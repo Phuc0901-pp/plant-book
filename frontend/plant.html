@@ -6,7 +6,8 @@
 <title>Hồ sơ cây trồng — Tanbao Corp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
 <style>
@@ -63,7 +64,7 @@
   .brand-bar {
     max-width: 900px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 20px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -71,11 +72,24 @@
   .brand-logo {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 16px;
-    color: var(--green-bright);
-    text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+    gap: 12px;
+  }
+  .brand-logo img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(34,197,94,0.25));
+  }
+  .brand-logo-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.12);
+  }
+  .brand-logo-tagline {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
   }
 
   /* Hero Section */
@@ -679,6 +693,14 @@
     color: var(--green-bright);
     text-decoration: none;
   }
+  .footer-logo {
+    height: 28px;
+    width: auto;
+    opacity: 0.5;
+    filter: brightness(0) invert(1);
+    margin-bottom: 10px;
+    display: inline-block;
+  }
 
   /* Skeleton loaders */
   .skeleton {
@@ -751,8 +773,9 @@
   <!-- Brand Header -->
   <header class="brand-bar">
     <div class="brand-logo">
-      <i class="fa fa-seedling"></i>
-      <span>Plant Book — Tanbao Corp</span>
+      <img src="/assets/logo.png" alt="TANBAO AgTech">
+      <div class="brand-logo-divider"></div>
+      <span class="brand-logo-tagline"><i class="fa-solid fa-book-open" style="color:var(--green-bright);margin-right:5px"></i>Hồ sơ cây trồng</span>
     </div>
     <button class="share-btn" onclick="sharePage()"><i class="fa fa-share-nodes"></i> Chia sẻ</button>
   </header>
@@ -782,7 +805,7 @@
   <!-- Error View -->
   <div id="error-view" style="display: none;">
     <div class="glass-panel error-state">
-      <div class="icon">🍂</div>
+      <div class="icon"><i class="fa-solid fa-leaf" style="font-size:56px;color:rgba(239,68,68,0.5)"></i></div>
       <h2>Không tìm thấy</h2>
       <p id="error-msg">Trang hồ sơ cây này không tồn tại hoặc đã được tắt chế độ công khai.</p>
     </div>
@@ -1454,7 +1477,8 @@ async function renderPlant(plant) {
     </div>
     
     <footer class="footer">
-      Dữ liệu được số hóa bởi hệ thống <a href="/">Plant Book Tanbao Corp</a> &nbsp;|&nbsp; Cập nhật lần cuối: ${fmtDate(plant.updated_at)}
+      <img src="/assets/logo.png" alt="TANBAO AgTech" class="footer-logo"><br>
+      Dữ liệu được số hóa bởi hệ thống <a href="/">Plant Book</a> — TANBAO AgTech &nbsp;|&nbsp; Cập nhật lần cuối: ${fmtDate(plant.updated_at)}
     </footer>
   `;
 

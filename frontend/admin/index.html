@@ -6,7 +6,8 @@
 <title>Plant Book Admin — Tanbao Corp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
 <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css">
@@ -30,10 +31,9 @@
   .login-card{background:var(--white);border-radius:20px;padding:48px 40px;width:100%;max-width:420px;
     box-shadow:0 20px 60px rgba(0,0,0,.3)}
   .login-logo{text-align:center;margin-bottom:32px}
-  .login-logo .icon{width:64px;height:64px;background:var(--green-light);border-radius:16px;
-    display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px}
-  .login-logo h1{font-size:22px;font-weight:700;color:var(--green-dark)}
-  .login-logo p{font-size:13px;color:var(--gray-400);margin-top:4px}
+  .login-logo .company-logo{width:180px;height:auto;display:block;margin:0 auto 16px;object-fit:contain}
+  .login-logo h1{font-size:18px;font-weight:700;color:var(--green-dark)}
+  .login-logo p{font-size:13px;color:var(--gray-400);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:6px}
   .form-group{margin-bottom:20px}
   .form-group label{display:block;font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:6px}
   .form-group input{width:100%;padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:8px;
@@ -49,11 +49,11 @@
   #app{display:none;height:100vh;overflow:hidden;flex-direction:row}
   .sidebar{width:260px;min-width:260px;background:var(--green-dark);color:#fff;
     display:flex;flex-direction:column;height:100vh;overflow-y:auto}
-  .sidebar-header{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
-  .sidebar-header .brand{display:flex;align-items:center;gap:12px}
-  .sidebar-header .brand-icon{width:40px;height:40px;background:var(--green);border-radius:10px;
-    display:flex;align-items:center;justify-content:center;font-size:18px}
-  .sidebar-header h2{font-size:15px;font-weight:700}
+  .sidebar-header{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sidebar-header .brand{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+  .sidebar-logo{width:140px;height:auto;display:block;filter:brightness(0) invert(1);opacity:0.9}
+  .sidebar-header .brand-subtitle{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.04em;text-transform:uppercase}
+  .sidebar-header h2{font-size:14px;font-weight:700}
   .sidebar-header p{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
   .sidebar-user{padding:14px 20px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08)}
   .sidebar-user .user-name{font-size:13px;font-weight:500}
@@ -327,9 +327,9 @@
 <div id="login-page">
   <div class="login-card">
     <div class="login-logo">
-      <div class="icon">🌿</div>
-      <h1>Plant Book Admin</h1>
-      <p>Tanbao Corp — Quản lý cây trồng</p>
+      <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
+      <h1>Hệ thống quản lý cây trồng</h1>
+      <p><i class="fa-solid fa-shield-halved" style="color:var(--green)"></i> Đăng nhập để tiếp tục</p>
     </div>
     <div class="login-error" id="login-error"></div>
     <div class="form-group">
@@ -352,11 +352,8 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="brand">
-        <div class="brand-icon">🌿</div>
-        <div>
-          <h2>Plant Book</h2>
-          <p>Tanbao Corp</p>
-        </div>
+        <img src="/assets/logo.png" alt="TANBAO AgTech" class="sidebar-logo">
+        <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
       </div>
     </div>
     <div class="sidebar-user">
@@ -423,7 +420,7 @@
         <!-- Bản đồ Tổng quan -->
         <div class="card" style="margin-bottom: 24px;">
           <div class="card-header">
-            <h3>🗺️ Bản đồ Tổng quan (Dự án & Trang trại)</h3>
+            <h3><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Tổng quan (Dự án & Trang trại)</h3>
             <span style="font-size: 11px; color: var(--gray-400);">Vị trí cây trồng và ranh giới trang trại</span>
           </div>
           <div style="padding: 12px;">
@@ -432,7 +429,7 @@
         </div>
 
         <div class="card">
-          <div class="card-header"><h3>🌱 Cây trồng gần đây</h3></div>
+          <div class="card-header"><h3><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Cây trồng gần đây</h3></div>
           <table>
             <thead><tr>
               <th>Cây</th><th>Loại</th><th>Sức khỏe</th><th>Vị trí</th><th>Ngày tạo</th><th></th>
@@ -587,7 +584,7 @@
         <div class="tab-pane" id="pane-config-care">
           <div class="card">
             <div class="card-header">
-              <h3>🛠️ Cấu hình danh mục quy trình</h3>
+              <h3><i class="fa-solid fa-screwdriver-wrench" style="color:var(--amber)"></i> Cấu hình danh mục quy trình</h3>
               <button class="btn btn-primary" id="save-care-cfg-btn" onclick="saveCareConfigs()">
                 <i class="fa fa-floppy-disk"></i> Lưu cấu hình
               </button>
@@ -625,7 +622,7 @@
       <!-- ── Media Library ── -->
       <div class="page-section" id="page-media">
         <div class="card">
-          <div class="card-header"><h3>🖼️ Thư viện Media (Supabase Storage)</h3></div>
+          <div class="card-header"><h3><i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media (Supabase Storage)</h3></div>
           <div style="padding:24px">
             <div class="alert alert-success">
               <i class="fa fa-circle-info"></i>
@@ -646,7 +643,7 @@
 <div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="plant-modal-title">🌱 Thêm cây mới</h2>
+      <h2 id="plant-modal-title"><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Thêm cây mới</h2>
       <button class="modal-close" onclick="closePlantModal()">×</button>
     </div>
     <div class="modal-body">
@@ -719,7 +716,7 @@
         </div>
         <!-- Public URL display -->
         <div class="public-url-box" id="public-url-section" style="display:none">
-          <label>🔗 Đường dẫn công khai của cây</label>
+          <label><i class="fa-solid fa-link"></i> Đường dẫn công khai của cây</label>
           <div class="url-copy-row">
             <input type="text" id="public-url-input" readonly>
             <button class="btn btn-secondary btn-sm" onclick="copyURL()"><i class="fa fa-copy"></i> Copy</button>
@@ -775,7 +772,7 @@
 <div class="modal-overlay" id="schema-modal" style="display:none" onclick="if(event.target===this)closeSchemaModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="schema-modal-title">⚙️ Tạo Schema loại cây</h2>
+      <h2 id="schema-modal-title"><i class="fa-solid fa-sliders" style="color:var(--green)"></i> Tạo Schema loại cây</h2>
       <button class="modal-close" onclick="closeSchemaModal()">×</button>
     </div>
     <div class="modal-body">
@@ -802,7 +799,7 @@
           <button class="btn btn-primary btn-sm" onclick="addSchemaField()"><i class="fa fa-plus"></i></button>
         </div>
         <p style="font-size:11px;color:var(--gray-400);margin-top:8px">
-          💡 Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
+          <i class="fa-solid fa-lightbulb" style="color:var(--amber)"></i> Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
         </p>
       </div>
     </div>
@@ -819,7 +816,7 @@
 <div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
-      <h2>📥 Import cây bằng file CSV</h2>
+      <h2><i class="fa-solid fa-file-import" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
       <button class="modal-close" onclick="closeCsvImportModal()">×</button>
     </div>
     <div class="modal-body">
@@ -870,14 +867,14 @@
         <div class="field">
           <label>Trạng thái công khai</label>
           <select id="csv-is-public" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
-            <option value="true">✅ Công khai</option>
-            <option value="false">🔒 Riêng tư</option>
+              <option value="true"><i class="fa-solid fa-earth-americas"></i> Công khai</option>
+              <option value="false"><i class="fa-solid fa-lock"></i> Riêng tư</option>
           </select>
         </div>
       </div>
       
       <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
-        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);">📊 Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
+        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i class="fa-solid fa-table"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
         <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
           <table style="width:100%; border-collapse:collapse; text-align:left;">
             <thead>

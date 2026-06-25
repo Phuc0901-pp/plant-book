@@ -41,7 +41,9 @@ function apiForm(path, body) {
 
 function toast(msg, type = 'success') {
   const el = document.getElementById('toast');
-  document.getElementById('toast-icon').textContent = type === 'success' ? '✅' : '❌';
+  document.getElementById('toast-icon').innerHTML = type === 'success'
+    ? '<i class="fa-solid fa-circle-check" style="color:#4ade80"></i>'
+    : '<i class="fa-solid fa-circle-xmark" style="color:#f87171"></i>';
   document.getElementById('toast-msg').textContent = msg;
   el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 3000);
@@ -185,7 +187,7 @@ async function loadDashboard() {
       <tr>
         <td>
           ${p.cover_image ? `<img src="${esc(p.cover_image)}" class="plant-cover">` :
-            `<div class="plant-cover" style="display:inline-flex;align-items:center;justify-content:center;font-size:18px">🌱</div>`}
+            `<div class="plant-cover" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--green)"><i class="fa-solid fa-seedling"></i></div>`}
         </td>
         <td><strong>${esc(p.plant_type)}</strong><br><small style="color:var(--gray-400)">${esc(p.plant_variety||'')}</small></td>
         <td>${healthBadge(p.health_status)}</td>
@@ -221,7 +223,7 @@ async function loadPlants() {
     tbody.innerHTML = plants.map(p => `
       <tr>
         <td>${p.cover_image ? `<img src="${esc(p.cover_image)}" class="plant-cover" style="width:44px;height:44px">` :
-          `<div class="plant-cover" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:20px">🌱</div>`}</td>
+          `<div class="plant-cover" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--green)"><i class="fa-solid fa-seedling"></i></div>`}</td>
         <td>
           <strong>${esc(p.plant_type)}</strong>
           ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
@@ -256,7 +258,9 @@ async function loadPlants() {
 async function openPlantModal(id = null) {
   editingPlantId = id;
   resetPlantForm();
-  document.getElementById('plant-modal-title').textContent = id ? '✏️ Chỉnh sửa cây' : '🌱 Thêm cây mới';
+  document.getElementById('plant-modal-title').innerHTML = id
+    ? '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa cây'
+    : '<i class="fa-solid fa-seedling" style="color:var(--green)"></i> Thêm cây mới';
   document.getElementById('public-url-section').style.display = 'none';
 
   // Load farms dropdown
@@ -651,7 +655,9 @@ async function loadSchemasDropdown() {
 async function openSchemaModal(id = null) {
   editingSchemaId = id;
   schemaFields = [];
-  document.getElementById('schema-modal-title').textContent = id ? '✏️ Chỉnh sửa Schema' : '⚙️ Tạo Schema loại cây';
+  document.getElementById('schema-modal-title').innerHTML = id
+    ? '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa Schema'
+    : '<i class="fa-solid fa-sliders" style="color:var(--green)"></i> Tạo Schema loại cây';
   document.getElementById('s-name').value = '';
   document.getElementById('s-desc').value = '';
 
@@ -919,7 +925,7 @@ function initDashboardMap(farms, plants) {
             .setLngLat(e.lngLat)
             .setHTML(`
               <div class="map-tooltip">
-                <h4>🌾 Trang trại: ${esc(farm.name)}</h4>
+                <h4><i class="fa-solid fa-wheat-awn" style="color:#10b981"></i> Trang trại: ${esc(farm.name)}</h4>
                 <p>${esc(farm.description || 'Không có mô tả.')}</p>
                 <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
               </div>
@@ -948,7 +954,7 @@ function initDashboardMap(farms, plants) {
             .setPopup(new mapboxgl.Popup({ offset: 25 })
               .setHTML(`
                 <div class="map-tooltip">
-                  <h4>🌳 ${esc(plant.plant_type)}</h4>
+                  <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> ${esc(plant.plant_type)}</h4>
                   ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                   <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                   <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
@@ -976,7 +982,7 @@ function initDashboardMap(farms, plants) {
 async function initGisPage() {
   activeFarmId = null;
   document.getElementById('gis-back-btn').style.display = 'none';
-  document.getElementById('gis-sidebar-title').textContent = '🗺️ Trang trại';
+  document.getElementById('gis-sidebar-title').innerHTML = '<i class="fa-solid fa-map" style="color:var(--green)"></i> Trang trại';
   document.getElementById('gis-header-actions').style.display = 'block';
   switchGisView('list');
   
@@ -1011,8 +1017,8 @@ function renderFarmsList(farms) {
     <div class="farm-item" onclick="selectFarm(${f.id})">
       <div class="farm-item-name">${esc(f.name)}</div>
       <div class="farm-item-meta">
-        <span>📏 ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
-        <span>🌳 ${f.plant_count} cây</span>
+        <span><i class="fa-solid fa-ruler-combined" style="color:var(--green-dark)"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+        <span><i class="fa-solid fa-seedling" style="color:var(--green)"></i> ${f.plant_count} cây</span>
       </div>
     </div>
   `).join('');
@@ -1131,7 +1137,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           .setPopup(new mapboxgl.Popup({ offset: 25 })
             .setHTML(`
               <div class="map-tooltip">
-                <h4>🌳 ${esc(plant.plant_type)}</h4>
+                <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> ${esc(plant.plant_type)}</h4>
                 ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                 <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                 <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
