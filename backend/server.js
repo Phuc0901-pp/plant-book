@@ -1,3 +1,7 @@
+// Force IPv4 first — required for Render free tier (no outbound IPv6)
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');

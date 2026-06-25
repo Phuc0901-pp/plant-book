@@ -1,5 +1,9 @@
 const { Pool } = require('pg');
+const dns = require('dns');
 require('dotenv').config();
+
+// Force IPv4 — Render free tier does not support outbound IPv6
+dns.setDefaultResultOrder('ipv4first');
 
 const pool = process.env.DATABASE_URL
   ? new Pool({
