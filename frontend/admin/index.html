@@ -7,6 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css">
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <style>
   :root {
     --green-dark:#1a4731;--green:#2d7a4f;--green-light:#e8f5ee;
@@ -218,6 +223,102 @@
     .sidebar{width:220px;min-width:220px}
     .form-row{grid-template-columns:1fr}
   }
+
+  /* ── GIS Section ── */
+  .gis-container {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 120px);
+    align-items: stretch;
+  }
+  .gis-sidebar {
+    width: 340px;
+    min-width: 340px;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .gis-sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--gray-50);
+  }
+  .gis-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .gis-map-container {
+    flex: 1;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--gray-200);
+  }
+  .gis-map {
+    width: 100%;
+    height: 100%;
+  }
+  .farm-item {
+    padding: 12px;
+    border: 1.5px solid var(--gray-100);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: 0.15s;
+    background: #fff;
+  }
+  .farm-item:hover {
+    background: var(--gray-50);
+    border-color: var(--green);
+  }
+  .farm-item.active {
+    background: var(--green-light);
+    border-color: var(--green);
+  }
+  .farm-item-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--green-dark);
+  }
+  .farm-item-meta {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .gis-back-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--gray-600);
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .gis-back-btn:hover {
+    background: var(--gray-200);
+    color: var(--gray-800);
+  }
+  .map-tooltip {
+    max-width: 240px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .map-tooltip h4 {
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: var(--green-dark);
+  }
 </style>
 </head>
 <body>
@@ -267,6 +368,10 @@
       <div class="nav-item active" onclick="showPage('dashboard')">
         <i class="fa fa-chart-pie"></i> Dashboard
       </div>
+      <div class="nav-section">Bản đồ & GIS</div>
+      <div class="nav-item" onclick="showPage('gis')">
+        <i class="fa fa-earth-asia"></i> Quản lý GIS
+      </div>
       <div class="nav-section">Cây trồng</div>
       <div class="nav-item" onclick="showPage('plants')">
         <i class="fa fa-seedling"></i> Danh sách cây
@@ -315,6 +420,17 @@
           </div>
         </div>
 
+        <!-- Bản đồ Tổng quan -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3>🗺️ Bản đồ Tổng quan (Dự án & Trang trại)</h3>
+            <span style="font-size: 11px; color: var(--gray-400);">Vị trí cây trồng và ranh giới trang trại</span>
+          </div>
+          <div style="padding: 12px;">
+            <div id="dashboard-map" style="width: 100%; height: 380px; border-radius: 8px; background: #e5e7eb; overflow: hidden;"></div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header"><h3>🌱 Cây trồng gần đây</h3></div>
           <table>
@@ -323,6 +439,81 @@
             </tr></thead>
             <tbody id="dashboard-plants-table"><tr><td colspan="6" class="empty-state">Đang tải...</td></tr></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ── GIS Management ── -->
+      <div class="page-section" id="page-gis">
+        <div class="gis-container">
+          <!-- GIS Sidebar -->
+          <div class="gis-sidebar">
+            <div class="gis-sidebar-header">
+              <button class="gis-back-btn" id="gis-back-btn" style="display: none;" onclick="backToFarmsList()">
+                <i class="fa fa-arrow-left"></i>
+              </button>
+              <h3 id="gis-sidebar-title" style="font-size: 14px; font-weight: 700; flex: 1;">🗺️ Trang trại</h3>
+              <div id="gis-header-actions">
+                <button class="btn btn-primary btn-sm" onclick="openFarmForm()">
+                  <i class="fa fa-plus"></i> Thêm mới
+                </button>
+              </div>
+            </div>
+            <div class="gis-sidebar-content" id="gis-sidebar-content">
+              <!-- Farm list view -->
+              <div id="gis-view-list">
+                <div id="farms-list-container">
+                  <div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div>
+                </div>
+              </div>
+              
+              <!-- Farm edit/create form view -->
+              <div id="gis-view-form" style="display: none;">
+                <div class="field">
+                  <label>Tên trang trại *</label>
+                  <input type="text" id="farm-name" placeholder="VD: Nông trại Tây Nguyên, Farm A...">
+                </div>
+                <div class="field">
+                  <label>Mô tả</label>
+                  <textarea id="farm-desc" rows="3" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
+                </div>
+                <div class="field">
+                  <label>Ranh giới bản đồ</label>
+                  <div class="alert alert-success" style="padding: 8px 12px; margin-bottom: 8px; font-size: 11px; line-height: 1.4;">
+                    <i class="fa fa-circle-info"></i> Vẽ ranh giới (đa giác) trên bản đồ. Nhấp đỉnh đầu tiên để khép kín đa giác.
+                  </div>
+                  <div style="font-size: 12px; color: var(--gray-600); margin-bottom: 12px;">
+                    Diện tích tính toán: <strong id="farm-area-display">0 m²</strong> (<span id="farm-area-ha">0</span> ha)
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                  <button class="btn btn-secondary" style="flex: 1;" onclick="cancelFarmForm()">Hủy</button>
+                  <button class="btn btn-primary" style="flex: 1;" onclick="saveFarm()">Lưu</button>
+                </div>
+              </div>
+
+              <!-- Farm details view (list of plants inside the farm) -->
+              <div id="gis-view-details" style="display: none;">
+                <div style="margin-bottom: 16px; border-bottom: 1px dashed var(--gray-200); padding-bottom: 12px;">
+                  <p id="farm-details-desc" style="font-size: 12px; color: var(--gray-600); margin-bottom: 8px; min-height: 20px; font-style: italic;"></p>
+                  <p style="font-size: 12px; color: var(--gray-800);">Diện tích: <strong id="farm-details-area">0 m²</strong></p>
+                </div>
+                <h4 style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--gray-600); margin-bottom: 10px; letter-spacing: 0.05em;">
+                  🌳 Cây trồng trong trang trại (<span id="farm-details-plant-count">0</span>)
+                </h4>
+                <div id="farm-details-plants-list" style="margin-bottom: 16px; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                  <!-- List of plants in the farm -->
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 16px; border-top: 1px solid var(--gray-100); padding-top: 12px;">
+                  <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="editFarm()"><i class="fa fa-pen"></i> Sửa</button>
+                  <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="deleteFarm()"><i class="fa fa-trash"></i> Xóa</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- GIS Map Container -->
+          <div class="gis-map-container">
+            <div id="gis-map" class="gis-map"></div>
+          </div>
         </div>
       </div>
 
@@ -481,6 +672,21 @@
         <div class="field">
           <label>Vị trí / Lô trồng</label>
           <input type="text" id="f-location" placeholder="VD: Lô A1 - Vườn Tây, Tọa độ 10.xxx...">
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Thuộc trang trại (GIS)</label>
+            <select id="f-farm-id">
+              <option value="">— Không thuộc trang trại nào —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tọa độ GPS (Vĩ độ, Kinh độ)</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="number" step="any" id="f-latitude" placeholder="Vĩ độ (Latitude) VD: 10.762...">
+              <input type="number" step="any" id="f-longitude" placeholder="Kinh độ (Longitude) VD: 106.682...">
+            </div>
+          </div>
         </div>
         <div class="field">
           <label>Cấu hình loại cây (Schema)</label>

@@ -18,6 +18,12 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET Mapbox public token (served from env, avoids hardcoding in frontend)
+router.get('/mapbox-token', (req, res) => {
+  const token = process.env.MAPBOX_TOKEN || '';
+  res.json({ token });
+});
+
 // PUT update configurations (Admin auth required)
 router.put('/', auth, async (req, res) => {
   try {

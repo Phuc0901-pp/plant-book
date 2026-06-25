@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
 <style>
   :root {
     --bg-dark: #071910;
@@ -711,6 +713,36 @@
     color: var(--text-secondary);
     line-height: 1.6;
   }
+
+  /* Plant Location Map */
+  .plant-map-container {
+    width: 100%;
+    height: 240px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border-glass);
+    position: relative;
+  }
+  .plant-map-container .mapboxgl-map {
+    border-radius: 14px;
+  }
+  .map-farm-badge {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 10;
+    background: rgba(7,25,16,0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: var(--green-bright);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 </style>
 </head>
 <body>
@@ -1161,7 +1193,7 @@ async function loadPlant() {
     if (!res.ok) throw new Error(plant.error || 'Không tìm thấy hồ sơ');
 
     document.title = `${plant.plant_type} — Plant Book | Tanbao Corp`;
-    renderPlant(plant);
+    await renderPlant(plant);
   } catch (err) {
     document.getElementById('loader').style.display = 'none';
     document.getElementById('error-view').style.display = 'block';
@@ -1191,7 +1223,7 @@ function getCareLogSummary(log) {
 }
 
 // Render dynamic plant data
-function renderPlant(plant) {
+async function renderPlant(plant) {
   const extra = plant.data || {};
   const schemaFields = plant.schema_fields || [];
   const media = plant.media || [];
@@ -1251,6 +1283,19 @@ function renderPlant(plant) {
       <!-- Left Column (Specs, Logs) -->
       <div class="left-col">
   `;
+
+  // 0. Location Map (if GPS coordinates exist)
+  if (plant.latitude && plant.longitude) {
+    html += `
+        <div class="glass-panel glass-card">
+          <h2 class="sec-title"><i class="fa-solid fa-map-location-dot" style="color: var(--green-bright)"></i> Vị trí trên bản đồ</h2>
+          <div class="plant-map-container">
+            <div id="plant-location-map" style="width:100%;height:100%;"></div>
+            ${plant.farm_name ? `<div class="map-farm-badge"><i class="fa fa-seedling"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
+          </div>
+        </div>
+    `;
+  }
 
   // 1. Plant Details (Schema attributes)
   const schemaValues = schemaFields.filter(f => extra[f.name] !== undefined && extra[f.name] !== '');
@@ -1417,6 +1462,62 @@ function renderPlant(plant) {
   const view = document.getElementById('plant-view');
   view.innerHTML = html;
   view.style.display = 'block';
+
+  // Initialize Mapbox plant location map if coordinates exist
+  if (plant.latitude && plant.longitude) {
+    let MAPBOX_TOKEN = '';
+    try {
+      const tokenRes = await fetch('/api/config/mapbox-token');
+      const tokenData = await tokenRes.json();
+      MAPBOX_TOKEN = tokenData.token;
+    } catch(e) {
+      console.error('Lỗi tải Mapbox token:', e);
+    }
+    if (!MAPBOX_TOKEN) return;
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    const plantMap = new mapboxgl.Map({
+      container: 'plant-location-map',
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: [parseFloat(plant.longitude), parseFloat(plant.latitude)],
+      zoom: 16,
+      attributionControl: false
+    });
+    plantMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
+
+    // Add plant marker
+    const el = document.createElement('div');
+    el.style.cssText = 'width:32px;height:32px;background:rgba(34,197,94,0.9);border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.4);cursor:pointer;';
+    el.innerHTML = '🌱';
+    new mapboxgl.Marker({ element: el })
+      .setLngLat([parseFloat(plant.longitude), parseFloat(plant.latitude)])
+      .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
+        .setHTML(`<strong>${esc(plant.plant_type)}</strong>${plant.plant_variety ? '<br><small>'+esc(plant.plant_variety)+'</small>' : ''}`))
+      .addTo(plantMap);
+
+    // Draw farm polygon if available
+    if (plant.farm_boundary && plant.farm_boundary.coordinates) {
+      plantMap.on('load', () => {
+        plantMap.addSource('farm-poly', {
+          type: 'geojson',
+          data: { type: 'Feature', geometry: plant.farm_boundary, properties: {} }
+        });
+        plantMap.addLayer({
+          id: 'farm-poly-fill',
+          type: 'fill',
+          source: 'farm-poly',
+          paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.15 }
+        });
+        plantMap.addLayer({
+          id: 'farm-poly-line',
+          type: 'line',
+          source: 'farm-poly',
+          paint: { 'line-color': '#22c55e', 'line-width': 2, 'line-opacity': 0.8 }
+        });
+      });
+    }
+  }
 }
 
 // Submit log entries from care forms

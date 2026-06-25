@@ -29,6 +29,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
 app.use('/api/plants', require('./routes/plants'));
 app.use('/api/config', require('./routes/config'));
+app.use('/api/farms', require('./routes/farms'));
 
 
 // Health check

@@ -89,14 +89,17 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public } = req.body;
+    const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude } = req.body;
     const slug = generateSlug(plant_type);
 
     const result = await pool.query(
-      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
       [slug, schema_id || null, plant_type, plant_variety, plant_age, health_status || 'Tốt',
-       location, JSON.stringify(data || {}), is_public !== false, req.user.id]
+       location, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
+       latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
+       longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
+       req.user.id]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -107,13 +110,17 @@ router.post('/', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { plant_type, plant_variety, plant_age, health_status, location, data, is_public, schema_id } = req.body;
+    const { plant_type, plant_variety, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude } = req.body;
     const result = await pool.query(
-      `UPDATE plants SET plant_type=$1, plant_variety=$2, plant_age=$3, health_status=$4,
-       location=$5, data=$6, is_public=$7, schema_id=$8, updated_at=NOW()
-       WHERE id=$9 RETURNING *`,
+      `UPDATE plants 
+       SET plant_type=$1, plant_variety=$2, plant_age=$3, health_status=$4, location=$5, 
+           data=$6, is_public=$7, schema_id=$8, farm_id=$9, latitude=$10, longitude=$11, updated_at=NOW()
+       WHERE id=$12 RETURNING *`,
       [plant_type, plant_variety, plant_age, health_status, location,
-       JSON.stringify(data || {}), is_public !== false, schema_id || null, req.params.id]
+       JSON.stringify(data || {}), is_public !== false, schema_id || null, farm_id || null,
+       latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
+       longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
+       req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
     res.json(result.rows[0]);
@@ -211,8 +218,11 @@ router.delete('/:plantId/logs/:logId', auth, async (req, res) => {
 router.get('/public/:slug', async (req, res) => {
   try {
     const plant = await pool.query(
-      `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields
-       FROM plants p LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
+      `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields,
+              f.name as farm_name, f.polygon_coordinates as farm_polygon
+       FROM plants p 
+       LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
+       LEFT JOIN farms f ON f.id = p.farm_id
        WHERE p.public_slug=$1 AND p.is_public=true`, [req.params.slug]
     );
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
@@ -220,8 +230,21 @@ router.get('/public/:slug', async (req, res) => {
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plant.rows[0].id]);
     const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 ORDER BY log_date DESC', [plant.rows[0].id]);
 
-    res.json({ ...plant.rows[0], media: media.rows, logs: logs.rows });
+    // Build GeoJSON geometry for the farm boundary polygon
+    const row = plant.rows[0];
+    let farm_boundary = null;
+    if (row.farm_polygon) {
+      try {
+        const coords = typeof row.farm_polygon === 'string' ? JSON.parse(row.farm_polygon) : row.farm_polygon;
+        if (Array.isArray(coords) && coords.length > 0) {
+          farm_boundary = { type: 'Polygon', coordinates: coords };
+        }
+      } catch(e) { /* ignore parse errors */ }
+    }
+
+    res.json({ ...row, media: media.rows, logs: logs.rows, farm_boundary });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });

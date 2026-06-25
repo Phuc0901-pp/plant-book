@@ -98,6 +98,27 @@ async function initDB() {
       )
     `);
 
+    // Farms table (GIS boundaries)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS farms (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        polygon_coordinates JSONB NOT NULL DEFAULT '[]',
+        area NUMERIC,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Alter plants table for GIS
+    await client.query(`
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS latitude NUMERIC;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS longitude NUMERIC;
+    `);
+
     // Seed default configurations
     const defaultConfigs = [
       { key: 'fertilizers', value: JSON.stringify(["Phân NPK 16-16-8", "Phân hữu cơ trùn quế", "Phân bón lá Đầu Trâu", "Phân chuồng hoai mục"]) },

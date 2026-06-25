@@ -109,6 +109,7 @@ async function showApp() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('sb-user-name').textContent = currentUser?.name || '';
   document.getElementById('sb-user-email').textContent = currentUser?.email || '';
+  await ensureMapboxToken();
   loadDashboard();
   loadSchemasDropdown();
 }
@@ -129,8 +130,10 @@ function showPage(page) {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`page-${page}`).classList.add('active');
-  event.currentTarget.classList.add('active');
-  const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình', media:'Thư viện Media' };
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
+  const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình', media:'Thư viện Media', gis:'Quản lý GIS' };
   document.getElementById('page-title').textContent = titles[page] || page;
 
   if (page === 'dashboard') loadDashboard();
@@ -139,6 +142,7 @@ function showPage(page) {
     loadSchemas();
     loadCareConfigs();
   }
+  if (page === 'gis') initGisPage();
 }
 
 function switchTab(el, tabId) {
@@ -156,9 +160,10 @@ function switchTab(el, tabId) {
 
 async function loadDashboard() {
   try {
-    const [plants, schemas] = await Promise.all([
+    const [plants, schemas, farms] = await Promise.all([
       api('/plants'),
-      api('/schemas')
+      api('/schemas'),
+      api('/farms')
     ]);
     const healthy = plants.filter(p => p.health_status === 'Tốt').length;
     const watch = plants.filter(p => ['Cần chú ý','Bệnh'].includes(p.health_status)).length;
@@ -166,6 +171,9 @@ async function loadDashboard() {
     document.getElementById('stat-healthy').textContent = healthy;
     document.getElementById('stat-watch').textContent = watch;
     document.getElementById('stat-schemas').textContent = schemas.length;
+
+    // Load Overview map
+    initDashboardMap(farms, plants);
 
     const tbody = document.getElementById('dashboard-plants-table');
     const recent = plants.slice(0, 8);
@@ -251,6 +259,9 @@ async function openPlantModal(id = null) {
   document.getElementById('plant-modal-title').textContent = id ? '✏️ Chỉnh sửa cây' : '🌱 Thêm cây mới';
   document.getElementById('public-url-section').style.display = 'none';
 
+  // Load farms dropdown
+  await loadFarmsDropdown();
+
   if (id) {
     try {
       const plant = await api(`/plants/${id}`);
@@ -261,6 +272,9 @@ async function openPlantModal(id = null) {
       document.getElementById('f-location').value = plant.location || '';
       document.getElementById('f-schema-id').value = plant.schema_id || '';
       document.getElementById('f-is-public').value = plant.is_public ? 'true' : 'false';
+      document.getElementById('f-farm-id').value = plant.farm_id || '';
+      document.getElementById('f-latitude').value = plant.latitude !== null && plant.latitude !== undefined ? plant.latitude : '';
+      document.getElementById('f-longitude').value = plant.longitude !== null && plant.longitude !== undefined ? plant.longitude : '';
 
       // Show public URL
       if (plant.is_public && plant.public_slug) {
@@ -285,7 +299,10 @@ function closePlantModal() {
 }
 
 function resetPlantForm() {
-  ['f-plant-type','f-plant-variety','f-plant-age','f-location'].forEach(id => document.getElementById(id).value = '');
+  ['f-plant-type','f-plant-variety','f-plant-age','f-location','f-farm-id','f-latitude','f-longitude'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   document.getElementById('f-health-status').value = 'Tốt';
   document.getElementById('f-schema-id').value = '';
   document.getElementById('f-is-public').value = 'true';
@@ -327,6 +344,9 @@ async function savePlant() {
     location: document.getElementById('f-location').value.trim(),
     schema_id: schema_id || null,
     is_public: document.getElementById('f-is-public').value === 'true',
+    farm_id: document.getElementById('f-farm-id').value || null,
+    latitude: document.getElementById('f-latitude').value,
+    longitude: document.getElementById('f-longitude').value,
     data: extraData
   };
 
@@ -777,5 +797,546 @@ async function saveCareConfigs() {
   } finally {
     btn.innerHTML = oldText;
     btn.disabled = false;
+  }
+}
+
+// ── Mapbox GIS & Farm Management ──────────────────────────────
+
+let mapboxTokenFetched = false;
+async function ensureMapboxToken() {
+  if (mapboxTokenFetched) return;
+  try {
+    const res = await fetch('/api/config/mapbox-token');
+    const data = await res.json();
+    mapboxgl.accessToken = data.token;
+    mapboxTokenFetched = true;
+  } catch (err) {
+    console.error('Lỗi tải Mapbox token:', err);
+  }
+}
+let dbMap = null;
+let gMap = null;
+let drawControl = null;
+let activeFarmId = null;
+let currentFarms = [];
+let currentPlants = [];
+
+// Populate farms select in plant modal
+async function loadFarmsDropdown() {
+  try {
+    const farms = await api('/farms');
+    const select = document.getElementById('f-farm-id');
+    if (select) {
+      select.innerHTML = '<option value="">— Không thuộc trang trại nào —</option>' + 
+        farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+    }
+  } catch (err) {
+    console.error('Error loading farms for dropdown:', err);
+  }
+}
+
+// Initialize Overview map on Dashboard
+function initDashboardMap(farms, plants) {
+  const mapContainer = document.getElementById('dashboard-map');
+  if (!mapContainer) return;
+  
+  mapContainer.innerHTML = '';
+  const mapDiv = document.createElement('div');
+  mapDiv.style.width = '100%';
+  mapDiv.style.height = '100%';
+  mapContainer.appendChild(mapDiv);
+
+  const map = new mapboxgl.Map({
+    container: mapDiv,
+    style: 'mapbox://styles/mapbox/satellite-streets-v12',
+    center: [106.3, 12.5],
+    zoom: 5
+  });
+
+  map.addControl(new mapboxgl.NavigationControl());
+
+  map.on('load', () => {
+    const bounds = new mapboxgl.LngLatBounds();
+    let hasBounds = false;
+
+    // Render farms boundaries
+    farms.forEach(farm => {
+      let coords = [];
+      try {
+        coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+      } catch(e) {}
+      
+      if (coords && coords.length > 0) {
+        const farmSourceId = `farm-source-${farm.id}`;
+        const farmLayerId = `farm-layer-${farm.id}`;
+        const farmOutlineId = `farm-outline-${farm.id}`;
+
+        const polygonCoords = [...coords];
+        if (polygonCoords.length > 0 && 
+            (polygonCoords[0][0] !== polygonCoords[polygonCoords.length - 1][0] || 
+             polygonCoords[0][1] !== polygonCoords[polygonCoords.length - 1][1])) {
+          polygonCoords.push(polygonCoords[0]);
+        }
+
+        map.addSource(farmSourceId, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [polygonCoords]
+            }
+          }
+        });
+
+        map.addLayer({
+          id: farmLayerId,
+          type: 'fill',
+          source: farmSourceId,
+          layout: {},
+          paint: {
+            'fill-color': '#10b981',
+            'fill-opacity': 0.25
+          }
+        });
+
+        map.addLayer({
+          id: farmOutlineId,
+          type: 'line',
+          source: farmSourceId,
+          layout: {},
+          paint: {
+            'line-color': '#10b981',
+            'line-width': 2
+          }
+        });
+
+        coords.forEach(pt => {
+          bounds.extend(pt);
+          hasBounds = true;
+        });
+
+        map.on('click', farmLayerId, (e) => {
+          new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <div class="map-tooltip">
+                <h4>🌾 Trang trại: ${esc(farm.name)}</h4>
+                <p>${esc(farm.description || 'Không có mô tả.')}</p>
+                <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
+              </div>
+            `)
+            .addTo(map);
+        });
+
+        map.on('mouseenter', farmLayerId, () => map.getCanvas().style.cursor = 'pointer');
+        map.on('mouseleave', farmLayerId, () => map.getCanvas().style.cursor = '');
+      }
+    });
+
+    // Render plant markers
+    plants.forEach(plant => {
+      if (plant.latitude && plant.longitude) {
+        const lat = parseFloat(plant.latitude);
+        const lng = parseFloat(plant.longitude);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          let color = '#3b82f6';
+          if (plant.health_status === 'Tốt') color = '#22c55e';
+          else if (plant.health_status === 'Cần chú ý') color = '#eab308';
+          else if (plant.health_status === 'Bệnh') color = '#ef4444';
+
+          const marker = new mapboxgl.Marker({ color })
+            .setLngLat([lng, lat])
+            .setPopup(new mapboxgl.Popup({ offset: 25 })
+              .setHTML(`
+                <div class="map-tooltip">
+                  <h4>🌳 ${esc(plant.plant_type)}</h4>
+                  ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
+                  <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
+                  <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
+                  <div style="margin-top:8px">
+                    <button class="btn btn-primary btn-sm" onclick="openPlantModal(${plant.id})">Chi tiết</button>
+                  </div>
+                </div>
+              `)
+            )
+            .addTo(map);
+
+          bounds.extend([lng, lat]);
+          hasBounds = true;
+        }
+      }
+    });
+
+    if (hasBounds) {
+      map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 1000 });
+    }
+  });
+}
+
+// Initialize GIS Page
+async function initGisPage() {
+  activeFarmId = null;
+  document.getElementById('gis-back-btn').style.display = 'none';
+  document.getElementById('gis-sidebar-title').textContent = '🗺️ Trang trại';
+  document.getElementById('gis-header-actions').style.display = 'block';
+  switchGisView('list');
+  
+  try {
+    const [farms, plants] = await Promise.all([
+      api('/farms'),
+      api('/plants')
+    ]);
+    currentFarms = farms;
+    currentPlants = plants;
+    renderFarmsList(farms);
+    initGisMap(farms, plants);
+  } catch (err) {
+    toast('Lỗi tải dữ liệu GIS: ' + err.message, 'error');
+  }
+}
+
+function switchGisView(view) {
+  document.getElementById('gis-view-list').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('gis-view-form').style.display = view === 'form' ? 'block' : 'none';
+  document.getElementById('gis-view-details').style.display = view === 'details' ? 'block' : 'none';
+}
+
+function renderFarmsList(farms) {
+  const container = document.getElementById('farms-list-container');
+  if (!farms.length) {
+    container.innerHTML = '<div class="empty-state"><i class="fa fa-map-location-dot"></i><p>Chưa có trang trại nào. Hãy thêm mới!</p></div>';
+    return;
+  }
+  container.innerHTML = farms.map(f => `
+    <div class="farm-item" onclick="selectFarm(${f.id})">
+      <div class="farm-item-name">${esc(f.name)}</div>
+      <div class="farm-item-meta">
+        <span>📏 ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+        <span>🌳 ${f.plant_count} cây</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function initGisMap(farms, plants) {
+  const container = document.getElementById('gis-map');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  gMap = new mapboxgl.Map({
+    container: 'gis-map',
+    style: 'mapbox://styles/mapbox/satellite-streets-v12',
+    center: [106.3, 12.5],
+    zoom: 5
+  });
+
+  gMap.addControl(new mapboxgl.NavigationControl());
+
+  drawControl = new MapboxDraw({
+    displayControlsDefault: false,
+    controls: {
+      polygon: true,
+      trash: true
+    },
+    defaultMode: 'simple_select'
+  });
+  gMap.addControl(drawControl);
+
+  gMap.on('draw.create', updateAreaDisplay);
+  gMap.on('draw.update', updateAreaDisplay);
+  gMap.on('draw.delete', updateAreaDisplay);
+
+  gMap.on('load', () => {
+    drawFarmsAndPlantsLayers(farms, plants);
+  });
+}
+
+function drawFarmsAndPlantsLayers(farms, plants) {
+  if (!gMap) return;
+  const bounds = new mapboxgl.LngLatBounds();
+  let hasBounds = false;
+
+  farms.forEach(farm => {
+    let coords = [];
+    try {
+      coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+    } catch(e) {}
+
+    if (coords && coords.length > 0) {
+      const srcId = `gis-farm-src-${farm.id}`;
+      const layerId = `gis-farm-layer-${farm.id}`;
+      const outlineId = `gis-farm-outline-${farm.id}`;
+
+      const polyCoords = [...coords];
+      if (polyCoords.length > 0 && 
+          (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || 
+           polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1])) {
+        polyCoords.push(polyCoords[0]);
+      }
+
+      gMap.addSource(srcId, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [polyCoords] }
+        }
+      });
+
+      gMap.addLayer({
+        id: layerId,
+        type: 'fill',
+        source: srcId,
+        paint: {
+          'fill-color': '#10b981',
+          'fill-opacity': activeFarmId === farm.id ? 0.45 : 0.25
+        }
+      });
+
+      gMap.addLayer({
+        id: outlineId,
+        type: 'line',
+        source: srcId,
+        paint: {
+          'line-color': '#10b981',
+          'line-width': activeFarmId === farm.id ? 3 : 1.5
+        }
+      });
+
+      gMap.on('click', layerId, () => {
+        selectFarm(farm.id);
+      });
+      
+      gMap.on('mouseenter', layerId, () => gMap.getCanvas().style.cursor = 'pointer');
+      gMap.on('mouseleave', layerId, () => gMap.getCanvas().style.cursor = '');
+
+      coords.forEach(pt => {
+        bounds.extend(pt);
+        hasBounds = true;
+      });
+    }
+  });
+
+  plants.forEach(plant => {
+    if (plant.latitude && plant.longitude) {
+      const lat = parseFloat(plant.latitude);
+      const lng = parseFloat(plant.longitude);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        let color = '#3b82f6';
+        if (plant.health_status === 'Tốt') color = '#22c55e';
+        else if (plant.health_status === 'Cần chú ý') color = '#eab308';
+        else if (plant.health_status === 'Bệnh') color = '#ef4444';
+
+        const marker = new mapboxgl.Marker({ color })
+          .setLngLat([lng, lat])
+          .setPopup(new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+              <div class="map-tooltip">
+                <h4>🌳 ${esc(plant.plant_type)}</h4>
+                ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
+                <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
+                <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
+                <div style="margin-top:8px">
+                  <button class="btn btn-primary btn-sm" onclick="openPlantModal(${plant.id})">Chi tiết</button>
+                </div>
+              </div>
+            `)
+          )
+          .addTo(gMap);
+
+        bounds.extend([lng, lat]);
+        hasBounds = true;
+      }
+    }
+  });
+
+  if (hasBounds && !activeFarmId) {
+    gMap.fitBounds(bounds, { padding: 50, maxZoom: 16, duration: 1000 });
+  }
+}
+
+function updateAreaDisplay() {
+  const data = drawControl.getAll();
+  if (data.features.length > 0) {
+    const polygon = data.features[0];
+    const areaVal = turf.area(polygon);
+    document.getElementById('farm-area-display').textContent = Math.round(areaVal).toLocaleString('vi-VN') + ' m²';
+    document.getElementById('farm-area-ha').textContent = (areaVal / 10000).toFixed(2);
+    window._lastDrawnArea = areaVal;
+  } else {
+    document.getElementById('farm-area-display').textContent = '0 m²';
+    document.getElementById('farm-area-ha').textContent = '0';
+    window._lastDrawnArea = 0;
+  }
+}
+
+function openFarmForm() {
+  activeFarmId = null;
+  document.getElementById('gis-back-btn').style.display = 'block';
+  document.getElementById('gis-sidebar-title').textContent = 'Tạo Trang trại';
+  document.getElementById('gis-header-actions').style.display = 'none';
+  switchGisView('form');
+  
+  document.getElementById('farm-name').value = '';
+  document.getElementById('farm-desc').value = '';
+  document.getElementById('farm-area-display').textContent = '0 m²';
+  document.getElementById('farm-area-ha').textContent = '0';
+  window._lastDrawnArea = 0;
+
+  drawControl.deleteAll();
+  drawControl.changeMode('draw_polygon');
+}
+
+function cancelFarmForm() {
+  drawControl.changeMode('simple_select');
+  drawControl.deleteAll();
+  initGisPage();
+}
+
+async function saveFarm() {
+  const name = document.getElementById('farm-name').value.trim();
+  const description = document.getElementById('farm-desc').value.trim();
+  if (!name) {
+    toast('Vui lòng nhập tên trang trại!', 'error');
+    return;
+  }
+
+  const data = drawControl.getAll();
+  if (data.features.length === 0) {
+    toast('Vui lòng vẽ ranh giới trang trại trên bản đồ!', 'error');
+    return;
+  }
+
+  const coordinates = data.features[0].geometry.coordinates[0];
+  const area = window._lastDrawnArea || 0;
+
+  const body = {
+    name,
+    description,
+    polygon_coordinates: coordinates,
+    area
+  };
+
+  try {
+    const method = activeFarmId ? 'PUT' : 'POST';
+    const url = activeFarmId ? `/farms/${activeFarmId}` : '/farms';
+    
+    await api(url, {
+      method,
+      body: JSON.stringify(body)
+    });
+
+    toast(activeFarmId ? 'Đã cập nhật ranh giới trang trại!' : 'Đã tạo trang trại thành công!');
+    drawControl.changeMode('simple_select');
+    drawControl.deleteAll();
+    initGisPage();
+  } catch (err) {
+    toast('Lỗi lưu trang trại: ' + err.message, 'error');
+  }
+}
+
+async function selectFarm(farmId) {
+  activeFarmId = farmId;
+  document.getElementById('gis-back-btn').style.display = 'block';
+  document.getElementById('gis-header-actions').style.display = 'none';
+  switchGisView('details');
+  
+  try {
+    const farm = await api(`/farms/${farmId}`);
+    document.getElementById('gis-sidebar-title').textContent = farm.name;
+    document.getElementById('farm-details-desc').textContent = farm.description || 'Không có mô tả.';
+    document.getElementById('farm-details-area').textContent = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
+    document.getElementById('farm-details-plant-count').textContent = farm.plants.length;
+
+    const listEl = document.getElementById('farm-details-plants-list');
+    if (farm.plants.length === 0) {
+      listEl.innerHTML = '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
+    } else {
+      listEl.innerHTML = farm.plants.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--gray-50); border-radius:6px; font-size:12px; border:1px solid var(--gray-200);">
+          <div>
+            <strong>${esc(p.plant_type)}</strong>
+            ${p.plant_variety ? `<span style="color:var(--gray-400)"> - ${esc(p.plant_variety)}</span>` : ''}
+          </div>
+          <div style="display:flex; align-items:center;">
+            ${healthBadge(p.health_status)}
+            <button class="btn btn-secondary btn-sm" style="padding: 2px 6px; margin-left: 6px;" onclick="openPlantModal(${p.id})">
+              <i class="fa fa-pen"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    let coords = [];
+    try {
+      coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+    } catch(e) {}
+
+    if (coords && coords.length > 0 && gMap) {
+      const bounds = new mapboxgl.LngLatBounds();
+      coords.forEach(pt => bounds.extend(pt));
+      gMap.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 1000 });
+    }
+  } catch (err) {
+    toast('Lỗi tải chi tiết trang trại: ' + err.message, 'error');
+  }
+}
+
+function backToFarmsList() {
+  initGisPage();
+}
+
+async function editFarm() {
+  if (!activeFarmId) return;
+  try {
+    const farm = currentFarms.find(f => f.id === activeFarmId);
+    if (!farm) return;
+
+    switchGisView('form');
+    document.getElementById('gis-sidebar-title').textContent = 'Sửa Trang trại';
+    document.getElementById('farm-name').value = farm.name;
+    document.getElementById('farm-desc').value = farm.description || '';
+    document.getElementById('farm-area-display').textContent = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
+    document.getElementById('farm-area-ha').textContent = ((farm.area || 0) / 10000).toFixed(2);
+    window._lastDrawnArea = farm.area || 0;
+
+    let coords = [];
+    try {
+      coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+    } catch(e) {}
+
+    if (coords && coords.length > 0) {
+      const polyCoords = [...coords];
+      if (polyCoords.length > 0 && 
+          (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || 
+           polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1])) {
+        polyCoords.push(polyCoords[0]);
+      }
+
+      drawControl.deleteAll();
+      drawControl.add({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [polyCoords]
+        }
+      });
+    }
+  } catch (err) {
+    toast('Lỗi khi sửa trang trại: ' + err.message, 'error');
+  }
+}
+
+async function deleteFarm() {
+  if (!activeFarmId) return;
+  if (!confirm('Bạn có chắc chắn muốn xóa trang trại này? Các cây liên kết sẽ được giữ lại nhưng không thuộc trang trại nào nữa.')) return;
+  
+  try {
+    await api(`/farms/${activeFarmId}`, { method: 'DELETE' });
+    toast('Đã xóa trang trại thành công.');
+    initGisPage();
+  } catch (err) {
+    toast('Lỗi xóa trang trại: ' + err.message, 'error');
   }
 }
