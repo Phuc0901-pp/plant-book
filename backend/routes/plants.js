@@ -241,7 +241,7 @@ router.post('/public/:slug/logs', async (req, res) => {
       `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,NULL) RETURNING *`,
       [plantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
-       JSON.stringify(media_urls || []), JSON.stringify(details || {}), null]
+       JSON.stringify(media_urls || []), JSON.stringify(details || {})]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

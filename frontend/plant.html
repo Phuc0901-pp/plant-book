@@ -386,6 +386,23 @@
   .log-time-indicator {
     font-size: 11px;
     color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .log-time-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
   }
   .log-body {
     font-size: 13px;
@@ -792,6 +809,10 @@
           </select>
         </div>
         <div class="field">
+          <label>Thời gian thực hiện</label>
+          <input type="datetime-local" id="water-datetime" required>
+        </div>
+        <div class="field">
           <label>Ghi chú thêm</label>
           <textarea id="water-note" rows="3" placeholder="Tình trạng thấm đất, thời tiết lúc tưới..."></textarea>
         </div>
@@ -844,6 +865,10 @@
             <option value="Phun lá">Hòa nước phun lá</option>
             <option value="Trộn nước tưới">Trộn hòa vào nước tưới</option>
           </select>
+        </div>
+        <div class="field">
+          <label>Thời gian thực hiện</label>
+          <input type="datetime-local" id="fertilizer-datetime" required>
         </div>
         <div class="field">
           <label>Ghi chú thêm</label>
@@ -904,6 +929,10 @@
           </select>
         </div>
         <div class="field">
+          <label>Thời gian thực hiện</label>
+          <input type="datetime-local" id="pesticide-datetime" required>
+        </div>
+        <div class="field">
           <label>Ghi chú thêm</label>
           <textarea id="pesticide-note" rows="3" placeholder="Tình trạng sâu hại, thời tiết gió lặng..."></textarea>
         </div>
@@ -939,6 +968,10 @@
           </div>
         </div>
         <div class="field">
+          <label>Thời gian thực hiện</label>
+          <input type="datetime-local" id="leaf-datetime" required>
+        </div>
+        <div class="field">
           <label>Ghi chú thêm</label>
           <textarea id="leaf-note" rows="3" placeholder="Trạng thái cành cắt, xử lý vết cắt (nếu có)..."></textarea>
         </div>
@@ -972,6 +1005,10 @@
             </select>
             <input type="text" id="flower-reason-custom" placeholder="Lý do khác..." style="display:none; width: 40%;">
           </div>
+        </div>
+        <div class="field">
+          <label>Thời gian thực hiện</label>
+          <input type="datetime-local" id="flower-datetime" required>
         </div>
         <div class="field">
           <label>Ghi chú thêm</label>
@@ -1017,6 +1054,16 @@ function toggleCustomInput(prefix) {
 // Open / Close Modal Helpers
 function openModal(id) {
   document.getElementById(id).style.display = 'flex';
+  
+  // Set default datetime to local now in YYYY-MM-DDTHH:mm format
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  const localISOTime = (new Date(now - offset)).toISOString().slice(0, 16);
+  
+  const dtInput = document.getElementById(id).querySelector('input[type="datetime-local"]');
+  if (dtInput) {
+    dtInput.value = localISOTime;
+  }
 }
 function closeModal(id) {
   document.getElementById(id).style.display = 'none';
@@ -1068,6 +1115,15 @@ async function loadConfigurations() {
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+// Format full DateTime: HH:mm DD/MM/YYYY
+function fmtDateTime(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  const hhmm = dt.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit', hour12: false});
+  const ddmmyyyy = dt.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
+  return `${hhmm} — ${ddmmyyyy}`;
 }
 
 // Escape HTML utility
@@ -1268,13 +1324,16 @@ function renderPlant(plant) {
                     icon = 'fa-solid fa-spa';
                   }
                   
+                  const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
+                  const fullDateTime = fmtDateTime(timeVal);
+
                   return `
                     <div class="timeline-item">
                       <div class="timeline-marker ${markerClass}"></div>
                       <div class="timeline-content">
                         <div class="log-header">
                           <span class="log-tag ${tagClass}"><i class="${icon}"></i> ${esc(log.log_type || 'Ghi chú')}</span>
-                          <span class="log-time-indicator">${new Date(log.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}</span>
+                          <span class="log-time-indicator"><i class="fa-regular fa-clock"></i> ${fullDateTime}</span>
                         </div>
                         <div class="log-body">
                           ${getCareLogSummary(log)}
@@ -1412,11 +1471,22 @@ async function submitCareLog(event, type, modalId, formId) {
     note = document.getElementById('flower-note').value.trim();
   }
 
+  const dtInput = form.querySelector('input[type="datetime-local"]');
+  let performedAt = new Date().toISOString();
+  let logDate = performedAt.slice(0, 10);
+  if (dtInput && dtInput.value) {
+    const localDate = new Date(dtInput.value);
+    performedAt = localDate.toISOString();
+    logDate = dtInput.value.slice(0, 10);
+  }
+  
+  details.performed_at = performedAt;
+
   const payload = {
     log_type: type,
     note: note,
     details: details,
-    log_date: new Date().toISOString().slice(0, 10),
+    log_date: logDate,
     media_urls: []
   };
 
