@@ -1,0 +1,109 @@
+const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
+require('dotenv').config();
+
+async function initDB() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Users table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        full_name VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'admin',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Plant fields definition table (template/schema for a plant type)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS plant_schemas (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        fields JSONB NOT NULL DEFAULT '[]',
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Plants table (actual plant records)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS plants (
+        id SERIAL PRIMARY KEY,
+        public_slug VARCHAR(100) UNIQUE NOT NULL,
+        schema_id INTEGER REFERENCES plant_schemas(id),
+        plant_type VARCHAR(255),
+        plant_variety VARCHAR(255),
+        plant_age VARCHAR(100),
+        health_status VARCHAR(100) DEFAULT 'Tốt',
+        location TEXT,
+        data JSONB NOT NULL DEFAULT '{}',
+        cover_image TEXT,
+        created_by INTEGER REFERENCES users(id),
+        is_public BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Media table (images & videos linked to plants)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS plant_media (
+        id SERIAL PRIMARY KEY,
+        plant_id INTEGER REFERENCES plants(id) ON DELETE CASCADE,
+        object_name VARCHAR(500) NOT NULL,
+        url TEXT NOT NULL,
+        media_type VARCHAR(50) DEFAULT 'image',
+        caption TEXT,
+        uploaded_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Plant diary / log entries
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS plant_logs (
+        id SERIAL PRIMARY KEY,
+        plant_id INTEGER REFERENCES plants(id) ON DELETE CASCADE,
+        log_date DATE DEFAULT CURRENT_DATE,
+        log_type VARCHAR(100),
+        note TEXT,
+        media_urls JSONB DEFAULT '[]',
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Seed admin user
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@tanbaocorp.vn';
+    const adminPass = process.env.ADMIN_PASSWORD || 'Tanbao@123';
+    const existing = await client.query('SELECT id FROM users WHERE email=$1', [adminEmail]);
+    if (existing.rows.length === 0) {
+      const hash = await bcrypt.hash(adminPass, 12);
+      await client.query(
+        'INSERT INTO users (email, password_hash, full_name, role) VALUES ($1,$2,$3,$4)',
+        [adminEmail, hash, 'Quản trị viên Tanbao Corp', 'admin']
+      );
+      console.log(`✅ Admin user created: ${adminEmail}`);
+    } else {
+      console.log(`ℹ️  Admin user already exists: ${adminEmail}`);
+    }
+
+    await client.query('COMMIT');
+    console.log('✅ Database schema initialized');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ DB init error:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = initDB;

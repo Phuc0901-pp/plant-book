@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plant Book Admin — Tanbao Corp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --green-dark:#1a4731;--green:#2d7a4f;--green-light:#e8f5ee;
+    --amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+    --gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;
+    --gray-400:#9ca3af;--gray-600:#4b5563;--gray-800:#1f2937;
+    --white:#ffffff;--shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.08);
+    --shadow-lg:0 10px 25px rgba(0,0,0,.12);--radius:10px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:var(--gray-50);color:var(--gray-800);min-height:100vh}
+
+  /* ── Login ── */
+  #login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;
+    background:linear-gradient(135deg,#0f2b1b 0%,#1a4731 50%,#2d7a4f 100%)}
+  .login-card{background:var(--white);border-radius:20px;padding:48px 40px;width:100%;max-width:420px;
+    box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .login-logo{text-align:center;margin-bottom:32px}
+  .login-logo .icon{width:64px;height:64px;background:var(--green-light);border-radius:16px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px}
+  .login-logo h1{font-size:22px;font-weight:700;color:var(--green-dark)}
+  .login-logo p{font-size:13px;color:var(--gray-400);margin-top:4px}
+  .form-group{margin-bottom:20px}
+  .form-group label{display:block;font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:6px}
+  .form-group input{width:100%;padding:12px 16px;border:1.5px solid var(--gray-200);border-radius:8px;
+    font-size:14px;font-family:inherit;transition:.2s;outline:none}
+  .form-group input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(45,122,79,.1)}
+  .btn-login{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:8px;
+    font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+  .btn-login:hover{background:var(--green-dark)}
+  .login-error{background:#fff5f5;border:1px solid #fecaca;color:var(--red);border-radius:8px;
+    padding:12px 16px;font-size:13px;margin-bottom:16px;display:none}
+
+  /* ── Layout ── */
+  #app{display:none;height:100vh;overflow:hidden;flex-direction:row}
+  .sidebar{width:260px;min-width:260px;background:var(--green-dark);color:#fff;
+    display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+  .sidebar-header{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sidebar-header .brand{display:flex;align-items:center;gap:12px}
+  .sidebar-header .brand-icon{width:40px;height:40px;background:var(--green);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;font-size:18px}
+  .sidebar-header h2{font-size:15px;font-weight:700}
+  .sidebar-header p{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+  .sidebar-user{padding:14px 20px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08)}
+  .sidebar-user .user-name{font-size:13px;font-weight:500}
+  .sidebar-user .user-email{font-size:11px;color:rgba(255,255,255,.5)}
+  nav{padding:12px 12px;flex:1}
+  .nav-section{font-size:10px;font-weight:600;color:rgba(255,255,255,.35);
+    letter-spacing:.08em;text-transform:uppercase;padding:8px 8px 4px;margin-top:8px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;
+    cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.75);
+    transition:.15s;margin-bottom:2px;text-decoration:none}
+  .nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+  .nav-item.active{background:var(--green);color:#fff}
+  .nav-item i{width:18px;text-align:center;font-size:14px}
+  .sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1)}
+  .btn-logout{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.6);
+    cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
+  .btn-logout:hover{color:#fff}
+
+  /* ── Main content ── */
+  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+  .topbar{background:#fff;border-bottom:1px solid var(--gray-200);padding:0 28px;
+    height:64px;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:10}
+  .topbar h1{font-size:18px;font-weight:700}
+  .topbar-actions{display:flex;gap:10px;align-items:center}
+  .content{padding:24px 28px;flex:1}
+
+  /* ── Cards ── */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+  .stat-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:16px}
+  .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;
+    justify-content:center;font-size:20px;flex-shrink:0}
+  .stat-icon.green{background:var(--green-light);color:var(--green)}
+  .stat-icon.amber{background:#fef3c7;color:var(--amber)}
+  .stat-icon.blue{background:#eff6ff;color:var(--blue)}
+  .stat-icon.red{background:#fef2f2;color:var(--red)}
+  .stat-val{font-size:24px;font-weight:700}
+  .stat-label{font-size:12px;color:var(--gray-400);margin-top:2px}
+
+  /* ── Buttons ── */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;
+    font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;border:none;transition:.15s}
+  .btn-primary{background:var(--green);color:#fff}
+  .btn-primary:hover{background:var(--green-dark)}
+  .btn-secondary{background:var(--gray-100);color:var(--gray-600)}
+  .btn-secondary:hover{background:var(--gray-200)}
+  .btn-danger{background:var(--red);color:#fff}
+  .btn-danger:hover{background:#dc2626}
+  .btn-sm{padding:6px 12px;font-size:12px}
+
+  /* ── Table ── */
+  .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .card-header{padding:18px 20px;border-bottom:1px solid var(--gray-100);
+    display:flex;align-items:center;justify-content:space-between}
+  .card-header h3{font-size:15px;font-weight:600}
+  .search-bar{display:flex;gap:10px;padding:16px 20px;border-bottom:1px solid var(--gray-100)}
+  .search-bar input{flex:1;padding:8px 14px;border:1.5px solid var(--gray-200);border-radius:8px;
+    font-size:13px;font-family:inherit;outline:none}
+  .search-bar input:focus{border-color:var(--green)}
+  table{width:100%;border-collapse:collapse}
+  thead th{background:var(--gray-50);padding:10px 16px;text-align:left;font-size:12px;
+    font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em}
+  tbody td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--gray-50)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
+  .badge-green{background:#dcfce7;color:#16a34a}
+  .badge-red{background:#fef2f2;color:#dc2626}
+  .badge-amber{background:#fef3c7;color:#d97706}
+  .badge-blue{background:#eff6ff;color:#2563eb}
+  .badge-gray{background:#f3f4f6;color:#6b7280}
+
+  /* ── Modal ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:20px}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:700px;max-height:90vh;
+    overflow-y:auto;box-shadow:var(--shadow-lg)}
+  .modal-header{padding:20px 24px;border-bottom:1px solid var(--gray-100);
+    display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+  .modal-header h2{font-size:16px;font-weight:700}
+  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);line-height:1}
+  .modal-body{padding:24px}
+  .modal-footer{padding:16px 24px;border-top:1px solid var(--gray-100);
+    display:flex;justify-content:flex-end;gap:10px}
+
+  /* ── Forms ── */
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--gray-600);
+    margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+  .field input,.field select,.field textarea{width:100%;padding:10px 14px;
+    border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit;
+    outline:none;transition:.2s;background:#fff}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green)}
+  .field textarea{resize:vertical;min-height:80px}
+
+  /* ── Public URL box ── */
+  .public-url-box{background:var(--green-light);border:1.5px solid #86efac;border-radius:10px;padding:16px;margin-top:12px}
+  .public-url-box label{font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;margin-bottom:6px;display:block}
+  .url-copy-row{display:flex;gap:8px;align-items:center}
+  .url-copy-row input{flex:1;background:#fff;font-size:12px;color:var(--green-dark);font-family:monospace}
+  .url-copy-row input:focus{border-color:var(--green)}
+
+  /* ── Schema builder ── */
+  .schema-fields-list{border:1.5px solid var(--gray-200);border-radius:8px;min-height:80px;padding:10px}
+  .schema-field-item{display:flex;align-items:center;gap:10px;padding:8px 10px;
+    background:var(--gray-50);border-radius:6px;margin-bottom:6px}
+  .schema-field-item .field-info{flex:1;font-size:13px}
+  .schema-field-item .field-type{font-size:11px;color:var(--gray-400);margin-top:2px}
+  .add-field-row{display:grid;grid-template-columns:1fr 140px auto;gap:8px;margin-top:10px}
+  .add-field-row input,.add-field-row select{padding:8px 12px;border:1.5px solid var(--gray-200);
+    border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+  .add-field-row input:focus,.add-field-row select:focus{border-color:var(--green)}
+
+  /* ── Media grid ── */
+  .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+  .media-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--gray-100)}
+  .media-thumb img,.media-thumb video{width:100%;height:100%;object-fit:cover}
+  .media-thumb .del-btn{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;
+    border:none;border-radius:50%;width:24px;height:24px;font-size:11px;cursor:pointer;display:none}
+  .media-thumb:hover .del-btn{display:flex;align-items:center;justify-content:center}
+  .upload-zone{border:2px dashed var(--gray-200);border-radius:10px;padding:28px;text-align:center;
+    cursor:pointer;transition:.2s;color:var(--gray-400)}
+  .upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:var(--green-light);color:var(--green)}
+  .upload-zone i{font-size:28px;margin-bottom:8px;display:block}
+  .upload-zone p{font-size:13px}
+  .upload-zone small{font-size:11px;color:var(--gray-400)}
+
+  /* ── Log entries ── */
+  .log-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--gray-100)}
+  .log-item:last-child{border-bottom:none}
+  .log-date-badge{background:var(--green-light);color:var(--green);border-radius:8px;padding:4px 10px;
+    font-size:11px;font-weight:600;white-space:nowrap;height:fit-content}
+  .log-type-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;
+    background:#eff6ff;color:var(--blue);margin-bottom:4px}
+  .log-note{font-size:13px;color:var(--gray-600);line-height:1.5}
+
+  /* ── Tabs ── */
+  .tabs{display:flex;gap:4px;border-bottom:2px solid var(--gray-100);margin-bottom:20px}
+  .tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--gray-400);cursor:pointer;
+    border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
+  .tab.active{color:var(--green);border-color:var(--green)}
+  .tab-pane{display:none}
+  .tab-pane.active{display:block}
+
+  /* ── Alerts ── */
+  .alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px}
+  .alert-success{background:#dcfce7;color:#16a34a;border:1px solid #86efac}
+  .alert-error{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+
+  /* Spinner */
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);
+    border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .empty-state{text-align:center;padding:48px;color:var(--gray-400)}
+  .empty-state i{font-size:40px;margin-bottom:12px;display:block}
+  .plant-cover{width:36px;height:36px;border-radius:6px;object-fit:cover;background:var(--green-light)}
+  .actions-cell{display:flex;gap:6px}
+
+  /* Page sections */
+  .page-section{display:none}
+  .page-section.active{display:block}
+
+  @media(max-width:768px){
+    .sidebar{width:220px;min-width:220px}
+    .form-row{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ LOGIN ════════════════ -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">🌿</div>
+      <h1>Plant Book Admin</h1>
+      <p>Tanbao Corp — Quản lý cây trồng</p>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@tanbaocorp.vn" value="admin@tanbaocorp.vn">
+    </div>
+    <div class="form-group">
+      <label>Mật khẩu</label>
+      <input type="password" id="login-pass" placeholder="••••••••" value="Tanbao@123">
+    </div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">
+      <span id="login-btn-text">Đăng nhập</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════ APP ════════════════ -->
+<div id="app" style="display:none;flex-direction:row">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">🌿</div>
+        <div>
+          <h2>Plant Book</h2>
+          <p>Tanbao Corp</p>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-name" id="sb-user-name">—</div>
+      <div class="user-email" id="sb-user-email">—</div>
+    </div>
+    <nav>
+      <div class="nav-section">Tổng quan</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <i class="fa fa-chart-pie"></i> Dashboard
+      </div>
+      <div class="nav-section">Cây trồng</div>
+      <div class="nav-item" onclick="showPage('plants')">
+        <i class="fa fa-seedling"></i> Danh sách cây
+      </div>
+      <div class="nav-item" onclick="showPage('schemas')">
+        <i class="fa fa-layer-group"></i> Cấu hình loại cây
+      </div>
+      <div class="nav-section">Hệ thống</div>
+      <div class="nav-item" onclick="showPage('media')">
+        <i class="fa fa-images"></i> Thư viện media
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <i class="fa fa-right-from-bracket"></i> Đăng xuất
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <h1 id="page-title">Dashboard</h1>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content">
+
+      <!-- ── Dashboard ── -->
+      <div class="page-section active" id="page-dashboard">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fa fa-seedling"></i></div>
+            <div><div class="stat-val" id="stat-plants">—</div><div class="stat-label">Tổng cây trồng</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fa fa-circle-check"></i></div>
+            <div><div class="stat-val" id="stat-healthy">—</div><div class="stat-label">Sức khỏe tốt</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber"><i class="fa fa-triangle-exclamation"></i></div>
+            <div><div class="stat-val" id="stat-watch">—</div><div class="stat-label">Cần theo dõi</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue"><i class="fa fa-layer-group"></i></div>
+            <div><div class="stat-val" id="stat-schemas">—</div><div class="stat-label">Loại cây</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🌱 Cây trồng gần đây</h3></div>
+          <table>
+            <thead><tr>
+              <th>Cây</th><th>Loại</th><th>Sức khỏe</th><th>Vị trí</th><th>Ngày tạo</th><th></th>
+            </tr></thead>
+            <tbody id="dashboard-plants-table"><tr><td colspan="6" class="empty-state">Đang tải...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Plants list ── -->
+      <div class="page-section" id="page-plants">
+        <div class="card">
+          <div class="card-header">
+            <h3>🌿 Danh sách cây trồng</h3>
+            <button class="btn btn-primary" onclick="openPlantModal()">
+              <i class="fa fa-plus"></i> Thêm cây mới
+            </button>
+          </div>
+          <div class="search-bar">
+            <input type="text" id="plant-search" placeholder="🔍 Tìm theo tên, giống, vị trí..." oninput="loadPlants()">
+            <select id="plant-filter-health" onchange="loadPlants()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit;outline:none">
+              <option value="">Tất cả sức khỏe</option>
+              <option>Tốt</option><option>Bình thường</option>
+              <option>Cần chú ý</option><option>Bệnh</option>
+            </select>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Ảnh</th><th>Loại cây / Giống</th><th>Tuổi cây</th>
+              <th>Sức khỏe</th><th>Vị trí</th><th>Công khai</th><th>Thao tác</th>
+            </tr></thead>
+            <tbody id="plants-table"><tr><td colspan="7"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Schemas ── -->
+      <div class="page-section" id="page-schemas">
+        <div class="card">
+          <div class="card-header">
+            <h3>⚙️ Cấu hình loại cây (Schema)</h3>
+            <button class="btn btn-primary" onclick="openSchemaModal()">
+              <i class="fa fa-plus"></i> Tạo schema mới
+            </button>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Tên schema</th><th>Mô tả</th><th>Số trường</th><th>Ngày tạo</th><th>Thao tác</th>
+            </tr></thead>
+            <tbody id="schemas-table"><tr><td colspan="5"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Media Library ── -->
+      <div class="page-section" id="page-media">
+        <div class="card">
+          <div class="card-header"><h3>🖼️ Thư viện Media (Supabase Storage)</h3></div>
+          <div style="padding:24px">
+            <div class="alert alert-success">
+              <i class="fa fa-circle-info"></i>
+              Media được lưu trữ trực tiếp trong Supabase Storage. Xem và quản lý ảnh/video của từng cây trong trang chi tiết cây.
+            </div>
+            <p style="font-size:13px;color:var(--gray-600)">
+              Truy cập Supabase Dashboard: <a href="https://supabase.com" target="_blank" style="color:var(--green)">https://supabase.com</a> để quản lý và xem các file phương tiện của bạn.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<!-- ════════════ PLANT MODAL ════════════ -->
+<div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="plant-modal-title">🌱 Thêm cây mới</h2>
+      <button class="modal-close" onclick="closePlantModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-info')">Thông tin cơ bản</div>
+        <div class="tab" onclick="switchTab(this,'tab-extra')">Dữ liệu mở rộng</div>
+        <div class="tab" onclick="switchTab(this,'tab-media')">Ảnh / Video</div>
+        <div class="tab" onclick="switchTab(this,'tab-logs')">Nhật ký</div>
+      </div>
+
+      <!-- Tab: Info -->
+      <div class="tab-pane active" id="tab-info">
+        <div class="form-row">
+          <div class="field">
+            <label>Loại cây *</label>
+            <input type="text" id="f-plant-type" placeholder="VD: Lúa, Cà phê, Sầu riêng...">
+          </div>
+          <div class="field">
+            <label>Giống cây</label>
+            <input type="text" id="f-plant-variety" placeholder="VD: IR50404, Thiên Lý...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Tuổi cây</label>
+            <input type="text" id="f-plant-age" placeholder="VD: 2 năm, 6 tháng...">
+          </div>
+          <div class="field">
+            <label>Tình trạng sức khỏe</label>
+            <select id="f-health-status">
+              <option>Tốt</option>
+              <option>Bình thường</option>
+              <option>Cần chú ý</option>
+              <option>Bệnh</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vị trí / Lô trồng</label>
+          <input type="text" id="f-location" placeholder="VD: Lô A1 - Vườn Tây, Tọa độ 10.xxx...">
+        </div>
+        <div class="field">
+          <label>Cấu hình loại cây (Schema)</label>
+          <select id="f-schema-id">
+            <option value="">— Không dùng schema —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Công khai URL</label>
+          <select id="f-is-public">
+            <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
+            <option value="false">🔒 Riêng tư</option>
+          </select>
+        </div>
+        <!-- Public URL display -->
+        <div class="public-url-box" id="public-url-section" style="display:none">
+          <label>🔗 Đường dẫn công khai của cây</label>
+          <div class="url-copy-row">
+            <input type="text" id="public-url-input" readonly>
+            <button class="btn btn-secondary btn-sm" onclick="copyURL()"><i class="fa fa-copy"></i> Copy</button>
+            <a id="public-url-link" href="#" target="_blank" class="btn btn-primary btn-sm">
+              <i class="fa fa-arrow-up-right-from-square"></i> Mở
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Extra data -->
+      <div class="tab-pane" id="tab-extra">
+        <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">
+          Các trường dữ liệu được định nghĩa bởi schema. Nhấn vào tab <strong>Thông tin cơ bản</strong> để chọn schema trước.
+        </p>
+        <div id="extra-fields-container">
+          <div class="empty-state" style="padding:24px">
+            <i class="fa fa-layer-group"></i>
+            <p>Chọn schema ở tab Thông tin cơ bản để hiển thị các trường mở rộng</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Media -->
+      <div class="tab-pane" id="tab-media">
+        <div id="plant-media-container">
+          <p style="font-size:13px;color:var(--gray-400);margin-bottom:16px">
+            Lưu cây trước để có thể upload ảnh/video.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab: Logs -->
+      <div class="tab-pane" id="tab-logs">
+        <div id="plant-logs-container">
+          <p style="font-size:13px;color:var(--gray-400);margin-bottom:16px">
+            Lưu cây trước để ghi nhật ký chăm sóc.
+          </p>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePlantModal()">Hủy</button>
+      <button class="btn btn-primary" id="plant-save-btn" onclick="savePlant()">
+        <span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu cây</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SCHEMA MODAL ════════════ -->
+<div class="modal-overlay" id="schema-modal" style="display:none" onclick="if(event.target===this)closeSchemaModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="schema-modal-title">⚙️ Tạo Schema loại cây</h2>
+      <button class="modal-close" onclick="closeSchemaModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Tên Schema *</label>
+        <input type="text" id="s-name" placeholder="VD: Sổ tay Lúa Nước, Cây Ăn Quả...">
+      </div>
+      <div class="field">
+        <label>Mô tả</label>
+        <textarea id="s-desc" placeholder="Mô tả về loại cây và các thông tin theo dõi..."></textarea>
+      </div>
+      <div class="field">
+        <label>Các trường thông tin</label>
+        <div class="schema-fields-list" id="schema-fields-list"></div>
+        <div class="add-field-row" style="margin-top:10px">
+          <input type="text" id="new-field-name" placeholder="Tên trường (VD: Ngày trồng, Diện tích...)">
+          <select id="new-field-type">
+            <option value="text">Văn bản</option>
+            <option value="number">Số</option>
+            <option value="date">Ngày tháng</option>
+            <option value="select">Lựa chọn</option>
+            <option value="textarea">Đoạn văn</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="addSchemaField()"><i class="fa fa-plus"></i></button>
+        </div>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:8px">
+          💡 Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeSchemaModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveSchema()">
+        <i class="fa fa-floppy-disk"></i> Lưu Schema
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:999;display:none">
+  <div style="background:#1f2937;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px">
+    <span id="toast-icon"></span>
+    <span id="toast-msg"></span>
+  </div>
+</div>
+
+<script src="/admin/app.js"></script>
+</body>
+</html>
