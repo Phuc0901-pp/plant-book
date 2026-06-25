@@ -77,12 +77,13 @@
   .brand-logo-img-wrap {
     background: #fff;
     border-radius: 8px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     display: inline-flex;
     align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
   .brand-logo-img-wrap img {
-    height: 24px;
+    height: 32px;
     width: auto;
     display: block;
     object-fit: contain;
@@ -700,13 +701,20 @@
     color: var(--green-bright);
     text-decoration: none;
   }
-  .footer-logo {
-    height: 28px;
-    width: auto;
-    opacity: 0.5;
-    filter: brightness(0) invert(1);
+  .footer-logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 4px 10px;
     margin-bottom: 10px;
-    display: inline-block;
+    opacity: 0.65;
+  }
+  .footer-logo {
+    height: 22px;
+    width: auto;
+    display: block;
+    object-fit: contain;
   }
 
   /* Skeleton loaders */
@@ -1486,7 +1494,9 @@ async function renderPlant(plant) {
     </div>
     
     <footer class="footer">
-      <img src="/assets/logo.png" alt="TANBAO AgTech" class="footer-logo"><br>
+      <div class="footer-logo-wrap">
+        <img src="/assets/logo.png" alt="TANBAO AgTech" class="footer-logo">
+      </div><br>
       Dữ liệu được số hóa bởi hệ thống <a href="/">Plant Book</a> — TANBAO AgTech &nbsp;|&nbsp; Cập nhật lần cuối: ${fmtDate(plant.updated_at)}
     </footer>
   `;
