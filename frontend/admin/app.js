@@ -1220,7 +1220,7 @@ async function saveFarm() {
     const method = activeFarmId ? 'PUT' : 'POST';
     const url = activeFarmId ? `/farms/${activeFarmId}` : '/farms';
     
-    await api(url, {
+    const savedFarm = await api(url, {
       method,
       body: JSON.stringify(body)
     });
@@ -1228,7 +1228,11 @@ async function saveFarm() {
     toast(activeFarmId ? 'Đã cập nhật ranh giới trang trại!' : 'Đã tạo trang trại thành công!');
     drawControl.changeMode('simple_select');
     drawControl.deleteAll();
-    initGisPage();
+    
+    await initGisPage();
+    if (savedFarm && savedFarm.id) {
+      selectFarm(savedFarm.id);
+    }
   } catch (err) {
     toast('Lỗi lưu trang trại: ' + err.message, 'error');
   }
@@ -1337,5 +1341,172 @@ async function deleteFarm() {
     initGisPage();
   } catch (err) {
     toast('Lỗi xóa trang trại: ' + err.message, 'error');
+  }
+}
+
+// ── CSV Import & Plant Association ───────────────────────────
+
+async function openAddPlantsManual() {
+  if (!activeFarmId) {
+    toast('Vui lòng chọn trang trại trước!', 'error');
+    return;
+  }
+  // Open modal
+  await openPlantModal();
+  // Pre-select the farm
+  const select = document.getElementById('f-farm-id');
+  if (select) {
+    select.value = activeFarmId;
+  }
+}
+
+async function openCsvImportModal() {
+  if (!activeFarmId) {
+    toast('Vui lòng chọn trang trại trước!', 'error');
+    return;
+  }
+  
+  // Reset form
+  document.getElementById('csv-file-input').value = '';
+  document.getElementById('csv-plant-type').value = '';
+  document.getElementById('csv-plant-variety').value = '';
+  document.getElementById('csv-plant-age').value = '';
+  document.getElementById('csv-health-status').value = 'Tốt';
+  document.getElementById('csv-is-public').value = 'true';
+  
+  // Populate schemas
+  const schemaSelect = document.getElementById('csv-schema-id');
+  if (schemaSelect) {
+    schemaSelect.innerHTML = '<option value="">— Không dùng schema —</option>' +
+      schemasCache.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  }
+  
+  document.getElementById('csv-preview-section').style.display = 'none';
+  document.getElementById('csv-preview-table-body').innerHTML = '';
+  document.getElementById('csv-import-submit-btn').disabled = true;
+  window._parsedCsvItems = [];
+  
+  document.getElementById('csv-import-modal').style.display = 'flex';
+}
+
+function closeCsvImportModal() {
+  document.getElementById('csv-import-modal').style.display = 'none';
+  window._parsedCsvItems = [];
+}
+
+// Local CSV parser
+function parseCsvContent(text) {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+
+  // Parse header
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+  const sttIdx = headers.findIndex(h => h === 'stt' || h === 'id' || h === 'no');
+  const eIdx = headers.findIndex(h => h === 'e' || h === 'easting' || h === 'lng' || h === 'longitude' || h === 'kinh độ');
+  const nIdx = headers.findIndex(h => h === 'n' || h === 'northing' || h === 'lat' || h === 'latitude' || h === 'vĩ độ');
+
+  if (eIdx === -1 || nIdx === -1) {
+    toast('File CSV phải chứa tiêu đề "E" (hoặc Lng) và "N" (hoặc Lat) để định vị!', 'error');
+    return [];
+  }
+
+  const items = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/['"]/g, ''));
+    if (cols.length < Math.max(eIdx, nIdx) + 1) continue;
+
+    const stt = sttIdx !== -1 ? cols[sttIdx] : String(i);
+    const eVal = parseFloat(cols[eIdx]);
+    const nVal = parseFloat(cols[nIdx]);
+
+    if (isNaN(eVal) || isNaN(nVal)) continue;
+
+    items.push({ stt, e: eVal, n: nVal });
+  }
+  return items;
+}
+
+// Bind CSV file input changes
+const csvInput = document.getElementById('csv-file-input');
+if (csvInput) {
+  csvInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const text = evt.target.result;
+      const items = parseCsvContent(text);
+      
+      if (items.length === 0) {
+        document.getElementById('csv-preview-section').style.display = 'none';
+        document.getElementById('csv-import-submit-btn').disabled = true;
+        window._parsedCsvItems = [];
+        return;
+      }
+
+      window._parsedCsvItems = items;
+      document.getElementById('csv-preview-count').textContent = items.length;
+      
+      const tbody = document.getElementById('csv-preview-table-body');
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td style="padding:4px 6px;">${esc(item.stt)}</td>
+          <td style="padding:4px 6px;">${item.e.toFixed(6)}</td>
+          <td style="padding:4px 6px;">${item.n.toFixed(6)}</td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('csv-preview-section').style.display = 'block';
+      document.getElementById('csv-import-submit-btn').disabled = false;
+    };
+    reader.readAsText(file);
+  });
+}
+
+async function submitCsvImport() {
+  const plant_type = document.getElementById('csv-plant-type').value.trim();
+  if (!plant_type) {
+    toast('Vui lòng nhập loại cây!', 'error');
+    return;
+  }
+  if (!window._parsedCsvItems || window._parsedCsvItems.length === 0) {
+    toast('Vui lòng chọn file CSV hợp lệ!', 'error');
+    return;
+  }
+
+  const submitBtn = document.getElementById('csv-import-submit-btn');
+  const oldText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang import...';
+
+  const body = {
+    farm_id: activeFarmId,
+    plant_type,
+    plant_variety: document.getElementById('csv-plant-variety').value.trim(),
+    plant_age: document.getElementById('csv-plant-age').value.trim(),
+    health_status: document.getElementById('csv-health-status').value,
+    schema_id: document.getElementById('csv-schema-id').value || null,
+    is_public: document.getElementById('csv-is-public').value === 'true',
+    items: window._parsedCsvItems
+  };
+
+  try {
+    const res = await api('/plants/batch', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+    toast(`Đã import thành công ${res.count} cây vào trang trại!`);
+    closeCsvImportModal();
+    // Refresh farm details and map to show the new plants
+    if (activeFarmId) {
+      await initGisPage();
+      selectFarm(activeFarmId);
+    }
+  } catch (err) {
+    toast('Lỗi import CSV: ' + err.message, 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = oldText;
   }
 }

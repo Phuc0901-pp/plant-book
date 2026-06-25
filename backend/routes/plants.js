@@ -87,6 +87,47 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
   }
 });
 
+router.post('/batch', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { farm_id, plant_type, plant_variety, plant_age, health_status, schema_id, is_public, items } = req.body;
+    if (!plant_type) {
+      return res.status(400).json({ error: 'Loại cây là bắt buộc.' });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Danh sách cây import trống.' });
+    }
+
+    await client.query('BEGIN');
+    const inserted = [];
+
+    for (const item of items) {
+      const slug = generateSlug(plant_type);
+      const lat = parseFloat(item.n || item.latitude);
+      const lng = parseFloat(item.e || item.longitude);
+      const stt = item.stt || '';
+      const location = farm_id ? `Lô nhập CSV - STT ${stt}` : `Nhập CSV - STT ${stt}`;
+
+      const resDb = await client.query(
+        `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+        [slug, schema_id || null, plant_type, plant_variety || '', plant_age || '', health_status || 'Tốt',
+         location, JSON.stringify({}), is_public !== false, farm_id || null, lat, lng, req.user.id]
+      );
+      inserted.push(resDb.rows[0].id);
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ success: true, count: inserted.length, ids: inserted });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Batch import error:', err);
+    res.status(500).json({ error: 'Lỗi server khi import lô cây: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
 router.post('/', auth, async (req, res) => {
   try {
     const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude } = req.body;
