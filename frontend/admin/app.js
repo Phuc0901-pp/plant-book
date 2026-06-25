@@ -805,14 +805,12 @@ async function saveCareConfigs() {
 let mapboxTokenFetched = false;
 async function ensureMapboxToken() {
   if (mapboxTokenFetched) return;
-  try {
-    const res = await fetch('/api/config/mapbox-token');
-    const data = await res.json();
-    mapboxgl.accessToken = data.token;
-    mapboxTokenFetched = true;
-  } catch (err) {
-    console.error('Lỗi tải Mapbox token:', err);
-  }
+  const res = await fetch(API + '/config/mapbox-token');
+  if (!res.ok) throw new Error('Không thể lấy cấu hình Mapbox từ server');
+  const data = await res.json();
+  if (!data || !data.token) throw new Error('Cấu hình Mapbox không hợp lệ hoặc thiếu token');
+  mapboxgl.accessToken = data.token;
+  mapboxTokenFetched = true;
 }
 let dbMap = null;
 let gMap = null;
@@ -983,6 +981,7 @@ async function initGisPage() {
   switchGisView('list');
   
   try {
+    await ensureMapboxToken();
     const [farms, plants] = await Promise.all([
       api('/farms'),
       api('/plants')
