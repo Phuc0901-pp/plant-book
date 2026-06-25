@@ -272,7 +272,7 @@
         <i class="fa fa-seedling"></i> Danh sách cây
       </div>
       <div class="nav-item" onclick="showPage('schemas')">
-        <i class="fa fa-layer-group"></i> Cấu hình loại cây
+        <i class="fa fa-sliders"></i> Cấu hình
       </div>
       <div class="nav-section">Hệ thống</div>
       <div class="nav-item" onclick="showPage('media')">
@@ -353,21 +353,65 @@
         </div>
       </div>
 
-      <!-- ── Schemas ── -->
+      <!-- ── Schemas & Config ── -->
       <div class="page-section" id="page-schemas">
-        <div class="card">
-          <div class="card-header">
-            <h3>⚙️ Cấu hình loại cây (Schema)</h3>
-            <button class="btn btn-primary" onclick="openSchemaModal()">
-              <i class="fa fa-plus"></i> Tạo schema mới
-            </button>
+        <div class="tabs" style="margin-bottom: 20px;">
+          <div class="tab active" id="config-tab-schema" onclick="switchConfigTab('schema')">Schema loại cây</div>
+          <div class="tab" id="config-tab-care" onclick="switchConfigTab('care')">Quy trình chăm sóc</div>
+        </div>
+
+        <div class="tab-pane active" id="pane-config-schema">
+          <div class="card">
+            <div class="card-header">
+              <h3>⚙️ Cấu hình loại cây (Schema)</h3>
+              <button class="btn btn-primary" onclick="openSchemaModal()">
+                <i class="fa fa-plus"></i> Tạo schema mới
+              </button>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Tên schema</th><th>Mô tả</th><th>Số trường</th><th>Ngày tạo</th><th>Thao tác</th>
+              </tr></thead>
+              <tbody id="schemas-table"><tr><td colspan="5"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
+            </table>
           </div>
-          <table>
-            <thead><tr>
-              <th>Tên schema</th><th>Mô tả</th><th>Số trường</th><th>Ngày tạo</th><th>Thao tác</th>
-            </tr></thead>
-            <tbody id="schemas-table"><tr><td colspan="5"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
-          </table>
+        </div>
+
+        <div class="tab-pane" id="pane-config-care">
+          <div class="card">
+            <div class="card-header">
+              <h3>🛠️ Cấu hình danh mục quy trình</h3>
+              <button class="btn btn-primary" id="save-care-cfg-btn" onclick="saveCareConfigs()">
+                <i class="fa fa-floppy-disk"></i> Lưu cấu hình
+              </button>
+            </div>
+            <div style="padding:24px">
+              <div class="form-row">
+                <div class="field">
+                  <label>Tưới nước — Các phương pháp tưới (mỗi dòng một phương pháp)</label>
+                  <textarea id="cfg-water-methods" rows="5" placeholder="Tưới tay thủ công&#10;Tưới nhỏ giọt&#10;Tưới phun mưa"></textarea>
+                </div>
+                <div class="field">
+                  <label>Bón phân — Các loại phân bón (mỗi dòng một loại)</label>
+                  <textarea id="cfg-fertilizers" rows="5" placeholder="Phân NPK 16-16-8&#10;Phân hữu cơ trùn quế&#10;Phân chuồng hoai mục"></textarea>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label>Phun thuốc — Các loại thuốc (mỗi dòng một loại)</label>
+                  <textarea id="cfg-pesticides" rows="5" placeholder="Thuốc trừ sâu sinh học&#10;Thuốc trừ bệnh Anvil&#10;Thuốc trừ nấm Ridomil Gold"></textarea>
+                </div>
+                <div class="field">
+                  <label>Cắt lá — Lý do cắt lá (mỗi dòng một lý do)</label>
+                  <textarea id="cfg-leaf-reasons" rows="5" placeholder="Lá già úa/vàng&#10;Lá bị sâu bệnh hại&#10;Tỉa cành tạo tán"></textarea>
+                </div>
+              </div>
+              <div class="field">
+                <label>Tỉa hoa — Lý do tỉa hoa (mỗi dòng một lý do)</label>
+                <textarea id="cfg-flower-reasons" rows="5" placeholder="Tỉa hoa tàn&#10;Tỉa bớt nụ còi&#10;Kích thích ra chồi mới"></textarea>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

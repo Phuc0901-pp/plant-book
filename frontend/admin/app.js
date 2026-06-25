@@ -130,12 +130,15 @@ function showPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`page-${page}`).classList.add('active');
   event.currentTarget.classList.add('active');
-  const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình loại cây', media:'Thư viện Media' };
+  const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình', media:'Thư viện Media' };
   document.getElementById('page-title').textContent = titles[page] || page;
 
   if (page === 'dashboard') loadDashboard();
   if (page === 'plants') loadPlants();
-  if (page === 'schemas') loadSchemas();
+  if (page === 'schemas') {
+    loadSchemas();
+    loadCareConfigs();
+  }
 }
 
 function switchTab(el, tabId) {
@@ -719,3 +722,60 @@ async function deleteSchema(id, name) {
 document.getElementById('new-field-name').addEventListener('keydown', e => {
   if (e.key === 'Enter') addSchemaField();
 });
+
+// ── Configuration tabs & care options ──────────────────────
+
+function switchConfigTab(tab) {
+  document.getElementById('config-tab-schema').classList.toggle('active', tab === 'schema');
+  document.getElementById('config-tab-care').classList.toggle('active', tab === 'care');
+  document.getElementById('pane-config-schema').style.display = tab === 'schema' ? 'block' : 'none';
+  document.getElementById('pane-config-care').style.display = tab === 'care' ? 'block' : 'none';
+}
+
+async function loadCareConfigs() {
+  try {
+    const configs = await api('/config');
+    document.getElementById('cfg-water-methods').value = (configs.water_methods || []).join('\n');
+    document.getElementById('cfg-fertilizers').value = (configs.fertilizers || []).join('\n');
+    document.getElementById('cfg-pesticides').value = (configs.pesticides || []).join('\n');
+    document.getElementById('cfg-leaf-reasons').value = (configs.leaf_cut_reasons || []).join('\n');
+    document.getElementById('cfg-flower-reasons').value = (configs.flower_prune_reasons || []).join('\n');
+  } catch (err) {
+    toast('Lỗi tải cấu hình quy trình: ' + err.message, 'error');
+  }
+}
+
+async function saveCareConfigs() {
+  const btn = document.getElementById('save-care-cfg-btn');
+  const oldText = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Đang lưu...';
+  btn.disabled = true;
+
+  const parseTextarea = (id) => {
+    return document.getElementById(id).value
+      .split('\n')
+      .map(x => x.trim())
+      .filter(x => x.length > 0);
+  };
+
+  const body = {
+    water_methods: parseTextarea('cfg-water-methods'),
+    fertilizers: parseTextarea('cfg-fertilizers'),
+    pesticides: parseTextarea('cfg-pesticides'),
+    leaf_cut_reasons: parseTextarea('cfg-leaf-reasons'),
+    flower_prune_reasons: parseTextarea('cfg-flower-reasons')
+  };
+
+  try {
+    await api('/config', {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    });
+    toast('Lưu cấu hình quy trình thành công!');
+  } catch (err) {
+    toast('Lỗi lưu cấu hình: ' + err.message, 'error');
+  } finally {
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+  }
+}

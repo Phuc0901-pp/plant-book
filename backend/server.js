@@ -28,6 +28,8 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
 app.use('/api/plants', require('./routes/plants'));
+app.use('/api/config', require('./routes/config'));
+
 
 // Health check
 app.get('/api/health', (req, res) => {

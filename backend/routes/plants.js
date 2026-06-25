@@ -184,12 +184,12 @@ router.delete('/:plantId/media/:mediaId', auth, async (req, res) => {
 
 router.post('/:id/logs', auth, async (req, res) => {
   try {
-    const { log_date, log_type, note, media_urls } = req.body;
+    const { log_date, log_type, note, media_urls, details } = req.body;
     const result = await pool.query(
-      `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [req.params.id, log_date || new Date().toISOString().slice(0,10), log_type, note,
-       JSON.stringify(media_urls || []), req.user.id]
+       JSON.stringify(media_urls || []), JSON.stringify(details || {}), req.user.id]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -206,7 +206,7 @@ router.delete('/:plantId/logs/:logId', auth, async (req, res) => {
   }
 });
 
-// ─── Public route ─────────────────────────────────────────────────
+// ─── Public routes ────────────────────────────────────────────────
 router.get('/public/:slug', async (req, res) => {
   try {
     const plant = await pool.query(
@@ -224,5 +224,30 @@ router.get('/public/:slug', async (req, res) => {
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });
+
+router.post('/public/:slug/logs', async (req, res) => {
+  try {
+    const { log_date, log_type, note, media_urls, details } = req.body;
+    
+    // Find plant ID by slug
+    const plantResult = await pool.query('SELECT id FROM plants WHERE public_slug=$1 AND is_public=true', [req.params.slug]);
+    if (plantResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
+    }
+    const plantId = plantResult.rows[0].id;
+
+    const result = await pool.query(
+      `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,NULL) RETURNING *`,
+      [plantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
+       JSON.stringify(media_urls || []), JSON.stringify(details || {}), null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
 
 module.exports = router;

@@ -80,6 +80,38 @@ async function initDB() {
       )
     `);
 
+    // Ensure details column exists in plant_logs
+    await client.query(`
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS details JSONB DEFAULT '{}'
+    `);
+
+    // System configurations table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS system_configs (
+        key VARCHAR(255) PRIMARY KEY,
+        value JSONB NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Seed default configurations
+    const defaultConfigs = [
+      { key: 'fertilizers', value: JSON.stringify(["Phân NPK 16-16-8", "Phân hữu cơ trùn quế", "Phân bón lá Đầu Trâu", "Phân chuồng hoai mục"]) },
+      { key: 'pesticides', value: JSON.stringify(["Thuốc trừ sâu sinh học", "Thuốc trừ bệnh Anvil", "Thuốc trừ nấm Ridomil Gold", "Chất kích thích sinh trưởng Atonik"]) },
+      { key: 'water_methods', value: JSON.stringify(["Tưới tay thủ công", "Tưới nhỏ giọt", "Tưới phun mưa", "Tưới phun sương"]) },
+      { key: 'leaf_cut_reasons', value: JSON.stringify(["Lá già úa/vàng", "Lá bị sâu bệnh hại", "Tỉa cành tạo tán", "Tỉa bớt lá thông thoáng"]) },
+      { key: 'flower_prune_reasons', value: JSON.stringify(["Tỉa hoa tàn", "Tỉa bớt nụ còi", "Tỉa cành tạo dáng", "Kích thích ra chồi mới"]) }
+    ];
+
+    for (const config of defaultConfigs) {
+      await client.query(`
+        INSERT INTO system_configs (key, value)
+        VALUES ($1, $2)
+        ON CONFLICT (key) DO NOTHING
+      `, [config.key, config.value]);
+    }
+
+
     // Seed admin user
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@tanbaocorp.vn';
     const adminPass = process.env.ADMIN_PASSWORD || 'Tanbao@123';
