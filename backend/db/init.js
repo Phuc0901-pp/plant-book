@@ -80,10 +80,14 @@ async function initDB() {
       )
     `);
 
-    // Ensure details column exists in plant_logs
+    // Ensure details column exists in plant_logs and created_by is not restricted to NOT NULL
     await client.query(`
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS details JSONB DEFAULT '{}'
     `);
+    await client.query(`
+      ALTER TABLE plant_logs ALTER COLUMN created_by DROP NOT NULL
+    `);
+
 
     // System configurations table
     await client.query(`
