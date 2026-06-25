@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
+const WebSocket = require('ws');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
@@ -10,7 +11,12 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { persistSession: false },
+  realtime: {
+    transport: WebSocket,
+  },
+});
 
 const BUCKET = process.env.SUPABASE_BUCKET || 'plant-media';
 
