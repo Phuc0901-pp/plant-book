@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Smart Plant Book - Backend API",
   "main": "server.js",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "scripts": {
     "start": "node --dns-result-order=ipv4first server.js",
     "dev": "nodemon server.js"
