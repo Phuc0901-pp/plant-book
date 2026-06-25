@@ -9,6 +9,13 @@ let editingSchemaId = null;
 let schemaFields = [];
 let schemasCache = [];
 
+// Dashboard state variables
+let dashboardMap = null;
+let dashboardMarkers = [];
+let allFarms = [];
+let allPlants = [];
+let currentDashboardFilter = 'all';
+
 // ── Helpers ─────────────────────────────────────────────
 
 function api(path, opts = {}) {
@@ -167,6 +174,9 @@ async function loadDashboard() {
       api('/schemas'),
       api('/farms')
     ]);
+    allPlants = plants;
+    allFarms = farms;
+
     const healthy = plants.filter(p => p.health_status === 'Tốt').length;
     const watch = plants.filter(p => ['Cần chú ý','Bệnh'].includes(p.health_status)).length;
     document.getElementById('stat-plants').textContent = plants.length;
@@ -174,34 +184,95 @@ async function loadDashboard() {
     document.getElementById('stat-watch').textContent = watch;
     document.getElementById('stat-schemas').textContent = schemas.length;
 
+    // Reset and update filter buttons
+    currentDashboardFilter = 'all';
+    document.querySelectorAll('.dashboard-filter-bar .filter-chip').forEach(btn => btn.classList.remove('active'));
+    const btnAll = document.getElementById('btn-filter-all');
+    if (btnAll) btnAll.classList.add('active');
+
     // Load Overview map
     initDashboardMap(farms, plants);
 
-    const tbody = document.getElementById('dashboard-plants-table');
-    const recent = plants.slice(0, 8);
-    if (!recent.length) {
-      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa fa-seedling"></i><p>Chưa có cây nào</p></div></td></tr>';
-      return;
-    }
-    tbody.innerHTML = recent.map(p => `
-      <tr>
-        <td>
-          ${p.cover_image ? `<img src="${esc(p.cover_image)}" class="plant-cover">` :
-            `<div class="plant-cover" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--green)"><i class="fa-solid fa-seedling"></i></div>`}
-        </td>
-        <td><strong>${esc(p.plant_type)}</strong><br><small style="color:var(--gray-400)">${esc(p.plant_variety||'')}</small></td>
-        <td>${healthBadge(p.health_status)}</td>
-        <td>${esc(p.location||'—')}</td>
-        <td>${fmtDate(p.created_at)}</td>
-        <td>
-          <button class="btn btn-secondary btn-sm" onclick="openPlantModal(${p.id})">
-            <i class="fa fa-pen"></i>
-          </button>
-        </td>
-      </tr>`).join('');
+    // Initial render of dashboard table
+    renderDashboardPlantsTable(plants);
   } catch (err) {
     toast('Lỗi tải dashboard: ' + err.message, 'error');
   }
+}
+
+function renderDashboardPlantsTable(filteredPlants) {
+  const tbody = document.getElementById('dashboard-plants-table');
+  if (!tbody) return;
+  const recent = filteredPlants.slice(0, 8);
+  if (!recent.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa fa-seedling"></i><p>Không tìm thấy cây nào khớp</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = recent.map(p => `
+    <tr>
+      <td>
+        ${p.cover_image ? `<img src="${esc(p.cover_image)}" class="plant-cover">` :
+          `<div class="plant-cover" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--green)"><i class="fa-solid fa-seedling"></i></div>`}
+      </td>
+      <td><strong>${esc(p.plant_type)}</strong><br><small style="color:var(--gray-400)">${esc(p.plant_variety||'')}</small></td>
+      <td>${healthBadge(p.health_status)}</td>
+      <td>${esc(p.location||'—')}</td>
+      <td>${fmtDate(p.created_at)}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openPlantModal(${p.id})">
+          <i class="fa fa-pen"></i>
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+function matchesFilter(plant, type) {
+  if (type === 'all') return true;
+  if (type === 'sick') return plant.health_status === 'Bệnh';
+  if (type === 'watch') return plant.health_status === 'Cần chú ý';
+  
+  const now = new Date();
+  if (type === 'not-watered') {
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return plant.last_watered !== todayStr;
+  }
+  
+  if (type === 'not-fertilized') {
+    if (!plant.last_fertilized) return true;
+    const lastFertDate = new Date(plant.last_fertilized + 'T00:00:00');
+    const limitDate = new Date();
+    limitDate.setDate(limitDate.getDate() - 7);
+    limitDate.setHours(0,0,0,0);
+    return lastFertDate < limitDate;
+  }
+  return true;
+}
+
+function filterDashboard(type) {
+  currentDashboardFilter = type;
+  document.querySelectorAll('.dashboard-filter-bar .filter-chip').forEach(btn => btn.classList.remove('active'));
+  
+  let btnId = 'btn-filter-all';
+  if (type === 'sick') btnId = 'btn-filter-sick';
+  else if (type === 'watch') btnId = 'btn-filter-watch';
+  else if (type === 'not-watered') btnId = 'btn-filter-not-watered';
+  else if (type === 'not-fertilized') btnId = 'btn-filter-not-fertilized';
+  
+  const btn = document.getElementById(btnId);
+  if (btn) btn.classList.add('active');
+
+  // Toggle map markers visibility/opacity
+  dashboardMarkers.forEach(({ marker, plant, element }) => {
+    if (matchesFilter(plant, type)) {
+      element.classList.remove('filtered-out');
+    } else {
+      element.classList.add('filtered-out');
+    }
+  });
+
+  // Filter list below
+  const filtered = allPlants.filter(p => matchesFilter(p, type));
+  renderDashboardPlantsTable(filtered);
 }
 
 // ── Plants ─────────────────────────────────────────────────
@@ -844,6 +915,14 @@ function initDashboardMap(farms, plants) {
   const mapContainer = document.getElementById('dashboard-map');
   if (!mapContainer) return;
   
+  if (dashboardMap) {
+    try {
+      dashboardMap.remove();
+    } catch (e) {}
+    dashboardMap = null;
+  }
+  dashboardMarkers = [];
+
   mapContainer.innerHTML = '';
   const mapDiv = document.createElement('div');
   mapDiv.style.width = '100%';
@@ -856,6 +935,7 @@ function initDashboardMap(farms, plants) {
     center: [106.3, 12.5],
     zoom: 5
   });
+  dashboardMap = map;
 
   map.addControl(new mapboxgl.NavigationControl());
 
@@ -938,23 +1018,27 @@ function initDashboardMap(farms, plants) {
       }
     });
 
-    // Render plant markers
+    // Render plant markers using custom HTML with ID and health color
     plants.forEach(plant => {
       if (plant.latitude && plant.longitude) {
         const lat = parseFloat(plant.latitude);
         const lng = parseFloat(plant.longitude);
         if (!isNaN(lat) && !isNaN(lng)) {
-          let color = '#3b82f6';
-          if (plant.health_status === 'Tốt') color = '#22c55e';
-          else if (plant.health_status === 'Cần chú ý') color = '#eab308';
-          else if (plant.health_status === 'Bệnh') color = '#ef4444';
+          const el = document.createElement('div');
+          let healthClass = 'health-default';
+          if (plant.health_status === 'Tốt') healthClass = 'health-tot';
+          else if (plant.health_status === 'Cần chú ý') healthClass = 'health-watch';
+          else if (plant.health_status === 'Bệnh') healthClass = 'health-sick';
 
-          const marker = new mapboxgl.Marker({ color })
+          el.className = `plant-id-marker ${healthClass}`;
+          el.innerHTML = `<span>${plant.id}</span>`;
+
+          const marker = new mapboxgl.Marker(el)
             .setLngLat([lng, lat])
             .setPopup(new mapboxgl.Popup({ offset: 25 })
               .setHTML(`
                 <div class="map-tooltip">
-                  <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> ${esc(plant.plant_type)}</h4>
+                  <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${plant.id}: ${esc(plant.plant_type)}</h4>
                   ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                   <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                   <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
@@ -966,6 +1050,7 @@ function initDashboardMap(farms, plants) {
             )
             .addTo(map);
 
+          dashboardMarkers.push({ marker, plant, element: el });
           bounds.extend([lng, lat]);
           hasBounds = true;
         }
@@ -974,6 +1059,11 @@ function initDashboardMap(farms, plants) {
 
     if (hasBounds) {
       map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 1000 });
+    }
+
+    // Apply active filter state on load if it was set
+    if (currentDashboardFilter !== 'all') {
+      filterDashboard(currentDashboardFilter);
     }
   });
 }

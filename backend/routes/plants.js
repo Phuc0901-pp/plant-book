@@ -35,7 +35,9 @@ router.get('/', auth, async (req, res) => {
     let query = `
       SELECT p.*, ps.name as schema_name, u.full_name as creator_name,
              (SELECT COUNT(*) FROM plant_media pm WHERE pm.plant_id = p.id) as media_count,
-             (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id) as log_count
+             (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id) as log_count,
+             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước'), 'YYYY-MM-DD') as last_watered,
+             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân'), 'YYYY-MM-DD') as last_fertilized
       FROM plants p
       LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
       LEFT JOIN users u ON u.id = p.created_by
