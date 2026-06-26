@@ -38,6 +38,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // ─── SPA fallback ────────────────────────────────────────────────
+app.get('/plant/:slug/report', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/report.html'));
+});
+
 app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/plant.html'));
 });
