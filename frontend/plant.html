@@ -925,6 +925,36 @@
     align-items: center;
     gap: 6px;
   }
+
+  /* GPS Device Location Marker pulse animation */
+  .device-location-marker {
+    width: 28px;
+    height: 28px;
+    background: #3b82f6;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% {
+      transform: scale(0.9);
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+    100% {
+      transform: scale(0.9);
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+  }
 </style>
 </head>
 <body>
@@ -1492,6 +1522,22 @@ async function renderPlant(plant) {
   const media = plant.media || [];
   const logs = plant.logs || [];
   
+  // Helper to resolve crop cover image from variety or type
+  function getCropImageSrc(p) {
+    if (p.cover_image) return esc(p.cover_image);
+    const term = p.plant_variety || p.plant_type;
+    if (!term) return '';
+    const normalized = term
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[đĐ]/g, "d")
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    return `/assets/crop/${normalized}.png`;
+  }
+
   // Render health status badge
   let healthClass = 'badge-gray';
   if (plant.health_status === 'Tốt') healthClass = 'badge-tot';
@@ -1504,16 +1550,20 @@ async function renderPlant(plant) {
     <div class="hero-container">
       <div class="glass-panel hero-card">
         <div class="cover-image-container">
-          ${plant.cover_image
-            ? `<img src="${esc(plant.cover_image)}" alt="${esc(plant.plant_type)}">`
-            : `<div class="no-cover-icon"><i class="fa-solid fa-tree"></i></div>`}
+          ${(plant.cover_image || plant.plant_variety || plant.plant_type)
+            ? `<img src="${getCropImageSrc(plant)}" alt="${esc(plant.plant_type)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+               <div class="no-cover-icon" style="display: none;"><i class="fa-solid fa-tree"></i></div>`
+            : `<div class="no-cover-icon"><i class="fa-solid fa-tree"></i></div>`
+          }
           <div class="cover-overlay"></div>
         </div>
         <div class="hero-details">
           <div class="plant-title-row">
             <div>
               <h1 class="plant-name">${esc(plant.plant_type)}</h1>
-              ${plant.plant_variety ? `<p class="plant-variety">Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
+              ${plant.plant_variety 
+                ? `<p class="plant-variety">Mã số cây: <strong>#${plant.id}</strong> &nbsp;•&nbsp; Giống: <strong>${esc(plant.plant_variety)}</strong></p>` 
+                : `<p class="plant-variety">Mã số cây: <strong>#${plant.id}</strong></p>`}
             </div>
           </div>
           
@@ -1547,8 +1597,9 @@ async function renderPlant(plant) {
       <div class="left-col">
   `;
 
-  // 0. Location Map (if GPS coordinates exist)
-  if (plant.latitude && plant.longitude) {
+  // 0. Location Map (if GPS coordinates or farm polygon exists)
+  const hasMap = (plant.latitude && plant.longitude) || (plant.farm_boundary && plant.farm_boundary.coordinates);
+  if (hasMap) {
     html += `
         <div class="glass-panel glass-card">
           <h2 class="sec-title"><i class="fa-solid fa-map-location-dot" style="color: var(--green-bright)"></i> Vị trí trên bản đồ</h2>
@@ -1755,8 +1806,8 @@ async function renderPlant(plant) {
   view.innerHTML = html;
   view.style.display = 'block';
 
-  // Initialize Mapbox plant location map if coordinates exist
-  if (plant.latitude && plant.longitude) {
+  // Initialize Mapbox plant location map if coordinates or farm polygon exist
+  if (hasMap) {
     let MAPBOX_TOKEN = '';
     try {
       const tokenRes = await fetch('/api/config/mapbox-token');
@@ -1768,25 +1819,45 @@ async function renderPlant(plant) {
     if (!MAPBOX_TOKEN) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    // Determine the initial center of the map
+    let centerLng = 105.0;
+    let centerLat = 16.0;
+    let initialZoom = 16;
+    
+    if (plant.longitude && plant.latitude) {
+      centerLng = parseFloat(plant.longitude);
+      centerLat = parseFloat(plant.latitude);
+    } else if (plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
+      const firstRing = plant.farm_boundary.coordinates[0];
+      if (firstRing && firstRing[0]) {
+        centerLng = parseFloat(firstRing[0][0]);
+        centerLat = parseFloat(firstRing[0][1]);
+        initialZoom = 14;
+      }
+    }
+
     const plantMap = new mapboxgl.Map({
       container: 'plant-location-map',
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [parseFloat(plant.longitude), parseFloat(plant.latitude)],
-      zoom: 16,
+      center: [centerLng, centerLat],
+      zoom: initialZoom,
       attributionControl: false
     });
     plantMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
     plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     // Add plant marker
-    const el = document.createElement('div');
-    el.style.cssText = 'width:32px;height:32px;background:rgba(34,197,94,0.9);border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.4);cursor:pointer;';
-    el.innerHTML = '🌱';
-    new mapboxgl.Marker({ element: el })
-      .setLngLat([parseFloat(plant.longitude), parseFloat(plant.latitude)])
-      .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
-        .setHTML(`<strong>${esc(plant.plant_type)}</strong>${plant.plant_variety ? '<br><small>'+esc(plant.plant_variety)+'</small>' : ''}`))
-      .addTo(plantMap);
+    if (plant.latitude && plant.longitude) {
+      const el = document.createElement('div');
+      el.style.cssText = 'width:32px;height:32px;background:rgba(34,197,94,0.9);border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.4);cursor:pointer;';
+      el.innerHTML = '🌱';
+      new mapboxgl.Marker({ element: el })
+        .setLngLat([parseFloat(plant.longitude), parseFloat(plant.latitude)])
+        .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
+          .setHTML(`<strong>${esc(plant.plant_type)}</strong>${plant.plant_variety ? '<br><small>'+esc(plant.plant_variety)+'</small>' : ''}`))
+        .addTo(plantMap);
+    }
 
     // Draw farm polygon if available
     if (plant.farm_boundary && plant.farm_boundary.coordinates) {
@@ -1808,6 +1879,51 @@ async function renderPlant(plant) {
           paint: { 'line-color': '#22c55e', 'line-width': 2, 'line-opacity': 0.8 }
         });
       });
+    }
+
+    // Request and show device GPS location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const devLat = position.coords.latitude;
+          const devLng = position.coords.longitude;
+
+          // Create a marker for the device's position
+          const devEl = document.createElement('div');
+          devEl.className = 'device-location-marker';
+          devEl.innerHTML = '📱';
+          new mapboxgl.Marker({ element: devEl })
+            .setLngLat([devLng, devLat])
+            .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
+              .setHTML(`<strong>Vị trí của bạn</strong><br><small>Thiết bị mở URL</small>`))
+            .addTo(plantMap);
+
+          // Adjust map bounds to show both the plant/farm and the device
+          const bounds = new mapboxgl.LngLatBounds();
+          let hasPoints = false;
+
+          if (plant.longitude && plant.latitude) {
+            bounds.extend([parseFloat(plant.longitude), parseFloat(plant.latitude)]);
+            hasPoints = true;
+          }
+
+          if (plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
+            plant.farm_boundary.coordinates[0].forEach(coord => {
+              bounds.extend([parseFloat(coord[0]), parseFloat(coord[1])]);
+              hasPoints = true;
+            });
+          }
+
+          if (hasPoints) {
+            bounds.extend([devLng, devLat]);
+            plantMap.fitBounds(bounds, { padding: 50, maxZoom: 16 });
+          }
+        },
+        (error) => {
+          console.warn('Không thể lấy vị trí thiết bị:', error);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
     }
   }
 }
