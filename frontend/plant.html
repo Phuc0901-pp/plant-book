@@ -496,11 +496,19 @@
     width: 100%;
     max-width: 480px;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     display: flex;
     flex-direction: column;
     border-radius: 20px;
     overflow: hidden;
     animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .modal form {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
   }
   .modal-header {
     padding: 20px 24px;
@@ -532,6 +540,8 @@
     padding: 24px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    flex: 1;
+    min-height: 0;
   }
   .modal-footer {
     padding: 16px 24px;
@@ -539,6 +549,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    flex-shrink: 0;
   }
 
   /* Forms */
@@ -1327,6 +1338,7 @@ function toggleCustomInput(prefix) {
 // Open / Close Modal Helpers
 function openModal(id) {
   document.getElementById(id).style.display = 'flex';
+  document.body.style.overflow = 'hidden';
   
   // Set default datetime to local now in YYYY-MM-DDTHH:mm format
   const now = new Date();
@@ -1344,6 +1356,12 @@ function closeModal(id) {
   // Reset custom input visibility
   const customInputs = document.getElementById(id).querySelectorAll('input[id$="-custom"]');
   customInputs.forEach(i => i.style.display = 'none');
+  
+  // Restore body overflow only if there are no other open modals
+  const openModals = Array.from(document.querySelectorAll('.modal-overlay')).filter(m => m.style.display === 'flex');
+  if (openModals.length === 0) {
+    document.body.style.overflow = '';
+  }
 }
 function closeModalOnOuterClick(event, id) {
   if (event.target === document.getElementById(id)) {
