@@ -1530,7 +1530,7 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Dynamic Crop image loading retry with multiple extensions & fallback to general crop type
+// Dynamic Crop image loading retry with multiple extensions
 function handleCropImageError(img) {
   if (img.getAttribute('data-is-cover') === 'true') {
     fallbackToTreeIcon(img);
@@ -1556,16 +1556,7 @@ function handleCropImageError(img) {
   if (nextExt) {
     img.src = base + nextExt;
   } else {
-    // If we finished checking all extensions for the current base (e.g. variety), check if there's a fallback base (e.g. crop type)
-    const fallbackBase = img.getAttribute('data-fallback-base');
-    if (fallbackBase) {
-      img.setAttribute('data-base', fallbackBase);
-      img.removeAttribute('data-fallback-base');
-      img.setAttribute('data-ext-idx', '1'); // Start at index 1 since we immediately try index 0 (.jpg)
-      img.src = fallbackBase + extensions[0];
-    } else {
-      fallbackToTreeIcon(img);
-    }
+    fallbackToTreeIcon(img);
   }
 }
 
@@ -1651,26 +1642,12 @@ async function renderPlant(plant) {
   const media = plant.media || [];
   const logs = plant.logs || [];
   
-  // Helpers to resolve crop cover image base paths
-  function getVarietyImageBase(p) {
-    if (p.cover_image) return esc(p.cover_image);
-    const term = p.plant_variety || '';
-    if (!term) return '';
-    const normalized = term
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[đĐ]/g, "d")
-      .replace(/[^a-z0-9]/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_+|_+$/g, "");
-    return `/assets/crop/${normalized}`;
-  }
-
-  function getTypeImageBase(p) {
+  // Helper to resolve crop cover image from plant type (schema)
+  function getCropImageSrc(p) {
     if (p.cover_image) return esc(p.cover_image);
     const term = p.plant_type || '';
     if (!term) return '';
+    
     // Extract text in parentheses, e.g. "Sầu riêng(durian)" -> "durian"
     const match = term.match(/\(([^)]+)\)/);
     let baseName = '';
@@ -1679,6 +1656,7 @@ async function renderPlant(plant) {
     } else {
       baseName = term;
     }
+    
     const normalized = baseName
       .toLowerCase()
       .normalize("NFD")
@@ -1727,11 +1705,10 @@ async function renderPlant(plant) {
     <div class="hero-container">
       <div class="glass-panel hero-card">
         <div class="cover-image-container">
-          ${(plant.cover_image || plant.plant_variety || plant.plant_type)
-            ? `<img src="${plant.cover_image ? plant.cover_image : (getVarietyImageBase(plant) ? getVarietyImageBase(plant) + '.png' : getTypeImageBase(plant) + '.png')}" 
+          ${(plant.cover_image || plant.plant_type)
+            ? `<img src="${getCropImageSrc(plant) + (plant.cover_image ? '' : '.png')}" 
                     alt="${esc(plant.plant_type)}" 
-                    data-base="${plant.cover_image ? plant.cover_image : (getVarietyImageBase(plant) || getTypeImageBase(plant))}" 
-                    data-fallback-base="${plant.cover_image ? '' : (getVarietyImageBase(plant) ? getTypeImageBase(plant) : '')}" 
+                    data-base="${getCropImageSrc(plant)}" 
                     data-ext-idx="0" 
                     data-is-cover="${plant.cover_image ? 'true' : 'false'}" 
                     onerror="handleCropImageError(this)">
