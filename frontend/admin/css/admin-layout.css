@@ -68,6 +68,8 @@
   .content{padding:24px 28px;flex:1}
   .page-section{display:none}
   .page-section.active{display:block}
+  .tab-pane{display:none}
+  .tab-pane.active{display:block}
 
   /* ── Media queries (Mobile Responsive) ── */
   @media(max-width:768px){
