@@ -3014,6 +3014,41 @@ function generateExportReport() {
           <tbody>
             ${filteredLogs.map(l => {
               const detailsText = getLogDetailsText(l);
+              
+              // Handle media links for print/PDF (show images, link videos)
+              const mediaUrls = (l.media_urls && Array.isArray(l.media_urls)) ? l.media_urls : [];
+              let mediaHtml = '';
+              if (mediaUrls.length > 0) {
+                const imgHtmls = [];
+                const videoHtmls = [];
+                
+                mediaUrls.forEach(m => {
+                  const url = m.url || m;
+                  const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
+                  if (isVideo) {
+                    videoHtmls.push(`
+                      <div style="margin-top: 6px; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                        <span style="color: #e53e3e;">▶</span>
+                        <a href="${url}" target="_blank" style="color: #3182ce; text-decoration: underline; font-weight: 600;">Xem video nhật ký bệnh cây</a>
+                      </div>
+                    `);
+                  } else {
+                    imgHtmls.push(`
+                      <img src="${url}" style="max-height: 80px; max-width: 120px; object-fit: cover; border-radius: 4px; margin-right: 6px; margin-top: 6px; border: 1px solid #cbd5e0;">
+                    `);
+                  }
+                });
+                
+                if (imgHtmls.length > 0 || videoHtmls.length > 0) {
+                  mediaHtml = `
+                    <div style="margin-top: 6px;">
+                      ${imgHtmls.length > 0 ? `<div style="display: flex; flex-wrap: wrap;">${imgHtmls.join('')}</div>` : ''}
+                      ${videoHtmls.join('')}
+                    </div>
+                  `;
+                }
+              }
+
               return `
                 <tr>
                   <td><strong>${formatPrintDate(l.log_date)}</strong></td>
@@ -3021,6 +3056,7 @@ function generateExportReport() {
                   <td>
                     ${detailsText ? `<div style="font-weight: 500; margin-bottom: 4px;">${detailsText}</div>` : ''}
                     ${l.note ? `<div class="log-note">${esc(l.note)}</div>` : ''}
+                    ${mediaHtml}
                   </td>
                   <td>${esc(l.creator_name || 'Công nhân / Khách')}</td>
                 </tr>
