@@ -388,35 +388,78 @@
         <div class="tab-pane" id="pane-config-care">
           <div class="card">
             <div class="card-header">
-              <h3><i class="fa-solid fa-screwdriver-wrench" style="color:var(--amber)"></i> Cấu hình danh mục quy trình</h3>
+              <h3><i class="fa-solid fa-screwdriver-wrench" style="color:var(--green)"></i> Quy trình chăm sóc & canh tác</h3>
               <button class="btn btn-primary" id="save-care-cfg-btn" onclick="saveCareConfigs()">
                 <i class="fa fa-floppy-disk"></i> Lưu cấu hình
               </button>
             </div>
+            
             <div style="padding:24px">
-              <div class="form-row">
-                <div class="field">
-                  <label>Tưới nước — Các phương pháp tưới (mỗi dòng một phương pháp)</label>
-                  <textarea id="cfg-water-methods" rows="5" placeholder="Tưới tay thủ công&#10;Tưới nhỏ giọt&#10;Tưới phun mưa"></textarea>
-                </div>
-                <div class="field">
-                  <label>Bón phân — Các loại phân bón (mỗi dòng một loại)</label>
-                  <textarea id="cfg-fertilizers" rows="5" placeholder="Phân NPK 16-16-8&#10;Phân hữu cơ trùn quế&#10;Phân chuồng hoai mục"></textarea>
-                </div>
+              <div class="alert alert-success" style="margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.5; background: var(--green-light); color: var(--green-dark); border: 1.5px solid rgba(34, 197, 94, 0.2); display: flex; gap: 8px; align-items: flex-start;">
+                <i class="fa fa-circle-info" style="margin-top: 2px;"></i>
+                <span>Các cấu hình danh mục dưới đây sẽ hiển thị trực tiếp làm tùy chọn nhanh khi Nông hộ thực hiện ghi nhận nhật ký canh tác hàng ngày. Hãy nhập <strong>mỗi dòng một phương pháp / lý do</strong>.</span>
               </div>
-              <div class="form-row">
-                <div class="field">
-                  <label>Phun thuốc — Các loại thuốc (mỗi dòng một loại)</label>
-                  <textarea id="cfg-pesticides" rows="5" placeholder="Thuốc trừ sâu sinh học&#10;Thuốc trừ bệnh Anvil&#10;Thuốc trừ nấm Ridomil Gold"></textarea>
+
+              <div class="care-grid">
+                <!-- Card 1: Tưới nước -->
+                <div class="care-card">
+                  <div class="care-card-header">
+                    <i class="fa-solid fa-droplet" style="color:#3b82f6"></i>
+                    <h4>Tưới nước</h4>
+                  </div>
+                  <p class="care-card-desc">Các phương pháp tưới nước áp dụng tại trang trại (ví dụ: tưới nhỏ giọt, tưới tay...).</p>
+                  <div class="field">
+                    <textarea id="cfg-water-methods" rows="5" placeholder="Tưới tay thủ công&#10;Tưới nhỏ giọt&#10;Tưới phun mưa"></textarea>
+                  </div>
                 </div>
-                <div class="field">
-                  <label>Cắt lá — Lý do cắt lá (mỗi dòng một lý do)</label>
-                  <textarea id="cfg-leaf-reasons" rows="5" placeholder="Lá già úa/vàng&#10;Lá bị sâu bệnh hại&#10;Tỉa cành tạo tán"></textarea>
+
+                <!-- Card 2: Bón phân -->
+                <div class="care-card">
+                  <div class="care-card-header">
+                    <i class="fa-solid fa-flask" style="color:#8b5cf6"></i>
+                    <h4>Bón phân</h4>
+                  </div>
+                  <p class="care-card-desc">Danh mục các loại phân bón hóa học hoặc phân bón hữu cơ sử dụng cho cây trồng.</p>
+                  <div class="field">
+                    <textarea id="cfg-fertilizers" rows="5" placeholder="Phân NPK 16-16-8&#10;Phân hữu cơ trùn quế&#10;Phân chuồng hoai mục"></textarea>
+                  </div>
                 </div>
-              </div>
-              <div class="field">
-                <label>Tỉa hoa — Lý do tỉa hoa (mỗi dòng một lý do)</label>
-                <textarea id="cfg-flower-reasons" rows="5" placeholder="Tỉa hoa tàn&#10;Tỉa bớt nụ còi&#10;Kích thích ra chồi mới"></textarea>
+
+                <!-- Card 3: Phun thuốc -->
+                <div class="care-card">
+                  <div class="care-card-header">
+                    <i class="fa-solid fa-shield-virus" style="color:#ef4444"></i>
+                    <h4>Phun thuốc</h4>
+                  </div>
+                  <p class="care-card-desc">Các loại thuốc bảo vệ thực vật, chế phẩm diệt nấm hoặc trừ sâu bệnh.</p>
+                  <div class="field">
+                    <textarea id="cfg-pesticides" rows="5" placeholder="Thuốc trừ sâu sinh học&#10;Thuốc trừ bệnh Anvil&#10;Thuốc trừ nấm Ridomil Gold"></textarea>
+                  </div>
+                </div>
+
+                <!-- Card 4: Cắt cành / Cắt lá -->
+                <div class="care-card">
+                  <div class="care-card-header">
+                    <i class="fa-solid fa-scissors" style="color:#f59e0b"></i>
+                    <h4>Cắt cành & Cắt lá</h4>
+                  </div>
+                  <p class="care-card-desc">Các lý do thực hiện tỉa cành tạo tán hoặc loại bỏ các lá bệnh, lá vàng úa.</p>
+                  <div class="field">
+                    <textarea id="cfg-leaf-reasons" rows="5" placeholder="Lá già úa/vàng&#10;Lá bị sâu bệnh hại&#10;Tỉa cành tạo tán"></textarea>
+                  </div>
+                </div>
+
+                <!-- Card 5: Tỉa hoa -->
+                <div class="care-card">
+                  <div class="care-card-header">
+                    <i class="fa-solid fa-seedling" style="color:#10b981"></i>
+                    <h4>Tỉa hoa</h4>
+                  </div>
+                  <p class="care-card-desc">Lý do thực hiện tỉa bớt hoa/nụ còi để tập trung chất dinh dưỡng nuôi quả.</p>
+                  <div class="field">
+                    <textarea id="cfg-flower-reasons" rows="5" placeholder="Tỉa hoa tàn&#10;Tỉa bớt nụ còi&#10;Kích thích ra chồi mới"></textarea>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
