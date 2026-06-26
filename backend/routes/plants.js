@@ -299,7 +299,12 @@ router.get('/public/:slug', async (req, res) => {
       try {
         const coords = typeof row.farm_polygon === 'string' ? JSON.parse(row.farm_polygon) : row.farm_polygon;
         if (Array.isArray(coords) && coords.length > 0) {
-          farm_boundary = { type: 'Polygon', coordinates: coords };
+          // If coords is 2D [[lng, lat], ...], wrap it in an outer array to make it a valid GeoJSON Polygon coordinates array
+          if (Array.isArray(coords[0]) && !Array.isArray(coords[0][0])) {
+            farm_boundary = { type: 'Polygon', coordinates: [coords] };
+          } else {
+            farm_boundary = { type: 'Polygon', coordinates: coords };
+          }
         }
       } catch(e) { /* ignore parse errors */ }
     }
@@ -310,6 +315,26 @@ router.get('/public/:slug', async (req, res) => {
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });
+
+// Update plant health status publicly
+router.patch('/public/:slug/health', async (req, res) => {
+  try {
+    const { health_status } = req.body;
+    if (!['Tốt', 'Bình thường', 'Cần chú ý', 'Bệnh'].includes(health_status)) {
+      return res.status(400).json({ error: 'Trạng thái sức khỏe không hợp lệ.' });
+    }
+    const result = await pool.query(
+      `UPDATE plants SET health_status = $1, updated_at = NOW() WHERE public_slug = $2 RETURNING *`,
+      [health_status, req.params.slug]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
 
 router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) => {
   try {

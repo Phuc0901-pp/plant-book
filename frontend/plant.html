@@ -926,34 +926,111 @@
     gap: 6px;
   }
 
-  /* GPS Device Location Marker pulse animation */
-  .device-location-marker {
-    width: 28px;
-    height: 28px;
-    background: #3b82f6;
+  /* GPS & Map Markers */
+  .plant-map-marker {
+    width: 32px;
+    height: 32px;
+    background: #22c55e;
     border: 2px solid #fff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    color: #fff;
+    font-size: 14px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     cursor: pointer;
-    animation: pulse 2s infinite;
+    transition: transform 0.2s;
   }
-  @keyframes pulse {
+  .plant-map-marker:hover {
+    transform: scale(1.1);
+  }
+  .device-location-marker {
+    width: 20px;
+    height: 20px;
+    background: #3b82f6;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    position: relative;
+  }
+  .device-location-marker::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid #3b82f6;
+    animation: gpsPulse 2s infinite ease-out;
+    opacity: 0;
+  }
+  @keyframes gpsPulse {
     0% {
-      transform: scale(0.9);
-      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-    }
-    70% {
       transform: scale(1);
-      box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+      opacity: 1;
     }
     100% {
-      transform: scale(0.9);
-      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+      transform: scale(2.5);
+      opacity: 0;
     }
+  }
+
+  /* Interactive Health Badge */
+  .badge-health-interactive {
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    user-select: none;
+  }
+  .badge-health-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+  }
+  .badge-health-interactive:active {
+    transform: translateY(0);
+  }
+
+  /* Collapsible Timeline Details */
+  .timeline-content {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  .timeline-content:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+  .timeline-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 0;
+  }
+  .timeline-item.expanded .timeline-details {
+    max-height: 2000px;
+    opacity: 1;
+    margin-top: 12px;
+    border-top: 1px dashed var(--border-glass);
+    padding-top: 12px;
+  }
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .log-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toggle-arrow {
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+  }
+  .timeline-item.expanded .toggle-arrow {
+    transform: rotate(180deg);
   }
 </style>
 </head>
@@ -1341,6 +1418,7 @@
 <script>
 // Parse Slug
 const slug = location.pathname.replace('/plant/', '').split('/')[0];
+let currentPlantData = null;
 
 // Global Configurations Cache (Default Fallbacks)
 let configData = {
@@ -1481,6 +1559,7 @@ async function loadPlant() {
     const plant = await res.json();
     if (!res.ok) throw new Error(plant.error || 'Không tìm thấy hồ sơ');
 
+    currentPlantData = plant;
     document.title = `${plant.plant_type} — Plant Book | Tanbao Corp`;
     await renderPlant(plant);
   } catch (err) {
@@ -1538,6 +1617,31 @@ async function renderPlant(plant) {
     return `/assets/crop/${normalized}.png`;
   }
 
+  // Helper to get short summary preview for logs timeline
+  function getShortSummary(log) {
+    const details = log.details || {};
+    if (log.log_type === 'Tưới nước') {
+      return `Tưới bằng ${esc(details.method || '—')} (${esc(details.amount || '—')} ${esc(details.unit || '')})`;
+    }
+    if (log.log_type === 'Bón phân') {
+      return `Bón ${esc(details.type || '—')} (${esc(details.amount || '—')} ${esc(details.unit || '')})`;
+    }
+    if (log.log_type === 'Phun thuốc') {
+      return `Phun ${esc(details.type || '—')} (Liều: ${esc(details.amount || '—')})`;
+    }
+    if (log.log_type === 'Cắt lá') {
+      return `Cắt tỉa (${esc(details.amount || '—')} cành/lá) - ${esc(details.reason || '—')}`;
+    }
+    if (log.log_type === 'Tỉa hoa') {
+      return `Tỉa bớt (${esc(details.amount || '—')} bông/trái) - ${esc(details.reason || '—')}`;
+    }
+    if (log.log_type === 'Bệnh cây') {
+      const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
+      return `${sevEmoji} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
+    }
+    return esc(log.note || '').slice(0, 40) + (log.note && log.note.length > 40 ? '...' : '');
+  }
+
   // Render health status badge
   let healthClass = 'badge-gray';
   if (plant.health_status === 'Tốt') healthClass = 'badge-tot';
@@ -1568,22 +1672,22 @@ async function renderPlant(plant) {
           </div>
           
           <div class="badges-row">
-            <span class="badge ${healthClass}"><i class="fa fa-circle-dot"></i> Sức khỏe: ${esc(plant.health_status)}</span>
-            ${plant.plant_age ? `<span class="badge badge-info"><i class="fa fa-calendar-days"></i> Tuổi: ${esc(plant.plant_age)}</span>` : ''}
-            ${plant.schema_name ? `<span class="badge badge-info"><i class="fa fa-layer-group"></i> ${esc(plant.schema_name)}</span>` : ''}
+            <span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" title="Click để thay đổi trạng thái sức khỏe"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status)}</span>
+            ${plant.plant_age ? `<span class="badge badge-info"><i class="fa-solid fa-calendar-days"></i> Tuổi: ${esc(plant.plant_age)}</span>` : ''}
+            ${plant.schema_name ? `<span class="badge badge-info"><i class="fa-solid fa-layer-group"></i> ${esc(plant.schema_name)}</span>` : ''}
           </div>
           
           <div class="info-grid">
             <div class="info-tile">
-              <span class="label">📍 Vị trí / Lô</span>
+              <span class="label"><i class="fa-solid fa-location-dot" style="color: var(--green-bright); margin-right: 6px;"></i>Vị trí / Lô</span>
               <span class="value">${esc(plant.location || 'Chưa ghi nhận')}</span>
             </div>
             <div class="info-tile">
-              <span class="label">📅 Ngày số hóa</span>
+              <span class="label"><i class="fa-solid fa-calendar-days" style="color: var(--green-bright); margin-right: 6px;"></i>Ngày số hóa</span>
               <span class="value">${fmtDate(plant.created_at)}</span>
             </div>
             <div class="info-tile">
-              <span class="label">📸 Hoạt động</span>
+              <span class="label"><i class="fa-solid fa-chart-line" style="color: var(--green-bright); margin-right: 6px;"></i>Hoạt động</span>
               <span class="value">${logs.length} nhật ký &nbsp;•&nbsp; ${media.length} hình ảnh</span>
             </div>
           </div>
@@ -1710,16 +1814,24 @@ async function renderPlant(plant) {
                   return `
                     <div class="timeline-item">
                       <div class="timeline-marker ${markerClass}"></div>
-                      <div class="timeline-content">
+                      <div class="timeline-content" onclick="toggleTimelineItem(event, this)">
                         <div class="log-header">
                           <span class="log-tag ${tagClass}"><i class="${icon}"></i> ${esc(log.log_type || 'Ghi chú')}</span>
-                          <span class="log-time-indicator"><i class="fa-regular fa-clock"></i> ${fullDateTime}</span>
+                          <div class="log-header-right">
+                            <span class="log-time-indicator"><i class="fa-regular fa-clock"></i> ${fullDateTime}</span>
+                            <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                          </div>
                         </div>
-                        <div class="log-body">
-                          ${getCareLogSummary(log)}
+                        <div class="log-short-preview" style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">
+                          ${getShortSummary(log)}
                         </div>
-                        ${noteHtml}
-                        ${mediaThumbs}
+                        <div class="timeline-details">
+                          <div class="log-body">
+                            ${getCareLogSummary(log)}
+                          </div>
+                          ${noteHtml}
+                          ${mediaThumbs}
+                        </div>
                       </div>
                     </div>
                   `;
@@ -1850,8 +1962,8 @@ async function renderPlant(plant) {
     // Add plant marker
     if (plant.latitude && plant.longitude) {
       const el = document.createElement('div');
-      el.style.cssText = 'width:32px;height:32px;background:rgba(34,197,94,0.9);border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.4);cursor:pointer;';
-      el.innerHTML = '🌱';
+      el.className = 'plant-map-marker';
+      el.innerHTML = '<i class="fa-solid fa-seedling"></i>';
       new mapboxgl.Marker({ element: el })
         .setLngLat([parseFloat(plant.longitude), parseFloat(plant.latitude)])
         .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
@@ -1891,7 +2003,6 @@ async function renderPlant(plant) {
           // Create a marker for the device's position
           const devEl = document.createElement('div');
           devEl.className = 'device-location-marker';
-          devEl.innerHTML = '📱';
           new mapboxgl.Marker({ element: devEl })
             .setLngLat([devLng, devLat])
             .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
@@ -2266,6 +2377,56 @@ openModal = function(modalId) {
   originalOpenModal(modalId);
   onModalOpen(modalId);
 };
+
+// Toggle timeline item expanded state (accordion)
+function toggleTimelineItem(event, el) {
+  // Ignore clicks on lightbox media thumbnails, play icons or buttons
+  if (event.target.closest('.log-media-item') || event.target.closest('.remove-preview') || event.target.tagName === 'BUTTON') {
+    return;
+  }
+  const item = el.closest('.timeline-item');
+  const details = item.querySelector('.timeline-details');
+  item.classList.toggle('expanded');
+  
+  if (item.classList.contains('expanded')) {
+    // Add buffer space for scrollHeight to handle image loads
+    details.style.maxHeight = (details.scrollHeight + 150) + "px";
+    details.style.opacity = "1";
+  } else {
+    details.style.maxHeight = "0";
+    details.style.opacity = "0";
+  }
+}
+
+// Toggle health status between Tốt / Bệnh
+async function toggleHealthStatus() {
+  if (!currentPlantData) return;
+  const current = currentPlantData.health_status;
+  // If it's anything else than Bệnh, toggle to Bệnh. Otherwise, toggle to Tốt.
+  const nextStatus = current === 'Bệnh' ? 'Tốt' : 'Bệnh';
+  
+  const confirmed = confirm(`Bạn có chắc chắn muốn thay đổi trạng thái sức khỏe cây trồng này thành "${nextStatus}" không?`);
+  if (!confirmed) return;
+  
+  try {
+    const res = await fetch(`/api/plants/public/${slug}/health`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ health_status: nextStatus })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Lỗi hệ thống');
+    }
+    
+    // Reload plant profile to reflect status changes
+    await loadPlant();
+  } catch (err) {
+    alert('Không thể cập nhật trạng thái sức khỏe: ' + err.message);
+  }
+}
 
 // Startup
 async function init() {
