@@ -495,6 +495,9 @@
   .modal {
     width: 100%;
     max-width: 480px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
     border-radius: 20px;
     overflow: hidden;
     animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -527,6 +530,8 @@
   }
   .modal-body {
     padding: 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .modal-footer {
     padding: 16px 24px;
@@ -1890,20 +1895,121 @@ async function submitCareLog(event, type, modalId, formId) {
 let diseaseImageFiles = [];
 let diseaseVideoFiles = [];
 
-function handleDiseaseFiles(input, type) {
+// IndexedDB for File Caching
+const DB_NAME = 'PlantAppDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'draftFiles';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(STORE_NAME);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function saveDraftFiles(key, files) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(files, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function getDraftFiles(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).get(key);
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function clearDraftFiles() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(`diseaseImages_${slug}`);
+    tx.objectStore(STORE_NAME).delete(`diseaseVideos_${slug}`);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Save text inputs to localStorage
+function saveDiseaseDraftText() {
+  const draft = {
+    name: document.getElementById('disease-name').value,
+    desc: document.getElementById('disease-desc').value,
+    severity: document.getElementById('disease-severity').value,
+    datetime: document.getElementById('disease-datetime').value,
+    note: document.getElementById('disease-note').value
+  };
+  localStorage.setItem(`diseaseText_${slug}`, JSON.stringify(draft));
+}
+
+// Restore draft text and files
+async function restoreDiseaseDraft() {
+  const draftTxt = localStorage.getItem(`diseaseText_${slug}`);
+  if (draftTxt) {
+    try {
+      const draft = JSON.parse(draftTxt);
+      if (draft.name) document.getElementById('disease-name').value = draft.name;
+      if (draft.desc) document.getElementById('disease-desc').value = draft.desc;
+      if (draft.severity) document.getElementById('disease-severity').value = draft.severity;
+      if (draft.datetime) document.getElementById('disease-datetime').value = draft.datetime;
+      if (draft.note) document.getElementById('disease-note').value = draft.note;
+    } catch(e) {}
+  }
+  try {
+    diseaseImageFiles = await getDraftFiles(`diseaseImages_${slug}`);
+    diseaseVideoFiles = await getDraftFiles(`diseaseVideos_${slug}`);
+    renderDiseasePreviews('images');
+    renderDiseasePreviews('videos');
+  } catch(e) {
+    console.error("Lỗi khôi phục files:", e);
+  }
+}
+
+// Bind auto-save to inputs
+document.querySelectorAll('#form-disease input, #form-disease textarea, #form-disease select').forEach(el => {
+  if (el.type !== 'file') {
+    el.addEventListener('input', saveDiseaseDraftText);
+    el.addEventListener('change', saveDiseaseDraftText);
+  }
+});
+
+async function handleDiseaseFiles(input, type) {
   const files = Array.from(input.files);
   if (!files.length) return;
   if (type === 'images') {
     const toAdd = files.slice(0, 10 - diseaseImageFiles.length);
     diseaseImageFiles = [...diseaseImageFiles, ...toAdd];
     renderDiseasePreviews('images');
+    await saveDraftFiles(`diseaseImages_${slug}`, diseaseImageFiles);
   } else {
     const toAdd = files.slice(0, 2 - diseaseVideoFiles.length);
     diseaseVideoFiles = [...diseaseVideoFiles, ...toAdd];
     renderDiseasePreviews('videos');
+    await saveDraftFiles(`diseaseVideos_${slug}`, diseaseVideoFiles);
   }
   // Reset file input so the same file can be re-selected if needed
   input.value = '';
+}
+
+async function removeDiseaseFile(idx, type) {
+  if (type === 'images') {
+    diseaseImageFiles.splice(idx, 1);
+    renderDiseasePreviews('images');
+    await saveDraftFiles(`diseaseImages_${slug}`, diseaseImageFiles);
+  } else {
+    diseaseVideoFiles.splice(idx, 1);
+    renderDiseasePreviews('videos');
+    await saveDraftFiles(`diseaseVideos_${slug}`, diseaseVideoFiles);
+  }
 }
 
 function renderDiseasePreviews(type) {
@@ -1923,13 +2029,9 @@ function renderDiseasePreviews(type) {
     removeBtn.className = 'remove-preview';
     removeBtn.innerHTML = '×';
     removeBtn.type = 'button';
-    removeBtn.onclick = () => {
-      if (type === 'images') diseaseImageFiles.splice(idx, 1);
-      else diseaseVideoFiles.splice(idx, 1);
-      renderDiseasePreviews(type);
-    };
+    removeBtn.onclick = () => removeDiseaseFile(idx, type);
 
-    if (file.type.startsWith('video')) {
+    if (file.type && file.type.startsWith('video')) {
       const video = document.createElement('video');
       video.src = URL.createObjectURL(file);
       video.muted = true;
@@ -1998,12 +2100,14 @@ async function submitDiseaseLog(event) {
       throw new Error(errData.error || 'Lỗi server');
     }
 
-    // Reset form
+    // Reset form and clear drafts
     document.getElementById('form-disease').reset();
     diseaseImageFiles = [];
     diseaseVideoFiles = [];
     renderDiseasePreviews('images');
     renderDiseasePreviews('videos');
+    localStorage.removeItem(`diseaseText_${slug}`);
+    await clearDraftFiles();
 
     closeModal('modal-disease');
     await loadPlant();
@@ -2015,10 +2119,25 @@ async function submitDiseaseLog(event) {
   }
 }
 
+// Restore drafts if user cancels out and re-opens
+function onModalOpen(modalId) {
+  if (modalId === 'modal-disease') {
+    restoreDiseaseDraft();
+  }
+}
+
+// Modifying the existing openModal function:
+const originalOpenModal = openModal;
+openModal = function(modalId) {
+  originalOpenModal(modalId);
+  onModalOpen(modalId);
+};
+
 // Startup
 async function init() {
   await loadConfigurations();
   await loadPlant();
+  await restoreDiseaseDraft(); // Restore on initial load in case page reloaded while capturing
 }
 
 init();
