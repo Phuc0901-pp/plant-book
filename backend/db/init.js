@@ -119,6 +119,11 @@ async function initDB() {
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS longitude NUMERIC;
     `);
 
+    // Alter farms table to assign a user/farmer
+    await client.query(`
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+    `);
+
     // Seed default configurations
     const defaultConfigs = [
       { key: 'fertilizers', value: JSON.stringify(["Phân NPK 16-16-8", "Phân hữu cơ trùn quế", "Phân bón lá Đầu Trâu", "Phân chuồng hoai mục"]) },

@@ -215,12 +215,21 @@ async function initGisPage() {
   
   try {
     await ensureMapboxToken();
-    const [farms, plants] = await Promise.all([
+    const [farms, plants, users] = await Promise.all([
       api('/farms'),
-      api('/plants')
+      api('/plants'),
+      api('/users')
     ]);
     currentFarms = farms;
     currentPlants = plants;
+    
+    // Populate customer filter dropdown
+    const filterSelect = document.getElementById('filter-farm-user');
+    if (filterSelect) {
+      filterSelect.innerHTML = '<option value="all">Tất cả khách hàng (nông hộ)</option>' +
+        users.map(u => `<option value="${u.id}">${esc(u.full_name)} (${u.role === 'admin' ? 'Admin' : 'Nông hộ'})</option>`).join('');
+    }
+    
     renderFarmsList(farms);
     initGisMap(farms, plants);
   } catch (err) {
@@ -243,9 +252,10 @@ function renderFarmsList(farms) {
   container.innerHTML = farms.map(f => `
     <div class="farm-item" onclick="selectFarm(${f.id})">
       <div class="farm-item-name">${esc(f.name)}</div>
-      <div class="farm-item-meta">
+      <div class="farm-item-meta" style="flex-wrap: wrap; gap: 8px;">
         <span><i class="fa-solid fa-ruler-combined" style="color:var(--green-dark)"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
         <span><i class="fa-solid fa-seedling" style="color:var(--green)"></i> ${f.plant_count} cây</span>
+        <span><i class="fa fa-user" style="color:#ea580c"></i> ${esc(f.user_name || 'Chưa gán')}</span>
       </div>
     </div>
   `).join('');
@@ -427,7 +437,23 @@ function updateAreaDisplay() {
   }
 }
 
-function openFarmForm() {
+async function loadUsersDropdown(selectedUserId = '') {
+  try {
+    const users = await api('/users');
+    const select = document.getElementById('farm-user-id');
+    if (select) {
+      select.innerHTML = '<option value="">— Chưa gán cho ai —</option>' + 
+        users.map(u => {
+          const roleLabel = u.role === 'admin' ? ' (Admin)' : ' (Nông hộ)';
+          return `<option value="${u.id}" ${u.id == selectedUserId ? 'selected' : ''}>${esc(u.full_name)}${roleLabel}</option>`;
+        }).join('');
+    }
+  } catch (err) {
+    console.error('Error loading users for dropdown:', err);
+  }
+}
+
+async function openFarmForm() {
   activeFarmId = null;
   document.getElementById('gis-back-btn').style.display = 'block';
   document.getElementById('gis-sidebar-title').textContent = 'Tạo Trang trại';
@@ -439,6 +465,8 @@ function openFarmForm() {
   document.getElementById('farm-area-display').textContent = '0 m²';
   document.getElementById('farm-area-ha').textContent = '0';
   window._lastDrawnArea = 0;
+
+  await loadUsersDropdown();
 
   drawControl.deleteAll();
   drawControl.changeMode('draw_polygon');
@@ -453,6 +481,8 @@ function cancelFarmForm() {
 async function saveFarm() {
   const name = document.getElementById('farm-name').value.trim();
   const description = document.getElementById('farm-desc').value.trim();
+  const user_id = document.getElementById('farm-user-id').value;
+  
   if (!name) {
     toast('Vui lòng nhập tên trang trại!', 'error');
     return;
@@ -471,7 +501,8 @@ async function saveFarm() {
     name,
     description,
     polygon_coordinates: coordinates,
-    area
+    area,
+    user_id: user_id ? parseInt(user_id) : null
   };
 
   try {
@@ -505,7 +536,10 @@ async function selectFarm(farmId) {
   try {
     const farm = await api(`/farms/${farmId}`);
     document.getElementById('gis-sidebar-title').textContent = farm.name;
-    document.getElementById('farm-details-desc').textContent = farm.description || 'Không có mô tả.';
+    
+    const ownerHtml = `<div style="margin-bottom:8px; font-size:12px; color:var(--gray-800);"><i class="fa fa-user" style="color:#ea580c"></i> Nông hộ phụ trách: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></div>`;
+    document.getElementById('farm-details-desc').innerHTML = ownerHtml + (farm.description ? `<p>${esc(farm.description)}</p>` : '<p style="font-style:italic; color:var(--gray-400);">Không có mô tả.</p>');
+    
     document.getElementById('farm-details-area').textContent = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
     document.getElementById('farm-details-plant-count').textContent = farm.plants.length;
 
@@ -562,6 +596,8 @@ async function editFarm() {
     document.getElementById('farm-area-ha').textContent = ((farm.area || 0) / 10000).toFixed(2);
     window._lastDrawnArea = farm.area || 0;
 
+    await loadUsersDropdown(farm.user_id);
+
     let coords = [];
     try {
       coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
@@ -600,5 +636,29 @@ async function deleteFarm() {
   } catch (err) {
     toast('Lỗi xóa trang trại: ' + err.message, 'error');
   }
+}
+
+function filterFarmsByCustomer() {
+  const userId = document.getElementById('filter-farm-user').value;
+  let filteredFarms = currentFarms;
+  if (userId !== 'all') {
+    filteredFarms = currentFarms.filter(f => f.user_id == userId);
+  }
+  
+  // Filter the plants to only show those inside the filtered farms
+  const filteredPlants = (userId === 'all') 
+    ? currentPlants 
+    : currentPlants.filter(p => filteredFarms.some(f => f.id === p.farm_id));
+
+  renderFarmsList(filteredFarms);
+  
+  // Re-initialize the Mapbox GIS map with filtered data
+  if (gMap) {
+    try {
+      gMap.remove();
+    } catch(e) {}
+    gMap = null;
+  }
+  initGisMap(filteredFarms, filteredPlants);
 }
 

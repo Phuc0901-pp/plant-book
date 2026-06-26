@@ -7,10 +7,11 @@ const auth = require('../middleware/auth');
 router.get('/', auth, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT f.*, COUNT(p.id)::int as plant_count 
+      SELECT f.*, COUNT(p.id)::int as plant_count, u.full_name as user_name, u.email as user_email
       FROM farms f 
       LEFT JOIN plants p ON p.farm_id = f.id 
-      GROUP BY f.id 
+      LEFT JOIN users u ON u.id = f.user_id
+      GROUP BY f.id, u.id
       ORDER BY f.created_at DESC
     `);
     res.json(result.rows);
@@ -23,7 +24,12 @@ router.get('/', auth, async (req, res) => {
 // GET single farm details with list of plants (requires auth)
 router.get('/:id', auth, async (req, res) => {
   try {
-    const farmResult = await pool.query('SELECT * FROM farms WHERE id = $1', [req.params.id]);
+    const farmResult = await pool.query(`
+      SELECT f.*, u.full_name as user_name, u.email as user_email
+      FROM farms f
+      LEFT JOIN users u ON u.id = f.user_id
+      WHERE f.id = $1
+    `, [req.params.id]);
     if (farmResult.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
@@ -49,16 +55,16 @@ router.get('/:id', auth, async (req, res) => {
 // POST create farm (requires auth)
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, description, polygon_coordinates, area } = req.body;
+    const { name, description, polygon_coordinates, area, user_id } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     const result = await pool.query(`
-      INSERT INTO farms (name, description, polygon_coordinates, area, created_by)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, req.user.id]);
+    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, req.user.id, user_id || null]);
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -70,17 +76,17 @@ router.post('/', auth, async (req, res) => {
 // PUT update farm (requires auth)
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { name, description, polygon_coordinates, area } = req.body;
+    const { name, description, polygon_coordinates, area, user_id } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     const result = await pool.query(`
       UPDATE farms 
-      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, updated_at = NOW() 
-      WHERE id = $5 
+      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, user_id = $5, updated_at = NOW() 
+      WHERE id = $6 
       RETURNING *
-    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, req.params.id]);
+    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, user_id || null, req.params.id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });

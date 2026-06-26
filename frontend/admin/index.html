@@ -262,6 +262,12 @@
             <div class="gis-sidebar-content" id="gis-sidebar-content">
               <!-- Farm list view -->
               <div id="gis-view-list">
+                <div class="field" style="margin-bottom: 12px; padding: 0 0 10px; border-bottom: 1px dashed var(--gray-200);">
+                  <label style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px;">Lọc theo Nông hộ / Khách hàng</label>
+                  <select id="filter-farm-user" onchange="filterFarmsByCustomer()" style="width:100%; padding:8px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none; background:#fff;">
+                    <option value="all">Tất cả khách hàng (nông hộ)</option>
+                  </select>
+                </div>
                 <div id="farms-list-container">
                   <div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div>
                 </div>
@@ -276,6 +282,12 @@
                 <div class="field">
                   <label>Mô tả</label>
                   <textarea id="farm-desc" rows="3" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
+                </div>
+                <div class="field">
+                  <label>Gán cho Nông hộ / Người dùng</label>
+                  <select id="farm-user-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+                    <option value="">— Chưa gán cho ai —</option>
+                  </select>
                 </div>
                 <div class="field">
                   <label>Ranh giới bản đồ</label>
