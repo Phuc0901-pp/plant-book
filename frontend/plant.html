@@ -2746,6 +2746,7 @@ function generateExportReport() {
   
   const plant = currentPlantData;
   const logs = plant.logs || [];
+  const hasMap = (plant.latitude && plant.longitude) || (plant.farm_boundary && plant.farm_boundary.coordinates);
   
   // Filter logs by date range & category
   const filteredLogs = logs.filter(log => {
@@ -2803,6 +2804,10 @@ function generateExportReport() {
     <head>
       <meta charset="UTF-8">
       <title>Báo cáo canh tác Cây #${plant.id}</title>
+      ${hasMap ? `
+        <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+        <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+      ` : ''}
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -2946,6 +2951,9 @@ function generateExportReport() {
           tr {
             page-break-inside: avoid;
           }
+          #print-map {
+            border: 1px solid #a0aec0 !important;
+          }
         }
       </style>
     </head>
@@ -2992,6 +3000,11 @@ function generateExportReport() {
           <span class="info-val">${plant.latitude && plant.longitude ? plant.latitude + ', ' + plant.longitude : '—'}</span>
         </div>
       </div>
+      
+      ${hasMap ? `
+        <div class="section-title">Bản đồ vị trí & Ranh giới trang trại</div>
+        <div id="print-map" style="width: 100%; height: 260px; border-radius: 8px; border: 1px solid #cbd5e0; margin-bottom: 30px;"></div>
+      ` : ''}
       
       <div class="section-title">Nhật ký hoạt động canh tác</div>
       <div style="margin-bottom: 6px; font-size: 13px; color: #4a5568;">
@@ -3073,9 +3086,102 @@ function generateExportReport() {
       
       <script>
         window.onload = function() {
-          setTimeout(function() {
-            window.print();
-          }, 300);
+          const hasMap = ${hasMap};
+          if (!hasMap) {
+            setTimeout(function() { window.print(); }, 300);
+            return;
+          }
+          
+          try {
+            mapboxgl.accessToken = '${mapboxgl.accessToken}';
+            const map = new mapboxgl.Map({
+              container: 'print-map',
+              style: 'mapbox://styles/mapbox/satellite-streets-v12',
+              center: [${parseFloat(plant.longitude || 106.3)}, ${parseFloat(plant.latitude || 12.5)}],
+              zoom: 15,
+              interactive: false,
+              attributionControl: false
+            });
+            
+            let hasPrinted = false;
+            const fallbackPrint = setTimeout(() => {
+              if (!hasPrinted) {
+                hasPrinted = true;
+                window.print();
+              }
+            }, 6000);
+            
+            map.on('load', () => {
+              const bounds = new mapboxgl.LngLatBounds();
+              let hasBounds = false;
+              
+              const farmBoundary = ${JSON.stringify(plant.farm_boundary || null)};
+              if (farmBoundary && farmBoundary.coordinates) {
+                map.addSource('farm-boundary', {
+                  type: 'geojson',
+                  data: { type: 'Feature', geometry: farmBoundary }
+                });
+                
+                map.addLayer({
+                  id: 'farm-boundary-fill',
+                  type: 'fill',
+                  source: 'farm-boundary',
+                  paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.15 }
+                });
+                
+                map.addLayer({
+                  id: 'farm-boundary-line',
+                  type: 'line',
+                  source: 'farm-boundary',
+                  paint: { 'line-color': '#22c55e', 'line-width': 2 }
+                });
+                
+                const coords = farmBoundary.coordinates[0];
+                coords.forEach(coord => { bounds.extend(coord); });
+                hasBounds = true;
+              }
+              
+              const lat = ${plant.latitude || 'null'};
+              const lng = ${plant.longitude || 'null'};
+              if (lat && lng) {
+                const el = document.createElement('div');
+                el.style.width = '24px';
+                el.style.height = '24px';
+                el.style.background = '#22c55e';
+                el.style.border = '2px solid white';
+                el.style.borderRadius = '50%';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                el.innerHTML = '<span style="font-size: 11px;">🌱</span>';
+                
+                new mapboxgl.Marker({ element: el })
+                  .setLngLat([lng, lat])
+                  .addTo(map);
+                  
+                bounds.extend([lng, lat]);
+                hasBounds = true;
+              }
+              
+              if (hasBounds) {
+                map.fitBounds(bounds, { padding: 40, animate: false });
+              }
+              
+              map.once('idle', () => {
+                setTimeout(() => {
+                  if (!hasPrinted) {
+                    hasPrinted = true;
+                    clearTimeout(fallbackPrint);
+                    window.print();
+                  }
+                }, 800);
+              });
+            });
+          } catch (e) {
+            console.error(e);
+            setTimeout(function() { window.print(); }, 300);
+          }
         }
       <\/script>
     </body>
