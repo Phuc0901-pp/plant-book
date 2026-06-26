@@ -150,6 +150,9 @@
         <i class="fa fa-sliders"></i> Cấu hình
       </div>
       <div class="nav-section">Hệ thống</div>
+      <div class="nav-item" onclick="showPage('users')">
+        <i class="fa fa-users"></i> Người dùng
+      </div>
       <div class="nav-item" onclick="showPage('media')">
         <i class="fa fa-images"></i> Thư viện media
       </div>
@@ -436,6 +439,37 @@
         </div>
       </div>
 
+      <!-- ── Users management ── -->
+      <div class="page-section" id="page-users">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-users" style="color:var(--green)"></i> Quản lý người dùng & nông hộ</h3>
+            <button class="btn btn-primary" onclick="openUserModal()">
+              <i class="fa fa-plus"></i> Thêm người dùng mới
+            </button>
+          </div>
+          <div class="search-bar">
+            <input type="text" id="user-search" placeholder="🔍 Tìm theo tên hoặc email..." oninput="filterUsers()">
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Họ và tên</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Ngày tạo</th>
+                <th style="width:150px">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="users-table">
+              <tr>
+                <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </main>
 </div>
@@ -708,6 +742,51 @@
   </div>
 </div>
 
+<!-- ════════════ USER MODAL ════════════ -->
+<div class="modal-overlay" id="user-modal" style="display:none" onclick="if(event.target===this)closeUserModal()">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <h2 id="user-modal-title"><i class="fa-solid fa-user-plus" style="color:var(--green)"></i> Thêm người dùng mới</h2>
+      <button class="modal-close" onclick="closeUserModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-user-id">
+      
+      <div class="field">
+        <label>Họ và tên *</label>
+        <input type="text" id="f-user-name" placeholder="VD: Nguyễn Văn A, Trần Thị B...">
+      </div>
+      
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" id="f-user-email" placeholder="VD: farmer@tanbaocorp.vn...">
+      </div>
+      
+      <div class="field">
+        <label id="f-user-pass-label">Mật khẩu *</label>
+        <input type="password" id="f-user-pass" placeholder="••••••••">
+        <small id="f-user-pass-help" style="display:none; font-size:11px; color:var(--gray-400); margin-top:4px;">
+          Để trống nếu không muốn thay đổi mật khẩu
+        </small>
+      </div>
+      
+      <div class="field">
+        <label>Vai trò *</label>
+        <select id="f-user-role" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="user">Người dùng / Nông hộ</option>
+          <option value="admin">Quản trị viên</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>
+      <button class="btn btn-primary" id="user-save-btn" onclick="saveUser()">
+        <span id="user-save-text"><i class="fa fa-floppy-disk"></i> Lưu người dùng</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:none">
   <div style="background:#1f2937;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;
@@ -723,6 +802,7 @@
   <script src="/admin/js/schemas.js"></script>
   <script src="/admin/js/plants.js"></script>
   <script src="/admin/js/gis.js"></script>
+  <script src="/admin/js/users.js"></script>
   <script src="/admin/js/app.js"></script>
 </body>
 </html>

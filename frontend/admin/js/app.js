@@ -27,7 +27,7 @@ function showPage(page) {
   if (event && event.currentTarget) {
     event.currentTarget.classList.add('active');
   }
-  const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình', media:'Thư viện Media', gis:'Quản lý GIS' };
+  const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình', media:'Thư viện Media', gis:'Quản lý GIS', users:'Quản lý người dùng' };
   document.getElementById('page-title').textContent = titles[page] || page;
 
   // Auto-close mobile sidebar
@@ -45,6 +45,7 @@ function showPage(page) {
     loadCareConfigs();
   }
   if (page === 'gis') initGisPage();
+  if (page === 'users') loadUsers();
 }
 
 function toggleMobileSidebar() {
