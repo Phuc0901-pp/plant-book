@@ -17,7 +17,225 @@ let allPlants = [];
 let allRecentLogs = [];
 let currentDashboardFilter = 'all';
 
-// ── Helpers ─────────────────────────────────────────────
+// ── Helpers & Translation ───────────────────────────────
+
+const CROP_TRANSLATIONS = {
+  // Trái cây / Fruits
+  "sầu riêng": "durian",
+  "cà phê": "coffee",
+  "ca cao": "cacao",
+  "bơ": "avocado",
+  "mít": "jackfruit",
+  "điều": "cashew",
+  "cao su": "rubber",
+  "lúa nước": "rice",
+  "lúa": "rice",
+  "khoai tây": "potato",
+  "khoai lang": "sweet potato",
+  "ngô": "corn",
+  "bắp": "corn",
+  "tiêu": "pepper",
+  "hồ tiêu": "pepper",
+  "chè": "tea",
+  "trà": "tea",
+  "cam": "orange",
+  "quýt": "mandarin",
+  "bưởi": "pomelo",
+  "chanh": "lemon",
+  "xoài": "mango",
+  "chuối": "banana",
+  "nhãn": "longan",
+  "vải": "lychee",
+  "vải thiều": "lychee",
+  "chôm chôm": "rambutan",
+  "măng cụt": "mangosteen",
+  "dừa": "coconut",
+  "thanh long": "dragonfruit",
+  "đu đủ": "papaya",
+  "dứa": "pineapple",
+  "thơm": "pineapple",
+  "khóm": "pineapple",
+  "ổi": "guava",
+  "mận": "plum",
+  "đào": "peach",
+  "na": "custard apple",
+  "mãng cầu": "custard apple",
+  "mãng cầu xiêm": "soursop",
+  "hồng": "persimmon",
+  "táo": "apple",
+  "nho": "grape",
+  "dâu tây": "strawberry",
+  "dưa hấu": "watermelon",
+  "dưa lưới": "cantaloupe",
+  "ớt": "chili",
+  "tỏi": "garlic",
+  "hành": "onion",
+  "hành tây": "onion",
+  "hành lá": "scallion",
+  "gừng": "ginger",
+  "nghệ": "turmeric",
+  "sả": "lemongrass",
+  "sen": "lotus",
+  "khoai mì": "cassava",
+  "sắn": "cassava",
+  "mắc ca": "macadamia",
+  "macca": "macadamia",
+  "hạt điều": "cashew",
+  "muống": "water spinach",
+  "rau muống": "water spinach",
+  "cải": "cabbage",
+  "rau cải": "cabbage",
+  "xà lách": "lettuce",
+  "rau xà lách": "lettuce",
+  "cà chua": "tomato",
+  "cà tím": "eggplant",
+  "dưa leo": "cucumber",
+  "dưa chuột": "cucumber",
+  "đậu": "bean",
+  "đậu nành": "soybean",
+  "đậu tương": "soybean",
+  "đậu phộng": "peanut",
+  "lạc": "peanut",
+  "mướp": "luffa",
+  "bầu": "gourd",
+  "bí": "squash",
+  "bí đỏ": "pumpkin",
+  "bí ngô": "pumpkin",
+  "khổ qua": "bitter melon",
+  "mướp đắng": "bitter melon",
+
+  // Không dấu / Diacritic-free
+  "sau rieng": "durian",
+  "ca phe": "coffee",
+  "ca-phe": "coffee",
+  "ca phay": "coffee",
+  "ca cao": "cacao",
+  "bo": "avocado",
+  "mit": "jackfruit",
+  "dieu": "cashew",
+  "cao su": "rubber",
+  "lua": "rice",
+  "lua nuoc": "rice",
+  "khoai tay": "potato",
+  "khoai lang": "sweet potato",
+  "ngo": "corn",
+  "bap": "corn",
+  "tieu": "pepper",
+  "ho tieu": "pepper",
+  "che": "tea",
+  "tra": "tea",
+  "cam": "orange",
+  "quyt": "mandarin",
+  "buoi": "pomelo",
+  "chanh": "lemon",
+  "xoai": "mango",
+  "chuoi": "banana",
+  "nhan": "longan",
+  "vai": "lychee",
+  "vai thieu": "lychee",
+  "chom chom": "rambutan",
+  "mang cut": "mangosteen",
+  "dua": "coconut",
+  "thanh long": "dragonfruit",
+  "du du": "papaya",
+  "dua": "pineapple",
+  "thom": "pineapple",
+  "khom": "pineapple",
+  "oi": "guava",
+  "man": "plum",
+  "dao": "peach",
+  "na": "custard apple",
+  "mang cau": "custard apple",
+  "mang cau xiem": "soursop",
+  "hong": "persimmon",
+  "tao": "apple",
+  "nho": "grape",
+  "dau tay": "strawberry",
+  "dua hau": "watermelon",
+  "dua luoi": "cantaloupe",
+  "ot": "chili",
+  "toi": "garlic",
+  "hanh": "onion",
+  "hanh tay": "onion",
+  "hanh la": "scallion",
+  "gung": "ginger",
+  "nghe": "turmeric",
+  "sa": "lemongrass",
+  "sen": "lotus",
+  "khoai mi": "cassava",
+  "san": "cassava",
+  "mac ca": "macadamia",
+  "macca": "macadamia",
+  "hat dieu": "cashew",
+  "muong": "water spinach",
+  "rau muong": "water spinach",
+  "cai": "cabbage",
+  "rau cai": "cabbage",
+  "xa lach": "lettuce",
+  "rau xa lach": "lettuce",
+  "ca chua": "tomato",
+  "ca tim": "eggplant",
+  "dua leo": "cucumber",
+  "dua chuot": "cucumber",
+  "dau": "bean",
+  "dau nanh": "soybean",
+  "dau tuong": "soybean",
+  "dau phong": "peanut",
+  "lac": "peanut",
+  "muop": "luffa",
+  "bau": "gourd",
+  "bi": "squash",
+  "bi do": "pumpkin",
+  "bi ngo": "pumpkin",
+  "kho qua": "bitter melon",
+  "muop dang": "bitter melon"
+};
+
+function removeDiacritics(str) {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d");
+}
+
+async function translateCropName(viName) {
+  const cleanVi = viName.trim().toLowerCase();
+  if (!cleanVi) return "";
+  
+  // 1. Check direct match in dictionary
+  if (CROP_TRANSLATIONS[cleanVi]) {
+    return CROP_TRANSLATIONS[cleanVi];
+  }
+  
+  // 2. Check normalized match (no diacritics)
+  const normVi = removeDiacritics(cleanVi);
+  if (CROP_TRANSLATIONS[normVi]) {
+    return CROP_TRANSLATIONS[normVi];
+  }
+  
+  // 3. Fallback to MyMemory translation API
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(viName)}&langpair=vi|en`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      let enText = data?.responseData?.translatedText;
+      if (enText) {
+        enText = enText.replace(/\./g, "").trim().toLowerCase();
+        if (enText.startsWith("the ")) {
+          enText = enText.slice(4).trim();
+        }
+        return enText;
+      }
+    }
+  } catch (e) {
+    console.error("MyMemory translation error:", e);
+  }
+  
+  // 4. Ultimate fallback: use the normalized name itself
+  return normVi.replace(/[^a-z0-9]/g, "_");
+}
+
 
 function api(path, opts = {}) {
   return fetch(API + path, {
@@ -836,10 +1054,28 @@ function removeSchemaField(i) {
 }
 
 async function saveSchema() {
-  const name = document.getElementById('s-name').value.trim();
+  let name = document.getElementById('s-name').value.trim();
   if (!name) { toast('Tên schema là bắt buộc!', 'error'); return; }
-  const body = { name, description: document.getElementById('s-desc').value.trim(), fields: schemaFields };
+  
+  const btn = document.querySelector('#schema-modal .modal-footer button.btn-primary');
+  let oldHtml = '';
+  if (btn) {
+    oldHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Đang dịch & lưu...';
+  }
+
   try {
+    // Automatically translate and append English name in parentheses if not already present
+    if (!/\([^)]+\)/.test(name)) {
+      const translated = await translateCropName(name);
+      if (translated) {
+        name = `${name}(${translated})`;
+        document.getElementById('s-name').value = name;
+      }
+    }
+
+    const body = { name, description: document.getElementById('s-desc').value.trim(), fields: schemaFields };
     if (editingSchemaId) {
       await api(`/schemas/${editingSchemaId}`, { method: 'PUT', body: JSON.stringify(body) });
     } else {
@@ -851,6 +1087,11 @@ async function saveSchema() {
     loadSchemasDropdown();
   } catch (err) {
     toast('Lỗi: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = oldHtml;
+    }
   }
 }
 
