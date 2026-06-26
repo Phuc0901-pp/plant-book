@@ -1,0 +1,166 @@
+
+  /* ── Zoom-dependent Dot Styling ── */
+  .low-zoom .plant-marker-wrap {
+    width: 12px;
+    height: 12px;
+  }
+  .low-zoom .plant-id-marker {
+    width: 10px;
+    height: 10px;
+    border-width: 1px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .low-zoom .plant-id-marker span {
+    display: none;
+  }
+
+  /* ── Custom Plant Marker ── */
+  .plant-marker-wrap {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .plant-marker-wrap:hover {
+    z-index: 9999;
+  }
+  .plant-id-marker {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  .plant-id-marker:hover {
+    transform: scale(1.25);
+  }
+  .plant-id-marker.health-tot {
+    background: #10b981;
+  }
+  .plant-id-marker.health-watch {
+    background: #f59e0b;
+  }
+  .plant-id-marker.health-sick {
+    background: #ef4444;
+  }
+  .plant-id-marker.health-default {
+    background: #3b82f6;
+  }
+  .plant-id-marker.filtered-out {
+    opacity: 0.15;
+  }
+
+  /* ── GIS Section ── */
+  .gis-container {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 120px);
+    align-items: stretch;
+  }
+  .gis-sidebar {
+    width: 340px;
+    min-width: 340px;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .gis-sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--gray-50);
+  }
+  .gis-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .gis-map-container {
+    flex: 1;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--gray-200);
+  }
+  .gis-map {
+    width: 100%;
+    height: 100%;
+  }
+  .farm-item {
+    padding: 12px;
+    border: 1.5px solid var(--gray-100);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: 0.15s;
+    background: #fff;
+  }
+  .farm-item:hover, .farm-item.active {
+    border-color: var(--green);
+    background: var(--green-light);
+  }
+  .farm-name {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--green-dark);
+  }
+  .farm-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .farm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.04);
+    padding-top: 6px;
+  }
+  .gis-back-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: var(--gray-600);
+    cursor: pointer;
+    margin-right: 10px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gis-back-btn:hover {
+    color: var(--text-main);
+  }
+  .map-tooltip {
+    padding: 4px 6px;
+  }
+  .map-tooltip h4 {
+    margin-bottom: 6px;
+    font-size: 13px;
+    border-bottom: 1.5px solid var(--gray-100);
+    padding-bottom: 4px;
+  }
+  .map-tooltip p {
+    font-size: 11.5px;
+    margin-bottom: 3px;
+    color: var(--text-secondary);
+  }
