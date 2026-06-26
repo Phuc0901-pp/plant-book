@@ -1001,12 +1001,43 @@ async function openSchemaModal(id = null) {
   document.getElementById('s-name').value = '';
   document.getElementById('s-desc').value = '';
 
+  // Reset image upload fields
+  const fileInput = document.getElementById('s-image');
+  if (fileInput) fileInput.value = '';
+  document.getElementById('schema-image-preview-container').style.display = 'none';
+  document.getElementById('schema-image-filename').textContent = 'Chưa chọn ảnh';
+
   if (id) {
     try {
       const schema = await api(`/schemas/${id}`);
-      document.getElementById('s-name').value = schema.name || '';
+      const name = schema.name || '';
+      document.getElementById('s-name').value = name;
       document.getElementById('s-desc').value = schema.description || '';
       schemaFields = schema.fields || [];
+
+      // Check if schema name has English translation in parentheses for cover image preview
+      const match = name.match(/\(([^)]+)\)/);
+      if (match && match[1]) {
+        const englishName = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const imgEl = document.getElementById('schema-image-preview');
+        imgEl.src = `/assets/crop/${englishName}.png`;
+        imgEl.setAttribute('data-ext-idx', '0');
+        imgEl.onerror = function() {
+          const exts = ['.jpg', '.jpeg', '.webp', '.gif'];
+          let extIdx = parseInt(this.getAttribute('data-ext-idx') || '0');
+          if (extIdx < exts.length) {
+            const nextExt = exts[extIdx];
+            this.setAttribute('data-ext-idx', extIdx + 1);
+            this.src = `/assets/crop/${englishName}${nextExt}`;
+          } else {
+            // Failed to load any extension, hide preview
+            document.getElementById('schema-image-preview-container').style.display = 'none';
+            document.getElementById('schema-image-filename').textContent = 'Chưa có ảnh đại diện';
+          }
+        };
+        document.getElementById('schema-image-preview-container').style.display = 'flex';
+        document.getElementById('schema-image-filename').textContent = 'Đã có ảnh (assets)';
+      }
     } catch (err) { toast('Lỗi: ' + err.message, 'error'); return; }
   }
   renderSchemaFields();
@@ -1017,6 +1048,35 @@ function closeSchemaModal() {
   document.getElementById('schema-modal').style.display = 'none';
   editingSchemaId = null;
   schemaFields = [];
+  const imgInput = document.getElementById('s-image');
+  if (imgInput) imgInput.value = '';
+  document.getElementById('schema-image-preview-container').style.display = 'none';
+  document.getElementById('schema-image-filename').textContent = 'Chưa chọn ảnh';
+}
+
+function previewSchemaImage(input) {
+  const container = document.getElementById('schema-image-preview-container');
+  const img = document.getElementById('schema-image-preview');
+  const label = document.getElementById('schema-image-filename');
+  
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    label.textContent = file.name;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      img.src = e.target.result;
+      img.onerror = null; // Clear error handler for local preview
+      container.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function removeSelectedSchemaImage() {
+  document.getElementById('s-image').value = '';
+  document.getElementById('schema-image-preview-container').style.display = 'none';
+  document.getElementById('schema-image-filename').textContent = 'Chưa chọn ảnh';
 }
 
 function renderSchemaFields() {
@@ -1081,6 +1141,20 @@ async function saveSchema() {
     } else {
       await api('/schemas', { method: 'POST', body: JSON.stringify(body) });
     }
+
+    // Upload crop image if selected
+    const fileInput = document.getElementById('s-image');
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      const fd = new FormData();
+      fd.append('image', fileInput.files[0]);
+      
+      const match = name.match(/\(([^)]+)\)/);
+      const englishName = (match && match[1]) ? match[1].trim() : 'unknown';
+      fd.append('englishName', englishName);
+
+      await apiForm('/schemas/upload-image', fd);
+    }
+
     toast('Đã lưu schema!');
     closeSchemaModal();
     loadSchemas();

@@ -2,6 +2,35 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer storage to write directly to frontend/assets/crop/
+const cropStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dest = path.join(__dirname, '../../frontend/assets/crop');
+    cb(null, dest);
+  },
+  filename: (req, file, cb) => {
+    // We expect req.body.englishName to contain the english crop name (e.g. 'durian')
+    const englishName = (req.body.englishName || 'unknown').trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, englishName + ext);
+  }
+});
+
+const uploadCrop = multer({
+  storage: cropStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|webp/;
+    const ext = path.extname(file.originalname).toLowerCase().slice(1);
+    if (allowed.test(ext)) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận ảnh (jpeg, jpg, png, gif, webp).'));
+  }
+});
+
 
 // GET all schemas
 router.get('/', auth, async (req, res) => {
@@ -71,6 +100,39 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'Đã xóa.' });
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
+// POST upload crop image
+router.post('/upload-image', auth, uploadCrop.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không nhận được file ảnh.' });
+    }
+    
+    // To prevent extension conflicts (e.g., if durian.png exists, and we upload durian.jpg, delete durian.png)
+    const englishName = (req.body.englishName || 'unknown').trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const uploadedExt = path.extname(req.file.originalname).toLowerCase();
+    const destDir = path.join(__dirname, '../../frontend/assets/crop');
+    
+    const possibleExts = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+    possibleExts.forEach(ext => {
+      if (ext !== uploadedExt) {
+        const oldFile = path.join(destDir, englishName + ext);
+        if (fs.existsSync(oldFile)) {
+          try {
+            fs.unlinkSync(oldFile);
+          } catch (e) {
+            console.error('Error deleting old crop image:', e);
+          }
+        }
+      }
+    });
+
+    res.json({ message: 'Tải ảnh loại cây lên thành công.', filename: req.file.filename });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Lỗi upload ảnh loại cây.' });
   }
 });
 

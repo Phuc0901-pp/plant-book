@@ -907,6 +907,20 @@
         <textarea id="s-desc" placeholder="Mô tả về loại cây và các thông tin theo dõi..."></textarea>
       </div>
       <div class="field">
+        <label>Ảnh đại diện loại cây (Crop Image)</label>
+        <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
+          <input type="file" id="s-image" accept="image/*" style="display:none;" onchange="previewSchemaImage(this)">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('s-image').click()" style="padding:8px 12px; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fa fa-image"></i> Chọn ảnh đại diện
+          </button>
+          <div id="schema-image-preview-container" style="display:none; align-items:center; gap:8px;">
+            <img id="schema-image-preview" src="" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--gray-300);">
+            <button class="btn btn-danger btn-sm" type="button" onclick="removeSelectedSchemaImage()" style="padding:4px 8px; font-size:11px;">Xóa</button>
+          </div>
+          <span id="schema-image-filename" style="font-size:12px; color:var(--gray-400);">Chưa chọn ảnh</span>
+        </div>
+      </div>
+      <div class="field">
         <label>Các trường thông tin</label>
         <div class="schema-fields-list" id="schema-fields-list"></div>
         <div class="add-field-row" style="margin-top:10px">
