@@ -785,7 +785,9 @@
         <div class="form-row">
           <div class="field">
             <label>Loại cây *</label>
-            <input type="text" id="f-plant-type" placeholder="VD: Lúa, Cà phê, Sầu riêng...">
+            <select id="f-plant-type" onchange="onPlantTypeChange()">
+              <option value="">— Chọn loại cây —</option>
+            </select>
           </div>
           <div class="field">
             <label>Giống cây</label>
@@ -826,12 +828,7 @@
             </div>
           </div>
         </div>
-        <div class="field">
-          <label>Cấu hình loại cây (Schema)</label>
-          <select id="f-schema-id">
-            <option value="">— Không dùng schema —</option>
-          </select>
-        </div>
+        <input type="hidden" id="f-schema-id">
         <div class="field">
           <label>Công khai URL</label>
           <select id="f-is-public">
@@ -958,7 +955,9 @@
       <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
         <div class="field">
           <label>Loại cây *</label>
-          <input type="text" id="csv-plant-type" placeholder="VD: Sầu Riêng, Ca Cao...">
+          <select id="csv-plant-type" onchange="onCsvPlantTypeChange()" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <option value="">— Chọn loại cây —</option>
+          </select>
         </div>
         <div class="field">
           <label>Giống cây</label>
@@ -983,12 +982,7 @@
       </div>
 
       <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-        <div class="field">
-          <label>Schema loại cây (nếu có)</label>
-          <select id="csv-schema-id" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
-            <!-- Will populate dynamically -->
-          </select>
-        </div>
+        <input type="hidden" id="csv-schema-id">
         <div class="field">
           <label>Trạng thái công khai</label>
           <select id="csv-is-public" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">

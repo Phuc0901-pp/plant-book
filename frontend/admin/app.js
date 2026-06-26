@@ -738,10 +738,40 @@ async function loadSchemasDropdown() {
   try {
     const schemas = await api('/schemas');
     schemasCache = schemas;
-    const sel = document.getElementById('f-schema-id');
-    sel.innerHTML = '<option value="">— Không dùng schema —</option>' +
-      schemas.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
-  } catch { /* ignore */ }
+    
+    // Populate f-plant-type select
+    const pTypeSel = document.getElementById('f-plant-type');
+    if (pTypeSel) {
+      pTypeSel.innerHTML = '<option value="">— Chọn loại cây —</option>' +
+        schemas.map(s => `<option value="${esc(s.name)}" data-schema-id="${s.id}">${esc(s.name)}</option>`).join('');
+    }
+    
+    // Populate csv-plant-type select
+    const csvTypeSel = document.getElementById('csv-plant-type');
+    if (csvTypeSel) {
+      csvTypeSel.innerHTML = '<option value="">— Chọn loại cây —</option>' +
+        schemas.map(s => `<option value="${esc(s.name)}" data-schema-id="${s.id}">${esc(s.name)}</option>`).join('');
+    }
+  } catch (err) {
+    console.error('Lỗi tải schemas dropdown:', err);
+  }
+}
+
+function onPlantTypeChange() {
+  const pTypeSel = document.getElementById('f-plant-type');
+  const selectedOpt = pTypeSel.options[pTypeSel.selectedIndex];
+  const schemaId = selectedOpt ? selectedOpt.getAttribute('data-schema-id') : '';
+  
+  document.getElementById('f-schema-id').value = schemaId || '';
+  renderExtraFields();
+}
+
+function onCsvPlantTypeChange() {
+  const csvTypeSel = document.getElementById('csv-plant-type');
+  const selectedOpt = csvTypeSel.options[csvTypeSel.selectedIndex];
+  const schemaId = selectedOpt ? selectedOpt.getAttribute('data-schema-id') : '';
+  
+  document.getElementById('csv-schema-id').value = schemaId || '';
 }
 
 async function openSchemaModal(id = null) {

@@ -1530,6 +1530,47 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Dynamic Crop image loading retry with multiple extensions
+function handleCropImageError(img) {
+  if (img.getAttribute('data-is-cover') === 'true') {
+    fallbackToTreeIcon(img);
+    return;
+  }
+  
+  const extensions = ['.jpg', '.jpeg', '.webp', '.png'];
+  let extIdx = parseInt(img.getAttribute('data-ext-idx') || '0');
+  const base = img.getAttribute('data-base');
+  const currentSrc = img.src || '';
+  let nextExt = '';
+  
+  while (extIdx < extensions.length) {
+    const ext = extensions[extIdx];
+    extIdx++;
+    img.setAttribute('data-ext-idx', extIdx);
+    if (!currentSrc.endsWith(ext)) {
+      nextExt = ext;
+      break;
+    }
+  }
+  
+  if (nextExt) {
+    img.src = base + nextExt;
+  } else {
+    fallbackToTreeIcon(img);
+  }
+}
+
+function fallbackToTreeIcon(img) {
+  img.style.display = 'none';
+  const container = img.parentElement;
+  if (container && !container.querySelector('.no-cover-icon')) {
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'no-cover-icon';
+    iconDiv.innerHTML = '<i class="fa-solid fa-tree"></i>';
+    container.insertBefore(iconDiv, img);
+  }
+}
+
 // Lightbox controller
 function openLightbox(url, type) {
   document.getElementById('lightbox-content').innerHTML = type === 'video'
@@ -1604,9 +1645,19 @@ async function renderPlant(plant) {
   // Helper to resolve crop cover image from variety or type
   function getCropImageSrc(p) {
     if (p.cover_image) return esc(p.cover_image);
-    const term = p.plant_variety || p.plant_type;
+    const term = p.plant_variety || p.plant_type || '';
     if (!term) return '';
-    const normalized = term
+    
+    // Extract text in parentheses, e.g. "Sầu riêng(durian)" -> "durian"
+    const match = term.match(/\(([^)]+)\)/);
+    let baseName = '';
+    if (match && match[1]) {
+      baseName = match[1].trim();
+    } else {
+      baseName = term;
+    }
+    
+    const normalized = baseName
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -1614,7 +1665,7 @@ async function renderPlant(plant) {
       .replace(/[^a-z0-9]/g, "_")
       .replace(/_+/g, "_")
       .replace(/^_+|_+$/g, "");
-    return `/assets/crop/${normalized}.png`;
+    return `/assets/crop/${normalized}`;
   }
 
   // Helper to get short summary preview for logs timeline
@@ -1655,7 +1706,7 @@ async function renderPlant(plant) {
       <div class="glass-panel hero-card">
         <div class="cover-image-container">
           ${(plant.cover_image || plant.plant_variety || plant.plant_type)
-            ? `<img src="${getCropImageSrc(plant)}" alt="${esc(plant.plant_type)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            ? `<img src="${getCropImageSrc(plant) + (plant.cover_image ? '' : '.png')}" alt="${esc(plant.plant_type)}" data-base="${getCropImageSrc(plant)}" data-ext-idx="0" data-is-cover="${plant.cover_image ? 'true' : 'false'}" onerror="handleCropImageError(this)">
                <div class="no-cover-icon" style="display: none;"><i class="fa-solid fa-tree"></i></div>`
             : `<div class="no-cover-icon"><i class="fa-solid fa-tree"></i></div>`
           }
