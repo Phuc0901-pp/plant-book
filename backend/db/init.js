@@ -117,6 +117,7 @@ async function initDB() {
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS latitude NUMERIC;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS longitude NUMERIC;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS tree_code VARCHAR(100);
     `);
 
     // Alter farms table to assign a user/farmer

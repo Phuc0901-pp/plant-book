@@ -355,9 +355,15 @@
               <i class="fa fa-plus"></i> Thêm cây mới
             </button>
           </div>
-          <div class="search-bar">
-            <input type="text" id="plant-search" placeholder="🔍 Tìm theo tên, giống, vị trí..." oninput="loadPlants()">
-            <select id="plant-filter-health" onchange="loadPlants()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:inherit;outline:none">
+          <div class="search-bar" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input type="text" id="plant-search" placeholder="🔍 Tìm theo tên, giống, vị trí..." oninput="loadPlants()" style="flex:1; min-width:200px;">
+            <select id="plant-filter-user" onchange="onPlantUserFilterChange()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;background:#fff;">
+              <option value="all">Tất cả khách hàng (nông hộ)</option>
+            </select>
+            <select id="plant-filter-farm" onchange="loadPlants()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;background:#fff;">
+              <option value="all">Tất cả trang trại</option>
+            </select>
+            <select id="plant-filter-health" onchange="loadPlants()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;background:#fff;">
               <option value="">Tất cả sức khỏe</option>
               <option>Tốt</option><option>Bình thường</option>
               <option>Cần chú ý</option><option>Bệnh</option>
@@ -365,10 +371,17 @@
           </div>
           <table>
             <thead><tr>
-              <th>Ảnh</th><th>Loại cây / Giống</th><th>Tuổi cây</th>
-              <th>Sức khỏe</th><th>Vị trí</th><th>Công khai</th><th>Thao tác</th>
+              <th>Ảnh</th>
+              <th>Mã cây</th>
+              <th>Loại & Giống</th>
+              <th>Nông hộ phụ trách</th>
+              <th>Trang trại</th>
+              <th>Tuổi cây</th>
+              <th>Sức khỏe</th>
+              <th>Vị trí</th>
+              <th>Thao tác</th>
             </tr></thead>
-            <tbody id="plants-table"><tr><td colspan="7"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
+            <tbody id="plants-table"><tr><td colspan="9"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -549,21 +562,27 @@
       <div class="tab-pane active" id="tab-info">
         <div class="form-row">
           <div class="field">
+            <label>Mã số cây (ID trong trang trại)</label>
+            <input type="text" id="f-tree-code" placeholder="VD: 01, A-02, 105...">
+          </div>
+          <div class="field">
             <label>Loại cây *</label>
             <select id="f-plant-type" onchange="onPlantTypeChange()">
               <option value="">— Chọn loại cây —</option>
             </select>
           </div>
+        </div>
+        <div class="form-row">
           <div class="field">
             <label>Giống cây</label>
             <input type="text" id="f-plant-variety" placeholder="VD: IR50404, Thiên Lý...">
           </div>
-        </div>
-        <div class="form-row">
           <div class="field">
             <label>Tuổi cây</label>
             <input type="text" id="f-plant-age" placeholder="VD: 2 năm, 6 tháng...">
           </div>
+        </div>
+        <div class="form-row">
           <div class="field">
             <label>Tình trạng sức khỏe</label>
             <select id="f-health-status">
@@ -573,10 +592,10 @@
               <option>Bệnh</option>
             </select>
           </div>
-        </div>
-        <div class="field">
-          <label>Vị trí / Lô trồng</label>
-          <input type="text" id="f-location" placeholder="VD: Lô A1 - Vườn Tây, Tọa độ 10.xxx...">
+          <div class="field">
+            <label>Vị trí / Lô trồng</label>
+            <input type="text" id="f-location" placeholder="VD: Lô A1 - Vườn Tây, Tọa độ 10.xxx...">
+          </div>
         </div>
         <div class="form-row">
           <div class="field">

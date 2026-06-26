@@ -2,16 +2,21 @@
 
 async function loadPlants() {
   const search = document.getElementById('plant-search')?.value || '';
+  const user = document.getElementById('plant-filter-user')?.value || 'all';
+  const farm = document.getElementById('plant-filter-farm')?.value || 'all';
   const health = document.getElementById('plant-filter-health')?.value || '';
+  
   const params = new URLSearchParams();
   if (search) params.append('search', search);
+  if (user && user !== 'all') params.append('user_id', user);
+  if (farm && farm !== 'all') params.append('farm_id', farm);
   if (health) params.append('health_status', health);
 
   try {
     const plants = await api(`/plants?${params}`);
     const tbody = document.getElementById('plants-table');
     if (!plants.length) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa fa-seedling"></i><p>Không có cây nào</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fa fa-seedling"></i><p>Không có cây nào</p></div></td></tr>';
       return;
     }
     tbody.innerHTML = plants.map(p => `
@@ -19,16 +24,18 @@ async function loadPlants() {
         <td>${p.cover_image ? `<img src="${esc(p.cover_image)}" class="plant-cover" style="width:44px;height:44px">` :
           `<div class="plant-cover" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--green)"><i class="fa-solid fa-seedling"></i></div>`}</td>
         <td>
+          <strong>${esc(p.tree_code || '—')}</strong>
+          <br><small style="color:var(--gray-400)">ID: ${p.id}</small>
+        </td>
+        <td>
           <strong>${esc(p.plant_type)}</strong>
           ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
         </td>
+        <td>${esc(p.farm_owner_name || '—')}</td>
+        <td>${esc(p.farm_name || '—')}</td>
         <td>${esc(p.plant_age||'—')}</td>
         <td>${healthBadge(p.health_status)}</td>
         <td>${esc(p.location||'—')}</td>
-        <td>${p.is_public
-          ? `<span class="badge badge-green">Công khai</span>`
-          : `<span class="badge badge-gray">Riêng tư</span>`}
-        </td>
         <td>
           <div class="actions-cell">
             <button class="btn btn-secondary btn-sm" onclick="openPlantModal(${p.id})" title="Chỉnh sửa">
@@ -49,6 +56,50 @@ async function loadPlants() {
   }
 }
 
+let _plantFiltersLoaded = false;
+async function initPlantFilters() {
+  if (_plantFiltersLoaded) return;
+  try {
+    const [users, farms] = await Promise.all([
+      api('/users'),
+      api('/farms')
+    ]);
+    window._allFarmsCache = farms;
+    
+    const userSelect = document.getElementById('plant-filter-user');
+    if (userSelect) {
+      userSelect.innerHTML = '<option value="all">Tất cả khách hàng (nông hộ)</option>' +
+        users.map(u => `<option value="${u.id}">${esc(u.full_name)} (${u.role === 'admin' ? 'Admin' : 'Nông hộ'})</option>`).join('');
+    }
+    
+    updatePlantFarmFilterDropdown(farms);
+    _plantFiltersLoaded = true;
+  } catch (err) {
+    console.error('Lỗi khởi tạo bộ lọc cây:', err);
+  }
+}
+
+function updatePlantFarmFilterDropdown(farms) {
+  const farmSelect = document.getElementById('plant-filter-farm');
+  if (farmSelect) {
+    farmSelect.innerHTML = '<option value="all">Tất cả trang trại</option>' +
+      farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  }
+}
+
+function onPlantUserFilterChange() {
+  const userId = document.getElementById('plant-filter-user').value;
+  const farms = window._allFarmsCache || [];
+  
+  if (userId === 'all') {
+    updatePlantFarmFilterDropdown(farms);
+  } else {
+    const filteredFarms = farms.filter(f => f.user_id == userId);
+    updatePlantFarmFilterDropdown(filteredFarms);
+  }
+  loadPlants();
+}
+
 async function openPlantModal(id = null) {
   editingPlantId = id;
   resetPlantForm();
@@ -63,6 +114,7 @@ async function openPlantModal(id = null) {
   if (id) {
     try {
       const plant = await api(`/plants/${id}`);
+      document.getElementById('f-tree-code').value = plant.tree_code || '';
       document.getElementById('f-plant-type').value = plant.plant_type || '';
       document.getElementById('f-plant-variety').value = plant.plant_variety || '';
       document.getElementById('f-plant-age').value = plant.plant_age || '';
@@ -97,7 +149,7 @@ function closePlantModal() {
 }
 
 function resetPlantForm() {
-  ['f-plant-type','f-plant-variety','f-plant-age','f-location','f-farm-id','f-latitude','f-longitude'].forEach(id => {
+  ['f-tree-code','f-plant-type','f-plant-variety','f-plant-age','f-location','f-farm-id','f-latitude','f-longitude'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -135,6 +187,7 @@ async function savePlant() {
   const extraData = collectExtraFields();
 
   const body = {
+    tree_code: document.getElementById('f-tree-code').value.trim(),
     plant_type,
     plant_variety: document.getElementById('f-plant-variety').value.trim(),
     plant_age: document.getElementById('f-plant-age').value.trim(),

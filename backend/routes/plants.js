@@ -31,9 +31,10 @@ function generateSlug(plantType) {
 
 router.get('/', auth, async (req, res) => {
   try {
-    const { search, health_status, plant_type } = req.query;
+    const { search, health_status, plant_type, user_id, farm_id } = req.query;
     let query = `
       SELECT p.*, ps.name as schema_name, u.full_name as creator_name,
+             f.name as farm_name, fu.full_name as farm_owner_name, fu.id as farm_owner_id,
              (SELECT COUNT(*) FROM plant_media pm WHERE pm.plant_id = p.id) as media_count,
              (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id) as log_count,
              TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước'), 'YYYY-MM-DD') as last_watered,
@@ -41,13 +42,15 @@ router.get('/', auth, async (req, res) => {
       FROM plants p
       LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
       LEFT JOIN users u ON u.id = p.created_by
+      LEFT JOIN farms f ON f.id = p.farm_id
+      LEFT JOIN users fu ON fu.id = f.user_id
       WHERE 1=1
     `;
     const params = [];
     let idx = 1;
 
     if (search) {
-      query += ` AND (p.plant_type ILIKE $${idx} OR p.plant_variety ILIKE $${idx} OR p.location ILIKE $${idx})`;
+      query += ` AND (p.plant_type ILIKE $${idx} OR p.plant_variety ILIKE $${idx} OR p.location ILIKE $${idx} OR p.tree_code ILIKE $${idx})`;
       params.push(`%${search}%`);
       idx++;
     }
@@ -59,6 +62,16 @@ router.get('/', auth, async (req, res) => {
     if (plant_type) {
       query += ` AND p.plant_type ILIKE $${idx}`;
       params.push(`%${plant_type}%`);
+      idx++;
+    }
+    if (user_id) {
+      query += ` AND f.user_id = $${idx}`;
+      params.push(parseInt(user_id));
+      idx++;
+    }
+    if (farm_id) {
+      query += ` AND p.farm_id = $${idx}`;
+      params.push(parseInt(farm_id));
       idx++;
     }
 
@@ -130,10 +143,10 @@ router.post('/batch', auth, async (req, res) => {
       const location = farm_id ? `Lô nhập CSV - STT ${stt}` : `Nhập CSV - STT ${stt}`;
 
       const resDb = await client.query(
-        `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+        `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
         [slug, schema_id || null, plant_type, plant_variety || '', plant_age || '', health_status || 'Tốt',
-         location, JSON.stringify({}), is_public !== false, farm_id || null, lat, lng, req.user.id]
+         location, JSON.stringify({}), is_public !== false, farm_id || null, lat, lng, req.user.id, stt]
       );
       inserted.push(resDb.rows[0].id);
     }
@@ -151,17 +164,17 @@ router.post('/batch', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude } = req.body;
+    const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code } = req.body;
     const slug = generateSlug(plant_type);
 
     const result = await pool.query(
-      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       [slug, schema_id || null, plant_type, plant_variety, plant_age, health_status || 'Tốt',
        location, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
-       req.user.id]
+       req.user.id, tree_code || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -172,16 +185,17 @@ router.post('/', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { plant_type, plant_variety, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude } = req.body;
+    const { plant_type, plant_variety, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude, tree_code } = req.body;
     const result = await pool.query(
       `UPDATE plants 
        SET plant_type=$1, plant_variety=$2, plant_age=$3, health_status=$4, location=$5, 
-           data=$6, is_public=$7, schema_id=$8, farm_id=$9, latitude=$10, longitude=$11, updated_at=NOW()
-       WHERE id=$12 RETURNING *`,
+           data=$6, is_public=$7, schema_id=$8, farm_id=$9, latitude=$10, longitude=$11, tree_code=$12, updated_at=NOW()
+       WHERE id=$13 RETURNING *`,
       [plant_type, plant_variety, plant_age, health_status, location,
        JSON.stringify(data || {}), is_public !== false, schema_id || null, farm_id || null,
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
+       tree_code || null,
        req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });

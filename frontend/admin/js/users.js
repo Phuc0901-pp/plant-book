@@ -164,6 +164,7 @@ async function saveUser() {
       });
       toast('Tạo tài khoản người dùng thành công!');
     }
+    window._plantFiltersLoaded = false;
     closeUserModal();
     loadUsers();
   } catch (err) {
@@ -185,6 +186,7 @@ async function deleteUser(id) {
   try {
     await api(`/users/${id}`, { method: 'DELETE' });
     toast('Đã xóa người dùng thành công.');
+    window._plantFiltersLoaded = false;
     loadUsers();
   } catch (err) {
     toast('Lỗi xóa người dùng: ' + err.message, 'error');

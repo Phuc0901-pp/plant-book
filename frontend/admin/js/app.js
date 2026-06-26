@@ -39,7 +39,9 @@ function showPage(page) {
   }
 
   if (page === 'dashboard') loadDashboard();
-  if (page === 'plants') loadPlants();
+  if (page === 'plants') {
+    initPlantFilters().then(() => loadPlants());
+  }
   if (page === 'schemas') {
     loadSchemas();
     loadCareConfigs();

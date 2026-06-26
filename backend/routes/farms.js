@@ -36,7 +36,7 @@ router.get('/:id', auth, async (req, res) => {
     const farm = farmResult.rows[0];
 
     const plantsResult = await pool.query(`
-      SELECT id, plant_type, plant_variety, health_status, latitude, longitude, cover_image, is_public, public_slug
+      SELECT id, plant_type, plant_variety, health_status, latitude, longitude, cover_image, is_public, public_slug, tree_code
       FROM plants 
       WHERE farm_id = $1 
       ORDER BY created_at DESC

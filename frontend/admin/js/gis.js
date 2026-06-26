@@ -167,7 +167,7 @@ function initDashboardMap(farms, plants) {
           else if (plant.health_status === 'Bệnh') healthClass = 'health-sick';
 
           el.className = `plant-id-marker ${healthClass}`;
-          el.innerHTML = `<span>${plant.id}</span>`;
+          el.innerHTML = `<span>${esc(plant.tree_code || plant.id)}</span>`;
           wrapper.appendChild(el);
 
           const marker = new mapboxgl.Marker(wrapper)
@@ -175,7 +175,7 @@ function initDashboardMap(farms, plants) {
             .setPopup(new mapboxgl.Popup({ offset: 25 })
               .setHTML(`
                 <div class="map-tooltip">
-                  <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${plant.id}: ${esc(plant.plant_type)}</h4>
+                  <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
                   ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                   <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                   <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
@@ -391,7 +391,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         else if (plant.health_status === 'Bệnh') healthClass = 'health-sick';
 
         el.className = `plant-id-marker ${healthClass}`;
-        el.innerHTML = `<span>${plant.id}</span>`;
+        el.innerHTML = `<span>${esc(plant.tree_code || plant.id)}</span>`;
         wrapper.appendChild(el);
 
         const marker = new mapboxgl.Marker(wrapper)
@@ -399,7 +399,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           .setPopup(new mapboxgl.Popup({ offset: 25 })
             .setHTML(`
               <div class="map-tooltip">
-                <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${plant.id}: ${esc(plant.plant_type)}</h4>
+                <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
                 ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                 <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                 <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
@@ -518,6 +518,7 @@ async function saveFarm() {
     drawControl.changeMode('simple_select');
     drawControl.deleteAll();
     
+    window._plantFiltersLoaded = false;
     await initGisPage();
     if (savedFarm && savedFarm.id) {
       selectFarm(savedFarm.id);
@@ -550,8 +551,8 @@ async function selectFarm(farmId) {
       listEl.innerHTML = farm.plants.map(p => `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--gray-50); border-radius:6px; font-size:12px; border:1px solid var(--gray-200);">
           <div>
-            <strong>${esc(p.plant_type)}</strong>
-            ${p.plant_variety ? `<span style="color:var(--gray-400)"> - ${esc(p.plant_variety)}</span>` : ''}
+            <strong>Cây ${esc(p.tree_code || p.id)}: ${esc(p.plant_type)}</strong>
+            ${p.plant_variety ? `<br><small style="color:var(--gray-400)">Giống: ${esc(p.plant_variety)}</small>` : ''}
           </div>
           <div style="display:flex; align-items:center;">
             ${healthBadge(p.health_status)}
@@ -632,6 +633,7 @@ async function deleteFarm() {
   try {
     await api(`/farms/${activeFarmId}`, { method: 'DELETE' });
     toast('Đã xóa trang trại thành công.');
+    window._plantFiltersLoaded = false;
     initGisPage();
   } catch (err) {
     toast('Lỗi xóa trang trại: ' + err.message, 'error');
