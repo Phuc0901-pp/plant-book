@@ -71,6 +71,25 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+router.get('/logs/recent', auth, async (req, res) => {
+  try {
+    const daysLimit = 3;
+    const result = await pool.query(
+      `SELECT pl.*, p.plant_type, p.plant_variety, p.location as plant_location, u.full_name as creator_name
+       FROM plant_logs pl
+       JOIN plants p ON pl.plant_id = p.id
+       LEFT JOIN users u ON pl.created_by = u.id
+       WHERE pl.log_date >= CURRENT_DATE - $1::integer
+       ORDER BY pl.log_date DESC, pl.id DESC`,
+      [daysLimit]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching recent logs:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải nhật ký canh tác.' });
+  }
+});
+
 router.get('/:id(\\d+)', auth, async (req, res) => {
   try {
     const plant = await pool.query(

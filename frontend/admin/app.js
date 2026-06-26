@@ -14,6 +14,7 @@ let dashboardMap = null;
 let dashboardMarkers = [];
 let allFarms = [];
 let allPlants = [];
+let allRecentLogs = [];
 let currentDashboardFilter = 'all';
 
 // ── Helpers ─────────────────────────────────────────────
@@ -169,13 +170,15 @@ function switchTab(el, tabId) {
 
 async function loadDashboard() {
   try {
-    const [plants, schemas, farms] = await Promise.all([
+    const [plants, schemas, farms, recentLogs] = await Promise.all([
       api('/plants'),
       api('/schemas'),
-      api('/farms')
+      api('/farms'),
+      api('/plants/logs/recent')
     ]);
     allPlants = plants;
     allFarms = farms;
+    allRecentLogs = recentLogs;
 
     const healthy = plants.filter(p => p.health_status === 'Tốt').length;
     const watch = plants.filter(p => ['Cần chú ý','Bệnh'].includes(p.health_status)).length;
@@ -193,37 +196,56 @@ async function loadDashboard() {
     // Load Overview map
     initDashboardMap(farms, plants);
 
-    // Initial render of dashboard table
-    renderDashboardPlantsTable(plants);
+    // Initial render of dashboard logs table
+    renderDashboardLogsTable(recentLogs);
   } catch (err) {
     toast('Lỗi tải dashboard: ' + err.message, 'error');
   }
 }
 
-function renderDashboardPlantsTable(filteredPlants) {
-  const tbody = document.getElementById('dashboard-plants-table');
+function renderDashboardLogsTable(logs) {
+  const tbody = document.getElementById('dashboard-logs-table');
   if (!tbody) return;
-  const recent = filteredPlants.slice(0, 8);
-  if (!recent.length) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa fa-seedling"></i><p>Không tìm thấy cây nào khớp</p></div></td></tr>';
+
+  const filteredLogs = logs.filter(log => {
+    const plant = allPlants.find(p => p.id === log.plant_id);
+    if (!plant) return false;
+    return matchesFilter(plant, currentDashboardFilter);
+  });
+
+  if (!filteredLogs.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa fa-list-check"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></div></td></tr>';
     return;
   }
-  tbody.innerHTML = recent.map(p => `
-    <tr>
-      <td>
-        ${p.cover_image ? `<img src="${esc(p.cover_image)}" class="plant-cover">` :
-          `<div class="plant-cover" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--green)"><i class="fa-solid fa-seedling"></i></div>`}
-      </td>
-      <td><strong>${esc(p.plant_type)}</strong><br><small style="color:var(--gray-400)">${esc(p.plant_variety||'')}</small></td>
-      <td>${healthBadge(p.health_status)}</td>
-      <td>${esc(p.location||'—')}</td>
-      <td>${fmtDate(p.created_at)}</td>
-      <td>
-        <button class="btn btn-secondary btn-sm" onclick="openPlantModal(${p.id})">
-          <i class="fa fa-pen"></i>
-        </button>
-      </td>
-    </tr>`).join('');
+
+  tbody.innerHTML = filteredLogs.map(l => {
+    const plant = allPlants.find(p => p.id === l.plant_id) || {};
+    const plantLabel = `<strong>Cây #${l.plant_id}</strong> (${esc(l.plant_type || plant.plant_type || '—')})`;
+    
+    // Build details text or use note
+    let detailsStr = esc(l.note || '');
+    if (l.details && Object.keys(l.details).length > 0) {
+      const parts = [];
+      if (l.details.method) parts.push(`Cách: ${l.details.method}`);
+      if (l.details.amount) parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+      if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
+      if (l.details.pesticide_name) parts.push(`Thuốc: ${l.details.pesticide_name}`);
+      if (l.details.reason) parts.push(`Lý do: ${l.details.reason}`);
+      if (parts.length > 0) {
+        detailsStr = `<span style="color:var(--green)">[${parts.join(', ')}]</span>` + (l.note ? ` - ${esc(l.note)}` : '');
+      }
+    }
+
+    return `
+      <tr>
+        <td>${fmtDate(l.log_date)}</td>
+        <td>${plantLabel}</td>
+        <td><span class="log-type-tag">${esc(l.log_type || 'Ghi chú')}</span></td>
+        <td>${detailsStr}</td>
+        <td><small>${esc(l.creator_name || 'Khách/Công nhân')}</small></td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function matchesFilter(plant, type) {
@@ -270,9 +292,8 @@ function filterDashboard(type) {
     }
   });
 
-  // Filter list below
-  const filtered = allPlants.filter(p => matchesFilter(p, type));
-  renderDashboardPlantsTable(filtered);
+  // Filter logs table
+  renderDashboardLogsTable(allRecentLogs);
 }
 
 // ── Plants ─────────────────────────────────────────────────
@@ -1018,12 +1039,15 @@ function initDashboardMap(farms, plants) {
       }
     });
 
-    // Render plant markers using custom HTML with ID and health color
+    // Render plant markers using custom HTML with ID and health color wrapped in a container
     plants.forEach(plant => {
       if (plant.latitude && plant.longitude) {
         const lat = parseFloat(plant.latitude);
         const lng = parseFloat(plant.longitude);
         if (!isNaN(lat) && !isNaN(lng)) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'plant-marker-wrap';
+
           const el = document.createElement('div');
           let healthClass = 'health-default';
           if (plant.health_status === 'Tốt') healthClass = 'health-tot';
@@ -1032,8 +1056,9 @@ function initDashboardMap(farms, plants) {
 
           el.className = `plant-id-marker ${healthClass}`;
           el.innerHTML = `<span>${plant.id}</span>`;
+          wrapper.appendChild(el);
 
-          const marker = new mapboxgl.Marker(el)
+          const marker = new mapboxgl.Marker(wrapper)
             .setLngLat([lng, lat])
             .setPopup(new mapboxgl.Popup({ offset: 25 })
               .setHTML(`

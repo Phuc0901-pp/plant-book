@@ -329,6 +329,16 @@
   }
 
   /* ── Custom Plant Marker ── */
+  .plant-marker-wrap {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .plant-marker-wrap:hover {
+    z-index: 9999;
+  }
   .plant-id-marker {
     width: 28px;
     height: 28px;
@@ -345,8 +355,7 @@
     transition: transform 0.2s, opacity 0.2s;
   }
   .plant-id-marker:hover {
-    transform: scale(1.25) !important;
-    z-index: 9999;
+    transform: scale(1.25);
   }
   .plant-id-marker.health-tot {
     background: #10b981;
@@ -541,12 +550,16 @@
         </div>
 
         <div class="card">
-          <div class="card-header"><h3><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Cây trồng gần đây</h3></div>
+          <div class="card-header"><h3><i class="fa-solid fa-list-check" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3></div>
           <table>
             <thead><tr>
-              <th>Cây</th><th>Loại</th><th>Sức khỏe</th><th>Vị trí</th><th>Ngày tạo</th><th></th>
+              <th style="width:140px">Thời gian</th>
+              <th style="width:200px">Cây trồng</th>
+              <th style="width:150px">Hoạt động</th>
+              <th>Chi tiết / Ghi chú</th>
+              <th style="width:160px">Người thực hiện</th>
             </tr></thead>
-            <tbody id="dashboard-plants-table"><tr><td colspan="6" class="empty-state">Đang tải...</td></tr></tbody>
+            <tbody id="dashboard-logs-table"><tr><td colspan="5" class="empty-state">Đang tải hoạt động...</td></tr></tbody>
           </table>
         </div>
       </div>
