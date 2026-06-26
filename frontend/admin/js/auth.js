@@ -7,19 +7,19 @@ async function doLogin() {
   const btn = document.getElementById('login-btn');
   errEl.style.display = 'none';
   btn.innerHTML = '<span class="spinner"></span>';
-  btn.disabled = true;
+  btn.disabled  = true;
+
   try {
     const res  = await fetch(`${API}/auth/login`, {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass })
+      body:    JSON.stringify({ email, password: pass })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
 
     /* Phân luồng theo role */
     if (data.user.role !== 'admin') {
-      /* User thường đăng nhập ở trang admin → redirect sang /user */
       localStorage.setItem('pb_token', data.token);
       window.location.href = '/user';
       return;
@@ -29,11 +29,14 @@ async function doLogin() {
     localStorage.setItem('pb_token', token);
     currentUser = data.user;
     showApp();
+
   } catch (err) {
-    errEl.textContent = err.message;
-    errEl.style.display = 'block';
-    btn.innerHTML = '<span id="login-btn-text">Đăng nhập</span>';
-    btn.disabled = false;
+    const errText = document.getElementById('login-error-text');
+    if (errText) errText.textContent = err.message;
+    else errEl.textContent = err.message;
+    errEl.style.display  = 'flex';
+    btn.innerHTML = '<span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>';
+    btn.disabled  = false;
   }
 }
 
