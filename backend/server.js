@@ -50,6 +50,10 @@ app.get('/admin*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });
 
+app.get('/user*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/user/index.html'));
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });

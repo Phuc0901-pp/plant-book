@@ -9,15 +9,22 @@ async function doLogin() {
   btn.innerHTML = '<span class="spinner"></span>';
   btn.disabled = true;
   try {
-    const data = await fetch(`${API}/auth/login`, {
+    const res  = await fetch(`${API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pass })
-    }).then(async r => {
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || 'Đăng nhập thất bại');
-      return d;
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
+
+    /* Phân luồng theo role */
+    if (data.user.role !== 'admin') {
+      /* User thường đăng nhập ở trang admin → redirect sang /user */
+      localStorage.setItem('pb_token', data.token);
+      window.location.href = '/user';
+      return;
+    }
+
     token = data.token;
     localStorage.setItem('pb_token', token);
     currentUser = data.user;
@@ -51,11 +58,17 @@ async function showApp() {
   loadSchemasDropdown();
 }
 
-// Check existing token on load
+// Check existing token on load – guard: chỉ admin mới được ở /admin
 window.addEventListener('load', async () => {
   if (token) {
     try {
-      currentUser = await api('/auth/me');
+      const me = await api('/auth/me');
+      if (me.role !== 'admin') {
+        /* Token hợp lệ nhưng không phải admin → redirect /user */
+        window.location.href = '/user';
+        return;
+      }
+      currentUser = me;
       showApp();
     } catch { logout(); }
   }

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plant Book — Cổng người dùng | Tanbao Corp</title>
+  <meta name="description" content="Cổng thông tin người dùng hệ thống quản lý cây trồng Tanbao Corp">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/user/css/user-layout.css">
+</head>
+<body>
+
+<!-- ════════════════ LOGIN ════════════════ -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
+      <h1>Hệ thống quản lý cây trồng</h1>
+      <p>Đăng nhập để xem thông tin của bạn</p>
+      <span class="role-badge"><i class="fa fa-user"></i> Cổng người dùng</span>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="email@tanbaocorp.vn">
+    </div>
+    <div class="form-group">
+      <label>Mật khẩu</label>
+      <input type="password" id="login-pass" placeholder="••••••••">
+    </div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">
+      <span id="login-btn-text">Đăng nhập</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════ APP ════════════════ -->
+<div id="app" style="display:none; flex-direction:row">
+  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="sidebar-logo-wrap">
+          <img src="/assets/logo.png" alt="TANBAO AgTech" class="sidebar-logo">
+        </div>
+        <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
+      </div>
+    </div>
+
+    <!-- User info -->
+    <div class="sidebar-user">
+      <div class="user-name" id="sb-user-name">—</div>
+      <div class="user-email" id="sb-user-email">—</div>
+      <div class="sb-role-pill"><i class="fa fa-user" style="font-size:9px"></i> Người dùng</div>
+    </div>
+
+    <!-- Navigation -->
+    <nav>
+      <div class="nav-section">Tổng quan</div>
+      <div class="nav-item active" data-page="home" onclick="showPage('home')">
+        <i class="fa fa-house"></i> Trang chủ
+      </div>
+
+      <div class="nav-section">Cây trồng</div>
+      <div class="nav-item" data-page="myplants" onclick="showPage('myplants')">
+        <i class="fa fa-seedling"></i> Cây trồng của tôi
+        <span class="nav-soon">sắp ra</span>
+      </div>
+      <div class="nav-item" data-page="logs" onclick="showPage('logs')">
+        <i class="fa fa-clipboard-list"></i> Nhật ký canh tác
+        <span class="nav-soon">sắp ra</span>
+      </div>
+
+      <div class="nav-section">Báo cáo</div>
+      <div class="nav-item" data-page="reports" onclick="showPage('reports')">
+        <i class="fa fa-chart-bar"></i> Báo cáo
+        <span class="nav-soon">sắp ra</span>
+      </div>
+
+      <div class="nav-section">Tài khoản</div>
+      <div class="nav-item" data-page="settings" onclick="showPage('settings')">
+        <i class="fa fa-gear"></i> Cài đặt
+        <span class="nav-soon">sắp ra</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <i class="fa fa-right-from-bracket"></i> Đăng xuất
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none;">
+          <i class="fa fa-bars"></i>
+        </button>
+        <h1 id="page-title">Trang chủ</h1>
+      </div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- ── Trang chủ ── -->
+      <div class="page-section active" id="page-home">
+        <!-- Welcome banner -->
+        <div style="
+          background: linear-gradient(135deg, var(--green-dark) 0%, #2d6a4f 60%, #1e5c40 100%);
+          border-radius: var(--radius);
+          padding: 36px 40px;
+          margin-bottom: 24px;
+          position: relative;
+          overflow: hidden;
+          color: #fff;
+        ">
+          <!-- Decorative circle -->
+          <div style="
+            position:absolute; right:-30px; top:-30px;
+            width:200px; height:200px;
+            background: rgba(255,255,255,.05);
+            border-radius:50%;
+          "></div>
+          <div style="
+            position:absolute; right:60px; bottom:-50px;
+            width:140px; height:140px;
+            background: rgba(255,255,255,.04);
+            border-radius:50%;
+          "></div>
+
+          <div style="position:relative;z-index:1;">
+            <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:6px;">
+              <i class="fa fa-leaf"></i> &nbsp;Plant Book · Tanbao Corp
+            </div>
+            <h2 style="font-size:26px;font-weight:700;margin-bottom:8px;">
+              Xin chào, <span id="welcome-name">bạn</span> 👋
+            </h2>
+            <p style="font-size:14px;color:rgba(255,255,255,.7);max-width:480px;line-height:1.6;">
+              Chào mừng đến với cổng người dùng Plant Book. Các tính năng đang được
+              xây dựng và sẽ sớm ra mắt. Cảm ơn sự kiên nhẫn của bạn!
+            </p>
+            <div style="
+              display:inline-flex;align-items:center;gap:6px;
+              margin-top:20px;
+              background:rgba(255,255,255,.15);
+              border:1px solid rgba(255,255,255,.2);
+              border-radius:20px;
+              padding:6px 16px;
+              font-size:12px;font-weight:600;
+              backdrop-filter:blur(4px);
+            ">
+              <i class="fa fa-rocket"></i> Phiên bản đang phát triển
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature preview cards -->
+        <div style="
+          display:grid;
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          gap:16px;
+          margin-bottom:24px;
+        ">
+          <!-- Card 1 -->
+          <div style="
+            background:#fff;border-radius:var(--radius);padding:24px;
+            box-shadow:var(--shadow);border:1px solid var(--gray-200);
+            display:flex;flex-direction:column;gap:14px;
+            opacity:.7;
+          ">
+            <div style="
+              width:48px;height:48px;border-radius:12px;
+              background:var(--green-light);
+              display:flex;align-items:center;justify-content:center;
+            ">
+              <i class="fa fa-seedling" style="font-size:22px;color:var(--green);"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Cây trồng của tôi</div>
+              <div style="font-size:13px;color:var(--text-muted);">Theo dõi sức khỏe và tiến trình từng cây trồng được giao.</div>
+            </div>
+            <div style="
+              display:inline-flex;align-items:center;gap:5px;
+              font-size:11px;font-weight:600;
+              color:var(--user-accent);
+            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
+          </div>
+
+          <!-- Card 2 -->
+          <div style="
+            background:#fff;border-radius:var(--radius);padding:24px;
+            box-shadow:var(--shadow);border:1px solid var(--gray-200);
+            display:flex;flex-direction:column;gap:14px;
+            opacity:.7;
+          ">
+            <div style="
+              width:48px;height:48px;border-radius:12px;
+              background:#eff6ff;
+              display:flex;align-items:center;justify-content:center;
+            ">
+              <i class="fa fa-clipboard-list" style="font-size:22px;color:var(--blue);"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Nhật ký canh tác</div>
+              <div style="font-size:13px;color:var(--text-muted);">Xem lịch sử tưới nước, bón phân, phòng trừ sâu bệnh.</div>
+            </div>
+            <div style="
+              display:inline-flex;align-items:center;gap:5px;
+              font-size:11px;font-weight:600;
+              color:var(--user-accent);
+            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
+          </div>
+
+          <!-- Card 3 -->
+          <div style="
+            background:#fff;border-radius:var(--radius);padding:24px;
+            box-shadow:var(--shadow);border:1px solid var(--gray-200);
+            display:flex;flex-direction:column;gap:14px;
+            opacity:.7;
+          ">
+            <div style="
+              width:48px;height:48px;border-radius:12px;
+              background:#fefce8;
+              display:flex;align-items:center;justify-content:center;
+            ">
+              <i class="fa fa-chart-bar" style="font-size:22px;color:var(--amber);"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Báo cáo</div>
+              <div style="font-size:13px;color:var(--text-muted);">Xuất báo cáo canh tác theo kỳ, chia sẻ với đội nhóm.</div>
+            </div>
+            <div style="
+              display:inline-flex;align-items:center;gap:5px;
+              font-size:11px;font-weight:600;
+              color:var(--user-accent);
+            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
+          </div>
+
+          <!-- Card 4 -->
+          <div style="
+            background:#fff;border-radius:var(--radius);padding:24px;
+            box-shadow:var(--shadow);border:1px solid var(--gray-200);
+            display:flex;flex-direction:column;gap:14px;
+            opacity:.7;
+          ">
+            <div style="
+              width:48px;height:48px;border-radius:12px;
+              background:var(--user-accent-soft);
+              display:flex;align-items:center;justify-content:center;
+            ">
+              <i class="fa fa-gear" style="font-size:22px;color:var(--user-accent);"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Cài đặt tài khoản</div>
+              <div style="font-size:13px;color:var(--text-muted);">Cập nhật thông tin cá nhân, thay đổi mật khẩu.</div>
+            </div>
+            <div style="
+              display:inline-flex;align-items:center;gap:5px;
+              font-size:11px;font-weight:600;
+              color:var(--user-accent);
+            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
+          </div>
+        </div>
+      </div><!-- end page-home -->
+
+      <!-- ── Cây trồng của tôi ── -->
+      <div class="page-section" id="page-myplants">
+        <div class="dev-banner">
+          <div class="dev-icon-wrap"><i class="fa fa-seedling"></i></div>
+          <div class="dev-title">Cây trồng của tôi</div>
+          <div class="dev-subtitle">
+            Tính năng xem danh sách cây trồng được phân công, theo dõi sức khỏe
+            và tiến trình đang được phát triển.
+          </div>
+          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
+        </div>
+      </div>
+
+      <!-- ── Nhật ký canh tác ── -->
+      <div class="page-section" id="page-logs">
+        <div class="dev-banner">
+          <div class="dev-icon-wrap"><i class="fa fa-clipboard-list"></i></div>
+          <div class="dev-title">Nhật ký canh tác</div>
+          <div class="dev-subtitle">
+            Xem lịch sử các hoạt động canh tác: tưới nước, bón phân, phòng trừ
+            sâu bệnh, thu hoạch… đang được xây dựng.
+          </div>
+          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
+        </div>
+      </div>
+
+      <!-- ── Báo cáo ── -->
+      <div class="page-section" id="page-reports">
+        <div class="dev-banner">
+          <div class="dev-icon-wrap"><i class="fa fa-chart-bar"></i></div>
+          <div class="dev-title">Báo cáo</div>
+          <div class="dev-subtitle">
+            Xuất báo cáo canh tác theo kỳ, chia sẻ URL công khai với đội nhóm
+            hoặc đối tác. Tính năng đang được phát triển.
+          </div>
+          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
+        </div>
+      </div>
+
+      <!-- ── Cài đặt ── -->
+      <div class="page-section" id="page-settings">
+        <div class="dev-banner">
+          <div class="dev-icon-wrap"><i class="fa fa-gear"></i></div>
+          <div class="dev-title">Cài đặt tài khoản</div>
+          <div class="dev-subtitle">
+            Cập nhật thông tin cá nhân, thay đổi mật khẩu và quản lý thông báo
+            đang được phát triển.
+          </div>
+          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
+        </div>
+      </div>
+
+    </div><!-- end content -->
+  </main>
+</div><!-- end app -->
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="/user/js/app.js"></script>
+<script src="/user/js/auth.js"></script>
+<script>
+  /* Cập nhật tên welcome khi app load */
+  const _origShowApp = showApp;
+  showApp = function() {
+    _origShowApp();
+    const nameEl = document.getElementById('welcome-name');
+    if (nameEl && currentUser) {
+      nameEl.textContent = currentUser.name || currentUser.full_name || 'bạn';
+    }
+  };
+</script>
+</body>
+</html>
