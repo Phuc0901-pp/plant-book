@@ -28,6 +28,7 @@
     --color-pesticide: #f97316;
     --color-leaf: #eab308;
     --color-flower: #ec4899;
+    --color-disease: #ef4444;
   }
 
   * {
@@ -303,6 +304,7 @@
   .care-btn-pesticide:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.4); box-shadow: 0 0 15px rgba(249,115,22,0.2); }
   .care-btn-leaf:hover { background: rgba(234,179,8,0.12); border-color: rgba(234,179,8,0.4); box-shadow: 0 0 15px rgba(234,179,8,0.2); }
   .care-btn-flower:hover { background: rgba(236,72,153,0.12); border-color: rgba(236,72,153,0.4); box-shadow: 0 0 15px rgba(236,72,153,0.2); }
+  .care-btn-disease:hover { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.4); box-shadow: 0 0 15px rgba(239,68,68,0.25); }
   .care-btn:hover i { transform: scale(1.15); }
   .care-btn:active { transform: scale(0.95); }
 
@@ -381,6 +383,7 @@
   .marker-pesticide { border-color: var(--color-pesticide); box-shadow: 0 0 8px var(--color-pesticide); }
   .marker-leaf { border-color: var(--color-leaf); box-shadow: 0 0 8px var(--color-leaf); }
   .marker-flower { border-color: var(--color-flower); box-shadow: 0 0 8px var(--color-flower); }
+  .marker-disease { border-color: var(--color-disease); box-shadow: 0 0 8px var(--color-disease); }
   
   .timeline-content {
     background: rgba(255, 255, 255, 0.02);
@@ -405,6 +408,7 @@
   .tag-pesticide { color: var(--color-pesticide); }
   .tag-leaf { color: var(--color-leaf); }
   .tag-flower { color: var(--color-flower); }
+  .tag-disease { color: var(--color-disease); }
   .tag-general { color: var(--text-secondary); }
 
   .log-time-indicator {
@@ -622,6 +626,131 @@
   .btn-leaf:hover { background: #ca8a04; }
   .btn-flower { background: var(--color-flower); }
   .btn-flower:hover { background: #db2777; }
+  .btn-disease { background: var(--color-disease); }
+  .btn-disease:hover { background: #dc2626; }
+
+  /* File upload preview area */
+  .upload-zone {
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    background: rgba(255,255,255,0.01);
+    position: relative;
+  }
+  .upload-zone:hover {
+    border-color: rgba(239,68,68,0.5);
+    background: rgba(239,68,68,0.04);
+  }
+  .upload-zone.has-file {
+    border-color: rgba(239,68,68,0.4);
+    background: rgba(239,68,68,0.06);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .upload-zone-icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+    color: rgba(255,255,255,0.3);
+  }
+  .upload-zone.has-file .upload-zone-icon { color: var(--color-disease); }
+  .upload-zone-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .upload-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .upload-preview-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .upload-preview-item img,
+  .upload-preview-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .upload-preview-item .remove-preview {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.7);
+    border: none;
+    color: #fff;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .upload-preview-item .video-badge {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* Log media gallery (inside timeline) */
+  .log-media-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .log-media-item {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+    background: rgba(0,0,0,0.3);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .log-media-item:hover { transform: scale(1.05); }
+  .log-media-item img, .log-media-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .log-media-item .video-play-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+    font-size: 18px;
+    color: rgba(255,255,255,0.9);
+  }
 
   /* Lightbox */
   .lightbox {
@@ -1095,6 +1224,73 @@
   </div>
 </div>
 
+<!-- 🦠 Disease Report Modal -->
+<div class="modal-overlay" id="modal-disease" onclick="closeModalOnOuterClick(event, 'modal-disease')">
+  <div class="glass-panel modal">
+    <div class="modal-header">
+      <h3 class="modal-title" style="color: var(--color-disease);"><i class="fa-solid fa-virus"></i> Báo cáo bệnh cây</h3>
+      <button class="modal-close" onclick="closeModal('modal-disease')">×</button>
+    </div>
+    <form id="form-disease" onsubmit="submitDiseaseLog(event)">
+      <div class="modal-body">
+        <div class="field">
+          <label>Tên / Loại bệnh <span style="color:var(--color-disease)">*</span></label>
+          <input type="text" id="disease-name" placeholder="Ví dụ: Nấm lá, Sâu đầu xanh, Thán thư, Rỉ sắt..." required>
+        </div>
+        <div class="field">
+          <label>Mô tả triệu chứng</label>
+          <textarea id="disease-desc" rows="3" placeholder="Mô tả chi tiết biểu hiện: lá vàng, đốm nâu, cành khô héo, sâu ăn lá..."></textarea>
+        </div>
+        <div class="field">
+          <label>Mức độ nghiêm trọng</label>
+          <select id="disease-severity">
+            <option value="Nhẹ">🟡 Nhẹ — Ít ảnh hưởng, theo dõi thêm</option>
+            <option value="Trung bình">🟠 Trung bình — Cần xử lý sớm</option>
+            <option value="Nghiêm trọng">🔴 Nghiêm trọng — Cần can thiệp ngay</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Thời gian phát hiện <span style="color:var(--color-disease)">*</span></label>
+          <input type="datetime-local" id="disease-datetime" required>
+        </div>
+
+        <!-- Image upload zone -->
+        <div class="field">
+          <label><i class="fa-solid fa-camera" style="color:var(--color-disease)"></i> Đính kèm ảnh (tối đa 10 ảnh)</label>
+          <div class="upload-zone" id="disease-img-zone">
+            <input type="file" id="disease-images" multiple accept="image/*" onchange="handleDiseaseFiles(this, 'images')">
+            <div class="upload-zone-icon"><i class="fa-regular fa-image"></i></div>
+            <div class="upload-zone-label">Nhấp để chọn ảnh hoặc kéo thả vào đây<br><small>Hỗ trợ: JPG, PNG, WEBP, GIF</small></div>
+          </div>
+          <div class="upload-preview-grid" id="disease-img-preview"></div>
+        </div>
+
+        <!-- Video upload zone -->
+        <div class="field">
+          <label><i class="fa-solid fa-video" style="color:var(--color-disease)"></i> Đính kèm video (tối đa 2 video)</label>
+          <div class="upload-zone" id="disease-vid-zone">
+            <input type="file" id="disease-videos" multiple accept="video/*" onchange="handleDiseaseFiles(this, 'videos')">
+            <div class="upload-zone-icon"><i class="fa-regular fa-circle-play"></i></div>
+            <div class="upload-zone-label">Nhấp để chọn video hoặc kéo thả vào đây<br><small>Hỗ trợ: MP4, MOV, AVI. Tối đa 100MB/file</small></div>
+          </div>
+          <div class="upload-preview-grid" id="disease-vid-preview"></div>
+        </div>
+
+        <div class="field">
+          <label>Ghi chú thêm</label>
+          <textarea id="disease-note" rows="2" placeholder="Cây đã được xử lý gì chưa, vị trí phát hiện bệnh..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-disease')">Hủy</button>
+        <button type="submit" class="btn btn-submit btn-disease" id="btn-disease-submit">
+          <i class="fa-solid fa-flag"></i> Ghi nhận bệnh
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- JavaScript Logic -->
 <script>
 // Parse Slug
@@ -1259,6 +1455,10 @@ function getCareLogSummary(log) {
   if (log.log_type === 'Tỉa hoa') {
     return `Đã tỉa hoa/quả. Số lượng: <strong>${esc(details.amount)}</strong>. Lý do: <strong>${esc(details.reason)}</strong>.`;
   }
+  if (log.log_type === 'Bệnh cây') {
+    const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
+    return `<span style="color:var(--color-disease);font-weight:700">${sevEmoji} ${esc(details.disease_name || 'Bệnh chưa xác định')}</span>${details.description ? '<br><span style="color:var(--text-secondary);font-size:12px">' + esc(details.description) + '</span>' : ''}`;
+  }
   return esc(log.note || '');
 }
 
@@ -1407,10 +1607,31 @@ async function renderPlant(plant) {
                     markerClass = 'marker-flower';
                     tagClass = 'tag-flower';
                     icon = 'fa-solid fa-spa';
+                  } else if (log.log_type === 'Bệnh cây') {
+                    markerClass = 'marker-disease';
+                    tagClass = 'tag-disease';
+                    icon = 'fa-solid fa-virus';
                   }
                   
                   const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
                   const fullDateTime = fmtDateTime(timeVal);
+
+                  // Render inline media thumbnails from media_urls stored in log
+                  const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) ? log.media_urls : [];
+                  const mediaThumbs = mediaUrls.length > 0 ? `
+                    <div class="log-media-gallery">
+                      ${mediaUrls.map(m => {
+                        const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(m.url || m);
+                        const url = m.url || m;
+                        return isVideo
+                          ? `<div class="log-media-item" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" muted preload="metadata"></video><div class="video-play-icon"><i class="fa-solid fa-circle-play"></i></div></div>`
+                          : `<div class="log-media-item" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" alt="ảnh nhật ký" loading="lazy"></div>`;
+                      }).join('')}
+                    </div>` : '';
+
+                  const noteHtml = log.note
+                    ? `<div class="log-body" style="margin-top: 6px; color: var(--text-secondary); font-size:12px;"><i class="fa-solid fa-comment-dots"></i> ${esc(log.note)}</div>`
+                    : '';
 
                   return `
                     <div class="timeline-item">
@@ -1423,7 +1644,8 @@ async function renderPlant(plant) {
                         <div class="log-body">
                           ${getCareLogSummary(log)}
                         </div>
-                        ${log.note ? `<div class="log-body" style="margin-top: 6px; color: var(--text-secondary); font-style: italic;">"${esc(log.note)}"</div>` : ''}
+                        ${noteHtml}
+                        ${mediaThumbs}
                       </div>
                     </div>
                   `;
@@ -1466,6 +1688,10 @@ async function renderPlant(plant) {
             <button class="care-btn care-btn-flower" onclick="openModal('modal-flower')">
               <i class="fa-solid fa-spa" style="color: var(--color-flower)"></i>
               <span>Tỉa hoa/quả</span>
+            </button>
+            <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
+              <i class="fa-solid fa-virus" style="color: var(--color-disease)"></i>
+              <span>Bệnh cây</span>
             </button>
           </div>
         </div>
@@ -1656,6 +1882,135 @@ async function submitCareLog(event, type, modalId, formId) {
     alert('Không thể lưu nhật ký: ' + err.message);
   } finally {
     submitBtn.innerHTML = oldText;
+    submitBtn.disabled = false;
+  }
+}
+
+// ── Bệnh cây Feature ─────────────────────────────────────────────
+let diseaseImageFiles = [];
+let diseaseVideoFiles = [];
+
+function handleDiseaseFiles(input, type) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  if (type === 'images') {
+    const toAdd = files.slice(0, 10 - diseaseImageFiles.length);
+    diseaseImageFiles = [...diseaseImageFiles, ...toAdd];
+    renderDiseasePreviews('images');
+  } else {
+    const toAdd = files.slice(0, 2 - diseaseVideoFiles.length);
+    diseaseVideoFiles = [...diseaseVideoFiles, ...toAdd];
+    renderDiseasePreviews('videos');
+  }
+  // Reset file input so the same file can be re-selected if needed
+  input.value = '';
+}
+
+function renderDiseasePreviews(type) {
+  const files = type === 'images' ? diseaseImageFiles : diseaseVideoFiles;
+  const previewEl = document.getElementById(type === 'images' ? 'disease-img-preview' : 'disease-vid-preview');
+  const zoneEl = document.getElementById(type === 'images' ? 'disease-img-zone' : 'disease-vid-zone');
+  if (!previewEl || !zoneEl) return;
+
+  previewEl.innerHTML = '';
+  zoneEl.classList.toggle('has-file', files.length > 0);
+
+  files.forEach((file, idx) => {
+    const item = document.createElement('div');
+    item.className = 'upload-preview-item';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-preview';
+    removeBtn.innerHTML = '×';
+    removeBtn.type = 'button';
+    removeBtn.onclick = () => {
+      if (type === 'images') diseaseImageFiles.splice(idx, 1);
+      else diseaseVideoFiles.splice(idx, 1);
+      renderDiseasePreviews(type);
+    };
+
+    if (file.type.startsWith('video')) {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(file);
+      video.muted = true;
+      item.appendChild(video);
+      const badge = document.createElement('div');
+      badge.className = 'video-badge';
+      badge.textContent = 'VIDEO';
+      item.appendChild(badge);
+    } else {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      item.appendChild(img);
+    }
+    item.appendChild(removeBtn);
+    previewEl.appendChild(item);
+  });
+}
+
+async function submitDiseaseLog(event) {
+  event.preventDefault();
+
+  const submitBtn = document.getElementById('btn-disease-submit');
+  const oldHtml = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải lên...';
+  submitBtn.disabled = true;
+
+  const diseaseName = document.getElementById('disease-name').value.trim();
+  const desc = document.getElementById('disease-desc').value.trim();
+  const severity = document.getElementById('disease-severity').value;
+  const note = document.getElementById('disease-note').value.trim();
+  const dtInput = document.getElementById('disease-datetime');
+
+  let performedAt = new Date().toISOString();
+  let logDate = performedAt.slice(0, 10);
+  if (dtInput && dtInput.value) {
+    const localDate = new Date(dtInput.value);
+    performedAt = localDate.toISOString();
+    logDate = dtInput.value.slice(0, 10);
+  }
+
+  const details = {
+    disease_name: diseaseName,
+    description: desc,
+    severity: severity,
+    performed_at: performedAt
+  };
+
+  try {
+    const formData = new FormData();
+    formData.append('log_type', 'Bệnh cây');
+    formData.append('log_date', logDate);
+    formData.append('note', note);
+    formData.append('details', JSON.stringify(details));
+
+    diseaseImageFiles.forEach(f => formData.append('files', f));
+    diseaseVideoFiles.forEach(f => formData.append('files', f));
+
+    const res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}/logs`, {
+      method: 'POST',
+      // Do NOT set Content-Type — browser sets multipart/form-data with boundary automatically
+      body: formData
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Lỗi server');
+    }
+
+    // Reset form
+    document.getElementById('form-disease').reset();
+    diseaseImageFiles = [];
+    diseaseVideoFiles = [];
+    renderDiseasePreviews('images');
+    renderDiseasePreviews('videos');
+
+    closeModal('modal-disease');
+    await loadPlant();
+  } catch (err) {
+    alert('Không thể lưu nhật ký bệnh cây: ' + err.message);
+  } finally {
+    submitBtn.innerHTML = oldHtml;
     submitBtn.disabled = false;
   }
 }
