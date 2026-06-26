@@ -1041,6 +1041,180 @@
   .timeline-item.expanded .toggle-arrow {
     transform: rotate(180deg);
   }
+
+  /* Export Modal Styles */
+  .export-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .export-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .export-modal {
+    background: rgba(20, 35, 28, 0.95);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+  }
+  .export-modal-overlay.active .export-modal {
+    transform: translateY(0);
+  }
+  .export-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 12px;
+  }
+  .export-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .export-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .export-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .export-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .export-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .export-date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .export-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+  .export-input:focus {
+    border-color: var(--green-bright);
+  }
+  .export-categories-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .export-category-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary);
+    user-select: none;
+  }
+  .export-category-item input {
+    cursor: pointer;
+    accent-color: var(--green-bright);
+  }
+  .export-quick-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: -6px;
+  }
+  .export-link-btn {
+    background: none;
+    border: none;
+    color: var(--green-bright);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 600;
+  }
+  .export-link-btn:hover {
+    text-decoration: underline;
+  }
+  .export-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    border-top: 1px solid var(--border-glass);
+    padding-top: 16px;
+  }
+  .export-btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-glass);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .export-btn-secondary:hover {
+    background: rgba(255,255,255,0.05);
+  }
+  .export-btn-primary {
+    background: var(--green-bright);
+    border: 1px solid var(--green-bright);
+    color: #071910;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .export-btn-primary:hover {
+    background: #4ade80;
+    border-color: #4ade80;
+    transform: translateY(-1px);
+  }
+  .export-btn-primary:active {
+    transform: translateY(0);
+  }
 </style>
 </head>
 <body>
@@ -1055,7 +1229,10 @@
       <div class="brand-logo-divider"></div>
       <span class="brand-logo-tagline"><i class="fa-solid fa-book-open" style="color:var(--green-bright);margin-right:5px"></i>Hồ sơ cây trồng</span>
     </div>
-    <button class="share-btn" onclick="sharePage()"><i class="fa fa-share-nodes"></i> Chia sẻ</button>
+    <div style="display: flex; gap: 8px;">
+      <button class="share-btn" onclick="openExportModal()" style="background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4); color: var(--green-bright);"><i class="fa-solid fa-file-pdf"></i> Xuất nhật ký</button>
+      <button class="share-btn" onclick="sharePage()"><i class="fa fa-share-nodes"></i> Chia sẻ</button>
+    </div>
   </header>
 
   <!-- Loading State -->
@@ -2494,6 +2671,388 @@ async function toggleHealthStatus() {
   }
 }
 
+// Export report functionality
+function openExportModal() {
+  if (!currentPlantData) {
+    alert("Dữ liệu cây trồng chưa được tải xong.");
+    return;
+  }
+  
+  const fromDateInput = document.getElementById('export-from-date');
+  const toDateInput = document.getElementById('export-to-date');
+  
+  // Default to Date: Today
+  const today = new Date().toISOString().split('T')[0];
+  toDateInput.value = today;
+  
+  // Default From Date: 1 year ago or plant creation date
+  if (currentPlantData.created_at) {
+    const createdDate = new Date(currentPlantData.created_at).toISOString().split('T')[0];
+    fromDateInput.value = createdDate;
+  } else {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    fromDateInput.value = oneYearAgo.toISOString().split('T')[0];
+  }
+  
+  // Populate categories
+  const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Cắt lá", "Tỉa hoa", "Bệnh cây", "Ghi chú khác"];
+  
+  // Append any extra unique category present in logs
+  const logs = currentPlantData.logs || [];
+  logs.forEach(l => {
+    if (l.log_type && !categories.includes(l.log_type)) {
+      categories.push(l.log_type);
+    }
+  });
+  
+  const container = document.getElementById('export-categories-container');
+  container.innerHTML = categories.map(cat => {
+    return `
+      <label class="export-category-item">
+        <input type="checkbox" name="export-cat" value="${esc(cat)}" checked>
+        <span>${esc(cat)}</span>
+      </label>
+    `;
+  }).join('');
+  
+  document.getElementById('export-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function toggleAllExportCategories(select) {
+  const checkboxes = document.querySelectorAll('#export-categories-container input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = select);
+}
+
+function generateExportReport() {
+  const fromDate = document.getElementById('export-from-date').value;
+  const toDate = document.getElementById('export-to-date').value;
+  
+  const checkedCats = [];
+  document.querySelectorAll('#export-categories-container input[name="export-cat"]:checked').forEach(cb => {
+    checkedCats.push(cb.value);
+  });
+  
+  if (checkedCats.length === 0) {
+    alert("Vui lòng chọn ít nhất một hạng mục nhật ký để xuất.");
+    return;
+  }
+  
+  const plant = currentPlantData;
+  const logs = plant.logs || [];
+  
+  // Filter logs by date range & category
+  const filteredLogs = logs.filter(log => {
+    const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
+    const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
+    const isMatchedCat = checkedCats.includes(log.log_type);
+    return isWithinDate && isMatchedCat;
+  });
+  
+  // Sort logs chronologically by date
+  filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
+  
+  // Generate HTML for printing
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert("Trình duyệt đã chặn cửa sổ pop-up. Vui lòng cấp quyền mở pop-up để xuất báo cáo.");
+    return;
+  }
+  
+  // Build details helper
+  function getLogDetailsText(log) {
+    const details = log.details || {};
+    if (log.log_type === 'Tưới nước') {
+      return `Phương pháp: ${esc(details.method || '—')} | Lượng nước: ${esc(details.amount || '—')} ${esc(details.unit || '')}`;
+    }
+    if (log.log_type === 'Bón phân') {
+      return `Loại phân: ${esc(details.type || '—')} | Lượng bón: ${esc(details.amount || '—')} ${esc(details.unit || '')} | Tên phân: ${esc(details.fertilizer_name || '—')}`;
+    }
+    if (log.log_type === 'Phun thuốc') {
+      return `Loại thuốc: ${esc(details.type || '—')} | Tên thuốc: ${esc(details.pesticide_name || '—')} | Liều lượng: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
+    }
+    if (log.log_type === 'Cắt lá') {
+      return `Số cành/lá cắt tỉa: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
+    }
+    if (log.log_type === 'Tỉa hoa') {
+      return `Số bông/trái tỉa bớt: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
+    }
+    if (log.log_type === 'Bệnh cây') {
+      return `Bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')} | Mức độ: ${esc(details.severity || '—')} | Mô tả: ${esc(details.description || '—')}`;
+    }
+    return '';
+  }
+
+  // Format date helper for print window
+  function formatPrintDate(d) {
+    if (!d) return '—';
+    const dateObj = new Date(d);
+    return dateObj.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+  
+  // Construct HTML Document content
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <title>Báo cáo canh tác Cây #${plant.id}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+          font-family: 'Inter', sans-serif;
+          color: #1a202c;
+          line-height: 1.5;
+          margin: 0;
+          padding: 40px;
+          background: #ffffff;
+        }
+        
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 2px solid #22c55e;
+          padding-bottom: 20px;
+          margin-bottom: 30px;
+        }
+        
+        .logo-wrap {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .logo-img {
+          height: 36px;
+        }
+        
+        .title-wrap {
+          text-align: right;
+        }
+        
+        .title {
+          font-size: 22px;
+          font-weight: 700;
+          margin: 0;
+          color: #1b4d3e;
+          text-transform: uppercase;
+        }
+        
+        .subtitle {
+          font-size: 13px;
+          color: #718096;
+          margin: 4px 0 0 0;
+        }
+        
+        .section-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1b4d3e;
+          border-left: 4px solid #22c55e;
+          padding-left: 10px;
+          margin: 24px 0 12px 0;
+          text-transform: uppercase;
+        }
+        
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          background: #f7fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 30px;
+        }
+        
+        .info-item {
+          display: flex;
+          font-size: 14px;
+        }
+        
+        .info-label {
+          font-weight: 600;
+          color: #4a5568;
+          width: 140px;
+          flex-shrink: 0;
+        }
+        
+        .info-val {
+          color: #1a202c;
+        }
+        
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 10px;
+          font-size: 13px;
+        }
+        
+        th, td {
+          border: 1px solid #cbd5e0;
+          padding: 10px 12px;
+          text-align: left;
+          vertical-align: top;
+        }
+        
+        th {
+          background-color: #edf2f7;
+          color: #2d3748;
+          font-weight: 700;
+        }
+        
+        .log-type {
+          font-weight: 600;
+          color: #2f855a;
+        }
+        
+        .log-note {
+          color: #4a5568;
+          font-style: italic;
+          margin-top: 4px;
+        }
+        
+        .no-data {
+          text-align: center;
+          padding: 30px;
+          color: #718096;
+          border: 1px dashed #cbd5e0;
+          border-radius: 8px;
+          background: #f7fafc;
+        }
+        
+        .footer {
+          margin-top: 50px;
+          border-top: 1px solid #e2e8f0;
+          padding-top: 16px;
+          font-size: 11px;
+          color: #a0aec0;
+          display: flex;
+          justify-content: space-between;
+        }
+        
+        @media print {
+          body {
+            padding: 20px;
+          }
+          tr {
+            page-break-inside: avoid;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="logo-wrap">
+          <img src="/assets/logo.png" class="logo-img" onerror="this.style.display='none'">
+          <div style="font-weight: 700; color: #1b4d3e; font-size: 18px;">TANBAO AgTech</div>
+        </div>
+        <div class="title-wrap">
+          <h1 class="title">Báo cáo lịch trình canh tác</h1>
+          <p class="subtitle">Trích xuất lúc: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</p>
+        </div>
+      </div>
+      
+      <div class="section-title">Thông tin cây trồng</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Mã số cây:</span>
+          <span class="info-val">#${plant.id}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Loại cây:</span>
+          <span class="info-val">${esc(plant.plant_type)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Giống cây:</span>
+          <span class="info-val">${esc(plant.plant_variety || '—')}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Tuổi cây:</span>
+          <span class="info-val">${esc(plant.plant_age || '—')}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Vị trí / Lô:</span>
+          <span class="info-val">${esc(plant.location || '—')}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Trang trại:</span>
+          <span class="info-val">${esc(plant.farm_name || '—')}</span>
+        </div>
+        <div class="info-item" style="grid-column: span 2;">
+          <span class="info-label">Tọa độ GPS:</span>
+          <span class="info-val">${plant.latitude && plant.longitude ? plant.latitude + ', ' + plant.longitude : '—'}</span>
+        </div>
+      </div>
+      
+      <div class="section-title">Nhật ký hoạt động canh tác</div>
+      <div style="margin-bottom: 6px; font-size: 13px; color: #4a5568;">
+        Thời gian báo cáo: từ <strong>${fromDate ? formatPrintDate(fromDate) : 'ngày đầu số hóa'}</strong> đến <strong>${toDate ? formatPrintDate(toDate) : 'hiện tại'}</strong>. 
+        Đã lọc <strong>${filteredLogs.length}</strong> nhật ký hoạt động.
+      </div>
+      
+      ${filteredLogs.length === 0 ? `
+        <div class="no-data">Không có hoạt động canh tác nào khớp với khoảng thời gian và hạng mục đã chọn.</div>
+      ` : `
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%">Ngày thực hiện</th>
+              <th style="width: 20%">Hoạt động</th>
+              <th style="width: 45%">Nội dung chi tiết</th>
+              <th style="width: 20%">Người thực hiện</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredLogs.map(l => {
+              const detailsText = getLogDetailsText(l);
+              return `
+                <tr>
+                  <td><strong>${formatPrintDate(l.log_date)}</strong></td>
+                  <td><span class="log-type">${esc(l.log_type)}</span></td>
+                  <td>
+                    ${detailsText ? `<div style="font-weight: 500; margin-bottom: 4px;">${detailsText}</div>` : ''}
+                    ${l.note ? `<div class="log-note">${esc(l.note)}</div>` : ''}
+                  </td>
+                  <td>${esc(l.creator_name || 'Công nhân / Khách')}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `}
+      
+      <div class="footer">
+        <div>Báo cáo được tạo tự động bởi hệ sinh thái số Tanbao AgTech</div>
+        <div>Trang 1/1</div>
+      </div>
+      
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+          }, 300);
+        }
+      <\/script>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  
+  closeExportModal();
+}
+
 // Startup
 async function init() {
   await loadConfigurations();
@@ -2503,5 +3062,46 @@ async function init() {
 
 init();
 </script>
+
+<!-- Export Modal -->
+<div class="export-modal-overlay" id="export-modal" onclick="if(event.target===this)closeExportModal()">
+  <div class="export-modal">
+    <div class="export-modal-header">
+      <div class="export-modal-title">
+        <i class="fa-solid fa-file-pdf" style="color:var(--green-bright)"></i> Xuất báo cáo & Nhật ký
+      </div>
+      <button class="export-modal-close" onclick="closeExportModal()">×</button>
+    </div>
+    <div class="export-modal-body">
+      <div class="export-field">
+        <label>Khoảng thời gian xuất báo cáo</label>
+        <div class="export-date-row">
+          <input type="date" id="export-from-date" class="export-input">
+          <input type="date" id="export-to-date" class="export-input">
+        </div>
+      </div>
+      
+      <div class="export-field">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <label>Hạng mục nhật ký muốn xuất</label>
+          <div class="export-quick-actions">
+            <button class="export-link-btn" onclick="toggleAllExportCategories(true)">Chọn hết</button>
+            <span style="color:var(--border-glass)">|</span>
+            <button class="export-link-btn" onclick="toggleAllExportCategories(false)">Bỏ chọn</button>
+          </div>
+        </div>
+        <div class="export-categories-grid" id="export-categories-container">
+          <!-- Dynamic categories -->
+        </div>
+      </div>
+    </div>
+    <div class="export-modal-footer">
+      <button class="export-btn-secondary" onclick="closeExportModal()">Hủy bỏ</button>
+      <button class="export-btn-primary" onclick="generateExportReport()">
+        <i class="fa-solid fa-print"></i> Tạo báo cáo
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
