@@ -1256,22 +1256,22 @@
 
         <!-- Image upload zone -->
         <div class="field">
-          <label><i class="fa-solid fa-camera" style="color:var(--color-disease)"></i> Đính kèm ảnh (tối đa 10 ảnh)</label>
+          <label><i class="fa-solid fa-camera" style="color:var(--color-disease)"></i> Chụp ảnh (tối đa 10 ảnh)</label>
           <div class="upload-zone" id="disease-img-zone">
-            <input type="file" id="disease-images" multiple accept="image/*" onchange="handleDiseaseFiles(this, 'images')">
-            <div class="upload-zone-icon"><i class="fa-regular fa-image"></i></div>
-            <div class="upload-zone-label">Nhấp để chọn ảnh hoặc kéo thả vào đây<br><small>Hỗ trợ: JPG, PNG, WEBP, GIF</small></div>
+            <input type="file" id="disease-images" accept="image/*" capture="environment" onchange="handleDiseaseFiles(this, 'images')">
+            <div class="upload-zone-icon"><i class="fa-solid fa-camera"></i></div>
+            <div class="upload-zone-label">Nhấp để mở camera chụp ảnh</div>
           </div>
           <div class="upload-preview-grid" id="disease-img-preview"></div>
         </div>
 
         <!-- Video upload zone -->
         <div class="field">
-          <label><i class="fa-solid fa-video" style="color:var(--color-disease)"></i> Đính kèm video (tối đa 2 video)</label>
+          <label><i class="fa-solid fa-video" style="color:var(--color-disease)"></i> Quay video (tối đa 2 video)</label>
           <div class="upload-zone" id="disease-vid-zone">
-            <input type="file" id="disease-videos" multiple accept="video/*" onchange="handleDiseaseFiles(this, 'videos')">
-            <div class="upload-zone-icon"><i class="fa-regular fa-circle-play"></i></div>
-            <div class="upload-zone-label">Nhấp để chọn video hoặc kéo thả vào đây<br><small>Hỗ trợ: MP4, MOV, AVI. Tối đa 100MB/file</small></div>
+            <input type="file" id="disease-videos" accept="video/*" capture="environment" onchange="handleDiseaseFiles(this, 'videos')">
+            <div class="upload-zone-icon"><i class="fa-solid fa-video"></i></div>
+            <div class="upload-zone-label">Nhấp để mở camera quay video<br><small>Tối đa 100MB/file</small></div>
           </div>
           <div class="upload-preview-grid" id="disease-vid-preview"></div>
         </div>
