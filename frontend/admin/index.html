@@ -612,6 +612,110 @@
         </div>
         <p style="font-size:11px;color:var(--gray-400);margin-top:8px">
           <i class="fa-solid fa-lightbulb" style="color:var(--amber)"></i> Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeSchemaModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveSchema()">
+        <i class="fa fa-floppy-disk"></i> Lưu Schema
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ CSV IMPORT MODAL ════════════ -->
+<div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-file-import" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
+      <button class="modal-close" onclick="closeCsvImportModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--gray-600);margin-bottom:16px;line-height:1.5">
+        Phương thức này giúp tự động tạo hàng loạt cây trồng từ file tọa độ CSV.
+        File CSV cần có các cột tiêu đề: <strong>STT</strong>, <strong>E</strong> (Kinh độ/Lng), <strong>N</strong> (Vĩ độ/Lat).
+      </p>
+
+      <div class="field">
+        <label>Chọn file CSV *</label>
+        <input type="file" id="csv-file-input" accept=".csv" style="padding: 8px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px; width: 100%;">
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="field">
+          <label>Loại cây *</label>
+          <select id="csv-plant-type" onchange="onCsvPlantTypeChange()" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <option value="">— Chọn loại cây —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Giống cây</label>
+          <input type="text" id="csv-plant-variety" placeholder="VD: Ri6, Monthong...">
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="field">
+          <label>Tuổi cây</label>
+          <input type="text" id="csv-plant-age" placeholder="VD: 3 năm, 6 tháng...">
+        </div>
+        <div class="field">
+          <label>Tình trạng sức khỏe</label>
+          <select id="csv-health-status" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <option>Tốt</option>
+            <option>Bình thường</option>
+            <option>Cần chú ý</option>
+            <option>Bệnh</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <input type="hidden" id="csv-schema-id">
+        <div class="field">
+          <label>Trạng thái công khai</label>
+          <select id="csv-is-public" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+              <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
+              <option value="false">🔒 Riêng tư</option>
+          </select>
+        </div>
+      </div>
+      
+      <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
+        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i class="fa-solid fa-table"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
+        <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
+          <table style="width:100%; border-collapse:collapse; text-align:left;">
+            <thead>
+              <tr style="border-bottom:1px solid #ddd; color:var(--gray-600);">
+                <th style="padding:4px 6px;">STT</th>
+                <th style="padding:4px 6px;">E (Kinh độ)</th>
+                <th style="padding:4px 6px;">N (Vĩ độ)</th>
+              </tr>
+            </thead>
+            <tbody id="csv-preview-table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCsvImportModal()">Hủy</button>
+      <button class="btn btn-primary" id="csv-import-submit-btn" onclick="submitCsvImport()" disabled>
+        <i class="fa fa-upload"></i> Thực hiện Import
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:none">
+  <div style="background:#1f2937;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px">
+    <span id="toast-icon"></span>
+    <span id="toast-msg"></span>
+  </div>
+</div>
 
   <script src="/admin/js/auth.js"></script>
   <script src="/admin/js/dashboard.js"></script>
