@@ -364,6 +364,14 @@ function showPage(page) {
   const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình', media:'Thư viện Media', gis:'Quản lý GIS' };
   document.getElementById('page-title').textContent = titles[page] || page;
 
+  // Auto-close mobile sidebar
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar && sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
   if (page === 'dashboard') loadDashboard();
   if (page === 'plants') loadPlants();
   if (page === 'schemas') {
@@ -371,6 +379,18 @@ function showPage(page) {
     loadCareConfigs();
   }
   if (page === 'gis') initGisPage();
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  if (!sidebar) return;
+  sidebar.classList.toggle('open');
+  if (sidebar.classList.contains('open')) {
+    if (overlay) overlay.style.display = 'block';
+  } else {
+    if (overlay) overlay.style.display = 'none';
+  }
 }
 
 function switchTab(el, tabId) {
@@ -1303,6 +1323,18 @@ function initDashboardMap(farms, plants) {
   });
   dashboardMap = map;
 
+  map.on('zoom', () => {
+    const zoom = map.getZoom();
+    if (zoom < 16.5) {
+      mapDiv.classList.add('low-zoom');
+    } else {
+      mapDiv.classList.remove('low-zoom');
+    }
+  });
+  if (map.getZoom() < 16.5) {
+    mapDiv.classList.add('low-zoom');
+  }
+
   map.addControl(new mapboxgl.NavigationControl());
 
   map.on('load', () => {
@@ -1496,6 +1528,18 @@ function initGisMap(farms, plants) {
     zoom: 5
   });
 
+  gMap.on('zoom', () => {
+    const zoom = gMap.getZoom();
+    if (zoom < 16.5) {
+      container.classList.add('low-zoom');
+    } else {
+      container.classList.remove('low-zoom');
+    }
+  });
+  if (gMap.getZoom() < 16.5) {
+    container.classList.add('low-zoom');
+  }
+
   gMap.addControl(new mapboxgl.NavigationControl());
 
   drawControl = new MapboxDraw({
@@ -1592,12 +1636,25 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         else if (plant.health_status === 'Cần chú ý') color = '#eab308';
         else if (plant.health_status === 'Bệnh') color = '#ef4444';
 
-        const marker = new mapboxgl.Marker({ color })
+        const wrapper = document.createElement('div');
+        wrapper.className = 'plant-marker-wrap';
+
+        const el = document.createElement('div');
+        let healthClass = 'health-default';
+        if (plant.health_status === 'Tốt') healthClass = 'health-tot';
+        else if (plant.health_status === 'Cần chú ý') healthClass = 'health-watch';
+        else if (plant.health_status === 'Bệnh') healthClass = 'health-sick';
+
+        el.className = `plant-id-marker ${healthClass}`;
+        el.innerHTML = `<span>${plant.id}</span>`;
+        wrapper.appendChild(el);
+
+        const marker = new mapboxgl.Marker(wrapper)
           .setLngLat([lng, lat])
           .setPopup(new mapboxgl.Popup({ offset: 25 })
             .setHTML(`
               <div class="map-tooltip">
-                <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> ${esc(plant.plant_type)}</h4>
+                <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${plant.id}: ${esc(plant.plant_type)}</h4>
                 ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                 <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                 <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>

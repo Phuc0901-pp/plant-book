@@ -227,9 +227,108 @@
   .page-section{display:none}
   .page-section.active{display:block}
 
+  /* ── Zoom-dependent Dot Styling ── */
+  .low-zoom .plant-marker-wrap {
+    width: 12px;
+    height: 12px;
+  }
+  .low-zoom .plant-id-marker {
+    width: 10px;
+    height: 10px;
+    border-width: 1px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .low-zoom .plant-id-marker span {
+    display: none;
+  }
+
+  /* ── Media queries (Mobile Responsive) ── */
   @media(max-width:768px){
-    .sidebar{width:220px;min-width:220px}
-    .form-row{grid-template-columns:1fr}
+    #app {
+      position: relative;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -260px;
+      z-index: 1100;
+      height: 100vh;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+      transition: left 0.3s ease;
+    }
+    .sidebar.open {
+      left: 0;
+    }
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 1050;
+      display: none;
+    }
+    .main {
+      width: 100%;
+      margin-left: 0;
+    }
+    .topbar {
+      padding: 0 16px;
+    }
+    .mobile-toggle-btn {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 12px;
+      outline: none;
+      transition: background-color 0.15s;
+    }
+    .mobile-toggle-btn:hover {
+      background: var(--gray-100);
+    }
+    .content {
+      padding: 16px;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 12px !important;
+    }
+    .card {
+      overflow-x: auto;
+    }
+    .form-row {
+      grid-template-columns: 1fr !important;
+    }
+    /* GIS View mobile adjustments */
+    .gis-container {
+      flex-direction: column-reverse;
+      height: auto;
+      gap: 16px;
+    }
+    .gis-sidebar {
+      width: 100%;
+      min-width: 100%;
+      height: 400px;
+      min-height: 400px;
+    }
+    .gis-map-container {
+      width: 100%;
+      height: 350px;
+      min-height: 350px;
+      flex: none;
+    }
+  }
+
+  @media(max-width:480px){
+    .stats-grid {
+      grid-template-columns: 1fr !important;
+    }
   }
 
   /* ── GIS Section ── */
@@ -448,6 +547,7 @@
 
 <!-- ════════════════ APP ════════════════ -->
 <div id="app" style="display:none;flex-direction:row">
+  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
@@ -493,7 +593,12 @@
   <!-- Main -->
   <main class="main">
     <div class="topbar">
-      <h1 id="page-title">Dashboard</h1>
+      <div style="display:flex;align-items:center;">
+        <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none;">
+          <i class="fa fa-bars"></i>
+        </button>
+        <h1 id="page-title" style="margin:0;">Dashboard</h1>
+      </div>
       <div class="topbar-actions" id="topbar-actions"></div>
     </div>
     <div class="content">
