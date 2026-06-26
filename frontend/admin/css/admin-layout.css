@@ -66,6 +66,8 @@
   .topbar h1{font-size:18px;font-weight:700}
   .topbar-actions{display:flex;gap:10px;align-items:center}
   .content{padding:24px 28px;flex:1}
+  .page-section{display:none}
+  .page-section.active{display:block}
 
   /* ── Media queries (Mobile Responsive) ── */
   @media(max-width:768px){
