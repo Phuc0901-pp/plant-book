@@ -271,6 +271,24 @@ function renderUserLogsTable(logs) {
         detailsStr = `<span style="color:var(--green)">[${parts.join(', ')}]</span>` + (l.note ? ` - ${esc(l.note)}` : '');
       }
     }
+    
+    let mediaHtml = '';
+    if (l.log_type === 'Bệnh cây' && l.media_urls && l.media_urls.length > 0) {
+      mediaHtml = `
+        <div style="display:flex; gap:6px; margin-top:6px; overflow-x:auto; padding-bottom:4px;">
+          ${l.media_urls.map(m => {
+            const url = m.url || m;
+            const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
+            if (isVideo) {
+              return `<div style="width:40px; height:40px; border-radius:4px; overflow:hidden; position:relative; cursor:pointer; background:#000; flex-shrink:0;" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" style="width:100%; height:100%; object-fit:cover;"></video><i class="fa fa-play-circle" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:11px;"></i></div>`;
+            } else {
+              return `<div style="width:40px; height:40px; border-radius:4px; overflow:hidden; cursor:pointer; flex-shrink:0;" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+            }
+          }).join('')}
+        </div>
+      `;
+    }
+
     const dateStr = l.log_date ? new Date(l.log_date).toLocaleDateString('vi-VN', {
       year: 'numeric', month: '2-digit', day: '2-digit'
     }) : '—';
@@ -279,7 +297,12 @@ function renderUserLogsTable(logs) {
         <td data-label="Thời gian"><div>${dateStr}</div></td>
         <td data-label="Cây trồng"><div><strong>Cây #${l.plant_id}</strong> <small style="color:var(--gray-400)">(${esc(l.plant_type)})</small></div></td>
         <td data-label="Hoạt động"><div><span class="badge badge-gray" style="text-transform:none; font-weight:500;">${esc(l.log_type)}</span></div></td>
-        <td data-label="Chi tiết / Ghi chú"><div>${detailsStr}</div></td>
+        <td data-label="Chi tiết / Ghi chú">
+          <div>
+            ${detailsStr}
+            ${mediaHtml}
+          </div>
+        </td>
         <td data-label="Người thực hiện"><div><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></div></td>
       </tr>
     `;
@@ -307,6 +330,24 @@ function renderUserLogsTableFull(logs) {
         detailsStr = `<span style="color:var(--green)">[${parts.join(', ')}]</span>` + (l.note ? ` - ${esc(l.note)}` : '');
       }
     }
+
+    let mediaHtml = '';
+    if (l.log_type === 'Bệnh cây' && l.media_urls && l.media_urls.length > 0) {
+      mediaHtml = `
+        <div style="display:flex; gap:6px; margin-top:6px; overflow-x:auto; padding-bottom:4px;">
+          ${l.media_urls.map(m => {
+            const url = m.url || m;
+            const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
+            if (isVideo) {
+              return `<div style="width:40px; height:40px; border-radius:4px; overflow:hidden; position:relative; cursor:pointer; background:#000; flex-shrink:0;" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" style="width:100%; height:100%; object-fit:cover;"></video><i class="fa fa-play-circle" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:11px;"></i></div>`;
+            } else {
+              return `<div style="width:40px; height:40px; border-radius:4px; overflow:hidden; cursor:pointer; flex-shrink:0;" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+            }
+          }).join('')}
+        </div>
+      `;
+    }
+
     const dateStr = l.log_date ? new Date(l.log_date).toLocaleDateString('vi-VN', {
       year: 'numeric', month: '2-digit', day: '2-digit'
     }) : '—';
@@ -315,7 +356,12 @@ function renderUserLogsTableFull(logs) {
         <td data-label="Thời gian"><div>${dateStr}</div></td>
         <td data-label="Cây trồng"><div><strong>Cây #${l.plant_id}</strong> <small style="color:var(--gray-400)">(${esc(l.plant_type)})</small></div></td>
         <td data-label="Hoạt động"><div><span class="badge badge-gray" style="text-transform:none; font-weight:500;">${esc(l.log_type)}</span></div></td>
-        <td data-label="Chi tiết / Ghi chú"><div>${detailsStr}</div></td>
+        <td data-label="Chi tiết / Ghi chú">
+          <div>
+            ${detailsStr}
+            ${mediaHtml}
+          </div>
+        </td>
         <td data-label="Người thực hiện"><div><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></div></td>
       </tr>
     `;
@@ -921,10 +967,17 @@ function onCareLogTypeChange() {
       <div class="field">
         <label>Hình ảnh / Video thực tế (Tự động đóng dấu ảnh) *</label>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <input type="file" id="c-detail-media" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected()">
-          <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media').click()" style="width: 100%;">
-            <i class="fa-solid fa-camera"></i> Chụp ảnh hoặc Chọn video
-          </button>
+          <input type="file" id="c-detail-media-capture" accept="image/*,video/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
+          <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
+          
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex: 1; justify-content: center; gap: 6px; padding: 10px; display: inline-flex; align-items: center;">
+              <i class="fa-solid fa-camera"></i> Chụp hình
+            </button>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex: 1; justify-content: center; gap: 6px; padding: 10px; background: #fff; display: inline-flex; align-items: center;">
+              <i class="fa-solid fa-images"></i> Thư viện
+            </button>
+          </div>
           <div id="c-media-preview" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;"></div>
         </div>
       </div>
@@ -1047,12 +1100,13 @@ async function saveCareLog() {
 }
 
 /* ── Mobile Media Uploader & Watermark Helpers ── */
-function onCareMediaSelected() {
-  const input = document.getElementById('c-detail-media');
+function onCareMediaSelected(source) {
+  const input = document.getElementById(source === 'capture' ? 'c-detail-media-capture' : 'c-detail-media-library');
   const preview = document.getElementById('c-media-preview');
   if (!input || !preview) return;
 
-  selectedCareFiles = Array.from(input.files);
+  const newFiles = Array.from(input.files);
+  selectedCareFiles = selectedCareFiles.concat(newFiles);
   preview.innerHTML = '';
 
   if (selectedCareFiles.length === 0) return;
@@ -1193,6 +1247,10 @@ function initFloatingActionButton() {
   const fab = document.getElementById('fab-care-btn');
   if (!fab) return;
 
+  // Tránh gán đè nhiều lần bộ lắng nghe sự kiện khi reload dashboard
+  if (fab.dataset.initialized) return;
+  fab.dataset.initialized = 'true';
+
   let isDragging = false;
   let startX, startY;
   let initialLeft, initialTop;
@@ -1206,7 +1264,7 @@ function initFloatingActionButton() {
     initialLeft = rect.left;
     initialTop = rect.top;
 
-    // Shift to absolute left/top styles
+    // Chuyển sang dạng left/top tuyệt đối
     fab.style.right = 'auto';
     fab.style.bottom = 'auto';
     fab.style.left = `${initialLeft}px`;
@@ -1217,13 +1275,15 @@ function initFloatingActionButton() {
       fab.style.transform = 'scale(1.15)';
       fab.style.opacity = '0.9';
       fab.style.background = '#047857';
-    }, 350);
+      if (navigator.vibrate) navigator.vibrate(40);
+    }, 400); // 400ms nhấn giữ để di chuyển
   };
 
   const moveDrag = (clientX, clientY) => {
     if (longPressTimer && !isDragging) {
       const distance = Math.hypot(clientX - startX, clientY - startY);
-      if (distance > 6) {
+      // Tăng ngưỡng dung sai lên 25px để tránh việc run tay nhẹ của ngón chạm hủy mất timer
+      if (distance > 25) {
         clearTimeout(longPressTimer);
         longPressTimer = null;
       }
@@ -1258,7 +1318,7 @@ function initFloatingActionButton() {
     }
   };
 
-  // Mouse drag handlers
+  // Lắng nghe sự kiện chuột
   fab.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
     startDrag(e.clientX, e.clientY);
@@ -1273,7 +1333,7 @@ function initFloatingActionButton() {
     document.addEventListener('mouseup', handleMouseUp);
   });
 
-  // Touch drag handlers
+  // Lắng nghe sự kiện chạm (Touch)
   fab.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
     startDrag(touch.clientX, touch.clientY);
