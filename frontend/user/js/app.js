@@ -163,14 +163,16 @@ function renderUserPlantsTable(plants) {
   }
   tbody.innerHTML = plants.map(p => `
     <tr>
-      <td data-label="Mã cây"><strong>${esc(p.tree_code || p.id)}</strong></td>
+      <td data-label="Mã cây"><div><strong>${esc(p.tree_code || p.id)}</strong></div></td>
       <td data-label="Loại & Giống">
-        <strong>${esc(p.plant_type)}</strong>
-        ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
+        <div>
+          <strong>${esc(p.plant_type)}</strong>
+          ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
+        </div>
       </td>
-      <td data-label="Tuổi cây">${esc(p.plant_age || '—')}</td>
-      <td data-label="Sức khỏe">${healthBadge(p.health_status)}</td>
-      <td data-label="Vị trí">${esc(p.location || '—')}</td>
+      <td data-label="Tuổi cây"><div>${esc(p.plant_age || '—')}</div></td>
+      <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
+      <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="Thao tác">
         <button class="btn btn-secondary btn-xs" onclick="openCareModal(${p.id}, '${esc(p.tree_code || p.id)}', '${esc(p.plant_type)}')">
           <i class="fa-solid fa-file-signature"></i> Nhật ký
@@ -213,11 +215,11 @@ function renderUserLogsTable(logs) {
     }) : '—';
     return `
       <tr>
-        <td data-label="Thời gian">${dateStr}</td>
-        <td data-label="Cây trồng"><strong>Cây #${l.plant_id}</strong> (${esc(l.plant_type)})</td>
-        <td data-label="Hoạt động"><span class="badge badge-gray" style="text-transform:none; font-weight:500;">${esc(l.log_type)}</span></td>
-        <td data-label="Chi tiết / Ghi chú">${detailsStr}</td>
-        <td data-label="Người thực hiện"><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></td>
+        <td data-label="Thời gian"><div>${dateStr}</div></td>
+        <td data-label="Cây trồng"><div><strong>Cây #${l.plant_id}</strong> <small style="color:var(--gray-400)">(${esc(l.plant_type)})</small></div></td>
+        <td data-label="Hoạt động"><div><span class="badge badge-gray" style="text-transform:none; font-weight:500;">${esc(l.log_type)}</span></div></td>
+        <td data-label="Chi tiết / Ghi chú"><div>${detailsStr}</div></td>
+        <td data-label="Người thực hiện"><div><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></div></td>
       </tr>
     `;
   }).join('');

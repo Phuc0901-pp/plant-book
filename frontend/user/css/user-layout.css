@@ -826,13 +826,48 @@ tr:hover td {
 }
 
 @media (max-width: 768px) {
+  /* ── General Mobile Sizing Polish ── */
+  .content {
+    padding: 12px !important;
+  }
+  
+  .welcome-banner {
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+  }
+  .welcome-banner h1 {
+    font-size: 18px !important;
+    margin-bottom: 0 !important;
+  }
+  .welcome-banner p {
+    display: none !important; /* Hide long greeting text on mobile */
+  }
+  
+  #user-map {
+    height: 240px !important; /* Compact map height */
+    border-radius: 12px !important;
+  }
+  
+  .card {
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+  }
+  .card-header {
+    padding: 10px 14px !important;
+  }
+  .card-header h3 {
+    font-size: 14px !important;
+  }
+  
+  /* ── Mobile Navigation Bar ── */
   .bottom-nav {
     display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 60px;
     background: #ffffff;
     border-top: 1px solid var(--gray-200);
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
@@ -856,70 +891,100 @@ tr:hover td {
     transition: color 0.15s, transform 0.1s;
   }
   .bottom-nav-item i {
-    font-size: 20px;
+    font-size: 18px;
   }
   .bottom-nav-item.active {
     color: var(--green);
-    transform: scale(1.05);
   }
   
-  /* Thêm khoảng trống dưới cho content không bị che khuất */
   .main {
-    padding-bottom: 80px !important;
+    padding-bottom: 74px !important;
   }
   
-  /* Ẩn sidebar toggle và sidebar khi trên mobile */
-  .mobile-toggle-btn {
-    display: none !important;
-  }
-  .sidebar {
+  .mobile-toggle-btn, .sidebar {
     display: none !important;
   }
   
-  /* ── Mobile Table-to-Card Layout ── */
+  /* ── Mobile Table-to-Card Layout (Prevent Overflow) ── */
+  .table-responsive {
+    overflow-x: visible !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  table.table {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+  }
+  
   #user-plants-table, #user-logs-table {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px;
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box;
   }
   
   #user-plants-table tr, #user-logs-table tr {
-    display: flex;
-    flex-direction: column;
+    display: block !important;
+    width: 100% !important;
     background: var(--white);
-    border: 1.5px solid var(--gray-200);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    gap: 8px;
-    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    box-sizing: border-box;
   }
   
-  #user-plants-table tr:hover, #user-logs-table tr:hover {
-    background: #fff;
-    border-color: #bbf7d0;
-  }
-
   #user-plants-table td, #user-logs-table td {
-    display: flex;
+    display: flex !important;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
-    border: none;
+    padding: 6px 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed var(--gray-100) !important;
+    width: 100% !important;
     font-size: 13px;
+    box-sizing: border-box;
   }
-  
+
+  /* Make cell values align to the right side of the card */
+  #user-plants-table td > div, #user-logs-table td > div {
+    text-align: right !important;
+    display: block !important;
+  }
+
   #user-plants-table td::before, #user-logs-table td::before {
-    content: attr(data-label) ": ";
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--gray-400);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
   }
   
   #user-plants-table thead, #user-logs-table thead {
-    display: none;
+    display: none !important;
+  }
+
+  /* Optimize Action Button in Card */
+  #user-plants-table td[data-label="Thao tác"] {
+    display: block !important;
+    text-align: center !important;
+    border-bottom: none !important;
+    padding-top: 10px !important;
+    width: 100% !important;
+  }
+  #user-plants-table td[data-label="Thao tác"]::before {
+    display: none !important;
+  }
+  #user-plants-table td[data-label="Thao tác"] button {
+    width: 100% !important;
+    display: block !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
   }
 }
 
