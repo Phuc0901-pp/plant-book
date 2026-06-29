@@ -433,19 +433,10 @@
 <!-- Toast container -->
 <div id="toast-container"></div>
 
-<!-- Scripts -->
-<script src="/user/js/app.js"></script>
-<script src="/user/js/auth.js"></script>
-<script>
-  /* Cập nhật tên welcome khi app load */
-  const _origShowApp = showApp;
-  showApp = function() {
-    _origShowApp();
-    const nameEl = document.getElementById('welcome-name');
-    if (nameEl && currentUser) {
-      nameEl.textContent = currentUser.name || currentUser.full_name || 'bạn';
-    }
-  };
-</script>
+<!-- Scripts (ES Modules) -->
+<!-- auth.js phải load trước để xử lý token check khi tải trang -->
+<script type="module" src="/user/js/auth.js"></script>
+<!-- app.js là entry point: import tất cả module và expose lên window -->
+<script type="module" src="/user/js/app.js"></script>
 </body>
 </html>
