@@ -92,7 +92,7 @@ router.get('/', auth, async (req, res) => {
 
 router.get('/logs/recent', auth, async (req, res) => {
   try {
-    const daysLimit = 3;
+    const daysLimit = parseInt(req.query.days) || 3;
     let query = `
       SELECT pl.*, p.plant_type, p.plant_variety, p.location as plant_location, u.full_name as creator_name
       FROM plant_logs pl

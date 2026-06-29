@@ -103,17 +103,29 @@ function esc(str) {
 let userMap = null;
 let userMarkers = [];
 let allConfigsCache = {};
+let allPlantsCache = [];
+let allLogsCache = [];
+let recentLogsSummary = [];
 
 async function loadUserDashboard() {
   try {
     const [farms, plants, recentLogs, configs] = await Promise.all([
       api('/farms'),
       api('/plants'),
-      api('/plants/logs/recent'),
+      api('/plants/logs/recent?days=3'),
       api('/config')
     ]);
 
+    // Tải 30 ngày lịch sử cho tab Lịch sử
+    const allLogs = await api('/plants/logs/recent?days=30').catch(err => {
+      console.warn('Lỗi tải lịch sử 30 ngày:', err);
+      return [];
+    });
+
     allConfigsCache = configs;
+    allPlantsCache = plants;
+    allLogsCache = allLogs;
+    recentLogsSummary = recentLogs;
 
     // Update Welcome
     const nameEl = document.getElementById('welcome-name');
@@ -121,12 +133,19 @@ async function loadUserDashboard() {
       nameEl.textContent = currentUser.full_name || currentUser.name || 'nông hộ';
     }
     
-    document.getElementById('user-plant-count').textContent = plants.length;
+    // Cập nhật số lượng cây
+    const countEl = document.getElementById('user-plant-count');
+    if (countEl) countEl.textContent = plants.length;
+    const countFullEl = document.getElementById('user-plant-count-full');
+    if (countFullEl) countFullEl.textContent = plants.length;
 
     renderUserFarmsList(farms);
-    renderUserPlantsTable(plants);
-    renderUserLogsTable(recentLogs);
+    renderUserPlantsSummaryTable(plants); // Chỉ hiển thị 2-3 cây ở Trang chủ
+    renderUserPlantsTable(plants); // Hiển thị đầy đủ ở Trang trại
+    renderUserLogsTable(recentLogs); // Chỉ hiển thị tối đa 3 dòng nhật ký ở Trang chủ
+    renderUserLogsTableFull(allLogs); // Hiển thị đầy đủ ở Lịch sử
     renderUserReminders(plants);
+    initFloatingActionButton();
 
     await ensureUserMapboxToken();
     initUserMap(farms, plants);
@@ -154,11 +173,44 @@ function renderUserFarmsList(farms) {
   `).join('');
 }
 
+// Render danh sách tóm tắt (Trang chủ)
+function renderUserPlantsSummaryTable(plants) {
+  const tbody = document.getElementById('user-plants-summary-table');
+  if (!tbody) return;
+  if (!plants.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không có cây trồng nào được giao</p></td></tr>';
+    return;
+  }
+  
+  // Tóm gọn hiển thị tối đa 3 cây đầu tiên
+  const summaryList = plants.slice(0, 3);
+  tbody.innerHTML = summaryList.map(p => `
+    <tr>
+      <td data-label="Mã cây"><div><strong>${esc(p.tree_code || p.id)}</strong></div></td>
+      <td data-label="Loại & Giống">
+        <div>
+          <strong>${esc(p.plant_type)}</strong>
+          ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
+        </div>
+      </td>
+      <td data-label="Tuổi cây"><div>${esc(p.plant_age || '—')}</div></td>
+      <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
+      <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
+      <td data-label="Thao tác">
+        <button class="btn btn-secondary btn-xs" onclick="openCareModal(${p.id}, '${esc(p.tree_code || p.id)}', '${esc(p.plant_type)}')">
+          <i class="fa-solid fa-file-signature"></i> Nhật ký
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// Render danh sách đầy đủ (Trang trại)
 function renderUserPlantsTable(plants) {
   const tbody = document.getElementById('user-plants-table');
   if (!tbody) return;
   if (!plants.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không có cây trồng nào được giao</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không tìm thấy cây trồng phù hợp</p></td></tr>';
     return;
   }
   tbody.innerHTML = plants.map(p => `
@@ -190,11 +242,56 @@ function healthBadge(status) {
   return `<span class="badge badge-gray">${esc(status)}</span>`;
 }
 
+// Render Nhật ký tóm gọn (Trang chủ - Tối đa 3 hàng)
 function renderUserLogsTable(logs) {
   const tbody = document.getElementById('user-logs-table');
+  const moreWrap = document.getElementById('user-logs-more-btn-wrap');
   if (!tbody) return;
   if (!logs.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></td></tr>';
+    if (moreWrap) moreWrap.style.display = 'none';
+    return;
+  }
+  
+  if (moreWrap) {
+    moreWrap.style.display = logs.length > 3 ? 'block' : 'none';
+  }
+
+  const summaryLogs = logs.slice(0, 3);
+  tbody.innerHTML = summaryLogs.map(l => {
+    let detailsStr = esc(l.note || '');
+    if (l.details && Object.keys(l.details).length > 0) {
+      const parts = [];
+      if (l.details.method) parts.push(`Cách: ${l.details.method}`);
+      if (l.details.amount) parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+      if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
+      if (l.details.pesticide_name) parts.push(`Thuốc: ${l.details.pesticide_name}`);
+      if (l.details.reason) parts.push(`Lý do: ${l.details.reason}`);
+      if (parts.length > 0) {
+        detailsStr = `<span style="color:var(--green)">[${parts.join(', ')}]</span>` + (l.note ? ` - ${esc(l.note)}` : '');
+      }
+    }
+    const dateStr = l.log_date ? new Date(l.log_date).toLocaleDateString('vi-VN', {
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    }) : '—';
+    return `
+      <tr>
+        <td data-label="Thời gian"><div>${dateStr}</div></td>
+        <td data-label="Cây trồng"><div><strong>Cây #${l.plant_id}</strong> <small style="color:var(--gray-400)">(${esc(l.plant_type)})</small></div></td>
+        <td data-label="Hoạt động"><div><span class="badge badge-gray" style="text-transform:none; font-weight:500;">${esc(l.log_type)}</span></div></td>
+        <td data-label="Chi tiết / Ghi chú"><div>${detailsStr}</div></td>
+        <td data-label="Người thực hiện"><div><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></div></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Render Nhật ký đầy đủ (Lịch sử)
+function renderUserLogsTableFull(logs) {
+  const tbody = document.getElementById('user-logs-table-full');
+  if (!tbody) return;
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không tìm thấy hoạt động nào được ghi nhận</p></td></tr>';
     return;
   }
   tbody.innerHTML = logs.map(l => {
@@ -225,6 +322,51 @@ function renderUserLogsTable(logs) {
   }).join('');
 }
 
+// Bộ lọc Tìm kiếm Cây
+function filterUserPlants() {
+  const query = document.getElementById('user-plant-search').value.trim().toLowerCase();
+  if (!query) {
+    renderUserPlantsTable(allPlantsCache);
+    return;
+  }
+  const filtered = allPlantsCache.filter(p => {
+    const code = (p.tree_code || '').toLowerCase();
+    const idStr = String(p.id);
+    const type = (p.plant_type || '').toLowerCase();
+    const variety = (p.plant_variety || '').toLowerCase();
+    const loc = (p.location || '').toLowerCase();
+    return code.includes(query) || idStr.includes(query) || type.includes(query) || variety.includes(query) || loc.includes(query);
+  });
+  renderUserPlantsTable(filtered);
+}
+
+// Bộ lọc Tìm kiếm Nhật ký
+function filterUserLogs() {
+  const query = document.getElementById('user-log-search').value.trim().toLowerCase();
+  const filterType = document.getElementById('user-log-filter-type').value;
+
+  let filtered = allLogsCache;
+  if (filterType !== 'all') {
+    filtered = filtered.filter(l => l.log_type === filterType);
+  }
+
+  if (query) {
+    filtered = filtered.filter(l => {
+      const plantIdStr = String(l.plant_id);
+      const note = (l.note || '').toLowerCase();
+      const type = (l.log_type || '').toLowerCase();
+      const creator = (l.creator_name || '').toLowerCase();
+      let detailsStr = '';
+      if (l.details) {
+        detailsStr = JSON.stringify(l.details).toLowerCase();
+      }
+      return plantIdStr.includes(query) || note.includes(query) || type.includes(query) || creator.includes(query) || detailsStr.includes(query);
+    });
+  }
+  renderUserLogsTableFull(filtered);
+}
+
+// Xử lý nhắc nhở tinh gọn và khung dịch bệnh
 function renderUserReminders(plants) {
   const container = document.getElementById('reminder-container');
   const countEl = document.getElementById('reminder-count');
@@ -253,53 +395,130 @@ function renderUserReminders(plants) {
     }
   });
 
-  const totalReminders = unwatered.length + unfertilized.length;
-  if (countEl) countEl.textContent = `${totalReminders} nhắc nhở`;
+  let reminderCount = 0;
+  let html = '';
 
-  if (totalReminders === 0) {
+  // 1. Cảnh báo Cây Bệnh thông minh (kèm ảnh/video thực tế)
+  const sickPlants = plants.filter(p => p.health_status === 'Bệnh');
+  if (sickPlants.length > 0) {
+    reminderCount += sickPlants.length;
+    html += `<div style="font-size:11px; font-weight:700; color:#ef4444; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.04em;"><i class="fa-solid fa-triangle-exclamation"></i> Phát hiện cây bệnh (${sickPlants.length})</div>`;
+    
+    sickPlants.forEach(p => {
+      // Tìm log bệnh gần nhất trong lịch sử
+      const diseaseLog = allLogsCache.find(l => l.plant_id === p.id && l.log_type === 'Bệnh cây');
+      const details = diseaseLog?.details || {};
+      const diseaseName = details.disease_name || 'Chưa xác định dịch bệnh';
+      const severity = details.severity || 'Trung bình';
+      const mediaUrls = diseaseLog?.media_urls || [];
+
+      let mediaHtml = '';
+      if (mediaUrls && mediaUrls.length > 0) {
+        mediaHtml = `
+          <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto; padding-bottom:4px;">
+            ${mediaUrls.map(m => {
+              const url = m.url || m;
+              const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
+              if (isVideo) {
+                return `<div style="width:50px; height:50px; border-radius:6px; overflow:hidden; position:relative; cursor:pointer; background:#000;" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" style="width:100%; height:100%; object-fit:cover;"></video><i class="fa fa-play-circle" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:14px;"></i></div>`;
+              } else {
+                return `<div style="width:50px; height:50px; border-radius:6px; overflow:hidden; cursor:pointer;" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+              }
+            }).join('')}
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="disease-alert-card" style="padding:12px; background:#fef2f2; border:1px solid #fee2e2; border-radius:10px; margin-bottom:8px; box-shadow: 0 2px 4px rgba(239,68,68,0.03);">
+          <div style="font-size:12px; color:#991b1b; font-weight:700;">
+            ⚠️ Cây ${esc(p.tree_code || p.id)}: Bị ${esc(diseaseName)}
+          </div>
+          <div style="font-size:11px; color:#b91c1c; margin-top:4px;">
+            Mức độ: <span class="badge" style="background:#fee2e2; color:#b91c1c; font-size:9px; padding:2px 6px;">${esc(severity)}</span>
+            ${diseaseLog?.note ? `<br><span style="color:#7f1d1d; font-style:italic;">"${esc(diseaseLog.note)}"</span>` : ''}
+          </div>
+          ${mediaHtml}
+        </div>
+      `;
+    });
+  }
+
+  // 2. Nhắc nhở Tưới nước gộp
+  if (unwatered.length > 0) {
+    reminderCount++;
+    const isAll = unwatered.length === plants.length;
+    const alertText = isAll 
+      ? '💦 Chưa tưới cả vườn!' 
+      : `💦 Cây chưa được tưới: ${unwatered.map(p => p.tree_code || p.id).join(', ')}`;
+      
+    html += `
+      <div style="padding:10px 12px; background:#eff6ff; border:1px solid #dbeafe; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:12px; font-weight:600; color:#1e40af; line-height:1.4; flex: 1; padding-right: 8px;">
+          ${esc(alertText)}
+        </div>
+        ${isAll ? `
+          <button class="btn btn-primary btn-xs" style="background:var(--blue); color:#fff; font-size:10px; padding:4px 8px; border-radius:6px;" onclick="quickCareAll('Tưới nước')">Tưới cả vườn</button>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // 3. Nhắc nhở Bón phân gộp
+  if (unfertilized.length > 0) {
+    reminderCount++;
+    const isAll = unfertilized.length === plants.length;
+    const alertText = isAll 
+      ? '🧪 Chưa bón phân cả vườn!' 
+      : `🧪 Cây chưa bón phân (quá 7 ngày): ${unfertilized.map(p => p.tree_code || p.id).join(', ')}`;
+      
+    html += `
+      <div style="padding:10px 12px; background:#fffbeb; border:1px solid #fef3c7; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:12px; font-weight:600; color:#854d0e; line-height:1.4; flex: 1; padding-right: 8px;">
+          ${esc(alertText)}
+        </div>
+      </div>
+    `;
+  }
+
+  if (countEl) countEl.textContent = `${reminderCount} nhắc nhở`;
+
+  if (reminderCount === 0) {
     container.innerHTML = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-circle-check" style="color:var(--green)"></i><p>Tất cả cây đã được chăm sóc đầy đủ hôm nay!</p></div>';
     return;
   }
 
-  let html = '';
-
-  if (unwatered.length > 0) {
-    html += `<div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.04em;"><i class="fa-solid fa-droplet" style="color:var(--blue)"></i> Chưa tưới hôm nay (${unwatered.length})</div>`;
-    html += unwatered.slice(0, 5).map(p => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#fff7ed; border:1px solid #ffedd5; border-radius:8px; margin-bottom:6px;">
-        <div style="font-size:12px;">
-          <strong>Cây ${esc(p.tree_code || p.id)}</strong> (${esc(p.plant_type)})
-        </div>
-        <button class="btn btn-primary btn-xs" style="background:var(--blue); color:#fff;" onclick="quickCare(${p.id}, 'Tưới nước')">
-          Tưới nhanh
-        </button>
-      </div>
-    `).join('');
-    if (unwatered.length > 5) {
-      html += `<div style="font-size:11px; color:var(--text-muted); text-align:center; margin-bottom:10px;">Và ${unwatered.length - 5} cây khác...</div>`;
-    } else {
-      html += `<div style="height:8px"></div>`;
-    }
-  }
-
-  if (unfertilized.length > 0) {
-    html += `<div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.04em;"><i class="fa-solid fa-flask" style="color:var(--amber)"></i> Quá 7 ngày chưa bón phân (${unfertilized.length})</div>`;
-    html += unfertilized.slice(0, 5).map(p => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#fffbeb; border:1px solid #fef3c7; border-radius:8px; margin-bottom:6px;">
-        <div style="font-size:12px;">
-          <strong>Cây ${esc(p.tree_code || p.id)}</strong> (${esc(p.plant_type)})
-        </div>
-        <button class="btn btn-primary btn-xs" style="background:var(--amber); color:#fff;" onclick="quickCare(${p.id}, 'Bón phân')">
-          Bón nhanh
-        </button>
-      </div>
-    `).join('');
-    if (unfertilized.length > 5) {
-      html += `<div style="font-size:11px; color:var(--text-muted); text-align:center;">Và ${unfertilized.length - 5} cây khác...</div>`;
-    }
-  }
-
   container.innerHTML = html;
+}
+
+async function quickCareAll(logType) {
+  if (!confirm('Bạn có chắc chắn muốn ghi nhận ĐÃ TƯỚI NƯỚC nhanh cho tất cả cây chưa tưới?')) return;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  
+  const unwatered = allPlantsCache.filter(p => p.last_watered !== todayStr);
+  if (unwatered.length === 0) return;
+
+  toast('Đang ghi nhận chăm sóc cả vườn...');
+  try {
+    for (const p of unwatered) {
+      const body = {
+        log_type: logType,
+        log_date: todayStr,
+        note: 'Tưới nhanh cả vườn tự động',
+        media_urls: [],
+        details: { method: 'Tự động cả vườn', amount: 2, unit: 'lít' }
+      };
+      await api(`/plants/${p.id}/logs`, {
+        method: 'POST',
+        body: JSON.stringify(body)
+      });
+    }
+    toast('Đã ghi nhận chăm sóc cả vườn thành công!');
+    loadUserDashboard();
+  } catch (err) {
+    toast('Lỗi ghi nhận: ' + err.message, 'error');
+  }
 }
 
 async function quickCare(plantId, logType) {
@@ -545,14 +764,35 @@ function initUserMap(farms, plants) {
 let selectedCareFiles = [];
 
 function openCareModal(plantId, treeCode, plantType) {
-  window._activePlantTreeCode = treeCode;
   selectedCareFiles = [];
-  document.getElementById('c-plant-id').value = plantId;
-  document.getElementById('c-plant-display').value = `Cây ${treeCode} - ${plantType}`;
   document.getElementById('c-note').value = '';
   document.getElementById('c-log-type').value = 'Tưới nước';
-  
   onCareLogTypeChange();
+
+  const displayEl = document.getElementById('c-plant-display');
+  const selectEl = document.getElementById('c-plant-id-select');
+  const idEl = document.getElementById('c-plant-id');
+
+  if (plantId) {
+    // Ghi nhật ký cho 1 cây cụ thể
+    window._activePlantTreeCode = treeCode;
+    idEl.value = plantId;
+    displayEl.value = `Cây ${treeCode} - ${plantType}`;
+    displayEl.style.display = 'block';
+    selectEl.style.display = 'none';
+  } else {
+    // Chạm từ nút nổi FAB chung (hiển thị Dropdown danh sách tất cả cây)
+    window._activePlantTreeCode = '';
+    idEl.value = '';
+    displayEl.style.display = 'none';
+    
+    selectEl.innerHTML = allPlantsCache.map(p => `
+      <option value="${p.id}" data-code="${esc(p.tree_code || p.id)}">
+        Cây ${esc(p.tree_code || p.id)} - ${esc(p.plant_type)}
+      </option>
+    `).join('');
+    selectEl.style.display = 'block';
+  }
 
   document.getElementById('care-modal').style.display = 'flex';
 }
@@ -693,7 +933,20 @@ function onCareLogTypeChange() {
 }
 
 async function saveCareLog() {
-  const plantId = document.getElementById('c-plant-id').value;
+  const selectEl = document.getElementById('c-plant-id-select');
+  const plantId = selectEl.style.display === 'block' ? selectEl.value : document.getElementById('c-plant-id').value;
+  
+  if (!plantId) {
+    toast('Vui lòng chọn một cây trồng!', 'error');
+    return;
+  }
+
+  // Cập nhật active tree code nếu chọn từ select
+  if (selectEl.style.display === 'block') {
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    window._activePlantTreeCode = selectedOption.getAttribute('data-code') || plantId;
+  }
+
   const logType = document.getElementById('c-log-type').value;
   const note = document.getElementById('c-note').value.trim();
 
@@ -887,5 +1140,154 @@ function watermarkImage(file, treeCode, diseaseName) {
     };
     reader.onerror = () => resolve(file);
     reader.readAsDataURL(file);
+  });
+}
+
+// Lightbox viewer for diseased plant media (Images & Videos)
+function openLightbox(url, type) {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.background = 'rgba(0,0,0,0.9)';
+  overlay.style.zIndex = '2000';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.padding = '20px';
+  overlay.onclick = () => overlay.remove();
+
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '×';
+  closeBtn.style.position = 'absolute';
+  closeBtn.style.top = '20px';
+  closeBtn.style.right = '20px';
+  closeBtn.style.background = 'none';
+  closeBtn.style.border = 'none';
+  closeBtn.style.color = '#fff';
+  closeBtn.style.fontSize = '40px';
+  closeBtn.style.cursor = 'pointer';
+  overlay.appendChild(closeBtn);
+
+  if (type === 'video') {
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.autoplay = true;
+    video.style.maxWidth = '100%';
+    video.style.maxHeight = '90vh';
+    overlay.appendChild(video);
+  } else {
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '90vh';
+    img.style.objectFit = 'contain';
+    overlay.appendChild(img);
+  }
+
+  document.body.appendChild(overlay);
+}
+
+// Drag & Drop floating action button (FAB) trigger
+function initFloatingActionButton() {
+  const fab = document.getElementById('fab-care-btn');
+  if (!fab) return;
+
+  let isDragging = false;
+  let startX, startY;
+  let initialLeft, initialTop;
+  let longPressTimer = null;
+
+  const startDrag = (clientX, clientY) => {
+    startX = clientX;
+    startY = clientY;
+    
+    const rect = fab.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+
+    // Shift to absolute left/top styles
+    fab.style.right = 'auto';
+    fab.style.bottom = 'auto';
+    fab.style.left = `${initialLeft}px`;
+    fab.style.top = `${initialTop}px`;
+
+    longPressTimer = setTimeout(() => {
+      isDragging = true;
+      fab.style.transform = 'scale(1.15)';
+      fab.style.opacity = '0.9';
+      fab.style.background = '#047857';
+    }, 350);
+  };
+
+  const moveDrag = (clientX, clientY) => {
+    if (longPressTimer && !isDragging) {
+      const distance = Math.hypot(clientX - startX, clientY - startY);
+      if (distance > 6) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    }
+
+    if (isDragging) {
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+
+      const newLeft = Math.max(10, Math.min(window.innerWidth - 66, initialLeft + dx));
+      const newTop = Math.max(10, Math.min(window.innerHeight - 66, initialTop + dy));
+
+      fab.style.left = `${newLeft}px`;
+      fab.style.top = `${newTop}px`;
+    }
+  };
+
+  const endDrag = (e) => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+
+    if (isDragging) {
+      isDragging = false;
+      fab.style.transform = '';
+      fab.style.opacity = '';
+      fab.style.background = '';
+      if (e) e.preventDefault();
+    } else {
+      openCareModal(null, null, null);
+    }
+  };
+
+  // Mouse drag handlers
+  fab.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    startDrag(e.clientX, e.clientY);
+    
+    const handleMouseMove = (ev) => moveDrag(ev.clientX, ev.clientY);
+    const handleMouseUp = (ev) => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      endDrag(ev);
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  });
+
+  // Touch drag handlers
+  fab.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  }, { passive: true });
+
+  fab.addEventListener('touchmove', (e) => {
+    if (isDragging) {
+      e.preventDefault();
+    }
+    const touch = e.touches[0];
+    moveDrag(touch.clientX, touch.clientY);
+  }, { passive: false });
+
+  fab.addEventListener('touchend', (e) => {
+    endDrag(e);
   });
 }

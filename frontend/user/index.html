@@ -130,31 +130,18 @@
 
     <!-- Navigation -->
     <nav>
-      <div class="nav-section">Tổng quan</div>
+      <div class="nav-section">Chức năng</div>
       <div class="nav-item active" data-page="home" onclick="showPage('home')">
         <i class="fa fa-house"></i> Trang chủ
       </div>
-
-      <div class="nav-section">Cây trồng</div>
       <div class="nav-item" data-page="myplants" onclick="showPage('myplants')">
-        <i class="fa fa-seedling"></i> Cây trồng của tôi
-        <span class="nav-soon">sắp ra</span>
+        <i class="fa-solid fa-map-location-dot"></i> Trang trại
       </div>
       <div class="nav-item" data-page="logs" onclick="showPage('logs')">
-        <i class="fa fa-clipboard-list"></i> Nhật ký canh tác
-        <span class="nav-soon">sắp ra</span>
+        <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử
       </div>
-
-      <div class="nav-section">Báo cáo</div>
-      <div class="nav-item" data-page="reports" onclick="showPage('reports')">
-        <i class="fa fa-chart-bar"></i> Báo cáo
-        <span class="nav-soon">sắp ra</span>
-      </div>
-
-      <div class="nav-section">Tài khoản</div>
       <div class="nav-item" data-page="settings" onclick="showPage('settings')">
         <i class="fa fa-gear"></i> Cài đặt
-        <span class="nav-soon">sắp ra</span>
       </div>
     </nav>
 
@@ -196,21 +183,10 @@
         <!-- Dashboard Layout Grid (2 Columns) -->
         <div class="user-dashboard-grid" style="display: flex; gap: 24px; flex-wrap: wrap;">
           
-          <!-- LEFT: Map, Recent Activities, My Plants list -->
+          <!-- LEFT: Recent Activities, My Plants list summary -->
           <div style="flex: 1; min-width: 600px; display: flex; flex-direction: column; gap: 24px;" class="dashboard-left">
-            <!-- Bản đồ Trang trại -->
-            <div class="card">
-              <div class="card-header">
-                <h3><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Trang trại của tôi</h3>
-                <span style="font-size:11px; color:var(--gray-400)">Vị trí cây trồng & ranh giới đất</span>
-              </div>
-              <div style="padding: 12px;">
-                <div id="user-map" style="width: 100%; height: 350px; border-radius: 8px; background: #e5e7eb; overflow: hidden;"></div>
-              </div>
-            </div>
-
-            <!-- Danh sách Cây trồng -->
-            <div class="card">
+            <!-- Tóm tắt Danh sách Cây trồng -->
+            <div class="card" id="user-plants-summary-card">
               <div class="card-header">
                 <h3><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Danh sách Cây trồng</h3>
                 <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count">0</strong> cây</span>
@@ -227,14 +203,19 @@
                       <th style="width:110px">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody id="user-plants-table">
+                  <tbody id="user-plants-summary-table">
                     <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
                   </tbody>
                 </table>
               </div>
+              <div style="padding: 12px 16px; border-top: 1px solid var(--gray-100);">
+                <button class="btn btn-secondary btn-sm" onclick="showPage('myplants')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  Xem tất cả cây trồng <i class="fa fa-arrow-right"></i>
+                </button>
+              </div>
             </div>
 
-            <!-- Hoạt động canh tác gần đây (3 ngày) -->
+            <!-- Hoạt động canh tác gần đây (Tối đa 3 dòng) -->
             <div class="card">
               <div class="card-header">
                 <h3><i class="fa-solid fa-clipboard-list" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3>
@@ -255,10 +236,15 @@
                   </tbody>
                 </table>
               </div>
+              <div style="padding: 12px 16px; border-top: 1px solid var(--gray-100);" id="user-logs-more-btn-wrap">
+                <button class="btn btn-secondary btn-sm" onclick="showPage('logs')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  Xem chi tiết lịch sử <i class="fa-solid fa-clock-rotate-left"></i>
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- RIGHT: Reminders and quick stats -->
+          <!-- RIGHT: Reminders -->
           <div style="width: 320px; display: flex; flex-direction: column; gap: 24px;" class="dashboard-right">
             <!-- Lịch trình & Nhắc nhở hôm nay -->
             <div class="card" style="border: 1.5px solid #fed7aa; box-shadow: 0 4px 12px rgba(249,115,22,0.08);">
@@ -267,70 +253,91 @@
                 <span class="badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa; font-size:10px" id="reminder-count">0 nhắc nhở</span>
               </div>
               <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;" id="reminder-container">
-                <!-- Reminder items populated dynamically -->
                 <div class="empty-state" style="padding:16px"><i class="fa-solid fa-circle-check" style="color:var(--green)"></i><p>Tất cả cây đã được chăm sóc đầy đủ hôm nay!</p></div>
               </div>
             </div>
-
-            <!-- Thông tin Trang trại phụ trách -->
-            <div class="card">
-              <div class="card-header">
-                <h3><i class="fa-solid fa-wheat-awn" style="color:var(--green)"></i> Trang trại phụ trách</h3>
-              </div>
-              <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;" id="user-farms-container">
-                <div class="empty-state" style="padding:12px"><p>Bạn chưa được gán phụ trách trang trại nào.</p></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>ze:15px;font-weight:700;margin-bottom:4px;">Cài đặt tài khoản</div>
-              <div style="font-size:13px;color:var(--text-muted);">Cập nhật thông tin cá nhân, thay đổi mật khẩu.</div>
-            </div>
-            <div style="
-              display:inline-flex;align-items:center;gap:5px;
-              font-size:11px;font-weight:600;
-              color:var(--user-accent);
-            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
           </div>
         </div>
       </div><!-- end page-home -->
 
-      <!-- ── Cây trồng của tôi ── -->
+      <!-- ── TRANG TRẠI (Bản đồ & Danh sách đầy đủ cây) ── -->
       <div class="page-section" id="page-myplants">
-        <div class="dev-banner">
-          <div class="dev-icon-wrap"><i class="fa fa-seedling"></i></div>
-          <div class="dev-title">Cây trồng của tôi</div>
-          <div class="dev-subtitle">
-            Tính năng xem danh sách cây trồng được phân công, theo dõi sức khỏe
-            và tiến trình đang được phát triển.
+        <!-- Bản đồ Trang trại -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Trang trại của tôi</h3>
+            <span style="font-size:11px; color:var(--gray-400)">Vị trí cây trồng & ranh giới đất</span>
           </div>
-          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
+          <div style="padding: 12px;">
+            <div id="user-map" style="width: 100%; height: 350px; border-radius: 8px; background: #e5e7eb; overflow: hidden;"></div>
+          </div>
+        </div>
+
+        <!-- Danh sách Cây trồng Đầy đủ -->
+        <div class="card">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <h3><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Danh sách Cây trồng</h3>
+            <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count-full">0</strong> cây</span>
+          </div>
+          <!-- Thanh tìm kiếm danh sách cây trồng -->
+          <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 12px; padding: 12px 16px 0;">
+            <input type="text" id="user-plant-search" placeholder="🔍 Tìm theo mã cây, giống, loại, vị trí..." oninput="filterUserPlants()" style="flex:1; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none; background:#fff;">
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã cây</th>
+                  <th>Loại & Giống</th>
+                  <th>Tuổi cây</th>
+                  <th>Sức khỏe</th>
+                  <th>Vị trí</th>
+                  <th style="width:110px">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="user-plants-table">
+                <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- ── Nhật ký canh tác ── -->
+      <!-- ── LỊCH SỬ (Toàn bộ hoạt động canh tác) ── -->
       <div class="page-section" id="page-logs">
-        <div class="dev-banner">
-          <div class="dev-icon-wrap"><i class="fa fa-clipboard-list"></i></div>
-          <div class="dev-title">Nhật ký canh tác</div>
-          <div class="dev-subtitle">
-            Xem lịch sử các hoạt động canh tác: tưới nước, bón phân, phòng trừ
-            sâu bệnh, thu hoạch… đang được xây dựng.
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử Hoạt động Canh tác</h3>
           </div>
-          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
-        </div>
-      </div>
-
-      <!-- ── Báo cáo ── -->
-      <div class="page-section" id="page-reports">
-        <div class="dev-banner">
-          <div class="dev-icon-wrap"><i class="fa fa-chart-bar"></i></div>
-          <div class="dev-title">Báo cáo</div>
-          <div class="dev-subtitle">
-            Xuất báo cáo canh tác theo kỳ, chia sẻ URL công khai với đội nhóm
-            hoặc đối tác. Tính năng đang được phát triển.
+          <!-- Thanh tìm kiếm và lọc lịch sử -->
+          <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 12px; padding: 12px 16px 0; flex-wrap: wrap;">
+            <input type="text" id="user-log-search" placeholder="🔍 Tìm theo mã cây, nội dung ghi chú, loại phân/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none;">
+            <select id="user-log-filter-type" onchange="filterUserLogs()" style="flex:1; min-width: 130px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none;">
+              <option value="all">Tất cả hoạt động</option>
+              <option value="Tưới nước">💧 Tưới cây</option>
+              <option value="Bón phân">🧪 Bón phân</option>
+              <option value="Phun thuốc">💊 Phun thuốc</option>
+              <option value="Cắt lá">🍃 Cắt cành/lá</option>
+              <option value="Tỉa hoa">🌸 Tỉa hoa/quả</option>
+              <option value="Bệnh cây">🐛 Bệnh cây</option>
+            </select>
           </div>
-          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Cây trồng</th>
+                  <th>Hoạt động</th>
+                  <th>Chi tiết / Ghi chú</th>
+                  <th>Người thực hiện</th>
+                </tr>
+              </thead>
+              <tbody id="user-logs-table-full">
+                <tr><td colspan="5" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -340,8 +347,7 @@
           <div class="dev-icon-wrap"><i class="fa fa-gear"></i></div>
           <div class="dev-title">Cài đặt tài khoản</div>
           <div class="dev-subtitle">
-            Cập nhật thông tin cá nhân, thay đổi mật khẩu và quản lý thông báo
-            đang được phát triển.
+            Cập nhật thông tin cá nhân, thay đổi mật khẩu và quản lý thông báo đang được phát triển.
           </div>
           <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
         </div>
@@ -358,18 +364,23 @@
     <span>Trang chủ</span>
   </div>
   <div class="bottom-nav-item" data-page="myplants" onclick="showPage('myplants')">
-    <i class="fa-solid fa-seedling"></i>
-    <span>Cây trồng</span>
+    <i class="fa-solid fa-map-location-dot"></i>
+    <span>Trang trại</span>
   </div>
   <div class="bottom-nav-item" data-page="logs" onclick="showPage('logs')">
-    <i class="fa-solid fa-clipboard-list"></i>
-    <span>Nhật ký</span>
+    <i class="fa-solid fa-clock-rotate-left"></i>
+    <span>Lịch sử</span>
   </div>
   <div class="bottom-nav-item" data-page="settings" onclick="showPage('settings')">
     <i class="fa-solid fa-gear"></i>
     <span>Cài đặt</span>
   </div>
 </div>
+
+<!-- Floating Action Button (FAB) -->
+<button class="fab-btn" id="fab-care-btn">
+  <i class="fa fa-plus"></i>
+</button>
 
 <!-- ════════════ CARE MODAL ════════════ -->
 <div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
@@ -382,8 +393,11 @@
       <input type="hidden" id="c-plant-id">
       
       <div class="field">
-        <label>Cây trồng</label>
-        <input type="text" id="c-plant-display" readonly style="background:var(--gray-50); font-weight:600;">
+        <label>Cây trồng *</label>
+        <div id="c-plant-selection-wrap">
+          <input type="text" id="c-plant-display" readonly style="background:var(--gray-50); font-weight:600;">
+          <select id="c-plant-id-select" style="display:none; width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600; background:#fff;"></select>
+        </div>
       </div>
 
       <div class="field">
