@@ -18,7 +18,7 @@ jobs:
           echo "Pinging $URL..."
           response=$(curl -s -w "%{http_code}" -o /dev/null "$URL")
           if [ "$response" -eq 200 ]; then
-            echo "✅ Ping thành công! Dịch vụ đang hoạt động."
+            echo "[SUCCESS] Ping thành công! Dịch vụ đang hoạt động."
           else
-            echo "⚠️ Cảnh báo: Phản hồi từ máy chủ nhận được mã $response. Vui lòng kiểm tra lại URL: $URL"
+            echo "[WARMING] Cảnh báo: Phản hồi từ máy chủ nhận được mã $response. Vui lòng kiểm tra lại URL: $URL"
           fi
