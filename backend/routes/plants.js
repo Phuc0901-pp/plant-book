@@ -49,6 +49,12 @@ router.get('/', auth, async (req, res) => {
     const params = [];
     let idx = 1;
 
+    if (req.user.role !== 'admin') {
+      query += ` AND f.user_id = $${idx}`;
+      params.push(req.user.id);
+      idx++;
+    }
+
     if (search) {
       query += ` AND (p.plant_type ILIKE $${idx} OR p.plant_variety ILIKE $${idx} OR p.location ILIKE $${idx} OR p.tree_code ILIKE $${idx})`;
       params.push(`%${search}%`);
@@ -87,15 +93,21 @@ router.get('/', auth, async (req, res) => {
 router.get('/logs/recent', auth, async (req, res) => {
   try {
     const daysLimit = 3;
-    const result = await pool.query(
-      `SELECT pl.*, p.plant_type, p.plant_variety, p.location as plant_location, u.full_name as creator_name
-       FROM plant_logs pl
-       JOIN plants p ON pl.plant_id = p.id
-       LEFT JOIN users u ON pl.created_by = u.id
-       WHERE pl.log_date >= CURRENT_DATE - $1::integer
-       ORDER BY pl.log_date DESC, pl.id DESC`,
-      [daysLimit]
-    );
+    let query = `
+      SELECT pl.*, p.plant_type, p.plant_variety, p.location as plant_location, u.full_name as creator_name
+      FROM plant_logs pl
+      JOIN plants p ON pl.plant_id = p.id
+      LEFT JOIN farms f ON f.id = p.farm_id
+      LEFT JOIN users u ON pl.created_by = u.id
+      WHERE pl.log_date >= CURRENT_DATE - $1::integer
+    `;
+    const params = [daysLimit];
+    if (req.user.role !== 'admin') {
+      query += ` AND f.user_id = $2 `;
+      params.push(req.user.id);
+    }
+    query += ` ORDER BY pl.log_date DESC, pl.id DESC `;
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching recent logs:', err);
@@ -106,16 +118,23 @@ router.get('/logs/recent', auth, async (req, res) => {
 router.get('/:id(\\d+)', auth, async (req, res) => {
   try {
     const plant = await pool.query(
-      `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields
-       FROM plants p LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
+      `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields, f.user_id as farm_owner_id
+       FROM plants p 
+       LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
+       LEFT JOIN farms f ON f.id = p.farm_id
        WHERE p.id=$1`, [req.params.id]
     );
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
 
+    const row = plant.rows[0];
+    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
+    }
+
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [req.params.id]);
     const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 ORDER BY log_date DESC', [req.params.id]);
 
-    res.json({ ...plant.rows[0], media: media.rows, logs: logs.rows });
+    res.json({ ...row, media: media.rows, logs: logs.rows });
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
   }
@@ -268,10 +287,19 @@ router.delete('/:plantId/media/:mediaId', auth, async (req, res) => {
 router.post('/:id/logs', auth, async (req, res) => {
   try {
     const { log_date, log_type, note, media_urls, details } = req.body;
+    const plantId = req.params.id;
+    
+    // Check permission
+    const plant = await pool.query('SELECT p.id, f.user_id FROM plants p LEFT JOIN farms f ON f.id = p.farm_id WHERE p.id=$1', [plantId]);
+    if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
+    if (req.user.role !== 'admin' && plant.rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền ghi nhật ký cho cây này.' });
+    }
+
     const result = await pool.query(
       `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [req.params.id, log_date || new Date().toISOString().slice(0,10), log_type, note,
+      [plantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
        JSON.stringify(media_urls || []), JSON.stringify(details || {}), req.user.id]
     );
     res.status(201).json(result.rows[0]);

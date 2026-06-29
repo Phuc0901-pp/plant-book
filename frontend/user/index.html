@@ -15,6 +15,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Styles -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
   <link rel="stylesheet" href="/user/css/user-layout.css">
 </head>
 <body>
@@ -179,156 +181,109 @@
     <!-- Content -->
     <div class="content">
 
-      <!-- ── Trang chủ ── -->
       <div class="page-section active" id="page-home">
         <!-- Welcome banner -->
-        <div style="
-          background: linear-gradient(135deg, var(--green-dark) 0%, #2d6a4f 60%, #1e5c40 100%);
-          border-radius: var(--radius);
-          padding: 36px 40px;
-          margin-bottom: 24px;
-          position: relative;
-          overflow: hidden;
-          color: #fff;
-        ">
+        <div style="background: linear-gradient(135deg, var(--green-dark) 0%, #2d6a4f 60%, #1e5c40 100%); border-radius: var(--radius); padding: 30px 36px; margin-bottom: 24px; color: #fff; position: relative; overflow: hidden; box-shadow: var(--shadow);">
           <!-- Decorative circle -->
-          <div style="
-            position:absolute; right:-30px; top:-30px;
-            width:200px; height:200px;
-            background: rgba(255,255,255,.05);
-            border-radius:50%;
-          "></div>
-          <div style="
-            position:absolute; right:60px; bottom:-50px;
-            width:140px; height:140px;
-            background: rgba(255,255,255,.04);
-            border-radius:50%;
-          "></div>
-
-          <div style="position:relative;z-index:1;">
-            <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:6px;">
-              <i class="fa fa-leaf"></i> &nbsp;Plant Book · Tanbao Corp
-            </div>
-            <h2 style="font-size:26px;font-weight:700;margin-bottom:8px;">
-              Xin chào, <span id="welcome-name">bạn</span> 👋
-            </h2>
-            <p style="font-size:14px;color:rgba(255,255,255,.7);max-width:480px;line-height:1.6;">
-              Chào mừng đến với cổng người dùng Plant Book. Các tính năng đang được
-              xây dựng và sẽ sớm ra mắt. Cảm ơn sự kiên nhẫn của bạn!
-            </p>
-            <div style="
-              display:inline-flex;align-items:center;gap:6px;
-              margin-top:20px;
-              background:rgba(255,255,255,.15);
-              border:1px solid rgba(255,255,255,.2);
-              border-radius:20px;
-              padding:6px 16px;
-              font-size:12px;font-weight:600;
-              backdrop-filter:blur(4px);
-            ">
-              <i class="fa fa-rocket"></i> Phiên bản đang phát triển
-            </div>
+          <div style="position:absolute; right:-30px; top:-30px; width:200px; height:200px; background: rgba(255,255,255,.05); border-radius:50%;"></div>
+          <div style="position:relative; z-index:1;">
+            <div style="font-size:12px; color:rgba(255,255,255,.6); margin-bottom:6px;"><i class="fa fa-leaf"></i> &nbsp;Plant Book · Cổng Nông Hộ</div>
+            <h2 style="font-size:24px; font-weight:700; margin-bottom:6px;">Xin chào, <span id="welcome-name">nông hộ</span> 👋</h2>
+            <p style="font-size:13px; color:rgba(255,255,255,.7); max-width:550px; line-height:1.5;">Chào mừng đến với hệ thống quản lý và chăm sóc cây trồng thông minh của bạn. Dưới đây là hiện trạng trang trại, danh sách cây và các hoạt động cần thực hiện hôm nay.</p>
           </div>
         </div>
 
-        <!-- Feature preview cards -->
-        <div style="
-          display:grid;
-          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-          gap:16px;
-          margin-bottom:24px;
-        ">
-          <!-- Card 1 -->
-          <div style="
-            background:#fff;border-radius:var(--radius);padding:24px;
-            box-shadow:var(--shadow);border:1px solid var(--gray-200);
-            display:flex;flex-direction:column;gap:14px;
-            opacity:.7;
-          ">
-            <div style="
-              width:48px;height:48px;border-radius:12px;
-              background:var(--green-light);
-              display:flex;align-items:center;justify-content:center;
-            ">
-              <i class="fa fa-seedling" style="font-size:22px;color:var(--green);"></i>
+        <!-- Dashboard Layout Grid (2 Columns) -->
+        <div class="user-dashboard-grid" style="display: flex; gap: 24px; flex-wrap: wrap;">
+          
+          <!-- LEFT: Map, Recent Activities, My Plants list -->
+          <div style="flex: 1; min-width: 600px; display: flex; flex-direction: column; gap: 24px;" class="dashboard-left">
+            <!-- Bản đồ Trang trại -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Trang trại của tôi</h3>
+                <span style="font-size:11px; color:var(--gray-400)">Vị trí cây trồng & ranh giới đất</span>
+              </div>
+              <div style="padding: 12px;">
+                <div id="user-map" style="width: 100%; height: 350px; border-radius: 8px; background: #e5e7eb; overflow: hidden;"></div>
+              </div>
             </div>
-            <div>
-              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Cây trồng của tôi</div>
-              <div style="font-size:13px;color:var(--text-muted);">Theo dõi sức khỏe và tiến trình từng cây trồng được giao.</div>
+
+            <!-- Danh sách Cây trồng -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Danh sách Cây trồng</h3>
+                <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count">0</strong> cây</span>
+              </div>
+              <div style="overflow-x: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Mã cây</th>
+                      <th>Loại & Giống</th>
+                      <th>Tuổi cây</th>
+                      <th>Sức khỏe</th>
+                      <th>Vị trí</th>
+                      <th style="width:110px">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-plants-table">
+                    <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div style="
-              display:inline-flex;align-items:center;gap:5px;
-              font-size:11px;font-weight:600;
-              color:var(--user-accent);
-            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
+
+            <!-- Hoạt động canh tác gần đây (3 ngày) -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-clipboard-list" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3>
+              </div>
+              <div style="overflow-x: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Thời gian</th>
+                      <th>Cây trồng</th>
+                      <th>Hoạt động</th>
+                      <th>Chi tiết / Ghi chú</th>
+                      <th>Người thực hiện</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-logs-table">
+                    <tr><td colspan="5" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          <!-- Card 2 -->
-          <div style="
-            background:#fff;border-radius:var(--radius);padding:24px;
-            box-shadow:var(--shadow);border:1px solid var(--gray-200);
-            display:flex;flex-direction:column;gap:14px;
-            opacity:.7;
-          ">
-            <div style="
-              width:48px;height:48px;border-radius:12px;
-              background:#eff6ff;
-              display:flex;align-items:center;justify-content:center;
-            ">
-              <i class="fa fa-clipboard-list" style="font-size:22px;color:var(--blue);"></i>
+          <!-- RIGHT: Reminders and quick stats -->
+          <div style="width: 320px; display: flex; flex-direction: column; gap: 24px;" class="dashboard-right">
+            <!-- Lịch trình & Nhắc nhở hôm nay -->
+            <div class="card" style="border: 1.5px solid #fed7aa; box-shadow: 0 4px 12px rgba(249,115,22,0.08);">
+              <div class="card-header" style="background:#fff7ed; border-bottom: 1px solid #fed7aa;">
+                <h3 style="color:#c2410c"><i class="fa-solid fa-bell" style="color:var(--user-accent)"></i> Lịch trình & Nhắc nhở</h3>
+                <span class="badge" style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa; font-size:10px" id="reminder-count">0 nhắc nhở</span>
+              </div>
+              <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;" id="reminder-container">
+                <!-- Reminder items populated dynamically -->
+                <div class="empty-state" style="padding:16px"><i class="fa-solid fa-circle-check" style="color:var(--green)"></i><p>Tất cả cây đã được chăm sóc đầy đủ hôm nay!</p></div>
+              </div>
             </div>
-            <div>
-              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Nhật ký canh tác</div>
-              <div style="font-size:13px;color:var(--text-muted);">Xem lịch sử tưới nước, bón phân, phòng trừ sâu bệnh.</div>
-            </div>
-            <div style="
-              display:inline-flex;align-items:center;gap:5px;
-              font-size:11px;font-weight:600;
-              color:var(--user-accent);
-            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
-          </div>
 
-          <!-- Card 3 -->
-          <div style="
-            background:#fff;border-radius:var(--radius);padding:24px;
-            box-shadow:var(--shadow);border:1px solid var(--gray-200);
-            display:flex;flex-direction:column;gap:14px;
-            opacity:.7;
-          ">
-            <div style="
-              width:48px;height:48px;border-radius:12px;
-              background:#fefce8;
-              display:flex;align-items:center;justify-content:center;
-            ">
-              <i class="fa fa-chart-bar" style="font-size:22px;color:var(--amber);"></i>
+            <!-- Thông tin Trang trại phụ trách -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-wheat-awn" style="color:var(--green)"></i> Trang trại phụ trách</h3>
+              </div>
+              <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;" id="user-farms-container">
+                <div class="empty-state" style="padding:12px"><p>Bạn chưa được gán phụ trách trang trại nào.</p></div>
+              </div>
             </div>
-            <div>
-              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Báo cáo</div>
-              <div style="font-size:13px;color:var(--text-muted);">Xuất báo cáo canh tác theo kỳ, chia sẻ với đội nhóm.</div>
-            </div>
-            <div style="
-              display:inline-flex;align-items:center;gap:5px;
-              font-size:11px;font-weight:600;
-              color:var(--user-accent);
-            "><i class="fa fa-clock"></i> Sắp ra mắt</div>
           </div>
-
-          <!-- Card 4 -->
-          <div style="
-            background:#fff;border-radius:var(--radius);padding:24px;
-            box-shadow:var(--shadow);border:1px solid var(--gray-200);
-            display:flex;flex-direction:column;gap:14px;
-            opacity:.7;
-          ">
-            <div style="
-              width:48px;height:48px;border-radius:12px;
-              background:var(--user-accent-soft);
-              display:flex;align-items:center;justify-content:center;
-            ">
-              <i class="fa fa-gear" style="font-size:22px;color:var(--user-accent);"></i>
-            </div>
-            <div>
-              <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Cài đặt tài khoản</div>
+        </div>
+      </div>ze:15px;font-weight:700;margin-bottom:4px;">Cài đặt tài khoản</div>
               <div style="font-size:13px;color:var(--text-muted);">Cập nhật thông tin cá nhân, thay đổi mật khẩu.</div>
             </div>
             <div style="
@@ -395,6 +350,51 @@
     </div><!-- end content -->
   </main>
 </div><!-- end app -->
+
+<!-- ════════════ CARE MODAL ════════════ -->
+<div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="care-modal-title"><i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký chăm sóc</h2>
+      <button class="modal-close" onclick="closeCareModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="c-plant-id">
+      
+      <div class="field">
+        <label>Cây trồng</label>
+        <input type="text" id="c-plant-display" readonly style="background:var(--gray-50); font-weight:600;">
+      </div>
+
+      <div class="field">
+        <label>Loại hoạt động *</label>
+        <select id="c-log-type" onchange="onCareLogTypeChange()">
+          <option value="Tưới nước">💧 Tưới nước</option>
+          <option value="Bón phân">🧪 Bón phân</option>
+          <option value="Phun thuốc">💊 Phun thuốc</option>
+          <option value="Cắt cành & Cắt lá">🍃 Cắt cành / Cắt lá</option>
+          <option value="Tỉa hoa">🌸 Tỉa hoa</option>
+          <option value="Ghi chú">📝 Ghi chú sức khỏe/khác</option>
+        </select>
+      </div>
+
+      <div id="care-detail-fields">
+        <!-- Rendered dynamically based on selected activity type -->
+      </div>
+
+      <div class="field">
+        <label>Ghi chú thêm</label>
+        <textarea id="c-note" rows="3" placeholder="Nhập ghi chú chi tiết nếu có..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCareModal()">Hủy</button>
+      <button class="btn btn-primary" id="care-save-btn" onclick="saveCareLog()">
+        <span id="care-save-text"><i class="fa fa-floppy-disk"></i> Lưu nhật ký</span>
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Toast container -->
 <div id="toast-container"></div>

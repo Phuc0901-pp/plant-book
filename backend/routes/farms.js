@@ -6,14 +6,22 @@ const auth = require('../middleware/auth');
 // GET all farms with plant count (requires auth)
 router.get('/', auth, async (req, res) => {
   try {
-    const result = await pool.query(`
+    let query = `
       SELECT f.*, COUNT(p.id)::int as plant_count, u.full_name as user_name, u.email as user_email
       FROM farms f 
       LEFT JOIN plants p ON p.farm_id = f.id 
       LEFT JOIN users u ON u.id = f.user_id
+    `;
+    const params = [];
+    if (req.user.role !== 'admin') {
+      query += ` WHERE f.user_id = $1 `;
+      params.push(req.user.id);
+    }
+    query += `
       GROUP BY f.id, u.id
       ORDER BY f.created_at DESC
-    `);
+    `;
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.error('Error getting farms:', err);
@@ -34,6 +42,9 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
     const farm = farmResult.rows[0];
+    if (req.user.role !== 'admin' && farm.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập trang trại này.' });
+    }
 
     const plantsResult = await pool.query(`
       SELECT id, plant_type, plant_variety, health_status, latitude, longitude, cover_image, is_public, public_slug, tree_code
