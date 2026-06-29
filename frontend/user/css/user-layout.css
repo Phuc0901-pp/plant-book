@@ -820,4 +820,108 @@ tr:hover td {
   transition: all 0.15s ease-in-out;
 }
 
+/* ── Mobile App Navigation Bar ── */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: #ffffff;
+    border-top: 1px solid var(--gray-200);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 8px;
+  }
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-400);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    height: 100%;
+    gap: 4px;
+    transition: color 0.15s, transform 0.1s;
+  }
+  .bottom-nav-item i {
+    font-size: 20px;
+  }
+  .bottom-nav-item.active {
+    color: var(--green);
+    transform: scale(1.05);
+  }
+  
+  /* Thêm khoảng trống dưới cho content không bị che khuất */
+  .main {
+    padding-bottom: 80px !important;
+  }
+  
+  /* Ẩn sidebar toggle và sidebar khi trên mobile */
+  .mobile-toggle-btn {
+    display: none !important;
+  }
+  .sidebar {
+    display: none !important;
+  }
+  
+  /* ── Mobile Table-to-Card Layout ── */
+  #user-plants-table, #user-logs-table {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  #user-plants-table tr, #user-logs-table tr {
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    gap: 8px;
+    box-shadow: var(--shadow);
+  }
+  
+  #user-plants-table tr:hover, #user-logs-table tr:hover {
+    background: #fff;
+    border-color: #bbf7d0;
+  }
+
+  #user-plants-table td, #user-logs-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border: none;
+    font-size: 13px;
+  }
+  
+  #user-plants-table td::before, #user-logs-table td::before {
+    content: attr(data-label) ": ";
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  #user-plants-table thead, #user-logs-table thead {
+    display: none;
+  }
+}
+
+
 

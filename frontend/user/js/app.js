@@ -18,16 +18,13 @@ const PAGE_TITLES = {
 
 /* ── Router ─────────────────────────────────────────────────── */
 function showPage(page) {
-  /* Ẩn tất cả sections */
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-  /* Bỏ active nav */
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
 
-  /* Active section */
   const section = document.getElementById(`page-${page}`);
   if (section) section.classList.add('active');
 
-  /* Active nav item */
   if (window.event && window.event.currentTarget) {
     window.event.currentTarget.classList.add('active');
   } else {
@@ -35,11 +32,12 @@ function showPage(page) {
     if (navEl) navEl.classList.add('active');
   }
 
-  /* Cập nhật tiêu đề topbar */
+  const bottomNavEl = document.querySelector(`.bottom-nav-item[data-page="${page}"]`);
+  if (bottomNavEl) bottomNavEl.classList.add('active');
+
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = PAGE_TITLES[page] || page;
 
-  /* Đóng mobile sidebar */
   closeMobileSidebar();
 
   if (page === 'home') {
@@ -165,15 +163,15 @@ function renderUserPlantsTable(plants) {
   }
   tbody.innerHTML = plants.map(p => `
     <tr>
-      <td><strong>${esc(p.tree_code || p.id)}</strong></td>
-      <td>
+      <td data-label="Mã cây"><strong>${esc(p.tree_code || p.id)}</strong></td>
+      <td data-label="Loại & Giống">
         <strong>${esc(p.plant_type)}</strong>
         ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
       </td>
-      <td>${esc(p.plant_age || '—')}</td>
-      <td>${healthBadge(p.health_status)}</td>
-      <td>${esc(p.location || '—')}</td>
-      <td>
+      <td data-label="Tuổi cây">${esc(p.plant_age || '—')}</td>
+      <td data-label="Sức khỏe">${healthBadge(p.health_status)}</td>
+      <td data-label="Vị trí">${esc(p.location || '—')}</td>
+      <td data-label="Thao tác">
         <button class="btn btn-secondary btn-xs" onclick="openCareModal(${p.id}, '${esc(p.tree_code || p.id)}', '${esc(p.plant_type)}')">
           <i class="fa-solid fa-file-signature"></i> Nhật ký
         </button>
@@ -215,11 +213,11 @@ function renderUserLogsTable(logs) {
     }) : '—';
     return `
       <tr>
-        <td>${dateStr}</td>
-        <td><strong>Cây #${l.plant_id}</strong> (${esc(l.plant_type)})</td>
-        <td><span class="badge badge-gray" style="text-transform:none; font-weight:500;">${esc(l.log_type)}</span></td>
-        <td>${detailsStr}</td>
-        <td><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></td>
+        <td data-label="Thời gian">${dateStr}</td>
+        <td data-label="Cây trồng"><strong>Cây #${l.plant_id}</strong> (${esc(l.plant_type)})</td>
+        <td data-label="Hoạt động"><span class="badge badge-gray" style="text-transform:none; font-weight:500;">${esc(l.log_type)}</span></td>
+        <td data-label="Chi tiết / Ghi chú">${detailsStr}</td>
+        <td data-label="Người thực hiện"><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></td>
       </tr>
     `;
   }).join('');
@@ -542,7 +540,11 @@ function initUserMap(farms, plants) {
 }
 
 /* ── Care Log Modal ── */
+let selectedCareFiles = [];
+
 function openCareModal(plantId, treeCode, plantType) {
+  window._activePlantTreeCode = treeCode;
+  selectedCareFiles = [];
   document.getElementById('c-plant-id').value = plantId;
   document.getElementById('c-plant-display').value = `Cây ${treeCode} - ${plantType}`;
   document.getElementById('c-note').value = '';
@@ -674,6 +676,16 @@ function onCareLogTypeChange() {
         <label>Mô tả dấu hiệu / Triệu chứng</label>
         <textarea id="c-detail-description" rows="2" placeholder="Nhập thêm chi tiết quan sát được..."></textarea>
       </div>
+      <div class="field">
+        <label>Hình ảnh / Video thực tế (Tự động đóng dấu ảnh) *</label>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <input type="file" id="c-detail-media" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected()">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media').click()" style="width: 100%;">
+            <i class="fa-solid fa-camera"></i> Chụp ảnh hoặc Chọn video
+          </button>
+          <div id="c-media-preview" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;"></div>
+        </div>
+      </div>
     `;
   }
 }
@@ -728,8 +740,41 @@ async function saveCareLog() {
       const description = document.getElementById('c-detail-description').value.trim();
       if (!disease_name) throw new Error('Vui lòng nhập tên bệnh hoặc triệu chứng!');
       body.details = { disease_name, severity, description };
+
+      // Tải hình ảnh / video có đóng dấu bản quyền
+      if (selectedCareFiles.length > 0) {
+        btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
+        const formData = new FormData();
+        const treeCode = window._activePlantTreeCode || plantId;
+
+        for (const file of selectedCareFiles) {
+          if (file.type.startsWith('image/')) {
+            const watermarked = await watermarkImage(file, treeCode, disease_name);
+            formData.append('files', watermarked, file.name);
+          } else {
+            formData.append('files', file);
+          }
+        }
+
+        const uploadRes = await fetch(`${API}/plants/${plantId}/media`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json();
+          throw new Error(errData.error || 'Lỗi tải ảnh/video lên máy chủ');
+        }
+
+        const uploadedFiles = await uploadRes.json();
+        body.media_urls = uploadedFiles.map(f => ({ url: f.url, type: f.media_type }));
+      }
     }
 
+    btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
     await api(`/plants/${plantId}/logs`, {
       method: 'POST',
       body: JSON.stringify(body)
@@ -744,4 +789,101 @@ async function saveCareLog() {
     btn.disabled = false;
     btn.innerHTML = oldText;
   }
+}
+
+/* ── Mobile Media Uploader & Watermark Helpers ── */
+function onCareMediaSelected() {
+  const input = document.getElementById('c-detail-media');
+  const preview = document.getElementById('c-media-preview');
+  if (!input || !preview) return;
+
+  selectedCareFiles = Array.from(input.files);
+  preview.innerHTML = '';
+
+  if (selectedCareFiles.length === 0) return;
+
+  selectedCareFiles.forEach((file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const div = document.createElement('div');
+      div.style.position = 'relative';
+      div.style.width = '64px';
+      div.style.height = '64px';
+      div.style.borderRadius = '8px';
+      div.style.overflow = 'hidden';
+      div.style.border = '1px solid var(--gray-200)';
+      div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+
+      if (file.type.startsWith('image/')) {
+        div.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+      } else {
+        div.innerHTML = `
+          <div style="width:100%; height:100%; background:var(--gray-100); display:flex; align-items:center; justify-content:center;">
+            <i class="fa-solid fa-video" style="color:var(--text-muted)"></i>
+          </div>
+        `;
+      }
+      preview.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function watermarkImage(file, treeCode, diseaseName) {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      return resolve(file);
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0);
+
+        const padding = Math.max(16, Math.round(canvas.width * 0.03));
+        const fontSize = Math.max(14, Math.round(canvas.width * 0.025));
+        ctx.font = `bold ${fontSize}px sans-serif`;
+
+        const timeStr = new Date().toLocaleString('vi-VN');
+        const textLines = [
+          `Mã cây: ${treeCode}`,
+          `Thời gian: ${timeStr}`,
+          `Tên bệnh: ${diseaseName || 'Chưa xác định'}`
+        ];
+
+        const textHeight = textLines.length * (fontSize + 6) + padding * 2;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.fillRect(0, canvas.height - textHeight, canvas.width, textHeight);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textBaseline = 'top';
+        textLines.forEach((line, idx) => {
+          ctx.fillText(line, padding, canvas.height - textHeight + padding + idx * (fontSize + 8));
+        });
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const watermarkedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(watermarkedFile);
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.85);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
 }

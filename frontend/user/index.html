@@ -351,6 +351,26 @@
   </main>
 </div><!-- end app -->
 
+<!-- Fixed Bottom Navigation (Mobile Only) -->
+<div class="bottom-nav">
+  <div class="bottom-nav-item active" data-page="home" onclick="showPage('home')">
+    <i class="fa-solid fa-house"></i>
+    <span>Trang chủ</span>
+  </div>
+  <div class="bottom-nav-item" data-page="myplants" onclick="showPage('myplants')">
+    <i class="fa-solid fa-seedling"></i>
+    <span>Cây trồng</span>
+  </div>
+  <div class="bottom-nav-item" data-page="logs" onclick="showPage('logs')">
+    <i class="fa-solid fa-clipboard-list"></i>
+    <span>Nhật ký</span>
+  </div>
+  <div class="bottom-nav-item" data-page="settings" onclick="showPage('settings')">
+    <i class="fa-solid fa-gear"></i>
+    <span>Cài đặt</span>
+  </div>
+</div>
+
 <!-- ════════════ CARE MODAL ════════════ -->
 <div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
   <div class="modal">
