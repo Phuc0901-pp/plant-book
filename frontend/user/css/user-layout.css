@@ -826,38 +826,76 @@ tr:hover td {
 }
 
 @media (max-width: 768px) {
+  /* ── Strict Mobile Viewport Containment ── */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100vw !important;
+    position: relative;
+  }
+  #app {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+  }
+  .main {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    padding-bottom: 74px !important;
+  }
+  .dashboard-left {
+    min-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
   /* ── General Mobile Sizing Polish ── */
   .content {
     padding: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   .welcome-banner {
-    padding: 16px !important;
+    padding: 14px 16px !important;
     margin-bottom: 12px !important;
     border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08) !important;
   }
-  .welcome-banner h1 {
-    font-size: 18px !important;
+  .welcome-banner h2 {
+    font-size: 16px !important;
     margin-bottom: 0 !important;
+    font-weight: 700 !important;
   }
   .welcome-banner p {
-    display: none !important; /* Hide long greeting text on mobile */
+    display: none !important;
   }
   
+  /* ── Map Card Constraints (Co bản đồ gọn gàng) ── */
   #user-map {
-    height: 240px !important; /* Compact map height */
-    border-radius: 12px !important;
+    height: 220px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   .card {
     margin-bottom: 12px !important;
     border-radius: 12px !important;
+    border: 1px solid var(--gray-100) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
   }
   .card-header {
     padding: 10px 14px !important;
   }
   .card-header h3 {
-    font-size: 14px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+  }
+  .card-header span {
+    font-size: 10px !important;
   }
   
   /* ── Mobile Navigation Bar ── */
@@ -867,14 +905,16 @@ tr:hover td {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
-    background: #ffffff;
-    border-top: 1px solid var(--gray-200);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    height: 56px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
     z-index: 1000;
     justify-content: space-around;
     align-items: center;
-    padding: 0 8px;
+    padding: 0 4px;
   }
   .bottom-nav-item {
     display: flex;
@@ -882,12 +922,12 @@ tr:hover td {
     align-items: center;
     justify-content: center;
     color: var(--gray-400);
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 600;
     cursor: pointer;
     flex: 1;
     height: 100%;
-    gap: 4px;
+    gap: 3px;
     transition: color 0.15s, transform 0.1s;
   }
   .bottom-nav-item i {
@@ -895,17 +935,14 @@ tr:hover td {
   }
   .bottom-nav-item.active {
     color: var(--green);
+    transform: scale(1.05);
   }
   
-  .main {
-    padding-bottom: 74px !important;
-  }
-  
-  .mobile-toggle-btn, .sidebar {
+  .mobile-toggle-btn, .sidebar, .sidebar-overlay {
     display: none !important;
   }
   
-  /* ── Mobile Table-to-Card Layout (Prevent Overflow) ── */
+  /* ── Mobile Table-to-Card Layout (Hủy cuộn ngang, thiết kế thẻ app) ── */
   .table-responsive {
     overflow-x: visible !important;
     border: none !important;
@@ -918,6 +955,10 @@ tr:hover td {
     display: block !important;
     width: 100% !important;
     border: none !important;
+  }
+  
+  .table-responsive thead, .table thead, table thead {
+    display: none !important;
   }
   
   #user-plants-table, #user-logs-table {
@@ -934,9 +975,9 @@ tr:hover td {
     background: var(--white);
     border: 1px solid var(--gray-200);
     border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
     box-sizing: border-box;
   }
   
