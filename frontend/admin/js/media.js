@@ -85,13 +85,12 @@ function renderLogsSection(plantId) {
           <div class="field">
             <label>Loại nhật ký</label>
             <select id="log-type-${plantId}">
-              <option>Tưới nước</option>
-              <option>Bón phân</option>
-              <option>Phun thuốc</option>
-              <option>Thu hoạch</option>
-              <option>Kiểm tra sức khỏe</option>
-              <option>Cắt tỉa</option>
-              <option>Ghi chú khác</option>
+              <option value="Tưới nước">Tưới cây</option>
+              <option value="Bón phân">Bón phân</option>
+              <option value="Phun thuốc">Phun thuốc</option>
+              <option value="Cắt lá">Cắt cành/lá</option>
+              <option value="Tỉa hoa">Tỉa hoa/quả</option>
+              <option value="Bệnh cây">Bệnh cây</option>
             </select>
           </div>
         </div>

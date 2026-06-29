@@ -379,6 +379,18 @@ function initUserMap(farms, plants) {
   });
   userMap = map;
 
+  map.on('zoom', () => {
+    const zoom = map.getZoom();
+    if (zoom < 16.5) {
+      mapDiv.classList.add('low-zoom');
+    } else {
+      mapDiv.classList.remove('low-zoom');
+    }
+  });
+  if (map.getZoom() < 16.5) {
+    mapDiv.classList.add('low-zoom');
+  }
+
   map.addControl(new mapboxgl.NavigationControl());
 
   map.on('load', () => {
@@ -616,7 +628,7 @@ function onCareLogTypeChange() {
         </div>
       </div>
     `;
-  } else if (logType === 'Cắt cành & Cắt lá') {
+  } else if (logType === 'Cắt lá') {
     const leafReasons = configs.leaf_cut_reasons || [];
     container.innerHTML = `
       <div class="field">
@@ -625,15 +637,42 @@ function onCareLogTypeChange() {
           ${leafReasons.map(r => `<option>${esc(r)}</option>`).join('')}
         </select>
       </div>
+      <div class="field">
+        <label>Số lượng cành/lá đã cắt</label>
+        <input type="number" id="c-detail-amount" value="5" min="1">
+      </div>
     `;
   } else if (logType === 'Tỉa hoa') {
     const flowerReasons = configs.flower_prune_reasons || [];
     container.innerHTML = `
       <div class="field">
-        <label>Lý do tỉa hoa *</label>
+        <label>Lý do tỉa hoa/quả *</label>
         <select id="c-detail-reason">
           ${flowerReasons.map(r => `<option>${esc(r)}</option>`).join('')}
         </select>
+      </div>
+      <div class="field">
+        <label>Số lượng hoa/quả đã tỉa</label>
+        <input type="number" id="c-detail-amount" value="3" min="1">
+      </div>
+    `;
+  } else if (logType === 'Bệnh cây') {
+    container.innerHTML = `
+      <div class="field">
+        <label>Tên bệnh / Triệu chứng *</label>
+        <input type="text" id="c-detail-disease-name" placeholder="Ví dụ: Vàng lá thối rễ, Sâu đục thân...">
+      </div>
+      <div class="field">
+        <label>Mức độ nghiêm trọng *</label>
+        <select id="c-detail-severity">
+          <option value="Nhẹ">🟡 Nhẹ</option>
+          <option value="Trung bình" selected>🟠 Trung bình</option>
+          <option value="Nghiêm trọng">🔴 Nghiêm trọng</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Mô tả dấu hiệu / Triệu chứng</label>
+        <textarea id="c-detail-description" rows="2" placeholder="Nhập thêm chi tiết quan sát được..."></textarea>
       </div>
     `;
   }
@@ -675,12 +714,20 @@ async function saveCareLog() {
       const unit = document.getElementById('c-detail-unit').value;
       if (isNaN(amount) || amount <= 0) throw new Error('Vui lòng nhập liều lượng hợp lệ!');
       body.details = { pesticide_name, amount, unit };
-    } else if (logType === 'Cắt cành & Cắt lá') {
+    } else if (logType === 'Cắt lá') {
       const reason = document.getElementById('c-detail-reason').value;
-      body.details = { reason };
+      const amount = parseInt(document.getElementById('c-detail-amount').value) || 0;
+      body.details = { reason, amount };
     } else if (logType === 'Tỉa hoa') {
       const reason = document.getElementById('c-detail-reason').value;
-      body.details = { reason };
+      const amount = parseInt(document.getElementById('c-detail-amount').value) || 0;
+      body.details = { reason, amount };
+    } else if (logType === 'Bệnh cây') {
+      const disease_name = document.getElementById('c-detail-disease-name').value.trim();
+      const severity = document.getElementById('c-detail-severity').value;
+      const description = document.getElementById('c-detail-description').value.trim();
+      if (!disease_name) throw new Error('Vui lòng nhập tên bệnh hoặc triệu chứng!');
+      body.details = { disease_name, severity, description };
     }
 
     await api(`/plants/${plantId}/logs`, {

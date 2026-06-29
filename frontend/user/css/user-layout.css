@@ -791,3 +791,33 @@ tr:hover td {
   }
 }
 
+/* ── Zoom-dependent Dot Styling on Map ── */
+.low-zoom .plant-marker-wrap {
+  width: 12px !important;
+  height: 12px !important;
+}
+.low-zoom .plant-id-marker {
+  width: 10px !important;
+  height: 10px !important;
+  border-width: 1px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+.low-zoom .plant-id-marker span {
+  display: none !important;
+}
+
+.plant-marker-wrap {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.plant-marker-wrap:hover {
+  z-index: 9999;
+}
+.plant-id-marker {
+  transition: all 0.15s ease-in-out;
+}
+
+
