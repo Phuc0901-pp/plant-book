@@ -153,6 +153,9 @@
       <div class="nav-item" onclick="showPage('users')">
         <i class="fa fa-users"></i> Người dùng
       </div>
+      <div class="nav-item" onclick="showPage('devices')">
+        <i class="fa fa-microchip"></i> Thiết bị IoT
+      </div>
       <div class="nav-item" onclick="showPage('media')">
         <i class="fa fa-images"></i> Thư viện media
       </div>
@@ -538,6 +541,53 @@
         </div>
       </div>
 
+      <!-- ── Devices management ── -->
+      <div class="page-section" id="page-devices">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Giám sát & Quản lý thiết bị IoT</h3>
+            <button class="btn btn-primary" onclick="openDeviceModal()">
+              <i class="fa fa-plus"></i> Thêm thiết bị mới
+            </button>
+          </div>
+          <div class="search-bar" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input type="text" id="device-search" placeholder="🔍 Tìm theo tên, IP..." oninput="filterDevices()" style="flex:1; min-width:200px;">
+            <select id="device-filter-type" onchange="filterDevices()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;background:#fff;">
+              <option value="all">Tất cả loại thiết bị</option>
+              <option value="Cảm biến nhiệt độ & độ ẩm">Cảm biến nhiệt độ & độ ẩm</option>
+              <option value="Hệ thống tưới tự động">Hệ thống tưới tự động</option>
+              <option value="Camera giám sát">Camera giám sát</option>
+              <option value="Bộ điều khiển trung tâm (Gateway)">Bộ điều khiển trung tâm (Gateway)</option>
+            </select>
+            <select id="device-filter-status" onchange="filterDevices()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;background:#fff;">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="Hoạt động">🟢 Hoạt động</option>
+              <option value="Mất kết nối">🔴 Mất kết nối</option>
+              <option value="Bảo trì">🟡 Bảo trì</option>
+            </select>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Tên thiết bị</th>
+                <th>Loại thiết bị</th>
+                <th>Trang trại</th>
+                <th>Địa chỉ IP</th>
+                <th>Dung lượng pin</th>
+                <th>Trạng thái</th>
+                <th>Kết nối cuối</th>
+                <th style="width:150px">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="devices-table">
+              <tr>
+                <td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </main>
 </div>
@@ -861,6 +911,66 @@
   </div>
 </div>
 
+<!-- ════════════ DEVICE MODAL ════════════ -->
+<div class="modal-overlay" id="device-modal" style="display:none" onclick="if(event.target===this)closeDeviceModal()">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <h2 id="device-modal-title"><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
+      <button class="modal-close" onclick="closeDeviceModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-device-id">
+      
+      <div class="field">
+        <label>Tên thiết bị *</label>
+        <input type="text" id="f-device-name" placeholder="VD: Cảm biến nhiệt ẩm số 1, Van tưới A2...">
+      </div>
+      
+      <div class="field">
+        <label>Loại thiết bị *</label>
+        <select id="f-device-type" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="Cảm biến nhiệt độ & độ ẩm">Cảm biến nhiệt độ & độ ẩm</option>
+          <option value="Hệ thống tưới tự động">Hệ thống tưới tự động</option>
+          <option value="Camera giám sát">Camera giám sát</option>
+          <option value="Bộ điều khiển trung tâm (Gateway)">Bộ điều khiển trung tâm (Gateway)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Trang trại gán thiết bị</label>
+        <select id="f-device-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="">— Không thuộc trang trại nào —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Địa chỉ IP</label>
+        <input type="text" id="f-device-ip" placeholder="VD: 192.168.1.105...">
+      </div>
+
+      <div class="field">
+        <label>Dung lượng Pin (%)</label>
+        <input type="number" id="f-device-battery" value="100" min="0" max="100">
+      </div>
+      
+      <div class="field">
+        <label>Trạng thái *</label>
+        <select id="f-device-status" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="Hoạt động">🟢 Hoạt động</option>
+          <option value="Mất kết nối">🔴 Mất kết nối</option>
+          <option value="Bảo trì">🟡 Bảo trì</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeviceModal()">Hủy</button>
+      <button class="btn btn-primary" id="device-save-btn" onclick="saveDevice()">
+        <span id="device-save-text"><i class="fa fa-floppy-disk"></i> Lưu thiết bị</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:none">
   <div style="background:#1f2937;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;
@@ -877,6 +987,7 @@
   <script src="/admin/js/plants.js"></script>
   <script src="/admin/js/gis.js"></script>
   <script src="/admin/js/users.js"></script>
+  <script src="/admin/js/devices.js"></script>
   <script src="/admin/js/app.js"></script>
 </body>
 </html>

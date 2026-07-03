@@ -32,6 +32,8 @@ app.use('/api/plants', require('./routes/plants'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/farms', require('./routes/farms'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/devices', require('./routes/devices'));
+
 
 
 // Health check

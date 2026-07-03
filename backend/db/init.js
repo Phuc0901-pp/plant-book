@@ -125,6 +125,23 @@ async function initDB() {
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
     `);
 
+    // Devices table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS devices (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        device_type VARCHAR(100) NOT NULL,
+        status VARCHAR(50) DEFAULT 'Hoạt động',
+        farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL,
+        last_connection TIMESTAMPTZ DEFAULT NOW(),
+        ip_address VARCHAR(50),
+        battery_level INTEGER,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+
     // Seed default configurations
     const defaultConfigs = [
       { key: 'fertilizers', value: JSON.stringify(["Phân NPK 16-16-8", "Phân hữu cơ trùn quế", "Phân bón lá Đầu Trâu", "Phân chuồng hoai mục"]) },

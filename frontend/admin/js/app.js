@@ -27,7 +27,15 @@ function showPage(page) {
   if (event && event.currentTarget) {
     event.currentTarget.classList.add('active');
   }
-  const titles = { dashboard:'Dashboard', plants:'Danh sách cây trồng', schemas:'Cấu hình', media:'Thư viện Media', gis:'Quản lý GIS', users:'Quản lý người dùng' };
+  const titles = { 
+    dashboard: 'Dashboard', 
+    plants: 'Danh sách cây trồng', 
+    schemas: 'Cấu hình', 
+    media: 'Thư viện Media', 
+    gis: 'Quản lý GIS', 
+    users: 'Quản lý người dùng',
+    devices: 'Quản lý thiết bị IoT'
+  };
   document.getElementById('page-title').textContent = titles[page] || page;
 
   // Auto-close mobile sidebar
@@ -48,6 +56,8 @@ function showPage(page) {
   }
   if (page === 'gis') initGisPage();
   if (page === 'users') loadUsers();
+  if (page === 'devices') loadDevices();
+
 }
 
 function toggleMobileSidebar() {
