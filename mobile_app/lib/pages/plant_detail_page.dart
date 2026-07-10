@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/plant.dart';
 import '../models/plant_log.dart';
 import '../services/api_service.dart';
+import '../services/websocket_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
 import '../components/log_edit_dialog.dart';
@@ -18,6 +20,7 @@ class PlantDetailPage extends StatefulWidget {
 
 class _PlantDetailPageState extends State<PlantDetailPage> {
   final ApiService _apiService = ApiService();
+  StreamSubscription? _wsSubscription;
   bool _isLoading = true;
   List<PlantLog> _logs = [];
   String? _error;
@@ -26,6 +29,20 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
   void initState() {
     super.initState();
     _loadLogs();
+
+    // Listen to real-time events to reload logs
+    _wsSubscription = WebSocketService().stream.listen((event) {
+      final ev = event['event'];
+      if (ev == 'plants_updated' || ev == 'new_care_log') {
+        if (mounted) _loadLogs();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _wsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadLogs() async {

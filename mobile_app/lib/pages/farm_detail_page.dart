@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
 import '../services/api_service.dart';
+import '../services/websocket_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
 import '../components/log_edit_dialog.dart';
+import '../utils/app_config.dart';
 import 'plant_detail_page.dart';
 
 class FarmDetailPage extends StatefulWidget {
@@ -19,6 +22,7 @@ class FarmDetailPage extends StatefulWidget {
 
 class _FarmDetailPageState extends State<FarmDetailPage> {
   final ApiService _apiService = ApiService();
+  StreamSubscription? _wsSubscription;
   bool _isLoading = true;
   List<Plant> _farmPlants = [];
   String? _error;
@@ -27,6 +31,22 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   void initState() {
     super.initState();
     _loadFarmData();
+
+    // Listen to real-time events to reload farm data
+    _wsSubscription = WebSocketService().stream.listen((event) {
+      final ev = event['event'];
+      if (ev == 'plants_updated' || ev == 'new_care_log') {
+        if (mounted) {
+          _loadFarmData();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _wsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadFarmData() async {
@@ -193,6 +213,47 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   }
 
   Widget _buildGisMapBlock() {
+    double centerLng = 108.0;
+    double centerLat = 12.0;
+    bool hasCoords = false;
+
+    if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
+      try {
+        final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
+        if (coords.isNotEmpty) {
+          List<List<double>> flatCoords = [];
+          if (coords[0] is List && coords[0][0] is List) {
+            for (var pt in coords[0]) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          } else {
+            for (var pt in coords) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          }
+          
+          if (flatCoords.isNotEmpty) {
+            double sumLng = 0;
+            double sumLat = 0;
+            for (var pt in flatCoords) {
+              sumLng += pt[0];
+              sumLat += pt[1];
+            }
+            centerLng = sumLng / flatCoords.length;
+            centerLat = sumLat / flatCoords.length;
+            hasCoords = true;
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    final mapboxToken = AppConfig.mapboxPublicToken;
+    final mapboxUrl = hasCoords
+        ? 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/$centerLng,$centerLat,17.2,0,0/450x250@2x?access_token=$mapboxToken'
+        : 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/108.2,12.0,17.2,0,0/450x250@2x?access_token=$mapboxToken';
+
     return Container(
       height: 250,
       margin: const EdgeInsets.all(16),
@@ -207,7 +268,19 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            // Base Satellite Map Drawing using Canvas
+            // Mapbox Satellite background image
+            Positioned.fill(
+              child: Image.network(
+                mapboxUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: const Color(0xFF1E293B),
+                  child: const Icon(Icons.broken_image_rounded, color: Colors.white24),
+                ),
+              ),
+            ),
+            
+            // Base Satellite Map Drawing overlay using Canvas
             Positioned.fill(
               child: CustomPaint(
                 painter: FarmGisPainter(
@@ -424,22 +497,6 @@ class FarmGisPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Draw satellite grid background simulation
-    final bgPaint = Paint()..color = const Color(0xFF1E293B); // Slate-800 mockup satellite
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
-
-    final linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
-      ..strokeWidth = 1;
-    
-    // Grid lines
-    for (double i = 0; i < size.width; i += 30) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), linePaint);
-    }
-    for (double i = 0; i < size.height; i += 30) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), linePaint);
-    }
-
     // 2. Parse polygon and find coordinates boundary box
     List<Offset> projectedPoints = [];
     

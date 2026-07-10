@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../components/farm_card.dart';
 import '../components/plant_card.dart';
@@ -6,6 +7,7 @@ import '../components/qr_nfc_scanner.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
 import '../services/api_service.dart';
+import '../services/websocket_service.dart';
 import '../utils/theme.dart';
 import 'farm_detail_page.dart';
 import 'plant_detail_page.dart';
@@ -21,6 +23,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final ApiService _apiService = ApiService();
+  StreamSubscription? _wsSubscription;
   
   int _currentIndex = 0;
   bool _isLoading = true;
@@ -33,6 +36,23 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _loadData();
+    
+    // Connect and listen to real-time sync events
+    WebSocketService().connect();
+    _wsSubscription = WebSocketService().stream.listen((event) {
+      final ev = event['event'];
+      if (ev == 'plants_updated' || ev == 'new_care_log' || ev == 'farms_updated') {
+        if (mounted) {
+          _loadData();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _wsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {

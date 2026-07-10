@@ -208,4 +208,56 @@ class ApiService {
       return {'success': false, 'message': 'Không thể kết nối đến máy chủ.'};
     }
   }
+
+  // ── Public Plant (No Auth required) ───────────────────────────
+
+  Future<Map<String, dynamic>?> fetchPublicPlant(String slug) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/plants/public/$slug'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching public plant: $e');
+      return null;
+    }
+  }
+
+  Future<bool> createPublicLog(String slug, String logType, String note, Map<String, dynamic> details) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/plants/public/$slug/logs'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'log_type': logType,
+          'note': note,
+          'details': details,
+        }),
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      print('Error creating public log: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updatePublicHealth(String slug, String healthStatus) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/plants/public/$slug/health'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'health_status': healthStatus,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error updating public health: $e');
+      return false;
+    }
+  }
 }

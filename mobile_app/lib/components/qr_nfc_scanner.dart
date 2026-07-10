@@ -3,6 +3,7 @@ import '../models/plant.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../pages/plant_detail_page.dart';
+import '../pages/public_plant_profile_page.dart';
 
 class QrNfcScanner extends StatefulWidget {
   final bool isNfcMode;
@@ -59,6 +60,32 @@ class _QrNfcScannerState extends State<QrNfcScanner> with SingleTickerProviderSt
     });
 
     await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+    // Detect if code is a public plant URL
+    if (code.contains('/plant/')) {
+      final cleanUrl = code.trim();
+      final uri = Uri.tryParse(cleanUrl);
+      final pathSegments = uri?.pathSegments ?? cleanUrl.split('/');
+      
+      if (pathSegments.isNotEmpty) {
+        final slug = pathSegments.last;
+        
+        setState(() {
+          _isProcessing = false;
+          _statusText = 'Đọc mã thành công!';
+        });
+
+        if (!mounted) return;
+        Navigator.pop(context); // Close scanner modal
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PublicPlantProfilePage(slug: slug),
+          ),
+        );
+        return;
+      }
+    }
 
     // Try finding the plant with matching tree_code or ID
     Plant? matchedPlant;
