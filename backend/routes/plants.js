@@ -349,6 +349,87 @@ router.post('/:id/logs', auth, async (req, res) => {
   }
 });
 
+router.put('/:plantId/logs/:logId', auth, async (req, res) => {
+  try {
+    const { plantId, logId } = req.params;
+    const { log_date, log_type, note, details, media_urls } = req.body;
+
+    // Check if plant exists and check farm ownership for user role
+    const plant = await pool.query(
+      `SELECT p.id, f.user_id 
+       FROM plants p 
+       LEFT JOIN farms f ON f.id = p.farm_id 
+       WHERE p.id = $1`, [plantId]
+    );
+    if (plant.rows.length === 0) {
+      return res.status(404).json({ error: 'Cây trồng không tồn tại.' });
+    }
+
+    if (req.user.role !== 'admin' && plant.rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa nhật ký của cây trồng này.' });
+    }
+
+    // Get current log to save in history
+    const logRes = await pool.query('SELECT * FROM plant_logs WHERE id=$1 AND plant_id=$2', [logId, plantId]);
+    if (logRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Nhật ký không tồn tại.' });
+    }
+
+    const currentLog = logRes.rows[0];
+
+    // Create history snapshot
+    const historyItem = {
+      edited_at: new Date().toISOString(),
+      edited_by: req.user.id,
+      edited_by_name: req.user.full_name || req.user.email,
+      previous_version: {
+        log_date: currentLog.log_date,
+        log_type: currentLog.log_type,
+        note: currentLog.note,
+        details: currentLog.details,
+        media_urls: currentLog.media_urls
+      }
+    };
+
+    const editHistory = [...(currentLog.edit_history || []), historyItem];
+
+    // Update log
+    const updated = await pool.query(
+      `UPDATE plant_logs 
+       SET log_date = $1, log_type = $2, note = $3, details = $4, media_urls = $5, edit_history = $6, updated_at = NOW() 
+       WHERE id = $7 AND plant_id = $8 RETURNING *`,
+      [
+        log_date || currentLog.log_date,
+        log_type || currentLog.log_type,
+        note !== undefined ? note : currentLog.note,
+        JSON.stringify(details || currentLog.details || {}),
+        JSON.stringify(media_urls || currentLog.media_urls || []),
+        JSON.stringify(editHistory),
+        logId,
+        plantId
+      ]
+    );
+
+    // Record user activity
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Sửa nhật ký', $2)`,
+      [req.user.id, `Chỉnh sửa nhật ký [${log_type || currentLog.log_type}] cho cây #${plantId} (ID nhật ký: ${logId})`]
+    );
+
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('plants_updated', { message: `Care log edited on plant #${plantId}` });
+    }
+
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error('Error updating log:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
 router.delete('/:plantId/logs/:logId', auth, admin, async (req, res) => {
   try {
     await pool.query('DELETE FROM plant_logs WHERE id=$1 AND plant_id=$2', [req.params.logId, req.params.plantId]);

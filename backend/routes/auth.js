@@ -94,4 +94,42 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password
+router.post('/change-password', require('../middleware/auth'), async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Vui lòng điền đầy đủ mật khẩu cũ và mật khẩu mới.' });
+    }
+
+    // Get user details
+    const result = await pool.query('SELECT * FROM users WHERE id=$1', [req.user.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản.' });
+    }
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(oldPassword, user.password_hash);
+    if (!valid) {
+      return res.status(400).json({ error: 'Mật khẩu cũ không chính xác.' });
+    }
+
+    // Hash new password
+    const hash = await bcrypt.hash(newPassword, 12);
+    await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, req.user.id]);
+
+    // Record activity
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Đổi mật khẩu', 'Thay đổi mật khẩu tài khoản thành công.')`,
+      [req.user.id]
+    );
+
+    res.json({ success: true, message: 'Đổi mật khẩu thành công.' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Lỗi server khi thay đổi mật khẩu.' });
+  }
+});
+
 module.exports = router;

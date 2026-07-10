@@ -131,10 +131,7 @@ class PlantCard extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: onLogTap,
                   icon: const Icon(Icons.edit_note_rounded, size: 18),
-                  label: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ) == null ? const Text('Ghi nhật ký') : const Text('Ghi nhật ký'),
+                  label: const Text('Ghi nhật ký'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppTheme.userAccent,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

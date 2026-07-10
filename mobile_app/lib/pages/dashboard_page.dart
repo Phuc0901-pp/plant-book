@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import '../components/farm_card.dart';
 import '../components/plant_card.dart';
 import '../components/loading_indicator.dart';
+import '../components/qr_nfc_scanner.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
-import 'login_page.dart';
+import 'farm_detail_page.dart';
+import 'plant_detail_page.dart';
+import 'alerts_page.dart';
+import 'settings_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,6 +22,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final ApiService _apiService = ApiService();
   
+  int _currentIndex = 0;
   bool _isLoading = true;
   String? _error;
   
@@ -49,95 +54,127 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng hoặc server backend.';
+        _error = 'Không thể đồng bộ dữ liệu. Vui lòng kiểm tra kết nối mạng.';
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _handleLogout() async {
-    final confirm = await showDialog<bool>(
+  void _triggerQrScan() {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận đăng xuất'),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản nông hộ không?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Đăng xuất', style: TextStyle(color: AppTheme.red, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const QrNfcScanner(isNfcMode: false),
+    ).then((_) => _loadData());
+  }
 
-    if (confirm == true) {
-      await _apiService.logout();
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
-    }
+  void _triggerNfcScan() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const QrNfcScanner(isNfcMode: true),
+    ).then((_) => _loadData());
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Row(
-            children: [
-              Container(
-                width: 8,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: AppTheme.green,
-                  borderRadius: BorderRadius.circular(4),
-                ),
+    // If not the home tab (index 0 or 1), don't show the farm/plant data loading wrapper here,
+    // since AlertsPage and SettingsPage manage their own lifecycle and loading internally.
+    Widget body;
+    if (_isLoading && (_currentIndex == 0 || _currentIndex == 1)) {
+      body = const LoadingIndicator(message: 'Đang tải dữ liệu thực địa...');
+    } else if (_error != null && (_currentIndex == 0 || _currentIndex == 1)) {
+      body = _buildErrorView();
+    } else {
+      switch (_currentIndex) {
+        case 0:
+          body = _buildFarmsTab();
+          break;
+        case 1:
+          body = _buildPlantsTab();
+          break;
+        case 2:
+          body = const AlertsPage();
+          break;
+        case 3:
+          body = const SettingsPage();
+          break;
+        default:
+          body = _buildFarmsTab();
+      }
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Container(
+              width: 8,
+              height: 24,
+              decoration: BoxDecoration(
+                color: AppTheme.green,
+                borderRadius: BorderRadius.circular(4),
               ),
-              const SizedBox(width: 8),
-              const Text('Plant Book Nông Hộ'),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout_rounded, color: AppTheme.red),
-              tooltip: 'Đăng xuất',
-              onPressed: _handleLogout,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Plant Book',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
-          bottom: const TabBar(
-            indicatorColor: AppTheme.green,
-            labelColor: AppTheme.greenDark,
-            unselectedLabelColor: AppTheme.textMuted,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            tabs: [
-              Tab(
-                icon: Icon(Icons.home_work_rounded),
-                text: 'Trang trại của tôi',
-              ),
-              Tab(
-                icon: Icon(Icons.nature_rounded),
-                text: 'Cây trồng phụ trách',
-              ),
-            ],
-          ),
         ),
-        body: _isLoading
-            ? const LoadingIndicator(message: 'Đang tải dữ liệu thực địa...')
-            : _error != null
-                ? _buildErrorView()
-                : TabBarView(
-                    children: [
-                      _buildFarmsTab(),
-                      _buildPlantsTab(),
-                    ],
-                  ),
+        actions: [
+          // NFC Reader Trigger
+          IconButton(
+            icon: const Icon(Icons.nfc_rounded, color: AppTheme.userAccent),
+            tooltip: 'Đọc thẻ NFC',
+            onPressed: _triggerNfcScan,
+          ),
+          // QR Code Scanner Trigger
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: AppTheme.green),
+            tooltip: 'Quét mã QR',
+            onPressed: _triggerQrScan,
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: body,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppTheme.greenDark,
+        unselectedItemColor: AppTheme.textMuted,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        unselectedLabelStyle: const TextStyle(fontSize: 11),
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          if (index == 0 || index == 1) {
+            _loadData();
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_work_rounded),
+            label: 'Nông trại',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.nature_rounded),
+            label: 'Cây trồng',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.warning_amber_rounded),
+            label: 'Cảnh báo',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_rounded),
+            label: 'Cài đặt',
+          ),
+        ],
       ),
     );
   }
@@ -182,7 +219,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Container(
             height: MediaQuery.of(context).size.height * 0.6,
             alignment: Alignment.center,
-            child: const Text('Bạn chưa được gán quản lý trang trại nào.'),
+            child: const Text('Nông hộ chưa được gán trang trại nào.'),
           ),
         ),
       );
@@ -195,7 +232,17 @@ class _DashboardPageState extends State<DashboardPage> {
         itemCount: _farms.length,
         itemBuilder: (context, index) {
           final farm = _farms[index];
-          return FarmCard(farm: farm);
+          return FarmCard(
+            farm: farm,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FarmDetailPage(farm: farm),
+                ),
+              ).then((_) => _loadData());
+            },
+          );
         },
       ),
     );
@@ -210,7 +257,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Container(
             height: MediaQuery.of(context).size.height * 0.6,
             alignment: Alignment.center,
-            child: const Text('Không có cây trồng nào được bàn giao.'),
+            child: const Text('Nông hộ chưa được bàn giao cây trồng nào.'),
           ),
         ),
       );
@@ -226,13 +273,12 @@ class _DashboardPageState extends State<DashboardPage> {
           return PlantCard(
             plant: plant,
             onLogTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Tính năng ghi nhật ký nhanh cho Cây #${plant.displayName} đang được phát triển.'),
-                  backgroundColor: AppTheme.greenDark,
-                  behavior: SnackBarBehavior.floating,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PlantDetailPage(plant: plant),
                 ),
-              );
+              ).then((_) => _loadData());
             },
           );
         },

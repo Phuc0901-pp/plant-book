@@ -87,6 +87,10 @@ async function initDB() {
     await client.query(`
       ALTER TABLE plant_logs ALTER COLUMN created_by DROP NOT NULL
     `);
+    await client.query(`
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS edit_history JSONB DEFAULT '[]';
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+    `);
 
 
     // System configurations table
