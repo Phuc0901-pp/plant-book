@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
@@ -213,82 +214,91 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   }
 
   Widget _buildGisMapBlock() {
-    double centerLng = 108.0;
-    double centerLat = 12.0;
-    bool hasCoords = false;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final double height = 250.0;
+        
+        double centerLng = 108.0;
+        double centerLat = 12.0;
+        bool hasCoords = false;
 
-    if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
-      try {
-        final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
-        if (coords.isNotEmpty) {
-          List<List<double>> flatCoords = [];
-          if (coords[0] is List && coords[0][0] is List) {
-            for (var pt in coords[0]) {
-              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+        if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
+          try {
+            final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
+            if (coords.isNotEmpty) {
+              List<List<double>> flatCoords = [];
+              if (coords[0] is List && coords[0][0] is List) {
+                for (var pt in coords[0]) {
+                  flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+                }
+              } else {
+                for (var pt in coords) {
+                  flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+                }
+              }
+              
+              if (flatCoords.isNotEmpty) {
+                double sumLng = 0;
+                double sumLat = 0;
+                for (var pt in flatCoords) {
+                  sumLng += pt[0];
+                  sumLat += pt[1];
+                }
+                centerLng = sumLng / flatCoords.length;
+                centerLat = sumLat / flatCoords.length;
+                hasCoords = true;
+              }
             }
-          } else {
-            for (var pt in coords) {
-              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
-            }
-          }
-          
-          if (flatCoords.isNotEmpty) {
-            double sumLng = 0;
-            double sumLat = 0;
-            for (var pt in flatCoords) {
-              sumLng += pt[0];
-              sumLat += pt[1];
-            }
-            centerLng = sumLng / flatCoords.length;
-            centerLat = sumLat / flatCoords.length;
-            hasCoords = true;
+          } catch (e) {
+            // Ignore
           }
         }
-      } catch (e) {
-        // Ignore
-      }
-    }
 
-    final mapboxToken = AppConfig.mapboxPublicToken;
-    final mapboxUrl = hasCoords
-        ? 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/$centerLng,$centerLat,17.2,0,0/450x250@2x?access_token=$mapboxToken'
-        : 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/108.2,12.0,17.2,0,0/450x250@2x?access_token=$mapboxToken';
+        final mapboxToken = AppConfig.mapboxPublicToken;
+        const double mapZoom = 17.5; // Optimized zoom matching satellite imagery level
+        final mapboxUrl = hasCoords
+            ? 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/$centerLng,$centerLat,$mapZoom,0,0/${width.toInt()}x250@2x?access_token=$mapboxToken'
+            : 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/108.2,12.0,$mapZoom,0,0/${width.toInt()}x250@2x?access_token=$mapboxToken';
 
-    return Container(
-      height: 250,
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.black.withOpacity(0.05),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            // Mapbox Satellite background image
-            Positioned.fill(
-              child: Image.network(
-                mapboxUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: const Color(0xFF1E293B),
-                  child: const Icon(Icons.broken_image_rounded, color: Colors.white24),
+        return Container(
+          height: height,
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.black.withOpacity(0.05),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              children: [
+                // Mapbox Satellite background image
+                Positioned.fill(
+                  child: Image.network(
+                    mapboxUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xFF1E293B),
+                      child: const Icon(Icons.broken_image_rounded, color: Colors.white24),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            
-            // Base Satellite Map Drawing overlay using Canvas
-            Positioned.fill(
-              child: CustomPaint(
-                painter: FarmGisPainter(
-                  polygonCoords: widget.farm.polygonCoordinates,
-                  plants: _farmPlants,
+                
+                // Base Satellite Map Drawing overlay using Canvas
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: FarmGisPainter(
+                      polygonCoords: widget.farm.polygonCoordinates,
+                      plants: _farmPlants,
+                      centerLng: centerLng,
+                      centerLat: centerLat,
+                      zoom: mapZoom,
+                    ),
+                  ),
                 ),
-              ),
-            ),
             
             // Map controls overlay
             Positioned(
@@ -330,6 +340,8 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
           ],
         ),
       ),
+    );
+      },
     );
   }
 
@@ -492,60 +504,63 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
 class FarmGisPainter extends CustomPainter {
   final String? polygonCoords;
   final List<Plant> plants;
+  final double centerLng;
+  final double centerLat;
+  final double zoom;
 
-  FarmGisPainter({this.polygonCoords, required this.plants});
+  FarmGisPainter({
+    this.polygonCoords,
+    required this.plants,
+    required this.centerLng,
+    required this.centerLat,
+    required this.zoom,
+  });
+
+  Offset _project(double lng, double lat, Size size) {
+    final double mapSize = 256.0 * math.pow(2.0, zoom);
+    
+    // Convert center to Mercator
+    final double centerMetersX = centerLng * (mapSize / 360.0);
+    final double centerMetersY = math.log(math.tan(math.pi / 4.0 + (centerLat * math.pi / 180.0) / 2.0)) * (mapSize / (2.0 * math.pi));
+    
+    // Convert point to Mercator
+    final double pointMetersX = lng * (mapSize / 360.0);
+    final double pointMetersY = math.log(math.tan(math.pi / 4.0 + (lat * math.pi / 180.0) / 2.0)) * (mapSize / (2.0 * math.pi));
+    
+    // Delta in pixels
+    final double dx = pointMetersX - centerMetersX;
+    final double dy = centerMetersY - pointMetersY;
+    
+    // Relative to widget center
+    final double px = size.width / 2.0 + dx;
+    final double py = size.height / 2.0 + dy;
+    
+    return Offset(px, py);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 2. Parse polygon and find coordinates boundary box
     List<Offset> projectedPoints = [];
     
     try {
       if (polygonCoords != null && polygonCoords!.isNotEmpty) {
         final List<dynamic> coords = jsonDecode(polygonCoords!);
         if (coords.isNotEmpty) {
-          // Flatten coords to handle potential nested arrays (GeoJSON polygon coordinates format)
           List<List<double>> flatCoords = [];
           
           if (coords[0] is List && coords[0][0] is List) {
-            // Standard GeoJSON Polygon: [[[lng, lat], [lng, lat]]]
             for (var pt in coords[0]) {
               flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
             }
           } else {
-            // Simple Array: [[lng, lat], [lng, lat]]
             for (var pt in coords) {
               flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
             }
           }
 
           if (flatCoords.isNotEmpty) {
-            // Find bounding box
-            double minLng = flatCoords[0][0];
-            double maxLng = flatCoords[0][0];
-            double minLat = flatCoords[0][1];
-            double maxLat = flatCoords[0][1];
-
             for (var pt in flatCoords) {
-              if (pt[0] < minLng) minLng = pt[0];
-              if (pt[0] > maxLng) maxLng = pt[0];
-              if (pt[1] < minLat) minLat = pt[1];
-              if (pt[1] > maxLat) maxLat = pt[1];
-            }
-
-            // Project polygon coordinates to fit within canvas size
-            final padding = 40.0;
-            final mapW = size.width - (padding * 2);
-            final mapH = size.height - (padding * 2);
-
-            final deltaLng = maxLng - minLng == 0 ? 1.0 : maxLng - minLng;
-            final deltaLat = maxLat - minLat == 0 ? 1.0 : maxLat - minLat;
-
-            for (var pt in flatCoords) {
-              final px = padding + ((pt[0] - minLng) / deltaLng) * mapW;
-              // Flip Y axis since canvas Y starts from top and Lat starts from south
-              final py = padding + (1.0 - ((pt[1] - minLat) / deltaLat)) * mapH;
-              projectedPoints.add(Offset(px, py));
+              projectedPoints.add(_project(pt[0], pt[1], size));
             }
 
             // 3. Draw Farm Boundary Polygon
@@ -572,8 +587,9 @@ class FarmGisPainter extends CustomPainter {
             // 4. Draw Plant Markers inside boundaries
             for (var plant in plants) {
               if (plant.latitude != null && plant.longitude != null) {
-                final px = padding + ((plant.longitude! - minLng) / deltaLng) * mapW;
-                final py = padding + (1.0 - ((plant.latitude! - minLat) / deltaLat)) * mapH;
+                final pt = _project(plant.longitude!, plant.latitude!, size);
+                final px = pt.dx;
+                final py = pt.dy;
 
                 Color healthColor;
                 if (plant.healthStatus == 'Tốt') {
@@ -606,7 +622,6 @@ class FarmGisPainter extends CustomPainter {
           }
         }
       } else {
-        // Fallback drawing if coordinates not loaded yet
         _drawMockBoundary(canvas, size);
       }
     } catch (e) {
