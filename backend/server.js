@@ -54,6 +54,10 @@ app.get('/plant/:slug/report', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/report.html'));
 });
 
+app.get('/plant/:slug/map', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/public/map.html'));
+});
+
 app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });

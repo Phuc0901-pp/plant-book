@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
@@ -11,6 +13,7 @@ import '../components/loading_indicator.dart';
 import '../components/log_edit_dialog.dart';
 import '../utils/app_config.dart';
 import 'plant_detail_page.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class FarmDetailPage extends StatefulWidget {
   final Farm farm;
@@ -28,6 +31,8 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   List<Plant> _farmPlants = [];
   String? _error;
 
+  late final WebViewController _webViewController;
+
   // Interactive map state variables
   double _centerLng = 108.0;
   double _centerLat = 12.0;
@@ -37,6 +42,29 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   @override
   void initState() {
     super.initState();
+
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..addJavaScriptChannel(
+        'FlutterChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          try {
+            final Map<String, dynamic> data = jsonDecode(message.message);
+            final int? plantId = data['plantId'];
+            if (plantId != null) {
+              final matched = _farmPlants.firstWhere((p) => p.id == plantId);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PlantDetailPage(plant: matched)),
+              ).then((_) => _loadFarmData());
+            }
+          } catch (e) {
+            // Ignore
+          }
+        },
+      );
+
     _loadFarmData();
 
     // Listen to real-time events to reload farm data
@@ -79,17 +107,179 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
               sumLng += pt[0];
               sumLat += pt[1];
             }
-            setState(() {
-              _centerLng = sumLng / flatCoords.length;
-              _centerLat = sumLat / flatCoords.length;
-              _hasCalculatedCenter = true;
-            });
+            _centerLng = sumLng / flatCoords.length;
+            _centerLat = sumLat / flatCoords.length;
+            _hasCalculatedCenter = true;
           }
         }
       } catch (e) {
         // Ignore
       }
     }
+  }
+
+  void _updateMapHtml() {
+    if (_farmPlants.isEmpty && widget.farm.polygonCoordinates == null) return;
+    
+    // Format polygon coordinates for javascript array
+    String polyCoordsJson = '[]';
+    if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
+      try {
+        final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
+        if (coords.isNotEmpty) {
+          List<List<double>> flatCoords = [];
+          if (coords[0] is List && coords[0][0] is List) {
+            for (var pt in coords[0]) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          } else {
+            for (var pt in coords) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          }
+          polyCoordsJson = jsonEncode(flatCoords);
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    // Format plants list for javascript
+    final List<Map<String, dynamic>> plantsList = _farmPlants.map((p) => {
+      'id': p.id,
+      'tree_code': p.treeCode ?? p.id.toString(),
+      'lat': p.latitude,
+      'lng': p.longitude,
+      'health': p.healthStatus,
+    }).toList();
+    final String plantsJson = jsonEncode(plantsList);
+
+    final mapboxToken = AppConfig.mapboxPublicToken;
+
+    final String htmlContent = '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Mapbox GIS</title>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
+    .custom-marker {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background-color: #22C55E;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    .custom-marker.sick {
+      background-color: #EF4444;
+    }
+    .custom-marker.warn {
+      background-color: #F59E0B;
+    }
+    .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = '$mapboxToken';
+    
+    const center = [$_centerLng, $_centerLat];
+    const polygonCoords = $polyCoordsJson;
+    const plants = $plantsJson;
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: center,
+      zoom: $_mapZoom,
+      attributionControl: false
+    });
+
+    map.on('load', () => {
+      // Draw polygon if available
+      if (polygonCoords && polygonCoords.length > 0) {
+        const poly = [...polygonCoords];
+        if (poly[0][0] !== poly[poly.length - 1][0] || poly[0][1] !== poly[poly.length - 1][1]) {
+          poly.push(poly[0]);
+        }
+
+        map.addSource('farm-boundary', {
+          'type': 'geojson',
+          'data': {
+            'type': 'Feature',
+            'geometry': {
+              'type': 'Polygon',
+              'coordinates': [poly]
+            }
+          }
+        });
+
+        map.addLayer({
+          'id': 'farm-fill',
+          'type': 'fill',
+          'source': 'farm-boundary',
+          'layout': {},
+          'paint': {
+            'fill-color': '#22C55E',
+            'fill-opacity': 0.15
+          }
+        });
+
+        map.addLayer({
+          'id': 'farm-outline',
+          'type': 'line',
+          'source': 'farm-boundary',
+          'layout': {},
+          'paint': {
+            'line-color': '#22C55E',
+            'line-width': 2
+          }
+        });
+      }
+
+      // Add markers
+      plants.forEach(plant => {
+        if (plant.lat && plant.lng) {
+          const el = document.createElement('div');
+          el.className = 'custom-marker';
+          if (plant.health === 'Bệnh') el.className += ' sick';
+          if (plant.health === 'Cần chú ý') el.className += ' warn';
+          el.innerText = plant.tree_code || plant.id;
+
+          el.addEventListener('click', () => {
+            if (window.FlutterChannel) {
+              window.FlutterChannel.postMessage(JSON.stringify({ plantId: plant.id }));
+            }
+          });
+
+          new mapboxgl.Marker({ element: el })
+            .setLngLat([plant.lng, plant.lat])
+            .addTo(map);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+''';
+
+    _webViewController.loadHtmlString(htmlContent);
   }
 
   Future<void> _loadFarmData() async {
@@ -123,6 +313,9 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
 
         _isLoading = false;
       });
+      
+      // Load/Update HTML in WebView
+      _updateMapHtml();
     } catch (e) {
       setState(() {
         _error = 'Không thể tải thông tin cây trồng của nông trại.';
@@ -274,121 +467,78 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   }
 
   Widget _buildGisMapBlock() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-        final double height = 250.0;
-
-        final mapboxToken = AppConfig.mapboxPublicToken;
-        final mapboxUrl = 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/$_centerLng,$_centerLat,$_mapZoom,0,0/${width.toInt()}x250@2x?access_token=$mapboxToken';
-
-        return Container(
-          height: height,
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Colors.black.withOpacity(0.05),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              children: [
-                // Mapbox Satellite background image
-                Positioned.fill(
-                  child: Image.network(
-                    mapboxUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: const Color(0xFF1E293B),
-                      child: const Icon(Icons.broken_image_rounded, color: Colors.white24),
-                    ),
+    return Container(
+      height: 250,
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.black.withOpacity(0.05),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Mapbox GL JS WebView
+            Positioned.fill(
+              child: WebViewWidget(
+                controller: _webViewController,
+                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                  Factory<OneSequenceGestureRecognizer>(
+                    () => EagerGestureRecognizer(),
                   ),
-                ),
-                
-                // Base Satellite Map Drawing overlay using Canvas & Interactive Gesture Detector
-                Positioned.fill(
-                  child: GestureDetector(
-                    onPanUpdate: (details) {
-                      final double mapSize = 256.0 * math.pow(2.0, _mapZoom);
-                      double dLng = -(details.delta.dx) * 360.0 / mapSize;
-                      double latRadians = _centerLat * math.pi / 180.0;
-                      double dLat = (details.delta.dy) * 360.0 * math.cos(latRadians) / mapSize;
-                      
-                      setState(() {
-                        _centerLng += dLng;
-                        _centerLat += dLat;
-                      });
-                    },
-                    child: CustomPaint(
-                      painter: FarmGisPainter(
-                        polygonCoords: widget.farm.polygonCoordinates,
-                        plants: _farmPlants,
-                        centerLng: _centerLng,
-                        centerLat: _centerLat,
-                        zoom: _mapZoom,
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Map controls overlay
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Column(
-                    children: [
-                      _mapButton(Icons.add_rounded, () {
-                        setState(() {
-                          _mapZoom = (_mapZoom + 0.5).clamp(10.0, 20.0);
-                        });
-                      }),
-                      const SizedBox(height: 6),
-                      _mapButton(Icons.remove_rounded, () {
-                        setState(() {
-                          _mapZoom = (_mapZoom - 0.5).clamp(10.0, 20.0);
-                        });
-                      }),
-                      const SizedBox(height: 6),
-                      _mapButton(Icons.my_location_rounded, () {
-                        _calculateInitialCenter();
-                        setState(() {
-                          _mapZoom = 17.5;
-                        });
-                      }),
-                    ],
-                  ),
-                ),
-                
-                // Map legend overlay
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.layers_rounded, size: 12, color: Colors.white70),
-                        SizedBox(width: 6),
-                        Text(
-                          'Mapbox Satellite GIS Live (Kéo để di chuyển)',
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              ],
+                },
+              ),
             ),
-          ),
-        );
-      },
+            
+            // Map controls overlay (calling Web Mercator map API methods directly via JS)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Column(
+                children: [
+                  _mapButton(Icons.add_rounded, () {
+                    _webViewController.runJavaScript('map.zoomIn();');
+                  }),
+                  const SizedBox(height: 6),
+                  _mapButton(Icons.remove_rounded, () {
+                    _webViewController.runJavaScript('map.zoomOut();');
+                  }),
+                  const SizedBox(height: 6),
+                  _mapButton(Icons.my_location_rounded, () {
+                    _webViewController.runJavaScript('map.flyTo({ center: [$_centerLng, $_centerLat], zoom: 17.5 });');
+                  }),
+                ],
+              ),
+            ),
+            
+            // Map legend overlay
+            Positioned(
+              bottom: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.layers_rounded, size: 12, color: Colors.white70),
+                    SizedBox(width: 6),
+                    Text(
+                      'Mapbox GL Satellite GIS',
+                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 
@@ -551,156 +701,4 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   }
 }
 
-// Custom painter to draw beautiful vectors representing Mapbox satellite maps & GIS data
-class FarmGisPainter extends CustomPainter {
-  final String? polygonCoords;
-  final List<Plant> plants;
-  final double centerLng;
-  final double centerLat;
-  final double zoom;
 
-  FarmGisPainter({
-    this.polygonCoords,
-    required this.plants,
-    required this.centerLng,
-    required this.centerLat,
-    required this.zoom,
-  });
-
-  Offset _project(double lng, double lat, Size size) {
-    final double mapSize = 256.0 * math.pow(2.0, zoom);
-    
-    // Convert center to Mercator
-    final double centerMetersX = centerLng * (mapSize / 360.0);
-    final double centerMetersY = math.log(math.tan(math.pi / 4.0 + (centerLat * math.pi / 180.0) / 2.0)) * (mapSize / (2.0 * math.pi));
-    
-    // Convert point to Mercator
-    final double pointMetersX = lng * (mapSize / 360.0);
-    final double pointMetersY = math.log(math.tan(math.pi / 4.0 + (lat * math.pi / 180.0) / 2.0)) * (mapSize / (2.0 * math.pi));
-    
-    // Delta in pixels
-    final double dx = pointMetersX - centerMetersX;
-    final double dy = centerMetersY - pointMetersY;
-    
-    // Relative to widget center
-    final double px = size.width / 2.0 + dx;
-    final double py = size.height / 2.0 + dy;
-    
-    return Offset(px, py);
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    List<Offset> projectedPoints = [];
-    
-    try {
-      if (polygonCoords != null && polygonCoords!.isNotEmpty) {
-        final List<dynamic> coords = jsonDecode(polygonCoords!);
-        if (coords.isNotEmpty) {
-          List<List<double>> flatCoords = [];
-          
-          if (coords[0] is List && coords[0][0] is List) {
-            for (var pt in coords[0]) {
-              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
-            }
-          } else {
-            for (var pt in coords) {
-              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
-            }
-          }
-
-          if (flatCoords.isNotEmpty) {
-            for (var pt in flatCoords) {
-              projectedPoints.add(_project(pt[0], pt[1], size));
-            }
-
-            // 3. Draw Farm Boundary Polygon
-            final polyPath = Path();
-            polyPath.moveTo(projectedPoints[0].dx, projectedPoints[0].dy);
-            for (var i = 1; i < projectedPoints.length; i++) {
-              polyPath.lineTo(projectedPoints[i].dx, projectedPoints[i].dy);
-            }
-            polyPath.close();
-
-            // Draw filled boundary
-            final fillPaint = Paint()
-              ..color = AppTheme.green.withOpacity(0.15)
-              ..style = PaintingStyle.fill;
-            canvas.drawPath(polyPath, fillPaint);
-
-            // Draw border stroke
-            final strokePaint = Paint()
-              ..color = AppTheme.green
-              ..strokeWidth = 2
-              ..style = PaintingStyle.stroke;
-            canvas.drawPath(polyPath, strokePaint);
-
-            // 4. Draw Plant Markers inside boundaries
-            for (var plant in plants) {
-              if (plant.latitude != null && plant.longitude != null) {
-                final pt = _project(plant.longitude!, plant.latitude!, size);
-                final px = pt.dx;
-                final py = pt.dy;
-
-                Color healthColor;
-                if (plant.healthStatus == 'Tốt') {
-                  healthColor = AppTheme.green;
-                } else if (plant.healthStatus == 'Cần chú ý') {
-                  healthColor = AppTheme.amber;
-                } else {
-                  healthColor = AppTheme.red;
-                }
-
-                // Draw marker glow effect
-                final glowPaint = Paint()
-                  ..color = healthColor.withOpacity(0.3)
-                  ..style = PaintingStyle.fill;
-                canvas.drawCircle(Offset(px, py), 9, glowPaint);
-
-                // Draw solid inner circle
-                final pinPaint = Paint()
-                  ..color = healthColor
-                  ..style = PaintingStyle.fill;
-                canvas.drawCircle(Offset(px, py), 5, pinPaint);
-
-                // Draw inner white dot
-                final corePaint = Paint()
-                  ..color = Colors.white
-                  ..style = PaintingStyle.fill;
-                canvas.drawCircle(Offset(px, py), 2, corePaint);
-              }
-            }
-          }
-        }
-      } else {
-        _drawMockBoundary(canvas, size);
-      }
-    } catch (e) {
-      _drawMockBoundary(canvas, size);
-    }
-  }
-
-  void _drawMockBoundary(Canvas canvas, Size size) {
-    // Draw a generic placeholder farm polygon
-    final polyPath = Path();
-    polyPath.moveTo(size.width * 0.2, size.height * 0.2);
-    polyPath.lineTo(size.width * 0.8, size.height * 0.15);
-    polyPath.lineTo(size.width * 0.9, size.height * 0.7);
-    polyPath.lineTo(size.width * 0.3, size.height * 0.85);
-    polyPath.close();
-
-    final fillPaint = Paint()
-      ..color = AppTheme.green.withOpacity(0.12)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(polyPath, fillPaint);
-
-    final strokePaint = Paint()
-      ..color = AppTheme.green
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(polyPath, strokePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}

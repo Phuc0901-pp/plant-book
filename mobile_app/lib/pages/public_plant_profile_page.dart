@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
@@ -14,6 +17,7 @@ class PublicPlantProfilePage extends StatefulWidget {
 
 class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
   final ApiService _apiService = ApiService();
+  late final WebViewController _webViewController;
   
   bool _isLoading = true;
   String? _error;
@@ -25,6 +29,11 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
   @override
   void initState() {
     super.initState();
+
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white);
+
     _loadPublicData();
   }
 
@@ -45,12 +54,31 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         _media = data['media'] as List<dynamic>? ?? [];
         _isLoading = false;
       });
+      
+      // Load public Mapbox satellite map via secure context URL
+      final String baseUrl = _apiService.baseUrl.replaceAll('/api', '');
+      final mapUri = Uri.parse('$baseUrl/plant/${widget.slug}/map');
+      _webViewController.loadRequest(mapUri);
     } else {
       setState(() {
         _error = 'Không thể tải hồ sơ cây trồng. Vui lòng kiểm tra lại liên kết hoặc kết nối mạng.';
         _isLoading = false;
       });
     }
+  }
+
+  String _getCropAsset(String plantType) {
+    final type = plantType.toLowerCase();
+    if (type.contains('sầu riêng') || type.contains('durian')) {
+      return 'assets/images/durian.png';
+    } else if (type.contains('cà phê') || type.contains('coffee')) {
+      return 'assets/images/coffee.png';
+    } else if (type.contains('cao su') || type.contains('rubber')) {
+      return 'assets/images/rubber.png';
+    } else if (type.contains('ca cao') || type.contains('cacao')) {
+      return 'assets/images/cacao.png';
+    }
+    return 'assets/images/durian.png'; // Fallback crop icon
   }
 
   Future<void> _showQuickLogDialog(String activityType) async {
@@ -68,10 +96,10 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A), // Dark slate dialog background
+        backgroundColor: Colors.white,
         title: Text(
           'Ghi nhanh: $activityType',
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: AppTheme.textMain, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         content: Form(
           key: formKey,
@@ -79,31 +107,31 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(detailLabel, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(detailLabel, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               TextFormField(
                 controller: detailController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  fillColor: Colors.white.withOpacity(0.05),
+                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                decoration: const InputDecoration(
+                  fillColor: Color(0xFFF8FAFC),
                   hintText: 'Nhập thông tin...',
-                  hintStyle: const TextStyle(color: Colors.white30),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  hintStyle: TextStyle(color: Colors.black26, fontSize: 13),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 validator: (val) => val == null || val.isEmpty ? 'Trường này không được trống' : null,
               ),
               const SizedBox(height: 12),
-              const Text('Ghi chú thêm:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              const Text('Ghi chú thêm:', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               TextFormField(
                 controller: noteController,
                 maxLines: 2,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  fillColor: Colors.white.withOpacity(0.05),
+                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                decoration: const InputDecoration(
+                  fillColor: Color(0xFFF8FAFC),
                   hintText: 'Nhập ghi chú...',
-                  hintStyle: const TextStyle(color: Colors.white30),
-                  contentPadding: const EdgeInsets.all(12),
+                  hintStyle: TextStyle(color: Colors.black26, fontSize: 13),
+                  contentPadding: EdgeInsets.all(12),
                 ),
               ),
             ],
@@ -112,7 +140,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+            child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -134,7 +162,6 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       if (activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') details['reason'] = value;
       if (activityType == 'Bệnh cây') details['disease'] = value;
 
-      // Call public API
       final success = await _apiService.createPublicLog(
         widget.slug,
         activityType,
@@ -143,7 +170,6 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       );
 
       if (success) {
-        // If type is disease, update health status to Bệnh publicly
         if (activityType == 'Bệnh cây') {
           await _apiService.updatePublicHealth(widget.slug, 'Bệnh');
         }
@@ -155,6 +181,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
           SnackBar(
             content: Text('Đã đồng bộ nhật ký "$activityType" công khai thành công!'),
             backgroundColor: AppTheme.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -169,7 +196,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         children: ['Tốt', 'Cần chú ý', 'Bệnh'].map((status) {
           return SimpleDialogOption(
             onPressed: () => Navigator.pop(context, status),
-            child: Text(status),
+            child: Text(status, style: const TextStyle(fontWeight: FontWeight.w500)),
           );
         }).toList(),
       ),
@@ -184,6 +211,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
           SnackBar(
             content: Text('Đã cập nhật tình trạng sức khỏe thành "$newStatus" công khai!'),
             backgroundColor: AppTheme.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -193,28 +221,27 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF02231C), // Deep premium forest green background matching mockup
-        primaryColor: AppTheme.green,
-        colorScheme: const ColorScheme.dark(
-          primary: AppTheme.green,
-          secondary: AppTheme.userAccent,
-        ),
-      ),
+      data: AppTheme.lightTheme,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC), // Light background
         appBar: AppBar(
-          backgroundColor: const Color(0xFF011813),
-          foregroundColor: Colors.white,
-          title: const Row(
+          backgroundColor: Colors.white,
+          foregroundColor: AppTheme.textMain,
+          elevation: 0.5,
+          title: Row(
             children: [
-              Icon(Icons.spa_rounded, color: AppTheme.green),
-              SizedBox(width: 8),
-              Text('HỒ SƠ CÂY TRỒNG', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+              Image.asset(
+                'assets/images/logo.png',
+                height: 28,
+                errorBuilder: (_, __, ___) => const Icon(Icons.spa_rounded, color: AppTheme.green),
+              ),
+              const SizedBox(width: 8),
+              const Text('SỔ TAY CANH TÁC ĐIỆN TỬ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ],
           ),
         ),
         body: _isLoading
-            ? const LoadingIndicator(message: 'Tải dữ liệu hồ sơ công khai...')
+            ? const LoadingIndicator(message: 'Tải dữ liệu sổ tay điện tử...')
             : _error != null
                 ? _buildErrorView()
                 : RefreshIndicator(
@@ -225,23 +252,27 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // 1. Durian Image header
+                          // 1. Plant Image header card
                           _buildPlantHeaderWidget(),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           
                           // 2. Metadata details grid
                           _buildMetadataGrid(),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
+
+                          // 3. Map View widget (WebView Satellite Map)
+                          _buildMapWidget(),
+                          const SizedBox(height: 16),
                           
-                          // 3. Quick Log Actions block
+                          // 4. Quick Log Actions block
                           _buildQuickLogsBlock(),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           
-                          // 4. Media Gallery block
+                          // 5. Media Gallery block
                           _buildMediaGalleryBlock(),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           
-                          // 5. Timeline Care Logs
+                          // 6. Timeline Care Logs
                           _buildCareLogsTimelineBlock(),
                           const SizedBox(height: 32),
                         ],
@@ -261,7 +292,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
           children: [
             const Icon(Icons.cloud_off_rounded, size: 54, color: AppTheme.red),
             const SizedBox(height: 16),
-            Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+            Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppTheme.textMuted)),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _loadPublicData, child: const Text('Thử lại')),
           ],
@@ -286,21 +317,31 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       statusColor = AppTheme.red;
     }
 
+    final cropAsset = _getCropAsset(type);
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF04342A), // Soft forest green card
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         children: [
-          // Durian Tree vector/icon representation
-          const Center(
+          Center(
             child: Column(
               children: [
-                Icon(Icons.park_rounded, size: 64, color: AppTheme.green),
-                SizedBox(height: 8),
+                Image.asset(
+                  cropAsset,
+                  height: 64,
+                  width: 64,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.park_rounded, size: 64, color: AppTheme.green),
+                ),
+                const SizedBox(height: 12),
               ],
             ),
           ),
@@ -308,20 +349,21 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
           Text(
             '$type ($variety)',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textMain),
           ),
           const SizedBox(height: 12),
           
           // Badge list row
           Wrap(
             spacing: 8,
+            runSpacing: 6,
             children: [
-              _badgeChip('Mã số: #$treeCode', Colors.white24),
+              _badgeChip('Mã số: #$treeCode', const Color(0xFFF1F5F9), textColor: AppTheme.textMain),
               InkWell(
                 onTap: _updateHealthPublicly,
-                child: _badgeChip('Sức khỏe: $health', statusColor.withOpacity(0.2), textColor: statusColor),
+                child: _badgeChip('Sức khỏe: $health', statusColor.withOpacity(0.1), textColor: statusColor),
               ),
-              _badgeChip('Tuổi: $age năm', Colors.white24),
+              _badgeChip('Tuổi: $age năm', const Color(0xFFF1F5F9), textColor: AppTheme.textMain),
             ],
           ),
         ],
@@ -349,7 +391,6 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     final totalLogs = _logs.length;
     final totalPics = _media.length;
     
-    // Hardcoded default blooming date/bloomed status matching web mockup
     const bloomDate = '25/06/2026';
 
     return GridView.count(
@@ -372,9 +413,12 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF04342A),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,7 +428,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
             children: [
               Icon(icon, size: 12, color: AppTheme.green),
               const SizedBox(width: 4),
-              Text(label, style: const TextStyle(fontSize: 9, color: Colors.white60, fontWeight: FontWeight.bold)),
+              Text(label, style: const TextStyle(fontSize: 9, color: AppTheme.textMuted, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 4),
@@ -392,9 +436,59 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMain),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildMapWidget() {
+    return Container(
+      height: 250,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            WebViewWidget(
+              controller: _webViewController,
+              gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                Factory<OneSequenceGestureRecognizer>(
+                  () => EagerGestureRecognizer(),
+                ),
+              },
+            ),
+            Positioned(
+              bottom: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.gps_fixed_rounded, size: 12, color: Colors.white70),
+                    SizedBox(width: 6),
+                    Text(
+                      'Bản đồ vệ tinh GIS (GPS Vị trí thiết bị)',
+                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -412,18 +506,21 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF04342A),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('🌿 Ghi nhật ký nhanh', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+          const Text('🌿 Ghi nhật ký nhanh', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
           const SizedBox(height: 4),
           const Text(
             'Chọn quy trình chăm sóc bên dưới để điền thông tin nhanh (không cần đăng nhập).',
-            style: TextStyle(fontSize: 10, color: Colors.white60),
+            style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
           ),
           const SizedBox(height: 14),
           GridView.builder(
@@ -443,16 +540,16 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.03),
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(item['icon'] as IconData, size: 14, color: item['color'] as Color),
                       const SizedBox(width: 6),
-                      Text(item['label'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(item['label'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
                     ],
                   ),
                 ),
@@ -470,14 +567,17 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF04342A),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('📷 Thư viện hình ảnh', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+          const Text('📷 Thư viện hình ảnh', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
@@ -498,8 +598,8 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                   url,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.white10,
-                    child: const Icon(Icons.broken_image_rounded, color: Colors.white30),
+                    color: const Color(0xFFF1F5F9),
+                    child: const Icon(Icons.broken_image_rounded, color: Colors.black26),
                   ),
                 ),
               );
@@ -514,19 +614,22 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF04342A),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('📅 Nhật ký chăm sóc cây', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+          const Text('📅 Nhật ký chăm sóc cây', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
           const SizedBox(height: 16),
           _logs.isEmpty
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: Text('Chưa có hoạt động canh tác nào được ghi.', style: TextStyle(fontSize: 12, color: Colors.white30))),
+                  child: Center(child: Text('Chưa có hoạt động canh tác nào được ghi.', style: TextStyle(fontSize: 12, color: AppTheme.textMuted))),
                 )
               : ListView.builder(
                   shrinkWrap: true,
@@ -538,7 +641,6 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                     final type = log['log_type'] ?? 'Khác';
                     final note = log['note'] ?? '';
                     
-                    // Parse details
                     final details = log['details'] as Map<String, dynamic>? ?? {};
                     final detailVal = details['value'] ?? 
                                       details['method'] ?? 
@@ -568,7 +670,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                               Expanded(
                                 child: Container(
                                   width: 2,
-                                  color: index == _logs.length - 1 ? Colors.transparent : Colors.white12,
+                                  color: index == _logs.length - 1 ? Colors.transparent : const Color(0xFFE2E8F0),
                                 ),
                               )
                             ],
@@ -581,9 +683,9 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.02),
+                                color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.white10),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,16 +697,16 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                                         type.toString().toUpperCase(),
                                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: logColor),
                                       ),
-                                      Text(date, style: const TextStyle(fontSize: 10, color: Colors.white30)),
+                                      Text(date, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
                                     ],
                                   ),
                                   if (detailVal.toString().isNotEmpty) ...[
                                     const SizedBox(height: 6),
-                                    Text('• Chi tiết: $detailVal', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                    Text('• Chi tiết: $detailVal', style: const TextStyle(fontSize: 12, color: AppTheme.textMain)),
                                   ],
                                   if (note.toString().isNotEmpty) ...[
                                     const SizedBox(height: 4),
-                                    Text('• Ghi chú: $note', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                                    Text('• Ghi chú: $note', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                                   ]
                                 ],
                               ),
