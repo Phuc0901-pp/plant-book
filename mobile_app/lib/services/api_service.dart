@@ -25,6 +25,7 @@ class ApiService {
     final t = await token;
     return {
       'Content-Type': 'application/json',
+      'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
       if (t != null) 'Authorization': 'Bearer $t',
     };
   }
@@ -35,7 +36,10 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+        },
         body: jsonEncode({
           'email': email,
           'password': password,
@@ -215,7 +219,10 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/plants/public/$slug'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+        },
       );
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -231,7 +238,10 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/plants/public/$slug/logs'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+        },
         body: jsonEncode({
           'log_type': logType,
           'note': note,
@@ -249,7 +259,10 @@ class ApiService {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/plants/public/$slug/health'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+        },
         body: jsonEncode({
           'health_status': healthStatus,
         }),
