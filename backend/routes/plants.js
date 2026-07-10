@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 const multer = require('multer');
 const { uploadFile, deleteFile } = require('../config/supabase');
 const { v4: uuidv4 } = require('uuid');
@@ -140,7 +141,7 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
   }
 });
 
-router.post('/batch', auth, async (req, res) => {
+router.post('/batch', auth, admin, async (req, res) => {
   const client = await pool.connect();
   try {
     const { farm_id, plant_type, plant_variety, plant_age, health_status, schema_id, is_public, items } = req.body;
@@ -181,7 +182,7 @@ router.post('/batch', auth, async (req, res) => {
   }
 });
 
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, admin, async (req, res) => {
   try {
     const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code } = req.body;
     const slug = generateSlug(plant_type);
@@ -202,7 +203,7 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, admin, async (req, res) => {
   try {
     const { plant_type, plant_variety, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude, tree_code } = req.body;
     const result = await pool.query(
@@ -224,7 +225,7 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const mediaResult = await pool.query('SELECT object_name FROM plant_media WHERE plant_id=$1', [req.params.id]);
     for (const row of mediaResult.rows) {
@@ -272,7 +273,7 @@ router.post('/:id/media', auth, upload.array('files', 20), async (req, res) => {
   }
 });
 
-router.delete('/:plantId/media/:mediaId', auth, async (req, res) => {
+router.delete('/:plantId/media/:mediaId', auth, admin, async (req, res) => {
   try {
     const media = await pool.query('SELECT * FROM plant_media WHERE id=$1 AND plant_id=$2', [req.params.mediaId, req.params.plantId]);
     if (media.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
@@ -309,7 +310,7 @@ router.post('/:id/logs', auth, async (req, res) => {
   }
 });
 
-router.delete('/:plantId/logs/:logId', auth, async (req, res) => {
+router.delete('/:plantId/logs/:logId', auth, admin, async (req, res) => {
   try {
     await pool.query('DELETE FROM plant_logs WHERE id=$1 AND plant_id=$2', [req.params.logId, req.params.plantId]);
     res.json({ message: 'Đã xóa.' });

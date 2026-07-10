@@ -2,15 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-
-// Middleware to check if user is admin
-function requireAdmin(req, res, next) {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ error: 'Quyền truy cập bị từ chối. Chỉ dành cho Quản trị viên.' });
-  }
-}
+const admin = require('../middleware/admin');
 
 // GET all devices (requires auth)
 router.get('/', auth, async (req, res) => {
@@ -70,7 +62,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // POST create device (Admin only)
-router.post('/', auth, requireAdmin, async (req, res) => {
+router.post('/', auth, admin, async (req, res) => {
   try {
     const { name, device_type, status, farm_id, ip_address, battery_level } = req.body;
     
@@ -99,7 +91,7 @@ router.post('/', auth, requireAdmin, async (req, res) => {
 });
 
 // PUT update device (Admin only)
-router.put('/:id', auth, requireAdmin, async (req, res) => {
+router.put('/:id', auth, admin, async (req, res) => {
   try {
     const { name, device_type, status, farm_id, ip_address, battery_level } = req.body;
     
@@ -134,7 +126,7 @@ router.put('/:id', auth, requireAdmin, async (req, res) => {
 });
 
 // DELETE device (Admin only)
-router.delete('/:id', auth, requireAdmin, async (req, res) => {
+router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM devices WHERE id = $1 RETURNING id', [req.params.id]);
     

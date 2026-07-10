@@ -25,7 +25,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 
-// ─── API Routes ───────────────────────────────────────────────────
+const { antiScraper, apiLimiter } = require('./middleware/antiScraper');
+
+// ─── API Routes (Protected by anti-scraper & rate limiter) ──────────
+app.use('/api', antiScraper);
+app.use('/api', apiLimiter);
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
 app.use('/api/plants', require('./routes/plants'));

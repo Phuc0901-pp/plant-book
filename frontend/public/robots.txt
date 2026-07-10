@@ -1,0 +1,15 @@
+# robots.txt for Tanbao Corp Plant Book
+# Prevent indexing of sensitive portal sections and APIs
+
+User-agent: *
+Disallow: /admin/
+Disallow: /user/
+Disallow: /api/
+Disallow: /config/
+Disallow: /auth/
+Disallow: /backend/
+
+# Allow public plants pages
+Allow: /plant/
+Allow: /assets/
+Allow: /crop/

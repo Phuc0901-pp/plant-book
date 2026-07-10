@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -59,8 +60,8 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// POST create schema
-router.post('/', auth, async (req, res) => {
+// POST create schema (requires admin)
+router.post('/', auth, admin, async (req, res) => {
   try {
     const { name, description, fields } = req.body;
     if (!name) return res.status(400).json({ error: 'Tên schema là bắt buộc.' });
@@ -77,8 +78,8 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// PUT update schema
-router.put('/:id', auth, async (req, res) => {
+// PUT update schema (requires admin)
+router.put('/:id', auth, admin, async (req, res) => {
   try {
     const { name, description, fields } = req.body;
     const result = await pool.query(
@@ -93,8 +94,8 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// DELETE schema
-router.delete('/:id', auth, async (req, res) => {
+// DELETE schema (requires admin)
+router.delete('/:id', auth, admin, async (req, res) => {
   try {
     await pool.query('DELETE FROM plant_schemas WHERE id=$1', [req.params.id]);
     res.json({ message: 'Đã xóa.' });
@@ -103,8 +104,8 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// POST upload crop image
-router.post('/upload-image', auth, uploadCrop.single('image'), (req, res) => {
+// POST upload crop image (requires admin)
+router.post('/upload-image', auth, admin, uploadCrop.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Không nhận được file ảnh.' });

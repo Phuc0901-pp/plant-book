@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 // GET all configurations (Public - for dropdowns on public page)
 router.get('/', async (req, res) => {
@@ -25,7 +26,7 @@ router.get('/mapbox-token', (req, res) => {
 });
 
 // PUT update configurations (Admin auth required)
-router.put('/', auth, async (req, res) => {
+router.put('/', auth, admin, async (req, res) => {
   try {
     const updates = req.body; // e.g. { fertilizers: [...], pesticides: [...] }
     const client = await pool.connect();

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 // GET all farms with plant count (requires auth)
 router.get('/', auth, async (req, res) => {
@@ -63,8 +64,8 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// POST create farm (requires auth)
-router.post('/', auth, async (req, res) => {
+// POST create farm (requires auth, admin)
+router.post('/', auth, admin, async (req, res) => {
   try {
     const { name, description, polygon_coordinates, area, user_id } = req.body;
     if (!name) {
@@ -84,8 +85,8 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// PUT update farm (requires auth)
-router.put('/:id', auth, async (req, res) => {
+// PUT update farm (requires auth, admin)
+router.put('/:id', auth, admin, async (req, res) => {
   try {
     const { name, description, polygon_coordinates, area, user_id } = req.body;
     if (!name) {
@@ -109,8 +110,8 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// DELETE farm (requires auth)
-router.delete('/:id', auth, async (req, res) => {
+// DELETE farm (requires auth, admin)
+router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM farms WHERE id = $1 RETURNING id', [req.params.id]);
     if (result.rows.length === 0) {

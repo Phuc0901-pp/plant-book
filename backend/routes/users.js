@@ -3,19 +3,11 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
-// Middleware to ensure user is admin
-function requireAdmin(req, res, next) {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ error: 'Quyền truy cập bị từ chối. Chỉ dành cho Quản trị viên.' });
-  }
-}
-
-// Apply auth and requireAdmin to all routes in this file
+// Apply auth and admin check to all routes in this file
 router.use(auth);
-router.use(requireAdmin);
+router.use(admin);
 
 // GET /api/users - List all users
 router.get('/', async (req, res) => {
