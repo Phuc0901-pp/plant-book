@@ -5,14 +5,19 @@ let allUsers = [];
 
 async function loadUsers() {
   const tbody = document.getElementById('users-table');
+  const tbodyStatus = document.getElementById('users-status-table');
   if (!tbody) return;
 
   tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>';
+  if (tbodyStatus) {
+    tbodyStatus.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>';
+  }
 
   try {
     const users = await api('/users');
     allUsers = users || [];
     renderUsersTable(allUsers);
+    renderUserStatusTable(allUsers);
   } catch (err) {
     toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
     tbody.innerHTML = `<tr><td colspan="5" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
@@ -202,4 +207,125 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function switchUserTab(tab) {
+  document.getElementById('user-tab-manage').classList.toggle('active', tab === 'manage');
+  document.getElementById('user-tab-status').classList.toggle('active', tab === 'status');
+  document.getElementById('pane-user-manage').style.display = tab === 'manage' ? 'block' : 'none';
+  document.getElementById('pane-user-status').style.display = tab === 'status' ? 'block' : 'none';
+}
+
+function formatRelativeTime(dateString) {
+  if (!dateString) return 'Chưa từng hoạt động';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / (60 * 1000));
+  
+  if (diffMins < 1) return 'Vừa mới hoạt động';
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  
+  return date.toLocaleString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function renderUserStatusTable(users) {
+  const tbody = document.getElementById('users-status-table');
+  if (!tbody) return;
+
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Không có dữ liệu.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => {
+    const statusHtml = u.is_online
+      ? '<span class="badge" style="background:#dcfce7; color:#15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><span class="dot-live" style="background:#22c55e; margin-right:4px;"></span> Trực tuyến</span>'
+      : '<span class="badge" style="background:#f3f4f6; color:#4b5563; border: 1px solid #e5e7eb; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">⚪ Ngoại tuyến</span>';
+
+    const lastActiveStr = formatRelativeTime(u.last_active_at);
+
+    return `
+      <tr>
+        <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(u.full_name)}</td>
+        <td>${escapeHtml(u.email)}</td>
+        <td>${statusHtml}</td>
+        <td style="color: var(--text-muted); font-size: 13px;">${lastActiveStr}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openUserActivityModal(${u.id}, '${escapeHtml(u.full_name)}')">
+            <i class="fa fa-clock-rotate-left"></i> Xem lịch sử
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterUserStatuses() {
+  const q = document.getElementById('user-status-search').value.toLowerCase().trim();
+  if (!q) {
+    renderUserStatusTable(allUsers);
+    return;
+  }
+  const filtered = allUsers.filter(u => 
+    (u.full_name || '').toLowerCase().includes(q) || 
+    (u.email || '').toLowerCase().includes(q)
+  );
+  renderUserStatusTable(filtered);
+}
+
+async function openUserActivityModal(userId, userName) {
+  const modal = document.getElementById('user-activity-modal');
+  const titleName = document.getElementById('activity-modal-username');
+  const timeline = document.getElementById('user-activity-timeline');
+  
+  if (!modal || !timeline) return;
+  
+  titleName.textContent = userName;
+  timeline.innerHTML = '<div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải lịch sử hoạt động...</div>';
+  modal.style.display = 'flex';
+  
+  try {
+    const activities = await api(`/users/${userId}/activities`);
+    if (activities.length === 0) {
+      timeline.innerHTML = '<div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i> Không có lịch sử hoạt động nào gần đây.</div>';
+      return;
+    }
+    
+    timeline.innerHTML = activities.map(act => {
+      let iconClass = 'info';
+      if (act.activity_type === 'Đăng nhập') iconClass = 'login';
+      if (act.activity_type === 'Đăng xuất') iconClass = 'logout';
+      
+      const timeStr = new Date(act.created_at).toLocaleString('vi-VN', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      
+      return `
+        <div class="timeline-item ${iconClass}">
+          <div class="timeline-marker"></div>
+          <div class="timeline-content">
+            <div class="timeline-time">${timeStr}</div>
+            <div class="timeline-title">${escapeHtml(act.activity_type)}</div>
+            <div class="timeline-desc">${escapeHtml(act.description || '')}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    toast('Lỗi tải lịch sử hoạt động: ' + err.message, 'error');
+    timeline.innerHTML = `<div class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</div>`;
+  }
+}
+
+function closeUserActivityModal() {
+  const modal = document.getElementById('user-activity-modal');
+  if (modal) modal.style.display = 'none';
 }

@@ -98,6 +98,23 @@ async function initDB() {
       )
     `);
 
+    // Ensure status columns exist in users table
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ DEFAULT NOW();
+    `);
+
+    // User activities history table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_activities (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        activity_type VARCHAR(100) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
     // Farms table (GIS boundaries)
     await client.query(`
       CREATE TABLE IF NOT EXISTS farms (

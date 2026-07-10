@@ -72,6 +72,32 @@ async function start() {
   try {
     await initDB();
     await ensureBucket();
+
+    // Setup interval to mark users offline after 30 minutes of inactivity
+    const pool = require('./config/db');
+    setInterval(async () => {
+      try {
+        const res = await pool.query(`
+          UPDATE users 
+          SET is_online = false 
+          WHERE is_online = true 
+            AND last_active_at < NOW() - INTERVAL '30 minutes'
+          RETURNING id, email
+        `);
+        if (res.rows.length > 0) {
+          console.log(`🧹 Marked ${res.rows.length} inactive users as offline:`, res.rows.map(r => r.email));
+          for (const u of res.rows) {
+            await pool.query(`
+              INSERT INTO user_activities (user_id, activity_type, description)
+              VALUES ($1, 'Đăng xuất', 'Hệ thống tự động đăng xuất do không hoạt động (quá 30 phút)')
+            `, [u.id]);
+          }
+        }
+      } catch (err) {
+        console.error('Error cleaning up inactive users:', err);
+      }
+    }, 30 * 60 * 1000); // 30 minutes
+
     app.listen(PORT, () => {
       console.log(`\n🌿 Plant Book Server running at port ${PORT}`);
       console.log(`📋 Admin panel: /admin`);

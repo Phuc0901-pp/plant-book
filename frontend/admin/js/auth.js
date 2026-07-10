@@ -44,7 +44,14 @@ document.getElementById('login-pass').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
 
-function logout() {
+async function logout() {
+  if (token) {
+    try {
+      await api('/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Admin API logout error:', e);
+    }
+  }
   token = '';
   localStorage.removeItem('pb_token');
   document.getElementById('app').style.display = 'none';

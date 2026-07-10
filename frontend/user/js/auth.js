@@ -52,7 +52,14 @@ document.getElementById('login-pass')?.addEventListener('keydown', e => {
 window.doLogin = doLogin;
 
 // ── Đăng xuất ─────────────────────────────────────────────────
-export function logout() {
+export async function logout() {
+  if (token) {
+    try {
+      await api('/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('API logout error:', e);
+    }
+  }
   clearToken();
   setCurrentUser(null);
   const app       = document.getElementById('app');

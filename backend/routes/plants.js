@@ -266,6 +266,15 @@ router.post('/:id/media', auth, upload.array('files', 20), async (req, res) => {
       );
     }
 
+    // Record user activity
+    if (uploaded.length > 0) {
+      await pool.query(
+        `INSERT INTO user_activities (user_id, activity_type, description)
+         VALUES ($1, 'Tải lên hình ảnh', $2)`,
+        [req.user.id, `Tải lên ${uploaded.length} tệp tin media cho cây #${plantId}`]
+      );
+    }
+
     res.json(uploaded);
   } catch (err) {
     console.error(err);
@@ -303,6 +312,13 @@ router.post('/:id/logs', auth, async (req, res) => {
       [plantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
        JSON.stringify(media_urls || []), JSON.stringify(details || {}), req.user.id]
     );
+    // Record user activity
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Ghi nhật ký', $2)`,
+      [req.user.id, `Ghi nhận nhật ký chăm sóc [${log_type}] cho cây #${plantId}`]
+    );
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error inserting log:', err);

@@ -513,32 +513,68 @@
 
       <!-- ── Users management ── -->
       <div class="page-section" id="page-users">
-        <div class="card">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-users" style="color:var(--green)"></i> Quản lý người dùng & nông hộ</h3>
-            <button class="btn btn-primary" onclick="openUserModal()">
-              <i class="fa fa-plus"></i> Thêm người dùng mới
-            </button>
+        <div class="tabs" style="margin-bottom: 20px;">
+          <div class="tab active" id="user-tab-manage" onclick="switchUserTab('manage')">Quản lý nông hộ</div>
+          <div class="tab" id="user-tab-status" onclick="switchUserTab('status')">Trạng thái hoạt động</div>
+        </div>
+
+        <!-- Pane: Manage Users -->
+        <div class="tab-pane active" id="pane-user-manage">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-users" style="color:var(--green)"></i> Danh sách tài khoản nông hộ</h3>
+              <button class="btn btn-primary" onclick="openUserModal()">
+                <i class="fa fa-plus"></i> Thêm người dùng mới
+              </button>
+            </div>
+            <div class="search-bar">
+              <input type="text" id="user-search" placeholder="🔍 Tìm theo tên hoặc email..." oninput="filterUsers()">
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Họ và tên</th>
+                  <th>Email</th>
+                  <th>Vai trò</th>
+                  <th>Ngày tạo</th>
+                  <th style="width:150px">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="users-table">
+                <tr>
+                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div class="search-bar">
-            <input type="text" id="user-search" placeholder="🔍 Tìm theo tên hoặc email..." oninput="filterUsers()">
+        </div>
+
+        <!-- Pane: Activity Status -->
+        <div class="tab-pane" id="pane-user-status" style="display:none;">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-signal" style="color:var(--green)"></i> Theo dõi trạng thái hoạt động thực địa</h3>
+            </div>
+            <div class="search-bar">
+              <input type="text" id="user-status-search" placeholder="🔍 Tìm nông hộ theo tên, email..." oninput="filterUserStatuses()">
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Nông hộ</th>
+                  <th>Email</th>
+                  <th>Trạng thái</th>
+                  <th>Hoạt động cuối</th>
+                  <th style="width:150px">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="users-status-table">
+                <tr>
+                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Họ và tên</th>
-                <th>Email</th>
-                <th>Vai trò</th>
-                <th>Ngày tạo</th>
-                <th style="width:150px">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="users-table">
-              <tr>
-                <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -968,6 +1004,24 @@
       <button class="btn btn-primary" id="device-save-btn" onclick="saveDevice()">
         <span id="device-save-text"><i class="fa fa-floppy-disk"></i> Lưu thiết bị</span>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ USER ACTIVITY MODAL ════════════ -->
+<div class="modal-overlay" id="user-activity-modal" style="display:none" onclick="if(event.target===this)closeUserActivityModal()">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
+      <button class="modal-close" onclick="closeUserActivityModal()">×</button>
+    </div>
+    <div class="modal-body" style="max-height: 450px; overflow-y: auto;">
+      <div id="user-activity-timeline" class="timeline" style="padding: 10px 0;">
+        <!-- Activities rendered dynamically here -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUserActivityModal()">Đóng</button>
     </div>
   </div>
 </div>

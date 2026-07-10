@@ -13,12 +13,29 @@ router.use(admin);
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, full_name, role, created_at FROM users ORDER BY id ASC'
+      'SELECT id, email, full_name, role, is_online, last_active_at, created_at FROM users ORDER BY id ASC'
     );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server khi lấy danh sách người dùng.' });
+  }
+});
+
+// GET /api/users/:id/activities - Get activity history of a specific user
+router.get('/:id/activities', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM user_activities 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC 
+       LIMIT 100`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching activities:', err);
+    res.status(500).json({ error: 'Lỗi server khi lấy lịch sử hoạt động.' });
   }
 });
 

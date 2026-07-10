@@ -30,6 +30,19 @@ router.post('/login', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
+    // Update active status
+    await pool.query(
+      'UPDATE users SET is_online = true, last_active_at = NOW() WHERE id = $1',
+      [user.id]
+    );
+
+    // Record login activity log
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Đăng nhập', 'Đăng nhập vào hệ thống thành công.')`,
+      [user.id]
+    );
+
     res.json({
       token,
       user: { id: user.id, email: user.email, role: user.role, name: user.full_name }
@@ -37,6 +50,25 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
+// POST /api/auth/logout
+router.post('/logout', require('../middleware/auth'), async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE users SET is_online = false, last_active_at = NOW() WHERE id = $1',
+      [req.user.id]
+    );
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Đăng xuất', 'Người dùng chủ động đăng xuất khỏi hệ thống.')`,
+      [req.user.id]
+    );
+    res.json({ success: true, message: 'Đăng xuất thành công.' });
+  } catch (err) {
+    console.error('Logout error:', err);
+    res.status(500).json({ error: 'Lỗi server khi đăng xuất.' });
   }
 });
 
