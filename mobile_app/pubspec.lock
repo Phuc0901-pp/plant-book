@@ -160,6 +160,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.16.0"
+  mobile_scanner:
+    dependency: "direct main"
+    description:
+      name: mobile_scanner
+      sha256: d234581c090526676fd8fab4ada92f35c6746e3fb4f05a399665d75a399fb760
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.3"
+  nfc_manager:
+    dependency: "direct main"
+    description:
+      name: nfc_manager
+      sha256: "071faa6e43317f9feeef316067456ae6e61a40f7748ed6e93470a812e103c326"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.5.1"
   path:
     dependency: transitive
     description:

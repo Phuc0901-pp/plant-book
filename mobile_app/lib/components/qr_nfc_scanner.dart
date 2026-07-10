@@ -1,312 +1,650 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:nfc_manager/nfc_manager.dart';
 import '../models/plant.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../pages/plant_detail_page.dart';
 import '../pages/public_plant_profile_page.dart';
 
-class QrNfcScanner extends StatefulWidget {
-  final bool isNfcMode;
+// ─── QR Scanner Page (real camera) ──────────────────────────────────────────
 
-  const QrNfcScanner({super.key, this.isNfcMode = false});
+class QrScannerPage extends StatefulWidget {
+  final List<Plant> availablePlants;
+  const QrScannerPage({super.key, required this.availablePlants});
 
   @override
-  State<QrNfcScanner> createState() => _QrNfcScannerState();
+  State<QrScannerPage> createState() => _QrScannerPageState();
 }
 
-class _QrNfcScannerState extends State<QrNfcScanner> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  final TextEditingController _codeController = TextEditingController();
-  
-  bool _isProcessing = false;
-  String? _statusText;
-  List<Plant> _availablePlants = [];
+class _QrScannerPageState extends State<QrScannerPage>
+    with TickerProviderStateMixin {
+  MobileScannerController? _controller;
+  bool _hasScanned = false;
+  bool _torchOn = false;
+
+  late AnimationController _lineController;
+  late Animation<double> _lineAnimation;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-    
-    _loadPlants();
-  }
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+    );
 
-  Future<void> _loadPlants() async {
-    try {
-      final plants = await ApiService().fetchPlants();
-      setState(() {
-        _availablePlants = plants;
-      });
-    } catch (e) {
-      // Ignored
-    }
+    // Scanning line animation
+    _lineController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _lineAnimation = Tween<double>(begin: 0.05, end: 0.95).animate(
+      CurvedAnimation(parent: _lineController, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _codeController.dispose();
+    _controller?.dispose();
+    _lineController.dispose();
     super.dispose();
   }
 
-  Future<void> _processScan(String code) async {
-    if (code.trim().isEmpty) return;
-    
+  void _handleBarcode(String rawValue) async {
+    if (_hasScanned) return;
+    setState(() => _hasScanned = true);
+    await _controller?.stop();
+
+    // Vibrate/feedback
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    if (!mounted) return;
+    _routeToPlant(context, rawValue);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Text('Quét mã QR cây trồng',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: Icon(_torchOn ? Icons.flash_off_rounded : Icons.flash_on_rounded,
+                color: Colors.white),
+            onPressed: () {
+              setState(() => _torchOn = !_torchOn);
+              _controller?.toggleTorch();
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Camera preview
+          MobileScanner(
+            controller: _controller!,
+            onDetect: (capture) {
+              final barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty) {
+                final rawValue = barcodes.first.rawValue ?? '';
+                if (rawValue.isNotEmpty) _handleBarcode(rawValue);
+              }
+            },
+          ),
+
+          // Dark overlay with cutout
+          _buildOverlay(),
+
+          // Bottom hint
+          Positioned(
+            bottom: 60,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
+                const Icon(Icons.qr_code_scanner_rounded, color: Colors.white54, size: 28),
+                const SizedBox(height: 8),
+                Text(
+                  _hasScanned ? 'Đọc mã thành công! Đang điều hướng...' : 'Hướng camera vào mã QR cây trồng',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _hasScanned ? AppTheme.green : Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverlay() {
+    final double cutoutSize = MediaQuery.of(context).size.width * 0.72;
+    return Stack(
+      children: [
+        // Dark dimmed areas
+        Column(
+          children: [
+            Expanded(child: Container(color: Colors.black.withOpacity(0.65))),
+            Row(
+              children: [
+                Container(
+                    width: (MediaQuery.of(context).size.width - cutoutSize) / 2,
+                    height: cutoutSize,
+                    color: Colors.black.withOpacity(0.65)),
+                SizedBox(
+                  width: cutoutSize,
+                  height: cutoutSize,
+                  child: Stack(
+                    children: [
+                      // Scanning line
+                      AnimatedBuilder(
+                        animation: _lineAnimation,
+                        builder: (context, _) => Positioned(
+                          top: cutoutSize * _lineAnimation.value,
+                          left: 12,
+                          right: 12,
+                          child: Container(
+                            height: 2.5,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  AppTheme.green.withOpacity(0.8),
+                                  AppTheme.green,
+                                  AppTheme.green.withOpacity(0.8),
+                                  Colors.transparent,
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.green.withOpacity(0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Corner brackets
+                      ..._buildCornerBrackets(cutoutSize),
+                    ],
+                  ),
+                ),
+                Container(
+                    width: (MediaQuery.of(context).size.width - cutoutSize) / 2,
+                    height: cutoutSize,
+                    color: Colors.black.withOpacity(0.65)),
+              ],
+            ),
+            Expanded(child: Container(color: Colors.black.withOpacity(0.65))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildCornerBrackets(double size) {
+    const thick = 4.0;
+    const length = 28.0;
+    const Color bracketColor = AppTheme.green;
+    return [
+      // Top-left
+      Positioned(top: 0, left: 0, child: _corner(length, thick, bracketColor, true, true)),
+      // Top-right
+      Positioned(top: 0, right: 0, child: _corner(length, thick, bracketColor, true, false)),
+      // Bottom-left
+      Positioned(bottom: 0, left: 0, child: _corner(length, thick, bracketColor, false, true)),
+      // Bottom-right
+      Positioned(bottom: 0, right: 0, child: _corner(length, thick, bracketColor, false, false)),
+    ];
+  }
+
+  Widget _corner(double len, double thick, Color color, bool top, bool left) {
+    return SizedBox(
+      width: len,
+      height: len,
+      child: CustomPaint(painter: _CornerPainter(color, thick, top, left)),
+    );
+  }
+}
+
+class _CornerPainter extends CustomPainter {
+  final Color color;
+  final double thick;
+  final bool top;
+  final bool left;
+
+  _CornerPainter(this.color, this.thick, this.top, this.left);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = thick
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    if (top && left) {
+      canvas.drawLine(Offset(0, size.height), Offset(0, 0), paint);
+      canvas.drawLine(Offset(0, 0), Offset(size.width, 0), paint);
+    } else if (top && !left) {
+      canvas.drawLine(Offset(size.width, size.height), Offset(size.width, 0), paint);
+      canvas.drawLine(Offset(size.width, 0), Offset(0, 0), paint);
+    } else if (!top && left) {
+      canvas.drawLine(Offset(0, 0), Offset(0, size.height), paint);
+      canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), paint);
+    } else {
+      canvas.drawLine(Offset(size.width, 0), Offset(size.width, size.height), paint);
+      canvas.drawLine(Offset(size.width, size.height), Offset(0, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── NFC Scanner Page ────────────────────────────────────────────────────────
+
+class NfcScannerPage extends StatefulWidget {
+  final List<Plant> availablePlants;
+  const NfcScannerPage({super.key, required this.availablePlants});
+
+  @override
+  State<NfcScannerPage> createState() => _NfcScannerPageState();
+}
+
+class _NfcScannerPageState extends State<NfcScannerPage>
+    with TickerProviderStateMixin {
+  String _statusText = 'Đưa điện thoại lại gần thẻ NFC...';
+  bool _isSuccess = false;
+  bool _isError = false;
+  bool _isReading = false;
+  bool _nfcAvailable = false;
+
+  // Ring ripple animation
+  late AnimationController _rippleController;
+  late Animation<double> _rippleScale;
+  late Animation<double> _rippleOpacity;
+
+  // Success check animation
+  late AnimationController _successController;
+  late Animation<double> _successScale;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat();
+
+    _rippleScale = Tween<double>(begin: 0.8, end: 1.6).animate(
+      CurvedAnimation(parent: _rippleController, curve: Curves.easeOut),
+    );
+    _rippleOpacity = Tween<double>(begin: 0.6, end: 0.0).animate(
+      CurvedAnimation(parent: _rippleController, curve: Curves.easeOut),
+    );
+
+    _successController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _successScale = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _successController, curve: Curves.elasticOut),
+    );
+
+    _initNfc();
+  }
+
+  @override
+  void dispose() {
+    NfcManager.instance.stopSession();
+    _rippleController.dispose();
+    _successController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initNfc() async {
+    final isAvail = await NfcManager.instance.isAvailable();
+    if (!mounted) return;
+
+    if (!isAvail) {
+      setState(() {
+        _nfcAvailable = false;
+        _isError = true;
+        _statusText = 'Thiết bị không hỗ trợ NFC hoặc NFC chưa được bật.';
+      });
+      return;
+    }
+
     setState(() {
-      _isProcessing = true;
-      _statusText = widget.isNfcMode ? 'Đang đọc thẻ NFC...' : 'Đang đối chiếu mã QR...';
+      _nfcAvailable = true;
+      _isReading = true;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    NfcManager.instance.startSession(onDiscovered: (NfcTag tag) async {
+      // Try to extract URL/text from NDEF records
+      final ndef = Ndef.from(tag);
+      String? readValue;
 
-    // Detect if code is a public plant URL
-    if (code.contains('/plant/')) {
-      final cleanUrl = code.trim();
-      final uri = Uri.tryParse(cleanUrl);
-      final pathSegments = uri?.pathSegments ?? cleanUrl.split('/');
-      
-      if (pathSegments.isNotEmpty) {
-        final slug = pathSegments.last;
-        
+      if (ndef != null) {
+        try {
+          final cachedMessage = ndef.cachedMessage;
+          if (cachedMessage != null) {
+            for (final record in cachedMessage.records) {
+              final payload = record.payload;
+              if (payload.isNotEmpty) {
+                // NDEF Text record: first byte = status, next bytes = lang code, rest = text
+                // NDEF URI record: first byte = URI prefix identifier
+                final prefix = payload[0];
+                String text;
+                if (prefix == 0x02 || prefix == 0x01) {
+                  // URI record - prefix maps to scheme
+                  const prefixes = {
+                    0x01: 'http://www.',
+                    0x02: 'https://www.',
+                    0x03: 'http://',
+                    0x04: 'https://',
+                  };
+                  final scheme = prefixes[prefix] ?? '';
+                  text = scheme + String.fromCharCodes(payload.sublist(1));
+                } else {
+                  // Text record - skip status byte and lang code
+                  final langLength = payload[0] & 0x3F;
+                  text = String.fromCharCodes(payload.sublist(1 + langLength));
+                }
+                readValue = text.trim();
+                break;
+              }
+            }
+          }
+        } catch (_) {
+          readValue = null;
+        }
+      }
+
+      await NfcManager.instance.stopSession();
+      if (!mounted) return;
+
+      if (readValue != null && readValue.isNotEmpty) {
+        _onReadSuccess(readValue);
+      } else {
         setState(() {
-          _isProcessing = false;
-          _statusText = 'Đọc mã thành công!';
+          _isError = true;
+          _isReading = false;
+          _statusText = 'Thẻ NFC không chứa dữ liệu cây trồng hợp lệ.';
         });
+      }
+    }, onError: (error) async {
+      if (!mounted) return;
+      setState(() {
+        _isError = true;
+        _isReading = false;
+        _statusText = 'Lỗi đọc thẻ: ${error.message}';
+      });
+    });
+  }
 
-        if (!mounted) return;
-        Navigator.pop(context); // Close scanner modal
+  void _onReadSuccess(String value) async {
+    setState(() {
+      _isSuccess = true;
+      _isReading = false;
+      _statusText = 'Đọc thẻ thành công!';
+    });
+
+    _rippleController.stop();
+    _successController.forward();
+
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+
+    Navigator.pop(context);
+    _routeToPlant(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A1628),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0A1628),
+        foregroundColor: Colors.white,
+        title: const Text('Đọc thẻ NFC cây trồng',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // NFC icon with ripple animation
+            SizedBox(
+              width: 200,
+              height: 200,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Ripple rings (only when reading)
+                  if (_isReading) ...[
+                    AnimatedBuilder(
+                      animation: _rippleController,
+                      builder: (context, _) => Transform.scale(
+                        scale: _rippleScale.value,
+                        child: Container(
+                          width: 160,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppTheme.green.withOpacity(_rippleOpacity.value),
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    AnimatedBuilder(
+                      animation: _rippleController,
+                      builder: (context, _) {
+                        final delayed = (_rippleController.value + 0.4) % 1.0;
+                        final scale = 0.8 + delayed * 0.8;
+                        final opacity = 0.6 - delayed * 0.6;
+                        return Transform.scale(
+                          scale: scale,
+                          child: Container(
+                            width: 160,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppTheme.green.withOpacity(opacity.clamp(0.0, 1.0)),
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
+                  // Center icon circle
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _isSuccess
+                          ? AppTheme.green
+                          : _isError
+                              ? AppTheme.red
+                              : const Color(0xFF1E3A5F),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (_isSuccess
+                              ? AppTheme.green
+                              : _isError
+                                  ? AppTheme.red
+                                  : AppTheme.green).withOpacity(0.3),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: _isSuccess
+                        ? ScaleTransition(
+                            scale: _successScale,
+                            child: const Icon(Icons.check_rounded,
+                                size: 56, color: Colors.white),
+                          )
+                        : _isError
+                            ? const Icon(Icons.nfc_rounded,
+                                size: 56, color: Colors.white54)
+                            : const Icon(Icons.nfc_rounded,
+                                size: 56, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Status text
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Text(
+                _statusText,
+                key: ValueKey(_statusText),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _isSuccess
+                      ? AppTheme.green
+                      : _isError
+                          ? AppTheme.red
+                          : Colors.white70,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            if (!_isSuccess && !_isError)
+              const Text(
+                'Chạm thẻ NFC của cây trồng vào mặt sau điện thoại',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white38, fontSize: 13),
+              ),
+
+            if (_isError && _nfcAvailable) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isError = false;
+                    _isReading = true;
+                    _statusText = 'Đưa điện thoại lại gần thẻ NFC...';
+                  });
+                  _rippleController.repeat();
+                  _initNfc();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Thử lại'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+
+            if (_isError && !_nfcAvailable) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Hãy bật NFC trong Cài đặt → Kết nối → NFC',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white38, fontSize: 13),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Shared routing logic ────────────────────────────────────────────────────
+
+void _routeToPlant(BuildContext context, String code) async {
+  final apiService = ApiService();
+  
+  // 1. Detect if it's a public plant URL
+  if (code.contains('/plant/')) {
+    final uri = Uri.tryParse(code.trim());
+    final segments = uri?.pathSegments ?? code.trim().split('/');
+    if (segments.isNotEmpty) {
+      final slug = segments.last;
+      if (slug.isNotEmpty) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PublicPlantProfilePage(slug: slug),
+            builder: (_) => PublicPlantProfilePage(slug: slug),
           ),
         );
         return;
       }
     }
+  }
 
-    // Try finding the plant with matching tree_code or ID
-    Plant? matchedPlant;
-    for (var p in _availablePlants) {
-      if (p.treeCode?.toLowerCase() == code.toLowerCase() || p.id.toString() == code) {
-        matchedPlant = p;
-        break;
-      }
-    }
+  // 2. Try to match by tree_code or plant ID via API
+  try {
+    final allPlants = await apiService.fetchPlants();
+    final matched = allPlants.firstWhere(
+      (p) =>
+          p.treeCode?.toLowerCase() == code.toLowerCase() ||
+          p.id.toString() == code,
+      orElse: () => throw Exception('not found'),
+    );
 
-    if (!mounted) return;
-
-    if (matchedPlant != null) {
-      setState(() {
-        _isProcessing = false;
-        _statusText = 'Kết nối thành công!';
-      });
-      
-      Navigator.pop(context); // Close scanner modal
+    if (context.mounted) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => PlantDetailPage(plant: matchedPlant!),
+        MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không tìm thấy cây trồng với mã "$code"'),
+          backgroundColor: AppTheme.red,
+          behavior: SnackBarBehavior.floating,
         ),
       );
-    } else {
-      setState(() {
-        _isProcessing = false;
-        _statusText = 'Không tìm thấy cây trồng có mã "$code"';
-      });
     }
   }
+}
+
+// ─── Legacy compatibility wrapper (bottom sheet) ─────────────────────────────
+// Keep this for backward compatibility with existing dashboard trigger code
+
+class QrNfcScanner extends StatelessWidget {
+  final bool isNfcMode;
+  const QrNfcScanner({super.key, this.isNfcMode = false});
 
   @override
-  Widget build(BuildContext context) {
-    final title = widget.isNfcMode ? 'Đọc thẻ NFC Cây' : 'Quét Mã QR Cây';
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Drag Handle
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 5,
-            decoration: BoxDecoration(
-              color: AppTheme.grayBorder,
-              borderRadius: BorderRadius.circular(2.5),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Header title
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textMain,
-            ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Scanner Box
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  if (!widget.isNfcMode) ...[
-                    // QR Scanner View simulation
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppTheme.greenDark, width: 4),
-                            borderRadius: BorderRadius.circular(16),
-                            color: Colors.black.withOpacity(0.05),
-                          ),
-                          child: const Icon(Icons.qr_code_2_rounded, size: 100, color: Colors.black12),
-                        ),
-                        // Scanning laser line animation
-                        AnimatedBuilder(
-                          animation: _animationController,
-                          builder: (context, child) {
-                            return Positioned(
-                              top: 10 + (_animationController.value * 170),
-                              child: Container(
-                                width: 180,
-                                height: 3,
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.redAccent.withOpacity(0.5),
-                                      blurRadius: 4,
-                                      spreadRadius: 1,
-                                    )
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    // NFC Scanner View simulation
-                    Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: AppTheme.userAccentSoft,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.userAccent.withOpacity(0.3), width: 3),
-                      ),
-                      child: const Icon(
-                        Icons.nfc_rounded,
-                        size: 80,
-                        color: AppTheme.userAccent,
-                      ),
-                    ),
-                  ],
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Status Text
-                  if (_statusText != null)
-                    Text(
-                      _statusText!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _statusText!.contains('thành công') ? AppTheme.green : AppTheme.red,
-                      ),
-                    ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Form input to type / simulate scan
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Nhập mã định danh cây (Simulate Scan):',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _codeController,
-                          decoration: const InputDecoration(
-                            hintText: 'Nhập mã cây (ví dụ: XOAI-001, 2...)',
-                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          ),
-                          enabled: !_isProcessing,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: _isProcessing ? null : () => _processScan(_codeController.text),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: widget.isNfcMode ? AppTheme.userAccent : AppTheme.green,
-                        ),
-                        child: const Text('OK'),
-                      )
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  const Divider(color: AppTheme.grayBorder),
-                  const SizedBox(height: 12),
-                  
-                  // Quick lists of plants to test scan instantly
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Hoặc chọn nhanh từ danh sách cây thực tế:',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  _availablePlants.isEmpty
-                      ? const Text('Đang tải danh sách cây trồng...', style: TextStyle(fontSize: 12, color: AppTheme.textMuted))
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _availablePlants.length,
-                          itemBuilder: (context, index) {
-                            final p = _availablePlants[index];
-                            final displayCode = p.treeCode ?? p.id.toString();
-                            return ListTile(
-                              title: Text('Cây #$displayCode - ${p.plantType}'),
-                              subtitle: Text('Sức khỏe: ${p.healthStatus}'),
-                              trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: widget.isNfcMode ? AppTheme.userAccent : AppTheme.green),
-                              onTap: _isProcessing ? null : () {
-                                _codeController.text = displayCode;
-                                _processScan(displayCode);
-                              },
-                            );
-                          },
-                        ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

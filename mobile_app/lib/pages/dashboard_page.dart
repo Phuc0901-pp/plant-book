@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../components/farm_card.dart';
 import '../components/plant_card.dart';
 import '../components/loading_indicator.dart';
-import '../components/qr_nfc_scanner.dart';
+import '../components/qr_nfc_scanner.dart' show QrScannerPage, NfcScannerPage;
 import '../models/farm.dart';
 import '../models/plant.dart';
 import '../services/api_service.dart';
@@ -81,20 +81,20 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _triggerQrScan() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const QrNfcScanner(isNfcMode: false),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QrScannerPage(availablePlants: _plants),
+      ),
     ).then((_) => _loadData());
   }
 
   void _triggerNfcScan() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const QrNfcScanner(isNfcMode: true),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NfcScannerPage(availablePlants: _plants),
+      ),
     ).then((_) => _loadData());
   }
 
