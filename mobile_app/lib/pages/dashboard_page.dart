@@ -158,7 +158,7 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 8),
             Text(
               _error!,
-              textAlign: Center,
+              textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13, color: AppTheme.textMuted, height: 1.5),
             ),
             const SizedBox(height: 24),

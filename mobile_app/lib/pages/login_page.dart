@@ -177,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                           decoration: const InputDecoration(
                             labelText: 'Email',
                             hintText: 'user@tanbaocorp.vn',
-                            prefixIcon: Icon(Icons.envelope_outlined, size: 20),
+                            prefixIcon: Icon(Icons.email_outlined, size: 20),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
