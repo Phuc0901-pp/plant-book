@@ -10,16 +10,7 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // Determine local port address based on operating system
-  String get baseUrl {
-    if (Platform.isAndroid) {
-      // Android emulator maps localhost of the development machine to 10.0.2.2
-      return 'http://10.0.2.2:3000/api';
-    } else {
-      // iOS Simulator or real devices running in local network should use localhost or specific LAN IP
-      return 'http://localhost:3000/api';
-    }
-  }
+  String get baseUrl => 'https://plant-book.onrender.com/api';
 
   String? _token;
 

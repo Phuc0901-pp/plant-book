@@ -12,6 +12,7 @@ const http = require('http');
 const WebSocket = require('ws');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 // ─── Middleware ───────────────────────────────────────────────────
