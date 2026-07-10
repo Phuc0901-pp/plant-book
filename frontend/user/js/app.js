@@ -37,3 +37,12 @@ window.onCareLogTypeChange  = onCareLogTypeChange;
 
 window.onCareMediaSelected  = onCareMediaSelected;
 window.openLightbox         = openLightbox;
+
+// Register PWA service worker for offline support and mobile install option
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/user/sw.js')
+      .then(reg => console.log('✅ ServiceWorker registered successfully:', reg.scope))
+      .catch(err => console.warn('❌ ServiceWorker registration failed:', err));
+  });
+}

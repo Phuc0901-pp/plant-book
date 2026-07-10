@@ -1,0 +1,18 @@
+{
+  "name": "Plant Book Farmer Portal",
+  "short_name": "Plant Book",
+  "description": "Cổng thông tin người dùng hệ thống quản lý cây trồng Tanbao Corp",
+  "start_url": "/user/",
+  "display": "standalone",
+  "background_color": "#1b4d3e",
+  "theme_color": "#22c55e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

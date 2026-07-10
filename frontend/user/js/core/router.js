@@ -48,6 +48,17 @@ export function showPage(page) {
       window.loadUserDashboard();
     }
   }
+
+  if (page === 'myplants') {
+    // Force Mapbox viewport recalculation when switching to the map page
+    import('../modules/map.js').then(mapModule => {
+      if (mapModule.userMap) {
+        setTimeout(() => {
+          try { mapModule.userMap.resize(); } catch (_) {}
+        }, 150);
+      }
+    });
+  }
 }
 
 /**

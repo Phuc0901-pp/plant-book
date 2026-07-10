@@ -58,6 +58,13 @@ export function initUserMap(farms, plants) {
     zoom: 5
   });
   userMap = map;
+  
+  // Force resize trigger on window resize / screen rotate to prevent canvas layout clipping
+  window.addEventListener('resize', () => {
+    if (userMap) {
+      try { userMap.resize(); } catch (_) {}
+    }
+  });
 
   // Ẩn nhãn ở zoom thấp (chỉ hiện chấm tròn)
   map.on('zoom', () => {
