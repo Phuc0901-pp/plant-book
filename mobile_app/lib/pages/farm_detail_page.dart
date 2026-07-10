@@ -28,6 +28,12 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   List<Plant> _farmPlants = [];
   String? _error;
 
+  // Interactive map state variables
+  double _centerLng = 108.0;
+  double _centerLat = 12.0;
+  double _mapZoom = 17.5;
+  bool _hasCalculatedCenter = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +56,42 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     super.dispose();
   }
 
+  void _calculateInitialCenter() {
+    if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
+      try {
+        final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
+        if (coords.isNotEmpty) {
+          List<List<double>> flatCoords = [];
+          if (coords[0] is List && coords[0][0] is List) {
+            for (var pt in coords[0]) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          } else {
+            for (var pt in coords) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          }
+          
+          if (flatCoords.isNotEmpty) {
+            double sumLng = 0;
+            double sumLat = 0;
+            for (var pt in flatCoords) {
+              sumLng += pt[0];
+              sumLat += pt[1];
+            }
+            setState(() {
+              _centerLng = sumLng / flatCoords.length;
+              _centerLat = sumLat / flatCoords.length;
+              _hasCalculatedCenter = true;
+            });
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }
+
   Future<void> _loadFarmData() async {
     setState(() {
       _isLoading = true;
@@ -61,6 +103,24 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
       setState(() {
         // Filter plants belonging to this farm
         _farmPlants = plants.where((p) => p.farmId == widget.farm.id).toList();
+        
+        // Sort: Sick ('Bệnh') plants first, then by treeCode/displayName
+        _farmPlants.sort((a, b) {
+          bool aIsSick = a.healthStatus == 'Bệnh';
+          bool bIsSick = b.healthStatus == 'Bệnh';
+          if (aIsSick && !bIsSick) return -1;
+          if (!aIsSick && bIsSick) return 1;
+          
+          final aCode = a.treeCode ?? '';
+          final bCode = b.treeCode ?? '';
+          return aCode.compareTo(bCode);
+        });
+
+        // Initialize map center
+        if (!_hasCalculatedCenter) {
+          _calculateInitialCenter();
+        }
+
         _isLoading = false;
       });
     } catch (e) {
@@ -218,48 +278,9 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
         final double height = 250.0;
-        
-        double centerLng = 108.0;
-        double centerLat = 12.0;
-        bool hasCoords = false;
-
-        if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
-          try {
-            final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
-            if (coords.isNotEmpty) {
-              List<List<double>> flatCoords = [];
-              if (coords[0] is List && coords[0][0] is List) {
-                for (var pt in coords[0]) {
-                  flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
-                }
-              } else {
-                for (var pt in coords) {
-                  flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
-                }
-              }
-              
-              if (flatCoords.isNotEmpty) {
-                double sumLng = 0;
-                double sumLat = 0;
-                for (var pt in flatCoords) {
-                  sumLng += pt[0];
-                  sumLat += pt[1];
-                }
-                centerLng = sumLng / flatCoords.length;
-                centerLat = sumLat / flatCoords.length;
-                hasCoords = true;
-              }
-            }
-          } catch (e) {
-            // Ignore
-          }
-        }
 
         final mapboxToken = AppConfig.mapboxPublicToken;
-        const double mapZoom = 17.5; // Optimized zoom matching satellite imagery level
-        final mapboxUrl = hasCoords
-            ? 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/$centerLng,$centerLat,$mapZoom,0,0/${width.toInt()}x250@2x?access_token=$mapboxToken'
-            : 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/108.2,12.0,$mapZoom,0,0/${width.toInt()}x250@2x?access_token=$mapboxToken';
+        final mapboxUrl = 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/$_centerLng,$_centerLat,$_mapZoom,0,0/${width.toInt()}x250@2x?access_token=$mapboxToken';
 
         return Container(
           height: height,
@@ -287,76 +308,106 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                   ),
                 ),
                 
-                // Base Satellite Map Drawing overlay using Canvas
+                // Base Satellite Map Drawing overlay using Canvas & Interactive Gesture Detector
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: FarmGisPainter(
-                      polygonCoords: widget.farm.polygonCoordinates,
-                      plants: _farmPlants,
-                      centerLng: centerLng,
-                      centerLat: centerLat,
-                      zoom: mapZoom,
+                  child: GestureDetector(
+                    onPanUpdate: (details) {
+                      final double mapSize = 256.0 * math.pow(2.0, _mapZoom);
+                      double dLng = -(details.delta.dx) * 360.0 / mapSize;
+                      double latRadians = _centerLat * math.pi / 180.0;
+                      double dLat = (details.delta.dy) * 360.0 * math.cos(latRadians) / mapSize;
+                      
+                      setState(() {
+                        _centerLng += dLng;
+                        _centerLat += dLat;
+                      });
+                    },
+                    child: CustomPaint(
+                      painter: FarmGisPainter(
+                        polygonCoords: widget.farm.polygonCoordinates,
+                        plants: _farmPlants,
+                        centerLng: _centerLng,
+                        centerLat: _centerLat,
+                        zoom: _mapZoom,
+                      ),
                     ),
                   ),
                 ),
-            
-            // Map controls overlay
-            Positioned(
-              top: 12,
-              right: 12,
-              child: Column(
-                children: [
-                  _mapButton(Icons.add_rounded),
-                  const SizedBox(height: 6),
-                  _mapButton(Icons.remove_rounded),
-                  const SizedBox(height: 6),
-                  _mapButton(Icons.my_location_rounded),
-                ],
-              ),
-            ),
-            
-            // Map legend overlay
-            Positioned(
-              bottom: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(8),
+                
+                // Map controls overlay
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Column(
+                    children: [
+                      _mapButton(Icons.add_rounded, () {
+                        setState(() {
+                          _mapZoom = (_mapZoom + 0.5).clamp(10.0, 20.0);
+                        });
+                      }),
+                      const SizedBox(height: 6),
+                      _mapButton(Icons.remove_rounded, () {
+                        setState(() {
+                          _mapZoom = (_mapZoom - 0.5).clamp(10.0, 20.0);
+                        });
+                      }),
+                      const SizedBox(height: 6),
+                      _mapButton(Icons.my_location_rounded, () {
+                        _calculateInitialCenter();
+                        setState(() {
+                          _mapZoom = 17.5;
+                        });
+                      }),
+                    ],
+                  ),
                 ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.layers_rounded, size: 12, color: Colors.white70),
-                    SizedBox(width: 6),
-                    Text(
-                      'Mapbox Satellite GIS Live',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                
+                // Map legend overlay
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
+                    child: const Row(
+                      children: [
+                        Icon(Icons.layers_rounded, size: 12, color: Colors.white70),
+                        SizedBox(width: 6),
+                        Text(
+                          'Mapbox Satellite GIS Live (Kéo để di chuyển)',
+                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
       },
     );
   }
 
-  Widget _mapButton(IconData icon) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4, offset: const Offset(0, 1))
-        ],
+  Widget _mapButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4, offset: const Offset(0, 1))
+          ],
+        ),
+        child: Icon(icon, size: 18, color: AppTheme.textMain),
       ),
-      child: Icon(icon, size: 18, color: AppTheme.textMain),
     );
   }
 
