@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../utils/app_config.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
@@ -37,6 +39,200 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     _loadPublicData();
   }
 
+  List<dynamic> _typeofPolyCoords(dynamic poly) {
+    if (poly is String) {
+      try {
+        return jsonDecode(poly);
+      } catch (e) {
+        return [];
+      }
+    } else if (poly is List) {
+      return poly;
+    }
+    return [];
+  }
+
+  void _updateMapHtml() {
+    if (_plantData == null) return;
+
+    final double plantLat = double.tryParse(_plantData!['latitude']?.toString() ?? '') ?? 0.0;
+    final double plantLng = double.tryParse(_plantData!['longitude']?.toString() ?? '') ?? 0.0;
+    final String health = _plantData!['health_status'] ?? 'Tốt';
+    final String treeCode = _plantData!['tree_code'] ?? _plantData!['id']?.toString() ?? '';
+
+    // Format polygon coordinates
+    String polyCoordsJson = '[]';
+    if (_plantData!['farm_polygon'] != null && _plantData!['farm_polygon'].toString().isNotEmpty) {
+      try {
+        final List<dynamic> coords = _typeofPolyCoords(_plantData!['farm_polygon']);
+        if (coords.isNotEmpty) {
+          List<List<double>> flatCoords = [];
+          if (coords[0] is List && coords[0][0] is List) {
+            for (var pt in coords[0]) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          } else {
+            for (var pt in coords) {
+              flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
+            }
+          }
+          polyCoordsJson = jsonEncode(flatCoords);
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    final mapboxToken = AppConfig.mapboxPublicToken;
+
+    final String htmlContent = '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Mapbox GL JS Satellite Map</title>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
+    
+    .target-marker {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background-color: #22C55E;
+      border: 2px solid white;
+      box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.35);
+      animation: pulse 1.6s infinite alternate;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .target-marker.sick {
+      background-color: #EF4444;
+      box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.35);
+    }
+    .target-marker.warn {
+      background-color: #F59E0B;
+      box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.35);
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(0.92); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3); }
+      100% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    }
+    .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = '$mapboxToken';
+    
+    const plantCenter = [$plantLng, $plantLat];
+    const polygonCoords = $polyCoordsJson;
+    const health = '$health';
+    const treeCode = '$treeCode';
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/satellite-streets-v12', // Satellite Streets detail map
+      center: plantCenter.length === 2 && plantCenter[0] !== 0 ? plantCenter : [108.2, 12.0],
+      zoom: 17.5,
+      attributionControl: false
+    });
+
+    // Add navigation controls (zoom in/out)
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right');
+
+    // Add Geolocate Control for current phone GPS location
+    const geolocate = new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true,
+      showUserHeading: true
+    });
+    map.addControl(geolocate, 'top-right');
+
+    map.on('load', () => {
+      // Auto locate user
+      setTimeout(() => {
+        try { geolocate.trigger(); } catch (e) {}
+      }, 1000);
+
+      // Draw farm polygon boundary
+      if (polygonCoords && polygonCoords.length > 0) {
+        const poly = [...polygonCoords];
+        if (poly[0][0] !== poly[poly.length - 1][0] || poly[0][1] !== poly[poly.length - 1][1]) {
+          poly.push(poly[0]);
+        }
+
+        map.addSource('farm-boundary', {
+          'type': 'geojson',
+          'data': {
+            'type': 'Feature',
+            'geometry': {
+              'type': 'Polygon',
+              'coordinates': [poly]
+            }
+          }
+        });
+
+        map.addLayer({
+          'id': 'farm-fill',
+          'type': 'fill',
+          'source': 'farm-boundary',
+          'layout': {},
+          'paint': {
+            'fill-color': '#22C55E',
+            'fill-opacity': 0.12
+          }
+        });
+
+        map.addLayer({
+          'id': 'farm-outline',
+          'type': 'line',
+          'source': 'farm-boundary',
+          'layout': {},
+          'paint': {
+            'line-color': '#22C55E',
+            'line-width': 2.5
+          }
+        });
+      }
+
+      // Draw target plant marker
+      if (plantCenter[0] && plantCenter[1]) {
+        const el = document.createElement('div');
+        el.className = 'target-marker';
+        if (health === 'Bệnh') el.className += ' sick';
+        if (health === 'Cần chú ý') el.className += ' warn';
+        el.innerText = treeCode;
+
+        new mapboxgl.Marker({ element: el })
+          .setLngLat(plantCenter)
+          .addTo(map);
+      }
+    });
+  </script>
+</body>
+</html>
+''';
+
+    // Inject with HTTPS baseUrl to enforce Secure Context for Location API access
+    final String mainBaseUrl = _apiService.baseUrl.replaceAll('/api', '');
+    _webViewController.loadHtmlString(htmlContent, baseUrl: mainBaseUrl);
+  }
+
   Future<void> _loadPublicData() async {
     setState(() {
       _isLoading = true;
@@ -54,11 +250,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         _media = data['media'] as List<dynamic>? ?? [];
         _isLoading = false;
       });
-      
-      // Load public Mapbox satellite map via secure context URL
-      final String baseUrl = _apiService.baseUrl.replaceAll('/api', '');
-      final mapUri = Uri.parse('$baseUrl/plant/${widget.slug}/map');
-      _webViewController.loadRequest(mapUri);
+      _updateMapHtml();
     } else {
       setState(() {
         _error = 'Không thể tải hồ sơ cây trồng. Vui lòng kiểm tra lại liên kết hoặc kết nối mạng.';
