@@ -45,6 +45,7 @@ document.getElementById('login-pass').addEventListener('keydown', e => {
 });
 
 async function logout() {
+  closeWebSocket();
   if (token) {
     try {
       await api('/auth/logout', { method: 'POST' });
@@ -66,6 +67,7 @@ async function showApp() {
   await ensureMapboxToken();
   loadDashboard();
   loadSchemasDropdown();
+  connectWebSocket();
 }
 
 // Check existing token on load – guard: chỉ admin mới được ở /admin

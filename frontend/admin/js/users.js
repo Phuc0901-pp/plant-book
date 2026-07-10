@@ -54,7 +54,7 @@ function renderUsersTable(users) {
       : `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})"><i class="fa fa-trash"></i> Xóa</button>`;
 
     return `
-      <tr>
+      <tr data-user-id="${u.id}">
         <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(u.full_name)}${selfBadge}</td>
         <td>${escapeHtml(u.email)}</td>
         <td>${roleBadge}</td>
@@ -252,7 +252,7 @@ function renderUserStatusTable(users) {
     const lastActiveStr = formatRelativeTime(u.last_active_at);
 
     return `
-      <tr>
+      <tr data-user-id="${u.id}">
         <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(u.full_name)}</td>
         <td>${escapeHtml(u.email)}</td>
         <td>${statusHtml}</td>

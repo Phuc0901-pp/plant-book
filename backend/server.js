@@ -8,6 +8,8 @@ const cors = require('cors');
 const path = require('path');
 const { ensureBucket } = require('./config/supabase');
 const initDB = require('./db/init');
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -91,6 +93,11 @@ async function start() {
               INSERT INTO user_activities (user_id, activity_type, description)
               VALUES ($1, 'Đăng xuất', 'Hệ thống tự động đăng xuất do không hoạt động (quá 30 phút)')
             `, [u.id]);
+            
+            // Broadcast real-time status change
+            if (global.broadcastWS) {
+              global.broadcastWS('user_status_changed', { id: u.id, is_online: false, last_active_at: new Date() });
+            }
           }
         }
       } catch (err) {
@@ -98,7 +105,32 @@ async function start() {
       }
     }, 30 * 60 * 1000); // 30 minutes
 
-    app.listen(PORT, () => {
+    // Create HTTP Server wrapped around Express
+    const server = http.createServer(app);
+    const wss = new WebSocket.Server({ server });
+    const clients = new Set();
+
+    wss.on('connection', (ws) => {
+      clients.add(ws);
+      ws.on('close', () => {
+        clients.delete(ws);
+      });
+    });
+
+    const broadcast = (event, data) => {
+      const payload = JSON.stringify({ event, data });
+      for (const client of clients) {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(payload);
+        }
+      }
+    };
+
+    // Store broadcast function globally and in app
+    global.broadcastWS = broadcast;
+    app.set('broadcast', broadcast);
+
+    server.listen(PORT, () => {
       console.log(`\n🌿 Plant Book Server running at port ${PORT}`);
       console.log(`📋 Admin panel: /admin`);
       console.log(`🔑 Login: ${process.env.ADMIN_EMAIL} / ${process.env.ADMIN_PASSWORD}\n`);

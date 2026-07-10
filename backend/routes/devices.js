@@ -83,6 +83,10 @@ router.post('/', auth, admin, async (req, res) => {
       battery_level !== undefined ? parseInt(battery_level) : 100
     ]);
     
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('device_status_changed');
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating device:', err);
@@ -118,6 +122,10 @@ router.put('/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy thiết bị.' });
     }
     
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('device_status_changed');
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Error updating device:', err);
@@ -134,6 +142,10 @@ router.delete('/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy thiết bị.' });
     }
     
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('device_status_changed');
+
     res.json({ message: 'Đã xóa thiết bị thành công.' });
   } catch (err) {
     console.error('Error deleting device:', err);

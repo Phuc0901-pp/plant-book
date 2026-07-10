@@ -78,6 +78,10 @@ router.post('/', auth, admin, async (req, res) => {
       RETURNING *
     `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, req.user.id, user_id || null]);
 
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('farms_updated');
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating farm:', err);
@@ -103,6 +107,10 @@ router.put('/:id', auth, admin, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('farms_updated');
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Error updating farm:', err);
@@ -117,6 +125,10 @@ router.delete('/:id', auth, admin, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('farms_updated');
+
     res.json({ message: 'Đã xóa trang trại thành công.' });
   } catch (err) {
     console.error('Error deleting farm:', err);

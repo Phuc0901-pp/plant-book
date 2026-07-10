@@ -5,6 +5,7 @@
 
 import { API, api, token, setToken, clearToken, setCurrentUser, currentUser } from './core/api.js';
 import { showPage } from './core/router.js';
+import { connectWebSocket, closeWebSocket } from './core/websocket.js';
 
 // ── Đăng nhập ──────────────────────────────────────────────────
 async function doLogin() {
@@ -53,6 +54,7 @@ window.doLogin = doLogin;
 
 // ── Đăng xuất ─────────────────────────────────────────────────
 export async function logout() {
+  closeWebSocket();
   if (token) {
     try {
       await api('/auth/logout', { method: 'POST' });
@@ -90,6 +92,7 @@ function showApp() {
   if (settingEmailEl) settingEmailEl.textContent = user?.email || '—';
 
   showPage('home');
+  connectWebSocket();
 }
 
 // ── Kiểm tra token lưu sẵn khi tải trang ──────────────────────

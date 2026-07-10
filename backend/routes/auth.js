@@ -43,6 +43,12 @@ router.post('/login', async (req, res) => {
       [user.id]
     );
 
+    // Broadcast user online status
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('user_status_changed', { id: user.id, is_online: true, last_active_at: new Date() });
+    }
+
     res.json({
       token,
       user: { id: user.id, email: user.email, role: user.role, name: user.full_name }
@@ -65,6 +71,12 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
        VALUES ($1, 'Đăng xuất', 'Người dùng chủ động đăng xuất khỏi hệ thống.')`,
       [req.user.id]
     );
+    // Broadcast user offline status
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('user_status_changed', { id: req.user.id, is_online: false, last_active_at: new Date() });
+    }
+
     res.json({ success: true, message: 'Đăng xuất thành công.' });
   } catch (err) {
     console.error('Logout error:', err);

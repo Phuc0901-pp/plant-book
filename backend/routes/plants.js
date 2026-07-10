@@ -196,6 +196,10 @@ router.post('/', auth, admin, async (req, res) => {
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
        req.user.id, tree_code || null]
     );
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated');
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -219,6 +223,10 @@ router.put('/:id', auth, admin, async (req, res) => {
        req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated');
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
@@ -232,6 +240,10 @@ router.delete('/:id', auth, admin, async (req, res) => {
       await deleteFile(row.object_name);
     }
     await pool.query('DELETE FROM plants WHERE id=$1', [req.params.id]);
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated');
+
     res.json({ message: 'Đã xóa cây.' });
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
@@ -300,7 +312,7 @@ router.post('/:id/logs', auth, async (req, res) => {
     const plantId = req.params.id;
     
     // Check permission
-    const plant = await pool.query('SELECT p.id, f.user_id FROM plants p LEFT JOIN farms f ON f.id = p.farm_id WHERE p.id=$1', [plantId]);
+    const plant = await pool.query('SELECT p.id, p.plant_type, p.plant_variety, f.user_id FROM plants p LEFT JOIN farms f ON f.id = p.farm_id WHERE p.id=$1', [plantId]);
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
     if (req.user.role !== 'admin' && plant.rows[0].user_id !== req.user.id) {
       return res.status(403).json({ error: 'Bạn không có quyền ghi nhật ký cho cây này.' });
@@ -318,6 +330,17 @@ router.post('/:id/logs', auth, async (req, res) => {
        VALUES ($1, 'Ghi nhật ký', $2)`,
       [req.user.id, `Ghi nhận nhật ký chăm sóc [${log_type}] cho cây #${plantId}`]
     );
+
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('new_care_log', {
+        log: result.rows[0],
+        plant_type: plant.rows[0].plant_type,
+        plant_variety: plant.rows[0].plant_variety,
+        creator_name: req.user.name
+      });
+    }
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
