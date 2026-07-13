@@ -759,5 +759,27 @@ Developer → git push → GitHub
 
 ---
 
-*Tài liệu này được tạo tự động từ việc phân tích toàn bộ source code dự án Plant Book — Tanbao Corp.*  
-*Cập nhật lần cuối: 30/06/2026*
+## 🚀 12. Cập nhật Nâng cấp - Phase 2 (Tháng 7/2026)
+
+Hệ thống đã được nâng cấp đồng bộ các tính năng mới cho Cổng Nông hộ (User Portal):
+
+### 12.1 Giao diện & Bản đồ
+- **Khôi phục giao diện Desktop rộng**: Loại bỏ mock-bezel di động để hiển thị full-width trên PC/Laptop, tối ưu hóa không gian làm việc.
+- **Sửa lỗi méo GPS marker**: Đồng bộ hóa chính xác lớp CSS `plant-id-marker` giúp các hình tròn chỉ định cây thu phóng tỉ lệ đều, tròn trịa, không bị bóp méo elip ở tỷ lệ xem thông thường.
+
+### 12.2 Module Cài đặt tài khoản (Premium Glassmorphism)
+- **Hồ sơ nông hộ**: Cho phép cập nhật Họ tên, SĐT, Giới tính, Thành phố, Quốc gia.
+- **Tải ảnh đại diện trực tiếp**: Kết nối lưu trữ ảnh an toàn lên Supabase Storage bucket `plant-media/avatars/`. Tự động dọn dẹp các tệp ảnh cũ của người dùng trên đám mây khi cập nhật ảnh mới.
+- **Hoạt ảnh mượt mà**: Bổ sung hiệu ứng vi chạm (micro-animations), vòng xoay cầu vồng, camera overlay khi hover ảnh đại diện và hiệu ứng phát sáng viền thông minh khi nhập liệu.
+
+### 12.3 Chỉnh sửa Lịch sử Canh tác & Quản lý Ảnh bệnh cây
+- **Chỉnh sửa dữ liệu**: Cấp quyền cho nông hộ chỉnh sửa thông tin các bản ghi canh tác trực tiếp từ tab Lịch sử.
+- **Lưu dấu vết thay đổi (Audit trail)**: Khi chỉnh sửa, hệ thống tự động ghi nhận thời gian chỉnh sửa và toàn bộ các giá trị thông số gốc vào cuối ghi chú:
+  `\n(Chỉnh sửa lúc: hh:mm:ss DD/MM/YYYY. Dữ liệu gốc: [Cách/Lượng/Lý do...] | Ghi chú gốc: [...])`
+- **Quản lý ảnh Bệnh cây**: Cho phép xóa bớt các ảnh bệnh cũ đã lưu và chụp thêm/chọn tải lên các ảnh bệnh mới trực tiếp trong chế độ sửa nhật ký.
+
+---
+
+*Tài liệu này được phân tích và tổng hợp toàn bộ từ mã nguồn dự án Plant Book — Tanbao Corp.*  
+*Cập nhật lần cuối: 13/07/2026 (Phase 2)*
+
