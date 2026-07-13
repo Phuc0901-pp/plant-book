@@ -28,6 +28,12 @@ export function onCareMediaSelected(source) {
 
   const newFiles = Array.from(input.files);
   selectedCareFiles = selectedCareFiles.concat(newFiles);
+
+  if (typeof window.renderMediaPreviews === 'function') {
+    window.renderMediaPreviews();
+    return;
+  }
+
   preview.innerHTML = '';
 
   if (selectedCareFiles.length === 0) return;

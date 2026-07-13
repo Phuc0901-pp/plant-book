@@ -5,7 +5,8 @@
 
 import { api, token, API }      from '../core/api.js';
 import { toast, esc }           from '../core/utils.js';
-import { selectedCareFiles, clearSelectedFiles, watermarkImage, onCareMediaSelected } from './media.js';
+import { selectedCareFiles, clearSelectedFiles, watermarkImage } from './media.js';
+import { getLogsCache }         from './logs.js';
 
 // ── Truy cập config/plants qua window để tránh circular import ──
 function _configs()  { return window._allConfigsCache || {}; }
@@ -17,42 +18,99 @@ function _plants()   { return window._allPlantsCache  || []; }
  * Mở modal nhật ký chăm sóc.
  * - Nếu plantId được cung cấp → khoá vào 1 cây cụ thể
  * - Nếu plantId = null (FAB) → hiển thị dropdown chọn cây
+ * - Nếu logId được cung cấp → chuyển sang chế độ CHỈNH SỬA nhật ký
  *
  * @param {number|null} plantId
  * @param {string|null} treeCode
  * @param {string|null} plantType
+ * @param {number|null} logId
  */
-export function openCareModal(plantId, treeCode, plantType) {
+export function openCareModal(plantId, treeCode, plantType, logId = null) {
   clearSelectedFiles();
 
-  // Reset form
-  const noteEl    = document.getElementById('c-note');
-  const logTypeEl = document.getElementById('c-log-type');
-  if (noteEl)    noteEl.value    = '';
-  if (logTypeEl) logTypeEl.value = 'Tưới nước';
-  onCareLogTypeChange();
+  const noteEl      = document.getElementById('c-note');
+  const logTypeEl   = document.getElementById('c-log-type');
+  const dateEl      = document.getElementById('c-log-date');
+  const titleEl     = document.getElementById('care-modal-title');
+  const saveTextEl  = document.getElementById('care-save-text');
+  const displayEl   = document.getElementById('c-plant-display');
+  const selectEl    = document.getElementById('c-plant-id-select');
+  const idEl        = document.getElementById('c-plant-id');
 
-  const displayEl = document.getElementById('c-plant-display');
-  const selectEl  = document.getElementById('c-plant-id-select');
-  const idEl      = document.getElementById('c-plant-id');
-
-  if (plantId) {
-    // Cây cụ thể
-    window._activePlantTreeCode = treeCode;
-    if (idEl)      idEl.value             = plantId;
-    if (displayEl) { displayEl.value       = `Cây ${treeCode} - ${plantType}`; displayEl.style.display = 'block'; }
-    if (selectEl)  selectEl.style.display = 'none';
-  } else {
-    // FAB chung: dropdown tất cả cây
-    window._activePlantTreeCode = '';
-    if (idEl)      idEl.value              = '';
-    if (displayEl) displayEl.style.display = 'none';
-    if (selectEl) {
-      selectEl.innerHTML = _plants().map(p =>
-        `<option value="${p.id}" data-code="${esc(p.tree_code || p.id)}">Cây ${esc(p.tree_code || p.id)} - ${esc(p.plant_type)}</option>`
-      ).join('');
-      selectEl.style.display = 'block';
+  if (logId) {
+    // ── CHẾ ĐỘ CHỈNH SỬA (EDIT MODE) ──
+    const log = getLogsCache().find(l => l.id === logId);
+    if (!log) {
+      toast('Không tìm thấy dữ liệu nhật ký này trong bộ nhớ.', 'error');
+      return;
     }
+
+    window._activeEditLogId = logId;
+    window._existingMediaUrls = log.media_urls || [];
+    window._activePlantTreeCode = treeCode || log.tree_code || plantId;
+
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square" style="color:var(--green)"></i> Chỉnh sửa nhật ký`;
+    if (saveTextEl) saveTextEl.innerHTML = `<i class="fa fa-floppy-disk"></i> Cập nhật nhật ký`;
+
+    if (idEl) idEl.value = plantId || log.plant_id;
+    if (displayEl) {
+      displayEl.value = `Cây ${treeCode || log.tree_code || plantId} - ${plantType || log.plant_type}`;
+      displayEl.style.display = 'block';
+    }
+    if (selectEl) selectEl.style.display = 'none';
+
+    if (dateEl) dateEl.value = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
+    if (logTypeEl) {
+      logTypeEl.value = log.log_type;
+      logTypeEl.disabled = true; // Khóa loại hoạt động để bảo toàn schema details
+    }
+
+    // Loại bỏ phần thông tin thời gian chỉnh sửa cũ trong ghi chú để điền vào textarea
+    if (noteEl) {
+      noteEl.value = (log.note || '').replace(/\n\(Chỉnh sửa lúc: .*\)/g, '').trim();
+    }
+
+    // Render form fields
+    onCareLogTypeChange();
+
+    // Điền dữ liệu chi tiết của log cũ vào form sau khi render xong
+    setTimeout(() => {
+      _populateDetailFields(log);
+    }, 50);
+
+  } else {
+    // ── CHẾ ĐỘ GHI MỚI (CREATE MODE) ──
+    window._activeEditLogId = null;
+    window._existingMediaUrls = [];
+
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký chăm sóc`;
+    if (saveTextEl) saveTextEl.innerHTML = `<i class="fa fa-floppy-disk"></i> Lưu nhật ký`;
+
+    if (noteEl) noteEl.value = '';
+    if (logTypeEl) {
+      logTypeEl.value = 'Tưới nước';
+      logTypeEl.disabled = false;
+    }
+    if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
+
+    if (plantId) {
+      window._activePlantTreeCode = treeCode;
+      if (idEl) idEl.value = plantId;
+      if (displayEl) { displayEl.value = `Cây ${treeCode} - ${plantType}`; displayEl.style.display = 'block'; }
+      if (selectEl) selectEl.style.display = 'none';
+    } else {
+      window._activePlantTreeCode = '';
+      if (idEl) idEl.value = '';
+      if (displayEl) displayEl.style.display = 'none';
+      if (selectEl) {
+        selectEl.innerHTML = _plants().map(p =>
+          `<option value="${p.id}" data-code="${esc(p.tree_code || p.id)}">Cây ${esc(p.tree_code || p.id)} - ${esc(p.plant_type)}</option>`
+        ).join('');
+        selectEl.style.display = 'block';
+      }
+    }
+
+    onCareLogTypeChange();
   }
 
   const modal = document.getElementById('care-modal');
@@ -71,7 +129,6 @@ export function closeCareModal() {
 
 /**
  * Cập nhật các trường form trong modal khi người dùng thay đổi loại hoạt động.
- * 6 loại: Tưới nước | Bón phân | Phun thuốc | Cắt lá | Tỉa hoa | Bệnh cây
  */
 export function onCareLogTypeChange() {
   const logType   = document.getElementById('c-log-type')?.value;
@@ -172,6 +229,98 @@ function _buildDetailFields(logType, configs) {
   }
 }
 
+// ── Điền giá trị chi tiết khi sửa đổi ─────────────────────────────
+function _populateDetailFields(log) {
+  const t = log.log_type;
+  const d = log.details || {};
+  if (t === 'Tưới nước') {
+    _setVal('c-detail-method', d.method);
+    _setVal('c-detail-amount', d.amount);
+  } else if (t === 'Bón phân') {
+    _setVal('c-detail-fertilizer', d.fertilizer_name);
+    _setVal('c-detail-amount',     d.amount);
+    _setVal('c-detail-unit',       d.unit);
+  } else if (t === 'Phun thuốc') {
+    _setVal('c-detail-pesticide',  d.pesticide_name);
+    _setVal('c-detail-amount',     d.amount);
+    _setVal('c-detail-unit',       d.unit);
+  } else if (t === 'Cắt lá' || t === 'Tỉa hoa') {
+    _setVal('c-detail-reason',     d.reason);
+    _setVal('c-detail-amount',     d.amount);
+  } else if (t === 'Bệnh cây') {
+    _setVal('c-detail-disease-name', d.disease_name);
+    _setVal('c-detail-severity',     d.severity);
+    _setVal('c-detail-description',  d.description);
+    renderMediaPreviews();
+  }
+}
+
+function _setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== undefined) el.value = val;
+}
+
+// ── Preview & Xóa Media ─────────────────────────────────────────
+
+export function renderMediaPreviews() {
+  const preview = document.getElementById('c-media-preview');
+  if (!preview) return;
+  preview.innerHTML = '';
+
+  // 1. Ảnh hiện tại (Đã lưu)
+  const existing = window._existingMediaUrls || [];
+  existing.forEach((item, index) => {
+    const div = Object.assign(document.createElement('div'), {});
+    Object.assign(div.style, {
+      position: 'relative', width: '64px', height: '64px',
+      borderRadius: '8px', overflow: 'hidden',
+      border: '1px solid var(--gray-200)',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+    });
+    div.innerHTML = `
+      <img src="${item.url}" style="width:100%;height:100%;object-fit:cover;">
+      <button type="button" onclick="window.removeExistingPhoto(${index})" style="position:absolute; top:2px; right:2px; background:rgba(239,68,68,0.85); color:#fff; border:none; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:9px;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>`;
+    preview.appendChild(div);
+  });
+
+  // 2. Ảnh mới (Đang chờ upload)
+  selectedCareFiles.forEach((file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const div = Object.assign(document.createElement('div'), {});
+      Object.assign(div.style, {
+        position: 'relative', width: '64px', height: '64px',
+        borderRadius: '8px', overflow: 'hidden',
+        border: '1px solid var(--gray-200)',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+      });
+
+      if (file.type.startsWith('image/')) {
+        div.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+      } else {
+        div.innerHTML = `
+          <div style="width:100%;height:100%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-video" style="color:var(--text-muted)"></i>
+          </div>`;
+      }
+      preview.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+export function removeExistingPhoto(index) {
+  if (window._existingMediaUrls) {
+    window._existingMediaUrls.splice(index, 1);
+    renderMediaPreviews();
+  }
+}
+
+window.renderMediaPreviews = renderMediaPreviews;
+window.removeExistingPhoto = removeExistingPhoto;
+
 // ── Save ──────────────────────────────────────────────────────
 
 /**
@@ -185,7 +334,6 @@ export async function saveCareLog() {
 
   if (!plantId) { toast('Vui lòng chọn một cây trồng!', 'error'); return; }
 
-  // Cập nhật tree code nếu chọn từ dropdown
   if (selectEl?.style.display === 'block') {
     const opt = selectEl.options[selectEl.selectedIndex];
     window._activePlantTreeCode = opt?.getAttribute('data-code') || plantId;
@@ -193,8 +341,9 @@ export async function saveCareLog() {
 
   const logType = document.getElementById('c-log-type')?.value;
   const note    = document.getElementById('c-note')?.value.trim() || '';
+  const logDate = document.getElementById('c-log-date')?.value || new Date().toISOString().slice(0, 10);
 
-  const body = { log_type: logType, log_date: new Date().toISOString().slice(0, 10), note, media_urls: [], details: {} };
+  const body = { log_type: logType, log_date: logDate, note, media_urls: [], details: {} };
 
   const btn     = document.getElementById('care-save-btn');
   const oldText = btn?.innerHTML;
@@ -232,7 +381,9 @@ export async function saveCareLog() {
         description: document.getElementById('c-detail-description')?.value.trim()
       };
 
-      // Upload ảnh có watermark
+      // Hợp nhất ảnh cũ và ảnh mới
+      let mediaUrls = [...(window._existingMediaUrls || [])];
+
       if (selectedCareFiles.length > 0) {
         if (btn) btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
         const formData  = new FormData();
@@ -255,14 +406,28 @@ export async function saveCareLog() {
           throw new Error(errData.error || 'Lỗi tải ảnh/video lên máy chủ');
         }
         const uploaded = await uploadRes.json();
-        body.media_urls = uploaded.map(f => ({ url: f.url, type: f.media_type }));
+        uploaded.forEach(f => {
+          mediaUrls.push({ url: f.url, type: f.media_type });
+        });
       }
+      body.media_urls = mediaUrls;
     }
 
-    if (btn) btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
-    await api(`/plants/${plantId}/logs`, { method: 'POST', body: JSON.stringify(body) });
+    if (window._activeEditLogId) {
+      // Ghi chú thêm thời gian chỉnh sửa
+      const editTimeStr = new Date().toLocaleString('vi-VN');
+      const cleanedNote = note.replace(/\n\(Chỉnh sửa lúc: .*\)/g, '').trim();
+      body.note = cleanedNote + `\n(Chỉnh sửa lúc: ${editTimeStr})`;
 
-    toast('Ghi nhật ký chăm sóc thành công!');
+      if (btn) btn.innerHTML = '<span class="spinner"></span> Cập nhật...';
+      await api(`/plants/${plantId}/logs/${window._activeEditLogId}`, { method: 'PUT', body: JSON.stringify(body) });
+      toast('Đã cập nhật nhật ký thành công!');
+    } else {
+      if (btn) btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
+      await api(`/plants/${plantId}/logs`, { method: 'POST', body: JSON.stringify(body) });
+      toast('Ghi nhật ký chăm sóc thành công!');
+    }
+
     closeCareModal();
     if (typeof window.loadUserDashboard === 'function') window.loadUserDashboard();
 

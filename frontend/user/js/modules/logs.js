@@ -92,6 +92,13 @@ function _logRow(l) {
       <td data-label="Hoạt động"><div><span class="badge badge-gray" style="text-transform:none;font-weight:500;">${esc(l.log_type)}</span></div></td>
       <td data-label="Chi tiết / Ghi chú"><div>${detailsStr}${mediaHtml}</div></td>
       <td data-label="Người thực hiện"><div><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></div></td>
+      <td data-label="Thao tác">
+        <div>
+          <button class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})" style="gap:4px; padding:6px 10px;">
+            <i class="fa-solid fa-pen-to-square" style="color:var(--green)"></i> Sửa
+          </button>
+        </div>
+      </td>
     </tr>`;
 }
 

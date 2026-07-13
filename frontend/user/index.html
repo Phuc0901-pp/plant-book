@@ -236,10 +236,11 @@
                       <th>Hoạt động</th>
                       <th>Chi tiết / Ghi chú</th>
                       <th>Người thực hiện</th>
+                      <th>Thao tác</th>
                     </tr>
                   </thead>
                   <tbody id="user-logs-table">
-                    <tr><td colspan="5" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                    <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -338,10 +339,11 @@
                   <th>Hoạt động</th>
                   <th>Chi tiết / Ghi chú</th>
                   <th>Người thực hiện</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody id="user-logs-table-full">
-                <tr><td colspan="5" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
               </tbody>
             </table>
           </div>
@@ -551,6 +553,11 @@
           <input type="text" id="c-plant-display" readonly style="background:var(--gray-50); font-weight:600;">
           <select id="c-plant-id-select" style="display:none; width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600; background:#fff;"></select>
         </div>
+      </div>
+
+      <div class="field">
+        <label>Ngày thực hiện *</label>
+        <input type="date" id="c-log-date" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
       </div>
 
       <div class="field">
