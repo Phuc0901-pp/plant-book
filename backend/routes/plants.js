@@ -141,6 +141,31 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
   }
 });
 
+router.get('/:id(\\d+)/logs', auth, async (req, res) => {
+  try {
+    const plant = await pool.query(
+      `SELECT p.id, f.user_id as farm_owner_id
+       FROM plants p 
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE p.id=$1`, [req.params.id]
+    );
+    if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
+
+    const row = plant.rows[0];
+    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
+    }
+
+    const logs = await pool.query(
+      'SELECT * FROM plant_logs WHERE plant_id=$1 ORDER BY log_date DESC',
+      [req.params.id]
+    );
+    res.json(logs.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
 router.post('/batch', auth, admin, async (req, res) => {
   const client = await pool.connect();
   try {

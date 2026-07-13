@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
 import '../models/plant_log.dart';
+import 'cache_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -75,6 +76,31 @@ class ApiService {
     await prefs.remove('pb_token');
   }
 
+  Future<void> syncOfflineLogs() async {
+    final pending = CacheService().getPendingLogs();
+    if (pending.isEmpty) return;
+
+    for (final log in pending) {
+      try {
+        final success = await createPlantLog(
+          log['plantId'] as int,
+          log['logType'] as String,
+          log['note'] as String,
+          Map<String, dynamic>.from(log['details'] as Map),
+          isSyncing: true,
+        );
+        if (!success) {
+          // If rejected by server validation, we skip it
+        }
+      } catch (e) {
+        // Still offline/failed, keep queue and try again later
+        return;
+      }
+    }
+    // Successfully synced all offline logs!
+    await CacheService().clearPendingLogs();
+  }
+
   Future<bool> isLoggedIn() async {
     final t = await token;
     if (t == null) return false;
@@ -82,9 +108,13 @@ class ApiService {
     // Verify token validity by calling /auth/me
     try {
       final headers = await _getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers);
+      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final user = jsonDecode(response.body);
+        
+        // Trigger offline queue sync in the background since we are online!
+        syncOfflineLogs();
+
         // Ensure the logged in role is not admin (this is the farmer portal)
         return user['role'] != 'admin';
       }
@@ -92,7 +122,7 @@ class ApiService {
       await logout();
       return false;
     } catch (e) {
-      // Network timeout/error, return true if we have local token to let user see dashboard (optional, or false)
+      // Network timeout/error, return true if we have local token to let user see dashboard
       return true; 
     }
   }
@@ -100,44 +130,74 @@ class ApiService {
   // ── Data Fetching ─────────────────────────────────────────────
   
   Future<List<Farm>> fetchFarms() async {
-    final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/farms'), headers: headers);
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/farms'), headers: headers).timeout(const Duration(seconds: 5));
 
-    if (response.statusCode == 200) {
-      final List<dynamic> body = jsonDecode(response.body);
-      return body.map((dynamic item) => Farm.fromJson(item as Map<String, dynamic>)).toList();
-    } else {
-      throw Exception('Failed to load farms');
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        await CacheService().cacheFarms(body);
+        return body.map((dynamic item) => Farm.fromJson(item as Map<String, dynamic>)).toList();
+      } else {
+        throw Exception('Failed to load farms');
+      }
+    } catch (e) {
+      // Fallback to offline Hive cache
+      final cached = CacheService().getCachedFarms();
+      if (cached.isNotEmpty) {
+        return cached.map((dynamic item) => Farm.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      rethrow;
     }
   }
 
   Future<List<Plant>> fetchPlants() async {
-    final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/plants'), headers: headers);
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/plants'), headers: headers).timeout(const Duration(seconds: 5));
 
-    if (response.statusCode == 200) {
-      final List<dynamic> body = jsonDecode(response.body);
-      return body.map((dynamic item) => Plant.fromJson(item as Map<String, dynamic>)).toList();
-    } else {
-      throw Exception('Failed to load plants');
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        await CacheService().cachePlants(body);
+        return body.map((dynamic item) => Plant.fromJson(item as Map<String, dynamic>)).toList();
+      } else {
+        throw Exception('Failed to load plants');
+      }
+    } catch (e) {
+      // Fallback to offline Hive cache
+      final cached = CacheService().getCachedPlants();
+      if (cached.isNotEmpty) {
+        return cached.map((dynamic item) => Plant.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      rethrow;
     }
   }
 
   // ── Log Fetching & Modifying ───────────────────────────────────
 
   Future<List<PlantLog>> fetchPlantLogs(int plantId) async {
-    final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/plants/$plantId/logs'), headers: headers);
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/plants/$plantId/logs'), headers: headers).timeout(const Duration(seconds: 5));
 
-    if (response.statusCode == 200) {
-      final List<dynamic> body = jsonDecode(response.body);
-      return body.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
-    } else {
-      throw Exception('Failed to load logs');
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        await CacheService().cachePlantLogs(plantId, body);
+        return body.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
+      } else {
+        throw Exception('Failed to load logs');
+      }
+    } catch (e) {
+      // Fallback to offline Hive cache
+      final cached = CacheService().getCachedPlantLogs(plantId);
+      if (cached.isNotEmpty) {
+        return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      rethrow;
     }
   }
 
-  Future<bool> createPlantLog(int plantId, String logType, String note, Map<String, dynamic> details) async {
+  Future<bool> createPlantLog(int plantId, String logType, String note, Map<String, dynamic> details, {bool isSyncing = false}) async {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
@@ -148,11 +208,22 @@ class ApiService {
           'note': note,
           'details': details,
         }),
-      );
-      return response.statusCode == 201;
-    } catch (e) {
-      print('Error creating log: $e');
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 201) {
+        if (!isSyncing) {
+          syncOfflineLogs(); // Sync any other pending logs
+        }
+        return true;
+      }
       return false;
+    } catch (e) {
+      if (!isSyncing) {
+        // Cache the log locally for offline queue sync
+        await CacheService().addPendingLog(plantId, logType, note, details);
+        return true; // Return true to indicate it was successfully cached offline
+      }
+      rethrow; // Rethrow to let the sync loop know we are still offline
     }
   }
 

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
 import 'services/api_service.dart';
+import 'services/cache_service.dart';
 import 'utils/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Hive Cache database
+  await CacheService().init();
   
   // Check if session token is already stored and valid
   final apiService = ApiService();
