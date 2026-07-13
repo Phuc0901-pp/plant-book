@@ -116,6 +116,59 @@ router.get('/logs/recent', auth, async (req, res) => {
   }
 });
 
+router.get('/media/all', auth, async (req, res) => {
+  try {
+    let query = `
+      SELECT pm.*, p.plant_type, p.tree_code, p.farm_id, f.name as farm_name, f.user_id as farm_owner_id, u.full_name as owner_name
+      FROM plant_media pm
+      JOIN plants p ON pm.plant_id = p.id
+      LEFT JOIN farms f ON f.id = p.farm_id
+      LEFT JOIN users u ON u.id = f.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramIndex = 1;
+
+    // Security: Non-admin users can only view their own farm media!
+    if (req.user.role !== 'admin') {
+      query += ` AND f.user_id = $${paramIndex} `;
+      params.push(req.user.id);
+      paramIndex++;
+      query += ` AND pm.delete_pending = false `;
+    } else {
+      // Admins can filter by User ID
+      if (req.query.user_id) {
+        query += ` AND f.user_id = $${paramIndex} `;
+        params.push(parseInt(req.query.user_id));
+        paramIndex++;
+      }
+      // Admins can filter by delete_pending
+      if (req.query.pending_only === 'true') {
+        query += ` AND pm.delete_pending = true `;
+      }
+    }
+
+    if (req.query.farm_id) {
+      query += ` AND p.farm_id = $${paramIndex} `;
+      params.push(parseInt(req.query.farm_id));
+      paramIndex++;
+    }
+
+    if (req.query.plant_id) {
+      query += ` AND pm.plant_id = $${paramIndex} `;
+      params.push(parseInt(req.query.plant_id));
+      paramIndex++;
+    }
+
+    query += ` ORDER BY pm.uploaded_at DESC `;
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching global media:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải thư viện media.' });
+  }
+});
+
 router.get('/:id(\\d+)', auth, async (req, res) => {
   try {
     const plant = await pool.query(
@@ -181,15 +234,30 @@ router.post('/batch', auth, admin, async (req, res) => {
     const inserted = [];
 
     for (const item of items) {
-      const slug = generateSlug(plant_type);
+      const stt = item.stt || '';
+      const slug = stt ? `${req.user.id}_${farm_id || 0}_${stt}` : generateSlug(plant_type);
       const lat = parseFloat(item.n || item.latitude);
       const lng = parseFloat(item.e || item.longitude);
-      const stt = item.stt || '';
       const location = farm_id ? `Lô nhập CSV - STT ${stt}` : `Nhập CSV - STT ${stt}`;
 
       const resDb = await client.query(
         `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         ON CONFLICT (public_slug) DO UPDATE 
+         SET schema_id = EXCLUDED.schema_id,
+             plant_type = EXCLUDED.plant_type,
+             plant_variety = EXCLUDED.plant_variety,
+             plant_age = EXCLUDED.plant_age,
+             health_status = EXCLUDED.health_status,
+             location = EXCLUDED.location,
+             is_public = EXCLUDED.is_public,
+             farm_id = EXCLUDED.farm_id,
+             latitude = EXCLUDED.latitude,
+             longitude = EXCLUDED.longitude,
+             created_by = EXCLUDED.created_by,
+             tree_code = EXCLUDED.tree_code,
+             updated_at = NOW()
+         RETURNING id`,
         [slug, schema_id || null, plant_type, plant_variety || '', plant_age || '', health_status || 'Tốt',
          location, JSON.stringify({}), is_public !== false, farm_id || null, lat, lng, req.user.id, stt]
       );
@@ -210,11 +278,27 @@ router.post('/batch', auth, admin, async (req, res) => {
 router.post('/', auth, admin, async (req, res) => {
   try {
     const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code } = req.body;
-    const slug = generateSlug(plant_type);
+    const slug = tree_code ? `${req.user.id}_${farm_id || 0}_${tree_code}` : generateSlug(plant_type);
 
     const result = await pool.query(
       `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+       ON CONFLICT (public_slug) DO UPDATE 
+       SET schema_id = EXCLUDED.schema_id,
+           plant_type = EXCLUDED.plant_type,
+           plant_variety = EXCLUDED.plant_variety,
+           plant_age = EXCLUDED.plant_age,
+           health_status = EXCLUDED.health_status,
+           location = EXCLUDED.location,
+           data = EXCLUDED.data,
+           is_public = EXCLUDED.is_public,
+           farm_id = EXCLUDED.farm_id,
+           latitude = EXCLUDED.latitude,
+           longitude = EXCLUDED.longitude,
+           created_by = EXCLUDED.created_by,
+           tree_code = EXCLUDED.tree_code,
+           updated_at = NOW()
+       RETURNING *`,
       [slug, schema_id || null, plant_type, plant_variety, plant_age, health_status || 'Tốt',
        location, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
@@ -235,16 +319,20 @@ router.post('/', auth, admin, async (req, res) => {
 router.put('/:id', auth, admin, async (req, res) => {
   try {
     const { plant_type, plant_variety, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude, tree_code } = req.body;
+    const slug = tree_code ? `${req.user.id}_${farm_id || 0}_${tree_code}` : generateSlug(plant_type);
+
     const result = await pool.query(
       `UPDATE plants 
        SET plant_type=$1, plant_variety=$2, plant_age=$3, health_status=$4, location=$5, 
-           data=$6, is_public=$7, schema_id=$8, farm_id=$9, latitude=$10, longitude=$11, tree_code=$12, updated_at=NOW()
-       WHERE id=$13 RETURNING *`,
+           data=$6, is_public=$7, schema_id=$8, farm_id=$9, latitude=$10, longitude=$11, tree_code=$12, 
+           public_slug=$13, updated_at=NOW()
+       WHERE id=$14 RETURNING *`,
       [plant_type, plant_variety, plant_age, health_status, location,
        JSON.stringify(data || {}), is_public !== false, schema_id || null, farm_id || null,
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
        tree_code || null,
+       slug,
        req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
@@ -319,14 +407,53 @@ router.post('/:id/media', auth, upload.array('files', 20), async (req, res) => {
   }
 });
 
-router.delete('/:plantId/media/:mediaId', auth, admin, async (req, res) => {
+router.delete('/:plantId/media/:mediaId', auth, async (req, res) => {
   try {
-    const media = await pool.query('SELECT * FROM plant_media WHERE id=$1 AND plant_id=$2', [req.params.mediaId, req.params.plantId]);
+    const { plantId, mediaId } = req.params;
+
+    // Check if the plant exists and user has access
+    const plant = await pool.query(
+      `SELECT p.id, f.user_id as farm_owner_id
+       FROM plants p 
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE p.id=$1`, [plantId]
+    );
+    if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
+
+    const row = plant.rows[0];
+    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền quản lý ảnh của cây này.' });
+    }
+
+    const media = await pool.query('SELECT * FROM plant_media WHERE id=$1 AND plant_id=$2', [mediaId, plantId]);
     if (media.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
-    await deleteFile(media.rows[0].object_name);
-    await pool.query('DELETE FROM plant_media WHERE id=$1', [req.params.mediaId]);
-    res.json({ message: 'Đã xóa.' });
+
+    if (req.user.role === 'admin') {
+      // Admin: Delete permanently
+      await deleteFile(media.rows[0].object_name);
+      await pool.query('DELETE FROM plant_media WHERE id=$1', [mediaId]);
+      res.json({ message: 'Đã xóa vĩnh viễn khỏi hệ thống.' });
+    } else {
+      // User (farmer): Mark delete_pending = true
+      await pool.query('UPDATE plant_media SET delete_pending = true WHERE id=$1', [mediaId]);
+      res.json({ message: 'Đã gửi yêu cầu xóa lên quản trị viên phê duyệt.' });
+    }
   } catch (err) {
+    console.error('Delete media error:', err);
+    res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
+router.post('/:plantId/media/:mediaId/reject-delete', auth, admin, async (req, res) => {
+  try {
+    const { plantId, mediaId } = req.params;
+    const media = await pool.query('SELECT * FROM plant_media WHERE id=$1 AND plant_id=$2', [mediaId, plantId]);
+    if (media.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy phương tiện.' });
+
+    await pool.query('UPDATE plant_media SET delete_pending = false WHERE id=$1', [mediaId]);
+    res.json({ message: 'Đã khôi phục ảnh/video thành công.' });
+  } catch (err) {
+    console.error('Reject delete media error:', err);
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });

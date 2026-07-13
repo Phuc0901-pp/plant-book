@@ -80,9 +80,11 @@ async function initDB() {
       )
     `);
 
-    // Ensure details column exists in plant_logs and created_by is not restricted to NOT NULL
     await client.query(`
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS details JSONB DEFAULT '{}'
+    `);
+    await client.query(`
+      ALTER TABLE plant_media ADD COLUMN IF NOT EXISTS delete_pending BOOLEAN DEFAULT false
     `);
     await client.query(`
       ALTER TABLE plant_logs ALTER COLUMN created_by DROP NOT NULL

@@ -57,7 +57,7 @@ function showPage(page) {
   if (page === 'gis') initGisPage();
   if (page === 'users') loadUsers();
   if (page === 'devices') loadDevices();
-
+  if (page === 'media') initGlobalMediaLibrary();
 }
 
 function toggleMobileSidebar() {

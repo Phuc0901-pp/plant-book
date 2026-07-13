@@ -129,7 +129,7 @@
         <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
       </div>
     </div>
-    // Thanh menu quan tri
+    <!-- Thanh menu quan tri -->
     <div class="sidebar-user">
       <div class="user-name" id="sb-user-name">—</div>
       <div class="user-email" id="sb-user-email">—</div>
@@ -497,16 +497,46 @@
 
       <!-- ── Media Library ── -->
       <div class="page-section" id="page-media">
+        <div class="tabs" style="margin-bottom: 20px;">
+          <div class="tab active" id="media-tab-all" onclick="switchMediaTab('all')">Tất cả ảnh & video</div>
+          <div class="tab" id="media-tab-pending" onclick="switchMediaTab('pending')">Yêu cầu chờ duyệt xóa</div>
+        </div>
+
         <div class="card">
-          <div class="card-header"><h3><i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media (Supabase Storage)</h3></div>
-          <div style="padding:24px">
-            <div class="alert alert-success">
-              <i class="fa fa-circle-info"></i>
-              Media được lưu trữ trực tiếp trong Supabase Storage. Xem và quản lý ảnh/video của từng cây trong trang chi tiết cây.
+          <div class="card-header">
+            <h3><i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media</h3>
+          </div>
+          
+          <!-- Filter bar -->
+          <div class="search-bar" style="padding: 16px; display: flex; gap: 12px; flex-wrap: wrap; background: #f8fafc; border-bottom: 1px solid var(--gray-200);">
+            <div style="flex: 1; min-width: 150px;">
+              <label style="font-size: 11px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 4px;">Nông hộ phụ trách</label>
+              <select id="media-filter-user" onchange="onMediaFilterChange()" style="width: 100%; padding: 8px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px;">
+                <option value="">Tất cả nông hộ</option>
+              </select>
             </div>
-            <p style="font-size:13px;color:var(--gray-600)">
-              Truy cập Supabase Dashboard: <a href="https://supabase.com" target="_blank" style="color:var(--green)">https://supabase.com</a> để quản lý và xem các file phương tiện của bạn.
-            </p>
+            <div style="flex: 1; min-width: 150px;">
+              <label style="font-size: 11px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 4px;">Trang trại</label>
+              <select id="media-filter-farm" onchange="onMediaFilterChange()" style="width: 100%; padding: 8px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px;">
+                <option value="">Tất cả trang trại</option>
+              </select>
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+              <label style="font-size: 11px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 4px;">Cây trồng</label>
+              <select id="media-filter-plant" onchange="onMediaFilterChange()" style="width: 100%; padding: 8px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px;">
+                <option value="">Tất cả cây trồng</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="padding: 20px;">
+            <div id="media-gallery-grid" class="media-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px;">
+              <!-- Media items populated dynamically -->
+            </div>
+            <div id="media-gallery-empty" style="display: none; text-align: center; padding: 40px; color: var(--gray-400);">
+              <i class="fa-regular fa-images" style="font-size: 48px; margin-bottom: 12px; display: block;"></i>
+              Chưa có hình ảnh hoặc video nào phù hợp với bộ lọc.
+            </div>
           </div>
         </div>
       </div>
