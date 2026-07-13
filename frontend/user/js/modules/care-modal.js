@@ -260,6 +260,31 @@ function _setVal(id, val) {
   if (el && val !== undefined) el.value = val;
 }
 
+function _buildDetailsString(logType, details) {
+  const parts = [];
+  const d = details || {};
+  if (logType === 'Tưới nước') {
+    if (d.method) parts.push(`Cách: ${d.method}`);
+    if (d.amount) parts.push(`Lượng: ${d.amount} lít`);
+  } else if (logType === 'Bón phân') {
+    if (d.fertilizer_name) parts.push(`Phân: ${d.fertilizer_name}`);
+    if (d.amount) parts.push(`Lượng: ${d.amount} ${d.unit || ''}`);
+  } else if (logType === 'Phun thuốc') {
+    if (d.pesticide_name) parts.push(`Thuốc: ${d.pesticide_name}`);
+    if (d.amount) parts.push(`Lượng: ${d.amount} ${d.unit || ''}`);
+  } else if (logType === 'Cắt lá') {
+    if (d.reason) parts.push(`Lý do: ${d.reason}`);
+    if (d.amount) parts.push(`Lượng: ${d.amount}`);
+  } else if (logType === 'Tỉa hoa') {
+    if (d.reason) parts.push(`Lý do: ${d.reason}`);
+    if (d.amount) parts.push(`Lượng: ${d.amount}`);
+  } else if (logType === 'Bệnh cây') {
+    if (d.disease_name) parts.push(`Bệnh: ${d.disease_name}`);
+    if (d.severity) parts.push(`Mức độ: ${d.severity}`);
+  }
+  return parts.join(', ');
+}
+
 // ── Preview & Xóa Media ─────────────────────────────────────────
 
 export function renderMediaPreviews() {
@@ -414,10 +439,18 @@ export async function saveCareLog() {
     }
 
     if (window._activeEditLogId) {
-      // Ghi chú thêm thời gian chỉnh sửa
+      // Ghi chú thêm thời gian chỉnh sửa kèm dữ liệu gốc
       const editTimeStr = new Date().toLocaleString('vi-VN');
+      const originalLog = getLogsCache().find(l => l.id === window._activeEditLogId);
+      let origDetailsStr = '';
+      if (originalLog) {
+        const origVal = _buildDetailsString(originalLog.log_type, originalLog.details);
+        const origNote = originalLog.note ? ` | Ghi chú gốc: ${originalLog.note.replace(/\n\(Chỉnh sửa lúc: .*\)/g, '').trim()}` : '';
+        origDetailsStr = `. Dữ liệu gốc: ${origVal}${origNote}`;
+      }
+
       const cleanedNote = note.replace(/\n\(Chỉnh sửa lúc: .*\)/g, '').trim();
-      body.note = cleanedNote + `\n(Chỉnh sửa lúc: ${editTimeStr})`;
+      body.note = cleanedNote + `\n(Chỉnh sửa lúc: ${editTimeStr}${origDetailsStr})`;
 
       if (btn) btn.innerHTML = '<span class="spinner"></span> Cập nhật...';
       await api(`/plants/${plantId}/logs/${window._activeEditLogId}`, { method: 'PUT', body: JSON.stringify(body) });

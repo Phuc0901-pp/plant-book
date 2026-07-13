@@ -85,11 +85,21 @@ function _logRow(l) {
     ? buildMediaThumbnailsHtml(l.media_urls, 40)
     : '';
 
+  const badgeMap = {
+    'Tưới nước': 'badge-blue',
+    'Bón phân':  'badge-brown',
+    'Phun thuốc': 'badge-purple',
+    'Cắt lá':    'badge-green',
+    'Tỉa hoa':   'badge-amber',
+    'Bệnh cây':  'badge-red'
+  };
+  const badgeClass = badgeMap[l.log_type] || 'badge-gray';
+
   return `
     <tr>
       <td data-label="Thời gian"><div>${formatDate(l.log_date)}</div></td>
       <td data-label="Cây trồng"><div><strong>Cây #${l.plant_id}</strong> <small style="color:var(--gray-400)">(${esc(l.plant_type)})</small></div></td>
-      <td data-label="Hoạt động"><div><span class="badge badge-gray" style="text-transform:none;font-weight:500;">${esc(l.log_type)}</span></div></td>
+      <td data-label="Hoạt động"><div><span class="badge ${badgeClass}" style="text-transform:none;font-weight:500;">${esc(l.log_type)}</span></div></td>
       <td data-label="Chi tiết / Ghi chú"><div>${detailsStr}${mediaHtml}</div></td>
       <td data-label="Người thực hiện"><div><small>${esc(l.creator_name || 'Khách/Nông hộ')}</small></div></td>
       <td data-label="Thao tác">

@@ -597,6 +597,9 @@ tr:hover td {
 .badge-gray { background: var(--gray-100); color: var(--gray-600); border: 1px solid var(--gray-200); }
 .badge-amber { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
 .badge-red { background: #fef2f2; color: #b91c1c; border: 1px solid #fee2e2; }
+.badge-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.badge-brown { background: #fdf8f6; color: #7c2d12; border: 1px solid #ffedd5; }
+.badge-purple { background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
 
 /* ── Alert boxes ── */
 .alert {
