@@ -101,7 +101,7 @@ export async function uploadUserAvatar(file) {
     form.append('avatar', file);
     const res = await fetch(`${API}/auth/avatar`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('pb_token') || ''}` },
       body: form
     });
     const data = await res.json();
