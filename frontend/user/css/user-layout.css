@@ -1197,17 +1197,15 @@ tr:hover td {
 .settings-avatar-ring {
   position: absolute; inset: -4px;
   border-radius: 50%;
-  border: 2.5px solid transparent;
-  background: linear-gradient(#fff, #fff) padding-box,
-              linear-gradient(135deg, var(--green), #86efac, var(--green-dark)) border-box;
+  border: 2.5px solid var(--green);
   pointer-events: none;
   transition: all .4s ease;
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.2);
 }
 .settings-avatar-wrap:hover .settings-avatar-ring {
   inset: -5px;
-  animation: ringRotate 3s linear infinite;
-  background: linear-gradient(#fff, #fff) padding-box,
-              linear-gradient(135deg, var(--green), #fbbf24, #3b82f6, var(--green)) border-box;
+  border-color: var(--user-accent);
+  box-shadow: 0 0 12px 3px rgba(249,115,22,0.25);
 }
 
 /* Camera overlay on hover */
