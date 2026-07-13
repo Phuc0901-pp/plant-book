@@ -202,9 +202,9 @@ function _buildDetailFields(logType, configs) {
         <div class="field"><label>Tên bệnh / Triệu chứng *</label><input type="text" id="c-detail-disease-name" placeholder="Ví dụ: Vàng lá thối rễ, Sâu đục thân..."></div>
         <div class="field"><label>Mức độ nghiêm trọng *</label>
           <select id="c-detail-severity">
-            <option value="Nhẹ">🟡 Nhẹ</option>
-            <option value="Trung bình" selected>🟠 Trung bình</option>
-            <option value="Nghiêm trọng">🔴 Nghiêm trọng</option>
+            <option value="Nhẹ">Nhẹ</option>
+            <option value="Trung bình" selected>Trung bình</option>
+            <option value="Nghiêm trọng">Nghiêm trọng</option>
           </select>
         </div>
         <div class="field"><label>Mô tả dấu hiệu / Triệu chứng</label><textarea id="c-detail-description" rows="2" placeholder="Nhập thêm chi tiết quan sát được..."></textarea></div>

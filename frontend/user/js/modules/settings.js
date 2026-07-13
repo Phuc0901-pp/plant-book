@@ -132,7 +132,7 @@ export async function saveUserProfile() {
 
     const data = await api('/auth/me', { method: 'PUT', body: JSON.stringify(payload) });
     if (data.success) {
-      toast('✅ Đã cập nhật thông tin cá nhân!', 'success');
+      toast('Đã cập nhật thông tin cá nhân!', 'success');
       if (btn) {
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã lưu';
         btn.classList.add('saved');

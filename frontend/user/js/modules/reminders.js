@@ -57,7 +57,7 @@ export function renderUserReminders(plants) {
 
       html += `
         <div class="disease-alert-card" style="padding:12px;background:#fef2f2;border:1px solid #fee2e2;border-radius:10px;margin-bottom:8px;box-shadow:0 2px 4px rgba(239,68,68,0.03);">
-          <div style="font-size:12px;color:#991b1b;font-weight:700;">⚠️ Cây ${esc(p.tree_code || p.id)}: Bị ${esc(diseaseName)}</div>
+          <div style="font-size:12px;color:#991b1b;font-weight:700;"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; margin-right:4px;"></i> Cây ${esc(p.tree_code || p.id)}: Bị ${esc(diseaseName)}</div>
           <div style="font-size:11px;color:#b91c1c;margin-top:4px;">
             Mức độ: <span class="badge" style="background:#fee2e2;color:#b91c1c;font-size:9px;padding:2px 6px;">${esc(severity)}</span>
             ${diseaseLog?.note ? `<br><span style="color:#7f1d1d;font-style:italic;">"${esc(diseaseLog.note)}"</span>` : ''}
@@ -71,13 +71,13 @@ export function renderUserReminders(plants) {
   if (unwatered.length > 0) {
     reminderCount++;
     const isAll     = unwatered.length === plants.length;
-    const alertText = isAll
-      ? '💦 Chưa tưới cả vườn!'
-      : `💦 Cây chưa được tưới: ${unwatered.map(p => p.tree_code || p.id).join(', ')}`;
+    const alertHtml = isAll
+      ? '<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Chưa tưới cả vườn!'
+      : `<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Cây chưa được tưới: ${unwatered.map(p => p.tree_code || p.id).join(', ')}`;
 
     html += `
       <div style="padding:10px 12px;background:#eff6ff;border:1px solid #dbeafe;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:12px;font-weight:600;color:#1e40af;line-height:1.4;flex:1;padding-right:8px;">${esc(alertText)}</div>
+        <div style="font-size:12px;font-weight:600;color:#1e40af;line-height:1.4;flex:1;padding-right:8px;">${alertHtml}</div>
         ${isAll ? `<button class="btn btn-primary btn-xs" style="background:var(--blue);color:#fff;font-size:10px;padding:4px 8px;border-radius:6px;" onclick="quickCareAll('Tưới nước')">Tưới cả vườn</button>` : ''}
       </div>`;
   }
@@ -86,13 +86,13 @@ export function renderUserReminders(plants) {
   if (unfertilized.length > 0) {
     reminderCount++;
     const isAll     = unfertilized.length === plants.length;
-    const alertText = isAll
-      ? '🧪 Chưa bón phân cả vườn!'
-      : `🧪 Cây chưa bón phân (quá 7 ngày): ${unfertilized.map(p => p.tree_code || p.id).join(', ')}`;
+    const alertHtml = isAll
+      ? '<i class="fa-solid fa-flask" style="color:#d97706; margin-right:4px;"></i> Chưa bón phân cả vườn!'
+      : `<i class="fa-solid fa-flask" style="color:#d97706; margin-right:4px;"></i> Cây chưa bón phân (quá 7 ngày): ${unfertilized.map(p => p.tree_code || p.id).join(', ')}`;
 
     html += `
       <div style="padding:10px 12px;background:#fffbeb;border:1px solid #fef3c7;border-radius:10px;margin-bottom:8px;">
-        <div style="font-size:12px;font-weight:600;color:#854d0e;line-height:1.4;">${esc(alertText)}</div>
+        <div style="font-size:12px;font-weight:600;color:#854d0e;line-height:1.4;">${alertHtml}</div>
       </div>`;
   }
 
