@@ -1218,7 +1218,7 @@ tr:hover td {
 
   /* Keep login page fullscreen */
   #login-page {
-    display: flex !important;
+    display: flex;
     width: 100vw !important;
     height: 100vh !important;
     position: absolute !important;
