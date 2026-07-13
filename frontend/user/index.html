@@ -350,14 +350,160 @@
 
       <!-- ── Cài đặt ── -->
       <div class="page-section" id="page-settings">
-        <div class="dev-banner">
-          <div class="dev-icon-wrap"><i class="fa fa-gear"></i></div>
-          <div class="dev-title">Cài đặt tài khoản</div>
-          <div class="dev-subtitle">
-            Cập nhật thông tin cá nhân, thay đổi mật khẩu và quản lý thông báo đang được phát triển.
+
+        <!-- Header -->
+        <div class="settings-header">
+          <div class="settings-header-icon"><i class="fa-solid fa-sliders"></i></div>
+          <div>
+            <h2 class="settings-header-title">Cài đặt tài khoản</h2>
+            <p class="settings-header-sub">Quản lý hồ sơ cá nhân và bảo mật của bạn</p>
           </div>
-          <div class="dev-badge"><i class="fa fa-hammer"></i> Đang phát triển</div>
         </div>
+
+        <div class="settings-grid">
+
+          <!-- ── Cột 1: Avatar + Hồ sơ cá nhân ── -->
+          <div class="settings-card settings-card--profile">
+
+            <!-- Avatar Section -->
+            <div class="settings-avatar-section">
+              <div class="settings-avatar-wrap" id="settings-avatar-wrap" title="Nhấp để thay ảnh đại diện">
+                <img id="settings-avatar-img" src="" alt="Avatar" class="settings-avatar-img hidden" />
+                <div id="settings-avatar-initials" class="settings-avatar-initials">N</div>
+                <div class="settings-avatar-overlay">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Thay ảnh</span>
+                </div>
+                <div class="settings-avatar-ring"></div>
+              </div>
+              <input type="file" id="settings-avatar-input" accept="image/*" style="display:none" />
+              <div class="settings-avatar-info">
+                <p class="settings-avatar-hint"><i class="fa-solid fa-circle-info"></i> JPG, PNG, WebP · Tối đa 10MB</p>
+                <p class="settings-joined-label">Tham gia từ: <span id="settings-joined">—</span></p>
+              </div>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <!-- Profile Form -->
+            <div class="settings-section-title">
+              <i class="fa-solid fa-user-pen"></i> Thông tin cá nhân
+            </div>
+
+            <div class="settings-form-grid">
+              <div class="settings-field">
+                <label class="settings-label" for="settings-fullname">Họ và tên <span class="settings-required">*</span></label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-user settings-input-icon"></i>
+                  <input class="settings-input" id="settings-fullname" type="text" placeholder="Nguyễn Văn A" autocomplete="name" />
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="settings-email">Email</label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-envelope settings-input-icon"></i>
+                  <input class="settings-input" id="settings-email" type="email" placeholder="email@example.com" disabled />
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="settings-phone">Số điện thoại</label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-phone settings-input-icon"></i>
+                  <input class="settings-input" id="settings-phone" type="tel" placeholder="0901 234 567" autocomplete="tel" />
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="settings-gender">Giới tính</label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-venus-mars settings-input-icon"></i>
+                  <select class="settings-input settings-select" id="settings-gender">
+                    <option value="">-- Chọn giới tính --</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="settings-city">Thành phố</label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-city settings-input-icon"></i>
+                  <input class="settings-input" id="settings-city" type="text" placeholder="Ví dụ: Bình Phước" />
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="settings-country">Quốc gia</label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-globe settings-input-icon"></i>
+                  <input class="settings-input" id="settings-country" type="text" placeholder="Việt Nam" />
+                </div>
+              </div>
+            </div>
+
+            <button class="settings-btn settings-btn--primary" id="settings-save-profile">
+              <i class="fa-solid fa-floppy-disk"></i> Lưu thông tin
+            </button>
+          </div>
+
+          <!-- ── Cột 2: Bảo mật ── -->
+          <div class="settings-card settings-card--security">
+
+            <div class="settings-security-badge">
+              <div class="settings-security-icon"><i class="fa-solid fa-shield-halved"></i></div>
+              <div>
+                <div class="settings-section-title" style="margin-bottom:2px;">Bảo mật tài khoản</div>
+                <p class="settings-security-sub">Đổi mật khẩu định kỳ để bảo vệ tài khoản của bạn.</p>
+              </div>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <div class="settings-form-grid settings-form-grid--single">
+              <div class="settings-field">
+                <label class="settings-label" for="settings-old-password">Mật khẩu hiện tại <span class="settings-required">*</span></label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-lock settings-input-icon"></i>
+                  <input class="settings-input" id="settings-old-password" type="password" placeholder="Nhập mật khẩu cũ" autocomplete="current-password" />
+                  <button class="settings-pw-toggle" type="button" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'; this.querySelector('i').className=this.previousElementSibling.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="settings-new-password">Mật khẩu mới <span class="settings-required">*</span></label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-key settings-input-icon"></i>
+                  <input class="settings-input" id="settings-new-password" type="password" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" />
+                  <button class="settings-pw-toggle" type="button" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'; this.querySelector('i').className=this.previousElementSibling.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="settings-confirm-password">Xác nhận mật khẩu mới <span class="settings-required">*</span></label>
+                <div class="settings-input-wrap">
+                  <i class="fa-solid fa-key settings-input-icon"></i>
+                  <input class="settings-input" id="settings-confirm-password" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" />
+                  <button class="settings-pw-toggle" type="button" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'; this.querySelector('i').className=this.previousElementSibling.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button class="settings-btn settings-btn--security" id="settings-change-password">
+              <i class="fa-solid fa-rotate"></i> Đổi mật khẩu
+            </button>
+
+            <!-- Security tips -->
+            <div class="settings-tips">
+              <div class="settings-tip"><i class="fa-solid fa-circle-check"></i> Sử dụng ít nhất 8 ký tự</div>
+              <div class="settings-tip"><i class="fa-solid fa-circle-check"></i> Kết hợp chữ hoa, chữ thường và số</div>
+              <div class="settings-tip"><i class="fa-solid fa-circle-check"></i> Không dùng thông tin cá nhân dễ đoán</div>
+            </div>
+          </div>
+
+        </div><!-- end settings-grid -->
       </div>
 
     </div><!-- end content -->

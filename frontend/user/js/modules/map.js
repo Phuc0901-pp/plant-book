@@ -137,7 +137,7 @@ export function initUserMap(farms, plants) {
       const wrapper = Object.assign(document.createElement('div'), { className: 'plant-marker-wrap' });
       wrapper.style.cursor = 'pointer';
 
-      const el = document.createElement('div');
+      const el = Object.assign(document.createElement('div'), { className: 'plant-id-marker' });
       const colorMap = { 'Tốt': '#22c55e', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
       const color    = colorMap[plant.health_status] || '#3b82f6';
 

@@ -59,6 +59,12 @@ export function showPage(page) {
       }
     });
   }
+
+  if (page === 'settings') {
+    if (typeof window.loadUserSettings === 'function') {
+      window.loadUserSettings();
+    }
+  }
 }
 
 /**

@@ -14,6 +14,7 @@ import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange } from './modules/care-modal.js';
 import { onCareMediaSelected, openLightbox } from './modules/media.js';
+import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar } from './modules/settings.js';
 
 // ── Expose to Window (for HTML inline onclick="..." handlers) ──
 // Cần thiết vì ES Modules có scope riêng, không tự trở thành global.
@@ -37,6 +38,11 @@ window.onCareLogTypeChange  = onCareLogTypeChange;
 
 window.onCareMediaSelected  = onCareMediaSelected;
 window.openLightbox         = openLightbox;
+
+window.loadUserSettings     = loadUserSettings;
+window.saveUserProfile      = saveUserProfile;
+window.changeUserPassword   = changeUserPassword;
+window.uploadUserAvatar     = uploadUserAvatar;
 
 // Register PWA service worker for offline support and mobile install option
 if ('serviceWorker' in navigator) {
