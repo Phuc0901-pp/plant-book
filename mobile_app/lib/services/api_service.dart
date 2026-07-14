@@ -344,4 +344,21 @@ class ApiService {
       return false;
     }
   }
+
+  Future<bool> updateNfcTag(int plantId, String? nfcUid) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.put(
+        Uri.parse('$baseUrl/plants/$plantId/nfc'),
+        headers: headers,
+        body: jsonEncode({
+          'nfc_uid': nfcUid,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error updating NFC tag: $e');
+      return false;
+    }
+  }
 }

@@ -5,11 +5,13 @@ import '../utils/theme.dart';
 class PlantCard extends StatelessWidget {
   final Plant plant;
   final VoidCallback? onLogTap;
+  final VoidCallback? onNfcTap;
 
   const PlantCard({
     super.key,
     required this.plant,
     this.onLogTap,
+    this.onNfcTap,
   });
 
   @override
@@ -52,29 +54,75 @@ class PlantCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Cây #${plant.displayName}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textMain,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: badgeBg,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: badgeText.withOpacity(0.2), width: 1),
-                  ),
-                  child: Text(
-                    plant.healthStatus,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: badgeText,
+                Row(
+                  children: [
+                    Text(
+                      'Cây #${plant.displayName}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textMain,
+                      ),
                     ),
-                  ),
+                    if (plant.nfcUid != null) ...[
+                      const SizedBox(width: 6),
+                      const Icon(Icons.tag_rounded, size: 16, color: AppTheme.green),
+                    ],
+                  ],
+                ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: badgeBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: badgeText.withOpacity(0.2), width: 1),
+                      ),
+                      child: Text(
+                        plant.healthStatus,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: badgeText,
+                        ),
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textMuted),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onSelected: (value) {
+                        if (value == 'log' && onLogTap != null) {
+                          onLogTap!();
+                        } else if (value == 'nfc' && onNfcTap != null) {
+                          onNfcTap!();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'log',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_note_rounded, size: 20, color: AppTheme.green),
+                              SizedBox(width: 8),
+                              Text('Ghi nhật ký'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'nfc',
+                          child: Row(
+                            children: [
+                              Icon(Icons.tag_rounded, size: 20, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Text('Định danh NFC'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -122,23 +170,6 @@ class PlantCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (onLogTap != null) ...[
-              const SizedBox(height: 12),
-              const Divider(color: AppTheme.grayBorder, height: 1),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: onLogTap,
-                  icon: const Icon(Icons.edit_note_rounded, size: 18),
-                  label: const Text('Ghi nhật ký'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.userAccent,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  ),
-                ),
-              )
-            ]
           ],
         ),
       ),
