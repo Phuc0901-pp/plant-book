@@ -53,7 +53,12 @@ class PlantLog {
         .toList();
 
     var mediaList = json['media_urls'] as List<dynamic>? ?? [];
-    List<String> parsedMedia = mediaList.map((dynamic item) => item.toString()).toList();
+    List<String> parsedMedia = mediaList.map((dynamic item) {
+      if (item is Map) {
+        return (item['url'] ?? '').toString();
+      }
+      return item.toString();
+    }).where((url) => url.isNotEmpty).toList();
 
     return PlantLog(
       id: json['id'] as int,

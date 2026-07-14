@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import '../components/farm_card.dart';
 import '../components/plant_card.dart';
@@ -388,6 +389,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       if (identifier != null) {
                         final uid = identifier.map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase()).join(':');
                         
+                        String? plantUrl;
                         // Write NDEF URI to tag
                         final ndef = Ndef.from(tag);
                         if (ndef != null && ndef.isWritable) {
@@ -397,7 +399,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               domain = 'https://$domain';
                             }
                             final slug = plant.publicSlug ?? plant.id.toString();
-                            final plantUrl = '$domain/plant/$slug';
+                            plantUrl = '$domain/plant/$slug';
                             
                             final record = NdefRecord.createUri(Uri.parse(plantUrl));
                             await ndef.write(NdefMessage([record]));
@@ -410,12 +412,27 @@ class _DashboardPageState extends State<DashboardPage> {
                         
                         if (mounted) {
                           Navigator.pop(context);
+                          
+                          String domain = _apiService.baseUrl.replaceAll('/api', '');
+                          if (!domain.startsWith('http')) {
+                            domain = 'https://$domain';
+                          }
+                          final slug = plant.publicSlug ?? plant.id.toString();
+                          final finalUrl = plantUrl ?? '$domain/plant/$slug';
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(success 
-                                  ? 'Đã liên kết thẻ $uid với cây #${plant.displayName}'
+                                  ? 'Đã liên kết thẻ $uid thành công!\nĐường dẫn: $finalUrl'
                                   : 'Không thể liên kết thẻ NFC. Vui lòng thử lại.'),
                               backgroundColor: success ? AppTheme.green : AppTheme.red,
+                              action: success ? SnackBarAction(
+                                label: 'Sao chép',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: finalUrl));
+                                },
+                              ) : null,
                             ),
                           );
                           _loadData();
@@ -525,12 +542,26 @@ class _DashboardPageState extends State<DashboardPage> {
                         
                         final success = await _apiService.updateNfcTag(plant.id, uid);
                         if (mounted) {
+                          String domain = _apiService.baseUrl.replaceAll('/api', '');
+                          if (!domain.startsWith('http')) {
+                            domain = 'https://$domain';
+                          }
+                          final slug = plant.publicSlug ?? plant.id.toString();
+                          final plantUrl = '$domain/plant/$slug';
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(success 
-                                  ? 'Đã liên kết thẻ $uid với cây #${plant.displayName}'
+                                  ? 'Đã liên kết thẻ $uid thành công!\nĐường dẫn: $plantUrl'
                                   : 'Không thể liên kết thẻ NFC. Vui lòng thử lại.'),
                               backgroundColor: success ? AppTheme.green : AppTheme.red,
+                              action: success ? SnackBarAction(
+                                label: 'Sao chép',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: plantUrl));
+                                },
+                              ) : null,
                             ),
                           );
                           _loadData();

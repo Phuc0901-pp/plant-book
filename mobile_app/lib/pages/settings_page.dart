@@ -130,6 +130,35 @@ class _SettingsPageState extends State<SettingsPage> {
                 // 1. Profile header block
                 _buildProfileHeader(),
                 const SizedBox(height: 24),
+
+                // Profile details block
+                _sectionTitle('Thông tin cá nhân'),
+                Card(
+                  elevation: 0,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppTheme.grayBorder),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _profileDetailRow(Icons.person_outline_rounded, 'Họ và tên', _userProfile?['full_name'] ?? '—'),
+                        const Divider(height: 24, color: AppTheme.grayBorder),
+                        _profileDetailRow(Icons.phone_android_rounded, 'Số điện thoại', _userProfile?['phone'] ?? '—'),
+                        const Divider(height: 24, color: AppTheme.grayBorder),
+                        _profileDetailRow(Icons.wc_rounded, 'Giới tính', _userProfile?['gender'] ?? '—'),
+                        const Divider(height: 24, color: AppTheme.grayBorder),
+                        _profileDetailRow(Icons.location_city_rounded, 'Khu vực', 
+                            _userProfile?['city'] != null || _userProfile?['country'] != null
+                            ? '${_userProfile?['city'] ?? ''}${_userProfile?['city'] != null && _userProfile?['country'] != null ? ', ' : ''}${_userProfile?['country'] ?? ''}'
+                            : '—'),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 
                 // 2. Notification Toggle Settings
                 _sectionTitle('Thông báo ứng dụng'),
@@ -246,10 +275,29 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Widget _profileDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppTheme.textMuted),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+        ),
+      ],
+    );
+  }
+
   Widget _buildProfileHeader() {
     final email = _userProfile?['email'] ?? '—';
     final name = _userProfile?['full_name'] ?? 'Nông hộ Tanbao';
     final role = _userProfile?['role'] == 'user' ? 'Nông hộ chính thức' : 'Quản trị viên';
+    final avatarUrl = _userProfile?['avatar_url'];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -262,14 +310,21 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Colors.white24,
-              shape: BoxShape.circle,
+          if (avatarUrl != null && avatarUrl.toString().isNotEmpty)
+            CircleAvatar(
+              radius: 32,
+              backgroundImage: NetworkImage(avatarUrl.toString()),
+              backgroundColor: Colors.white24,
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_rounded, size: 40, color: Colors.white),
             ),
-            child: const Icon(Icons.person_rounded, size: 40, color: Colors.white),
-          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

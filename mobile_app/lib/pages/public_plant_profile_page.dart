@@ -839,7 +839,12 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                     final detailVal = _formatLogDetails(type, details);
                     
                     final List<dynamic> mediaList = log['media_urls'] as List<dynamic>? ?? [];
-                    final List<String> mediaUrls = mediaList.map((dynamic item) => item.toString()).toList();
+                    final List<String> mediaUrls = mediaList.map((dynamic item) {
+                      if (item is Map) {
+                        return (item['url'] ?? '').toString();
+                      }
+                      return item.toString();
+                    }).where((url) => url.isNotEmpty).toList();
                     
                     final historyList = log['edit_history'] as List<dynamic>? ?? [];
                     final parsedHistory = historyList
