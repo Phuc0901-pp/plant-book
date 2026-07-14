@@ -392,7 +392,13 @@ class _DashboardPageState extends State<DashboardPage> {
                         final ndef = Ndef.from(tag);
                         if (ndef != null && ndef.isWritable) {
                           try {
-                            final plantUrl = 'https://app.tanbaocorp.vn/plant/${plant.id}'; // fallback if no public slug
+                            String domain = _apiService.baseUrl.replaceAll('/api', '');
+                            if (!domain.startsWith('http')) {
+                              domain = 'https://$domain';
+                            }
+                            final slug = plant.publicSlug ?? plant.id.toString();
+                            final plantUrl = '$domain/plant/$slug';
+                            
                             final record = NdefRecord.createUri(Uri.parse(plantUrl));
                             await ndef.write(NdefMessage([record]));
                           } catch (_) {}

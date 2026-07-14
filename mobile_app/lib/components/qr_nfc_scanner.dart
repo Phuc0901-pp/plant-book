@@ -62,7 +62,7 @@ class _QrScannerPageState extends State<QrScannerPage>
     await Future.delayed(const Duration(milliseconds: 100));
 
     if (!mounted) return;
-    _routeToPlant(context, rawValue);
+    _routeToPlant(context, rawValue, '');
   }
 
   @override
@@ -337,7 +337,20 @@ class _NfcScannerPageState extends State<NfcScannerPage>
     });
 
     NfcManager.instance.startSession(onDiscovered: (NfcTag tag) async {
-      // Try to extract URL/text from NDEF records
+      // 1. Get physical UID of the tag
+      final List<dynamic>? identifier = 
+          tag.data['isodep']?['identifier'] ??
+          tag.data['nfca']?['identifier'] ??
+          tag.data['mifare']?['identifier'] ??
+          tag.data['mifareultralight']?['identifier'] ??
+          tag.data['ndef']?['identifier'];
+      
+      String? scannedUid;
+      if (identifier != null) {
+        scannedUid = identifier.map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase()).join(':');
+      }
+
+      // 2. Try to extract URL/text from NDEF records
       final ndef = Ndef.from(tag);
       String? readValue;
 
@@ -348,12 +361,9 @@ class _NfcScannerPageState extends State<NfcScannerPage>
             for (final record in cachedMessage.records) {
               final payload = record.payload;
               if (payload.isNotEmpty) {
-                // NDEF Text record: first byte = status, next bytes = lang code, rest = text
-                // NDEF URI record: first byte = URI prefix identifier
                 final prefix = payload[0];
                 String text;
                 if (prefix == 0x02 || prefix == 0x01) {
-                  // URI record - prefix maps to scheme
                   const prefixes = {
                     0x01: 'http://www.',
                     0x02: 'https://www.',
@@ -363,7 +373,6 @@ class _NfcScannerPageState extends State<NfcScannerPage>
                   final scheme = prefixes[prefix] ?? '';
                   text = scheme + String.fromCharCodes(payload.sublist(1));
                 } else {
-                  // Text record - skip status byte and lang code
                   final langLength = payload[0] & 0x3F;
                   text = String.fromCharCodes(payload.sublist(1 + langLength));
                 }
@@ -380,13 +389,13 @@ class _NfcScannerPageState extends State<NfcScannerPage>
       await NfcManager.instance.stopSession();
       if (!mounted) return;
 
-      if (readValue != null && readValue.isNotEmpty) {
-        _onReadSuccess(readValue);
+      if ((readValue != null && readValue.isNotEmpty) || (scannedUid != null && scannedUid.isNotEmpty)) {
+        _onReadSuccess(readValue ?? '', scannedUid ?? '');
       } else {
         setState(() {
           _isError = true;
           _isReading = false;
-          _statusText = 'Thẻ NFC không chứa dữ liệu cây trồng hợp lệ.';
+          _statusText = 'Thẻ NFC trống hoặc không nhận diện được mã thẻ.';
         });
       }
     }, onError: (error) async {
@@ -399,7 +408,7 @@ class _NfcScannerPageState extends State<NfcScannerPage>
     });
   }
 
-  void _onReadSuccess(String value) async {
+  void _onReadSuccess(String value, String scannedUid) async {
     setState(() {
       _isSuccess = true;
       _isReading = false;
@@ -413,7 +422,7 @@ class _NfcScannerPageState extends State<NfcScannerPage>
     if (!mounted) return;
 
     Navigator.pop(context);
-    _routeToPlant(context, value);
+    _routeToPlant(context, value, scannedUid);
   }
 
   @override
@@ -588,53 +597,98 @@ class _NfcScannerPageState extends State<NfcScannerPage>
 
 // ─── Shared routing logic ────────────────────────────────────────────────────
 
-void _routeToPlant(BuildContext context, String code) async {
+void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   final apiService = ApiService();
   
-  // 1. Detect if it's a public plant URL
+  // 1. Try to match by physical nfcUid first
+  if (scannedUid.isNotEmpty) {
+    try {
+      final allPlants = await apiService.fetchPlants();
+      final matched = allPlants.firstWhere(
+        (p) => p.nfcUid?.toUpperCase() == scannedUid.toUpperCase(),
+        orElse: () => throw Exception('not found by UID'),
+      );
+      
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
+        );
+        return;
+      }
+    } catch (_) {
+      // Fall through if not found by physical UID
+    }
+  }
+
+  // 2. Detect if it's a public plant URL
   if (code.contains('/plant/')) {
     final uri = Uri.tryParse(code.trim());
     final segments = uri?.pathSegments ?? code.trim().split('/');
     if (segments.isNotEmpty) {
       final slug = segments.last;
       if (slug.isNotEmpty) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PublicPlantProfilePage(slug: slug),
-          ),
-        );
-        return;
+        // Find if this slug matches a cached plant to navigate internally
+        try {
+          final allPlants = await apiService.fetchPlants();
+          final matched = allPlants.firstWhere(
+            (p) => p.publicSlug == slug,
+            orElse: () => throw Exception('not found in cache'),
+          );
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
+            );
+            return;
+          }
+        } catch (_) {
+          // If not found in cache, open public profile page inside the app
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PublicPlantProfilePage(slug: slug),
+              ),
+            );
+            return;
+          }
+        }
       }
     }
   }
 
-  // 2. Try to match by tree_code or plant ID via API
-  try {
-    final allPlants = await apiService.fetchPlants();
-    final matched = allPlants.firstWhere(
-      (p) =>
-          p.treeCode?.toLowerCase() == code.toLowerCase() ||
-          p.id.toString() == code,
-      orElse: () => throw Exception('not found'),
-    );
+  // 3. Try to match by tree_code or plant ID via API
+  if (code.isNotEmpty) {
+    try {
+      final allPlants = await apiService.fetchPlants();
+      final matched = allPlants.firstWhere(
+        (p) =>
+            p.treeCode?.toLowerCase() == code.toLowerCase() ||
+            p.id.toString() == code,
+        orElse: () => throw Exception('not found'),
+      );
 
-    if (context.mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
-      );
-    }
-  } catch (_) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Không tìm thấy cây trồng với mã "$code"'),
-          backgroundColor: AppTheme.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
+        );
+        return;
+      }
+    } catch (_) {}
+  }
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(scannedUid.isNotEmpty
+            ? 'Không tìm thấy cây trồng khớp với thẻ NFC này.'
+            : 'Không tìm thấy cây trồng với mã "$code"'),
+        backgroundColor: AppTheme.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }
 

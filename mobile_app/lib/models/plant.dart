@@ -10,6 +10,7 @@ class Plant {
   final double? latitude;
   final double? longitude;
   final String? nfcUid;
+  final String? publicSlug;
   final String? lastWatered;
   final String? lastFertilized;
 
@@ -25,6 +26,7 @@ class Plant {
     this.latitude,
     this.longitude,
     this.nfcUid,
+    this.publicSlug,
     this.lastWatered,
     this.lastFertilized,
   });
@@ -42,6 +44,7 @@ class Plant {
       latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
       longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
       nfcUid: json['nfc_uid'] as String?,
+      publicSlug: json['public_slug'] as String?,
       lastWatered: json['last_watered'] as String?,
       lastFertilized: json['last_fertilized'] as String?,
     );
@@ -60,6 +63,7 @@ class Plant {
       'latitude': latitude,
       'longitude': longitude,
       'nfc_uid': nfcUid,
+      'public_slug': publicSlug,
       'last_watered': lastWatered,
       'last_fertilized': lastFertilized,
     };
