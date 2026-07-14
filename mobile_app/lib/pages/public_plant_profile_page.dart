@@ -7,6 +7,8 @@ import '../utils/app_config.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
+import '../components/audit_history_view.dart';
+import '../models/plant_log.dart' show EditHistory;
 
 class PublicPlantProfilePage extends StatefulWidget {
   final String slug;
@@ -834,12 +836,15 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                     final note = log['note'] ?? '';
                     
                     final details = log['details'] as Map<String, dynamic>? ?? {};
-                    final detailVal = details['value'] ?? 
-                                      details['method'] ?? 
-                                      details['fertilizer'] ?? 
-                                      details['pesticide'] ?? 
-                                      details['reason'] ?? 
-                                      details['disease'] ?? '';
+                    final detailVal = _formatLogDetails(type, details);
+                    
+                    final List<dynamic> mediaList = log['media_urls'] as List<dynamic>? ?? [];
+                    final List<String> mediaUrls = mediaList.map((dynamic item) => item.toString()).toList();
+                    
+                    final historyList = log['edit_history'] as List<dynamic>? ?? [];
+                    final parsedHistory = historyList
+                        .map((dynamic item) => EditHistory.fromJson(item as Map<String, dynamic>))
+                        .toList();
 
                     Color logColor = AppTheme.green;
                     if (type == 'Bệnh cây') logColor = AppTheme.red;
@@ -892,14 +897,85 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
                                       Text(date, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
                                     ],
                                   ),
-                                  if (detailVal.toString().isNotEmpty) ...[
+                                  if (detailVal.isNotEmpty) ...[
                                     const SizedBox(height: 6),
                                     Text('• Chi tiết: $detailVal', style: const TextStyle(fontSize: 12, color: AppTheme.textMain)),
                                   ],
                                   if (note.toString().isNotEmpty) ...[
                                     const SizedBox(height: 4),
                                     Text('• Ghi chú: $note', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                                  ]
+                                  ],
+                                  
+                                  // Photos/Videos display
+                                  if (mediaUrls.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    SizedBox(
+                                      height: 64,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: mediaUrls.length,
+                                        itemBuilder: (context, index) {
+                                          final url = mediaUrls[index];
+                                          final isVideo = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().contains('/video/');
+                                          return GestureDetector(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => Dialog(
+                                                  backgroundColor: Colors.transparent,
+                                                  child: Stack(
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      InteractiveViewer(
+                                                        child: Image.network(url, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.white)),
+                                                      ),
+                                                      Positioned(
+                                                        top: 10,
+                                                        right: 10,
+                                                        child: CircleAvatar(
+                                                          backgroundColor: Colors.black54,
+                                                          child: IconButton(
+                                                            icon: const Icon(Icons.close, color: Colors.white),
+                                                            onPressed: () => Navigator.pop(context),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: Container(
+                                              margin: const EdgeInsets.only(right: 8),
+                                              width: 64,
+                                              height: 64,
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: AppTheme.grayBorder),
+                                                image: isVideo
+                                                    ? null
+                                                    : DecorationImage(
+                                                        image: NetworkImage(url),
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                              ),
+                                              child: isVideo
+                                                  ? const Center(
+                                                      child: Icon(Icons.play_circle_fill_rounded, size: 28, color: AppTheme.green),
+                                                    )
+                                                  : null,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                  
+                                  // Edit history timeline
+                                  if (parsedHistory.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    AuditHistoryView(history: parsedHistory),
+                                  ],
                                 ],
                               ),
                             ),
@@ -912,5 +988,45 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         ],
       ),
     );
+  }
+
+  String _formatLogDetails(String logType, Map<String, dynamic> details) {
+    if (details.isEmpty) return '';
+    final List<String> parts = [];
+    
+    if (logType == 'Tưới nước') {
+      final method = details['method'];
+      final amount = details['amount'];
+      if (method != null && method.toString().isNotEmpty) parts.add('Cách tưới: $method');
+      if (amount != null) parts.add('Lượng nước: $amount lít');
+    } else if (logType == 'Bón phân') {
+      final name = details['fertilizer_name'];
+      final amount = details['amount'];
+      final unit = details['unit'] ?? 'kg';
+      if (name != null && name.toString().isNotEmpty) parts.add('Loại phân: $name');
+      if (amount != null) parts.add('Lượng bón: $amount $unit');
+    } else if (logType == 'Phun thuốc') {
+      final name = details['pesticide_name'];
+      final amount = details['amount'];
+      final unit = details['unit'] ?? 'lít';
+      if (name != null && name.toString().isNotEmpty) parts.add('Loại thuốc: $name');
+      if (amount != null) parts.add('Lượng phun: $amount $unit');
+    } else if (logType == 'Bệnh cây') {
+      final name = details['disease_name'];
+      final severity = details['severity'];
+      final desc = details['description'];
+      if (name != null && name.toString().isNotEmpty) parts.add('Tên bệnh: $name');
+      if (severity != null && severity.toString().isNotEmpty) parts.add('Mức độ: $severity');
+      if (desc != null && desc.toString().isNotEmpty) parts.add('Mô tả: $desc');
+    } else if (logType == 'Tỉa cành/lá' || logType == 'Tỉa quả/hoa') {
+      final reason = details['reason'];
+      final amount = details['amount'];
+      if (reason != null && reason.toString().isNotEmpty) parts.add('Lý do: $reason');
+      if (amount != null && amount != 0) parts.add('Số lượng: $amount');
+    } else {
+      final val = details['value'] ?? details['method'] ?? details['fertilizer'] ?? details['pesticide'] ?? details['reason'] ?? details['disease'];
+      if (val != null) parts.add('$val');
+    }
+    return parts.join(' | ');
   }
 }

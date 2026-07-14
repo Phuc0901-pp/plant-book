@@ -664,7 +664,7 @@ router.get('/public/:slug', async (req, res) => {
        FROM plants p 
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
-       WHERE p.public_slug=$1 AND p.is_public=true`, [req.params.slug]
+       WHERE (p.public_slug=$1 OR p.id::text=$1) AND p.is_public=true`, [req.params.slug]
     );
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
 
@@ -703,7 +703,7 @@ router.patch('/public/:slug/health', async (req, res) => {
       return res.status(400).json({ error: 'Trạng thái sức khỏe không hợp lệ.' });
     }
     const result = await pool.query(
-      `UPDATE plants SET health_status = $1, updated_at = NOW() WHERE public_slug = $2 RETURNING *`,
+      `UPDATE plants SET health_status = $1, updated_at = NOW() WHERE (public_slug = $2 OR id::text = $2) RETURNING *`,
       [health_status, req.params.slug]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
@@ -732,7 +732,7 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
 
     // Find plant ID by slug
     const plantResult = await pool.query(
-      'SELECT id FROM plants WHERE public_slug=$1 AND is_public=true',
+      'SELECT id FROM plants WHERE (public_slug=$1 OR id::text=$1) AND is_public=true',
       [req.params.slug]
     );
     if (plantResult.rows.length === 0) {

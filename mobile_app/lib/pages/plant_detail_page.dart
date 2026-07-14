@@ -231,14 +231,7 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
                               itemCount: _logs.length,
                               itemBuilder: (context, index) {
                                 final log = _logs[index];
-                                
-                                // Format details value
-                                final detailVal = log.details['value'] ?? 
-                                                  log.details['method'] ?? 
-                                                  log.details['fertilizer'] ?? 
-                                                  log.details['pesticide'] ?? 
-                                                  log.details['reason'] ?? 
-                                                  log.details['disease'] ?? '';
+                                final detailVal = _formatLogDetails(log.logType, log.details);
 
                                 return Card(
                                   elevation: 0,
@@ -294,7 +287,7 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
                                         const SizedBox(height: 12),
                                         
                                         // Detail values
-                                        if (detailVal.toString().isNotEmpty) ...[
+                                        if (detailVal.isNotEmpty) ...[
                                           Text(
                                             'Chi tiết: $detailVal',
                                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -307,6 +300,72 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
                                           Text(
                                             'Ghi chú: ${log.note}',
                                             style: const TextStyle(fontSize: 13, color: AppTheme.textMain),
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+
+                                        // Photos/Videos display
+                                        if (log.mediaUrls.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          SizedBox(
+                                            height: 72,
+                                            child: ListView.builder(
+                                              scrollDirection: Axis.horizontal,
+                                              itemCount: log.mediaUrls.length,
+                                              itemBuilder: (context, index) {
+                                                final url = log.mediaUrls[index];
+                                                final isVideo = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().contains('/video/');
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) => Dialog(
+                                                        backgroundColor: Colors.transparent,
+                                                        child: Stack(
+                                                          alignment: Alignment.center,
+                                                          children: [
+                                                            InteractiveViewer(
+                                                              child: Image.network(url, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.white)),
+                                                            ),
+                                                            Positioned(
+                                                              top: 10,
+                                                              right: 10,
+                                                              child: CircleAvatar(
+                                                                backgroundColor: Colors.black54,
+                                                                child: IconButton(
+                                                                  icon: const Icon(Icons.close, color: Colors.white),
+                                                                  onPressed: () => Navigator.pop(context),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    margin: const EdgeInsets.only(right: 8),
+                                                    width: 72,
+                                                    height: 72,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      border: Border.all(color: AppTheme.grayBorder),
+                                                      image: isVideo
+                                                          ? null
+                                                          : DecorationImage(
+                                                              image: NetworkImage(url),
+                                                              fit: BoxFit.cover,
+                                                            ),
+                                                    ),
+                                                    child: isVideo
+                                                        ? const Center(
+                                                            child: Icon(Icons.play_circle_fill_rounded, size: 32, color: AppTheme.green),
+                                                          )
+                                                        : null,
+                                                  ),
+                                                );
+                                              },
+                                            ),
                                           ),
                                           const SizedBox(height: 8),
                                         ],
@@ -341,6 +400,46 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
         ),
       ),
     );
+  }
+
+  String _formatLogDetails(String logType, Map<String, dynamic> details) {
+    if (details.isEmpty) return '';
+    final List<String> parts = [];
+    
+    if (logType == 'Tưới nước') {
+      final method = details['method'];
+      final amount = details['amount'];
+      if (method != null && method.toString().isNotEmpty) parts.add('Cách tưới: $method');
+      if (amount != null) parts.add('Lượng nước: $amount lít');
+    } else if (logType == 'Bón phân') {
+      final name = details['fertilizer_name'];
+      final amount = details['amount'];
+      final unit = details['unit'] ?? 'kg';
+      if (name != null && name.toString().isNotEmpty) parts.add('Loại phân: $name');
+      if (amount != null) parts.add('Lượng bón: $amount $unit');
+    } else if (logType == 'Phun thuốc') {
+      final name = details['pesticide_name'];
+      final amount = details['amount'];
+      final unit = details['unit'] ?? 'lít';
+      if (name != null && name.toString().isNotEmpty) parts.add('Loại thuốc: $name');
+      if (amount != null) parts.add('Lượng phun: $amount $unit');
+    } else if (logType == 'Bệnh cây') {
+      final name = details['disease_name'];
+      final severity = details['severity'];
+      final desc = details['description'];
+      if (name != null && name.toString().isNotEmpty) parts.add('Tên bệnh: $name');
+      if (severity != null && severity.toString().isNotEmpty) parts.add('Mức độ: $severity');
+      if (desc != null && desc.toString().isNotEmpty) parts.add('Mô tả: $desc');
+    } else if (logType == 'Tỉa cành/lá' || logType == 'Tỉa quả/hoa') {
+      final reason = details['reason'];
+      final amount = details['amount'];
+      if (reason != null && reason.toString().isNotEmpty) parts.add('Lý do: $reason');
+      if (amount != null && amount != 0) parts.add('Số lượng: $amount');
+    } else {
+      final val = details['value'] ?? details['method'] ?? details['fertilizer'] ?? details['pesticide'] ?? details['reason'] ?? details['disease'];
+      if (val != null) parts.add('$val');
+    }
+    return parts.join(' | ');
   }
 
   Widget _infoRow(IconData icon, String label, String value) {
