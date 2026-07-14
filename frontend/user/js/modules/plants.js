@@ -7,6 +7,7 @@ import { esc, healthBadge } from '../core/utils.js';
 
 // ── State (chia sẻ với các module khác qua getter) ──────────
 let _plantsCache = [];
+let _farmsCache  = [];  // Danh sách trang trại của nông hộ
 
 /**
  * Cập nhật cache danh sách cây trồng.
@@ -20,6 +21,20 @@ export function setPlantsCache(plants) {
 /** Lấy danh sách cây trồng hiện tại từ cache */
 export function getPlantsCache() {
   return _plantsCache;
+}
+
+/** Cập nhật cache trang trại và nạp vào dropdown lọc */
+export function setFarmsCache(farms) {
+  _farmsCache = farms;
+  _populateFarmFilter(farms);
+}
+
+/** Nạp danh sách trang trại vào select #user-plant-filter-farm */
+function _populateFarmFilter(farms) {
+  const sel = document.getElementById('user-plant-filter-farm');
+  if (!sel) return;
+  sel.innerHTML = `<option value="">Tất cả trang trại</option>`
+    + farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
 }
 
 // ── Render ────────────────────────────────────────────────────
@@ -79,9 +94,23 @@ export function renderUserPlantsTable(plants) {
  * @private
  */
 function _plantRow(p) {
+  const nfcBadge = p.nfc_uid
+    ? `<span title="Thẻ: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#22c55e;"><i class="fa-solid fa-tag"></i></span>`
+    : `<span title="Chưa gắn thẻ NFC" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#d1d5db;"><i class="fa-solid fa-link-slash"></i></span>`;
+
+  const uid       = p.nfc_uid  ? `'${esc(p.nfc_uid)}'`  : 'null';
+  const slug      = esc(p.public_slug || '');
+  const treeCode  = esc(p.tree_code || String(p.id));
+  const plantType = esc(p.plant_type || '');
+
   return `
     <tr>
-      <td data-label="Mã cây"><div><strong>${esc(p.tree_code || p.id)}</strong></div></td>
+      <td data-label="Mã cây">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <strong>${treeCode}</strong>
+          ${nfcBadge}
+        </div>
+      </td>
       <td data-label="Loại & Giống">
         <div>
           <strong>${esc(p.plant_type)}</strong>
@@ -92,9 +121,19 @@ function _plantRow(p) {
       <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
       <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="Thao tác">
-        <button class="btn btn-secondary btn-xs" onclick="openCareModal(${p.id},'${esc(p.tree_code || p.id)}','${esc(p.plant_type)}')">
-          <i class="fa-solid fa-file-signature"></i> Nhật ký
-        </button>
+        <div class="plant-action-menu" id="pam-${p.id}">
+          <button class="btn-icon-dots" onclick="togglePlantMenu(${p.id})" title="Thao tác" aria-label="Menu thao tác cây">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="plant-action-dropdown" id="pad-${p.id}">
+            <button onclick="openCareModal(${p.id},'${treeCode}','${plantType}'); closePlantMenu(${p.id})">
+              <i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký
+            </button>
+            <button onclick="openNfcModal(${p.id},'${treeCode}','${slug}',${uid}); closePlantMenu(${p.id})">
+              <i class="fa-solid fa-tag" style="color:#3b82f6"></i> Định danh thẻ NFC
+            </button>
+          </div>
+        </div>
       </td>
     </tr>`;
 }
@@ -106,14 +145,44 @@ function _plantRow(p) {
  * Kết quả được render vào bảng đầy đủ.
  */
 export function filterUserPlants() {
-  const query = (document.getElementById('user-plant-search')?.value || '').trim().toLowerCase();
-  if (!query) {
-    renderUserPlantsTable(_plantsCache);
-    return;
+  const query  = (document.getElementById('user-plant-search')?.value || '').trim().toLowerCase();
+  const farmId = document.getElementById('user-plant-filter-farm')?.value || '';
+
+  let filtered = _plantsCache;
+
+  if (farmId) {
+    filtered = filtered.filter(p => String(p.farm_id) === farmId);
   }
-  const filtered = _plantsCache.filter(p =>
-    [p.tree_code, String(p.id), p.plant_type, p.plant_variety, p.location]
-      .some(v => (v || '').toLowerCase().includes(query))
-  );
+
+  if (query) {
+    filtered = filtered.filter(p =>
+      [p.tree_code, String(p.id), p.plant_type, p.plant_variety, p.location]
+        .some(v => (v || '').toLowerCase().includes(query))
+    );
+  }
+
   renderUserPlantsTable(filtered);
 }
+
+// ── Action Menu Toggle ─────────────────────────────────────────
+export function togglePlantMenu(plantId) {
+  // Close all other open menus first
+  document.querySelectorAll('.plant-action-dropdown.open').forEach(d => {
+    if (d.id !== `pad-${plantId}`) d.classList.remove('open');
+  });
+  const dropdown = document.getElementById(`pad-${plantId}`);
+  if (dropdown) dropdown.classList.toggle('open');
+}
+
+export function closePlantMenu(plantId) {
+  const dropdown = document.getElementById(`pad-${plantId}`);
+  if (dropdown) dropdown.classList.remove('open');
+}
+
+// Close menus on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.plant-action-menu')) {
+    document.querySelectorAll('.plant-action-dropdown.open')
+      .forEach(d => d.classList.remove('open'));
+  }
+});

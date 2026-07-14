@@ -15,6 +15,8 @@ import { renderUserReminders, quickCare, quickCareAll } from './modules/reminder
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange } from './modules/care-modal.js';
 import { onCareMediaSelected, openLightbox } from './modules/media.js';
 import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar } from './modules/settings.js';
+import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
+import { togglePlantMenu, closePlantMenu } from './modules/plants.js';
 
 // ── Expose to Window (for HTML inline onclick="..." handlers) ──
 // Cần thiết vì ES Modules có scope riêng, không tự trở thành global.
@@ -43,6 +45,15 @@ window.loadUserSettings     = loadUserSettings;
 window.saveUserProfile      = saveUserProfile;
 window.changeUserPassword   = changeUserPassword;
 window.uploadUserAvatar     = uploadUserAvatar;
+
+window.openNfcModal         = openNfcModal;
+window.closeNfcModal        = closeNfcModal;
+window.startNfcScan         = startNfcScan;
+window.saveNfcUidManually   = saveNfcUidManually;
+window.deactivateNfcTag     = deactivateNfcTag;
+
+window.togglePlantMenu      = togglePlantMenu;
+window.closePlantMenu       = closePlantMenu;
 
 // Register PWA service worker for offline support and mobile install option
 if ('serviceWorker' in navigator) {

@@ -5,7 +5,7 @@
 
 import { api, currentUser }          from '../core/api.js';
 import { toast }                     from '../core/utils.js';
-import { renderUserFarmsList, renderUserPlantsSummaryTable, renderUserPlantsTable, setPlantsCache } from './plants.js';
+import { renderUserFarmsList, renderUserPlantsSummaryTable, renderUserPlantsTable, setPlantsCache, setFarmsCache } from './plants.js';
 import { renderUserLogsTable, renderUserLogsTableFull, setLogsCache } from './logs.js';
 import { renderUserReminders }       from './reminders.js';
 import { initFloatingActionButton }  from './fab.js';
@@ -44,6 +44,7 @@ export async function loadUserDashboard() {
     window._allPlantsCache  = plants;    // dùng cho care-modal
 
     setPlantsCache(plants);
+    setFarmsCache(farms);
     setLogsCache(allLogs);
 
     // ── Cập nhật UI Trang chủ ────────────────────────────────

@@ -288,8 +288,11 @@
             <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count-full">0</strong> cây</span>
           </div>
           <!-- Thanh tìm kiếm danh sách cây trồng -->
-          <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 12px; padding: 12px 16px 0;">
-            <input type="text" id="user-plant-search" placeholder="🔍 Tìm theo mã cây, giống, loại, vị trí..." oninput="filterUserPlants()" style="flex:1; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none; background:#fff;">
+          <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 12px; padding: 12px 16px 0; flex-wrap:wrap;">
+            <input type="text" id="user-plant-search" placeholder="🔍 Tìm theo mã cây, giống, loại, vị trí..." oninput="filterUserPlants()" style="flex:2; min-width:160px; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none; background:#fff;">
+            <select id="user-plant-filter-farm" onchange="filterUserPlants()" style="flex:1; min-width:140px; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
+              <option value="">Tất cả trang trại</option>
+            </select>
           </div>
           <div style="overflow-x: auto;">
             <table>
@@ -532,10 +535,74 @@
   </div>
 </div>
 
-<!-- Floating Action Button (FAB) -->
-<button class="fab-btn" id="fab-care-btn">
-  <i class="fa fa-plus"></i>
-</button>
+  <!-- ── NFC TAG MODAL ── -->
+  <div id="nfc-modal" class="modal-overlay">
+    <div class="modal-box nfc-modal-box">
+      <!-- Header -->
+      <div class="nfc-modal-header">
+        <div class="nfc-modal-icon-ring">
+          <i class="fa-solid fa-tag"></i>
+        </div>
+        <div>
+          <h2 class="nfc-modal-title">Định danh Thẻ NFC</h2>
+          <p class="nfc-modal-subtitle">Cây: <strong id="nfc-modal-plant-name">...</strong></p>
+        </div>
+        <button class="modal-close-btn" onclick="closeNfcModal()" aria-label="Đóng">×</button>
+      </div>
+
+      <!-- Current UID -->
+      <div class="nfc-current-uid-row">
+        <span class="nfc-uid-label"><i class="fa-solid fa-id-card"></i> Thẻ hiện tại:</span>
+        <span id="nfc-modal-current-uid"></span>
+      </div>
+
+      <!-- Scan Area -->
+      <div class="nfc-scan-area">
+        <div class="nfc-scan-icon-wrap">
+          <i id="nfc-scan-icon" class="fa-solid fa-wifi" style="color:#6b7280"></i>
+        </div>
+        <p id="nfc-scan-label" class="nfc-scan-label">Nhấn "Bắt đầu quét" để chạm thẻ</p>
+        <button id="nfc-start-scan-btn" class="btn btn-primary nfc-scan-btn" onclick="startNfcScan()">
+          <i class="fa-solid fa-rss"></i> Bắt đầu quét NFC
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="nfc-divider"><span>hoặc nhập thủ công</span></div>
+
+      <!-- Manual Input -->
+      <div class="nfc-manual-section">
+        <label class="nfc-input-label"><i class="fa-solid fa-keyboard"></i> Nhập mã thẻ (UID)</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="nfc-manual-uid" placeholder="Ví dụ: 04:AB:12:CD:EF:34" class="nfc-manual-input"
+            onkeydown="if(event.key==='Enter') saveNfcUidManually()">
+          <button class="btn btn-primary" onclick="saveNfcUidManually()" style="white-space:nowrap;">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu
+          </button>
+        </div>
+        <p style="font-size:11px; color:var(--gray-400); margin-top:6px;">
+          <i class="fa-solid fa-circle-info"></i> Mã UID thường được in trên mặt thẻ hoặc do phần mềm đọc thẻ cung cấp.
+        </p>
+      </div>
+
+      <!-- Deactivate -->
+      <button id="nfc-deactivate-btn" class="nfc-deactivate-btn" onclick="deactivateNfcTag()" style="display:none;">
+        <i class="fa-solid fa-ban"></i> Hủy kích hoạt thẻ hiện tại
+      </button>
+
+      <!-- Footer -->
+      <div class="nfc-modal-footer">
+        <button class="btn btn-secondary" onclick="closeNfcModal()">
+          <i class="fa-solid fa-xmark"></i> Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FAB ── -->
+  <button class="fab" id="fab-btn" onclick="openCareModal()" title="Ghi nhật ký chăm sóc">
+    <i class="fa fa-plus"></i>
+  </button>
 
 <!-- ════════════ CARE MODAL ════════════ -->
 <div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">

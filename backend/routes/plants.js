@@ -346,6 +346,70 @@ router.put('/:id', auth, admin, async (req, res) => {
   }
 });
 
+// ─── NFC Tag Assignment (accessible by farm owner or admin) ──────────────────
+router.put('/:id/nfc', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const plantId = parseInt(req.params.id);
+    const { nfc_uid } = req.body; // string UID or null to deactivate
+
+    // 1. Verify the requesting user owns this plant (or is admin)
+    const plantRes = await client.query(
+      `SELECT p.id, p.nfc_uid, p.public_slug, p.tree_code, f.user_id as farm_owner_id
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE p.id = $1`, [plantId]
+    );
+    if (plantRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+
+    const plant = plantRes.rows[0];
+    if (req.user.role !== 'admin' && plant.farm_owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền thay đổi định danh thẻ của cây này.' });
+    }
+
+    await client.query('BEGIN');
+
+    // 2. If new UID provided, deactivate it from any other plant that currently holds it
+    if (nfc_uid) {
+      await client.query(
+        `UPDATE plants SET nfc_uid = NULL, updated_at = NOW()
+         WHERE nfc_uid = $1 AND id != $2`,
+        [nfc_uid, plantId]
+      );
+    }
+
+    // 3. Assign new nfc_uid (or NULL to deactivate) to this plant
+    const updated = await client.query(
+      `UPDATE plants SET nfc_uid = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, tree_code, public_slug, nfc_uid`,
+      [nfc_uid || null, plantId]
+    );
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated');
+
+    res.json({
+      success: true,
+      plant: updated.rows[0],
+      message: nfc_uid
+        ? `Đã gắn thẻ định danh ${nfc_uid} cho cây ${plant.tree_code || plantId}`
+        : `Đã hủy kích hoạt thẻ của cây ${plant.tree_code || plantId}`
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('NFC assign error:', err);
+    if (err.code === '23505') { // unique_violation
+      return res.status(409).json({ error: 'Mã thẻ này đã được sử dụng bởi một cây trồng khác.' });
+    }
+    res.status(500).json({ error: 'Lỗi server khi cập nhật định danh thẻ.' });
+  } finally {
+    client.release();
+  }
+});
+
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const mediaResult = await pool.query('SELECT object_name FROM plant_media WHERE plant_id=$1', [req.params.id]);

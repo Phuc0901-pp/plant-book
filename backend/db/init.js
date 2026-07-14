@@ -157,6 +157,11 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
     `);
 
+    // NFC Tag UID column for plants (physical tag serial, unique system-wide)
+    await client.query(`
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(100) UNIQUE;
+    `);
+
     // Devices table
     await client.query(`
       CREATE TABLE IF NOT EXISTS devices (
