@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import 'dashboard_page.dart';
+import 'admin/admin_dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -45,14 +46,30 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (success) {
-      // Redirect to Dashboard
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
+      try {
+        final user = await ApiService().fetchUserInfo();
+        if (!mounted) return;
+        if (user != null && user['role'] == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardPage()),
+          );
+        }
+      } catch (_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+        );
+      }
     } else {
       setState(() {
-        _errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại email, mật khẩu hoặc quyền truy cập tài khoản nông hộ.';
+        _errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại email, mật khẩu hoặc quyền truy cập tài khoản.';
       });
     }
   }
@@ -84,7 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                   child: Image.asset(
-                    'assets/logo.png', // Fallback to icon text if assets not loaded
+                    'assets/images/logo.png', // Correct asset path
                     width: 140,
                     errorBuilder: (context, error, stackTrace) {
                       return const Text(
@@ -102,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 16),
               const Center(
                 child: Text(
-                  'HỆ THỐNG QUẢN LÝ CÂY TRỒNG',
+                  'SỔ TAY NHẬT KÝ CÂY TRỒNG',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

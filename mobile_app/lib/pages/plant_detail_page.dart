@@ -8,6 +8,7 @@ import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
 import '../components/log_edit_dialog.dart';
 import '../components/audit_history_view.dart';
+import '../components/video_player_view.dart';
 
 class PlantDetailPage extends StatefulWidget {
   final Plant plant;
@@ -317,31 +318,40 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
                                                 final isVideo = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().contains('/video/');
                                                 return GestureDetector(
                                                   onTap: () {
-                                                    showDialog(
-                                                      context: context,
-                                                      builder: (context) => Dialog(
-                                                        backgroundColor: Colors.transparent,
-                                                        child: Stack(
-                                                          alignment: Alignment.center,
-                                                          children: [
-                                                            InteractiveViewer(
-                                                              child: Image.network(url, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.white)),
-                                                            ),
-                                                            Positioned(
-                                                              top: 10,
-                                                              right: 10,
-                                                              child: CircleAvatar(
-                                                                backgroundColor: Colors.black54,
-                                                                child: IconButton(
-                                                                  icon: const Icon(Icons.close, color: Colors.white),
-                                                                  onPressed: () => Navigator.pop(context),
+                                                    if (isVideo) {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (_) => VideoPlayerWebviewPage(videoUrl: url),
+                                                        ),
+                                                      );
+                                                    } else {
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (context) => Dialog(
+                                                          backgroundColor: Colors.transparent,
+                                                          child: Stack(
+                                                            alignment: Alignment.center,
+                                                            children: [
+                                                              InteractiveViewer(
+                                                                child: Image.network(url, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.white)),
+                                                              ),
+                                                              Positioned(
+                                                                top: 10,
+                                                                right: 10,
+                                                                child: CircleAvatar(
+                                                                  backgroundColor: Colors.black54,
+                                                                  child: IconButton(
+                                                                    icon: const Icon(Icons.close, color: Colors.white),
+                                                                    onPressed: () => Navigator.pop(context),
+                                                                  ),
                                                                 ),
                                                               ),
-                                                            ),
-                                                          ],
+                                                            ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                    );
+                                                      );
+                                                    }
                                                   },
                                                   child: Container(
                                                     margin: const EdgeInsets.only(right: 8),

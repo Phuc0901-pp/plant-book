@@ -110,13 +110,9 @@ class ApiService {
       final headers = await _getHeaders();
       final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
-        final user = jsonDecode(response.body);
-        
         // Trigger offline queue sync in the background since we are online!
         syncOfflineLogs();
-
-        // Ensure the logged in role is not admin (this is the farmer portal)
-        return user['role'] != 'admin';
+        return true;
       }
       // If server returns invalid token error, wipe it
       await logout();
@@ -359,6 +355,73 @@ class ApiService {
     } catch (e) {
       print('Error updating NFC tag: $e');
       return false;
+    }
+  }
+
+  // ── Admin-Only Services ─────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchUsers() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/users'), headers: headers);
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching users: $e');
+      return [];
+    }
+  }
+
+  Future<bool> createUser(String email, String password, String fullName, String role) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/users'),
+        headers: headers,
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+          'full_name': fullName,
+          'role': role,
+        }),
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      print('Error creating user: $e');
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchDevices() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/devices'), headers: headers);
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching devices: $e');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchSchemas() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/schemas'), headers: headers);
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching schemas: $e');
+      return [];
     }
   }
 }
