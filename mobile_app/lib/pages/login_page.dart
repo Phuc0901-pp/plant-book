@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    final success = await ApiService().login(email, password);
+    final result = await ApiService().login(email, password);
 
     if (!mounted) return;
 
@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = false;
     });
 
-    if (success) {
+    if (result['success'] == true) {
       try {
         final user = await ApiService().fetchUserInfo();
         if (!mounted) return;
@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } else {
       setState(() {
-        _errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại email, mật khẩu hoặc quyền truy cập tài khoản.';
+        _errorMessage = result['message'] ?? 'Đăng nhập thất bại. Vui lòng kiểm tra lại email, mật khẩu hoặc quyền truy cập tài khoản.';
       });
     }
   }

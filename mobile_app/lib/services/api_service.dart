@@ -33,7 +33,7 @@ class ApiService {
 
   // ── Authentication ───────────────────────────────────────────
   
-  Future<bool> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -45,20 +45,20 @@ class ApiService {
           'email': email,
           'password': password,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
+      final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
         _token = data['token'] as String;
         
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('pb_token', _token!);
-        return true;
+        return {'success': true};
       }
-      return false;
+      return {'success': false, 'message': data['error'] ?? 'Đăng nhập thất bại.'};
     } catch (e) {
       print('Login error: $e');
-      return false;
+      return {'success': false, 'message': 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng.'};
     }
   }
 
