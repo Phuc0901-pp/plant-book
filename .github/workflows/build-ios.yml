@@ -1,0 +1,45 @@
+name: Build iOS App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Cho phép kích hoạt tay từ giao diện GitHub Actions
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+
+      - name: Install dependencies
+        run: |
+          flutter pub get
+        working-directory: mobile_app
+
+      - name: Build iOS Application (Unsigned)
+        run: |
+          flutter build ios --release --no-codesign --dart-define=MAPBOX_TOKEN=${{ secrets.MAPBOX_TOKEN }}
+        working-directory: mobile_app
+
+      - name: Package Unsigned IPA
+        run: |
+          cd mobile_app
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r app-release-unsigned.ipa Payload
+        shell: bash
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ios-ipa-release-unsigned
+          path: mobile_app/app-release-unsigned.ipa
