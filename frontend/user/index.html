@@ -639,18 +639,19 @@
               <table class="table" id="supplies-list-table">
                 <thead>
                   <tr>
-                    <th>Hạng mục gốc</th>
-                    <th>Tên vật tư / Dịch vụ</th>
-                    <th>Đơn vị tính</th>
-                    <th>Đơn giá (VNĐ)</th>
-                    <th>Tổng chi đã dùng</th>
-                    <th>Ghi chú</th>
-                    <th style="width:140px; text-align:center;">Thao tác</th>
+                    <th><i class="fa-solid fa-layer-group"></i> Hạng mục gốc</th>
+                    <th><i class="fa-solid fa-box"></i> Tên vật tư / Dịch vụ</th>
+                    <th><i class="fa-solid fa-weight-hanging"></i> Quy cách / Khối lượng</th>
+                    <th><i class="fa-solid fa-scale-balanced"></i> Đơn vị tính</th>
+                    <th><i class="fa-solid fa-tag"></i> Đơn giá (VNĐ)</th>
+                    <th><i class="fa-solid fa-coins"></i> Tổng chi đã dùng</th>
+                    <th><i class="fa-solid fa-note-sticky"></i> Ghi chú</th>
+                    <th style="width:140px; text-align:center;"><i class="fa-solid fa-sliders"></i> Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="supplies-table-body">
                   <tr>
-                    <td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu vật tư...</td>
+                    <td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu vật tư...</td>
                   </tr>
                 </tbody>
               </table>
@@ -942,34 +943,39 @@
       <input type="hidden" id="sp-id">
 
       <div class="field">
-        <label>Hạng mục gốc *</label>
+        <label><i class="fa-solid fa-layer-group" style="color:var(--green)"></i> Hạng mục gốc *</label>
         <select id="sp-category" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
           <option value="Bón phân">🧪 Bón phân</option>
-          <option value="Tiền nước">💧 Tiền nước ($m^3$)</option>
+          <option value="Tiền nước">💧 Tiền nước (m³)</option>
           <option value="Phun thuốc">🛡️ Phun thuốc</option>
           <option value="Nhân công">👷 Nhân công</option>
         </select>
       </div>
 
       <div class="field">
-        <label>Tên vật tư / Dịch vụ *</label>
-        <input type="text" id="sp-name" placeholder="Ví dụ: Phân NPK 16-16-8, Tiền nước máy, Thuốc Anvil..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
+        <label><i class="fa-solid fa-box-open" style="color:var(--green)"></i> Tên vật tư / Dịch vụ *</label>
+        <input type="text" id="sp-name" placeholder="Ví dụ: Phân NPK 16-16-8, Tiền nước giếng máy, Thuốc Anvil..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
+      </div>
+
+      <div class="field">
+        <label><i class="fa-solid fa-weight-hanging" style="color:var(--green)"></i> Quy cách đóng gói / Khối lượng riêng (Dung tích)</label>
+        <input type="text" id="sp-package-size" placeholder="Ví dụ: Bao 50kg, Chai 500ml, Thùng 20 lít, 1m³..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
       </div>
 
       <div class="field-row" style="display:flex; gap:12px;">
         <div class="field" style="flex:1;">
-          <label>Đơn vị tính *</label>
-          <input type="text" id="sp-unit" placeholder="kg, m3, lít, bao, ngày công..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <label><i class="fa-solid fa-scale-balanced" style="color:var(--green)"></i> Đơn vị tính *</label>
+          <input type="text" id="sp-unit" placeholder="kg, m3, lít, bao, chai, ngày công..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
         </div>
         <div class="field" style="flex:1;">
-          <label>Đơn giá ($VNĐ$) *</label>
+          <label><i class="fa-solid fa-tag" style="color:var(--green)"></i> Đơn giá (VNĐ) *</label>
           <input type="number" id="sp-unit-price" min="0" step="100" placeholder="Ví dụ: 15000" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
         </div>
       </div>
 
       <div class="field">
-        <label>Ghi chú / Đơn giá quy đổi</label>
-        <textarea id="sp-note" rows="2" placeholder="Ví dụ: Đơn giá 5.000đ/m3 nước; 250.000đ/ngày công nhân công..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;"></textarea>
+        <label><i class="fa-solid fa-note-sticky" style="color:var(--green)"></i> Ghi chú / Thông tin thêm</label>
+        <textarea id="sp-note" rows="2" placeholder="Ví dụ: Đơn giá 5.000đ/m3 nước tưới; 250.000đ/ngày công nhân công..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;"></textarea>
       </div>
     </div>
     <div class="modal-footer">

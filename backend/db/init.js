@@ -200,12 +200,16 @@ async function initDB() {
         category VARCHAR(50) NOT NULL,
         name VARCHAR(255) NOT NULL,
         unit VARCHAR(50) NOT NULL,
+        package_size VARCHAR(100),
         unit_price NUMERIC NOT NULL DEFAULT 0,
         stock_quantity NUMERIC DEFAULT 0,
         note TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
+    `);
+    await client.query(`
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS package_size VARCHAR(100);
     `);
 
     // Supply Usages (Giám sát tiêu hao vật tư) table

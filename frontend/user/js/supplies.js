@@ -48,7 +48,7 @@ export async function loadSupplies() {
     if (!cachedSupplies || cachedSupplies.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" class="empty-state">
+          <td colspan="8" class="empty-state">
             <i class="fa-solid fa-boxes-packing" style="font-size:32px; color:var(--gray-300); margin-bottom:8px; display:block;"></i>
             Chưa có vật tư nào được khai báo${currentCategoryFilter !== 'all' ? ` trong hạng mục "${currentCategoryFilter}"` : ''}.<br>
             <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="margin-top:10px;">
@@ -64,14 +64,15 @@ export async function loadSupplies() {
       <tr>
         <td>${getCategoryBadge(sp.category)}</td>
         <td><strong>${sp.name}</strong></td>
+        <td>${sp.package_size ? `<span class="badge-gray" style="background:#f1f5f9; color:#334155; font-weight:600;"><i class="fa-solid fa-weight-hanging"></i> ${sp.package_size}</span>` : '<span style="color:var(--gray-300);">—</span>'}</td>
         <td><span class="badge-gray">${sp.unit}</span></td>
         <td><strong style="color:var(--green-dark);">${formatVND(sp.unit_price)}</strong> / ${sp.unit}</td>
         <td><strong style="color:#2563eb;">${formatVND(sp.total_spent)}</strong> <br><small style="color:var(--text-muted);">(${sp.total_used_qty} ${sp.unit})</small></td>
         <td>${sp.note ? sp.note : '<span style="color:var(--gray-300);">—</span>'}</td>
         <td style="text-align:center;">
           <div style="display:flex; gap:6px; justify-content:center;">
-            <button class="btn btn-secondary btn-sm" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư"><i class="fa fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteSupply(${sp.id})" title="Xóa vật tư"><i class="fa fa-trash"></i></button>
+            <button class="btn btn-secondary btn-sm" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSupply(${sp.id})" title="Xóa vật tư"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
       </tr>
@@ -79,7 +80,7 @@ export async function loadSupplies() {
 
   } catch (err) {
     console.error('Error loading supplies:', err);
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:red;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:red;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
   }
 }
 
@@ -99,6 +100,7 @@ export function openSupplyModal(id = null) {
   document.getElementById('sp-id').value = id || '';
   document.getElementById('sp-category').value = 'Bón phân';
   document.getElementById('sp-name').value = '';
+  document.getElementById('sp-package-size').value = '';
   document.getElementById('sp-unit').value = 'kg';
   document.getElementById('sp-unit-price').value = '';
   document.getElementById('sp-note').value = '';
@@ -109,6 +111,7 @@ export function openSupplyModal(id = null) {
       if (title) title.innerHTML = '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa vật tư';
       document.getElementById('sp-category').value = sp.category;
       document.getElementById('sp-name').value = sp.name;
+      document.getElementById('sp-package-size').value = sp.package_size || '';
       document.getElementById('sp-unit').value = sp.unit;
       document.getElementById('sp-unit-price').value = sp.unit_price;
       document.getElementById('sp-note').value = sp.note || '';
@@ -129,6 +132,7 @@ export async function saveSupply() {
   const id = document.getElementById('sp-id').value;
   const category = document.getElementById('sp-category').value;
   const name = document.getElementById('sp-name').value.trim();
+  const package_size = document.getElementById('sp-package-size').value.trim();
   const unit = document.getElementById('sp-unit').value.trim();
   const unit_price = document.getElementById('sp-unit-price').value;
   const note = document.getElementById('sp-note').value.trim();
@@ -145,13 +149,13 @@ export async function saveSupply() {
     if (id) {
       await api(`/supplies/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ category, name, unit, unit_price, note })
+        body: JSON.stringify({ category, name, unit, package_size, unit_price, note })
       });
       toast('Đã cập nhật thông tin vật tư thành công!');
     } else {
       await api('/supplies', {
         method: 'POST',
-        body: JSON.stringify({ category, name, unit, unit_price, note })
+        body: JSON.stringify({ category, name, unit, package_size, unit_price, note })
       });
       toast('Đã khai báo vật tư mới thành công!');
     }
@@ -310,7 +314,7 @@ export async function openRecordUsageModal() {
     if (select) {
       select.innerHTML = cachedSupplies.map(s => `
         <option value="${s.id}" data-price="${s.unit_price}" data-unit="${s.unit}">
-          [${s.category}] ${s.name} — ${formatVND(s.unit_price)} / ${s.unit}
+          [${s.category}] ${s.name} ${s.package_size ? `(${s.package_size})` : ''} — ${formatVND(s.unit_price)} / ${s.unit}
         </option>
       `).join('');
     }
