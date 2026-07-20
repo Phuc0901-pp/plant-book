@@ -934,41 +934,39 @@
 
 <!-- ════════════ MODAL KHAI BÁO VẬT TƯ ════════════ -->
 <div class="modal-overlay" id="modal-supply" style="display:none" onclick="if(event.target===this)closeSupplyModal()">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-header">
-      <h2 id="modal-supply-title"><i class="fa-solid fa-boxes-packing" style="color:var(--green)"></i> Khai báo vật tư mới</h2>
-      <button class="modal-close" onclick="closeSupplyModal()">×</button>
+  <div class="modal supply-modal-custom">
+    <div class="modal-header supply-modal-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="supply-modal-icon-wrap"><i class="fa-solid fa-boxes-packing"></i></div>
+        <div>
+          <h2 id="modal-supply-title" style="margin:0; font-size:18px; font-weight:700; color:#fff; display:block !important;">Khai báo vật tư mới</h2>
+          <p style="margin:2px 0 0 0; font-size:12px; color:rgba(255,255,255,0.85); font-weight:400;">Nhập khối lượng và giá mua để tự động suy ra đơn giá chi tiết</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeSupplyModal()" style="color:#fff; opacity:0.85;">×</button>
     </div>
-    <div class="modal-body">
+
+    <div class="modal-body supply-modal-body">
       <input type="hidden" id="sp-id">
 
-      <div class="field">
-        <label><i class="fa-solid fa-layer-group" style="color:var(--green)"></i> Hạng mục gốc *</label>
-        <select id="sp-category" onchange="autoCalculateSupplyUnits()" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
-          <option value="Bón phân">🧪 Bón phân</option>
-          <option value="Tiền nước">💧 Tiền nước (m³)</option>
-          <option value="Phun thuốc">🛡️ Phun thuốc</option>
-          <option value="Nhân công">👷 Nhân công</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label><i class="fa-solid fa-box-open" style="color:var(--green)"></i> Tên vật tư / Dịch vụ *</label>
-        <input type="text" id="sp-name" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
-      </div>
-
-      <!-- Khối lượng & Đóng gói -->
-      <div class="field-row" style="display:flex; gap:12px;">
-        <div class="field" style="flex:1;">
-          <label><i class="fa-solid fa-weight-hanging" style="color:var(--green)"></i> Khối lượng / Dung tích 1 gói *</label>
-          <input type="number" id="sp-package-qty" value="50" min="0.001" step="any" oninput="autoCalculateSupplyUnits()" placeholder="Ví dụ: 50 (cho bao 50kg) hoặc 500 (cho chai 500ml)" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+      <!-- Row 1: Hạng mục & Đơn vị gói -->
+      <div class="form-row-2">
+        <div class="field" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-layer-group"></i> Hạng mục gốc <span class="req-star">*</span></label>
+          <select id="sp-category" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
+            <option value="Bón phân">🧪 Bón phân</option>
+            <option value="Tiền nước">💧 Tiền nước (m³)</option>
+            <option value="Phun thuốc">🛡️ Phun thuốc</option>
+            <option value="Nhân công">👷 Nhân công</option>
+          </select>
         </div>
-        <div class="field" style="flex:1;">
-          <label><i class="fa-solid fa-scale-balanced" style="color:var(--green)"></i> Đơn vị gói *</label>
-          <select id="sp-package-unit" onchange="autoCalculateSupplyUnits()" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
-            <option value="kg">kg (Bao/Túi kg)</option>
-            <option value="g">g (Gam/Gram)</option>
-            <option value="lít">lít (Chai/Can lít)</option>
+
+        <div class="field" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-scale-balanced"></i> Quy cách / Đơn vị gói <span class="req-star">*</span></label>
+          <select id="sp-package-unit" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
+            <option value="kg">kg (Bao / Túi kg)</option>
+            <option value="g">g (Gam / Gram)</option>
+            <option value="lít">lít (Chai / Can lít)</option>
             <option value="ml">ml (Mililít)</option>
             <option value="m3">m³ (Khối nước)</option>
             <option value="ngày công">ngày công (Nhân công)</option>
@@ -977,44 +975,59 @@
         </div>
       </div>
 
-      <!-- Tổng giá tiền mua 1 bao / chai -->
-      <div class="field">
-        <label><i class="fa-solid fa-money-bill-wave" style="color:var(--green)"></i> Tổng giá mua 1 bao / 1 chai / 1 đợt (VNĐ) *</label>
-        <input type="number" id="sp-package-price" min="0" step="100" oninput="autoCalculateSupplyUnits()" placeholder="Ví dụ: 1530000 (cho 1 bao 50kg giá 1.530.000đ)" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:15px; font-weight:700; color:var(--green-dark);">
+      <!-- Row 2: Tên vật tư -->
+      <div class="field" style="margin-bottom:16px;">
+        <label class="form-label"><i class="fa-solid fa-box-open"></i> Tên vật tư / Dịch vụ <span class="req-star">*</span></label>
+        <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
       </div>
 
-      <!-- Live Auto Calculation Breakdown Preview Box -->
-      <div class="calc-breakdown-box" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border:1px solid #86efac; border-radius:12px; padding:14px 16px; margin:12px 0;">
-        <div style="font-size:12px; font-weight:700; color:var(--green-dark); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-calculator"></i> Tự động suy ra đơn giá chi tiết (1kg & 1g / 1lít & 1ml)
+      <!-- Row 3: Khối lượng 1 gói & Tổng giá tiền -->
+      <div class="form-row-2">
+        <div class="field" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-weight-hanging"></i> Khối lượng 1 gói <span class="req-star">*</span></label>
+          <input type="number" id="sp-package-qty" class="form-control-custom" value="50" min="0.001" step="any" oninput="autoCalculateSupplyUnits()" placeholder="VD: 50">
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <div style="background:#fff; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
-            <div style="font-size:11px; color:var(--text-muted);">Đơn giá / <span id="calc-unit-large-name">kg</span>:</div>
-            <div style="font-size:15px; font-weight:700; color:var(--green-dark);" id="calc-price-large">0 đ / kg</div>
-          </div>
-          <div style="background:#fff; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
-            <div style="font-size:11px; color:var(--text-muted);">Đơn giá / <span id="calc-unit-small-name">g</span>:</div>
-            <div style="font-size:15px; font-weight:700; color:#2563eb;" id="calc-price-small">0 đ / g</div>
-          </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span></label>
+          <input type="number" id="sp-package-price" class="form-control-custom" min="0" step="100" oninput="autoCalculateSupplyUnits()" placeholder="VD: 1530000" style="font-weight:700; color:var(--green-dark);">
         </div>
       </div>
 
-      <!-- Hidden standard unit price input used by backend -->
+      <!-- Live Auto Calculation Breakdown Card -->
+      <div class="calc-breakdown-card">
+        <div class="calc-card-title">
+          <i class="fa-solid fa-calculator"></i> BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT
+        </div>
+        <div class="calc-card-grid">
+          <div class="calc-metric-box">
+            <div class="calc-metric-label">Đơn giá chuẩn / <span id="calc-unit-large-name">kg</span></div>
+            <div class="calc-metric-value value-green" id="calc-price-large">0 VNĐ / kg</div>
+          </div>
+          <div class="calc-metric-box">
+            <div class="calc-metric-label">Đơn giá chi tiết / <span id="calc-unit-small-name">g</span></div>
+            <div class="calc-metric-value value-blue" id="calc-price-small">0 VNĐ / g</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden form values -->
       <input type="hidden" id="sp-unit" value="kg">
       <input type="hidden" id="sp-unit-price" value="0">
       <input type="hidden" id="sp-package-size" value="">
       <input type="hidden" id="sp-unit-price-small" value="0">
 
-      <div class="field">
-        <label><i class="fa-solid fa-note-sticky" style="color:var(--green)"></i> Ghi chú / Thông tin thêm</label>
-        <textarea id="sp-note" rows="2" placeholder="Ví dụ: Phân bón đợt 1 cho sầu riêng; Đơn giá 5.000đ/m3 nước..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;"></textarea>
+      <!-- Row 5: Ghi chú -->
+      <div class="field" style="margin-bottom:0;">
+        <label class="form-label"><i class="fa-solid fa-note-sticky"></i> Ghi chú / Thông tin thêm</label>
+        <textarea id="sp-note" class="form-control-custom" rows="2" placeholder="Ví dụ: Phân bón đợt 1 cho sầu riêng; Đơn giá 5.000đ/m3 nước..."></textarea>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeSupplyModal()">Hủy</button>
+
+    <div class="modal-footer supply-modal-footer">
+      <button class="btn btn-secondary" onclick="closeSupplyModal()">Hủy bỏ</button>
       <button class="btn btn-primary" id="supply-save-btn" onclick="saveSupply()">
-        <span id="supply-save-text"><i class="fa fa-floppy-disk"></i> Lưu vật tư</span>
+        <span id="supply-save-text"><i class="fa-solid fa-floppy-disk"></i> Lưu vật tư</span>
       </button>
     </div>
   </div>

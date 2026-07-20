@@ -13,7 +13,7 @@ let cachedSupplies = [];
 // ─── Formatting helpers ──────────────────────────────────────────
 function formatVND(amount) {
   const val = parseFloat(amount) || 0;
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  return new Intl.NumberFormat('vi-VN').format(Math.round(val)) + ' VNĐ';
 }
 
 function getCategoryBadge(category) {
