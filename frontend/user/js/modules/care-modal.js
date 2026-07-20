@@ -159,6 +159,24 @@ export function onCareSupplySelected(selectEl, hiddenInputId) {
 }
 window.onCareSupplySelected = onCareSupplySelected;
 
+function _formatSupplyOptionText(s) {
+  const pkgQty = parseFloat(s.package_qty) || 1;
+  const pkgPrice = parseFloat(s.package_price) || 0;
+  let unitPrice = parseFloat(s.unit_price) || 0;
+
+  if (pkgPrice > 0 && pkgQty > 1 && unitPrice >= pkgPrice) {
+    unitPrice = pkgPrice / pkgQty;
+  }
+
+  const pkgUnit = s.package_unit || s.unit || '';
+  const pkgText = s.package_size
+    ? (s.package_size.toLowerCase().includes(pkgUnit.toLowerCase()) ? s.package_size : `${s.package_size} ${pkgUnit}`)
+    : `${pkgQty} ${pkgUnit}`;
+
+  const formattedPrice = new Intl.NumberFormat('vi-VN').format(Math.round(unitPrice)) + ' VNĐ';
+  return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}`;
+}
+
 /**
  * Trả về HTML form fields theo loại hoạt động.
  * @private
@@ -178,7 +196,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <label><i class="fa-solid fa-droplet" style="color:var(--green)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
             <select id="c-detail-supply-id">
               <option value="">Không hạch toán tiền nước</option>
-              ${waterSupplies.map(s => `<option value="${s.id}">💧 ${esc(s.name)} — ${s.unit_price}đ/${s.unit}</option>`).join('')}
+              ${waterSupplies.map(s => `<option value="${s.id}">💧 ${_formatSupplyOptionText(s)}</option>`).join('')}
             </select>
           </div>
         ` : ''}
@@ -198,7 +216,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer')">
               ${declaredFertilizers.map(s => `
                 <option value="${s.id}" data-name="${esc(s.name)}">
-                  🧪 ${esc(s.name)} (${s.package_size || s.unit}) — ${s.unit_price}đ/${s.unit}
+                  🧪 ${_formatSupplyOptionText(s)}
                 </option>
               `).join('')}
             </select>
@@ -243,7 +261,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide')">
               ${declaredPesticides.map(s => `
                 <option value="${s.id}" data-name="${esc(s.name)}">
-                  🛡️ ${esc(s.name)} (${s.package_size || s.unit}) — ${s.unit_price}đ/${s.unit}
+                  🛡️ ${_formatSupplyOptionText(s)}
                 </option>
               `).join('')}
             </select>

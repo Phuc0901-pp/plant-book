@@ -214,6 +214,13 @@ async function initDB() {
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS package_unit VARCHAR(50);
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS package_price NUMERIC DEFAULT 0;
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS unit_price_small NUMERIC DEFAULT 0;
+
+      UPDATE supplies 
+      SET 
+        package_price = CASE WHEN COALESCE(package_price, 0) = 0 THEN unit_price ELSE package_price END,
+        unit_price = CASE WHEN COALESCE(package_qty, 1) > 1 AND unit_price >= COALESCE(package_price, unit_price) THEN (CASE WHEN COALESCE(package_price, 0) > 0 THEN package_price ELSE unit_price END) / package_qty ELSE unit_price END,
+        unit_price_small = CASE WHEN COALESCE(package_qty, 1) > 1 THEN (CASE WHEN COALESCE(package_price, 0) > 0 THEN package_price ELSE unit_price END) / (package_qty * 1000) ELSE unit_price END
+      WHERE COALESCE(package_qty, 1) > 1;
     `);
 
     // Supply Usages (Giám sát tiêu hao vật tư) table
