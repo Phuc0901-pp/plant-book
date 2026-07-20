@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'phphuc0539@gmail.com';
+const ADMIN_EMAIL = 'phphuc0539@gmail.com';
 
 // Configure transporter with fallback credentials & socket timeouts
 function createTransporter() {
