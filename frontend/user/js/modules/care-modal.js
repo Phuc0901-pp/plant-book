@@ -147,6 +147,10 @@ export async function onCareLogTypeChange() {
   const configs = _configs();
   const supplies = window._declaredSuppliesCache || [];
   container.innerHTML = _buildDetailFields(logType, configs, supplies);
+
+  if (logType === 'Tưới nước') {
+    calculateWaterCostPreview();
+  }
 }
 
 export function onCareSupplySelected(selectEl, hiddenInputId) {
@@ -177,6 +181,31 @@ function _formatSupplyOptionText(s) {
   return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}`;
 }
 
+export function calculateWaterCostPreview() {
+  const amountLiters = parseFloat(document.getElementById('c-detail-amount')?.value) || 0;
+  const supplyId = document.getElementById('c-detail-supply-id')?.value;
+  const volEl = document.getElementById('water-calc-vol');
+  const costEl = document.getElementById('water-calc-cost');
+
+  if (!volEl || !costEl) return;
+
+  const volumeM3 = amountLiters / 1000;
+  volEl.textContent = `${amountLiters} Lít = ${volumeM3 < 0.01 ? volumeM3.toFixed(3) : volumeM3} m³`;
+
+  if (!supplyId) {
+    costEl.textContent = '0 VNĐ (Không hạch toán)';
+    return;
+  }
+
+  const supplies = window._declaredSuppliesCache || [];
+  const supply = supplies.find(s => s.id == supplyId);
+  const unitPriceM3 = supply ? (parseFloat(supply.unit_price) || 0) : 0;
+  const totalCost = volumeM3 * unitPriceM3;
+
+  costEl.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(totalCost)) + ' VNĐ';
+}
+window.calculateWaterCostPreview = calculateWaterCostPreview;
+
 /**
  * Trả về HTML form fields theo loại hoạt động.
  * @private
@@ -191,19 +220,37 @@ function _buildDetailFields(logType, configs, supplies = []) {
           <label>Phương pháp tưới nước *</label>
           <select id="c-detail-method">${methods.map(m => `<option>${esc(m)}</option>`).join('')}</select>
         </div>
-        ${waterSupplies.length > 0 ? `
-          <div class="field">
-            <label><i class="fa-solid fa-droplet" style="color:var(--green)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
-            <select id="c-detail-supply-id">
-              <option value="">Không hạch toán tiền nước</option>
-              ${waterSupplies.map(s => `<option value="${s.id}">💧 ${_formatSupplyOptionText(s)}</option>`).join('')}
-            </select>
-          </div>
-        ` : ''}
         <div class="field">
-          <label>Lượng nước (Lít) *</label>
-          <input type="number" step="any" id="c-detail-amount" value="2">
-        </div>`;
+          <label><i class="fa-solid fa-droplet" style="color:var(--green)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
+          ${waterSupplies.length > 0 ? `
+            <select id="c-detail-supply-id" onchange="calculateWaterCostPreview()">
+              ${waterSupplies.map(s => `<option value="${s.id}">💧 ${_formatSupplyOptionText(s)}</option>`).join('')}
+              <option value="">Không hạch toán tiền nước</option>
+            </select>
+          ` : `
+            <div style="padding:8px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:12px; color:#166534;">
+              <i class="fa-solid fa-circle-info"></i> Chưa khai báo đơn giá m³ nước. 
+              <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:700;">
+                <i class="fa-solid fa-plus"></i> Khai báo đơn giá 1m³ nước
+              </a>
+            </div>
+          `}
+        </div>
+        <div class="field">
+          <label>Lượng nước tưới (Lít) *</label>
+          <input type="number" step="any" id="c-detail-amount" value="200" oninput="calculateWaterCostPreview()" onchange="calculateWaterCostPreview()">
+        </div>
+        ${waterSupplies.length > 0 ? `
+          <div id="water-conversion-preview-box" class="calc-breakdown-card" style="margin-top:10px; padding:12px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1px solid #7dd3fc; border-radius:12px;">
+            <div style="font-size:11px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-calculator"></i> TỰ ĐỘNG QUY ĐỔI LÍT ➔ M³ & QUY THÀNH TIỀN
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+              <span style="font-size:13px; font-weight:600; color:#0c4a6e;" id="water-calc-vol">200 Lít = 0.2 m³</span>
+              <span style="font-size:15px; font-weight:700; color:var(--green-dark);" id="water-calc-cost">1.000 VNĐ</span>
+            </div>
+          </div>
+        ` : ''}`;
     }
     case 'Bón phân': {
       const fertilizers = configs.fertilizers || [];
@@ -577,7 +624,9 @@ export async function saveCareLog() {
           const unit = document.getElementById('c-detail-unit')?.value || 'kg';
           
           let usageQty = amount;
-          if (unit === 'gam' || unit === 'g' || unit === 'ml') {
+          if (logType === 'Tưới nước') {
+            usageQty = amount / 1000; // Convert Liters -> m3 (1m3 = 1000 Liters)
+          } else if (unit === 'gam' || unit === 'g' || unit === 'ml') {
             usageQty = amount / 1000;
           }
 
@@ -588,10 +637,15 @@ export async function saveCareLog() {
               usage_date: logDate,
               quantity: usageQty,
               plant_id: plantId,
-              note: `Tự động hạch toán từ Nhật ký Chăm sóc: ${logType} (Cây ${window._activePlantTreeCode || plantId})`
+              note: `Tự động hạch toán từ Nhật ký Chăm sóc: ${logType} (${amount} Lít = ${usageQty} m³ cho Cây ${window._activePlantTreeCode || plantId})`
             })
           });
-          toast('Đã ghi nhật ký & tự động hạch toán chi phí vào Giám sát Vật tư!', 'success');
+
+          if (logType === 'Tưới nước') {
+            toast(`Đã quy đổi ${amount} Lít = ${usageQty} m³ & tự động hạch toán tiền nước!`, 'success');
+          } else {
+            toast('Đã ghi nhật ký & tự động hạch toán chi phí vào Giám sát Vật tư!', 'success');
+          }
         } catch (suppErr) {
           console.error('Auto-recording supply usage failed:', suppErr);
         }
