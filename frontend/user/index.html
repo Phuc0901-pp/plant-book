@@ -547,34 +547,31 @@
         </div><!-- end settings-grid -->
       </div>
 
-    </div><!-- end content -->
-  </main>
-</div><!-- end app -->
-
-<!-- Fixed Bottom Navigation (Mobile Only) -->
-<div class="bottom-nav">
-  <div class="bottom-nav-item active" data-page="home" onclick="showPage('home')">
-    <i class="fa-solid fa-house"></i>
-    <span>Trang chủ</span>
+  <!-- Fixed Bottom Navigation (Mobile Only) -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-item active" data-page="home" onclick="showPage('home')">
+      <i class="fa-solid fa-house"></i>
+      <span>Trang chủ</span>
+    </div>
+    <div class="bottom-nav-item" data-page="myplants" onclick="showPage('myplants')">
+      <i class="fa-solid fa-map-location-dot"></i>
+      <span>Trang trại</span>
+    </div>
+    <div class="bottom-nav-item" data-page="logs" onclick="showPage('logs')">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <span>Lịch sử</span>
+    </div>
+    <div class="bottom-nav-item" data-page="settings" onclick="showPage('settings')">
+      <i class="fa-solid fa-gear"></i>
+      <span>Cài đặt</span>
+    </div>
   </div>
-  <div class="bottom-nav-item" data-page="myplants" onclick="showPage('myplants')">
-    <i class="fa-solid fa-map-location-dot"></i>
-    <span>Trang trại</span>
-  </div>
-  <div class="bottom-nav-item" data-page="logs" onclick="showPage('logs')">
-    <i class="fa-solid fa-clock-rotate-left"></i>
-    <span>Lịch sử</span>
-  </div>
-  <div class="bottom-nav-item" data-page="settings" onclick="showPage('settings')">
-    <i class="fa-solid fa-gear"></i>
-    <span>Cài đặt</span>
-  </div>
-</div>
 
   <!-- ── FAB (Floating Action Button) ── -->
   <button class="fab-btn" id="fab-btn" onclick="openCareModal()" title="Ghi nhật ký chăm sóc">
     <i class="fa fa-plus"></i>
   </button>
+</div><!-- end app -->
 
   <!-- ── NFC TAG MODAL ── -->
   <div id="nfc-modal" class="modal-overlay">
