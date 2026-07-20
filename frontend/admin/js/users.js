@@ -18,6 +18,7 @@ async function loadUsers() {
     allUsers = users || [];
     renderUsersTable(allUsers);
     renderUserStatusTable(allUsers);
+    loadResetRequests();
   } catch (err) {
     toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
     tbody.innerHTML = `<tr><td colspan="5" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
@@ -320,10 +321,69 @@ async function openUserActivityModal(userId, userName) {
       `;
     }).join('');
   } catch (err) {
-    toast('Lỗi tải lịch sử hoạt động: ' + err.message, 'error');
-    timeline.innerHTML = `<div class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</div>`;
+    toast('Lỗi xóa lịch sử hoạt động: ' + err.message, 'error');
   }
 }
+
+async function loadResetRequests() {
+  const tbody = document.getElementById('reset-requests-table');
+  if (!tbody) return;
+
+  try {
+    const requests = await api('/auth/reset-requests');
+    if (!requests || requests.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Không có yêu cầu cấp lại mật khẩu nào.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = requests.map(r => {
+      const isPending = r.status === 'pending';
+      const statusBadge = isPending 
+        ? '<span class="badge" style="background:#fffbeb; color:#b45309; border:1px solid #fef3c7;">Đang chờ duyệt</span>'
+        : r.status === 'approved'
+          ? '<span class="badge" style="background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;">Đã phê duyệt</span>'
+          : '<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fee2e2;">Đã từ chối</span>';
+
+      const dateStr = new Date(r.created_at).toLocaleString('vi-VN');
+
+      return `
+        <tr>
+          <td><strong>${r.full_name || r.email}</strong><br><span style="font-size:12px; color:var(--text-muted);">${r.email}</span></td>
+          <td>${r.identity}</td>
+          <td>${dateStr}</td>
+          <td>${statusBadge}</td>
+          <td>
+            ${isPending ? `
+              <button class="btn btn-sm btn-primary" onclick="approveResetRequestFromAdmin('${r.token}')" style="background:var(--green); font-size:12px; padding:4px 10px;">
+                <i class="fa fa-check"></i> Duyệt
+              </button>
+            ` : '—'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.warn('Lỗi tải yêu cầu cấp mật khẩu:', err);
+  }
+}
+
+async function approveResetRequestFromAdmin(token) {
+  if (!confirm('Bạn có chắc chắn muốn phê duyệt cấp mật khẩu mới cho tài khoản này?')) return;
+  try {
+    const res = await fetch(`/api/auth/approve-reset-password?token=${token}`);
+    if (res.ok) {
+      toast('Đã phê duyệt và gửi mật khẩu mới về email khách hàng!');
+      loadResetRequests();
+    } else {
+      toast('Thao tác không thành công', 'error');
+    }
+  } catch (e) {
+    toast('Lỗi: ' + e.message, 'error');
+  }
+}
+
+window.loadResetRequests = loadResetRequests;
+window.approveResetRequestFromAdmin = approveResetRequestFromAdmin;
 
 function closeUserActivityModal() {
   const modal = document.getElementById('user-activity-modal');

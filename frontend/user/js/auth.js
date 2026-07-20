@@ -57,6 +57,79 @@ document.getElementById('login-pass')?.addEventListener('keydown', e => {
 // Expose doLogin cho nút HTML onclick
 window.doLogin = doLogin;
 
+// ── Password Visibility Toggle ─────────────────────────────────
+function togglePasswordVisibility() {
+  const passInput = document.getElementById('login-pass');
+  const icon = document.getElementById('toggle-pass-icon');
+  if (!passInput || !icon) return;
+  if (passInput.type === 'password') {
+    passInput.type = 'text';
+    icon.className = 'fa fa-eye-slash';
+  } else {
+    passInput.type = 'password';
+    icon.className = 'fa fa-eye';
+  }
+}
+window.togglePasswordVisibility = togglePasswordVisibility;
+
+// ── Forgot Password Modal Handlers ─────────────────────────────
+function openForgotPasswordModal() {
+  const modal = document.getElementById('forgot-modal');
+  const errEl = document.getElementById('forgot-error');
+  const identity = document.getElementById('forgot-identity');
+  const note = document.getElementById('forgot-note');
+  if (errEl) errEl.style.display = 'none';
+  if (identity) identity.value = '';
+  if (note) note.value = '';
+  if (modal) modal.style.display = 'flex';
+}
+window.openForgotPasswordModal = openForgotPasswordModal;
+
+function closeForgotPasswordModal() {
+  const modal = document.getElementById('forgot-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeForgotPasswordModal = closeForgotPasswordModal;
+
+async function submitForgotPasswordRequest() {
+  const identity = document.getElementById('forgot-identity')?.value.trim();
+  const note = document.getElementById('forgot-note')?.value.trim();
+  const errEl = document.getElementById('forgot-error');
+  const btn = document.getElementById('forgot-submit-btn');
+
+  if (!identity) {
+    if (errEl) {
+      document.getElementById('forgot-error-text').textContent = 'Vui lòng nhập Email hoặc Số điện thoại.';
+      errEl.style.display = 'flex';
+    }
+    return;
+  }
+
+  if (errEl) errEl.style.display = 'none';
+  if (btn) { btn.innerHTML = '<span class="spinner"></span> Đang gửi...'; btn.disabled = true; }
+
+  try {
+    const res = await fetch(`${API}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity, note })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gửi yêu cầu thất bại.');
+
+    alert(data.message);
+    closeForgotPasswordModal();
+  } catch (err) {
+    if (errEl) {
+      document.getElementById('forgot-error-text').textContent = err.message;
+      errEl.style.display = 'flex';
+    }
+  } finally {
+    if (btn) { btn.innerHTML = '<span id="forgot-submit-text"><i class="fa fa-paper-plane"></i> Gửi yêu cầu</span>'; btn.disabled = false; }
+  }
+}
+window.submitForgotPasswordRequest = submitForgotPasswordRequest;
+
 // ── Đăng xuất ─────────────────────────────────────────────────
 export async function logout() {
   closeWebSocket();

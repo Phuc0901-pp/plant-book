@@ -104,6 +104,20 @@ async function initDB() {
       )
     `);
 
+    // Password reset requests table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_requests (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        identity VARCHAR(255) NOT NULL,
+        token VARCHAR(255) UNIQUE NOT NULL,
+        note TEXT,
+        status VARCHAR(50) DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        approved_at TIMESTAMPTZ
+      )
+    `);
+
     // Ensure status columns exist in users table
     await client.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false;

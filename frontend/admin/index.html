@@ -98,8 +98,16 @@
         <input type="email" id="login-email" placeholder="email@tanbaocorp.vn">
       </div>
       <div class="form-group">
-        <label><i class="fa fa-lock"></i> Mật khẩu</label>
-        <input type="password" id="login-pass" placeholder="••••••••">
+        <div class="form-label-row">
+          <label style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
+          <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">Quên mật khẩu?</a>
+        </div>
+        <div class="password-input-wrap">
+          <input type="password" id="login-pass" placeholder="••••••••">
+          <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
+            <i id="toggle-pass-icon" class="fa fa-eye"></i>
+          </button>
+        </div>
       </div>
 
       <button class="btn-login" id="login-btn" onclick="doLogin()">
@@ -108,6 +116,39 @@
     </div>
   </div>
 
+</div>
+
+<!-- ════════════ FORGOT PASSWORD MODAL ════════════ -->
+<div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgotPasswordModal()">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h2 style="font-size:16px; margin:0;"><i class="fa-solid fa-key" style="color:var(--green)"></i> Yêu cầu cấp lại mật khẩu</h2>
+      <button class="modal-close" onclick="closeForgotPasswordModal()">×</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">
+        Vui lòng nhập Email hoặc Số điện thoại đăng ký. Yêu cầu sẽ được gửi tới Quản trị viên phê duyệt và gửi mật khẩu mới về email của bạn.
+      </p>
+      <div class="login-error" id="forgot-error" style="display:none; margin-bottom:14px;">
+        <i class="fa fa-circle-exclamation"></i>
+        <span id="forgot-error-text"></span>
+      </div>
+      <div class="form-group">
+        <label><i class="fa fa-user"></i> Email hoặc Số điện thoại *</label>
+        <input type="text" id="forgot-identity" placeholder="email@tanbaocorp.vn hoặc 0901234567" style="background:var(--gray-50); border:1.5px solid var(--gray-200); border-radius:10px; padding:11px 14px; width:100%; color:#1e293b;">
+      </div>
+      <div class="form-group">
+        <label><i class="fa-solid fa-note-sticky"></i> Ghi chú thêm (Không bắt buộc)</label>
+        <textarea id="forgot-note" rows="2" placeholder="Nhập ghi chú chi tiết nếu cần..." style="width:100%; border:1.5px solid var(--gray-200); border-radius:10px; padding:10px 14px; font-family:inherit; font-size:13px; outline:none; background:var(--gray-50); color:#1e293b;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn btn-secondary" onclick="closeForgotPasswordModal()">Hủy</button>
+      <button class="btn btn-primary" id="forgot-submit-btn" onclick="submitForgotPasswordRequest()">
+        <span id="forgot-submit-text"><i class="fa fa-paper-plane"></i> Gửi yêu cầu</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ════════════════ APP ════════════════ -->
