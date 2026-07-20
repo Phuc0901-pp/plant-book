@@ -68,11 +68,13 @@ app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
-app.get('/admin*', (req, res) => {
+app.get(['/admin', '/admin/*'], (req, res, next) => {
+  if (req.path.includes('.')) return next();
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });
 
-app.get('/user*', (req, res) => {
+app.get(['/user', '/user/*'], (req, res, next) => {
+  if (req.path.includes('.')) return next();
   res.sendFile(path.join(__dirname, '../frontend/user/index.html'));
 });
 

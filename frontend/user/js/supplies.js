@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { api } from './core/api.js';
-import { toast } from './core/ui.js';
+import { toast } from './core/utils.js';
 
 let currentCategoryFilter = 'all';
 let currentPeriodFilter = 'day';
