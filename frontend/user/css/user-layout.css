@@ -217,7 +217,7 @@ nav { padding: 12px; flex: 1; }
 
 /* ── Page sections ── */
 .page-section { display: none; }
-.page-section.active { display: block; }
+.page-section.active { display: block !important; }
 
 /* ══════════════════════════════════════════
    "ĐANG PHÁT TRIỂN" BANNER
