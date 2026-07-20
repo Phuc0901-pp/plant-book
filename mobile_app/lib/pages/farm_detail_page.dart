@@ -85,6 +85,11 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   }
 
   void _calculateInitialCenter() {
+    double sumLat = 0;
+    double sumLng = 0;
+    int count = 0;
+
+    // Check polygon coordinates
     if (widget.farm.polygonCoordinates != null && widget.farm.polygonCoordinates!.isNotEmpty) {
       try {
         final List<dynamic> coords = jsonDecode(widget.farm.polygonCoordinates!);
@@ -99,22 +104,28 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
               flatCoords.add([double.parse(pt[0].toString()), double.parse(pt[1].toString())]);
             }
           }
-          
-          if (flatCoords.isNotEmpty) {
-            double sumLng = 0;
-            double sumLat = 0;
-            for (var pt in flatCoords) {
-              sumLng += pt[0];
-              sumLat += pt[1];
-            }
-            _centerLng = sumLng / flatCoords.length;
-            _centerLat = sumLat / flatCoords.length;
-            _hasCalculatedCenter = true;
+          for (var pt in flatCoords) {
+            sumLng += pt[0];
+            sumLat += pt[1];
+            count++;
           }
         }
-      } catch (e) {
-        // Ignore
+      } catch (_) {}
+    }
+
+    // Check plant coordinates
+    for (var plant in _farmPlants) {
+      if (plant.latitude != null && plant.longitude != null && plant.latitude != 0 && plant.longitude != 0) {
+        sumLat += plant.latitude!;
+        sumLng += plant.longitude!;
+        count++;
       }
+    }
+
+    if (count > 0) {
+      _centerLat = sumLat / count;
+      _centerLng = sumLng / count;
+      _hasCalculatedCenter = true;
     }
   }
 
@@ -162,15 +173,14 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Mapbox GIS</title>
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <title>Farm GIS Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    body { margin: 0; padding: 0; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
+    html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #e5e7eb; }
     .custom-marker {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background-color: #22C55E;
       color: white;
@@ -180,106 +190,105 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
       justify-content: center;
       align-items: center;
       border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       cursor: pointer;
     }
-    .custom-marker.sick {
-      background-color: #EF4444;
-    }
-    .custom-marker.warn {
-      background-color: #F59E0B;
-    }
-    .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib {
-      display: none !important;
-    }
+    .custom-marker.sick { background-color: #EF4444; }
+    .custom-marker.warn { background-color: #F59E0B; }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script>
-    mapboxgl.accessToken = '$mapboxToken';
-    
-    const center = [$_centerLng, $_centerLat];
+    const center = [$_centerLat, $_centerLng];
     const polygonCoords = $polyCoordsJson;
     const plants = $plantsJson;
+    const mapboxToken = '$mapboxToken';
 
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: center,
-      zoom: $_mapZoom,
-      attributionControl: false
+    const map = L.map('map', { zoomControl: false }).setView(center, $_mapZoom);
+
+    // Tile Layer: Mapbox Satellite or Esri World Imagery Fallback
+    let satelliteLayer;
+    if (mapboxToken && mapboxToken.length > 10) {
+      satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + mapboxToken, {
+        maxZoom: 20,
+        tileSize: 512,
+        zoomOffset: -1,
+        attribution: 'Mapbox'
+      });
+    } else {
+      satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Esri'
+      });
+    }
+    satelliteLayer.addTo(map);
+
+    satelliteLayer.on('tileerror', function() {
+      if (!window._swappedToEsri) {
+        window._swappedToEsri = true;
+        map.removeLayer(satelliteLayer);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19
+        }).addTo(map);
+      }
     });
 
-    map.on('load', () => {
-      // Draw polygon if available
-      if (polygonCoords && polygonCoords.length > 0) {
-        const poly = [...polygonCoords];
-        if (poly[0][0] !== poly[poly.length - 1][0] || poly[0][1] !== poly[poly.length - 1][1]) {
-          poly.push(poly[0]);
-        }
+    // Place labels overlay
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd'
+    }).addTo(map);
 
-        map.addSource('farm-boundary', {
-          'type': 'geojson',
-          'data': {
-            'type': 'Feature',
-            'geometry': {
-              'type': 'Polygon',
-              'coordinates': [poly]
-            }
-          }
+    const bounds = L.latLngBounds();
+
+    // Polygon boundary
+    if (polygonCoords && polygonCoords.length > 0) {
+      const leafletPoly = polygonCoords.map(pt => [pt[1], pt[0]]);
+      const polyLayer = L.polygon(leafletPoly, {
+        color: '#22C55E',
+        weight: 3,
+        fillColor: '#22C55E',
+        fillOpacity: 0.2
+      }).addTo(map);
+      bounds.extend(polyLayer.getBounds());
+    }
+
+    // Plant markers
+    plants.forEach(plant => {
+      if (plant.lat && plant.lng) {
+        const latLng = [plant.lat, plant.lng];
+        bounds.extend(latLng);
+
+        let iconClass = 'custom-marker';
+        if (plant.health === 'Bệnh') iconClass += ' sick';
+        if (plant.health === 'Cần chú ý') iconClass += ' warn';
+
+        const customIcon = L.divIcon({
+          className: iconClass,
+          html: plant.tree_code || plant.id.toString(),
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
         });
 
-        map.addLayer({
-          'id': 'farm-fill',
-          'type': 'fill',
-          'source': 'farm-boundary',
-          'layout': {},
-          'paint': {
-            'fill-color': '#22C55E',
-            'fill-opacity': 0.15
-          }
-        });
-
-        map.addLayer({
-          'id': 'farm-outline',
-          'type': 'line',
-          'source': 'farm-boundary',
-          'layout': {},
-          'paint': {
-            'line-color': '#22C55E',
-            'line-width': 2
+        const marker = L.marker(latLng, { icon: customIcon }).addTo(map);
+        marker.on('click', () => {
+          if (window.FlutterChannel) {
+            window.FlutterChannel.postMessage(JSON.stringify({ plantId: plant.id }));
           }
         });
       }
-
-      // Add markers
-      plants.forEach(plant => {
-        if (plant.lat && plant.lng) {
-          const el = document.createElement('div');
-          el.className = 'custom-marker';
-          if (plant.health === 'Bệnh') el.className += ' sick';
-          if (plant.health === 'Cần chú ý') el.className += ' warn';
-          el.innerText = plant.tree_code || plant.id;
-
-          el.addEventListener('click', () => {
-            if (window.FlutterChannel) {
-              window.FlutterChannel.postMessage(JSON.stringify({ plantId: plant.id }));
-            }
-          });
-
-          new mapboxgl.Marker({ element: el })
-            .setLngLat([plant.lng, plant.lat])
-            .addTo(map);
-        }
-      });
     });
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 18 });
+    }
   </script>
 </body>
 </html>
 ''';
 
-    _webViewController.loadHtmlString(htmlContent, baseUrl: 'https://api.mapbox.com');
+    _webViewController.loadHtmlString(htmlContent);
   }
 
   Future<void> _loadFarmData() async {
@@ -513,7 +522,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
                   }),
                   const SizedBox(height: 6),
                   _mapButton(Icons.my_location_rounded, () {
-                    _webViewController.runJavaScript('map.flyTo({ center: [$_centerLng, $_centerLat], zoom: 17.5 });');
+                    _webViewController.runJavaScript('if (typeof bounds !== "undefined" && bounds.isValid()) { map.fitBounds(bounds, { padding: [30, 30] }); } else { map.setView([$_centerLat, $_centerLng], 17.5); }');
                   }),
                 ],
               ),
