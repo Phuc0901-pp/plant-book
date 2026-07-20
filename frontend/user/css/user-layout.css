@@ -1988,6 +1988,26 @@ tr:hover td {
 /* ─── Supplies Page & Monitoring Styling ─── */
 .supplies-banner {
   background: linear-gradient(135deg, #091e15 0%, #1b4d3e 60%, #14532d 100%) !important;
+  border-radius: 16px !important;
+  padding: 24px 28px !important;
+  margin-bottom: 24px !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(9, 30, 21, 0.25) !important;
+}
+.supplies-banner h2 {
+  color: #ffffff !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  margin-bottom: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.supplies-banner p {
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
 }
 .supplies-tabs .tab {
   cursor: pointer;
