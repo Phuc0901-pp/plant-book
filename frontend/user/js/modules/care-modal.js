@@ -130,28 +130,58 @@ export function closeCareModal() {
 /**
  * Cập nhật các trường form trong modal khi người dùng thay đổi loại hoạt động.
  */
-export function onCareLogTypeChange() {
+export async function onCareLogTypeChange() {
   const logType   = document.getElementById('c-log-type')?.value;
   const container = document.getElementById('care-detail-fields');
   if (!container || !logType) return;
 
+  // Load supplies if not loaded
+  if (!window._declaredSuppliesCache) {
+    try {
+      window._declaredSuppliesCache = await api('/supplies');
+    } catch (_) {
+      window._declaredSuppliesCache = [];
+    }
+  }
+
   const configs = _configs();
-  container.innerHTML = _buildDetailFields(logType, configs);
+  const supplies = window._declaredSuppliesCache || [];
+  container.innerHTML = _buildDetailFields(logType, configs, supplies);
 }
+
+export function onCareSupplySelected(selectEl, hiddenInputId) {
+  if (!selectEl) return;
+  const opt = selectEl.options[selectEl.selectedIndex];
+  if (opt && hiddenInputId) {
+    const hiddenInput = document.getElementById(hiddenInputId);
+    if (hiddenInput) hiddenInput.value = opt.getAttribute('data-name') || opt.text;
+  }
+}
+window.onCareSupplySelected = onCareSupplySelected;
 
 /**
  * Trả về HTML form fields theo loại hoạt động.
  * @private
  */
-function _buildDetailFields(logType, configs) {
+function _buildDetailFields(logType, configs, supplies = []) {
   switch (logType) {
     case 'Tưới nước': {
       const methods = configs.water_methods || [];
+      const waterSupplies = supplies.filter(s => s.category === 'Tiền nước');
       return `
         <div class="field">
           <label>Phương pháp tưới nước *</label>
           <select id="c-detail-method">${methods.map(m => `<option>${esc(m)}</option>`).join('')}</select>
         </div>
+        ${waterSupplies.length > 0 ? `
+          <div class="field">
+            <label><i class="fa-solid fa-droplet" style="color:var(--green)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
+            <select id="c-detail-supply-id">
+              <option value="">Không hạch toán tiền nước</option>
+              ${waterSupplies.map(s => `<option value="${s.id}">💧 ${esc(s.name)} — ${s.unit_price}đ/${s.unit}</option>`).join('')}
+            </select>
+          </div>
+        ` : ''}
         <div class="field">
           <label>Lượng nước (Lít) *</label>
           <input type="number" step="any" id="c-detail-amount" value="2">
@@ -159,31 +189,93 @@ function _buildDetailFields(logType, configs) {
     }
     case 'Bón phân': {
       const fertilizers = configs.fertilizers || [];
-      return `
-        <div class="field">
-          <label>Loại phân bón *</label>
-          <select id="c-detail-fertilizer">${fertilizers.map(f => `<option>${esc(f)}</option>`).join('')}</select>
-        </div>
-        <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
-          <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="100"></div>
-          <div class="field" style="flex:1;"><label>Đơn vị</label>
-            <select id="c-detail-unit"><option value="gam">gam</option><option value="kg">kg</option><option value="ml">ml</option><option value="lít">lít</option></select>
+      const declaredFertilizers = supplies.filter(s => s.category === 'Bón phân');
+
+      if (declaredFertilizers.length > 0) {
+        return `
+          <div class="field">
+            <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
+            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer')">
+              ${declaredFertilizers.map(s => `
+                <option value="${s.id}" data-name="${esc(s.name)}">
+                  🧪 ${esc(s.name)} (${s.package_size || s.unit}) — ${s.unit_price}đ/${s.unit}
+                </option>
+              `).join('')}
+            </select>
+            <input type="hidden" id="c-detail-fertilizer" value="${esc(declaredFertilizers[0].name)}">
+            <small style="color:var(--green-dark); font-weight:600; margin-top:4px; display:block;">
+              <i class="fa-solid fa-circle-check"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí)
+            </small>
           </div>
-        </div>`;
+          <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
+            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="100"></div>
+            <div class="field" style="flex:1;"><label>Đơn vị</label>
+              <select id="c-detail-unit"><option value="gam">gam</option><option value="kg">kg</option><option value="ml">ml</option><option value="lít">lít</option></select>
+            </div>
+          </div>`;
+      } else {
+        return `
+          <div class="field">
+            <label>Loại phân bón *</label>
+            <select id="c-detail-fertilizer">${fertilizers.map(f => `<option>${esc(f)}</option>`).join('')}</select>
+            <small style="color:var(--text-muted); margin-top:4px; display:block;">
+              <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:600;">
+                <i class="fa-solid fa-plus"></i> Khai báo loại phân này vào Kho Vật tư để tự động tính tiền
+              </a>
+            </small>
+          </div>
+          <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
+            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="100"></div>
+            <div class="field" style="flex:1;"><label>Đơn vị</label>
+              <select id="c-detail-unit"><option value="gam">gam</option><option value="kg">kg</option><option value="ml">ml</option><option value="lít">lít</option></select>
+            </div>
+          </div>`;
+      }
     }
     case 'Phun thuốc': {
       const pesticides = configs.pesticides || [];
-      return `
-        <div class="field">
-          <label>Loại thuốc bảo vệ thực vật *</label>
-          <select id="c-detail-pesticide">${pesticides.map(p => `<option>${esc(p)}</option>`).join('')}</select>
-        </div>
-        <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
-          <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="50"></div>
-          <div class="field" style="flex:1;"><label>Đơn vị</label>
-            <select id="c-detail-unit"><option value="ml">ml</option><option value="gam">gam</option><option value="lít">lít</option></select>
+      const declaredPesticides = supplies.filter(s => s.category === 'Phun thuốc');
+
+      if (declaredPesticides.length > 0) {
+        return `
+          <div class="field">
+            <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
+            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide')">
+              ${declaredPesticides.map(s => `
+                <option value="${s.id}" data-name="${esc(s.name)}">
+                  🛡️ ${esc(s.name)} (${s.package_size || s.unit}) — ${s.unit_price}đ/${s.unit}
+                </option>
+              `).join('')}
+            </select>
+            <input type="hidden" id="c-detail-pesticide" value="${esc(declaredPesticides[0].name)}">
+            <small style="color:var(--green-dark); font-weight:600; margin-top:4px; display:block;">
+              <i class="fa-solid fa-circle-check"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí)
+            </small>
           </div>
-        </div>`;
+          <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
+            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="50"></div>
+            <div class="field" style="flex:1;"><label>Đơn vị</label>
+              <select id="c-detail-unit"><option value="ml">ml</option><option value="gam">gam</option><option value="lít">lít</option></select>
+            </div>
+          </div>`;
+      } else {
+        return `
+          <div class="field">
+            <label>Loại thuốc bảo vệ thực vật *</label>
+            <select id="c-detail-pesticide">${pesticides.map(p => `<option>${esc(p)}</option>`).join('')}</select>
+            <small style="color:var(--text-muted); margin-top:4px; display:block;">
+              <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:600;">
+                <i class="fa-solid fa-plus"></i> Khai báo loại thuốc này vào Kho Vật tư để tự động tính tiền
+              </a>
+            </small>
+          </div>
+          <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
+            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="50"></div>
+            <div class="field" style="flex:1;"><label>Đơn vị</label>
+              <select id="c-detail-unit"><option value="ml">ml</option><option value="gam">gam</option><option value="lít">lít</option></select>
+            </div>
+          </div>`;
+      }
     }
     case 'Cắt lá': {
       const reasons = configs.leaf_cut_reasons || [];
@@ -458,7 +550,36 @@ export async function saveCareLog() {
     } else {
       if (btn) btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
       await api(`/plants/${plantId}/logs`, { method: 'POST', body: JSON.stringify(body) });
-      toast('Ghi nhật ký chăm sóc thành công!');
+
+      // ── Tự động hạch toán Tiêu hao Vật tư nếu có chọn từ Kho Vật tư ──
+      const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      if (supplyId) {
+        try {
+          const amount = parseFloat(document.getElementById('c-detail-amount')?.value) || 1;
+          const unit = document.getElementById('c-detail-unit')?.value || 'kg';
+          
+          let usageQty = amount;
+          if (unit === 'gam' || unit === 'g' || unit === 'ml') {
+            usageQty = amount / 1000;
+          }
+
+          await api('/supplies/usages', {
+            method: 'POST',
+            body: JSON.stringify({
+              supply_id: supplyId,
+              usage_date: logDate,
+              quantity: usageQty,
+              plant_id: plantId,
+              note: `Tự động hạch toán từ Nhật ký Chăm sóc: ${logType} (Cây ${window._activePlantTreeCode || plantId})`
+            })
+          });
+          toast('Đã ghi nhật ký & tự động hạch toán chi phí vào Giám sát Vật tư!', 'success');
+        } catch (suppErr) {
+          console.error('Auto-recording supply usage failed:', suppErr);
+        }
+      } else {
+        toast('Ghi nhật ký chăm sóc thành công!');
+      }
     }
 
     closeCareModal();
