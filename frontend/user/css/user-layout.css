@@ -2180,6 +2180,37 @@ tr:hover td {
   gap: 10px !important;
 }
 
+/* ─── Ultra-Premium Product Photo Upload Card ─── */
+.sp-image-upload-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 12px 14px !important;
+  background: #f8fafc !important;
+  border: 1.5px dashed #cbd5e1 !important;
+  border-radius: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.sp-image-upload-card:hover {
+  border-color: var(--green) !important;
+  background: #f0fdf4 !important;
+}
+
+.sp-img-preview-box {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  flex-shrink: 0 !important;
+}
+
 .cat-filter-btn {
   padding: 6px 14px;
   border-radius: 20px;
