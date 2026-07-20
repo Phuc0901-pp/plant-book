@@ -442,7 +442,6 @@ input:-webkit-autofill:active {
     width: 100% !important;
     background: linear-gradient(160deg, #091e15 0%, #1b4d3e 60%, #0f2d20 100%) !important;
     padding: 24px 16px !important;
-    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
   }
@@ -505,4 +504,17 @@ input:-webkit-autofill:active {
   .forgot-link { color: #86efac !important; }
   .login-error { background: rgba(239,68,68,.15) !important; border-color: rgba(239,68,68,.3) !important; }
   .login-footer-note { color: rgba(255,255,255,.4) !important; }
+}
+
+/* Guard: When JS hides #login-page (display: none), force hide it completely */
+#login-page[style*="display: none"],
+#login-page[style*="display:none"],
+div#login-page[style*="display: none"],
+div#login-page[style*="display:none"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
