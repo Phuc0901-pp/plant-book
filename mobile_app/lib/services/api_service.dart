@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
 import '../models/plant_log.dart';
+import '../models/supply.dart';
 import '../utils/app_config.dart';
 import 'cache_service.dart';
 
@@ -461,5 +462,99 @@ class ApiService {
     final fallback = ['pk.eyJ1IjoicGh1Y21lb21leSIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
     _cachedMapboxToken = fallback;
     return _cachedMapboxToken!;
+  }
+
+  // ─── Supplies API Services ───────────────────────────────────────
+
+  Future<List<Supply>> fetchSupplies({String? category, String? search}) async {
+    try {
+      final headers = await _getHeaders();
+      final queryParams = <String, String>{};
+      if (category != null && category.isNotEmpty && category != 'all') {
+        queryParams['category'] = category;
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final uri = Uri.parse('$baseUrl/supplies').replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      final response = await http.get(uri, headers: headers);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((e) => Supply.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching supplies: $e');
+      return [];
+    }
+  }
+
+  Future<Supply?> createSupply(Map<String, dynamic> data) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/supplies'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return Supply.fromJson(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      print('Error creating supply: $e');
+      return null;
+    }
+  }
+
+  Future<Supply?> updateSupply(int id, Map<String, dynamic> data) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.put(
+        Uri.parse('$baseUrl/supplies/$id'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      if (response.statusCode == 200) {
+        return Supply.fromJson(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      print('Error updating supply: $e');
+      return null;
+    }
+  }
+
+  Future<bool> deleteSupply(int id) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/supplies/$id'),
+        headers: headers,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error deleting supply: $e');
+      return false;
+    }
+  }
+
+  Future<bool> recordSupplyUsage(Map<String, dynamic> data) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/supplies/usages'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      return response.statusCode == 201 || response.statusCode == 200;
+    } catch (e) {
+      print('Error recording supply usage: $e');
+      return false;
+    }
   }
 }

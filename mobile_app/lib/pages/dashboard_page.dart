@@ -13,6 +13,7 @@ import '../services/websocket_service.dart';
 import '../utils/theme.dart';
 import 'farm_detail_page.dart';
 import 'plant_detail_page.dart';
+import 'supplies_page.dart';
 import 'alerts_page.dart';
 import 'settings_page.dart';
 
@@ -118,9 +119,12 @@ class _DashboardPageState extends State<DashboardPage> {
           body = _buildPlantsTab();
           break;
         case 2:
-          body = const AlertsPage();
+          body = const SuppliesPage();
           break;
         case 3:
+          body = const AlertsPage();
+          break;
+        case 4:
           body = const SettingsPage();
           break;
         default:
@@ -187,6 +191,10 @@ class _DashboardPageState extends State<DashboardPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.nature_rounded),
             label: 'Cây trồng',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_rounded),
+            label: 'Vật tư',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.warning_amber_rounded),
