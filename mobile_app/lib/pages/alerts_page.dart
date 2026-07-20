@@ -26,6 +26,9 @@ class _AlertsPageState extends State<AlertsPage> {
   List<Map<String, dynamic>> _diseaseAlerts = [];
   List<Map<String, dynamic>> _scheduleAlerts = [];
 
+  String? _selectedFarmId;
+  DateTime _lastRefreshTime = DateTime.now();
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +60,7 @@ class _AlertsPageState extends State<AlertsPage> {
         _farms = farms;
         _plants = plants;
         _plantLogs = logsMap;
+        _lastRefreshTime = DateTime.now();
         _isLoading = false;
       });
 
@@ -73,7 +77,7 @@ class _AlertsPageState extends State<AlertsPage> {
     List<Map<String, dynamic>> diseases = [];
     List<Map<String, dynamic>> schedules = [];
 
-    // 1. Compute Disease Alerts (Pin to top)
+    // 1. Compute Disease Alerts (Pin to top - Priority 1)
     for (var plant in _plants) {
       final logs = _plantLogs[plant.id] ?? [];
       if (logs.isNotEmpty) {
@@ -90,21 +94,31 @@ class _AlertsPageState extends State<AlertsPage> {
             'title': 'Cây đang bị sâu bệnh hại!',
             'desc': 'Cây #${plant.displayName} (${plant.plantType}) được báo cáo bị: $diseaseName vào ngày ${latest.logDate}.',
             'severity': 'high',
+            'farmId': plant.farmId,
           });
         }
-      } else if (plant.healthStatus == 'Bệnh') {
+      } else if (plant.healthStatus == 'Bệnh' || plant.healthStatus == 'Cần chú ý') {
         // Fallback check based on status
         diseases.add({
           'plant': plant,
-          'title': 'Cây có trạng thái Bệnh!',
-          'desc': 'Cây #${plant.displayName} (${plant.plantType}) có trạng thái sức khỏe là Bệnh nhưng chưa có nhật ký chi tiết.',
+          'title': plant.healthStatus == 'Bệnh' ? 'Cây có trạng thái Bệnh!' : 'Cây cần chú ý sức khỏe!',
+          'desc': 'Cây #${plant.displayName} (${plant.plantType}) có trạng thái sức khỏe là "${plant.healthStatus}".',
           'severity': 'high',
+          'farmId': plant.farmId,
         });
       }
     }
 
-    // 2. Compute Schedule Alerts (Watering / Fertilizing overdue)
-    // Thresholds: Overdue if not watered in 3 days, not fertilized in 30 days
+    // Sort disease alerts A-Z (1-n)
+    diseases.sort((a, b) {
+      final pA = a['plant'] as Plant?;
+      final pB = b['plant'] as Plant?;
+      final codeA = pA?.treeCode ?? pA?.displayName ?? '';
+      final codeB = pB?.treeCode ?? pB?.displayName ?? '';
+      return codeA.toLowerCase().compareTo(codeB.toLowerCase());
+    });
+
+    // 2. Compute Schedule Alerts (Watering overdue -> Fertilizing overdue)
     final now = DateTime.now();
 
     for (var farm in _farms) {
@@ -155,20 +169,23 @@ class _AlertsPageState extends State<AlertsPage> {
       if (unwateredCount == farmPlants.length) {
         schedules.add({
           'farm': farm,
+          'farmId': farm.id,
           'type': 'water_farm',
           'title': 'Chậm tưới nước toàn vườn!',
           'desc': 'Tất cả các cây trồng tại nông trại "${farm.name}" chưa được tưới nước trong 3 ngày qua.',
           'severity': 'medium',
+          'priorityRank': 1, // Watering priority
         });
       } else if (unwateredCount > 0) {
-        // Individual plant alerts
         for (var p in unwateredPlants) {
           schedules.add({
             'plant': p,
+            'farmId': farm.id,
             'type': 'water_plant',
             'title': 'Cây chậm tưới nước',
             'desc': 'Cây #${p.displayName} tại "${farm.name}" chưa được tưới nước theo lịch.',
-            'severity': 'low',
+            'severity': 'medium',
+            'priorityRank': 1, // Watering priority
           });
         }
       }
@@ -176,23 +193,40 @@ class _AlertsPageState extends State<AlertsPage> {
       if (unfertilizedCount == farmPlants.length) {
         schedules.add({
           'farm': farm,
+          'farmId': farm.id,
           'type': 'fert_farm',
           'title': 'Chậm bón phân định kỳ!',
           'desc': 'Toàn bộ cây trồng tại nông trại "${farm.name}" đã quá hạn bón phân định kỳ (30 ngày).',
-          'severity': 'medium',
+          'severity': 'low',
+          'priorityRank': 2, // Fertilizing priority
         });
       } else if (unfertilizedCount > 0) {
         for (var p in unfertilizedPlants) {
           schedules.add({
             'plant': p,
+            'farmId': farm.id,
             'type': 'fert_plant',
             'title': 'Cây chậm bón phân',
-            'desc': 'Cây #${p.displayName} đã quá hạn bón phân định kỳ.',
+            'desc': 'Cây #${p.displayName} tại "${farm.name}" đã quá hạn bón phân định kỳ.',
             'severity': 'low',
+            'priorityRank': 2, // Fertilizing priority
           });
         }
       }
     }
+
+    // Sort schedule alerts: Watering first (priorityRank 1), then Fertilizing (priorityRank 2), then A-Z (1-n)
+    schedules.sort((a, b) {
+      int pA = (a['priorityRank'] as int?) ?? 99;
+      int pB = (b['priorityRank'] as int?) ?? 99;
+      if (pA != pB) return pA.compareTo(pB);
+
+      final p1 = a['plant'] as Plant?;
+      final p2 = b['plant'] as Plant?;
+      final c1 = p1?.treeCode ?? p1?.displayName ?? a['farm']?.name ?? '';
+      final c2 = p2?.treeCode ?? p2?.displayName ?? b['farm']?.name ?? '';
+      return c1.toLowerCase().compareTo(c2.toLowerCase());
+    });
 
     setState(() {
       _diseaseAlerts = diseases;
@@ -202,7 +236,16 @@ class _AlertsPageState extends State<AlertsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final totalAlerts = _diseaseAlerts.length + _scheduleAlerts.length;
+    // Filter alerts by selected farm
+    final filteredDiseases = _selectedFarmId == null
+        ? _diseaseAlerts
+        : _diseaseAlerts.where((a) => a['farmId']?.toString() == _selectedFarmId).toList();
+
+    final filteredSchedules = _selectedFarmId == null
+        ? _scheduleAlerts
+        : _scheduleAlerts.where((a) => a['farmId']?.toString() == _selectedFarmId).toList();
+
+    final totalAlerts = filteredDiseases.length + filteredSchedules.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -223,21 +266,51 @@ class _AlertsPageState extends State<AlertsPage> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      // Farm Filter Dropdown
+                      if (_farms.isNotEmpty) ...[
+                        DropdownButtonFormField<String>(
+                          value: _selectedFarmId,
+                          decoration: InputDecoration(
+                            labelText: 'Lọc cảnh báo theo trang trại',
+                            labelStyle: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppTheme.grayBorder),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppTheme.green),
+                            ),
+                          ),
+                          items: [
+                            const DropdownMenuItem(value: null, child: Text('Tất cả trang trại sở hữu', style: TextStyle(fontSize: 13))),
+                            ..._farms.map((f) => DropdownMenuItem(value: f.id.toString(), child: Text(f.name, style: const TextStyle(fontSize: 13)))),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedFarmId = val;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
                       // Alert statistics banner
                       _buildStatsBanner(totalAlerts),
                       const SizedBox(height: 16),
                       
-                      // 1. High Priority Disease Alerts (Pinned to top)
-                      if (_diseaseAlerts.isNotEmpty) ...[
-                        _sectionTitle('⚠️ CẢNH BÁO SÂU BỆNH HẠI (NGUY CẤP)', AppTheme.red),
-                        ..._diseaseAlerts.map((a) => _buildAlertCard(a)),
+                      // 1. High Priority Disease Alerts (Pinned to top - Priority 1)
+                      if (filteredDiseases.isNotEmpty) ...[
+                        _sectionTitle('⚠️ CẢNH BÁO SÂU BỆNH HẠI & SỨC KHỎE (ƯU TIÊN 1)', AppTheme.red),
+                        ...filteredDiseases.map((a) => _buildAlertCard(a)),
                         const SizedBox(height: 20),
                       ],
                       
-                      // 2. Schedule Alerts
-                      if (_scheduleAlerts.isNotEmpty) ...[
-                        _sectionTitle('📅 LỊCH TRÌNH CANH TÁC QUÁ HẠN', AppTheme.amber),
-                        ..._scheduleAlerts.map((a) => _buildAlertCard(a)),
+                      // 2. Schedule Alerts (Priority 2: Tưới nước -> Priority 3: Bón phân / Khác)
+                      if (filteredSchedules.isNotEmpty) ...[
+                        _sectionTitle('📅 LỊCH TRÌNH CANH TÁC CẦN XỬ LÝ (TƯỚI NƯỚC & BÓN PHÂN)', AppTheme.amber),
+                        ...filteredSchedules.map((a) => _buildAlertCard(a)),
                       ],
                       
                       if (totalAlerts == 0) _buildCleanStateView(),
@@ -264,6 +337,8 @@ class _AlertsPageState extends State<AlertsPage> {
 
   Widget _buildStatsBanner(int count) {
     final Color bannerColor = count > 0 ? AppTheme.red : AppTheme.green;
+    final timeStr = '${_lastRefreshTime.day.toString().padLeft(2, '0')}/${_lastRefreshTime.month.toString().padLeft(2, '0')}/${_lastRefreshTime.year} ${_lastRefreshTime.hour.toString().padLeft(2, '0')}:${_lastRefreshTime.minute.toString().padLeft(2, '0')}';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -286,7 +361,12 @@ class _AlertsPageState extends State<AlertsPage> {
                 Text(
                   count > 0 ? 'Nông hộ vui lòng rà soát và xử lý các đầu việc dưới đây.' : 'Tất cả các hoạt động chăm sóc cây đều đúng lịch trình.',
                   style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                )
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '🔄 Đã làm mới kiểm tra hôm nay: $timeStr',
+                  style: const TextStyle(fontSize: 10, color: AppTheme.green, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           )

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/farm.dart';
 import '../models/plant.dart';
 import '../models/plant_log.dart';
+import '../utils/app_config.dart';
 import 'cache_service.dart';
 
 class ApiService {
@@ -12,6 +13,7 @@ class ApiService {
   ApiService._internal();
 
   String get baseUrl => 'https://plant-book.onrender.com/api';
+  String? _cachedMapboxToken;
 
   String? _token;
 
@@ -423,5 +425,41 @@ class ApiService {
       print('Error fetching schemas: $e');
       return [];
     }
+  }
+
+  Future<String> fetchMapboxToken() async {
+    if (_cachedMapboxToken != null && _cachedMapboxToken!.isNotEmpty) {
+      return _cachedMapboxToken!;
+    }
+
+    if (AppConfig.mapboxPublicToken.isNotEmpty) {
+      _cachedMapboxToken = AppConfig.mapboxPublicToken;
+      return _cachedMapboxToken!;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/config/mapbox-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+        },
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          _cachedMapboxToken = token;
+          return token;
+        }
+      }
+    } catch (e) {
+      print('Error fetching mapbox token: $e');
+    }
+
+    final fallback = ['pk.eyJ1IjoicGh1Y21lb21leSIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
+    _cachedMapboxToken = fallback;
+    return _cachedMapboxToken!;
   }
 }

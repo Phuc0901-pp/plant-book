@@ -154,7 +154,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     }).toList();
     final String plantsJson = jsonEncode(plantsList);
 
-    final mapboxToken = AppConfig.mapboxPublicToken;
+    final mapboxToken = await _apiService.fetchMapboxToken();
 
     final String htmlContent = '''
 <!DOCTYPE html>
@@ -279,7 +279,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
 </html>
 ''';
 
-    _webViewController.loadHtmlString(htmlContent);
+    _webViewController.loadHtmlString(htmlContent, baseUrl: 'https://api.mapbox.com');
   }
 
   Future<void> _loadFarmData() async {
@@ -294,16 +294,21 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
         // Filter plants belonging to this farm
         _farmPlants = plants.where((p) => p.farmId == widget.farm.id).toList();
         
-        // Sort: Sick ('Bệnh') plants first, then by treeCode/displayName
+        // Sort: Bệnh (Sick) -> Cần chú ý (Warning) -> Tốt (Healthy), then A-Z (1-n)
         _farmPlants.sort((a, b) {
-          bool aIsSick = a.healthStatus == 'Bệnh';
-          bool bIsSick = b.healthStatus == 'Bệnh';
-          if (aIsSick && !bIsSick) return -1;
-          if (!aIsSick && bIsSick) return 1;
-          
-          final aCode = a.treeCode ?? '';
-          final bCode = b.treeCode ?? '';
-          return aCode.compareTo(bCode);
+          int getHealthRank(String health) {
+            if (health == 'Bệnh') return 0;
+            if (health == 'Cần chú ý') return 1;
+            return 2;
+          }
+
+          int rankA = getHealthRank(a.healthStatus);
+          int rankB = getHealthRank(b.healthStatus);
+          if (rankA != rankB) return rankA.compareTo(rankB);
+
+          final aCode = a.treeCode ?? a.displayName;
+          final bCode = b.treeCode ?? b.displayName;
+          return aCode.toLowerCase().compareTo(bCode.toLowerCase());
         });
 
         // Initialize map center

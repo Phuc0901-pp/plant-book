@@ -86,7 +86,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       }
     }
 
-    final mapboxToken = AppConfig.mapboxPublicToken;
+    final mapboxToken = await _apiService.fetchMapboxToken();
 
     final String htmlContent = '''
 <!DOCTYPE html>

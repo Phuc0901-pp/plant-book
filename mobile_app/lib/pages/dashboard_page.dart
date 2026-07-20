@@ -287,9 +287,26 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
 
-    final filteredPlants = _selectedFarmIdForFilter == null
-        ? _plants
-        : _plants.where((p) => p.farmId == int.parse(_selectedFarmIdForFilter!)).toList();
+    final filteredPlants = (_selectedFarmIdForFilter == null
+        ? List<Plant>.from(_plants)
+        : _plants.where((p) => p.farmId == int.parse(_selectedFarmIdForFilter!)).toList());
+
+    // Sort: Bệnh (Sick) -> Cần chú ý (Warning) -> Tốt (Healthy), then A-Z (1-n)
+    filteredPlants.sort((a, b) {
+      int getHealthRank(String health) {
+        if (health == 'Bệnh') return 0;
+        if (health == 'Cần chú ý') return 1;
+        return 2;
+      }
+
+      int rankA = getHealthRank(a.healthStatus);
+      int rankB = getHealthRank(b.healthStatus);
+      if (rankA != rankB) return rankA.compareTo(rankB);
+
+      final aCode = a.treeCode ?? a.displayName;
+      final bCode = b.treeCode ?? b.displayName;
+      return aCode.toLowerCase().compareTo(bCode.toLowerCase());
+    });
 
     return Column(
       children: [
