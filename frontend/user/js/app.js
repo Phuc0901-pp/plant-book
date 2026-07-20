@@ -17,6 +17,7 @@ import { onCareMediaSelected, openLightbox } from './modules/media.js';
 import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
 import { togglePlantMenu, closePlantMenu } from './modules/plants.js';
+import './supplies.js';
 
 // ── Expose to Window (for HTML inline onclick="..." handlers) ──
 // Cần thiết vì ES Modules có scope riêng, không tự trở thành global.

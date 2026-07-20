@@ -7,6 +7,7 @@
 export const PAGE_TITLES = {
   home:     'Trang chủ',
   myplants: 'Trang trại',
+  supplies: 'Quản lý & Giám sát Vật tư',
   logs:     'Lịch sử',
   settings: 'Cài đặt tài khoản',
 };
@@ -15,7 +16,7 @@ export const PAGE_TITLES = {
  * Chuyển sang trang/tab chỉ định.
  * Kích hoạt section HTML tương ứng, cập nhật nav active.
  * Tự động load dashboard khi chuyển về Trang chủ.
- * @param {string} page — key của tab (home | myplants | logs | settings)
+ * @param {string} page — key của tab (home | myplants | supplies | logs | settings)
  */
 export function showPage(page) {
   // Tắt tất cả sections
@@ -58,6 +59,12 @@ export function showPage(page) {
         }, 150);
       }
     });
+  }
+
+  if (page === 'supplies') {
+    if (typeof window.loadSupplies === 'function') {
+      window.loadSupplies();
+    }
   }
 
   if (page === 'settings') {

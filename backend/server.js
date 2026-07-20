@@ -46,6 +46,7 @@ app.use('/api/config', require('./routes/config'));
 app.use('/api/farms', require('./routes/farms'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/devices', require('./routes/devices'));
+app.use('/api/supplies', require('./routes/supplies'));
 
 
 

@@ -1984,3 +1984,79 @@ tr:hover td {
 #login-page:not([style*="display: none"]) ~ .mobile-bottom-nav {
   display: none !important;
 }
+
+/* ─── Supplies Page & Monitoring Styling ─── */
+.supplies-banner {
+  background: linear-gradient(135deg, #091e15 0%, #1b4d3e 60%, #14532d 100%) !important;
+}
+.supplies-tabs .tab {
+  cursor: pointer;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.supplies-tabs .tab.active {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+
+.cat-filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--gray-200);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cat-filter-btn:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+.cat-filter-btn.active {
+  background: #f0fdf4;
+  border-color: var(--green);
+  color: #16a34a;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15);
+}
+
+.period-btn {
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.period-btn.active {
+  background: var(--green);
+  color: #fff;
+}
+
+.badge-cat-fertilizer {
+  background: #f3e8ff; color: #9333ea; border: 1px solid #e9d5ff;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+}
+.badge-cat-water {
+  background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+}
+.badge-cat-pesticide {
+  background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+}
+.badge-cat-labor {
+  background: #fffbebf0; color: #d97706; border: 1px solid #fef3c7;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+}

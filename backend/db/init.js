@@ -192,6 +192,39 @@ async function initDB() {
       )
     `);
 
+    // Supplies (Vật tư khai báo) table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS supplies (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        category VARCHAR(50) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        unit VARCHAR(50) NOT NULL,
+        unit_price NUMERIC NOT NULL DEFAULT 0,
+        stock_quantity NUMERIC DEFAULT 0,
+        note TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Supply Usages (Giám sát tiêu hao vật tư) table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS supply_usages (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        supply_id INTEGER REFERENCES supplies(id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL,
+        plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL,
+        usage_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        quantity NUMERIC NOT NULL DEFAULT 1,
+        unit_price NUMERIC NOT NULL DEFAULT 0,
+        total_cost NUMERIC NOT NULL DEFAULT 0,
+        note TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
 
     // Seed default configurations
     const defaultConfigs = [
