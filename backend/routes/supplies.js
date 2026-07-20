@@ -5,20 +5,23 @@ const auth = require('../middleware/auth');
 
 // ─── 1. SUPPLIES CRUD ─────────────────────────────────────────────
 
-// GET /api/supplies — Lấy danh sách vật tư khai báo
+// GET /api/supplies — Lấy danh sách vật tư khai báo của khách hàng/nông hộ hiện tại
 router.get('/', auth, async (req, res) => {
   try {
-    const { category, search } = req.query;
+    const { category, search, user_id } = req.query;
+    // Cho phép admin lọc theo user_id khách hàng cụ thể nếu truyền param, mặc định lấy của chính user đang đăng nhập
+    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
+
     let query = `
       SELECT s.*, 
              COALESCE(SUM(su.total_cost), 0) as total_spent,
              COALESCE(SUM(su.quantity), 0) as total_used_qty
       FROM supplies s
       LEFT JOIN supply_usages su ON su.supply_id = s.id
-      WHERE (s.user_id = $1 OR $2 = 'admin')
+      WHERE s.user_id = $1
     `;
-    const params = [req.user.id, req.user.role];
-    let idx = 3;
+    const params = [targetUserId];
+    let idx = 2;
 
     if (category) {
       query += ` AND s.category = $${idx}`;
