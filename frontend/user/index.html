@@ -86,7 +86,6 @@
       <div class="login-logo">
         <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
         <h1>Hệ thống quản lý cây trồng</h1>
-        <p><i class="fa fa-user" style="color:var(--user-accent)"></i> Cổng người dùng</p>
       </div>
       <div class="login-divider"></div>
       <div class="login-error" id="login-error">
@@ -104,10 +103,6 @@
       <button class="btn-login" id="login-btn" onclick="doLogin()">
         <span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>
       </button>
-      <div class="login-switch">
-        Bạn là quản trị viên?
-        <a href="/admin">Vào trang quản trị →</a>
-      </div>
     </div>
   </div>
 
@@ -535,6 +530,11 @@
   </div>
 </div>
 
+  <!-- ── FAB (Floating Action Button) ── -->
+  <button class="fab-btn" id="fab-btn" onclick="openCareModal()" title="Ghi nhật ký chăm sóc">
+    <i class="fa fa-plus"></i>
+  </button>
+
   <!-- ── NFC TAG MODAL ── -->
   <div id="nfc-modal" class="modal-overlay">
     <div class="modal-box nfc-modal-box">
@@ -598,11 +598,6 @@
       </div>
     </div>
   </div>
-
-  <!-- ── FAB ── -->
-  <button class="fab-btn" id="fab-btn" onclick="openCareModal()" title="Ghi nhật ký chăm sóc">
-    <i class="fa fa-plus"></i>
-  </button>
 
 <!-- ════════════ CARE MODAL ════════════ -->
 <div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">

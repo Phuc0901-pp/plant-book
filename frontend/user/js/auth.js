@@ -39,8 +39,13 @@ async function doLogin() {
     showApp();
 
   } catch (err) {
-    if (errEl) { errEl.textContent = err.message; errEl.style.display = 'block'; }
-    if (btn)   { btn.innerHTML = '<span id="login-btn-text">Đăng nhập</span>'; btn.disabled = false; }
+    if (errEl) {
+      const errText = document.getElementById('login-error-text');
+      if (errText) errText.textContent = err.message;
+      else errEl.textContent = err.message;
+      errEl.style.display = 'flex';
+    }
+    if (btn)   { btn.innerHTML = '<span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>'; btn.disabled = false; }
   }
 }
 
