@@ -174,7 +174,7 @@ class _SuppliesPageState extends State<SuppliesPage> {
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
                               onPressed: () => _openSupplyDialog(),
-                              backgroundColor: AppTheme.green,
+                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green),
                               icon: const Icon(Icons.add_rounded, color: Colors.white),
                               label: const Text('Khai báo vật tư mới', style: TextStyle(color: Colors.white)),
                             ),
