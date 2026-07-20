@@ -118,7 +118,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     }
   }
 
-  void _updateMapHtml() {
+  Future<void> _updateMapHtml() async {
     if (_farmPlants.isEmpty && widget.farm.polygonCoordinates == null) return;
     
     // Format polygon coordinates for javascript array

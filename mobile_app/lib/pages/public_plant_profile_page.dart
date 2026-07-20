@@ -55,7 +55,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     return [];
   }
 
-  void _updateMapHtml() {
+  Future<void> _updateMapHtml() async {
     if (_plantData == null) return;
 
     final double plantLat = double.tryParse(_plantData!['latitude']?.toString() ?? '') ?? 0.0;
