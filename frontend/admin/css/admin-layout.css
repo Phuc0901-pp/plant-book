@@ -174,9 +174,6 @@
     linear-gradient(to top,  rgba(15,45,32,.93) 0%, rgba(15,45,32,.3) 45%, transparent 70%),
     linear-gradient(to right, rgba(15,45,32,.15) 0%, transparent 60%);
 }
-.login-particles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
-.leaf-particle {
-  position: absolute;
 .hero-nfc-badge {
   position: absolute;
   top: 32px; left: 36px; z-index: 3;
