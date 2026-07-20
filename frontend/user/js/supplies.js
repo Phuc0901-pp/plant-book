@@ -33,6 +33,79 @@ function getCategoryBadge(category) {
 
 // ─── TAB 1: QUẢN LÝ VẬT TƯ (CRUD) ───────────────────────────────
 
+// ─── Live Unit Auto-Calculation ──────────────────────────────────
+export function autoCalculateSupplyUnits() {
+  const pkgQty = parseFloat(document.getElementById('sp-package-qty')?.value) || 1;
+  const pkgUnit = document.getElementById('sp-package-unit')?.value || 'kg';
+  const pkgPrice = parseFloat(document.getElementById('sp-package-price')?.value) || 0;
+
+  let unitLarge = 'kg';
+  let unitSmall = 'g';
+  let priceLarge = 0;
+  let priceSmall = 0;
+
+  if (pkgUnit === 'kg') {
+    unitLarge = 'kg';
+    unitSmall = 'g';
+    priceLarge = pkgPrice / pkgQty;
+    priceSmall = priceLarge / 1000;
+  } else if (pkgUnit === 'g') {
+    unitLarge = 'kg';
+    unitSmall = 'g';
+    priceSmall = pkgPrice / pkgQty;
+    priceLarge = priceSmall * 1000;
+  } else if (pkgUnit === 'lít') {
+    unitLarge = 'lít';
+    unitSmall = 'ml';
+    priceLarge = pkgPrice / pkgQty;
+    priceSmall = priceLarge / 1000;
+  } else if (pkgUnit === 'ml') {
+    unitLarge = 'lít';
+    unitSmall = 'ml';
+    priceSmall = pkgPrice / pkgQty;
+    priceLarge = priceSmall * 1000;
+  } else if (pkgUnit === 'm3') {
+    unitLarge = 'm³';
+    unitSmall = 'lít';
+    priceLarge = pkgPrice / pkgQty;
+    priceSmall = priceLarge / 1000;
+  } else if (pkgUnit === 'ngày công') {
+    unitLarge = 'ngày công';
+    unitSmall = 'giờ công';
+    priceLarge = pkgPrice / pkgQty;
+    priceSmall = priceLarge / 8;
+  } else {
+    unitLarge = pkgUnit;
+    unitSmall = pkgUnit;
+    priceLarge = pkgPrice / pkgQty;
+    priceSmall = priceLarge;
+  }
+
+  // Update hidden form inputs
+  if (document.getElementById('sp-unit')) document.getElementById('sp-unit').value = unitLarge;
+  if (document.getElementById('sp-unit-price')) document.getElementById('sp-unit-price').value = priceLarge;
+  if (document.getElementById('sp-package-size')) document.getElementById('sp-package-size').value = `${pkgQty} ${pkgUnit}`;
+  if (document.getElementById('sp-unit-price-small')) document.getElementById('sp-unit-price-small').value = priceSmall;
+
+  // Update live preview UI
+  const largeLabel = document.getElementById('calc-unit-large-name');
+  const smallLabel = document.getElementById('calc-unit-small-name');
+  const largeVal = document.getElementById('calc-price-large');
+  const smallVal = document.getElementById('calc-price-small');
+
+  if (largeLabel) largeLabel.textContent = unitLarge;
+  if (smallLabel) smallLabel.textContent = unitSmall;
+  if (largeVal) largeVal.textContent = `${formatVND(priceLarge)} / ${unitLarge}`;
+
+  if (smallVal) {
+    if (priceSmall > 0 && priceSmall < 1) {
+      smallVal.textContent = `${priceSmall.toFixed(2)} VNĐ / ${unitSmall}`;
+    } else {
+      smallVal.textContent = `${formatVND(priceSmall)} / ${unitSmall}`;
+    }
+  }
+}
+
 export async function loadSupplies() {
   const tbody = document.getElementById('supplies-table-body');
   if (!tbody) return;
@@ -60,23 +133,39 @@ export async function loadSupplies() {
       return;
     }
 
-    tbody.innerHTML = cachedSupplies.map(sp => `
-      <tr>
-        <td>${getCategoryBadge(sp.category)}</td>
-        <td><strong>${sp.name}</strong></td>
-        <td>${sp.package_size ? `<span class="badge-gray" style="background:#f1f5f9; color:#334155; font-weight:600;"><i class="fa-solid fa-weight-hanging"></i> ${sp.package_size}</span>` : '<span style="color:var(--gray-300);">—</span>'}</td>
-        <td><span class="badge-gray">${sp.unit}</span></td>
-        <td><strong style="color:var(--green-dark);">${formatVND(sp.unit_price)}</strong> / ${sp.unit}</td>
-        <td><strong style="color:#2563eb;">${formatVND(sp.total_spent)}</strong> <br><small style="color:var(--text-muted);">(${sp.total_used_qty} ${sp.unit})</small></td>
-        <td>${sp.note ? sp.note : '<span style="color:var(--gray-300);">—</span>'}</td>
-        <td style="text-align:center;">
-          <div style="display:flex; gap:6px; justify-content:center;">
-            <button class="btn btn-secondary btn-sm" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteSupply(${sp.id})" title="Xóa vật tư"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = cachedSupplies.map(sp => {
+      const priceLarge = parseFloat(sp.unit_price) || 0;
+      const priceSmall = parseFloat(sp.unit_price_small) || (sp.package_qty > 0 ? priceLarge / sp.package_qty : priceLarge);
+      const smallUnit = (sp.unit === 'kg' ? 'g' : (sp.unit === 'lít' ? 'ml' : (sp.unit === 'm³' || sp.unit === 'm3' ? 'lít' : sp.unit)));
+
+      return `
+        <tr>
+          <td>${getCategoryBadge(sp.category)}</td>
+          <td><strong>${sp.name}</strong></td>
+          <td>
+            <span class="badge-gray" style="background:#f1f5f9; color:#334155; font-weight:700;">
+              <i class="fa-solid fa-weight-hanging"></i> ${sp.package_qty || 1} ${sp.package_unit || sp.unit}
+            </span>
+          </td>
+          <td><span class="badge-gray">${sp.unit}</span></td>
+          <td>
+            <strong style="color:var(--green-dark);">${formatVND(priceLarge)}</strong> / ${sp.unit}
+            <br>
+            <small style="color:#2563eb; font-weight:600;">
+              (<i class="fa-solid fa-calculator"></i> ${priceSmall > 0 && priceSmall < 1 ? priceSmall.toFixed(2) + 'đ' : formatVND(priceSmall)} / ${smallUnit})
+            </small>
+          </td>
+          <td><strong style="color:#2563eb;">${formatVND(sp.total_spent)}</strong> <br><small style="color:var(--text-muted);">(${sp.total_used_qty} ${sp.unit})</small></td>
+          <td>${sp.note ? sp.note : '<span style="color:var(--gray-300);">—</span>'}</td>
+          <td style="text-align:center;">
+            <div style="display:flex; gap:6px; justify-content:center;">
+              <button class="btn btn-secondary btn-sm" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="deleteSupply(${sp.id})" title="Xóa vật tư"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
   } catch (err) {
     console.error('Error loading supplies:', err);
@@ -100,9 +189,9 @@ export function openSupplyModal(id = null) {
   document.getElementById('sp-id').value = id || '';
   document.getElementById('sp-category').value = 'Bón phân';
   document.getElementById('sp-name').value = '';
-  document.getElementById('sp-package-size').value = '';
-  document.getElementById('sp-unit').value = 'kg';
-  document.getElementById('sp-unit-price').value = '';
+  document.getElementById('sp-package-qty').value = '50';
+  document.getElementById('sp-package-unit').value = 'kg';
+  document.getElementById('sp-package-price').value = '1530000';
   document.getElementById('sp-note').value = '';
 
   if (id) {
@@ -111,15 +200,16 @@ export function openSupplyModal(id = null) {
       if (title) title.innerHTML = '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa vật tư';
       document.getElementById('sp-category').value = sp.category;
       document.getElementById('sp-name').value = sp.name;
-      document.getElementById('sp-package-size').value = sp.package_size || '';
-      document.getElementById('sp-unit').value = sp.unit;
-      document.getElementById('sp-unit-price').value = sp.unit_price;
+      document.getElementById('sp-package-qty').value = sp.package_qty || 1;
+      document.getElementById('sp-package-unit').value = sp.package_unit || sp.unit || 'kg';
+      document.getElementById('sp-package-price').value = sp.package_price || (sp.unit_price * (sp.package_qty || 1));
       document.getElementById('sp-note').value = sp.note || '';
     }
   } else {
     if (title) title.innerHTML = '<i class="fa-solid fa-boxes-packing" style="color:var(--green)"></i> Khai báo vật tư mới';
   }
 
+  autoCalculateSupplyUnits();
   modal.style.display = 'flex';
 }
 
@@ -129,33 +219,52 @@ export function closeSupplyModal() {
 }
 
 export async function saveSupply() {
+  autoCalculateSupplyUnits();
+
   const id = document.getElementById('sp-id').value;
   const category = document.getElementById('sp-category').value;
   const name = document.getElementById('sp-name').value.trim();
-  const package_size = document.getElementById('sp-package-size').value.trim();
-  const unit = document.getElementById('sp-unit').value.trim();
-  const unit_price = document.getElementById('sp-unit-price').value;
+  const package_qty = parseFloat(document.getElementById('sp-package-qty').value) || 1;
+  const package_unit = document.getElementById('sp-package-unit').value;
+  const package_price = parseFloat(document.getElementById('sp-package-price').value) || 0;
+  const package_size = document.getElementById('sp-package-size').value;
+  const unit = document.getElementById('sp-unit').value;
+  const unit_price = parseFloat(document.getElementById('sp-unit-price').value) || 0;
+  const unit_price_small = parseFloat(document.getElementById('sp-unit-price-small').value) || 0;
   const note = document.getElementById('sp-note').value.trim();
 
-  if (!name || !unit || !unit_price) {
-    toast('Vui lòng điền đầy đủ Tên vật tư, Đơn vị và Đơn giá!', 'warning');
+  if (!name || !package_price) {
+    toast('Vui lòng điền đầy đủ Tên vật tư và Tổng giá tiền mua!', 'warning');
     return;
   }
 
   const btn = document.getElementById('supply-save-btn');
   if (btn) btn.disabled = true;
 
+  const payload = {
+    category,
+    name,
+    package_qty,
+    package_unit,
+    package_price,
+    package_size,
+    unit,
+    unit_price,
+    unit_price_small,
+    note
+  };
+
   try {
     if (id) {
       await api(`/supplies/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ category, name, unit, package_size, unit_price, note })
+        body: JSON.stringify(payload)
       });
       toast('Đã cập nhật thông tin vật tư thành công!');
     } else {
       await api('/supplies', {
         method: 'POST',
-        body: JSON.stringify({ category, name, unit, package_size, unit_price, note })
+        body: JSON.stringify(payload)
       });
       toast('Đã khai báo vật tư mới thành công!');
     }
@@ -463,6 +572,7 @@ export async function deleteSupplyUsage(id) {
 }
 
 // ─── EXPOSE TO WINDOW FOR HTML ONCLICK ───────────────────────────
+window.autoCalculateSupplyUnits = autoCalculateSupplyUnits;
 window.loadSupplies = loadSupplies;
 window.filterSupplyCategory = filterSupplyCategory;
 window.openSupplyModal = openSupplyModal;

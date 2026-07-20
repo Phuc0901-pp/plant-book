@@ -44,7 +44,7 @@ router.get('/', auth, async (req, res) => {
 // POST /api/supplies — Khai báo vật tư mới
 router.post('/', auth, async (req, res) => {
   try {
-    const { category, name, unit, package_size, unit_price, stock_quantity, note } = req.body;
+    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note } = req.body;
     if (!category || !name || !unit) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });
     }
@@ -55,13 +55,29 @@ router.post('/', auth, async (req, res) => {
     }
 
     const price = parseFloat(unit_price) || 0;
+    const pkgQty = parseFloat(package_qty) || 1;
+    const pkgPrice = parseFloat(package_price) || price;
+    const unitPriceSmall = parseFloat(unit_price_small) || (pkgQty > 0 ? price / pkgQty : 0);
     const stock = parseFloat(stock_quantity) || 0;
 
     const result = await pool.query(
-      `INSERT INTO supplies (user_id, category, name, unit, package_size, unit_price, stock_quantity, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [req.user.id, category.trim(), name.trim(), unit.trim(), package_size ? package_size.trim() : null, price, stock, note || null]
+      [
+        req.user.id,
+        category.trim(),
+        name.trim(),
+        unit.trim(),
+        package_size ? package_size.trim() : null,
+        pkgQty,
+        package_unit ? package_unit.trim() : unit.trim(),
+        pkgPrice,
+        price,
+        unitPriceSmall,
+        stock,
+        note || null
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -75,7 +91,7 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, name, unit, package_size, unit_price, stock_quantity, note } = req.body;
+    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note } = req.body;
 
     const check = await pool.query('SELECT * FROM supplies WHERE id = $1', [id]);
     if (check.rows.length === 0) {
@@ -86,19 +102,26 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     const price = parseFloat(unit_price) || 0;
+    const pkgQty = parseFloat(package_qty) || check.rows[0].package_qty || 1;
+    const pkgPrice = parseFloat(package_price) || check.rows[0].package_price || price;
+    const unitPriceSmall = parseFloat(unit_price_small) || (pkgQty > 0 ? price / pkgQty : 0);
     const stock = parseFloat(stock_quantity) || 0;
 
     const result = await pool.query(
       `UPDATE supplies 
-       SET category = $1, name = $2, unit = $3, package_size = $4, unit_price = $5, stock_quantity = $6, note = $7, updated_at = NOW()
-       WHERE id = $8
+       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, updated_at = NOW()
+       WHERE id = $12
        RETURNING *`,
       [
         category || check.rows[0].category,
         name || check.rows[0].name,
         unit || check.rows[0].unit,
         package_size !== undefined ? package_size : check.rows[0].package_size,
+        pkgQty,
+        package_unit || check.rows[0].package_unit || unit,
+        pkgPrice,
         price,
+        unitPriceSmall,
         stock,
         note !== undefined ? note : check.rows[0].note,
         id

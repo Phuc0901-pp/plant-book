@@ -210,6 +210,10 @@ async function initDB() {
     `);
     await client.query(`
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS package_size VARCHAR(100);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS package_qty NUMERIC DEFAULT 1;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS package_unit VARCHAR(50);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS package_price NUMERIC DEFAULT 0;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS unit_price_small NUMERIC DEFAULT 0;
     `);
 
     // Supply Usages (Giám sát tiêu hao vật tư) table
