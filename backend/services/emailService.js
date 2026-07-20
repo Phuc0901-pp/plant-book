@@ -6,7 +6,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'phphuc0539@gmail.com';
 // Configure transporter with fallback credentials & socket timeouts
 function createTransporter() {
   const user = process.env.SMTP_USER || 'phphuc0539@gmail.com';
-  const pass = process.env.SMTP_PASS || '090103Phuc@';
+  const pass = process.env.SMTP_PASS || 'urtu ugxu pang qxjt';
 
   if (user && pass) {
     return nodemailer.createTransport({
