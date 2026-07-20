@@ -38,6 +38,12 @@
       <div class="leaf-particle"></div>
     </div>
 
+    <!-- NFC badge -->
+    <div class="hero-nfc-badge">
+      <i class="fa-solid fa-wifi"></i>
+      <span>NFC Ready</span>
+    </div>
+
     <!-- Nội dung hero -->
     <div class="login-hero-content">
       <div class="login-hero-tag">
@@ -80,10 +86,18 @@
 
   <!-- CỘT PHẢI: Form đăng nhập -->
   <div class="login-form-panel">
+    <!-- Decorative orbs -->
+    <div class="lf-orb lf-orb--1" aria-hidden="true"></div>
+    <div class="lf-orb lf-orb--2" aria-hidden="true"></div>
+
     <div class="login-card">
       <div class="login-logo">
-        <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
+        <div class="login-logo-wrap">
+          <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
+          <div class="login-logo-glow" aria-hidden="true"></div>
+        </div>
         <h1>Hệ thống quản lý cây trồng</h1>
+        <p class="login-subtitle">Đăng nhập để tiếp tục</p>
       </div>
 
       <div class="login-divider"></div>
@@ -94,16 +108,18 @@
       </div>
 
       <div class="form-group">
-        <label><i class="fa fa-envelope"></i> Email</label>
-        <input type="email" id="login-email" placeholder="email@tanbaocorp.vn">
+        <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
+        <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
       </div>
       <div class="form-group">
         <div class="form-label-row">
-          <label style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
-          <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">Quên mật khẩu?</a>
+          <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
+          <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
+            <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
+          </a>
         </div>
         <div class="password-input-wrap">
-          <input type="password" id="login-pass" placeholder="••••••••">
+          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
           <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
             <i id="toggle-pass-icon" class="fa fa-eye"></i>
           </button>
@@ -112,7 +128,13 @@
 
       <button class="btn-login" id="login-btn" onclick="doLogin()">
         <span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>
+        <span class="btn-login-shimmer" aria-hidden="true"></span>
       </button>
+
+      <div class="login-footer-note">
+        <i class="fa-solid fa-shield-halved" style="color:#22c55e;"></i>
+        Kết nối bảo mật SSL/TLS &nbsp;·&nbsp; Tanbao AgTech © 2025
+      </div>
     </div>
   </div>
 
