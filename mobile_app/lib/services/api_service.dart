@@ -79,6 +79,20 @@ class ApiService {
     await prefs.remove('pb_token');
   }
 
+  Future<Map<String, dynamic>?> fetchUserInfo() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching user info: $e');
+      return null;
+    }
+  }
+
   Future<void> syncOfflineLogs() async {
     final pending = CacheService().getPendingLogs();
     if (pending.isEmpty) return;
