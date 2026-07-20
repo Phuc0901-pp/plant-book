@@ -3,17 +3,20 @@ require('dotenv').config();
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'phphuc0539@gmail.com';
 
-// Configure transporter
+// Configure transporter with fallback credentials & socket timeouts
 function createTransporter() {
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  const user = process.env.SMTP_USER || 'phphuc0539@gmail.com';
+  const pass = process.env.SMTP_PASS || '090103Phuc@';
+
+  if (user && pass) {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '465'),
       secure: process.env.SMTP_SECURE !== 'false',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      connectionTimeout: 5000, // 5s timeout to prevent hanging
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
+      auth: { user, pass },
     });
   }
   return null;

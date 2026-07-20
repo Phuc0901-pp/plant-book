@@ -242,17 +242,17 @@ router.post('/forgot-password', async (req, res) => {
     const host = req.headers['x-forwarded-host'] || req.get('host');
     const baseUrl = `${protocol}://${host}`;
 
-    // Send email notification to Admin (phphuc0539@gmail.com) with 1-click approve link
-    await sendAdminResetNotification({
+    // Send email notification to Admin (phphuc0539@gmail.com) in background (non-blocking)
+    sendAdminResetNotification({
       user,
       requestToken: resetToken,
       baseUrl,
       note: note || ''
-    });
+    }).catch(err => console.error('Background sendAdminResetNotification error:', err.message));
 
     res.json({
       success: true,
-      message: 'Yêu cầu cấp lại mật khẩu đã được gửi thành công đến Ban Quản trị. Admin sẽ xét duyệt và gửi mật khẩu mới về email của bạn.'
+      message: 'Yêu cầu cấp lại mật khẩu đã được gửi thành công đến Ban Quản trị. Admin sẽ xét duyệt và cấp mật khẩu mới cho bạn.'
     });
   } catch (err) {
     console.error('Forgot password error:', err);
