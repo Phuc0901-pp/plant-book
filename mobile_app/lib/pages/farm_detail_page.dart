@@ -205,20 +205,22 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     const plants = $plantsJson;
     const mapboxToken = '$mapboxToken';
 
-    const map = L.map('map', { zoomControl: false }).setView(center, $_mapZoom);
+    const map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView(center, $_mapZoom);
 
-    // Tile Layer: Mapbox Satellite or Esri World Imagery Fallback
+    // Tile Layer: Mapbox Satellite or Esri World Imagery Fallback with maxNativeZoom to allow deep zooming without missing tiles
     let satelliteLayer;
     if (mapboxToken && mapboxToken.length > 10) {
       satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + mapboxToken, {
-        maxZoom: 20,
+        maxNativeZoom: 18,
+        maxZoom: 22,
         tileSize: 512,
         zoomOffset: -1,
         attribution: 'Mapbox'
       });
     } else {
       satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19,
+        maxNativeZoom: 18,
+        maxZoom: 22,
         attribution: 'Esri'
       });
     }
@@ -229,14 +231,16 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
         window._swappedToEsri = true;
         map.removeLayer(satelliteLayer);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-          maxZoom: 19
+          maxNativeZoom: 18,
+          maxZoom: 22
         }).addTo(map);
       }
     });
 
     // Place labels overlay
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
+      maxNativeZoom: 18,
+      maxZoom: 22,
       subdomains: 'abcd'
     }).addTo(map);
 

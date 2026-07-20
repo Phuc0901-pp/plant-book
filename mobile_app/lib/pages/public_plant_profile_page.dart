@@ -140,20 +140,22 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     const mapboxToken = '$mapboxToken';
 
     const center = (plantLat && plantLng) ? [plantLat, plantLng] : [12.0, 108.2];
-    const map = L.map('map', { zoomControl: true }).setView(center, 17.5);
+    const map = L.map('map', { zoomControl: true, maxZoom: 22 }).setView(center, 17.5);
 
     // Tile Layer: Mapbox Satellite or Esri World Imagery Fallback
     let satelliteLayer;
     if (mapboxToken && mapboxToken.length > 10) {
       satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=' + mapboxToken, {
-        maxZoom: 20,
+        maxNativeZoom: 18,
+        maxZoom: 22,
         tileSize: 512,
         zoomOffset: -1,
         attribution: 'Mapbox'
       });
     } else {
       satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19,
+        maxNativeZoom: 18,
+        maxZoom: 22,
         attribution: 'Esri'
       });
     }
@@ -164,14 +166,16 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         window._swappedToEsri = true;
         map.removeLayer(satelliteLayer);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-          maxZoom: 19
+          maxNativeZoom: 18,
+          maxZoom: 22
         }).addTo(map);
       }
     });
 
     // Place labels overlay
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
+      maxNativeZoom: 18,
+      maxZoom: 22,
       subdomains: 'abcd'
     }).addTo(map);
 
