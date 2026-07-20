@@ -41,6 +41,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const { uploadFile } = require('../config/supabase');
 const upload = multer({
@@ -52,11 +54,13 @@ const upload = multer({
 router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Vui lòng chọn một tệp hình ảnh.' });
-    const publicUrl = await uploadFile(req.file.buffer, req.file.originalname, 'supplies', req.file.mimetype);
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const objectName = `supplies/${uuidv4()}${ext}`;
+    const publicUrl = await uploadFile(objectName, req.file.buffer, req.file.mimetype);
     res.json({ url: publicUrl });
   } catch (err) {
     console.error('Error uploading supply image:', err);
-    res.status(500).json({ error: 'Lỗi server khi tải ảnh vật tư lên.' });
+    res.status(500).json({ error: 'Lỗi server khi tải ảnh vật tư lên: ' + err.message });
   }
 });
 

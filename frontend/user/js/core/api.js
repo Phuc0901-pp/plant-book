@@ -41,14 +41,27 @@ export function setCurrentUser(u) {
  * @returns {Promise<any>}
  */
 export async function api(path, opts = {}) {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    ...(opts.headers || {})
+  };
+
+  const isFormData = opts.isFormData || (opts.body && typeof FormData !== 'undefined' && opts.body instanceof FormData);
+  if (!isFormData && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const res = await fetch(API + path, {
     ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...(opts.headers || {})
-    }
+    headers
   });
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text();
+    throw new Error(res.ok ? 'Phản hồi không phải dạng JSON' : `Lỗi máy chủ (${res.status})`);
+  }
+
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
