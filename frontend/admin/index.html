@@ -606,6 +606,7 @@
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="user-tab-manage" onclick="switchUserTab('manage')">Quản lý nông hộ</div>
           <div class="tab" id="user-tab-status" onclick="switchUserTab('status')">Trạng thái hoạt động</div>
+          <div class="tab" id="user-tab-resets" onclick="switchUserTab('resets')">🔑 Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span></div>
         </div>
 
         <!-- Pane: Manage Users -->
@@ -659,6 +660,32 @@
                 </tr>
               </thead>
               <tbody id="users-status-table">
+                <tr>
+                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pane: Password Reset Requests -->
+        <div class="tab-pane" id="pane-user-resets" style="display:none;">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-key" style="color:var(--green)"></i> Danh sách yêu cầu cấp lại mật khẩu</h3>
+              <button class="btn btn-secondary btn-sm" onclick="loadResetRequests()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Tài khoản / Nông hộ</th>
+                  <th>Thông tin đã gửi</th>
+                  <th>Thời gian gửi</th>
+                  <th>Trạng thái</th>
+                  <th style="width:140px">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="reset-requests-table">
                 <tr>
                   <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
                 </tr>

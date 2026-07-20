@@ -211,10 +211,23 @@ function escapeHtml(str) {
 }
 
 function switchUserTab(tab) {
-  document.getElementById('user-tab-manage').classList.toggle('active', tab === 'manage');
-  document.getElementById('user-tab-status').classList.toggle('active', tab === 'status');
-  document.getElementById('pane-user-manage').style.display = tab === 'manage' ? 'block' : 'none';
-  document.getElementById('pane-user-status').style.display = tab === 'status' ? 'block' : 'none';
+  const tabManage = document.getElementById('user-tab-manage');
+  const tabStatus = document.getElementById('user-tab-status');
+  const tabResets = document.getElementById('user-tab-resets');
+
+  if (tabManage) tabManage.classList.toggle('active', tab === 'manage');
+  if (tabStatus) tabStatus.classList.toggle('active', tab === 'status');
+  if (tabResets) tabResets.classList.toggle('active', tab === 'resets');
+
+  const paneManage = document.getElementById('pane-user-manage');
+  const paneStatus = document.getElementById('pane-user-status');
+  const paneResets = document.getElementById('pane-user-resets');
+
+  if (paneManage) paneManage.style.display = tab === 'manage' ? 'block' : 'none';
+  if (paneStatus) paneStatus.style.display = tab === 'status' ? 'block' : 'none';
+  if (paneResets) paneResets.style.display = tab === 'resets' ? 'block' : 'none';
+
+  if (tab === 'resets') loadResetRequests();
 }
 
 function formatRelativeTime(dateString) {
@@ -327,10 +340,23 @@ async function openUserActivityModal(userId, userName) {
 
 async function loadResetRequests() {
   const tbody = document.getElementById('reset-requests-table');
-  if (!tbody) return;
+  const badge = document.getElementById('reset-badge');
 
   try {
     const requests = await api('/auth/reset-requests');
+    const pendingCount = (requests || []).filter(r => r.status === 'pending').length;
+
+    if (badge) {
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (!tbody) return;
+
     if (!requests || requests.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Không có yêu cầu cấp lại mật khẩu nào.</td></tr>';
       return;
@@ -349,13 +375,13 @@ async function loadResetRequests() {
       return `
         <tr>
           <td><strong>${r.full_name || r.email}</strong><br><span style="font-size:12px; color:var(--text-muted);">${r.email}</span></td>
-          <td>${r.identity}</td>
+          <td>${r.identity} ${r.note ? `<br><small style="color:var(--gray-500)">Ghi chú: "${escapeHtml(r.note)}"</small>` : ''}</td>
           <td>${dateStr}</td>
           <td>${statusBadge}</td>
           <td>
             ${isPending ? `
               <button class="btn btn-sm btn-primary" onclick="approveResetRequestFromAdmin('${r.token}')" style="background:var(--green); font-size:12px; padding:4px 10px;">
-                <i class="fa fa-check"></i> Duyệt
+                <i class="fa fa-check"></i> Duyệt & Cấp MK
               </button>
             ` : '—'}
           </td>
