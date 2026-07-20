@@ -1011,6 +1011,28 @@
         </div>
       </div>
 
+      <!-- Row 4: Hình ảnh bao bì / nhãn hiệu phân bón / thuốc BVTV -->
+      <div class="field" style="margin-bottom:16px;">
+        <label class="form-label"><i class="fa-solid fa-camera"></i> Hình ảnh bao bì / Nhãn hiệu sản phẩm (Tùy chọn)</label>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <div id="sp-image-preview-wrap" style="width:54px; height:54px; border-radius:10px; border:1px solid var(--gray-200); background:#f8fafc; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+            <i class="fa-solid fa-image" style="color:#94a3b8; font-size:22px;" id="sp-image-placeholder-icon"></i>
+            <img id="sp-image-preview" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+          </div>
+          <div style="flex:1;">
+            <input type="file" id="sp-image-file" accept="image/*" style="display:none;" onchange="uploadSupplyImage(this)">
+            <button type="button" class="btn btn-secondary btn-sm" id="sp-upload-btn" onclick="document.getElementById('sp-image-file').click()" style="display:inline-flex; align-items:center; gap:6px; background:#fff; border:1.5px solid var(--gray-200);">
+              <i class="fa-solid fa-upload" style="color:var(--green);"></i> <span id="sp-upload-btn-text">Tải ảnh bao bì...</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="sp-remove-img-btn" onclick="removeSupplyImage()" style="display:none; align-items:center; gap:4px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; margin-left:6px;">
+              <i class="fa-solid fa-trash"></i> Xóa
+            </button>
+            <input type="hidden" id="sp-image-url" value="">
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Tải ảnh bao phân NPK, chai thuốc Anvil...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Hidden form values -->
       <input type="hidden" id="sp-unit" value="kg">
       <input type="hidden" id="sp-unit-price" value="0">

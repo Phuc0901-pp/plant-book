@@ -106,6 +106,59 @@ export function autoCalculateSupplyUnits() {
   }
 }
 
+export async function uploadSupplyImage(fileInput) {
+  const file = fileInput?.files[0];
+  if (!file) return;
+
+  const btnText = document.getElementById('sp-upload-btn-text');
+  if (btnText) btnText.textContent = 'Đang tải...';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const data = await api('/supplies/upload-image', {
+      method: 'POST',
+      body: formData,
+      isFormData: true
+    });
+
+    setSupplyImagePreview(data.url);
+    toast('Đã tải ảnh bao bì thành công!');
+  } catch (err) {
+    toast('Lỗi tải ảnh: ' + err.message, 'error');
+  } finally {
+    if (btnText) btnText.textContent = 'Tải ảnh bao bì...';
+  }
+}
+window.uploadSupplyImage = uploadSupplyImage;
+
+export function setSupplyImagePreview(url) {
+  const preview = document.getElementById('sp-image-preview');
+  const placeholder = document.getElementById('sp-image-placeholder-icon');
+  const inputUrl = document.getElementById('sp-image-url');
+  const removeBtn = document.getElementById('sp-remove-img-btn');
+
+  if (url) {
+    if (preview) { preview.src = url; preview.style.display = 'block'; }
+    if (placeholder) placeholder.style.display = 'none';
+    if (inputUrl) inputUrl.value = url;
+    if (removeBtn) removeBtn.style.display = 'inline-flex';
+  } else {
+    if (preview) { preview.src = ''; preview.style.display = 'none'; }
+    if (placeholder) placeholder.style.display = 'block';
+    if (inputUrl) inputUrl.value = '';
+    if (removeBtn) removeBtn.style.display = 'none';
+  }
+}
+
+export function removeSupplyImage() {
+  setSupplyImagePreview('');
+  const fileInput = document.getElementById('sp-image-file');
+  if (fileInput) fileInput.value = '';
+}
+window.removeSupplyImage = removeSupplyImage;
+
 export async function loadSupplies() {
   const tbody = document.getElementById('supplies-table-body');
   if (!tbody) return;
@@ -141,7 +194,16 @@ export async function loadSupplies() {
       return `
         <tr>
           <td>${getCategoryBadge(sp.category)}</td>
-          <td><strong>${sp.name}</strong></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              ${sp.image_url 
+                ? `<img src="${esc(sp.image_url)}" style="width:38px; height:38px; border-radius:8px; object-fit:cover; border:1px solid var(--gray-200); box-shadow:0 2px 4px rgba(0,0,0,0.05);" onclick="openLightbox('${esc(sp.image_url)}', 'image')" class="clickable">` 
+                : `<div style="width:38px; height:38px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:16px;"><i class="fa-solid fa-boxes-packing"></i></div>`}
+              <div>
+                <strong>${esc(sp.name)}</strong>
+              </div>
+            </div>
+          </td>
           <td>
             <span class="badge-gray" style="background:#f1f5f9; color:#334155; font-weight:700;">
               <i class="fa-solid fa-weight-hanging"></i> ${sp.package_qty || 1} ${sp.package_unit || sp.unit}
@@ -193,6 +255,7 @@ export function openSupplyModal(id = null) {
   document.getElementById('sp-package-unit').value = 'kg';
   document.getElementById('sp-package-price').value = '1530000';
   document.getElementById('sp-note').value = '';
+  setSupplyImagePreview('');
 
   if (id) {
     const sp = cachedSupplies.find(item => item.id == id);
@@ -204,6 +267,7 @@ export function openSupplyModal(id = null) {
       document.getElementById('sp-package-unit').value = sp.package_unit || sp.unit || 'kg';
       document.getElementById('sp-package-price').value = sp.package_price || (sp.unit_price * (sp.package_qty || 1));
       document.getElementById('sp-note').value = sp.note || '';
+      setSupplyImagePreview(sp.image_url || '');
     }
   } else {
     if (title) title.innerHTML = '<i class="fa-solid fa-boxes-packing" style="color:var(--green)"></i> Khai báo vật tư mới';
@@ -232,6 +296,7 @@ export async function saveSupply() {
   const unit_price = parseFloat(document.getElementById('sp-unit-price').value) || 0;
   const unit_price_small = parseFloat(document.getElementById('sp-unit-price-small').value) || 0;
   const note = document.getElementById('sp-note').value.trim();
+  const image_url = document.getElementById('sp-image-url')?.value || '';
 
   if (!name || !package_price) {
     toast('Vui lòng điền đầy đủ Tên vật tư và Tổng giá tiền mua!', 'warning');
@@ -251,7 +316,8 @@ export async function saveSupply() {
     unit,
     unit_price,
     unit_price_small,
-    note
+    note,
+    image_url
   };
 
   try {

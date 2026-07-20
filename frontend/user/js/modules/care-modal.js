@@ -160,6 +160,18 @@ export function onCareSupplySelected(selectEl, hiddenInputId) {
     const hiddenInput = document.getElementById(hiddenInputId);
     if (hiddenInput) hiddenInput.value = opt.getAttribute('data-name') || opt.text;
   }
+
+  const imgUrl = opt?.getAttribute('data-img');
+  const imgPreviewWrap = document.getElementById('c-supply-img-wrap');
+  const imgPreview = document.getElementById('c-supply-img-preview');
+  if (imgPreviewWrap && imgPreview) {
+    if (imgUrl) {
+      imgPreview.src = imgUrl;
+      imgPreviewWrap.style.display = 'flex';
+    } else {
+      imgPreviewWrap.style.display = 'none';
+    }
+  }
 }
 window.onCareSupplySelected = onCareSupplySelected;
 
@@ -257,17 +269,22 @@ function _buildDetailFields(logType, configs, supplies = []) {
       const declaredFertilizers = supplies.filter(s => s.category === 'Bón phân');
 
       if (declaredFertilizers.length > 0) {
+        const firstImg = declaredFertilizers[0].image_url || '';
         return `
           <div class="field">
             <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer')">
               ${declaredFertilizers.map(s => `
-                <option value="${s.id}" data-name="${esc(s.name)}">
+                <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}">
                   🧪 ${_formatSupplyOptionText(s)}
                 </option>
               `).join('')}
             </select>
             <input type="hidden" id="c-detail-fertilizer" value="${esc(declaredFertilizers[0].name)}">
+            <div id="c-supply-img-wrap" style="display:${firstImg ? 'flex' : 'none'}; align-items:center; gap:8px; margin-top:8px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid var(--gray-200);">
+              <img id="c-supply-img-preview" src="${esc(firstImg)}" style="width:42px; height:42px; border-radius:6px; object-fit:cover; border:1px solid var(--gray-200);">
+              <span style="font-size:12px; color:var(--text-muted); font-weight:500;">Ảnh bao bì / nhãn hiệu sản phẩm</span>
+            </div>
             <small style="color:var(--green-dark); font-weight:600; margin-top:4px; display:block;">
               <i class="fa-solid fa-circle-check"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí)
             </small>
@@ -302,17 +319,22 @@ function _buildDetailFields(logType, configs, supplies = []) {
       const declaredPesticides = supplies.filter(s => s.category === 'Phun thuốc');
 
       if (declaredPesticides.length > 0) {
+        const firstImg = declaredPesticides[0].image_url || '';
         return `
           <div class="field">
             <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide')">
               ${declaredPesticides.map(s => `
-                <option value="${s.id}" data-name="${esc(s.name)}">
+                <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}">
                   🛡️ ${_formatSupplyOptionText(s)}
                 </option>
               `).join('')}
             </select>
             <input type="hidden" id="c-detail-pesticide" value="${esc(declaredPesticides[0].name)}">
+            <div id="c-supply-img-wrap" style="display:${firstImg ? 'flex' : 'none'}; align-items:center; gap:8px; margin-top:8px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid var(--gray-200);">
+              <img id="c-supply-img-preview" src="${esc(firstImg)}" style="width:42px; height:42px; border-radius:6px; object-fit:cover; border:1px solid var(--gray-200);">
+              <span style="font-size:12px; color:var(--text-muted); font-weight:500;">Ảnh bao bì / nhãn hiệu sản phẩm</span>
+            </div>
             <small style="color:var(--green-dark); font-weight:600; margin-top:4px; display:block;">
               <i class="fa-solid fa-circle-check"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí)
             </small>

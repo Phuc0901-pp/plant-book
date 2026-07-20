@@ -41,10 +41,29 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+const multer = require('multer');
+const { uploadFile } = require('../config/supabase');
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 }
+});
+
+// POST /api/supplies/upload-image — Tải ảnh bao bì vật tư (phân bón / thuốc BVTV)
+router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Vui lòng chọn một tệp hình ảnh.' });
+    const publicUrl = await uploadFile(req.file.buffer, req.file.originalname, 'supplies', req.file.mimetype);
+    res.json({ url: publicUrl });
+  } catch (err) {
+    console.error('Error uploading supply image:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải ảnh vật tư lên.' });
+  }
+});
+
 // POST /api/supplies — Khai báo vật tư mới
 router.post('/', auth, async (req, res) => {
   try {
-    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note } = req.body;
+    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url } = req.body;
     if (!category || !name || !unit) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });
     }
@@ -61,8 +80,8 @@ router.post('/', auth, async (req, res) => {
     const stock = parseFloat(stock_quantity) || 0;
 
     const result = await pool.query(
-      `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         req.user.id,
@@ -76,7 +95,8 @@ router.post('/', auth, async (req, res) => {
         price,
         unitPriceSmall,
         stock,
-        note || null
+        note || null,
+        image_url || null
       ]
     );
 
@@ -91,7 +111,7 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note } = req.body;
+    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url } = req.body;
 
     const check = await pool.query('SELECT * FROM supplies WHERE id = $1', [id]);
     if (check.rows.length === 0) {
@@ -109,8 +129,8 @@ router.put('/:id', auth, async (req, res) => {
 
     const result = await pool.query(
       `UPDATE supplies 
-       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, updated_at = NOW()
-       WHERE id = $12
+       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, image_url = $12, updated_at = NOW()
+       WHERE id = $13
        RETURNING *`,
       [
         category || check.rows[0].category,
@@ -118,12 +138,13 @@ router.put('/:id', auth, async (req, res) => {
         unit || check.rows[0].unit,
         package_size !== undefined ? package_size : check.rows[0].package_size,
         pkgQty,
-        package_unit || check.rows[0].package_unit || unit,
+        package_unit || check.rows[0].package_unit,
         pkgPrice,
         price,
         unitPriceSmall,
         stock,
         note !== undefined ? note : check.rows[0].note,
+        image_url !== undefined ? image_url : check.rows[0].image_url,
         id
       ]
     );
