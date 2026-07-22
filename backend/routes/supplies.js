@@ -70,6 +70,7 @@ router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
 // POST /api/supplies — Khai báo vật tư mới
 router.post('/', auth, async (req, res) => {
   try {
+    console.log('POST /api/supplies body:', req.body);
     const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, user_id } = req.body;
     if (!category || !name || !unit) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });

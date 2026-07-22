@@ -43,17 +43,23 @@ class Supply {
       name: json['name'] ?? '',
       unit: json['unit'] ?? 'kg',
       packageSize: json['package_size'],
-      packageQty: json['package_qty'] != null ? (json['package_qty'] as num).toDouble() : 1.0,
+      packageQty: _parseDouble(json['package_qty']),
       packageUnit: json['package_unit'] ?? json['unit'] ?? 'kg',
-      packagePrice: json['package_price'] != null ? (json['package_price'] as num).toDouble() : 0.0,
-      unitPrice: json['unit_price'] != null ? (json['unit_price'] as num).toDouble() : 0.0,
-      unitPriceSmall: json['unit_price_small'] != null ? (json['unit_price_small'] as num).toDouble() : 0.0,
-      stockQuantity: json['stock_quantity'] != null ? (json['stock_quantity'] as num).toDouble() : 0.0,
+      packagePrice: _parseDouble(json['package_price']),
+      unitPrice: _parseDouble(json['unit_price']),
+      unitPriceSmall: _parseDouble(json['unit_price_small']),
+      stockQuantity: _parseDouble(json['stock_quantity']),
       note: json['note'],
       imageUrl: json['image_url'],
-      totalSpent: json['total_spent'] != null ? (json['total_spent'] as num).toDouble() : 0.0,
-      totalUsedQty: json['total_used_qty'] != null ? (json['total_used_qty'] as num).toDouble() : 0.0,
+      totalSpent: _parseDouble(json['total_spent']),
+      totalUsedQty: _parseDouble(json['total_used_qty']),
     );
+  }
+
+  static double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
   }
 
   Map<String, dynamic> toJson() {
