@@ -961,7 +961,7 @@
           </select>
         </div>
 
-        <div class="field" style="margin-bottom:0;">
+        <div class="field" id="field-package-unit" style="margin-bottom:0;">
           <label class="form-label"><i class="fa-solid fa-scale-balanced"></i> Quy cách / Đơn vị gói <span class="req-star">*</span></label>
           <select id="sp-package-unit" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
             <option value="kg">kg (Bao / Túi kg)</option>
@@ -976,26 +976,26 @@
       </div>
 
       <!-- Row 2: Tên vật tư -->
-      <div class="field" style="margin-bottom:16px;">
+      <div class="field" id="field-name" style="margin-bottom:16px;">
         <label class="form-label"><i class="fa-solid fa-box-open"></i> Tên vật tư / Dịch vụ <span class="req-star">*</span></label>
         <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
       </div>
 
       <!-- Row 3: Khối lượng 1 gói & Tổng giá tiền -->
-      <div class="form-row-2">
-        <div class="field" style="margin-bottom:0;">
+      <div class="form-row-2" id="row-package-qty-price">
+        <div class="field" id="field-package-qty" style="margin-bottom:0;">
           <label class="form-label"><i class="fa-solid fa-weight-hanging"></i> Khối lượng 1 gói <span class="req-star">*</span></label>
           <input type="number" id="sp-package-qty" class="form-control-custom" value="50" min="0.001" step="any" oninput="autoCalculateSupplyUnits()" placeholder="VD: 50">
         </div>
 
-        <div class="field" style="margin-bottom:0;">
-          <label class="form-label"><i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span></label>
+        <div class="field" id="field-package-price" style="margin-bottom:0;">
+          <label class="form-label" id="label-package-price"><i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span></label>
           <input type="number" id="sp-package-price" class="form-control-custom" min="0" step="100" oninput="autoCalculateSupplyUnits()" placeholder="VD: 1530000" style="font-weight:700; color:var(--green-dark);">
         </div>
       </div>
 
       <!-- Live Auto Calculation Breakdown Card -->
-      <div class="calc-breakdown-card">
+      <div class="calc-breakdown-card" id="card-breakdown">
         <div class="calc-card-title">
           <i class="fa-solid fa-calculator"></i> BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT
         </div>
@@ -1012,7 +1012,7 @@
       </div>
 
       <!-- Row 4: Hình ảnh bao bì / nhãn hiệu phân bón / thuốc BVTV -->
-      <div class="field" style="margin-bottom:16px;">
+      <div class="field" id="field-image-upload" style="margin-bottom:16px;">
         <label class="form-label"><i class="fa-solid fa-camera"></i> Hình ảnh bao bì / Nhãn hiệu sản phẩm (Tùy chọn)</label>
         <div class="sp-image-upload-card">
           <div class="sp-img-preview-box">

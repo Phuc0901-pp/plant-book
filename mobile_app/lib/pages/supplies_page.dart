@@ -802,6 +802,18 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
   }
 
   void _recalculateUnits() {
+    final isWaterOrLabor = (_category == 'Tiền nước' || _category == 'Nhân công');
+    if (isWaterOrLabor) {
+      final price = double.tryParse(_packagePriceController.text) ?? 0.0;
+      _unitLarge = (_category == 'Tiền nước' ? 'm³' : 'ngày công');
+      _unitSmall = (_category == 'Tiền nước' ? 'lít' : 'ngày công');
+      _priceLarge = price;
+      _priceSmall = (_category == 'Tiền nước' ? price / 1000 : 0);
+      _packageUnit = (_category == 'Tiền nước' ? 'm3' : 'ngày công');
+      setState(() {});
+      return;
+    }
+
     final qty = double.tryParse(_packageQtyController.text) ?? 1.0;
     final price = double.tryParse(_packagePriceController.text) ?? 0.0;
 
@@ -844,21 +856,28 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
 
     setState(() => _isSaving = true);
 
-    final qty = double.tryParse(_packageQtyController.text) ?? 1.0;
-    final price = double.tryParse(_packagePriceController.text) ?? 0.0;
+    final isWaterOrLabor = (_category == 'Tiền nước' || _category == 'Nhân công');
+    final double qty = isWaterOrLabor ? 1.0 : (double.tryParse(_packageQtyController.text) ?? 1.0);
+    final double price = double.tryParse(_packagePriceController.text) ?? 0.0;
+    final String name = isWaterOrLabor ? _category : _nameController.text.trim();
+    final String pkgUnit = isWaterOrLabor ? (_category == 'Tiền nước' ? 'm3' : 'ngày công') : _packageUnit;
+    final String unitLarge = isWaterOrLabor ? (_category == 'Tiền nước' ? 'm³' : 'ngày công') : _unitLarge;
+    final double priceLarge = isWaterOrLabor ? price : _priceLarge;
+    final double priceSmall = isWaterOrLabor ? (_category == 'Tiền nước' ? price / 1000 : 0.0) : _priceSmall;
+    final String packageSize = isWaterOrLabor ? '1 $pkgUnit' : '$qty $_packageUnit';
 
     final data = {
       'category': _category,
-      'name': _nameController.text.trim(),
+      'name': name,
       'package_qty': qty,
-      'package_unit': _packageUnit,
+      'package_unit': pkgUnit,
       'package_price': price,
-      'package_size': '$qty $_packageUnit',
-      'unit': _unitLarge,
-      'unit_price': _priceLarge,
-      'unit_price_small': _priceSmall,
+      'package_size': packageSize,
+      'unit': unitLarge,
+      'unit_price': priceLarge,
+      'unit_price_small': priceSmall,
       'note': _noteController.text.trim(),
-      'image_url': _imageUrl,
+      'image_url': isWaterOrLabor ? null : _imageUrl,
     };
 
     final isEdit = widget.supply != null;
@@ -941,25 +960,7 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       const Text(
                         'Tự động quy đổi đơn giá chi tiết',
                         style: TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-
-          // Scrollable Form Body
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(18),
-              child: Form(
-                key: _formKey,
-                child: Column(
+                                     child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -981,26 +982,33 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                         DropdownMenuItem(value: 'Nhân công', child: Text('👷 Nhân công')),
                       ],
                       onChanged: (val) {
-                        if (val != null) setState(() => _category = val);
+                        if (val != null) {
+                          setState(() {
+                            _category = val;
+                            _recalculateUnits();
+                          });
+                        }
                       },
                     ),
                     const SizedBox(height: 14),
 
-                    // Tên vật tư
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Tên vật tư / Dịch vụ *',
-                        hintText: 'Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE',
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        fillColor: const Color(0xFFF8FAFC),
-                        filled: true,
+                    // Tên vật tư (chỉ hiện khi không phải Tiền nước / Nhân công)
+                    if (_category != 'Tiền nước' && _category != 'Nhân công') ...[
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Tên vật tư / Dịch vụ *',
+                          hintText: 'Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          fillColor: const Color(0xFFF8FAFC),
+                          filled: true,
+                        ),
+                        validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng nhập tên vật tư' : null,
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng nhập tên vật tư' : null,
-                    ),
-                    const SizedBox(height: 14),
+                      const SizedBox(height: 14),
+                    ],
 
                     // Photo Upload Card (only for Bón phân / Phun thuốc)
                     if (_category == 'Bón phân' || _category == 'Phun thuốc') ...[
@@ -1083,66 +1091,74 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       const SizedBox(height: 14),
                     ],
 
-                    // Khối lượng & Đơn vị
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: TextFormField(
-                            controller: _packageQtyController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: InputDecoration(
-                              labelText: 'Khối lượng gói *',
-                              hintText: 'VD: 50',
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              fillColor: const Color(0xFFF8FAFC),
-                              filled: true,
+                    // Khối lượng & Đơn vị (chỉ hiện khi không phải Tiền nước / Nhân công)
+                    if (_category != 'Tiền nước' && _category != 'Nhân công') ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: TextFormField(
+                              controller: _packageQtyController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                labelText: 'Khối lượng gói *',
+                                hintText: 'VD: 50',
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                              ),
+                              onChanged: (_) => _recalculateUnits(),
+                              validator: (val) => val == null || double.tryParse(val) == null ? 'Lỗi số' : null,
                             ),
-                            onChanged: (_) => _recalculateUnits(),
-                            validator: (val) => val == null || double.tryParse(val) == null ? 'Lỗi số' : null,
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 2,
-                          child: DropdownButtonFormField<String>(
-                            value: _packageUnit,
-                            decoration: InputDecoration(
-                              labelText: 'Đơn vị gói *',
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              fillColor: const Color(0xFFF8FAFC),
-                              filled: true,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              value: _packageUnit,
+                              decoration: InputDecoration(
+                                labelText: 'Đơn vị gói *',
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'kg', child: Text('kg')),
+                                DropdownMenuItem(value: 'g', child: Text('g')),
+                                DropdownMenuItem(value: 'lít', child: Text('lít')),
+                                DropdownMenuItem(value: 'ml', child: Text('ml')),
+                                DropdownMenuItem(value: 'm3', child: Text('m³')),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  _packageUnit = val;
+                                  _recalculateUnits();
+                                }
+                              },
                             ),
-                            items: const [
-                              DropdownMenuItem(value: 'kg', child: Text('kg')),
-                              DropdownMenuItem(value: 'g', child: Text('g')),
-                              DropdownMenuItem(value: 'lít', child: Text('lít')),
-                              DropdownMenuItem(value: 'ml', child: Text('ml')),
-                              DropdownMenuItem(value: 'm3', child: Text('m³')),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                _packageUnit = val;
-                                _recalculateUnits();
-                              }
-                            },
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                    ],
 
-                    // Tổng giá mua
+                    // Đơn giá / Tổng giá mua
                     TextFormField(
                       controller: _packagePriceController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'Tổng giá mua 1 gói (VNĐ) *',
-                        hintText: 'VD: 1530000',
+                        labelText: (_category == 'Tiền nước')
+                            ? 'Đơn giá nước (VNĐ / m³) *'
+                            : (_category == 'Nhân công'
+                                ? 'Đơn giá nhân công (VNĐ / ngày công) *'
+                                : 'Tổng giá mua 1 gói (VNĐ) *'),
+                        hintText: (_category == 'Tiền nước')
+                            ? 'VD: 5000'
+                            : (_category == 'Nhân công' ? 'VD: 300000' : 'VD: 1530000'),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -1154,83 +1170,85 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Breakdown Calculator Box (Design Upgrade)
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    // Breakdown Calculator Box (chỉ hiện khi không phải Tiền nước / Nhân công)
+                    if (_category != 'Tiền nước' && _category != 'Nhân công') ...[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                        border: Border.all(color: const Color(0xFF86EFAC)),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.calculate_rounded, size: 16, color: AppTheme.greenDark),
-                              SizedBox(width: 6),
-                              Text(
-                                'BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.greenDark, letterSpacing: 0.3),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFFBBF7D0)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Đơn giá chuẩn / $_unitLarge', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${currencyFormat.format(_priceLarge)} / $_unitLarge',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.greenDark, fontSize: 12),
-                                      ),
-                                    ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.calculate_rounded, size: 16, color: AppTheme.greenDark),
+                                SizedBox(width: 6),
+                                Text(
+                                  'BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.greenDark, letterSpacing: 0.3),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Đơn giá chuẩn / $_unitLarge', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${currencyFormat.format(_priceLarge)} / $_unitLarge',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.greenDark, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFFBFDBFE)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Đơn giá chi tiết / $_unitSmall', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${currencyFormat.format(_priceSmall)} / $_unitSmall',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 12),
-                                      ),
-                                    ],
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Đơn giá chi tiết / $_unitSmall', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${currencyFormat.format(_priceSmall)} / $_unitSmall',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
+                      const SizedBox(height: 14),
+                    ],
 
                     // Ghi chú thêm
                     TextFormField(

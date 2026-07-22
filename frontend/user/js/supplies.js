@@ -34,74 +34,133 @@ function getCategoryBadge(category) {
 // ─── TAB 1: QUẢN LÝ VẬT TƯ (CRUD) ───────────────────────────────
 
 // ─── Live Unit Auto-Calculation ──────────────────────────────────
+// ─── Live Unit Auto-Calculation ──────────────────────────────────
 export function autoCalculateSupplyUnits() {
-  const pkgQty = parseFloat(document.getElementById('sp-package-qty')?.value) || 1;
-  const pkgUnit = document.getElementById('sp-package-unit')?.value || 'kg';
-  const pkgPrice = parseFloat(document.getElementById('sp-package-price')?.value) || 0;
+  const category = document.getElementById('sp-category')?.value || 'Bón phân';
+  const isWaterOrLabor = (category === 'Tiền nước' || category === 'Nhân công');
 
-  let unitLarge = 'kg';
-  let unitSmall = 'g';
-  let priceLarge = 0;
-  let priceSmall = 0;
+  // Toggle DOM visibility based on Category
+  const fieldPkgUnit = document.getElementById('field-package-unit');
+  const fieldName = document.getElementById('field-name');
+  const fieldPkgQty = document.getElementById('field-package-qty');
+  const cardBreakdown = document.getElementById('card-breakdown');
+  const fieldImgUpload = document.getElementById('field-image-upload');
+  const labelPrice = document.getElementById('label-package-price');
+  const rowPrice = document.getElementById('row-package-qty-price');
 
-  if (pkgUnit === 'kg') {
-    unitLarge = 'kg';
-    unitSmall = 'g';
-    priceLarge = pkgPrice / pkgQty;
-    priceSmall = priceLarge / 1000;
-  } else if (pkgUnit === 'g') {
-    unitLarge = 'kg';
-    unitSmall = 'g';
-    priceSmall = pkgPrice / pkgQty;
-    priceLarge = priceSmall * 1000;
-  } else if (pkgUnit === 'lít') {
-    unitLarge = 'lít';
-    unitSmall = 'ml';
-    priceLarge = pkgPrice / pkgQty;
-    priceSmall = priceLarge / 1000;
-  } else if (pkgUnit === 'ml') {
-    unitLarge = 'lít';
-    unitSmall = 'ml';
-    priceSmall = pkgPrice / pkgQty;
-    priceLarge = priceSmall * 1000;
-  } else if (pkgUnit === 'm3') {
-    unitLarge = 'm³';
-    unitSmall = 'lít';
-    priceLarge = pkgPrice / pkgQty;
-    priceSmall = priceLarge / 1000;
-  } else if (pkgUnit === 'ngày công') {
-    unitLarge = 'ngày công';
-    unitSmall = 'giờ công';
-    priceLarge = pkgPrice / pkgQty;
-    priceSmall = priceLarge / 8;
+  if (isWaterOrLabor) {
+    if (fieldPkgUnit) fieldPkgUnit.style.display = 'none';
+    if (fieldName) fieldName.style.display = 'none';
+    if (fieldPkgQty) fieldPkgQty.style.display = 'none';
+    if (cardBreakdown) cardBreakdown.style.display = 'none';
+    if (fieldImgUpload) fieldImgUpload.style.display = 'none';
+    if (rowPrice) rowPrice.style.gridTemplateColumns = '1fr';
+
+    if (labelPrice) {
+      if (category === 'Tiền nước') {
+        labelPrice.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Đơn giá nước (VNĐ / m³) <span class="req-star">*</span>`;
+      } else {
+        labelPrice.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Đơn giá nhân công (VNĐ / ngày công) <span class="req-star">*</span>`;
+      }
+    }
+
+    // Set defaults for water & labor
+    const pkgPrice = parseFloat(document.getElementById('sp-package-price')?.value) || 0;
+    const pkgQty = 1;
+    const pkgUnit = (category === 'Tiền nước' ? 'm3' : 'ngày công');
+    const unitLarge = (category === 'Tiền nước' ? 'm³' : 'ngày công');
+    const priceLarge = pkgPrice;
+    const priceSmall = (category === 'Tiền nước' ? pkgPrice / 1000 : 0);
+
+    if (document.getElementById('sp-name')) document.getElementById('sp-name').value = category;
+    if (document.getElementById('sp-package-qty')) document.getElementById('sp-package-qty').value = pkgQty;
+    if (document.getElementById('sp-package-unit')) document.getElementById('sp-package-unit').value = pkgUnit;
+    if (document.getElementById('sp-unit')) document.getElementById('sp-unit').value = unitLarge;
+    if (document.getElementById('sp-unit-price')) document.getElementById('sp-unit-price').value = priceLarge;
+    if (document.getElementById('sp-package-size')) document.getElementById('sp-package-size').value = `1 ${pkgUnit}`;
+    if (document.getElementById('sp-unit-price-small')) document.getElementById('sp-unit-price-small').value = priceSmall;
+
   } else {
-    unitLarge = pkgUnit;
-    unitSmall = pkgUnit;
-    priceLarge = pkgPrice / pkgQty;
-    priceSmall = priceLarge;
-  }
+    // Normal Bón phân / Phun thuốc flow
+    if (fieldPkgUnit) fieldPkgUnit.style.display = '';
+    if (fieldName) fieldName.style.display = '';
+    if (fieldPkgQty) fieldPkgQty.style.display = '';
+    if (cardBreakdown) cardBreakdown.style.display = '';
+    if (fieldImgUpload) fieldImgUpload.style.display = '';
+    if (rowPrice) rowPrice.style.gridTemplateColumns = '';
 
-  // Update hidden form inputs
-  if (document.getElementById('sp-unit')) document.getElementById('sp-unit').value = unitLarge;
-  if (document.getElementById('sp-unit-price')) document.getElementById('sp-unit-price').value = priceLarge;
-  if (document.getElementById('sp-package-size')) document.getElementById('sp-package-size').value = `${pkgQty} ${pkgUnit}`;
-  if (document.getElementById('sp-unit-price-small')) document.getElementById('sp-unit-price-small').value = priceSmall;
+    if (labelPrice) {
+      labelPrice.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span>`;
+    }
 
-  // Update live preview UI
-  const largeLabel = document.getElementById('calc-unit-large-name');
-  const smallLabel = document.getElementById('calc-unit-small-name');
-  const largeVal = document.getElementById('calc-price-large');
-  const smallVal = document.getElementById('calc-price-small');
+    const pkgQty = parseFloat(document.getElementById('sp-package-qty')?.value) || 1;
+    const pkgUnit = document.getElementById('sp-package-unit')?.value || 'kg';
+    const pkgPrice = parseFloat(document.getElementById('sp-package-price')?.value) || 0;
 
-  if (largeLabel) largeLabel.textContent = unitLarge;
-  if (smallLabel) smallLabel.textContent = unitSmall;
-  if (largeVal) largeVal.textContent = `${formatVND(priceLarge)} / ${unitLarge}`;
+    let unitLarge = 'kg';
+    let unitSmall = 'g';
+    let priceLarge = 0;
+    let priceSmall = 0;
 
-  if (smallVal) {
-    if (priceSmall > 0 && priceSmall < 1) {
-      smallVal.textContent = `${priceSmall.toFixed(2)} VNĐ / ${unitSmall}`;
+    if (pkgUnit === 'kg') {
+      unitLarge = 'kg';
+      unitSmall = 'g';
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge / 1000;
+    } else if (pkgUnit === 'g') {
+      unitLarge = 'kg';
+      unitSmall = 'g';
+      priceSmall = pkgPrice / pkgQty;
+      priceLarge = priceSmall * 1000;
+    } else if (pkgUnit === 'lít') {
+      unitLarge = 'lít';
+      unitSmall = 'ml';
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge / 1000;
+    } else if (pkgUnit === 'ml') {
+      unitLarge = 'lít';
+      unitSmall = 'ml';
+      priceSmall = pkgPrice / pkgQty;
+      priceLarge = priceSmall * 1000;
+    } else if (pkgUnit === 'm3') {
+      unitLarge = 'm³';
+      unitSmall = 'lít';
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge / 1000;
+    } else if (pkgUnit === 'ngày công') {
+      unitLarge = 'ngày công';
+      unitSmall = 'giờ công';
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge / 8;
     } else {
-      smallVal.textContent = `${formatVND(priceSmall)} / ${unitSmall}`;
+      unitLarge = pkgUnit;
+      unitSmall = pkgUnit;
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge;
+    }
+
+    // Update hidden form inputs
+    if (document.getElementById('sp-unit')) document.getElementById('sp-unit').value = unitLarge;
+    if (document.getElementById('sp-unit-price')) document.getElementById('sp-unit-price').value = priceLarge;
+    if (document.getElementById('sp-package-size')) document.getElementById('sp-package-size').value = `${pkgQty} ${pkgUnit}`;
+    if (document.getElementById('sp-unit-price-small')) document.getElementById('sp-unit-price-small').value = priceSmall;
+
+    // Update live preview UI
+    const largeLabel = document.getElementById('calc-unit-large-name');
+    const smallLabel = document.getElementById('calc-unit-small-name');
+    const largeVal = document.getElementById('calc-price-large');
+    const smallVal = document.getElementById('calc-price-small');
+
+    if (largeLabel) largeLabel.textContent = unitLarge;
+    if (smallLabel) smallLabel.textContent = unitSmall;
+    if (largeVal) largeVal.textContent = `${formatVND(priceLarge)} / ${unitLarge}`;
+
+    if (smallVal) {
+      if (priceSmall > 0 && priceSmall < 1) {
+        smallVal.textContent = `${priceSmall.toFixed(2)} VNĐ / ${unitSmall}`;
+      } else {
+        smallVal.textContent = `${formatVND(priceSmall)} / ${unitSmall}`;
+      }
     }
   }
 }
