@@ -19,6 +19,10 @@ class _SuppliesPageState extends State<SuppliesPage> {
   String _selectedCategory = 'all';
   List<Supply> _supplies = [];
 
+  Map<String, dynamic>? _analyticsData;
+  List<Map<String, dynamic>> _usages = [];
+  bool _isAnalyticsLoading = true;
+
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'vi_VN',
     symbol: 'VNĐ',
@@ -29,6 +33,7 @@ class _SuppliesPageState extends State<SuppliesPage> {
   void initState() {
     super.initState();
     _loadSupplies();
+    _loadAnalyticsAndUsages();
   }
 
   Future<void> _loadSupplies() async {
@@ -55,6 +60,31 @@ class _SuppliesPageState extends State<SuppliesPage> {
     }
   }
 
+  Future<void> _loadAnalyticsAndUsages() async {
+    if (!mounted) return;
+    setState(() {
+      _isAnalyticsLoading = true;
+    });
+
+    try {
+      final usages = await _apiService.fetchSupplyUsages();
+      final analytics = await _apiService.fetchSupplyAnalytics(period: 'month');
+      if (mounted) {
+        setState(() {
+          _usages = usages;
+          _analyticsData = analytics;
+          _isAnalyticsLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAnalyticsLoading = false;
+        });
+      }
+    }
+  }
+
   void _onCategorySelected(String cat) {
     if (_selectedCategory == cat) return;
     setState(() {
@@ -69,7 +99,10 @@ class _SuppliesPageState extends State<SuppliesPage> {
       barrierDismissible: false,
       builder: (context) => SupplyFormDialog(
         supply: supply,
-        onSaved: () => _loadSupplies(),
+        onSaved: () {
+          _loadSupplies();
+          _loadAnalyticsAndUsages();
+        },
       ),
     );
   }
@@ -110,7 +143,10 @@ class _SuppliesPageState extends State<SuppliesPage> {
             backgroundColor: success ? AppTheme.green : AppTheme.red,
           ),
         );
-        if (success) _loadSupplies();
+        if (success) {
+          _loadSupplies();
+          _loadAnalyticsAndUsages();
+        }
       }
     }
   }
@@ -131,18 +167,8 @@ class _SuppliesPageState extends State<SuppliesPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildManagementTab() {
     return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          children: [
-            Icon(Icons.inventory_2_rounded, color: AppTheme.green),
-            SizedBox(width: 8),
-            Text('Quản lý & Giám sát Vật tư', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openSupplyDialog(),
         backgroundColor: AppTheme.green,
@@ -216,7 +242,7 @@ class _SuppliesPageState extends State<SuppliesPage> {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.green.withValues(alpha: 0.1),
+                                      color: AppTheme.green.withOpacity(0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(Icons.inventory_2_outlined, size: 54, color: AppTheme.green),
@@ -261,6 +287,302 @@ class _SuppliesPageState extends State<SuppliesPage> {
                           ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsTab() {
+    if (_isAnalyticsLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppTheme.green),
+            SizedBox(height: 12),
+            Text('Đang nạp báo cáo giám sát chi phí...', style: TextStyle(fontSize: 13, color: AppTheme.textMuted)),
+          ],
+        ),
+      );
+    }
+
+    final totalSpent = _analyticsData?['summary']?['total_expenditure'] ?? 0.0;
+    final categories = _analyticsData?['summary']?['categories'] as Map<String, dynamic>? ?? {};
+
+    final formattedTotal = _currencyFormat.format(totalSpent);
+
+    return RefreshIndicator(
+      onRefresh: _loadAnalyticsAndUsages,
+      color: AppTheme.green,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Total Expenditure Card (Gradient Header)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.green, AppTheme.greenDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.green.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'TỔNG CHI PHÍ ĐÃ TIÊU HAO',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    formattedTotal,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Dựa trên tất cả các lượt ghi chép tiêu hao vật tư của các thửa ruộng',
+                    style: TextStyle(fontSize: 11, color: Colors.white60),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Cost by category title
+            const Text(
+              'Chi phí theo hạng mục',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+            ),
+            const SizedBox(height: 10),
+
+            // Grid of Categories Cost
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.5,
+              children: [
+                _buildCategoryCostCard('Bón phân', categories['Bón phân'] ?? 0.0, Icons.science_rounded, Colors.green),
+                _buildCategoryCostCard('Tiền nước', categories['Tiền nước'] ?? 0.0, Icons.water_drop_rounded, Colors.blue),
+                _buildCategoryCostCard('Phun thuốc', categories['Phun thuốc'] ?? 0.0, Icons.shield_rounded, Colors.orange.shade800),
+                _buildCategoryCostCard('Nhân công', categories['Nhân công'] ?? 0.0, Icons.badge_rounded, Colors.purple),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Recent usages title
+            const Text(
+              'Nhật ký tiêu hao vật tư gần đây',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+            ),
+            const SizedBox(height: 10),
+
+            if (_usages.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history_rounded, size: 40, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text(
+                      'Chưa có lượt tiêu hao nào được ghi nhận',
+                      style: TextStyle(fontSize: 13, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Lịch sử tiêu hao sẽ xuất hiện khi bạn thêm nhật ký chăm sóc cây có sử dụng vật tư.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _usages.length,
+                itemBuilder: (context, index) {
+                  final usage = _usages[index];
+                  return _buildUsageListItem(usage);
+                },
+              ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryCostCard(String title, dynamic cost, IconData icon, Color color) {
+    final formattedCost = _currencyFormat.format(cost);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade100,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+              ),
+            ],
+          ),
+          Text(
+            formattedCost,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUsageListItem(Map<String, dynamic> usage) {
+    final cat = usage['category'] ?? '';
+    IconData icon = Icons.inventory_2_rounded;
+    Color color = AppTheme.green;
+    if (cat == 'Bón phân') {
+      icon = Icons.science_rounded;
+      color = Colors.green;
+    } else if (cat == 'Tiền nước') {
+      icon = Icons.water_drop_rounded;
+      color = Colors.blue;
+    } else if (cat == 'Phun thuốc') {
+      icon = Icons.shield_rounded;
+      color = Colors.orange.shade800;
+    } else if (cat == 'Nhân công') {
+      icon = Icons.badge_rounded;
+      color = Colors.purple;
+    }
+
+    final dateStr = usage['usage_date']?.toString().substring(0, 10) ?? '';
+    final formattedDate = dateStr.split('-').reversed.join('/');
+    final qty = double.tryParse(usage['quantity']?.toString() ?? '0') ?? 0.0;
+    final unit = usage['unit'] ?? '';
+    final totalCost = double.tryParse(usage['total_cost']?.toString() ?? '0') ?? 0.0;
+
+    final targetName = usage['tree_code'] != null
+        ? 'Cây ${usage['tree_code']}'
+        : (usage['farm_name'] ?? 'Cây trồng');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade100),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        title: Text(
+          usage['supply_name'] ?? 'Vật tư',
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+        ),
+        subtitle: Text(
+          '$formattedDate • $targetName\nĐã dùng: $qty $unit',
+          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.3),
+        ),
+        isThreeLine: true,
+        trailing: Text(
+          _currencyFormat.format(totalCost),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Row(
+            children: [
+              Icon(Icons.inventory_2_rounded, color: AppTheme.green),
+              SizedBox(width: 8),
+              Text('Quản lý & Giám sát Vật tư', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          bottom: const TabBar(
+            labelColor: AppTheme.green,
+            unselectedLabelColor: AppTheme.textMuted,
+            indicatorColor: AppTheme.green,
+            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            tabs: [
+              Tab(text: 'Quản lý vật tư'),
+              Tab(text: 'Giám sát & Chi phí'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildManagementTab(),
+            _buildAnalyticsTab(),
+          ],
+        ),
       ),
     );
   }

@@ -585,4 +585,60 @@ class ApiService {
       return false;
     }
   }
+
+  Future<List<Map<String, dynamic>>> fetchSupplyUsages({int? farmId, String? category, int? limit}) async {
+    try {
+      final headers = await _getHeaders();
+      final queryParams = <String, String>{};
+      if (farmId != null) {
+        queryParams['farm_id'] = farmId.toString();
+      }
+      if (category != null && category.isNotEmpty && category != 'all') {
+        queryParams['category'] = category;
+      }
+      if (limit != null) {
+        queryParams['limit'] = limit.toString();
+      }
+
+      Uri uri = Uri.parse('$baseUrl/supplies/usages');
+      if (queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams);
+      }
+
+      final response = await http.get(uri, headers: headers);
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching supply usages: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchSupplyAnalytics({String period = 'month', int? year, int? farmId}) async {
+    try {
+      final headers = await _getHeaders();
+      final queryParams = <String, String>{
+        'period': period,
+        'year': (year ?? DateTime.now().year).toString(),
+      };
+      if (farmId != null) {
+        queryParams['farm_id'] = farmId.toString();
+      }
+
+      Uri uri = Uri.parse('$baseUrl/supplies/analytics');
+      uri = uri.replace(queryParameters: queryParams);
+
+      final response = await http.get(uri, headers: headers);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching supply analytics: $e');
+      return null;
+    }
+  }
 }
