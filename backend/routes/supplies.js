@@ -70,7 +70,7 @@ router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
 // POST /api/supplies — Khai báo vật tư mới
 router.post('/', auth, async (req, res) => {
   try {
-    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url } = req.body;
+    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, user_id } = req.body;
     if (!category || !name || !unit) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });
     }
@@ -85,13 +85,14 @@ router.post('/', auth, async (req, res) => {
     const pkgPrice = parseFloat(package_price) || price;
     const unitPriceSmall = parseFloat(unit_price_small) || (pkgQty > 0 ? price / pkgQty : 0);
     const stock = parseFloat(stock_quantity) || 0;
+    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
 
     const result = await pool.query(
       `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
-        req.user.id,
+        targetUserId,
         category.trim(),
         name.trim(),
         unit.trim(),
@@ -183,12 +184,11 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// ─── 2. USAGE LOGS & RECORDING ───────────────────────────────────
-
 // GET /api/supplies/usages — Lấy nhật ký tiêu hao vật tư
 router.get('/usages', auth, async (req, res) => {
   try {
-    const { farm_id, category, limit } = req.query;
+    const { farm_id, category, limit, user_id } = req.query;
+    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     let query = `
       SELECT su.*, s.name as supply_name, s.category, s.unit,
              f.name as farm_name, p.plant_type, p.tree_code
@@ -196,10 +196,10 @@ router.get('/usages', auth, async (req, res) => {
       JOIN supplies s ON su.supply_id = s.id
       LEFT JOIN farms f ON su.farm_id = f.id
       LEFT JOIN plants p ON su.plant_id = p.id
-      WHERE (su.user_id = $1 OR $2 = 'admin')
+      WHERE su.user_id = $1
     `;
-    const params = [req.user.id, req.user.role];
-    let idx = 3;
+    const params = [targetUserId];
+    let idx = 2;
 
     if (farm_id) {
       query += ` AND su.farm_id = $${idx}`;
@@ -292,14 +292,15 @@ router.delete('/usages/:id', auth, async (req, res) => {
 
 // ─── 3. ANALYTICS & COST MONITORING ──────────────────────────────
 
-// GET /api/supplies/analytics — Thống kê chi phí theo Ngày, Tháng, Quý, Năm
+// GET /api/supplies/analytics — Thống kê chi phí vật tư
 router.get('/analytics', auth, async (req, res) => {
   try {
-    const { period = 'month', year = new Date().getFullYear(), farm_id } = req.query;
+    const { period = 'month', year = new Date().getFullYear(), farm_id, user_id } = req.query;
+    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     
-    let baseWhere = `WHERE (su.user_id = $1 OR $2 = 'admin')`;
-    const params = [req.user.id, req.user.role];
-    let idx = 3;
+    let baseWhere = `WHERE su.user_id = $1`;
+    const params = [targetUserId];
+    let idx = 2;
 
     if (farm_id && farm_id !== 'all') {
       baseWhere += ` AND su.farm_id = $${idx}`;
