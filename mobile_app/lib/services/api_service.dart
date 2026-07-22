@@ -477,9 +477,10 @@ class ApiService {
         queryParams['search'] = search;
       }
 
-      final uri = Uri.parse('$baseUrl/supplies').replace(
-        queryParameters: queryParams.isNotEmpty ? queryParams : null,
-      );
+      Uri uri = Uri.parse('$baseUrl/supplies');
+      if (queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams);
+      }
       final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
