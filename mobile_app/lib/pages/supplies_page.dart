@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/supply.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
@@ -423,6 +424,8 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
   double _priceSmall = 0;
   String _unitLarge = 'kg';
   String _unitSmall = 'g';
+  String? _imageUrl;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -434,8 +437,46 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
     _packageQtyController = TextEditingController(text: sp != null ? sp.packageQty.toStringAsFixed(sp.packageQty.truncateToDouble() == sp.packageQty ? 0 : 1) : '50');
     _packagePriceController = TextEditingController(text: sp != null ? sp.packagePrice.toStringAsFixed(0) : '1530000');
     _noteController = TextEditingController(text: sp?.note ?? '');
+    _imageUrl = sp?.imageUrl;
 
     _recalculateUnits();
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (image == null) return;
+
+      setState(() {
+        _isUploadingImage = true;
+      });
+
+      final bytes = await image.readAsBytes();
+      final filename = image.name;
+
+      final url = await _apiService.uploadSupplyImage(bytes, filename);
+
+      setState(() {
+        _imageUrl = url;
+        _isUploadingImage = false;
+      });
+
+      if (url == null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tải ảnh bao bì lên thất bại. Vui lòng thử lại.')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isUploadingImage = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải ảnh: $e')),
+        );
+      }
+    }
   }
 
   void _recalculateUnits() {
@@ -495,6 +536,7 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
       'unit_price': _priceLarge,
       'unit_price_small': _priceSmall,
       'note': _noteController.text.trim(),
+      'image_url': _imageUrl,
     };
 
     final isEdit = widget.supply != null;
@@ -637,6 +679,87 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       validator: (val) => val == null || val.trim().isEmpty ? 'Vui lòng nhập tên vật tư' : null,
                     ),
                     const SizedBox(height: 14),
+
+                    // Photo Upload Card (only for Bón phân / Phun thuốc)
+                    if (_category == 'Bón phân' || _category == 'Phun thuốc') ...[
+                      const Text(
+                        'Hình ảnh bao bì / sản phẩm',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                      ),
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: _isUploadingImage ? null : _pickAndUploadImage,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            border: Border.all(color: AppTheme.grayBorder, style: BorderStyle.solid, width: 1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: _isUploadingImage
+                              ? const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      CircularProgressIndicator(strokeWidth: 2, color: AppTheme.green),
+                                      SizedBox(height: 8),
+                                      Text('Đang tải ảnh lên...', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                                    ],
+                                  ),
+                                )
+                              : _imageUrl != null
+                                  ? Stack(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.network(
+                                            _imageUrl!,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: CircleAvatar(
+                                            radius: 16,
+                                            backgroundColor: Colors.black.withOpacity(0.6),
+                                            child: IconButton(
+                                              padding: EdgeInsets.zero,
+                                              icon: const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 18),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _imageUrl = null;
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.add_photo_alternate_rounded, size: 36, color: Colors.grey.shade400),
+                                          const SizedBox(height: 4),
+                                          const Text(
+                                            'Bấm để tải lên ảnh bao bì vật tư',
+                                            style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                                          ),
+                                          const Text(
+                                            'Hỗ trợ định dạng JPG, PNG, WEBP',
+                                            style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
 
                     // Khối lượng & Đơn vị
                     Row(

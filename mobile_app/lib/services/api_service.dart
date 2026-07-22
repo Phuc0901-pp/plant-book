@@ -512,6 +512,33 @@ class ApiService {
     }
   }
 
+  Future<String?> uploadSupplyImage(List<int> fileBytes, String filename) async {
+    try {
+      final headers = await _getHeaders();
+      final requestHeaders = Map<String, String>.from(headers)..remove('Content-Type');
+
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/supplies/upload-image'))
+        ..headers.addAll(requestHeaders)
+        ..files.add(http.MultipartFile.fromBytes(
+          'file',
+          fileBytes,
+          filename: filename,
+        ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data['url'] as String?;
+      }
+      return null;
+    } catch (e) {
+      print('Error uploading supply image: $e');
+      return null;
+    }
+  }
+
   Future<Supply?> updateSupply(int id, Map<String, dynamic> data) async {
     try {
       final headers = await _getHeaders();
