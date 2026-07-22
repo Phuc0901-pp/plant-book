@@ -252,11 +252,20 @@ router.post('/usages', auth, async (req, res) => {
 
     const uDate = usage_date ? new Date(usage_date) : new Date();
 
+    // Auto-resolve farm_id from plants table if missing but plant_id is present
+    let resolvedFarmId = farm_id;
+    if (!resolvedFarmId && plant_id) {
+      const plantRes = await pool.query('SELECT farm_id FROM plants WHERE id = $1', [plant_id]);
+      if (plantRes.rows.length > 0) {
+        resolvedFarmId = plantRes.rows[0].farm_id;
+      }
+    }
+
     const result = await pool.query(
       `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [req.user.id, supply.id, farm_id || null, plant_id || null, uDate, qty, unit_price, total_cost, note || null]
+      [req.user.id, supply.id, resolvedFarmId || null, plant_id || null, uDate, qty, unit_price, total_cost, note || null]
     );
 
     // Trừ kho vật tư (nếu có kho)

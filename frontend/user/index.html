@@ -892,8 +892,14 @@
       <div class="field">
         <label>Cây trồng *</label>
         <div id="c-plant-selection-wrap">
-          <input type="text" id="c-plant-display" readonly style="background:var(--gray-50); font-weight:600;">
+          <input type="text" id="c-plant-display" readonly style="display:none; background:var(--gray-50); font-weight:600;">
           <select id="c-plant-id-select" style="display:none; width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600; background:#fff;"></select>
+          <div id="c-plant-multi-select" style="display:none; max-height: 200px; overflow-y: auto; border: 1.5px solid var(--gray-200); border-radius: 8px; padding: 10px; background: #fff;">
+            <div id="c-plant-checkboxes-list"></div>
+          </div>
+          <div id="c-selected-trees-count" style="display:none; margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--green-dark);">
+            <i class="fa-solid fa-square-check"></i> Đã chọn: <span id="c-selected-count-number">0</span> cây trồng.
+          </div>
         </div>
       </div>
 
@@ -1118,8 +1124,8 @@
 
 <!-- Scripts (ES Modules) -->
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=2.0.7"></script>
+<script type="module" src="/user/js/auth.js?v=2.1.0"></script>
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=2.0.7"></script>
+<script type="module" src="/user/js/app.js?v=2.1.0"></script>
 </body>
 </html>

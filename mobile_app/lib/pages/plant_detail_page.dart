@@ -69,7 +69,10 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
   void _openAddLogDialog() {
     showDialog<bool>(
       context: context,
-      builder: (context) => LogEditDialog(plantId: widget.plant.id),
+      builder: (context) => LogEditDialog(
+        plantIds: [widget.plant.id],
+        farmName: widget.plant.farmName,
+      ),
     ).then((success) {
       if (success == true) {
         _loadLogs();
@@ -83,7 +86,11 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
   void _openEditLogDialog(PlantLog log) {
     showDialog<bool>(
       context: context,
-      builder: (context) => LogEditDialog(plantId: widget.plant.id, log: log),
+      builder: (context) => LogEditDialog(
+        plantIds: [widget.plant.id],
+        log: log,
+        farmName: widget.plant.farmName,
+      ),
     ).then((success) {
       if (success == true) {
         _loadLogs();

@@ -6,13 +6,15 @@ import '../services/api_service.dart';
 import '../utils/theme.dart';
 
 class LogEditDialog extends StatefulWidget {
-  final int plantId;
+  final List<int> plantIds;
   final PlantLog? log; // null means ADD, not null means EDIT
+  final String? farmName;
 
   const LogEditDialog({
     super.key,
-    required this.plantId,
+    required this.plantIds,
     this.log,
+    this.farmName,
   });
 
   @override
@@ -195,10 +197,10 @@ class _LogEditDialogState extends State<LogEditDialog> {
       details['value'] = _manualNameController.text.trim();
     }
 
-    bool success;
+    bool success = true;
     if (widget.log != null) {
       success = await ApiService().updatePlantLog(
-        widget.plantId,
+        widget.plantIds.first,
         widget.log!.id,
         dateStr,
         _selectedType,
@@ -206,36 +208,39 @@ class _LogEditDialogState extends State<LogEditDialog> {
         details,
       );
     } else {
-      success = await ApiService().createPlantLog(
-        widget.plantId,
-        _selectedType,
-        note,
-        details,
-      );
+      for (final id in widget.plantIds) {
+        final ok = await ApiService().createPlantLog(
+          id,
+          _selectedType,
+          note,
+          details,
+        );
+        if (!ok) {
+          success = false;
+        }
 
-      // Auto-record supply usage if online and a supply was chosen from the list
-      if (success && _selectedSupply != null) {
-        try {
-          final amount = double.tryParse(_amountController.text) ?? 0.0;
-          double usageQty = amount;
-          
-          if (_selectedType == 'Tưới nước') {
-            usageQty = amount / 1000.0; // Liters -> m3
-          } else if (_selectedUnit == 'g' || _selectedUnit == 'gam' || _selectedUnit == 'ml') {
-            usageQty = amount / 1000.0; // g/ml -> kg/l
+        // Auto-record supply usage if online and a supply was chosen from the list
+        if (ok && _selectedSupply != null) {
+          try {
+            final amount = double.tryParse(_amountController.text) ?? 0.0;
+            double usageQty = amount;
+            
+            if (_selectedType == 'Tưới nước') {
+              usageQty = amount / 1000.0; // Liters -> m3
+            } else if (_selectedUnit == 'g' || _selectedUnit == 'gam' || _selectedUnit == 'ml') {
+              usageQty = amount / 1000.0; // g/ml -> kg/l
+            }
+
+            await ApiService().recordSupplyUsage({
+              'supply_id': _selectedSupply!.id,
+              'usage_date': dateStr,
+              'quantity': usageQty,
+              'plant_id': id,
+              'note': 'Tự động hạch toán từ Nhật ký Chăm sóc Mobile: $_selectedType ($amount ${_selectedType == 'Tưới nước' ? 'Lít' : _selectedUnit} = $usageQty ${_selectedSupply!.unit} cho Cây #$id)',
+            });
+          } catch (e) {
+            print('Failed to record supply usage in background for plant $id: $e');
           }
-
-          final cost = usageQty * _selectedSupply!.unitPrice;
-
-          await ApiService().recordSupplyUsage({
-            'supply_id': _selectedSupply!.id,
-            'usage_date': dateStr,
-            'quantity': usageQty,
-            'plant_id': widget.plantId,
-            'note': 'Tự động hạch toán từ Nhật ký Chăm sóc Mobile: $_selectedType ($amount ${_selectedType == 'Tưới nước' ? 'Lít' : _selectedUnit} = $usageQty ${_selectedSupply!.unit} cho Cây #${widget.plantId})',
-          });
-        } catch (e) {
-          print('Failed to record supply usage in background: $e');
         }
       }
     }
@@ -316,9 +321,11 @@ class _LogEditDialogState extends State<LogEditDialog> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Đồng bộ tức thì với kho vật tư hệ thống',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      Text(
+                        widget.plantIds.length == 1
+                            ? 'Cây #${widget.plantIds.first}${widget.farmName != null ? ' - ${widget.farmName}' : ''}'
+                            : '${widget.plantIds.length} cây đã chọn${widget.farmName != null ? ' - ${widget.farmName}' : ''}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
                       ),
                     ],
                   ),
@@ -627,11 +634,15 @@ class _LogEditDialogState extends State<LogEditDialog> {
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
-                                        '${_amountController.text} Lít = ${(double.tryParse(_amountController.text) ?? 0.0) / 1000.0} m³',
+                                        widget.plantIds.length == 1
+                                            ? '${_amountController.text} Lít = ${(double.tryParse(_amountController.text) ?? 0.0) / 1000.0} m³'
+                                            : '${_amountController.text} Lít/cây x ${widget.plantIds.length} cây = ${((double.tryParse(_amountController.text) ?? 0.0) * widget.plantIds.length).toStringAsFixed(1)} Lít (${((double.tryParse(_amountController.text) ?? 0.0) * widget.plantIds.length / 1000.0).toStringAsFixed(3)} m³)',
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMain),
                                       ),
                                       Text(
-                                        'Thành tiền: ${_currencyFormat.format(_calculateWaterCost())}',
+                                        widget.plantIds.length == 1
+                                            ? 'Thành tiền: ${_currencyFormat.format(_calculateWaterCost())}'
+                                            : 'Tổng: ${_currencyFormat.format(_calculateWaterCost() * widget.plantIds.length)} (${_currencyFormat.format(_calculateWaterCost())}/cây)',
                                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue),
                                       ),
                                     ],

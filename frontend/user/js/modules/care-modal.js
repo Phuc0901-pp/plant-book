@@ -36,6 +36,16 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
   const displayEl   = document.getElementById('c-plant-display');
   const selectEl    = document.getElementById('c-plant-id-select');
   const idEl        = document.getElementById('c-plant-id');
+  const multiEl     = document.getElementById('c-plant-multi-select');
+  const checkboxListEl = document.getElementById('c-plant-checkboxes-list');
+
+  // Register select all toggler globally
+  window.toggleSelectAllPlants = function(masterCb) {
+    const checkboxes = document.querySelectorAll('.c-plant-checkbox');
+    checkboxes.forEach(cb => {
+      cb.checked = masterCb.checked;
+    });
+  };
 
   if (logId) {
     // ── CHẾ ĐỘ CHỈNH SỬA (EDIT MODE) ──
@@ -54,10 +64,15 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
 
     if (idEl) idEl.value = plantId || log.plant_id;
     if (displayEl) {
-      displayEl.value = `Cây ${treeCode || log.tree_code || plantId} - ${plantType || log.plant_type}`;
+      const plant = _plants().find(p => p.id == (plantId || log.plant_id));
+      const farmName = plant ? plant.farm_name : '';
+      displayEl.value = `Cây ${treeCode || log.tree_code || plantId}${farmName ? ' - ' + farmName : ''}`;
       displayEl.style.display = 'block';
     }
     if (selectEl) selectEl.style.display = 'none';
+    if (multiEl) multiEl.style.display = 'none';
+    const wrapEl = document.getElementById('c-selected-trees-count');
+    if (wrapEl) wrapEl.style.display = 'none';
 
     if (dateEl) dateEl.value = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
     if (logTypeEl) {
@@ -96,17 +111,86 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
     if (plantId) {
       window._activePlantTreeCode = treeCode;
       if (idEl) idEl.value = plantId;
-      if (displayEl) { displayEl.value = `Cây ${treeCode} - ${plantType}`; displayEl.style.display = 'block'; }
+      if (displayEl) {
+        const plant = _plants().find(p => p.id == plantId);
+        const farmName = plant ? plant.farm_name : '';
+        displayEl.value = `Cây ${treeCode}${farmName ? ' - ' + farmName : ''}`;
+        displayEl.style.display = 'block';
+      }
       if (selectEl) selectEl.style.display = 'none';
+      if (multiEl) multiEl.style.display = 'none';
+      const wrapEl = document.getElementById('c-selected-trees-count');
+      if (wrapEl) wrapEl.style.display = 'none';
     } else {
       window._activePlantTreeCode = '';
       if (idEl) idEl.value = '';
       if (displayEl) displayEl.style.display = 'none';
-      if (selectEl) {
-        selectEl.innerHTML = _plants().map(p =>
-          `<option value="${p.id}" data-code="${esc(p.tree_code || p.id)}">Cây ${esc(p.tree_code || p.id)} - ${esc(p.plant_type)}</option>`
-        ).join('');
-        selectEl.style.display = 'block';
+      if (selectEl) selectEl.style.display = 'none';
+
+      if (multiEl && checkboxListEl) {
+        // Group plants by farm
+        const plantsByFarm = {};
+        _plants().forEach(p => {
+          const farmId = p.farm_id || 0;
+          const farmName = p.farm_name || 'Khác';
+          if (!plantsByFarm[farmId]) {
+            plantsByFarm[farmId] = { name: farmName, list: [] };
+          }
+          plantsByFarm[farmId].list.push(p);
+        });
+
+        // Register farm select all toggler
+        window.toggleFarmSelectAll = function(masterCb, farmId) {
+          const checkboxes = document.querySelectorAll(`.c-plant-checkbox-farm-${farmId}`);
+          checkboxes.forEach(cb => {
+            cb.checked = masterCb.checked;
+          });
+          if (typeof window.updateSelectedCount === 'function') {
+            window.updateSelectedCount();
+          }
+        };
+
+        // Register selected count updater
+        window.updateSelectedCount = function() {
+          const checkboxes = document.querySelectorAll('.c-plant-checkbox:checked');
+          const count = checkboxes.length;
+          const countEl = document.getElementById('c-selected-count-number');
+          const wrapEl = document.getElementById('c-selected-trees-count');
+          if (countEl && wrapEl) {
+            countEl.textContent = count;
+            wrapEl.style.display = count > 0 ? 'block' : 'none';
+          }
+          if (typeof calculateWaterCostPreview === 'function') {
+            calculateWaterCostPreview();
+          }
+        };
+
+        let html = '';
+        Object.keys(plantsByFarm).forEach(farmId => {
+          const group = plantsByFarm[farmId];
+          html += `
+            <div style="margin-bottom: 12px; border-bottom: 1px dashed var(--gray-200); padding-bottom: 8px;">
+              <div style="font-weight: bold; font-size: 13px; color: var(--green-dark); margin: 6px 0; display: flex; align-items: center; justify-content: space-between;">
+                <span><i class="fa-solid fa-farm" style="color:var(--green)"></i> Vườn: ${esc(group.name)}</span>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text-muted); margin: 0;">
+                  <input type="checkbox" onchange="toggleFarmSelectAll(this, ${farmId})" style="transform: scale(0.95); cursor: pointer;"> Chọn tất cả
+                </label>
+              </div>
+              <div style="padding-left: 6px;">
+                ${group.list.map(p => `
+                  <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                    <input type="checkbox" class="c-plant-checkbox c-plant-checkbox-farm-${farmId}" value="${p.id}" data-code="${esc(p.tree_code || p.id)}" id="chk-plant-${p.id}" style="margin-right: 8px; transform: scale(1.1); cursor: pointer;" onchange="window.updateSelectedCount()">
+                    <label for="chk-plant-${p.id}" style="cursor: pointer; font-size: 13px; margin: 0; font-weight: 500;">Cây ${esc(p.tree_code || p.id)} - ${esc(p.plant_type)}</label>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        });
+
+        checkboxListEl.innerHTML = html || '<div style="font-size:13px; color:var(--text-muted);">Không có cây trồng nào.</div>';
+        multiEl.style.display = 'block';
+        window.updateSelectedCount(); // initial run
       }
     }
 
@@ -201,8 +285,20 @@ export function calculateWaterCostPreview() {
 
   if (!volEl || !costEl) return;
 
-  const volumeM3 = amountLiters / 1000;
-  volEl.textContent = `${amountLiters} Lít = ${volumeM3 < 0.01 ? volumeM3.toFixed(3) : volumeM3} m³`;
+  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
+  let treeCount = 1;
+  if (isMulti) {
+    treeCount = document.querySelectorAll('.c-plant-checkbox:checked').length || 1;
+  }
+
+  const singleVolumeM3 = amountLiters / 1000;
+  const totalVolumeM3 = singleVolumeM3 * treeCount;
+  
+  if (treeCount > 1) {
+    volEl.textContent = `${amountLiters} Lít/cây x ${treeCount} cây = ${amountLiters * treeCount} Lít (${totalVolumeM3 < 0.01 ? totalVolumeM3.toFixed(3) : totalVolumeM3.toFixed(2)} m³)`;
+  } else {
+    volEl.textContent = `${amountLiters} Lít = ${singleVolumeM3 < 0.01 ? singleVolumeM3.toFixed(3) : singleVolumeM3.toFixed(2)} m³`;
+  }
 
   if (!supplyId) {
     costEl.textContent = '0 VNĐ (Không hạch toán)';
@@ -212,9 +308,15 @@ export function calculateWaterCostPreview() {
   const supplies = window._declaredSuppliesCache || [];
   const supply = supplies.find(s => s.id == supplyId);
   const unitPriceM3 = supply ? (parseFloat(supply.unit_price) || 0) : 0;
-  const totalCost = volumeM3 * unitPriceM3;
+  
+  const singleCost = singleVolumeM3 * unitPriceM3;
+  const totalCost = singleCost * treeCount;
 
-  costEl.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(totalCost)) + ' VNĐ';
+  if (treeCount > 1) {
+    costEl.textContent = `${new Intl.NumberFormat('vi-VN').format(Math.round(totalCost))} VNĐ (${new Intl.NumberFormat('vi-VN').format(Math.round(singleCost))} VNĐ/cây)`;
+  } else {
+    costEl.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(totalCost)) + ' VNĐ';
+  }
 }
 window.calculateWaterCostPreview = calculateWaterCostPreview;
 
@@ -531,16 +633,30 @@ window.removeExistingPhoto = removeExistingPhoto;
  * Xác thực, xử lý media, và lưu nhật ký chăm sóc lên API.
  */
 export async function saveCareLog() {
-  const selectEl = document.getElementById('c-plant-id-select');
-  const plantId  = selectEl?.style.display === 'block'
-    ? selectEl.value
-    : document.getElementById('c-plant-id')?.value;
+  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
+  let selectedPlants = []; // Array of { id, treeCode }
 
-  if (!plantId) { toast('Vui lòng chọn một cây trồng!', 'error'); return; }
+  if (isMulti) {
+    const checkboxes = document.querySelectorAll('.c-plant-checkbox:checked');
+    checkboxes.forEach(cb => {
+      selectedPlants.push({
+        id: parseInt(cb.value),
+        treeCode: cb.getAttribute('data-code') || cb.value
+      });
+    });
+  } else {
+    const singleId = document.getElementById('c-plant-id')?.value;
+    if (singleId) {
+      selectedPlants.push({
+        id: parseInt(singleId),
+        treeCode: window._activePlantTreeCode || singleId
+      });
+    }
+  }
 
-  if (selectEl?.style.display === 'block') {
-    const opt = selectEl.options[selectEl.selectedIndex];
-    window._activePlantTreeCode = opt?.getAttribute('data-code') || plantId;
+  if (selectedPlants.length === 0) {
+    toast('Vui lòng chọn ít nhất một cây trồng!', 'error');
+    return;
   }
 
   const logType = document.getElementById('c-log-type')?.value;
@@ -591,16 +707,16 @@ export async function saveCareLog() {
       if (selectedCareFiles.length > 0) {
         if (btn) btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
         const formData  = new FormData();
-        const treeCode  = window._activePlantTreeCode || plantId;
+        const primaryTreeCode  = selectedPlants[0].treeCode;
 
         for (const file of selectedCareFiles) {
           const processed = file.type.startsWith('image/')
-            ? await watermarkImage(file, treeCode, disease_name)
+            ? await watermarkImage(file, primaryTreeCode, disease_name)
             : file;
           formData.append('files', processed, file.name);
         }
 
-        const uploadRes = await fetch(`${API}/plants/${plantId}/media`, {
+        const uploadRes = await fetch(`${API}/plants/${selectedPlants[0].id}/media`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
@@ -618,7 +734,8 @@ export async function saveCareLog() {
     }
 
     if (window._activeEditLogId) {
-      // Ghi chú thêm thời gian chỉnh sửa kèm dữ liệu gốc
+      // CHẾ ĐỘ CHỈNH SỬA (EDIT MODE) - chỉ chỉnh sửa 1 log duy nhất
+      const plantId = selectedPlants[0].id;
       const editTimeStr = new Date().toLocaleString('vi-VN');
       const originalLog = getLogsCache().find(l => l.id === window._activeEditLogId);
       let origDetailsStr = '';
@@ -635,41 +752,48 @@ export async function saveCareLog() {
       await api(`/plants/${plantId}/logs/${window._activeEditLogId}`, { method: 'PUT', body: JSON.stringify(body) });
       toast('Đã cập nhật nhật ký thành công!');
     } else {
+      // CHẾ ĐỘ GHI MỚI (CREATE MODE) - hỗ trợ lưu cho nhiều cây cùng lúc
       if (btn) btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
-      await api(`/plants/${plantId}/logs`, { method: 'POST', body: JSON.stringify(body) });
 
-      // ── Tự động hạch toán Tiêu hao Vật tư nếu có chọn từ Kho Vật tư ──
       const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      const amount = parseFloat(document.getElementById('c-detail-amount')?.value) || 1;
+      const unit = document.getElementById('c-detail-unit')?.value || 'kg';
+
+      let usageQty = amount;
+      if (logType === 'Tưới nước') {
+        usageQty = amount / 1000;
+      } else if (unit === 'gam' || unit === 'g' || unit === 'ml') {
+        usageQty = amount / 1000;
+      }
+
+      for (const plant of selectedPlants) {
+        // Gửi POST tạo nhật ký cho cây này
+        await api(`/plants/${plant.id}/logs`, { method: 'POST', body: JSON.stringify(body) });
+
+        // Tự động hạch toán vật tư cho cây này
+        if (supplyId) {
+          try {
+            await api('/supplies/usages', {
+              method: 'POST',
+              body: JSON.stringify({
+                supply_id: supplyId,
+                usage_date: logDate,
+                quantity: usageQty,
+                plant_id: plant.id,
+                note: `Tự động hạch toán từ Nhật ký Chăm sóc: ${logType} (${amount} Lít = ${usageQty} m³ cho Cây ${plant.treeCode})`
+              })
+            });
+          } catch (suppErr) {
+            console.error('Auto-recording supply usage failed for plant ' + plant.id, suppErr);
+          }
+        }
+      }
+
       if (supplyId) {
-        try {
-          const amount = parseFloat(document.getElementById('c-detail-amount')?.value) || 1;
-          const unit = document.getElementById('c-detail-unit')?.value || 'kg';
-          
-          let usageQty = amount;
-          if (logType === 'Tưới nước') {
-            usageQty = amount / 1000; // Convert Liters -> m3 (1m3 = 1000 Liters)
-          } else if (unit === 'gam' || unit === 'g' || unit === 'ml') {
-            usageQty = amount / 1000;
-          }
-
-          await api('/supplies/usages', {
-            method: 'POST',
-            body: JSON.stringify({
-              supply_id: supplyId,
-              usage_date: logDate,
-              quantity: usageQty,
-              plant_id: plantId,
-              note: `Tự động hạch toán từ Nhật ký Chăm sóc: ${logType} (${amount} Lít = ${usageQty} m³ cho Cây ${window._activePlantTreeCode || plantId})`
-            })
-          });
-
-          if (logType === 'Tưới nước') {
-            toast(`Đã quy đổi ${amount} Lít = ${usageQty} m³ & tự động hạch toán tiền nước!`, 'success');
-          } else {
-            toast('Đã ghi nhật ký & tự động hạch toán chi phí vào Giám sát Vật tư!', 'success');
-          }
-        } catch (suppErr) {
-          console.error('Auto-recording supply usage failed:', suppErr);
+        if (logType === 'Tưới nước') {
+          toast(`Đã quy đổi & tự động hạch toán tiền nước cho các cây được chọn!`, 'success');
+        } else {
+          toast('Đã ghi nhật ký & tự động hạch toán chi phí cho các cây được chọn!', 'success');
         }
       } else {
         toast('Ghi nhật ký chăm sóc thành công!');

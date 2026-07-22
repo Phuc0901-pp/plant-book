@@ -511,9 +511,9 @@ class _SuppliesPageState extends State<SuppliesPage> {
     final unit = usage['unit'] ?? '';
     final totalCost = double.tryParse(usage['total_cost']?.toString() ?? '0') ?? 0.0;
 
-    final targetName = usage['tree_code'] != null
-        ? 'Cây ${usage['tree_code']}'
-        : (usage['farm_name'] ?? 'Cây trồng');
+    final targetName = usage['plant_id'] != null
+        ? 'Cây ${usage['tree_code'] ?? '#${usage['plant_id']}'} (${usage['farm_name'] ?? ''})'
+        : 'Toàn vườn ${usage['farm_name'] ?? ''}';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -960,7 +960,23 @@ class _SupplyFormDialogState extends State<SupplyFormDialog> {
                       const Text(
                         'Tự động quy đổi đơn giá chi tiết',
                         style: TextStyle(color: Colors.white70, fontSize: 11),
-                                     child: Column(
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(18),
+              child: Form(
+                key: _formKey,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

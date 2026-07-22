@@ -668,7 +668,11 @@ export async function loadSupplyUsagesLog() {
           <td><strong>${dateStr}</strong></td>
           <td><strong>${l.supply_name}</strong></td>
           <td>${getCategoryBadge(l.category)}</td>
-          <td>${l.farm_name ? l.farm_name : '<span style="color:var(--gray-300);">Toàn vườn</span>'}</td>
+          <td>${
+            l.plant_id 
+              ? `Cây ${l.tree_code || '#' + l.plant_id} (${l.farm_name || ''})` 
+              : `Toàn vườn ${l.farm_name || ''}`
+          }</td>
           <td><strong>${l.quantity}</strong> ${l.unit}</td>
           <td>${formatVND(l.unit_price)}</td>
           <td><strong style="color:var(--green-dark);">${formatVND(l.total_cost)}</strong></td>

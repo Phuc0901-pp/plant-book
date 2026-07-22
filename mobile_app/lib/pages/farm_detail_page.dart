@@ -350,32 +350,86 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
       return;
     }
 
-    showDialog<int?>(
+    List<int> selectedIds = [];
+
+    showDialog<List<int>?>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Chọn cây trồng để ghi "$activityType"'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: _farmPlants.length,
-            itemBuilder: (context, index) {
-              final p = _farmPlants[index];
-              return ListTile(
-                leading: const Icon(Icons.eco_rounded, color: AppTheme.green),
-                title: Text('Cây #${p.displayName} - ${p.plantType}'),
-                subtitle: Text('Sức khỏe: ${p.healthStatus}'),
-                onTap: () => Navigator.pop(context, p.id),
-              );
-            },
-          ),
-        ),
-      ),
-    ).then((plantId) {
-      if (plantId != null) {
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final allSelected = selectedIds.length == _farmPlants.length;
+            return AlertDialog(
+              title: Text('Chọn cây trồng để ghi "$activityType"'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 350,
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text('Chọn tất cả cây trồng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      activeColor: AppTheme.green,
+                      value: allSelected,
+                      onChanged: (val) {
+                        setDialogState(() {
+                          if (val == true) {
+                            selectedIds = _farmPlants.map((p) => p.id).toList();
+                          } else {
+                            selectedIds.clear();
+                          }
+                        });
+                      },
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _farmPlants.length,
+                        itemBuilder: (context, index) {
+                          final p = _farmPlants[index];
+                          final isSelected = selectedIds.contains(p.id);
+                          return CheckboxListTile(
+                            title: Text('Cây #${p.displayName} - ${p.plantType}', style: const TextStyle(fontSize: 13)),
+                            subtitle: Text('Sức khỏe: ${p.healthStatus}', style: const TextStyle(fontSize: 11)),
+                            activeColor: AppTheme.green,
+                            value: isSelected,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                if (val == true) {
+                                  selectedIds.add(p.id);
+                                } else {
+                                  selectedIds.remove(p.id);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green),
+                  onPressed: selectedIds.isEmpty ? null : () => Navigator.pop(context, selectedIds),
+                  child: const Text('Tiếp tục', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((selectedList) {
+      if (selectedList != null && selectedList.isNotEmpty) {
         showDialog<bool>(
           context: context,
-          builder: (context) => LogEditDialog(plantId: plantId),
+          builder: (context) => LogEditDialog(
+            plantIds: selectedList,
+            farmName: widget.farm.name,
+          ),
         ).then((success) {
           if (success == true) {
             _loadFarmData();

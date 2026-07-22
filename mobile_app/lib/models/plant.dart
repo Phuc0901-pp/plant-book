@@ -7,6 +7,7 @@ class Plant {
   final String healthStatus;
   final String? location;
   final int? farmId;
+  final String? farmName;
   final double? latitude;
   final double? longitude;
   final String? nfcUid;
@@ -23,6 +24,7 @@ class Plant {
     required this.healthStatus,
     this.location,
     this.farmId,
+    this.farmName,
     this.latitude,
     this.longitude,
     this.nfcUid,
@@ -41,6 +43,7 @@ class Plant {
       healthStatus: json['health_status'] as String? ?? 'Tốt',
       location: json['location'] as String?,
       farmId: json['farm_id'] as int?,
+      farmName: json['farm_name'] as String?,
       latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
       longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
       nfcUid: json['nfc_uid'] as String?,
@@ -60,6 +63,7 @@ class Plant {
       'health_status': healthStatus,
       'location': location,
       'farm_id': farmId,
+      'farm_name': farmName,
       'latitude': latitude,
       'longitude': longitude,
       'nfc_uid': nfcUid,
