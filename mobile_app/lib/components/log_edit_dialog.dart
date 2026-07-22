@@ -453,7 +453,7 @@ class _LogEditDialogState extends State<LogEditDialog> {
                         // Fallback warning + text input for manual name entry
                         Container(
                           padding: const EdgeInsets.all(10),
-                          margin: const EdgeInsets.bottom(12),
+                          margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
                             color: Colors.amber.withValues(alpha: 0.1),
                             border: Border.all(color: Colors.amber.shade300),
