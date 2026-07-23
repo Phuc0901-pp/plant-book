@@ -138,28 +138,181 @@ export function groupCareLogs(logs) {
   return grouped;
 }
 
+// ── Daily Grouping for Dashboard ──────────────────────────────
+
+/**
+ * Gom nhóm tất cả các nhật ký canh tác theo NGÀY (phục vụ bảng tóm tắt 3 ngày trên Trang chủ).
+ * Trả về mảng các đối tượng Ngày (Tối đa 3 ngày gần nhất), trong đó mỗi ngày chứa mảng các thẻ tóm tắt công việc đã làm trong ngày.
+ */
+export function groupCareLogsByDay(logs) {
+  if (!Array.isArray(logs) || logs.length === 0) return [];
+
+  const daysMap = new Map();
+
+  for (const log of logs) {
+    const dateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
+    if (!dateStr) continue;
+
+    if (!daysMap.has(dateStr)) {
+      daysMap.set(dateStr, []);
+    }
+    daysMap.get(dateStr).push(log);
+  }
+
+  const sortedDates = Array.from(daysMap.keys()).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  const recent3Dates = sortedDates.slice(0, 3);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayObj = new Date();
+  yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+  const yesterdayStr = yesterdayObj.toISOString().slice(0, 10);
+
+  const daySummaries = [];
+
+  for (const dateStr of recent3Dates) {
+    const dayLogs = daysMap.get(dateStr) || [];
+    
+    let dateTag = '';
+    const dObj = new Date(dateStr);
+    const dateFormatted = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}/${dObj.getFullYear()}`;
+
+    if (dateStr === todayStr) {
+      dateTag = 'Hôm nay';
+    } else if (dateStr === yesterdayStr) {
+      dateTag = 'Hôm qua';
+    } else {
+      dateTag = dateFormatted;
+    }
+
+    const dayGroupedItems = groupCareLogs(dayLogs);
+
+    const items = dayGroupedItems.map(l => {
+      let detailsStr = esc(l.note || '');
+      if (l.details && Object.keys(l.details).length > 0) {
+        const parts = [];
+        if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
+        if (l.details.amount)          parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+        if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
+        if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
+        if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
+        if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
+        if (l.details.severity)        parts.push(`Mức độ: ${l.details.severity}`);
+        if (parts.length > 0) {
+          detailsStr = parts.join(', ') + (l.note ? ` - ${esc(l.note)}` : '');
+        }
+      }
+
+      const mediaHtml = l.log_type === 'Bệnh cây'
+        ? buildMediaThumbnailsHtml(l.media_urls, 36)
+        : '';
+
+      const badgeMap = {
+        'Tưới nước': 'badge-blue',
+        'Bón phân':  'badge-brown',
+        'Phun thuốc': 'badge-purple',
+        'Cắt lá':    'badge-green',
+        'Tỉa hoa':   'badge-amber'
+      };
+
+      return {
+        id: l.id,
+        plantId: l.plant_id,
+        treeCode: l.tree_code || l.plant_id,
+        plantType: l.plant_type,
+        type: l.log_type,
+        isDiseaseLog: l.isDiseaseLog || l.log_type === 'Bệnh cây',
+        badgeClass: badgeMap[l.log_type] || 'badge-gray',
+        targetDisplay: l.targetDisplay || `Cây #${l.tree_code || l.plant_id}`,
+        detailsStr: detailsStr,
+        mediaHtml: mediaHtml,
+        creatorName: l.creator_name || 'Nông hộ'
+      };
+    });
+
+    daySummaries.push({
+      dateStr: dateFormatted,
+      dateTag: dateTag,
+      items: items,
+      totalActivities: dayLogs.length
+    });
+  }
+
+  return daySummaries;
+}
+
 // ── Render ────────────────────────────────────────────────────
 
 /**
- * Render tóm tắt tối đa 3 dòng nhật ký gần đây ở Trang chủ.
- * @param {Array} logs — nhật ký 3 ngày gần nhất
+ * Render tóm tắt Hoạt động Canh tác gần đây trên Trang chủ (Nhóm theo 3 ngày gần nhất).
+ * @param {Array} logs
  */
 export function renderUserLogsTable(logs) {
   const tbody   = document.getElementById('user-logs-table');
   const moreWrap = document.getElementById('user-logs-more-btn-wrap');
   if (!tbody) return;
 
-  if (!logs.length) {
+  if (!logs || !logs.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></td></tr>';
     if (moreWrap) moreWrap.style.display = 'none';
     return;
   }
 
-  const grouped = groupCareLogs(logs);
+  const daySummaries = groupCareLogsByDay(logs);
 
-  if (moreWrap) moreWrap.style.display = grouped.length > 3 ? 'block' : 'none';
+  if (!daySummaries.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></td></tr>';
+    if (moreWrap) moreWrap.style.display = 'none';
+    return;
+  }
 
-  tbody.innerHTML = grouped.slice(0, 3).map(l => _logRow(l)).join('');
+  if (moreWrap) moreWrap.style.display = 'block';
+
+  let html = '';
+  for (const day of daySummaries) {
+    html += `
+      <tr style="border-bottom: 1px solid var(--gray-200);">
+        <td data-label="Thời gian" style="vertical-align: top; width: 140px; padding: 12px 10px;">
+          <div style="font-size: 14px; font-weight: 700; color: #1e293b;"><i class="fa-regular fa-calendar-days" style="color:var(--green)"></i> ${day.dateStr}</div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--green-dark); margin-top: 2px;">${day.dateTag}</div>
+          <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">${day.totalActivities} hoạt động</small>
+        </td>
+        <td colspan="5" data-label="Tóm tắt công việc trong ngày" style="padding: 10px 10px;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${day.items.map(item => `
+              ${item.isDiseaseLog ? `
+                <div style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border: 1px solid #fca5a5; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 12px; gap: 10px; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:700; box-shadow:0 2px 6px rgba(220,38,38,0.3); font-size:11px; text-transform:none;">🐛 Bệnh cây</span>
+                    <strong style="color:#dc2626; font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(item.targetDisplay)}</strong>
+                    ${item.detailsStr ? `<span style="font-size:12px; color:#7f1d1d; font-weight:600;">[${item.detailsStr}]</span>` : ''}
+                    ${item.mediaHtml || ''}
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <small style="color:#991b1b; font-weight:600; font-size:11px;"><i class="fa-solid fa-user"></i> ${esc(item.creatorName)}</small>
+                    <button class="btn btn-secondary btn-xs" onclick="openCareModal(${item.plantId}, '${esc(item.treeCode)}', '${esc(item.plantType)}', ${item.id})" style="padding:3px 8px; font-size:11px; border-color:#fca5a5; color:#dc2626;">Sửa</button>
+                  </div>
+                </div>
+              ` : `
+                <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; gap: 10px; flex-wrap: wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span class="badge ${item.badgeClass}" style="text-transform:none; font-weight:600; font-size:11px;">${esc(item.type)}</span>
+                    <strong style="color:#1e293b; font-size:13px;">${esc(item.targetDisplay)}</strong>
+                    ${item.detailsStr ? `<span style="font-size:12px; color:#475569; background:#f8fafc; padding:2px 8px; border-radius:6px; border:1px solid #e2e8f0;">[${item.detailsStr}]</span>` : ''}
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <small style="color:var(--text-muted); font-size:11px;"><i class="fa-solid fa-user"></i> ${esc(item.creatorName)}</small>
+                    <button class="btn btn-secondary btn-xs" onclick="openCareModal(${item.plantId}, '${esc(item.treeCode)}', '${esc(item.plantType)}', ${item.id})" style="padding:3px 8px; font-size:11px;">Sửa</button>
+                  </div>
+                </div>
+              `}
+            `).join('')}
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  tbody.innerHTML = html;
 }
 
 /**
