@@ -1,17 +1,41 @@
-// Parse Slug from /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
-function getPublicSlugFromUrl() {
+// Parse Slug info from /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
+function getPublicSlugInfoFromUrl() {
   const pathParts = location.pathname.split('/').filter(p => p.length > 0);
-  if (pathParts.length === 0) return '';
-  if (pathParts[0] === 'plant') return decodeURIComponent(pathParts[1] || '');
-  if (pathParts[0] === 'nfc') return decodeURIComponent(pathParts[1] || '');
+  if (pathParts.length === 0) return { slug: '', plantId: '', nfcUid: '' };
+  if (pathParts[0] === 'plant') {
+    return { slug: decodeURIComponent(pathParts[1] || ''), plantId: decodeURIComponent(pathParts[1] || ''), nfcUid: '' };
+  }
+  if (pathParts[0] === 'nfc') {
+    return { slug: decodeURIComponent(pathParts[1] || ''), plantId: '', nfcUid: decodeURIComponent(pathParts[1] || '') };
+  }
   
   // Hierarchical Format: /:userId/:farmId/:plantId/:nfcUid
-  if (pathParts.length >= 4) return decodeURIComponent(pathParts[3]); // nfcUid
-  if (pathParts.length === 3) return decodeURIComponent(pathParts[2]); // plantId
-  if (pathParts.length === 2) return decodeURIComponent(pathParts[1]);
-  return decodeURIComponent(pathParts[0]);
+  if (pathParts.length >= 4) {
+    return {
+      slug: decodeURIComponent(pathParts[3]), // nfcUid
+      plantId: decodeURIComponent(pathParts[2]), // plantId
+      nfcUid: decodeURIComponent(pathParts[3])
+    };
+  }
+  if (pathParts.length === 3) {
+    return {
+      slug: decodeURIComponent(pathParts[2]),
+      plantId: decodeURIComponent(pathParts[2]),
+      nfcUid: ''
+    };
+  }
+  if (pathParts.length === 2) {
+    return {
+      slug: decodeURIComponent(pathParts[1]),
+      plantId: decodeURIComponent(pathParts[1]),
+      nfcUid: ''
+    };
+  }
+  return { slug: decodeURIComponent(pathParts[0]), plantId: decodeURIComponent(pathParts[0]), nfcUid: '' };
 }
-const slug = getPublicSlugFromUrl();
+
+const slugInfo = getPublicSlugInfoFromUrl();
+const slug = slugInfo.slug;
 let currentPlantData = null;
 
 // Global Configurations Cache (Default Fallbacks)
@@ -190,12 +214,23 @@ function sharePage() {
 // Load Plant Profile on startup
 async function loadPlant() {
   try {
-    const res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}`);
-    const plant = await res.json();
-    if (!res.ok) throw new Error(plant.error || 'Không tìm thấy hồ sơ');
+    const primarySlug = slugInfo.slug || slug;
+    let res = await fetch(`/api/plants/public/${encodeURIComponent(primarySlug)}`);
+    let plant = await res.json();
+
+    // Fallback: If primary slug (e.g. nfcUid) returned 404, fallback to plantId (e.g. /0/2/1/04:17:...)
+    if (!res.ok && slugInfo.plantId && slugInfo.plantId !== primarySlug) {
+      const fallbackRes = await fetch(`/api/plants/public/${encodeURIComponent(slugInfo.plantId)}`);
+      if (fallbackRes.ok) {
+        res = fallbackRes;
+        plant = await fallbackRes.json();
+      }
+    }
+
+    if (!res.ok) throw new Error(plant.error || 'Không tìm thấy hồ sơ cây trồng.');
 
     currentPlantData = plant;
-    document.title = `${plant.plant_type} — Plant Book | Tanbao Corp`;
+    document.title = `${plant.plant_type || 'Cây trồng'} — Plant Book | Tanbao Corp`;
     await renderPlant(plant);
   } catch (err) {
     document.getElementById('loader').style.display = 'none';
