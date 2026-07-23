@@ -85,7 +85,10 @@ router.post('/', auth, async (req, res) => {
     const pkgQty = parseFloat(package_qty) || 1;
     const pkgPrice = parseFloat(package_price) || price;
     const unitPriceSmall = parseFloat(unit_price_small) || (pkgQty > 0 ? price / pkgQty : 0);
-    const stock = parseFloat(stock_quantity) || 0;
+    let stock = parseFloat(stock_quantity);
+    if (isNaN(stock) || stock <= 0) {
+      stock = (category === 'Tiền nước' || category === 'Nhân công') ? 999999 : pkgQty;
+    }
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
 
     // Kiểm tra nếu sản phẩm cùng loại & cùng tên đã tồn tại -> Cộng dồn số lượng tồn kho
@@ -166,7 +169,11 @@ router.put('/:id', auth, async (req, res) => {
     const pkgQty = parseFloat(package_qty) || check.rows[0].package_qty || 1;
     const pkgPrice = parseFloat(package_price) || check.rows[0].package_price || price;
     const unitPriceSmall = parseFloat(unit_price_small) || (pkgQty > 0 ? price / pkgQty : 0);
-    const stock = parseFloat(stock_quantity) || 0;
+    
+    let stock = parseFloat(stock_quantity);
+    if (isNaN(stock) || stock <= 0) {
+      stock = (check.rows[0].stock_quantity > 0) ? check.rows[0].stock_quantity : pkgQty;
+    }
 
     const result = await pool.query(
       `UPDATE supplies 

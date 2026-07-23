@@ -1040,11 +1040,16 @@
         <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
       </div>
 
-      <!-- Row 3: Khối lượng 1 gói & Tổng giá tiền -->
-      <div class="form-row-2" id="row-package-qty-price">
+      <!-- Row 3: Khối lượng 1 gói, Số lượng bao/chai & Tổng giá tiền -->
+      <div class="form-row-2" id="row-package-qty-price" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
         <div class="field" id="field-package-qty" style="margin-bottom:0;">
           <label class="form-label"><i class="fa-solid fa-weight-hanging"></i> Khối lượng 1 gói <span class="req-star">*</span></label>
           <input type="number" id="sp-package-qty" class="form-control-custom" value="50" min="0.001" step="any" oninput="autoCalculateSupplyUnits()" placeholder="VD: 50">
+        </div>
+
+        <div class="field" id="field-stock-count" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-boxes-stacked"></i> Số bao/chai mua <span class="req-star">*</span></label>
+          <input type="number" id="sp-stock-count" class="form-control-custom" value="1" min="1" step="1" oninput="autoCalculateSupplyUnits()" placeholder="VD: 1 bao/chai">
         </div>
 
         <div class="field" id="field-package-price" style="margin-bottom:0;">
@@ -1177,8 +1182,8 @@
 
 <!-- Scripts (ES Modules) -->
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=2.5.0"></script>
+<script type="module" src="/user/js/auth.js?v=2.6.0"></script>
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=2.5.0"></script>
+<script type="module" src="/user/js/app.js?v=2.6.0"></script>
 </body>
 </html>

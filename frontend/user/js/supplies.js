@@ -48,10 +48,13 @@ export function autoCalculateSupplyUnits() {
   const labelPrice = document.getElementById('label-package-price');
   const rowPrice = document.getElementById('row-package-qty-price');
 
+  const fieldStockCount = document.getElementById('field-stock-count');
+
   if (isWaterOrLabor) {
     if (fieldPkgUnit) fieldPkgUnit.style.display = 'none';
     if (fieldName) fieldName.style.display = 'none';
     if (fieldPkgQty) fieldPkgQty.style.display = 'none';
+    if (fieldStockCount) fieldStockCount.style.display = 'none';
     if (cardBreakdown) cardBreakdown.style.display = 'none';
     if (fieldImgUpload) fieldImgUpload.style.display = 'none';
     if (rowPrice) rowPrice.style.gridTemplateColumns = '1fr';
@@ -85,9 +88,10 @@ export function autoCalculateSupplyUnits() {
     if (fieldPkgUnit) fieldPkgUnit.style.display = '';
     if (fieldName) fieldName.style.display = '';
     if (fieldPkgQty) fieldPkgQty.style.display = '';
+    if (fieldStockCount) fieldStockCount.style.display = '';
     if (cardBreakdown) cardBreakdown.style.display = '';
     if (fieldImgUpload) fieldImgUpload.style.display = '';
-    if (rowPrice) rowPrice.style.gridTemplateColumns = '';
+    if (rowPrice) rowPrice.style.gridTemplateColumns = '1fr 1fr 1fr';
 
     if (labelPrice) {
       labelPrice.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span>`;
@@ -321,6 +325,7 @@ export function openSupplyModal(id = null) {
   document.getElementById('sp-category').value = 'Bón phân';
   document.getElementById('sp-name').value = '';
   document.getElementById('sp-package-qty').value = '50';
+  if (document.getElementById('sp-stock-count')) document.getElementById('sp-stock-count').value = '1';
   document.getElementById('sp-package-unit').value = 'kg';
   document.getElementById('sp-package-price').value = '1530000';
   document.getElementById('sp-note').value = '';
@@ -333,6 +338,11 @@ export function openSupplyModal(id = null) {
       document.getElementById('sp-category').value = sp.category;
       document.getElementById('sp-name').value = sp.name;
       document.getElementById('sp-package-qty').value = sp.package_qty || 1;
+      if (document.getElementById('sp-stock-count')) {
+        const pkgQty = parseFloat(sp.package_qty) || 1;
+        const currentStock = parseFloat(sp.stock_quantity) || pkgQty;
+        document.getElementById('sp-stock-count').value = Math.max(1, Math.round(currentStock / pkgQty));
+      }
       document.getElementById('sp-package-unit').value = sp.package_unit || sp.unit || 'kg';
       document.getElementById('sp-package-price').value = sp.package_price || (sp.unit_price * (sp.package_qty || 1));
       document.getElementById('sp-note').value = sp.note || '';
@@ -358,6 +368,7 @@ export async function saveSupply() {
   const category = document.getElementById('sp-category').value;
   const name = document.getElementById('sp-name').value.trim();
   const package_qty = parseFloat(document.getElementById('sp-package-qty').value) || 1;
+  const stock_count = parseFloat(document.getElementById('sp-stock-count')?.value) || 1;
   const package_unit = document.getElementById('sp-package-unit').value;
   const package_price = parseFloat(document.getElementById('sp-package-price').value) || 0;
   const package_size = document.getElementById('sp-package-size').value;
@@ -367,8 +378,11 @@ export async function saveSupply() {
   const note = document.getElementById('sp-note').value.trim();
   const image_url = document.getElementById('sp-image-url')?.value || '';
 
-  if (!name || !package_price) {
-    toast('Vui lòng điền đầy đủ Tên vật tư và Tổng giá tiền mua!', 'warning');
+  const isWaterOrLabor = (category === 'Tiền nước' || category === 'Nhân công');
+  const stock_quantity = isWaterOrLabor ? 999999 : (package_qty * stock_count);
+
+  if (!name || (!isWaterOrLabor && !package_price)) {
+    toast('Vui lòng điền đầy đủ Tên vật tư và Đơn giá!', 'warning');
     return;
   }
 
@@ -385,6 +399,7 @@ export async function saveSupply() {
     unit,
     unit_price,
     unit_price_small,
+    stock_quantity,
     note,
     image_url
   };

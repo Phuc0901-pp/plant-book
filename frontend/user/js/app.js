@@ -12,12 +12,12 @@ import { loadUserDashboard }          from './modules/dashboard.js';
 import { filterUserPlants }           from './modules/plants.js';
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
-import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange } from './modules/care-modal.js?v=2.5.0';
+import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange } from './modules/care-modal.js?v=2.6.0';
 import { onCareMediaSelected, openLightbox } from './modules/media.js';
 import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
 import { togglePlantMenu, closePlantMenu } from './modules/plants.js';
-import './supplies.js?v=2.5.0';
+import './supplies.js?v=2.6.0';
 
 // ── Expose to Window (for HTML inline onclick="..." handlers) ──
 // Cần thiết vì ES Modules có scope riêng, không tự trở thành global.
