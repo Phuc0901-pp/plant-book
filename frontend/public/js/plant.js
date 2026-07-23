@@ -1,5 +1,17 @@
-// Parse Slug
-const slug = location.pathname.replace('/plant/', '').split('/')[0];
+// Parse Slug from /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
+function getPublicSlugFromUrl() {
+  const pathParts = location.pathname.split('/').filter(p => p.length > 0);
+  if (pathParts.length === 0) return '';
+  if (pathParts[0] === 'plant') return decodeURIComponent(pathParts[1] || '');
+  if (pathParts[0] === 'nfc') return decodeURIComponent(pathParts[1] || '');
+  
+  // Hierarchical Format: /:userId/:farmId/:plantId/:nfcUid
+  if (pathParts.length >= 4) return decodeURIComponent(pathParts[3]); // nfcUid
+  if (pathParts.length === 3) return decodeURIComponent(pathParts[2]); // plantId
+  if (pathParts.length === 2) return decodeURIComponent(pathParts[1]);
+  return decodeURIComponent(pathParts[0]);
+}
+const slug = getPublicSlugFromUrl();
 let currentPlantData = null;
 
 // Global Configurations Cache (Default Fallbacks)

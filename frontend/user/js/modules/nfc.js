@@ -14,6 +14,14 @@ let _scanning      = false;
 
 // ── Open / Close ───────────────────────────────────────────────
 
+function _buildHierarchicalPlantUrl(userId, farmId, plantId, nfcUid) {
+  const u = userId || 0;
+  const f = farmId || 0;
+  const p = plantId;
+  const n = nfcUid ? `/${encodeURIComponent(nfcUid)}` : '';
+  return `${window.location.origin}/${u}/${f}/${p}${n}`;
+}
+
 export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
   const cache = getPlantsCache();
   const plantObj = cache.find(p => p.id == plantId) || {};
@@ -26,31 +34,18 @@ export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
     : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
   _setEl('nfc-modal-current-uid', uidBadge, true);
 
-  // 1. Direct Plant Page URL
-  const slug = publicSlug || plantId;
-  const plantUrl = `${window.location.origin}/plant/${slug}`;
+  // Render Hierarchical Public Plant URL: https://domain.com/<user_id>/<farm_id>/<plant_id>/<nfc_uid>
+  const fullPlantUrl = _buildHierarchicalPlantUrl(plantObj.user_id, plantObj.farm_id, plantId, currentNfcUid);
   const urlInput = document.getElementById('nfc-public-url-input');
   const urlLink = document.getElementById('nfc-public-url-link');
-  if (urlInput) urlInput.value = plantUrl;
-  if (urlLink) urlLink.href = plantUrl;
+  if (urlInput) urlInput.value = fullPlantUrl;
+  if (urlLink) urlLink.href = fullPlantUrl;
 
-  // 2. NFC Redirect URL by UID
-  const tagUrlWrap = document.getElementById('nfc-tag-url-wrap');
-  const tagUrlInput = document.getElementById('nfc-tag-url-input');
-  const tagUrlLink = document.getElementById('nfc-tag-url-link');
-  if (currentNfcUid) {
-    if (tagUrlWrap) tagUrlWrap.style.display = 'block';
-    const tagUrl = `${window.location.origin}/nfc/${currentNfcUid}`;
-    if (tagUrlInput) tagUrlInput.value = tagUrl;
-    if (tagUrlLink) tagUrlLink.href = tagUrl;
-  } else {
-    if (tagUrlWrap) tagUrlWrap.style.display = 'none';
-  }
-
-  // 3. Associated Metadata IDs
+  // Render Metadata Component IDs
+  _setEl('nfc-meta-user-id', plantObj.user_id ? `#${plantObj.user_id}` : '#0');
+  _setEl('nfc-meta-farm-id', plantObj.farm_id ? `#${plantObj.farm_id}` : '#0');
   _setEl('nfc-meta-plant-id', `#${plantId}`);
-  _setEl('nfc-meta-farm-id', plantObj.farm_id ? `#${plantObj.farm_id}` : '#—');
-  _setEl('nfc-meta-user-id', plantObj.user_id ? `#${plantObj.user_id}` : '#—');
+  _setEl('nfc-meta-tag-id', currentNfcUid ? currentNfcUid : 'Chưa gắn');
 
   const manualInput = document.getElementById('nfc-manual-uid');
   if (manualInput) manualInput.value = currentNfcUid || '';
@@ -158,17 +153,13 @@ async function _saveUid(uid) {
       : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
     _setEl('nfc-modal-current-uid', uidBadge, true);
 
-    const tagUrlWrap = document.getElementById('nfc-tag-url-wrap');
-    const tagUrlInput = document.getElementById('nfc-tag-url-input');
-    const tagUrlLink = document.getElementById('nfc-tag-url-link');
-    if (uid) {
-      if (tagUrlWrap) tagUrlWrap.style.display = 'block';
-      const tagUrl = `${window.location.origin}/nfc/${uid}`;
-      if (tagUrlInput) tagUrlInput.value = tagUrl;
-      if (tagUrlLink) tagUrlLink.href = tagUrl;
-    } else {
-      if (tagUrlWrap) tagUrlWrap.style.display = 'none';
-    }
+    const fullPlantUrl = _buildHierarchicalPlantUrl(_currentPlant.user_id, _currentPlant.farm_id, _currentPlant.id, uid);
+    const urlInput = document.getElementById('nfc-public-url-input');
+    const urlLink = document.getElementById('nfc-public-url-link');
+    if (urlInput) urlInput.value = fullPlantUrl;
+    if (urlLink) urlLink.href = fullPlantUrl;
+
+    _setEl('nfc-meta-tag-id', uid ? uid : 'Chưa gắn');
 
     const deactivateBtn = document.getElementById('nfc-deactivate-btn');
     if (deactivateBtn) deactivateBtn.style.display = uid ? 'flex' : 'none';

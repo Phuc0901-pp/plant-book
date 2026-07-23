@@ -714,13 +714,14 @@ router.delete('/:plantId/logs/:logId', auth, admin, async (req, res) => {
 // ─── Public routes ────────────────────────────────────────────────
 router.get('/public/:slug', async (req, res) => {
   try {
+    const slugParam = req.params.slug.trim();
     const plant = await pool.query(
       `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields,
-              f.name as farm_name, f.polygon_coordinates as farm_polygon
+              f.name as farm_name, f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id
        FROM plants p 
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
-       WHERE (p.public_slug=$1 OR p.id::text=$1) AND p.is_public=true`, [req.params.slug]
+       WHERE (p.public_slug=$1 OR p.id::text=$1 OR UPPER(p.nfc_uid)=UPPER($1)) AND p.is_public=true`, [slugParam]
     );
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
 

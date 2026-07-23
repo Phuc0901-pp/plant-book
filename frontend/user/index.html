@@ -888,45 +888,31 @@
         <span id="nfc-modal-current-uid"></span>
       </div>
 
-      <!-- Public Plant URL Box -->
-      <div id="nfc-public-url-wrap" style="margin: 10px 0; padding: 10px 12px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px;">
-        <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
-          <span><i class="fa-solid fa-link"></i> 1. Link Trang Thông tin Cây:</span>
-          <span style="font-size: 10px; color: #15803d; background: #dcfce7; padding: 1px 6px; border-radius: 4px; font-weight:600;">Link trực tiếp</span>
+      <!-- Hierarchical Public Plant URL Box: domain / <user_id> / <farm_id> / <plant_id> / <nfc_uid> -->
+      <div id="nfc-public-url-wrap" style="margin: 12px 0; padding: 12px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px;">
+        <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+          <span><i class="fa-solid fa-link"></i> Đường dẫn Trang Cây Công khai chuẩn:</span>
+          <span style="font-size: 10px; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 6px; font-weight:700;">Liên kết ghi vào thẻ NFC</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <input type="text" id="nfc-public-url-input" readonly style="flex: 1; padding: 7px 10px; font-size: 12px; font-family: monospace; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #0f172a;" value="...">
-          <button class="btn btn-secondary btn-xs" onclick="copyNfcPublicUrl()" title="Sao chép link" style="white-space: nowrap; padding: 6px 10px; font-size: 12px; height:32px;">
+        
+        <!-- URL Input & Buttons -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <input type="text" id="nfc-public-url-input" readonly style="flex: 1; padding: 8px 12px; font-size: 12px; font-family: monospace; background: #ffffff; border: 1px solid #94a3b8; border-radius: 8px; color: #0f172a; font-weight: 600;" value="...">
+          <button class="btn btn-secondary btn-xs" onclick="copyNfcPublicUrl()" title="Sao chép link" style="white-space: nowrap; padding: 6px 12px; font-size: 12px; height:34px; border-radius: 8px;">
             <i class="fa-regular fa-copy"></i> Copy
           </button>
-          <a id="nfc-public-url-link" href="#" target="_blank" class="btn btn-primary btn-xs" title="Mở trang công khai" style="white-space: nowrap; padding: 6px 10px; font-size: 12px; text-decoration: none; height:32px; display:inline-flex; align-items:center; gap:4px;">
+          <a id="nfc-public-url-link" href="#" target="_blank" class="btn btn-primary btn-xs" title="Mở trang công khai" style="white-space: nowrap; padding: 6px 12px; font-size: 12px; text-decoration: none; height:34px; display:inline-flex; align-items:center; gap:4px; border-radius: 8px;">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở
           </a>
         </div>
-      </div>
 
-      <!-- NFC Redirect URL Box (Triggered when scanning tag UID) -->
-      <div id="nfc-tag-url-wrap" style="margin: 8px 0 12px 0; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;">
-        <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
-          <span><i class="fa-solid fa-rss"></i> 2. Link Redirect theo Mã Thẻ (UID):</span>
-          <span style="font-size: 10px; color: #1d4ed8; background: #dbeafe; padding: 1px 6px; border-radius: 4px; font-weight:600;">Link tự động chuyển hướng</span>
+        <!-- Component ID Parameters breakdown -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; font-size:11px;">
+          <span class="badge" style="background:#dcfce7; color:#14532d; font-weight:600;"><i class="fa-solid fa-user"></i> ID Nông hộ: <strong id="nfc-meta-user-id">#--</strong></span>
+          <span class="badge" style="background:#dcfce7; color:#14532d; font-weight:600;"><i class="fa-solid fa-warehouse"></i> ID Vườn: <strong id="nfc-meta-farm-id">#--</strong></span>
+          <span class="badge" style="background:#dcfce7; color:#14532d; font-weight:600;"><i class="fa-solid fa-seedling"></i> ID Cây: <strong id="nfc-meta-plant-id">#--</strong></span>
+          <span class="badge" style="background:#dcfce7; color:#14532d; font-weight:600;"><i class="fa-solid fa-tag"></i> ID Mã Thẻ: <strong id="nfc-meta-tag-id">Chưa gắn</strong></span>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <input type="text" id="nfc-tag-url-input" readonly style="flex: 1; padding: 7px 10px; font-size: 12px; font-family: monospace; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; color: #0f172a;" value="...">
-          <button class="btn btn-secondary btn-xs" onclick="copyNfcTagUrl()" title="Sao chép link" style="white-space: nowrap; padding: 6px 10px; font-size: 12px; height:32px;">
-            <i class="fa-regular fa-copy"></i> Copy
-          </button>
-          <a id="nfc-tag-url-link" href="#" target="_blank" class="btn btn-primary btn-xs" title="Mở đường dẫn mã thẻ" style="white-space: nowrap; padding: 6px 10px; font-size: 12px; text-decoration: none; height:32px; display:inline-flex; align-items:center; gap:4px; background:#2563eb; border-color:#2563eb;">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở
-          </a>
-        </div>
-      </div>
-
-      <!-- Associated IDs Metadata Row -->
-      <div id="nfc-metadata-row" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; font-size:11px;">
-        <span class="badge" style="background:#f1f5f9; color:#334155; font-weight:600;"><i class="fa-solid fa-seedling"></i> ID Cây: <strong id="nfc-meta-plant-id">#--</strong></span>
-        <span class="badge" style="background:#f1f5f9; color:#334155; font-weight:600;"><i class="fa-solid fa-warehouse"></i> ID Vườn: <strong id="nfc-meta-farm-id">#--</strong></span>
-        <span class="badge" style="background:#f1f5f9; color:#334155; font-weight:600;"><i class="fa-solid fa-user"></i> ID Nông hộ: <strong id="nfc-meta-user-id">#--</strong></span>
       </div>
 
       <!-- Scan Area -->
@@ -1223,8 +1209,8 @@
 
 <!-- Scripts (ES Modules) -->
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=2.7.0"></script>
+<script type="module" src="/user/js/auth.js?v=2.8.0"></script>
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=2.7.0"></script>
+<script type="module" src="/user/js/app.js?v=2.8.0"></script>
 </body>
 </html>
