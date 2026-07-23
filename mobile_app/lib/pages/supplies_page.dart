@@ -644,22 +644,40 @@ class _SuppliesPageState extends State<SuppliesPage> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: sp.isOutOfStock ? Colors.red.withValues(alpha: 0.12) : Colors.green.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
-                              border: sp.isOutOfStock ? Border.all(color: Colors.red.shade300) : null,
-                            ),
-                            child: Text(
-                              sp.isOutOfStock ? '🚫 HẾT HÀNG' : '📦 Tồn: ${sp.stockQuantity} ${sp.unit}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: sp.isOutOfStock ? Colors.red : Colors.green.shade800,
+                          if (sp.category == 'Tiền nước' || sp.category == 'Nhân công') ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                '♾️ Vĩnh cửu',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
                               ),
                             ),
-                          ),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: sp.isOutOfStock ? Colors.red.withValues(alpha: 0.12) : Colors.green.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                                border: sp.isOutOfStock ? Border.all(color: Colors.red.shade300) : null,
+                              ),
+                              child: Text(
+                                sp.isOutOfStock ? '🚫 HẾT HÀNG' : '📦 Tồn: ${sp.stockQuantity} ${sp.unit}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: sp.isOutOfStock ? Colors.red : Colors.green.shade800,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],

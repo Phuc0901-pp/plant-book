@@ -300,8 +300,8 @@ router.post('/usages', auth, async (req, res) => {
       [req.user.id, supply.id, resolvedFarmId || null, plant_id || null, uDate, qty, unit_price, total_cost, note || null]
     );
 
-    // Trừ kho vật tư (nếu có kho)
-    if (supply.stock_quantity > 0) {
+    // Trừ kho vật tư (chỉ trừ cho phân bón & thuốc BVTV, không trừ cho Tiền nước & Nhân công vì là vật tư vĩnh cửu)
+    if (supply.category !== 'Tiền nước' && supply.category !== 'Nhân công' && supply.stock_quantity > 0) {
       await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1) WHERE id = $2', [qty, supply.id]);
     }
 

@@ -331,8 +331,9 @@ function _formatSupplyOptionText(s) {
 
   const formattedPrice = new Intl.NumberFormat('vi-VN').format(Math.round(unitPrice)) + ' VNĐ';
   const stock = parseFloat(s.stock_quantity) || 0;
-  const isOut = stock <= 0;
-  const stockBadge = isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Còn: ${stock} ${s.unit})`;
+  const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
+  const isOut = !isPermanent && stock <= 0;
+  const stockBadge = isPermanent ? '' : (isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Còn: ${stock} ${s.unit})`);
 
   return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}${stockBadge}`;
 }
@@ -437,7 +438,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer')">
               ${declaredFertilizers.map(s => {
-                const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+                const isOut = (s.category !== 'Tiền nước' && s.category !== 'Nhân công') && (parseFloat(s.stock_quantity) || 0) <= 0;
                 return `
                   <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
                     🧪 ${_formatSupplyOptionText(s)}
@@ -490,7 +491,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide')">
               ${declaredPesticides.map(s => {
-                const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+                const isOut = (s.category !== 'Tiền nước' && s.category !== 'Nhân công') && (parseFloat(s.stock_quantity) || 0) <= 0;
                 return `
                   <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
                     🛡️ ${_formatSupplyOptionText(s)}

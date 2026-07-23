@@ -16,7 +16,7 @@ class Supply {
   final double totalSpent;
   final double totalUsedQty;
 
-  bool get isOutOfStock => stockQuantity <= 0;
+  bool get isOutOfStock => (category != 'Tiền nước' && category != 'Nhân công') && stockQuantity <= 0;
 
   Supply({
     required this.id,

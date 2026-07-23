@@ -251,9 +251,12 @@ export async function loadSupplies() {
       const smallUnit = (sp.unit === 'kg' ? 'g' : (sp.unit === 'lít' ? 'ml' : (sp.unit === 'm³' || sp.unit === 'm3' ? 'lít' : sp.unit)));
 
       const stock = parseFloat(sp.stock_quantity) || 0;
-      const stockBadge = stock <= 0 
-        ? '<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; padding:2px 6px; border:1px solid #fca5a5; margin-top:3px; display:inline-block;"><i class="fa-solid fa-triangle-exclamation"></i> HẾT HÀNG</span>' 
-        : `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; padding:2px 6px; margin-top:3px; display:inline-block;"><i class="fa-solid fa-boxes-stacked"></i> Tồn: ${stock} ${sp.unit}</span>`;
+      const isPermanent = sp.category === 'Tiền nước' || sp.category === 'Nhân công';
+      const stockBadge = isPermanent
+        ? '<span class="badge" style="background:#e0f2fe; color:#0284c7; font-size:10px; padding:2px 6px; margin-top:3px; display:inline-block;"><i class="fa-solid fa-infinity"></i> Vật tư vĩnh cửu</span>'
+        : (stock <= 0 
+            ? '<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; padding:2px 6px; border:1px solid #fca5a5; margin-top:3px; display:inline-block;"><i class="fa-solid fa-triangle-exclamation"></i> HẾT HÀNG</span>' 
+            : `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; padding:2px 6px; margin-top:3px; display:inline-block;"><i class="fa-solid fa-boxes-stacked"></i> Tồn: ${stock} ${sp.unit}</span>`);
 
       return `
         <tr>
@@ -633,8 +636,9 @@ export async function openRecordUsageModal() {
     if (select) {
       select.innerHTML = cachedSupplies.map(s => {
         const stock = parseFloat(s.stock_quantity) || 0;
-        const isOut = stock <= 0;
-        const stockText = isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Tồn: ${stock} ${s.unit})`;
+        const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
+        const isOut = !isPermanent && stock <= 0;
+        const stockText = isPermanent ? '' : (isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Tồn: ${stock} ${s.unit})`);
         return `
           <option value="${s.id}" data-price="${s.unit_price}" data-unit="${s.unit}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
             [${s.category}] ${esc(s.name)} ${s.package_size ? `(${esc(s.package_size)})` : ''} — ${formatVND(s.unit_price)} / ${s.unit}${stockText}
