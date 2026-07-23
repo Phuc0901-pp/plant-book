@@ -249,6 +249,7 @@ async function renderPlant(plant) {
   const schemaFields = plant.schema_fields || [];
   const media = plant.media || [];
   const logs = plant.logs || [];
+  const hasMap = (plant.latitude && plant.longitude) || (plant.farm_boundary && plant.farm_boundary.coordinates);
   
   // Helper to resolve crop cover image from plant type (schema)
   function getCropImageSrc(p) {
