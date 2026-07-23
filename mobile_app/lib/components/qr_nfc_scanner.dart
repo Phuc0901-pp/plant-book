@@ -599,92 +599,157 @@ class _NfcScannerPageState extends State<NfcScannerPage>
 
 void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   final apiService = ApiService();
-  
-  // 1. Try to match by physical nfcUid first
-  final searchUid = scannedUid.isNotEmpty ? scannedUid : (code.startsWith('nfc:') ? code.replaceFirst('nfc:', '') : '');
-  if (searchUid.isNotEmpty) {
-    try {
-      final allPlants = await apiService.fetchPlants();
-      final matched = allPlants.firstWhere(
-        (p) => p.nfcUid?.toUpperCase() == searchUid.toUpperCase() || p.publicSlug == searchUid || p.id.toString() == searchUid,
-        orElse: () => throw Exception('not found by UID'),
-      );
-      
-      if (context.mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
-        );
-        return;
+
+  final cleanScannedUid = scannedUid.trim();
+  final cleanCode = code.trim();
+
+  // Extract components from URL if code contains URL/path
+  String pathNfcUid = '';
+  String pathPlantId = '';
+  String pathSlug = '';
+
+  if (cleanCode.startsWith('http://') || cleanCode.startsWith('https://') || cleanCode.contains('/')) {
+    final uri = Uri.tryParse(cleanCode);
+    final segments = uri?.pathSegments ?? cleanCode.split('/').where((s) => s.isNotEmpty).toList();
+    if (segments.isNotEmpty) {
+      pathSlug = Uri.decodeComponent(segments.last);
+      if (segments.length >= 4) {
+        pathPlantId = Uri.decodeComponent(segments[2]);
+        pathNfcUid = Uri.decodeComponent(segments[3]);
+      } else if (segments.length == 3) {
+        pathPlantId = Uri.decodeComponent(segments[2]);
+      } else if (segments.length == 2 && (segments[0] == 'nfc' || segments[0] == 'plant')) {
+        if (segments[0] == 'nfc') pathNfcUid = Uri.decodeComponent(segments[1]);
+        if (segments[0] == 'plant') pathSlug = Uri.decodeComponent(segments[1]);
       }
-    } catch (_) {
-      // Fall through
     }
   }
 
-  // 2. Detect if it's an NFC or public plant URL (e.g. /nfc/04:AB... or /plant/sau-rieng-01)
-  if (code.contains('/nfc/') || code.contains('/plant/')) {
-    final uri = Uri.tryParse(code.trim());
-    final segments = uri?.pathSegments ?? code.trim().split('/');
-    if (segments.isNotEmpty) {
-      final slugOrUid = segments.last;
-      if (slugOrUid.isNotEmpty) {
-        try {
-          final allPlants = await apiService.fetchPlants();
-          final matched = allPlants.firstWhere(
-            (p) => p.publicSlug == slugOrUid || p.nfcUid?.toUpperCase() == slugOrUid.toUpperCase() || p.id.toString() == slugOrUid,
-            orElse: () => throw Exception('not found in cache'),
+  final searchUid = cleanScannedUid.isNotEmpty ? cleanScannedUid : pathNfcUid;
+  final searchPlantId = pathPlantId;
+
+  // 1. Fetch user's plants list
+  List<Plant> allPlants = [];
+  try {
+    allPlants = await apiService.fetchPlants();
+  } catch (_) {}
+
+  Plant? matched;
+
+  if (allPlants.isNotEmpty) {
+    // Match by physical or URL NFC UID
+    if (searchUid.isNotEmpty) {
+      try {
+        matched = allPlants.firstWhere(
+          (p) => p.nfcUid != null && p.nfcUid!.toUpperCase() == searchUid.toUpperCase(),
+        );
+      } catch (_) {}
+    }
+
+    // Match by plant ID from path (e.g. /0/2/1/04:17:...)
+    if (matched == null && searchPlantId.isNotEmpty) {
+      try {
+        matched = allPlants.firstWhere(
+          (p) => p.id.toString() == searchPlantId,
+        );
+      } catch (_) {}
+    }
+
+    // Match by publicSlug or treeCode or last path segment
+    if (matched == null && pathSlug.isNotEmpty) {
+      try {
+        matched = allPlants.firstWhere(
+          (p) =>
+              p.publicSlug == pathSlug ||
+              (p.nfcUid != null && p.nfcUid!.toUpperCase() == pathSlug.toUpperCase()) ||
+              p.id.toString() == pathSlug ||
+              (p.treeCode != null && p.treeCode!.toLowerCase() == pathSlug.toLowerCase()),
+        );
+      } catch (_) {}
+    }
+
+    // Match by cleanCode as fallback
+    if (matched == null && cleanCode.isNotEmpty) {
+      try {
+        matched = allPlants.firstWhere(
+          (p) =>
+              (p.treeCode != null && p.treeCode!.toLowerCase() == cleanCode.toLowerCase()) ||
+              (p.nfcUid != null && p.nfcUid!.toUpperCase() == cleanCode.toUpperCase()) ||
+              p.id.toString() == cleanCode,
+        );
+      } catch (_) {}
+    }
+  }
+
+  // If found in allPlants -> Open PlantDetailPage directly for care management!
+  if (matched != null) {
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched!)),
+      );
+      return;
+    }
+  }
+
+  // 2. If not found in user's list, query plant via Public API (by UID or plantId or slug)
+  final fetchQuery = searchUid.isNotEmpty
+      ? searchUid
+      : (searchPlantId.isNotEmpty ? searchPlantId : (pathSlug.isNotEmpty ? pathSlug : cleanCode));
+
+  if (fetchQuery.isNotEmpty) {
+    try {
+      final publicData = await apiService.fetchPublicPlant(fetchQuery);
+      if (publicData != null && publicData['id'] != null) {
+        final fetchedPlant = Plant.fromJson(publicData);
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => PlantDetailPage(plant: fetchedPlant)),
           );
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // Secondary API query by searchPlantId if searchUid returned null
+    if (searchPlantId.isNotEmpty && searchPlantId != fetchQuery) {
+      try {
+        final publicData = await apiService.fetchPublicPlant(searchPlantId);
+        if (publicData != null && publicData['id'] != null) {
+          final fetchedPlant = Plant.fromJson(publicData);
           if (context.mounted) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
-            );
-            return;
-          }
-        } catch (_) {
-          if (context.mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PublicPlantProfilePage(slug: slugOrUid),
-              ),
+              MaterialPageRoute(builder: (_) => PlantDetailPage(plant: fetchedPlant)),
             );
             return;
           }
         }
-      }
+      } catch (_) {}
     }
   }
 
-  // 3. Try to match by tree_code, nfc_uid, or plant ID via API
-  if (code.isNotEmpty) {
-    try {
-      final allPlants = await apiService.fetchPlants();
-      final matched = allPlants.firstWhere(
-        (p) =>
-            p.treeCode?.toLowerCase() == code.toLowerCase() ||
-            p.nfcUid?.toUpperCase() == code.toUpperCase() ||
-            p.id.toString() == code,
-        orElse: () => throw Exception('not found'),
+  // 3. Fallback: Open public profile page if slug exists
+  if (pathSlug.isNotEmpty || fetchQuery.isNotEmpty) {
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PublicPlantProfilePage(slug: pathSlug.isNotEmpty ? pathSlug : fetchQuery),
+        ),
       );
-
-      if (context.mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched)),
-        );
-        return;
-      }
-    } catch (_) {}
+      return;
+    }
   }
 
+  // 4. Alert user if plant not found
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(scannedUid.isNotEmpty
-            ? 'Không tìm thấy cây trồng khớp với thẻ NFC "$scannedUid".'
-            : 'Không tìm thấy cây trồng với mã "$code"'),
+        content: Text(cleanScannedUid.isNotEmpty
+            ? 'Không tìm thấy cây trồng khớp với thẻ NFC "$cleanScannedUid".'
+            : 'Không tìm thấy cây trồng phù hợp.'),
         backgroundColor: AppTheme.red,
         behavior: SnackBarBehavior.floating,
       ),
