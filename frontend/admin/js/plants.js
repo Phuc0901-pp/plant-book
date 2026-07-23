@@ -21,8 +21,7 @@ async function loadPlants() {
     }
     tbody.innerHTML = plants.map(p => `
       <tr>
-        <td>${p.cover_image ? `<img src="${esc(p.cover_image)}" class="plant-cover" style="width:44px;height:44px">` :
-          `<div class="plant-cover" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--green)"><i class="fa-solid fa-seedling"></i></div>`}</td>
+        <td><div class="plant-cover" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--green);background:rgba(34,197,94,0.1);border-radius:10px;"><i class="fa-solid fa-seedling"></i></div></td>
         <td>
           <strong>${esc(p.tree_code || '—')}</strong>
           <br><small style="color:var(--gray-400)">ID: ${p.id}</small>
