@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/nfc.js — NFC Tag Definition & Reassignment
    ═══════════════════════════════════════════════════════════════ */
@@ -15,16 +15,25 @@ let _scanning      = false;
 // ── Open / Close ───────────────────────────────────────────────
 
 export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
-  _currentPlant = { id: plantId, tree_code: treeCode, public_slug: publicSlug, nfc_uid: currentNfcUid };
+  _currentPlant = { id: plantId, tree_code: treeCode, public_slug: publicSlug || plantId, nfc_uid: currentNfcUid };
 
-  _setEl('nfc-modal-plant-name', treeCode || `Cay #${plantId}`);
+  _setEl('nfc-modal-plant-name', treeCode || `Cây #${plantId}`);
+
   const uidBadge = currentNfcUid
-    ? `<span class="badge badge-green"><i class="fa-solid fa-tag"></i> ${currentNfcUid}</span>`
-    : `<span class="badge badge-gray"><i class="fa-solid fa-link-slash"></i> Chua gan the</span>`;
+    ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i class="fa-solid fa-tag"></i> ${currentNfcUid}</span>`
+    : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
   _setEl('nfc-modal-current-uid', uidBadge, true);
 
+  // Render Public URL
+  const slug = publicSlug || plantId;
+  const fullUrl = `${window.location.origin}/plant/${slug}`;
+  const urlInput = document.getElementById('nfc-public-url-input');
+  const urlLink = document.getElementById('nfc-public-url-link');
+  if (urlInput) urlInput.value = fullUrl;
+  if (urlLink) urlLink.href = fullUrl;
+
   const manualInput = document.getElementById('nfc-manual-uid');
-  if (manualInput) manualInput.value = '';
+  if (manualInput) manualInput.value = currentNfcUid || '';
 
   const deactivateBtn = document.getElementById('nfc-deactivate-btn');
   if (deactivateBtn) deactivateBtn.style.display = currentNfcUid ? 'flex' : 'none';
@@ -34,7 +43,12 @@ export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
   const modal = document.getElementById('nfc-modal');
   if (modal) { modal.classList.add('open'); document.body.style.overflow = 'hidden'; }
 
-  if ('NDEFReader' in window) { startNfcScan(); } else { _setNfcStatus('unsupported'); }
+  // Check Web NFC support (Web NFC requires HTTPS & Chrome on Android with NFC hardware)
+  if ('NDEFReader' in window && 'ontouchstart' in window) {
+    startNfcScan();
+  } else {
+    _setNfcStatus('unsupported');
+  }
 }
 
 export function closeNfcModal() {
@@ -44,6 +58,15 @@ export function closeNfcModal() {
   document.body.style.overflow = '';
   _currentPlant = null;
 }
+
+export function copyNfcPublicUrl() {
+  const input = document.getElementById('nfc-public-url-input');
+  if (input && input.value) {
+    navigator.clipboard.writeText(input.value);
+    toast('Đã sao chép đường dẫn URL cây công khai!');
+  }
+}
+window.copyNfcPublicUrl = copyNfcPublicUrl;
 
 export async function startNfcScan() {
   if (_scanning || !_currentPlant) return;
@@ -57,10 +80,10 @@ export async function startNfcScan() {
       _stopNfcScan();
       const uid = serialNumber.toUpperCase();
       _setNfcStatus('detected', uid);
-      const plantUrl = `${location.origin}/plant/${_currentPlant.public_slug}`;
+      const plantUrl = `${location.origin}/plant/${_currentPlant.public_slug || _currentPlant.id}`;
       try {
         await _nfcReader.write({ records: [{ recordType: 'url', data: plantUrl }] });
-        toast(`Da ghi URL cay vao the: ${_currentPlant.tree_code}`);
+        toast(`Đã ghi URL cây vào thẻ: ${_currentPlant.tree_code || _currentPlant.id}`);
       } catch (writeErr) {
         console.warn('NFC write skipped:', writeErr.message);
       }
@@ -69,7 +92,7 @@ export async function startNfcScan() {
     _nfcReader.addEventListener('readingerror', () => { _stopNfcScan(); _setNfcStatus('error'); });
   } catch (err) {
     _scanning = false;
-    _setNfcStatus(err.name === 'NotAllowedError' ? 'permission_denied' : 'error');
+    _setNfcStatus(err.name === 'NotAllowedError' ? 'permission_denied' : 'unsupported');
   }
 }
 
@@ -77,14 +100,14 @@ function _stopNfcScan() { _scanning = false; _nfcReader = null; }
 
 export async function saveNfcUidManually() {
   const uid = (document.getElementById('nfc-manual-uid')?.value || '').trim().toUpperCase();
-  if (!uid) { toast('Vui long nhap ma the dinh danh.', 'error'); return; }
+  if (!uid) { toast('Vui lòng nhập mã thẻ định danh.', 'warning'); return; }
   if (!_currentPlant) return;
   await _saveUid(uid);
 }
 
 export async function deactivateNfcTag() {
   if (!_currentPlant) return;
-  if (!confirm(`Huy kich hoat the dinh danh cho cay ${_currentPlant.tree_code || _currentPlant.id}?`)) return;
+  if (!confirm(`Hủy kích hoạt thẻ định danh cho cây ${_currentPlant.tree_code || _currentPlant.id}?`)) return;
   await _saveUid(null);
 }
 
@@ -95,13 +118,29 @@ async function _saveUid(uid) {
       method: 'PUT',
       body: JSON.stringify({ nfc_uid: uid })
     });
-    toast(res.message || 'Da cap nhat dinh danh the.');
-    closeNfcModal();
+    
+    toast(res.message || (uid ? 'Đã gán thẻ định danh thành công!' : 'Đã hủy kích hoạt thẻ thành công.'));
+    
+    _currentPlant.nfc_uid = uid;
+
+    // Update modal UI live
+    const uidBadge = uid
+      ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i class="fa-solid fa-tag"></i> ${uid}</span>`
+      : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
+    _setEl('nfc-modal-current-uid', uidBadge, true);
+
+    const deactivateBtn = document.getElementById('nfc-deactivate-btn');
+    if (deactivateBtn) deactivateBtn.style.display = uid ? 'flex' : 'none';
+
+    // Update cache & table
     const cache = getPlantsCache();
     const idx   = cache.findIndex(p => p.id === _currentPlant.id);
-    if (idx !== -1) { cache[idx].nfc_uid = uid; renderUserPlantsTable(cache); }
+    if (idx !== -1) {
+      cache[idx].nfc_uid = uid;
+      renderUserPlantsTable(cache);
+    }
   } catch (err) {
-    toast(err.message || 'Loi cap nhat dinh danh the.', 'error');
+    toast(err.message || 'Lỗi cập nhật định danh thẻ.', 'error');
   }
 }
 
@@ -118,12 +157,12 @@ function _setNfcStatus(status, uid = '') {
   if (!iconEl || !labelEl) return;
 
   const states = {
-    idle:             { icon: 'fa-wifi',          color: '#6b7280', spin: false, label: 'Nhan "Bat dau quet" de cham the', btnText: '<i class="fa-solid fa-rss"></i> Bat dau quet NFC' },
-    scanning:         { icon: 'fa-circle-notch',  color: '#3b82f6', spin: true,  label: 'Dang cho... Cham dien thoai vao the NFC', btnText: '<i class="fa-solid fa-stop"></i> Dung quet' },
-    detected:         { icon: 'fa-circle-check',  color: '#22c55e', spin: false, label: `Da phat hien the: ${uid}`, btnText: '<i class="fa-solid fa-rss"></i> Quet lai' },
-    error:            { icon: 'fa-circle-xmark',  color: '#ef4444', spin: false, label: 'Khong doc duoc the. Thu lai hoac nhap thu cong.', btnText: '<i class="fa-solid fa-rss"></i> Thu lai' },
-    unsupported:      { icon: 'fa-mobile-screen-button', color: '#f59e0b', spin: false, label: 'Trinh duyet chua ho tro NFC. Vui long nhap ma the thu cong.', btnText: null },
-    permission_denied:{ icon: 'fa-lock',          color: '#ef4444', spin: false, label: 'Quyen NFC bi tu choi. Kiem tra cai dat trinh duyet.', btnText: '<i class="fa-solid fa-rss"></i> Thu lai' }
+    idle:             { icon: 'fa-wifi',          color: '#6b7280', spin: false, label: 'Nhấn "Bắt đầu quét" để chạm thẻ', btnText: '<i class="fa-solid fa-rss"></i> Bắt đầu quét NFC' },
+    scanning:         { icon: 'fa-circle-notch',  color: '#3b82f6', spin: true,  label: 'Đang chờ... Chạm điện thoại vào thẻ NFC', btnText: '<i class="fa-solid fa-stop"></i> Dừng quét' },
+    detected:         { icon: 'fa-circle-check',  color: '#22c55e', spin: false, label: `Đã phát hiện thẻ: ${uid}`, btnText: '<i class="fa-solid fa-rss"></i> Quét lại' },
+    error:            { icon: 'fa-circle-xmark',  color: '#ef4444', spin: false, label: 'Không đọc được thẻ. Vui lòng nhập mã thủ công bên dưới.', btnText: '<i class="fa-solid fa-rss"></i> Thử lại' },
+    unsupported:      { icon: 'fa-desktop', color: '#f59e0b', spin: false, label: 'Trình duyệt chưa hỗ trợ Web NFC trên máy tính (Web NFC hoạt động trên Chrome Android HTTPS). Vui lòng nhập mã UID thủ công bên dưới hoặc dùng Mobile App.', btnText: null },
+    permission_denied:{ icon: 'fa-lock',          color: '#ef4444', spin: false, label: 'Quyền NFC bị từ chối. Kiểm tra cài đặt trình duyệt.', btnText: '<i class="fa-solid fa-rss"></i> Thử lại' }
   };
 
   const s = states[status] || states.idle;
