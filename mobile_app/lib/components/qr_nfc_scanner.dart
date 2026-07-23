@@ -418,10 +418,9 @@ class _NfcScannerPageState extends State<NfcScannerPage>
     _rippleController.stop();
     _successController.forward();
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
 
-    Navigator.pop(context);
     _routeToPlant(context, value, scannedUid);
   }
 
@@ -439,14 +438,12 @@ class _NfcScannerPageState extends State<NfcScannerPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // NFC icon with ripple animation
             SizedBox(
               width: 200,
               height: 200,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Ripple rings (only when reading)
                   if (_isReading) ...[
                     AnimatedBuilder(
                       animation: _rippleController,
@@ -489,7 +486,6 @@ class _NfcScannerPageState extends State<NfcScannerPage>
                     ),
                   ],
 
-                  // Center icon circle
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 400),
                     width: 110,
@@ -520,62 +516,59 @@ class _NfcScannerPageState extends State<NfcScannerPage>
                                 size: 56, color: Colors.white),
                           )
                         : _isError
-                            ? const Icon(Icons.nfc_rounded,
-                                size: 56, color: Colors.white54)
+                            ? const Icon(Icons.close_rounded,
+                                size: 56, color: Colors.white)
                             : const Icon(Icons.nfc_rounded,
-                                size: 56, color: Colors.white),
+                                size: 56, color: AppTheme.green),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 32),
 
-            // Status text
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
+            // Status message
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
                 _statusText,
-                key: ValueKey(_statusText),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: _isSuccess
-                      ? AppTheme.green
-                      : _isError
-                          ? AppTheme.red
-                          : Colors.white70,
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
+                  color: _isError ? AppTheme.red : Colors.white,
                 ),
               ),
             ),
+            const SizedBox(height: 8),
 
-            const SizedBox(height: 12),
-
-            if (!_isSuccess && !_isError)
+            if (_isReading)
               const Text(
                 'Chạm thẻ NFC của cây trồng vào mặt sau điện thoại',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white38, fontSize: 13),
+                style: TextStyle(color: Colors.white54, fontSize: 13),
               ),
 
-            if (_isError && _nfcAvailable) ...[
+            if (_isError) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () {
                   setState(() {
-                    _isError = false;
                     _isReading = true;
+                    _isError = false;
+                    _isSuccess = false;
                     _statusText = 'Đưa điện thoại lại gần thẻ NFC...';
                   });
                   _rippleController.repeat();
-                  _initNfc();
+                  _startNfcReading();
                 },
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Thử lại'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.green,
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
@@ -637,11 +630,12 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   Plant? matched;
 
   if (allPlants.isNotEmpty) {
-    // Match by physical or URL NFC UID
+    // Match by physical or URL NFC UID (colon & case insensitive)
     if (searchUid.isNotEmpty) {
+      final normalizedSearchUid = searchUid.replaceAll(':', '').toUpperCase();
       try {
         matched = allPlants.firstWhere(
-          (p) => p.nfcUid != null && p.nfcUid!.toUpperCase() == searchUid.toUpperCase(),
+          (p) => p.nfcUid != null && p.nfcUid!.replaceAll(':', '').toUpperCase() == normalizedSearchUid,
         );
       } catch (_) {}
     }
@@ -661,7 +655,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
         matched = allPlants.firstWhere(
           (p) =>
               p.publicSlug == pathSlug ||
-              (p.nfcUid != null && p.nfcUid!.toUpperCase() == pathSlug.toUpperCase()) ||
+              (p.nfcUid != null && p.nfcUid!.replaceAll(':', '').toUpperCase() == pathSlug.replaceAll(':', '').toUpperCase()) ||
               p.id.toString() == pathSlug ||
               (p.treeCode != null && p.treeCode!.toLowerCase() == pathSlug.toLowerCase()),
         );
@@ -674,7 +668,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
         matched = allPlants.firstWhere(
           (p) =>
               (p.treeCode != null && p.treeCode!.toLowerCase() == cleanCode.toLowerCase()) ||
-              (p.nfcUid != null && p.nfcUid!.toUpperCase() == cleanCode.toUpperCase()) ||
+              (p.nfcUid != null && p.nfcUid!.replaceAll(':', '').toUpperCase() == cleanCode.replaceAll(':', '').toUpperCase()) ||
               p.id.toString() == cleanCode,
         );
       } catch (_) {}
@@ -684,7 +678,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   // If found in allPlants -> Open PlantDetailPage directly for care management!
   if (matched != null) {
     if (context.mounted) {
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched!)),
       );
@@ -703,7 +697,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
       if (publicData != null && publicData['id'] != null) {
         final fetchedPlant = Plant.fromJson(publicData);
         if (context.mounted) {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => PlantDetailPage(plant: fetchedPlant)),
           );
@@ -719,7 +713,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
         if (publicData != null && publicData['id'] != null) {
           final fetchedPlant = Plant.fromJson(publicData);
           if (context.mounted) {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => PlantDetailPage(plant: fetchedPlant)),
             );
@@ -733,7 +727,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   // 3. Fallback: Open public profile page if slug exists
   if (pathSlug.isNotEmpty || fetchQuery.isNotEmpty) {
     if (context.mounted) {
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => PublicPlantProfilePage(slug: pathSlug.isNotEmpty ? pathSlug : fetchQuery),

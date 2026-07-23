@@ -493,16 +493,11 @@ async function renderPlant(plant) {
   function getCropImageSrc(p) {
     if (p.cover_image) return esc(p.cover_image);
     const term = p.plant_type || '';
-    if (!term) return '';
+    if (!term) return '/assets/logo.png';
     
     // Extract text in parentheses, e.g. "Sầu riêng(durian)" -> "durian"
     const match = term.match(/\(([^)]+)\)/);
-    let baseName = '';
-    if (match && match[1]) {
-      baseName = match[1].trim();
-    } else {
-      baseName = term;
-    }
+    let baseName = (match && match[1]) ? match[1].trim() : term;
     
     const normalized = baseName
       .toLowerCase()
@@ -512,8 +507,24 @@ async function renderPlant(plant) {
       .replace(/[^a-z0-9]/g, "_")
       .replace(/_+/g, "_")
       .replace(/^_+|_+$/g, "");
-    return `/assets/crop/${normalized}`;
+    return `/assets/crop/${normalized}.png`;
   }
+
+  window.tryNextCropExt = function(img, cropType) {
+    if (!img) return;
+    const currentSrc = img.src || '';
+    if (currentSrc.endsWith('.png')) {
+      img.src = currentSrc.replace('.png', '.jpg');
+    } else if (currentSrc.endsWith('.jpg')) {
+      img.src = currentSrc.replace('.jpg', '.jpeg');
+    } else if (currentSrc.endsWith('.jpeg')) {
+      img.src = currentSrc.replace('.jpeg', '.webp');
+    } else {
+      img.onerror = null;
+      img.src = '/assets/logo.png';
+      img.className = 'cover-image-fallback';
+    }
+  };
 
   // Render health status badge
   let healthClass = 'badge-gray';
