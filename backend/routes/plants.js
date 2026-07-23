@@ -540,6 +540,15 @@ router.post('/:id/logs', auth, async (req, res) => {
       [plantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
        JSON.stringify(media_urls || []), JSON.stringify(details || {}), req.user.id]
     );
+
+    // Tự động chuyển trạng thái cây thành Bệnh nếu ghi nhật ký Bệnh cây
+    if (log_type === 'Bệnh cây') {
+      await pool.query(
+        `UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = $1`,
+        [plantId]
+      );
+    }
+
     // Record user activity
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)

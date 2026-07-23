@@ -250,6 +250,11 @@ export async function loadSupplies() {
       const priceSmall = parseFloat(sp.unit_price_small) || (sp.package_qty > 0 ? priceLarge / sp.package_qty : priceLarge);
       const smallUnit = (sp.unit === 'kg' ? 'g' : (sp.unit === 'lít' ? 'ml' : (sp.unit === 'm³' || sp.unit === 'm3' ? 'lít' : sp.unit)));
 
+      const stock = parseFloat(sp.stock_quantity) || 0;
+      const stockBadge = stock <= 0 
+        ? '<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; padding:2px 6px; border:1px solid #fca5a5; margin-top:3px; display:inline-block;"><i class="fa-solid fa-triangle-exclamation"></i> HẾT HÀNG</span>' 
+        : `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; padding:2px 6px; margin-top:3px; display:inline-block;"><i class="fa-solid fa-boxes-stacked"></i> Tồn: ${stock} ${sp.unit}</span>`;
+
       return `
         <tr>
           <td>${getCategoryBadge(sp.category)}</td>
@@ -260,6 +265,8 @@ export async function loadSupplies() {
                 : `<div style="width:38px; height:38px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:16px;"><i class="fa-solid fa-boxes-packing"></i></div>`}
               <div>
                 <strong>${esc(sp.name)}</strong>
+                <br>
+                ${stockBadge}
               </div>
             </div>
           </td>
@@ -440,18 +447,26 @@ export function switchSupplyPeriod(period) {
   document.querySelectorAll('.period-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.period === period);
   });
+
+  const monthWrap = document.getElementById('supplies-month-wrap');
+  if (monthWrap) {
+    monthWrap.style.display = (period === 'day') ? 'flex' : 'none';
+  }
+
   loadSuppliesAnalytics();
 }
 
 export async function loadSuppliesAnalytics() {
   const yearSelect = document.getElementById('supplies-filter-year');
+  const monthSelect = document.getElementById('supplies-filter-month');
   const farmSelect = document.getElementById('supplies-filter-farm');
   
   const year = yearSelect ? yearSelect.value : new Date().getFullYear();
+  const month = (currentPeriodFilter === 'day' && monthSelect) ? monthSelect.value : 'all';
   const farm_id = farmSelect ? farmSelect.value : 'all';
 
   try {
-    const data = await api(`/supplies/analytics?period=${currentPeriodFilter}&year=${year}&farm_id=${farm_id}`);
+    const data = await api(`/supplies/analytics?period=${currentPeriodFilter}&year=${year}&month=${month}&farm_id=${farm_id}`);
 
     // Update Stats Cards
     const totalEl = document.getElementById('cost-stat-total');
@@ -466,6 +481,9 @@ export async function loadSuppliesAnalytics() {
     const combinedPestLabor = (data.summary.categories['Phun thuốc'] || 0) + (data.summary.categories['Nhân công'] || 0);
     if (pestLaborEl) pestLaborEl.textContent = formatVND(combinedPestLabor);
 
+    // Render Cost Heatmap Chart
+    renderCostHeatmap(data.time_breakdown, data.summary.total_expenditure);
+
     // Render Breakdown Table
     renderBreakdownTable(data.time_breakdown, data.summary.total_expenditure);
 
@@ -475,6 +493,73 @@ export async function loadSuppliesAnalytics() {
   } catch (err) {
     console.error('Error loading supplies analytics:', err);
   }
+}
+
+function renderCostHeatmap(breakdown, grandTotal) {
+  const container = document.getElementById('supplies-cost-heatmap-container');
+  if (!container) return;
+
+  if (!breakdown || breakdown.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px; color:var(--text-muted); background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+        <i class="fa-solid fa-chart-line" style="font-size:24px; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+        Chưa có dữ liệu tiêu hao chi phí trong khoảng thời gian này.
+      </div>`;
+    return;
+  }
+
+  // Gom nhóm tổng chi phí theo period_label
+  const periodCostsMap = new Map();
+  let maxCost = 0;
+
+  breakdown.forEach(row => {
+    const label = row.period_label || 'Khác';
+    const cost = parseFloat(row.total_cost) || 0;
+    const current = periodCostsMap.get(label) || 0;
+    const updated = current + cost;
+    periodCostsMap.set(label, updated);
+    if (updated > maxCost) maxCost = updated;
+  });
+
+  const periodEntries = Array.from(periodCostsMap.entries());
+
+  let html = `
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">
+  `;
+
+  periodEntries.forEach(([label, totalCost]) => {
+    const ratio = maxCost > 0 ? (totalCost / maxCost) : 0;
+    let bgColor = '#f0fdf4';
+    let borderColor = '#bbf7d0';
+    let textColor = '#166534';
+
+    if (ratio > 0.75) {
+      bgColor = '#fef2f2';
+      borderColor = '#fca5a5';
+      textColor = '#991b1b';
+    } else if (ratio > 0.4) {
+      bgColor = '#fef9c3';
+      borderColor = '#fde047';
+      textColor = '#854d0e';
+    } else if (ratio > 0.1) {
+      bgColor = '#dcfce7';
+      borderColor = '#86efac';
+      textColor = '#14532d';
+    }
+
+    html += `
+      <div style="background:${bgColor}; border:1px solid ${borderColor}; border-radius:10px; padding:10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.03); transition:transform 0.15s ease;" title="${label}: ${formatVND(totalCost)}">
+        <div style="font-size:11px; font-weight:700; color:${textColor}; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(label)}</div>
+        <div style="font-size:13px; font-weight:800; color:${textColor}; margin-top:4px;">${formatVND(totalCost)}</div>
+        <div style="margin-top:6px; height:4px; background:rgba(0,0,0,0.06); border-radius:2px; overflow:hidden;">
+          <div style="width:${(ratio * 100).toFixed(0)}%; height:100%; background:${textColor}; border-radius:2px;"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
 function renderBreakdownTable(breakdown, grandTotal) {
@@ -546,11 +631,16 @@ export async function openRecordUsageModal() {
     }
 
     if (select) {
-      select.innerHTML = cachedSupplies.map(s => `
-        <option value="${s.id}" data-price="${s.unit_price}" data-unit="${s.unit}">
-          [${s.category}] ${s.name} ${s.package_size ? `(${s.package_size})` : ''} — ${formatVND(s.unit_price)} / ${s.unit}
-        </option>
-      `).join('');
+      select.innerHTML = cachedSupplies.map(s => {
+        const stock = parseFloat(s.stock_quantity) || 0;
+        const isOut = stock <= 0;
+        const stockText = isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Tồn: ${stock} ${s.unit})`;
+        return `
+          <option value="${s.id}" data-price="${s.unit_price}" data-unit="${s.unit}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+            [${s.category}] ${esc(s.name)} ${s.package_size ? `(${esc(s.package_size)})` : ''} — ${formatVND(s.unit_price)} / ${s.unit}${stockText}
+          </option>
+        `;
+      }).join('');
     }
 
     // Load farms into dropdown

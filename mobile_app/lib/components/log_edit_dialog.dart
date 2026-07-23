@@ -440,11 +440,19 @@ class _LogEditDialogState extends State<LogEditDialog> {
                             filled: true,
                           ),
                           items: _filteredSupplies.map((s) {
+                            final isOut = s.isOutOfStock;
                             return DropdownMenuItem<Supply>(
                               value: s,
+                              enabled: !isOut,
                               child: Text(
-                                '${s.name} (${s.packageQty} ${s.packageUnit})',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                isOut
+                                    ? '${s.name} (${s.packageQty} ${s.packageUnit}) - ⚠️ [HẾT HÀNG]'
+                                    : '${s.name} (${s.packageQty} ${s.packageUnit}) (Tồn: ${s.stockQuantity} ${s.unit})',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isOut ? Colors.red : AppTheme.textMain,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             );

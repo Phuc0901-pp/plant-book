@@ -88,6 +88,38 @@ router.post('/', auth, async (req, res) => {
     const stock = parseFloat(stock_quantity) || 0;
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
 
+    // Kiểm tra nếu sản phẩm cùng loại & cùng tên đã tồn tại -> Cộng dồn số lượng tồn kho
+    const existingCheck = await pool.query(
+      `SELECT * FROM supplies WHERE user_id = $1 AND category = $2 AND LOWER(name) = LOWER($3)`,
+      [targetUserId, category.trim(), name.trim()]
+    );
+
+    if (existingCheck.rows.length > 0) {
+      const existing = existingCheck.rows[0];
+      const updatedStock = parseFloat(existing.stock_quantity || 0) + stock;
+      const updatedRes = await pool.query(
+        `UPDATE supplies 
+         SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4,
+             package_qty = $5, package_unit = $6, package_size = $7,
+             image_url = COALESCE($8, image_url), note = COALESCE($9, note), updated_at = NOW()
+         WHERE id = $10
+         RETURNING *`,
+        [
+          updatedStock,
+          pkgPrice || existing.package_price,
+          price || existing.unit_price,
+          unitPriceSmall || existing.unit_price_small,
+          pkgQty || existing.package_qty,
+          package_unit ? package_unit.trim() : existing.package_unit,
+          package_size ? package_size.trim() : existing.package_size,
+          image_url || null,
+          note || null,
+          existing.id
+        ]
+      );
+      return res.status(200).json(updatedRes.rows[0]);
+    }
+
     const result = await pool.query(
       `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -305,7 +337,7 @@ router.delete('/usages/:id', auth, async (req, res) => {
 // GET /api/supplies/analytics — Thống kê chi phí vật tư
 router.get('/analytics', auth, async (req, res) => {
   try {
-    const { period = 'month', year = new Date().getFullYear(), farm_id, user_id } = req.query;
+    const { period = 'month', year = new Date().getFullYear(), month, farm_id, user_id } = req.query;
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     
     let baseWhere = `WHERE su.user_id = $1`;
@@ -318,12 +350,30 @@ router.get('/analytics', auth, async (req, res) => {
       idx++;
     }
 
-    // 1. Overall Category Totals
+    let filterTimeClause = '';
+
+    if (period === 'day') {
+      filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
+      params.push(parseInt(year));
+      idx++;
+
+      if (month && month !== 'all') {
+        filterTimeClause += ` AND EXTRACT(MONTH FROM su.usage_date) = $${idx}`;
+        params.push(parseInt(month));
+        idx++;
+      }
+    } else if (period === 'month' || period === 'quarter') {
+      filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
+      params.push(parseInt(year));
+      idx++;
+    }
+
+    // 1. Overall Category Totals for Selected Time Period & Farm
     const catTotalsQuery = `
       SELECT s.category, COALESCE(SUM(su.total_cost), 0) as total_cost, COUNT(su.id) as transaction_count
       FROM supply_usages su
       JOIN supplies s ON su.supply_id = s.id
-      ${baseWhere}
+      ${baseWhere} ${filterTimeClause}
       GROUP BY s.category
     `;
     const catTotalsRes = await pool.query(catTotalsQuery, params);
@@ -348,28 +398,17 @@ router.get('/analytics', auth, async (req, res) => {
     let timeGroupOrderBy = '';
 
     if (period === 'day') {
-      // Group by Date for the current month
       timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY-MM-DD') as period_label, EXTRACT(DAY FROM su.usage_date) as period_num`;
       timeGroupOrderBy = `ORDER BY period_label ASC`;
     } else if (period === 'quarter') {
-      // Group by Quarter (Q1, Q2, Q3, Q4) for the selected year
       timeGroupSelect = `'Quý ' || EXTRACT(QUARTER FROM su.usage_date) as period_label, EXTRACT(QUARTER FROM su.usage_date) as period_num`;
       timeGroupOrderBy = `ORDER BY period_num ASC`;
     } else if (period === 'year') {
-      // Group by Year
       timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY') as period_label, EXTRACT(YEAR FROM su.usage_date) as period_num`;
       timeGroupOrderBy = `ORDER BY period_num ASC`;
     } else {
-      // Default: Month (Tháng 1 -> Tháng 12) for the selected year
       timeGroupSelect = `'Tháng ' || EXTRACT(MONTH FROM su.usage_date) as period_label, EXTRACT(MONTH FROM su.usage_date) as period_num`;
       timeGroupOrderBy = `ORDER BY period_num ASC`;
-    }
-
-    let filterYearClause = '';
-    if (period === 'month' || period === 'quarter' || period === 'day') {
-      filterYearClause = ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
-      params.push(parseInt(year));
-      idx++;
     }
 
     const breakdownQuery = `
@@ -379,7 +418,7 @@ router.get('/analytics', auth, async (req, res) => {
              COALESCE(SUM(su.quantity), 0) as total_quantity
       FROM supply_usages su
       JOIN supplies s ON su.supply_id = s.id
-      ${baseWhere} ${filterYearClause}
+      ${baseWhere} ${filterTimeClause}
       GROUP BY period_label, period_num, s.category
       ${timeGroupOrderBy}
     `;
@@ -389,6 +428,7 @@ router.get('/analytics', auth, async (req, res) => {
     res.json({
       period,
       selected_year: parseInt(year),
+      selected_month: month ? parseInt(month) : null,
       summary: {
         total_expenditure: totalExpenditure,
         categories: categorySummary,

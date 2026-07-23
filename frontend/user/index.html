@@ -697,6 +697,26 @@
                 <button class="period-btn" data-period="year" onclick="switchSupplyPeriod('year')">📊 Theo Năm</button>
               </div>
 
+              <!-- Month Selector (dành cho bộ lọc Theo Ngày) -->
+              <div id="supplies-month-wrap" style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:13px; font-weight:600; color:var(--text-secondary);">Tháng:</label>
+                <select id="supplies-filter-month" onchange="loadSuppliesAnalytics()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--gray-300); outline:none;">
+                  <option value="all">Tất cả các tháng</option>
+                  <option value="1">Tháng 1</option>
+                  <option value="2">Tháng 2</option>
+                  <option value="3">Tháng 3</option>
+                  <option value="4">Tháng 4</option>
+                  <option value="5">Tháng 5</option>
+                  <option value="6">Tháng 6</option>
+                  <option value="7" selected>Tháng 7</option>
+                  <option value="8">Tháng 8</option>
+                  <option value="9">Tháng 9</option>
+                  <option value="10">Tháng 10</option>
+                  <option value="11">Tháng 11</option>
+                  <option value="12">Tháng 12</option>
+                </select>
+              </div>
+
               <!-- Year Selector -->
               <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:13px; font-weight:600; color:var(--text-secondary);">Năm:</label>
@@ -741,6 +761,21 @@
               <div class="stat-icon" style="background:#fef2f2; color:#ef4444; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-shield-virus"></i></div>
               <div class="stat-label" style="font-size:12px; color:var(--text-muted);">🛡️ PHUN THUỐC & NHÂN CÔNG</div>
               <div class="stat-value" id="cost-stat-pesticide-labor" style="font-size:20px; font-weight:700; color:#1e293b; margin-top:4px;">0 VNĐ</div>
+            </div>
+          </div>
+
+          <!-- Cost Expenditure Heatmap Chart Card -->
+          <div class="card" style="margin-bottom:20px; background:#ffffff; border:1px solid var(--gray-200); border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-fire-flame-curved" style="color:#ef4444;"></i> Biểu đồ Nhiệt Chi phí tiêu hao (Expenditure Heatmap)</h3>
+              <div style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+                <span>Ít: <span style="display:inline-block; width:12px; height:12px; background:#dcfce7; border-radius:3px;"></span></span>
+                <span>Vừa: <span style="display:inline-block; width:12px; height:12px; background:#fef08a; border-radius:3px;"></span></span>
+                <span>Nhiều: <span style="display:inline-block; width:12px; height:12px; background:#ef4444; border-radius:3px;"></span></span>
+              </div>
+            </div>
+            <div id="supplies-cost-heatmap-container" style="padding:16px;">
+              <div style="text-align:center; color:var(--text-muted); padding:20px;"><i class="fa fa-spinner fa-spin"></i> Đang nạp biểu đồ nhiệt...</div>
             </div>
           </div>
 
@@ -1142,8 +1177,8 @@
 
 <!-- Scripts (ES Modules) -->
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=2.4.0"></script>
+<script type="module" src="/user/js/auth.js?v=2.5.0"></script>
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=2.4.0"></script>
+<script type="module" src="/user/js/app.js?v=2.5.0"></script>
 </body>
 </html>

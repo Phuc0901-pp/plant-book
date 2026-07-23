@@ -41,7 +41,17 @@ export function renderUserReminders(plants) {
   let html          = '';
 
   // ── 1. Cảnh báo Cây Bệnh ────────────────────────────────────
-  const sickPlants = plants.filter(p => p.health_status === 'Bệnh');
+  // Lấy danh sách cây có health_status = 'Bệnh' hoặc có nhật ký bệnh cây gần nhất
+  const sickPlantIds = new Set();
+  plants.forEach(p => {
+    if (p.health_status === 'Bệnh') sickPlantIds.add(p.id);
+  });
+  logsCache.forEach(l => {
+    if (l.log_type === 'Bệnh cây' && l.plant_id) sickPlantIds.add(l.plant_id);
+  });
+
+  const sickPlants = plants.filter(p => sickPlantIds.has(p.id));
+
   if (sickPlants.length > 0) {
     reminderCount += sickPlants.length;
     html += `<div style="font-size:11px;font-weight:700;color:#ef4444;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.04em;">
@@ -72,8 +82,8 @@ export function renderUserReminders(plants) {
     reminderCount++;
     const isAll     = unwatered.length === plants.length;
     const alertHtml = isAll
-      ? '<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Chưa tưới cả vườn!'
-      : `<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Cây chưa được tưới: ${unwatered.map(p => p.tree_code || p.id).join(', ')}`;
+      ? '<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Chưa tưới nước hôm nay (Toàn vườn)'
+      : `<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Cây chưa được tưới hôm nay: ${unwatered.map(p => p.tree_code || p.id).join(', ')}`;
 
     html += `
       <div style="padding:10px 12px;background:#eff6ff;border:1px solid #dbeafe;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
@@ -87,7 +97,7 @@ export function renderUserReminders(plants) {
     reminderCount++;
     const isAll     = unfertilized.length === plants.length;
     const alertHtml = isAll
-      ? '<i class="fa-solid fa-flask" style="color:#d97706; margin-right:4px;"></i> Chưa bón phân cả vườn!'
+      ? '<i class="fa-solid fa-flask" style="color:#d97706; margin-right:4px;"></i> Chưa bón phân cả vườn (quá 7 ngày)'
       : `<i class="fa-solid fa-flask" style="color:#d97706; margin-right:4px;"></i> Cây chưa bón phân (quá 7 ngày): ${unfertilized.map(p => p.tree_code || p.id).join(', ')}`;
 
     html += `

@@ -626,20 +626,41 @@ class _SuppliesPageState extends State<SuppliesPage> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textMain),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _getCategoryColor(sp.category).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          sp.category,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: _getCategoryColor(sp.category),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _getCategoryColor(sp.category).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              sp.category,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _getCategoryColor(sp.category),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: sp.isOutOfStock ? Colors.red.withValues(alpha: 0.12) : Colors.green.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: sp.isOutOfStock ? Border.all(color: Colors.red.shade300) : null,
+                            ),
+                            child: Text(
+                              sp.isOutOfStock ? '🚫 HẾT HÀNG' : '📦 Tồn: ${sp.stockQuantity} ${sp.unit}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: sp.isOutOfStock ? Colors.red : Colors.green.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

@@ -16,6 +16,8 @@ class Supply {
   final double totalSpent;
   final double totalUsedQty;
 
+  bool get isOutOfStock => stockQuantity <= 0;
+
   Supply({
     required this.id,
     required this.userId,

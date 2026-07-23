@@ -330,7 +330,11 @@ function _formatSupplyOptionText(s) {
     : `${pkgQty} ${pkgUnit}`;
 
   const formattedPrice = new Intl.NumberFormat('vi-VN').format(Math.round(unitPrice)) + ' VNĐ';
-  return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}`;
+  const stock = parseFloat(s.stock_quantity) || 0;
+  const isOut = stock <= 0;
+  const stockBadge = isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Còn: ${stock} ${s.unit})`;
+
+  return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}${stockBadge}`;
 }
 
 export function calculateWaterCostPreview() {
@@ -432,11 +436,14 @@ function _buildDetailFields(logType, configs, supplies = []) {
           <div class="field">
             <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer')">
-              ${declaredFertilizers.map(s => `
-                <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}">
-                  🧪 ${_formatSupplyOptionText(s)}
-                </option>
-              `).join('')}
+              ${declaredFertilizers.map(s => {
+                const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+                return `
+                  <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+                    🧪 ${_formatSupplyOptionText(s)}
+                  </option>
+                `;
+              }).join('')}
             </select>
             <input type="hidden" id="c-detail-fertilizer" value="${esc(declaredFertilizers[0].name)}">
             <div id="c-supply-img-wrap" style="display:${firstImg ? 'flex' : 'none'}; align-items:center; gap:8px; margin-top:8px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid var(--gray-200);">
@@ -482,11 +489,14 @@ function _buildDetailFields(logType, configs, supplies = []) {
           <div class="field">
             <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide')">
-              ${declaredPesticides.map(s => `
-                <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}">
-                  🛡️ ${_formatSupplyOptionText(s)}
-                </option>
-              `).join('')}
+              ${declaredPesticides.map(s => {
+                const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+                return `
+                  <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+                    🛡️ ${_formatSupplyOptionText(s)}
+                  </option>
+                `;
+              }).join('')}
             </select>
             <input type="hidden" id="c-detail-pesticide" value="${esc(declaredPesticides[0].name)}">
             <div id="c-supply-img-wrap" style="display:${firstImg ? 'flex' : 'none'}; align-items:center; gap:8px; margin-top:8px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid var(--gray-200);">
