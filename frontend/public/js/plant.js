@@ -318,7 +318,6 @@ async function renderPlant(plant) {
   else if (plant.health_status === 'Bình thường') healthClass = 'badge-binhthuong';
   else if (plant.health_status === 'Cần chú ý') healthClass = 'badge-chuyi';
   else if (plant.health_status === 'Bệnh') healthClass = 'badge-benh';
-
   // Group logs by date for timeline pagination
   window._publicLogsGrouped = {};
   window._publicLogDates = [];
@@ -335,114 +334,94 @@ async function renderPlant(plant) {
     window._publicLogsGrouped[dateStr].push(log);
   });
 
-  // Construct UI
+  // Construct UI using exact plant.css rules
   let html = `
-    <!-- Top Header Navigation -->
-    <header class="app-header">
-      <div class="header-left">
-        <img src="/assets/logo.png" alt="Tanbao Corp" class="header-logo">
-        <div class="header-titles">
-          <h1 class="header-app-name">Plant Book</h1>
-          <span class="header-tagline">Sổ Tay Cây Trồng Thông Minh</span>
+    <!-- Hero Header Card -->
+    <div class="hero-container">
+      <div class="glass-panel hero-card">
+        <div class="cover-image-container">
+          <img src="${getCropImageSrc(plant)}" alt="${esc(plant.plant_type)}" class="${plant.cover_image ? 'cover-image-photo' : 'cover-image-fallback'}" onerror="tryNextCropExt(this, '${esc(plant.plant_type || '')}')">
+          <div class="cover-overlay"></div>
+        </div>
+        <div class="hero-details">
+          <div class="plant-title-row">
+            <div>
+              <h1 class="plant-name">${esc(plant.plant_type)}</h1>
+              ${plant.plant_variety 
+                ? `<p class="plant-variety">Mã số cây: <strong>${esc(plant.tree_code || '#' + plant.id)}</strong> &nbsp;•&nbsp; Giống: <strong>${esc(plant.plant_variety)}</strong></p>` 
+                : `<p class="plant-variety">Mã số cây: <strong>${esc(plant.tree_code || '#' + plant.id)}</strong></p>`}
+            </div>
+          </div>
+          
+          <div class="badges-row">
+            <span class="badge badge-info"><i class="fa-solid fa-tag"></i> ${esc(plant.plant_type)}</span>
+            <span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>
+            ${plant.nfc_uid ? `<span class="badge badge-info"><i class="fa-solid fa-rss"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
+          </div>
+          
+          <div class="info-grid">
+            <div class="info-tile">
+              <span class="label"><i class="fa-solid fa-seedling" style="color: var(--green-bright); margin-right: 6px;"></i>Giống cây</span>
+              <span class="value">${esc(plant.plant_variety || 'Tiêu chuẩn')}</span>
+            </div>
+            <div class="info-tile">
+              <span class="label"><i class="fa-solid fa-calendar-days" style="color: var(--green-bright); margin-right: 6px;"></i>Ngày trồng</span>
+              <span class="value">${plant.planting_date ? fmtDate(plant.planting_date) : 'Chưa ghi nhận'}</span>
+            </div>
+            <div class="info-tile">
+              <span class="label"><i class="fa-solid fa-location-dot" style="color: var(--green-bright); margin-right: 6px;"></i>Trang trại</span>
+              <span class="value">${esc(plant.farm_name || 'Vườn nhà')}</span>
+            </div>
+            <div class="info-tile">
+              <span class="label"><i class="fa-solid fa-chart-line" style="color: var(--green-bright); margin-right: 6px;"></i>Hoạt động</span>
+              <span class="value">${logs.length} nhật ký &nbsp;•&nbsp; ${media.length} hình ảnh</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="header-right">
-        <button class="btn btn-secondary btn-sm" onclick="sharePage()">
-          <i class="fa-solid fa-share-nodes"></i> Chia sẻ
-        </button>
-      </div>
-    </header>
+    </div>
 
-    <!-- Main Container -->
-    <main class="main-container">
-      <!-- Left Column (Plant Info, Timeline) -->
+    <!-- Main Container Grid -->
+    <div class="main-layout">
+      <!-- Left Column (Location Map, Timeline Logs) -->
       <div class="left-col">
-        <!-- Hero Plant Banner Card -->
-        <div class="glass-panel plant-hero-card">
-          <div class="hero-cover-container">
-            <img src="${getCropImageSrc(plant)}" alt="${esc(plant.tree_code || plant.plant_type)}" class="hero-cover-img" onerror="tryNextCropExt(this, '${esc(plant.plant_type || '')}')">
-          </div>
-          <div class="hero-info">
-            <div class="hero-tags">
-              <span class="badge badge-green"><i class="fa-solid fa-tag"></i> ${esc(plant.plant_type)}</span>
-              <span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" title="Bấm để đổi trạng thái sức khỏe"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>
-              ${plant.nfc_uid ? `<span class="badge badge-blue"><i class="fa-solid fa-rss"></i> ${esc(plant.nfc_uid)}</span>` : ''}
-            </div>
-            <h1 class="hero-title">${esc(plant.tree_code || `Cây #${plant.id}`)}</h1>
-            <p class="hero-subtitle">
-              <i class="fa-solid fa-seedling" style="color:var(--green)"></i> ${esc(plant.plant_variety || 'Giống tiêu chuẩn')} 
-              • Trang trại: <strong>${esc(plant.farm_name || 'Vườn nhà')}</strong>
-            </p>
-          </div>
-        </div>
-
-        <!-- Plant Overview Metadata Table -->
-        <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-circle-info" style="color: var(--green-bright)"></i> Thông tin chi tiết cây trồng</h2>
-          <div class="meta-grid">
-            <div class="meta-item">
-              <span class="meta-label">Mã cây / Số hiệu</span>
-              <span class="meta-val">${esc(plant.tree_code || `#${plant.id}`)}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Loại cây trồng</span>
-              <span class="meta-val">${esc(plant.plant_type || '—')}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Giống cây</span>
-              <span class="meta-val">${esc(plant.plant_variety || '—')}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Ngày trồng</span>
-              <span class="meta-val">${plant.planting_date ? fmtDate(plant.planting_date) : '—'}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Mã thẻ NFC UID</span>
-              <span class="meta-val">${esc(plant.nfc_uid || 'Chưa gắn thẻ')}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Trang trại quản lý</span>
-              <span class="meta-val">${esc(plant.farm_name || '—')}</span>
-            </div>
-          </div>
-        </div>
-
         ${hasMap ? `
-        <!-- Plant Map Location -->
+        <!-- Location Map Card -->
         <div class="glass-panel glass-card">
           <h2 class="sec-title"><i class="fa-solid fa-map-location-dot" style="color: var(--green-bright)"></i> Vị trí trên bản đồ</h2>
-          <div class="plant-map-container">
-            <div id="plant-location-map" style="width:100%;height:300px;border-radius:12px;"></div>
-            ${plant.farm_name ? `<div class="map-farm-badge" style="margin-top:8px;font-size:12px;color:var(--text-secondary);"><i class="fa fa-seedling"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
+          <div class="plant-map-container" style="position:relative; width:100%; height:280px; border-radius:12px; overflow:hidden;">
+            <div id="plant-location-map" style="width:100%;height:100%;"></div>
+            ${plant.farm_name ? `<div class="map-farm-badge" style="position:absolute; bottom:12px; left:12px; z-index:5; background:rgba(7,25,16,0.85); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:12px; color:#fff; border:1px solid rgba(255,255,255,0.1);"><i class="fa fa-seedling" style="color:var(--green-bright)"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
           </div>
-        </div>` : ''}
+        </div>
+        ` : ''}
 
-        <!-- Timeline Diary with 3-Day Default View & 5-Day/Page Pagination -->
+        <!-- Timeline Diary Card -->
         <div class="glass-panel glass-card">
-          <h2 class="sec-title" style="display:flex; align-items:center; justify-content:space-between;">
+          <h2 class="sec-title" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
             <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--green-bright)"></i> Nhật ký chăm sóc cây</span>
-            <span style="font-size:11px; font-weight:600; color:var(--text-secondary); background:#f1f5f9; padding:2px 8px; border-radius:6px;">
+            <span style="font-size:11px; font-weight:600; color:var(--text-secondary); background:rgba(255,255,255,0.05); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
               Tổng ${window._publicLogDates.length} ngày canh tác
             </span>
           </h2>
 
           <div id="public-timeline-container">
-            <!-- Timeline items rendered dynamically -->
+            <!-- Rendered dynamically -->
           </div>
 
           <div id="public-timeline-pagination">
-            <!-- Pagination / Expand controls rendered dynamically -->
+            <!-- Rendered dynamically -->
           </div>
         </div>
       </div>
-      
-      <!-- Right Column (Care action panels, Media) -->
+
+      <!-- Right Column (Quick Care Buttons, Media Gallery) -->
       <div class="right-col">
-        <!-- Care Actions (NFC/QR scanner Quick Log) -->
+        <!-- Care Actions (Quick Log Buttons) -->
         <div class="glass-panel glass-card">
           <h2 class="sec-title"><i class="fa-solid fa-heart-pulse" style="color: var(--green-bright)"></i> Ghi nhật ký nhanh</h2>
           <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4;">
-            Chọn quy trình chăm sóc bên dưới để điền thông tin nhanh (không cần đăng nhập).
+            Chọn quy trình chăm sóc bên dưới để điền thông tin nhanh.
           </p>
           <div class="care-actions-grid">
             <button class="care-btn care-btn-water" onclick="openModal('modal-water')">
@@ -471,11 +450,9 @@ async function renderPlant(plant) {
             </button>
           </div>
         </div>
-  `;
 
-  // 3. Media Gallery
-  if (media.length) {
-    html += `
+        ${media.length ? `
+        <!-- Media Gallery Card -->
         <div class="glass-panel glass-card">
           <h2 class="sec-title"><i class="fa-solid fa-images" style="color: var(--green-bright)"></i> Thư viện hình ảnh</h2>
           <div class="gallery-grid">
@@ -488,10 +465,7 @@ async function renderPlant(plant) {
             `).join('')}
           </div>
         </div>
-    `;
-  }
-
-  html += `
+        ` : ''}
       </div>
     </div>
     
