@@ -482,22 +482,25 @@ async function renderPlant(plant) {
   view.innerHTML = html;
   view.style.display = 'block';
 
+  // Render initial care timeline (3 days default)
+  renderPublicLogTimeline(1, false);
+
   // Initialize Mapbox plant location map if coordinates or farm polygon exist
   if (hasMap) {
     const mapContainerEl = document.getElementById('plant-location-map');
-    if (!mapContainerEl) return;
+    if (mapContainerEl) {
+      (async () => {
+        let MAPBOX_TOKEN = '';
+        try {
+          const tokenRes = await fetch('/api/config/mapbox-token');
+          const tokenData = await tokenRes.json();
+          MAPBOX_TOKEN = tokenData.token;
+        } catch(e) {
+          console.error('Lỗi tải Mapbox token:', e);
+        }
+        if (!MAPBOX_TOKEN) return;
 
-    let MAPBOX_TOKEN = '';
-    try {
-      const tokenRes = await fetch('/api/config/mapbox-token');
-      const tokenData = await tokenRes.json();
-      MAPBOX_TOKEN = tokenData.token;
-    } catch(e) {
-      console.error('Lỗi tải Mapbox token:', e);
-    }
-    if (!MAPBOX_TOKEN) return;
-
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+        mapboxgl.accessToken = MAPBOX_TOKEN;
 
     // Determine the initial center of the map
     let centerLng = 105.0;
@@ -602,6 +605,8 @@ async function renderPlant(plant) {
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
+    }
+      })();
     }
   }
 }
