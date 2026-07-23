@@ -601,11 +601,12 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   final apiService = ApiService();
   
   // 1. Try to match by physical nfcUid first
-  if (scannedUid.isNotEmpty) {
+  final searchUid = scannedUid.isNotEmpty ? scannedUid : (code.startsWith('nfc:') ? code.replaceFirst('nfc:', '') : '');
+  if (searchUid.isNotEmpty) {
     try {
       final allPlants = await apiService.fetchPlants();
       final matched = allPlants.firstWhere(
-        (p) => p.nfcUid?.toUpperCase() == scannedUid.toUpperCase(),
+        (p) => p.nfcUid?.toUpperCase() == searchUid.toUpperCase() || p.publicSlug == searchUid || p.id.toString() == searchUid,
         orElse: () => throw Exception('not found by UID'),
       );
       
@@ -617,22 +618,21 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
         return;
       }
     } catch (_) {
-      // Fall through if not found by physical UID
+      // Fall through
     }
   }
 
-  // 2. Detect if it's a public plant URL
-  if (code.contains('/plant/')) {
+  // 2. Detect if it's an NFC or public plant URL (e.g. /nfc/04:AB... or /plant/sau-rieng-01)
+  if (code.contains('/nfc/') || code.contains('/plant/')) {
     final uri = Uri.tryParse(code.trim());
     final segments = uri?.pathSegments ?? code.trim().split('/');
     if (segments.isNotEmpty) {
-      final slug = segments.last;
-      if (slug.isNotEmpty) {
-        // Find if this slug matches a cached plant to navigate internally
+      final slugOrUid = segments.last;
+      if (slugOrUid.isNotEmpty) {
         try {
           final allPlants = await apiService.fetchPlants();
           final matched = allPlants.firstWhere(
-            (p) => p.publicSlug == slug,
+            (p) => p.publicSlug == slugOrUid || p.nfcUid?.toUpperCase() == slugOrUid.toUpperCase() || p.id.toString() == slugOrUid,
             orElse: () => throw Exception('not found in cache'),
           );
           if (context.mounted) {
@@ -643,12 +643,11 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
             return;
           }
         } catch (_) {
-          // If not found in cache, open public profile page inside the app
           if (context.mounted) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => PublicPlantProfilePage(slug: slug),
+                builder: (_) => PublicPlantProfilePage(slug: slugOrUid),
               ),
             );
             return;
@@ -658,13 +657,14 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     }
   }
 
-  // 3. Try to match by tree_code or plant ID via API
+  // 3. Try to match by tree_code, nfc_uid, or plant ID via API
   if (code.isNotEmpty) {
     try {
       final allPlants = await apiService.fetchPlants();
       final matched = allPlants.firstWhere(
         (p) =>
             p.treeCode?.toLowerCase() == code.toLowerCase() ||
+            p.nfcUid?.toUpperCase() == code.toUpperCase() ||
             p.id.toString() == code,
         orElse: () => throw Exception('not found'),
       );
@@ -683,7 +683,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(scannedUid.isNotEmpty
-            ? 'Không tìm thấy cây trồng khớp với thẻ NFC này.'
+            ? 'Không tìm thấy cây trồng khớp với thẻ NFC "$scannedUid".'
             : 'Không tìm thấy cây trồng với mã "$code"'),
         backgroundColor: AppTheme.red,
         behavior: SnackBarBehavior.floating,

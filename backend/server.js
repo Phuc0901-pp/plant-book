@@ -81,6 +81,23 @@ app.get('/plant/:slug/map', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/map.html'));
 });
 
+app.get('/nfc/:uid', async (req, res) => {
+  try {
+    const uid = req.params.uid.trim();
+    const result = await pool.query(
+      `SELECT p.id, p.public_slug FROM plants p WHERE UPPER(p.nfc_uid) = UPPER($1) OR p.public_slug = $1 OR p.id::text = $1`,
+      [uid]
+    );
+    if (result.rows.length > 0) {
+      const slug = result.rows[0].public_slug || result.rows[0].id;
+      return res.redirect(`/plant/${slug}`);
+    }
+    res.status(404).send('<div style="font-family:sans-serif; text-align:center; padding:50px;"><h2>⚠️ 404 - Không tìm thấy cây trồng tương ứng với mã thẻ NFC này</h2><p>Mã thẻ chưa được gán cho bất kỳ cây trồng nào trên hệ thống Plant Book.</p><a href="/">Về trang chủ</a></div>');
+  } catch (err) {
+    res.redirect('/');
+  }
+});
+
 app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });

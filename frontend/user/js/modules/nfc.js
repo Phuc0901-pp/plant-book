@@ -15,7 +15,9 @@ let _scanning      = false;
 // ── Open / Close ───────────────────────────────────────────────
 
 export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
-  _currentPlant = { id: plantId, tree_code: treeCode, public_slug: publicSlug || plantId, nfc_uid: currentNfcUid };
+  const cache = getPlantsCache();
+  const plantObj = cache.find(p => p.id == plantId) || {};
+  _currentPlant = { id: plantId, tree_code: treeCode, public_slug: publicSlug || plantId, nfc_uid: currentNfcUid, farm_id: plantObj.farm_id, user_id: plantObj.user_id };
 
   _setEl('nfc-modal-plant-name', treeCode || `Cây #${plantId}`);
 
@@ -24,13 +26,31 @@ export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
     : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
   _setEl('nfc-modal-current-uid', uidBadge, true);
 
-  // Render Public URL
+  // 1. Direct Plant Page URL
   const slug = publicSlug || plantId;
-  const fullUrl = `${window.location.origin}/plant/${slug}`;
+  const plantUrl = `${window.location.origin}/plant/${slug}`;
   const urlInput = document.getElementById('nfc-public-url-input');
   const urlLink = document.getElementById('nfc-public-url-link');
-  if (urlInput) urlInput.value = fullUrl;
-  if (urlLink) urlLink.href = fullUrl;
+  if (urlInput) urlInput.value = plantUrl;
+  if (urlLink) urlLink.href = plantUrl;
+
+  // 2. NFC Redirect URL by UID
+  const tagUrlWrap = document.getElementById('nfc-tag-url-wrap');
+  const tagUrlInput = document.getElementById('nfc-tag-url-input');
+  const tagUrlLink = document.getElementById('nfc-tag-url-link');
+  if (currentNfcUid) {
+    if (tagUrlWrap) tagUrlWrap.style.display = 'block';
+    const tagUrl = `${window.location.origin}/nfc/${currentNfcUid}`;
+    if (tagUrlInput) tagUrlInput.value = tagUrl;
+    if (tagUrlLink) tagUrlLink.href = tagUrl;
+  } else {
+    if (tagUrlWrap) tagUrlWrap.style.display = 'none';
+  }
+
+  // 3. Associated Metadata IDs
+  _setEl('nfc-meta-plant-id', `#${plantId}`);
+  _setEl('nfc-meta-farm-id', plantObj.farm_id ? `#${plantObj.farm_id}` : '#—');
+  _setEl('nfc-meta-user-id', plantObj.user_id ? `#${plantObj.user_id}` : '#—');
 
   const manualInput = document.getElementById('nfc-manual-uid');
   if (manualInput) manualInput.value = currentNfcUid || '';
@@ -67,6 +87,15 @@ export function copyNfcPublicUrl() {
   }
 }
 window.copyNfcPublicUrl = copyNfcPublicUrl;
+
+export function copyNfcTagUrl() {
+  const input = document.getElementById('nfc-tag-url-input');
+  if (input && input.value) {
+    navigator.clipboard.writeText(input.value);
+    toast('Đã sao chép đường dẫn Redirect NFC!');
+  }
+}
+window.copyNfcTagUrl = copyNfcTagUrl;
 
 export async function startNfcScan() {
   if (_scanning || !_currentPlant) return;
@@ -128,6 +157,18 @@ async function _saveUid(uid) {
       ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i class="fa-solid fa-tag"></i> ${uid}</span>`
       : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
     _setEl('nfc-modal-current-uid', uidBadge, true);
+
+    const tagUrlWrap = document.getElementById('nfc-tag-url-wrap');
+    const tagUrlInput = document.getElementById('nfc-tag-url-input');
+    const tagUrlLink = document.getElementById('nfc-tag-url-link');
+    if (uid) {
+      if (tagUrlWrap) tagUrlWrap.style.display = 'block';
+      const tagUrl = `${window.location.origin}/nfc/${uid}`;
+      if (tagUrlInput) tagUrlInput.value = tagUrl;
+      if (tagUrlLink) tagUrlLink.href = tagUrl;
+    } else {
+      if (tagUrlWrap) tagUrlWrap.style.display = 'none';
+    }
 
     const deactivateBtn = document.getElementById('nfc-deactivate-btn');
     if (deactivateBtn) deactivateBtn.style.display = uid ? 'flex' : 'none';

@@ -410,6 +410,53 @@ router.put('/:id/nfc', auth, async (req, res) => {
   }
 });
 
+// GET /api/plants/nfc/:uid — Public lookup plant by NFC UID, Slug, or ID
+router.get('/nfc/:uid', async (req, res) => {
+  try {
+    const uid = req.params.uid.trim();
+    const result = await pool.query(
+      `SELECT p.id as plant_id, p.tree_code, p.plant_type, p.plant_variety, p.public_slug, p.health_status, p.nfc_uid, p.location,
+              f.id as farm_id, f.name as farm_name, f.user_id,
+              u.full_name as farm_owner_name, u.email as farm_owner_email
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
+       LEFT JOIN users u ON u.id = f.user_id
+       WHERE UPPER(p.nfc_uid) = UPPER($1) OR p.public_slug = $1 OR p.id::text = $1`,
+      [uid]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy thông tin cây trồng liên kết với mã thẻ NFC này.' });
+    }
+
+    const plant = result.rows[0];
+    const slug = plant.public_slug || plant.plant_id;
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.get('host') || 'plant-book.onrender.com';
+    const baseUrl = `${protocol}://${host}`;
+
+    res.json({
+      success: true,
+      plant_id: plant.plant_id,
+      tree_code: plant.tree_code,
+      plant_type: plant.plant_type,
+      plant_variety: plant.plant_variety,
+      health_status: plant.health_status,
+      nfc_uid: plant.nfc_uid,
+      farm_id: plant.farm_id,
+      farm_name: plant.farm_name,
+      user_id: plant.user_id,
+      farm_owner_name: plant.farm_owner_name,
+      public_slug: slug,
+      public_url: `${baseUrl}/plant/${slug}`,
+      nfc_url: plant.nfc_uid ? `${baseUrl}/nfc/${plant.nfc_uid}` : `${baseUrl}/plant/${slug}`
+    });
+  } catch (err) {
+    console.error('NFC lookup error:', err);
+    res.status(500).json({ error: 'Lỗi server khi tra cứu thẻ NFC.' });
+  }
+});
+
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const mediaResult = await pool.query('SELECT object_name FROM plant_media WHERE plant_id=$1', [req.params.id]);
