@@ -6,7 +6,7 @@
 import { api, currentUser }          from '../core/api.js';
 import { toast }                     from '../core/utils.js';
 import { renderUserFarmsList, renderUserPlantsSummaryTable, renderUserPlantsTable, setPlantsCache, setFarmsCache } from './plants.js';
-import { renderUserLogsTable, renderUserLogsTableFull, setLogsCache } from './logs.js';
+import { renderUserLogsTable, renderUserLogsTableFull, setLogsCache, populateLogFarmFilter } from './logs.js';
 import { renderUserReminders }       from './reminders.js';
 import { initFloatingActionButton }  from './fab.js';
 import { ensureUserMapboxToken, initUserMap } from './map.js';
@@ -46,6 +46,7 @@ export async function loadUserDashboard() {
     setPlantsCache(plants);
     setFarmsCache(farms);
     setLogsCache(allLogs);
+    populateLogFarmFilter(farms);
 
     // ── Cập nhật UI Trang chủ ────────────────────────────────
     const nameEl = document.getElementById('welcome-name');

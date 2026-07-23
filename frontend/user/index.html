@@ -404,11 +404,16 @@
           <div class="card-header">
             <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử Hoạt động Canh tác</h3>
           </div>
-          <!-- Thanh tìm kiếm và lọc lịch sử -->
-          <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 12px; padding: 12px 16px 0; flex-wrap: wrap;">
-            <input type="text" id="user-log-search" placeholder="🔍 Tìm theo mã cây, nội dung ghi chú, loại phân/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none;">
+          <!-- Thanh tìm kiếm, lọc và sắp xếp lịch sử -->
+          <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 14px; padding: 12px 16px 0; flex-wrap: wrap; align-items: center;">
+            <input type="text" id="user-log-search" placeholder="🔍 Tìm mã cây, ghi chú, phân bón/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none;">
+            
+            <select id="user-log-filter-farm" onchange="filterUserLogs()" style="flex:1; min-width: 140px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none;">
+              <option value="all">🏡 Tất cả trang trại</option>
+            </select>
+
             <select id="user-log-filter-type" onchange="filterUserLogs()" style="flex:1; min-width: 130px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none;">
-              <option value="all">Tất cả hoạt động</option>
+              <option value="all">🧪 Tất cả hoạt động</option>
               <option value="Tưới nước">💧 Tưới cây</option>
               <option value="Bón phân">🧪 Bón phân</option>
               <option value="Phun thuốc">💊 Phun thuốc</option>
@@ -416,6 +421,18 @@
               <option value="Tỉa hoa">🌸 Tỉa hoa/quả</option>
               <option value="Bệnh cây">🐛 Bệnh cây</option>
             </select>
+
+            <select id="user-log-sort-by" onchange="filterUserLogs()" style="flex:1; min-width: 150px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none; font-weight:600; color:#1e293b;">
+              <option value="date_desc">📅 Mới nhất</option>
+              <option value="date_asc">📅 Cũ nhất</option>
+              <option value="disease_first">🚨 Ưu tiên Cây bệnh</option>
+              <option value="plant_asc">🪴 Theo Mã cây (1 ➔ n)</option>
+              <option value="activity_asc">🏷️ Theo loại Hoạt động</option>
+            </select>
+
+            <button type="button" id="user-log-disease-toggle" onclick="toggleDiseaseOnlyFilter()" style="padding:8px 12px; border-radius:8px; border:1.5px solid #fca5a5; background:#fff1f2; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-shield-virus"></i> Chỉ Cây bệnh
+            </button>
           </div>
           <div style="overflow-x: auto;">
             <table>
@@ -1125,8 +1142,8 @@
 
 <!-- Scripts (ES Modules) -->
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=2.2.0"></script>
+<script type="module" src="/user/js/auth.js?v=2.3.0"></script>
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=2.2.0"></script>
+<script type="module" src="/user/js/app.js?v=2.3.0"></script>
 </body>
 </html>

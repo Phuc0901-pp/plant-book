@@ -95,7 +95,7 @@ router.get('/logs/recent', auth, async (req, res) => {
   try {
     const daysLimit = parseInt(req.query.days) || 3;
     let query = `
-      SELECT pl.*, p.plant_type, p.plant_variety, p.location as plant_location, u.full_name as creator_name
+      SELECT pl.*, p.plant_type, p.plant_variety, p.tree_code, p.farm_id, f.name as farm_name, p.location as plant_location, u.full_name as creator_name
       FROM plant_logs pl
       JOIN plants p ON pl.plant_id = p.id
       LEFT JOIN farms f ON f.id = p.farm_id

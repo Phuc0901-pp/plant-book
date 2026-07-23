@@ -62,6 +62,26 @@ export function renderUserFarmsList(farms) {
 }
 
 /**
+ * Sắp xếp ưu tiên:
+ * 1. Cây bệnh (health_status khác 'Bình thường' và khác 'Tốt') lên đầu (xếp theo ID 1 -> n)
+ * 2. Cây bình thường / tốt xuống phía sau (xếp theo ID 1 -> n)
+ */
+export function sortPlantsByHealthThenId(plants) {
+  if (!Array.isArray(plants)) return [];
+  return [...plants].sort((a, b) => {
+    const isDiseaseA = a.health_status && a.health_status !== 'Bình thường' && a.health_status !== 'Tốt';
+    const isDiseaseB = b.health_status && b.health_status !== 'Bình thường' && b.health_status !== 'Tốt';
+
+    if (isDiseaseA && !isDiseaseB) return -1;
+    if (!isDiseaseA && isDiseaseB) return 1;
+
+    const codeA = parseInt(a.tree_code || a.id) || a.id;
+    const codeB = parseInt(b.tree_code || b.id) || b.id;
+    return codeA - codeB;
+  });
+}
+
+/**
  * Render tóm tắt tối đa 3 cây ở Trang chủ.
  * @param {Array} plants
  */
@@ -72,7 +92,8 @@ export function renderUserPlantsSummaryTable(plants) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không có cây trồng nào được giao</p></td></tr>';
     return;
   }
-  tbody.innerHTML = plants.slice(0, 3).map(p => _plantRow(p)).join('');
+  const sorted = sortPlantsByHealthThenId(plants);
+  tbody.innerHTML = sorted.slice(0, 3).map(p => _plantRow(p)).join('');
 }
 
 /**
@@ -86,7 +107,8 @@ export function renderUserPlantsTable(plants) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không tìm thấy cây trồng phù hợp</p></td></tr>';
     return;
   }
-  tbody.innerHTML = plants.map(p => _plantRow(p)).join('');
+  const sorted = sortPlantsByHealthThenId(plants);
+  tbody.innerHTML = sorted.map(p => _plantRow(p)).join('');
 }
 
 /**
