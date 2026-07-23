@@ -278,6 +278,209 @@ function getCareLogSummary(log) {
   return esc(log.note || '');
 }
 
+// ── Timeline Pagination & Rendering Helpers ──────────────────
+
+function getShortSummary(log) {
+  const details = log.details || {};
+  if (log.log_type === 'Tưới nước') {
+    return `Tưới bằng ${esc(details.method || 'Thủ công')} (${esc(details.amount || '—')} ${esc(details.unit || 'Lít')})`;
+  }
+  if (log.log_type === 'Bón phân') {
+    const fertName = getFertilizerName(details) || 'Phân bón';
+    const unitStr = details.unit ? ` ${details.unit}` : '';
+    return `Bón ${esc(fertName)} — (${esc(details.amount || '—')}${esc(unitStr)})`;
+  }
+  if (log.log_type === 'Phun thuốc') {
+    const pestName = getPesticideName(details) || 'Thuốc BVTV';
+    const amountStr = details.amount ? ` (Liều: ${details.amount}${details.unit ? ' ' + details.unit : ''})` : '';
+    return `Phun ${esc(pestName)}${esc(amountStr)}`;
+  }
+  if (log.log_type === 'Cắt lá') {
+    return `Cắt tỉa (${esc(details.amount || '—')} cành/lá) - ${esc(details.reason || 'Định kỳ')}`;
+  }
+  if (log.log_type === 'Tỉa hoa') {
+    return `Tỉa bớt (${esc(details.amount || '—')} bông/trái) - ${esc(details.reason || 'Định kỳ')}`;
+  }
+  if (log.log_type === 'Bệnh cây') {
+    const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
+    return `${sevEmoji} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
+  }
+  return esc(log.note || '').slice(0, 40) + (log.note && log.note.length > 40 ? '...' : '');
+}
+
+function _renderTimelineItemHtml(log) {
+  let markerClass = '';
+  let tagClass = 'tag-general';
+  let icon = 'fa-solid fa-pen';
+  
+  if (log.log_type === 'Tưới nước') {
+    markerClass = 'marker-water';
+    tagClass = 'tag-water';
+    icon = 'fa-solid fa-droplet';
+  } else if (log.log_type === 'Bón phân') {
+    markerClass = 'marker-fertilize';
+    tagClass = 'tag-fertilize';
+    icon = 'fa-solid fa-leaf';
+  } else if (log.log_type === 'Phun thuốc') {
+    markerClass = 'marker-pesticide';
+    tagClass = 'tag-pesticide';
+    icon = 'fa-solid fa-flask';
+  } else if (log.log_type === 'Cắt lá') {
+    markerClass = 'marker-leaf';
+    tagClass = 'tag-leaf';
+    icon = 'fa-solid fa-scissors';
+  } else if (log.log_type === 'Tỉa hoa') {
+    markerClass = 'marker-flower';
+    tagClass = 'tag-flower';
+    icon = 'fa-solid fa-spa';
+  } else if (log.log_type === 'Bệnh cây') {
+    markerClass = 'marker-disease';
+    tagClass = 'tag-disease';
+    icon = 'fa-solid fa-virus';
+  }
+  
+  const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
+  const fullDateTime = fmtDateTime(timeVal);
+
+  const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) ? log.media_urls : [];
+  const mediaThumbs = mediaUrls.length > 0 ? `
+    <div class="log-media-gallery">
+      ${mediaUrls.map(m => {
+        const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(m.url || m);
+        const url = m.url || m;
+        return isVideo
+          ? `<div class="log-media-item" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" muted preload="metadata"></video><div class="video-play-icon"><i class="fa-solid fa-circle-play"></i></div></div>`
+          : `<div class="log-media-item" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" alt="ảnh nhật ký" loading="lazy"></div>`;
+      }).join('')}
+    </div>` : '';
+
+  const noteHtml = log.note
+    ? `<div class="log-body" style="margin-top: 6px; color: var(--text-secondary); font-size:12px;"><i class="fa-solid fa-comment-dots"></i> ${esc(log.note)}</div>`
+    : '';
+
+  return `
+    <div class="timeline-item">
+      <div class="timeline-marker ${markerClass}"></div>
+      <div class="timeline-content" onclick="toggleTimelineItem(event, this)">
+        <div class="log-header">
+          <span class="log-tag ${tagClass}"><i class="${icon}"></i> ${esc(log.log_type || 'Ghi chú')}</span>
+          <div class="log-header-right">
+            <span class="log-time-indicator"><i class="fa-regular fa-clock"></i> ${fullDateTime}</span>
+            <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+          </div>
+        </div>
+        <div class="log-short-preview" style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">
+          ${getShortSummary(log)}
+        </div>
+        <div class="timeline-details">
+          <div class="log-body">
+            ${getCareLogSummary(log)}
+          </div>
+          ${noteHtml}
+          ${mediaThumbs}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPublicLogTimeline(page = 1, expanded = false) {
+  const container = document.getElementById('public-timeline-container');
+  const paginationBox = document.getElementById('public-timeline-pagination');
+  if (!container) return;
+
+  const dates = window._publicLogDates || [];
+  if (dates.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+        <i class="fa-regular fa-clipboard" style="font-size: 32px; margin-bottom: 12px;"></i>
+        <p style="font-size: 13px;">Cây chưa có ghi chép nhật ký nào.</p>
+      </div>
+    `;
+    if (paginationBox) paginationBox.style.display = 'none';
+    return;
+  }
+
+  let visibleDates = [];
+  if (!expanded) {
+    // Mode 1: Default summary (3 days most recent)
+    visibleDates = dates.slice(0, 3);
+  } else {
+    // Mode 2: Expanded with pagination (5 days per page)
+    const totalPages = Math.ceil(dates.length / window._publicLogPageSize) || 1;
+    if (page < 1) page = 1;
+    if (page > totalPages) page = totalPages;
+    window._publicLogCurrentPage = page;
+
+    const startIdx = (page - 1) * window._publicLogPageSize;
+    const endIdx = startIdx + window._publicLogPageSize;
+    visibleDates = dates.slice(startIdx, endIdx);
+  }
+
+  const groups = window._publicLogsGrouped;
+  
+  container.innerHTML = `
+    <div class="timeline">
+      ${visibleDates.map(date => `
+        <div class="timeline-group">
+          <div class="timeline-date">${date}</div>
+          ${groups[date].map(log => _renderTimelineItemHtml(log)).join('')}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Render Pagination / Expand Controls Box
+  if (paginationBox) {
+    const totalDatesCount = dates.length;
+    if (!expanded) {
+      if (totalDatesCount > 3) {
+        paginationBox.style.display = 'flex';
+        paginationBox.innerHTML = `
+          <div style="width:100%; text-align:center; margin-top:16px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="togglePublicLogExpand(true)" style="padding:10px 20px; font-weight:700; border-radius:10px; background:rgba(255,255,255,0.08); border:1.5px solid var(--green-bright); color:var(--green-bright); box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer;">
+              <i class="fa-solid fa-list-check"></i> Xem tất cả nhật ký (Tổng ${totalDatesCount} ngày canh tác)
+            </button>
+          </div>
+        `;
+      } else {
+        paginationBox.style.display = 'none';
+      }
+    } else {
+      const totalPages = Math.ceil(dates.length / window._publicLogPageSize) || 1;
+      const curPage = window._publicLogCurrentPage;
+      paginationBox.style.display = 'flex';
+      paginationBox.innerHTML = `
+        <div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button type="button" class="btn btn-secondary btn-xs" ${curPage <= 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="changePublicLogPage(${curPage - 1})"`} style="padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;">
+              <i class="fa-solid fa-chevron-left"></i> Trang trước
+            </button>
+            <span style="font-size:12px; font-weight:700; color:var(--text-secondary); background:rgba(255,255,255,0.05); padding:6px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+              Trang ${curPage} / ${totalPages} (${totalDatesCount} ngày)
+            </span>
+            <button type="button" class="btn btn-secondary btn-xs" ${curPage >= totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="changePublicLogPage(${curPage + 1})"`} style="padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;">
+              Trang tiếp <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+          <button type="button" class="btn btn-link btn-xs" onclick="togglePublicLogExpand(false)" style="font-size:12px; color:var(--text-secondary); font-weight:600; text-decoration:none; cursor:pointer; background:none; border:none; margin-top:4px;">
+            <i class="fa-solid fa-compress"></i> Thu gọn về 3 ngày gần nhất
+          </button>
+        </div>
+      `;
+    }
+  }
+}
+
+window.togglePublicLogExpand = function(expanded) {
+  window._publicLogIsExpanded = expanded;
+  renderPublicLogTimeline(1, expanded);
+};
+
+window.changePublicLogPage = function(page) {
+  renderPublicLogTimeline(page, true);
+};
+
 // Render dynamic plant data
 async function renderPlant(plant) {
   const extra = plant.data || {};
