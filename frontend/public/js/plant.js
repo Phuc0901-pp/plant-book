@@ -887,7 +887,8 @@ async function toggleHealthStatus() {
   if (!confirmed) return;
   
   try {
-    const res = await fetch(`/api/plants/public/${slug}/health`, {
+    const targetId = currentPlantData.public_slug || currentPlantData.id || slug;
+    const res = await fetch(`/api/plants/public/${encodeURIComponent(targetId)}/health`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
