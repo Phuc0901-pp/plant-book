@@ -71,7 +71,7 @@ router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     console.log('POST /api/supplies body:', req.body);
-    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, user_id } = req.body;
+    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, fertilizer_type, user_id } = req.body;
     if (!category || !name || !unit) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });
     }
@@ -104,8 +104,8 @@ router.post('/', auth, async (req, res) => {
         `UPDATE supplies 
          SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4,
              package_qty = $5, package_unit = $6, package_size = $7,
-             image_url = COALESCE($8, image_url), note = COALESCE($9, note), updated_at = NOW()
-         WHERE id = $10
+             image_url = COALESCE($8, image_url), note = COALESCE($9, note), fertilizer_type = COALESCE($10, fertilizer_type), updated_at = NOW()
+         WHERE id = $11
          RETURNING *`,
         [
           updatedStock,
@@ -117,6 +117,7 @@ router.post('/', auth, async (req, res) => {
           package_size ? package_size.trim() : existing.package_size,
           image_url || null,
           note || null,
+          fertilizer_type || null,
           existing.id
         ]
       );
@@ -124,8 +125,8 @@ router.post('/', auth, async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, fertilizer_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         targetUserId,
@@ -140,7 +141,8 @@ router.post('/', auth, async (req, res) => {
         unitPriceSmall,
         stock,
         note || null,
-        image_url || null
+        image_url || null,
+        fertilizer_type ? fertilizer_type.trim() : null
       ]
     );
 
@@ -155,7 +157,7 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url } = req.body;
+    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, fertilizer_type } = req.body;
 
     const check = await pool.query('SELECT * FROM supplies WHERE id = $1', [id]);
     if (check.rows.length === 0) {
@@ -177,8 +179,8 @@ router.put('/:id', auth, async (req, res) => {
 
     const result = await pool.query(
       `UPDATE supplies 
-       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, image_url = $12, updated_at = NOW()
-       WHERE id = $13
+       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, image_url = $12, fertilizer_type = $13, updated_at = NOW()
+       WHERE id = $14
        RETURNING *`,
       [
         category || check.rows[0].category,
@@ -193,6 +195,7 @@ router.put('/:id', auth, async (req, res) => {
         stock,
         note !== undefined ? note : check.rows[0].note,
         image_url !== undefined ? image_url : check.rows[0].image_url,
+        fertilizer_type !== undefined ? fertilizer_type : check.rows[0].fertilizer_type,
         id
       ]
     );

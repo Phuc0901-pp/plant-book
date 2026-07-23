@@ -49,6 +49,11 @@ export function autoCalculateSupplyUnits() {
   const rowPrice = document.getElementById('row-package-qty-price');
 
   const fieldStockCount = document.getElementById('field-stock-count');
+  const fieldFertType = document.getElementById('field-fertilizer-type');
+
+  if (fieldFertType) {
+    fieldFertType.style.display = (category === 'Bón phân') ? 'block' : 'none';
+  }
 
   if (isWaterOrLabor) {
     if (fieldPkgUnit) fieldPkgUnit.style.display = 'none';
@@ -346,10 +351,16 @@ export function openSupplyModal(id = null) {
       document.getElementById('sp-package-unit').value = sp.package_unit || sp.unit || 'kg';
       document.getElementById('sp-package-price').value = sp.package_price || (sp.unit_price * (sp.package_qty || 1));
       document.getElementById('sp-note').value = sp.note || '';
+      if (document.getElementById('sp-fertilizer-type')) {
+        document.getElementById('sp-fertilizer-type').value = sp.fertilizer_type || 'Phân vô cơ (NPK / Hóa học)';
+      }
       setSupplyImagePreview(sp.image_url || '');
     }
   } else {
     if (title) title.innerHTML = '<i class="fa-solid fa-boxes-packing" style="color:var(--green)"></i> Khai báo vật tư mới';
+    if (document.getElementById('sp-fertilizer-type')) {
+      document.getElementById('sp-fertilizer-type').value = 'Phân vô cơ (NPK / Hóa học)';
+    }
   }
 
   autoCalculateSupplyUnits();
@@ -377,6 +388,7 @@ export async function saveSupply() {
   const unit_price_small = parseFloat(document.getElementById('sp-unit-price-small').value) || 0;
   const note = document.getElementById('sp-note').value.trim();
   const image_url = document.getElementById('sp-image-url')?.value || '';
+  const fertilizer_type = (category === 'Bón phân') ? (document.getElementById('sp-fertilizer-type')?.value || 'Phân vô cơ (NPK / Hóa học)') : null;
 
   const isWaterOrLabor = (category === 'Tiền nước' || category === 'Nhân công');
   const stock_quantity = isWaterOrLabor ? 999999 : (package_qty * stock_count);
@@ -401,7 +413,8 @@ export async function saveSupply() {
     unit_price_small,
     stock_quantity,
     note,
-    image_url
+    image_url,
+    fertilizer_type
   };
 
   try {

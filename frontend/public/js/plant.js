@@ -204,23 +204,37 @@ async function loadPlant() {
   }
 }
 
+// Helper: Get fertilizer / supply / pesticide name from details
+function getFertilizerName(details) {
+  return (details.fertilizer_name || details.supply_name || details.fertilizer || details.type || details.product_name || details.name || '').trim();
+}
+
+function getPesticideName(details) {
+  return (details.pesticide_name || details.supply_name || details.pesticide || details.type || details.product_name || details.name || '').trim();
+}
+
 // Helper: Get structured text from care logs
 function getCareLogSummary(log) {
   const details = log.details || {};
   if (log.log_type === 'Tưới nước') {
-    return `Đã tưới nước bằng phương pháp <strong>${esc(details.method)}</strong>. Lượng nước: <strong>${esc(details.amount)} ${esc(details.unit)}</strong> vào buổi <strong>${esc(details.time)}</strong>.`;
+    return `Đã tưới nước bằng phương pháp <strong>${esc(details.method || 'Thủ công')}</strong>. Lượng nước: <strong>${esc(details.amount || '—')} ${esc(details.unit || 'Lít')}</strong>.`;
   }
   if (log.log_type === 'Bón phân') {
-    return `Đã bón phân <strong>${esc(details.type)}</strong>. Liều lượng: <strong>${esc(details.amount)} ${esc(details.unit)}</strong> bằng phương pháp <strong>${esc(details.method)}</strong>.`;
+    const fertName = getFertilizerName(details) || 'Phân bón';
+    const methodStr = details.method ? ` bằng phương pháp <strong>${esc(details.method)}</strong>` : '';
+    return `Đã bón phân <strong>${esc(fertName)}</strong>. Liều lượng: <strong>${esc(details.amount || '—')} ${esc(details.unit || 'kg')}</strong>${methodStr}.`;
   }
   if (log.log_type === 'Phun thuốc') {
-    return `Đã phun thuốc <strong>${esc(details.type)}</strong> (Mục đích: ${esc(details.purpose)}). Liều lượng: <strong>${esc(details.amount)} ${esc(details.unit)}</strong> pha với <strong>${esc(details.water_volume)}L</strong> nước.`;
+    const pestName = getPesticideName(details) || 'Thuốc bảo vệ thực vật';
+    const purposeStr = details.purpose ? ` (Mục đích: ${esc(details.purpose)})` : '';
+    const waterStr = details.water_volume ? ` pha với <strong>${esc(details.water_volume)}L</strong> nước` : '';
+    return `Đã phun thuốc <strong>${esc(pestName)}</strong>${purposeStr}. Liều lượng: <strong>${esc(details.amount || '—')} ${esc(details.unit || '')}</strong>${waterStr}.`;
   }
   if (log.log_type === 'Cắt lá') {
-    return `Đã cắt tỉa lá/cành. Số lượng: <strong>${esc(details.amount)}</strong>. Lý do: <strong>${esc(details.reason)}</strong>.`;
+    return `Đã cắt tỉa lá/cành. Số lượng: <strong>${esc(details.amount || '—')}</strong>. Lý do: <strong>${esc(details.reason || 'Cắt tỉa định kỳ')}</strong>.`;
   }
   if (log.log_type === 'Tỉa hoa') {
-    return `Đã tỉa hoa/quả. Số lượng: <strong>${esc(details.amount)}</strong>. Lý do: <strong>${esc(details.reason)}</strong>.`;
+    return `Đã tỉa hoa/quả. Số lượng: <strong>${esc(details.amount || '—')}</strong>. Lý do: <strong>${esc(details.reason || 'Tỉa thưa')}</strong>.`;
   }
   if (log.log_type === 'Bệnh cây') {
     const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
@@ -262,31 +276,6 @@ async function renderPlant(plant) {
     return `/assets/crop/${normalized}`;
   }
 
-  // Helper to get short summary preview for logs timeline
-  function getShortSummary(log) {
-    const details = log.details || {};
-    if (log.log_type === 'Tưới nước') {
-      return `Tưới bằng ${esc(details.method || '—')} (${esc(details.amount || '—')} ${esc(details.unit || '')})`;
-    }
-    if (log.log_type === 'Bón phân') {
-      return `Bón ${esc(details.type || '—')} (${esc(details.amount || '—')} ${esc(details.unit || '')})`;
-    }
-    if (log.log_type === 'Phun thuốc') {
-      return `Phun ${esc(details.type || '—')} (Liều: ${esc(details.amount || '—')})`;
-    }
-    if (log.log_type === 'Cắt lá') {
-      return `Cắt tỉa (${esc(details.amount || '—')} cành/lá) - ${esc(details.reason || '—')}`;
-    }
-    if (log.log_type === 'Tỉa hoa') {
-      return `Tỉa bớt (${esc(details.amount || '—')} bông/trái) - ${esc(details.reason || '—')}`;
-    }
-    if (log.log_type === 'Bệnh cây') {
-      const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
-      return `${sevEmoji} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
-    }
-    return esc(log.note || '').slice(0, 40) + (log.note && log.note.length > 40 ? '...' : '');
-  }
-
   // Render health status badge
   let healthClass = 'badge-gray';
   if (plant.health_status === 'Tốt') healthClass = 'badge-tot';
@@ -294,206 +283,44 @@ async function renderPlant(plant) {
   else if (plant.health_status === 'Cần chú ý') healthClass = 'badge-chuyi';
   else if (plant.health_status === 'Bệnh') healthClass = 'badge-benh';
 
+  // Group logs by date for timeline pagination
+  window._publicLogsGrouped = {};
+  window._publicLogDates = [];
+  window._publicLogCurrentPage = 1;
+  window._publicLogPageSize = 5;
+  window._publicLogIsExpanded = false;
+
+  logs.forEach(log => {
+    const dateStr = fmtDate(log.log_date);
+    if (!window._publicLogsGrouped[dateStr]) {
+      window._publicLogsGrouped[dateStr] = [];
+      window._publicLogDates.push(dateStr);
+    }
+    window._publicLogsGrouped[dateStr].push(log);
+  });
+
+  // Construct UI
   let html = `
-    <!-- Hero Header -->
-    <div class="hero-container">
-      <div class="glass-panel hero-card">
-        <div class="cover-image-container">
-          ${(plant.cover_image || plant.plant_type)
-            ? `<img src="${getCropImageSrc(plant) + (plant.cover_image ? '' : '.png')}" 
-                    alt="${esc(plant.plant_type)}" 
-                    class="${plant.cover_image ? 'cover-image-photo' : 'cover-image-fallback'}"
-                    data-base="${getCropImageSrc(plant)}" 
-                    data-ext-idx="0" 
-                    data-is-cover="${plant.cover_image ? 'true' : 'false'}" 
-                    onerror="handleCropImageError(this)">
-               <div class="no-cover-icon" style="display: none;"><i class="fa-solid fa-tree"></i></div>`
-            : `<div class="no-cover-icon"><i class="fa-solid fa-tree"></i></div>`
-          }
-          <div class="cover-overlay"></div>
-        </div>
-        <div class="hero-details">
-          <div class="plant-title-row">
-            <div>
-              <h1 class="plant-name">${esc(plant.plant_type)}</h1>
-              ${plant.plant_variety 
-                ? `<p class="plant-variety">Mã số cây: <strong>#${plant.id}</strong> &nbsp;•&nbsp; Giống: <strong>${esc(plant.plant_variety)}</strong></p>` 
-                : `<p class="plant-variety">Mã số cây: <strong>#${plant.id}</strong></p>`}
-            </div>
-          </div>
-          
-          <div class="badges-row">
-            <span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" title="Click để thay đổi trạng thái sức khỏe"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status)}</span>
-            ${plant.plant_age ? `<span class="badge badge-info"><i class="fa-solid fa-calendar-days"></i> Tuổi: ${esc(plant.plant_age)}</span>` : ''}
-            ${plant.schema_name ? `<span class="badge badge-info"><i class="fa-solid fa-layer-group"></i> ${esc(plant.schema_name)}</span>` : ''}
-          </div>
-          
-          <div class="info-grid">
-            <div class="info-tile">
-              <span class="label"><i class="fa-solid fa-location-dot" style="color: var(--green-bright); margin-right: 6px;"></i>Vị trí / Lô</span>
-              <span class="value">${esc(plant.location || 'Chưa ghi nhận')}</span>
-            </div>
-            <div class="info-tile">
-              <span class="label"><i class="fa-solid fa-calendar-days" style="color: var(--green-bright); margin-right: 6px;"></i>Ngày số hóa</span>
-              <span class="value">${fmtDate(plant.created_at)}</span>
-            </div>
-            <div class="info-tile">
-              <span class="label"><i class="fa-solid fa-chart-line" style="color: var(--green-bright); margin-right: 6px;"></i>Hoạt động</span>
-              <span class="value">${logs.length} nhật ký &nbsp;•&nbsp; ${media.length} hình ảnh</span>
-            </div>
-          </div>
+    <!-- Top Header Navigation -->
+    <header class="app-header">
+      <div class="header-left">
+        <img src="/assets/logo.png" alt="Tanbao Corp" class="header-logo">
+        <div class="header-titles">
+          <h1 class="header-app-name">Plant Book</h1>
+          <span class="header-tagline">Sổ Tay Cây Trồng Thông Minh</span>
         </div>
       </div>
-    </div>
+      <div class="header-right">
+        <button class="btn btn-secondary btn-sm" onclick="sharePage()">
+          <i class="fa-solid fa-share-nodes"></i> Chia sẻ
+        </button>
+      </div>
+    </header>
 
-    <!-- Main Container Grid -->
-    <div class="main-layout">
-      <!-- Left Column (Specs, Logs) -->
+    <!-- Main Container -->
+    <main class="main-container">
+      <!-- Left Column (Plant Info, Timeline) -->
       <div class="left-col">
-  `;
-
-  // 0. Location Map (if GPS coordinates or farm polygon exists)
-  const hasMap = (plant.latitude && plant.longitude) || (plant.farm_boundary && plant.farm_boundary.coordinates);
-  if (hasMap) {
-    html += `
-        <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-map-location-dot" style="color: var(--green-bright)"></i> Vị trí trên bản đồ</h2>
-          <div class="plant-map-container">
-            <div id="plant-location-map" style="width:100%;height:100%;"></div>
-            ${plant.farm_name ? `<div class="map-farm-badge"><i class="fa fa-seedling"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
-          </div>
-        </div>
-    `;
-  }
-
-  // 1. Plant Details (Schema attributes)
-  const schemaValues = schemaFields.filter(f => extra[f.name] !== undefined && extra[f.name] !== '');
-  if (schemaValues.length) {
-    html += `
-        <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-circle-info" style="color: var(--green-bright)"></i> Thông tin chi tiết</h2>
-          <div class="spec-list">
-            ${schemaValues.map(f => `
-              <div class="spec-item">
-                <div class="spec-label">${esc(f.name)}</div>
-                <div class="spec-value">${esc(extra[f.name])}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-    `;
-  }
-
-  // 2. Timeline Diary
-  html += `
-        <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-clock-rotate-left" style="color: var(--green-bright)"></i> Nhật ký chăm sóc cây</h2>
-  `;
-  
-  if (logs.length === 0) {
-    html += `
-          <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
-            <i class="fa-regular fa-clipboard" style="font-size: 32px; margin-bottom: 12px;"></i>
-            <p style="font-size: 13px;">Cây chưa có ghi chép nhật ký nào.</p>
-          </div>
-    `;
-  } else {
-    // Group logs by date
-    const groups = {};
-    logs.forEach(log => {
-      const dateStr = fmtDate(log.log_date);
-      if (!groups[dateStr]) groups[dateStr] = [];
-      groups[dateStr].push(log);
-    });
-
-    html += `
-          <div class="timeline">
-            ${Object.keys(groups).map(date => `
-              <div class="timeline-group">
-                <div class="timeline-date">${date}</div>
-                ${groups[date].map(log => {
-                  let markerClass = '';
-                  let tagClass = 'tag-general';
-                  let icon = 'fa-solid fa-pen';
-                  
-                  if (log.log_type === 'Tưới nước') {
-                    markerClass = 'marker-water';
-                    tagClass = 'tag-water';
-                    icon = 'fa-solid fa-droplet';
-                  } else if (log.log_type === 'Bón phân') {
-                    markerClass = 'marker-fertilize';
-                    tagClass = 'tag-fertilize';
-                    icon = 'fa-solid fa-leaf';
-                  } else if (log.log_type === 'Phun thuốc') {
-                    markerClass = 'marker-pesticide';
-                    tagClass = 'tag-pesticide';
-                    icon = 'fa-solid fa-flask';
-                  } else if (log.log_type === 'Cắt lá') {
-                    markerClass = 'marker-leaf';
-                    tagClass = 'tag-leaf';
-                    icon = 'fa-solid fa-scissors';
-                  } else if (log.log_type === 'Tỉa hoa') {
-                    markerClass = 'marker-flower';
-                    tagClass = 'tag-flower';
-                    icon = 'fa-solid fa-spa';
-                  } else if (log.log_type === 'Bệnh cây') {
-                    markerClass = 'marker-disease';
-                    tagClass = 'tag-disease';
-                    icon = 'fa-solid fa-virus';
-                  }
-                  
-                  const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
-                  const fullDateTime = fmtDateTime(timeVal);
-
-                  // Render inline media thumbnails from media_urls stored in log
-                  const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) ? log.media_urls : [];
-                  const mediaThumbs = mediaUrls.length > 0 ? `
-                    <div class="log-media-gallery">
-                      ${mediaUrls.map(m => {
-                        const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(m.url || m);
-                        const url = m.url || m;
-                        return isVideo
-                          ? `<div class="log-media-item" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" muted preload="metadata"></video><div class="video-play-icon"><i class="fa-solid fa-circle-play"></i></div></div>`
-                          : `<div class="log-media-item" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" alt="ảnh nhật ký" loading="lazy"></div>`;
-                      }).join('')}
-                    </div>` : '';
-
-                  const noteHtml = log.note
-                    ? `<div class="log-body" style="margin-top: 6px; color: var(--text-secondary); font-size:12px;"><i class="fa-solid fa-comment-dots"></i> ${esc(log.note)}</div>`
-                    : '';
-
-                  return `
-                    <div class="timeline-item">
-                      <div class="timeline-marker ${markerClass}"></div>
-                      <div class="timeline-content" onclick="toggleTimelineItem(event, this)">
-                        <div class="log-header">
-                          <span class="log-tag ${tagClass}"><i class="${icon}"></i> ${esc(log.log_type || 'Ghi chú')}</span>
-                          <div class="log-header-right">
-                            <span class="log-time-indicator"><i class="fa-regular fa-clock"></i> ${fullDateTime}</span>
-                            <i class="fa-solid fa-chevron-down toggle-arrow"></i>
-                          </div>
-                        </div>
-                        <div class="log-short-preview" style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">
-                          ${getShortSummary(log)}
-                        </div>
-                        <div class="timeline-details">
-                          <div class="log-body">
-                            ${getCareLogSummary(log)}
-                          </div>
-                          ${noteHtml}
-                          ${mediaThumbs}
-                        </div>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            `).join('')}
-          </div>
-    `;
-  }
-  
-  html += `
         </div>
       </div>
       
