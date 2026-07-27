@@ -153,7 +153,18 @@ function initDashboardMap(farms, plants) {
       }
     });
 
-    // Render plant markers using custom HTML with ID and health color wrapped in a container
+// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
+function getShortTreeCode(treeCode, plantId) {
+  const code = String(treeCode || plantId || '').trim();
+  if (!code) return '';
+  const match = code.match(/(\d+)$/);
+  if (match) {
+    return String(parseInt(match[1], 10));
+  }
+  return code;
+}
+
+// Render plant markers using custom HTML with ID and health color wrapped in a container
     plants.forEach(plant => {
       if (plant.latitude && plant.longitude) {
         const lat = parseFloat(plant.latitude);
@@ -169,7 +180,7 @@ function initDashboardMap(farms, plants) {
           else if (plant.health_status === 'Bệnh') healthClass = 'health-sick';
 
           el.className = `plant-id-marker ${healthClass}`;
-          el.innerHTML = `<span>${esc(plant.tree_code || plant.id)}</span>`;
+          el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
           wrapper.appendChild(el);
 
           const marker = new mapboxgl.Marker(wrapper)
@@ -515,7 +526,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         else if (plant.health_status === 'Bệnh') healthClass = 'health-sick';
 
         el.className = `plant-id-marker ${healthClass}`;
-        el.innerHTML = `<span>${esc(plant.tree_code || plant.id)}</span>`;
+        el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
         wrapper.appendChild(el);
 
         const marker = new mapboxgl.Marker(wrapper)
@@ -895,14 +906,17 @@ function addContourLinesToMap(map, options = {}) {
           };
         }
 
-        const mapBounds = map.getBounds();
-        if (mapBounds) {
-          return {
-            west: mapBounds.getWest(),
-            east: mapBounds.getEast(),
-            south: mapBounds.getSouth(),
-            north: mapBounds.getNorth()
-          };
+        // Chỉ dùng mapBounds làm fallback khi người dùng đang zoom sâu vào xem địa hình (zoom >= 14)
+        if (map.getZoom() >= 14) {
+          const mapBounds = map.getBounds();
+          if (mapBounds) {
+            return {
+              west: mapBounds.getWest(),
+              east: mapBounds.getEast(),
+              south: mapBounds.getSouth(),
+              north: mapBounds.getNorth()
+            };
+          }
         }
 
         return null;

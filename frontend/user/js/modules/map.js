@@ -143,6 +143,17 @@ export function initUserMap(farms, plants) {
       const colorMap = { 'Tốt': '#22c55e', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
       const color    = colorMap[plant.health_status] || '#3b82f6';
 
+// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
+export function getShortTreeCode(treeCode, plantId) {
+  const code = String(treeCode || plantId || '').trim();
+  if (!code) return '';
+  const match = code.match(/(\d+)$/);
+  if (match) {
+    return String(parseInt(match[1], 10));
+  }
+  return code;
+}
+
       Object.assign(el.style, {
         width: '30px', height: '30px', borderRadius: '50%',
         border: '2px solid white', display: 'flex',
@@ -150,7 +161,7 @@ export function initUserMap(farms, plants) {
         fontSize: '9px', fontWeight: '700', color: '#fff',
         background: color, boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
       });
-      el.innerHTML = `<span>${esc(plant.tree_code || plant.id)}</span>`;
+      el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
       wrapper.appendChild(el);
 
       const marker = new mapboxgl.Marker(wrapper)
@@ -298,14 +309,17 @@ export function addContourLinesToMap(map, options = {}) {
           };
         }
 
-        const mapBounds = map.getBounds();
-        if (mapBounds) {
-          return {
-            west: mapBounds.getWest(),
-            east: mapBounds.getEast(),
-            south: mapBounds.getSouth(),
-            north: mapBounds.getNorth()
-          };
+        // Chỉ dùng mapBounds làm fallback khi zoom >= 14
+        if (map.getZoom() >= 14) {
+          const mapBounds = map.getBounds();
+          if (mapBounds) {
+            return {
+              west: mapBounds.getWest(),
+              east: mapBounds.getEast(),
+              south: mapBounds.getSouth(),
+              north: mapBounds.getNorth()
+            };
+          }
         }
 
         return null;
