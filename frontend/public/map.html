@@ -449,6 +449,9 @@
                     data: geoData
                   });
 
+                  // ─── Bình độ con: nét liền mảnh | Bình độ cái: nét liền đậm ───
+                  const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 10], 0];
+
                   map.addLayer({
                     id: 'dense-1m-contour-lines',
                     type: 'line',
@@ -461,31 +464,34 @@
                     paint: {
                       'line-color': dynamicRamp,
                       'line-width': [
-                        'interpolate',
-                        ['exponential', 1.5],
-                        ['zoom'],
-                        12, 1.8,
-                        15, 2.8,
-                        18, 4.2
+                        'interpolate', ['exponential', 1.5], ['zoom'],
+                        12, ['case', isMajor, 2.2, 0.7],
+                        15, ['case', isMajor, 3.5, 1.2],
+                        18, ['case', isMajor, 5.0, 1.8]
                       ],
-                      'line-opacity': 0.95
+                      'line-opacity': ['case', isMajor, 0.95, 0.55]
                     }
                   });
 
+                  // ─── Nhãn số: chỉ hiển thị trên bình độ cái (mỗi 10m) ───
                   map.addLayer({
                     id: 'dense-1m-contour-labels',
                     type: 'symbol',
                     source: 'dense-1m-contours',
                     layout: {
                       'symbol-placement': 'line',
-                      'text-field': ['concat', ['get', 'ele'], ' m'],
-                      'text-size': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        12, 10,
-                        16, 12.5
+                      'text-field': [
+                        'case',
+                        isMajor,
+                        ['concat', ['to-string', ['get', 'ele']], ' m'],
+                        ''
                       ],
+                      'text-size': [
+                        'interpolate', ['linear'], ['zoom'],
+                        12, 10,
+                        16, 13
+                      ],
+                      'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
                       'text-allow-overlap': false,
                       'text-ignore-placement': false,
                       'text-max-angle': 35,
@@ -493,7 +499,7 @@
                     },
                     paint: {
                       'text-color': dynamicRamp,
-                      'text-halo-color': 'rgba(0, 0, 0, 0.95)',
+                      'text-halo-color': 'rgba(0, 0, 0, 0.9)',
                       'text-halo-width': 2.5
                     }
                   });

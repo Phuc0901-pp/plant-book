@@ -973,6 +973,12 @@ function addContourLinesToMap(map, options = {}) {
               data: geoData
             });
 
+            // ─── Đường bình độ con (Minor contour): nét liền mảnh ───
+            // ─── Đường bình độ cái (Major/Index contour): nét liền đậm ───
+            // Phân biệt bằng: ele % 10 === 0 → bình độ cái (10m interval)
+            //                 else           → bình độ con (2m interval)
+            const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 10], 0];
+
             map.addLayer({
               id: 'dense-1m-contour-lines',
               type: 'line',
@@ -984,32 +990,38 @@ function addContourLinesToMap(map, options = {}) {
               },
               paint: {
                 'line-color': dynamicRamp,
+                // Bình độ cái: nét đậm 3-5px | Bình độ con: nét mảnh 1-2px
                 'line-width': [
-                  'interpolate',
-                  ['exponential', 1.5],
-                  ['zoom'],
-                  12, 1.8,
-                  15, 2.8,
-                  18, 4.2
+                  'interpolate', ['exponential', 1.5], ['zoom'],
+                  12, ['case', isMajor, 2.2, 0.7],
+                  15, ['case', isMajor, 3.5, 1.2],
+                  18, ['case', isMajor, 5.0, 1.8]
                 ],
-                'line-opacity': 0.95
+                // Bình độ cái: rõ ràng | Bình độ con: hơi mờ
+                'line-opacity': ['case', isMajor, 0.95, 0.55]
               }
             });
 
+            // ─── Nhãn số cao độ: chỉ hiển thị trên bình độ cái (mỗi 10m) ───
             map.addLayer({
               id: 'dense-1m-contour-labels',
               type: 'symbol',
               source: 'dense-1m-contours',
               layout: {
                 'symbol-placement': 'line',
-                'text-field': ['concat', ['get', 'ele'], ' m'],
-                'text-size': [
-                  'interpolate',
-                  ['linear'],
-                  ['zoom'],
-                  12, 10,
-                  16, 12.5
+                // Chỉ hiển thị nhãn trên bình độ cái (ele % 10 === 0)
+                'text-field': [
+                  'case',
+                  isMajor,
+                  ['concat', ['to-string', ['get', 'ele']], ' m'],
+                  ''
                 ],
+                'text-size': [
+                  'interpolate', ['linear'], ['zoom'],
+                  12, 10,
+                  16, 13
+                ],
+                'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
                 'text-allow-overlap': false,
                 'text-ignore-placement': false,
                 'text-max-angle': 35,
@@ -1017,7 +1029,7 @@ function addContourLinesToMap(map, options = {}) {
               },
               paint: {
                 'text-color': dynamicRamp,
-                'text-halo-color': 'rgba(0, 0, 0, 0.95)',
+                'text-halo-color': 'rgba(0, 0, 0, 0.9)',
                 'text-halo-width': 2.5
               }
             });
