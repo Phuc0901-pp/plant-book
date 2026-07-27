@@ -787,7 +787,7 @@ function addContourLinesToMap(map, options = {}) {
         return null;
       };
 
-      // 4. Hàm Sinh Đường Đồng Mức Mật Độ 1m CHO NÔNG TRẠI
+      // 4. Hàm Sinh Đường Đồng Mức Mật Độ Biến Thiên Năng Động Theo Zoom
       const updateDense1mContours = () => {
         try {
           const bbox = getFarmBoundingBox();
@@ -798,9 +798,18 @@ function addContourLinesToMap(map, options = {}) {
             return;
           }
 
+          // Công thức khoảng cách đường đồng mức theo yêu cầu:
+          // Kích cỡ xem nông trại hiện tại (Zoom ~16.0): 2.5m
+          // Mỗi lần Zoom in (+1 zoom): -0.5m
+          // Mỗi lần Zoom out (-1 zoom): +0.5m
+          const currentZoom = map.getZoom();
+          let interval = 2.5 - (currentZoom - 16.0) * 0.5;
+          interval = Math.max(0.5, Math.min(10.0, interval));
+          interval = Math.round(interval * 2) / 2;
+
           const { west, south, east, north } = bbox;
-          const nx = 35;
-          const ny = 35;
+          const nx = 45;
+          const ny = 45;
           const dx = (east - west) / (nx - 1);
           const dy = (north - south) / (ny - 1);
 
@@ -829,8 +838,8 @@ function addContourLinesToMap(map, options = {}) {
 
           if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
 
-          const startLevel = Math.floor(minEle);
-          const endLevel = Math.ceil(maxEle);
+          const startLevel = Math.ceil(minEle / interval) * interval;
+          const endLevel = Math.floor(maxEle / interval) * interval;
           const features = [];
 
           function interp(pA, pB, vA, vB, val) {
@@ -839,8 +848,10 @@ function addContourLinesToMap(map, options = {}) {
             return [pA[0] + t * (pB[0] - pA[0]), pA[1] + t * (pB[1] - pA[1])];
           }
 
-          for (let threshold = startLevel; threshold <= endLevel; threshold += 1.0) {
+          for (let threshold = startLevel; threshold <= endLevel + 1e-5; threshold += interval) {
+            const roundedThreshold = Math.round(threshold * 10) / 10;
             const segments = [];
+
             for (let r = 0; r < ny - 1; r++) {
               const lat0 = south + r * dy;
               const lat1 = south + (r + 1) * dy;
@@ -854,10 +865,10 @@ function addContourLinesToMap(map, options = {}) {
                 const v2 = grid[r + 1][c + 1];
                 const v3 = grid[r + 1][c];
 
-                const code = (v0 >= threshold ? 1 : 0) |
-                             (v1 >= threshold ? 2 : 0) |
-                             (v2 >= threshold ? 4 : 0) |
-                             (v3 >= threshold ? 8 : 0);
+                const code = (v0 >= roundedThreshold ? 1 : 0) |
+                             (v1 >= roundedThreshold ? 2 : 0) |
+                             (v2 >= roundedThreshold ? 4 : 0) |
+                             (v3 >= roundedThreshold ? 8 : 0);
 
                 if (code === 0 || code === 15) continue;
 
@@ -866,10 +877,10 @@ function addContourLinesToMap(map, options = {}) {
                 const p2 = [lng1, lat1];
                 const p3 = [lng0, lat1];
 
-                const e0 = interp(p0, p1, v0, v1, threshold);
-                const e1 = interp(p1, p2, v1, v2, threshold);
-                const e2 = interp(p3, p2, v3, v2, threshold);
-                const e3 = interp(p0, p3, v0, v3, threshold);
+                const e0 = interp(p0, p1, v0, v1, roundedThreshold);
+                const e1 = interp(p1, p2, v1, v2, roundedThreshold);
+                const e2 = interp(p3, p2, v3, v2, roundedThreshold);
+                const e3 = interp(p0, p3, v0, v3, roundedThreshold);
 
                 switch (code) {
                   case 1: case 14: segments.push([e3, e0]); break;
@@ -887,7 +898,7 @@ function addContourLinesToMap(map, options = {}) {
             if (segments.length > 0) {
               features.push({
                 type: 'Feature',
-                properties: { ele: Math.round(threshold) },
+                properties: { ele: roundedThreshold },
                 geometry: {
                   type: 'MultiLineString',
                   coordinates: segments
@@ -963,20 +974,21 @@ function addContourLinesToMap(map, options = {}) {
             });
           }
 
-          updateLegendWidget(minEle, maxEle);
+          updateLegendWidget(minEle, maxEle, interval);
         } catch (e) {
           console.warn('Lỗi sinh đường đồng mức nông trại:', e);
         }
       };
 
-      // Cập nhật Bảng Chú Giải Cao Độ Dạng Thanh Dải Màu Sang Trọng (Không Cuộn, Không Giật)
-      const updateLegendWidget = (minEle, maxEle) => {
+      // Cập nhật Bảng Chú Giải Cao Độ Dạng Thanh Dải Màu Sang Trọng (Hiển thị khoảng cách mét)
+      const updateLegendWidget = (minEle, maxEle, interval) => {
         const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
         if (!legendContainer) return;
 
         const minE = Math.floor(minEle);
         const maxE = Math.ceil(maxEle);
         const midE = Math.round((maxE + minE) / 2);
+        const stepTxt = interval ? ` (${interval}m)` : '';
 
         legendContainer.innerHTML = `
           <div style="
@@ -992,10 +1004,10 @@ function addContourLinesToMap(map, options = {}) {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 80px;
+            min-width: 90px;
             pointer-events: auto;
           ">
-            <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#9ca3af; margin-bottom:8px; letter-spacing:0.5px;">Cao độ (m)</div>
+            <div style="font-size:9.5px; font-weight:800; text-transform:uppercase; color:#9ca3af; margin-bottom:8px; letter-spacing:0.5px; text-align:center;">Cao độ${stepTxt}</div>
             <div style="display:flex; align-items:center; gap:10px;">
               <div style="
                 width: 12px;
