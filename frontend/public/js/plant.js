@@ -1708,16 +1708,10 @@ function addContourLinesToMap(map, options = {}) {
             bottom: 24px;
             right: 10px;
             z-index: 8;
-                border: 1px solid rgba(255,255,255,0.3);
-              "></div>
-              <div style="display:flex; flex-direction:column; justify-content:space-between; height:110px; font-size:9px; font-weight:700; color:#e5e7eb;">
-                <span style="color:#ef4444;">Cao ▲</span>
-                <span style="color:#eab308;">TB</span>
-                <span style="color:#06b6d4;">Thấp ▼</span>
-              </div>
-            </div>
+            display: ${defaultVisible ? 'block' : 'none'};
+            pointer-events: auto;
           `;
-          mapContainer.appendChild(legend);
+          mapContainer.appendChild(legendContainer);
         }
       }
     } catch (err) {

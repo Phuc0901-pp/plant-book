@@ -244,12 +244,28 @@ export function addContourLinesToMap(map, options = {}) {
           });
         }
 
-        // 2. Trích xuất từ các lớp ranh giới nông trại có sẵn trên bản đồ
-        if (lngs.length === 0) {
-          const farmLayers = ['farm-bounds-layer', 'admin-farms-fill', 'farm-layer', 'farm-polygon'];
-          farmLayers.forEach(lId => {
-            if (map.getLayer(lId)) {
-              const features = map.queryRenderedFeatures({ layers: [lId] });
+        // 2. Kiểm tra global object (plantData hay reportData)
+        if (lngs.length === 0 && window.plantData && window.plantData.farm && window.plantData.farm.coordinates) {
+          try {
+            const coords = typeof window.plantData.farm.coordinates === 'string'
+              ? JSON.parse(window.plantData.farm.coordinates)
+              : window.plantData.farm.coordinates;
+            coords.flat(2).forEach(pt => {
+              if (pt && pt.length >= 2) { lngs.push(pt[0]); lats.push(pt[1]); }
+            });
+          } catch (_) {}
+        }
+
+        // 3. Trích xuất tự động từ TẤT CẢ các lớp ranh giới trang trại trên Mapbox
+        if (lngs.length === 0 && map.getStyle()) {
+          const styleLayers = map.getStyle().layers || [];
+          const farmLayers = styleLayers.filter(l => 
+            l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
+          );
+
+          farmLayers.forEach(layer => {
+            try {
+              const features = map.queryRenderedFeatures({ layers: [layer.id] });
               features.forEach(f => {
                 const geom = f.geometry;
                 if (geom && (geom.type === 'Polygon' || geom.type === 'MultiPolygon')) {
@@ -262,7 +278,7 @@ export function addContourLinesToMap(map, options = {}) {
                   });
                 }
               });
-            }
+            } catch (_) {}
           });
         }
 
@@ -272,14 +288,25 @@ export function addContourLinesToMap(map, options = {}) {
           const minLat = Math.min(...lats);
           const maxLat = Math.max(...lats);
           
-          const marginLng = (maxLng - minLng) * 0.05 || 0.0005;
-          const marginLat = (maxLat - minLat) * 0.05 || 0.0005;
+          const marginLng = (maxLng - minLng) * 0.08 || 0.0008;
+          const marginLat = (maxLat - minLat) * 0.08 || 0.0008;
 
           return {
             west: minLng - marginLng,
             east: maxLng + marginLng,
             south: minLat - marginLat,
             north: maxLat + marginLat
+          };
+        }
+
+        // 4. Fallback an toàn: Sử dụng Bounds tầm nhìn bản đồ hiện tại nếu chưa tìm thấy ranh giới
+        const mapBounds = map.getBounds();
+        if (mapBounds) {
+          return {
+            west: mapBounds.getWest(),
+            east: mapBounds.getEast(),
+            south: mapBounds.getSouth(),
+            north: mapBounds.getNorth()
           };
         }
 
@@ -290,16 +317,11 @@ export function addContourLinesToMap(map, options = {}) {
       const updateDense1mContours = () => {
         try {
           const bbox = getFarmBoundingBox();
-          if (!bbox) {
-            if (map.getSource('dense-1m-contours')) {
-              map.getSource('dense-1m-contours').setData({ type: 'FeatureCollection', features: [] });
-            }
-            return;
-          }
+          if (!bbox) return;
 
           const { west, south, east, north } = bbox;
-          const nx = 35;
-          const ny = 35;
+          const nx = 40;
+          const ny = 40;
           const dx = (east - west) / (nx - 1);
           const dy = (north - south) / (ny - 1);
 

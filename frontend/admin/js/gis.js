@@ -732,11 +732,15 @@ function addContourLinesToMap(map, options = {}) {
           });
         }
 
-        if (lngs.length === 0) {
-          const farmLayers = ['admin-farms-fill', 'farm-bounds-layer', 'farm-layer', 'farm-polygon'];
-          farmLayers.forEach(lId => {
-            if (map.getLayer(lId)) {
-              const features = map.queryRenderedFeatures({ layers: [lId] });
+        if (lngs.length === 0 && map.getStyle()) {
+          const styleLayers = map.getStyle().layers || [];
+          const farmLayers = styleLayers.filter(l => 
+            l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
+          );
+
+          farmLayers.forEach(layer => {
+            try {
+              const features = map.queryRenderedFeatures({ layers: [layer.id] });
               features.forEach(f => {
                 const geom = f.geometry;
                 if (geom && (geom.type === 'Polygon' || geom.type === 'MultiPolygon')) {
@@ -749,7 +753,7 @@ function addContourLinesToMap(map, options = {}) {
                   });
                 }
               });
-            }
+            } catch (_) {}
           });
         }
 
@@ -759,14 +763,24 @@ function addContourLinesToMap(map, options = {}) {
           const minLat = Math.min(...lats);
           const maxLat = Math.max(...lats);
           
-          const marginLng = (maxLng - minLng) * 0.05 || 0.0005;
-          const marginLat = (maxLat - minLat) * 0.05 || 0.0005;
+          const marginLng = (maxLng - minLng) * 0.08 || 0.0008;
+          const marginLat = (maxLat - minLat) * 0.08 || 0.0008;
 
           return {
             west: minLng - marginLng,
             east: maxLng + marginLng,
             south: minLat - marginLat,
             north: maxLat + marginLat
+          };
+        }
+
+        const mapBounds = map.getBounds();
+        if (mapBounds) {
+          return {
+            west: mapBounds.getWest(),
+            east: mapBounds.getEast(),
+            south: mapBounds.getSouth(),
+            north: mapBounds.getNorth()
           };
         }
 
