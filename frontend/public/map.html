@@ -310,8 +310,8 @@
                 const bbox = getFarmBoundingBox();
                 if (!bbox) return;
 
-                // Khoảng cách đường đồng mức cố định 2m theo tiêu chuẩn bản vẽ CAD/GIS
-                const interval = 2.0;
+                // Khoảng cách đường đồng mức cố định 1m (Bình độ cái % 5 === 0, Bình độ con 1m còn lại)
+                const interval = 1.0;
 
                 // Chỉ lấy mẫu DEM khi zoom đủ cao để có tile độ phân giải cao và ổn định
                 // Nếu zoom < 13, giữ nguyên dữ liệu cũ tránh sai số datum khi zoom out
