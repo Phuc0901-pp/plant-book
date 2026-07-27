@@ -227,6 +227,9 @@ async function savePlant() {
     loadPlants();
     loadDashboard();
     document.getElementById('plant-modal-title').textContent = '✏️ Chỉnh sửa cây';
+    if (typeof window.onPlantSavedHook === 'function') {
+      window.onPlantSavedHook(plant);
+    }
   } catch (err) {
     toast('Lỗi lưu cây: ' + err.message, 'error');
   } finally {

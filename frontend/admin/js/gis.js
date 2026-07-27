@@ -308,10 +308,127 @@ function initGisMap(farms, plants) {
   gMap.on('draw.update', updateAreaDisplay);
   gMap.on('draw.delete', updateAreaDisplay);
 
+  // Click map handler cho Chế độ Import GIS Cây Trồng
+  gMap.on('click', (e) => {
+    if (!isGisImportMode) return;
+
+    // Ngăn chặn trigger click nếu đang trong chế độ vẽ polygon
+    if (drawControl && drawControl.getMode && drawControl.getMode() !== 'simple_select') return;
+
+    const { lng, lat } = e.lngLat;
+
+    // Gắn ghim tạm thời khi click chọn vị trí cây
+    if (gisImportTempMarker) {
+      gisImportTempMarker.remove();
+      gisImportTempMarker = null;
+    }
+
+    const el = document.createElement('div');
+    el.className = 'gis-temp-click-pin';
+    el.style.cssText = 'font-size:32px; color:#ef4444; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.6)); pointer-events:none;';
+    el.innerHTML = '<i class="fa-solid fa-location-dot fa-bounce"></i>';
+
+    gisImportTempMarker = new mapboxgl.Marker({ element: el })
+      .setLngLat([lng, lat])
+      .addTo(gMap);
+
+    openPlantModalForGisClick(lng, lat);
+  });
+
   gMap.on('load', () => {
     drawFarmsAndPlantsLayers(farms, plants);
   });
 }
+
+// Chuyển đổi Bật/Tắt chế độ Import GIS (Click chọn vị trí cây trên bản đồ)
+let isGisImportMode = false;
+let gisImportTempMarker = null;
+
+function toggleGisImportMode(forceState) {
+  if (typeof forceState === 'boolean') {
+    isGisImportMode = forceState;
+  } else {
+    isGisImportMode = !isGisImportMode;
+  }
+
+  const btn = document.getElementById('btn-gis-import-mode');
+  const banner = document.getElementById('gis-import-active-banner');
+
+  if (isGisImportMode) {
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang Bật Import GIS (Click Bản Đồ)';
+      btn.style.background = '#059669';
+      btn.style.borderColor = '#047857';
+    }
+    if (banner) banner.style.display = 'flex';
+    if (gMap) gMap.getCanvas().style.cursor = 'crosshair';
+    toast('📍 Đã bật chế độ Import GIS: Click vào vị trí cây trên bản đồ để lấy tọa độ GPS!', 'info');
+  } else {
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-map-pin"></i> 📍 Import GIS (Click chọn vị trí cây trên bản đồ)';
+      btn.style.background = '#10b981';
+      btn.style.borderColor = '#059669';
+    }
+    if (banner) banner.style.display = 'none';
+    if (gMap) gMap.getCanvas().style.cursor = '';
+    if (gisImportTempMarker) {
+      gisImportTempMarker.remove();
+      gisImportTempMarker = null;
+    }
+  }
+}
+
+function openAddPlantsManual() {
+  openPlantModal(null);
+  if (activeFarmId) {
+    const select = document.getElementById('f-farm-id');
+    if (select) select.value = activeFarmId;
+  }
+}
+
+async function openPlantModalForGisClick(lng, lat) {
+  await openPlantModal(null);
+
+  // Tự động gán Trang trại hiện tại
+  if (activeFarmId) {
+    const farmSelect = document.getElementById('f-farm-id');
+    if (farmSelect) farmSelect.value = activeFarmId;
+  }
+
+  // Tự động điền GPS Kinh độ, Vĩ độ & Chuỗi vị trí
+  const latInput = document.getElementById('f-latitude');
+  const lngInput = document.getElementById('f-longitude');
+  const locInput = document.getElementById('f-location');
+  const codeInput = document.getElementById('f-tree-code');
+
+  if (latInput) latInput.value = lat.toFixed(7);
+  if (lngInput) lngInput.value = lng.toFixed(7);
+  if (locInput) locInput.value = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+  if (codeInput && !codeInput.value) {
+    const farmPlantsCount = (currentPlants || []).filter(p => p.farm_id === activeFarmId).length + 1;
+    codeInput.value = `CT-${farmPlantsCount.toString().padStart(3, '0')}`;
+  }
+
+  const typeInput = document.getElementById('f-plant-type');
+  if (typeInput) typeInput.focus();
+
+  toast(`📍 Đã ghim GPS (${lat.toFixed(5)}, ${lng.toFixed(5)}). Hãy nhập thông tin chi tiết cây trồng!`, 'success');
+}
+
+// Hook gọi sau khi lưu cây thành công từ Modal
+window.onPlantSavedHook = function(plant) {
+  if (gisImportTempMarker) {
+    gisImportTempMarker.remove();
+    gisImportTempMarker = null;
+  }
+  if (activeFarmId) {
+    selectFarm(activeFarmId);
+  }
+  if (isGisImportMode) {
+    toast('✅ Đã lưu cây mới vào hệ thống GIS! Tiếp tục click bản đồ để nhập cây tiếp theo.', 'info');
+  }
+};
 
 function drawFarmsAndPlantsLayers(farms, plants) {
   if (!gMap) return;
