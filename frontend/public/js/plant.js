@@ -738,7 +738,8 @@ async function renderPlant(plant) {
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
       center: [centerLng, centerLat],
       zoom: initialZoom,
-      attributionControl: false
+      attributionControl: false,
+      preserveDrawingBuffer: true
     });
     plantMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
     plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
@@ -1661,7 +1662,7 @@ function addContourLinesToMap(map, options = {}) {
       map.on('idle', debouncedUpdate);
       setTimeout(updateDense1mContours, 1000);
 
-      // 5. Nút Bật/Tắt đường đồng mức
+      // 5. Nút Bật/Tắt đường đồng mức & Nút Xuất Bản Vẽ A4 Nằm Ngang
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
 
@@ -1671,12 +1672,12 @@ function addContourLinesToMap(map, options = {}) {
             this._container = document.createElement('div');
             this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
             
-            const btn = document.createElement('button');
-            btn.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
-            btn.type = 'button';
-            btn.title = 'Bật/Tắt đường đồng mức 1m nông trại (Contour Lines)';
-            btn.setAttribute('aria-label', 'Toggle Contour Lines');
-            btn.style.cssText = `
+            const btnContour = document.createElement('button');
+            btnContour.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
+            btnContour.type = 'button';
+            btnContour.title = 'Bật/Tắt đường đồng mức 1m nông trại (Contour Lines)';
+            btnContour.setAttribute('aria-label', 'Toggle Contour Lines');
+            btnContour.style.cssText = `
               display: flex;
               align-items: center;
               justify-content: center;
@@ -1689,24 +1690,50 @@ function addContourLinesToMap(map, options = {}) {
               border: none;
               cursor: pointer;
             `;
-            btn.innerHTML = '⛰️';
+            btnContour.innerHTML = '⛰️';
 
             let isVisible = defaultVisible;
 
-            btn.onclick = () => {
+            btnContour.onclick = () => {
               isVisible = !isVisible;
               const visVal = isVisible ? 'visible' : 'none';
               if (m.getLayer('dense-1m-contour-lines')) m.setLayoutProperty('dense-1m-contour-lines', 'visibility', visVal);
               if (m.getLayer('dense-1m-contour-labels')) m.setLayoutProperty('dense-1m-contour-labels', 'visibility', visVal);
 
-              btn.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
-              btn.style.color = isVisible ? '#f59e0b' : '#555';
+              btnContour.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
+              btnContour.style.color = isVisible ? '#f59e0b' : '#555';
 
               const legendEl = m.getContainer().querySelector('.elevation-legend-widget-container');
               if (legendEl) legendEl.style.display = isVisible ? 'block' : 'none';
             };
 
-            this._container.appendChild(btn);
+            const btnExportA4 = document.createElement('button');
+            btnExportA4.className = 'mapboxgl-ctrl-icon mapbox-ctrl-export-a4-btn';
+            btnExportA4.type = 'button';
+            btnExportA4.title = 'Xuất Bản Vẽ Trang Trại A4 Nằm Ngang (PDF & In bản vẽ)';
+            btnExportA4.setAttribute('aria-label', 'Export A4 Farm CAD Drawing');
+            btnExportA4.style.cssText = `
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 29px;
+              height: 29px;
+              font-size: 13px;
+              font-weight: bold;
+              background: transparent;
+              color: #16a34a;
+              border: none;
+              border-top: 1px solid #e2e8f0;
+              cursor: pointer;
+            `;
+            btnExportA4.innerHTML = '📐';
+
+            btnExportA4.onclick = () => {
+              openPublicFarmA4ExportModal(m);
+            };
+
+            this._container.appendChild(btnContour);
+            this._container.appendChild(btnExportA4);
             return this._container;
           }
 
@@ -1746,5 +1773,350 @@ function addContourLinesToMap(map, options = {}) {
   } else {
     map.once('load', initContours);
   }
+}
+
+function openPublicFarmA4ExportModal(map) {
+  if (!map) return;
+
+  const loadHtml2Pdf = () => {
+    return new Promise((resolve) => {
+      if (window.html2pdf) return resolve(window.html2pdf);
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.onload = () => resolve(window.html2pdf);
+      s.onerror = () => resolve(null);
+      document.head.appendChild(s);
+    });
+  };
+
+  let farmName = 'Nông Trại Cây Trồng';
+  let ownerName = 'Khách Hàng Tanbao';
+  let performerName = 'Kỹ sư Tanbao Corp';
+  let farmCoords = [];
+  let plantCount = 1;
+
+  if (window.currentPlantData) {
+    if (window.currentPlantData.name) farmName = window.currentPlantData.name;
+    if (window.currentPlantData.farm_name) farmName = window.currentPlantData.farm_name;
+    if (window.currentPlantData.owner_name) ownerName = window.currentPlantData.owner_name;
+    if (window.currentPlantData.farm_boundary && window.currentPlantData.farm_boundary.coordinates) {
+      farmCoords = window.currentPlantData.farm_boundary.coordinates[0];
+    }
+  }
+
+  if (farmCoords.length === 0 && map.getStyle()) {
+    const styleLayers = map.getStyle().layers || [];
+    const farmLayers = styleLayers.filter(l => 
+      l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
+    );
+    farmLayers.forEach(layer => {
+      try {
+        const features = map.queryRenderedFeatures({ layers: [layer.id] });
+        features.forEach(f => {
+          const geom = f.geometry;
+          if (geom && geom.type === 'Polygon' && farmCoords.length === 0) {
+            farmCoords = geom.coordinates[0];
+          }
+        });
+      } catch (_) {}
+    });
+  }
+
+  let mapImageDataUrl = '';
+  try {
+    mapImageDataUrl = map.getCanvas().toDataURL('image/png');
+  } catch (err) {
+    console.warn('Cảnh báo chụp ảnh bản đồ:', err);
+  }
+
+  const getDist = (p1, p2) => {
+    const R = 6371000;
+    const rad = Math.PI / 180;
+    const dLat = (p2[1] - p1[1]) * rad;
+    const dLng = (p2[0] - p1[0]) * rad;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(p1[1] * rad) * Math.cos(p2[1] * rad) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+  };
+
+  let edgeRowsHtml = '';
+  let perimeter = 0;
+  let areaSqM = 0;
+
+  if (farmCoords && farmCoords.length >= 3) {
+    for (let i = 0; i < farmCoords.length - 1; i++) {
+      const len = getDist(farmCoords[i], farmCoords[i + 1]);
+      perimeter += len;
+      edgeRowsHtml += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:4px; font-weight:600;">Cạnh ${i + 1} - ${i + 2}</td>
+          <td style="padding:4px; text-align:right; font-weight:700; color:#15803d;">${len.toLocaleString('vi-VN')} m</td>
+        </tr>
+      `;
+    }
+
+    const rad = Math.PI / 180;
+    const R = 6371000;
+    let accArea = 0;
+    for (let i = 0; i < farmCoords.length - 1; i++) {
+      const p1 = farmCoords[i];
+      const p2 = farmCoords[i + 1];
+      accArea += (p2[0] - p1[0]) * rad * (2 + Math.sin(p1[1] * rad) + Math.sin(p2[1] * rad));
+    }
+    areaSqM = Math.round(Math.abs(accArea * R * R / 2));
+  } else {
+    edgeRowsHtml = `<tr><td colspan="2" style="padding:6px; text-align:center; color:#94a3b8; font-style:italic;">Chưa có dữ liệu ranh giới trang trại</td></tr>`;
+  }
+
+  const center = map.getCenter();
+  const zoom = map.getZoom();
+  const mPerPx = (156543.03392 * Math.cos(center.lat * Math.PI / 180)) / Math.pow(2, zoom);
+  const scaleRatio = Math.round(mPerPx / 0.000264583);
+  const scaleText = `1 : ${scaleRatio.toLocaleString('vi-VN')}`;
+  const exportDate = new Date().toLocaleDateString('vi-VN');
+
+  let minEle = 735, maxEle = 765;
+  const legendEl = map.getContainer().querySelector('.elevation-legend-widget-container');
+  if (legendEl) {
+    const text = legendEl.innerText;
+    const matches = text.match(/(\d+)\s*m/g);
+    if (matches && matches.length >= 2) {
+      maxEle = parseInt(matches[0]);
+      minEle = parseInt(matches[matches.length - 1]);
+    }
+  }
+
+  let modalContainer = document.getElementById('farm-a4-export-modal');
+  if (modalContainer) modalContainer.remove();
+
+  modalContainer = document.createElement('div');
+  modalContainer.id = 'farm-a4-export-modal';
+  modalContainer.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+  `;
+
+  modalContainer.innerHTML = `
+    <div style="
+      width: 100%; max-width: 1100px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; color: #fff; background: rgba(30, 41, 59, 0.9);
+      padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    ">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:22px;">📐</span>
+        <div>
+          <h3 style="font-size:16px; font-weight:800; margin:0; color:#4ade80;">XUẤT BẢN VẼ TRANG TRẠI A4 NẰM NGANG</h3>
+          <p style="font-size:12px; color:#94a3b8; margin:0;">Bao gồm Khung thông tin, Đường đồng mức 1m & Chiều dài kích thước ranh giới</p>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button id="btn-do-print-a4" style="
+          background: #3b82f6; color: #fff; border: none; padding: 8px 16px;
+          border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+          display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(59,130,246,0.4);
+        ">
+          🖨️ In bản vẽ (Print)
+        </button>
+        <button id="btn-download-pdf-a4" style="
+          background: #16a34a; color: #fff; border: none; padding: 8px 18px;
+          border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+          display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(22,163,74,0.4);
+        ">
+          📥 Tải PDF (A4 Nằm Ngang)
+        </button>
+        <button id="btn-close-a4-modal" style="
+          background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 8px 14px;
+          border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+        ">
+          ✕ Đóng
+        </button>
+      </div>
+    </div>
+
+    <div id="a4-drawing-paper" style="
+      width: 297mm; min-height: 210mm;
+      background: #ffffff; color: #0f172a;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      border-radius: 4px; padding: 8mm; box-sizing: border-box;
+      display: flex; flex-direction: column; justify-content: space-between;
+      border: 2px solid #000; font-family: 'Segoe UI', Roboto, sans-serif;
+    ">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2.5px solid #16a34a; padding-bottom:6px; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img src="/assets/logo.png" style="height:38px;" onerror="this.style.display='none'">
+          <div>
+            <h2 style="font-size:15px; font-weight:800; color:#15803d; margin:0; text-transform:uppercase; letter-spacing:0.5px;">TANBAO CORP — HỆ THỐNG GIS BẢN VẼ TRANG TRẠI</h2>
+            <div style="font-size:10.5px; color:#475569; font-weight:600;">HỒ SƠ BẢN VẼ ĐỊA HÌNH, RANH GIỚI & ĐƯỜNG ĐỒNG MỨC</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px; font-weight:800; color:#0f172a; text-transform:uppercase;">BẢN VẼ A4 CHUẨN TỶ LỆ</div>
+          <div style="font-size:10px; color:#64748b;">Mã Hồ Sơ: <strong>TB-CAD-PUB-${Date.now().toString().slice(-6)}</strong></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex:1; overflow:hidden;">
+        <div style="flex:1.75; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; display:flex; align-items:center; justify-content:center; background:#e2e8f0;">
+          <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
+          <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.92); padding:4px 10px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            ⬆️ HƯỚNG BẮC (N)
+          </div>
+          <div style="position:absolute; bottom:10px; left:10px; background:rgba(15,23,42,0.85); color:#fff; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:700;">
+            ⛰️ Đường đồng mức interval = 1.0m
+          </div>
+        </div>
+
+        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+          <div style="border:1.5px solid #000; border-radius:4px; padding:8px; background:#f0fdf4;">
+            <div style="font-weight:800; font-size:11px; color:#15803d; border-bottom:1px solid #bbf7d0; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase;">
+              📊 THỐNG KÊ KÍCH THƯỚC TRANG TRẠI
+            </div>
+            <table style="width:100%; font-size:10.5px; border-collapse:collapse;">
+              <tr>
+                <td style="padding:3px 0; color:#475569;">Diện tích trang trại:</td>
+                <td style="padding:3px 0; text-align:right; font-weight:800; color:#15803d;">${areaSqM.toLocaleString('vi-VN')} m² (${(areaSqM/10000).toFixed(2)} ha)</td>
+              </tr>
+              <tr>
+                <td style="padding:3px 0; color:#475569;">Chu vi ranh giới:</td>
+                <td style="padding:3px 0; text-align:right; font-weight:800; color:#0f172a;">${perimeter.toLocaleString('vi-VN')} m</td>
+              </tr>
+              <tr>
+                <td style="padding:3px 0; color:#475569;">Số lượng cây trồng:</td>
+                <td style="padding:3px 0; text-align:right; font-weight:800; color:#2563eb;">${plantCount} cây</td>
+              </tr>
+              <tr>
+                <td style="padding:3px 0; color:#475569;">Chênh lệch cao độ:</td>
+                <td style="padding:3px 0; text-align:right; font-weight:800; color:#d97706;">${minEle}m — ${maxEle}m (Δ ${maxEle - minEle}m)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:8px; background:#fff; overflow-y:auto;">
+            <div style="font-weight:800; font-size:11px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase;">
+              📏 CHIỀU DÀI CÁC CẠNH RANH GIỚI
+            </div>
+            <table style="width:100%; font-size:10px; border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f1f5f9; text-align:left; border-bottom:1px solid #cbd5e1;">
+                  <th style="padding:4px;">Đoạn Cạnh</th>
+                  <th style="padding:4px; text-align:right;">Chiều Dài (m)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${edgeRowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; border:2px solid #000; background:#fff;">
+        <table style="width:100%; border-collapse:collapse; font-size:10.5px;">
+          <tr>
+            <td style="width:35%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">TÊN TRANG TRẠI</div>
+              <div style="font-size:13px; font-weight:800; color:#15803d; margin-top:2px;">🏡 ${farmName}</div>
+            </td>
+            <td style="width:25%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">KHÁCH HÀNG / NÔNG HỘ</div>
+              <div style="font-size:11.5px; font-weight:700; color:#0f172a; margin-top:2px;">👤 ${ownerName}</div>
+            </td>
+            <td style="width:20%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">NGƯỜI THỰC HIỆN</div>
+              <div style="font-size:11.5px; font-weight:700; color:#0f172a; margin-top:2px;">✍️ ${performerName}</div>
+            </td>
+            <td style="width:10%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">NGÀY XUẤT</div>
+              <div style="font-size:11px; font-weight:700; margin-top:2px;">📅 ${exportDate}</div>
+            </td>
+            <td style="width:10%; padding:6px 10px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">TỶ LỆ</div>
+              <div style="font-size:12px; font-weight:800; color:#2563eb; margin-top:2px;">📐 ${scaleText}</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modalContainer);
+
+  document.getElementById('btn-close-a4-modal').onclick = () => modalContainer.remove();
+
+  modalContainer.onclick = (e) => {
+    if (e.target === modalContainer) modalContainer.remove();
+  };
+
+  document.getElementById('btn-do-print-a4').onclick = () => {
+    const paperHtml = document.getElementById('a4-drawing-paper').outerHTML;
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Ban_ve_trang_trai_${farmName.replace(/\s+/g, '_')}</title>
+        <style>
+          @page { size: A4 landscape; margin: 0; }
+          body { margin: 0; padding: 0; background: #fff; }
+          #a4-drawing-paper { width: 297mm !important; height: 210mm !important; box-shadow: none !important; border-radius: 0 !important; }
+        </style>
+      </head>
+      <body>
+        ${paperHtml}
+        <script>
+          setTimeout(() => { window.print(); window.close(); }, 500);
+        <\/script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
+  };
+
+  document.getElementById('btn-download-pdf-a4').onclick = async () => {
+    const btn = document.getElementById('btn-download-pdf-a4');
+    btn.innerHTML = '⏳ Đang tạo PDF...';
+    btn.disabled = true;
+
+    const html2pdfLib = await loadHtml2Pdf();
+    const element = document.getElementById('a4-drawing-paper');
+
+    if (html2pdfLib && element) {
+      const opt = {
+        margin: 0,
+        filename: `Ban_ve_trang_trai_${farmName.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      html2pdfLib().set(opt).from(element).save().then(() => {
+        btn.innerHTML = '📥 Tải PDF (A4 Nằm Ngang)';
+        btn.disabled = false;
+      }).catch(err => {
+        console.error('Lỗi xuất PDF:', err);
+        btn.innerHTML = '📥 Tải PDF (A4 Nằm Ngang)';
+        btn.disabled = false;
+        document.getElementById('btn-do-print-a4').click();
+      });
+    } else {
+      btn.innerHTML = '📥 Tải PDF (A4 Nằm Ngang)';
+      btn.disabled = false;
+      document.getElementById('btn-do-print-a4').click();
+    }
+  };
 }
 
