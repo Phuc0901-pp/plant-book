@@ -310,15 +310,12 @@
                 const bbox = getFarmBoundingBox();
                 if (!bbox) return;
 
-                // Công thức khoảng cách đường đồng mức theo tiêu chuẩn bản vẽ địa hình CAD:
-                const currentZoom = map.getZoom();
-                let interval = 2.5 - (currentZoom - 16.0) * 0.5;
-                interval = Math.max(1.0, Math.min(5.0, interval));
-                interval = Math.round(interval * 2) / 2;
+                // Mặc định khoảng cách đường đồng mức cố định 2m theo tiêu chuẩn bản vẽ CAD/GIS
+                const interval = 2.0;
 
                 const { west, south, east, north } = bbox;
-                const nx = 40;
-                const ny = 40;
+                const nx = 45;
+                const ny = 45;
                 const dx = (east - west) / (nx - 1);
                 const dy = (north - south) / (ny - 1);
 
@@ -347,8 +344,8 @@
 
                 if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
 
-                // Lọc mịn lưới DEM bằng Gaussian Blur 2 pass để loại bỏ đường gấp khúc / vòng lặp nhiễu
-                const grid = smoothGrid(rawGrid, 2);
+                // Lọc mịn lưới DEM bằng Gaussian Blur 3 pass để loại bỏ hoàn toàn nhiễu và lặp đường
+                const grid = smoothGrid(rawGrid, 3);
 
                 // Chuẩn hóa Elevation Offset nếu dữ liệu DEM bị lệch datum (chuẩn hóa về dải ~495m-505m như contourmap.app)
                 const eleOffset = (minEle > 600) ? Math.round(minEle - 493) : 0;
