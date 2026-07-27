@@ -834,8 +834,13 @@ function addContourLinesToMap(map, options = {}) {
             return;
           }
 
-          // Mặc định khoảng cách đường đồng mức cố định 2m theo tiêu chuẩn bản vẽ CAD/GIS
+          // Khoảng cách đường đồng mức cố định 2m theo tiêu chuẩn bản vẽ CAD/GIS
           const interval = 2.0;
+
+          // Chỉ lấy mẫu DEM khi zoom đủ cao để có dữ liệu tile độ phân giải cao và ổn định
+          // Nếu zoom quá thấp (< 13), giữ nguyên dữ liệu cũ để tránh sai số datum
+          const currentZoom = map.getZoom();
+          if (currentZoom < 13 && map.getSource('dense-1m-contours')) return;
 
           const { west, south, east, north } = bbox;
           const nx = 45;
@@ -871,8 +876,13 @@ function addContourLinesToMap(map, options = {}) {
           // Lọc mịn lưới DEM bằng Gaussian Blur 3 pass để loại bỏ hoàn toàn nhiễu và lặp đường
           const grid = smoothGrid(rawGrid, 3);
 
-          // Chuẩn hóa Elevation Offset nếu dữ liệu DEM bị lệch datum (chuẩn hóa về dải ~495m-505m như contourmap.app)
-          const eleOffset = (minEle > 600) ? Math.round(minEle - 493) : 0;
+          // Chuẩn hóa Elevation Offset: CACHE một lần duy nhất khi zoom >= 14 để đảm bảo
+          // số liệu cao độ không thay đổi khi zoom in/out (root fix của lỗi nhảy số)
+          if (typeof map._contourEleOffset === 'undefined' || (currentZoom >= 14 && !map._contourOffsetLocked)) {
+            map._contourEleOffset = (minEle > 600) ? Math.round(minEle - 493) : 0;
+            if (currentZoom >= 14) map._contourOffsetLocked = true;
+          }
+          const eleOffset = map._contourEleOffset;
           const displayMin = Math.round(minEle - eleOffset);
           const displayMax = Math.round(maxEle - eleOffset);
 
