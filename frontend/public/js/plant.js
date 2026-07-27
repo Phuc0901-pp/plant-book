@@ -1306,7 +1306,8 @@ async function init() {
 init();
 
 /**
- * Thêm đường đồng mức (Contour Lines), độ cao 3D (Terrain DEM) và nút Bật/Tắt đường đồng mức lên bản đồ Mapbox công khai.
+ * Thêm đường đồng mức mật độ cao (Contour Lines), dải màu cao độ quang phổ (Elevation Spectrum Gradient)
+ * và nút Bật/Tắt đường đồng mức kèm Bảng chú giải cao độ (Elevation Legend).
  * @param {mapboxgl.Map} map - Mapbox map instance
  * @param {Object} options - { defaultVisible: true, showControl: true }
  */
@@ -1317,7 +1318,7 @@ function addContourLinesToMap(map, options = {}) {
 
   const initContours = () => {
     try {
-      // 1. Thêm nguồn Terrain DEM cho 3D địa hình
+      // 1. Thêm nguồn Terrain DEM cho 3D địa hình gồ gồ
       if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
           type: 'raster-dem',
@@ -1325,7 +1326,7 @@ function addContourLinesToMap(map, options = {}) {
           tileSize: 512,
           maxzoom: 14
         });
-        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.2 });
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       }
 
       // 2. Thêm nguồn Vector Đường Đồng Mức (Mapbox Terrain v2)
@@ -1336,7 +1337,25 @@ function addContourLinesToMap(map, options = {}) {
         });
       }
 
-      // 3. Lớp Đường Đồng Mức (Contour Lines)
+      // Dải màu dốc cao độ dải quang phổ (Spectrum Elevation Color Ramp: Xanh dương -> Xanh ngọc -> Xanh lá -> Vàng -> Cam -> Đỏ)
+      const contourColorRamp = [
+        'interpolate',
+        ['linear'],
+        ['get', 'ele'],
+        0,    '#1d4ed8', // 0m: Xanh dương đậm
+        100,  '#0284c7', // 100m: Xanh biển
+        300,  '#06b6d4', // 300m: Xanh lam sáng
+        450,  '#10b981', // 450m: Xanh lá cây
+        490,  '#22c55e', // 490m: Xanh lá mạ
+        500,  '#84cc16', // 500m: Xanh đọt chuối
+        504,  '#eab308', // 504m: Vàng tươi
+        508,  '#f97316', // 508m: Cam
+        512,  '#ef4444', // 512m: Đỏ tươi
+        800,  '#dc2626', // 800m: Đỏ sẫm
+        1500, '#991b1b'  // 1500m: Đỏ đậm
+      ];
+
+      // 3. Lớp Đường Đồng Mức Năng Động Mật Độ Cao (High-Density Contour Lines)
       if (!map.getLayer('contour-lines')) {
         map.addLayer({
           id: 'contour-lines',
@@ -1349,45 +1368,45 @@ function addContourLinesToMap(map, options = {}) {
             'visibility': defaultVisible ? 'visible' : 'none'
           },
           paint: {
-            'line-color': [
-              'match',
-              ['get', 'index'],
-              5, '#f59e0b',
-              10, '#d97706',
-              '#eab308'
-            ],
+            'line-color': contourColorRamp,
             'line-width': [
-              'match',
-              ['get', 'index'],
-              5, 1.8,
-              10, 2.2,
-              0.9
+              'interpolate',
+              ['exponential', 1.5],
+              ['zoom'],
+              11, 0.6,
+              14, 1.4,
+              17, 2.8
             ],
-            'line-opacity': 0.85
+            'line-opacity': 0.9
           }
         });
       }
 
-      // 4. Lớp nhãn chỉ số Cao độ (Contour Elevation Labels - VD: 250 m)
+      // 4. Lớp nhãn số chỉ cao độ m (Contour Elevation Labels)
       if (!map.getLayer('contour-labels')) {
         map.addLayer({
           id: 'contour-labels',
           type: 'symbol',
           source: 'mapbox-terrain-contours',
           'source-layer': 'contour',
-          filter: ['>=', ['get', 'index'], 5],
           layout: {
             'symbol-placement': 'line',
             'text-field': ['concat', ['get', 'ele'], ' m'],
-            'text-size': 11,
+            'text-size': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              12, 9,
+              16, 12
+            ],
             'text-allow-overlap': false,
             'text-ignore-placement': false,
-            'text-max-angle': 30,
+            'text-max-angle': 35,
             'visibility': defaultVisible ? 'visible' : 'none'
           },
           paint: {
-            'text-color': '#f59e0b',
-            'text-halo-color': 'rgba(0, 0, 0, 0.85)',
+            'text-color': contourColorRamp,
+            'text-halo-color': 'rgba(0, 0, 0, 0.9)',
             'text-halo-width': 2
           }
         });
@@ -1406,7 +1425,7 @@ function addContourLinesToMap(map, options = {}) {
             const btn = document.createElement('button');
             btn.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btn.type = 'button';
-            btn.title = 'Bật/Tắt đường đồng mức (Contour Lines)';
+            btn.title = 'Bật/Tắt đường đồng mức mật độ cao (Contour Lines)';
             btn.setAttribute('aria-label', 'Toggle Contour Lines');
             btn.style.cssText = `
               display: flex;
@@ -1416,7 +1435,7 @@ function addContourLinesToMap(map, options = {}) {
               height: 29px;
               font-size: 13px;
               font-weight: bold;
-              background: ${defaultVisible ? 'rgba(245, 158, 11, 0.2)' : 'transparent'};
+              background: ${defaultVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent'};
               color: ${defaultVisible ? '#f59e0b' : '#555'};
               border: none;
               cursor: pointer;
@@ -1431,8 +1450,11 @@ function addContourLinesToMap(map, options = {}) {
               if (m.getLayer('contour-lines')) m.setLayoutProperty('contour-lines', 'visibility', visVal);
               if (m.getLayer('contour-labels')) m.setLayoutProperty('contour-labels', 'visibility', visVal);
 
-              btn.style.background = isVisible ? 'rgba(245, 158, 11, 0.2)' : 'transparent';
+              btn.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
               btn.style.color = isVisible ? '#f59e0b' : '#555';
+
+              const legendEl = m.getContainer().querySelector('.elevation-legend-widget');
+              if (legendEl) legendEl.style.display = isVisible ? 'flex' : 'none';
             };
 
             this._container.appendChild(btn);
@@ -1448,6 +1470,50 @@ function addContourLinesToMap(map, options = {}) {
         }
 
         map.addControl(new ContourToggleControl(), 'top-right');
+
+        // 6. Thêm Bảng Chú Giải Dải Màu Cao Độ (Elevation Spectrum Legend Widget)
+        const mapContainer = map.getContainer();
+        if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget')) {
+          const legend = document.createElement('div');
+          legend.className = 'elevation-legend-widget';
+          legend.style.cssText = `
+            position: absolute;
+            bottom: 24px;
+            right: 10px;
+            z-index: 8;
+            background: rgba(7, 25, 16, 0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 8px 10px;
+            color: #fff;
+            font-size: 11px;
+            display: ${defaultVisible ? 'flex' : 'none'};
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            pointer-events: none;
+          `;
+          legend.innerHTML = `
+            <div style="font-weight:700; margin-bottom:6px; font-size:10px; text-transform:uppercase; color:#9ca3af; letter-spacing:0.5px;">Cao độ (m)</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="
+                width: 10px;
+                height: 110px;
+                border-radius: 5px;
+                background: linear-gradient(to top, #1d4ed8, #06b6d4, #10b981, #84cc16, #eab308, #f97316, #ef4444);
+                border: 1px solid rgba(255,255,255,0.3);
+              "></div>
+              <div style="display:flex; flex-direction:column; justify-content:space-between; height:110px; font-size:9px; font-weight:700; color:#e5e7eb;">
+                <span style="color:#ef4444;">Cao ▲</span>
+                <span style="color:#eab308;">TB</span>
+                <span style="color:#06b6d4;">Thấp ▼</span>
+              </div>
+            </div>
+          `;
+          mapContainer.appendChild(legend);
+        }
       }
     } catch (err) {
       console.warn('Cảnh báo hiển thị đường đồng mức:', err);
