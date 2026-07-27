@@ -72,6 +72,7 @@ function initDashboardMap(farms, plants) {
   }
 
   map.addControl(new mapboxgl.NavigationControl());
+  map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
   map.on('load', () => {
     const bounds = new mapboxgl.LngLatBounds();
@@ -291,6 +292,7 @@ function initGisMap(farms, plants) {
   }
 
   gMap.addControl(new mapboxgl.NavigationControl());
+  gMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
   drawControl = new MapboxDraw({
     displayControlsDefault: false,

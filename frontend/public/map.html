@@ -82,6 +82,7 @@
         });
 
         map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right');
+        map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
         // Location tracker
         const geolocate = new mapboxgl.GeolocateControl({

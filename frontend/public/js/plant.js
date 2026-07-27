@@ -742,6 +742,7 @@ async function renderPlant(plant) {
       preserveDrawingBuffer: true
     });
     plantMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    plantMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
     plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     // Add contour lines (đường đồng mức) & 3D terrain elevation to public plant map

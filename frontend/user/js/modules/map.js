@@ -74,6 +74,7 @@ export function initUserMap(farms, plants) {
   if (map.getZoom() < 16.5) mapDiv.classList.add('low-zoom');
 
   map.addControl(new mapboxgl.NavigationControl());
+  map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
   map.on('load', () => {
     const bounds    = new mapboxgl.LngLatBounds();
