@@ -699,16 +699,33 @@ export function openFarmA4ExportModal(map) {
   let ownerName = 'Khách Hàng Tanbao';
   let performerName = 'Kỹ sư Tanbao Corp';
   let farmCoords = [];
+  let areaSqM = 0;
   let plantCount = 0;
 
-  if (window.plantData) {
+  if (window.userFarms && Array.isArray(window.userFarms) && window.userFarms.length > 0) {
+    const f = window.userFarms[0];
+    if (f.name) farmName = f.name;
+    if (f.owner_name || f.user_name) ownerName = f.owner_name || f.user_name;
+    if (f.area) areaSqM = Math.round(parseFloat(f.area));
+    if (f.polygon_coordinates) {
+      try {
+        const parsed = typeof f.polygon_coordinates === 'string' ? JSON.parse(f.polygon_coordinates) : f.polygon_coordinates;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          farmCoords = Array.isArray(parsed[0]) && Array.isArray(parsed[0][0]) ? parsed[0] : parsed;
+        }
+      } catch (_) {}
+    }
+  } else if (window.plantData) {
     if (window.plantData.name) farmName = window.plantData.name;
     if (window.plantData.farm && window.plantData.farm.name) farmName = window.plantData.farm.name;
     if (window.plantData.owner_name) ownerName = window.plantData.owner_name;
     if (window.plantData.farm && window.plantData.farm.owner_name) ownerName = window.plantData.farm.owner_name;
+    if (window.plantData.farm_boundary && window.plantData.farm_boundary.coordinates) {
+      farmCoords = window.plantData.farm_boundary.coordinates[0];
+    }
   }
 
-  if (map.getStyle()) {
+  if (farmCoords.length === 0 && map.getStyle()) {
     const styleLayers = map.getStyle().layers || [];
     const farmLayers = styleLayers.filter(l => 
       l.id.includes('farm') || l.id.includes('polygon') || (l.type === 'fill' && !l.id.includes('mapbox'))
@@ -726,12 +743,73 @@ export function openFarmA4ExportModal(map) {
     });
   }
 
+  // Thuật toán lật trang trại thẳng đứng
+  const getMajorAxisBearing = (coords) => {
+    if (!coords || coords.length < 2) return 0;
+    let maxDistSq = 0;
+    let pA = coords[0];
+    let pB = coords[1];
+
+    for (let i = 0; i < coords.length; i++) {
+      for (let j = i + 1; j < coords.length; j++) {
+        const dx = coords[j][0] - coords[i][0];
+        const dy = coords[j][1] - coords[i][1];
+        const d2 = dx * dx + dy * dy;
+        if (d2 > maxDistSq) {
+          maxDistSq = d2;
+          pA = coords[i];
+          pB = coords[j];
+        }
+      }
+    }
+
+    const rad = Math.PI / 180;
+    const lat1 = pA[1] * rad;
+    const lat2 = pB[1] * rad;
+    const dLng = (pB[0] - pA[0]) * rad;
+
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    let bearing = Math.atan2(y, x) * (180 / Math.PI);
+    return (bearing + 360) % 360;
+  };
+
+  const oldCenter = map.getCenter();
+  const oldZoom = map.getZoom();
+  const oldBearing = map.getBearing();
+  const oldPitch = map.getPitch();
+
+  let uprightBearing = 0;
+  if (farmCoords && farmCoords.length >= 3) {
+    const bounds = new mapboxgl.LngLatBounds();
+    farmCoords.forEach(c => bounds.extend(c));
+    uprightBearing = getMajorAxisBearing(farmCoords);
+
+    try {
+      map.fitBounds(bounds, {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        bearing: uprightBearing,
+        pitch: 0,
+        animate: false
+      });
+    } catch (_) {}
+  }
+
   let mapImageDataUrl = '';
   try {
     mapImageDataUrl = map.getCanvas().toDataURL('image/png');
   } catch (err) {
     console.warn('Cảnh báo chụp ảnh bản đồ:', err);
   }
+
+  try {
+    map.jumpTo({
+      center: oldCenter,
+      zoom: oldZoom,
+      bearing: oldBearing,
+      pitch: oldPitch
+    });
+  } catch (_) {}
 
   const getDist = (p1, p2) => {
     const R = 6371000;
@@ -746,7 +824,6 @@ export function openFarmA4ExportModal(map) {
 
   let edgeRowsHtml = '';
   let perimeter = 0;
-  let areaSqM = 0;
 
   if (farmCoords && farmCoords.length >= 3) {
     for (let i = 0; i < farmCoords.length - 1; i++) {
@@ -760,15 +837,17 @@ export function openFarmA4ExportModal(map) {
       `;
     }
 
-    const rad = Math.PI / 180;
-    const R = 6371000;
-    let accArea = 0;
-    for (let i = 0; i < farmCoords.length - 1; i++) {
-      const p1 = farmCoords[i];
-      const p2 = farmCoords[i + 1];
-      accArea += (p2[0] - p1[0]) * rad * (2 + Math.sin(p1[1] * rad) + Math.sin(p2[1] * rad));
+    if (!areaSqM) {
+      const rad = Math.PI / 180;
+      const R = 6371000;
+      let accArea = 0;
+      for (let i = 0; i < farmCoords.length - 1; i++) {
+        const p1 = farmCoords[i];
+        const p2 = farmCoords[i + 1];
+        accArea += (p2[0] - p1[0]) * rad * (2 + Math.sin(p1[1] * rad) + Math.sin(p2[1] * rad));
+      }
+      areaSqM = Math.round(Math.abs(accArea * R * R / 2));
     }
-    areaSqM = Math.round(Math.abs(accArea * R * R / 2));
   } else {
     edgeRowsHtml = `<tr><td colspan="2" style="padding:6px; text-align:center; color:#94a3b8; font-style:italic;">Chưa chọn ranh giới trang trại</td></tr>`;
   }
@@ -781,6 +860,10 @@ export function openFarmA4ExportModal(map) {
   const scaleRatio = Math.round(mPerPx / 0.000264583);
   const scaleText = `1 : ${scaleRatio.toLocaleString('vi-VN')}`;
   const exportDate = new Date().toLocaleDateString('vi-VN');
+
+  let contourInterval = 2.5 - (zoom - 16.0) * 0.5;
+  contourInterval = Math.max(0.5, Math.min(10.0, contourInterval));
+  contourInterval = Math.round(contourInterval * 2) / 2;
 
   let minEle = 735, maxEle = 765;
   const legendEl = map.getContainer().querySelector('.elevation-legend-widget-container');
@@ -825,8 +908,8 @@ export function openFarmA4ExportModal(map) {
       <div style="display:flex; align-items:center; gap:10px;">
         <span style="font-size:22px;">📐</span>
         <div>
-          <h3 style="font-size:16px; font-weight:800; margin:0; color:#4ade80;">XUẤT BẢN VẼ TRANG TRẠI A4 NẰM NGANG</h3>
-          <p style="font-size:12px; color:#94a3b8; margin:0;">Bao gồm Khung thông tin, Đường đồng mức 1m & Chiều dài kích thước ranh giới</p>
+          <h3 style="font-size:16px; font-weight:800; margin:0; color:#4ade80;">XUẤT BẢN VẼ KỸ THUẬT TRANG TRẠI A4 NẰM NGANG</h3>
+          <p style="font-size:12px; color:#94a3b8; margin:0;">Bản vẽ lật thẳng đứng theo chuẩn CAD/GIS | Khoảng cách đường đồng mức ${contourInterval}m</p>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
@@ -866,7 +949,7 @@ export function openFarmA4ExportModal(map) {
           <img src="/assets/logo.png" style="height:38px;" onerror="this.style.display='none'">
           <div>
             <h2 style="font-size:15px; font-weight:800; color:#15803d; margin:0; text-transform:uppercase; letter-spacing:0.5px;">TANBAO CORP — HỆ THỐNG GIS BẢN VẼ TRANG TRẠI</h2>
-            <div style="font-size:10.5px; color:#475569; font-weight:600;">HỒ SƠ BẢN VẼ ĐỊA HÌNH, RANH GIỚI & ĐƯỜNG ĐỒNG MỨC</div>
+            <div style="font-size:10.5px; color:#475569; font-weight:600;">HỒ SƠ BẢN VẼ KỸ THUẬT ĐỊA HÌNH, RANH GIỚI & KÍCH THƯỚC CHI TIẾT</div>
           </div>
         </div>
         <div style="text-align:right;">
@@ -882,7 +965,7 @@ export function openFarmA4ExportModal(map) {
             ⬆️ HƯỚNG BẮC (N)
           </div>
           <div style="position:absolute; bottom:10px; left:10px; background:rgba(15,23,42,0.85); color:#fff; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:700;">
-            ⛰️ Đường đồng mức interval = 1.0m
+            ⛰️ Đường đồng mức interval = ${contourInterval}m
           </div>
         </div>
 
@@ -900,10 +983,11 @@ export function openFarmA4ExportModal(map) {
                 <td style="padding:3px 0; color:#475569;">Chu vi ranh giới:</td>
                 <td style="padding:3px 0; text-align:right; font-weight:800; color:#0f172a;">${perimeter.toLocaleString('vi-VN')} m</td>
               </tr>
+              ${plantCount ? `
               <tr>
                 <td style="padding:3px 0; color:#475569;">Số lượng cây trồng:</td>
                 <td style="padding:3px 0; text-align:right; font-weight:800; color:#2563eb;">${plantCount} cây</td>
-              </tr>
+              </tr>` : ''}
               <tr>
                 <td style="padding:3px 0; color:#475569;">Chênh lệch cao độ:</td>
                 <td style="padding:3px 0; text-align:right; font-weight:800; color:#d97706;">${minEle}m — ${maxEle}m (Δ ${maxEle - minEle}m)</td>
@@ -1016,7 +1100,6 @@ export function openFarmA4ExportModal(map) {
         console.error('Lỗi xuất PDF:', err);
         btn.innerHTML = '📥 Tải PDF (A4 Nằm Ngang)';
         btn.disabled = false;
-        alert('Đã mở cửa sổ in bản vẽ A4 cho bạn.');
         document.getElementById('btn-do-print-a4').click();
       });
     } else {
