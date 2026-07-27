@@ -553,7 +553,7 @@ function addContourLinesToMap(map, options = {}) {
                 'visibility': defaultVisible ? 'visible' : 'none'
               },
               paint: {
-                'line-color': contourColorRamp,
+                'line-color': dynamicRamp,
                 'line-width': [
                   'interpolate',
                   ['exponential', 1.5],
@@ -577,18 +577,18 @@ function addContourLinesToMap(map, options = {}) {
                   'interpolate',
                   ['linear'],
                   ['zoom'],
-                  12, 9,
-                  16, 12
+                  12, 10,
+                  16, 13
                 ],
-                'text-allow-overlap': false,
+                'text-allow-overlap': true,
                 'text-ignore-placement': false,
-                'text-max-angle': 35,
+                'text-max-angle': 45,
                 'visibility': defaultVisible ? 'visible' : 'none'
               },
               paint: {
-                'text-color': contourColorRamp,
-                'text-halo-color': 'rgba(0, 0, 0, 0.9)',
-                'text-halo-width': 2
+                'text-color': dynamicRamp,
+                'text-halo-color': 'rgba(0, 0, 0, 0.95)',
+                'text-halo-width': 2.5
               }
             });
           }
@@ -599,46 +599,53 @@ function addContourLinesToMap(map, options = {}) {
         }
       };
 
+      // Cập nhật Bảng Chú Giải Cao Độ Dạng Thanh Dải Màu Sang Trọng (Không Cuộn, Không Giật)
       const updateLegendWidget = (minEle, maxEle) => {
         const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
         if (!legendContainer) return;
 
         const minE = Math.floor(minEle);
         const maxE = Math.ceil(maxEle);
-        const span = maxE - minE;
-        const step = span > 25 ? Math.ceil(span / 20) : 1;
-
-        let badgesHtml = '';
-        for (let ele = maxE; ele >= minE; ele -= step) {
-          const color = getDynamicColorForEle(ele, minEle, maxEle);
-          badgesHtml += `
-            <div style="
-              background: ${color};
-              color: #ffffff;
-              font-weight: 800;
-              font-size: 11px;
-              padding: 2px 10px;
-              text-align: center;
-              text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-              line-height: 1.3;
-              letter-spacing: 0.5px;
-              font-family: system-ui, -apple-system, sans-serif;
-            ">${ele} m</div>
-          `;
-        }
+        const midE = Math.round((maxE + minE) / 2);
 
         legendContainer.innerHTML = `
           <div style="
+            background: rgba(10, 25, 18, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 10px 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            color: #fff;
+            font-family: system-ui, -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-            border: 1px solid rgba(255,255,255,0.25);
-            max-height: 360px;
-            overflow-y: auto;
+            align-items: center;
+            min-width: 80px;
+            pointer-events: auto;
           ">
-            ${badgesHtml}
+            <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#9ca3af; margin-bottom:8px; letter-spacing:0.5px;">Cao độ (m)</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="
+                width: 12px;
+                height: 140px;
+                border-radius: 6px;
+                background: linear-gradient(to top, 
+                  #000080, #0000cd, #0000ff, #0066ff, #0099ff,
+                  #00c8ff, #00f0ff, #00ffc8, #00ff99, #00ff33,
+                  #66ff00, #a6ff00, #ccff00, #ffff00, #ffcc00,
+                  #ff9900, #ff6600, #ff3300, #ff0000, #cc0000, #800000
+                );
+                border: 1px solid rgba(255,255,255,0.3);
+                box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+              "></div>
+              <div style="display:flex; flex-direction:column; justify-content:space-between; height:140px; font-size:11px; font-weight:800;">
+                <span style="color:#ef4444; text-shadow:0 1px 2px #000;">${maxE} m</span>
+                <span style="color:#eab308; text-shadow:0 1px 2px #000;">${midE} m</span>
+                <span style="color:#38bdf8; text-shadow:0 1px 2px #000;">${minE} m</span>
+              </div>
+            </div>
           </div>
         `;
       };
