@@ -1590,8 +1590,8 @@ function addContourLinesToMap(map, options = {}) {
               data: geoData
             });
 
-            // ─── Bình độ con: nét liền mảnh | Bình độ cái: nét liền đậm ───
-            const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 10], 0];
+            // ─── Bình độ cái (% 5 === 0): Nét đậm 7px | Bình độ con: Nét 2.5px ───
+            const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 5], 0];
 
             map.addLayer({
               id: 'dense-1m-contour-lines',
@@ -1606,31 +1606,26 @@ function addContourLinesToMap(map, options = {}) {
                 'line-color': dynamicRamp,
                 'line-width': [
                   'interpolate', ['exponential', 1.5], ['zoom'],
-                  12, ['case', isMajor, 2.2, 0.7],
-                  15, ['case', isMajor, 3.5, 1.2],
-                  18, ['case', isMajor, 5.0, 1.8]
+                  12, ['case', isMajor, 3.5, 1.5],
+                  15, ['case', isMajor, 5.0, 2.0],
+                  18, ['case', isMajor, 7.0, 2.5]
                 ],
-                'line-opacity': ['case', isMajor, 0.95, 0.55]
+                'line-opacity': ['case', isMajor, 0.95, 0.8]
               }
             });
 
-            // ─── Nhãn số: chỉ hiển thị trên bình độ cái (mỗi 10m) ───
+            // ─── Nhãn số cao độ: Nhét trực tiếp vào tất cả các đường đồng mức (có nhãn cho cả 2 loại) ───
             map.addLayer({
               id: 'dense-1m-contour-labels',
               type: 'symbol',
               source: 'dense-1m-contours',
               layout: {
                 'symbol-placement': 'line',
-                'text-field': [
-                  'case',
-                  isMajor,
-                  ['concat', ['to-string', ['get', 'ele']], ' m'],
-                  ''
-                ],
+                'text-field': ['concat', ['to-string', ['get', 'ele']], ' m'],
                 'text-size': [
                   'interpolate', ['linear'], ['zoom'],
-                  12, 10,
-                  16, 13
+                  12, ['case', isMajor, 10, 8.5],
+                  16, ['case', isMajor, 13, 10.5]
                 ],
                 'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
                 'text-allow-overlap': false,
@@ -1640,7 +1635,7 @@ function addContourLinesToMap(map, options = {}) {
               },
               paint: {
                 'text-color': dynamicRamp,
-                'text-halo-color': 'rgba(0, 0, 0, 0.9)',
+                'text-halo-color': 'rgba(0, 0, 0, 0.92)',
                 'text-halo-width': 2.5
               }
             });
