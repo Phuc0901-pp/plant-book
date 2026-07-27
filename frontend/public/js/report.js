@@ -245,6 +245,7 @@
       });
 
       map.on('load', () => {
+        addContourLinesToMap(map);
         const bounds = new mapboxgl.LngLatBounds();
         let hasBounds = false;
 
@@ -316,5 +317,156 @@
       });
     }
 
-    // Run Startup logic
     window.onload = initReport;
+
+/**
+ * Thêm đường đồng mức (Contour Lines), độ cao 3D (Terrain DEM) và nút Bật/Tắt đường đồng mức lên bản đồ Mapbox báo cáo.
+ * @param {mapboxgl.Map} map - Mapbox map instance
+ * @param {Object} options - { defaultVisible: true, showControl: true }
+ */
+function addContourLinesToMap(map, options = {}) {
+  if (!map) return;
+  const defaultVisible = options.defaultVisible !== false;
+  const showControl = options.showControl !== false;
+
+  const initContours = () => {
+    try {
+      if (!map.getSource('mapbox-dem')) {
+        map.addSource('mapbox-dem', {
+          type: 'raster-dem',
+          url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+          tileSize: 512,
+          maxzoom: 14
+        });
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.2 });
+      }
+
+      if (!map.getSource('mapbox-terrain-contours')) {
+        map.addSource('mapbox-terrain-contours', {
+          type: 'vector',
+          url: 'mapbox://mapbox.mapbox-terrain-v2'
+        });
+      }
+
+      if (!map.getLayer('contour-lines')) {
+        map.addLayer({
+          id: 'contour-lines',
+          type: 'line',
+          source: 'mapbox-terrain-contours',
+          'source-layer': 'contour',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+            'visibility': defaultVisible ? 'visible' : 'none'
+          },
+          paint: {
+            'line-color': [
+              'match',
+              ['get', 'index'],
+              5, '#f59e0b',
+              10, '#d97706',
+              '#eab308'
+            ],
+            'line-width': [
+              'match',
+              ['get', 'index'],
+              5, 1.8,
+              10, 2.2,
+              0.9
+            ],
+            'line-opacity': 0.85
+          }
+        });
+      }
+
+      if (!map.getLayer('contour-labels')) {
+        map.addLayer({
+          id: 'contour-labels',
+          type: 'symbol',
+          source: 'mapbox-terrain-contours',
+          'source-layer': 'contour',
+          filter: ['>=', ['get', 'index'], 5],
+          layout: {
+            'symbol-placement': 'line',
+            'text-field': ['concat', ['get', 'ele'], ' m'],
+            'text-size': 11,
+            'text-allow-overlap': false,
+            'text-ignore-placement': false,
+            'text-max-angle': 30,
+            'visibility': defaultVisible ? 'visible' : 'none'
+          },
+          paint: {
+            'text-color': '#f59e0b',
+            'text-halo-color': 'rgba(0, 0, 0, 0.85)',
+            'text-halo-width': 2
+          }
+        });
+      }
+
+      if (showControl && !map._contourControlAdded) {
+        map._contourControlAdded = true;
+
+        class ContourToggleControl {
+          onAdd(m) {
+            this._map = m;
+            this._container = document.createElement('div');
+            this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+            
+            const btn = document.createElement('button');
+            btn.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
+            btn.type = 'button';
+            btn.title = 'Bật/Tắt đường đồng mức (Contour Lines)';
+            btn.setAttribute('aria-label', 'Toggle Contour Lines');
+            btn.style.cssText = `
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 29px;
+              height: 29px;
+              font-size: 13px;
+              font-weight: bold;
+              background: ${defaultVisible ? 'rgba(245, 158, 11, 0.2)' : 'transparent'};
+              color: ${defaultVisible ? '#f59e0b' : '#555'};
+              border: none;
+              cursor: pointer;
+            `;
+            btn.innerHTML = '⛰️';
+
+            let isVisible = defaultVisible;
+
+            btn.onclick = () => {
+              isVisible = !isVisible;
+              const visVal = isVisible ? 'visible' : 'none';
+              if (m.getLayer('contour-lines')) m.setLayoutProperty('contour-lines', 'visibility', visVal);
+              if (m.getLayer('contour-labels')) m.setLayoutProperty('contour-labels', 'visibility', visVal);
+
+              btn.style.background = isVisible ? 'rgba(245, 158, 11, 0.2)' : 'transparent';
+              btn.style.color = isVisible ? '#f59e0b' : '#555';
+            };
+
+            this._container.appendChild(btn);
+            return this._container;
+          }
+
+          onRemove() {
+            if (this._container && this._container.parentNode) {
+              this._container.parentNode.removeChild(this._container);
+            }
+            this._map = undefined;
+          }
+        }
+
+        map.addControl(new ContourToggleControl(), 'top-right');
+      }
+    } catch (err) {
+      console.warn('Cảnh báo hiển thị đường đồng mức:', err);
+    }
+  };
+
+  if (map.isStyleLoaded()) {
+    initContours();
+  } else {
+    map.once('load', initContours);
+  }
+}
+

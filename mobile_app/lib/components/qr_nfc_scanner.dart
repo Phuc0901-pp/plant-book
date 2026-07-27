@@ -559,7 +559,7 @@ class _NfcScannerPageState extends State<NfcScannerPage>
                     _statusText = 'Đưa điện thoại lại gần thẻ NFC...';
                   });
                   _rippleController.repeat();
-                  _startNfcReading();
+                  _initNfc();
                 },
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Thử lại'),
