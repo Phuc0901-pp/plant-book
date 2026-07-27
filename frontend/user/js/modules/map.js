@@ -855,28 +855,6 @@ export function openFarmA4ExportModal(map) {
 
   if (window.userMarkers && Array.isArray(window.userMarkers)) plantCount = window.userMarkers.length;
 
-  const center = map.getCenter();
-  const zoom = map.getZoom();
-  const mPerPx = (156543.03392 * Math.cos(center.lat * Math.PI / 180)) / Math.pow(2, zoom);
-  const scaleRatio = Math.round(mPerPx / 0.000264583);
-  const scaleText = `1 : ${scaleRatio.toLocaleString('vi-VN')}`;
-  const exportDate = new Date().toLocaleDateString('vi-VN');
-
-  let contourInterval = 2.5 - (zoom - 16.0) * 0.5;
-  contourInterval = Math.max(0.5, Math.min(10.0, contourInterval));
-  contourInterval = Math.round(contourInterval * 2) / 2;
-
-  let minEle = 735, maxEle = 765;
-  const legendEl = map.getContainer().querySelector('.elevation-legend-widget-container');
-  if (legendEl) {
-    const text = legendEl.innerText;
-    const matches = text.match(/(\d+)\s*m/g);
-    if (matches && matches.length >= 2) {
-      maxEle = parseInt(matches[0]);
-      minEle = parseInt(matches[matches.length - 1]);
-    }
-  }
-
   let modalContainer = document.getElementById('farm-a4-export-modal');
   if (modalContainer) modalContainer.remove();
 
@@ -898,7 +876,36 @@ export function openFarmA4ExportModal(map) {
     overflow-y: auto;
   `;
 
+  const docCodeDefault = `TB-CAD-USER-${Date.now().toString().slice(-6)}`;
+
   modalContainer.innerHTML = `
+    <style>
+      .a4-edit-field {
+        border: 1px dashed #94a3b8 !important;
+        background: #f8fafc !important;
+        padding: 2px 5px !important;
+        border-radius: 4px !important;
+        font-family: inherit !important;
+        color: inherit !important;
+        box-sizing: border-box !important;
+        transition: all 0.2s ease !important;
+      }
+      .a4-edit-field:focus {
+        border-color: #2563eb !important;
+        background: #ffffff !important;
+        outline: none !important;
+        box-shadow: 0 0 0 2px rgba(37,99,235,0.25) !important;
+      }
+      .a4-print-mode .a4-edit-field {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+      }
+    </style>
+
     <div style="
       width: 100%; max-width: 1100px;
       display: flex; justify-content: space-between; align-items: center;
@@ -907,10 +914,10 @@ export function openFarmA4ExportModal(map) {
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     ">
       <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:22px;">📐</span>
+        <i class="fa-solid fa-drafting-compass" style="font-size:22px; color:#4ade80;"></i>
         <div>
           <h3 style="font-size:16px; font-weight:800; margin:0; color:#4ade80;">XUẤT BẢN VẼ KỸ THUẬT TRANG TRẠI A4 NẰM NGANG</h3>
-          <p style="font-size:12px; color:#94a3b8; margin:0;">Bản vẽ lật thẳng đứng theo chuẩn CAD/GIS | Khoảng cách đường đồng mức ${contourInterval}m</p>
+          <p style="font-size:12px; color:#94a3b8; margin:0;">Nhập trực tiếp thông tin hồ sơ | Tỷ lệ 1:1 | Sai số ±3% | Chú giải dải màu đồng mức</p>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
@@ -919,14 +926,14 @@ export function openFarmA4ExportModal(map) {
           border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(59,130,246,0.4);
         ">
-          🖨️ In bản vẽ (Print)
+          <i class="fa-solid fa-print"></i> In bản vẽ (Print)
         </button>
         <button id="btn-download-pdf-a4" style="
           background: #16a34a; color: #fff; border: none; padding: 8px 18px;
           border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(22,163,74,0.4);
         ">
-          📥 Tải PDF (A4 Nằm Ngang)
+          <i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)
         </button>
         <button id="btn-close-a4-modal" style="
           background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 8px 14px;
@@ -946,34 +953,37 @@ export function openFarmA4ExportModal(map) {
       border: 2px solid #000; font-family: 'Segoe UI', Roboto, sans-serif;
     ">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2.5px solid #16a34a; padding-bottom:6px; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px; flex:1;">
           <img src="/assets/logo.png" style="height:38px;" onerror="this.style.display='none'">
-          <div>
+          <div style="flex:1;">
             <h2 style="font-size:15px; font-weight:800; color:#15803d; margin:0; text-transform:uppercase; letter-spacing:0.5px;">TANBAO CORP — HỆ THỐNG GIS BẢN VẼ TRANG TRẠI</h2>
-            <div style="font-size:10.5px; color:#475569; font-weight:600;">HỒ SƠ BẢN VẼ KỸ THUẬT ĐỊA HÌNH, RANH GIỚI & KÍCH THƯỚC CHI TIẾT</div>
+            <input type="text" id="a4-input-doc-title" class="a4-edit-field" value="HỒ SƠ BẢN VẼ KỸ THUẬT ĐỊA HÌNH, RANH GIỚI & KÍCH THƯỚC CHI TIẾT" style="font-size:10.5px; font-weight:700; color:#475569; width:95%; margin-top:2px;">
           </div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:13px; font-weight:800; color:#0f172a; text-transform:uppercase;">BẢN VẼ A4 CHUẨN TỶ LỆ</div>
-          <div style="font-size:10px; color:#64748b;">Mã Hồ Sơ: <strong>TB-CAD-FARM-${Date.now().toString().slice(-6)}</strong></div>
+          <div style="font-size:10px; color:#64748b; margin-top:2px; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+            <span>Mã Hồ Sơ:</span>
+            <input type="text" id="a4-input-doc-code" class="a4-edit-field" value="${docCodeDefault}" style="font-size:10px; font-weight:800; color:#0f172a; width:160px; text-align:right;">
+          </div>
         </div>
       </div>
 
       <div style="display:flex; gap:12px; flex:1; overflow:hidden;">
         <div style="flex:1.75; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; display:flex; align-items:center; justify-content:center; background:#e2e8f0;">
           <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
-          <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.92); padding:4px 10px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
-            ⬆️ HƯỚNG BẮC (N)
+          <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.92); padding:4px 10px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.2); display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-compass" style="color:#0f172a;"></i> HƯỚNG BẮC (N)
           </div>
-          <div style="position:absolute; bottom:10px; left:10px; background:rgba(15,23,42,0.85); color:#fff; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:700;">
-            ⛰️ Đường đồng mức interval = ${contourInterval}m
+          <div style="position:absolute; bottom:10px; left:10px; background:rgba(15,23,42,0.85); color:#fff; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:700; display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-mountain-sun" style="color:#4ade80;"></i> Đường đồng mức interval = ${contourInterval}m
           </div>
         </div>
 
-        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
           <div style="border:1.5px solid #000; border-radius:4px; padding:8px; background:#f0fdf4;">
-            <div style="font-weight:800; font-size:11px; color:#15803d; border-bottom:1px solid #bbf7d0; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase;">
-              📊 THỐNG KÊ KÍCH THƯỚC TRANG TRẠI
+            <div style="font-weight:800; font-size:11px; color:#15803d; border-bottom:1px solid #bbf7d0; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-chart-pie"></i> THỐNG KÊ KÍCH THƯỚC TRANG TRẠI
             </div>
             <table style="width:100%; font-size:10.5px; border-collapse:collapse;">
               <tr>
@@ -993,12 +1003,44 @@ export function openFarmA4ExportModal(map) {
                 <td style="padding:3px 0; color:#475569;">Chênh lệch cao độ:</td>
                 <td style="padding:3px 0; text-align:right; font-weight:800; color:#d97706;">${minEle}m — ${maxEle}m (Δ ${maxEle - minEle}m)</td>
               </tr>
+              <tr>
+                <td style="padding:3px 0; color:#dc2626; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
+                <td style="padding:3px 0; text-align:right; font-weight:800; color:#dc2626;">± 3%</td>
+              </tr>
             </table>
           </div>
 
+          <div style="border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#fff;">
+            <div style="font-weight:800; font-size:10px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:3px; margin-bottom:5px; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-palette" style="color:#2563eb;"></i> CHÚ GIẢI DẢI MÀU CAO ĐỘ (${contourInterval}M/BẬC)
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:9.5px; font-weight:700;">
+              <div style="flex:1; text-align:center;">
+                <div style="height:10px; background:#ef4444; border-radius:2px; margin-bottom:2px;"></div>
+                <span style="color:#ef4444;">${maxEle}m</span>
+              </div>
+              <div style="flex:1; text-align:center;">
+                <div style="height:10px; background:#f97316; border-radius:2px; margin-bottom:2px;"></div>
+                <span style="color:#f97316;">${Math.round(minEle + (maxEle - minEle)*0.75)}m</span>
+              </div>
+              <div style="flex:1; text-align:center;">
+                <div style="height:10px; background:#eab308; border-radius:2px; margin-bottom:2px;"></div>
+                <span style="color:#ca8a04;">${Math.round(minEle + (maxEle - minEle)*0.5)}m</span>
+              </div>
+              <div style="flex:1; text-align:center;">
+                <div style="height:10px; background:#22c55e; border-radius:2px; margin-bottom:2px;"></div>
+                <span style="color:#16a34a;">${Math.round(minEle + (maxEle - minEle)*0.25)}m</span>
+              </div>
+              <div style="flex:1; text-align:center;">
+                <div style="height:10px; background:#3b82f6; border-radius:2px; margin-bottom:2px;"></div>
+                <span style="color:#2563eb;">${minEle}m</span>
+              </div>
+            </div>
+          </div>
+
           <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:8px; background:#fff; overflow-y:auto;">
-            <div style="font-weight:800; font-size:11px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase;">
-              📏 CHIỀU DÀI CÁC CẠNH RANH GIỚI
+            <div style="font-weight:800; font-size:11px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-ruler-horizontal"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
             </div>
             <table style="width:100%; font-size:10px; border-collapse:collapse;">
               <thead>
@@ -1018,25 +1060,35 @@ export function openFarmA4ExportModal(map) {
       <div style="margin-top:10px; border:2px solid #000; background:#fff;">
         <table style="width:100%; border-collapse:collapse; font-size:10.5px;">
           <tr>
-            <td style="width:35%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">TÊN TRANG TRẠI</div>
-              <div style="font-size:13px; font-weight:800; color:#15803d; margin-top:2px;">🏡 ${farmName}</div>
+            <td style="width:33%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-house-chimney" style="color:#15803d;"></i> TÊN TRANG TRẠI
+              </div>
+              <input type="text" id="a4-input-farm-name" class="a4-edit-field" value="${farmName}" style="font-size:12px; font-weight:800; color:#15803d; width:100%; margin-top:2px;">
             </td>
-            <td style="width:25%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">KHÁCH HÀNG / NÔNG HỘ</div>
-              <div style="font-size:11.5px; font-weight:700; color:#0f172a; margin-top:2px;">👤 ${ownerName}</div>
+            <td style="width:27%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-user" style="color:#0f172a;"></i> KHÁCH HÀNG / NÔNG HỘ
+              </div>
+              <input type="text" id="a4-input-owner-name" class="a4-edit-field" value="${ownerName}" style="font-size:11px; font-weight:700; color:#0f172a; width:100%; margin-top:2px;">
             </td>
-            <td style="width:20%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">NGƯỜI THỰC HIỆN</div>
-              <div style="font-size:11.5px; font-weight:700; color:#0f172a; margin-top:2px;">✍️ ${performerName}</div>
+            <td style="width:22%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-user-gear" style="color:#0f172a;"></i> NGƯỜI THỰC HIỆN
+              </div>
+              <input type="text" id="a4-input-performer-name" class="a4-edit-field" value="${performerName}" style="font-size:11px; font-weight:700; color:#0f172a; width:100%; margin-top:2px;">
             </td>
-            <td style="width:10%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">NGÀY XUẤT</div>
-              <div style="font-size:11px; font-weight:700; margin-top:2px;">📅 ${exportDate}</div>
+            <td style="width:10%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-calendar-days" style="color:#64748b;"></i> NGÀY XUẤT
+              </div>
+              <div style="font-size:11px; font-weight:700; margin-top:4px;">${exportDate}</div>
             </td>
-            <td style="width:10%; padding:6px 10px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase;">TỶ LỆ</div>
-              <div style="font-size:12px; font-weight:800; color:#2563eb; margin-top:2px;">📐 ${scaleText}</div>
+            <td style="width:8%; padding:6px 8px; vertical-align:top;">
+              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-ruler-combined" style="color:#2563eb;"></i> TỶ LỆ
+              </div>
+              <input type="text" id="a4-input-scale-text" class="a4-edit-field" value="1 : 1" style="font-size:11.5px; font-weight:800; color:#2563eb; width:100%; margin-top:2px;">
             </td>
           </tr>
         </table>
@@ -1052,24 +1104,43 @@ export function openFarmA4ExportModal(map) {
     if (e.target === modalContainer) modalContainer.remove();
   };
 
+  const preparePrintMode = () => {
+    const paper = document.getElementById('a4-drawing-paper');
+    if (!paper) return;
+    paper.classList.add('a4-print-mode');
+    paper.querySelectorAll('.a4-edit-field').forEach(input => {
+      input.setAttribute('value', input.value);
+    });
+  };
+
+  const cleanupPrintMode = () => {
+    const paper = document.getElementById('a4-drawing-paper');
+    if (paper) paper.classList.remove('a4-print-mode');
+  };
+
   document.getElementById('btn-do-print-a4').onclick = () => {
+    preparePrintMode();
     const paperHtml = document.getElementById('a4-drawing-paper').outerHTML;
+    cleanupPrintMode();
+
     const printWin = window.open('', '_blank');
     printWin.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Ban_ve_trang_trai_${farmName.replace(/\s+/g, '_')}</title>
+        <title>Ban_ve_trang_trai</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
           @page { size: A4 landscape; margin: 0; }
           body { margin: 0; padding: 0; background: #fff; }
           #a4-drawing-paper { width: 297mm !important; height: 210mm !important; box-shadow: none !important; border-radius: 0 !important; }
+          .a4-edit-field { border: none !important; background: transparent !important; padding: 0 !important; box-shadow: none !important; }
         </style>
       </head>
       <body>
         ${paperHtml}
         <script>
-          setTimeout(() => { window.print(); window.close(); }, 500);
+          setTimeout(() => { window.print(); window.close(); }, 600);
         <\/script>
       </body>
       </html>
@@ -1079,9 +1150,10 @@ export function openFarmA4ExportModal(map) {
 
   document.getElementById('btn-download-pdf-a4').onclick = async () => {
     const btn = document.getElementById('btn-download-pdf-a4');
-    btn.innerHTML = '⏳ Đang tạo PDF...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo PDF...';
     btn.disabled = true;
 
+    preparePrintMode();
     const html2pdfLib = await loadHtml2Pdf();
     const element = document.getElementById('a4-drawing-paper');
 
