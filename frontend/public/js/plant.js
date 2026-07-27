@@ -1306,8 +1306,8 @@ async function init() {
 init();
 
 /**
- * Thêm đường đồng mức mật độ cao (Contour Lines), dải màu cao độ quang phổ (Elevation Spectrum Gradient)
- * và nút Bật/Tắt đường đồng mức kèm Bảng chú giải cao độ (Elevation Legend).
+ * Thêm đường đồng mức siêu dày mật độ 1m (1-Meter High-Density Contour Lines),
+ * dải màu cao độ quang phổ (Elevation Spectrum Gradient) và Bảng chú giải cao độ.
  * @param {mapboxgl.Map} map - Mapbox map instance
  * @param {Object} options - { defaultVisible: true, showControl: true }
  */
@@ -1318,7 +1318,7 @@ function addContourLinesToMap(map, options = {}) {
 
   const initContours = () => {
     try {
-      // 1. Thêm nguồn Terrain DEM cho 3D địa hình gồ gồ
+      // 1. Thêm nguồn Terrain DEM cho 3D địa hình
       if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
           type: 'raster-dem',
@@ -1329,7 +1329,7 @@ function addContourLinesToMap(map, options = {}) {
         map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       }
 
-      // 2. Thêm nguồn Vector Đường Đồng Mức (Mapbox Terrain v2)
+      // 2. Thêm nguồn Vector Đường Đồng Mức tiêu chuẩn Mapbox Terrain v2
       if (!map.getSource('mapbox-terrain-contours')) {
         map.addSource('mapbox-terrain-contours', {
           type: 'vector',
@@ -1337,7 +1337,7 @@ function addContourLinesToMap(map, options = {}) {
         });
       }
 
-      // Dải màu dốc cao độ dải quang phổ (Spectrum Elevation Color Ramp: Xanh dương -> Xanh ngọc -> Xanh lá -> Vàng -> Cam -> Đỏ)
+      // Dải màu dốc cao độ quang phổ (Spectrum Elevation Color Ramp)
       const contourColorRamp = [
         'interpolate',
         ['linear'],
@@ -1355,7 +1355,7 @@ function addContourLinesToMap(map, options = {}) {
         1500, '#991b1b'  // 1500m: Đỏ đậm
       ];
 
-      // 3. Lớp Đường Đồng Mức Năng Động Mật Độ Cao (High-Density Contour Lines)
+      // 3. Lớp Đường Đồng Mức Tiêu Chuẩn
       if (!map.getLayer('contour-lines')) {
         map.addLayer({
           id: 'contour-lines',
@@ -1382,7 +1382,6 @@ function addContourLinesToMap(map, options = {}) {
         });
       }
 
-      // 4. Lớp nhãn số chỉ cao độ m (Contour Elevation Labels)
       if (!map.getLayer('contour-labels')) {
         map.addLayer({
           id: 'contour-labels',
@@ -1412,7 +1411,190 @@ function addContourLinesToMap(map, options = {}) {
         });
       }
 
-      // 5. Nút Bật/Tắt đường đồng mức (Custom Mapbox Control Button)
+      // 4. Hàm Sinh Đường Đồng Mức Mật Độ Dày 1-Meter qua Marching Squares
+      const updateDense1mContours = () => {
+        try {
+          const bounds = map.getBounds();
+          if (!bounds) return;
+
+          const west = bounds.getWest();
+          const south = bounds.getSouth();
+          const east = bounds.getEast();
+          const north = bounds.getNorth();
+
+          const nx = 50;
+          const ny = 50;
+          const dx = (east - west) / (nx - 1);
+          const dy = (north - south) / (ny - 1);
+
+          const grid = [];
+          let minEle = Infinity;
+          let maxEle = -Infinity;
+          let hasTerrainData = false;
+
+          for (let r = 0; r < ny; r++) {
+            const lat = south + r * dy;
+            const row = [];
+            for (let c = 0; c < nx; c++) {
+              const lng = west + c * dx;
+              const ele = map.queryTerrainElevation([lng, lat]);
+              if (ele !== null && ele !== undefined) {
+                row.push(ele);
+                if (ele < minEle) minEle = ele;
+                if (ele > maxEle) maxEle = ele;
+                hasTerrainData = true;
+              } else {
+                row.push(0);
+              }
+            }
+            grid.push(row);
+          }
+
+          if (!hasTerrainData || minEle === Infinity || maxEle === -Infinity) return;
+
+          const startLevel = Math.floor(minEle);
+          const endLevel = Math.ceil(maxEle);
+          const features = [];
+
+          function interp(pA, pB, vA, vB, val) {
+            if (Math.abs(vB - vA) < 1e-6) return pA;
+            const t = (val - vA) / (vB - vA);
+            return [pA[0] + t * (pB[0] - pA[0]), pA[1] + t * (pB[1] - pA[1])];
+          }
+
+          for (let threshold = startLevel; threshold <= endLevel; threshold += 1.0) {
+            const segments = [];
+            for (let r = 0; r < ny - 1; r++) {
+              const lat0 = south + r * dy;
+              const lat1 = south + (r + 1) * dy;
+
+              for (let c = 0; c < nx - 1; c++) {
+                const lng0 = west + c * dx;
+                const lng1 = west + (c + 1) * dx;
+
+                const v0 = grid[r][c];
+                const v1 = grid[r][c + 1];
+                const v2 = grid[r + 1][c + 1];
+                const v3 = grid[r + 1][c];
+
+                const code = (v0 >= threshold ? 1 : 0) |
+                             (v1 >= threshold ? 2 : 0) |
+                             (v2 >= threshold ? 4 : 0) |
+                             (v3 >= threshold ? 8 : 0);
+
+                if (code === 0 || code === 15) continue;
+
+                const p0 = [lng0, lat0];
+                const p1 = [lng1, lat0];
+                const p2 = [lng1, lat1];
+                const p3 = [lng0, lat1];
+
+                const e0 = interp(p0, p1, v0, v1, threshold);
+                const e1 = interp(p1, p2, v1, v2, threshold);
+                const e2 = interp(p3, p2, v3, v2, threshold);
+                const e3 = interp(p0, p3, v0, v3, threshold);
+
+                switch (code) {
+                  case 1: case 14: segments.push([e3, e0]); break;
+                  case 2: case 13: segments.push([e0, e1]); break;
+                  case 3: case 12: segments.push([e3, e1]); break;
+                  case 4: case 11: segments.push([e1, e2]); break;
+                  case 5: segments.push([e3, e2]); segments.push([e0, e1]); break;
+                  case 6: case 9:  segments.push([e0, e2]); break;
+                  case 7: case 8:  segments.push([e3, e2]); break;
+                  case 10: segments.push([e3, e0]); segments.push([e1, e2]); break;
+                }
+              }
+            }
+
+            if (segments.length > 0) {
+              features.push({
+                type: 'Feature',
+                properties: { ele: Math.round(threshold) },
+                geometry: {
+                  type: 'MultiLineString',
+                  coordinates: segments
+                }
+              });
+            }
+          }
+
+          const geoData = { type: 'FeatureCollection', features };
+
+          if (map.getSource('dense-1m-contours')) {
+            map.getSource('dense-1m-contours').setData(geoData);
+          } else {
+            map.addSource('dense-1m-contours', {
+              type: 'geojson',
+              data: geoData
+            });
+
+            map.addLayer({
+              id: 'dense-1m-contour-lines',
+              type: 'line',
+              source: 'dense-1m-contours',
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round',
+                'visibility': defaultVisible ? 'visible' : 'none'
+              },
+              paint: {
+                'line-color': contourColorRamp,
+                'line-width': [
+                  'interpolate',
+                  ['exponential', 1.5],
+                  ['zoom'],
+                  12, 1.2,
+                  15, 2.2,
+                  18, 3.5
+                ],
+                'line-opacity': 0.95
+              }
+            });
+
+            map.addLayer({
+              id: 'dense-1m-contour-labels',
+              type: 'symbol',
+              source: 'dense-1m-contours',
+              layout: {
+                'symbol-placement': 'line',
+                'text-field': ['concat', ['get', 'ele'], ' m'],
+                'text-size': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  12, 9,
+                  16, 12
+                ],
+                'text-allow-overlap': false,
+                'text-ignore-placement': false,
+                'text-max-angle': 35,
+                'visibility': defaultVisible ? 'visible' : 'none'
+              },
+              paint: {
+                'text-color': contourColorRamp,
+                'text-halo-color': 'rgba(0, 0, 0, 0.9)',
+                'text-halo-width': 2
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('Lỗi sinh đường đồng mức 1m:', e);
+        }
+      };
+
+      let contourTimer = null;
+      const debouncedUpdate = () => {
+        clearTimeout(contourTimer);
+        contourTimer = setTimeout(updateDense1mContours, 300);
+      };
+
+      map.on('moveend', debouncedUpdate);
+      map.on('idle', debouncedUpdate);
+      setTimeout(updateDense1mContours, 600);
+      setTimeout(updateDense1mContours, 1500);
+
+      // 5. Nút Bật/Tắt đường đồng mức
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
 
@@ -1425,7 +1607,7 @@ function addContourLinesToMap(map, options = {}) {
             const btn = document.createElement('button');
             btn.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btn.type = 'button';
-            btn.title = 'Bật/Tắt đường đồng mức mật độ cao (Contour Lines)';
+            btn.title = 'Bật/Tắt đường đồng mức 1m mật độ dày (Contour Lines)';
             btn.setAttribute('aria-label', 'Toggle Contour Lines');
             btn.style.cssText = `
               display: flex;
@@ -1449,6 +1631,8 @@ function addContourLinesToMap(map, options = {}) {
               const visVal = isVisible ? 'visible' : 'none';
               if (m.getLayer('contour-lines')) m.setLayoutProperty('contour-lines', 'visibility', visVal);
               if (m.getLayer('contour-labels')) m.setLayoutProperty('contour-labels', 'visibility', visVal);
+              if (m.getLayer('dense-1m-contour-lines')) m.setLayoutProperty('dense-1m-contour-lines', 'visibility', visVal);
+              if (m.getLayer('dense-1m-contour-labels')) m.setLayoutProperty('dense-1m-contour-labels', 'visibility', visVal);
 
               btn.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
               btn.style.color = isVisible ? '#f59e0b' : '#555';
@@ -1471,7 +1655,7 @@ function addContourLinesToMap(map, options = {}) {
 
         map.addControl(new ContourToggleControl(), 'top-right');
 
-        // 6. Thêm Bảng Chú Giải Dải Màu Cao Độ (Elevation Spectrum Legend Widget)
+        // 6. Thêm Bảng Chú Giải Dải Màu Cao Độ
         const mapContainer = map.getContainer();
         if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget')) {
           const legend = document.createElement('div');
