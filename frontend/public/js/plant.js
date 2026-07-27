@@ -1563,8 +1563,8 @@ function addContourLinesToMap(map, options = {}) {
                   'interpolate',
                   ['linear'],
                   ['zoom'],
-                  12, 9,
-                  16, 12
+                  12, 10,
+                  16, 13
                 ],
                 'text-allow-overlap': false,
                 'text-ignore-placement': false,
@@ -1572,27 +1572,72 @@ function addContourLinesToMap(map, options = {}) {
                 'visibility': defaultVisible ? 'visible' : 'none'
               },
               paint: {
-                'text-color': contourColorRamp,
+                'text-color': dynamicRamp,
                 'text-halo-color': 'rgba(0, 0, 0, 0.9)',
                 'text-halo-width': 2
               }
             });
           }
+
+          updateLegendWidget(minEle, maxEle);
         } catch (e) {
-          console.warn('Lỗi sinh đường đồng mức 1m:', e);
+          console.warn('Lỗi sinh đường đồng mức nông trại:', e);
         }
+      };
+
+      const updateLegendWidget = (minEle, maxEle) => {
+        const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
+        if (!legendContainer) return;
+
+        const minE = Math.floor(minEle);
+        const maxE = Math.ceil(maxEle);
+        const span = maxE - minE;
+        const step = span > 25 ? Math.ceil(span / 20) : 1;
+
+        let badgesHtml = '';
+        for (let ele = maxE; ele >= minE; ele -= step) {
+          const color = getDynamicColorForEle(ele, minEle, maxEle);
+          badgesHtml += `
+            <div style="
+              background: ${color};
+              color: #ffffff;
+              font-weight: 800;
+              font-size: 11px;
+              padding: 2px 10px;
+              text-align: center;
+              text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+              line-height: 1.3;
+              letter-spacing: 0.5px;
+              font-family: system-ui, -apple-system, sans-serif;
+            ">${ele} m</div>
+          `;
+        }
+
+        legendContainer.innerHTML = `
+          <div style="
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.25);
+            max-height: 360px;
+            overflow-y: auto;
+          ">
+            ${badgesHtml}
+          </div>
+        `;
       };
 
       let contourTimer = null;
       const debouncedUpdate = () => {
         clearTimeout(contourTimer);
-        contourTimer = setTimeout(updateDense1mContours, 300);
+        contourTimer = setTimeout(updateDense1mContours, 500);
       };
 
       map.on('moveend', debouncedUpdate);
       map.on('idle', debouncedUpdate);
-      setTimeout(updateDense1mContours, 600);
-      setTimeout(updateDense1mContours, 1500);
+      setTimeout(updateDense1mContours, 1000);
 
       // 5. Nút Bật/Tắt đường đồng mức
       if (showControl && !map._contourControlAdded) {
@@ -1607,7 +1652,7 @@ function addContourLinesToMap(map, options = {}) {
             const btn = document.createElement('button');
             btn.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btn.type = 'button';
-            btn.title = 'Bật/Tắt đường đồng mức 1m mật độ dày (Contour Lines)';
+            btn.title = 'Bật/Tắt đường đồng mức 1m nông trại (Contour Lines)';
             btn.setAttribute('aria-label', 'Toggle Contour Lines');
             btn.style.cssText = `
               display: flex;
@@ -1629,16 +1674,14 @@ function addContourLinesToMap(map, options = {}) {
             btn.onclick = () => {
               isVisible = !isVisible;
               const visVal = isVisible ? 'visible' : 'none';
-              if (m.getLayer('contour-lines')) m.setLayoutProperty('contour-lines', 'visibility', visVal);
-              if (m.getLayer('contour-labels')) m.setLayoutProperty('contour-labels', 'visibility', visVal);
               if (m.getLayer('dense-1m-contour-lines')) m.setLayoutProperty('dense-1m-contour-lines', 'visibility', visVal);
               if (m.getLayer('dense-1m-contour-labels')) m.setLayoutProperty('dense-1m-contour-labels', 'visibility', visVal);
 
               btn.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
               btn.style.color = isVisible ? '#f59e0b' : '#555';
 
-              const legendEl = m.getContainer().querySelector('.elevation-legend-widget');
-              if (legendEl) legendEl.style.display = isVisible ? 'flex' : 'none';
+              const legendEl = m.getContainer().querySelector('.elevation-legend-widget-container');
+              if (legendEl) legendEl.style.display = isVisible ? 'block' : 'none';
             };
 
             this._container.appendChild(btn);
@@ -1655,38 +1698,16 @@ function addContourLinesToMap(map, options = {}) {
 
         map.addControl(new ContourToggleControl(), 'top-right');
 
-        // 6. Thêm Bảng Chú Giải Dải Màu Cao Độ
+        // 6. Thêm Bảng Chú Giải Cao Độ Widget Container
         const mapContainer = map.getContainer();
-        if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget')) {
-          const legend = document.createElement('div');
-          legend.className = 'elevation-legend-widget';
-          legend.style.cssText = `
+        if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget-container')) {
+          const legendContainer = document.createElement('div');
+          legendContainer.className = 'elevation-legend-widget-container';
+          legendContainer.style.cssText = `
             position: absolute;
             bottom: 24px;
             right: 10px;
             z-index: 8;
-            background: rgba(7, 25, 16, 0.88);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 8px 10px;
-            color: #fff;
-            font-size: 11px;
-            display: ${defaultVisible ? 'flex' : 'none'};
-            flex-direction: column;
-            align-items: center;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-            pointer-events: none;
-          `;
-          legend.innerHTML = `
-            <div style="font-weight:700; margin-bottom:6px; font-size:10px; text-transform:uppercase; color:#9ca3af; letter-spacing:0.5px;">Cao độ (m)</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div style="
-                width: 10px;
-                height: 110px;
-                border-radius: 5px;
-                background: linear-gradient(to top, #1d4ed8, #06b6d4, #10b981, #84cc16, #eab308, #f97316, #ef4444);
                 border: 1px solid rgba(255,255,255,0.3);
               "></div>
               <div style="display:flex; flex-direction:column; justify-content:space-between; height:110px; font-size:9px; font-weight:700; color:#e5e7eb;">

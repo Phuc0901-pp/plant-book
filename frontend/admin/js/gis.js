@@ -671,10 +671,10 @@ function filterFarmsByCustomer() {
 }
 
 /**
- * Thêm đường đồng mức siêu dày mật độ 1m (1-Meter High-Density Contour Lines),
- * dải màu cao độ quang phổ (Elevation Spectrum Gradient) và Bảng chú giải cao độ.
+ * Thêm đường đồng mức siêu dày 1m (1-Meter High-Density Contour Lines)
+ * DÀNH RIÊNG CHO RANH GIỚI NÔNG TRẠI (Zero Lag, Tối ưu tối đa hiệu năng).
  * @param {mapboxgl.Map} map - Mapbox map instance
- * @param {Object} options - { defaultVisible: true, showControl: true }
+ * @param {Object} options - { defaultVisible: true, showControl: true, farmCoords: Array }
  */
 function addContourLinesToMap(map, options = {}) {
   if (!map) return;
@@ -694,101 +694,99 @@ function addContourLinesToMap(map, options = {}) {
         map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       }
 
-      // 2. Thêm nguồn Vector Đường Đồng Mức tiêu chuẩn Mapbox Terrain v2
-      if (!map.getSource('mapbox-terrain-contours')) {
-        map.addSource('mapbox-terrain-contours', {
-          type: 'vector',
-          url: 'mapbox://mapbox.mapbox-terrain-v2'
-        });
-      }
-
-      // Dải màu dốc cao độ quang phổ (Spectrum Elevation Color Ramp)
-      const contourColorRamp = [
-        'interpolate',
-        ['linear'],
-        ['get', 'ele'],
-        0,    '#1d4ed8', // 0m: Xanh dương đậm
-        100,  '#0284c7', // 100m: Xanh biển
-        300,  '#06b6d4', // 300m: Xanh lam sáng
-        450,  '#10b981', // 450m: Xanh lá cây
-        490,  '#22c55e', // 490m: Xanh lá mạ
-        500,  '#84cc16', // 500m: Xanh đọt chuối
-        504,  '#eab308', // 504m: Vàng tươi
-        508,  '#f97316', // 508m: Cam
-        512,  '#ef4444', // 512m: Đỏ tươi
-        800,  '#dc2626', // 800m: Đỏ sẫm
-        1500, '#991b1b'  // 1500m: Đỏ đậm
+      const SPECTRUM_COLORS = [
+        '#000080', '#0000cd', '#0000ff', '#0066ff', '#0099ff',
+        '#00c8ff', '#00f0ff', '#00ffc8', '#00ff99', '#00ff33',
+        '#66ff00', '#a6ff00', '#ccff00', '#ffff00', '#ffcc00',
+        '#ff9900', '#ff6600', '#ff3300', '#ff0000', '#cc0000', '#800000'
       ];
 
-      // 3. Lớp Đường Đồng Mức Tiêu Chuẩn
-      if (!map.getLayer('contour-lines')) {
-        map.addLayer({
-          id: 'contour-lines',
-          type: 'line',
-          source: 'mapbox-terrain-contours',
-          'source-layer': 'contour',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-            'visibility': defaultVisible ? 'visible' : 'none'
-          },
-          paint: {
-            'line-color': contourColorRamp,
-            'line-width': [
-              'interpolate',
-              ['exponential', 1.5],
-              ['zoom'],
-              11, 0.6,
-              14, 1.4,
-              17, 2.8
-            ],
-            'line-opacity': 0.9
-          }
-        });
-      }
+      const getDynamicColorForEle = (ele, minEle, maxEle) => {
+        if (maxEle <= minEle) return SPECTRUM_COLORS[0];
+        const t = Math.max(0, Math.min(1, (ele - minEle) / (maxEle - minEle)));
+        const idx = Math.min(SPECTRUM_COLORS.length - 1, Math.floor(t * SPECTRUM_COLORS.length));
+        return SPECTRUM_COLORS[idx];
+      };
 
-      if (!map.getLayer('contour-labels')) {
-        map.addLayer({
-          id: 'contour-labels',
-          type: 'symbol',
-          source: 'mapbox-terrain-contours',
-          'source-layer': 'contour',
-          layout: {
-            'symbol-placement': 'line',
-            'text-field': ['concat', ['get', 'ele'], ' m'],
-            'text-size': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              12, 9,
-              16, 12
-            ],
-            'text-allow-overlap': false,
-            'text-ignore-placement': false,
-            'text-max-angle': 35,
-            'visibility': defaultVisible ? 'visible' : 'none'
-          },
-          paint: {
-            'text-color': contourColorRamp,
-            'text-halo-color': 'rgba(0, 0, 0, 0.9)',
-            'text-halo-width': 2
-          }
-        });
-      }
+      const buildDynamicColorRamp = (minEle, maxEle) => {
+        const rampStops = [];
+        const count = SPECTRUM_COLORS.length;
+        for (let i = 0; i < count; i++) {
+          const val = minEle + (i / (count - 1)) * (maxEle - minEle);
+          rampStops.push(Math.round(val * 10) / 10, SPECTRUM_COLORS[i]);
+        }
+        return ['interpolate', ['linear'], ['get', 'ele'], ...rampStops];
+      };
 
-      // 4. Hàm Sinh Đường Đồng Mức Mật Độ Dày 1-Meter qua Marching Squares
+      // Helper tìm Bounding Box ranh giới nông trại
+      const getFarmBoundingBox = () => {
+        let lats = [];
+        let lngs = [];
+
+        if (options.farmCoords && Array.isArray(options.farmCoords) && options.farmCoords.length > 0) {
+          options.farmCoords.forEach(pt => {
+            if (Array.isArray(pt) && pt.length >= 2) {
+              lngs.push(pt[0]);
+              lats.push(pt[1]);
+            }
+          });
+        }
+
+        if (lngs.length === 0) {
+          const farmLayers = ['admin-farms-fill', 'farm-bounds-layer', 'farm-layer', 'farm-polygon'];
+          farmLayers.forEach(lId => {
+            if (map.getLayer(lId)) {
+              const features = map.queryRenderedFeatures({ layers: [lId] });
+              features.forEach(f => {
+                const geom = f.geometry;
+                if (geom && (geom.type === 'Polygon' || geom.type === 'MultiPolygon')) {
+                  const coords = geom.type === 'Polygon' ? geom.coordinates.flat() : geom.coordinates.flat(2);
+                  coords.forEach(pt => {
+                    if (pt && pt.length >= 2) {
+                      lngs.push(pt[0]);
+                      lats.push(pt[1]);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+
+        if (lngs.length > 0 && lats.length > 0) {
+          const minLng = Math.min(...lngs);
+          const maxLng = Math.max(...lngs);
+          const minLat = Math.min(...lats);
+          const maxLat = Math.max(...lats);
+          
+          const marginLng = (maxLng - minLng) * 0.05 || 0.0005;
+          const marginLat = (maxLat - minLat) * 0.05 || 0.0005;
+
+          return {
+            west: minLng - marginLng,
+            east: maxLng + marginLng,
+            south: minLat - marginLat,
+            north: maxLat + marginLat
+          };
+        }
+
+        return null;
+      };
+
+      // 4. Hàm Sinh Đường Đồng Mức Mật Độ 1m CHO NÔNG TRẠI
       const updateDense1mContours = () => {
         try {
-          const bounds = map.getBounds();
-          if (!bounds) return;
+          const bbox = getFarmBoundingBox();
+          if (!bbox) {
+            if (map.getSource('dense-1m-contours')) {
+              map.getSource('dense-1m-contours').setData({ type: 'FeatureCollection', features: [] });
+            }
+            return;
+          }
 
-          const west = bounds.getWest();
-          const south = bounds.getSouth();
-          const east = bounds.getEast();
-          const north = bounds.getNorth();
-
-          const nx = 50;
-          const ny = 50;
+          const { west, south, east, north } = bbox;
+          const nx = 35;
+          const ny = 35;
           const dx = (east - west) / (nx - 1);
           const dy = (north - south) / (ny - 1);
 
@@ -885,9 +883,16 @@ function addContourLinesToMap(map, options = {}) {
           }
 
           const geoData = { type: 'FeatureCollection', features };
+          const dynamicRamp = buildDynamicColorRamp(minEle, maxEle);
 
           if (map.getSource('dense-1m-contours')) {
             map.getSource('dense-1m-contours').setData(geoData);
+            if (map.getLayer('dense-1m-contour-lines')) {
+              map.setPaintProperty('dense-1m-contour-lines', 'line-color', dynamicRamp);
+            }
+            if (map.getLayer('dense-1m-contour-labels')) {
+              map.setPaintProperty('dense-1m-contour-labels', 'text-color', dynamicRamp);
+            }
           } else {
             map.addSource('dense-1m-contours', {
               type: 'geojson',
@@ -904,14 +909,14 @@ function addContourLinesToMap(map, options = {}) {
                 'visibility': defaultVisible ? 'visible' : 'none'
               },
               paint: {
-                'line-color': contourColorRamp,
+                'line-color': dynamicRamp,
                 'line-width': [
                   'interpolate',
                   ['exponential', 1.5],
                   ['zoom'],
-                  12, 1.2,
-                  15, 2.2,
-                  18, 3.5
+                  12, 1.5,
+                  15, 2.5,
+                  18, 4.0
                 ],
                 'line-opacity': 0.95
               }
@@ -928,8 +933,8 @@ function addContourLinesToMap(map, options = {}) {
                   'interpolate',
                   ['linear'],
                   ['zoom'],
-                  12, 9,
-                  16, 12
+                  12, 10,
+                  16, 13
                 ],
                 'text-allow-overlap': false,
                 'text-ignore-placement': false,
@@ -937,15 +942,61 @@ function addContourLinesToMap(map, options = {}) {
                 'visibility': defaultVisible ? 'visible' : 'none'
               },
               paint: {
-                'text-color': contourColorRamp,
+                'text-color': dynamicRamp,
                 'text-halo-color': 'rgba(0, 0, 0, 0.9)',
                 'text-halo-width': 2
               }
             });
           }
+
+          updateLegendWidget(minEle, maxEle);
         } catch (e) {
-          console.warn('Lỗi sinh đường đồng mức 1m:', e);
+          console.warn('Lỗi sinh đường đồng mức nông trại:', e);
         }
+      };
+
+      const updateLegendWidget = (minEle, maxEle) => {
+        const legendContainer = map.getContainer().querySelector('.elevation-legend-widget-container');
+        if (!legendContainer) return;
+
+        const minE = Math.floor(minEle);
+        const maxE = Math.ceil(maxEle);
+        const span = maxE - minE;
+        const step = span > 25 ? Math.ceil(span / 20) : 1;
+
+        let badgesHtml = '';
+        for (let ele = maxE; ele >= minE; ele -= step) {
+          const color = getDynamicColorForEle(ele, minEle, maxEle);
+          badgesHtml += `
+            <div style="
+              background: ${color};
+              color: #ffffff;
+              font-weight: 800;
+              font-size: 11px;
+              padding: 2px 10px;
+              text-align: center;
+              text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+              line-height: 1.3;
+              letter-spacing: 0.5px;
+              font-family: system-ui, -apple-system, sans-serif;
+            ">${ele} m</div>
+          `;
+        }
+
+        legendContainer.innerHTML = `
+          <div style="
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.25);
+            max-height: 360px;
+            overflow-y: auto;
+          ">
+            ${badgesHtml}
+          </div>
+        `;
       };
 
       let contourTimer = null;
@@ -972,7 +1023,7 @@ function addContourLinesToMap(map, options = {}) {
             const btn = document.createElement('button');
             btn.className = 'mapboxgl-ctrl-icon mapbox-ctrl-contour-btn';
             btn.type = 'button';
-            btn.title = 'Bật/Tắt đường đồng mức 1m mật độ dày (Contour Lines)';
+            btn.title = 'Bật/Tắt đường đồng mức 1m nông trại (Contour Lines)';
             btn.setAttribute('aria-label', 'Toggle Contour Lines');
             btn.style.cssText = `
               display: flex;
@@ -994,16 +1045,14 @@ function addContourLinesToMap(map, options = {}) {
             btn.onclick = () => {
               isVisible = !isVisible;
               const visVal = isVisible ? 'visible' : 'none';
-              if (m.getLayer('contour-lines')) m.setLayoutProperty('contour-lines', 'visibility', visVal);
-              if (m.getLayer('contour-labels')) m.setLayoutProperty('contour-labels', 'visibility', visVal);
               if (m.getLayer('dense-1m-contour-lines')) m.setLayoutProperty('dense-1m-contour-lines', 'visibility', visVal);
               if (m.getLayer('dense-1m-contour-labels')) m.setLayoutProperty('dense-1m-contour-labels', 'visibility', visVal);
 
               btn.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
               btn.style.color = isVisible ? '#f59e0b' : '#555';
 
-              const legendEl = m.getContainer().querySelector('.elevation-legend-widget');
-              if (legendEl) legendEl.style.display = isVisible ? 'flex' : 'none';
+              const legendEl = m.getContainer().querySelector('.elevation-legend-widget-container');
+              if (legendEl) legendEl.style.display = isVisible ? 'block' : 'none';
             };
 
             this._container.appendChild(btn);
@@ -1020,48 +1069,20 @@ function addContourLinesToMap(map, options = {}) {
 
         map.addControl(new ContourToggleControl(), 'top-right');
 
-        // 6. Thêm Bảng Chú Giải Dải Màu Cao Độ
+        // 6. Thêm Bảng Chú Giải Cao Độ Widget Container
         const mapContainer = map.getContainer();
-        if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget')) {
-          const legend = document.createElement('div');
-          legend.className = 'elevation-legend-widget';
-          legend.style.cssText = `
+        if (mapContainer && !mapContainer.querySelector('.elevation-legend-widget-container')) {
+          const legendContainer = document.createElement('div');
+          legendContainer.className = 'elevation-legend-widget-container';
+          legendContainer.style.cssText = `
             position: absolute;
             bottom: 24px;
             right: 10px;
             z-index: 8;
-            background: rgba(7, 25, 16, 0.88);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 8px 10px;
-            color: #fff;
-            font-size: 11px;
-            display: ${defaultVisible ? 'flex' : 'none'};
-            flex-direction: column;
-            align-items: center;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-            pointer-events: none;
+            display: ${defaultVisible ? 'block' : 'none'};
+            pointer-events: auto;
           `;
-          legend.innerHTML = `
-            <div style="font-weight:700; margin-bottom:6px; font-size:10px; text-transform:uppercase; color:#9ca3af; letter-spacing:0.5px;">Cao độ (m)</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div style="
-                width: 10px;
-                height: 110px;
-                border-radius: 5px;
-                background: linear-gradient(to top, #1d4ed8, #06b6d4, #10b981, #84cc16, #eab308, #f97316, #ef4444);
-                border: 1px solid rgba(255,255,255,0.3);
-              "></div>
-              <div style="display:flex; flex-direction:column; justify-content:space-between; height:110px; font-size:9px; font-weight:700; color:#e5e7eb;">
-                <span style="color:#ef4444;">Cao ▲</span>
-                <span style="color:#eab308;">TB</span>
-                <span style="color:#06b6d4;">Thấp ▼</span>
-              </div>
-            </div>
-          `;
-          mapContainer.appendChild(legend);
+          mapContainer.appendChild(legendContainer);
         }
       }
     } catch (err) {
