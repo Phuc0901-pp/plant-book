@@ -866,12 +866,29 @@ function renderFarmDimensions(farm) {
 
   if (!coords || !Array.isArray(coords) || coords.length < 3) return;
 
+  let uniquePts = [...coords];
+  if (uniquePts.length > 3 &&
+      uniquePts[0][0] === uniquePts[uniquePts.length - 1][0] &&
+      uniquePts[0][1] === uniquePts[uniquePts.length - 1][1]) {
+    uniquePts.pop();
+  }
+
+  const getVertexLabel = (idx) => {
+    let label = '';
+    let n = idx;
+    while (n >= 0) {
+      label = String.fromCharCode((n % 26) + 65) + label;
+      n = Math.floor(n / 26) - 1;
+    }
+    return label;
+  };
+
   let totalPerimeter = 0;
-  const n = coords.length;
+  const n = uniquePts.length;
 
   for (let i = 0; i < n; i++) {
-    const pt1 = coords[i];
-    const pt2 = coords[(i + 1) % n];
+    const pt1 = uniquePts[i];
+    const pt2 = uniquePts[(i + 1) % n];
 
     if (!pt1 || !pt2 || pt1.length < 2 || pt2.length < 2) continue;
 
@@ -880,36 +897,75 @@ function renderFarmDimensions(farm) {
     const lengthMeters = turf.distance(from, to, { units: 'meters' });
     totalPerimeter += lengthMeters;
 
-    const midLng = (pt1[0] + pt2[0]) / 2;
-    const midLat = (pt1[1] + pt2[1]) / 2;
+    // Bỏ qua các điểm trùng nhau có chiều dài < 0.2m (lỗi 0.0m)
+    if (lengthMeters < 0.2) continue;
 
-    const formattedLength = lengthMeters >= 1000 
-      ? (lengthMeters / 1000).toFixed(2) + ' km' 
-      : lengthMeters.toFixed(1) + ' m';
+    const vStart = getVertexLabel(i);
+    const vEnd = getVertexLabel((i + 1) % n);
+    const segName = `${vStart}${vEnd}`;
 
-    const badgeEl = document.createElement('div');
-    badgeEl.className = 'farm-edge-badge';
-    badgeEl.style.cssText = `
-      background: rgba(15, 23, 42, 0.92);
-      color: #38bdf8;
+    // 1. Render Vertex Marker Badge at Corner (A, B, C, D...)
+    const cornerBadgeEl = document.createElement('div');
+    cornerBadgeEl.className = 'farm-corner-badge';
+    cornerBadgeEl.style.cssText = `
+      background: #ef4444;
+      color: #ffffff;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 11px;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 12px;
-      border: 1.5px solid #0284c7;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      white-space: nowrap;
-      pointer-events: none;
+      font-weight: 900;
+      border: 2px solid #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       user-select: none;
+      pointer-events: none;
       transform: translate(-50%, -50%);
     `;
-    badgeEl.innerHTML = `📏 ${formattedLength}`;
+    cornerBadgeEl.textContent = vStart;
 
-    const marker = new mapboxgl.Marker({ element: badgeEl, anchor: 'center' })
-      .setLngLat([midLng, midLat])
+    const cornerMarker = new mapboxgl.Marker({ element: cornerBadgeEl, anchor: 'center' })
+      .setLngLat(pt1)
       .addTo(gMap);
 
-    gisEdgeMarkers.push(marker);
+    gisEdgeMarkers.push(cornerMarker);
+
+    // 2. Render Edge Segment Badge at Midpoint (AB: 98m, BC: 50m...)
+    // Đối với đoạn cuối nối về điểm đầu (i === n - 1), không show nhãn lên bản đồ theo yêu cầu
+    if (i !== n - 1) {
+      const midLng = (pt1[0] + pt2[0]) / 2;
+      const midLat = (pt1[1] + pt2[1]) / 2;
+
+      const formattedLength = lengthMeters >= 1000 
+        ? (lengthMeters / 1000).toFixed(2) + ' km' 
+        : lengthMeters.toFixed(1) + ' m';
+
+      const edgeBadgeEl = document.createElement('div');
+      edgeBadgeEl.className = 'farm-edge-badge';
+      edgeBadgeEl.style.cssText = `
+        background: rgba(15, 23, 42, 0.92);
+        color: #38bdf8;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 12px;
+        border: 1.5px solid #0284c7;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+        transform: translate(-50%, -50%);
+      `;
+      edgeBadgeEl.innerHTML = `📏 <strong>${segName}</strong>: ${formattedLength}`;
+
+      const edgeMarker = new mapboxgl.Marker({ element: edgeBadgeEl, anchor: 'center' })
+        .setLngLat([midLng, midLat])
+        .addTo(gMap);
+
+      gisEdgeMarkers.push(edgeMarker);
+    }
   }
 
   let sumLng = 0, sumLat = 0;
