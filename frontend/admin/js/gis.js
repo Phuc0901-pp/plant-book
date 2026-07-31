@@ -1,5 +1,35 @@
 // ── Mapbox GIS & Farm Management ──────────────────────────────
 
+// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
+function getShortTreeCode(treeCode, plantId) {
+  const code = String(treeCode || plantId || '').trim();
+  if (!code) return '';
+  const match = code.match(/(\d+)$/);
+  if (match) {
+    return String(parseInt(match[1], 10));
+  }
+  return code;
+}
+
+// Bảng màu phân biệt trang trại theo từng Nông hộ / Khách hàng
+const CUSTOMER_PALETTE = [
+  '#10b981', // Emerald green
+  '#3b82f6', // Royal blue
+  '#f59e0b', // Amber gold
+  '#8b5cf6', // Purple
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+  '#ef4444', // Red
+  '#84cc16'  // Lime
+];
+
+function getCustomerColor(userId) {
+  if (!userId) return '#10b981';
+  const idNum = parseInt(userId, 10);
+  if (isNaN(idNum)) return '#10b981';
+  return CUSTOMER_PALETTE[Math.abs(idNum) % CUSTOMER_PALETTE.length];
+}
+
 let mapboxTokenFetched = false;
 async function ensureMapboxToken() {
   if (mapboxTokenFetched) return;
@@ -31,7 +61,7 @@ async function loadFarmsDropdown() {
   }
 }
 
-// Initialize Overview map on Dashboard
+// Initialize Overview map on Dashboard (Trang tổng quan: Hiển thị ghim màu theo từng khách hàng, KHÔNG vẽ đường đồng mức)
 function initDashboardMap(farms, plants) {
   const mapContainer = document.getElementById('dashboard-map');
   if (!mapContainer) return;
@@ -78,7 +108,7 @@ function initDashboardMap(farms, plants) {
     const bounds = new mapboxgl.LngLatBounds();
     let hasBounds = false;
 
-    // Render farms boundaries
+    // Render farms boundaries & Customer-colored Pins
     farms.forEach(farm => {
       let coords = [];
       try {
@@ -86,6 +116,7 @@ function initDashboardMap(farms, plants) {
       } catch(e) {}
       
       if (coords && coords.length > 0) {
+        const farmColor = getCustomerColor(farm.user_id);
         const farmSourceId = `farm-source-${farm.id}`;
         const farmLayerId = `farm-layer-${farm.id}`;
         const farmOutlineId = `farm-outline-${farm.id}`;
@@ -114,8 +145,8 @@ function initDashboardMap(farms, plants) {
           source: farmSourceId,
           layout: {},
           paint: {
-            'fill-color': '#10b981',
-            'fill-opacity': 0.25
+            'fill-color': farmColor,
+            'fill-opacity': 0.35
           }
         });
 
@@ -125,24 +156,68 @@ function initDashboardMap(farms, plants) {
           source: farmSourceId,
           layout: {},
           paint: {
-            'line-color': '#10b981',
-            'line-width': 2
+            'line-color': farmColor,
+            'line-width': 2.5
           }
         });
 
+        let sumLng = 0, sumLat = 0;
         coords.forEach(pt => {
+          sumLng += pt[0];
+          sumLat += pt[1];
           bounds.extend(pt);
           hasBounds = true;
         });
+        const centerLng = sumLng / coords.length;
+        const centerLat = sumLat / coords.length;
+
+        // Render ghim trang trại phân biệt màu theo khách hàng
+        const pinEl = document.createElement('div');
+        pinEl.className = 'farm-dashboard-pin';
+        pinEl.style.cssText = `
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: ${farmColor};
+          color: #ffffff;
+          padding: 5px 10px;
+          border-radius: 20px;
+          font-size: 11.5px;
+          font-weight: 700;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          border: 2px solid #ffffff;
+          cursor: pointer;
+          white-space: nowrap;
+        `;
+        pinEl.innerHTML = `<i class="fa-solid fa-wheat-awn"></i> ${esc(farm.name)} ${farm.user_name ? `<small style="opacity:0.85">(${esc(farm.user_name)})</small>` : ''}`;
+
+        new mapboxgl.Marker({ element: pinEl })
+          .setLngLat([centerLng, centerLat])
+          .setPopup(new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+              <div class="map-tooltip">
+                <h4 style="color:${farmColor}"><i class="fa-solid fa-wheat-awn"></i> Trang trại: ${esc(farm.name)}</h4>
+                <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
+                <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
+                <div style="margin-top:8px">
+                  <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
+                </div>
+              </div>
+            `)
+          )
+          .addTo(map);
 
         map.on('click', farmLayerId, (e) => {
           new mapboxgl.Popup()
             .setLngLat(e.lngLat)
             .setHTML(`
               <div class="map-tooltip">
-                <h4><i class="fa-solid fa-wheat-awn" style="color:#10b981"></i> Trang trại: ${esc(farm.name)}</h4>
-                <p>${esc(farm.description || 'Không có mô tả.')}</p>
+                <h4 style="color:${farmColor}"><i class="fa-solid fa-wheat-awn"></i> Trang trại: ${esc(farm.name)}</h4>
+                <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
                 <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
+                <div style="margin-top:8px">
+                  <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
+                </div>
               </div>
             `)
             .addTo(map);
@@ -153,18 +228,7 @@ function initDashboardMap(farms, plants) {
       }
     });
 
-// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
-function getShortTreeCode(treeCode, plantId) {
-  const code = String(treeCode || plantId || '').trim();
-  if (!code) return '';
-  const match = code.match(/(\d+)$/);
-  if (match) {
-    return String(parseInt(match[1], 10));
-  }
-  return code;
-}
-
-// Render plant markers using custom HTML with ID and health color wrapped in a container
+    // Render plant markers
     plants.forEach(plant => {
       if (plant.latitude && plant.longitude) {
         const lat = parseFloat(plant.latitude);
@@ -215,9 +279,6 @@ function getShortTreeCode(treeCode, plantId) {
     if (currentDashboardFilter !== 'all') {
       filterDashboard(currentDashboardFilter);
     }
-
-    // Add contour lines (đường đồng mức) & 3D terrain elevation
-    addContourLinesToMap(map);
   });
 }
 
