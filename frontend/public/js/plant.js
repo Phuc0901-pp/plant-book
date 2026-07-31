@@ -1493,15 +1493,10 @@ function addContourLinesToMap(map, options = {}) {
           // Lọc mịn lưới DEM bằng Gaussian Blur 3 pass để loại bỏ hoàn toàn nhiễu và lặp đường
           const grid = smoothGrid(rawGrid, 3);
 
-          // Chuẩn hóa Elevation Offset: CACHE một lần duy nhất khi zoom >= 14 để số liệu
-          // cao độ không thay đổi khi zoom in/out (root fix của lỗi nhảy số)
-          if (typeof map._contourEleOffset === 'undefined' || (currentZoom >= 14 && !map._contourOffsetLocked)) {
-            map._contourEleOffset = (minEle > 600) ? Math.round(minEle - 493) : 0;
-            if (currentZoom >= 14) map._contourOffsetLocked = true;
-          }
-          const eleOffset = map._contourEleOffset;
-          const displayMin = Math.round(minEle - eleOffset);
-          const displayMax = Math.round(maxEle - eleOffset);
+          // Dữ liệu cao độ THỰC tế 100% từ Mapbox DEM (so với mực nước biển ASL)
+          const eleOffset = 0;
+          const displayMin = Math.round(minEle);
+          const displayMax = Math.round(maxEle);
 
           const startLevel = Math.ceil(minEle / interval) * interval;
           const endLevel = Math.floor(maxEle / interval) * interval;
