@@ -800,6 +800,9 @@ async function selectFarm(farmId) {
       // Re-render farm polygon highlights & plant markers for selected farm
       drawFarmsAndPlantsLayers(currentFarms, farm.plants);
 
+      // Render edge dimensions (kích thước từng cạnh), chu vi & tổng diện tích
+      renderFarmDimensions(farm);
+
       if (coords && coords.length > 0) {
         const bounds = new mapboxgl.LngLatBounds();
         coords.forEach(pt => bounds.extend(pt));
@@ -812,7 +815,286 @@ async function selectFarm(farmId) {
 }
 
 function backToFarmsList() {
+  activeFarmId = null;
+  gisEdgeMarkers.forEach(m => { try { m.remove(); } catch(_) {} });
+  gisEdgeMarkers = [];
   initGisPage();
+}
+
+// ── Bật/Tắt vị trí ghim các cây trên bản đồ trang trại ──────────────────
+let arePlantMarkersVisible = true;
+function togglePlantMarkers(forceState) {
+  if (typeof forceState === 'boolean') {
+    arePlantMarkersVisible = forceState;
+  } else {
+    arePlantMarkersVisible = !arePlantMarkersVisible;
+  }
+
+  gisPlantMarkers.forEach(m => {
+    const el = m.getElement();
+    if (el) el.style.display = arePlantMarkersVisible ? '' : 'none';
+  });
+
+  const btn = document.getElementById('btn-toggle-plant-markers');
+  if (btn) {
+    btn.innerHTML = arePlantMarkersVisible 
+      ? '<i class="fa-solid fa-eye"></i> 🌳 Hiện / Ẩn Vị Trí Cây' 
+      : '<i class="fa-solid fa-eye-slash"></i> 🙈 Đã Ẩn Vị Trí Cây';
+    btn.style.background = arePlantMarkersVisible ? '#fff' : '#fef3c7';
+    btn.style.borderColor = arePlantMarkersVisible ? '#cbd5e1' : '#f59e0b';
+    btn.style.color = arePlantMarkersVisible ? 'inherit' : '#d97706';
+  }
+
+  toast(arePlantMarkersVisible ? '🌳 Đã BẬT vị trí cây trồng' : '🙈 Đã ẨN vị trí cây trồng', 'info');
+}
+
+// ── Đo đạc hiển thị kích thước cạnh ranh giới, diện tích & chu vi ───────
+let gisEdgeMarkers = [];
+
+function renderFarmDimensions(farm) {
+  gisEdgeMarkers.forEach(m => {
+    try { m.remove(); } catch(_) {}
+  });
+  gisEdgeMarkers = [];
+
+  if (!farm || !gMap) return;
+
+  let coords = [];
+  try {
+    coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+  } catch(e) {}
+
+  if (!coords || !Array.isArray(coords) || coords.length < 3) return;
+
+  let totalPerimeter = 0;
+  const n = coords.length;
+
+  for (let i = 0; i < n; i++) {
+    const pt1 = coords[i];
+    const pt2 = coords[(i + 1) % n];
+
+    if (!pt1 || !pt2 || pt1.length < 2 || pt2.length < 2) continue;
+
+    const from = turf.point(pt1);
+    const to = turf.point(pt2);
+    const lengthMeters = turf.distance(from, to, { units: 'meters' });
+    totalPerimeter += lengthMeters;
+
+    const midLng = (pt1[0] + pt2[0]) / 2;
+    const midLat = (pt1[1] + pt2[1]) / 2;
+
+    const formattedLength = lengthMeters >= 1000 
+      ? (lengthMeters / 1000).toFixed(2) + ' km' 
+      : lengthMeters.toFixed(1) + ' m';
+
+    const badgeEl = document.createElement('div');
+    badgeEl.className = 'farm-edge-badge';
+    badgeEl.style.cssText = `
+      background: rgba(15, 23, 42, 0.92);
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1.5px solid #0284c7;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      transform: translate(-50%, -50%);
+    `;
+    badgeEl.innerHTML = `📏 ${formattedLength}`;
+
+    const marker = new mapboxgl.Marker({ element: badgeEl, anchor: 'center' })
+      .setLngLat([midLng, midLat])
+      .addTo(gMap);
+
+    gisEdgeMarkers.push(marker);
+  }
+
+  let sumLng = 0, sumLat = 0;
+  coords.forEach(pt => {
+    sumLng += pt[0];
+    sumLat += pt[1];
+  });
+  const centerLng = sumLng / n;
+  const centerLat = sumLat / n;
+
+  const farmAreaM2 = parseFloat(farm.area || 0) || Math.round(turf.area(turf.polygon([[...coords, coords[0]]])));
+  const farmAreaHa = (farmAreaM2 / 10000).toFixed(2);
+  const formattedPerimeter = totalPerimeter >= 1000 
+    ? (totalPerimeter / 1000).toFixed(2) + ' km' 
+    : totalPerimeter.toFixed(1) + ' m';
+
+  const summaryBadgeEl = document.createElement('div');
+  summaryBadgeEl.className = 'farm-summary-badge';
+  summaryBadgeEl.style.cssText = `
+    background: linear-gradient(135deg, #065f46, #059669);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+    white-space: nowrap;
+    text-align: center;
+    user-select: none;
+    pointer-events: auto;
+  `;
+  summaryBadgeEl.innerHTML = `
+    <div style="font-size:13px; color:#fff; font-weight:900;"><i class="fa-solid fa-wheat-awn"></i> ${esc(farm.name)}</div>
+    <div style="font-size:11px; opacity:0.95; margin-top:2px;">
+      📐 Diện tích: <strong>${Math.round(farmAreaM2).toLocaleString('vi-VN')} m² (${farmAreaHa} ha)</strong> | ⭕ Chu vi: <strong>${formattedPerimeter}</strong>
+    </div>
+  `;
+
+  const summaryMarker = new mapboxgl.Marker({ element: summaryBadgeEl, anchor: 'bottom' })
+    .setLngLat([centerLng, centerLat])
+    .addTo(gMap);
+
+  gisEdgeMarkers.push(summaryMarker);
+}
+
+// ── Import Bản Vẽ Thiết Kế (CAD / GeoJSON / Image Overlay) ───────────────
+let selectedDrawingFile = null;
+
+function openDesignDrawingModal() {
+  selectedDrawingFile = null;
+  const titleInput = document.getElementById('f-drawing-title');
+  if (titleInput) {
+    const targetFarm = activeFarmId ? currentFarms.find(f => f.id === activeFarmId) : null;
+    titleInput.value = targetFarm ? `Bản vẽ Thiết kế ${targetFarm.name}` : `Bản vẽ Quy hoạch Vườn`;
+  }
+  const fileInput = document.getElementById('f-drawing-file');
+  if (fileInput) fileInput.value = '';
+  const opacityInput = document.getElementById('f-drawing-opacity');
+  if (opacityInput) opacityInput.value = 80;
+  const opacityVal = document.getElementById('drawing-opacity-val');
+  if (opacityVal) opacityVal.textContent = '80%';
+  const previewBox = document.getElementById('drawing-preview-box');
+  if (previewBox) previewBox.style.display = 'none';
+
+  const modal = document.getElementById('design-drawing-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDesignDrawingModal() {
+  const modal = document.getElementById('design-drawing-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function previewDrawingFile(input) {
+  if (input.files && input.files[0]) {
+    selectedDrawingFile = input.files[0];
+    const previewBox = document.getElementById('drawing-preview-box');
+    const filenameEl = document.getElementById('drawing-filename');
+    if (filenameEl) filenameEl.textContent = `${selectedDrawingFile.name} (${(selectedDrawingFile.size / 1024).toFixed(1)} KB)`;
+    if (previewBox) previewBox.style.display = 'block';
+  } else {
+    selectedDrawingFile = null;
+    const previewBox = document.getElementById('drawing-preview-box');
+    if (previewBox) previewBox.style.display = 'none';
+  }
+}
+
+async function submitDesignDrawingImport() {
+  const title = (document.getElementById('f-drawing-title')?.value || '').trim();
+  if (!title) {
+    toast('Vui lòng nhập tên hồ sơ / bản vẽ thiết kế', 'warning');
+    return;
+  }
+  if (!selectedDrawingFile) {
+    toast('Vui lòng chọn tệp bản vẽ (GeoJSON, KML, DXF hoặc hình ảnh sơ đồ)', 'warning');
+    return;
+  }
+
+  const opacity = parseFloat(document.getElementById('f-drawing-opacity')?.value || 80) / 100;
+  const fileName = selectedDrawingFile.name.toLowerCase();
+
+  toast('⏳ Đang xử lý và áp dụng bản vẽ thiết kế lên trang trại...', 'info');
+
+  try {
+    if (fileName.endsWith('.geojson') || fileName.endsWith('.json') || fileName.endsWith('.kml')) {
+      const text = await selectedDrawingFile.text();
+      let geojson = null;
+      try {
+        geojson = JSON.parse(text);
+      } catch(e) {
+        throw new Error('Tệp JSON/GeoJSON không đúng định dạng');
+      }
+
+      if (gMap) {
+        if (gMap.getSource('farm-design-drawing-src')) {
+          gMap.getSource('farm-design-drawing-src').setData(geojson);
+        } else {
+          gMap.addSource('farm-design-drawing-src', { type: 'geojson', data: geojson });
+          gMap.addLayer({
+            id: 'farm-design-drawing-fill',
+            type: 'fill',
+            source: 'farm-design-drawing-src',
+            paint: { 'fill-color': '#0284c7', 'fill-opacity': opacity * 0.4 }
+          });
+          gMap.addLayer({
+            id: 'farm-design-drawing-line',
+            type: 'line',
+            source: 'farm-design-drawing-src',
+            paint: { 'line-color': '#0ea5e9', 'line-width': 2.5, 'line-opacity': opacity }
+          });
+        }
+      }
+    } else {
+      // Image Overlay (PNG / JPG / PDF)
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const imageUrl = e.target.result;
+        const targetFarm = activeFarmId ? currentFarms.find(f => f.id === activeFarmId) : currentFarms[0];
+        let coords = targetFarm ? targetFarm.polygon_coordinates : null;
+        if (typeof coords === 'string') try { coords = JSON.parse(coords); } catch(_) {}
+
+        if (gMap && coords && coords.length >= 3) {
+          let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+          coords.forEach(pt => {
+            if (pt[0] < minLng) minLng = pt[0];
+            if (pt[0] > maxLng) maxLng = pt[0];
+            if (pt[1] < minLat) minLat = pt[1];
+            if (pt[1] > maxLat) maxLat = pt[1];
+          });
+
+          const imgCoords = [
+            [minLng, maxLat], // Top-Left
+            [maxLng, maxLat], // Top-Right
+            [maxLng, minLat], // Bottom-Right
+            [minLng, minLat]  // Bottom-Left
+          ];
+
+          if (gMap.getSource('farm-design-drawing-img-src')) {
+            gMap.removeLayer('farm-design-drawing-raster');
+            gMap.removeSource('farm-design-drawing-img-src');
+          }
+
+          gMap.addSource('farm-design-drawing-img-src', {
+            type: 'image',
+            url: imageUrl,
+            coordinates: imgCoords
+          });
+
+          gMap.addLayer({
+            id: 'farm-design-drawing-raster',
+            type: 'raster',
+            source: 'farm-design-drawing-img-src',
+            paint: { 'raster-opacity': opacity }
+          });
+        }
+      };
+      reader.readAsDataURL(selectedDrawingFile);
+    }
+
+    closeDesignDrawingModal();
+    toast('✅ Đã Import và phủ Bản Vẽ Thiết Kế thành công lên bản đồ trang trại!', 'success');
+  } catch(err) {
+    toast('Lỗi import bản vẽ: ' + err.message, 'error');
+  }
 }
 
 async function editFarm() {
@@ -1194,7 +1476,7 @@ function addContourLinesToMap(map, options = {}) {
             });
 
             // ─── Bình độ cái (% 5 === 0): Nét đậm 7px | Bình độ con: Nét 2.5px ───
-            const isMajor = ['==', ['%', ['to-number', ['get', 'ele']], 5], 0];
+            const isMajor = ['==', ['%', ['round', ['to-number', ['get', 'ele']]], 5], 0];
 
             map.addLayer({
               id: 'dense-1m-contour-lines',
@@ -1207,7 +1489,7 @@ function addContourLinesToMap(map, options = {}) {
               },
               paint: {
                 'line-color': dynamicRamp,
-                // Bình độ cái (bội số 5m): đậm 7px | Bình độ con (2m): 2.5px
+                // Bình độ cái (bội số 5m): đậm 7px | Bình độ con: 2.5px
                 'line-width': [
                   'interpolate', ['exponential', 1.5], ['zoom'],
                   12, ['case', isMajor, 3.5, 1.5],
@@ -1218,20 +1500,47 @@ function addContourLinesToMap(map, options = {}) {
               }
             });
 
-            // ─── Nhãn số cao độ: Nhét trực tiếp vào tất cả các đường đồng mức (có nhãn cho cả 2 loại) ───
+            // ─── Nhãn số cao độ hiển thị 100% trên BÌNH ĐỘ MẸ (% 5 === 0) ───
+            map.addLayer({
+              id: 'dense-1m-contour-labels-major',
+              type: 'symbol',
+              source: 'dense-1m-contours',
+              filter: isMajor,
+              layout: {
+                'symbol-placement': 'line',
+                'symbol-spacing': 160,
+                'text-field': ['concat', ['to-string', ['get', 'ele']], ' m'],
+                'text-size': [
+                  'interpolate', ['linear'], ['zoom'],
+                  12, 11,
+                  16, 14
+                ],
+                'text-allow-overlap': true,
+                'text-ignore-placement': true,
+                'text-max-angle': 45,
+                'visibility': defaultVisible ? 'visible' : 'none'
+              },
+              paint: {
+                'text-color': '#ffffff',
+                'text-halo-color': '#000000',
+                'text-halo-width': 3.5
+              }
+            });
+
+            // ─── Nhãn số cao độ phụ cho các đường đồng mức con ───
             map.addLayer({
               id: 'dense-1m-contour-labels',
               type: 'symbol',
               source: 'dense-1m-contours',
               layout: {
                 'symbol-placement': 'line',
+                'symbol-spacing': 200,
                 'text-field': ['concat', ['to-string', ['get', 'ele']], ' m'],
                 'text-size': [
                   'interpolate', ['linear'], ['zoom'],
-                  12, ['case', isMajor, 10, 8.5],
-                  16, ['case', isMajor, 13, 10.5]
+                  12, 9,
+                  16, 11
                 ],
-                'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
                 'text-allow-overlap': false,
                 'text-ignore-placement': false,
                 'text-max-angle': 35,
