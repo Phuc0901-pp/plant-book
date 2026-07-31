@@ -441,8 +441,17 @@ window.onPlantSavedHook = function(plant) {
   }
 };
 
+let gisPlantMarkers = [];
+
 function drawFarmsAndPlantsLayers(farms, plants) {
   if (!gMap) return;
+
+  // Clear existing plant markers on map
+  gisPlantMarkers.forEach(m => {
+    try { m.remove(); } catch(_) {}
+  });
+  gisPlantMarkers = [];
+
   const bounds = new mapboxgl.LngLatBounds();
   let hasBounds = false;
 
@@ -464,40 +473,50 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         polyCoords.push(polyCoords[0]);
       }
 
-      gMap.addSource(srcId, {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          geometry: { type: 'Polygon', coordinates: [polyCoords] }
-        }
-      });
+      if (!gMap.getSource(srcId)) {
+        gMap.addSource(srcId, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [polyCoords] }
+          }
+        });
 
-      gMap.addLayer({
-        id: layerId,
-        type: 'fill',
-        source: srcId,
-        paint: {
-          'fill-color': '#10b981',
-          'fill-opacity': activeFarmId === farm.id ? 0.45 : 0.25
-        }
-      });
+        gMap.addLayer({
+          id: layerId,
+          type: 'fill',
+          source: srcId,
+          paint: {
+            'fill-color': '#10b981',
+            'fill-opacity': activeFarmId === farm.id ? 0.45 : 0.25
+          }
+        });
 
-      gMap.addLayer({
-        id: outlineId,
-        type: 'line',
-        source: srcId,
-        paint: {
-          'line-color': '#10b981',
-          'line-width': activeFarmId === farm.id ? 3 : 1.5
-        }
-      });
+        gMap.addLayer({
+          id: outlineId,
+          type: 'line',
+          source: srcId,
+          paint: {
+            'line-color': '#10b981',
+            'line-width': activeFarmId === farm.id ? 3 : 1.5
+          }
+        });
 
-      gMap.on('click', layerId, () => {
-        selectFarm(farm.id);
-      });
-      
-      gMap.on('mouseenter', layerId, () => gMap.getCanvas().style.cursor = 'pointer');
-      gMap.on('mouseleave', layerId, () => gMap.getCanvas().style.cursor = '');
+        gMap.on('click', layerId, () => {
+          selectFarm(farm.id);
+        });
+        
+        gMap.on('mouseenter', layerId, () => gMap.getCanvas().style.cursor = 'pointer');
+        gMap.on('mouseleave', layerId, () => gMap.getCanvas().style.cursor = '');
+      } else {
+        if (gMap.getLayer(layerId)) {
+          gMap.setPaintProperty(layerId, 'fill-opacity', activeFarmId === farm.id ? 0.45 : 0.25);
+        }
+        if (gMap.getLayer(outlineId)) {
+          gMap.setPaintProperty(outlineId, 'line-width', activeFarmId === farm.id ? 3.5 : 1.5);
+          gMap.setPaintProperty(outlineId, 'line-color', activeFarmId === farm.id ? '#059669' : '#10b981');
+        }
+      }
 
       coords.forEach(pt => {
         bounds.extend(pt);
@@ -506,7 +525,8 @@ function drawFarmsAndPlantsLayers(farms, plants) {
     }
   });
 
-  plants.forEach(plant => {
+  const displayPlants = plants || currentPlants || [];
+  displayPlants.forEach(plant => {
     if (plant.latitude && plant.longitude) {
       const lat = parseFloat(plant.latitude);
       const lng = parseFloat(plant.longitude);
@@ -546,6 +566,8 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           )
           .addTo(gMap);
 
+        gisPlantMarkers.push(marker);
+
         bounds.extend([lng, lat]);
         hasBounds = true;
       }
@@ -557,7 +579,9 @@ function drawFarmsAndPlantsLayers(farms, plants) {
   }
 
   // Add contour lines (đường đồng mức) & 3D terrain elevation to GIS map
-  addContourLinesToMap(gMap);
+  const activeFarm = activeFarmId ? farms.find(f => f.id === activeFarmId) : null;
+  const farmCoords = activeFarm ? activeFarm.polygon_coordinates : null;
+  addContourLinesToMap(gMap, { farmCoords });
 }
 
 function updateAreaDisplay() {
@@ -707,10 +731,19 @@ async function selectFarm(farmId) {
       coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
     } catch(e) {}
 
-    if (coords && coords.length > 0 && gMap) {
-      const bounds = new mapboxgl.LngLatBounds();
-      coords.forEach(pt => bounds.extend(pt));
-      gMap.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 1000 });
+    if (gMap) {
+      // Clear elevation offset lock so contour elevation calibrates cleanly for selected farm
+      gMap._contourOffsetLocked = false;
+      delete gMap._contourEleOffset;
+
+      // Re-render farm polygon highlights & plant markers for selected farm
+      drawFarmsAndPlantsLayers(currentFarms, farm.plants);
+
+      if (coords && coords.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds();
+        coords.forEach(pt => bounds.extend(pt));
+        gMap.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 1000 });
+      }
     }
   } catch (err) {
     toast('Lỗi tải chi tiết trang trại: ' + err.message, 'error');
