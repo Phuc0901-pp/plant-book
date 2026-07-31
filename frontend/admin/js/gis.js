@@ -1737,7 +1737,6 @@ function addContourLinesToMap(map, options = {}) {
 }
 
 function openAdminFarmA4ExportModal(map) {
-  if (!map) return;
 
   const loadHtml2Pdf = () => {
     return new Promise((resolve) => {
@@ -1853,6 +1852,9 @@ function openAdminFarmA4ExportModal(map) {
     } catch (_) {}
   }
 
+  // Force Mapbox to repaint and render text glyphs onto WebGL canvas
+  map.triggerRepaint();
+
   let mapImageDataUrl = '';
   try {
     mapImageDataUrl = map.getCanvas().toDataURL('image/png');
@@ -1881,17 +1883,42 @@ function openAdminFarmA4ExportModal(map) {
     return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
   };
 
+  const getVertexLabel = (idx) => {
+    let label = '';
+    let n = idx;
+    while (n >= 0) {
+      label = String.fromCharCode((n % 26) + 65) + label;
+      n = Math.floor(n / 26) - 1;
+    }
+    return label;
+  };
+
   let edgeRowsHtml = '';
   let perimeter = 0;
 
   if (farmCoords && farmCoords.length >= 3) {
-    for (let i = 0; i < farmCoords.length - 1; i++) {
-      const len = getDist(farmCoords[i], farmCoords[i + 1]);
+    let uniquePts = [...farmCoords];
+    if (uniquePts.length > 3 &&
+        uniquePts[0][0] === uniquePts[uniquePts.length - 1][0] &&
+        uniquePts[0][1] === uniquePts[uniquePts.length - 1][1]) {
+      uniquePts.pop();
+    }
+
+    const n = uniquePts.length;
+    for (let i = 0; i < n; i++) {
+      const p1 = uniquePts[i];
+      const p2 = uniquePts[(i + 1) % n];
+      const len = getDist(p1, p2);
       perimeter += len;
+
+      const vStart = getVertexLabel(i);
+      const vEnd = getVertexLabel((i + 1) % n);
+      const segName = `${vStart}${vEnd}`;
+
       edgeRowsHtml += `
         <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:4px; font-weight:600;">Cạnh ${i + 1} - ${i + 2}</td>
-          <td style="padding:4px; text-align:right; font-weight:700; color:#15803d;">${len.toLocaleString('vi-VN')} m</td>
+          <td style="padding:3.5px 4px; font-weight:700; color:#0f172a;">Đoạn ${segName}</td>
+          <td style="padding:3.5px 4px; text-align:right; font-weight:800; color:#15803d;">${len.toLocaleString('vi-VN')} m</td>
         </tr>
       `;
     }
@@ -1900,9 +1927,9 @@ function openAdminFarmA4ExportModal(map) {
       const rad = Math.PI / 180;
       const R = 6371000;
       let accArea = 0;
-      for (let i = 0; i < farmCoords.length - 1; i++) {
-        const p1 = farmCoords[i];
-        const p2 = farmCoords[i + 1];
+      for (let i = 0; i < uniquePts.length; i++) {
+        const p1 = uniquePts[i];
+        const p2 = uniquePts[(i + 1) % uniquePts.length];
         accArea += (p2[0] - p1[0]) * rad * (2 + Math.sin(p1[1] * rad) + Math.sin(p2[1] * rad));
       }
       areaSqM = Math.round(Math.abs(accArea * R * R / 2));
@@ -1918,10 +1945,7 @@ function openAdminFarmA4ExportModal(map) {
   const scaleText = `1 : ${scaleRatio.toLocaleString('vi-VN')}`;
   const exportDate = new Date().toLocaleDateString('vi-VN');
 
-  let contourInterval = 2.5 - (zoom - 16.0) * 0.5;
-  contourInterval = Math.max(0.5, Math.min(10.0, contourInterval));
-  contourInterval = Math.round(contourInterval * 2) / 2;
-
+  let contourInterval = 1.0;
   let minEle = 735, maxEle = 765;
   const legendEl = map.getContainer().querySelector('.elevation-legend-widget-container');
   if (legendEl) {
@@ -1955,6 +1979,7 @@ function openAdminFarmA4ExportModal(map) {
   `;
 
   const docCodeDefault = `TB-CAD-ADMIN-${Date.now().toString().slice(-6)}`;
+  const esc = (s) => s ? String(s).replace(/"/g, '&quot;') : '';
 
   modalContainer.innerHTML = `
     <style>
@@ -1981,6 +2006,12 @@ function openAdminFarmA4ExportModal(map) {
         box-shadow: none !important;
         appearance: none !important;
         -webkit-appearance: none !important;
+      }
+      @media print {
+        @page { size: A4 landscape; margin: 0; }
+        body { margin: 0; }
+        #farm-a4-export-modal { position: static; background: none; padding: 0; overflow: visible; }
+        #a4-drawing-paper { box-shadow: none !important; }
       }
     </style>
 
@@ -2047,8 +2078,9 @@ function openAdminFarmA4ExportModal(map) {
         </div>
       </div>
 
-      <div style="display:flex; gap:12px; flex:1; overflow:hidden;">
-        <div style="flex:1.75; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; display:flex; align-items:center; justify-content:center; background:#e2e8f0;">
+      <div style="display:flex; gap:10px; flex:1; overflow:hidden;">
+        <!-- Khung Bản Vẽ Kích Thước Bự (Flex: 1 chiếm 80% bề ngang A4) -->
+        <div style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; display:flex; align-items:center; justify-content:center; background:#e2e8f0;">
           <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
           <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.92); padding:4px 10px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.2); display:flex; align-items:center; gap:5px;">
             <i class="fa-solid fa-compass" style="color:#0f172a;"></i> HƯỚNG BẮC (N)
@@ -2058,78 +2090,65 @@ function openAdminFarmA4ExportModal(map) {
           </div>
         </div>
 
-        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
-          <div style="border:1.5px solid #000; border-radius:4px; padding:8px; background:#f0fdf4;">
-            <div style="font-weight:800; font-size:11px; color:#15803d; border-bottom:1px solid #bbf7d0; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-chart-pie"></i> THỐNG KÊ KÍCH THƯỚC TRANG TRẠI
+        <!-- Khung Thông Tin Ngắn Gọn Vô (Width: 230px chiếm 20% bề ngang A4) -->
+        <div style="width:230px; flex:none; display:flex; flex-direction:column; gap:6px;">
+          <div style="border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#f0fdf4;">
+            <div style="font-weight:800; font-size:10.5px; color:#15803d; border-bottom:1px solid #bbf7d0; padding-bottom:3px; margin-bottom:5px; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-chart-pie"></i> THỐNG KÊ TRANG TRẠI
             </div>
-            <table style="width:100%; font-size:10.5px; border-collapse:collapse;">
+            <table style="width:100%; font-size:10px; border-collapse:collapse;">
               <tr>
-                <td style="padding:3px 0; color:#475569;">Diện tích trang trại:</td>
-                <td style="padding:3px 0; text-align:right; font-weight:800; color:#15803d;">${areaSqM.toLocaleString('vi-VN')} m² (${(areaSqM/10000).toFixed(2)} ha)</td>
+                <td style="padding:2.5px 0; color:#475569;">Diện tích trang trại:</td>
+                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#15803d;">${areaSqM.toLocaleString('vi-VN')} m² (${(areaSqM/10000).toFixed(2)} ha)</td>
               </tr>
               <tr>
-                <td style="padding:3px 0; color:#475569;">Chu vi ranh giới:</td>
-                <td style="padding:3px 0; text-align:right; font-weight:800; color:#0f172a;">${perimeter.toLocaleString('vi-VN')} m</td>
+                <td style="padding:2.5px 0; color:#475569;">Chu vi ranh giới:</td>
+                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#0f172a;">${perimeter.toLocaleString('vi-VN')} m</td>
               </tr>
               ${plantCount ? `
               <tr>
-                <td style="padding:3px 0; color:#475569;">Số lượng cây trồng:</td>
-                <td style="padding:3px 0; text-align:right; font-weight:800; color:#2563eb;">${plantCount} cây</td>
+                <td style="padding:2.5px 0; color:#475569;">Số lượng cây trồng:</td>
+                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#2563eb;">${plantCount} cây</td>
               </tr>` : ''}
               <tr>
-                <td style="padding:3px 0; color:#475569;">Chênh lệch cao độ:</td>
-                <td style="padding:3px 0; text-align:right; font-weight:800; color:#d97706;">${minEle}m — ${maxEle}m (Δ ${maxEle - minEle}m)</td>
+                <td style="padding:2.5px 0; color:#475569;">Chênh lệch cao độ:</td>
+                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#d97706;">${minEle}m — ${maxEle}m (Δ ${maxEle - minEle}m)</td>
               </tr>
               <tr>
-                <td style="padding:3px 0; color:#dc2626; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
-                <td style="padding:3px 0; text-align:right; font-weight:800; color:#dc2626;">± 3%</td>
+                <td style="padding:2.5px 0; color:#dc2626; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
+                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#dc2626;">± 3%</td>
               </tr>
             </table>
           </div>
 
           <!-- Bảng Chú Giải Dải Màu Cao Độ Kỹ Thuật CAD -->
-          <div style="border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#fff;">
-            <div style="font-weight:800; font-size:10px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:3px; margin-bottom:5px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between;">
-              <span style="display:flex; align-items:center; gap:5px;">
-                <i class="fa-solid fa-palette" style="color:#2563eb;"></i> CHÚ GIẢI DẢI MÀU CAO ĐỘ (${contourInterval}M/BẬC)
+          <div style="border:1.5px solid #000; border-radius:4px; padding:5px 7px; background:#fff;">
+            <div style="font-weight:800; font-size:9.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:3px; margin-bottom:4px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-palette" style="color:#2563eb;"></i> CHÚ GIẢI CAO ĐỘ (${contourInterval}M/BẬC)
               </span>
-              <span style="font-size:9px; color:#15803d; font-weight:700;">⛰️ Nét vẽ CAD</span>
             </div>
 
-            <!-- Thanh Dải Màu Gradient Thang Độ Liên Tục từ Thấp (Trái) -> Cao (Phải) -->
-            <div style="height:12px; width:100%; border-radius:3px; background: linear-gradient(to right, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #94a3b8; margin-bottom:4px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);"></div>
+            <div style="height:10px; width:100%; border-radius:2px; background: linear-gradient(to right, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #94a3b8; margin-bottom:3px;"></div>
 
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:9.5px; font-weight:700;">
-              <div style="text-align:left; color:#000080;">
-                <div>${minEle}m</div>
-                <div style="font-size:8px; color:#64748b; font-weight:600;">(Thấp nhất)</div>
-              </div>
-              <div style="text-align:center; color:#0284c7;">
-                <div>${Math.round(minEle + (maxEle - minEle)*0.25)}m</div>
-              </div>
-              <div style="text-align:center; color:#ca8a04;">
-                <div>${Math.round(minEle + (maxEle - minEle)*0.5)}m</div>
-              </div>
-              <div style="text-align:center; color:#ea580c;">
-                <div>${Math.round(minEle + (maxEle - minEle)*0.75)}m</div>
-              </div>
-              <div style="text-align:right; color:#b91c1c;">
-                <div>${maxEle}m</div>
-                <div style="font-size:8px; color:#64748b; font-weight:600;">(Cao nhất)</div>
-              </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; font-weight:700;">
+              <div style="text-align:left; color:#000080;">${minEle}m</div>
+              <div style="text-align:center; color:#0284c7;">${Math.round(minEle + (maxEle - minEle)*0.25)}m</div>
+              <div style="text-align:center; color:#ca8a04;">${Math.round(minEle + (maxEle - minEle)*0.5)}m</div>
+              <div style="text-align:center; color:#ea580c;">${Math.round(minEle + (maxEle - minEle)*0.75)}m</div>
+              <div style="text-align:right; color:#b91c1c;">${maxEle}m</div>
             </div>
           </div>
 
-          <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:8px; background:#fff; overflow-y:auto;">
-            <div style="font-weight:800; font-size:11px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+          <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#fff; overflow-y:auto;">
+            <div style="font-weight:800; font-size:10.5px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:3px; margin-bottom:5px; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
               <i class="fa-solid fa-ruler-horizontal"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
             </div>
-            <table style="width:100%; font-size:10px; border-collapse:collapse;">
+            <table style="width:100%; font-size:9.5px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f1f5f9; text-align:left; border-bottom:1px solid #cbd5e1;">
-                  <th style="padding:4px;">Đoạn Cạnh</th>
-                  <th style="padding:4px; text-align:right;">Chiều Dài (m)</th>
+                  <th style="padding:3px 4px;">Đoạn Cạnh</th>
+                  <th style="padding:3px 4px; text-align:right;">Chiều Dài (m)</th>
                 </tr>
               </thead>
               <tbody>
@@ -2141,20 +2160,13 @@ function openAdminFarmA4ExportModal(map) {
       </div>
 
       <!-- Title Block Khung Tên Bản Vẽ CAD -->
-      <div style="margin-top:10px; border:2px solid #000; background:#fff;">
-        <table style="width:100%; border-collapse:collapse; font-size:10.5px;">
+      <div style="margin-top:8px; border:2px solid #000; background:#fff;">
+        <table style="width:100%; border-collapse:collapse; font-size:10px;">
           <tr>
-            <td style="width:33%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+            <td style="width:33%; border-right:1.5px solid #000; padding:5px 7px; vertical-align:top;">
+              <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
                 <i class="fa-solid fa-house-chimney" style="color:#15803d;"></i> TÊN TRANG TRẠI
               </div>
-              <input type="text" id="a4-input-farm-name" class="a4-edit-field" value="${farmName}" style="font-size:12px; font-weight:800; color:#15803d; width:100%; margin-top:2px;">
-            </td>
-            <td style="width:27%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-user" style="color:#0f172a;"></i> KHÁCH HÀNG / NÔNG HỘ
-              </div>
-              <input type="text" id="a4-input-owner-name" class="a4-edit-field" value="${ownerName}" style="font-size:11px; font-weight:700; color:#0f172a; width:100%; margin-top:2px;">
             </td>
             <td style="width:22%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
               <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
