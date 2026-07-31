@@ -1994,14 +1994,7 @@ function openAdminFarmA4ExportModal(map) {
     edgeRowsHtml = `<tr><td colspan="2" style="padding:6px; text-align:center; color:#94a3b8; font-style:italic;">Chưa chọn ranh giới trang trại</td></tr>`;
   }
 
-  const center = map.getCenter();
-  const zoom = map.getZoom();
-  const mPerPx = (156543.03392 * Math.cos(center.lat * Math.PI / 180)) / Math.pow(2, zoom);
-  const scaleRatio = Math.round(mPerPx / 0.000264583);
-  const scaleText = `1 : ${scaleRatio.toLocaleString('vi-VN')}`;
   const exportDate = new Date().toLocaleDateString('vi-VN');
-
-  let contourInterval = 1.0;
   let minEle = 735, maxEle = 765;
   const legendEl = map.getContainer().querySelector('.elevation-legend-widget-container');
   if (legendEl) {
@@ -2034,7 +2027,6 @@ function openAdminFarmA4ExportModal(map) {
     overflow-y: auto;
   `;
 
-  const docCodeDefault = `TB-CAD-ADMIN-${Date.now().toString().slice(-6)}`;
   const esc = (s) => s ? String(s).replace(/"/g, '&quot;') : '';
 
   modalContainer.innerHTML = `
@@ -2071,140 +2063,189 @@ function openAdminFarmA4ExportModal(map) {
       }
     </style>
 
+    <!-- Modal Toolbar Bar -->
     <div style="
-      width: 100%; max-width: 1100px;
+      width: 100%; max-width: 1120px;
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px; color: #fff; background: rgba(30, 41, 59, 0.9);
-      padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15);
+      margin-bottom: 14px; color: #fff; background: rgba(30, 41, 59, 0.95);
+      padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     ">
       <div style="display:flex; align-items:center; gap:10px;">
         <i class="fa-solid fa-drafting-compass" style="font-size:22px; color:#4ade80;"></i>
         <div>
-          <h3 style="font-size:16px; font-weight:800; margin:0; color:#4ade80;">XUẤT BẢN VẼ KỸ THUẬT TRANG TRẠI A4 NẰM NGANG</h3>
-          <p style="font-size:12px; color:#94a3b8; margin:0;">Nhập trực tiếp thông tin hồ sơ | Tỷ lệ 1:1 | Sai số ±3% | Chú giải dải màu đồng mức</p>
+          <h3 style="font-size:15px; font-weight:800; margin:0; color:#4ade80;">HỒ SƠ BẢN VẼ KỸ THUẬT A4 CHUẨN TỶ LỆ</h3>
+          <p style="font-size:11.5px; color:#94a3b8; margin:0;">Mẫu chuẩn Công ty TNHH Công Nghệ Nông Nghiệp Tân Bảo Sài Gòn</p>
         </div>
       </div>
-      <div style="display:flex; align-items:center; gap:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
         <button id="btn-do-print-a4" style="
-          background: #3b82f6; color: #fff; border: none; padding: 8px 16px;
-          border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+          background: #3b82f6; color: #fff; border: none; padding: 7px 15px;
+          border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(59,130,246,0.4);
         ">
           <i class="fa-solid fa-print"></i> In bản vẽ (Print)
         </button>
         <button id="btn-download-pdf-a4" style="
-          background: #16a34a; color: #fff; border: none; padding: 8px 18px;
-          border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+          background: #16a34a; color: #fff; border: none; padding: 7px 16px;
+          border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(22,163,74,0.4);
         ">
           <i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)
         </button>
         <button id="btn-close-a4-modal" style="
-          background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 8px 14px;
-          border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+          background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 7px 12px;
+          border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
         ">
           ✕ Đóng
         </button>
       </div>
     </div>
 
+    <!-- A4 Paper Container -->
     <div id="a4-drawing-paper" style="
       width: 297mm; min-height: 210mm;
       background: #ffffff; color: #0f172a;
       box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-      border-radius: 4px; padding: 8mm; box-sizing: border-box;
+      border-radius: 4px; padding: 7mm; box-sizing: border-box;
       display: flex; flex-direction: column; justify-content: space-between;
-      border: 2px solid #000; font-family: 'Segoe UI', Roboto, sans-serif;
+      border: 2px solid #000; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     ">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2.5px solid #16a34a; padding-bottom:6px; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:12px; flex:1;">
-          <img src="/assets/logo.png" style="height:38px;" onerror="this.style.display='none'">
-          <div style="flex:1;">
-            <h2 style="font-size:15px; font-weight:800; color:#15803d; margin:0; text-transform:uppercase; letter-spacing:0.5px;">TANBAO CORP — HỆ THỐNG GIS BẢN VẼ TRANG TRẠI</h2>
-            <input type="text" id="a4-input-doc-title" class="a4-edit-field" value="HỒ SƠ BẢN VẼ KỸ THUẬT ĐỊA HÌNH, RANH GIỚI & KÍCH THƯỚC CHI TIẾT" style="font-size:10.5px; font-weight:700; color:#475569; width:95%; margin-top:2px;">
+      <!-- 1. Header Bar -->
+      <div style="border-bottom:2px solid #000; padding-bottom:5px; margin-bottom:5px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <img src="https://tanbaoagtech.com/wp-content/uploads/2021/04/logo-tanbao.png" style="height:38px;" onerror="this.onerror=null; this.src='/assets/logo.png';">
+            <div>
+              <h1 style="font-size:15px; font-weight:900; color:#064e3b; margin:0; text-transform:uppercase; letter-spacing:0.3px;">CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN</h1>
+              <input type="text" id="a4-input-doc-subtitle" class="a4-edit-field" value="HỒ SƠ BẢN VẼ KỸ THUẬT ĐỊA HÌNH, RANH GIỚI & KÍCH THƯỚC CHI TIẾT" style="font-size:10.5px; font-weight:800; color:#334155; width:100%; margin-top:2px;">
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12.5px; font-weight:900; color:#0f172a; text-transform:uppercase;">BẢN VẼ A4 CHUẨN TỶ LỆ</div>
+            <div style="font-size:10.5px; color:#475569; margin-top:2px; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+              <span>Mã Hồ Sơ:</span>
+              <input type="text" id="a4-input-doc-code" class="a4-edit-field" value="TBSGAgTech - KH2601002" style="font-size:10.5px; font-weight:800; color:#0f172a; width:180px; text-align:right;">
+            </div>
           </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:13px; font-weight:800; color:#0f172a; text-transform:uppercase;">BẢN VẼ A4 CHUẨN TỶ LỆ</div>
-          <div style="font-size:10px; color:#64748b; margin-top:2px; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
-            <span>Mã Hồ Sơ:</span>
-            <input type="text" id="a4-input-doc-code" class="a4-edit-field" value="${docCodeDefault}" style="font-size:10px; font-weight:800; color:#0f172a; width:160px; text-align:right;">
+
+        <!-- Sub-Header Row: Farm name & Owner name -->
+        <div style="display:flex; justify-content:flex-start; gap:50px; font-size:11.5px; font-weight:700; margin-top:5px; padding:3px 8px; background:#f8fafc; border-radius:4px; border:1px solid #e2e8f0;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-house-chimney" style="color:#15803d;"></i> Tên trang trại: 
+            <input type="text" id="a4-input-farm-name" class="a4-edit-field" value="${esc(farmName)}" style="font-size:11.5px; font-weight:800; color:#15803d; width:220px;">
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-user-tie" style="color:#2563eb;"></i> Khách hàng: 
+            <input type="text" id="a4-input-owner-name" class="a4-edit-field" value="${esc(ownerName)}" style="font-size:11.5px; font-weight:800; color:#15803d; width:220px;">
           </div>
         </div>
       </div>
 
-      <div style="display:flex; gap:10px; flex:1; overflow:hidden;">
-        <!-- Khung Bản Vẽ Kích Thước Bự (Flex: 1 chiếm 80% bề ngang A4) -->
-        <div style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; display:flex; align-items:center; justify-content:center; background:#e2e8f0;">
-          <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
-          <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.92); padding:4px 10px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.2); display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-compass" style="color:#0f172a;"></i> HƯỚNG BẮC (N)
+      <!-- 2. Main Center Body (Map + Right Panel) -->
+      <div style="display:flex; gap:8px; flex:1; overflow:hidden; margin-bottom:5px;">
+        <!-- Main Map Area (Left) -->
+        <div style="flex:1; display:flex; flex-direction:column; gap:5px; overflow:hidden;">
+          <div style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#e2e8f0;">
+            <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
+            
+            <!-- Map Controls Top-Right -->
+            <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:3px;">
+              <div style="background:#fff; border:1px solid #000; border-radius:3px; width:20px; height:20px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);">+</div>
+              <div style="background:#fff; border:1px solid #000; border-radius:3px; width:20px; height:20px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);">-</div>
+              <div style="background:#fff; border:1px solid #000; border-radius:3px; width:20px; height:20px; font-size:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);"><i class="fa-solid fa-expand"></i></div>
+            </div>
+
+            <!-- Elevation Vertical Color Bar Widget (Bottom-Right inside map) -->
+            <div style="position:absolute; bottom:8px; right:8px; background:rgba(15,23,42,0.92); color:#fff; padding:5px 8px; border-radius:5px; border:1px solid rgba(255,255,255,0.3); font-size:9.5px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+              <div style="font-size:8.5px; font-weight:800; color:#cbd5e1;">CAO ĐỘ (1M)</div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:8px; height:65px; border-radius:2px; background:linear-gradient(to top, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #fff;"></div>
+                <div style="display:flex; flex-direction:column; justify-content:space-between; height:65px; font-weight:800; font-size:9px;">
+                  <span style="color:#ef4444;">${maxEle} m</span>
+                  <span style="color:#eab308;">${Math.round((maxEle+minEle)/2)} m</span>
+                  <span style="color:#38bdf8;">${minEle} m</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inset Zoom Magnifier Circle "A-A" (Bottom-Left inside map) -->
+            <div style="position:absolute; bottom:10px; left:10px; width:110px; height:110px; border-radius:50%; border:3px solid #ef4444; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,0.5); background:#e2e8f0; display:flex; align-items:center; justify-content:center;">
+              <img src="${mapImageDataUrl}" style="width:280%; height:280%; object-fit:cover; transform:scale(1.4);">
+              <div style="position:absolute; top:6px; left:50%; transform:translateX(-50%); background:#fff; color:#000; font-size:10.5px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444;">A-A</div>
+            </div>
           </div>
-          <div style="position:absolute; bottom:10px; left:10px; background:rgba(15,23,42,0.85); color:#fff; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:700; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-mountain-sun" style="color:#4ade80;"></i> Đường đồng mức interval = ${contourInterval}m
+
+          <!-- Bottom Symbology Legend Bar (Directly below map) -->
+          <div style="display:flex; justify-content:space-around; align-items:center; padding:4px 8px; background:#fff; border:1.5px solid #000; border-radius:4px; font-size:9.5px; font-weight:700; color:#1e293b;">
+            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#ef4444; border:1px solid #fff;"></span> <strong style="color:#ef4444;">A-H</strong> Mốc ranh giới</span>
+            <span style="display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-arrows-left-right" style="color:#0284c7;"></i> Chiều dài cạnh</span>
+            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#ef4444; color:#fff; text-align:center; font-size:7.5px; font-weight:900; line-height:11px;">1</span> Vị trí khu vực</span>
+            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:9px; height:9px; background:#3b82f6;"></span> Vị trí hệ thống</span>
+            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:9px; background:rgba(16,185,129,0.35); border:1px solid #10b981;"></span> Diện tích trang trại</span>
+            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#eab308; color:#fff; text-align:center; font-size:7.5px; font-weight:900; line-height:11px;">X</span> Vị trí trạm thời tiết</span>
           </div>
         </div>
 
-        <!-- Khung Thông Tin Ngắn Gọn Vô (Width: 230px chiếm 20% bề ngang A4) -->
-        <div style="width:230px; flex:none; display:flex; flex-direction:column; gap:6px;">
-          <div style="border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#f0fdf4;">
-            <div style="font-weight:800; font-size:10.5px; color:#15803d; border-bottom:1px solid #bbf7d0; padding-bottom:3px; margin-bottom:5px; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-chart-pie"></i> THỐNG KÊ TRANG TRẠI
+        <!-- Right Sidebar Panel (Width 250px) -->
+        <div style="width:250px; flex:none; display:flex; flex-direction:column; gap:5px;">
+          <!-- Section 1: Thống Kê Trang Trại -->
+          <div style="border:1.5px solid #000; border-radius:4px; padding:5px 7px; background:#fff;">
+            <div style="font-weight:800; font-size:10px; color:#15803d; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+              <i class="fa-solid fa-leaf"></i> THỐNG KÊ TRANG TRẠI
             </div>
-            <table style="width:100%; font-size:10px; border-collapse:collapse;">
+            <table style="width:100%; font-size:9.5px; border-collapse:collapse;">
               <tr>
-                <td style="padding:2.5px 0; color:#475569;">Diện tích trang trại:</td>
-                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#15803d;">${areaSqM.toLocaleString('vi-VN')} m² (${(areaSqM/10000).toFixed(2)} ha)</td>
+                <td style="padding:2px 0; color:#475569;">Diện tích trang trại:</td>
+                <td style="padding:2px 0; text-align:right; font-weight:900; color:#15803d;">${areaSqM.toLocaleString('vi-VN')} m² (${(areaSqM/10000).toFixed(2)} ha)</td>
               </tr>
               <tr>
-                <td style="padding:2.5px 0; color:#475569;">Chu vi ranh giới:</td>
-                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#0f172a;">${perimeter.toLocaleString('vi-VN')} m</td>
-              </tr>
-              ${plantCount ? `
-              <tr>
-                <td style="padding:2.5px 0; color:#475569;">Số lượng cây trồng:</td>
-                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#2563eb;">${plantCount} cây</td>
-              </tr>` : ''}
-              <tr>
-                <td style="padding:2.5px 0; color:#475569;">Chênh lệch cao độ:</td>
-                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#d97706;">${minEle}m — ${maxEle}m (Δ ${maxEle - minEle}m)</td>
-              </tr>
-              <tr>
-                <td style="padding:2.5px 0; color:#dc2626; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
-                <td style="padding:2.5px 0; text-align:right; font-weight:800; color:#dc2626;">± 3%</td>
+                <td style="padding:2px 0; color:#475569;">Chu vi ranh giới:</td>
+                <td style="padding:2px 0; text-align:right; font-weight:900; color:#0f172a;">${perimeter.toLocaleString('vi-VN')} m</td>
               </tr>
             </table>
           </div>
 
-          <!-- Bảng Chú Giải Dải Màu Cao Độ Kỹ Thuật CAD -->
+          <!-- Section 2: Chênh Lệch Cao Độ & Sai Số -->
           <div style="border:1.5px solid #000; border-radius:4px; padding:5px 7px; background:#fff;">
-            <div style="font-weight:800; font-size:9.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:3px; margin-bottom:4px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between;">
-              <span style="display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-palette" style="color:#2563eb;"></i> CHÚ GIẢI CAO ĐỘ (${contourInterval}M/BẬC)
-              </span>
+            <table style="width:100%; font-size:9.5px; border-collapse:collapse;">
+              <tr>
+                <td style="padding:2px 0; color:#475569;">Chênh lệch cao độ:</td>
+                <td style="padding:2px 0; text-align:right; font-weight:800; color:#ea580c;">${minEle} m — ${maxEle} m (Δ ${maxEle - minEle} m)</td>
+              </tr>
+              <tr>
+                <td style="padding:2px 0; color:#dc2626; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
+                <td style="padding:2px 0; text-align:right; font-weight:900; color:#dc2626;">± 3 %</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Section 3: Chú Giải Cao Độ (Tìm/Bậc) -->
+          <div style="border:1.5px solid #000; border-radius:4px; padding:4px 6px; background:#fff;">
+            <div style="font-weight:800; font-size:9px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:3px; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+              <i class="fa-solid fa-layer-group" style="color:#2563eb;"></i> CHÚ GIẢI CAO ĐỘ (TÌM/BẬC)
             </div>
-
-            <div style="height:10px; width:100%; border-radius:2px; background: linear-gradient(to right, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #94a3b8; margin-bottom:3px;"></div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; font-weight:700;">
-              <div style="text-align:left; color:#000080;">${minEle}m</div>
-              <div style="text-align:center; color:#0284c7;">${Math.round(minEle + (maxEle - minEle)*0.25)}m</div>
-              <div style="text-align:center; color:#ca8a04;">${Math.round(minEle + (maxEle - minEle)*0.5)}m</div>
-              <div style="text-align:center; color:#ea580c;">${Math.round(minEle + (maxEle - minEle)*0.75)}m</div>
-              <div style="text-align:right; color:#b91c1c;">${maxEle}m</div>
+            <div style="height:9px; width:100%; border-radius:2px; background: linear-gradient(to right, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #94a3b8; margin-bottom:2px;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:8.5px; font-weight:700;">
+              <span style="color:#000080;">${minEle}m</span>
+              <span style="color:#0284c7;">${Math.round(minEle + (maxEle - minEle)*0.25)}m</span>
+              <span style="color:#ca8a04;">${Math.round(minEle + (maxEle - minEle)*0.5)}m</span>
+              <span style="color:#ea580c;">${Math.round(minEle + (maxEle - minEle)*0.75)}m</span>
+              <span style="color:#b91c1c;">${maxEle}m</span>
             </div>
           </div>
 
-          <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#fff; overflow-y:auto;">
-            <div style="font-weight:800; font-size:10.5px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:3px; margin-bottom:5px; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-ruler-horizontal"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
+          <!-- Section 4: Chiều Dài Các Cạnh Ranh Giới Table -->
+          <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:5px 7px; background:#fff; overflow-y:auto;">
+            <div style="font-weight:800; font-size:9.5px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:3px; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+              <i class="fa-solid fa-ruler-combined"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
             </div>
-            <table style="width:100%; font-size:9.5px; border-collapse:collapse;">
+            <table style="width:100%; font-size:9px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f1f5f9; text-align:left; border-bottom:1px solid #cbd5e1;">
-                  <th style="padding:3px 4px;">Đoạn Cạnh</th>
-                  <th style="padding:3px 4px; text-align:right;">Chiều Dài (m)</th>
+                  <th style="padding:2.5px 3px;">ĐOẠN CẠNH</th>
+                  <th style="padding:2.5px 3px; text-align:right;">CHIỀU DÀI (m)</th>
                 </tr>
               </thead>
               <tbody>
@@ -2212,35 +2253,44 @@ function openAdminFarmA4ExportModal(map) {
               </tbody>
             </table>
           </div>
+
+          <!-- Section 5: Legend for sensors & weather station -->
+          <div style="border:1.5px solid #000; border-radius:4px; padding:4px 6px; background:#fff; font-size:9px;">
+            <table style="width:100%; border-collapse:collapse;">
+              <tr>
+                <td style="padding:1.5px 0; font-weight:700; color:#0f172a;">Vị trí 1,2,3</td>
+                <td style="padding:1.5px 0; text-align:right; font-weight:800; color:#dc2626;">Thiết bị Cảm biến đất</td>
+              </tr>
+              <tr>
+                <td style="padding:1.5px 0; font-weight:700; color:#0f172a;">Vị trí X</td>
+                <td style="padding:1.5px 0; text-align:right; font-weight:800; color:#ca8a04;">Trạm Quan Trắc Thời tiết</td>
+              </tr>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Title Block Khung Tên Bản Vẽ CAD -->
-      <div style="margin-top:8px; border:2px solid #000; background:#fff;">
+      <!-- 3. Bottom Title Block (Khung Tên Hồ Sơ) -->
+      <div style="border:1.5px solid #000; background:#fff;">
         <table style="width:100%; border-collapse:collapse; font-size:10px;">
           <tr>
-            <td style="width:33%; border-right:1.5px solid #000; padding:5px 7px; vertical-align:top;">
-              <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-house-chimney" style="color:#15803d;"></i> TÊN TRANG TRẠI
+            <td style="width:40%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:middle;">
+              <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                <i class="fa-solid fa-user-check" style="color:#15803d;"></i> NGƯỜI THỰC HIỆN
               </div>
+              <input type="text" id="a4-input-performer-name" class="a4-edit-field" value="Phạm Hoàng Phúc" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
             </td>
-            <td style="width:22%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-user-gear" style="color:#0f172a;"></i> NGƯỜI THỰC HIỆN
+            <td style="width:35%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:middle;">
+              <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                <i class="fa-solid fa-calendar-days" style="color:#2563eb;"></i> NGÀY XUẤT
               </div>
-              <input type="text" id="a4-input-performer-name" class="a4-edit-field" value="${performerName}" style="font-size:11px; font-weight:700; color:#0f172a; width:100%; margin-top:2px;">
+              <input type="text" id="a4-input-export-date" class="a4-edit-field" value="${exportDate}" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
             </td>
-            <td style="width:10%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-calendar-days" style="color:#64748b;"></i> NGÀY XUẤT
+            <td style="width:25%; padding:6px 10px; vertical-align:middle;">
+              <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                <i class="fa-solid fa-ruler-horizontal" style="color:#d97706;"></i> TỶ LỆ
               </div>
-              <div style="font-size:11px; font-weight:700; margin-top:4px;">${exportDate}</div>
-            </td>
-            <td style="width:8%; padding:6px 8px; vertical-align:top;">
-              <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-ruler-combined" style="color:#2563eb;"></i> TỶ LỆ
-              </div>
-              <input type="text" id="a4-input-scale-text" class="a4-edit-field" value="1 : 1" style="font-size:11.5px; font-weight:800; color:#2563eb; width:100%; margin-top:2px;">
+              <div style="font-size:11.5px; font-weight:900; color:#0f172a; margin-top:2px;">1 : 1</div>
             </td>
           </tr>
         </table>
