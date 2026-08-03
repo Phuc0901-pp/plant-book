@@ -3,34 +3,50 @@
    sw.js — PWA Service Worker for offline support and speed
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'pb-farmer-cache-v1';
+const CACHE_NAME = 'pb-farmer-cache-v3.0.0';
 const ASSETS = [
   '/user/',
   '/user/index.html',
   '/user/css/user-layout.css',
-  '/user/js/auth.js',
-  '/user/js/app.js',
-  '/user/js/core/api.js',
-  '/user/js/core/router.js',
-  '/user/js/core/utils.js',
-  '/user/js/core/websocket.js',
-  '/user/js/modules/dashboard.js',
-  '/user/js/modules/plants.js',
-  '/user/js/modules/logs.js',
-  '/user/js/modules/reminders.js',
-  '/user/js/modules/care-modal.js',
-  '/user/js/modules/media.js',
-  '/user/js/modules/map.js',
-  '/user/js/modules/fab.js',
+  '/user/js/auth.js?v=3.0.0',
+  '/user/js/app.js?v=3.0.0',
+  '/user/js/core/api.js?v=3.0.0',
+  '/user/js/core/router.js?v=3.0.0',
+  '/user/js/core/utils.js?v=3.0.0',
+  '/user/js/core/websocket.js?v=3.0.0',
+  '/user/js/modules/dashboard.js?v=3.0.0',
+  '/user/js/modules/plants.js?v=3.0.0',
+  '/user/js/modules/logs.js?v=3.0.0',
+  '/user/js/modules/reminders.js?v=3.0.0',
+  '/user/js/modules/care-modal.js?v=3.0.0',
+  '/user/js/modules/media.js?v=3.0.0',
+  '/user/js/modules/map.js?v=3.0.0',
+  '/user/js/modules/fab.js?v=3.0.0',
   '/assets/logo.png',
   '/assets/login-hero.jpg'
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS).catch(err => console.warn('PWA Asset caching error during installation:', err));
     })
+  );
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('🧹 Clearing old PWA cache:', key);
+            return caches.delete(key);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 

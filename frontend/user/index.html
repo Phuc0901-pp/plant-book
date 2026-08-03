@@ -1221,9 +1221,24 @@
 <div id="toast-container"></div>
 
 <!-- Scripts (ES Modules) -->
+<script>
+  // Inline fallbacks to ensure login buttons work immediately even before ES module evaluation
+  window.togglePasswordVisibility = window.togglePasswordVisibility || function() {
+    const passInput = document.getElementById('login-pass');
+    const icon = document.getElementById('toggle-pass-icon');
+    if (!passInput || !icon) return;
+    if (passInput.type === 'password') {
+      passInput.type = 'text';
+      icon.className = 'fa fa-eye-slash';
+    } else {
+      passInput.type = 'password';
+      icon.className = 'fa fa-eye';
+    }
+  };
+</script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=2.8.0"></script>
+<script type="module" src="/user/js/auth.js?v=3.0.0"></script>
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=2.8.0"></script>
+<script type="module" src="/user/js/app.js?v=3.0.0"></script>
 </body>
 </html>
