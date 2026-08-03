@@ -15,6 +15,17 @@ export let userMarkers = [];
 /** Cờ đánh dấu đã tải token Mapbox */
 let mapboxTokenFetched = false;
 
+// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
+export function getShortTreeCode(treeCode, plantId) {
+  const code = String(treeCode || plantId || '').trim();
+  if (!code) return '';
+  const match = code.match(/(\d+)$/);
+  if (match) {
+    return String(parseInt(match[1], 10));
+  }
+  return code;
+}
+
 /**
  * Tải Mapbox access token từ server (chỉ tải một lần).
  * Throws nếu không lấy được token.
@@ -139,21 +150,8 @@ export function initUserMap(farms, plants) {
       const wrapper = Object.assign(document.createElement('div'), { className: 'plant-marker-wrap' });
       wrapper.style.cursor = 'pointer';
 
-      const el = Object.assign(document.createElement('div'), { className: 'plant-id-marker' });
       const colorMap = { 'Tốt': '#22c55e', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
       const color    = colorMap[plant.health_status] || '#3b82f6';
-
-// Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
-export function getShortTreeCode(treeCode, plantId) {
-  const code = String(treeCode || plantId || '').trim();
-  if (!code) return '';
-  const match = code.match(/(\d+)$/);
-  if (match) {
-    return String(parseInt(match[1], 10));
-  }
-  return code;
-}
-
       Object.assign(el.style, {
         width: '30px', height: '30px', borderRadius: '50%',
         border: '2px solid white', display: 'flex',

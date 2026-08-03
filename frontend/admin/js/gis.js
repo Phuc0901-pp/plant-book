@@ -1973,8 +1973,12 @@ function openAdminFarmA4ExportModal(map) {
 
       edgeRowsHtml += `
         <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:3.5px 4px; font-weight:700; color:#0f172a;">Đoạn ${segName}</td>
-          <td style="padding:3.5px 4px; text-align:right; font-weight:800; color:#15803d;">${len.toLocaleString('vi-VN')} m</td>
+          <td style="padding:2px 3px;">
+            <input type="text" class="a4-edit-field" value="Đoạn ${segName}" style="font-size:9px; font-weight:700; color:#0f172a; width:98%;">
+          </td>
+          <td style="padding:2px 3px; text-align:right;">
+            <input type="text" class="a4-edit-field" value="${len.toLocaleString('vi-VN')} m" style="font-size:9px; font-weight:800; color:#15803d; width:98%; text-align:right;">
+          </td>
         </tr>
       `;
     }
@@ -2032,14 +2036,18 @@ function openAdminFarmA4ExportModal(map) {
   modalContainer.innerHTML = `
     <style>
       .a4-edit-field {
-        border: 1px dashed #94a3b8 !important;
+        border: 1px dashed #cbd5e1 !important;
         background: #f8fafc !important;
-        padding: 2px 5px !important;
+        padding: 1px 4px !important;
         border-radius: 4px !important;
         font-family: inherit !important;
         color: inherit !important;
         box-sizing: border-box !important;
         transition: all 0.2s ease !important;
+      }
+      .a4-edit-field:hover {
+        border-color: #3b82f6 !important;
+        background: #ffffff !important;
       }
       .a4-edit-field:focus {
         border-color: #2563eb !important;
@@ -2075,7 +2083,7 @@ function openAdminFarmA4ExportModal(map) {
         <i class="fa-solid fa-drafting-compass" style="font-size:22px; color:#4ade80;"></i>
         <div>
           <h3 style="font-size:15px; font-weight:800; margin:0; color:#4ade80;">HỒ SƠ BẢN VẼ KỸ THUẬT A4 CHUẨN TỶ LỆ</h3>
-          <p style="font-size:11.5px; color:#94a3b8; margin:0;">Mẫu chuẩn Công ty TNHH Công Nghệ Nông Nghiệp Tân Bảo Sài Gòn</p>
+          <p style="font-size:11.5px; color:#94a3b8; margin:0;">Nhấp chuột trực tiếp vào bất kỳ ô chữ/số nào trên bản vẽ để tùy chỉnh linh hoạt trước khi in</p>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
@@ -2114,15 +2122,15 @@ function openAdminFarmA4ExportModal(map) {
       <!-- 1. Header Bar -->
       <div style="border-bottom:2px solid #000; padding-bottom:5px; margin-bottom:5px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px; flex:1;">
             <img src="https://tanbaoagtech.com/wp-content/uploads/2021/04/logo-tanbao.png" style="height:38px;" onerror="this.onerror=null; this.src='/assets/logo.png';">
-            <div>
-              <h1 style="font-size:15px; font-weight:900; color:#064e3b; margin:0; text-transform:uppercase; letter-spacing:0.3px;">CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN</h1>
+            <div style="flex:1;">
+              <input type="text" id="a4-input-company-name" class="a4-edit-field" value="CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN" style="font-size:15px; font-weight:900; color:#064e3b; width:100%; text-transform:uppercase; letter-spacing:0.3px;">
               <input type="text" id="a4-input-doc-subtitle" class="a4-edit-field" value="HỒ SƠ BẢN VẼ KỸ THUẬT ĐỊA HÌNH, RANH GIỚI & KÍCH THƯỚC CHI TIẾT" style="font-size:10.5px; font-weight:800; color:#334155; width:100%; margin-top:2px;">
             </div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:12.5px; font-weight:900; color:#0f172a; text-transform:uppercase;">BẢN VẼ A4 CHUẨN TỶ LỆ</div>
+            <input type="text" id="a4-input-doc-type" class="a4-edit-field" value="BẢN VẼ A4 CHUẨN TỶ LỆ" style="font-size:12.5px; font-weight:900; color:#0f172a; text-transform:uppercase; text-align:right; width:190px;">
             <div style="font-size:10.5px; color:#475569; margin-top:2px; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
               <span>Mã Hồ Sơ:</span>
               <input type="text" id="a4-input-doc-code" class="a4-edit-field" value="TBSGAgTech - KH2601002" style="font-size:10.5px; font-weight:800; color:#0f172a; width:180px; text-align:right;">
@@ -2197,12 +2205,16 @@ function openAdminFarmA4ExportModal(map) {
             </div>
             <table style="width:100%; font-size:9.5px; border-collapse:collapse;">
               <tr>
-                <td style="padding:2px 0; color:#475569;">Diện tích trang trại:</td>
-                <td style="padding:2px 0; text-align:right; font-weight:900; color:#15803d;">${areaSqM.toLocaleString('vi-VN')} m² (${(areaSqM/10000).toFixed(2)} ha)</td>
+                <td style="padding:2px 0; color:#475569; width:45%;">Diện tích trang trại:</td>
+                <td style="padding:2px 0; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="${areaSqM.toLocaleString('vi-VN')} m² (${(areaSqM/10000).toFixed(2)} ha)" style="font-size:9.5px; font-weight:900; color:#15803d; width:100%; text-align:right;">
+                </td>
               </tr>
               <tr>
-                <td style="padding:2px 0; color:#475569;">Chu vi ranh giới:</td>
-                <td style="padding:2px 0; text-align:right; font-weight:900; color:#0f172a;">${perimeter.toLocaleString('vi-VN')} m</td>
+                <td style="padding:2px 0; color:#475569; width:45%;">Chu vi ranh giới:</td>
+                <td style="padding:2px 0; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="${perimeter.toLocaleString('vi-VN')} m" style="font-size:9.5px; font-weight:900; color:#0f172a; width:100%; text-align:right;">
+                </td>
               </tr>
             </table>
           </div>
@@ -2211,12 +2223,16 @@ function openAdminFarmA4ExportModal(map) {
           <div style="border:1.5px solid #000; border-radius:4px; padding:5px 7px; background:#fff;">
             <table style="width:100%; font-size:9.5px; border-collapse:collapse;">
               <tr>
-                <td style="padding:2px 0; color:#475569;">Chênh lệch cao độ:</td>
-                <td style="padding:2px 0; text-align:right; font-weight:800; color:#ea580c;">${minEle} m — ${maxEle} m (Δ ${maxEle - minEle} m)</td>
+                <td style="padding:2px 0; color:#475569; width:45%;">Chênh lệch cao độ:</td>
+                <td style="padding:2px 0; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="${minEle} m — ${maxEle} m (Δ ${maxEle - minEle} m)" style="font-size:9px; font-weight:800; color:#ea580c; width:100%; text-align:right;">
+                </td>
               </tr>
               <tr>
-                <td style="padding:2px 0; color:#dc2626; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
-                <td style="padding:2px 0; text-align:right; font-weight:900; color:#dc2626;">± 3 %</td>
+                <td style="padding:2px 0; color:#dc2626; font-weight:700; width:45%;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
+                <td style="padding:2px 0; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="± 3 %" style="font-size:9.5px; font-weight:900; color:#dc2626; width:100%; text-align:right;">
+                </td>
               </tr>
             </table>
           </div>
@@ -2244,8 +2260,8 @@ function openAdminFarmA4ExportModal(map) {
             <table style="width:100%; font-size:9px; border-collapse:collapse;">
               <thead>
                 <tr style="background:#f1f5f9; text-align:left; border-bottom:1px solid #cbd5e1;">
-                  <th style="padding:2.5px 3px;">ĐOẠN CẠNH</th>
-                  <th style="padding:2.5px 3px; text-align:right;">CHIỀU DÀI (m)</th>
+                  <th style="padding:2.5px 3px; width:45%;">ĐOẠN CẠNH</th>
+                  <th style="padding:2.5px 3px; text-align:right; width:55%;">CHIỀU DÀI (m)</th>
                 </tr>
               </thead>
               <tbody>
@@ -2258,12 +2274,20 @@ function openAdminFarmA4ExportModal(map) {
           <div style="border:1.5px solid #000; border-radius:4px; padding:4px 6px; background:#fff; font-size:9px;">
             <table style="width:100%; border-collapse:collapse;">
               <tr>
-                <td style="padding:1.5px 0; font-weight:700; color:#0f172a;">Vị trí 1,2,3</td>
-                <td style="padding:1.5px 0; text-align:right; font-weight:800; color:#dc2626;">Thiết bị Cảm biến đất</td>
+                <td style="padding:1.5px 0; font-weight:700; color:#0f172a; width:45%;">
+                  <input type="text" class="a4-edit-field" value="Vị trí 1,2,3" style="font-size:9px; font-weight:700; color:#0f172a; width:95%;">
+                </td>
+                <td style="padding:1.5px 0; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="Thiết bị Cảm biến đất" style="font-size:9px; font-weight:800; color:#dc2626; width:100%; text-align:right;">
+                </td>
               </tr>
               <tr>
-                <td style="padding:1.5px 0; font-weight:700; color:#0f172a;">Vị trí X</td>
-                <td style="padding:1.5px 0; text-align:right; font-weight:800; color:#ca8a04;">Trạm Quan Trắc Thời tiết</td>
+                <td style="padding:1.5px 0; font-weight:700; color:#0f172a; width:45%;">
+                  <input type="text" class="a4-edit-field" value="Vị trí X" style="font-size:9px; font-weight:700; color:#0f172a; width:95%;">
+                </td>
+                <td style="padding:1.5px 0; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="Trạm Quan Trắc Thời tiết" style="font-size:9px; font-weight:800; color:#ca8a04; width:100%; text-align:right;">
+                </td>
               </tr>
             </table>
           </div>
@@ -2290,7 +2314,7 @@ function openAdminFarmA4ExportModal(map) {
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-ruler-horizontal" style="color:#d97706;"></i> TỶ LỆ
               </div>
-              <div style="font-size:11.5px; font-weight:900; color:#0f172a; margin-top:2px;">1 : 1</div>
+              <input type="text" id="a4-input-scale-val" class="a4-edit-field" value="1 : 1" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
             </td>
           </tr>
         </table>
