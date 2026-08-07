@@ -10,6 +10,11 @@ let currentCategoryFilter = 'all';
 let currentPeriodFilter = 'day';
 let cachedSupplies = [];
 
+// ── State Phân trang Lịch sử Tiêu hao Vật tư (10 đợt / trang) ──
+let currentUsageLogPage = 1;
+const usageLogPageSize = 10;
+let cachedUsageLogs = [];
+
 // ─── Formatting helpers ──────────────────────────────────────────
 function formatVND(amount) {
   const val = parseFloat(amount) || 0;
@@ -799,6 +804,79 @@ export async function saveSupplyUsage() {
   }
 }
 
+export function changeSupplyUsagePage(direction) {
+  const totalPages = Math.ceil(cachedUsageLogs.length / usageLogPageSize) || 1;
+  const newPage = currentUsageLogPage + direction;
+  if (newPage >= 1 && newPage <= totalPages) {
+    currentUsageLogPage = newPage;
+    renderSupplyUsagesPage();
+  }
+}
+window.changeSupplyUsagePage = changeSupplyUsagePage;
+
+function renderSupplyUsagesPage() {
+  const tbody = document.getElementById('supplies-usages-log-body');
+  const paginationContainer = document.getElementById('supplies-usages-pagination');
+  if (!tbody) return;
+
+  if (!cachedUsageLogs || cachedUsageLogs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Chưa có đợt tiêu hao vật tư nào được ghi nhận.</td></tr>';
+    if (paginationContainer) paginationContainer.innerHTML = '';
+    return;
+  }
+
+  const totalLogs = cachedUsageLogs.length;
+  const totalPages = Math.ceil(totalLogs / usageLogPageSize) || 1;
+
+  if (currentUsageLogPage < 1) currentUsageLogPage = 1;
+  if (currentUsageLogPage > totalPages) currentUsageLogPage = totalPages;
+
+  const startIndex = (currentUsageLogPage - 1) * usageLogPageSize;
+  const endIndex = Math.min(startIndex + usageLogPageSize, totalLogs);
+  const pageLogs = cachedUsageLogs.slice(startIndex, endIndex);
+
+  tbody.innerHTML = pageLogs.map(l => {
+    const dateStr = new Date(l.usage_date).toLocaleDateString('vi-VN');
+    return `
+      <tr>
+        <td><strong>${dateStr}</strong></td>
+        <td><strong>${l.supply_name}</strong></td>
+        <td>${getCategoryBadge(l.category)}</td>
+        <td>${
+          l.plant_id 
+            ? `Cây ${l.tree_code || '#' + l.plant_id} (${l.farm_name || ''})` 
+            : `Toàn vườn ${l.farm_name || ''}`
+        }</td>
+        <td><strong>${l.quantity}</strong> ${l.unit}</td>
+        <td>${formatVND(l.unit_price)}</td>
+        <td><strong style="color:var(--green-dark);">${formatVND(l.total_cost)}</strong></td>
+        <td style="text-align:center;">
+          <button class="btn btn-danger btn-sm" onclick="deleteSupplyUsage(${l.id})" title="Xóa đợt tiêu hao"><i class="fa fa-trash"></i></button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (paginationContainer) {
+    paginationContainer.innerHTML = `
+      <div style="font-size:13px; font-weight:600; color:#64748b; display:flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-list-check" style="color:var(--green)"></i> Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> / Tổng <strong>${totalLogs}</strong> đợt tiêu hao
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="changeSupplyUsagePage(-1)" ${currentUsageLogPage === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
+          <i class="fa-solid fa-chevron-left"></i> Trang trước
+        </button>
+        <span style="font-size:13px; font-weight:700; color:#1e293b; padding:4px 10px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px;">
+          ${currentUsageLogPage} / ${totalPages}
+        </span>
+        <button class="btn btn-secondary btn-sm" onclick="changeSupplyUsagePage(1)" ${currentUsageLogPage === totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
+          Trang sau <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    `;
+  }
+}
+
 export async function loadSupplyUsagesLog() {
   const tbody = document.getElementById('supplies-usages-log-body');
   if (!tbody) return;
@@ -809,36 +887,13 @@ export async function loadSupplyUsagesLog() {
 
     const params = new URLSearchParams();
     if (farm_id && farm_id !== 'all') params.append('farm_id', farm_id);
-    params.append('limit', '20');
+    params.append('limit', '200');
 
     const logs = await api(`/supplies/usages?${params.toString()}`);
+    cachedUsageLogs = logs || [];
+    currentUsageLogPage = 1;
 
-    if (!logs || logs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Chưa có đợt tiêu hao vật tư nào được ghi nhận.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = logs.map(l => {
-      const dateStr = new Date(l.usage_date).toLocaleDateString('vi-VN');
-      return `
-        <tr>
-          <td><strong>${dateStr}</strong></td>
-          <td><strong>${l.supply_name}</strong></td>
-          <td>${getCategoryBadge(l.category)}</td>
-          <td>${
-            l.plant_id 
-              ? `Cây ${l.tree_code || '#' + l.plant_id} (${l.farm_name || ''})` 
-              : `Toàn vườn ${l.farm_name || ''}`
-          }</td>
-          <td><strong>${l.quantity}</strong> ${l.unit}</td>
-          <td>${formatVND(l.unit_price)}</td>
-          <td><strong style="color:var(--green-dark);">${formatVND(l.total_cost)}</strong></td>
-          <td style="text-align:center;">
-            <button class="btn btn-danger btn-sm" onclick="deleteSupplyUsage(${l.id})" title="Xóa đợt tiêu hao"><i class="fa fa-trash"></i></button>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    renderSupplyUsagesPage();
 
   } catch (err) {
     console.error('Error loading supply usages log:', err);
