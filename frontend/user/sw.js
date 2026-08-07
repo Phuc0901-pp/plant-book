@@ -3,25 +3,25 @@
    sw.js — PWA Service Worker for offline support and speed
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'pb-farmer-cache-v3.2.0';
+const CACHE_NAME = 'pb-farmer-cache-v3.3.0';
 const ASSETS = [
   '/user/',
   '/user/index.html',
-  '/user/css/user-layout.css?v=3.2.0',
-  '/user/js/auth.js?v=3.2.0',
-  '/user/js/app.js?v=3.2.0',
-  '/user/js/core/api.js?v=3.2.0',
-  '/user/js/core/router.js?v=3.2.0',
-  '/user/js/core/utils.js?v=3.2.0',
-  '/user/js/core/websocket.js?v=3.2.0',
-  '/user/js/modules/dashboard.js?v=3.2.0',
-  '/user/js/modules/plants.js?v=3.2.0',
-  '/user/js/modules/logs.js?v=3.2.0',
-  '/user/js/modules/reminders.js?v=3.2.0',
-  '/user/js/modules/care-modal.js?v=3.2.0',
-  '/user/js/modules/media.js?v=3.2.0',
-  '/user/js/modules/map.js?v=3.2.0',
-  '/user/js/modules/fab.js?v=3.2.0',
+  '/user/css/user-layout.css?v=3.3.0',
+  '/user/js/auth.js?v=3.3.0',
+  '/user/js/app.js?v=3.3.0',
+  '/user/js/core/api.js?v=3.3.0',
+  '/user/js/core/router.js?v=3.3.0',
+  '/user/js/core/utils.js?v=3.3.0',
+  '/user/js/core/websocket.js?v=3.3.0',
+  '/user/js/modules/dashboard.js?v=3.3.0',
+  '/user/js/modules/plants.js?v=3.3.0',
+  '/user/js/modules/logs.js?v=3.3.0',
+  '/user/js/modules/reminders.js?v=3.3.0',
+  '/user/js/modules/care-modal.js?v=3.3.0',
+  '/user/js/modules/media.js?v=3.3.0',
+  '/user/js/modules/map.js?v=3.3.0',
+  '/user/js/modules/fab.js?v=3.3.0',
   '/assets/logo.png',
   '/assets/login-hero.jpg'
 ];

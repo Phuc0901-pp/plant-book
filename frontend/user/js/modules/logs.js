@@ -10,6 +10,11 @@ import { buildMediaThumbnailsHtml } from './media.js';
 let _logsCache = [];
 let _diseaseOnlyFilterActive = false;
 
+// ── State Phân trang Lịch sử (10 dòng / trang) ───────────────
+let _currentLogPage = 1;
+const _logPageSize = 10;
+let _currentFilteredLogs = [];
+
 /**
  * Cập nhật cache nhật ký (30 ngày).
  * @param {Array} logs
@@ -314,13 +319,6 @@ export function renderUserLogsTable(logs) {
 
   tbody.innerHTML = html;
 }
-
-/**
- * Render toàn bộ nhật ký 30 ngày ở tab Lịch sử.
-// ── State Phân trang Lịch sử (10 dòng / trang) ───────────────
-let _currentLogPage = 1;
-const _logPageSize = 10;
-let _currentFilteredLogs = [];
 
 export function changeLogPage(direction) {
   const totalPages = Math.ceil(_currentFilteredLogs.length / _logPageSize) || 1;
