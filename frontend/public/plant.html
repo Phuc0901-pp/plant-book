@@ -244,13 +244,58 @@
           <textarea id="pesticide-note" rows="3" placeholder="Tình trạng sâu hại, thời tiết gió lặng..."></textarea>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pesticide')">Hủy</button>
-        <button type="submit" class="btn btn-submit btn-pesticide">Lưu nhật ký</button>
-      </div>
-    </form>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-disease')">Hủy</button>
+          <button type="submit" class="btn btn-submit btn-disease" id="disease-submit-btn">Lưu báo cáo bệnh</button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
+
+  <!-- 🌾 Harvest Modal -->
+  <div class="modal-overlay" id="modal-harvest" onclick="closeModalOnOuterClick(event, 'modal-harvest')">
+    <div class="glass-panel modal">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color: #d97706;"><i class="fa-solid fa-wheat-awn"></i> Quy trình Ghi nhận Thu hoạch</h3>
+        <button class="modal-close" onclick="closeModal('modal-harvest')">×</button>
+      </div>
+      <form id="form-harvest" onsubmit="submitCareLog(event, 'Thu hoạch', 'modal-harvest', 'form-harvest')">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="field" style="flex:2;">
+              <label>Sản lượng thu hoạch *</label>
+              <input type="number" step="any" id="harvest-amount" placeholder="Nhập sản lượng (VD: 50)..." required>
+            </div>
+            <div class="field" style="flex:1;">
+              <label>Đơn vị</label>
+              <select id="harvest-unit">
+                <option value="kg">kg (Kilogram)</option>
+                <option value="tấn">tấn (Tấn)</option>
+                <option value="trái">trái / quả</option>
+                <option value="thùng">thùng / sọt</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Chất lượng trái / Độ Brix</label>
+            <input type="text" id="harvest-quality" placeholder="Ví dụ: Loại A (Brix 18%), Hàng xuất khẩu..." value="Loại A (Đạt chuẩn xuất khẩu)">
+          </div>
+          <div class="field">
+            <label>Thời gian thu hoạch *</label>
+            <input type="datetime-local" id="harvest-datetime" required>
+          </div>
+          <div class="field">
+            <label>Ghi chú đợt thu hoạch</label>
+            <textarea id="harvest-note" rows="3" placeholder="Ví dụ: Thu hoạch đợt 1, chất lượng trái rất đều..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-harvest')">Hủy</button>
+          <button type="submit" class="btn btn-submit" style="background:linear-gradient(135deg, #d97706 0%, #b45309 100%); color:#fff;">Lưu nhật ký thu hoạch</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 <!-- ✂️ Leaf Cut Modal -->
 <div class="modal-overlay" id="modal-leaf" onclick="closeModalOnOuterClick(event, 'modal-leaf')">

@@ -662,6 +662,10 @@ async function renderPlant(plant) {
               <i class="fa-solid fa-virus" style="color: var(--color-disease)"></i>
               <span>Bệnh cây</span>
             </button>
+            <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a;">
+              <i class="fa-solid fa-wheat-awn" style="color: #d97706"></i>
+              <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
+            </button>
           </div>
         </div>
 
@@ -745,8 +749,8 @@ async function renderPlant(plant) {
     plantMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
     plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-    // Add contour lines (đường đồng mức) & 3D terrain elevation to public plant map
-    addContourLinesToMap(plantMap);
+    // Bản đồ vị trí cây trồng trên trang Public hiển thị bản đồ mượt mà (Không hiển thị đường đồng mức)
+    // addContourLinesToMap(plantMap);
 
     // Add plant marker
     if (plant.latitude && plant.longitude) {

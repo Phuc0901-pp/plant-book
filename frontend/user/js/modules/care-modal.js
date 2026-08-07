@@ -545,6 +545,25 @@ function _buildDetailFields(logType, configs, supplies = []) {
         <div class="field"><label>Lý do tỉa hoa/quả *</label><select id="c-detail-reason">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
         <div class="field"><label>Số lượng hoa/quả đã tỉa</label><input type="number" id="c-detail-amount" value="3" min="1"></div>`;
     }
+    case 'Thu hoạch': {
+      return `
+        <div class="field">
+          <label><i class="fa-solid fa-wheat-awn" style="color:#d97706"></i> Sản lượng thu hoạch *</label>
+          <div style="display:flex; gap:8px;">
+            <input type="number" step="any" id="c-detail-harvest-amount" value="50" placeholder="Số lượng (VD: 50)" style="flex:2;">
+            <select id="c-detail-harvest-unit" style="flex:1;">
+              <option value="kg">kg (Kilogram)</option>
+              <option value="tấn">tấn (Tấn)</option>
+              <option value="trái">trái / quả</option>
+              <option value="thùng">thùng / sọt</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Chất lượng nông sản / Độ đường (Brix)</label>
+          <input type="text" id="c-detail-harvest-quality" placeholder="Ví dụ: Loại A (Brix 18%), Hàng xuất khẩu..." value="Loại A (Đạt chuẩn xuất khẩu)">
+        </div>`;
+    }
     case 'Bệnh cây':
       return `
         <div class="field"><label>Tên bệnh / Triệu chứng *</label><input type="text" id="c-detail-disease-name" placeholder="Ví dụ: Vàng lá thối rễ, Sâu đục thân..."></div>
@@ -754,11 +773,19 @@ export async function saveCareLog() {
       body.details = { pesticide_name: document.getElementById('c-detail-pesticide')?.value, amount, unit: document.getElementById('c-detail-unit')?.value };
 
     } else if (logType === 'Cắt lá') {
-      body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
+            body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
 
     } else if (logType === 'Tỉa hoa') {
       body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
 
+    } else if (logType === 'Thu hoạch') {
+      const amount = parseFloat(document.getElementById('c-detail-harvest-amount')?.value) || 0;
+      if (amount <= 0) throw new Error('Vui lòng nhập sản lượng thu hoạch hợp lệ!');
+      body.details = {
+        amount,
+        unit: document.getElementById('c-detail-harvest-unit')?.value || 'kg',
+        quality: document.getElementById('c-detail-harvest-quality')?.value || ''
+      };
     } else if (logType === 'Bệnh cây') {
       const disease_name = document.getElementById('c-detail-disease-name')?.value.trim();
       if (!disease_name) throw new Error('Vui lòng nhập tên bệnh hoặc triệu chứng!');

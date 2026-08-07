@@ -196,10 +196,11 @@ export function groupCareLogsByDay(logs) {
       if (l.details && Object.keys(l.details).length > 0) {
         const parts = [];
         if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
-        if (l.details.amount)          parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+        if (l.details.amount && l.details.unit) parts.push(`Lượng: ${l.details.amount} ${l.details.unit}`);
         if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
         if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
         if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
+        if (l.details.quality)         parts.push(`Chất lượng: ${l.details.quality}`);
         if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
         if (l.details.severity)        parts.push(`Mức độ: ${l.details.severity}`);
         if (parts.length > 0) {
@@ -216,7 +217,8 @@ export function groupCareLogsByDay(logs) {
         'Bón phân':  'badge-brown',
         'Phun thuốc': 'badge-purple',
         'Cắt lá':    'badge-green',
-        'Tỉa hoa':   'badge-amber'
+        'Tỉa hoa':   'badge-amber',
+        'Thu hoạch': 'badge-amber'
       };
 
       return {
