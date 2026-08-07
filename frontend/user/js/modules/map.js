@@ -188,8 +188,8 @@ export function initUserMap(farms, plants) {
       map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 1000 });
     }
 
-    // ── Thêm Lớp Đường Đồng Mức (Contour Lines) & Địa hình 3D ──
-    addContourLinesToMap(map);
+    // ── Không hiển thị lớp đường đồng mức trên tài khoản User ──
+    // (Bản đồ tài khoản User giữ nguyên trải nghiệm mượt mà, tối giản)
   });
 }
 

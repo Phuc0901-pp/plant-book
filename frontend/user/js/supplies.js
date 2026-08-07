@@ -532,8 +532,8 @@ function renderCostHeatmap(breakdown, grandTotal) {
 
   if (!breakdown || breakdown.length === 0) {
     container.innerHTML = `
-      <div style="text-align:center; padding:24px; color:var(--text-muted); background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
-        <i class="fa-solid fa-chart-line" style="font-size:24px; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+      <div style="text-align:center; padding:32px 16px; color:var(--text-muted); background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
+        <i class="fa-solid fa-chart-line" style="font-size:28px; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
         Chưa có dữ liệu tiêu hao chi phí trong khoảng thời gian này.
       </div>`;
     return;
@@ -541,56 +541,91 @@ function renderCostHeatmap(breakdown, grandTotal) {
 
   // Gom nhóm tổng chi phí theo period_label
   const periodCostsMap = new Map();
-  let maxCost = 0;
-
   breakdown.forEach(row => {
     const label = row.period_label || 'Khác';
-    const cost = parseFloat(row.total_cost) || 0;
-    const current = periodCostsMap.get(label) || 0;
-    const updated = current + cost;
-    periodCostsMap.set(label, updated);
-    if (updated > maxCost) maxCost = updated;
+    const cost  = parseFloat(row.total_cost) || 0;
+    periodCostsMap.set(label, (periodCostsMap.get(label) || 0) + cost);
   });
 
   const periodEntries = Array.from(periodCostsMap.entries());
+  if (periodEntries.length === 0) return;
 
-  let html = `
-    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px;">
-  `;
+  const labels = periodEntries.map(e => e[0]);
+  const values = periodEntries.map(e => e[1]);
+  const maxVal = Math.max(...values, 100);
 
-  periodEntries.forEach(([label, totalCost]) => {
-    const ratio = maxCost > 0 ? (totalCost / maxCost) : 0;
-    let bgColor = '#f0fdf4';
-    let borderColor = '#bbf7d0';
-    let textColor = '#166534';
+  // Kích thước khung hình vẽ SVG Biểu Đồ Đường
+  const svgWidth = 800;
+  const svgHeight = 220;
+  const paddingX = 55;
+  const paddingTop = 25;
+  const paddingBottom = 35;
+  const chartW = svgWidth - paddingX * 2;
+  const chartH = svgHeight - paddingTop - paddingBottom;
 
-    if (ratio > 0.75) {
-      bgColor = '#fef2f2';
-      borderColor = '#fca5a5';
-      textColor = '#991b1b';
-    } else if (ratio > 0.4) {
-      bgColor = '#fef9c3';
-      borderColor = '#fde047';
-      textColor = '#854d0e';
-    } else if (ratio > 0.1) {
-      bgColor = '#dcfce7';
-      borderColor = '#86efac';
-      textColor = '#14532d';
-    }
-
-    html += `
-      <div style="background:${bgColor}; border:1px solid ${borderColor}; border-radius:10px; padding:10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.03); transition:transform 0.15s ease;" title="${label}: ${formatVND(totalCost)}">
-        <div style="font-size:11px; font-weight:700; color:${textColor}; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(label)}</div>
-        <div style="font-size:13px; font-weight:800; color:${textColor}; margin-top:4px;">${formatVND(totalCost)}</div>
-        <div style="margin-top:6px; height:4px; background:rgba(0,0,0,0.06); border-radius:2px; overflow:hidden;">
-          <div style="width:${(ratio * 100).toFixed(0)}%; height:100%; background:${textColor}; border-radius:2px;"></div>
-        </div>
-      </div>
-    `;
+  // Tính toán tọa độ các điểm dữ liệu (Points)
+  const points = values.map((val, idx) => {
+    const x = paddingX + (periodEntries.length > 1 ? (idx / (periodEntries.length - 1)) * chartW : chartW / 2);
+    const y = paddingTop + chartH - (val / maxVal) * chartH;
+    return { x, y, val, label: labels[idx] };
   });
 
-  html += `</div>`;
-  container.innerHTML = html;
+  // Dựng đường dẫn gấp khúc / uốn đường
+  const linePathD = points.reduce((acc, p, idx) => {
+    return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
+  }, '');
+
+  const areaPathD = `${linePathD} L ${points[points.length - 1].x} ${paddingTop + chartH} L ${points[0].x} ${paddingTop + chartH} Z`;
+
+  // Trục tọa độ và đường lưới định mức (Grid lines)
+  const gridRatios = [0, 0.33, 0.66, 1];
+  const gridLines = gridRatios.map(r => {
+    const y = paddingTop + chartH - r * chartH;
+    const v = r * maxVal;
+    const labelStr = r === 0 ? '0' : (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : (v/1e3).toFixed(0)+'K');
+    return `
+      <line x1="${paddingX}" y1="${y}" x2="${svgWidth - paddingX}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="4,4" stroke-width="1" />
+      <text x="${paddingX - 8}" y="${y + 3}" font-size="10" fill="#94a3b8" text-anchor="end" font-weight="600">${labelStr}</text>
+    `;
+  }).join('');
+
+  // Render nút tròn dữ liệu (Data Dots) & Nhãn trục X
+  const dotsSvg = points.map(p => `
+    <g class="chart-point-group" style="cursor:pointer;">
+      <circle cx="${p.x}" cy="${p.y}" r="5" fill="#22c55e" stroke="#ffffff" stroke-width="2.5">
+        <title>${p.label}: ${formatVND(p.val)}</title>
+      </circle>
+      <text x="${p.x}" y="${p.y - 10}" font-size="10" fill="#15803d" text-anchor="middle" font-weight="700">${formatVND(p.val)}</text>
+      <text x="${p.x}" y="${svgHeight - 10}" font-size="10" fill="#475569" text-anchor="middle" font-weight="700">${esc(p.label)}</text>
+    </g>
+  `).join('');
+
+  const svgHtml = `
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:12px; font-weight:700; color:#15803d; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-chart-line"></i> BIỂU ĐỒ ĐƯỜNG CHI PHÍ TIÊU HAO (${labels.length} KỲ CHỌN)
+        </span>
+        <span style="font-size:12px; font-weight:700; color:#1e293b; background:#f0fdf4; padding:4px 12px; border-radius:20px; border:1px solid #bbf7d0;">
+          Tổng chi phí: ${formatVND(grandTotal)}
+        </span>
+      </div>
+      <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width:100%; height:auto; overflow:visible;">
+        <defs>
+          <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#22c55e" stop-opacity="0.30" />
+            <stop offset="100%" stop-color="#22c55e" stop-opacity="0.02" />
+          </linearGradient>
+        </defs>
+        ${gridLines}
+        <path d="${areaPathD}" fill="url(#costGradient)" />
+        <path d="${linePathD}" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        ${dotsSvg}
+      </svg>
+    </div>
+  `;
+
+  container.innerHTML = svgHtml;
 }
 
 function renderBreakdownTable(breakdown, grandTotal) {

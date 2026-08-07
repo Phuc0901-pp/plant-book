@@ -317,16 +317,72 @@ export function renderUserLogsTable(logs) {
 
 /**
  * Render toàn bộ nhật ký 30 ngày ở tab Lịch sử.
+// ── State Phân trang Lịch sử (10 dòng / trang) ───────────────
+let _currentLogPage = 1;
+const _logPageSize = 10;
+let _currentFilteredLogs = [];
+
+export function changeLogPage(direction) {
+  const totalPages = Math.ceil(_currentFilteredLogs.length / _logPageSize) || 1;
+  const newPage = _currentLogPage + direction;
+  if (newPage >= 1 && newPage <= totalPages) {
+    _currentLogPage = newPage;
+    _renderLogPage();
+  }
+}
+window.changeLogPage = changeLogPage;
+
+function _renderLogPage() {
+  const tbody = document.getElementById('user-logs-table-full');
+  const paginationContainer = document.getElementById('user-logs-pagination');
+  if (!tbody) return;
+
+  if (!_currentFilteredLogs || !_currentFilteredLogs.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không tìm thấy hoạt động nào được ghi nhận</p></td></tr>';
+    if (paginationContainer) paginationContainer.innerHTML = '';
+    return;
+  }
+
+  const totalLogs = _currentFilteredLogs.length;
+  const totalPages = Math.ceil(totalLogs / _logPageSize) || 1;
+  
+  if (_currentLogPage < 1) _currentLogPage = 1;
+  if (_currentLogPage > totalPages) _currentLogPage = totalPages;
+
+  const startIndex = (_currentLogPage - 1) * _logPageSize;
+  const endIndex = Math.min(startIndex + _logPageSize, totalLogs);
+  const pageLogs = _currentFilteredLogs.slice(startIndex, endIndex);
+
+  tbody.innerHTML = pageLogs.map(l => _logRow(l)).join('');
+
+  if (paginationContainer) {
+    paginationContainer.innerHTML = `
+      <div style="font-size:13px; font-weight:600; color:#64748b; display:flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-list-check" style="color:var(--green)"></i> Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> / Tổng <strong>${totalLogs}</strong> nhật ký
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="changeLogPage(-1)" ${_currentLogPage === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
+          <i class="fa-solid fa-chevron-left"></i> Trang trước
+        </button>
+        <span style="font-size:13px; font-weight:700; color:#1e293b; padding:4px 10px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px;">
+          ${_currentLogPage} / ${totalPages}
+        </span>
+        <button class="btn btn-secondary btn-sm" onclick="changeLogPage(1)" ${_currentLogPage === totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
+          Trang sau <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Render toàn bộ nhật ký với phân trang 10 dòng/trang ở tab Lịch sử.
  * @param {Array} logs
  */
 export function renderUserLogsTableFull(logs) {
-  const tbody = document.getElementById('user-logs-table-full');
-  if (!tbody) return;
-  if (!logs.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không tìm thấy hoạt động nào được ghi nhận</p></td></tr>';
-    return;
-  }
-  tbody.innerHTML = logs.map(l => _logRow(l)).join('');
+  _currentFilteredLogs = logs || [];
+  _currentLogPage = 1;
+  _renderLogPage();
 }
 
 /**
