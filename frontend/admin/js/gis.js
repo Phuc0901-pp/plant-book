@@ -2340,16 +2340,19 @@ async function openAdminFarmA4ExportModal(map) {
         <!-- Main Map Area (Left) -->
         <div style="flex:1; display:flex; flex-direction:column; gap:5px; overflow:hidden;">
           <div id="a4-map-frame" style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#e2e8f0;">
-            <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
+            <!-- Viewport Bản Đồ Chính (Hỗ trợ Kéo Dịch & Zoom In / Zoom Out) -->
+            <div id="a4-main-map-viewport" style="width:100%; height:100%; position:relative; overflow:hidden; cursor:grab;" title="Nhấp giữ rê chuột để di chuyển bản đồ chính, Lăn chuột hoặc dùng nút + / - để Thu Phóng (Zoom In / Zoom Out)">
+              <img id="a4-main-map-img" src="${mapImageDataUrl}" style="position:absolute; left:50%; top:50%; width:100%; height:100%; object-fit:cover; transform:translate(-50%, -50%) scale(1.0); transition:transform 0.05s ease-out; pointer-events:none;">
+            </div>
             
             <!-- Layer chứa các Điểm Chấm Ghi Chú Tương Tác -->
             <div id="a4-custom-points-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:20;"></div>
 
-            <!-- Map Controls Top-Right -->
-            <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:3px;">
-              <div style="background:#fff; border:1px solid #000; border-radius:3px; width:20px; height:20px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);">+</div>
-              <div style="background:#fff; border:1px solid #000; border-radius:3px; width:20px; height:20px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);">-</div>
-              <div style="background:#fff; border:1px solid #000; border-radius:3px; width:20px; height:20px; font-size:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);"><i class="fa-solid fa-expand"></i></div>
+            <!-- Nút Điều Khiển Zoom Bản Đồ Chính Top-Right (+ / - / ↺) -->
+            <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:4px; z-index:25;">
+              <button id="btn-a4-main-zoom-in" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:26px; height:26px; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Phóng to Bản đồ chính (Zoom In)">+</button>
+              <button id="btn-a4-main-zoom-out" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:26px; height:26px; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Thu nhỏ Bản đồ chính (Zoom Out)">-</button>
+              <button id="btn-a4-main-zoom-reset" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:26px; height:26px; font-size:11px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Đặt lại vị trí ban đầu"><i class="fa-solid fa-rotate-left"></i></button>
             </div>
 
             <!-- Elevation Vertical Color Bar Widget (Bottom-Right inside map) -->
@@ -2530,6 +2533,113 @@ async function openAdminFarmA4ExportModal(map) {
     const legendTable = document.getElementById('a4-legend-custom-table-body');
 
     if (!mapFrameEl) return;
+
+    // ── GIAO DIỆN BẢN ĐỒ CHÍNH (MAIN A4 MAP): TỰ DO THU PHÓNG (ZOOM IN/OUT) & KÉO RÊ DI CHUYỂN ──
+    const mainMapViewport = document.getElementById('a4-main-map-viewport');
+    const mainMapImg = document.getElementById('a4-main-map-img');
+    const btnMainZoomIn = document.getElementById('btn-a4-main-zoom-in');
+    const btnMainZoomOut = document.getElementById('btn-a4-main-zoom-out');
+    const btnMainZoomReset = document.getElementById('btn-a4-main-zoom-reset');
+
+    let mainPanX = 0;
+    let mainPanY = 0;
+    let mainScale = 1.0;
+
+    const renderMainMapTransform = () => {
+      if (mainMapImg) {
+        mainMapImg.style.transform = `translate(calc(-50% + ${mainPanX}px), calc(-50% + ${mainPanY}px)) scale(${mainScale.toFixed(2)})`;
+      }
+    };
+
+    if (btnMainZoomIn) {
+      btnMainZoomIn.onclick = (e) => {
+        e.stopPropagation();
+        mainScale = Math.min(mainScale + 0.2, 5.0);
+        renderMainMapTransform();
+      };
+    }
+
+    if (btnMainZoomOut) {
+      btnMainZoomOut.onclick = (e) => {
+        e.stopPropagation();
+        mainScale = Math.max(mainScale - 0.2, 0.5);
+        renderMainMapTransform();
+      };
+    }
+
+    if (btnMainZoomReset) {
+      btnMainZoomReset.onclick = (e) => {
+        e.stopPropagation();
+        mainScale = 1.0;
+        mainPanX = 0;
+        mainPanY = 0;
+        renderMainMapTransform();
+      };
+    }
+
+    if (mainMapViewport) {
+      let isPanningMain = false;
+      let startMouseX = 0, startMouseY = 0;
+      let initialPanX = 0, initialPanY = 0;
+
+      const onMainStart = (evt) => {
+        if (evt.target.closest('#a4-cutout-circle') || evt.target.tagName === 'INPUT' || evt.target.tagName === 'BUTTON') return;
+
+        isPanningMain = true;
+        mainMapViewport.style.cursor = 'grabbing';
+
+        startMouseX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        startMouseY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+        initialPanX = mainPanX;
+        initialPanY = mainPanY;
+
+        if (evt.type === 'touchstart') evt.preventDefault();
+      };
+
+      const onMainMove = (evt) => {
+        if (!isPanningMain) return;
+
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+        const deltaX = clientX - startMouseX;
+        const deltaY = clientY - startMouseY;
+
+        mainPanX = initialPanX + deltaX;
+        mainPanY = initialPanY + deltaY;
+
+        renderMainMapTransform();
+      };
+
+      const onMainEnd = () => {
+        if (isPanningMain) {
+          isPanningMain = false;
+          mainMapViewport.style.cursor = 'grab';
+        }
+      };
+
+      mainMapViewport.addEventListener('mousedown', onMainStart);
+      document.addEventListener('mousemove', onMainMove);
+      document.addEventListener('mouseup', onMainEnd);
+
+      mainMapViewport.addEventListener('touchstart', onMainStart, { passive: false });
+      document.addEventListener('touchmove', onMainMove, { passive: false });
+      document.addEventListener('touchend', onMainEnd);
+
+      // Phóng to / Thu nhỏ bản đồ chính bằng Con trỏ chuột (Mouse Wheel)
+      mainMapViewport.addEventListener('wheel', (evt) => {
+        if (evt.target.closest('#a4-cutout-circle')) return;
+        evt.preventDefault();
+        evt.stopPropagation();
+        if (evt.deltaY < 0) {
+          mainScale = Math.min(mainScale + 0.15, 5.0);
+        } else {
+          mainScale = Math.max(mainScale - 0.15, 0.5);
+        }
+        renderMainMapTransform();
+      }, { passive: false });
+    }
 
     // Kính phóng đại quang học hiển thị chính xác vị trí bên dưới vòng tròn mặt cắt A-A
     const updateCutoutMagnifier = (left, top) => {
