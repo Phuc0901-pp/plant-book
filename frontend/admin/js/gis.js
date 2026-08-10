@@ -2371,10 +2371,10 @@ async function openAdminFarmA4ExportModal(map) {
             </div>
 
             <!-- Elevation Vertical Color Bar Widget (Bottom-Right inside map) -->
-            <div style="position:absolute; bottom:8px; right:8px; background:rgba(15,23,42,0.92); color:#fff; padding:5px 8px; border-radius:5px; border:1px solid rgba(255,255,255,0.3); font-size:9.5px; display:flex; flex-direction:column; align-items:center; gap:3px; z-index:22;">
-              <div style="font-size:8.5px; font-weight:800; color:#cbd5e1;">CAO ĐỘ (1M)</div>
+            <div style="position:absolute; bottom:8px; right:8px; background:#ffffff; color:#0f172a; padding:5px 8px; border-radius:5px; border:1.5px solid #000000; font-size:9.5px; display:flex; flex-direction:column; align-items:center; gap:3px; z-index:22; box-shadow:0 2px 8px rgba(0,0,0,0.35);">
+              <div style="font-size:8.5px; font-weight:800; color:#0f172a;">CAO ĐỘ (1M)</div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <div style="width:8px; height:65px; border-radius:2px; background:linear-gradient(to top, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #fff;"></div>
+                <div style="width:8px; height:65px; border-radius:2px; background:linear-gradient(to top, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #000;"></div>
                 <div style="display:flex; flex-direction:column; justify-content:space-between; height:65px; font-weight:800; font-size:9px;">
                   <input type="text" class="a4-edit-field" value="${maxEle} m" style="font-size:8.5px; font-weight:900; color:#000000; width:52px; text-align:right;">
                   <input type="text" class="a4-edit-field" value="${Math.round((maxEle+minEle)/2)} m" style="font-size:8.5px; font-weight:900; color:#000000; width:52px; text-align:right;">
