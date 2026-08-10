@@ -1857,7 +1857,7 @@ function addContourLinesToMap(map, options = {}) {
   }
 }
 
-function openAdminFarmA4ExportModal(map) {
+async function openAdminFarmA4ExportModal(map) {
 
   const loadHtml2Pdf = () => {
     return new Promise((resolve) => {
@@ -2094,8 +2094,11 @@ function openAdminFarmA4ExportModal(map) {
     console.warn('Lỗi vẽ layer tạm thời A4:', e);
   }
 
-  // Force Mapbox to repaint and render text glyphs onto WebGL canvas
+  // Ép Mapbox vẽ lại toàn bộ mốc ranh giới A-L và nhãn kích thước lên WebGL Canvas
   map.triggerRepaint();
+
+  // CHỜ Mapbox hoàn tất chu kỳ render WebGL Canvas (350ms) để toàn bộ điểm mốc ranh giới được vẽ hoàn chỉnh lên ảnh HD
+  await new Promise(resolve => setTimeout(resolve, 350));
 
   let mapImageDataUrl = '';
   try {
@@ -2433,12 +2436,12 @@ function openAdminFarmA4ExportModal(map) {
               <i class="fa-solid fa-layer-group" style="color:#2563eb;"></i> CHÚ GIẢI CAO ĐỘ (TÌM/BẬC)
             </div>
             <div style="height:9px; width:100%; border-radius:2px; background: linear-gradient(to right, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #94a3b8; margin-bottom:2px;"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:8.5px; font-weight:700;">
-              <span style="color:#000080;">${minEle}m</span>
-              <span style="color:#0284c7;">${Math.round(minEle + (maxEle - minEle)*0.25)}m</span>
-              <span style="color:#ca8a04;">${Math.round(minEle + (maxEle - minEle)*0.5)}m</span>
-              <span style="color:#ea580c;">${Math.round(minEle + (maxEle - minEle)*0.75)}m</span>
-              <span style="color:#b91c1c;">${maxEle}m</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:8.5px; font-weight:700; gap:1px;">
+              <input type="text" class="a4-edit-field" value="${minEle}m" style="font-size:8.5px; font-weight:900; color:#000080; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.25)}m" style="font-size:8.5px; font-weight:900; color:#0284c7; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.5)}m" style="font-size:8.5px; font-weight:900; color:#ca8a04; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.75)}m" style="font-size:8.5px; font-weight:900; color:#ea580c; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${maxEle}m" style="font-size:8.5px; font-weight:900; color:#b91c1c; width:40px; text-align:center;">
             </div>
           </div>
 
@@ -2691,14 +2694,14 @@ function openAdminFarmA4ExportModal(map) {
       document.addEventListener('touchmove', onViewportMove, { passive: false });
       document.addEventListener('touchend', onViewportEnd);
 
-      // Phóng to / Thu nhỏ hình ảnh bên trong bằng con trỏ chuột (Mouse Wheel Zoom)
+      // Phóng to / Thu nhỏ hình ảnh siêu nét bên trong bằng con trỏ chuột (Mouse Wheel Zoom hỗ trợ tới 10.0x)
       cutoutViewport.addEventListener('wheel', (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
         if (evt.deltaY < 0) {
-          innerScale = Math.min(innerScale + 0.2, 5.0);
+          innerScale = Math.min(innerScale + 0.3, 10.0);
         } else {
-          innerScale = Math.max(innerScale - 0.2, 0.8);
+          innerScale = Math.max(innerScale - 0.3, 0.8);
         }
         renderInnerTransform();
       }, { passive: false });
