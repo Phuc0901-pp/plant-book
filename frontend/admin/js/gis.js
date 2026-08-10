@@ -283,12 +283,18 @@ function initDashboardMap(farms, plants) {
 }
 
 // Initialize GIS Page
-async function initGisPage() {
-  activeFarmId = null;
-  document.getElementById('gis-back-btn').style.display = 'none';
-  document.getElementById('gis-sidebar-title').innerHTML = '<i class="fa-solid fa-map" style="color:var(--green)"></i> Trang trại';
-  document.getElementById('gis-header-actions').style.display = 'block';
-  switchGisView('list');
+async function initGisPage(targetFarmId = null) {
+  if (targetFarmId) {
+    window._pendingSelectFarmId = targetFarmId;
+  }
+  
+  if (!window._pendingSelectFarmId) {
+    activeFarmId = null;
+    document.getElementById('gis-back-btn').style.display = 'none';
+    document.getElementById('gis-sidebar-title').innerHTML = '<i class="fa-solid fa-map" style="color:var(--green)"></i> Trang trại';
+    document.getElementById('gis-header-actions').style.display = 'block';
+    switchGisView('list');
+  }
   
   try {
     await ensureMapboxToken();
@@ -309,6 +315,12 @@ async function initGisPage() {
     
     renderFarmsList(farms);
     initGisMap(farms, plants);
+
+    // Tự động nhảy bản đồ tới trang trại đang được chọn nếu có
+    if (window._pendingSelectFarmId) {
+      const farmToSelect = window._pendingSelectFarmId;
+      selectFarm(farmToSelect);
+    }
   } catch (err) {
     toast('Lỗi tải dữ liệu GIS: ' + err.message, 'error');
   }
@@ -752,23 +764,30 @@ async function saveFarm() {
 }
 
 async function selectFarm(farmId) {
+  if (!farmId) return;
   activeFarmId = farmId;
+  window._pendingSelectFarmId = farmId;
+
   document.getElementById('gis-back-btn').style.display = 'block';
   document.getElementById('gis-header-actions').style.display = 'none';
   switchGisView('details');
   
   try {
     const farm = await api(`/farms/${farmId}`);
+    if (window._pendingSelectFarmId === farmId) {
+      window._pendingSelectFarmId = null;
+    }
+
     document.getElementById('gis-sidebar-title').textContent = farm.name;
     
     const ownerHtml = `<div style="margin-bottom:8px; font-size:12px; color:var(--gray-800);"><i class="fa fa-user" style="color:#ea580c"></i> Nông hộ phụ trách: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></div>`;
     document.getElementById('farm-details-desc').innerHTML = ownerHtml + (farm.description ? `<p>${esc(farm.description)}</p>` : '<p style="font-style:italic; color:var(--gray-400);">Không có mô tả.</p>');
     
     document.getElementById('farm-details-area').textContent = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
-    document.getElementById('farm-details-plant-count').textContent = farm.plants.length;
+    document.getElementById('farm-details-plant-count').textContent = farm.plants ? farm.plants.length : 0;
 
     const listEl = document.getElementById('farm-details-plants-list');
-    if (farm.plants.length === 0) {
+    if (!farm.plants || farm.plants.length === 0) {
       listEl.innerHTML = '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
     } else {
       listEl.innerHTML = farm.plants.map(p => `
@@ -790,9 +809,15 @@ async function selectFarm(farmId) {
     let coords = [];
     try {
       coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+      while (Array.isArray(coords) && coords.length > 0 && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+        coords = coords[0];
+      }
     } catch(e) {}
 
     if (gMap) {
+      // Bắt buộc gọi resize bản đồ khi chuyển từ trang khác sang
+      gMap.resize();
+
       // Clear elevation offset lock so contour elevation calibrates cleanly for selected farm
       gMap._contourOffsetLocked = false;
       delete gMap._contourEleOffset;
@@ -803,10 +828,39 @@ async function selectFarm(farmId) {
       // Render edge dimensions (kích thước từng cạnh), chu vi & tổng diện tích
       renderFarmDimensions(farm);
 
-      if (coords && coords.length > 0) {
-        const bounds = new mapboxgl.LngLatBounds();
-        coords.forEach(pt => bounds.extend(pt));
-        gMap.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 1000 });
+      const bounds = new mapboxgl.LngLatBounds();
+      let hasBounds = false;
+
+      if (Array.isArray(coords) && coords.length > 0) {
+        coords.forEach(pt => {
+          if (Array.isArray(pt) && pt.length >= 2 && !isNaN(parseFloat(pt[0])) && !isNaN(parseFloat(pt[1]))) {
+            bounds.extend([parseFloat(pt[0]), parseFloat(pt[1])]);
+            hasBounds = true;
+          }
+        });
+      }
+
+      // Dự phòng: nếu chưa có ranh giới đa giác, tự động bay tới vị trí các cây trồng thuộc trang trại
+      if (!hasBounds && Array.isArray(farm.plants) && farm.plants.length > 0) {
+        farm.plants.forEach(p => {
+          if (p.latitude && p.longitude) {
+            const lat = parseFloat(p.latitude);
+            const lng = parseFloat(p.longitude);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              bounds.extend([lng, lat]);
+              hasBounds = true;
+            }
+          }
+        });
+      }
+
+      if (hasBounds) {
+        setTimeout(() => {
+          if (gMap) {
+            gMap.resize();
+            gMap.fitBounds(bounds, { padding: 60, maxZoom: 16.5, duration: 1000 });
+          }
+        }, 100);
       }
     }
   } catch (err) {
