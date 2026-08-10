@@ -2376,9 +2376,9 @@ async function openAdminFarmA4ExportModal(map) {
               <div style="display:flex; align-items:center; gap:6px;">
                 <div style="width:8px; height:65px; border-radius:2px; background:linear-gradient(to top, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #fff;"></div>
                 <div style="display:flex; flex-direction:column; justify-content:space-between; height:65px; font-weight:800; font-size:9px;">
-                  <input type="text" class="a4-edit-field" value="${maxEle} m" style="font-size:8.5px; font-weight:900; color:#ef4444; width:52px; text-align:right;">
-                  <input type="text" class="a4-edit-field" value="${Math.round((maxEle+minEle)/2)} m" style="font-size:8.5px; font-weight:900; color:#eab308; width:52px; text-align:right;">
-                  <input type="text" class="a4-edit-field" value="${minEle} m" style="font-size:8.5px; font-weight:900; color:#38bdf8; width:52px; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="${maxEle} m" style="font-size:8.5px; font-weight:900; color:#000000; width:52px; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="${Math.round((maxEle+minEle)/2)} m" style="font-size:8.5px; font-weight:900; color:#000000; width:52px; text-align:right;">
+                  <input type="text" class="a4-edit-field" value="${minEle} m" style="font-size:8.5px; font-weight:900; color:#000000; width:52px; text-align:right;">
                 </div>
               </div>
             </div>
@@ -2455,11 +2455,11 @@ async function openAdminFarmA4ExportModal(map) {
             </div>
             <div style="height:9px; width:100%; border-radius:2px; background: linear-gradient(to right, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #94a3b8; margin-bottom:2px;"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:8.5px; font-weight:700; gap:1px;">
-              <input type="text" class="a4-edit-field" value="${minEle}m" style="font-size:8.5px; font-weight:900; color:#000080; width:40px; text-align:center;">
-              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.25)}m" style="font-size:8.5px; font-weight:900; color:#0284c7; width:40px; text-align:center;">
-              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.5)}m" style="font-size:8.5px; font-weight:900; color:#ca8a04; width:40px; text-align:center;">
-              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.75)}m" style="font-size:8.5px; font-weight:900; color:#ea580c; width:40px; text-align:center;">
-              <input type="text" class="a4-edit-field" value="${maxEle}m" style="font-size:8.5px; font-weight:900; color:#b91c1c; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${minEle}m" style="font-size:8.5px; font-weight:900; color:#000000; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.25)}m" style="font-size:8.5px; font-weight:900; color:#000000; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.5)}m" style="font-size:8.5px; font-weight:900; color:#000000; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${Math.round(minEle + (maxEle - minEle)*0.75)}m" style="font-size:8.5px; font-weight:900; color:#000000; width:40px; text-align:center;">
+              <input type="text" class="a4-edit-field" value="${maxEle}m" style="font-size:8.5px; font-weight:900; color:#000000; width:40px; text-align:center;">
             </div>
           </div>
 
