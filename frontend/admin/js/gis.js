@@ -1962,16 +1962,6 @@ function openAdminFarmA4ExportModal(map) {
     } catch (_) {}
   }
 
-  // Force Mapbox to repaint and render text glyphs onto WebGL canvas
-  map.triggerRepaint();
-
-  let mapImageDataUrl = '';
-  try {
-    mapImageDataUrl = map.getCanvas().toDataURL('image/png');
-  } catch (err) {
-    console.warn('Cảnh báo chụp ảnh bản đồ:', err);
-  }
-
   const getVertexLabel = (idx) => {
     let label = '';
     let n = idx;
@@ -1982,54 +1972,135 @@ function openAdminFarmA4ExportModal(map) {
     return label;
   };
 
-  // Tính toán vị trí các điểm mốc ranh giới (A, B, C, D...) trên khung hình bản đồ
-  let vertexMarkersHtml = '';
   let lastVertexLabel = 'H';
-
+  let uniquePts = [];
   if (farmCoords && farmCoords.length >= 3) {
-    let uniquePts = [...farmCoords];
+    uniquePts = [...farmCoords];
     if (uniquePts.length > 3 &&
         uniquePts[0][0] === uniquePts[uniquePts.length - 1][0] &&
         uniquePts[0][1] === uniquePts[uniquePts.length - 1][1]) {
       uniquePts.pop();
     }
+  }
 
-    const clientW = map.getCanvas().clientWidth || 1;
-    const clientH = map.getCanvas().clientHeight || 1;
+  // 1. Chuẩn bị GeoJSON Vertex Points (Mốc A, B, C, D...) & Edge Labels (AB: 42.5m, BC: 10.1m...)
+  const vertexFeatures = uniquePts.map((pt, idx) => {
+    const vLabel = getVertexLabel(idx);
+    lastVertexLabel = vLabel;
+    return {
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: pt },
+      properties: { label: vLabel }
+    };
+  });
 
-    uniquePts.forEach((pt, idx) => {
-      try {
-        const p = map.project(pt);
-        const xPct = (p.x / clientW) * 100;
-        const yPct = (p.y / clientH) * 100;
-        const vLabel = getVertexLabel(idx);
-        lastVertexLabel = vLabel;
-
-        vertexMarkersHtml += `
-          <div class="a4-vertex-pin" style="
-            position: absolute;
-            left: ${xPct}%;
-            top: ${yPct}%;
-            transform: translate(-50%, -50%);
-            z-index: 18;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background: #ef4444;
-            color: #ffffff;
-            border: 1.5px solid #ffffff;
-            font-size: 8.5px;
-            font-weight: 900;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
-            pointer-events: none;
-          " title="Mốc ranh giới ${vLabel}">${vLabel}</div>
-        `;
-      } catch (_) {}
+  const edgeFeatures = [];
+  const nPts = uniquePts.length;
+  for (let i = 0; i < nPts; i++) {
+    const p1 = uniquePts[i];
+    const p2 = uniquePts[(i + 1) % nPts];
+    const len = getDist(p1, p2);
+    const midLng = (p1[0] + p2[0]) / 2;
+    const midLat = (p1[1] + p2[1]) / 2;
+    const v1 = getVertexLabel(i);
+    const v2 = getVertexLabel((i + 1) % nPts);
+    edgeFeatures.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [midLng, midLat] },
+      properties: { label: `${v1}${v2}: ${len} m` }
     });
   }
+
+  const tempVertSrcId = 'a4-export-vertices-src';
+  const tempCircleLayerId = 'a4-export-vertices-circle';
+  const tempTextLayerId = 'a4-export-vertices-text';
+  const tempEdgeSrcId = 'a4-export-edges-src';
+  const tempEdgeLayerId = 'a4-export-edges-text';
+
+  try {
+    if (map.getSource(tempVertSrcId)) {
+      map.getSource(tempVertSrcId).setData({ type: 'FeatureCollection', features: vertexFeatures });
+    } else {
+      map.addSource(tempVertSrcId, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: vertexFeatures }
+      });
+      map.addLayer({
+        id: tempCircleLayerId,
+        type: 'circle',
+        source: tempVertSrcId,
+        paint: {
+          'circle-color': '#ef4444',
+          'circle-radius': 9,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+      map.addLayer({
+        id: tempTextLayerId,
+        type: 'symbol',
+        source: tempVertSrcId,
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-size': 10,
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true
+        },
+        paint: {
+          'text-color': '#ffffff'
+        }
+      });
+    }
+
+    if (map.getSource(tempEdgeSrcId)) {
+      map.getSource(tempEdgeSrcId).setData({ type: 'FeatureCollection', features: edgeFeatures });
+    } else {
+      map.addSource(tempEdgeSrcId, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: edgeFeatures }
+      });
+      map.addLayer({
+        id: tempEdgeLayerId,
+        type: 'symbol',
+        source: tempEdgeSrcId,
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-size': 9,
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+          'text-offset': [0, -1.2]
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#0f172a',
+          'text-halo-width': 2.5
+        }
+      });
+    }
+  } catch(e) {
+    console.warn('Lỗi vẽ layer tạm thời A4:', e);
+  }
+
+  // Force Mapbox to repaint and render text glyphs onto WebGL canvas
+  map.triggerRepaint();
+
+  let mapImageDataUrl = '';
+  try {
+    mapImageDataUrl = map.getCanvas().toDataURL('image/png');
+  } catch (err) {
+    console.warn('Cảnh báo chụp ảnh bản đồ:', err);
+  }
+
+  // Dọn dẹp các layer WebGL tạm thời sau khi đã chụp ảnh xong
+  try {
+    if (map.getLayer(tempTextLayerId)) map.removeLayer(tempTextLayerId);
+    if (map.getLayer(tempCircleLayerId)) map.removeLayer(tempCircleLayerId);
+    if (map.getSource(tempVertSrcId)) map.removeSource(tempVertSrcId);
+    if (map.getLayer(tempEdgeLayerId)) map.removeLayer(tempEdgeLayerId);
+    if (map.getSource(tempEdgeSrcId)) map.removeSource(tempEdgeSrcId);
+  } catch(_) {}
 
   try {
     map.jumpTo({
@@ -2427,7 +2498,11 @@ function openAdminFarmA4ExportModal(map) {
             <td style="width:35%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:middle;">
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-calendar-days" style="color:#2563eb;"></i> NGÀY XUẤT
-          <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+              </div>
+              <input type="text" id="a4-input-export-date" class="a4-edit-field" value="${exportDate}" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
+            </td>
+            <td style="width:25%; padding:6px 10px; vertical-align:middle;">
+              <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-ruler-horizontal" style="color:#d97706;"></i> TỶ LỆ
               </div>
               <input type="text" id="a4-input-scale-val" class="a4-edit-field" value="1 : 1" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
