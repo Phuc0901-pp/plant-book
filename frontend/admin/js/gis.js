@@ -2087,6 +2087,13 @@ function openAdminFarmA4ExportModal(map) {
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
+        <button id="btn-add-a4-point" style="
+          background: #ea580c; color: #fff; border: none; padding: 7px 14px;
+          border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
+          display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(234,88,12,0.4);
+        " title="Chấm điểm & Gõ chữ trực tiếp lên bản vẽ (Thêm nhiều điểm tùy ý)">
+          <i class="fa-solid fa-location-dot"></i> + Chấm điểm / Gõ Text
+        </button>
         <button id="btn-do-print-a4" style="
           background: #3b82f6; color: #fff; border: none; padding: 7px 15px;
           border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
@@ -2155,9 +2162,12 @@ function openAdminFarmA4ExportModal(map) {
       <div style="display:flex; gap:8px; flex:1; overflow:hidden; margin-bottom:5px;">
         <!-- Main Map Area (Left) -->
         <div style="flex:1; display:flex; flex-direction:column; gap:5px; overflow:hidden;">
-          <div style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#e2e8f0;">
+          <div id="a4-map-frame" style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#e2e8f0;">
             <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
             
+            <!-- Layer chứa các Điểm Chấm Ghi Chú Tương Tác -->
+            <div id="a4-custom-points-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:20;"></div>
+
             <!-- Map Controls Top-Right -->
             <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:3px;">
               <div style="background:#fff; border:1px solid #000; border-radius:3px; width:20px; height:20px; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);">+</div>
@@ -2178,10 +2188,10 @@ function openAdminFarmA4ExportModal(map) {
               </div>
             </div>
 
-            <!-- Inset Zoom Magnifier Circle "A-A" (Bottom-Left inside map) -->
-            <div style="position:absolute; bottom:10px; left:10px; width:110px; height:110px; border-radius:50%; border:3px solid #ef4444; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,0.5); background:#e2e8f0; display:flex; align-items:center; justify-content:center;">
-              <img src="${mapImageDataUrl}" style="width:280%; height:280%; object-fit:cover; transform:scale(1.4);">
-              <div style="position:absolute; top:6px; left:50%; transform:translateX(-50%); background:#fff; color:#000; font-size:10.5px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444;">A-A</div>
+            <!-- Inset Zoom Magnifier Circle "A-A" (Kéo thả di chuyển tới vị trí bất kỳ) -->
+            <div id="a4-cutout-circle" style="position:absolute; bottom:10px; left:10px; width:110px; height:110px; border-radius:50%; border:3px solid #ef4444; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,0.5); background:#e2e8f0; display:flex; align-items:center; justify-content:center; cursor:grab; user-select:none; z-index:15;" title="Kéo giữ chuột để di chuyển Vòng mặt cắt A-A tới bất kỳ đâu trên bản vẽ">
+              <img src="${mapImageDataUrl}" style="width:280%; height:280%; object-fit:cover; transform:scale(1.4); pointer-events:none;">
+              <input type="text" id="a4-cutout-title-input" class="a4-edit-field" value="A-A" style="position:absolute; top:6px; left:50%; transform:translateX(-50%); background:#fff; color:#000; font-size:10.5px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444; width:44px; text-align:center; cursor:pointer;" title="Nhấp để đổi tên mặt cắt (VD: A-A, B-B, C-C)">
             </div>
           </div>
 
@@ -2270,11 +2280,15 @@ function openAdminFarmA4ExportModal(map) {
             </table>
           </div>
 
-          <!-- Section 5: Legend for sensors & weather station -->
+          <!-- Section 5: Legend for sensors & custom points -->
           <div style="border:1.5px solid #000; border-radius:4px; padding:4px 6px; background:#fff; font-size:9px;">
-            <table style="width:100%; border-collapse:collapse;">
+            <div style="font-weight:800; font-size:8.5px; color:#475569; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:3px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between;">
+              <span><i class="fa-solid fa-list-check" style="color:#ea580c;"></i> CHÚ GIẢI VỊ TRÍ & CHẤM ĐIỂM</span>
+              <small style="color:#94a3b8; font-weight:600; text-transform:none;">(Đồng bộ)</small>
+            </div>
+            <table style="width:100%; border-collapse:collapse;" id="a4-legend-custom-table-body">
               <tr>
-                <td style="padding:1.5px 0; font-weight:700; color:#0f172a; width:45%;">
+                <td style="padding:1.5px 0; font-weight:700; color:#0f172a; width:40%;">
                   <input type="text" class="a4-edit-field" value="Vị trí 1,2,3" style="font-size:9px; font-weight:700; color:#0f172a; width:95%;">
                 </td>
                 <td style="padding:1.5px 0; text-align:right;">
@@ -2323,6 +2337,185 @@ function openAdminFarmA4ExportModal(map) {
   `;
 
   document.body.appendChild(modalContainer);
+
+  // ─── THIẾT LẬP CÁC TÍNH NĂNG TƯƠNG TÁC BẢN VẼ: DI CHUYỂN MẶT CẮT & CHẤM ĐIỂM + GÕ TEXT ───
+  const initA4InteractiveTools = () => {
+    const mapFrameEl = document.getElementById('a4-map-frame');
+    const cutoutEl = document.getElementById('a4-cutout-circle');
+    const btnAddPoint = document.getElementById('btn-add-a4-point');
+    const pointsLayerEl = document.getElementById('a4-custom-points-layer');
+    const legendTable = document.getElementById('a4-legend-custom-table-body');
+
+    if (!mapFrameEl) return;
+
+    // 1. Hàm bổ trợ kéo thả chung (Universal Draggable Handler)
+    const makeDraggable = (el) => {
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let elemStartX = 0, elemStartY = 0;
+
+      const onStart = (evt) => {
+        const target = evt.target;
+        if (target.tagName === 'INPUT' || target.classList.contains('pt-del-btn')) {
+          return;
+        }
+
+        isDragging = true;
+        el.style.cursor = 'grabbing';
+
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+        startX = clientX;
+        startY = clientY;
+
+        const rect = el.getBoundingClientRect();
+        const containerRect = mapFrameEl.getBoundingClientRect();
+
+        elemStartX = rect.left - containerRect.left;
+        elemStartY = rect.top - containerRect.top;
+
+        if (evt.type === 'touchstart') evt.preventDefault();
+      };
+
+      const onMove = (evt) => {
+        if (!isDragging) return;
+
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+
+        let newLeft = elemStartX + deltaX;
+        let newTop = elemStartY + deltaY;
+
+        const containerRect = mapFrameEl.getBoundingClientRect();
+        const elemRect = el.getBoundingClientRect();
+
+        const maxLeft = containerRect.width - elemRect.width;
+        const maxTop = containerRect.height - elemRect.height;
+
+        if (newLeft < 0) newLeft = 0;
+        if (newTop < 0) newTop = 0;
+        if (newLeft > maxLeft) newLeft = maxLeft;
+        if (newTop > maxTop) newTop = maxTop;
+
+        el.style.left = newLeft + 'px';
+        el.style.top = newTop + 'px';
+        el.style.bottom = 'auto';
+        el.style.right = 'auto';
+      };
+
+      const onEnd = () => {
+        if (isDragging) {
+          isDragging = false;
+          el.style.cursor = 'grab';
+        }
+      };
+
+      el.addEventListener('mousedown', onStart);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+
+      el.addEventListener('touchstart', onStart, { passive: false });
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onEnd);
+    };
+
+    // Bật kéo thả di chuyển Vòng Tròn Mặt Cắt A-A
+    if (cutoutEl) {
+      makeDraggable(cutoutEl);
+    }
+
+    // 2. Tính năng Chấm Điểm & Gõ Text (Sử dụng nhiều lần)
+    let pointCount = 0;
+
+    const addNewPoint = (initialText) => {
+      pointCount++;
+      const textVal = initialText || (`Vị trí ${pointCount}`);
+
+      const ptId = 'a4-pt-node-' + pointCount;
+      const ptEl = document.createElement('div');
+      ptEl.id = ptId;
+      ptEl.className = 'a4-custom-point-node';
+      ptEl.style.cssText = `
+        position: absolute;
+        left: ${35 + ((pointCount * 7) % 45)}%;
+        top: ${30 + ((pointCount * 7) % 45)}%;
+        z-index: 25;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        background: rgba(15, 23, 42, 0.92);
+        color: #ffffff;
+        border: 1.5px solid #ea580c;
+        border-radius: 20px;
+        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
+        cursor: grab;
+        user-select: none;
+        font-size: 10px;
+        font-weight: 800;
+        white-space: nowrap;
+        pointer-events: auto;
+      `;
+
+      ptEl.innerHTML = `
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; background:#ea580c; color:#fff; font-size:8.5px; font-weight:900;">${pointCount}</span>
+        <input type="text" class="a4-edit-field pt-label-input" value="${esc(textVal)}" style="font-size:9.5px; font-weight:800; color:#fff; background:transparent; border:none; outline:none; width:95px; text-shadow:0 1px 2px #000;">
+        <span class="pt-del-btn" title="Xóa điểm này" style="cursor:pointer; color:#ef4444; font-weight:900; font-size:11px; margin-left:2px; padding:0 2px;">✕</span>
+      `;
+
+      if (pointsLayerEl) pointsLayerEl.appendChild(ptEl);
+
+      makeDraggable(ptEl);
+
+      // Thêm dòng tương ứng vào Bảng Chú Giải ở góc dưới bên phải
+      let legRow = null;
+      if (legendTable) {
+        legRow = document.createElement('tr');
+        legRow.innerHTML = `
+          <td style="padding:1.5px 0; font-weight:700; color:#0f172a; width:40%;">
+            <input type="text" class="a4-edit-field leg-tag-input" value="📍 Điểm ${pointCount}" style="font-size:9px; font-weight:700; color:#ea580c; width:95%;">
+          </td>
+          <td style="padding:1.5px 0; text-align:right;">
+            <input type="text" class="a4-edit-field leg-val-input" value="${esc(textVal)}" style="font-size:9px; font-weight:800; color:#ea580c; width:100%; text-align:right;">
+          </td>
+        `;
+        legendTable.appendChild(legRow);
+
+        // Đồng bộ chữ nhập giữa bản đồ và bảng chú giải
+        const ptInput = ptEl.querySelector('.pt-label-input');
+        const legValInput = legRow.querySelector('.leg-val-input');
+        if (ptInput && legValInput) {
+          ptInput.oninput = () => { legValInput.value = ptInput.value; };
+          legValInput.oninput = () => { ptInput.value = legValInput.value; };
+        }
+      }
+
+      // Xử lý sự kiện xóa điểm
+      const delBtn = ptEl.querySelector('.pt-del-btn');
+      if (delBtn) {
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          ptEl.remove();
+          if (legRow) legRow.remove();
+        };
+      }
+    };
+
+    if (btnAddPoint) {
+      btnAddPoint.onclick = () => {
+        const userInput = prompt('Nhập nội dung/tên điểm cần chấm trên bản vẽ (VD: Vị trí Cảm biến #1, Trạm bơm, Cổng chính, Mặt cắt B-B...):', `Vị trí ${pointCount + 1}`);
+        if (userInput !== null) {
+          addNewPoint(userInput.trim());
+        }
+      };
+    }
+  };
+
+  initA4InteractiveTools();
 
   document.getElementById('btn-close-a4-modal').onclick = () => modalContainer.remove();
 
