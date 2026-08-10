@@ -2488,22 +2488,6 @@ async function openAdminFarmA4ExportModal(map) {
               <small style="color:#94a3b8; font-weight:600; text-transform:none;">(Đồng bộ)</small>
             </div>
             <table style="width:100%; border-collapse:collapse;" id="a4-legend-custom-table-body">
-              <tr>
-                <td style="padding:1.5px 0; font-weight:700; color:#0f172a; width:40%;">
-                  <input type="text" class="a4-edit-field" value="Vị trí 1,2,3" style="font-size:9px; font-weight:700; color:#0f172a; width:95%;">
-                </td>
-                <td style="padding:1.5px 0; text-align:right;">
-                  <input type="text" class="a4-edit-field" value="Thiết bị Cảm biến đất" style="font-size:9px; font-weight:800; color:#dc2626; width:100%; text-align:right;">
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:1.5px 0; font-weight:700; color:#0f172a; width:45%;">
-                  <input type="text" class="a4-edit-field" value="Vị trí X" style="font-size:9px; font-weight:700; color:#0f172a; width:95%;">
-                </td>
-                <td style="padding:1.5px 0; text-align:right;">
-                  <input type="text" class="a4-edit-field" value="Trạm Quan Trắc Thời tiết" style="font-size:9px; font-weight:800; color:#ca8a04; width:100%; text-align:right;">
-                </td>
-              </tr>
             </table>
           </div>
         </div>
