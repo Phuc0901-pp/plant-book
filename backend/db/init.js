@@ -242,6 +242,24 @@ async function initDB() {
       )
     `);
 
+    // Fixed Assets (Tài sản cố định vĩnh cửu) table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS fixed_assets (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL,
+        name VARCHAR(255) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        year INTEGER NOT NULL DEFAULT 2024,
+        cost NUMERIC NOT NULL DEFAULT 0,
+        life INTEGER NOT NULL DEFAULT 5,
+        note TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+
 
     // Seed default configurations
     const defaultConfigs = [
