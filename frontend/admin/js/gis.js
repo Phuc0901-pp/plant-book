@@ -1918,27 +1918,6 @@ function openAdminFarmA4ExportModal(map) {
     console.warn('Cảnh báo chụp ảnh bản đồ:', err);
   }
 
-  try {
-    map.jumpTo({
-      center: oldCenter,
-      zoom: oldZoom,
-      bearing: oldBearing,
-      pitch: oldPitch
-    });
-  } catch (_) {}
-
-  // 3. Tính chiều dài các cạnh ranh giới & thông số
-  const getDist = (p1, p2) => {
-    const R = 6371000;
-    const rad = Math.PI / 180;
-    const dLat = (p2[1] - p1[1]) * rad;
-    const dLng = (p2[0] - p1[0]) * rad;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(p1[1] * rad) * Math.cos(p2[1] * rad) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
-  };
-
   const getVertexLabel = (idx) => {
     let label = '';
     let n = idx;
@@ -1948,6 +1927,64 @@ function openAdminFarmA4ExportModal(map) {
     }
     return label;
   };
+
+  // Tính toán vị trí các điểm mốc ranh giới (A, B, C, D...) trên khung hình bản đồ
+  let vertexMarkersHtml = '';
+  let lastVertexLabel = 'H';
+
+  if (farmCoords && farmCoords.length >= 3) {
+    let uniquePts = [...farmCoords];
+    if (uniquePts.length > 3 &&
+        uniquePts[0][0] === uniquePts[uniquePts.length - 1][0] &&
+        uniquePts[0][1] === uniquePts[uniquePts.length - 1][1]) {
+      uniquePts.pop();
+    }
+
+    const clientW = map.getCanvas().clientWidth || 1;
+    const clientH = map.getCanvas().clientHeight || 1;
+
+    uniquePts.forEach((pt, idx) => {
+      try {
+        const p = map.project(pt);
+        const xPct = (p.x / clientW) * 100;
+        const yPct = (p.y / clientH) * 100;
+        const vLabel = getVertexLabel(idx);
+        lastVertexLabel = vLabel;
+
+        vertexMarkersHtml += `
+          <div class="a4-vertex-pin" style="
+            position: absolute;
+            left: ${xPct}%;
+            top: ${yPct}%;
+            transform: translate(-50%, -50%);
+            z-index: 18;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #ef4444;
+            color: #ffffff;
+            border: 1.5px solid #ffffff;
+            font-size: 8.5px;
+            font-weight: 900;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+            pointer-events: none;
+          " title="Mốc ranh giới ${vLabel}">${vLabel}</div>
+        `;
+      } catch (_) {}
+    });
+  }
+
+  try {
+    map.jumpTo({
+      center: oldCenter,
+      zoom: oldZoom,
+      bearing: oldBearing,
+      pitch: oldPitch
+    });
+  } catch (_) {}
 
   let edgeRowsHtml = '';
   let perimeter = 0;
@@ -2165,6 +2202,11 @@ function openAdminFarmA4ExportModal(map) {
           <div id="a4-map-frame" style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#e2e8f0;">
             <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
             
+            <!-- Layer chứa các Điểm Mốc Ranh Giới (A, B, C, D...) -->
+            <div id="a4-vertex-markers-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:18;">
+              ${vertexMarkersHtml}
+            </div>
+
             <!-- Layer chứa các Điểm Chấm Ghi Chú Tương Tác -->
             <div id="a4-custom-points-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:20;"></div>
 
@@ -2197,12 +2239,10 @@ function openAdminFarmA4ExportModal(map) {
 
           <!-- Bottom Symbology Legend Bar (Directly below map) -->
           <div style="display:flex; justify-content:space-around; align-items:center; padding:4px 8px; background:#fff; border:1.5px solid #000; border-radius:4px; font-size:9.5px; font-weight:700; color:#1e293b;">
-            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#ef4444; border:1px solid #fff;"></span> <strong style="color:#ef4444;">A-H</strong> Mốc ranh giới</span>
+            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#ef4444; border:1px solid #fff;"></span> <strong style="color:#ef4444;">A-${lastVertexLabel}</strong> Mốc ranh giới</span>
             <span style="display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-arrows-left-right" style="color:#0284c7;"></i> Chiều dài cạnh</span>
             <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#ef4444; color:#fff; text-align:center; font-size:7.5px; font-weight:900; line-height:11px;">1</span> Vị trí khu vực</span>
-            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:9px; height:9px; background:#3b82f6;"></span> Vị trí hệ thống</span>
             <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:9px; background:rgba(16,185,129,0.35); border:1px solid #10b981;"></span> Diện tích trang trại</span>
-            <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#eab308; color:#fff; text-align:center; font-size:7.5px; font-weight:900; line-height:11px;">X</span> Vị trí trạm thời tiết</span>
           </div>
         </div>
 
@@ -2321,11 +2361,7 @@ function openAdminFarmA4ExportModal(map) {
             <td style="width:35%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:middle;">
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-calendar-days" style="color:#2563eb;"></i> NGÀY XUẤT
-              </div>
-              <input type="text" id="a4-input-export-date" class="a4-edit-field" value="${exportDate}" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
-            </td>
-            <td style="width:25%; padding:6px 10px; vertical-align:middle;">
-              <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+          <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-ruler-horizontal" style="color:#d97706;"></i> TỶ LỆ
               </div>
               <input type="text" id="a4-input-scale-val" class="a4-edit-field" value="1 : 1" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
@@ -2347,6 +2383,26 @@ function openAdminFarmA4ExportModal(map) {
     const legendTable = document.getElementById('a4-legend-custom-table-body');
 
     if (!mapFrameEl) return;
+
+    // Kính phóng đại quang học hiển thị chính xác vị trí bên dưới vòng tròn mặt cắt A-A
+    const updateCutoutMagnifier = (left, top) => {
+      if (!cutoutEl) return;
+      const cutoutImg = cutoutEl.querySelector('img');
+      if (!cutoutImg) return;
+      
+      const containerW = mapFrameEl.clientWidth || 1;
+      const containerH = mapFrameEl.clientHeight || 1;
+      const cutoutW = cutoutEl.clientWidth || 110;
+      const cutoutH = cutoutEl.clientHeight || 110;
+
+      const centerX = left + cutoutW / 2;
+      const centerY = top + cutoutH / 2;
+
+      const pctX = (centerX / containerW) * 100;
+      const pctY = (centerY / containerH) * 100;
+
+      cutoutImg.style.objectPosition = `${pctX}% ${pctY}%`;
+    };
 
     // 1. Hàm bổ trợ kéo thả chung (Universal Draggable Handler)
     const makeDraggable = (el) => {
