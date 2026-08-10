@@ -1986,6 +1986,18 @@ function openAdminFarmA4ExportModal(map) {
     });
   } catch (_) {}
 
+  // 3. Tính chiều dài các cạnh ranh giới & thông số
+  const getDist = (p1, p2) => {
+    const R = 6371000;
+    const rad = Math.PI / 180;
+    const dLat = (p2[1] - p1[1]) * rad;
+    const dLng = (p2[0] - p1[0]) * rad;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(p1[1] * rad) * Math.cos(p2[1] * rad) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+  };
+
   let edgeRowsHtml = '';
   let perimeter = 0;
 
