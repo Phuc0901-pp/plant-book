@@ -2362,10 +2362,18 @@ function openAdminFarmA4ExportModal(map) {
               </div>
             </div>
 
-            <!-- Inset Zoom Magnifier Circle "A-A" (Kéo thả di chuyển tới vị trí bất kỳ) -->
-            <div id="a4-cutout-circle" style="position:absolute; bottom:10px; left:10px; width:110px; height:110px; border-radius:50%; border:3px solid #ef4444; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,0.5); background:#e2e8f0; display:flex; align-items:center; justify-content:center; cursor:grab; user-select:none; z-index:15;" title="Kéo giữ chuột để di chuyển Vòng mặt cắt A-A tới bất kỳ đâu trên bản vẽ">
-              <img src="${mapImageDataUrl}" style="width:280%; height:280%; object-fit:cover; transform:scale(1.4); pointer-events:none;">
-              <input type="text" id="a4-cutout-title-input" class="a4-edit-field" value="A-A" style="position:absolute; top:6px; left:50%; transform:translateX(-50%); background:#fff; color:#000; font-size:10.5px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444; width:44px; text-align:center; cursor:pointer;" title="Nhấp để đổi tên mặt cắt (VD: A-A, B-B, C-C)">
+            <!-- Inset Zoom Magnifier Circle "A-A" (Cho phép Kéo di chuyển hình ảnh BÊN TRONG & Kéo Nắp đỏ để dời Vị trí khung) -->
+            <div id="a4-cutout-circle" style="position:absolute; bottom:10px; left:10px; width:120px; height:120px; border-radius:50%; border:3px solid #ef4444; box-shadow:0 6px 20px rgba(0,0,0,0.5); background:#e2e8f0; user-select:none; z-index:15;" title="Kéo chuột bên trong vòng để dịch chuyển ảnh mặt cắt; Kéo nút đỏ trên đỉnh để dời vị trí khung">
+              <!-- Nút Nắp Kéo Khung (Handle màu đỏ trên đỉnh) -->
+              <div id="a4-cutout-frame-handle" style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:#ef4444; color:#ffffff; font-size:8.5px; font-weight:800; padding:1px 7px; border-radius:10px; cursor:grab; z-index:25; box-shadow:0 2px 6px rgba(0,0,0,0.4); white-space:nowrap;" title="Nhấp giữ để kéo di chuyển Vị Trí Khung Vòng Tròn trên tờ giấy A4">
+                <i class="fa-solid fa-up-down-left-right"></i> Vị trí khung
+              </div>
+
+              <!-- Thấu kính chứa ảnh mặt cắt (Cho phép Kéo xoay dịch chuyển ảnh bên trong) -->
+              <div id="a4-cutout-viewport" style="width:100%; height:100%; border-radius:50%; overflow:hidden; position:relative; cursor:move;" title="Nhấp giữ rê chuột để dịch chuyển hình ảnh mặt cắt bên trong vòng tròn">
+                <img id="a4-cutout-img" src="${mapImageDataUrl}" style="position:absolute; left:50%; top:50%; width:320%; height:320%; object-fit:cover; transform:translate(-50%, -50%) scale(1.4); pointer-events:none;">
+                <input type="text" id="a4-cutout-title-input" class="a4-edit-field" value="A-A" style="position:absolute; top:6px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.92); color:#000; font-size:10px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444; width:44px; text-align:center; cursor:pointer; z-index:20;" title="Nhấp để đổi tên mặt cắt (VD: A-A, B-B, C-C)">
+              </div>
             </div>
           </div>
 
@@ -2540,11 +2548,13 @@ function openAdminFarmA4ExportModal(map) {
       cutoutImg.style.objectPosition = `${pctX}% ${pctY}%`;
     };
 
-    // 1. Hàm bổ trợ kéo thả chung (Universal Draggable Handler)
-    const makeDraggable = (el) => {
+    // 1. Hàm bổ trợ kéo thả di chuyển vị trí phần tử (Universal Draggable Handler)
+    const makeDraggable = (el, handleEl) => {
       let isDragging = false;
       let startX = 0, startY = 0;
       let elemStartX = 0, elemStartY = 0;
+
+      const triggerEl = handleEl || el;
 
       const onStart = (evt) => {
         const target = evt.target;
@@ -2553,7 +2563,8 @@ function openAdminFarmA4ExportModal(map) {
         }
 
         isDragging = true;
-        el.style.cursor = 'grabbing';
+        triggerEl.style.cursor = 'grabbing';
+        if (el) el.style.zIndex = '30';
 
         const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
         const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
@@ -2602,41 +2613,100 @@ function openAdminFarmA4ExportModal(map) {
       const onEnd = () => {
         if (isDragging) {
           isDragging = false;
-          el.style.cursor = 'grab';
+          triggerEl.style.cursor = 'grab';
+          if (el) el.style.zIndex = el.id === 'a4-cutout-circle' ? '15' : '25';
         }
       };
 
-      el.addEventListener('mousedown', onStart);
+      triggerEl.addEventListener('mousedown', onStart);
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onEnd);
 
-      el.addEventListener('touchstart', onStart, { passive: false });
+      triggerEl.addEventListener('touchstart', onStart, { passive: false });
       document.addEventListener('touchmove', onMove, { passive: false });
       document.addEventListener('touchend', onEnd);
     };
 
-    // Bật kéo thả di chuyển Vòng Tròn Mặt Cắt A-A & Khởi tạo kính phóng đại quang học
-    if (cutoutEl) {
-      makeDraggable(cutoutEl);
-      setTimeout(() => {
-        updateCutoutMagnifier(10, mapFrameEl.clientHeight - 120);
-      }, 100);
+    // ── XỬ LÝ DỊCH CHUYỂN ẢNH MẶT CẮT BÊN TRONG VÒNG TRÒN & DI CHUYỂN KHUNG ──
+    const cutoutViewport = document.getElementById('a4-cutout-viewport');
+    const cutoutFrameHandle = document.getElementById('a4-cutout-frame-handle');
+    const cutoutImg = document.getElementById('a4-cutout-img');
 
-      // Hỗ trợ Lăn chuột (Mouse Wheel) ngay tại vòng mặt cắt để Ph phóng to / Thu nhỏ tỉ lệ hình ảnh chi tiết
-      let currentScale = 1.4;
-      const cutoutImg = cutoutEl.querySelector('img');
-      cutoutEl.addEventListener('wheel', (evt) => {
+    let innerPanX = 0;
+    let innerPanY = 0;
+    let innerScale = 1.4;
+
+    const renderInnerTransform = () => {
+      if (cutoutImg) {
+        cutoutImg.style.transform = `translate(calc(-50% + ${innerPanX}px), calc(-50% + ${innerPanY}px)) scale(${innerScale.toFixed(2)})`;
+      }
+    };
+
+    if (cutoutViewport) {
+      let isPanningInner = false;
+      let startMouseX = 0, startMouseY = 0;
+      let initialPanX = 0, initialPanY = 0;
+
+      const onViewportStart = (evt) => {
+        if (evt.target.tagName === 'INPUT') return;
+        isPanningInner = true;
+        cutoutViewport.style.cursor = 'grabbing';
+
+        startMouseX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        startMouseY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+        initialPanX = innerPanX;
+        initialPanY = innerPanY;
+
+        if (evt.type === 'touchstart') evt.preventDefault();
+      };
+
+      const onViewportMove = (evt) => {
+        if (!isPanningInner) return;
+
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+        const deltaX = clientX - startMouseX;
+        const deltaY = clientY - startMouseY;
+
+        innerPanX = initialPanX + deltaX;
+        innerPanY = initialPanY + deltaY;
+
+        renderInnerTransform();
+      };
+
+      const onViewportEnd = () => {
+        if (isPanningInner) {
+          isPanningInner = false;
+          cutoutViewport.style.cursor = 'move';
+        }
+      };
+
+      cutoutViewport.addEventListener('mousedown', onViewportStart);
+      document.addEventListener('mousemove', onViewportMove);
+      document.addEventListener('mouseup', onViewportEnd);
+
+      cutoutViewport.addEventListener('touchstart', onViewportStart, { passive: false });
+      document.addEventListener('touchmove', onViewportMove, { passive: false });
+      document.addEventListener('touchend', onViewportEnd);
+
+      // Phóng to / Thu nhỏ hình ảnh bên trong bằng con trỏ chuột (Mouse Wheel Zoom)
+      cutoutViewport.addEventListener('wheel', (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
         if (evt.deltaY < 0) {
-          currentScale = Math.min(currentScale + 0.25, 4.5);
+          innerScale = Math.min(innerScale + 0.2, 5.0);
         } else {
-          currentScale = Math.max(currentScale - 0.25, 1.0);
+          innerScale = Math.max(innerScale - 0.2, 0.8);
         }
-        if (cutoutImg) {
-          cutoutImg.style.transform = `scale(${currentScale.toFixed(2)})`;
-        }
+        renderInnerTransform();
       }, { passive: false });
+    }
+
+    // Kéo Nút Handle Đỏ để di chuyển vị trí Khung Vòng Tròn Mặt Cắt trên bản vẽ A4
+    if (cutoutEl && cutoutFrameHandle) {
+      makeDraggable(cutoutEl, cutoutFrameHandle);
     }
 
     // 2. Tính năng Chấm Điểm & Gõ Text (Sử dụng nhiều lần)
