@@ -664,10 +664,14 @@ function drawFarmsAndPlantsLayers(farms, plants) {
     gMap.fitBounds(bounds, { padding: 50, maxZoom: 16, duration: 1000 });
   }
 
-  // Add contour lines (đường đồng mức) & 3D terrain elevation to GIS map
+  // Add contour lines (đường đồng mức) ONLY if a specific farm is selected
   const activeFarm = activeFarmId ? farms.find(f => f.id === activeFarmId) : null;
   const farmCoords = activeFarm ? activeFarm.polygon_coordinates : null;
-  addContourLinesToMap(gMap, { farmCoords });
+  if (farmCoords) {
+    addContourLinesToMap(gMap, { farmCoords });
+  } else {
+    removeContourLinesFromMap(gMap);
+  }
 }
 
 function updateAreaDisplay() {
@@ -878,6 +882,13 @@ async function selectFarm(farmId) {
           }
         }, 100);
       }
+      
+      // Render 3D contour elevation overlay ONLY for this selected farm
+      if (gMap && coords && coords.length > 0) {
+        addContourLinesToMap(gMap, { farmCoords: coords });
+      } else if (gMap) {
+        removeContourLinesFromMap(gMap);
+      }
     }
   } catch (err) {
     toast('Lỗi tải chi tiết trang trại: ' + err.message, 'error');
@@ -888,6 +899,7 @@ function backToFarmsList() {
   activeFarmId = null;
   gisEdgeMarkers.forEach(m => { try { m.remove(); } catch(_) {} });
   gisEdgeMarkers = [];
+  if (gMap) removeContourLinesFromMap(gMap);
   initGisPage();
 }
 
