@@ -2339,11 +2339,6 @@ function openAdminFarmA4ExportModal(map) {
           <div id="a4-map-frame" style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#e2e8f0;">
             <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
             
-            <!-- Layer chứa các Điểm Mốc Ranh Giới (A, B, C, D...) -->
-            <div id="a4-vertex-markers-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:18;">
-              ${vertexMarkersHtml}
-            </div>
-
             <!-- Layer chứa các Điểm Chấm Ghi Chú Tương Tác -->
             <div id="a4-custom-points-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:20;"></div>
 
