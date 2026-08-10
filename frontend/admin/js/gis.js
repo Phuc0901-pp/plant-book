@@ -2615,9 +2615,28 @@ function openAdminFarmA4ExportModal(map) {
       document.addEventListener('touchend', onEnd);
     };
 
-    // Bật kéo thả di chuyển Vòng Tròn Mặt Cắt A-A
+    // Bật kéo thả di chuyển Vòng Tròn Mặt Cắt A-A & Khởi tạo kính phóng đại quang học
     if (cutoutEl) {
       makeDraggable(cutoutEl);
+      setTimeout(() => {
+        updateCutoutMagnifier(10, mapFrameEl.clientHeight - 120);
+      }, 100);
+
+      // Hỗ trợ Lăn chuột (Mouse Wheel) ngay tại vòng mặt cắt để Ph phóng to / Thu nhỏ tỉ lệ hình ảnh chi tiết
+      let currentScale = 1.4;
+      const cutoutImg = cutoutEl.querySelector('img');
+      cutoutEl.addEventListener('wheel', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        if (evt.deltaY < 0) {
+          currentScale = Math.min(currentScale + 0.25, 4.5);
+        } else {
+          currentScale = Math.max(currentScale - 0.25, 1.0);
+        }
+        if (cutoutImg) {
+          cutoutImg.style.transform = `scale(${currentScale.toFixed(2)})`;
+        }
+      }, { passive: false });
     }
 
     // 2. Tính năng Chấm Điểm & Gõ Text (Sử dụng nhiều lần)
