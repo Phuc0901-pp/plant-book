@@ -2042,7 +2042,7 @@ async function openAdminFarmA4ExportModal(map) {
         source: tempVertSrcId,
         paint: {
           'circle-color': '#ef4444',
-          'circle-radius': 9,
+          'circle-radius': 7.5,
           'circle-stroke-width': 1.5,
           'circle-stroke-color': '#ffffff'
         }
@@ -2053,7 +2053,7 @@ async function openAdminFarmA4ExportModal(map) {
         source: tempVertSrcId,
         layout: {
           'text-field': ['get', 'label'],
-          'text-size': 10,
+          'text-size': 9.5,
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
           'text-allow-overlap': true,
           'text-ignore-placement': true
@@ -2079,9 +2079,10 @@ async function openAdminFarmA4ExportModal(map) {
           'text-field': ['get', 'label'],
           'text-size': 9,
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-          'text-allow-overlap': true,
-          'text-ignore-placement': true,
-          'text-offset': [0, -1.2]
+          'text-allow-overlap': false,
+          'text-ignore-placement': false,
+          'text-offset': [0, -1.2],
+          'text-padding': 2
         },
         paint: {
           'text-color': '#ffffff',
