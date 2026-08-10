@@ -819,6 +819,7 @@ async function selectFarm(farmId) {
           </div>
         </div>
       `).join('');
+      bindPlantTooltips(farm.plants);
     }
 
     let coords = [];
@@ -3004,3 +3005,117 @@ async function openAdminFarmA4ExportModal(map) {
 }
 
 
+
+/* ═══════════════════════════════════════════════════════════
+   PLANT HOVER TOOLTIP — Sidebar GIS
+   ═══════════════════════════════════════════════════════════ */
+
+(function() {
+  let tooltipEl = null;
+  let tooltipTimeout = null;
+
+  function getTooltipEl() {
+    if (!tooltipEl) tooltipEl = document.getElementById('plant-hover-tooltip');
+    return tooltipEl;
+  }
+
+  function healthClass(status) {
+    if (!status) return 'binh';
+    const s = status.toLowerCase();
+    if (s.includes('tốt') || s === 'tot') return 'tot';
+    if (s.includes('bệnh') || s === 'benh') return 'benh';
+    if (s.includes('chú ý') || s.includes('chu y') || s.includes('cần')) return 'chu-y';
+    return 'binh';
+  }
+
+  function healthIcon(status) {
+    const c = healthClass(status);
+    return { 'tot': '🟢', 'binh': '🟡', 'chu-y': '🟠', 'benh': '🔴' }[c] || '⚪';
+  }
+
+  window.showPlantTooltip = function(el, plant, event) {
+    const tip = getTooltipEl();
+    if (!tip) return;
+
+    clearTimeout(tooltipTimeout);
+
+    const hc = healthClass(plant.health_status);
+    const icon = healthIcon(plant.health_status);
+
+    let gpsText = '—';
+    if (plant.gps_lat && plant.gps_lng) {
+      gpsText = parseFloat(plant.gps_lat).toFixed(5) + ', ' + parseFloat(plant.gps_lng).toFixed(5);
+    }
+
+    const age = plant.plant_age || plant.age || '—';
+
+    tip.innerHTML =
+      '<div class="pht-title">' +
+        '<i class="fa-solid fa-seedling" style="color:#10b981;font-size:14px;"></i>' +
+        'Cây ' + esc(plant.tree_code || plant.id || '—') +
+      '</div>' +
+      '<div class="pht-row"><span class="pht-label">Loại cây</span><span class="pht-value">' + esc(plant.plant_type || '—') + '</span></div>' +
+      '<div class="pht-row"><span class="pht-label">Giống cây</span><span class="pht-value">' + esc(plant.plant_variety || '—') + '</span></div>' +
+      '<div class="pht-row"><span class="pht-label">Tuổi cây</span><span class="pht-value">' + esc(age) + '</span></div>' +
+      '<div class="pht-row"><span class="pht-label">Trạng thái</span>' +
+        '<span class="pht-health ' + hc + '">' + icon + ' ' + esc(plant.health_status || 'Bình thường') + '</span>' +
+      '</div>' +
+      (gpsText !== '—' ? '<div class="pht-row"><span class="pht-label">GPS</span><span class="pht-value" style="font-size:10px;color:#64748b;">' + gpsText + '</span></div>' : '') +
+      '<div style="margin-top:8px; padding-top:7px; border-top:1px solid rgba(255,255,255,0.06); font-size:10px; color:#475569; text-align:center;">Click để xem chi tiết</div>';
+
+    positionTooltip(tip, event);
+
+    tooltipTimeout = setTimeout(function() {
+      tip.classList.add('visible');
+    }, 30);
+  };
+
+  window.hidePlantTooltip = function() {
+    const tip = getTooltipEl();
+    if (!tip) return;
+    clearTimeout(tooltipTimeout);
+    tip.classList.remove('visible');
+  };
+
+  function positionTooltip(tip, event) {
+    const margin = 14;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const tipW = 260;
+    const tipH = 200;
+
+    let x = event.clientX + margin;
+    let y = event.clientY - tipH / 2;
+
+    if (x + tipW > vw - margin) x = event.clientX - tipW - margin;
+    if (y < margin) y = margin;
+    if (y + tipH > vh - margin) y = vh - tipH - margin;
+
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    const tip = getTooltipEl();
+    if (tip && tip.classList.contains('visible')) {
+      positionTooltip(tip, e);
+    }
+  });
+})();
+
+function bindPlantTooltips(plants) {
+  if (!plants || !plants.length) return;
+  setTimeout(function() {
+    const items = document.querySelectorAll('#farm-details-plants-list .gis-plant-item');
+    items.forEach(function(item, idx) {
+      const plant = plants[idx];
+      if (!plant) return;
+      item.addEventListener('mouseenter', function(e) {
+        showPlantTooltip(item, plant, e);
+      });
+      item.addEventListener('mouseleave', function() {
+        hidePlantTooltip();
+      });
+    });
+  }, 100);
+}

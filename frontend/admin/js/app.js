@@ -34,7 +34,8 @@ function showPage(page) {
     media: 'Thư viện Media', 
     gis: 'Quản lý GIS', 
     users: 'Quản lý người dùng',
-    devices: 'Quản lý thiết bị IoT'
+    devices: 'Quản lý thiết bị IoT',
+    cost: 'Quản trị Chi phí Đầu tư'
   };
   document.getElementById('page-title').textContent = titles[page] || page;
 
@@ -58,6 +59,7 @@ function showPage(page) {
   if (page === 'users') loadUsers();
   if (page === 'devices') loadDevices();
   if (page === 'media') initGlobalMediaLibrary();
+  if (page === 'cost') initCostPage();
 }
 
 function toggleMobileSidebar() {

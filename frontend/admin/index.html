@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css">
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="/admin/css/admin-layout.css">
   <link rel="stylesheet" href="/admin/css/admin-components.css">
   <link rel="stylesheet" href="/admin/css/admin-dashboard.css">
@@ -202,6 +203,9 @@
       <div class="nav-section">Quản lý</div>
       <div class="nav-item" onclick="showPage('gis')">
         <i class="fa fa-earth-asia"></i> Quản lý trang trại
+      </div>
+      <div class="nav-item" onclick="showPage('cost')">
+        <i class="fa fa-coins"></i> Quản trị Chi phí
       </div>
       <div class="nav-item" onclick="showPage('devices')">
         <i class="fa fa-microchip"></i> Quản lý thiết bị
@@ -733,48 +737,145 @@
 
       <!-- ── Devices management ── -->
       <div class="page-section" id="page-devices">
-        <div class="card">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Giám sát & Quản lý thiết bị IoT</h3>
-            <button class="btn btn-primary" onclick="openDeviceModal()">
-              <i class="fa fa-plus"></i> Thêm thiết bị mới
-            </button>
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; padding:40px 20px;">
+          <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f); border-radius:24px; padding:50px 60px; box-shadow:0 20px 60px rgba(0,0,0,0.15); max-width:520px; width:100%;">
+            <div style="width:80px; height:80px; background:linear-gradient(135deg,#10b981,#059669); border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow:0 8px 24px rgba(16,185,129,0.4);">
+              <i class="fa-solid fa-microchip" style="font-size:36px; color:#fff;"></i>
+            </div>
+            <h2 style="color:#f1f5f9; font-size:22px; font-weight:800; margin-bottom:12px;">Quản lý thiết bị IoT</h2>
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:30px; padding:6px 18px; margin-bottom:20px;">
+              <span style="width:8px; height:8px; background:#10b981; border-radius:50%; animation:pulse 1.5s ease-in-out infinite; display:inline-block;"></span>
+              <span style="color:#10b981; font-size:13px; font-weight:700; letter-spacing:0.05em;">ĐANG PHÁT TRIỂN</span>
+            </div>
+            <p style="color:#94a3b8; font-size:14px; line-height:1.7; margin-bottom:28px;">Tính năng giám sát và điều khiển thiết bị IoT (cảm biến đất, trạm thời tiết, hệ thống tưới tự động) đang được xây dựng và sẽ sớm ra mắt.</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:left;">
+              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
+                <i class="fa-solid fa-temperature-half" style="color:#f59e0b; margin-bottom:6px; font-size:18px; display:block;"></i>
+                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Cảm biến môi trường</div>
+                <div style="color:#64748b; font-size:11px;">Nhiệt độ, độ ẩm, ánh sáng</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
+                <i class="fa-solid fa-droplet" style="color:#3b82f6; margin-bottom:6px; font-size:18px; display:block;"></i>
+                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Hệ thống tưới thông minh</div>
+                <div style="color:#64748b; font-size:11px;">Van điện từ, lịch tưới tự động</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
+                <i class="fa-solid fa-camera" style="color:#a855f7; margin-bottom:6px; font-size:18px; display:block;"></i>
+                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Camera giám sát</div>
+                <div style="color:#64748b; font-size:11px;">Quan sát vườn theo thời gian thực</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
+                <i class="fa-solid fa-satellite-dish" style="color:#10b981; margin-bottom:6px; font-size:18px; display:block;"></i>
+                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Trạm thời tiết</div>
+                <div style="color:#64748b; font-size:11px;">Dữ liệu khí tượng tại chỗ</div>
+              </div>
+            </div>
           </div>
-          <div class="search-bar" style="display:flex; gap:10px; flex-wrap:wrap;">
-            <input type="text" id="device-search" placeholder="🔍 Tìm theo tên, IP..." oninput="filterDevices()" style="flex:1; min-width:200px;">
-            <select id="device-filter-type" onchange="filterDevices()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;background:#fff;">
-              <option value="all">Tất cả loại thiết bị</option>
-              <option value="Cảm biến nhiệt độ & độ ẩm">Cảm biến nhiệt độ & độ ẩm</option>
-              <option value="Hệ thống tưới tự động">Hệ thống tưới tự động</option>
-              <option value="Camera giám sát">Camera giám sát</option>
-              <option value="Bộ điều khiển trung tâm (Gateway)">Bộ điều khiển trung tâm (Gateway)</option>
+        </div>
+      </div>
+
+      <!-- ── Quản trị Chi phí Đầu tư ── -->
+      <div class="page-section" id="page-cost">
+        <!-- Header & Filters -->
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0;">📊 Quản trị Chi phí Đầu tư</h2>
+            <p style="font-size:13px; color:#64748b; margin:4px 0 0;">Giám sát tổng đầu vào trang trại — Vật tư, Tài sản &amp; Biểu đồ chi phí</p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <select id="cost-filter-user" onchange="costFilterChange()" style="padding:8px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; background:#fff; min-width:180px;">
+              <option value="all">👤 Tất cả khách hàng</option>
             </select>
-            <select id="device-filter-status" onchange="filterDevices()" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;background:#fff;">
-              <option value="all">Tất cả trạng thái</option>
-              <option value="Hoạt động">🟢 Hoạt động</option>
-              <option value="Mất kết nối">🔴 Mất kết nối</option>
-              <option value="Bảo trì">🟡 Bảo trì</option>
+            <select id="cost-filter-farm" onchange="costFilterChange()" style="padding:8px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; background:#fff; min-width:160px;">
+              <option value="all">🌿 Tất cả trang trại</option>
             </select>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Tên thiết bị</th>
-                <th>Loại thiết bị</th>
-                <th>Trang trại</th>
-                <th>Địa chỉ IP</th>
-                <th>Dung lượng pin</th>
-                <th>Trạng thái</th>
-                <th>Kết nối cuối</th>
-                <th style="width:150px">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="devices-table">
-              <tr>
-                <td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
-              </tr>
-            </tbody>
-          </table>
+        </div>
+
+        <!-- KPI Cards -->
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px;" id="cost-kpi-row">
+          <div style="background:linear-gradient(135deg,#10b981,#059669); border-radius:14px; padding:20px; color:#fff; box-shadow:0 4px 16px rgba(16,185,129,0.25);">
+            <div style="font-size:11px; font-weight:700; opacity:0.8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;"><i class="fa-solid fa-boxes-stacked"></i> Tổng vật tư tiêu hao</div>
+            <div id="kpi-consumable" style="font-size:24px; font-weight:900;">—</div>
+            <div style="font-size:11px; opacity:0.75; margin-top:4px;">VNĐ đã chi</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8); border-radius:14px; padding:20px; color:#fff; box-shadow:0 4px 16px rgba(59,130,246,0.25);">
+            <div style="font-size:11px; font-weight:700; opacity:0.8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;"><i class="fa-solid fa-landmark"></i> Tài sản cố định</div>
+            <div id="kpi-fixed" style="font-size:24px; font-weight:900;">—</div>
+            <div style="font-size:11px; opacity:0.75; margin-top:4px;">Tổng giá trị đầu tư</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#f59e0b,#d97706); border-radius:14px; padding:20px; color:#fff; box-shadow:0 4px 16px rgba(245,158,11,0.25);">
+            <div style="font-size:11px; font-weight:700; opacity:0.8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;"><i class="fa-solid fa-coins"></i> Tổng chi phí</div>
+            <div id="kpi-total" style="font-size:24px; font-weight:900;">—</div>
+            <div style="font-size:11px; opacity:0.75; margin-top:4px;">Tất cả khoản mục</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="card" style="overflow:hidden;">
+          <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+            <div class="tab active" id="cost-tab-consumable" onclick="switchCostTab('consumable')" style="padding:14px 20px;">📦 Vật tư tiêu hao</div>
+            <div class="tab" id="cost-tab-fixed" onclick="switchCostTab('fixed')" style="padding:14px 20px;">🏗️ Tài sản cố định</div>
+            <div class="tab" id="cost-tab-chart" onclick="switchCostTab('chart')" style="padding:14px 20px;">📈 Biểu đồ chi phí</div>
+          </div>
+
+          <!-- Tab 1: Vật tư tiêu hao -->
+          <div id="cost-pane-consumable" style="padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">📦 Danh sách vật tư tiêu hao</h4>
+              <button class="btn btn-primary btn-sm" onclick="openCostEntryModal('consumable')"><i class="fa fa-plus"></i> Thêm vật tư</button>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Ngày</th><th>Loại vật tư</th><th>Tên vật tư</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá (VNĐ)</th><th>Thành tiền</th><th>Trang trại</th><th>Ghi chú</th>
+              </tr></thead>
+              <tbody id="cost-consumable-table">
+                <tr><td colspan="9" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
+              </tbody>
+              <tfoot id="cost-consumable-footer" style="background:#f0fdf4; font-weight:700;"></tfoot>
+            </table>
+          </div>
+
+          <!-- Tab 2: Tài sản cố định -->
+          <div id="cost-pane-fixed" style="padding:20px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">🏗️ Danh sách tài sản cố định</h4>
+              <button class="btn btn-primary btn-sm" onclick="openCostEntryModal('fixed')"><i class="fa fa-plus"></i> Thêm tài sản</button>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Tên tài sản</th><th>Phân loại</th><th>Năm mua</th><th>Nguyên giá (VNĐ)</th><th>Năm sử dụng</th><th>Khấu hao/năm</th><th>Còn lại</th><th>Trang trại</th><th>Ghi chú</th>
+              </tr></thead>
+              <tbody id="cost-fixed-table">
+                <tr><td colspan="9" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
+              </tbody>
+              <tfoot id="cost-fixed-footer" style="background:#eff6ff; font-weight:700;"></tfoot>
+            </table>
+          </div>
+
+          <!-- Tab 3: Biểu đồ chi phí -->
+          <div id="cost-pane-chart" style="padding:20px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+              <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">📈 Đường biểu diễn chi phí theo tháng</h4>
+              <div style="display:flex; gap:8px;">
+                <select id="cost-chart-year" onchange="renderCostChart()" style="padding:7px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#fff;">
+                  <option value="2026">2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                </select>
+                <select id="cost-chart-type" onchange="renderCostChart()" style="padding:7px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#fff;">
+                  <option value="all">Tất cả chi phí</option>
+                  <option value="consumable">Vật tư tiêu hao</option>
+                  <option value="fixed">Tài sản cố định</option>
+                </select>
+              </div>
+            </div>
+            <div style="background:#f8fafc; border-radius:12px; padding:20px; border:1px solid #e2e8f0;">
+              <canvas id="cost-line-chart" style="max-height:380px;"></canvas>
+            </div>
+            <!-- Legend summary -->
+            <div id="cost-chart-summary" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:16px;"></div>
+          </div>
         </div>
       </div>
 
@@ -782,7 +883,101 @@
   </main>
 </div>
 
+<!-- ════════════ COST ENTRY MODAL ════════════ -->
+<div class="modal-overlay" id="cost-entry-modal" style="display:none" onclick="if(event.target===this)closeCostEntryModal()">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h2 id="cost-entry-modal-title"><i class="fa-solid fa-coins" style="color:var(--green)"></i> Thêm khoản chi</h2>
+      <button class="modal-close" onclick="closeCostEntryModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ce-type">
+      <div class="form-row">
+        <div class="field">
+          <label>Trang trại</label>
+          <select id="ce-farm" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+            <option value="">— Chọn trang trại —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ngày</label>
+          <input type="date" id="ce-date" style="width:100%;">
+        </div>
+      </div>
+      <div id="ce-fields-consumable">
+        <div class="form-row">
+          <div class="field">
+            <label>Loại vật tư</label>
+            <select id="ce-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+              <option value="Phân bón">Phân bón</option>
+              <option value="Thuốc BVTV">Thuốc BVTV</option>
+              <option value="Nhiên liệu">Nhiên liệu</option>
+              <option value="Nước tưới">Nước tưới</option>
+              <option value="Lao động">Lao động</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tên vật tư *</label>
+            <input type="text" id="ce-name" placeholder="VD: Ure 46%, DAP...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Số lượng</label>
+            <input type="number" id="ce-qty" placeholder="0" min="0" step="0.1">
+          </div>
+          <div class="field">
+            <label>Đơn vị</label>
+            <input type="text" id="ce-unit" placeholder="kg, lít, công...">
+          </div>
+          <div class="field">
+            <label>Đơn giá (VNĐ)</label>
+            <input type="number" id="ce-price" placeholder="0" min="0">
+          </div>
+        </div>
+      </div>
+      <div id="ce-fields-fixed" style="display:none;">
+        <div class="form-row">
+          <div class="field">
+            <label>Phân loại tài sản</label>
+            <select id="ce-fixed-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+              <option value="Máy móc thiết bị">Máy móc thiết bị</option>
+              <option value="Công trình">Công trình</option>
+              <option value="Cây giống">Cây giống ban đầu</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Năm mua</label>
+            <input type="number" id="ce-fixed-year" placeholder="2024" min="2000" max="2100">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Nguyên giá (VNĐ) *</label>
+            <input type="number" id="ce-fixed-price" placeholder="0" min="0">
+          </div>
+          <div class="field">
+            <label>Thời gian sử dụng (năm)</label>
+            <input type="number" id="ce-fixed-life" placeholder="5" min="1">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ghi chú</label>
+        <textarea id="ce-note" rows="2" placeholder="Ghi chú thêm..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCostEntryModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveCostEntry()"><i class="fa fa-check"></i> Lưu</button>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════ PLANT MODAL ════════════ -->
+
 <div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
   <div class="modal">
     <div class="modal-header">
@@ -1231,6 +1426,9 @@
   </div>
 </div>
 
+<!-- Plant Hover Tooltip -->
+<div id="plant-hover-tooltip"></div>
+
   <script src="/admin/js/auth.js"></script>
   <script src="/admin/js/dashboard.js?v=2.2.0"></script>
   <script src="/admin/js/media.js"></script>
@@ -1239,7 +1437,9 @@
   <script src="/admin/js/gis.js"></script>
   <script src="/admin/js/users.js"></script>
   <script src="/admin/js/devices.js"></script>
+  <script src="/admin/js/cost.js"></script>
   <script src="/admin/js/websocket.js"></script>
   <script src="/admin/js/app.js?v=2.2.0"></script>
 </body>
 </html>
+

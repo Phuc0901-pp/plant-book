@@ -352,3 +352,69 @@
     margin-bottom: 3px;
     color: #64748b;
   }
+
+/* ── Plant Item Hover Tooltip (Sidebar) ── */
+#plant-hover-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  min-width: 220px;
+  max-width: 280px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05);
+  opacity: 0;
+  transform: translateY(6px) scale(0.97);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  backdrop-filter: blur(8px);
+}
+#plant-hover-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+#plant-hover-tooltip .pht-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+#plant-hover-tooltip .pht-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+#plant-hover-tooltip .pht-label {
+  color: #64748b;
+  font-weight: 500;
+}
+#plant-hover-tooltip .pht-value {
+  color: #e2e8f0;
+  font-weight: 600;
+  text-align: right;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#plant-hover-tooltip .pht-health {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+#plant-hover-tooltip .pht-health.tot { background: rgba(16,185,129,0.15); color: #10b981; }
+#plant-hover-tooltip .pht-health.binh { background: rgba(245,158,11,0.15); color: #f59e0b; }
+#plant-hover-tooltip .pht-health.chu-y { background: rgba(249,115,22,0.15); color: #f97316; }
+#plant-hover-tooltip .pht-health.benh { background: rgba(239,68,68,0.15); color: #ef4444; }
