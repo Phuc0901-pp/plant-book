@@ -341,6 +341,8 @@ function switchGisView(view) {
   document.getElementById('gis-view-list').style.display = view === 'list' ? 'block' : 'none';
   document.getElementById('gis-view-form').style.display = view === 'form' ? 'block' : 'none';
   document.getElementById('gis-view-details').style.display = view === 'details' ? 'block' : 'none';
+  const footer = document.getElementById('gis-detail-footer');
+  if (footer) footer.style.display = view === 'details' ? 'flex' : 'none';
 }
 
 function renderFarmsList(farms) {
@@ -791,25 +793,27 @@ async function selectFarm(farmId) {
 
     document.getElementById('gis-sidebar-title').textContent = farm.name;
     
-    const ownerHtml = `<div style="margin-bottom:8px; font-size:12px; color:var(--gray-800);"><i class="fa fa-user" style="color:#ea580c"></i> Nông hộ phụ trách: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></div>`;
-    document.getElementById('farm-details-desc').innerHTML = ownerHtml + (farm.description ? `<p>${esc(farm.description)}</p>` : '<p style="font-style:italic; color:var(--gray-400);">Không có mô tả.</p>');
+    const ownerHtml = `<div class="gis-farm-info"><i class="fa fa-user" style="color:#ea580c"></i> Nông hộ phụ trách: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></div>`;
+    document.getElementById('farm-details-desc').innerHTML = ownerHtml + (farm.description ? `<p class="gis-farm-info">${esc(farm.description)}</p>` : '<p class="gis-farm-info" style="font-style:italic; color:#94a3b8;">Không có mô tả.</p>');
     
-    document.getElementById('farm-details-area').textContent = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
+    const areaVal = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
+    document.getElementById('farm-details-area').innerHTML = `<i class="fa-solid fa-chart-area"></i> ${areaVal}`;
     document.getElementById('farm-details-plant-count').textContent = farm.plants ? farm.plants.length : 0;
 
     const listEl = document.getElementById('farm-details-plants-list');
     if (!farm.plants || farm.plants.length === 0) {
-      listEl.innerHTML = '<p style="font-size:12px;color:var(--gray-400);text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
+      listEl.innerHTML = '<p style="font-size:12px;color:#94a3b8;text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
     } else {
+      const healthColors = { 'Tốt': '#10b981', 'Bình thường': '#f59e0b', 'Cần chú ý': '#f97316', 'Bệnh': '#ef4444' };
       listEl.innerHTML = farm.plants.map(p => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--gray-50); border-radius:6px; font-size:12px; border:1px solid var(--gray-200);">
-          <div>
-            <strong>Cây ${esc(p.tree_code || p.id)}: ${esc(p.plant_type)}</strong>
-            ${p.plant_variety ? `<br><small style="color:var(--gray-400)">Giống: ${esc(p.plant_variety)}</small>` : ''}
+        <div class="gis-plant-item" onclick="openPlantModal(${p.id})">
+          <div style="flex:1; min-width:0;">
+            <strong style="font-size:11.5px; color:#0f172a; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Cây ${esc(p.tree_code || p.id)}: ${esc(p.plant_type)}</strong>
+            ${p.plant_variety ? `<small style="color:#64748b">${esc(p.plant_variety)}</small>` : ''}
           </div>
-          <div style="display:flex; align-items:center;">
-            ${healthBadge(p.health_status)}
-            <button class="btn btn-secondary btn-sm" style="padding: 2px 6px; margin-left: 6px;" onclick="openPlantModal(${p.id})">
+          <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+            <span class="gis-plant-health-dot" style="background:${healthColors[p.health_status] || '#3b82f6'};"></span>
+            <button class="btn btn-secondary btn-sm" style="padding:2px 6px; font-size:10px;" onclick="event.stopPropagation(); openPlantModal(${p.id})">
               <i class="fa fa-pen"></i>
             </button>
           </div>
