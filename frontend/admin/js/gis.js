@@ -2042,7 +2042,7 @@ async function openAdminFarmA4ExportModal(map) {
         source: tempVertSrcId,
         paint: {
           'circle-color': '#ef4444',
-          'circle-radius': 7.5,
+          'circle-radius': 6.5,
           'circle-stroke-width': 1.5,
           'circle-stroke-color': '#ffffff'
         }
@@ -2053,7 +2053,7 @@ async function openAdminFarmA4ExportModal(map) {
         source: tempVertSrcId,
         layout: {
           'text-field': ['get', 'label'],
-          'text-size': 9.5,
+          'text-size': 8.5,
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
           'text-allow-overlap': true,
           'text-ignore-placement': true
@@ -2077,12 +2077,12 @@ async function openAdminFarmA4ExportModal(map) {
         source: tempEdgeSrcId,
         layout: {
           'text-field': ['get', 'label'],
-          'text-size': 9,
+          'text-size': 8.5,
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
           'text-allow-overlap': false,
           'text-ignore-placement': false,
           'text-offset': [0, -1.2],
-          'text-padding': 2
+          'text-padding': 3
         },
         paint: {
           'text-color': '#ffffff',
@@ -2095,10 +2095,8 @@ async function openAdminFarmA4ExportModal(map) {
     console.warn('Lỗi vẽ layer tạm thời A4:', e);
   }
 
-  // Ép Mapbox vẽ lại toàn bộ mốc ranh giới A-L và nhãn kích thước lên WebGL Canvas
+  // 1. Chụp ảnh Bản đồ tổng thể (Full Farm Map - Chuẩn Hình 2)
   map.triggerRepaint();
-
-  // CHỜ Mapbox hoàn tất chu kỳ render WebGL Canvas (350ms) để toàn bộ điểm mốc ranh giới được vẽ hoàn chỉnh lên ảnh HD
   await new Promise(resolve => setTimeout(resolve, 350));
 
   let mapImageDataUrl = '';
@@ -2106,6 +2104,23 @@ async function openAdminFarmA4ExportModal(map) {
     mapImageDataUrl = map.getCanvas().toDataURL('image/png');
   } catch (err) {
     console.warn('Cảnh báo chụp ảnh bản đồ:', err);
+  }
+
+  // 2. Chụp ảnh Chi tiết phóng đại cận cảnh (Close-Up Detail View - Chuẩn Hình 3 cho Vòng mặt cắt A-A)
+  let cutoutImageDataUrl = mapImageDataUrl;
+  if (uniquePts && uniquePts.length > 0) {
+    try {
+      const sectionCenter = uniquePts[0];
+      map.jumpTo({
+        center: sectionCenter,
+        zoom: Math.max(oldZoom + 2.5, 17.5),
+        bearing: uprightBearing,
+        pitch: 0
+      });
+      map.triggerRepaint();
+      await new Promise(resolve => setTimeout(resolve, 300));
+      cutoutImageDataUrl = map.getCanvas().toDataURL('image/png');
+    } catch (_) {}
   }
 
   // Dọn dẹp các layer WebGL tạm thời sau khi đã chụp ảnh xong
@@ -2378,7 +2393,7 @@ async function openAdminFarmA4ExportModal(map) {
 
               <!-- Thấu kính chứa ảnh mặt cắt (Cho phép Kéo xoay dịch chuyển ảnh bên trong) -->
               <div id="a4-cutout-viewport" style="width:100%; height:100%; border-radius:50%; overflow:hidden; position:relative; cursor:move;" title="Nhấp giữ rê chuột để dịch chuyển hình ảnh mặt cắt bên trong vòng tròn">
-                <img id="a4-cutout-img" src="${mapImageDataUrl}" style="position:absolute; left:50%; top:50%; width:320%; height:320%; object-fit:cover; transform:translate(-50%, -50%) scale(1.4); pointer-events:none;">
+                <img id="a4-cutout-img" src="${cutoutImageDataUrl}" style="position:absolute; left:50%; top:50%; width:180%; height:180%; object-fit:cover; transform:translate(-50%, -50%) scale(1.0); pointer-events:none;">
                 <input type="text" id="a4-cutout-title-input" class="a4-edit-field" value="A-A" style="position:absolute; top:6px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.92); color:#000; font-size:10px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444; width:44px; text-align:center; cursor:pointer; z-index:20;" title="Nhấp để đổi tên mặt cắt (VD: A-A, B-B, C-C)">
               </div>
             </div>
