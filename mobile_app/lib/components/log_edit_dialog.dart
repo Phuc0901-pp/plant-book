@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../models/plant_log.dart';
 import '../models/supply.dart';
 import '../services/api_service.dart';
@@ -33,6 +34,49 @@ class _LogEditDialogState extends State<LogEditDialog> {
   late DateTime _selectedDate;
   bool _isLoadingSupplies = false;
   bool _isSaving = false;
+  bool _isListeningVoice = false;
+  final stt.SpeechToText _speech = stt.SpeechToText();
+
+  Future<void> _toggleVoiceDictation() async {
+    if (!_isListeningVoice) {
+      bool available = await _speech.initialize(
+        onStatus: (status) {
+          if (status == 'done' || status == 'notListening') {
+            if (mounted) setState(() => _isListeningVoice = false);
+          }
+        },
+        onError: (err) {
+          if (mounted) setState(() => _isListeningVoice = false);
+        },
+      );
+      if (available) {
+        setState(() => _isListeningVoice = true);
+        _speech.listen(
+          localeId: 'vi_VN',
+          onResult: (result) {
+            if (mounted) {
+              setState(() {
+                final currentText = _noteController.text.trim();
+                _noteController.text = currentText.isEmpty
+                    ? result.recognizedWords
+                    : '$currentText ${result.recognizedWords}';
+              });
+            }
+          },
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Thiết bị chưa hỗ trợ hoặc chưa cấp quyền micro.')),
+          );
+        }
+      }
+    } else {
+      await _speech.stop();
+      setState(() => _isListeningVoice = false);
+    }
+  }
+
 
   List<Supply> _allSupplies = [];
   List<Supply> _filteredSupplies = [];
@@ -687,8 +731,41 @@ class _LogEditDialogState extends State<LogEditDialog> {
                     ],
 
                     // Note input field
-                    const Text('Ghi chú thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Ghi chú thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                        InkWell(
+                          onTap: _toggleVoiceDictation,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _isListeningVoice ? Colors.red.withValues(alpha: 0.15) : const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: _isListeningVoice ? Colors.red : const Color(0xFFFCA5A5)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isListeningVoice ? Icons.mic_rounded : Icons.mic_none_rounded,
+                                  size: 14,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _isListeningVoice ? 'Đang nghe...' : 'Đọc giọng nói',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 6),
+
                     TextFormField(
                       controller: _noteController,
                       maxLines: 3,
