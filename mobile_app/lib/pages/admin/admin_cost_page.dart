@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../utils/theme.dart';
 import '../../components/loading_indicator.dart';
@@ -112,7 +112,7 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
                           children: [
                             const Text('📦 Vật tư', style: TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 2),
-                            Text(_formatCurrency(_totalConsumable), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.emerald)),
+                            Text(_formatCurrency(_totalConsumable), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.green)),
                           ],
                         ),
                       ),
@@ -181,10 +181,10 @@ class _AdminCostPageState extends State<AdminCostPage> with SingleTickerProvider
           margin: const EdgeInsets.only(bottom: 10),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppTheme.grayBorder)),
           child: ListTile(
-            leading: const CircleAvatar(backgroundColor: Colors.emerald, child: Icon(Icons.inventory_2_rounded, color: Colors.white, size: 20)),
+            leading: const CircleAvatar(backgroundColor: AppTheme.green, child: Icon(Icons.inventory_2_rounded, color: Colors.white, size: 20)),
             title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             subtitle: Text('Loại: $cat | Trang trại: $farm', style: const TextStyle(fontSize: 11)),
-            trailing: Text(_formatCurrency(total), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.emerald, fontSize: 13)),
+            trailing: Text(_formatCurrency(total), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.green, fontSize: 13)),
           ),
         );
       },

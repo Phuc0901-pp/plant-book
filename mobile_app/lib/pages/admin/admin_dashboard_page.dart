@@ -204,8 +204,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     ),
                     _adminMenuTile(
                       icon: Icons.attach_money_rounded,
-                      color: Colors.emerald,
+                      color: AppTheme.green,
                       title: 'Quản trị Chi phí Đầu tư',
+
                       subtitle: 'Giám sát tổng vật tư tiêu hao, tài sản cố định & chi phí trang trại.',
                       onTap: () {
                         Navigator.push(
