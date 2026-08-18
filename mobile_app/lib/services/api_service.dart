@@ -641,4 +641,51 @@ class ApiService {
       return null;
     }
   }
+
+  // ── Cost Management API Endpoints ────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchCostConsumables({int? farmId, int? userId}) async {
+    try {
+      final headers = await _getHeaders();
+      final queryParams = <String, String>{};
+      if (farmId != null) queryParams['farm_id'] = farmId.toString();
+      if (userId != null) queryParams['user_id'] = userId.toString();
+
+      Uri uri = Uri.parse('$baseUrl/costs/consumables');
+      if (queryParams.isNotEmpty) uri = uri.replace(queryParameters: queryParams);
+
+      final response = await http.get(uri, headers: headers);
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching cost consumables: $e');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCostFixed({int? farmId, int? userId}) async {
+    try {
+      final headers = await _getHeaders();
+      final queryParams = <String, String>{};
+      if (farmId != null) queryParams['farm_id'] = farmId.toString();
+      if (userId != null) queryParams['user_id'] = userId.toString();
+
+      Uri uri = Uri.parse('$baseUrl/costs/fixed');
+      if (queryParams.isNotEmpty) uri = uri.replace(queryParameters: queryParams);
+
+      final response = await http.get(uri, headers: headers);
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching cost fixed: $e');
+      return [];
+    }
+  }
 }
+

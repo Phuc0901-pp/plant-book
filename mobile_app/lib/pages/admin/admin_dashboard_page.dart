@@ -7,6 +7,8 @@ import '../dashboard_page.dart';
 import 'admin_user_list_page.dart';
 import 'admin_device_list_page.dart';
 import 'admin_schema_list_page.dart';
+import 'admin_cost_page.dart';
+
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -201,6 +203,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       },
                     ),
                     _adminMenuTile(
+                      icon: Icons.attach_money_rounded,
+                      color: Colors.emerald,
+                      title: 'Quản trị Chi phí Đầu tư',
+                      subtitle: 'Giám sát tổng vật tư tiêu hao, tài sản cố định & chi phí trang trại.',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminCostPage()),
+                        );
+                      },
+                    ),
+                    _adminMenuTile(
                       icon: Icons.tune_rounded,
                       color: Colors.teal,
                       title: 'Cấu hình thuộc tính (Schemas)',
@@ -213,6 +227,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       },
                     ),
                   ],
+
                 ),
               ),
             ),
