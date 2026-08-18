@@ -81,7 +81,26 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: AppTheme.greenDark,
-        title: const Text('TANBAO AgTech — Admin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 26,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppTheme.green),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('TANBAO AgTech — Admin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

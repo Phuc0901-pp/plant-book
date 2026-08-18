@@ -137,20 +137,29 @@ class _DashboardPageState extends State<DashboardPage> {
         title: Row(
           children: [
             Container(
-              width: 8,
-              height: 24,
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: AppTheme.green,
-                borderRadius: BorderRadius.circular(4),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 28,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppTheme.green),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             const Text(
               'Plant Book',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
+
         actions: [
           // NFC Reader Trigger
           IconButton(
