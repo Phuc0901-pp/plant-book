@@ -1,21 +1,21 @@
   :root {
-    --bg-dark: #071910;
-    --bg-card: rgba(12, 41, 27, 0.45);
-    --border-glass: rgba(255, 255, 255, 0.08);
-    --border-glass-focus: rgba(34, 197, 94, 0.4);
-    --green-bright: #22c55e;
-    --green-glow: rgba(34, 197, 94, 0.15);
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
+    --bg-dark: #ffffff;
+    --bg-card: #ffffff;
+    --border-glass: #e2e8f0;
+    --border-glass-focus: #10b981;
+    --green-bright: #059669;
+    --green-glow: rgba(16, 185, 129, 0.12);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
     
     /* Care Colors */
-    --color-water: #3b82f6;
-    --color-fertilize: #10b981;
-    --color-pesticide: #f97316;
-    --color-leaf: #eab308;
-    --color-flower: #ec4899;
-    --color-disease: #ef4444;
+    --color-water: #2563eb;
+    --color-fertilize: #059669;
+    --color-pesticide: #ea580c;
+    --color-leaf: #ca8a04;
+    --color-flower: #db2777;
+    --color-disease: #dc2626;
   }
 
   * {
@@ -26,10 +26,10 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--bg-dark);
+    background-color: #ffffff;
     background-image: 
-      radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
+      radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.04) 0%, transparent 40%);
     background-attachment: fixed;
     color: var(--text-primary);
     min-height: 100vh;
@@ -39,54 +39,58 @@
 
   /* Glassmorphism Panel Utility */
   .glass-panel {
-    background: var(--bg-card);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-glass);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 20px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.06);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  /* Brand Bar */
+  /* Brand Bar Header */
   .brand-bar {
     max-width: 900px;
     margin: 0 auto;
-    padding: 20px 24px;
+    padding: 24px 16px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 14px;
+    text-align: center;
   }
   .brand-logo {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    gap: 8px;
   }
   .brand-logo-img-wrap {
-    background: #fff;
-    border-radius: 8px;
-    padding: 6px 14px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 10px 24px;
     display: inline-flex;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
   }
   .brand-logo-img-wrap img {
-    height: 32px;
+    height: 42px; /* Phóng to 30% (từ 32px -> 42px) */
     width: auto;
     display: block;
     object-fit: contain;
   }
   .brand-logo-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255,255,255,0.12);
+    display: none;
   }
   .brand-logo-tagline {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-secondary);
     letter-spacing: 0.02em;
   }
+
 
   /* Hero Section */
   .hero-container {
@@ -251,7 +255,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #fff;
+    color: #0f172a;
   }
 
   /* Glass Card */
@@ -271,8 +275,8 @@
     }
   }
   .care-btn {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
     padding: 14px 10px;
     display: flex;
@@ -295,12 +299,12 @@
   }
   
   /* Hover effects per category */
-  .care-btn-water:hover { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.4); box-shadow: 0 0 15px rgba(59,130,246,0.2); }
-  .care-btn-fertilize:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.4); box-shadow: 0 0 15px rgba(16,185,129,0.2); }
-  .care-btn-pesticide:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.4); box-shadow: 0 0 15px rgba(249,115,22,0.2); }
-  .care-btn-leaf:hover { background: rgba(234,179,8,0.12); border-color: rgba(234,179,8,0.4); box-shadow: 0 0 15px rgba(234,179,8,0.2); }
-  .care-btn-flower:hover { background: rgba(236,72,153,0.12); border-color: rgba(236,72,153,0.4); box-shadow: 0 0 15px rgba(236,72,153,0.2); }
-  .care-btn-disease:hover { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.4); box-shadow: 0 0 15px rgba(239,68,68,0.25); }
+  .care-btn-water:hover { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.3); }
+  .care-btn-fertilize:hover { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.3); }
+  .care-btn-pesticide:hover { background: rgba(234,88,12,0.08); border-color: rgba(234,88,12,0.3); }
+  .care-btn-leaf:hover { background: rgba(202,138,4,0.08); border-color: rgba(202,138,4,0.3); }
+  .care-btn-flower:hover { background: rgba(219,39,119,0.08); border-color: rgba(219,39,119,0.3); }
+  .care-btn-disease:hover { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.3); }
   .care-btn:hover i { transform: scale(1.15); }
   .care-btn:active { transform: scale(0.95); }
 
@@ -311,8 +315,8 @@
     gap: 12px;
   }
   .spec-item {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255,255,255,0.04);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 12px 16px;
   }
@@ -339,7 +343,7 @@
     top: 10px;
     bottom: 10px;
     width: 2px;
-    background: rgba(255, 255, 255, 0.06);
+    background: #e2e8f0;
   }
   .timeline-group {
     margin-bottom: 24px;
@@ -369,24 +373,25 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: var(--bg-dark);
-    border: 3px solid rgba(255,255,255,0.2);
+    background: #ffffff;
+    border: 3px solid #cbd5e1;
     z-index: 2;
   }
   
-  .marker-water { border-color: var(--color-water); box-shadow: 0 0 8px var(--color-water); }
-  .marker-fertilize { border-color: var(--color-fertilize); box-shadow: 0 0 8px var(--color-fertilize); }
-  .marker-pesticide { border-color: var(--color-pesticide); box-shadow: 0 0 8px var(--color-pesticide); }
-  .marker-leaf { border-color: var(--color-leaf); box-shadow: 0 0 8px var(--color-leaf); }
-  .marker-flower { border-color: var(--color-flower); box-shadow: 0 0 8px var(--color-flower); }
-  .marker-disease { border-color: var(--color-disease); box-shadow: 0 0 8px var(--color-disease); }
+  .marker-water { border-color: var(--color-water); box-shadow: 0 0 6px var(--color-water); }
+  .marker-fertilize { border-color: var(--color-fertilize); box-shadow: 0 0 6px var(--color-fertilize); }
+  .marker-pesticide { border-color: var(--color-pesticide); box-shadow: 0 0 6px var(--color-pesticide); }
+  .marker-leaf { border-color: var(--color-leaf); box-shadow: 0 0 6px var(--color-leaf); }
+  .marker-flower { border-color: var(--color-flower); box-shadow: 0 0 6px var(--color-flower); }
+  .marker-disease { border-color: var(--color-disease); box-shadow: 0 0 6px var(--color-disease); }
   
   .timeline-content {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255,255,255,0.04);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 14px 16px;
   }
+
   .log-header {
     display: flex;
     justify-content: space-between;
