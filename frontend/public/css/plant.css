@@ -67,20 +67,22 @@
   }
   .brand-logo-img-wrap {
     background: #ffffff;
-    border-radius: 14px;
-    padding: 10px 24px;
+    border-radius: 16px;
+    padding: 14px 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
     border: 1px solid #e2e8f0;
   }
   .brand-logo-img-wrap img {
-    height: 42px; /* Phóng to 30% (từ 32px -> 42px) */
+    height: 64px; /* Phóng lớn 50%+ nổi bật */
+    max-height: 80px;
     width: auto;
     display: block;
     object-fit: contain;
   }
+
   .brand-logo-divider {
     display: none;
   }
