@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập Micro để nông dân đọc nhật ký canh tác bằng giọng nói.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Ứng dụng cần quyền Nhận diện Giọng nói để chuyển câu nói thành văn bản ghi chú.</string>
 </dict>
 </plist>
+
