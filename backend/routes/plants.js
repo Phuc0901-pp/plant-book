@@ -843,5 +843,82 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
   }
 });
 
+// ─── VietGAP / GlobalGAP Cultivation Log Report Export ────────────
+router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
+  try {
+    const plantId = parseInt(req.params.id);
+    const plantRes = await pool.query(
+      `SELECT p.*, f.name as farm_name, f.location as farm_address, u.full_name as owner_name, u.phone as owner_phone
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
+       LEFT JOIN users u ON u.id = f.user_id
+       WHERE p.id = $1`, [plantId]
+    );
+
+    if (plantRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+    }
+
+    const plant = plantRes.rows[0];
+    const logsRes = await pool.query(
+      `SELECT * FROM plant_logs WHERE plant_id = $1 ORDER BY log_date ASC`, [plantId]
+    );
+
+    res.json({
+      title: 'BÁO CÁO NHẬT KÝ CANH TÁC CHUẨN VIETGAP / GLOBALGAP',
+      generated_at: new Date().toISOString(),
+      plant_info: {
+        tree_code: plant.tree_code || plant.id,
+        plant_type: plant.plant_type,
+        plant_variety: plant.plant_variety,
+        farm_name: plant.farm_name,
+        farm_address: plant.farm_address,
+        owner_name: plant.owner_name,
+        owner_phone: plant.owner_phone,
+        nfc_uid: plant.nfc_uid,
+        public_url: `https://plant-book.onrender.com/${plant.created_by || 0}/${plant.farm_id || 0}/${plant.id}/${plant.nfc_uid || ''}`
+      },
+      total_logs: logsRes.rows.length,
+      logs: logsRes.rows
+    });
+  } catch (err) {
+    console.error('VietGAP export error:', err);
+    res.status(500).json({ error: 'Lỗi xuất báo cáo VietGAP: ' + err.message });
+  }
+});
+
+// ─── QR Traceability Metadata API ───────────────────────────────
+router.get('/:id(\\d+)/qr-traceability', async (req, res) => {
+  try {
+    const plantId = parseInt(req.params.id);
+    const plantRes = await pool.query(
+      `SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.nfc_uid, p.farm_id, f.user_id as owner_id, f.name as farm_name
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE p.id = $1`, [plantId]
+    );
+
+    if (plantRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy thông tin.' });
+    }
+
+    const plant = plantRes.rows[0];
+    const traceUrl = `https://plant-book.onrender.com/${plant.owner_id || 0}/${plant.farm_id || 0}/${plant.id}/${encodeURIComponent(plant.nfc_uid || '')}`;
+
+    res.json({
+      success: true,
+      tree_code: plant.tree_code,
+      plant_type: plant.plant_type,
+      plant_variety: plant.plant_variety,
+      farm_name: plant.farm_name,
+      traceability_url: traceUrl,
+      qr_image_api: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(traceUrl)}`
+    });
+  } catch (err) {
+    console.error('QR Traceability error:', err);
+    res.status(500).json({ error: 'Lỗi tạo QR: ' + err.message });
+  }
+});
 
 module.exports = router;
+

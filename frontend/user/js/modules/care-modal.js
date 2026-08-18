@@ -903,3 +903,53 @@ export async function saveCareLog() {
     if (btn) { btn.disabled = false; btn.innerHTML = oldText; }
   }
 }
+
+// ── Voice-to-Text (Ghi âm giọng nói) ─────────────────────────
+export function startVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    toast('Trình duyệt của bạn chưa hỗ trợ nhận diện giọng nói. Vui lòng dùng Chrome hoặc Safari mới hơn.', 'error');
+    return;
+  }
+
+  const micIcon = document.getElementById('mic-icon');
+  const micLabel = document.getElementById('mic-label');
+  const noteEl = document.getElementById('c-note');
+
+  try {
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'vi-VN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      if (micIcon) micIcon.className = 'fa-solid fa-spinner fa-spin';
+      if (micLabel) micLabel.textContent = 'Đang nghe...';
+      toast('🎙️ Hãy đọc nội dung nhật ký bằng tiếng Việt...', 'info');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (noteEl && transcript) {
+        noteEl.value = (noteEl.value ? noteEl.value + ' ' : '') + transcript;
+      }
+      toast('✅ Đã nhận diện giọng nói!', 'success');
+    };
+
+    recognition.onerror = (event) => {
+      console.warn('Speech recognition error:', event.error);
+      toast('Không thể nhận diện giọng nói (' + event.error + '). Thử lại!', 'error');
+    };
+
+    recognition.onend = () => {
+      if (micIcon) micIcon.className = 'fa-solid fa-microphone';
+      if (micLabel) micLabel.textContent = 'Đọc giọng nói';
+    };
+
+    recognition.start();
+  } catch (err) {
+    console.error('Voice input error:', err);
+    toast('Lỗi khởi động nhận diện giọng nói.', 'error');
+  }
+}
+

@@ -82,9 +82,22 @@ export function watermarkImage(file, treeCode, diseaseName) {
         const canvas = document.createElement('canvas');
         const ctx    = canvas.getContext('2d');
 
-        canvas.width  = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+        const maxDim = 1280;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+
+        canvas.width  = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
 
         const padding  = Math.max(16, Math.round(canvas.width * 0.03));
         const fontSize = Math.max(14, Math.round(canvas.width * 0.025));
@@ -109,10 +122,11 @@ export function watermarkImage(file, treeCode, diseaseName) {
 
         canvas.toBlob((blob) => {
           resolve(blob
-            ? new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() })
+            ? new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg', lastModified: Date.now() })
             : file
           );
-        }, 'image/jpeg', 0.85);
+        }, 'image/jpeg', 0.80);
+
       };
       img.onerror = () => resolve(file);
       img.src = e.target.result;

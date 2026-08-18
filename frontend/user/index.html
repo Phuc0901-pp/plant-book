@@ -1017,9 +1017,15 @@
       </div>
 
       <div class="field">
-        <label>Ghi chú thêm</label>
-        <textarea id="c-note" rows="3" placeholder="Nhập ghi chú chi tiết nếu có..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="margin:0;">Ghi chú thêm</label>
+          <button type="button" class="btn btn-secondary btn-xs" id="btn-voice-dictate" onclick="startVoiceInput()" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; padding:4px 10px; font-size:12px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5;">
+            <i class="fa-solid fa-microphone" id="mic-icon"></i> <span id="mic-label">Đọc giọng nói</span>
+          </button>
+        </div>
+        <textarea id="c-note" rows="3" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>
       </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCareModal()">Hủy</button>

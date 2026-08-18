@@ -12,7 +12,7 @@ import { loadUserDashboard }          from './modules/dashboard.js';
 import { filterUserPlants }           from './modules/plants.js';
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
-import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange } from './modules/care-modal.js?v=2.8.0';
+import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput } from './modules/care-modal.js?v=2.8.0';
 import { onCareMediaSelected, openLightbox } from './modules/media.js';
 import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
@@ -38,6 +38,8 @@ window.openCareModal        = openCareModal;
 window.closeCareModal       = closeCareModal;
 window.saveCareLog          = saveCareLog;
 window.onCareLogTypeChange  = onCareLogTypeChange;
+window.startVoiceInput      = startVoiceInput;
+
 
 window.onCareMediaSelected  = onCareMediaSelected;
 window.openLightbox         = openLightbox;
