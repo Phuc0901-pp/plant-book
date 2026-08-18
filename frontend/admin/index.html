@@ -782,32 +782,48 @@
             <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0;">📊 Quản trị Chi phí Đầu tư</h2>
             <p style="font-size:13px; color:#64748b; margin:4px 0 0;">Giám sát tổng đầu vào trang trại — Vật tư, Tài sản &amp; Biểu đồ chi phí</p>
           </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
             <select id="cost-filter-user" onchange="costFilterChange()" style="padding:8px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; background:#fff; min-width:180px;">
               <option value="all">👤 Tất cả khách hàng</option>
             </select>
             <select id="cost-filter-farm" onchange="costFilterChange()" style="padding:8px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; outline:none; background:#fff; min-width:160px;">
               <option value="all">🌿 Tất cả trang trại</option>
             </select>
+            <button class="btn btn-secondary btn-sm" onclick="exportCostExcel()" style="gap:5px;">
+              <i class="fa-solid fa-file-excel" style="color:#10b981;"></i> Xuất Excel
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportCostPDF()" style="gap:5px;">
+              <i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> Xuất PDF
+            </button>
           </div>
         </div>
 
         <!-- KPI Cards -->
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px;" id="cost-kpi-row">
-          <div style="background:linear-gradient(135deg,#10b981,#059669); border-radius:14px; padding:20px; color:#fff; box-shadow:0 4px 16px rgba(16,185,129,0.25);">
-            <div style="font-size:11px; font-weight:700; opacity:0.8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;"><i class="fa-solid fa-boxes-stacked"></i> Tổng vật tư tiêu hao</div>
-            <div id="kpi-consumable" style="font-size:24px; font-weight:900;">—</div>
-            <div style="font-size:11px; opacity:0.75; margin-top:4px;">VNĐ đã chi</div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px;" id="cost-kpi-row">
+          <div style="background:linear-gradient(135deg,#10b981,#059669); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(16,185,129,0.25);">
+            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-boxes-stacked"></i> Vật tư tiêu hao</div>
+            <div id="kpi-consumable" style="font-size:20px; font-weight:900;">—</div>
+            <div style="font-size:10px; opacity:0.75; margin-top:4px;">VNĐ đã chi</div>
           </div>
-          <div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8); border-radius:14px; padding:20px; color:#fff; box-shadow:0 4px 16px rgba(59,130,246,0.25);">
-            <div style="font-size:11px; font-weight:700; opacity:0.8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;"><i class="fa-solid fa-landmark"></i> Tài sản cố định</div>
-            <div id="kpi-fixed" style="font-size:24px; font-weight:900;">—</div>
-            <div style="font-size:11px; opacity:0.75; margin-top:4px;">Tổng giá trị đầu tư</div>
+          <div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(59,130,246,0.25);">
+            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-landmark"></i> Tài sản cố định</div>
+            <div id="kpi-fixed" style="font-size:20px; font-weight:900;">—</div>
+            <div style="font-size:10px; opacity:0.75; margin-top:4px;">Tổng giá trị đầu tư</div>
           </div>
-          <div style="background:linear-gradient(135deg,#f59e0b,#d97706); border-radius:14px; padding:20px; color:#fff; box-shadow:0 4px 16px rgba(245,158,11,0.25);">
-            <div style="font-size:11px; font-weight:700; opacity:0.8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;"><i class="fa-solid fa-coins"></i> Tổng chi phí</div>
-            <div id="kpi-total" style="font-size:24px; font-weight:900;">—</div>
-            <div style="font-size:11px; opacity:0.75; margin-top:4px;">Tất cả khoản mục</div>
+          <div style="background:linear-gradient(135deg,#f59e0b,#d97706); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(245,158,11,0.25);">
+            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-coins"></i> Tổng chi phí</div>
+            <div id="kpi-total" style="font-size:20px; font-weight:900;">—</div>
+            <div style="font-size:10px; opacity:0.75; margin-top:4px;">Tất cả khoản mục</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(139,92,246,0.25);">
+            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-seedling"></i> TB / Cây</div>
+            <div id="kpi-cost-per-plant" style="font-size:20px; font-weight:900;">—</div>
+            <div style="font-size:10px; opacity:0.75; margin-top:4px;">VNĐ / gốc cây</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#06b6d4,#0891b2); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(6,182,212,0.25);">
+            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-ruler-combined"></i> TB / m²</div>
+            <div id="kpi-cost-per-area" style="font-size:20px; font-weight:900;">—</div>
+            <div style="font-size:10px; opacity:0.75; margin-top:4px;">VNĐ / diện tích</div>
           </div>
         </div>
 
@@ -825,6 +841,7 @@
               <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">📦 Danh sách vật tư tiêu hao</h4>
               <button class="btn btn-primary btn-sm" onclick="openCostEntryModal('consumable')"><i class="fa fa-plus"></i> Thêm vật tư</button>
             </div>
+
             <table>
               <thead><tr>
                 <th>Ngày</th><th>Loại vật tư</th><th>Tên vật tư</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá (VNĐ)</th><th>Thành tiền</th><th>Trang trại</th><th>Ghi chú</th>

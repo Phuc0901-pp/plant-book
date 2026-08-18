@@ -41,6 +41,40 @@ body {
   overflow-x: hidden;
 }
 
+/* ── Outdoor / Field UX Mode ── */
+body.field-mode {
+  font-size: 17px;
+  background: #0f172a;
+  color: #f8fafc;
+}
+body.field-mode button, 
+body.field-mode input, 
+body.field-mode select, 
+body.field-mode textarea {
+  min-height: 52px !important;
+  font-size: 16px !important;
+  border-width: 2px !important;
+}
+body.field-mode .card,
+body.field-mode .topbar,
+body.field-mode .sidebar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+body.field-mode .welcome-banner {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+body.field-mode .btn-primary {
+  background: #10b981 !important;
+  font-weight: 800 !important;
+}
+body.field-mode .gis-plant-item,
+body.field-mode .nav-item {
+  min-height: 50px;
+  font-size: 16px;
+}
+
 
 
 /* ══════════════════════════════════════════

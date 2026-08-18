@@ -261,6 +261,15 @@ async function initDB() {
 
 
 
+    // Database Performance Indexes
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_plants_farm_id ON plants(farm_id);
+      CREATE INDEX IF NOT EXISTS idx_plants_health ON plants(health_status);
+      CREATE INDEX IF NOT EXISTS idx_farms_user_id ON farms(user_id);
+      CREATE INDEX IF NOT EXISTS idx_supply_usages_farm_date ON supply_usages(farm_id, usage_date);
+      CREATE INDEX IF NOT EXISTS idx_fixed_assets_farm_year ON fixed_assets(farm_id, year);
+    `);
+
     // Seed default configurations
     const defaultConfigs = [
       { key: 'fertilizers', value: JSON.stringify(["Phân NPK 16-16-8", "Phân hữu cơ trùn quế", "Phân bón lá Đầu Trâu", "Phân chuồng hoai mục"]) },

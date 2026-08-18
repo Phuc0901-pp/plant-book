@@ -1,4 +1,4 @@
-﻿/* ════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════
    Plant Book Admin — cost.js
    Quản trị Chi phí Đầu tư (Dữ liệu thực từ PostgreSQL DB)
    ════════════════════════════════════════════════════════ */
@@ -62,17 +62,101 @@ function renderCostPage() {
   if (costCurrentTab === 'chart') renderCostChart();
 }
 
-function renderKpiCards(cons, fixed) {
-  const totalCons = cons.reduce((s, c) => s + (parseFloat(c.total) || 0), 0);
+async function renderKpiCards(cons, fixed) {
+  const totalCons = cons.reduce((s, c) => s + (parseFloat(c.total || c.total_cost) || 0), 0);
   const totalFixed = fixed.reduce((s, a) => s + (parseFloat(a.cost) || 0), 0);
+  const grandTotal = totalCons + totalFixed;
+
   const fmt = n => n.toLocaleString('vi-VN') + ' ₫';
   const kc = document.getElementById('kpi-consumable');
   const kf = document.getElementById('kpi-fixed');
   const kt = document.getElementById('kpi-total');
+  const kplant = document.getElementById('kpi-cost-per-plant');
+  const karea = document.getElementById('kpi-cost-per-area');
+
   if (kc) kc.textContent = fmt(totalCons);
   if (kf) kf.textContent = fmt(totalFixed);
-  if (kt) kt.textContent = fmt(totalCons + totalFixed);
+  if (kt) kt.textContent = fmt(grandTotal);
+
+  // Fetch farm metadata for plant count & total area calculations
+  try {
+    const farmId = document.getElementById('cost-filter-farm')?.value || 'all';
+    const farms = await api('/farms');
+    let totalPlants = 0;
+    let totalArea = 0;
+
+    if (farmId !== 'all') {
+      const selected = farms.find(f => String(f.id) === String(farmId));
+      if (selected) {
+        totalPlants = parseInt(selected.plant_count || 0);
+        totalArea = parseFloat(selected.area || 0);
+      }
+    } else {
+      farms.forEach(f => {
+        totalPlants += parseInt(f.plant_count || 0);
+        totalArea += parseFloat(f.area || 0);
+      });
+    }
+
+    if (kplant) kplant.textContent = totalPlants > 0 ? fmt(Math.round(grandTotal / totalPlants)) : '—';
+    if (karea) karea.textContent = totalArea > 0 ? fmt(Math.round(grandTotal / totalArea)) : '—';
+  } catch (_) {
+    if (kplant) kplant.textContent = '—';
+    if (karea) karea.textContent = '—';
+  }
 }
+
+// ── Export Excel / CSV ─────────────────────────────────────
+function exportCostExcel() {
+  const isCons = costCurrentTab === 'consumable';
+  const filename = isCons ? 'vat-tu-tieu-hao.csv' : 'tai-san-co-dinh.csv';
+  let csvContent = '\uFEFF'; // UTF-8 BOM
+
+  if (isCons) {
+    csvContent += 'Ngay,Loai vat tu,Ten vat tu,Don vi,So luong,Don gia (VND),Thanh tien (VND),Trang trai,Ghi chu\n';
+    costConsumables.forEach(c => {
+      const d = c.date ? new Date(c.date).toISOString().split('T')[0] : '';
+      const cat = `"${(c.category || '').replace(/"/g, '""')}"`;
+      const name = `"${(c.name || c.supply_name || '').replace(/"/g, '""')}"`;
+      const unit = `"${(c.unit || '').replace(/"/g, '""')}"`;
+      const qty = c.qty || c.quantity || 0;
+      const price = c.price || c.unit_price || 0;
+      const total = c.total || c.total_cost || (qty * price);
+      const farm = `"${(c.farm_name || '').replace(/"/g, '""')}"`;
+      const note = `"${(c.note || '').replace(/"/g, '""')}"`;
+      csvContent += `${d},${cat},${name},${unit},${qty},${price},${total},${farm},${note}\n`;
+    });
+  } else {
+    csvContent += 'Ten tai san,Phan loai,Nam mua,Nguyen gia (VND),Thoi gian dung (nam),Khau hao/nam (VND),Gia tri con lai (VND),Trang trai,Ghi chu\n';
+    costFixedAssets.forEach(a => {
+      const name = `"${(a.name || '').replace(/"/g, '""')}"`;
+      const cat = `"${(a.category || '').replace(/"/g, '""')}"`;
+      const yr = a.year || '';
+      const cost = a.cost || 0;
+      const life = a.life || 5;
+      const dep = a.dep_per_year || 0;
+      const rem = a.remaining || 0;
+      const farm = `"${(a.farm_name || '').replace(/"/g, '""')}"`;
+      const note = `"${(a.note || '').replace(/"/g, '""')}"`;
+      csvContent += `${name},${cat},${yr},${cost},${life},${dep},${rem},${farm},${note}\n`;
+    });
+  }
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('Đã xuất file báo cáo CSV/Excel!', 'success');
+}
+
+// ── Export PDF / Print ─────────────────────────────────────
+function exportCostPDF() {
+  window.print();
+}
+
 
 function switchCostTab(tab) {
   costCurrentTab = tab;

@@ -65,11 +65,11 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/devices', require('./routes/devices'));
 app.use('/api/supplies', require('./routes/supplies'));
 app.use('/api/costs', require('./routes/costs'));
-
-
+app.use('/api', require('./middleware/errorHandler'));
 
 // Health check
 app.get('/api/health', (req, res) => {
+
   res.json({ status: 'ok', time: new Date().toISOString(), app: 'Plant Book API v1.0' });
 });
 

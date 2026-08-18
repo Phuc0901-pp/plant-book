@@ -56,6 +56,24 @@ window.deactivateNfcTag     = deactivateNfcTag;
 window.togglePlantMenu      = togglePlantMenu;
 window.closePlantMenu       = closePlantMenu;
 
+// ── Field UX Mode (Outdoor Sunlight Mode) ───────────────────
+window.toggleFieldMode = function(forceState) {
+  const isField = typeof forceState === 'boolean' ? forceState : !document.body.classList.contains('field-mode');
+  document.body.classList.toggle('field-mode', isField);
+  localStorage.setItem('pb_field_mode', isField ? 'true' : 'false');
+  const btn = document.getElementById('btn-field-mode');
+  if (btn) {
+    btn.innerHTML = isField 
+      ? '<i class="fa-solid fa-cloud-sun" style="color:#10b981;"></i> Chế độ chuẩn'
+      : '<i class="fa-solid fa-sun" style="color:#f59e0b;"></i> Chế độ ngoài vườn';
+  }
+};
+
+// Initialize Field Mode preference on load
+if (localStorage.getItem('pb_field_mode') === 'true') {
+  window.toggleFieldMode(true);
+}
+
 // Register PWA service worker for offline support and mobile install option
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -64,3 +82,4 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.warn('❌ ServiceWorker registration failed:', err));
   });
 }
+
