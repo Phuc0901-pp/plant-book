@@ -19,7 +19,8 @@ dependencies:
   hive_flutter: ^1.1.0
   intl: ^0.19.0
   image_picker: ^1.0.7
-  speech_to_text: ^6.6.0
+  speech_to_text: ^7.0.0
+
 
 
 dev_dependencies:

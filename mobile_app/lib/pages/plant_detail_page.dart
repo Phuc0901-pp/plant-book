@@ -66,12 +66,13 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
     }
   }
 
-  void _openAddLogDialog() {
+  void _openAddLogDialog([String? initialType]) {
     showDialog<bool>(
       context: context,
       builder: (context) => LogEditDialog(
         plantIds: [widget.plant.id],
         farmName: widget.plant.farmName,
+        initialType: initialType,
       ),
     ).then((success) {
       if (success == true) {
@@ -82,6 +83,7 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
       }
     });
   }
+
 
   void _openEditLogDialog(PlantLog log) {
     showDialog<bool>(
@@ -179,20 +181,44 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // 2. Quick Care Action Grid (One-Tap Touch Target Category Selector)
+              const Text(
+                'THAO TÁC NHẬP NHẬT KÝ NHANH (1-CHẠM)',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.5),
+              ),
+              const SizedBox(height: 10),
+              GridView.count(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: 1.35,
+                children: [
+                  _quickCareTile('Tưới nước', Icons.water_drop_rounded, Colors.blue, 'Tưới nước'),
+                  _quickCareTile('Bón phân', Icons.opacity_rounded, AppTheme.green, 'Bón phân'),
+                  _quickCareTile('Phun thuốc', Icons.bug_report_rounded, Colors.orange, 'Phun thuốc'),
+                  _quickCareTile('Cắt lá', Icons.content_cut_rounded, Colors.amber, 'Tỉa cành/lá'),
+                  _quickCareTile('Tỉa hoa', Icons.grain_rounded, Colors.pink, 'Tỉa quả/hoa'),
+                  _quickCareTile('Bệnh cây', Icons.error_outline_rounded, Colors.red, 'Bệnh cây'),
+                ],
+              ),
               const SizedBox(height: 24),
               
-              // 2. Logs header
+              // 3. Logs header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Nhật ký chăm sóc',
+                    'Lịch sử nhật ký chăm sóc',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textMain),
                   ),
                   ElevatedButton.icon(
-                    onPressed: _openAddLogDialog,
+                    onPressed: () => _openAddLogDialog(),
                     icon: const Icon(Icons.add_rounded, size: 16),
-                    label: const Text('Ghi nhật ký', style: TextStyle(fontSize: 12)),
+                    label: const Text('Tất cả nhật ký', style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     ),
@@ -200,6 +226,7 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
                 ],
               ),
               const SizedBox(height: 12),
+
               
               // 3. Logs List
               _isLoading
@@ -495,4 +522,45 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
         return Icons.edit_note_rounded;
     }
   }
+
+  Widget _quickCareTile(String label, IconData icon, Color color, String activityType) {
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: color.withOpacity(0.3), width: 1.2),
+      ),
+      child: InkWell(
+        onTap: () => _openAddLogDialog(activityType),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
+

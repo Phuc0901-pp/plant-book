@@ -10,17 +10,20 @@ class LogEditDialog extends StatefulWidget {
   final List<int> plantIds;
   final PlantLog? log; // null means ADD, not null means EDIT
   final String? farmName;
+  final String? initialType; // Direct pre-selected care category e.g. 'Bón phân'
 
   const LogEditDialog({
     super.key,
     required this.plantIds,
     this.log,
     this.farmName,
+    this.initialType,
   });
 
   @override
   State<LogEditDialog> createState() => _LogEditDialogState();
 }
+
 
 class _LogEditDialogState extends State<LogEditDialog> {
   final _formKey = GlobalKey<FormState>();
@@ -123,10 +126,13 @@ class _LogEditDialogState extends State<LogEditDialog> {
         _manualNameController.text = (details['value'] ?? details['reason'] ?? details['disease'] ?? '').toString();
       }
     } else {
-      _selectedType = 'Tưới nước';
+      _selectedType = (widget.initialType != null && _activityTypes.contains(widget.initialType))
+          ? widget.initialType!
+          : 'Tưới nước';
       _selectedDate = DateTime.now();
-      _amountController.text = '10'; // default 10 liters
+      _amountController.text = _selectedType == 'Tưới nước' ? '10' : '1';
     }
+
 
     _loadSupplies();
   }
