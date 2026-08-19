@@ -279,7 +279,7 @@
           <label style="font-weight:600; font-size:12px; margin-bottom:4px; display:block;"><i class="fa fa-seedling"></i> Loại cây đang trồng</label>
           <input type="text" id="reg-plant-type" placeholder="Ví dụ: Sầu riêng, Cà phê, Cao su..." style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:10px 14px; width:100%;">
         </div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
           <div style="flex:1;">
             <label style="font-weight:600; font-size:12px; margin-bottom:4px; display:block;"><i class="fa fa-dna"></i> Giống cây</label>
             <input type="text" id="reg-plant-variety" placeholder="Ri6, Monthong..." style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:10px 14px; width:100%;">
@@ -288,6 +288,10 @@
             <label style="font-weight:600; font-size:12px; margin-bottom:4px; display:block;"><i class="fa fa-hourglass-half"></i> Tuổi cây (Năm)</label>
             <input type="number" id="reg-plant-age" placeholder="VD: 5" style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:10px 14px; width:100%;">
           </div>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label style="font-weight:600; font-size:12px; margin-bottom:4px; display:block;"><i class="fa-solid fa-ruler-combined"></i> Diện tích vườn (ha)</label>
+          <input type="number" id="reg-farm-area" step="0.1" placeholder="Ví dụ: 2.5 ha" style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:10px 14px; width:100%;">
         </div>
       </div>
 
@@ -299,8 +303,10 @@
             <div><strong>Số điện thoại:</strong> <span id="review-phone">—</span></div>
             <div><strong>Tên người dùng:</strong> <span id="review-name">—</span></div>
             <div><strong>Cây trồng:</strong> <span id="review-crop">—</span></div>
+            <div><strong>Diện tích vườn:</strong> <span id="review-area">—</span></div>
           </div>
         </div>
+
         <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:12px; border-radius:10px; font-size:12px; line-height:1.5;">
           <i class="fa-solid fa-info-circle"></i> <strong>Lưu ý:</strong> Ngay sau khi gửi yêu cầu, tài khoản của bạn sẽ được gửi tới Ban Quản trị. Admin sẽ kiểm tra và kích hoạt tài khoản cho bạn sớm nhất!
         </div>

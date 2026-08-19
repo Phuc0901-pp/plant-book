@@ -299,6 +299,7 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
   final _plantTypeController = TextEditingController();
   final _plantVarietyController = TextEditingController();
   final _plantAgeController = TextEditingController();
+  final _farmAreaController = TextEditingController();
   String _selectedGender = 'Nam';
   
   bool _isSubmitting = false;
@@ -314,6 +315,7 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
     _plantTypeController.dispose();
     _plantVarietyController.dispose();
     _plantAgeController.dispose();
+    _farmAreaController.dispose();
     super.dispose();
   }
 
@@ -332,7 +334,9 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
       'plant_type': _plantTypeController.text.trim(),
       'plant_variety': _plantVarietyController.text.trim(),
       'plant_age': _plantAgeController.text.trim(),
+      'farm_area': _farmAreaController.text.trim(),
     });
+
 
     if (!mounted) return;
     setState(() {
@@ -465,6 +469,12 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _farmAreaController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Diện tích vườn (ha)', hintText: 'VD: 2.5'),
+              ),
             ] else ...[
               const Text('Bước 3: Xác nhận gửi đăng ký', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
               const SizedBox(height: 12),
@@ -479,9 +489,12 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
                     Text('Tên nông hộ: ${_nameController.text.trim().isEmpty ? 'Nông hộ ${_phoneController.text.trim()}' : _nameController.text.trim()}'),
                     const SizedBox(height: 4),
                     Text('Cây trồng: ${_plantTypeController.text.trim().isEmpty ? 'Chưa khai báo' : _plantTypeController.text.trim()}'),
+                    const SizedBox(height: 4),
+                    Text('Diện tích vườn: ${_farmAreaController.text.trim().isEmpty ? 'Chưa khai báo' : '${_farmAreaController.text.trim()} ha'}'),
                   ],
                 ),
               ),
+
               const SizedBox(height: 12),
               const Text(
                 'Lưu ý: Sau khi bấm gửi đăng ký, tài khoản của bạn sẽ ở trạng thái chờ Quản trị viên duyệt và mở khóa.',

@@ -450,7 +450,9 @@ async function loadPendingFarmerUsers() {
 
     tbody.innerHTML = pendingUsers.map(u => {
       const dateStr = new Date(u.created_at).toLocaleString('vi-VN');
-      const cropInfo = u.plant_type ? `${u.plant_type} (${u.plant_variety || 'Giống địa phương'} - ${u.plant_age || 1} năm)` : 'Chưa khai báo';
+      const areaStr = u.farm_area ? ` - ${u.farm_area} ha` : '';
+      const cropInfo = u.plant_type ? `${u.plant_type} (${u.plant_variety || 'Giống địa phương'} - ${u.plant_age || 1} năm)${areaStr}` : 'Chưa khai báo';
+
 
       return `
         <tr>

@@ -175,8 +175,10 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_type VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_variety VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_age VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS farm_area NUMERIC;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
     `);
+
 
 
 

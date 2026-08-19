@@ -99,7 +99,8 @@ router.post('/register', async (req, res) => {
       dob,
       plant_type,
       plant_variety,
-      plant_age
+      plant_age,
+      farm_area
     } = req.body;
 
     if (!phone || !phone.trim() || !password || !password.trim()) {
@@ -107,6 +108,7 @@ router.post('/register', async (req, res) => {
     }
 
     const cleanPhone = phone.trim();
+    const parsedArea = farm_area && parseFloat(farm_area) ? parseFloat(farm_area) : null;
 
     // Check if phone already registered
     const existing = await pool.query(
@@ -130,10 +132,10 @@ router.post('/register', async (req, res) => {
 
     // Insert user with approved = false (pending Admin review)
     const userRes = await pool.query(
-      `INSERT INTO users (email, password_hash, full_name, role, phone, gender, dob, plant_type, plant_variety, plant_age, approved)
-       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, false)
+      `INSERT INTO users (email, password_hash, full_name, role, phone, gender, dob, plant_type, plant_variety, plant_age, farm_area, approved)
+       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, $10, false)
        RETURNING id, email, full_name, phone, approved, created_at`,
-      [email, hash, name, cleanPhone, gender || null, dob || null, plant_type || null, plant_variety || null, plant_age || null]
+      [email, hash, name, cleanPhone, gender || null, dob || null, plant_type || null, plant_variety || null, plant_age || null, parsedArea]
     );
 
     const newUser = userRes.rows[0];
@@ -141,11 +143,15 @@ router.post('/register', async (req, res) => {
     // Create default farm and initial plant for farmer if crop info provided
     if (plant_type && plant_type.trim()) {
       const farmRes = await pool.query(
-        `INSERT INTO farms (name, description, user_id, created_by)
-         VALUES ($1, $2, $3, $3) RETURNING id`,
-        [`Trang trại ${name}`, `Trang trại nông hộ ${name}`, newUser.id]
+        `INSERT INTO farms (name, description, area, user_id, created_by)
+         VALUES ($1, $2, $3, $4, $4) RETURNING id`,
+        [`Trang trại ${name}`, `Trang trại nông hộ ${name}`, parsedArea, newUser.id]
       );
       const farmId = farmRes.rows[0].id;
+
+      // Link newly created farm to user
+      await pool.query('UPDATE users SET farm_id = $1 WHERE id = $2', [farmId, newUser.id]);
+
       const slug = `${cleanPhone.slice(-4)}-${Date.now().toString(36)}`;
 
       await pool.query(
@@ -154,6 +160,7 @@ router.post('/register', async (req, res) => {
         [slug, plant_type.trim(), plant_variety || 'Giống địa phương', plant_age || '1', farmId, newUser.id]
       );
     }
+
 
     // Log registration activity
     await pool.query(

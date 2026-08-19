@@ -214,6 +214,8 @@ function openRegisterModal() {
   document.getElementById('reg-plant-type').value = '';
   document.getElementById('reg-plant-variety').value = '';
   document.getElementById('reg-plant-age').value = '';
+  document.getElementById('reg-farm-area').value = '';
+
 
   if (modal) modal.style.display = 'flex';
 }
@@ -321,10 +323,12 @@ async function nextRegStep() {
     const phone = document.getElementById('reg-phone')?.value.trim();
     const name = document.getElementById('reg-name')?.value.trim() || `Nông hộ ${phone}`;
     const plantType = document.getElementById('reg-plant-type')?.value.trim() || 'Chưa khai báo';
+    const farmArea = document.getElementById('reg-farm-area')?.value.trim();
 
     document.getElementById('review-phone').textContent = phone;
     document.getElementById('review-name').textContent = name;
     document.getElementById('review-crop').textContent = plantType;
+    document.getElementById('review-area').textContent = farmArea ? `${farmArea} ha` : 'Chưa khai báo';
 
     updateRegStepUI();
     return;
@@ -353,6 +357,7 @@ async function submitRegister() {
   const plant_type = document.getElementById('reg-plant-type')?.value.trim();
   const plant_variety = document.getElementById('reg-plant-variety')?.value.trim();
   const plant_age = document.getElementById('reg-plant-age')?.value.trim();
+  const farm_area = document.getElementById('reg-farm-area')?.value.trim();
 
   const errEl = document.getElementById('reg-error');
   const errText = document.getElementById('reg-error-text');
@@ -373,9 +378,11 @@ async function submitRegister() {
         dob,
         plant_type,
         plant_variety,
-        plant_age
+        plant_age,
+        farm_area
       })
     });
+
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đăng ký không thành công.');
 

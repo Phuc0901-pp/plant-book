@@ -179,11 +179,12 @@ router.get('/pending', async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT id, email, full_name, phone, gender, dob, plant_type, plant_variety, plant_age, approved, created_at
+      `SELECT id, email, full_name, phone, gender, dob, plant_type, plant_variety, plant_age, farm_area, approved, created_at
        FROM users
        WHERE approved = false
        ORDER BY created_at DESC`
     );
+
     res.json(result.rows);
   } catch (err) {
     console.error('Fetch pending users error:', err);
