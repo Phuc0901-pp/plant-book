@@ -5,23 +5,52 @@ const auth = require('../middleware/auth');
 
 // ─── 1. SUPPLIES CRUD ─────────────────────────────────────────────
 
-// GET /api/supplies — Lấy danh sách vật tư khai báo của khách hàng/nông hộ hiện tại
+// GET /api/supplies — Lấy danh sách vật tư khai báo (kèm hỗ trợ phân quyền dùng chung vật tư trang trại)
 router.get('/', auth, async (req, res) => {
   try {
     const { category, search, user_id } = req.query;
-    // Cho phép admin lọc theo user_id khách hàng cụ thể nếu truyền param, mặc định lấy của chính user đang đăng nhập
-    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
-
+    
     let query = `
       SELECT s.*, 
+             u.full_name as creator_name,
              COALESCE(SUM(su.total_cost), 0) as total_spent,
              COALESCE(SUM(su.quantity), 0) as total_used_qty
       FROM supplies s
       LEFT JOIN supply_usages su ON su.supply_id = s.id
-      WHERE s.user_id = $1
+      LEFT JOIN users u ON u.id = s.user_id
+      WHERE 1=1
     `;
-    const params = [targetUserId];
-    let idx = 2;
+    const params = [];
+    let idx = 1;
+
+    if (req.user.role === 'admin') {
+      if (user_id) {
+        query += ` AND s.user_id = $${idx}`;
+        params.push(parseInt(user_id));
+        idx++;
+      }
+    } else {
+      // Non-admin farmer
+      if (req.user.farm_id) {
+        // Check if shared supplies is enabled for this farm
+        const farmRes = await pool.query('SELECT allow_shared_supplies FROM farms WHERE id=$1', [req.user.farm_id]);
+        const allowShared = farmRes.rows.length > 0 && farmRes.rows[0].allow_shared_supplies !== false;
+
+        if (allowShared) {
+          query += ` AND (s.user_id = $${idx} OR s.user_id IN (SELECT id FROM users WHERE farm_id = $${idx + 1}) OR s.user_id = (SELECT user_id FROM farms WHERE id = $${idx + 1}))`;
+          params.push(req.user.id, req.user.farm_id);
+          idx += 2;
+        } else {
+          query += ` AND s.user_id = $${idx}`;
+          params.push(req.user.id);
+          idx++;
+        }
+      } else {
+        query += ` AND s.user_id = $${idx}`;
+        params.push(req.user.id);
+        idx++;
+      }
+    }
 
     if (category) {
       query += ` AND s.category = $${idx}`;
@@ -35,7 +64,7 @@ router.get('/', auth, async (req, res) => {
       idx++;
     }
 
-    query += ` GROUP BY s.id ORDER BY s.category ASC, s.name ASC`;
+    query += ` GROUP BY s.id, u.id ORDER BY s.category ASC, s.name ASC`;
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -43,6 +72,7 @@ router.get('/', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi tải danh sách vật tư.' });
   }
 });
+
 
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');

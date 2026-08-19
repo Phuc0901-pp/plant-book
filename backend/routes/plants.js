@@ -212,15 +212,27 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     }
 
 
-    const logs = await pool.query(
-      'SELECT * FROM plant_logs WHERE plant_id=$1 ORDER BY log_date DESC',
-      [req.params.id]
-    );
+    let logsQuery = 'SELECT pl.*, u.full_name as creator_name FROM plant_logs pl LEFT JOIN users u ON u.id = pl.created_by WHERE pl.plant_id = $1';
+    const logsParams = [req.params.id];
+
+    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id && row.farm_id) {
+      const farmRes = await pool.query('SELECT allow_shared_history FROM farms WHERE id=$1', [row.farm_id]);
+      const allowShared = farmRes.rows.length > 0 && farmRes.rows[0].allow_shared_history !== false;
+      if (!allowShared) {
+        logsQuery += ' AND pl.created_by = $2';
+        logsParams.push(req.user.id);
+      }
+    }
+
+    logsQuery += ' ORDER BY pl.log_date DESC';
+    const logs = await pool.query(logsQuery, logsParams);
     res.json(logs.rows);
   } catch (err) {
+    console.error('Error fetching logs:', err);
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });
+
 
 router.post('/batch', auth, admin, async (req, res) => {
   const client = await pool.connect();

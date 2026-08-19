@@ -716,6 +716,9 @@ async function openFarmForm() {
   document.getElementById('farm-desc').value = '';
   document.getElementById('farm-area-display').textContent = '0 m²';
   document.getElementById('farm-area-ha').textContent = '0';
+  if (document.getElementById('farm-perm-plants')) document.getElementById('farm-perm-plants').checked = true;
+  if (document.getElementById('farm-perm-history')) document.getElementById('farm-perm-history').checked = true;
+  if (document.getElementById('farm-perm-supplies')) document.getElementById('farm-perm-supplies').checked = true;
   window._lastDrawnArea = 0;
 
   await loadUsersDropdown();
@@ -734,6 +737,9 @@ async function saveFarm() {
   const name = document.getElementById('farm-name').value.trim();
   const description = document.getElementById('farm-desc').value.trim();
   const user_id = document.getElementById('farm-user-id').value;
+  const allow_view_plants = document.getElementById('farm-perm-plants')?.checked;
+  const allow_shared_history = document.getElementById('farm-perm-history')?.checked;
+  const allow_shared_supplies = document.getElementById('farm-perm-supplies')?.checked;
   
   if (!name) {
     toast('Vui lòng nhập tên trang trại!', 'error');
