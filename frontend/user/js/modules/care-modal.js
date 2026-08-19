@@ -744,6 +744,7 @@ window.removeExistingPhoto = removeExistingPhoto;
 export async function saveCareLog() {
   const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
   let selectedPlants = []; // Array of { id, treeCode }
+  const allPlantsCount = _plants().length;
 
   if (isMulti) {
     const checkboxes = document.querySelectorAll('.c-plant-checkbox:checked');
@@ -763,10 +764,23 @@ export async function saveCareLog() {
     }
   }
 
-  if (selectedPlants.length === 0) {
+  // ── Validation scope: ──
+  // Khi tài khoản có danh sách cây lẻ -> Bắt buộc chọn ít nhất 1 cây
+  if (allPlantsCount > 0 && selectedPlants.length === 0) {
     toast('Vui lòng chọn ít nhất một cây trồng!', 'error');
     return;
   }
+
+  // Khi tài khoản chưa được cấp tính năng cây lẻ (dùng GPS Toàn vườn) -> Chấp nhận tự động cho Toàn vườn
+  if (allPlantsCount === 0 && selectedPlants.length === 0) {
+    const activeFarm = typeof window.getActiveFarm === 'function' ? window.getActiveFarm() : null;
+    const farmName = activeFarm ? activeFarm.name : 'Toàn vườn';
+    selectedPlants.push({
+      id: 0,
+      treeCode: `Toàn vườn (${farmName})`
+    });
+  }
+
 
   const logType = document.getElementById('c-log-type')?.value;
   const note    = document.getElementById('c-note')?.value.trim() || '';

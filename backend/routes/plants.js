@@ -617,35 +617,42 @@ router.post('/:plantId/media/:mediaId/reject-delete', auth, admin, async (req, r
 router.post('/:id/logs', auth, async (req, res) => {
   try {
     const { log_date, log_type, note, media_urls, details } = req.body;
-    const plantId = req.params.id;
+    const plantIdRaw = req.params.id;
     
-    // Check permission
-    const plant = await pool.query(
-      `SELECT p.id, p.plant_type, p.plant_variety, p.farm_id, f.user_id 
-       FROM plants p 
-       LEFT JOIN farms f ON f.id = p.farm_id 
-       WHERE p.id=$1`, [plantId]
-    );
-    if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
-    
-    const isAssignedFarmer = req.user.farm_id && plant.rows[0].farm_id && req.user.farm_id === plant.rows[0].farm_id;
-    if (req.user.role !== 'admin' && plant.rows[0].user_id !== req.user.id && !isAssignedFarmer) {
-      return res.status(403).json({ error: 'Bạn không có quyền ghi nhật ký cho cây này.' });
-    }
+    let targetPlantId = null;
+    let plantType = 'Toàn vườn';
+    let plantVariety = '';
 
+    if (plantIdRaw && plantIdRaw !== '0') {
+      const plant = await pool.query(
+        `SELECT p.id, p.plant_type, p.plant_variety, p.farm_id, f.user_id 
+         FROM plants p 
+         LEFT JOIN farms f ON f.id = p.farm_id 
+         WHERE p.id=$1`, [plantIdRaw]
+      );
+      if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
+      
+      const isAssignedFarmer = req.user.farm_id && plant.rows[0].farm_id && req.user.farm_id === plant.rows[0].farm_id;
+      if (req.user.role !== 'admin' && plant.rows[0].user_id !== req.user.id && !isAssignedFarmer) {
+        return res.status(403).json({ error: 'Bạn không có quyền ghi nhật ký cho cây này.' });
+      }
+      targetPlantId = plant.rows[0].id;
+      plantType = plant.rows[0].plant_type;
+      plantVariety = plant.rows[0].plant_variety;
+    }
 
     const result = await pool.query(
       `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [plantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
+      [targetPlantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
        JSON.stringify(media_urls || []), JSON.stringify(details || {}), req.user.id]
     );
 
     // Tự động chuyển trạng thái cây thành Bệnh nếu ghi nhật ký Bệnh cây
-    if (log_type === 'Bệnh cây') {
+    if (log_type === 'Bệnh cây' && targetPlantId) {
       await pool.query(
         `UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = $1`,
-        [plantId]
+        [targetPlantId]
       );
     }
 
@@ -653,7 +660,7 @@ router.post('/:id/logs', auth, async (req, res) => {
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
        VALUES ($1, 'Ghi nhật ký', $2)`,
-      [req.user.id, `Ghi nhận nhật ký chăm sóc [${log_type}] cho cây #${plantId}`]
+      [req.user.id, `Ghi nhận nhật ký chăm sóc [${log_type}] cho ${targetPlantId ? 'cây #' + targetPlantId : 'Toàn vườn'}`]
     );
 
     // Broadcast WebSocket event
@@ -661,8 +668,8 @@ router.post('/:id/logs', auth, async (req, res) => {
     if (broadcast) {
       broadcast('new_care_log', {
         log: result.rows[0],
-        plant_type: plant.rows[0].plant_type,
-        plant_variety: plant.rows[0].plant_variety,
+        plant_type: plantType,
+        plant_variety: plantVariety,
         creator_name: req.user.name
       });
     }
@@ -673,6 +680,7 @@ router.post('/:id/logs', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });
+
 
 router.put('/:plantId/logs/:logId', auth, async (req, res) => {
   try {
