@@ -130,10 +130,10 @@ router.post('/register', async (req, res) => {
     const email = `${cleanPhone}@farmer.tanbaocorp.vn`;
     const name = full_name && full_name.trim() ? full_name.trim() : `Nông hộ ${cleanPhone}`;
 
-    // Insert user with approved = false (pending Admin review)
+    // Insert user with approved = true (Auto-approved, no admin review needed)
     const userRes = await pool.query(
       `INSERT INTO users (email, password_hash, full_name, role, phone, gender, dob, plant_type, plant_variety, plant_age, farm_area, approved)
-       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, $10, false)
+       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, $10, true)
        RETURNING id, email, full_name, phone, approved, created_at`,
       [email, hash, name, cleanPhone, gender || null, dob || null, plant_type || null, plant_variety || null, plant_age || null, parsedArea]
     );
@@ -141,20 +141,16 @@ router.post('/register', async (req, res) => {
     const newUser = userRes.rows[0];
 
     // Log registration activity
-
-
-
-    // Log registration activity
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
-       VALUES ($1, 'Đăng ký tài khoản', 'Khách hàng hoàn tất gửi yêu cầu đăng ký tài khoản nông hộ mới.')`,
+       VALUES ($1, 'Đăng ký tài khoản', 'Khách hàng hoàn tất đăng ký tài khoản nông hộ mới thành công.')`,
       [newUser.id]
     );
 
-    // Broadcast new pending registration notification to all online Admins
+    // Broadcast new registration notification to all online Admins
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
-      broadcast('new_registration_pending', {
+      broadcast('user_registered', {
         id: newUser.id,
         name: newUser.full_name,
         phone: newUser.phone,
@@ -165,7 +161,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Đăng ký thành công! Tài khoản của bạn đã được gửi tới Ban Quản trị. Admin sẽ xét duyệt và kích hoạt tài khoản cho bạn.',
+      message: 'Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ bằng Số điện thoại và Mật khẩu vừa tạo.',
       user: newUser
     });
   } catch (err) {
@@ -173,6 +169,7 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi đăng ký tài khoản: ' + err.message });
   }
 });
+
 
 
 // GET /api/auth/check-phone — Pre-check if phone number exists before registering

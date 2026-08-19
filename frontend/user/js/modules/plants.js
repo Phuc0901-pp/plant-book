@@ -43,23 +43,134 @@ function _populateFarmFilter(farms) {
  * Render danh sách trang trại ở Trang chủ.
  * @param {Array} farms
  */
+/**
+ * Render danh sách trang trại ở Trang chủ & kiểm tra xem nông hộ đã khởi tạo trang trại chưa.
+ * @param {Array} farms
+ */
 export function renderUserFarmsList(farms) {
   const container = document.getElementById('user-farms-container');
-  if (!container) return;
-  if (!farms.length) {
-    container.innerHTML = '<div class="empty-state" style="padding:12px"><p>Bạn chưa được gán phụ trách trang trại nào.</p></div>';
+  const noFarmNotice = document.getElementById('no-farm-notice');
+
+  if (!farms || !farms.length) {
+    if (container) {
+      container.innerHTML = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-location-crosshairs" style="color:var(--green)"></i><p>Bạn chưa khởi tạo trang trại nào. Mở tab <strong>Trang trại</strong> để tự định vị GPS và khởi tạo ngay!</p></div>';
+    }
+    if (noFarmNotice) {
+      noFarmNotice.style.display = 'block';
+    }
     return;
   }
-  container.innerHTML = farms.map(f => `
-    <div style="padding:12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">
-      <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(f.name)}</h4>
-      <div style="font-size:11px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;">
-        <span><i class="fa-solid fa-ruler-combined"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
-        <span><i class="fa-solid fa-seedling"></i> ${f.plant_count || 0} cây</span>
+
+  if (noFarmNotice) {
+    noFarmNotice.style.display = 'none';
+  }
+
+  if (container) {
+    container.innerHTML = farms.map(f => `
+      <div style="padding:12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">
+        <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(f.name)}</h4>
+        <div style="font-size:11px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;">
+          <span><i class="fa-solid fa-ruler-combined"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+          <span><i class="fa-solid fa-seedling"></i> ${f.plant_count || 0} cây</span>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  }
 }
+
+// ── GPS Self-Init Farm Functions ──────────────────────────────
+export function openSelfInitFarmModal() {
+  const modal = document.getElementById('self-init-farm-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  
+  const nameInput = document.getElementById('self-farm-name');
+  if (nameInput && !nameInput.value) {
+    const user = window.currentUser || {};
+    nameInput.value = user.full_name || user.name ? `Trang trại ${user.full_name || user.name}` : 'Trang trại Nông hộ';
+  }
+  
+  getDeviceGPSPosition();
+}
+
+export function closeSelfInitFarmModal() {
+  const modal = document.getElementById('self-init-farm-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+export function getDeviceGPSPosition() {
+  const latEl = document.getElementById('self-farm-lat');
+  const lngEl = document.getElementById('self-farm-lng');
+  if (latEl) latEl.value = 'Đang lấy GPS...';
+  if (lngEl) lngEl.value = 'Đang lấy GPS...';
+
+  if (!navigator.geolocation) {
+    if (latEl) latEl.value = '11.8333';
+    if (lngEl) lngEl.value = '106.9167';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      if (latEl) latEl.value = lat;
+      if (lngEl) lngEl.value = lng;
+    },
+    (err) => {
+      console.warn('Geolocation error:', err);
+      if (latEl) latEl.value = '11.8333';
+      if (lngEl) lngEl.value = '106.9167';
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+export async function submitSelfInitFarm() {
+  const name = document.getElementById('self-farm-name')?.value?.trim();
+  const lat = document.getElementById('self-farm-lat')?.value;
+  const lng = document.getElementById('self-farm-lng')?.value;
+  const area = document.getElementById('self-farm-area')?.value;
+  const desc = document.getElementById('self-farm-desc')?.value;
+
+  if (!name) {
+    alert('Vui lòng nhập Tên Trang trại.');
+    return;
+  }
+
+  try {
+    const btn = document.getElementById('btn-submit-self-farm');
+    if (btn) btn.disabled = true;
+
+    // Use fetch with JWT auth
+    const token = localStorage.getItem('plantbook_user_token');
+    const res = await fetch('/api/farms/self-init', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ name, description: desc, latitude: lat, longitude: lng, area })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Lỗi khi khởi tạo trang trại');
+
+    alert(data.message || 'Khởi tạo trang trại bằng GPS thành công!');
+    closeSelfInitFarmModal();
+
+    if (window.loadUserDashboard) {
+      await window.loadUserDashboard();
+    } else {
+      window.location.reload();
+    }
+  } catch (err) {
+    alert('Lỗi khi tạo trang trại: ' + err.message);
+  } finally {
+    const btn = document.getElementById('btn-submit-self-farm');
+    if (btn) btn.disabled = false;
+  }
+}
+
 
 /**
  * Sắp xếp ưu tiên:

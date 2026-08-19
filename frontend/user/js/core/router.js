@@ -9,8 +9,10 @@ export const PAGE_TITLES = {
   myplants: 'Trang trại',
   supplies: 'Quản lý & Giám sát Vật tư',
   logs:     'Lịch sử',
+  wiki:     'Bách khoa & Hướng dẫn',
   settings: 'Cài đặt tài khoản',
 };
+
 
 /**
  * Chuyển sang trang/tab chỉ định.

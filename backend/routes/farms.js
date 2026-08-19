@@ -68,8 +68,59 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// POST /api/farms/self-init — Self-initialize farm via GPS by a farmer (requires auth)
+router.post('/self-init', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { name, description, latitude, longitude, area } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
+    }
+
+    const lat = latitude ? parseFloat(latitude) : null;
+    const lng = longitude ? parseFloat(longitude) : null;
+    const farmArea = area && parseFloat(area) ? parseFloat(area) : null;
+
+    // Single point GPS ping polygon or coordinates
+    const polygonCoords = (lat && lng) ? [[lat, lng]] : [];
+
+    await client.query('BEGIN');
+
+    // Create farm
+    const farmRes = await client.query(`
+      INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id)
+      VALUES ($1, $2, $3, $4, $5, $5)
+      RETURNING *
+    `, [name.trim(), description || '', JSON.stringify(polygonCoords), farmArea, req.user.id]);
+
+    const newFarm = farmRes.rows[0];
+
+    // Update user's farm_id
+    await client.query('UPDATE users SET farm_id = $1 WHERE id = $2', [newFarm.id, req.user.id]);
+
+    await client.query('COMMIT');
+
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('farms_updated');
+
+    res.status(201).json({
+      success: true,
+      message: 'Khởi tạo trang trại bằng tọa độ GPS thành công!',
+      farm: newFarm
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error self-initializing farm:', err);
+    res.status(500).json({ error: 'Lỗi server khi khởi tạo trang trại: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // POST create farm (requires auth, admin)
 router.post('/', auth, admin, async (req, res) => {
+
   try {
     const { name, description, polygon_coordinates, area, user_id } = req.body;
     if (!name) {

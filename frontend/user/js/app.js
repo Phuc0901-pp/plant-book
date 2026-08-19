@@ -9,7 +9,58 @@ import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router
 
 // ── Modules ───────────────────────────────────────────────────
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { filterUserPlants }           from './modules/plants.js';
+import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm } from './modules/plants.js';
+
+window.openSelfInitFarmModal = openSelfInitFarmModal;
+window.closeSelfInitFarmModal = closeSelfInitFarmModal;
+window.getDeviceGPSPosition = getDeviceGPSPosition;
+window.submitSelfInitFarm = submitSelfInitFarm;
+
+window.switchWikiSubtab = function(tabName) {
+  const btnAdv = document.getElementById('btn-wiki-sub-advanced');
+  const btnGuide = document.getElementById('btn-wiki-sub-guide');
+  const paneAdv = document.getElementById('wiki-subtab-advanced');
+  const paneGuide = document.getElementById('wiki-subtab-guide');
+
+  if (tabName === 'guide') {
+    if (paneAdv) paneAdv.style.display = 'none';
+    if (paneGuide) paneGuide.style.display = 'block';
+
+    if (btnAdv) {
+      btnAdv.className = 'wiki-subtab';
+      btnAdv.style.background = '#ffffff';
+      btnAdv.style.color = '#334155';
+      btnAdv.style.border = '1.5px solid #cbd5e1';
+      btnAdv.style.boxShadow = 'none';
+    }
+    if (btnGuide) {
+      btnGuide.className = 'wiki-subtab active';
+      btnGuide.style.background = '#059669';
+      btnGuide.style.color = 'white';
+      btnGuide.style.border = 'none';
+      btnGuide.style.boxShadow = '0 4px 12px rgba(5,150,105,0.25)';
+    }
+  } else {
+    if (paneAdv) paneAdv.style.display = 'block';
+    if (paneGuide) paneGuide.style.display = 'none';
+
+    if (btnAdv) {
+      btnAdv.className = 'wiki-subtab active';
+      btnAdv.style.background = '#059669';
+      btnAdv.style.color = 'white';
+      btnAdv.style.border = 'none';
+      btnAdv.style.boxShadow = '0 4px 12px rgba(5,150,105,0.25)';
+    }
+    if (btnGuide) {
+      btnGuide.className = 'wiki-subtab';
+      btnGuide.style.background = '#ffffff';
+      btnGuide.style.color = '#334155';
+      btnGuide.style.border = '1.5px solid #cbd5e1';
+      btnGuide.style.boxShadow = 'none';
+    }
+  }
+};
+
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput } from './modules/care-modal.js?v=2.8.0';

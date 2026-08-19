@@ -434,9 +434,13 @@
       <div class="nav-item" data-page="logs" onclick="showPage('logs')">
         <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử
       </div>
+      <div class="nav-item" data-page="wiki" onclick="showPage('wiki')">
+        <i class="fa-solid fa-book-open"></i> Bách khoa
+      </div>
       <div class="nav-item" data-page="settings" onclick="showPage('settings')">
         <i class="fa fa-gear"></i> Cài đặt
       </div>
+
     </nav>
 
     <div class="sidebar-footer">
@@ -565,8 +569,25 @@
 
       <!-- ── TRANG TRẠI (Bản đồ & Danh sách đầy đủ cây) ── -->
       <div class="page-section" id="page-myplants">
+        <!-- Banner Khởi tạo Trang trại bằng GPS nếu chưa có trang trại -->
+        <div id="no-farm-notice" style="display:none; background:#ffffff; border:2px dashed #059669; border-radius:16px; padding:24px; text-align:center; margin-bottom:24px; box-shadow:0 10px 30px rgba(5,150,105,0.08);">
+          <div style="width:60px; height:60px; border-radius:50%; background:#ecfdf5; color:#059669; font-size:28px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(5,150,105,0.2);">
+            <i class="fa-solid fa-location-crosshairs"></i>
+          </div>
+          <h3 style="margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800;">Bạn chưa khởi tạo Trang trại của mình</h3>
+          <p style="margin:0 0 16px 0; font-size:13.5px; color:#475569; max-width:520px; display:inline-block; line-height:1.5;">
+            Hãy bấm nút dưới đây để lấy vị trí <strong>GPS thực tế từ thiết bị</strong> và tự khởi tạo Trang trại ngay lập tức!
+          </p>
+          <div>
+            <button onclick="openSelfInitFarmModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:12px 24px; font-size:14px; font-weight:800; border-radius:12px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-location-arrow"></i> Định vị GPS & Khởi tạo Trang trại ngay
+            </button>
+          </div>
+        </div>
+
         <!-- Bản đồ Trang trại -->
         <div class="card" style="margin-bottom: 24px;">
+
           <div class="card-header">
             <h3><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Trang trại của tôi</h3>
             <span style="font-size:11px; color:var(--gray-400)">Vị trí cây trồng & ranh giới đất</span>
@@ -827,8 +848,121 @@
         </div><!-- end settings-grid -->
       </div>
 
+      <!-- ── PAGE 5: BÁCH KHOA (ENCYCLOPEDIA & GUIDES) ── -->
+      <div class="page-section" id="page-wiki">
+        <div class="page-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:18px 22px; border-radius:14px; margin-bottom:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+          <h2 style="margin:0; font-size:18px; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-book-open" style="color:#059669"></i> Bách khoa & Trung tâm Hướng dẫn
+          </h2>
+          <p style="margin:6px 0 0 0; font-size:13px; color:#64748b;">
+            Khám phá các tính năng nâng cao và hướng dẫn vận hành trang trại thông minh Tân Bảo AgTech.
+          </p>
+        </div>
+
+        <!-- Sub-tabs bar -->
+        <div style="display:flex; gap:12px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:12px;">
+          <button class="wiki-subtab active" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')" style="padding:10px 20px; font-weight:800; font-size:13px; border-radius:10px; border:none; background:#059669; color:white; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Tính năng Nâng cao
+          </button>
+          <button class="wiki-subtab" id="btn-wiki-sub-guide" onclick="switchWikiSubtab('guide')" style="padding:10px 20px; font-weight:700; font-size:13px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">
+            <i class="fa-solid fa-circle-question"></i> Hướng dẫn sử dụng
+          </button>
+        </div>
+
+        <!-- Sub-tab 1: TÍNH NĂNG NÂNG CAO -->
+        <div id="wiki-subtab-advanced" style="display:block;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+            
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div style="width:44px; height:44px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
+                <i class="fa-solid fa-earth-asia"></i>
+              </div>
+              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Bản đồ GIS Vệ tinh & 3D Contour</h3>
+              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
+                Vẽ ranh giới thửa đất chuẩn xác, tính diện tích (ha), chu vi, đo đạc kích thước các cạnh (AB, BC...) và phủ đường đồng mức độ cao địa hình 3D.
+              </p>
+            </div>
+
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div style="width:44px; height:44px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
+                <i class="fa-solid fa-rss"></i>
+              </div>
+              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Thẻ Định danh NFC & Mã QR Cây</h3>
+              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
+                Chạm điện thoại vào thẻ chip NFC gắn trên từng cây trồng để mở ngay nhật ký chăm sóc, nguồn gốc giống và nhật ký bón phân/tưới nước thực địa.
+              </p>
+            </div>
+
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div style="width:44px; height:44px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
+                <i class="fa-solid fa-compass-drafting"></i>
+              </div>
+              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Phủ Bản vẽ Quy hoạch CAD</h3>
+              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
+                Import bản vẽ thiết kế hệ thống tưới, giao thông nội bộ và phân lô quy hoạch (KML, GeoJSON, CAD) phủ trực tiếp lên bản đồ thực địa.
+              </p>
+            </div>
+
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div style="width:44px; height:44px; border-radius:12px; background:#f3e8ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
+                <i class="fa-solid fa-user-gear"></i>
+              </div>
+              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Phân quyền Cá nhân hóa Nông hộ</h3>
+              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
+                Cấu hình phạm vi xem cây trồng cá nhân phụ trách, kho khóa xem lịch sử theo mốc thời gian và giới hạn truy cập tồn kho vật tư trang trại.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sub-tab 2: HƯỚNG DẪN SỬ DỤNG -->
+        <div id="wiki-subtab-guide" style="display:none;">
+          <div style="display:flex; flex-direction:column; gap:16px;">
+
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:18px;">
+              <h4 style="font-size:15px; color:#059669; margin:0 0 10px 0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                <span style="background:#059669; color:white; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">1</span>
+                Hướng dẫn Khởi tạo Trang trại bằng GPS
+              </h4>
+              <p style="font-size:13px; color:#334155; line-height:1.6; margin:0;">
+                • Bước 1: Mở menu <strong>Trang trại</strong> trên thanh điều hướng.<br>
+                • Bước 2: Bấm nút <strong>Định vị GPS & Khởi tạo Trang trại</strong> để thiết bị tự động cập nhật tọa độ vị trí hiện tại.<br>
+                • Bước 3: Nhập tên Trang trại, mô tả và bấm <strong>Lưu khởi tạo</strong>. Trang trại của bạn sẽ được kích hoạt ngay lập tức!
+              </p>
+            </div>
+
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:18px;">
+              <h4 style="font-size:15px; color:#059669; margin:0 0 10px 0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                <span style="background:#059669; color:white; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">2</span>
+                Hướng dẫn Ghi Nhật ký Canh tác Toàn vườn
+              </h4>
+              <p style="font-size:13px; color:#334155; line-height:1.6; margin:0;">
+                • Bấm nút tròn nổi <strong>+ Ghi nhật ký</strong> hoặc biểu tượng hoạt động (Tưới nước, Bón phân, Phun thuốc, Cắt lá, Tỉa hoa, Bệnh cây).<br>
+                • Phạm vi ghi nhận mặc định được áp dụng <strong>Toàn vườn</strong> cho trang trại của bạn.<br>
+                • Nhập chi tiết liều lượng, loại phân/thuốc, tải lên hình ảnh thực địa và bấm <strong>Lưu nhật ký</strong>.
+              </p>
+            </div>
+
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:18px;">
+              <h4 style="font-size:15px; color:#059669; margin:0 0 10px 0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                <span style="background:#059669; color:white; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">3</span>
+                Hướng dẫn Quản lý Vật tư & Xem Lịch sử
+              </h4>
+              <p style="font-size:13px; color:#334155; line-height:1.6; margin:0;">
+                • Vào tab <strong>Vật tư</strong> để theo dõi số lượng tồn kho phân bón, thuốc BVTV dùng cho trang trại.<br>
+                • Vào tab <strong>Lịch sử</strong> để tra cứu toàn bộ các nhật ký đã thực hiện theo mốc thời gian.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
       <!-- ── Page Supplies (Quản lý & Giám sát Vật tư) ── -->
       <div class="page-section" id="page-supplies">
+
 
         <!-- Header Banner -->
         <div class="welcome-banner supplies-banner">
@@ -1443,7 +1577,62 @@
 </div>
 
 <!-- Toast container -->
+<!-- ════════════ MODAL KHỞI TẠO TRANG TRẠI BẰNG GPS ════════════ -->
+<div class="modal-overlay" id="self-init-farm-modal" style="display:none" onclick="if(event.target===this)closeSelfInitFarmModal()">
+  <div class="modal" style="max-width:500px; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#ffffff;">
+      <h2 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;">
+        <i class="fa-solid fa-location-crosshairs" style="color:#6ee7b7"></i> Khởi tạo Trang trại bằng GPS
+      </h2>
+      <button class="modal-close" onclick="closeSelfInitFarmModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
+    </div>
+
+    <div class="modal-body" style="padding:22px; background:#ffffff;">
+      <div style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:12px 14px; border-radius:10px; font-size:12.5px; line-height:1.5; margin-bottom:16px; font-weight:500;">
+        <i class="fa-solid fa-circle-info"></i> Hệ thống sẽ tự động định vị vị trí mảnh vườn của bạn thông qua GPS thiết bị. Bạn có thể cập nhật tên và thông tin cơ bản!
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-house-chimney" style="color:#059669"></i> Tên Trang trại *</label>
+        <input type="text" id="self-farm-name" placeholder="Ví dụ: Trang trại Nguyễn Văn An" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:16px; align-items:flex-end;">
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#0f172a; margin-bottom:4px; display:block;"><i class="fa-solid fa-location-pin" style="color:#059669"></i> Vĩ độ (Latitude)</label>
+          <input type="text" id="self-farm-lat" placeholder="Đang lấy GPS..." style="background:#f1f5f9; border:2px solid #64748b; border-radius:10px; padding:10px; width:100%; color:#0f172a; font-weight:700; font-size:13px;" readonly>
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#0f172a; margin-bottom:4px; display:block;"><i class="fa-solid fa-location-pin" style="color:#059669"></i> Kinh độ (Longitude)</label>
+          <input type="text" id="self-farm-lng" placeholder="Đang lấy GPS..." style="background:#f1f5f9; border:2px solid #64748b; border-radius:10px; padding:10px; width:100%; color:#0f172a; font-weight:700; font-size:13px;" readonly>
+        </div>
+        <button type="button" onclick="getDeviceGPSPosition()" style="background:#059669; color:white; border:none; padding:11px 14px; border-radius:10px; font-weight:700; font-size:12px; cursor:pointer; height:42px; white-space:nowrap;" title="Tải lại tọa độ GPS">
+          <i class="fa-solid fa-arrows-rotate"></i> GPS
+        </button>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-ruler-combined" style="color:#059669"></i> Diện tích trang trại (ha)</label>
+        <input type="number" id="self-farm-area" step="0.1" placeholder="Ví dụ: 2.5" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-align-left" style="color:#059669"></i> Mô tả / Địa chỉ trang trại</label>
+        <textarea id="self-farm-desc" rows="2" placeholder="Ví dụ: Thôn 3, Xã Phú Riềng, Tỉnh Bình Phước" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px 14px; width:100%; color:#0f172a; font-size:13px; font-weight:500; font-family:inherit; outline:none;"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:16px 20px; display:flex; justify-content:flex-end; gap:12px; background:#f8fafc; border-top:1px solid #e2e8f0;">
+      <button class="btn btn-secondary" onclick="closeSelfInitFarmModal()" style="padding:10px 18px; font-weight:600; border-radius:10px;">Hủy</button>
+      <button class="btn btn-primary" id="btn-submit-self-farm" onclick="submitSelfInitFarm()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:12px 24px; font-size:14px; font-weight:800; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+        <i class="fa-solid fa-check"></i> Lưu Khởi Tạo Trang Trại
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
+
 
 <!-- Scripts (ES Modules) -->
 <script>
