@@ -21,7 +21,7 @@ async function loadUsers() {
     loadResetRequests();
   } catch (err) {
     toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
   }
 }
 
@@ -30,7 +30,7 @@ function renderUsersTable(users) {
   if (!tbody) return;
 
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Không tìm thấy người dùng nào.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Không tìm thấy người dùng nào.</td></tr>';
     return;
   }
 
@@ -43,6 +43,11 @@ function renderUsersTable(users) {
     const roleBadge = u.role === 'admin' 
       ? '<span class="badge badge-admin" style="background:#fef2f2; color:#b91c1c; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
       : '<span class="badge badge-user" style="background:#fff7ed; color:#ea580c; border: 1px solid #fdba74; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa fa-user"></i> Nông hộ</span>';
+
+    // Farm badge
+    const farmBadge = u.farm_name
+      ? `<span class="badge" style="background:#eff6ff; color:#2563eb; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-earth-asia"></i> ${escapeHtml(u.farm_name)}</span>`
+      : '<span style="color:var(--gray-400); font-size:12px;">— Chưa gán —</span>';
 
     const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN', {
       year: 'numeric', month: '2-digit', day: '2-digit',
@@ -58,11 +63,12 @@ function renderUsersTable(users) {
       <tr data-user-id="${u.id}">
         <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(u.full_name)}${selfBadge}</td>
         <td>${escapeHtml(u.email)}</td>
+        <td>${farmBadge}</td>
         <td>${roleBadge}</td>
         <td style="color: var(--text-muted); font-size: 13px;">${dateStr}</td>
         <td>
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-secondary btn-sm" onclick="openUserModal(${u.id})"><i class="fa fa-pen"></i> Sửa</button>
+            <button class="btn btn-secondary btn-sm" onclick="openUserModal(${u.id})"><i class="fa fa-pen"></i> Gán & Sửa</button>
             ${deleteBtn}
           </div>
         </td>
@@ -79,17 +85,19 @@ function filterUsers() {
   }
   const filtered = allUsers.filter(u => 
     (u.full_name || '').toLowerCase().includes(q) || 
-    (u.email || '').toLowerCase().includes(q)
+    (u.email || '').toLowerCase().includes(q) ||
+    (u.farm_name || '').toLowerCase().includes(q)
   );
   renderUsersTable(filtered);
 }
 
-function openUserModal(userId = null) {
+async function openUserModal(userId = null) {
   const modal = document.getElementById('user-modal');
   const title = document.getElementById('user-modal-title');
   const passLabel = document.getElementById('f-user-pass-label');
   const passHelp = document.getElementById('f-user-pass-help');
   const passInput = document.getElementById('f-user-pass');
+  const farmSelect = document.getElementById('f-user-farm-id');
   
   // Clear fields
   document.getElementById('f-user-id').value = '';
@@ -98,16 +106,28 @@ function openUserModal(userId = null) {
   document.getElementById('f-user-role').value = 'user';
   passInput.value = '';
 
+  // Populate initialized farms dropdown
+  try {
+    const farms = await api('/farms');
+    if (farmSelect) {
+      farmSelect.innerHTML = '<option value="">— Chưa gán trang trại nào —</option>' +
+        (farms || []).map(f => `<option value="${f.id}">🏡 ${escapeHtml(f.name)} (${f.area ? f.area + ' ha' : 'Chưa nhập diện tích'})</option>`).join('');
+    }
+  } catch (e) {
+    console.warn('Lỗi tải danh sách trang trại:', e);
+  }
+
   if (userId) {
     // Edit mode
     const u = allUsers.find(x => x.id === userId);
     if (!u) return;
 
-    title.innerHTML = '<i class="fa-solid fa-user-pen" style="color:var(--green)"></i> Chỉnh sửa người dùng';
+    title.innerHTML = '<i class="fa-solid fa-user-pen" style="color:var(--green)"></i> Gán Trang trại & Chỉnh sửa Nông hộ';
     document.getElementById('f-user-id').value = u.id;
     document.getElementById('f-user-name').value = u.full_name || '';
     document.getElementById('f-user-email').value = u.email || '';
     document.getElementById('f-user-role').value = u.role || 'user';
+    if (farmSelect) farmSelect.value = u.farm_id || '';
     
     passLabel.textContent = 'Mật khẩu mới (Tùy chọn)';
     passHelp.style.display = 'block';
@@ -118,6 +138,7 @@ function openUserModal(userId = null) {
     passLabel.textContent = 'Mật khẩu *';
     passHelp.style.display = 'none';
     passInput.placeholder = '••••••••';
+    if (farmSelect) farmSelect.value = '';
   }
 
   modal.style.display = 'flex';
@@ -133,6 +154,7 @@ async function saveUser() {
   const email = document.getElementById('f-user-email').value.trim();
   const password = document.getElementById('f-user-pass').value;
   const role = document.getElementById('f-user-role').value;
+  const farm_id = document.getElementById('f-user-farm-id')?.value;
 
   if (!full_name || !email) {
     toast('Họ tên và email là bắt buộc!', 'error');
@@ -149,7 +171,7 @@ async function saveUser() {
   btn.innerHTML = '<span class="spinner"></span> Đang lưu...';
   btn.disabled = true;
 
-  const payload = { full_name, email, role };
+  const payload = { full_name, email, role, farm_id: farm_id ? parseInt(farm_id) : null };
   if (password) {
     payload.password = password;
   }
@@ -161,14 +183,14 @@ async function saveUser() {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
-      toast('Cập nhật người dùng thành công!');
+      toast('Cập nhật & gán trang trại thành công!');
     } else {
       // Create
       await api('/users', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
-      toast('Tạo tài khoản người dùng thành công!');
+      toast('Tạo người dùng mới thành công!');
     }
     window._plantFiltersLoaded = false;
     closeUserModal();

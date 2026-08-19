@@ -698,10 +698,12 @@
                 <tr>
                   <th>Họ và tên</th>
                   <th>Email</th>
+                  <th>Trang trại gán</th>
                   <th>Vai trò</th>
                   <th>Ngày tạo</th>
                   <th style="width:150px">Thao tác</th>
                 </tr>
+
               </thead>
               <tbody id="users-table">
                 <tr>
@@ -1336,7 +1338,18 @@
           <option value="admin">Quản trị viên</option>
         </select>
       </div>
+
+      <div class="field">
+        <label><i class="fa-solid fa-earth-asia" style="color:var(--green)"></i> Gắn vào Trang trại đã khởi tạo</label>
+        <select id="f-user-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="">— Chưa gán trang trại nào —</option>
+        </select>
+        <small style="font-size:11px; color:var(--gray-500); margin-top:4px; display:block;">
+          💡 Nhiều nông dân có thể gán vào cùng 1 trang trại để đồng bộ quản lý thực địa.
+        </small>
+      </div>
     </div>
+
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>
       <button class="btn btn-primary" id="user-save-btn" onclick="saveUser()">

@@ -157,9 +157,10 @@ async function initDB() {
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS tree_code VARCHAR(100);
     `);
 
-    // Alter farms table to assign a user/farmer
+    // Alter farms table to assign a user/farmer & shared history toggle
     await client.query(`
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_shared_history BOOLEAN DEFAULT true;
     `);
 
     // User profile extension columns
@@ -174,7 +175,9 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_type VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_variety VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_age VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
     `);
+
 
 
     // NFC Tag UID column for plants (physical tag serial, unique system-wide)

@@ -9,11 +9,14 @@ const admin = require('../middleware/admin');
 router.use(auth);
 router.use(admin);
 
-// GET /api/users - List all users
+// GET /api/users - List all users (with assigned farm info)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, full_name, role, is_online, last_active_at, created_at FROM users ORDER BY id ASC'
+      `SELECT u.id, u.email, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at, u.farm_id, u.phone, f.name as farm_name
+       FROM users u
+       LEFT JOIN farms f ON f.id = u.farm_id
+       ORDER BY u.id ASC`
     );
     res.json(result.rows);
   } catch (err) {
@@ -39,15 +42,16 @@ router.get('/:id/activities', async (req, res) => {
   }
 });
 
-// POST /api/users - Create a new user (farmer account)
+// POST /api/users - Create a new user (farmer account with assigned farm)
 router.post('/', async (req, res) => {
-  const { email, password, full_name, role } = req.body;
+  const { email, password, full_name, role, farm_id } = req.body;
   if (!email || !password || !full_name) {
     return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin: email, mật khẩu và họ tên.' });
   }
   
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedRole = role === 'admin' ? 'admin' : 'user';
+  const assignedFarmId = farm_id && parseInt(farm_id) ? parseInt(farm_id) : null;
 
   try {
     // Check if email already exists
@@ -58,8 +62,10 @@ router.post('/', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, full_name, role, created_at',
-      [trimmedEmail, hash, full_name.trim(), trimmedRole]
+      `INSERT INTO users (email, password_hash, full_name, role, farm_id, approved)
+       VALUES ($1, $2, $3, $4, $5, true)
+       RETURNING id, email, full_name, role, farm_id, created_at`,
+      [trimmedEmail, hash, full_name.trim(), trimmedRole, assignedFarmId]
     );
 
     res.status(201).json(result.rows[0]);
@@ -69,16 +75,17 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/users/:id - Update user details
+// PUT /api/users/:id - Update user details (including assigned farm_id)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { email, password, full_name, role } = req.body;
+  const { email, password, full_name, role, farm_id } = req.body;
   if (!email || !full_name) {
     return res.status(400).json({ error: 'Email và họ tên là bắt buộc.' });
   }
 
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedRole = role === 'admin' ? 'admin' : 'user';
+  const assignedFarmId = farm_id && parseInt(farm_id) ? parseInt(farm_id) : null;
 
   try {
     // Check if user exists
@@ -93,26 +100,33 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Email đã được sử dụng bởi tài khoản khác.' });
     }
 
-    let query = 'UPDATE users SET email=$1, full_name=$2, role=$3, updated_at=NOW()';
-    let params = [trimmedEmail, full_name.trim(), trimmedRole, id];
+    let query = 'UPDATE users SET email=$1, full_name=$2, role=$3, farm_id=$4, updated_at=NOW()';
+    let params = [trimmedEmail, full_name.trim(), trimmedRole, assignedFarmId, id];
 
     if (password && password.trim().length > 0) {
       const hash = await bcrypt.hash(password, 12);
-      query += ', password_hash=$4 WHERE id=$5';
-      params = [trimmedEmail, full_name.trim(), trimmedRole, hash, id];
+      query += ', password_hash=$5 WHERE id=$6';
+      params = [trimmedEmail, full_name.trim(), trimmedRole, assignedFarmId, hash, id];
     } else {
-      query += ' WHERE id=$4';
+      query += ' WHERE id=$5';
     }
 
     await pool.query(query, params);
     
-    const updated = await pool.query('SELECT id, email, full_name, role, created_at FROM users WHERE id=$1', [id]);
+    const updated = await pool.query(
+      `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.created_at, f.name as farm_name
+       FROM users u
+       LEFT JOIN farms f ON f.id = u.farm_id
+       WHERE u.id=$1`,
+      [id]
+    );
     res.json(updated.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server khi cập nhật người dùng.' });
   }
 });
+
 
 // DELETE /api/users/:id - Delete a user
 router.delete('/:id', async (req, res) => {
