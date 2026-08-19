@@ -29,7 +29,9 @@ export function getPlantsCache() {
 export function setFarmsCache(farms) {
   _farmsCache = farms;
   _populateFarmFilter(farms);
+  renderUserFarmsGrid(farms);
 }
+
 
 /** Nạp danh sách trang trại vào select #user-plant-filter-farm */
 function _populateFarmFilter(farms) {
@@ -328,3 +330,221 @@ document.addEventListener('click', e => {
       .forEach(d => d.classList.remove('open'));
   }
 });
+
+
+let _activeFarmId = null;
+
+export function renderUserFarmsGrid(farms) {
+  const gridContainer = document.getElementById('user-farms-grid');
+  const activeFarmName = document.getElementById('active-farm-name');
+  const activeFarmPlantCount = document.getElementById('active-farm-plant-count');
+  const activeFarmArea = document.getElementById('active-farm-area');
+
+  if (!farms || !farms.length) {
+    if (gridContainer) {
+      gridContainer.innerHTML = `
+        <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:14px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+          <div style="width:44px; height:44px; border-radius:50%; background:#dcfce7; color:#059669; font-size:20px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px;">
+            <i class="fa-solid fa-plus"></i>
+          </div>
+          <div style="font-size:14px; font-weight:800; color:#047857;">+ Khởi tạo Trang trại mới (GPS)</div>
+          <div style="font-size:12px; color:#166534; margin-top:2px;">Bấm vào đây để lấy tọa độ vị trí thực tế</div>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  if (!_activeFarmId && farms.length > 0) {
+    _activeFarmId = farms[0].id;
+  }
+
+  const activeFarm = farms.find(f => f.id === _activeFarmId) || farms[0];
+  _activeFarmId = activeFarm.id;
+
+  if (activeFarmName) activeFarmName.textContent = activeFarm.name;
+  if (activeFarmPlantCount) activeFarmPlantCount.textContent = activeFarm.plant_count || activeFarm.total_plants || 0;
+  if (activeFarmArea) activeFarmArea.textContent = activeFarm.area || 0;
+
+  if (gridContainer) {
+    let html = farms.map(f => {
+      const isActive = f.id === _activeFarmId;
+      const totalPlants = f.plant_count || f.total_plants || 0;
+      return `
+        <div onclick="selectUserFarm(${f.id})" style="background:${isActive ? '#f0fdf4' : '#ffffff'}; border:2px solid ${isActive ? '#059669' : '#cbd5e1'}; border-radius:14px; padding:16px; position:relative; cursor:pointer; transition:all 0.2s ease; box-shadow:${isActive ? '0 4px 14px rgba(5,150,105,0.15)' : '0 2px 6px rgba(0,0,0,0.03)'};">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <h4 style="margin:0; font-size:14px; font-weight:800; color:${isActive ? '#047857' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-house-chimney" style="color:#059669;"></i> ${esc(f.name)}
+            </h4>
+            ${isActive ? '<span style="background:#059669; color:white; font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px;">Đang chọn</span>' : ''}
+          </div>
+          <div style="font-size:12px; color:#475569; display:flex; gap:12px; margin-bottom:12px; font-weight:600;">
+            <span><i class="fa-solid fa-seedling" style="color:#059669;"></i> ${totalPlants} cây</span>
+            <span><i class="fa-solid fa-ruler-combined" style="color:#059669;"></i> ${f.area || 0} ha</span>
+          </div>
+          <div style="display:flex; gap:8px; border-top:1px solid #e2e8f0; padding-top:10px;">
+            <button onclick="event.stopPropagation(); openEditFarmModal(${f.id})" style="flex:1; background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:6px; font-size:12px; font-weight:700; color:#334155; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+              <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Sửa
+            </button>
+            <button onclick="selectUserFarm(${f.id})" style="flex:1; background:${isActive ? '#059669' : '#f1f5f9'}; color:${isActive ? '#ffffff' : '#0f172a'}; border:none; border-radius:8px; padding:6px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+              <i class="fa-solid fa-eye"></i> Xem bản đồ
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Add + Khởi tạo Trang trại mới card
+    html += `
+      <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:14px; padding:16px; text-align:center; cursor:pointer; transition:all 0.2s ease; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:120px;">
+        <div style="width:36px; height:36px; border-radius:50%; background:#dcfce7; color:#059669; font-size:18px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:6px;">
+          <i class="fa-solid fa-plus"></i>
+        </div>
+        <div style="font-size:13px; font-weight:800; color:#047857;">+ Tạo Trang trại mới (GPS)</div>
+      </div>
+    `;
+
+    gridContainer.innerHTML = html;
+  }
+}
+
+export function selectUserFarm(farmId) {
+  _activeFarmId = farmId;
+  if (_farmsCache && _farmsCache.length) {
+    renderUserFarmsGrid(_farmsCache);
+    const farm = _farmsCache.find(f => f.id === farmId);
+    if (farm && window.userMap && farm.polygon_coordinates) {
+      try {
+        let coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+        if (coords && coords.length > 0) {
+          let ptLng = coords[0][0];
+          let ptLat = coords[0][1];
+          if (ptLng < 50 && ptLat > 90) {
+            const tmp = ptLng;
+            ptLng = ptLat;
+            ptLat = tmp;
+          }
+          window.userMap.flyTo({ center: [ptLng, ptLat], zoom: 16, essential: true });
+        }
+      } catch (_) {}
+    }
+  }
+}
+
+// ── Farm Edit Functions ────────────────────────────────────────
+export function openEditFarmModal(farmId = null) {
+  const targetId = farmId || _activeFarmId;
+  const farm = (_farmsCache || []).find(f => f.id == targetId);
+  if (!farm) {
+    alert('Không tìm thấy trang trại để chỉnh sửa.');
+    return;
+  }
+
+  const modal = document.getElementById('edit-farm-modal');
+  if (!modal) return;
+
+  document.getElementById('edit-farm-id').value = farm.id;
+  document.getElementById('edit-farm-name').value = farm.name || '';
+  document.getElementById('edit-farm-area').value = farm.area || '';
+  document.getElementById('edit-farm-total-plants').value = farm.plant_count || farm.total_plants || 0;
+  document.getElementById('edit-farm-desc').value = farm.description || '';
+
+  let lat = '', lng = '';
+  try {
+    let coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+    if (coords && coords.length > 0) {
+      let ptLng = coords[0][0];
+      let ptLat = coords[0][1];
+      if (ptLng < 50 && ptLat > 90) {
+        lat = ptLng;
+        lng = ptLat;
+      } else {
+        lat = ptLat;
+        lng = ptLng;
+      }
+    }
+  } catch (_) {}
+
+  document.getElementById('edit-farm-lat').value = lat;
+  document.getElementById('edit-farm-lng').value = lng;
+
+  modal.style.display = 'flex';
+}
+
+export function closeEditFarmModal() {
+  const modal = document.getElementById('edit-farm-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+export function getEditDeviceGPSPosition() {
+  const latEl = document.getElementById('edit-farm-lat');
+  const lngEl = document.getElementById('edit-farm-lng');
+  if (latEl) latEl.value = 'Đang lấy GPS...';
+  if (lngEl) lngEl.value = 'Đang lấy GPS...';
+
+  if (!navigator.geolocation) {
+    if (latEl) latEl.value = '11.8333';
+    if (lngEl) lngEl.value = '106.9167';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (latEl) latEl.value = pos.coords.latitude.toFixed(6);
+      if (lngEl) lngEl.value = pos.coords.longitude.toFixed(6);
+    },
+    (err) => {
+      console.warn('Geolocation error:', err);
+      if (latEl) latEl.value = '11.8333';
+      if (lngEl) lngEl.value = '106.9167';
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+export async function submitEditFarm() {
+  const farmId = document.getElementById('edit-farm-id')?.value;
+  const name = document.getElementById('edit-farm-name')?.value?.trim();
+  const area = document.getElementById('edit-farm-area')?.value;
+  const totalPlants = document.getElementById('edit-farm-total-plants')?.value;
+  const lat = document.getElementById('edit-farm-lat')?.value;
+  const lng = document.getElementById('edit-farm-lng')?.value;
+  const desc = document.getElementById('edit-farm-desc')?.value;
+
+  if (!name) {
+    alert('Vui lòng nhập Tên Trang trại.');
+    return;
+  }
+
+  try {
+    const btn = document.getElementById('btn-submit-edit-farm');
+    if (btn) btn.disabled = true;
+
+    const data = await api(`/farms/${farmId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name,
+        description: desc,
+        area,
+        total_plants: totalPlants,
+        latitude: lat,
+        longitude: lng
+      })
+    });
+
+    alert(data.message || 'Cập nhật trang trại thành công!');
+    closeEditFarmModal();
+
+    if (window.loadUserDashboard) {
+      await window.loadUserDashboard();
+    } else {
+      window.location.reload();
+    }
+  } catch (err) {
+    alert('Lỗi khi cập nhật trang trại: ' + err.message);
+  } finally {
+    const btn = document.getElementById('btn-submit-edit-farm');
+    if (btn) btn.disabled = false;
+  }
+}
+

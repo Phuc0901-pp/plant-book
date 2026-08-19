@@ -387,9 +387,61 @@ nav { padding: 12px; flex: 1; }
     outline: none;
     transition: background-color .15s;
   }
-  .mobile-toggle-btn:hover { background: var(--gray-100); }
   .dev-banner { min-height: 280px; padding: 32px 16px; }
+
+  /* ── Mobile Bottom Nav ── */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    gap: 3px;
+    padding: 6px 0;
+    transition: color 0.15s ease;
+  }
+
+  .bottom-nav-item i {
+    font-size: 17px;
+  }
+
+  .bottom-nav-item.active {
+    color: #059669;
+    font-weight: 800;
+  }
+
+  .content {
+    padding-bottom: 80px !important;
+  }
+
+  #fab-care-btn {
+    bottom: 74px !important;
+  }
 }
+
+.mobile-bottom-nav {
+  display: none;
+}
+
 
 
 

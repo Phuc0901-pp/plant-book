@@ -30,12 +30,12 @@
   <link rel="stylesheet" href="/user/css/user-layout.css">
 <style>
 /* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
-#register-modal .modal, #forgot-modal .modal, #self-init-farm-modal .modal {
+#register-modal .modal, #forgot-modal .modal, #self-init-farm-modal .modal, #edit-farm-modal .modal {
   background: #ffffff !important;
   color: #0f172a !important;
 }
 
-#register-modal label, #forgot-modal label, #self-init-farm-modal label {
+#register-modal label, #forgot-modal label, #self-init-farm-modal label, #edit-farm-modal label {
   color: #0f172a !important;
   font-weight: 700 !important;
   font-size: 13px !important;
@@ -47,7 +47,8 @@
 
 #register-modal input, #register-modal select, #register-modal textarea,
 #forgot-modal input, #forgot-modal textarea,
-#self-init-farm-modal input, #self-init-farm-modal select, #self-init-farm-modal textarea {
+#self-init-farm-modal input, #self-init-farm-modal select, #self-init-farm-modal textarea,
+#edit-farm-modal input, #edit-farm-modal select, #edit-farm-modal textarea {
   color: #0f172a !important;
   background-color: #ffffff !important;
   border: 2px solid #475569 !important;
@@ -65,7 +66,9 @@
 #forgot-modal input::placeholder,
 #register-modal textarea::placeholder,
 #self-init-farm-modal input::placeholder,
-#self-init-farm-modal textarea::placeholder {
+#self-init-farm-modal textarea::placeholder,
+#edit-farm-modal input::placeholder,
+#edit-farm-modal textarea::placeholder {
   color: #64748b !important;
   opacity: 0.8 !important;
   -webkit-text-fill-color: #64748b !important;
@@ -73,27 +76,28 @@
 
 #register-modal input:focus, #register-modal select:focus, #register-modal textarea:focus,
 #forgot-modal input:focus, #forgot-modal textarea:focus,
-#self-init-farm-modal input:focus, #self-init-farm-modal select:focus, #self-init-farm-modal textarea:focus {
+#self-init-farm-modal input:focus, #self-init-farm-modal select:focus, #self-init-farm-modal textarea:focus,
+#edit-farm-modal input:focus, #edit-farm-modal select:focus, #edit-farm-modal textarea:focus {
   background-color: #ffffff !important;
   border-color: #059669 !important;
   box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.25) !important;
   outline: none !important;
 }
 
-#register-modal .modal-header, #forgot-modal .modal-header, #self-init-farm-modal .modal-header {
+#register-modal .modal-header, #forgot-modal .modal-header, #self-init-farm-modal .modal-header, #edit-farm-modal .modal-header {
   background: linear-gradient(135deg, #064e3b, #047857) !important;
   color: #ffffff !important;
   padding: 16px 20px !important;
 }
 
-#register-modal .modal-header h2, #forgot-modal .modal-header h2, #self-init-farm-modal .modal-header h2 {
+#register-modal .modal-header h2, #forgot-modal .modal-header h2, #self-init-farm-modal .modal-header h2, #edit-farm-modal .modal-header h2 {
   color: #ffffff !important;
   font-size: 16px !important;
   font-weight: 700 !important;
   margin: 0 !important;
 }
 
-#register-modal .modal-close, #forgot-modal .modal-close, #self-init-farm-modal .modal-close {
+#register-modal .modal-close, #forgot-modal .modal-close, #self-init-farm-modal .modal-close, #edit-farm-modal .modal-close {
   color: #ffffff !important;
   opacity: 0.9 !important;
   font-size: 24px !important;
@@ -102,6 +106,7 @@
   cursor: pointer !important;
 }
 </style>
+
 
 </head>
 
@@ -574,6 +579,19 @@
 
       <!-- ── TRANG TRẠI (Bản đồ & Danh sách đầy đủ cây) ── -->
       <div class="page-section" id="page-myplants">
+        <!-- Khối Trang trại sở hữu & Khối Tạo mới -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:14px; font-weight:800; color:#0f172a; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+            <span><i class="fa-solid fa-house-chimney" style="color:#059669"></i> Trang trại của tôi</span>
+            <button onclick="openSelfInitFarmModal()" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-size:12px; font-weight:700; padding:6px 12px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-plus"></i> Khởi tạo Trang trại mới (GPS)
+            </button>
+          </div>
+          <div id="user-farms-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px;">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
+
         <!-- Banner Khởi tạo Trang trại bằng GPS nếu chưa có trang trại -->
         <div id="no-farm-notice" style="display:none; background:#ffffff; border:2px dashed #059669; border-radius:16px; padding:24px; text-align:center; margin-bottom:24px; box-shadow:0 10px 30px rgba(5,150,105,0.08);">
           <div style="width:60px; height:60px; border-radius:50%; background:#ecfdf5; color:#059669; font-size:28px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(5,150,105,0.2);">
@@ -592,12 +610,17 @@
 
         <!-- Bản đồ Trang trại -->
         <div class="card" style="margin-bottom: 24px;">
-
-          <div class="card-header">
-            <h3><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Trang trại của tôi</h3>
-            <span style="font-size:11px; color:var(--gray-400)">Vị trí cây trồng & ranh giới đất</span>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h3 style="margin:0;"><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Trang trại: <span id="active-farm-name" style="color:#047857;">—</span></h3>
+              <span style="font-size:11px; color:var(--gray-400)">Tổng cây: <strong id="active-farm-plant-count" style="color:#059669;">0</strong> cây | Diện tích: <strong id="active-farm-area" style="color:#059669;">0</strong> ha</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-edit-active-farm" onclick="openEditFarmModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+              <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Chỉnh sửa Trang trại
+            </button>
           </div>
           <div style="padding: 12px;">
+
             <div id="user-map" style="width: 100%; height: 350px; border-radius: 8px; background: #e5e7eb; overflow: hidden;"></div>
           </div>
         </div>
@@ -1653,7 +1676,94 @@
   </div>
 </div>
 
+<!-- ════════════ MODAL CHỈNH SỬA THÔNG TIN TRANG TRẠI ════════════ -->
+<div class="modal-overlay" id="edit-farm-modal" style="display:none" onclick="if(event.target===this)closeEditFarmModal()">
+  <div class="modal" style="max-width:500px; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#ffffff;">
+      <h2 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;">
+        <i class="fa-solid fa-pen-to-square" style="color:#6ee7b7"></i> Chỉnh sửa thông tin Trang trại
+      </h2>
+      <button class="modal-close" onclick="closeEditFarmModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
+    </div>
+
+    <div class="modal-body" style="padding:22px; background:#ffffff;">
+      <input type="hidden" id="edit-farm-id" value="">
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-house-chimney" style="color:#059669"></i> Tên Trang trại *</label>
+        <input type="text" id="edit-farm-name" placeholder="Ví dụ: Trang trại Nguyễn Văn An" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
+      </div>
+
+      <div style="display:flex; gap:12px; margin-bottom:16px;">
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-ruler-combined" style="color:#059669"></i> Diện tích vườn (ha)</label>
+          <input type="number" id="edit-farm-area" step="0.1" placeholder="Ví dụ: 2.5" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-seedling" style="color:#059669"></i> Tổng số lượng cây *</label>
+          <input type="number" id="edit-farm-total-plants" step="1" placeholder="Ví dụ: 500 cây" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:16px; align-items:flex-end;">
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#0f172a; margin-bottom:4px; display:block;"><i class="fa-solid fa-location-pin" style="color:#059669"></i> Vĩ độ (Latitude)</label>
+          <input type="text" id="edit-farm-lat" placeholder="10.7312" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px; width:100%; color:#0f172a; font-weight:700; font-size:13px;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#0f172a; margin-bottom:4px; display:block;"><i class="fa-solid fa-location-pin" style="color:#059669"></i> Kinh độ (Longitude)</label>
+          <input type="text" id="edit-farm-lng" placeholder="106.6885" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px; width:100%; color:#0f172a; font-weight:700; font-size:13px;">
+        </div>
+        <button type="button" onclick="getEditDeviceGPSPosition()" style="background:#059669; color:white; border:none; padding:11px 14px; border-radius:10px; font-weight:700; font-size:12px; cursor:pointer; height:42px; white-space:nowrap;" title="Cập nhật vị trí GPS mới">
+          <i class="fa-solid fa-arrows-rotate"></i> GPS
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-align-left" style="color:#059669"></i> Mô tả / Địa chỉ trang trại</label>
+        <textarea id="edit-farm-desc" rows="2" placeholder="Nhập địa chỉ hoặc mô tả trang trại..." style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px 14px; width:100%; color:#0f172a; font-size:13px; font-weight:500; font-family:inherit; outline:none;"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:16px 20px; display:flex; justify-content:flex-end; gap:12px; background:#f8fafc; border-top:1px solid #e2e8f0;">
+      <button class="btn btn-secondary" onclick="closeEditFarmModal()" style="padding:10px 18px; font-weight:600; border-radius:10px;">Hủy</button>
+      <button class="btn btn-primary" id="btn-submit-edit-farm" onclick="submitEditFarm()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:12px 24px; font-size:14px; font-weight:800; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+        <i class="fa-solid fa-floppy-disk"></i> Cập Nhật Trang Trại
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Bottom Navigation Bar (Appears on Mobile screens) -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-item active" data-page="home" onclick="showPage('home')">
+    <i class="fa fa-house"></i>
+    <span>Trang chủ</span>
+  </div>
+  <div class="bottom-nav-item" data-page="myplants" onclick="showPage('myplants')">
+    <i class="fa-solid fa-map-location-dot"></i>
+    <span>Trang trại</span>
+  </div>
+  <div class="bottom-nav-item" data-page="supplies" onclick="showPage('supplies')">
+    <i class="fa-solid fa-boxes-packing"></i>
+    <span>Vật tư</span>
+  </div>
+  <div class="bottom-nav-item" data-page="logs" onclick="showPage('logs')">
+    <i class="fa-solid fa-clock-rotate-left"></i>
+    <span>Lịch sử</span>
+  </div>
+  <div class="bottom-nav-item" data-page="wiki" onclick="showPage('wiki')">
+    <i class="fa-solid fa-book-open"></i>
+    <span>Bách khoa</span>
+  </div>
+  <div class="bottom-nav-item" data-page="settings" onclick="showPage('settings')">
+    <i class="fa fa-gear"></i>
+    <span>Cài đặt</span>
+  </div>
+</nav>
+
 <div id="toast-container"></div>
+
 
 
 <!-- Scripts (ES Modules) -->

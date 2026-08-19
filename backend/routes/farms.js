@@ -135,34 +135,63 @@ router.post('/', auth, admin, async (req, res) => {
   }
 });
 
-// PUT update farm (requires auth, admin)
-router.put('/:id', auth, admin, async (req, res) => {
+// PUT update farm (requires auth — admin or farm owner)
+router.put('/:id', auth, async (req, res) => {
   try {
-    const { name, description, polygon_coordinates, area, user_id } = req.body;
-    if (!name) {
+    const farmId = req.params.id;
+    const farmCheck = await pool.query('SELECT * FROM farms WHERE id = $1', [farmId]);
+    if (farmCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
+    }
+    const farm = farmCheck.rows[0];
+
+    // Check ownership
+    const isOwner = farm.user_id === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
+    if (req.user.role !== 'admin' && !isOwner) {
+      return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa trang trại này.' });
+    }
+
+    const { name, description, polygon_coordinates, area, total_plants, user_id, latitude, longitude } = req.body;
+    if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
+    let finalCoords = polygon_coordinates;
+    if ((latitude && longitude) || (!polygon_coordinates && latitude && longitude)) {
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        finalCoords = [[lng, lat]];
+      }
+    }
+
+    const assignedUserId = user_id !== undefined ? user_id : farm.user_id;
+    const parsedArea = area !== undefined && area !== null && area !== '' ? parseFloat(area) : farm.area;
+    const parsedTotalPlants = total_plants !== undefined && total_plants !== null && total_plants !== '' ? parseInt(total_plants) : farm.total_plants;
+    const coordsJson = finalCoords ? JSON.stringify(finalCoords) : JSON.stringify(farm.polygon_coordinates);
+
     const result = await pool.query(`
       UPDATE farms 
-      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, user_id = $5, updated_at = NOW() 
-      WHERE id = $6 
+      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, total_plants = $5, user_id = $6, updated_at = NOW() 
+      WHERE id = $7 
       RETURNING *
-    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, user_id || null, req.params.id]);
+    `, [name.trim(), description || '', coordsJson, parsedArea, parsedTotalPlants, assignedUserId, farmId]);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
-    }
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('farms_updated');
 
-    res.json(result.rows[0]);
+    res.json({
+      success: true,
+      message: 'Cập nhật thông tin trang trại thành công!',
+      farm: result.rows[0]
+    });
   } catch (err) {
     console.error('Error updating farm:', err);
-    res.status(500).json({ error: 'Lỗi server khi cập nhật trang trại.' });
+    res.status(500).json({ error: 'Lỗi server khi cập nhật trang trại: ' + err.message });
   }
 });
+
 
 
 

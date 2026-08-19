@@ -9,12 +9,20 @@ import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router
 
 // ── Modules ───────────────────────────────────────────────────
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm } from './modules/plants.js';
+import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, renderUserFarmsGrid } from './modules/plants.js';
 
 window.openSelfInitFarmModal = openSelfInitFarmModal;
 window.closeSelfInitFarmModal = closeSelfInitFarmModal;
 window.getDeviceGPSPosition = getDeviceGPSPosition;
 window.submitSelfInitFarm = submitSelfInitFarm;
+
+window.selectUserFarm = selectUserFarm;
+window.openEditFarmModal = openEditFarmModal;
+window.closeEditFarmModal = closeEditFarmModal;
+window.getEditDeviceGPSPosition = getEditDeviceGPSPosition;
+window.submitEditFarm = submitEditFarm;
+window.renderUserFarmsGrid = renderUserFarmsGrid;
+
 
 window.switchWikiSubtab = function(tabName) {
   const btnAdv = document.getElementById('btn-wiki-sub-advanced');
