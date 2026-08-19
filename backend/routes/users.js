@@ -13,11 +13,15 @@ router.use(admin);
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at, u.farm_id, u.phone, f.name as farm_name
+      `SELECT u.id, u.email, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at, u.phone,
+              COALESCE(u.farm_id, f_legacy.id) as farm_id,
+              COALESCE(f.name, f_legacy.name) as farm_name
        FROM users u
        LEFT JOIN farms f ON f.id = u.farm_id
+       LEFT JOIN farms f_legacy ON f_legacy.user_id = u.id
        ORDER BY u.id ASC`
     );
+
     res.json(result.rows);
   } catch (err) {
     console.error(err);

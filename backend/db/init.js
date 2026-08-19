@@ -179,6 +179,14 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
     `);
 
+    // Backfill farm_id for existing farmers who created farms previously
+    await client.query(`
+      UPDATE users u
+      SET farm_id = (SELECT id FROM farms WHERE user_id = u.id ORDER BY id ASC LIMIT 1)
+      WHERE u.farm_id IS NULL AND EXISTS (SELECT 1 FROM farms WHERE user_id = u.id);
+    `);
+
+
 
 
 
