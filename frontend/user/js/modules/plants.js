@@ -133,6 +133,7 @@ export async function submitSelfInitFarm() {
   const lat = document.getElementById('self-farm-lat')?.value;
   const lng = document.getElementById('self-farm-lng')?.value;
   const area = document.getElementById('self-farm-area')?.value;
+  const totalPlants = document.getElementById('self-farm-total-plants')?.value;
   const desc = document.getElementById('self-farm-desc')?.value;
 
   if (!name) {
@@ -147,7 +148,7 @@ export async function submitSelfInitFarm() {
     // Use standard api helper which attaches correct pb_token automatically
     const data = await api('/farms/self-init', {
       method: 'POST',
-      body: JSON.stringify({ name, description: desc, latitude: lat, longitude: lng, area })
+      body: JSON.stringify({ name, description: desc, latitude: lat, longitude: lng, area, total_plants: totalPlants })
     });
 
     alert(data.message || 'Khởi tạo trang trại bằng GPS thành công!');
@@ -158,6 +159,17 @@ export async function submitSelfInitFarm() {
     } else {
       window.location.reload();
     }
+
+    // Auto fly map to GPS ping location
+    if (window.userMap && lat && lng) {
+      try {
+        window.userMap.flyTo({
+          center: [parseFloat(lng), parseFloat(lat)],
+          zoom: 16,
+          essential: true
+        });
+      } catch (_) {}
+    }
   } catch (err) {
     alert('Lỗi khi tạo trang trại: ' + err.message);
   } finally {
@@ -165,6 +177,7 @@ export async function submitSelfInitFarm() {
     if (btn) btn.disabled = false;
   }
 }
+
 
 
 

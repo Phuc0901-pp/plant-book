@@ -122,7 +122,38 @@ export function initUserMap(farms, plants) {
       map.addLayer({ id: outlineId, type: 'line', source: srcId, layout: {},
         paint: { 'line-color': '#10b981', 'line-width': 2 } });
 
-      coords.forEach(pt => { bounds.extend(pt); hasBounds = true; });
+      // Render Farm GPS Marker
+      let ptLng = coords[0][0];
+      let ptLat = coords[0][1];
+      if (ptLng && ptLat) {
+        if (ptLng < 50 && ptLat > 90) {
+          const tmp = ptLng;
+          ptLng = ptLat;
+          ptLat = tmp;
+        }
+
+        const farmMarkerWrap = document.createElement('div');
+        farmMarkerWrap.className = 'farm-gps-marker';
+        farmMarkerWrap.innerHTML = `
+          <div style="background:linear-gradient(135deg, #10b981, #047857); color:white; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; border:2px solid white; box-shadow:0 4px 12px rgba(0,0,0,0.35); display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap;">
+            <i class="fa-solid fa-house-chimney"></i> ${esc(farm.name)} (${farm.plant_count || farm.total_plants || 0} cây)
+          </div>
+        `;
+        new mapboxgl.Marker(farmMarkerWrap)
+          .setLngLat([ptLng, ptLat])
+          .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`
+            <div class="map-tooltip" style="font-family:inherit;font-size:12px;">
+              <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(farm.name)}</h4>
+              <p style="margin-bottom:2px;">Tổng số cây: <strong>${farm.plant_count || farm.total_plants || 0} cây</strong></p>
+              <p style="margin-bottom:2px;">Diện tích: <strong>${farm.area ? farm.area : 0} ha</strong></p>
+              <p style="color:var(--text-muted);font-style:italic;">${esc(farm.description || 'Không có mô tả')}</p>
+            </div>
+          `))
+          .addTo(map);
+
+        bounds.extend([ptLng, ptLat]);
+        hasBounds = true;
+      }
 
       // Popup khi click vào trang trại
       map.on('click', layerId, (e) => {
@@ -131,7 +162,8 @@ export function initUserMap(farms, plants) {
           .setHTML(`
             <div class="map-tooltip" style="font-family:inherit;font-size:12px;">
               <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(farm.name)}</h4>
-              <p style="margin-bottom:2px;">Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
+              <p style="margin-bottom:2px;">Tổng số cây: <strong>${farm.plant_count || farm.total_plants || 0} cây</strong></p>
+              <p style="margin-bottom:2px;">Diện tích: <strong>${farm.area ? farm.area : 0} ha</strong></p>
               <p style="color:var(--text-muted);font-style:italic;">${esc(farm.description || 'Không có mô tả')}</p>
             </div>`)
           .addTo(map);
@@ -139,6 +171,7 @@ export function initUserMap(farms, plants) {
       map.on('mouseenter', layerId, () => map.getCanvas().style.cursor = 'pointer');
       map.on('mouseleave', layerId, () => map.getCanvas().style.cursor = '');
     });
+
 
     // ── Vẽ Cây trồng (Marker chấm tròn màu) ─────────────
     plants.forEach(plant => {

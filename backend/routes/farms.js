@@ -8,7 +8,7 @@ const admin = require('../middleware/admin');
 router.get('/', auth, async (req, res) => {
   try {
     let query = `
-      SELECT f.*, COUNT(p.id)::int as plant_count, u.full_name as user_name, u.email as user_email
+      SELECT f.*, GREATEST(COUNT(p.id)::int, COALESCE(f.total_plants, 0)) as plant_count, u.full_name as user_name, u.email as user_email
       FROM farms f 
       LEFT JOIN plants p ON p.farm_id = f.id 
       LEFT JOIN users u ON u.id = f.user_id
@@ -50,18 +50,8 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền truy cập trang trại này.' });
     }
 
-
-    const plantsResult = await pool.query(`
-      SELECT id, plant_type, plant_variety, health_status, latitude, longitude, cover_image, is_public, public_slug, tree_code
-      FROM plants 
-      WHERE farm_id = $1 
-      ORDER BY created_at DESC
-    `, [req.params.id]);
-
-    res.json({
-      ...farm,
-      plants: plantsResult.rows
-    });
+    const plantsResult = await pool.query('SELECT * FROM plants WHERE farm_id = $1 ORDER BY id ASC', [farm.id]);
+    res.json({ ...farm, plants: plantsResult.rows });
   } catch (err) {
     console.error('Error getting farm details:', err);
     res.status(500).json({ error: 'Lỗi server khi tải chi tiết trang trại.' });
@@ -72,7 +62,7 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/self-init', auth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { name, description, latitude, longitude, area } = req.body;
+    const { name, description, latitude, longitude, area, total_plants, plant_count } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
@@ -80,6 +70,7 @@ router.post('/self-init', auth, async (req, res) => {
     const lat = latitude ? parseFloat(latitude) : null;
     const lng = longitude ? parseFloat(longitude) : null;
     const farmArea = area && parseFloat(area) ? parseFloat(area) : null;
+    const countVal = parseInt(total_plants || plant_count) || 0;
 
     // Single point GPS ping polygon or coordinates
     const polygonCoords = (lat && lng) ? [[lat, lng]] : [];
@@ -88,10 +79,10 @@ router.post('/self-init', auth, async (req, res) => {
 
     // Create farm
     const farmRes = await client.query(`
-      INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id)
-      VALUES ($1, $2, $3, $4, $5, $5)
+      INSERT INTO farms (name, description, polygon_coordinates, area, total_plants, created_by, user_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $6)
       RETURNING *
-    `, [name.trim(), description || '', JSON.stringify(polygonCoords), farmArea, req.user.id]);
+    `, [name.trim(), description || '', JSON.stringify(polygonCoords), farmArea, countVal, req.user.id]);
 
     const newFarm = farmRes.rows[0];
 

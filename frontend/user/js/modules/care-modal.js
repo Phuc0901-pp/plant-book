@@ -203,19 +203,40 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
 
         const totalPlantsCount = _plants().length;
 
-        let html = `
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #e2e8f0;">
-            <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh sách Cây trồng (${totalPlantsCount})</span>
-            <div style="display:flex; gap:6px;">
-              <button type="button" onclick="window.toggleSelectAllGlobal(true)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:6px; cursor:pointer;">
-                <i class="fa-solid fa-check-double"></i> Chọn tất cả
-              </button>
-              <button type="button" onclick="window.toggleSelectAllGlobal(false)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#475569; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
-                <i class="fa-solid fa-xmark"></i> Bỏ chọn
-              </button>
+        let html = '';
+
+        if (totalPlantsCount === 0) {
+          const activeFarms = window._farmsCache || window._allFarmsCache || [];
+          const farm = activeFarms[0] || {};
+          const farmName = farm.name || 'Trang trại Nông hộ';
+          const count = farm.plant_count || farm.total_plants || 0;
+
+          html = `
+            <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:16px; text-align:center; box-shadow:0 4px 12px rgba(5,150,105,0.08);">
+              <div style="font-size:15px; font-weight:800; color:#047857; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <i class="fa-solid fa-house-chimney"></i> PHẠM VI: TOÀN VƯỜN — ${esc(farmName)}
+              </div>
+              <div style="font-size:13px; color:#065f46; font-weight:600;">
+                Áp dụng nhật ký chăm sóc cho tổng số <strong style="color:#047857; font-size:15px; text-decoration:underline;">${count} cây trồng</strong> trong trang trại.
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        } else {
+          html = `
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #e2e8f0;">
+              <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh sách Cây trồng (${totalPlantsCount})</span>
+              <div style="display:flex; gap:6px;">
+                <button type="button" onclick="window.toggleSelectAllGlobal(true)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:6px; cursor:pointer;">
+                  <i class="fa-solid fa-check-double"></i> Chọn tất cả
+                </button>
+                <button type="button" onclick="window.toggleSelectAllGlobal(false)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#475569; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
+                  <i class="fa-solid fa-xmark"></i> Bỏ chọn
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
 
         Object.keys(plantsByFarm).forEach(farmId => {
           const group = plantsByFarm[farmId];
