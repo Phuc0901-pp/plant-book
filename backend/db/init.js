@@ -180,7 +180,12 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_age VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS farm_area NUMERIC;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS view_plants_scope VARCHAR(20) DEFAULT 'all';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS view_history_from_date DATE DEFAULT NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_shared_history BOOLEAN DEFAULT true;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_view_supplies BOOLEAN DEFAULT true;
     `);
+
 
     // Backfill farm_id for existing farmers who created farms previously
     await client.query(`

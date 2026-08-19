@@ -129,6 +129,11 @@ async function openUserModal(userId = null) {
     document.getElementById('f-user-role').value = u.role || 'user';
     if (farmSelect) farmSelect.value = u.farm_id || '';
     
+    if (document.getElementById('f-user-plants-scope')) document.getElementById('f-user-plants-scope').value = u.view_plants_scope || 'all';
+    if (document.getElementById('f-user-history-date')) document.getElementById('f-user-history-date').value = u.view_history_from_date ? u.view_history_from_date.split('T')[0] : '';
+    if (document.getElementById('f-user-shared-history')) document.getElementById('f-user-shared-history').checked = u.allow_shared_history !== false;
+    if (document.getElementById('f-user-view-supplies')) document.getElementById('f-user-view-supplies').checked = u.allow_view_supplies !== false;
+
     passLabel.textContent = 'Mật khẩu mới (Tùy chọn)';
     passHelp.style.display = 'block';
     passInput.placeholder = 'Để trống nếu giữ nguyên';
@@ -139,6 +144,10 @@ async function openUserModal(userId = null) {
     passHelp.style.display = 'none';
     passInput.placeholder = '••••••••';
     if (farmSelect) farmSelect.value = '';
+    if (document.getElementById('f-user-plants-scope')) document.getElementById('f-user-plants-scope').value = 'all';
+    if (document.getElementById('f-user-history-date')) document.getElementById('f-user-history-date').value = '';
+    if (document.getElementById('f-user-shared-history')) document.getElementById('f-user-shared-history').checked = true;
+    if (document.getElementById('f-user-view-supplies')) document.getElementById('f-user-view-supplies').checked = true;
   }
 
   modal.style.display = 'flex';
@@ -155,6 +164,10 @@ async function saveUser() {
   const password = document.getElementById('f-user-pass').value;
   const role = document.getElementById('f-user-role').value;
   const farm_id = document.getElementById('f-user-farm-id')?.value;
+  const view_plants_scope = document.getElementById('f-user-plants-scope')?.value || 'all';
+  const view_history_from_date = document.getElementById('f-user-history-date')?.value || null;
+  const allow_shared_history = document.getElementById('f-user-shared-history')?.checked;
+  const allow_view_supplies = document.getElementById('f-user-view-supplies')?.checked;
 
   if (!full_name || !email) {
     toast('Họ tên và email là bắt buộc!', 'error');
@@ -171,7 +184,17 @@ async function saveUser() {
   btn.innerHTML = '<span class="spinner"></span> Đang lưu...';
   btn.disabled = true;
 
-  const payload = { full_name, email, role, farm_id: farm_id ? parseInt(farm_id) : null };
+  const payload = { 
+    full_name, 
+    email, 
+    role, 
+    farm_id: farm_id ? parseInt(farm_id) : null,
+    view_plants_scope,
+    view_history_from_date,
+    allow_shared_history,
+    allow_view_supplies
+  };
+
   if (password) {
     payload.password = password;
   }

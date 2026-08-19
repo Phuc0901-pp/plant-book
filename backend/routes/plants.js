@@ -51,10 +51,17 @@ router.get('/', auth, async (req, res) => {
     let idx = 1;
 
     if (req.user.role !== 'admin') {
-      query += ` AND (f.user_id = $${idx} OR p.created_by = $${idx} OR (u.farm_id IS NOT NULL AND p.farm_id = u.farm_id))`;
-      params.push(req.user.id);
-      idx++;
+      if (req.user.view_plants_scope === 'assigned') {
+        query += ` AND (p.created_by = $${idx} OR f.user_id = $${idx})`;
+        params.push(req.user.id);
+        idx++;
+      } else {
+        query += ` AND (f.user_id = $${idx} OR p.created_by = $${idx} OR (u.farm_id IS NOT NULL AND p.farm_id = u.farm_id))`;
+        params.push(req.user.id);
+        idx++;
+      }
     }
+
 
 
     if (search) {
@@ -214,13 +221,23 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
 
     let logsQuery = 'SELECT pl.*, u.full_name as creator_name FROM plant_logs pl LEFT JOIN users u ON u.id = pl.created_by WHERE pl.plant_id = $1';
     const logsParams = [req.params.id];
+    let idx = 2;
 
-    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id && row.farm_id) {
+    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id) {
       const farmRes = await pool.query('SELECT allow_shared_history FROM farms WHERE id=$1', [row.farm_id]);
-      const allowShared = farmRes.rows.length > 0 && farmRes.rows[0].allow_shared_history !== false;
-      if (!allowShared) {
-        logsQuery += ' AND pl.created_by = $2';
+      const farmAllowShared = farmRes.rows.length > 0 && farmRes.rows[0].allow_shared_history !== false;
+      const userAllowShared = req.user.allow_shared_history !== false;
+
+      if (!farmAllowShared || !userAllowShared) {
+        logsQuery += ` AND pl.created_by = $${idx}`;
         logsParams.push(req.user.id);
+        idx++;
+      }
+
+      if (req.user.view_history_from_date) {
+        logsQuery += ` AND pl.log_date >= $${idx}`;
+        logsParams.push(req.user.view_history_from_date);
+        idx++;
       }
     }
 
@@ -232,6 +249,7 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });
+
 
 
 router.post('/batch', auth, admin, async (req, res) => {

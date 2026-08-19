@@ -9,11 +9,12 @@ const admin = require('../middleware/admin');
 router.use(auth);
 router.use(admin);
 
-// GET /api/users - List all users (with assigned farm info)
+// GET /api/users - List all users (with assigned farm info & permissions)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT u.id, u.email, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at, u.phone,
+              u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies,
               COALESCE(u.farm_id, f_legacy.id) as farm_id,
               COALESCE(f.name, f_legacy.name) as farm_name
        FROM users u
@@ -46,9 +47,13 @@ router.get('/:id/activities', async (req, res) => {
   }
 });
 
-// POST /api/users - Create a new user (farmer account with assigned farm)
+// POST /api/users - Create a new user (farmer account with assigned farm & permissions)
 router.post('/', async (req, res) => {
-  const { email, password, full_name, role, farm_id } = req.body;
+  const { 
+    email, password, full_name, role, farm_id,
+    view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies
+  } = req.body;
+
   if (!email || !password || !full_name) {
     return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin: email, mật khẩu và họ tên.' });
   }
@@ -66,10 +71,19 @@ router.post('/', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, full_name, role, farm_id, approved)
-       VALUES ($1, $2, $3, $4, $5, true)
-       RETURNING id, email, full_name, role, farm_id, created_at`,
-      [trimmedEmail, hash, full_name.trim(), trimmedRole, assignedFarmId]
+      `INSERT INTO users (
+        email, password_hash, full_name, role, farm_id, approved,
+        view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies
+       )
+       VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9)
+       RETURNING id, email, full_name, role, farm_id, view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies, created_at`,
+      [
+        trimmedEmail, hash, full_name.trim(), trimmedRole, assignedFarmId,
+        view_plants_scope || 'all',
+        view_history_from_date || null,
+        allow_shared_history !== false,
+        allow_view_supplies !== false
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -79,10 +93,14 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/users/:id - Update user details (including assigned farm_id)
+// PUT /api/users/:id - Update user details (including assigned farm_id & permissions)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { email, password, full_name, role, farm_id } = req.body;
+  const { 
+    email, password, full_name, role, farm_id,
+    view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies
+  } = req.body;
+
   if (!email || !full_name) {
     return res.status(400).json({ error: 'Email và họ tên là bắt buộc.' });
   }
@@ -104,15 +122,30 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Email đã được sử dụng bởi tài khoản khác.' });
     }
 
-    let query = 'UPDATE users SET email=$1, full_name=$2, role=$3, farm_id=$4, updated_at=NOW()';
-    let params = [trimmedEmail, full_name.trim(), trimmedRole, assignedFarmId, id];
+    let query = `
+      UPDATE users 
+      SET email=$1, full_name=$2, role=$3, farm_id=$4,
+          view_plants_scope=$5, view_history_from_date=$6, allow_shared_history=$7, allow_view_supplies=$8,
+          updated_at=NOW()
+    `;
+    let params = [
+      trimmedEmail,
+      full_name.trim(),
+      trimmedRole,
+      assignedFarmId,
+      view_plants_scope || 'all',
+      view_history_from_date || null,
+      allow_shared_history !== false,
+      allow_view_supplies !== false
+    ];
 
     if (password && password.trim().length > 0) {
       const hash = await bcrypt.hash(password, 12);
-      query += ', password_hash=$5 WHERE id=$6';
-      params = [trimmedEmail, full_name.trim(), trimmedRole, assignedFarmId, hash, id];
+      query += ', password_hash=$9 WHERE id=$10';
+      params.push(hash, id);
     } else {
-      query += ' WHERE id=$5';
+      query += ' WHERE id=$9';
+      params.push(id);
     }
 
     await pool.query(query, params);
@@ -123,12 +156,13 @@ router.put('/:id', async (req, res) => {
     }
 
     const updated = await pool.query(
-      `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.created_at, f.name as farm_name
+      `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies, u.created_at, f.name as farm_name
        FROM users u
        LEFT JOIN farms f ON f.id = u.farm_id
        WHERE u.id=$1`,
       [id]
     );
+
 
     res.json(updated.rows[0]);
   } catch (err) {

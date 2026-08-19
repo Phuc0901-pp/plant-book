@@ -11,8 +11,13 @@ async function authMiddleware(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Fetch latest user details (farm_id, role) from DB
-    const userRes = await pool.query('SELECT id, email, role, full_name, farm_id FROM users WHERE id=$1', [decoded.id]);
+    // Fetch latest user details (farm_id, role, permissions) from DB
+    const userRes = await pool.query(
+      `SELECT id, email, role, full_name, farm_id, 
+              view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies 
+       FROM users WHERE id=$1`, 
+      [decoded.id]
+    );
     if (userRes.rows.length === 0) {
       return res.status(401).json({ error: 'Tài khoản không còn tồn tại.' });
     }
@@ -23,8 +28,13 @@ async function authMiddleware(req, res, next) {
       email: u.email,
       role: u.role,
       name: u.full_name,
-      farm_id: u.farm_id
+      farm_id: u.farm_id,
+      view_plants_scope: u.view_plants_scope || 'all',
+      view_history_from_date: u.view_history_from_date ? u.view_history_from_date.toISOString().split('T')[0] : null,
+      allow_shared_history: u.allow_shared_history !== false,
+      allow_view_supplies: u.allow_view_supplies !== false
     };
+
 
     // Update user active status in the background (non-blocking)
     pool.query(

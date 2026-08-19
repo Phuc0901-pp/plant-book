@@ -31,7 +31,7 @@ router.get('/', auth, async (req, res) => {
       }
     } else {
       // Non-admin farmer
-      if (req.user.farm_id) {
+      if (req.user.farm_id && req.user.allow_view_supplies !== false) {
         // Check if shared supplies is enabled for this farm
         const farmRes = await pool.query('SELECT allow_shared_supplies FROM farms WHERE id=$1', [req.user.farm_id]);
         const allowShared = farmRes.rows.length > 0 && farmRes.rows[0].allow_shared_supplies !== false;
@@ -50,6 +50,7 @@ router.get('/', auth, async (req, res) => {
         params.push(req.user.id);
         idx++;
       }
+
     }
 
     if (category) {
