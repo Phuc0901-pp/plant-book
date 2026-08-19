@@ -312,7 +312,17 @@ router.post('/batch', auth, admin, async (req, res) => {
 router.post('/', auth, admin, async (req, res) => {
   try {
     const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code } = req.body;
-    const slug = tree_code ? `${req.user.id}_${farm_id || 0}_${tree_code}` : generateSlug(plant_type);
+    
+    let finalTreeCode = tree_code && tree_code.trim() ? tree_code.trim() : null;
+    if (!finalTreeCode) {
+      const year = new Date().getFullYear();
+      const farmCode = farm_id ? `TT${String(farm_id).padStart(2, '0')}` : 'TT00';
+      const countRes = await pool.query('SELECT COUNT(*)::int as count FROM plants WHERE farm_id IS NOT DISTINCT FROM $1', [farm_id || null]);
+      const stt = String((countRes.rows[0].count || 0) + 1).padStart(3, '0');
+      finalTreeCode = `${farmCode}-${year}-${stt}`;
+    }
+
+    const slug = finalTreeCode ? `${farm_id || 0}_${finalTreeCode}` : generateSlug(plant_type);
 
     const result = await pool.query(
       `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
@@ -337,8 +347,9 @@ router.post('/', auth, admin, async (req, res) => {
        location, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
-       req.user.id, tree_code || null]
+       req.user.id, finalTreeCode]
     );
+
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated');

@@ -95,7 +95,7 @@ app.get('/nfc/:uid', async (req, res) => {
     if (result.rows.length > 0) {
       const p = result.rows[0];
       const uidSuffix = p.nfc_uid ? `/${encodeURIComponent(p.nfc_uid)}` : '';
-      return res.redirect(`/${p.user_id || 0}/${p.farm_id || 0}/${p.id}${uidSuffix}`);
+      return res.redirect(`/${p.farm_id || 0}/${p.id}${uidSuffix}`);
     }
     res.status(404).send('<div style="font-family:sans-serif; text-align:center; padding:50px;"><h2>⚠️ 404 - Không tìm thấy cây trồng tương ứng với mã thẻ NFC này</h2><p>Mã thẻ chưa được gán cho bất kỳ cây trồng nào trên hệ thống Plant Book.</p><a href="/">Về trang chủ</a></div>');
   } catch (err) {
@@ -107,12 +107,13 @@ app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
-// ─── Hierarchical Public Plant Route: /:userId/:farmId/:plantId/:nfcUid? ───
-app.get('/:userId/:farmId/:plantId/:nfcUid?', (req, res, next) => {
+// ─── Hierarchical Public Plant Route: /:farmId/:plantId/:nfcUid? (or legacy /:userId/:farmId/:plantId/:nfcUid?) ───
+app.get(['/:farmId/:plantId/:nfcUid?', '/:userId/:farmId/:plantId/:nfcUid?'], (req, res, next) => {
   const reserved = ['admin', 'user', 'api', 'plant', 'nfc', 'assets', 'public', 'favicon.ico'];
-  if (reserved.includes(req.params.userId)) return next();
+  if (reserved.includes(req.params.farmId) || reserved.includes(req.params.userId)) return next();
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
+
 
 app.get(['/admin', '/admin/*'], (req, res, next) => {
   if (req.path.includes('.')) return next();

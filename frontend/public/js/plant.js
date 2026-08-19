@@ -1,4 +1,4 @@
-// Parse Slug info from /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
+// Parse Slug info from /:farmId/:plantId/:nfcUid, /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
 function getPublicSlugInfoFromUrl() {
   const pathParts = location.pathname.split('/').filter(p => p.length > 0);
   if (pathParts.length === 0) return { slug: '', plantId: '', nfcUid: '' };
@@ -9,7 +9,7 @@ function getPublicSlugInfoFromUrl() {
     return { slug: decodeURIComponent(pathParts[1] || ''), plantId: '', nfcUid: decodeURIComponent(pathParts[1] || '') };
   }
   
-  // Hierarchical Format: /:userId/:farmId/:plantId/:nfcUid
+  // Format: /:farmId/:plantId/:nfcUid? OR legacy /:userId/:farmId/:plantId/:nfcUid
   if (pathParts.length >= 4) {
     return {
       slug: decodeURIComponent(pathParts[3]), // nfcUid
@@ -19,9 +19,9 @@ function getPublicSlugInfoFromUrl() {
   }
   if (pathParts.length === 3) {
     return {
-      slug: decodeURIComponent(pathParts[2]),
-      plantId: decodeURIComponent(pathParts[2]),
-      nfcUid: ''
+      slug: decodeURIComponent(pathParts[2]), // nfcUid
+      plantId: decodeURIComponent(pathParts[1]), // plantId
+      nfcUid: decodeURIComponent(pathParts[2])
     };
   }
   if (pathParts.length === 2) {
@@ -33,6 +33,7 @@ function getPublicSlugInfoFromUrl() {
   }
   return { slug: decodeURIComponent(pathParts[0]), plantId: decodeURIComponent(pathParts[0]), nfcUid: '' };
 }
+
 
 const slugInfo = getPublicSlugInfoFromUrl();
 const slug = slugInfo.slug;
