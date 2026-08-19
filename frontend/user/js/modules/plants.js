@@ -334,60 +334,105 @@ document.addEventListener('click', e => {
 
 let _activeFarmId = null;
 
+export function openFarmDetailView(farmId) {
+  _activeFarmId = farmId;
+  const masterView = document.getElementById('farm-master-view');
+  const detailView = document.getElementById('farm-detail-view');
+
+  if (masterView) masterView.style.display = 'none';
+  if (detailView) detailView.style.display = 'block';
+
+  const farm = (_farmsCache || []).find(f => f.id === farmId);
+  if (farm) {
+    const nameEl = document.getElementById('active-farm-name');
+    const countEl = document.getElementById('active-farm-plant-count');
+    const areaEl = document.getElementById('active-farm-area');
+
+    if (nameEl) nameEl.textContent = farm.name;
+    if (countEl) countEl.textContent = farm.plant_count || farm.total_plants || 0;
+    if (areaEl) areaEl.textContent = farm.area || 0;
+
+    // Filter plant table select dropdown for this farm
+    const filterSel = document.getElementById('user-plant-filter-farm');
+    if (filterSel) {
+      filterSel.value = farm.id;
+      filterUserPlants();
+    }
+
+    // Trigger map resize & flyTo
+    setTimeout(() => {
+      if (window.userMap) {
+        try { window.userMap.resize(); } catch (_) {}
+        if (farm.polygon_coordinates) {
+          try {
+            let coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+            if (coords && coords.length > 0) {
+              let ptLng = coords[0][0];
+              let ptLat = coords[0][1];
+              if (ptLng < 50 && ptLat > 90) {
+                const tmp = ptLng;
+                ptLng = ptLat;
+                ptLat = tmp;
+              }
+              window.userMap.flyTo({ center: [ptLng, ptLat], zoom: 16, essential: true });
+            }
+          } catch (_) {}
+        }
+      }
+    }, 100);
+  }
+}
+
+export function closeFarmDetailView() {
+  const masterView = document.getElementById('farm-master-view');
+  const detailView = document.getElementById('farm-detail-view');
+
+  if (detailView) detailView.style.display = 'none';
+  if (masterView) masterView.style.display = 'block';
+}
+
 export function renderUserFarmsGrid(farms) {
   const gridContainer = document.getElementById('user-farms-grid');
-  const activeFarmName = document.getElementById('active-farm-name');
-  const activeFarmPlantCount = document.getElementById('active-farm-plant-count');
-  const activeFarmArea = document.getElementById('active-farm-area');
 
   if (!farms || !farms.length) {
     if (gridContainer) {
       gridContainer.innerHTML = `
-        <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:14px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s ease;">
-          <div style="width:44px; height:44px; border-radius:50%; background:#dcfce7; color:#059669; font-size:20px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px;">
+        <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:28px 20px; text-align:center; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
+          <div style="width:54px; height:54px; border-radius:50%; background:#dcfce7; color:#059669; font-size:24px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(5,150,105,0.15);">
             <i class="fa-solid fa-plus"></i>
           </div>
-          <div style="font-size:14px; font-weight:800; color:#047857;">+ Khởi tạo Trang trại mới (GPS)</div>
-          <div style="font-size:12px; color:#166534; margin-top:2px;">Bấm vào đây để lấy tọa độ vị trí thực tế</div>
+          <div style="font-size:16px; font-weight:800; color:#047857; margin-bottom:4px;">Khởi tạo Trang trại mới (GPS)</div>
+          <div style="font-size:13px; color:#166534;">Bấm vào đây để lấy tọa độ thực tế từ GPS thiết bị</div>
         </div>
       `;
     }
     return;
   }
 
-  if (!_activeFarmId && farms.length > 0) {
-    _activeFarmId = farms[0].id;
-  }
-
-  const activeFarm = farms.find(f => f.id === _activeFarmId) || farms[0];
-  _activeFarmId = activeFarm.id;
-
-  if (activeFarmName) activeFarmName.textContent = activeFarm.name;
-  if (activeFarmPlantCount) activeFarmPlantCount.textContent = activeFarm.plant_count || activeFarm.total_plants || 0;
-  if (activeFarmArea) activeFarmArea.textContent = activeFarm.area || 0;
-
   if (gridContainer) {
     let html = farms.map(f => {
-      const isActive = f.id === _activeFarmId;
       const totalPlants = f.plant_count || f.total_plants || 0;
       return `
-        <div onclick="selectUserFarm(${f.id})" style="background:${isActive ? '#f0fdf4' : '#ffffff'}; border:2px solid ${isActive ? '#059669' : '#cbd5e1'}; border-radius:14px; padding:16px; position:relative; cursor:pointer; transition:all 0.2s ease; box-shadow:${isActive ? '0 4px 14px rgba(5,150,105,0.15)' : '0 2px 6px rgba(0,0,0,0.03)'};">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-            <h4 style="margin:0; font-size:14px; font-weight:800; color:${isActive ? '#047857' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-house-chimney" style="color:#059669;"></i> ${esc(f.name)}
+        <div onclick="openFarmDetailView(${f.id})" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:18px; position:relative; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+            <h4 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-house-chimney" style="color:#059669; font-size:16px;"></i> ${esc(f.name)}
             </h4>
-            ${isActive ? '<span style="background:#059669; color:white; font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px;">Đang chọn</span>' : ''}
+            <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;">Trang trại của tôi</span>
           </div>
-          <div style="font-size:12px; color:#475569; display:flex; gap:12px; margin-bottom:12px; font-weight:600;">
+          <p style="margin:0 0 14px 0; font-size:12.5px; color:#64748b; font-style:italic; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical;">
+            ${esc(f.description || 'Chưa có mô tả địa chỉ')}
+          </p>
+          <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#334155; display:flex; justify-content:space-between; margin-bottom:14px; font-weight:700;">
             <span><i class="fa-solid fa-seedling" style="color:#059669;"></i> ${totalPlants} cây</span>
             <span><i class="fa-solid fa-ruler-combined" style="color:#059669;"></i> ${f.area || 0} ha</span>
           </div>
-          <div style="display:flex; gap:8px; border-top:1px solid #e2e8f0; padding-top:10px;">
-            <button onclick="event.stopPropagation(); openEditFarmModal(${f.id})" style="flex:1; background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:6px; font-size:12px; font-weight:700; color:#334155; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
-              <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Sửa
+          <div style="display:flex; gap:8px;">
+            <button onclick="openFarmDetailView(${f.id})" style="flex:1; background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
+              <i class="fa-solid fa-map-location-dot"></i> Xem Bản đồ & Chi tiết
             </button>
-            <button onclick="selectUserFarm(${f.id})" style="flex:1; background:${isActive ? '#059669' : '#f1f5f9'}; color:${isActive ? '#ffffff' : '#0f172a'}; border:none; border-radius:8px; padding:6px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
-              <i class="fa-solid fa-eye"></i> Xem bản đồ
+            <button onclick="event.stopPropagation(); openEditFarmModal(${f.id})" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; color:#334155; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Chỉnh sửa trang trại">
+              <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Sửa
             </button>
           </div>
         </div>
@@ -396,17 +441,19 @@ export function renderUserFarmsGrid(farms) {
 
     // Add + Khởi tạo Trang trại mới card
     html += `
-      <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:14px; padding:16px; text-align:center; cursor:pointer; transition:all 0.2s ease; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:120px;">
-        <div style="width:36px; height:36px; border-radius:50%; background:#dcfce7; color:#059669; font-size:18px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:6px;">
+      <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:all 0.2s ease; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:150px; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
+        <div style="width:42px; height:42px; border-radius:50%; background:#dcfce7; color:#059669; font-size:20px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px;">
           <i class="fa-solid fa-plus"></i>
         </div>
-        <div style="font-size:13px; font-weight:800; color:#047857;">+ Tạo Trang trại mới (GPS)</div>
+        <div style="font-size:14px; font-weight:800; color:#047857;">+ Khởi tạo Trang trại mới (GPS)</div>
+        <div style="font-size:12px; color:#166534; margin-top:2px;">Bấm để định vị GPS thêm trang trại</div>
       </div>
     `;
 
     gridContainer.innerHTML = html;
   }
 }
+
 
 export function selectUserFarm(farmId) {
   _activeFarmId = farmId;

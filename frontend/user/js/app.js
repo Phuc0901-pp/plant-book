@@ -9,7 +9,7 @@ import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router
 
 // ── Modules ───────────────────────────────────────────────────
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, renderUserFarmsGrid } from './modules/plants.js';
+import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView } from './modules/plants.js';
 
 window.openSelfInitFarmModal = openSelfInitFarmModal;
 window.closeSelfInitFarmModal = closeSelfInitFarmModal;
@@ -22,6 +22,10 @@ window.closeEditFarmModal = closeEditFarmModal;
 window.getEditDeviceGPSPosition = getEditDeviceGPSPosition;
 window.submitEditFarm = submitEditFarm;
 window.renderUserFarmsGrid = renderUserFarmsGrid;
+
+window.openFarmDetailView = openFarmDetailView;
+window.closeFarmDetailView = closeFarmDetailView;
+
 
 
 window.switchWikiSubtab = function(tabName) {
