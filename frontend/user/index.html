@@ -1013,47 +1013,182 @@
         </div>
 
 
-        <!-- Sub-tab 2: HƯỚNG DẪN SỬ DỤNG -->
+        <!-- Sub-tab 2: HƯỚNG DẪN SỬ DỤNG (RÕ RÀNG, SƠ ĐỒ KHỐI & VÍ DỤ ĐIỂN HÌNH) -->
         <div id="wiki-subtab-guide" style="display:none;">
-          <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; flex-direction:column; gap:24px;">
 
-            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:18px;">
-              <h4 style="font-size:15px; color:#059669; margin:0 0 10px 0; font-weight:800; display:flex; align-items:center; gap:10px;">
-                <span style="background:#059669; color:white; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">1</span>
-                Hướng dẫn Khởi tạo Trang trại bằng GPS
-              </h4>
-              <p style="font-size:13px; color:#334155; line-height:1.6; margin:0;">
-                • Bước 1: Mở menu <strong>Trang trại</strong> trên thanh điều hướng.<br>
-                • Bước 2: Bấm nút <strong>Định vị GPS & Khởi tạo Trang trại</strong> để thiết bị tự động cập nhật tọa độ vị trí hiện tại.<br>
-                • Bước 3: Nhập tên Trang trại, mô tả và bấm <strong>Lưu khởi tạo</strong>. Trang trại của bạn sẽ được kích hoạt ngay lập tức!
-              </p>
+            <!-- HƯỚNG DẪN 1: KHỞI TẠO TRANG TRẠI & ĐỊNH VỊ GPS -->
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                  <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">1</span>
+                  Hướng dẫn Khởi tạo Trang trại & Định vị ranh giới GPS
+                </h3>
+                <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
+                  <i class="fa-solid fa-location-crosshairs"></i> Bước đầu tiên khi sử dụng
+                </span>
+              </div>
+
+              <!-- Flowchart Diagram Image -->
+              <div style="width:100%; border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+                <img src="img/guide_step1_gps_farm.jpg" alt="Sơ đồ khối 3 bước Khởi tạo Trang trại GPS" style="width:100%; height:auto; display:block;">
+              </div>
+
+              <!-- Sơ đồ khối các bước (Steps Block Chart) -->
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: ĐỊNH VỊ GPS</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Trang trại</strong> ➔ Bấm nút <strong>Khởi tạo Trang trại mới (GPS)</strong> ➔ Bấm <strong>Bật GPS</strong>.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KHAI BÁO VƯỜN</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Điền <strong>Tên trang trại</strong> (VD: Vườn Bưởi An Phú), <strong>Diện tích (ha)</strong> và <strong>Tổng số cây</strong>.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: KÍCH HOẠT VƯỜN</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Lưu khởi tạo</strong>. Trang trại được kích hoạt đưa lên Bản đồ Vệ tinh GIS ngay lập tức!</div>
+                </div>
+              </div>
+
+              <!-- Ví dụ điển hình (Practical Example Card) -->
+              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
+                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ DIỂN HÌNH:
+                </div>
+                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
+                  Anh Nguyễn Văn An cầm điện thoại ra giữa vườn bưởi tại Bến Tre. Anh bật GPS, ứng dụng tự động lấy tọa độ vị trí <code>10.2415, 106.3752</code>. Anh nhập tên <strong>"Trang trại Bưởi Da Xanh An Phú"</strong>, diện tích <strong>2.5 ha</strong>, tổng số <strong>500 cây</strong>. Bấm lưu là vườn của anh hiển thị chuẩn xác trên bản đồ vệ tinh!
+                </p>
+              </div>
             </div>
 
-            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:18px;">
-              <h4 style="font-size:15px; color:#059669; margin:0 0 10px 0; font-weight:800; display:flex; align-items:center; gap:10px;">
-                <span style="background:#059669; color:white; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">2</span>
-                Hướng dẫn Ghi Nhật ký Canh tác Toàn vườn
-              </h4>
-              <p style="font-size:13px; color:#334155; line-height:1.6; margin:0;">
-                • Bấm nút tròn nổi <strong>+ Ghi nhật ký</strong> hoặc biểu tượng hoạt động (Tưới nước, Bón phân, Phun thuốc, Cắt lá, Tỉa hoa, Bệnh cây).<br>
-                • Phạm vi ghi nhận mặc định được áp dụng <strong>Toàn vườn</strong> cho trang trại của bạn.<br>
-                • Nhập chi tiết liều lượng, loại phân/thuốc, tải lên hình ảnh thực địa và bấm <strong>Lưu nhật ký</strong>.
-              </p>
+
+            <!-- HƯỚNG DẪN 2: GHI NHẬT KÝ CANH TÁC -->
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                  <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">2</span>
+                  Hướng dẫn Ghi Nhật ký Canh tác (Tưới nước, Bón phân, Bệnh cây...)
+                </h3>
+                <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
+                  <i class="fa-solid fa-square-plus"></i> Thực hiện hàng ngày ngoài vườn
+                </span>
+              </div>
+
+              <!-- Flowchart Diagram Image -->
+              <div style="width:100%; border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+                <img src="img/guide_step2_care_log.jpg" alt="Sơ đồ khối 3 bước Ghi Nhật ký Canh tác" style="width:100%; height:auto; display:block;">
+              </div>
+
+              <!-- Sơ đồ khối các bước (Steps Block Chart) -->
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: BẤM NÚT (+) GHI NHẬT KÝ</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>(+) Tròn xanh</strong> nổi ở góc dưới màn hình từ bất kỳ trang nào.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: ĐIỀN THÔNG TIN & ẢNH</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn loại hoạt động (Tưới nước, Bón phân, Phun thuốc...), nhập liều lượng và chụp ảnh thực địa.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: LƯU & TỰ TRỪ KHO</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Lưu nhật ký</strong>. Hệ thống tự động lưu vào Lịch sử và trừ tồn kho phân bón/thuốc tương ứng!</div>
+                </div>
+              </div>
+
+              <!-- Ví dụ điển hình (Practical Example Card) -->
+              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
+                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ DIỂN HÌNH:
+                </div>
+                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
+                  Chú Hai vừa bón <strong>50 kg Phân NPK 20-20-15</strong> cho toàn vườn sầu riêng. Chú mở ứng dụng, bấm nút <strong>(+)</strong>, chọn <strong>Bón phân</strong>, chọn vật tư "NPK 20-20-15" trong kho, nhập 50kg và chụp 1 tấm ảnh bao phân. Ngay khi bấm <strong>Lưu nhật ký</strong>, kho phân bón của chú tự động trừ đi 50kg và hệ thống ghi lại lịch sử bón phân chuẩn VietGAP!
+                </p>
+              </div>
             </div>
 
-            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:18px;">
-              <h4 style="font-size:15px; color:#059669; margin:0 0 10px 0; font-weight:800; display:flex; align-items:center; gap:10px;">
-                <span style="background:#059669; color:white; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">3</span>
-                Hướng dẫn Quản lý Vật tư & Xem Lịch sử
-              </h4>
-              <p style="font-size:13px; color:#334155; line-height:1.6; margin:0;">
-                • Vào tab <strong>Vật tư</strong> để theo dõi số lượng tồn kho phân bón, thuốc BVTV dùng cho trang trại.<br>
-                • Vào tab <strong>Lịch sử</strong> để tra cứu toàn bộ các nhật ký đã thực hiện theo mốc thời gian.
-              </p>
+
+            <!-- HƯỚNG DẪN 3: QUẢN LÝ VẬT TƯ & ĐƠN GIÁ TIỀN NƯỚC -->
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                  <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">3</span>
+                  Hướng dẫn Quản lý Vật tư & Khai báo Đơn giá Tiền nước
+                </h3>
+                <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
+                  <i class="fa-solid fa-boxes-packing"></i> Tự động hạch toán chi phí
+                </span>
+              </div>
+
+              <!-- Sơ đồ khối các bước (Steps Block Chart) -->
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: VÀO TAB VẬT TƯ</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Vật tư</strong> ➔ Bấm nút <strong>+ Thêm vật tư mới</strong>.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN DANH MỤC</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn Phân bón, Thuốc BVTV hoặc <strong>Tiền nước</strong>. Điền tên, số lượng nhập kho & đơn giá.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: TỰ ĐỘNG QUY ĐỔI TIỀN</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Khi ghi nhật ký Tưới nước (VD: 500 Lít), ứng dụng tự quy đổi Lít ➔ m³ ➔ Tiền nước chính xác!</div>
+                </div>
+              </div>
+
+              <!-- Ví dụ điển hình (Practical Example Card) -->
+              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
+                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ DIỂN HÌNH:
+                </div>
+                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
+                  Chị Mai khai báo trong Kho Vật tư item "Nước máy tưới tiêu" với đơn giá <strong>5.000 VNĐ / m³</strong>. Khi chị tưới 200 Lít cho vườn (tương đương 0.2 m³), ứng dụng tự động tính ra chi phí tiền nước đợt tưới này là <strong>1.000 VNĐ</strong> mà chị không cần tự bấm máy tính thủ công!
+                </p>
+              </div>
+            </div>
+
+
+            <!-- HƯỚNG DẪN 4: TRA CỨU LỊCH SỬ & XUẤT BÁO CÁO VIETGAP -->
+            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                  <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">4</span>
+                  Hướng dẫn Tra cứu Lịch sử & Xuất Báo cáo VietGAP / GlobalGAP
+                </h3>
+                <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
+                  <i class="fa-solid fa-file-export"></i> Minh bạch xuất xứ nông sản
+                </span>
+              </div>
+
+              <!-- Sơ đồ khối các bước (Steps Block Chart) -->
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: VÀO TAB LỊCH SỬ</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Lịch sử</strong> để theo dõi dòng thời gian toàn bộ các công việc đã ghi nhận.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: LỌC THEO NGUYÊN NHÂN</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Sử dụng ô Tìm kiếm, lọc theo Loại hoạt động hoặc bấm nút <strong>Chỉ Cây bệnh</strong> để xem vết bệnh.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: XUẤT NHẬT KÝ VIETGAP</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>Xuất báo cáo VietGAP</strong> để tải hồ sơ nhật ký điện tử minh bạch hoàn chỉnh!</div>
+                </div>
+              </div>
+
+              <!-- Ví dụ điển hình (Practical Example Card) -->
+              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
+                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ DIỂN HÌNH:
+                </div>
+                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
+                  Khi chuyên gia hoặc đối tác thu mua đến chứng nhận VietGAP cho vườn sầu riêng, anh Minh chỉ cần mở app Tân Bảo AgTech ➔ chọn <strong>Xuất báo cáo VietGAP</strong>. Mọi lịch sử tưới nước, bón phân, cách ly phun thuốc 6 tháng qua được xuất ra rõ ràng, giúp trái cây đạt chuẩn xuất khẩu ngay lập tức!
+                </p>
+              </div>
             </div>
 
           </div>
         </div>
+
 
       </div>
 
