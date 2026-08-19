@@ -186,10 +186,19 @@ window.addEventListener('load', async () => {
       return;
     }
 
+    setCurrentUser(me);
+    showApp();
+  } catch {
+    // Token hết hạn / không hợp lệ
+    logout();
+  }
+});
+
 // ── 3-Step Farmer Registration Wizard ──────────────────────────
 let currentRegStep = 1;
 
 function openRegisterModal() {
+
   currentRegStep = 1;
   updateRegStepUI();
   const modal = document.getElementById('register-modal');
