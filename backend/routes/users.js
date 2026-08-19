@@ -9,14 +9,17 @@ const admin = require('../middleware/admin');
 router.use(auth);
 router.use(admin);
 
-// GET /api/users - List all users (with assigned farm info & permissions)
+// GET /api/users - List all users (with assigned farm info & permissions & assigned plants)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT u.id, u.email, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at, u.phone,
               u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies,
               COALESCE(u.farm_id, f_legacy.id) as farm_id,
-              COALESCE(f.name, f_legacy.name) as farm_name
+              COALESCE(f.name, f_legacy.name) as farm_name,
+              COALESCE((
+                SELECT json_agg(p.id) FROM plants p WHERE p.assigned_to_user_id = u.id
+              ), '[]'::json) as assigned_plant_ids
        FROM users u
        LEFT JOIN farms f ON f.id = u.farm_id
        LEFT JOIN farms f_legacy ON f_legacy.user_id = u.id
@@ -51,7 +54,8 @@ router.get('/:id/activities', async (req, res) => {
 router.post('/', async (req, res) => {
   const { 
     email, password, full_name, role, farm_id,
-    view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies
+    view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies,
+    assigned_plant_ids
   } = req.body;
 
   if (!email || !password || !full_name) {
@@ -86,19 +90,30 @@ router.post('/', async (req, res) => {
       ]
     );
 
-    res.status(201).json(result.rows[0]);
+    const newUser = result.rows[0];
+
+    // Assign specific plants to new user if provided
+    if (Array.isArray(assigned_plant_ids) && assigned_plant_ids.length > 0) {
+      const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
+      if (validIds.length > 0) {
+        await pool.query('UPDATE plants SET assigned_to_user_id = $1 WHERE id = ANY($2::int[])', [newUser.id, validIds]);
+      }
+    }
+
+    res.status(201).json(newUser);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server khi tạo người dùng.' });
   }
 });
 
-// PUT /api/users/:id - Update user details (including assigned farm_id & permissions)
+// PUT /api/users/:id - Update user details (including assigned farm_id & permissions & assigned plants)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { 
     email, password, full_name, role, farm_id,
-    view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies
+    view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies,
+    assigned_plant_ids
   } = req.body;
 
   if (!email || !full_name) {
@@ -108,16 +123,17 @@ router.put('/:id', async (req, res) => {
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedRole = role === 'admin' ? 'admin' : 'user';
   const assignedFarmId = farm_id && parseInt(farm_id) ? parseInt(farm_id) : null;
+  const targetUserId = parseInt(id);
 
   try {
     // Check if user exists
-    const userRes = await pool.query('SELECT * FROM users WHERE id=$1', [id]);
+    const userRes = await pool.query('SELECT * FROM users WHERE id=$1', [targetUserId]);
     if (userRes.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
     }
 
     // Check if email is taken by another user
-    const existing = await pool.query('SELECT id FROM users WHERE email=$1 AND id<>$2', [trimmedEmail, id]);
+    const existing = await pool.query('SELECT id FROM users WHERE email=$1 AND id<>$2', [trimmedEmail, targetUserId]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Email đã được sử dụng bởi tài khoản khác.' });
     }
@@ -142,18 +158,28 @@ router.put('/:id', async (req, res) => {
     if (password && password.trim().length > 0) {
       const hash = await bcrypt.hash(password, 12);
       query += ', password_hash=$9 WHERE id=$10';
-      params.push(hash, id);
+      params.push(hash, targetUserId);
     } else {
       query += ' WHERE id=$9';
-      params.push(id);
+      params.push(targetUserId);
     }
 
     await pool.query(query, params);
     
     // Sync farm ownership if assigned farm has no primary owner
     if (assignedFarmId) {
-      await pool.query('UPDATE farms SET user_id = $1 WHERE id = $2 AND user_id IS NULL', [id, assignedFarmId]);
+      await pool.query('UPDATE farms SET user_id = $1 WHERE id = $2 AND user_id IS NULL', [targetUserId, assignedFarmId]);
     }
+
+    // Update specific assigned plants for this user
+    if (Array.isArray(assigned_plant_ids)) {
+      await pool.query('UPDATE plants SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1', [targetUserId]);
+      const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
+      if (validIds.length > 0) {
+        await pool.query('UPDATE plants SET assigned_to_user_id = $1 WHERE id = ANY($2::int[])', [targetUserId, validIds]);
+      }
+    }
+
 
     const updated = await pool.query(
       `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies, u.created_at, f.name as farm_name

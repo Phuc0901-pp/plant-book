@@ -1360,11 +1360,22 @@
 
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11.5px; font-weight:600; color:#334155;">Phạm vi Cây trồng được xem</label>
-          <select id="f-user-plants-scope" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px;">
+          <select id="f-user-plants-scope" onchange="toggleAssignedPlantsPicker()" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px;">
             <option value="all">🌳 Xem toàn bộ cây trồng trong trang trại</option>
             <option value="assigned">👤 Chỉ xem cây trồng do cá nhân phụ trách</option>
           </select>
+          
+          <!-- Danh sách cây trồng gán thủ công cho Nông hộ này -->
+          <div id="assigned-plants-picker-container" style="display:none; margin-top:8px; background:#fff; border:1.5px solid #bbf7d0; border-radius:8px; padding:10px;">
+            <label style="font-size:11px; font-weight:700; color:#047857; margin-bottom:6px; display:block;">
+              🌱 Tích chọn danh sách cây giao riêng cho Nông hộ này:
+            </label>
+            <div id="assigned-plants-checkboxes" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; font-size:11.5px;">
+              <!-- Filled dynamically by JS -->
+            </div>
+          </div>
         </div>
+
 
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11.5px; font-weight:600; color:#334155;">Chỉ được xem Lịch sử & Nhật ký từ ngày</label>

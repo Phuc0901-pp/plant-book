@@ -134,6 +134,8 @@ async function openUserModal(userId = null) {
     if (document.getElementById('f-user-shared-history')) document.getElementById('f-user-shared-history').checked = u.allow_shared_history !== false;
     if (document.getElementById('f-user-view-supplies')) document.getElementById('f-user-view-supplies').checked = u.allow_view_supplies !== false;
 
+    toggleAssignedPlantsPicker(u);
+
     passLabel.textContent = 'Mật khẩu mới (Tùy chọn)';
     passHelp.style.display = 'block';
     passInput.placeholder = 'Để trống nếu giữ nguyên';
@@ -148,10 +150,61 @@ async function openUserModal(userId = null) {
     if (document.getElementById('f-user-history-date')) document.getElementById('f-user-history-date').value = '';
     if (document.getElementById('f-user-shared-history')) document.getElementById('f-user-shared-history').checked = true;
     if (document.getElementById('f-user-view-supplies')) document.getElementById('f-user-view-supplies').checked = true;
+    
+    toggleAssignedPlantsPicker(null);
   }
 
   modal.style.display = 'flex';
 }
+
+let allPlantsForPicker = [];
+
+async function toggleAssignedPlantsPicker(userObj = null) {
+  const scope = document.getElementById('f-user-plants-scope')?.value;
+  const container = document.getElementById('assigned-plants-picker-container');
+  const checkboxesEl = document.getElementById('assigned-plants-checkboxes');
+  
+  if (!container || !checkboxesEl) return;
+
+  if (scope !== 'assigned') {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+  checkboxesEl.innerHTML = '<div style="font-size:11px; color:#64748b;"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách cây...</div>';
+
+  try {
+    const farmId = document.getElementById('f-user-farm-id')?.value;
+    allPlantsForPicker = await api('/plants');
+
+    let filteredPlants = allPlantsForPicker;
+    if (farmId) {
+      filteredPlants = allPlantsForPicker.filter(p => p.farm_id == farmId);
+    }
+
+    if (filteredPlants.length === 0) {
+      checkboxesEl.innerHTML = '<div style="font-size:11px; color:#94a3b8; font-style:italic;">Chưa có cây nào trong trang trại này.</div>';
+      return;
+    }
+
+    const currentUserId = userObj ? userObj.id : (document.getElementById('f-user-id')?.value ? parseInt(document.getElementById('f-user-id').value) : null);
+    const assignedIds = (userObj && Array.isArray(userObj.assigned_plant_ids)) ? userObj.assigned_plant_ids.map(x => parseInt(x)) : [];
+
+    checkboxesEl.innerHTML = filteredPlants.map(p => {
+      const isChecked = assignedIds.includes(p.id) || (currentUserId && p.assigned_to_user_id == currentUserId);
+      return `
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; background:#f8fafc; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">
+          <input type="checkbox" class="user-assigned-plant-cb" value="${p.id}" ${isChecked ? 'checked' : ''} style="accent-color:var(--green);">
+          <span><strong>Cây #${esc(p.tree_code || p.id)}:</strong> ${esc(p.plant_type)} (${esc(p.plant_variety || 'Giống địa phương')})</span>
+        </label>
+      `;
+    }).join('');
+  } catch (err) {
+    checkboxesEl.innerHTML = `<div style="font-size:11px; color:#ef4444;">Lỗi tải cây: ${esc(err.message)}</div>`;
+  }
+}
+window.toggleAssignedPlantsPicker = toggleAssignedPlantsPicker;
 
 function closeUserModal() {
   document.getElementById('user-modal').style.display = 'none';
@@ -168,6 +221,7 @@ async function saveUser() {
   const view_history_from_date = document.getElementById('f-user-history-date')?.value || null;
   const allow_shared_history = document.getElementById('f-user-shared-history')?.checked;
   const allow_view_supplies = document.getElementById('f-user-view-supplies')?.checked;
+  const assigned_plant_ids = Array.from(document.querySelectorAll('.user-assigned-plant-cb:checked')).map(cb => parseInt(cb.value));
 
   if (!full_name || !email) {
     toast('Họ tên và email là bắt buộc!', 'error');
@@ -192,8 +246,10 @@ async function saveUser() {
     view_plants_scope,
     view_history_from_date,
     allow_shared_history,
-    allow_view_supplies
+    allow_view_supplies,
+    assigned_plant_ids
   };
+
 
   if (password) {
     payload.password = password;
