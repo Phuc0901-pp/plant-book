@@ -149,13 +149,15 @@ async function initDB() {
       )
     `);
 
-    // Alter plants table for GIS
+    // Alter plants table for GIS & assigned user
     await client.query(`
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS latitude NUMERIC;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS longitude NUMERIC;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS tree_code VARCHAR(100);
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS assigned_to_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
     `);
+
 
     // Alter farms table to assign a user/farmer & permission toggles for farmers
     await client.query(`

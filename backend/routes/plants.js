@@ -52,10 +52,11 @@ router.get('/', auth, async (req, res) => {
 
     if (req.user.role !== 'admin') {
       if (req.user.view_plants_scope === 'assigned') {
-        query += ` AND (p.created_by = $${idx} OR f.user_id = $${idx})`;
+        query += ` AND (p.created_by = $${idx} OR p.assigned_to_user_id = $${idx} OR f.user_id = $${idx})`;
         params.push(req.user.id);
         idx++;
       } else {
+
         query += ` AND (f.user_id = $${idx} OR p.created_by = $${idx} OR (u.farm_id IS NOT NULL AND p.farm_id = u.farm_id))`;
         params.push(req.user.id);
         idx++;

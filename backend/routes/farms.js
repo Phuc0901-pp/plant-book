@@ -71,26 +71,16 @@ router.get('/:id', auth, async (req, res) => {
 // POST create farm (requires auth, admin)
 router.post('/', auth, admin, async (req, res) => {
   try {
-    const { name, description, polygon_coordinates, area, user_id, allow_view_plants, allow_shared_history, allow_shared_supplies } = req.body;
+    const { name, description, polygon_coordinates, area, user_id } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     const result = await pool.query(`
-      INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id, allow_view_plants, allow_shared_history, allow_shared_supplies)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [
-      name,
-      description || '',
-      JSON.stringify(polygon_coordinates || []),
-      area || null,
-      req.user.id,
-      user_id || null,
-      allow_view_plants !== false,
-      allow_shared_history !== false,
-      allow_shared_supplies !== false
-    ]);
+    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, req.user.id, user_id || null]);
 
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
@@ -106,29 +96,17 @@ router.post('/', auth, admin, async (req, res) => {
 // PUT update farm (requires auth, admin)
 router.put('/:id', auth, admin, async (req, res) => {
   try {
-    const { name, description, polygon_coordinates, area, user_id, allow_view_plants, allow_shared_history, allow_shared_supplies } = req.body;
+    const { name, description, polygon_coordinates, area, user_id } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     const result = await pool.query(`
       UPDATE farms 
-      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, user_id = $5,
-          allow_view_plants = $6, allow_shared_history = $7, allow_shared_supplies = $8,
-          updated_at = NOW() 
-      WHERE id = $9 
+      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, user_id = $5, updated_at = NOW() 
+      WHERE id = $6 
       RETURNING *
-    `, [
-      name,
-      description || '',
-      JSON.stringify(polygon_coordinates || []),
-      area || null,
-      user_id || null,
-      allow_view_plants !== false,
-      allow_shared_history !== false,
-      allow_shared_supplies !== false,
-      req.params.id
-    ]);
+    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, user_id || null, req.params.id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
@@ -143,6 +121,7 @@ router.put('/:id', auth, admin, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi cập nhật trang trại.' });
   }
 });
+
 
 
 // DELETE farm (requires auth, admin)
