@@ -128,28 +128,51 @@ router.put('/:id', async (req, res) => {
 });
 
 
-// DELETE /api/users/:id - Delete a user
+// DELETE /api/users/:id - Delete a user cleanly
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
+  const userId = parseInt(id);
   
   // Prevent admin from deleting themselves
-  if (parseInt(id) === req.user.id) {
+  if (userId === req.user.id) {
     return res.status(400).json({ error: 'Bạn không thể tự xóa tài khoản của chính mình.' });
   }
 
+  const client = await pool.connect();
   try {
-    const userRes = await pool.query('SELECT * FROM users WHERE id=$1', [id]);
+    const userRes = await client.query('SELECT * FROM users WHERE id=$1', [userId]);
     if (userRes.rows.length === 0) {
+      client.release();
       return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
     }
 
-    await pool.query('DELETE FROM users WHERE id=$1', [id]);
+    await client.query('BEGIN');
+
+    // Unlink foreign keys pointing to this user before deleting
+    await client.query('UPDATE farms SET user_id = NULL WHERE user_id = $1', [userId]);
+    await client.query('UPDATE farms SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('UPDATE plants SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('UPDATE plant_schemas SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('UPDATE plant_logs SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM user_activities WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM supply_usages WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM supplies WHERE user_id = $1', [userId]);
+
+    // Finally delete the user
+    await client.query('DELETE FROM users WHERE id=$1', [userId]);
+
+    await client.query('COMMIT');
     res.json({ success: true, message: 'Đã xóa người dùng thành công.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Lỗi server khi xóa người dùng.' });
+    await client.query('ROLLBACK');
+    console.error('Delete user error:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa người dùng: ' + err.message });
+  } finally {
+    client.release();
   }
 });
+
 
 // GET /api/users/pending - List pending farmer registrations
 router.get('/pending', async (req, res) => {
