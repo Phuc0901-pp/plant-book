@@ -514,15 +514,27 @@ class _FarmerRegisterWizardDialogState extends State<_FarmerRegisterWizardDialog
                               setState(() => _errorMsg = 'Mật khẩu xác nhận không khớp');
                               return;
                             }
-                            setState(() {
-                              _errorMsg = null;
-                              _currentStep = 2;
+
+                            // Pre-check phone number existence on server
+                            setState(() => _isSubmitting = true);
+                            ApiService().checkPhoneExists(_phoneController.text.trim()).then((check) {
+                              if (!mounted) return;
+                              setState(() => _isSubmitting = false);
+                              if (check['exists'] == true) {
+                                setState(() => _errorMsg = check['message']);
+                              } else {
+                                setState(() {
+                                  _errorMsg = null;
+                                  _currentStep = 2;
+                                });
+                              }
                             });
                           } else if (_currentStep == 2) {
                             setState(() => _currentStep = 3);
                           } else {
                             _submitRegister();
                           }
+
                         },
                   child: _isSubmitting
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))

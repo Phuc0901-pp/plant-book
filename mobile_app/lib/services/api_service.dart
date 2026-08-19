@@ -65,7 +65,24 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> checkPhoneExists(String phone) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/check-phone?phone=${Uri.encodeComponent(phone)}'),
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'exists': data['exists'] == true,
+        'message': data['message'] ?? 'Số điện thoại khả dụng.'
+      };
+    } catch (e) {
+      return {'exists': false, 'message': ''};
+    }
+  }
+
   Future<Map<String, dynamic>> registerFarmerAccount(Map<String, dynamic> body) async {
+
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register'),

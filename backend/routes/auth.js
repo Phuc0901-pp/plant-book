@@ -186,7 +186,46 @@ router.post('/register', async (req, res) => {
 });
 
 
+// GET /api/auth/check-phone — Pre-check if phone number exists before registering
+router.get('/check-phone', async (req, res) => {
+
+  try {
+    const { phone } = req.query;
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: 'Số điện thoại là bắt buộc.' });
+    }
+    const cleanPhone = phone.trim();
+    const result = await pool.query(
+      'SELECT id, approved FROM users WHERE phone = $1 OR LOWER(email) = LOWER($2)',
+      [cleanPhone, `${cleanPhone}@farmer.tanbaocorp.vn`]
+    );
+
+    if (result.rows.length > 0) {
+      const u = result.rows[0];
+      if (u.approved === false) {
+        return res.json({
+          exists: true,
+          approved: false,
+          message: '⚠️ Số điện thoại này đã đăng ký và đang CHỜ ADMIN DUYỆT. Vui lòng không đăng ký lại!'
+        });
+      }
+      return res.json({
+        exists: true,
+        approved: true,
+        message: '⚠️ Số điện thoại này ĐÃ TỒN TẠI trên hệ thống. Vui lòng chuyển sang màn hình Đăng nhập!'
+      });
+    }
+
+    res.json({ exists: false, message: 'Số điện thoại hợp lệ.' });
+  } catch (err) {
+    console.error('Check phone error:', err);
+    res.status(500).json({ error: 'Lỗi server khi kiểm tra số điện thoại.' });
+  }
+});
+
+
 // POST /api/auth/logout
+
 router.post('/logout', require('../middleware/auth'), async (req, res) => {
   try {
     await pool.query(

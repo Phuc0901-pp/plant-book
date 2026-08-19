@@ -107,6 +107,14 @@ function handleRealtimeEvent(msg) {
       if (typeof loadFarmsList === 'function') loadFarmsList();
     }
   }
+
+  if (event === 'new_registration_pending') {
+    toast(`🔔 YÊU CẦU MỚI: Nông hộ ${data.name || data.phone} vừa gửi yêu cầu đăng ký tài khoản!`, 'warning');
+    if (typeof loadPendingFarmerUsers === 'function') {
+      loadPendingFarmerUsers();
+    }
+  }
+
 }
 
 // Visual flash notification on updated row

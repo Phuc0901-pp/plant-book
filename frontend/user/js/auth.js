@@ -266,9 +266,10 @@ function updateRegStepUI() {
   }
 }
 
-function nextRegStep() {
+async function nextRegStep() {
   const errEl = document.getElementById('reg-error');
   const errText = document.getElementById('reg-error-text');
+  const nextBtn = document.getElementById('reg-next-btn');
 
   if (currentRegStep === 1) {
     const phone = document.getElementById('reg-phone')?.value.trim();
@@ -291,10 +292,28 @@ function nextRegStep() {
       return;
     }
 
+    // Pre-check if phone exists on server
+    if (nextBtn) { nextBtn.innerHTML = '<span class="spinner"></span> Đang kiểm tra...'; nextBtn.disabled = true; }
+    try {
+      const checkRes = await fetch(`${API}/auth/check-phone?phone=${encodeURIComponent(phone)}`);
+      const checkData = await checkRes.json();
+
+      if (checkData.exists) {
+        if (errText) errText.textContent = checkData.message;
+        if (errEl) errEl.style.display = 'flex';
+        return;
+      }
+    } catch (e) {
+      console.warn('Check phone error:', e);
+    } finally {
+      if (nextBtn) { nextBtn.innerHTML = 'Tiếp theo <i class="fa fa-arrow-right"></i>'; nextBtn.disabled = false; }
+    }
+
     currentRegStep = 2;
     updateRegStepUI();
     return;
   }
+
 
   if (currentRegStep === 2) {
     currentRegStep = 3;
