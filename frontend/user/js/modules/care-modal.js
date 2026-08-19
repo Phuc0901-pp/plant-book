@@ -206,10 +206,12 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
         let html = '';
 
         if (totalPlantsCount === 0) {
-          const activeFarms = window._farmsCache || window._allFarmsCache || [];
-          const farm = activeFarms[0] || {};
+          const farm = typeof window.getActiveFarm === 'function' 
+            ? (window.getActiveFarm() || {}) 
+            : (window._allFarmsCache && window._allFarmsCache.length ? window._allFarmsCache[0] : {});
           const farmName = farm.name || 'Trang trại Nông hộ';
           const count = farm.plant_count || farm.total_plants || 0;
+
 
           html = `
             <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:16px; text-align:center; box-shadow:0 4px 12px rgba(5,150,105,0.08);">

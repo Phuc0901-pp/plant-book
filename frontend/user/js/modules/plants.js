@@ -28,9 +28,25 @@ export function getPlantsCache() {
 /** Cập nhật cache trang trại và nạp vào dropdown lọc */
 export function setFarmsCache(farms) {
   _farmsCache = farms;
+  window._allFarmsCache = farms;
   _populateFarmFilter(farms);
   renderUserFarmsGrid(farms);
 }
+
+/** Lấy danh sách trang trại từ cache */
+export function getFarmsCache() {
+  return _farmsCache;
+}
+
+/** Lấy trang trại đang được chọn/kích hoạt hiện tại */
+export function getActiveFarm() {
+  if (_activeFarmId && _farmsCache && _farmsCache.length) {
+    const found = _farmsCache.find(f => f.id == _activeFarmId);
+    if (found) return found;
+  }
+  return _farmsCache && _farmsCache.length > 0 ? _farmsCache[0] : null;
+}
+
 
 
 /** Nạp danh sách trang trại vào select #user-plant-filter-farm */
