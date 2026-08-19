@@ -117,6 +117,11 @@ router.put('/:id', async (req, res) => {
 
     await pool.query(query, params);
     
+    // Sync farm ownership if assigned farm has no primary owner
+    if (assignedFarmId) {
+      await pool.query('UPDATE farms SET user_id = $1 WHERE id = $2 AND user_id IS NULL', [id, assignedFarmId]);
+    }
+
     const updated = await pool.query(
       `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.created_at, f.name as farm_name
        FROM users u
@@ -124,6 +129,7 @@ router.put('/:id', async (req, res) => {
        WHERE u.id=$1`,
       [id]
     );
+
     res.json(updated.rows[0]);
   } catch (err) {
     console.error(err);

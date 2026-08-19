@@ -15,7 +15,7 @@ router.get('/', auth, async (req, res) => {
     `;
     const params = [];
     if (req.user.role !== 'admin') {
-      query += ` WHERE f.user_id = $1 `;
+      query += ` WHERE (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1)) `;
       params.push(req.user.id);
     }
     query += `
@@ -43,9 +43,13 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
     const farm = farmResult.rows[0];
-    if (req.user.role !== 'admin' && farm.user_id !== req.user.id) {
+    
+    // Check if user is farm owner, admin, or assigned farmer
+    const isAssigned = req.user.farm_id && farm.id === req.user.farm_id;
+    if (req.user.role !== 'admin' && farm.user_id !== req.user.id && !isAssigned) {
       return res.status(403).json({ error: 'Bạn không có quyền truy cập trang trại này.' });
     }
+
 
     const plantsResult = await pool.query(`
       SELECT id, plant_type, plant_variety, health_status, latitude, longitude, cover_image, is_public, public_slug, tree_code
