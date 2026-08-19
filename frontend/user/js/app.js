@@ -29,6 +29,85 @@ window.closeFarmDetailView = closeFarmDetailView;
 window.getActiveFarm = getActiveFarm;
 window.getFarmsCache = getFarmsCache;
 
+window.openFeatureDetailModal = function(type) {
+  const modal = document.getElementById('feature-detail-modal');
+  const titleEl = document.getElementById('feature-modal-title');
+  const imgEl = document.getElementById('feature-modal-img');
+  const contentEl = document.getElementById('feature-modal-body-content');
+  const headerEl = document.getElementById('feature-modal-header');
+
+  if (!modal) return;
+
+  if (type === 'gis') {
+    titleEl.innerHTML = '<i class="fa-solid fa-earth-asia" style="color:#6ee7b7"></i> Bản đồ GIS Vệ tinh & 3D Contour';
+    imgEl.src = 'img/gis_contour_map.jpg';
+    imgEl.style.objectFit = 'cover';
+    headerEl.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
+    contentEl.innerHTML = `
+      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Công nghệ Bản đồ GIS Vệ tinh & Đường đồng mức 3D</h4>
+      <p style="margin-bottom:12px; color:#475569;">
+        Tính năng này hỗ trợ số hóa toàn bộ diện tích trang trại với độ chính xác cao:
+      </p>
+      <ul style="margin:0 0 16px 0; padding-left:20px; color:#334155; line-height:1.7;">
+        <li><strong>Ranh giới thửa đất chuẩn xác:</strong> Vẽ ranh giới vườn, đo đạc diện tích (ha), chu vi và hiển thị chiều dài từng cạnh thực địa (AB, BC, CD...).</li>
+        <li><strong>Bản đồ đường đồng mức 3D (Contour):</strong> Phủ độ cao địa hình 3D giúp tính toán độ dốc, hướng thoát nước và quy hoạch khu vực trồng trọt.</li>
+        <li><strong>Định vị GPS thời gian thực:</strong> Định vị chính xác tọa độ lô vườn, liên kết trực tiếp với dữ liệu bản đồ vệ tinh Mapbox.</li>
+      </ul>
+      <div style="background:#f0fdf4; border-left:4px solid #059669; padding:10px 14px; font-size:13px; color:#166534; border-radius:0 8px 8px 0; font-weight:600;">
+        💡 Tính năng dành cho các trang trại cần vẽ ranh giới chính xác và thiết kế bản đồ địa hình 3D.
+      </div>
+    `;
+  } else if (type === 'nfc') {
+    titleEl.innerHTML = '<i class="fa-solid fa-rss" style="color:#93c5fd"></i> Thẻ Định danh NFC & Mã QR Cây';
+    imgEl.src = 'img/nfc_tag.png';
+    imgEl.style.objectFit = 'contain';
+    imgEl.style.background = '#f8fafc';
+    imgEl.style.padding = '16px';
+    headerEl.style.background = 'linear-gradient(135deg, #1e3a8a, #2563eb)';
+    contentEl.innerHTML = `
+      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Hệ thống Thẻ Định danh Chip NFC TANBAO AgTech & Mã QR</h4>
+      <p style="margin-bottom:12px; color:#475569;">
+        Thẻ chip NFC chống nước chống tia UV cao cấp kết hợp mã QR độc bản giúp làm bản đồ số hóa cho từng cây trồng:
+      </p>
+      <ul style="margin:0 0 16px 0; padding-left:20px; color:#334155; line-height:1.7;">
+        <li><strong>Bản đồ số hóa cây trồng:</strong> Thẻ định danh chip NFC và mã QR độc bản gắn cố định trên từng gốc cây.</li>
+        <li><strong>Ghi nhật ký 1 chạm:</strong> Chỉ cần áp điện thoại thông minh vào thẻ NFC để mở ngay nhật ký chăm sóc, bón phân, tưới nước hoặc bệnh cây thực địa.</li>
+        <li><strong>Truy xuất nguồn gốc VietGAP:</strong> Khách hàng scan mã QR để xem toàn bộ lịch sử canh tác minh bạch của trái cây.</li>
+      </ul>
+      <div style="background:#eff6ff; border-left:4px solid #2563eb; padding:10px 14px; font-size:13px; color:#1e40af; border-radius:0 8px 8px 0; font-weight:600;">
+        💡 Thẻ chip NFC cao cấp Tân Bảo AgTech sẵn sàng cung cấp và cài đặt tận nơi cho nông hộ.
+      </div>
+    `;
+  } else if (type === 'iot') {
+    titleEl.innerHTML = '<i class="fa-solid fa-microchip" style="color:#fde047"></i> Tích hợp Thiết bị IoT & Cảm biến Tự động';
+    imgEl.src = 'img/iot_sensors.jpg';
+    imgEl.style.objectFit = 'cover';
+    headerEl.style.background = 'linear-gradient(135deg, #78350f, #d97706)';
+    contentEl.innerHTML = `
+      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Nền sinh thái IoT & Trạm cảm biến Thông minh</h4>
+      <p style="margin-bottom:12px; color:#475569;">
+        Mô hình tích hợp dữ liệu cảm biến đa dạng tạo nên nền sinh thái nông nghiệp tự động hóa 100%:
+      </p>
+      <ul style="margin:0 0 16px 0; padding-left:20px; color:#334155; line-height:1.7;">
+        <li><strong>Cảm biến đất đa tầng (Soil NPK & Moisture):</strong> Tích hợp dữ liệu cảm biến đất đo liên tục độ ẩm, nhiệt độ, độ pH và dinh dưỡng NPK.</li>
+        <li><strong>Trạm thời tiết thông minh (Weather Station):</strong> Tích hợp cảm biến thời tiết đo lượng mưa, hướng gió, bức xạ mặt trời và nhiệt độ môi trường.</li>
+        <li><strong>Nền sinh thái đa dạng tự động:</strong> Tự động kích hoạt hệ thống tưới tiêu và điều khiển thiết bị theo thời gian thực, tiết kiệm 40% chi phí.</li>
+      </ul>
+      <div style="background:#fffbeb; border-left:4px solid #d97706; padding:10px 14px; font-size:13px; color:#92400e; border-radius:0 8px 8px 0; font-weight:600;">
+        💡 Tích hợp trọn gói phần cứng cảm biến và van điều khiển thông minh tận vườn.
+      </div>
+    `;
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.closeFeatureDetailModal = function() {
+  const modal = document.getElementById('feature-detail-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+
 
 
 

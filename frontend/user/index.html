@@ -935,50 +935,83 @@
 
         <!-- Sub-tab 1: TÍNH NĂNG NÂNG CAO -->
         <div id="wiki-subtab-advanced" style="display:block;">
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:20px;">
             
-            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
-              <div style="width:44px; height:44px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
-                <i class="fa-solid fa-earth-asia"></i>
+            <!-- Khối 1: Bản đồ GIS Vệ tinh & 3D Contour -->
+            <div onclick="openFeatureDetailModal('gis')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
+                <img src="img/gis_contour_map.jpg" alt="Bản đồ GIS Vệ tinh & 3D Contour" style="width:100%; height:100%; object-fit:cover;">
+                <span style="position:absolute; top:12px; left:12px; background:rgba(5,150,105,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-earth-asia"></i> Bản đồ GIS
+                </span>
               </div>
-              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Bản đồ GIS Vệ tinh & 3D Contour</h3>
-              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
-                Vẽ ranh giới thửa đất chuẩn xác, tính diện tích (ha), chu vi, đo đạc kích thước các cạnh (AB, BC...) và phủ đường đồng mức độ cao địa hình 3D.
-              </p>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-map-location-dot" style="color:#059669"></i> Bản đồ GIS Vệ tinh & 3D Contour
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
+                    Vẽ ranh giới vườn chuẩn xác và bản đồ đồng mức độ cao địa hình 3D, đo kích thước cạnh thực địa.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#059669; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
             </div>
 
-            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
-              <div style="width:44px; height:44px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
-                <i class="fa-solid fa-rss"></i>
+            <!-- Khối 2: Thẻ Định danh NFC & Mã QR Cây -->
+            <div onclick="openFeatureDetailModal('nfc')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:170px; background:#f8fafc; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; padding:10px;">
+                <img src="img/nfc_tag.png" alt="Thẻ Định danh NFC TANBAO AgTech" style="max-height:100%; object-fit:contain; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));">
+                <span style="position:absolute; top:12px; left:12px; background:rgba(37,99,235,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-rss"></i> NFC Chip
+                </span>
               </div>
-              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Thẻ Định danh NFC & Mã QR Cây</h3>
-              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
-                Chạm điện thoại vào thẻ chip NFC gắn trên từng cây trồng để mở ngay nhật ký chăm sóc, nguồn gốc giống và nhật ký bón phân/tưới nước thực địa.
-              </p>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-qrcode" style="color:#2563eb"></i> Thẻ Định danh NFC & Mã QR Cây
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
+                    Sử dụng thẻ chip NFC & QR Code độc bản để làm bản đồ số hóa từng cây trồng và tra cứu 1 chạm thực địa.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#2563eb; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
             </div>
 
-            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
-              <div style="width:44px; height:44px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
-                <i class="fa-solid fa-compass-drafting"></i>
+            <!-- Khối 3: Tích hợp Thiết bị IoT & Cảm biến Tự động -->
+            <div onclick="openFeatureDetailModal('iot')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
+                <img src="img/iot_sensors.jpg" alt="Tích hợp thiết bị IoT & Cảm biến" style="width:100%; height:100%; object-fit:cover;">
+                <span style="position:absolute; top:12px; left:12px; background:rgba(217,119,6,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-microchip"></i> IoT Smart Farm
+                </span>
               </div>
-              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Phủ Bản vẽ Quy hoạch CAD</h3>
-              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
-                Import bản vẽ thiết kế hệ thống tưới, giao thông nội bộ và phân lô quy hoạch (KML, GeoJSON, CAD) phủ trực tiếp lên bản đồ thực địa.
-              </p>
-            </div>
-
-            <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
-              <div style="width:44px; height:44px; border-radius:12px; background:#f3e8ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px;">
-                <i class="fa-solid fa-user-gear"></i>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-tower-cell" style="color:#d97706"></i> Tích hợp Thiết bị IoT & Cảm biến
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
+                    Mô hình tích hợp dữ liệu cảm biến đất và cảm biến thời tiết... tạo nên 1 nền sinh thái đa dạng tự động hóa.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#d97706; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
               </div>
-              <h3 style="font-size:15px; color:#0f172a; margin:0 0 8px 0; font-weight:800;">Phân quyền Cá nhân hóa Nông hộ</h3>
-              <p style="font-size:13px; color:#475569; line-height:1.5; margin:0;">
-                Cấu hình phạm vi xem cây trồng cá nhân phụ trách, kho khóa xem lịch sử theo mốc thời gian và giới hạn truy cập tồn kho vật tư trang trại.
-              </p>
             </div>
 
           </div>
         </div>
+
 
         <!-- Sub-tab 2: HƯỚNG DẪN SỬ DỤNG -->
         <div id="wiki-subtab-guide" style="display:none;">
@@ -1760,8 +1793,56 @@
   </div>
 </div>
 
+<!-- ════════════ MODAL CHI TIẾT TÍNH NĂNG NÂNG CAO ════════════ -->
+<div class="modal-overlay" id="feature-detail-modal" style="display:none" onclick="if(event.target===this)closeFeatureDetailModal()">
+  <div class="modal" style="max-width:580px; border-radius:18px; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.4);">
+    <div class="modal-header" id="feature-modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#ffffff;">
+      <h2 style="font-size:16.5px; margin:0; color:#ffffff; font-weight:800; display:flex; align-items:center; gap:10px;" id="feature-modal-title">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Chi tiết Tính năng Nâng cao
+      </h2>
+      <button class="modal-close" onclick="closeFeatureDetailModal()" style="color:#ffffff; opacity:0.9; font-size:24px;">×</button>
+    </div>
+
+    <div class="modal-body" style="padding:0; background:#ffffff; color:#0f172a; max-height:75vh; overflow-y:auto;">
+      <!-- Image header -->
+      <div style="width:100%; height:220px; background:#f8fafc; overflow:hidden; position:relative; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center;">
+        <img id="feature-modal-img" src="" alt="Minh họa tính năng" style="width:100%; height:100%; object-fit:cover;">
+      </div>
+
+      <div style="padding:22px;">
+        <div id="feature-modal-body-content" style="font-size:14px; color:#334155; line-height:1.6;">
+          <!-- Content inserted dynamically -->
+        </div>
+
+        <!-- Contact Box -->
+        <div style="margin-top:20px; background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:2px solid #a7f3d0; border-radius:16px; padding:18px; text-align:center; box-shadow:0 4px 14px rgba(5,150,105,0.1);">
+          <div style="font-size:12.5px; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+            <i class="fa-solid fa-headset"></i> TƯ VẤN & TÍCH HỢP TẬN VƯỜN
+          </div>
+          <div style="font-size:15px; font-weight:800; color:#047857; margin-bottom:12px;">
+            Liên hệ Kích hoạt Admin: <span style="color:#059669; text-decoration:underline;">0908904895 (Mr. Phúc)</span>
+          </div>
+          <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <a href="tel:0908904895" style="background:#059669; color:#ffffff; font-weight:800; font-size:13px; padding:10px 18px; border-radius:10px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(5,150,105,0.3);">
+              <i class="fa-solid fa-phone"></i> Gọi ngay: 0908 904 895
+            </a>
+            <a href="https://zalo.me/0908904895" target="_blank" rel="noopener noreferrer" style="background:#0284c7; color:#ffffff; font-weight:800; font-size:13px; padding:10px 18px; border-radius:10px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(2,132,199,0.3);">
+              <i class="fa-solid fa-comment"></i> Chat Zalo
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:flex-end; background:#f8fafc; border-top:1px solid #e2e8f0;">
+      <button class="btn btn-secondary" onclick="closeFeatureDetailModal()" style="padding:9px 20px; font-weight:700; border-radius:10px;">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <!-- Mobile Bottom Navigation Bar (Appears on Mobile screens) -->
 <nav class="mobile-bottom-nav">
+
   <div class="bottom-nav-item active" data-page="home" onclick="showPage('home')">
     <i class="fa fa-house"></i>
     <span>Trang chủ</span>
