@@ -4,6 +4,8 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { esc, healthBadge } from '../core/utils.js';
+import { api } from '../core/api.js';
+
 
 // ── State (chia sẻ với các module khác qua getter) ──────────
 let _plantsCache = [];
@@ -142,18 +144,11 @@ export async function submitSelfInitFarm() {
     const btn = document.getElementById('btn-submit-self-farm');
     if (btn) btn.disabled = true;
 
-    // Use fetch with JWT auth
-    const token = localStorage.getItem('plantbook_user_token');
-    const res = await fetch('/api/farms/self-init', {
+    // Use standard api helper which attaches correct pb_token automatically
+    const data = await api('/farms/self-init', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({ name, description: desc, latitude: lat, longitude: lng, area })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Lỗi khi khởi tạo trang trại');
 
     alert(data.message || 'Khởi tạo trang trại bằng GPS thành công!');
     closeSelfInitFarmModal();
@@ -170,6 +165,7 @@ export async function submitSelfInitFarm() {
     if (btn) btn.disabled = false;
   }
 }
+
 
 
 /**
