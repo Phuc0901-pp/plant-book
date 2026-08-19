@@ -246,11 +246,37 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         );
                       },
                     ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.greenDark.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(color: AppTheme.greenDark.withOpacity(0.2)),
+                            ),
+                            child: const Text(
+                              'v1.0.0',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.greenDark),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Sổ Nông Tân Bảo AgTech Admin © 2026',
+                            style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                   ],
 
                 ),
               ),
             ),
+
     );
   }
 

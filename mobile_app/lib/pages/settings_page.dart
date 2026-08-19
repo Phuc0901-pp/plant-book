@@ -259,11 +259,38 @@ class _SettingsPageState extends State<SettingsPage> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // 5. Version Info Footer Badge
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(color: AppTheme.green.withOpacity(0.3)),
+                        ),
+                        child: const Text(
+                          'v1.0.0',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.green),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Sổ Nông Tân Bảo AgTech © 2026',
+                        style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 32),
               ],
             ),
     );
   }
+
 
   Widget _sectionTitle(String title) {
     return Padding(
