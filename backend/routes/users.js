@@ -137,4 +137,51 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// GET /api/users/pending - List pending farmer registrations
+router.get('/pending', async (req, res) => {
+
+  try {
+    const result = await pool.query(
+      `SELECT id, email, full_name, phone, gender, dob, plant_type, plant_variety, plant_age, approved, created_at
+       FROM users
+       WHERE approved = false
+       ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Fetch pending users error:', err);
+    res.status(500).json({ error: 'Lỗi server khi lấy danh sách đăng ký chờ duyệt.' });
+  }
+});
+
+// PUT /api/users/:id/approve - Approve pending farmer account
+router.put('/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userRes = await pool.query('SELECT * FROM users WHERE id=$1', [id]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
+    }
+
+    await pool.query('UPDATE users SET approved = true, updated_at = NOW() WHERE id = $1', [id]);
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Phê duyệt tài khoản', 'Quản trị viên đã phê duyệt mở khóa tài khoản thành công.')`,
+      [id]
+    );
+
+    // Broadcast approval WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('user_approved', { id: parseInt(id), approved: true });
+    }
+
+    res.json({ success: true, message: 'Đã phê duyệt và kích hoạt tài khoản nông hộ thành công!' });
+  } catch (err) {
+    console.error('Approve user error:', err);
+    res.status(500).json({ error: 'Lỗi server khi phê duyệt tài khoản.' });
+  }
+});
+
 module.exports = router;
+

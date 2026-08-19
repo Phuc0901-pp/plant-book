@@ -20,23 +20,37 @@ const avatarUpload = multer({
   }
 });
 
-// POST /api/auth/login
+// POST /api/auth/login (Supports Email or Phone number + Approval check)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ error: 'Vui lòng nhập email và mật khẩu.' });
+      return res.status(400).json({ error: 'Vui lòng nhập Email/Số điện thoại và mật khẩu.' });
     }
 
-    const result = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
+    const trimmed = email.trim();
+    // Allow login by email OR phone number
+    const result = await pool.query(
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR phone = $1',
+      [trimmed]
+    );
+
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
+      return res.status(401).json({ error: 'Thông tin tài khoản hoặc mật khẩu không đúng.' });
     }
 
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
+      return res.status(401).json({ error: 'Thông tin tài khoản hoặc mật khẩu không đúng.' });
+    }
+
+    // Check account approval status
+    if (user.approved === false) {
+      return res.status(403).json({
+        error: 'Tài khoản của bạn đang chờ Quản trị viên phê duyệt. Chúng tôi sẽ mở khóa ngay khi duyệt xong!',
+        pending: true
+      });
     }
 
     const token = jwt.sign(
@@ -66,13 +80,111 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, name: user.full_name }
+      user: { id: user.id, email: user.email, role: user.role, name: user.full_name, phone: user.phone }
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });
+
+// POST /api/auth/register — 3-Step Farmer Registration (Pending Admin Approval)
+router.post('/register', async (req, res) => {
+  try {
+    const {
+      phone,
+      password,
+      full_name,
+      gender,
+      dob,
+      plant_type,
+      plant_variety,
+      plant_age
+    } = req.body;
+
+    if (!phone || !phone.trim() || !password || !password.trim()) {
+      return res.status(400).json({ error: 'Bước 1: Số điện thoại và mật khẩu là bắt buộc.' });
+    }
+
+    const cleanPhone = phone.trim();
+
+    // Check if phone already registered
+    const existing = await pool.query(
+      'SELECT id, approved FROM users WHERE phone = $1 OR LOWER(email) = LOWER($2)',
+      [cleanPhone, `${cleanPhone}@farmer.tanbaocorp.vn`]
+    );
+
+    if (existing.rows.length > 0) {
+      const existingUser = existing.rows[0];
+      if (existingUser.approved === false) {
+        return res.status(400).json({
+          error: 'Số điện thoại này đã đăng ký và đang chờ Admin duyệt. Vui lòng không đăng ký lại!'
+        });
+      }
+      return res.status(400).json({ error: 'Số điện thoại này đã được đăng ký tài khoản trên hệ thống.' });
+    }
+
+    const hash = await bcrypt.hash(password.trim(), 12);
+    const email = `${cleanPhone}@farmer.tanbaocorp.vn`;
+    const name = full_name && full_name.trim() ? full_name.trim() : `Nông hộ ${cleanPhone}`;
+
+    // Insert user with approved = false (pending Admin review)
+    const userRes = await pool.query(
+      `INSERT INTO users (email, password_hash, full_name, role, phone, gender, dob, plant_type, plant_variety, plant_age, approved)
+       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, false)
+       RETURNING id, email, full_name, phone, approved, created_at`,
+      [email, hash, name, cleanPhone, gender || null, dob || null, plant_type || null, plant_variety || null, plant_age || null]
+    );
+
+    const newUser = userRes.rows[0];
+
+    // Create default farm and initial plant for farmer if crop info provided
+    if (plant_type && plant_type.trim()) {
+      const farmRes = await pool.query(
+        `INSERT INTO farms (name, description, user_id, created_by)
+         VALUES ($1, $2, $3, $3) RETURNING id`,
+        [`Trang trại ${name}`, `Trang trại nông hộ ${name}`, newUser.id]
+      );
+      const farmId = farmRes.rows[0].id;
+      const slug = `${cleanPhone.slice(-4)}-${Date.now().toString(36)}`;
+
+      await pool.query(
+        `INSERT INTO plants (public_slug, plant_type, plant_variety, plant_age, farm_id, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [slug, plant_type.trim(), plant_variety || 'Giống địa phương', plant_age || '1', farmId, newUser.id]
+      );
+    }
+
+    // Log registration activity
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Đăng ký tài khoản', 'Khách hàng hoàn tất gửi yêu cầu đăng ký tài khoản nông hộ mới.')`,
+      [newUser.id]
+    );
+
+    // Broadcast new pending registration notification to all online Admins
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('new_registration_pending', {
+        id: newUser.id,
+        name: newUser.full_name,
+        phone: newUser.phone,
+        plant_type: plant_type || 'Chưa khai báo',
+        created_at: newUser.created_at
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Đăng ký thành công! Tài khoản của bạn đã được gửi tới Ban Quản trị. Admin sẽ xét duyệt và kích hoạt tài khoản cho bạn.',
+      user: newUser
+    });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Lỗi server khi đăng ký tài khoản: ' + err.message });
+  }
+});
+
 
 // POST /api/auth/logout
 router.post('/logout', require('../middleware/auth'), async (req, res) => {

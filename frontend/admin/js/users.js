@@ -408,10 +408,87 @@ async function approveResetRequestFromAdmin(token) {
   }
 }
 
-window.loadResetRequests = loadResetRequests;
-window.approveResetRequestFromAdmin = approveResetRequestFromAdmin;
+async function loadPendingFarmerUsers() {
+  const tbody = document.getElementById('pending-users-table');
+  const badge = document.getElementById('pending-users-count-badge');
+  if (!tbody) return;
 
-function closeUserActivityModal() {
-  const modal = document.getElementById('user-activity-modal');
-  if (modal) modal.style.display = 'none';
+  try {
+    const pendingUsers = await api('/users/pending');
+    const count = pendingUsers ? pendingUsers.length : 0;
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+
+    if (!pendingUsers || pendingUsers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa fa-check-circle" style="color:var(--green)"></i> Tất cả tài khoản nông hộ đã được phê duyệt.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = pendingUsers.map(u => {
+      const dateStr = new Date(u.created_at).toLocaleString('vi-VN');
+      const cropInfo = u.plant_type ? `${u.plant_type} (${u.plant_variety || 'Giống địa phương'} - ${u.plant_age || 1} năm)` : 'Chưa khai báo';
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(u.full_name)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(u.phone)}</span></td>
+          <td><span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">Chờ Admin duyệt</span></td>
+          <td>${escapeHtml(cropInfo)}</td>
+          <td>${u.gender || '—'} / ${u.dob || '—'}</td>
+          <td style="font-size:12px; color:var(--text-muted);">${dateStr}</td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-sm btn-primary" onclick="approveFarmerUser(${u.id})" style="background:var(--green); font-size:12px; padding:5px 12px;">
+                <i class="fa fa-check"></i> Phê duyệt & Mở khóa
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" style="font-size:12px; padding:5px 10px;">
+                <i class="fa fa-times"></i> Từ chối
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.warn('Lỗi tải danh sách chờ duyệt:', err);
+  }
 }
+
+async function approveFarmerUser(userId) {
+  if (!confirm('Bạn có chắc chắn muốn PHÊ DUYỆT và MỞ KHÓA tài khoản Nông hộ này?')) return;
+  try {
+    const res = await api(`/users/${userId}/approve`, { method: 'PUT' });
+    toast(res.message || 'Đã phê duyệt tài khoản nông hộ thành công!');
+    loadUsers();
+    loadPendingFarmerUsers();
+  } catch (e) {
+    toast('Lỗi khi phê duyệt: ' + e.message, 'error');
+  }
+}
+
+function switchUserTab(tab) {
+  const tabs = ['manage', 'pending', 'status', 'resets'];
+  tabs.forEach(t => {
+    const tabEl = document.getElementById(`user-tab-${t}`);
+    const paneEl = document.getElementById(`pane-user-${t}`);
+    if (tabEl) tabEl.classList.toggle('active', t === tab);
+    if (paneEl) paneEl.style.display = (t === tab ? 'block' : 'none');
+  });
+
+  if (tab === 'pending') loadPendingFarmerUsers();
+  if (tab === 'resets') loadResetRequests();
+}
+window.switchUserTab = switchUserTab;
+
+window.loadPendingFarmerUsers = loadPendingFarmerUsers;
+window.approveFarmerUser = approveFarmerUser;
+
+// Hook loadPendingFarmerUsers on loadUsers
+const originalLoadUsers = loadUsers;
+loadUsers = async function() {
+  await originalLoadUsers();
+  await loadPendingFarmerUsers();
+};
+
+

@@ -650,8 +650,35 @@
       <div class="page-section" id="page-users">
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="user-tab-manage" onclick="switchUserTab('manage')">Quản lý nông hộ</div>
+          <div class="tab" id="user-tab-pending" onclick="switchUserTab('pending')">⏳ Đăng ký chờ duyệt <span class="badge" id="pending-users-count-badge" style="display:none; background:#f59e0b; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span></div>
           <div class="tab" id="user-tab-status" onclick="switchUserTab('status')">Trạng thái hoạt động</div>
           <div class="tab" id="user-tab-resets" onclick="switchUserTab('resets')">🔑 Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span></div>
+        </div>
+
+        <!-- Pane: Pending Farmer Registrations -->
+        <div class="tab-pane" id="pane-user-pending" style="display:none;">
+          <div class="card">
+            <div class="card-header" style="background:#fffbeb; border-bottom:1px solid #fef3c7;">
+              <h3><i class="fa-solid fa-user-clock" style="color:#b45309"></i> Danh sách Nông hộ mới Đăng ký chờ Phê duyệt</h3>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Nông hộ / Số ĐT</th>
+                  <th>Trạng thái</th>
+                  <th>Cây trồng khai báo</th>
+                  <th>Giới tính / Ngày sinh</th>
+                  <th>Thời gian đăng ký</th>
+                  <th style="width:220px">Thao tác duyệt</th>
+                </tr>
+              </thead>
+              <tbody id="pending-users-table">
+                <tr>
+                  <td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách chờ duyệt...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Pane: Manage Users -->
@@ -684,6 +711,7 @@
             </table>
           </div>
         </div>
+
 
         <!-- Pane: Activity Status -->
         <div class="tab-pane" id="pane-user-status" style="display:none;">

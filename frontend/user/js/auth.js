@@ -186,10 +186,185 @@ window.addEventListener('load', async () => {
       return;
     }
 
-    setCurrentUser(me);
-    showApp();
-  } catch {
-    // Token hết hạn / không hợp lệ
-    logout();
+// ── 3-Step Farmer Registration Wizard ──────────────────────────
+let currentRegStep = 1;
+
+function openRegisterModal() {
+  currentRegStep = 1;
+  updateRegStepUI();
+  const modal = document.getElementById('register-modal');
+  const errEl = document.getElementById('reg-error');
+  if (errEl) errEl.style.display = 'none';
+
+  // Clear inputs
+  document.getElementById('reg-phone').value = '';
+  document.getElementById('reg-pass').value = '';
+  document.getElementById('reg-pass-confirm').value = '';
+  document.getElementById('reg-name').value = '';
+  document.getElementById('reg-dob').value = '';
+  document.getElementById('reg-plant-type').value = '';
+  document.getElementById('reg-plant-variety').value = '';
+  document.getElementById('reg-plant-age').value = '';
+
+  if (modal) modal.style.display = 'flex';
+}
+window.openRegisterModal = openRegisterModal;
+
+function closeRegisterModal() {
+  const modal = document.getElementById('register-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeRegisterModal = closeRegisterModal;
+
+function updateRegStepUI() {
+  const errEl = document.getElementById('reg-error');
+  if (errEl) errEl.style.display = 'none';
+
+  document.getElementById('reg-step-1').style.display = currentRegStep === 1 ? 'block' : 'none';
+  document.getElementById('reg-step-2').style.display = currentRegStep === 2 ? 'block' : 'none';
+  document.getElementById('reg-step-3').style.display = currentRegStep === 3 ? 'block' : 'none';
+
+  const titleEl = document.getElementById('reg-modal-title');
+  if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-user-plus" style="color:var(--green)"></i> Đăng ký tài khoản Nông hộ (Bước ${currentRegStep}/3)`;
+
+  // Dots
+  const dot1 = document.getElementById('step-dot-1');
+  const dot2 = document.getElementById('step-dot-2');
+  const dot3 = document.getElementById('step-dot-3');
+
+  if (dot1) {
+    dot1.style.background = currentRegStep >= 1 ? 'var(--green)' : '#e2e8f0';
+    dot1.style.color = currentRegStep >= 1 ? 'white' : '#64748b';
   }
-});
+  if (dot2) {
+    dot2.style.background = currentRegStep >= 2 ? 'var(--green)' : '#e2e8f0';
+    dot2.style.color = currentRegStep >= 2 ? 'white' : '#64748b';
+  }
+  if (dot3) {
+    dot3.style.background = currentRegStep >= 3 ? 'var(--green)' : '#e2e8f0';
+    dot3.style.color = currentRegStep >= 3 ? 'white' : '#64748b';
+  }
+
+  // Buttons
+  const prevBtn = document.getElementById('reg-prev-btn');
+  const nextBtn = document.getElementById('reg-next-btn');
+
+  if (prevBtn) prevBtn.style.display = currentRegStep > 1 ? 'inline-flex' : 'none';
+  if (nextBtn) {
+    nextBtn.innerHTML = currentRegStep === 3
+      ? '<i class="fa fa-paper-plane"></i> Gửi yêu cầu đăng ký'
+      : 'Tiếp theo <i class="fa fa-arrow-right"></i>';
+  }
+}
+
+function nextRegStep() {
+  const errEl = document.getElementById('reg-error');
+  const errText = document.getElementById('reg-error-text');
+
+  if (currentRegStep === 1) {
+    const phone = document.getElementById('reg-phone')?.value.trim();
+    const pass = document.getElementById('reg-pass')?.value;
+    const confirm = document.getElementById('reg-pass-confirm')?.value;
+
+    if (!phone) {
+      if (errText) errText.textContent = 'Vui lòng nhập số điện thoại đăng ký.';
+      if (errEl) errEl.style.display = 'flex';
+      return;
+    }
+    if (!pass || pass.length < 6) {
+      if (errText) errText.textContent = 'Mật khẩu phải chứa ít nhất 6 ký tự.';
+      if (errEl) errEl.style.display = 'flex';
+      return;
+    }
+    if (pass !== confirm) {
+      if (errText) errText.textContent = 'Mật khẩu xác nhận không khớp.';
+      if (errEl) errEl.style.display = 'flex';
+      return;
+    }
+
+    currentRegStep = 2;
+    updateRegStepUI();
+    return;
+  }
+
+  if (currentRegStep === 2) {
+    currentRegStep = 3;
+    // Populate review step
+    const phone = document.getElementById('reg-phone')?.value.trim();
+    const name = document.getElementById('reg-name')?.value.trim() || `Nông hộ ${phone}`;
+    const plantType = document.getElementById('reg-plant-type')?.value.trim() || 'Chưa khai báo';
+
+    document.getElementById('review-phone').textContent = phone;
+    document.getElementById('review-name').textContent = name;
+    document.getElementById('review-crop').textContent = plantType;
+
+    updateRegStepUI();
+    return;
+  }
+
+  if (currentRegStep === 3) {
+    submitRegister();
+  }
+}
+window.nextRegStep = nextRegStep;
+
+function prevRegStep() {
+  if (currentRegStep > 1) {
+    currentRegStep--;
+    updateRegStepUI();
+  }
+}
+window.prevRegStep = prevRegStep;
+
+async function submitRegister() {
+  const phone = document.getElementById('reg-phone')?.value.trim();
+  const password = document.getElementById('reg-pass')?.value;
+  const full_name = document.getElementById('reg-name')?.value.trim();
+  const gender = document.getElementById('reg-gender')?.value;
+  const dob = document.getElementById('reg-dob')?.value;
+  const plant_type = document.getElementById('reg-plant-type')?.value.trim();
+  const plant_variety = document.getElementById('reg-plant-variety')?.value.trim();
+  const plant_age = document.getElementById('reg-plant-age')?.value.trim();
+
+  const errEl = document.getElementById('reg-error');
+  const errText = document.getElementById('reg-error-text');
+  const nextBtn = document.getElementById('reg-next-btn');
+
+  if (errEl) errEl.style.display = 'none';
+  if (nextBtn) { nextBtn.innerHTML = '<span class="spinner"></span> Đang gửi đăng ký...'; nextBtn.disabled = true; }
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone,
+        password,
+        full_name,
+        gender,
+        dob,
+        plant_type,
+        plant_variety,
+        plant_age
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Đăng ký không thành công.');
+
+    alert(data.message);
+    closeRegisterModal();
+    // Fill login phone for fast login
+    const loginEmailInput = document.getElementById('login-email');
+    if (loginEmailInput) loginEmailInput.value = phone;
+
+  } catch (err) {
+    if (errEl) {
+      if (errText) errText.textContent = err.message;
+      errEl.style.display = 'flex';
+    }
+  } finally {
+    if (nextBtn) { nextBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Gửi yêu cầu đăng ký'; nextBtn.disabled = false; }
+  }
+}
+window.submitRegister = submitRegister;
+

@@ -65,6 +65,25 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> registerFarmerAccount(Map<String, dynamic> body) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {'success': true, 'message': data['message'] ?? 'Đăng ký thành công!'};
+      }
+      return {'success': false, 'message': data['error'] ?? 'Đăng ký thất bại.'};
+    } catch (e) {
+      return {'success': false, 'message': 'Không thể kết nối tới máy chủ: $e'};
+    }
+  }
+
+
   Future<void> logout() async {
     try {
       // Call backend logout endpoint to switch online flag offline

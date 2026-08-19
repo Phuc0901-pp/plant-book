@@ -169,7 +169,13 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT true;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS dob VARCHAR(50);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_type VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_variety VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS plant_age VARCHAR(100);
     `);
+
 
     // NFC Tag UID column for plants (physical tag serial, unique system-wide)
     await client.query(`
