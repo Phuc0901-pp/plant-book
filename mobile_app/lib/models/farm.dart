@@ -6,6 +6,9 @@ class Farm {
   final double? area;
   final int? userId;
   final int? plantCount;
+  final bool allowViewPlants;
+  final bool allowSharedHistory;
+  final bool allowSharedSupplies;
 
   Farm({
     required this.id,
@@ -15,6 +18,9 @@ class Farm {
     this.area,
     this.userId,
     this.plantCount,
+    this.allowViewPlants = true,
+    this.allowSharedHistory = true,
+    this.allowSharedSupplies = true,
   });
 
   factory Farm.fromJson(Map<String, dynamic> json) {
@@ -26,6 +32,9 @@ class Farm {
       area: json['area'] != null ? double.tryParse(json['area'].toString()) : null,
       userId: json['user_id'] as int?,
       plantCount: json['plant_count'] as int?,
+      allowViewPlants: json['allow_view_plants'] ?? true,
+      allowSharedHistory: json['allow_shared_history'] ?? true,
+      allowSharedSupplies: json['allow_shared_supplies'] ?? true,
     );
   }
 
@@ -38,6 +47,10 @@ class Farm {
       'area': area,
       'user_id': userId,
       'plant_count': plantCount,
+      'allow_view_plants': allowViewPlants,
+      'allow_shared_history': allowSharedHistory,
+      'allow_shared_supplies': allowSharedSupplies,
     };
   }
 }
+
