@@ -22,7 +22,78 @@
   <link rel="stylesheet" href="/admin/css/admin-components.css">
   <link rel="stylesheet" href="/admin/css/admin-dashboard.css">
   <link rel="stylesheet" href="/admin/css/admin-gis.css">
+<style>
+/* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
+#register-modal .modal, #forgot-modal .modal {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+#register-modal label, #forgot-modal label {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-bottom: 6px !important;
+}
+
+#register-modal input, #register-modal select, #register-modal textarea,
+#forgot-modal input, #forgot-modal textarea {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border: 2px solid #475569 !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  -webkit-text-fill-color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+#register-modal input::placeholder,
+#forgot-modal input::placeholder,
+#register-modal textarea::placeholder {
+  color: #64748b !important;
+  opacity: 0.8 !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+#register-modal input:focus, #register-modal select:focus, #register-modal textarea:focus,
+#forgot-modal input:focus, #forgot-modal textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #059669 !important;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.25) !important;
+  outline: none !important;
+}
+
+#register-modal .modal-header, #forgot-modal .modal-header {
+  background: linear-gradient(135deg, #064e3b, #047857) !important;
+  color: #ffffff !important;
+  padding: 16px 20px !important;
+}
+
+#register-modal .modal-header h2, #forgot-modal .modal-header h2 {
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+
+#register-modal .modal-close, #forgot-modal .modal-close {
+  color: #ffffff !important;
+  opacity: 0.9 !important;
+  font-size: 24px !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+</style>
 </head>
+
 <body>
 
 <!-- ════════════════ LOGIN ════════════════ -->
