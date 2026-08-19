@@ -102,18 +102,25 @@ router.get('/', auth, async (req, res) => {
 
 router.get('/logs/recent', auth, async (req, res) => {
   try {
-    const daysLimit = parseInt(req.query.days) || 3;
+    const daysLimit = parseInt(req.query.days) || 30;
     let query = `
-      SELECT pl.*, p.plant_type, p.plant_variety, p.tree_code, p.farm_id, f.name as farm_name, p.location as plant_location, u.full_name as creator_name
+      SELECT pl.*, 
+             COALESCE(p.plant_type, 'Toàn vườn') as plant_type, 
+             COALESCE(p.plant_variety, '') as plant_variety, 
+             COALESCE(p.tree_code, 'Toàn vườn') as tree_code, 
+             COALESCE(p.farm_id, (SELECT id FROM farms WHERE user_id = pl.created_by LIMIT 1)) as farm_id, 
+             COALESCE(f.name, (SELECT name FROM farms WHERE user_id = pl.created_by LIMIT 1), 'Trang trại Nông hộ') as farm_name, 
+             COALESCE(p.location, 'Toàn vườn') as plant_location, 
+             u.full_name as creator_name
       FROM plant_logs pl
-      JOIN plants p ON pl.plant_id = p.id
+      LEFT JOIN plants p ON pl.plant_id = p.id
       LEFT JOIN farms f ON f.id = p.farm_id
       LEFT JOIN users u ON pl.created_by = u.id
       WHERE pl.log_date >= CURRENT_DATE - $1::integer
     `;
     const params = [daysLimit];
     if (req.user.role !== 'admin') {
-      query += ` AND f.user_id = $2 `;
+      query += ` AND (pl.created_by = $2 OR f.user_id = $2 OR f.id = (SELECT farm_id FROM users WHERE id = $2)) `;
       params.push(req.user.id);
     }
     query += ` ORDER BY pl.log_date DESC, pl.id DESC `;
@@ -124,6 +131,7 @@ router.get('/logs/recent', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi tải nhật ký canh tác.' });
   }
 });
+
 
 router.get('/media/all', auth, async (req, res) => {
   try {

@@ -118,13 +118,14 @@ export function groupCareLogs(logs) {
     }
 
     let targetDisplay = '';
-    if (farmPlantsCount > 0 && plantIds.length >= farmPlantsCount) {
-      targetDisplay = `Toàn vườn${groupObj.farmName ? ' ' + groupObj.farmName : ''}`;
+    if (!log.plant_id || log.plant_id === 0 || (treeCodes[0] && String(treeCodes[0]).includes('Toàn vườn')) || (farmPlantsCount > 0 && plantIds.length >= farmPlantsCount)) {
+      targetDisplay = `Toàn vườn${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
     } else if (treeCodes.length > 1) {
       targetDisplay = `Cây #${treeCodes.join(', #')}${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
     } else {
       targetDisplay = `Cây #${treeCodes[0] || log.plant_id}${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
     }
+
 
     log.targetDisplay = targetDisplay;
     log.isGrouped = treeCodes.length > 1 || targetDisplay.startsWith('Toàn vườn');
