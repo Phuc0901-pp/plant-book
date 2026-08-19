@@ -230,7 +230,8 @@ async function loadPlant() {
     if (!res.ok) throw new Error(plant.error || 'Không tìm thấy hồ sơ cây trồng.');
 
     currentPlantData = plant;
-    document.title = `${plant.plant_type || 'Cây trồng'} — Plant Book | Tanbao Corp`;
+    document.title = `${plant.plant_type || 'Cây trồng'} — Sổ Nông Tân Bảo Agtech`;
+
     await renderPlant(plant);
   } catch (err) {
     document.getElementById('loader').style.display = 'none';

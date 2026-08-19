@@ -1,0 +1,56 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer Rounded Cute Circle Container -->
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#bgGrad)" filter="url(#softGlow)" />
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="none" stroke="#6ee7b7" stroke-width="8" stroke-opacity="0.4" />
+  
+  <!-- Cute Open Book Cover Base -->
+  <path d="M110 340 C170 310, 240 330, 256 340 C272 330, 342 310, 402 340 L402 190 C342 160, 272 180, 256 190 C240 180, 170 160, 110 190 Z" fill="#ffffff" filter="url(#softGlow)" />
+  <path d="M110 340 C170 310, 240 330, 256 340 L256 190 C240 180, 170 160, 110 190 Z" fill="#f8fafc" />
+  
+  <!-- Book Spine Center Divider -->
+  <line x1="256" y1="190" x2="256" y2="340" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" />
+  
+  <!-- Book Page Lines (Cute AgTech Notebook lines) -->
+  <path d="M140 230 C175 215, 215 225, 236 232" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round" opacity="0.4" />
+  <path d="M140 260 C175 245, 215 255, 236 262" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round" opacity="0.4" />
+  <path d="M140 290 C175 275, 215 285, 236 292" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round" opacity="0.4" />
+
+  <path d="M372 230 C337 215, 297 225, 276 232" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round" opacity="0.4" />
+  <path d="M372 260 C337 245, 297 255, 276 262" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round" opacity="0.4" />
+  <path d="M372 290 C337 275, 297 285, 276 292" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round" opacity="0.4" />
+
+  <!-- Sprouting Cute Plant / Leaf (Sprouting out of AgTech Notebook) -->
+  <!-- Main Stem -->
+  <path d="M256 220 C256 150, 220 110, 180 90" fill="none" stroke="#047857" stroke-width="14" stroke-linecap="round" />
+  
+  <!-- Right Leaf -->
+  <path d="M256 160 C310 130, 360 150, 370 190 C330 210, 270 190, 256 160 Z" fill="url(#leafGrad)" />
+  <path d="M256 160 C300 170, 340 180, 370 190" fill="none" stroke="#a7f3d0" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Left Sprout Leaf (Cute Small Leaf) -->
+  <path d="M220 120 C170 90, 130 120, 140 150 C180 160, 210 140, 220 120 Z" fill="url(#leafGrad)" />
+  <path d="M220 120 C180 135, 150 145, 140 150" fill="none" stroke="#a7f3d0" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Cute Golden AgTech Star Sparkle -->
+  <path d="M390 100 L396 114 L410 120 L396 126 L390 140 L384 126 L370 120 L384 114 Z" fill="url(#accentGrad)" opacity="0.9" />
+  <circle cx="130" cy="80" r="10" fill="#fbbf24" opacity="0.85" />
+</svg>
