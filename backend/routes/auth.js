@@ -140,26 +140,8 @@ router.post('/register', async (req, res) => {
 
     const newUser = userRes.rows[0];
 
-    // Create default farm and initial plant for farmer if crop info provided
-    if (plant_type && plant_type.trim()) {
-      const farmRes = await pool.query(
-        `INSERT INTO farms (name, description, area, user_id, created_by)
-         VALUES ($1, $2, $3, $4, $4) RETURNING id`,
-        [`Trang trại ${name}`, `Trang trại nông hộ ${name}`, parsedArea, newUser.id]
-      );
-      const farmId = farmRes.rows[0].id;
+    // Log registration activity
 
-      // Link newly created farm to user
-      await pool.query('UPDATE users SET farm_id = $1 WHERE id = $2', [farmId, newUser.id]);
-
-      const slug = `${cleanPhone.slice(-4)}-${Date.now().toString(36)}`;
-
-      await pool.query(
-        `INSERT INTO plants (public_slug, plant_type, plant_variety, plant_age, farm_id, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [slug, plant_type.trim(), plant_variety || 'Giống địa phương', plant_age || '1', farmId, newUser.id]
-      );
-    }
 
 
     // Log registration activity
