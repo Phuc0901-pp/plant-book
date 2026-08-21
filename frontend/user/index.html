@@ -723,23 +723,11 @@
               <i class="fa-solid fa-shield-virus"></i> Chỉ Cây bệnh
             </button>
           </div>
-          <div style="overflow-x: auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Thời gian</th>
-                  <th>Cây trồng</th>
-                  <th>Hoạt động</th>
-                  <th>Chi tiết / Ghi chú</th>
-                  <th>Người thực hiện</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="user-logs-table-full">
-                <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
-              </tbody>
-            </table>
+          <!-- Date-Grouped History Logs Container -->
+          <div id="user-logs-grouped-container" style="padding:16px; display:flex; flex-direction:column; gap:18px;">
+            <div class="empty-state" style="padding:40px; text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải nhật ký canh tác...</div>
           </div>
+
           <!-- Thanh điều hướng phân trang (10 bản ghi / trang) -->
           <div id="user-logs-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid #e2e8f0; background:#f8fafc; flex-wrap:wrap; gap:10px;">
           </div>
@@ -1393,27 +1381,11 @@
               <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử các đợt tiêu hao vật tư</h3>
               <button class="btn btn-secondary btn-sm" onclick="loadSupplyUsagesLog()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
             </div>
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Ngày tiêu hao</th>
-                    <th>Tên vật tư</th>
-                    <th>Hạng mục</th>
-                    <th>Trang trại / Cây</th>
-                    <th>Số lượng tiêu hao</th>
-                    <th>Đơn giá (VNĐ)</th>
-                    <th>Thành tiền (VNĐ)</th>
-                    <th style="width:100px; text-align:center;">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody id="supplies-usages-log-body">
-                  <tr>
-                    <td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải lịch sử...</td>
-                  </tr>
-                </tbody>
-              </table>
+            <!-- Date-Grouped Supplies Usage Container (Date -> Category -> Supply Name & Total Cost) -->
+            <div id="supplies-usages-grouped-container" style="padding:16px;">
+              <div class="empty-state" style="padding:40px; text-align:center;"><i class="fa fa-spinner fa-spin"></i> Đang tải lịch sử tiêu hao vật tư...</div>
             </div>
+
             <!-- Thanh điều hướng phân trang (10 đợt tiêu hao / trang) -->
             <div id="supplies-usages-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid #e2e8f0; background:#f8fafc; flex-wrap:wrap; gap:10px;">
             </div>

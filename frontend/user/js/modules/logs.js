@@ -334,19 +334,23 @@ export function changeLogPage(direction) {
 window.changeLogPage = changeLogPage;
 
 function _renderLogPage() {
-  const tbody = document.getElementById('user-logs-table-full');
+  const container = document.getElementById('user-logs-grouped-container');
   const paginationContainer = document.getElementById('user-logs-pagination');
-  if (!tbody) return;
+  if (!container) return;
 
   if (!_currentFilteredLogs || !_currentFilteredLogs.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không tìm thấy hoạt động nào được ghi nhận</p></td></tr>';
+    container.innerHTML = `
+      <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:14px; border:1px solid #e2e8f0; text-align:center;">
+        <i class="fa-solid fa-clipboard-list" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
+        <p style="font-size:14px; font-weight:700; color:#475569;">Không tìm thấy hoạt động canh tác nào được ghi nhận.</p>
+      </div>`;
     if (paginationContainer) paginationContainer.innerHTML = '';
     return;
   }
 
   const totalLogs = _currentFilteredLogs.length;
   const totalPages = Math.ceil(totalLogs / _logPageSize) || 1;
-  
+
   if (_currentLogPage < 1) _currentLogPage = 1;
   if (_currentLogPage > totalPages) _currentLogPage = totalPages;
 
@@ -354,7 +358,115 @@ function _renderLogPage() {
   const endIndex = Math.min(startIndex + _logPageSize, totalLogs);
   const pageLogs = _currentFilteredLogs.slice(startIndex, endIndex);
 
-  tbody.innerHTML = pageLogs.map(l => _logRow(l)).join('');
+  // Group pageLogs by Date
+  const groupedByDate = {};
+  pageLogs.forEach(item => {
+    const dObj = new Date(item.log_date || item.created_at);
+    const dateKey = !isNaN(dObj) ? dObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Khác / Chưa rõ ngày';
+    if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+    groupedByDate[dateKey].push(item);
+  });
+
+  let html = '';
+  Object.keys(groupedByDate).forEach(dateStr => {
+    const dayItems = groupedByDate[dateStr];
+
+    html += `
+      <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.03);">
+        <!-- Date Header Bar -->
+        <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px;">
+            <i class="fa-regular fa-calendar-days" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
+          </div>
+          <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:700; padding:3px 12px; border-radius:20px;">
+            ${dayItems.length} nhật ký hoạt động
+          </span>
+        </div>
+
+        <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
+    `;
+
+    dayItems.forEach(l => {
+      let detailsStr = esc(l.note || '');
+      if (l.details && Object.keys(l.details).length > 0) {
+        const parts = [];
+        if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
+        if (l.details.amount)          parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+        if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
+        if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
+        if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
+        if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
+        if (l.details.severity)        parts.push(`Mức độ: ${l.details.severity}`);
+        if (parts.length > 0) {
+          detailsStr = `[${parts.join(', ')}]` + (l.note ? ` - ${esc(l.note)}` : '');
+        }
+      }
+
+      const mediaHtml = l.log_type === 'Bệnh cây'
+        ? buildMediaThumbnailsHtml(l.media_urls, 36)
+        : '';
+
+      const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
+
+      if (l.isDiseaseLog || l.log_type === 'Bệnh cây') {
+        html += `
+          <div style="background:linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border:1px solid #fca5a5; border-left:5px solid #ef4444; border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:800; font-size:11px;">🐛 Bệnh cây</span>
+                <strong style="color:#dc2626; font-size:14px;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(targetDisplay)}</strong>
+              </div>
+              <div style="font-size:12.5px; color:#7f1d1d; margin-top:4px; font-weight:600;">${detailsStr}</div>
+              ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
+              <div style="font-size:11.5px; color:#991b1b; margin-top:4px;">
+                👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+              </div>
+            </div>
+
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})" style="border-color:#fca5a5; color:#dc2626;">
+                <i class="fa fa-pen"></i> Sửa
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id})">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span class="badge badge-green" style="font-size:11px; font-weight:700;">${esc(l.log_type)}</span>
+                <strong style="color:#0f172a; font-size:14px;">${esc(targetDisplay)}</strong>
+              </div>
+              ${detailsStr ? `<div style="font-size:12.5px; color:#475569; margin-top:4px;">${detailsStr}</div>` : ''}
+              <div style="font-size:11.5px; color:#64748b; margin-top:4px;">
+                👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+              </div>
+            </div>
+
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})">
+                <i class="fa fa-pen"></i> Sửa
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id})">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
 
   if (paginationContainer) {
     paginationContainer.innerHTML = `
@@ -368,6 +480,7 @@ function _renderLogPage() {
         <span style="font-size:13px; font-weight:700; color:#1e293b; padding:4px 10px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px;">
           ${_currentLogPage} / ${totalPages}
         </span>
+
         <button class="btn btn-secondary btn-sm" onclick="changeLogPage(1)" ${_currentLogPage === totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
           Trang sau <i class="fa-solid fa-chevron-right"></i>
         </button>
@@ -375,6 +488,7 @@ function _renderLogPage() {
     `;
   }
 }
+
 
 /**
  * Render toàn bộ nhật ký với phân trang 10 dòng/trang ở tab Lịch sử.

@@ -815,12 +815,16 @@ export function changeSupplyUsagePage(direction) {
 window.changeSupplyUsagePage = changeSupplyUsagePage;
 
 function renderSupplyUsagesPage() {
-  const tbody = document.getElementById('supplies-usages-log-body');
+  const container = document.getElementById('supplies-usages-grouped-container');
   const paginationContainer = document.getElementById('supplies-usages-pagination');
-  if (!tbody) return;
+  if (!container) return;
 
   if (!cachedUsageLogs || cachedUsageLogs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Chưa có đợt tiêu hao vật tư nào được ghi nhận.</td></tr>';
+    container.innerHTML = `
+      <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:14px; border:1px solid #e2e8f0; text-align:center;">
+        <i class="fa-solid fa-boxes-packing" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
+        <p style="font-size:14px; font-weight:700; color:#475569;">Chưa có đợt tiêu hao vật tư nào được ghi nhận.</p>
+      </div>`;
     if (paginationContainer) paginationContainer.innerHTML = '';
     return;
   }
@@ -835,27 +839,102 @@ function renderSupplyUsagesPage() {
   const endIndex = Math.min(startIndex + usageLogPageSize, totalLogs);
   const pageLogs = cachedUsageLogs.slice(startIndex, endIndex);
 
-  tbody.innerHTML = pageLogs.map(l => {
-    const dateStr = new Date(l.usage_date).toLocaleDateString('vi-VN');
-    return `
-      <tr>
-        <td><strong>${dateStr}</strong></td>
-        <td><strong>${l.supply_name}</strong></td>
-        <td>${getCategoryBadge(l.category)}</td>
-        <td>${
-          l.plant_id 
-            ? `Cây ${l.tree_code || '#' + l.plant_id} (${l.farm_name || ''})` 
-            : `Toàn vườn ${l.farm_name || ''}`
-        }</td>
-        <td><strong>${l.quantity}</strong> ${l.unit}</td>
-        <td>${formatVND(l.unit_price)}</td>
-        <td><strong style="color:var(--green-dark);">${formatVND(l.total_cost)}</strong></td>
-        <td style="text-align:center;">
-          <button class="btn btn-danger btn-sm" onclick="deleteSupplyUsage(${l.id})" title="Xóa đợt tiêu hao"><i class="fa fa-trash"></i></button>
-        </td>
-      </tr>
+  // Group pageLogs by Date
+  const groupedByDate = {};
+  pageLogs.forEach(item => {
+    const dObj = new Date(item.usage_date || item.created_at);
+    const dateKey = !isNaN(dObj) ? dObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Khác / Chưa rõ ngày';
+    if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+    groupedByDate[dateKey].push(item);
+  });
+
+  let html = '';
+  Object.keys(groupedByDate).forEach(dateStr => {
+    const dayItems = groupedByDate[dateStr];
+    const dayTotalCost = dayItems.reduce((s, i) => s + (parseFloat(i.total_cost || (i.quantity * i.unit_price)) || 0), 0);
+
+    // Group by Category within the Date
+    const groupedByCat = {};
+    dayItems.forEach(item => {
+      const cat = item.category || 'Vật tư khác';
+      if (!groupedByCat[cat]) groupedByCat[cat] = [];
+      groupedByCat[cat].push(item);
+    });
+
+    html += `
+      <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; margin-bottom:20px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.03);">
+        <!-- Date Header Bar -->
+        <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:14px; font-weight:800; display:flex; align-items:center; gap:8px;">
+            <i class="fa-regular fa-calendar-check" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <span class="badge" style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:11.5px; font-weight:700;">${dayItems.length} mục tiêu hao</span>
+            <span style="background:#059669; color:#ffffff; font-size:13px; font-weight:800; padding:4px 12px; border-radius:20px;">💰 ${formatVND(dayTotalCost)}</span>
+          </div>
+        </div>
+
+        <div style="padding:16px; display:flex; flex-direction:column; gap:14px;">
     `;
-  }).join('');
+
+    Object.keys(groupedByCat).forEach(catName => {
+      const catItems = groupedByCat[catName];
+      const catTotalCost = catItems.reduce((s, i) => s + (parseFloat(i.total_cost || (i.quantity * i.unit_price)) || 0), 0);
+
+      html += `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px;">
+          <!-- Category Header -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:6px; border-bottom:1px dashed #cbd5e1; flex-wrap:wrap; gap:8px;">
+            <div>${getCategoryBadge(catName)}</div>
+            <span style="font-size:12.5px; font-weight:800; color:#047857;">Tổng loại: ${formatVND(catTotalCost)}</span>
+          </div>
+
+          <!-- Items Rows -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+      `;
+
+      catItems.forEach(l => {
+        const cost = parseFloat(l.total_cost) || 0;
+        const targetStr = l.plant_id ? `Cây ${l.tree_code || '#' + l.plant_id} (${l.farm_name || ''})` : `Toàn vườn ${l.farm_name || ''}`;
+
+        html += `
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="font-size:13.5px; font-weight:800; color:#0f172a;">${esc(l.supply_name)}</div>
+              <div style="font-size:12px; color:#475569; margin-top:2px;">
+                Số lượng: <strong style="color:#047857;">${l.quantity} ${esc(l.unit)}</strong> · Đơn giá: <strong>${formatVND(l.unit_price)}</strong>
+              </div>
+              <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <span><i class="fa-solid fa-house-chimney" style="color:#059669;"></i> ${esc(targetStr)}</span>
+                ${l.note ? `<span><i class="fa-solid fa-note-sticky" style="color:#eab308;"></i> <em>${esc(l.note)}</em></span>` : ''}
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="font-size:14px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0;">
+                ${formatVND(cost)}
+              </div>
+              <button class="btn btn-danger btn-xs" onclick="deleteSupplyUsage(${l.id})" title="Xóa đợt tiêu hao" style="padding:6px 10px;">
+                <i class="fa fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
 
   if (paginationContainer) {
     paginationContainer.innerHTML = `
@@ -876,6 +955,7 @@ function renderSupplyUsagesPage() {
     `;
   }
 }
+
 
 export async function loadSupplyUsagesLog() {
   const tbody = document.getElementById('supplies-usages-log-body');
