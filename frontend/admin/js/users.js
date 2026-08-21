@@ -44,14 +44,35 @@ function renderUsersTable(users) {
       ? '<span class="badge badge-admin" style="background:#fef2f2; color:#b91c1c; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
       : '<span class="badge badge-user" style="background:#fff7ed; color:#ea580c; border: 1px solid #fdba74; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa fa-user"></i> Nông hộ</span>';
 
+    // Tier badge
+    let tierBadge = '';
+    if (u.account_tier === 'pro') {
+      if (u.tier_expires_at) {
+        const diffMs = new Date(u.tier_expires_at) - new Date();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          const isWarning = diffDays <= 7;
+          const bg = isWarning ? '#fffbeb' : '#ecfdf5';
+          const color = isWarning ? '#b45309' : '#047857';
+          const border = isWarning ? '#fde68a' : '#a7f3d0';
+          tierBadge = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (${diffDays}d)</span>`;
+        } else {
+          tierBadge = `<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> PRO (Hết hạn)</span>`;
+        }
+      } else {
+        tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (Vĩnh viễn)</span>`;
+      }
+    } else {
+      tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;">⚪ NORMAL</span>`;
+    }
+
     // Farm badge
     const farmBadge = u.farm_name
       ? `<span class="badge" style="background:#eff6ff; color:#2563eb; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-earth-asia"></i> ${escapeHtml(u.farm_name)}</span>`
       : '<span style="color:var(--gray-400); font-size:12px;">— Chưa gán —</span>';
 
     const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit'
+      year: 'numeric', month: '2-digit', day: '2-digit'
     }) : '—';
 
     // Actions
@@ -62,19 +83,25 @@ function renderUsersTable(users) {
     return `
       <tr data-user-id="${u.id}">
         <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(u.full_name)}${selfBadge}</td>
-        <td>${escapeHtml(u.email)}</td>
+        <td>${escapeHtml(u.phone || u.email)}</td>
         <td>${farmBadge}</td>
+        <td>${tierBadge}</td>
         <td>${roleBadge}</td>
         <td style="color: var(--text-muted); font-size: 13px;">${dateStr}</td>
         <td>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-secondary btn-sm" onclick="openUserModal(${u.id})"><i class="fa fa-pen"></i> Gán & Sửa</button>
+          <div style="display:flex; gap:4px; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openUserTierModal(${u.id})" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-weight:800;" title="Quản lý gói cước PRO">
+              <i class="fa-solid fa-crown" style="color:#059669"></i> Gói PRO
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="openUserModal(${u.id})"><i class="fa fa-pen"></i> Sửa</button>
             ${deleteBtn}
           </div>
         </td>
       </tr>
     `;
   }).join('');
+}
+
 }
 
 function filterUsers() {
@@ -570,6 +597,136 @@ async function approveFarmerUser(userId) {
   }
 }
 
+// ── Tier Management Modal Handlers ─────────────────────────────────
+function openUserTierModal(userId) {
+  const user = allUsers.find(u => u.id === userId);
+  if (!user) return;
+
+  document.getElementById('tier-edit-user-id').value = user.id;
+  document.getElementById('tier-edit-user-name').textContent = user.full_name || 'Nông hộ';
+  document.getElementById('tier-edit-user-email').textContent = user.phone || user.email || '';
+  document.getElementById('tier-admin-note').value = user.tier_admin_note || '';
+
+  const tier = user.account_tier || 'normal';
+  const rads = document.getElementsByName('opt-account-tier');
+  for (const r of rads) {
+    r.checked = (r.value === tier);
+  }
+  onTierOptionChange(tier);
+
+  const dateInput = document.getElementById('tier-expires-date');
+  const chkUnlimited = document.getElementById('chk-tier-unlimited');
+
+  if (user.tier_expires_at) {
+    const dStr = new Date(user.tier_expires_at).toISOString().slice(0, 10);
+    dateInput.value = dStr;
+    chkUnlimited.checked = false;
+    dateInput.disabled = false;
+  } else {
+    dateInput.value = '';
+    chkUnlimited.checked = true;
+    dateInput.disabled = true;
+  }
+
+  document.getElementById('modal-edit-user-tier').style.display = 'flex';
+}
+
+function closeUserTierModal() {
+  const modal = document.getElementById('modal-edit-user-tier');
+  if (modal) modal.style.display = 'none';
+}
+
+function onTierOptionChange(tier) {
+  const durSec = document.getElementById('pro-duration-section');
+  if (durSec) {
+    durSec.style.display = (tier === 'pro') ? 'block' : 'none';
+  }
+}
+
+function toggleUnlimitedTierDate(isUnlimited) {
+  const dateInput = document.getElementById('tier-expires-date');
+  if (!dateInput) return;
+  if (isUnlimited) {
+    dateInput.value = '';
+    dateInput.disabled = true;
+  } else {
+    dateInput.disabled = false;
+    if (!dateInput.value) {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      dateInput.value = d.toISOString().slice(0, 10);
+    }
+  }
+}
+
+function setQuickTierDuration(preset) {
+  const chkUnlimited = document.getElementById('chk-tier-unlimited');
+  const dateInput = document.getElementById('tier-expires-date');
+  if (!dateInput || !chkUnlimited) return;
+
+  if (preset === 'unlimited') {
+    chkUnlimited.checked = true;
+    dateInput.value = '';
+    dateInput.disabled = true;
+    return;
+  }
+
+  chkUnlimited.checked = false;
+  dateInput.disabled = false;
+
+  const now = new Date();
+  if (preset === '14days') {
+    now.setDate(now.getDate() + 14);
+  } else if (preset === '6months') {
+    now.setMonth(now.getMonth() + 6);
+  } else if (preset === '1year') {
+    now.setFullYear(now.getFullYear() + 1);
+  } else if (preset === '2years') {
+    now.setFullYear(now.getFullYear() + 2);
+  }
+  dateInput.value = now.toISOString().slice(0, 10);
+}
+
+async function submitUserTierUpdate() {
+  const userId = document.getElementById('tier-edit-user-id').value;
+  const rads = document.getElementsByName('opt-account-tier');
+  let selectedTier = 'normal';
+  for (const r of rads) {
+    if (r.checked) selectedTier = r.value;
+  }
+
+  const isUnlimited = document.getElementById('chk-tier-unlimited').checked;
+  const expiresDate = document.getElementById('tier-expires-date').value;
+  const adminNote = document.getElementById('tier-admin-note').value;
+
+  let tier_expires_at = null;
+  if (selectedTier === 'pro' && !isUnlimited && expiresDate) {
+    tier_expires_at = new Date(expiresDate).toISOString();
+  }
+
+  const btn = document.getElementById('btn-submit-user-tier');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang lưu...'; }
+
+  try {
+    await api(`/users/${userId}/tier`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        account_tier: selectedTier,
+        tier_expires_at,
+        tier_admin_note: adminNote
+      })
+    });
+    toast('Đã cập nhật gói cước tài khoản thành công!');
+    closeUserTierModal();
+    loadUsers();
+  } catch (err) {
+    toast('Lỗi cập nhật gói cước: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Kích Hoạt PRO'; }
+  }
+}
+
+
 function switchUserTab(tab) {
   const tabs = ['manage', 'pending', 'status', 'resets'];
   tabs.forEach(t => {
@@ -586,6 +743,12 @@ window.switchUserTab = switchUserTab;
 
 window.loadPendingFarmerUsers = loadPendingFarmerUsers;
 window.approveFarmerUser = approveFarmerUser;
+window.openUserTierModal = openUserTierModal;
+window.closeUserTierModal = closeUserTierModal;
+window.submitUserTierUpdate = submitUserTierUpdate;
+window.setQuickTierDuration = setQuickTierDuration;
+window.toggleUnlimitedTierDate = toggleUnlimitedTierDate;
+window.onTierOptionChange = onTierOptionChange;
 
 // Hook loadPendingFarmerUsers on loadUsers
 const originalLoadUsers = loadUsers;
@@ -593,5 +756,6 @@ loadUsers = async function() {
   await originalLoadUsers();
   await loadPendingFarmerUsers();
 };
+
 
 

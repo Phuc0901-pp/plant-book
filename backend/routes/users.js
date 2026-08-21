@@ -15,6 +15,7 @@ router.get('/', async (req, res) => {
     const result = await pool.query(
       `SELECT u.id, u.email, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at, u.phone,
               u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies,
+              u.account_tier, u.tier_expires_at, u.tier_admin_note,
               COALESCE(u.farm_id, f_legacy.id) as farm_id,
               COALESCE(f.name, f_legacy.name) as farm_name,
               COALESCE((
@@ -32,6 +33,46 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi lấy danh sách người dùng.' });
   }
 });
+
+// PUT /api/users/:id/tier - Update user account tier & custom expiration date (Admin only)
+router.put('/:id/tier', async (req, res) => {
+  try {
+    const { account_tier, tier_expires_at, tier_admin_note } = req.body;
+    const userId = req.params.id;
+
+    if (!['normal', 'pro'].includes(account_tier)) {
+      return res.status(400).json({ error: 'Gói cước không hợp lệ (Chỉ chấp nhận normal hoặc pro).' });
+    }
+
+    const expiresValue = account_tier === 'pro'
+      ? (tier_expires_at ? new Date(tier_expires_at).toISOString() : null)
+      : null;
+
+    const result = await pool.query(
+      `UPDATE users 
+       SET account_tier = $1, tier_expires_at = $2, tier_admin_note = $3 
+       WHERE id = $4 RETURNING id, email, full_name, role, account_tier, tier_expires_at, tier_admin_note`,
+      [account_tier, expiresValue, tier_admin_note || null, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
+    }
+
+    // Record admin activity log
+    await pool.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Cập nhật gói cước', $2)`,
+      [req.user.id, `Cập nhật gói cước cho Nông hộ #${userId} thành [${account_tier.toUpperCase()}] ${expiresValue ? '(Hạn: ' + expiresValue.slice(0, 10) + ')' : '(Vĩnh viễn)'}`]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating user tier:', err);
+    res.status(500).json({ error: 'Lỗi server khi cập nhật gói cước.' });
+  }
+});
+
 
 // GET /api/users/:id/activities - Get activity history of a specific user
 router.get('/:id/activities', async (req, res) => {

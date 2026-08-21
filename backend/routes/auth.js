@@ -54,12 +54,19 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, name: user.full_name },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        farm_id: user.farm_id,
+        account_tier: user.account_tier || 'normal',
+        tier_expires_at: user.tier_expires_at
+      },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: '30d' }
     );
 
-    // Update active status
+    // Update last_active_at and is_online
     await pool.query(
       'UPDATE users SET is_online = true, last_active_at = NOW() WHERE id = $1',
       [user.id]
@@ -80,7 +87,15 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, name: user.full_name, phone: user.phone }
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.full_name,
+        phone: user.phone,
+        account_tier: user.account_tier || 'normal',
+        tier_expires_at: user.tier_expires_at
+      }
     });
   } catch (err) {
     console.error(err);
@@ -240,7 +255,7 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, full_name, role, avatar_url, phone, city, country, gender, created_at FROM users WHERE id=$1',
+      'SELECT id, email, full_name, role, avatar_url, phone, city, country, gender, created_at, account_tier, tier_expires_at, tier_admin_note FROM users WHERE id=$1',
       [req.user.id]
     );
     res.json(result.rows[0]);
@@ -248,6 +263,7 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });
+
 
 // PUT /api/auth/me — Update personal profile
 router.put('/me', require('../middleware/auth'), async (req, res) => {

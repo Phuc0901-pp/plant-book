@@ -161,13 +161,29 @@ function showApp() {
   const nameEl  = document.getElementById('sb-user-name');
   const emailEl = document.getElementById('sb-user-email');
   if (nameEl)  nameEl.textContent  = user?.name || user?.full_name || '—';
-  if (emailEl) emailEl.textContent = user?.email || '—';
+  if (emailEl) emailEl.textContent = user?.phone || user?.email || '—';
+
+  const rolePill = document.getElementById('sb-role-pill');
+  if (rolePill) {
+    if (user?.account_tier === 'pro') {
+      rolePill.innerHTML = '<i class="fa-solid fa-crown" style="font-size:10px; color:#fde047"></i> Nông hộ PRO';
+      rolePill.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
+      rolePill.style.color = '#ffffff';
+      rolePill.style.border = '1px solid #059669';
+    } else {
+      rolePill.innerHTML = '<i class="fa fa-user" style="font-size:9px"></i> Nông hộ NORMAL';
+      rolePill.style.background = '#f1f5f9';
+      rolePill.style.color = '#475569';
+      rolePill.style.border = '1px solid #cbd5e1';
+    }
+  }
 
   // Cập nhật thông tin ở tab Cài đặt
   const settingNameEl  = document.getElementById('setting-user-name');
   const settingEmailEl = document.getElementById('setting-user-email');
   if (settingNameEl)  settingNameEl.textContent  = user?.full_name || user?.name || '—';
-  if (settingEmailEl) settingEmailEl.textContent = user?.email || '—';
+  if (settingEmailEl) settingEmailEl.textContent = user?.phone || user?.email || '—';
+
 
   showPage('home');
   connectWebSocket();

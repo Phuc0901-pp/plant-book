@@ -3,6 +3,8 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const checkTier = require('../middleware/checkTier');
+
 const multer = require('multer');
 const { uploadFile, deleteFile } = require('../config/supabase');
 const { v4: uuidv4 } = require('uuid');

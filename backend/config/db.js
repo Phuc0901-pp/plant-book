@@ -18,9 +18,17 @@ const pool = process.env.DATABASE_URL
       password: process.env.DB_PASSWORD,
     });
 
-pool.on('connect', () => {
+pool.on('connect', (client) => {
   console.log('✅ Connected to PostgreSQL');
+  // Auto-migration for tier management fields
+  client.query(`
+    ALTER TABLE users 
+    ADD COLUMN IF NOT EXISTS account_tier VARCHAR(20) DEFAULT 'normal',
+    ADD COLUMN IF NOT EXISTS tier_expires_at TIMESTAMPTZ NULL,
+    ADD COLUMN IF NOT EXISTS tier_admin_note TEXT NULL;
+  `).catch(err => console.error('Migration tier columns error:', err.message));
 });
+
 
 pool.on('error', (err) => {
   console.error('❌ PostgreSQL error:', err);
