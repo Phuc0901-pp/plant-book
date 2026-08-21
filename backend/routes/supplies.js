@@ -8,7 +8,7 @@ const auth = require('../middleware/auth');
 // GET /api/supplies — Lấy danh sách vật tư khai báo (kèm hỗ trợ phân quyền dùng chung vật tư trang trại)
 router.get('/', auth, async (req, res) => {
   try {
-    const { category, search, user_id } = req.query;
+    const { category, search, user_id, farm_id } = req.query;
     
     let query = `
       SELECT s.*, 
@@ -24,12 +24,18 @@ router.get('/', auth, async (req, res) => {
     let idx = 1;
 
     if (req.user.role === 'admin') {
-      if (user_id) {
+
+      if (farm_id) {
+        query += ` AND (s.user_id = (SELECT user_id FROM farms WHERE id = $${idx}) OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $${idx}))`;
+        params.push(parseInt(farm_id));
+        idx++;
+      } else if (user_id) {
         query += ` AND s.user_id = $${idx}`;
         params.push(parseInt(user_id));
         idx++;
       }
     } else {
+
       // Non-admin farmer
       if (req.user.farm_id && req.user.allow_view_supplies !== false) {
         // Check if shared supplies is enabled for this farm

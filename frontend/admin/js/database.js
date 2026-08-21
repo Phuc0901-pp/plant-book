@@ -14,25 +14,38 @@ async function initDatabasePage() {
     dbFarmsCache = await api('/farms') || [];
     dbPlantsCache = await api('/plants') || [];
 
-    // Populate User filter
+    const normalUsers = dbUsersCache.filter(u => u.role === 'user');
+
+    // Populate Tab 1 Filters
     const uSelect = document.getElementById('db-filter-user');
     if (uSelect) {
       uSelect.innerHTML = '<option value="">— tất cả khách hàng —</option>' +
-        dbUsersCache.filter(u => u.role === 'user').map(u => `<option value="${u.id}">👤 ${esc(u.full_name)} (${esc(u.phone || u.email)})</option>`).join('');
+        normalUsers.map(u => `<option value="${u.id}">👤 ${esc(u.full_name)} (${esc(u.phone || u.email)})</option>`).join('');
     }
 
-    // Populate Farm filter
     const fSelect = document.getElementById('db-filter-farm');
     if (fSelect) {
       fSelect.innerHTML = '<option value="">— tất cả trang trại —</option>' +
         dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
     }
 
-    // Populate Plant filter
     const pSelect = document.getElementById('db-filter-plant');
     if (pSelect) {
       pSelect.innerHTML = '<option value="">— Chọn Cây trồng để xem Nhật ký Canh tác —</option>' +
         dbPlantsCache.map(p => `<option value="${p.id}">🌳 Cây #${p.tree_code || p.id} (${esc(p.plant_type)})</option>`).join('');
+    }
+
+    // Populate Tab 2 Supplies Filters
+    const suUserSelect = document.getElementById('db-supply-filter-user');
+    if (suUserSelect) {
+      suUserSelect.innerHTML = '<option value="">— Tất cả Khách hàng —</option>' +
+        normalUsers.map(u => `<option value="${u.id}">👤 ${esc(u.full_name)} (${esc(u.phone || u.email)})</option>`).join('');
+    }
+
+    const suFarmSelect = document.getElementById('db-supply-filter-farm');
+    if (suFarmSelect) {
+      suFarmSelect.innerHTML = '<option value="">— Tất cả Trang trại —</option>' +
+        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
     }
 
     switchDatabaseTab('cultivation');
@@ -94,6 +107,26 @@ function onDbFilterChange() {
   loadPlantCultivationTimeline();
 }
 
+function onSupplyFilterChange() {
+  const userId = document.getElementById('db-supply-filter-user')?.value;
+  const farmSelect = document.getElementById('db-supply-filter-farm');
+
+  let filteredFarms = dbFarmsCache;
+  if (userId) {
+    filteredFarms = dbFarmsCache.filter(f => f.user_id == userId);
+    if (farmSelect && farmSelect.value && !filteredFarms.some(f => f.id == farmSelect.value)) {
+      farmSelect.value = '';
+    }
+  }
+
+  if (farmSelect) {
+    farmSelect.innerHTML = '<option value="">— Tất cả Trang trại —</option>' +
+      filteredFarms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+  }
+
+  loadSuppliesTab();
+}
+
 async function loadPlantCultivationTimeline() {
   const plantId = document.getElementById('db-filter-plant')?.value;
   const summaryBox = document.getElementById('db-plant-cost-summary');
@@ -121,7 +154,6 @@ async function loadPlantCultivationTimeline() {
     // Calculate Costs Breakdown
     let totalConsumableCost = 0; // Phân bón, Thuốc
     let totalFixedCost = 0;      // Tưới nước, Tỉa cành, Thuế/Nhân công
-    let totalHarvestValue = 0;  // Giá trị thu hoạch
 
     logs.forEach(l => {
       let details = {};
@@ -148,13 +180,13 @@ async function loadPlantCultivationTimeline() {
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
           <div>
             <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.85;">
-              🌳 HỒ SƠ TỔNG TỔNG DỮ LIỆU CANH TÁC & CHI PHÍ ĐẦU TƯ CÂY #${esc(plant.tree_code || plant.id)}
+              🌳 HỒ SƠ TỔNG DỮ LIỆU CANH TÁC & CHI PHÍ ĐẦU TƯ CÂY #${esc(plant.tree_code || plant.id)}
             </div>
             <div style="font-size:22px; font-weight:800; margin-top:4px;">
               ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''} · Trang trại: ${esc(plant.farm_name || 'Vườn Nông hộ')}
             </div>
             <div style="font-size:13px; opacity:0.9; margin-top:2px;">
-              Tình trạng: <strong>${esc(plant.health_status)}</strong> · Tuổi cây: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong> · Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong>
+              Khách hàng: <strong>${esc(plant.owner_name || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status)}</strong> · Tuổi cây: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong>
             </div>
           </div>
 
@@ -199,7 +231,7 @@ async function loadPlantCultivationTimeline() {
           <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; color:#064e3b;">
             <div style="font-size:12px; font-weight:800; text-transform:uppercase; color:#047857;">🌱 KHỞI TẠO CÂY TRỒNG TRÊN ỨNG DỤNG</div>
             <div style="font-size:13.5px; font-weight:700; margin-top:2px;">Ngày đăng ký: ${fmtDate(plant.created_at)}</div>
-            <div style="font-size:12.5px; color:#166534; margin-top:4px;">Cây #${esc(plant.tree_code || plant.id)} (${esc(plant.plant_type)}) được khởi tạo dữ liệu canh tác vĩnh viễn.</div>
+            <div style="font-size:12.5px; color:#166534; margin-top:4px;">Cây #${esc(plant.tree_code || plant.id)} (${esc(plant.plant_type)}) khởi tạo dữ liệu canh tác vĩnh viễn trên hệ thống Tanbao AgTech.</div>
           </div>
         </div>
     `;
@@ -224,25 +256,51 @@ async function loadPlantCultivationTimeline() {
       } catch (e) { details = {}; }
 
       // Supplies info (Phân bón / Thuốc)
-      const supplyName = details.supply_name || details.product_name || '';
-      const supplyImg = details.supply_image || details.product_image || '';
-      const quantity = details.quantity || details.dosage || '';
-      const unit = details.unit || '';
+      const supplyName = details.supply_name || details.product_name || details.fertilizer_name || details.pesticide_name || '';
+      const supplyImg = details.supply_image || details.product_image || details.image_url || '';
+      const quantity = details.quantity || details.dosage || details.amount || '';
+      const unit = details.unit || details.dosage_unit || '';
+      const method = details.method || details.water_method || '';
+      const reason = details.reason || '';
       const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
 
-      // Render Supply Thumbnail & Details if applicable
+      // Parse attached log media photos
+      let logMediaList = [];
+      if (l.media_urls) {
+        try {
+          const raw = typeof l.media_urls === 'string' ? JSON.parse(l.media_urls) : l.media_urls;
+          if (Array.isArray(raw)) logMediaList = raw;
+        } catch(e) {}
+      }
+
+      // Render Supply Box if applicable
       let supplyBoxHtml = '';
-      if (supplyName || cost > 0 || quantity) {
+      if (supplyName || cost > 0 || quantity || method || reason) {
         supplyBoxHtml = `
           <div style="margin-top:10px; background:#ffffff; border:1px solid ${cfg.border}; border-radius:10px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:10px;">
-              ${supplyImg ? `<img src="${esc(supplyImg)}" alt="${esc(supplyName)}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">` : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i class="fa-solid ${cfg.icon}"></i></div>`}
+              ${supplyImg ? `<img src="${esc(supplyImg)}" alt="${esc(supplyName)}" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">` : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i class="fa-solid ${cfg.icon}"></i></div>`}
               <div>
                 <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(supplyName || l.log_type)}</div>
-                ${quantity ? `<div style="font-size:11.5px; color:#64748b; font-weight:600;">Liều lượng / Sử dụng: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
+                ${quantity ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Liều lượng / Số lượng: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
+                ${method ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Phương thức: <strong>${esc(method)}</strong></div>` : ''}
+                ${reason ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mục đích / Lý do: <strong>${esc(reason)}</strong></div>` : ''}
               </div>
             </div>
-            ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:4px 10px; border-radius:8px; border:1px solid #a7f3d0;"><i class="fa-solid fa-coins"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
+            ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0;"><i class="fa-solid fa-coins"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
+          </div>
+        `;
+      }
+
+      // Render Attached Photos/Videos
+      let attachedMediaHtml = '';
+      if (logMediaList.length > 0) {
+        attachedMediaHtml = `
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            ${logMediaList.map(m => {
+              const url = typeof m === 'string' ? m : m.url;
+              return `<img src="${esc(url)}" alt="Hình ảnh nhật ký" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="window.open('${esc(url)}')">`;
+            }).join('')}
           </div>
         `;
       }
@@ -261,14 +319,13 @@ async function loadPlantCultivationTimeline() {
                 </span>
                 <span style="font-size:12px; font-weight:700; color:#64748b;"><i class="fa-regular fa-clock"></i> ${fmtDate(l.log_date)}</span>
               </div>
-              ${l.creator_name ? `<small style="color:#94a3b8; font-weight:600;"><i class="fa fa-user"></i> ${esc(l.creator_name)}</small>` : ''}
+              ${l.creator_name ? `<small style="color:#64748b; font-weight:700; background:#f1f5f9; padding:2px 8px; border-radius:6px;"><i class="fa fa-user"></i> ${esc(l.creator_name)}</small>` : ''}
             </div>
 
-            <div style="font-size:13.5px; color:#1e293b; margin-top:8px; line-height:1.5; font-weight:500;">
-              ${esc(l.note || 'Không có ghi chú thêm.')}
-            </div>
+            ${l.note ? `<div style="font-size:13.5px; color:#1e293b; margin-top:8px; line-height:1.5; font-weight:500;">${esc(l.note)}</div>` : ''}
 
             ${supplyBoxHtml}
+            ${attachedMediaHtml}
           </div>
         </div>
       `;
@@ -289,10 +346,17 @@ async function loadSuppliesTab() {
   const tbody = document.getElementById('supplies-table-body');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh mục vật tư...</td></tr>';
+  const userId = document.getElementById('db-supply-filter-user')?.value;
+  const farmId = document.getElementById('db-supply-filter-farm')?.value;
+
+  const queryParams = new URLSearchParams();
+  if (userId) queryParams.set('user_id', userId);
+  if (farmId) queryParams.set('farm_id', farmId);
+
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải kho vật tư...</td></tr>';
 
   try {
-    const supplies = await api('/supplies') || [];
+    const supplies = await api(`/supplies?${queryParams.toString()}`) || [];
     allSuppliesCache = supplies;
     renderSuppliesTable(supplies);
   } catch (err) {
@@ -305,7 +369,7 @@ function renderSuppliesTable(supplies) {
   if (!tbody) return;
 
   if (supplies.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Kho vật tư hiện chưa có sản phẩm nào.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Kho vật tư hiện chưa có sản phẩm nào theo bộ lọc đã chọn.</td></tr>';
     return;
   }
 
@@ -315,10 +379,10 @@ function renderSuppliesTable(supplies) {
         ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">` : `<div style="width:44px; height:44px; border-radius:8px; background:#f1f5f9; color:#94a3b8; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-box"></i></div>`}
       </td>
       <td style="font-weight:700; color:#0f172a;">${esc(s.name)}</td>
-      <td><span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700; padding:4px 8px; border-radius:6px;">${esc(s.type || 'Vật tư')}</span></td>
-      <td style="font-weight:700; color:#047857;">${s.quantity || 0} ${esc(s.unit || '')}</td>
-      <td style="font-weight:800; color:#059669;">${s.unit_price ? parseFloat(s.unit_price).toLocaleString('vi-VN') + ' đ' : '—'}</td>
-      <td style="font-size:12px; color:#64748b;">${esc(s.supplier || s.note || '—')}</td>
+      <td><span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700; padding:4px 8px; border-radius:6px;">${esc(s.category || s.type || 'Vật tư')}</span></td>
+      <td style="font-weight:700; color:#047857;">${s.stock_quantity || s.quantity || 0} ${esc(s.unit || '')}</td>
+      <td style="font-weight:800; color:#059669;">${s.unit_price ? parseFloat(s.unit_price).toLocaleString('vi-VN') + ' đ' : (s.package_price ? parseFloat(s.package_price).toLocaleString('vi-VN') + ' đ' : '—')}</td>
+      <td style="font-size:12px; color:#64748b;">${esc(s.creator_name || s.supplier || s.note || 'Nông hộ')}</td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editSupply(${s.id})"><i class="fa fa-pen"></i> Sửa</button>
       </td>
@@ -334,8 +398,8 @@ function filterSupplies() {
   }
   const filtered = allSuppliesCache.filter(s =>
     (s.name || '').toLowerCase().includes(q) ||
-    (s.type || '').toLowerCase().includes(q) ||
-    (s.supplier || '').toLowerCase().includes(q)
+    (s.category || s.type || '').toLowerCase().includes(q) ||
+    (s.creator_name || s.supplier || '').toLowerCase().includes(q)
   );
   renderSuppliesTable(filtered);
 }
@@ -343,6 +407,7 @@ function filterSupplies() {
 window.initDatabasePage = initDatabasePage;
 window.switchDatabaseTab = switchDatabaseTab;
 window.onDbFilterChange = onDbFilterChange;
+window.onSupplyFilterChange = onSupplyFilterChange;
 window.loadPlantCultivationTimeline = loadPlantCultivationTimeline;
 window.loadSuppliesTab = loadSuppliesTab;
 window.filterSupplies = filterSupplies;
