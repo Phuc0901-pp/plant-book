@@ -102,7 +102,7 @@ function switchDatabaseTab(tab) {
   activeDbTab = tab;
 
   // Update tabs active state
-  ['cultivation', 'supplies', 'media'].forEach(t => {
+  ['cultivation', 'supplies', 'media', 'history'].forEach(t => {
     const tabEl = document.getElementById(`db-tab-${t}`);
     const paneEl = document.getElementById(`db-pane-${t}`);
     if (tabEl) tabEl.classList.toggle('active', t === tab);
@@ -113,8 +113,11 @@ function switchDatabaseTab(tab) {
     initGlobalMediaLibrary();
   } else if (tab === 'supplies') {
     loadSuppliesTab();
+  } else if (tab === 'history') {
+    loadHistoryTab();
   }
 }
+
 
 function setSupplyGroupMode(mode) {
   supplyGroupMode = mode;
@@ -783,6 +786,141 @@ async function saveSupplySubmit() {
   }
 }
 
+// ── Tab 4: Audit History (Lịch sử biến động dữ liệu bị sửa/xóa) ──
+let allHistoryCache = [];
+
+async function loadHistoryTab() {
+  const tbody = document.getElementById('db-history-table-body');
+  if (!tbody) return;
+
+  const actionType = document.getElementById('db-history-filter-action')?.value || '';
+  const targetType = document.getElementById('db-history-filter-target')?.value || '';
+  const search = document.getElementById('db-history-search')?.value?.trim() || '';
+
+  const params = new URLSearchParams();
+  if (actionType) params.set('action_type', actionType);
+  if (targetType) params.set('target_type', targetType);
+  if (search) params.set('search', search);
+
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký lịch sử dữ liệu...</td></tr>';
+
+  try {
+    const historyList = await api(`/history?${params.toString()}`) || [];
+    allHistoryCache = historyList;
+    renderHistoryTable(historyList);
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+  }
+}
+
+function renderHistoryTable(list) {
+  const tbody = document.getElementById('db-history-table-body');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có dữ liệu biến động (sửa/xóa) nào được ghi nhận.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(h => {
+    const isDelete = h.action_type === 'DELETE';
+    const actionBadge = isDelete
+      ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-weight:800; padding:4px 10px; border-radius:20px;"><i class="fa-solid fa-trash-can"></i> Xóa dữ liệu</span>`
+      : `<span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px;"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa</span>`;
+
+    const targetBadge = `<span class="badge" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-weight:700; padding:4px 10px; border-radius:8px;">${esc(h.target_type)}</span>`;
+
+    const dateStr = h.created_at ? new Date(h.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+    return `
+      <tr>
+        <td style="font-size:12px; font-weight:700; color:#64748b;"><i class="fa-regular fa-clock"></i> ${dateStr}</td>
+        <td>${actionBadge}</td>
+        <td>${targetBadge}</td>
+        <td style="font-weight:700; color:#0f172a;">${esc(h.title)}</td>
+        <td style="font-size:12.5px; color:#475569; font-weight:600;">👤 ${esc(h.user_name || h.current_user_name || 'Hệ thống')}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:4px 10px; font-size:11.5px; font-weight:700;">
+            <i class="fa-solid fa-circle-info"></i> Chi tiết
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterHistoryTab() {
+  const q = (document.getElementById('db-history-search')?.value || '').toLowerCase().trim();
+  if (!q) {
+    renderHistoryTable(allHistoryCache);
+    return;
+  }
+  const filtered = allHistoryCache.filter(h =>
+    (h.title || '').toLowerCase().includes(q) ||
+    (h.user_name || h.current_user_name || '').toLowerCase().includes(q) ||
+    (h.target_type || '').toLowerCase().includes(q)
+  );
+  renderHistoryTable(filtered);
+}
+
+function openViewHistoryModal(id) {
+  const item = allHistoryCache.find(h => h.id == id);
+  if (!item) return;
+
+  const modalBody = document.getElementById('history-view-modal-body');
+  if (!modalBody) return;
+
+  const isDelete = item.action_type === 'DELETE';
+  const actionText = isDelete ? '🗑️ Xóa dữ liệu (DELETE)' : '✏️ Chỉnh sửa dữ liệu (UPDATE)';
+  const dateStr = item.created_at ? new Date(item.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+  let oldDataStr = '{}';
+  let newDataStr = '{}';
+  try {
+    oldDataStr = typeof item.old_data === 'string' ? item.old_data : JSON.stringify(item.old_data, null, 2);
+  } catch(e) {}
+  try {
+    newDataStr = typeof item.new_data === 'string' ? item.new_data : JSON.stringify(item.new_data, null, 2);
+  } catch(e) {}
+
+  modalBody.innerHTML = `
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
+      <div style="font-size:14px; font-weight:800; color:#0f172a; margin-bottom:6px;">${esc(item.title)}</div>
+      <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b;">
+        <span>Thao tác: <strong>${actionText}</strong></span>
+        <span>Thời gian: <strong>${dateStr}</strong></span>
+      </div>
+      <div style="font-size:12px; color:#64748b; margin-top:4px;">
+        Người thực hiện: <strong>${esc(item.user_name || item.current_user_name || 'Admin')}</strong>
+      </div>
+    </div>
+
+    ${!isDelete ? `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+        <div>
+          <div style="font-size:11.5px; font-weight:800; color:#dc2626; margin-bottom:4px;"><i class="fa-solid fa-rotate-left"></i> Dữ liệu cũ trước khi sửa:</div>
+          <pre style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:10px; font-size:11px; max-height:220px; overflow:auto; color:#9f1239;">${esc(oldDataStr)}</pre>
+        </div>
+        <div>
+          <div style="font-size:11.5px; font-weight:800; color:#16a34a; margin-bottom:4px;"><i class="fa-solid fa-circle-check"></i> Dữ liệu mới sau khi sửa:</div>
+          <pre style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; font-size:11px; max-height:220px; overflow:auto; color:#14532d;">${esc(newDataStr)}</pre>
+        </div>
+      </div>
+    ` : `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11.5px; font-weight:800; color:#dc2626; margin-bottom:4px;"><i class="fa-solid fa-trash-can"></i> Dữ liệu chi tiết đã bị xóa:</div>
+        <pre style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:10px; font-size:11px; max-height:260px; overflow:auto; color:#9f1239;">${esc(oldDataStr)}</pre>
+      </div>
+    `}
+  `;
+
+  document.getElementById('history-view-modal').style.display = 'flex';
+}
+
+function closeViewHistoryModal() {
+  document.getElementById('history-view-modal').style.display = 'none';
+}
+
 window.initDatabasePage = initDatabasePage;
 window.switchDatabaseTab = switchDatabaseTab;
 window.setSupplyGroupMode = setSupplyGroupMode;
@@ -798,3 +936,8 @@ window.closeSupplyFormModal = closeSupplyFormModal;
 window.editSupply = editSupply;
 window.uploadSupplyPhoto = uploadSupplyPhoto;
 window.saveSupplySubmit = saveSupplySubmit;
+window.loadHistoryTab = loadHistoryTab;
+window.filterHistoryTab = filterHistoryTab;
+window.openViewHistoryModal = openViewHistoryModal;
+window.closeViewHistoryModal = closeViewHistoryModal;
+

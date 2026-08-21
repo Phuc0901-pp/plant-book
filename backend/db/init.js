@@ -139,6 +139,24 @@ async function initDB() {
       )
     `);
 
+    // Audit logs table for data edits & deletions (Vật tư, Nhật ký, Media, Cây trồng)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS data_audit_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        user_name VARCHAR(255),
+        action_type VARCHAR(50) NOT NULL,
+        target_type VARCHAR(100) NOT NULL,
+        record_id INTEGER,
+        title VARCHAR(500) NOT NULL,
+        old_data JSONB DEFAULT '{}',
+        new_data JSONB DEFAULT '{}',
+        note TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+
     // Farms table (GIS boundaries)
     await client.query(`
       CREATE TABLE IF NOT EXISTS farms (

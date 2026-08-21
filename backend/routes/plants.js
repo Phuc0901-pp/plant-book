@@ -3,6 +3,8 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const { logAuditAction } = require('./history');
+
 const checkTier = require('../middleware/checkTier');
 
 const multer = require('multer');
@@ -764,11 +766,22 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
       ]
     );
 
-    // Record user activity
+    // Record user activity & audit history
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
        VALUES ($1, 'Sửa nhật ký', $2)`,
       [req.user.id, `Chỉnh sửa nhật ký [${log_type || currentLog.log_type}] cho cây #${plantId} (ID nhật ký: ${logId})`]
+    );
+
+    logAuditAction(
+      req.user.id,
+      req.user.full_name || req.user.email,
+      'UPDATE',
+      'Nhật ký canh tác',
+      logId,
+      `Chỉnh sửa nhật ký "${log_type || currentLog.log_type}" cho cây #${plantId}`,
+      currentLog,
+      updated.rows[0]
     );
 
     // Broadcast WebSocket event
@@ -786,12 +799,28 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
 
 router.delete('/:plantId/logs/:logId', auth, admin, async (req, res) => {
   try {
+    const currentLog = await pool.query('SELECT * FROM plant_logs WHERE id=$1 AND plant_id=$2', [req.params.logId, req.params.plantId]);
     await pool.query('DELETE FROM plant_logs WHERE id=$1 AND plant_id=$2', [req.params.logId, req.params.plantId]);
+    
+    if (currentLog.rows.length > 0) {
+      logAuditAction(
+        req.user.id,
+        req.user.full_name || req.user.email,
+        'DELETE',
+        'Nhật ký canh tác',
+        req.params.logId,
+        `Xóa nhật ký "${currentLog.rows[0].log_type}" của cây #${req.params.plantId}`,
+        currentLog.rows[0],
+        {}
+      );
+    }
+    
     res.json({ message: 'Đã xóa.' });
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });
+
 
 // ─── Public routes ────────────────────────────────────────────────
 router.get('/public/:slug', async (req, res) => {

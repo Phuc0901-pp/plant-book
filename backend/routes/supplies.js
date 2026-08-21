@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const { logAuditAction } = require('./history');
+
 
 // ─── 1. SUPPLIES CRUD ─────────────────────────────────────────────
 
@@ -237,6 +239,7 @@ router.put('/:id', auth, async (req, res) => {
       ]
     );
 
+    logAuditAction(req.user.id, req.user.full_name || req.user.email, 'UPDATE', 'Vật tư', id, `Chỉnh sửa thông tin vật tư "${result.rows[0].name}"`, check.rows[0], result.rows[0]);
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Error updating supply:', err);
@@ -257,12 +260,14 @@ router.delete('/:id', auth, async (req, res) => {
     }
 
     await pool.query('DELETE FROM supplies WHERE id = $1', [id]);
+    logAuditAction(req.user.id, req.user.full_name || req.user.email, 'DELETE', 'Vật tư', id, `Xóa vật tư "${check.rows[0].name}"`, check.rows[0], {});
     res.json({ success: true, message: 'Đã xóa vật tư thành công.' });
   } catch (err) {
     console.error('Error deleting supply:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa vật tư.' });
   }
 });
+
 
 // GET /api/supplies/usages — Lấy nhật ký tiêu hao vật tư
 router.get('/usages', auth, async (req, res) => {
