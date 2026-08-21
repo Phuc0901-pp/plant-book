@@ -1,46 +1,125 @@
 /* ════════════════════════════════════════════════════════
-   Plant Book Admin — app.js
+   Plant Book Admin — app.js (Core Application Router & Globals)
    ════════════════════════════════════════════════════════ */
-const API = '/api';
-let token = localStorage.getItem('pb_token') || '';
-let currentUser = null;
-let editingPlantId = null;
-let editingSchemaId = null;
-let schemaFields = [];
-let schemasCache = [];
+var API = '/api';
+var token = localStorage.getItem('pb_token') || '';
+var currentUser = null;
+var editingPlantId = null;
+var editingSchemaId = null;
+var schemaFields = [];
+var schemasCache = [];
 
 // Dashboard state variables
-let dashboardMap = null;
-let dashboardMarkers = [];
-let allFarms = [];
-let allPlants = [];
-let allRecentLogs = [];
-let currentDashboardFilter = 'all';
+var dashboardMap = null;
+var dashboardMarkers = [];
+var allFarms = [];
+var allPlants = [];
+var allRecentLogs = [];
+var currentDashboardFilter = 'all';
 
+/**
+ * Common REST API helper
+ */
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(opts.headers || {})
+    }
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    if (res.status === 401) {
+      if (typeof logout === 'function') logout();
+    }
+    throw new Error(data.error || `Lỗi HTTP ${res.status}`);
+  }
+  return data;
+}
 
-// ── Pages ─────────────────────────────────────────────────
+/**
+ * Toast Notification Helper
+ */
+function toast(msg, type = 'success') {
+  const toastEl = document.getElementById('toast');
+  const iconEl = document.getElementById('toast-icon');
+  const msgEl = document.getElementById('toast-msg');
+
+  if (!toastEl || !msgEl) {
+    console.log(`[TOAST ${type.toUpperCase()}] ${msg}`);
+    return;
+  }
+
+  if (iconEl) {
+    iconEl.innerHTML = type === 'success'
+      ? '<i class="fa-solid fa-circle-check" style="color:#4ade80"></i>'
+      : (type === 'error' ? '<i class="fa-solid fa-circle-xmark" style="color:#f87171"></i>' : '<i class="fa-solid fa-circle-info" style="color:#60a5fa"></i>');
+  }
+  msgEl.textContent = msg;
+  toastEl.style.display = 'block';
+  setTimeout(() => { toastEl.style.display = 'none'; }, 3500);
+}
+
+/**
+ * HTML Escaper
+ */
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/**
+ * Date Formatter
+ */
+function fmtDate(d) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch(e) {
+    return String(d);
+  }
+}
+
+// ── Main Page Switcher ─────────────────────────────────────
 
 function showPage(page) {
+  const targetSection = document.getElementById(`page-${page}`);
+  if (!targetSection) {
+    console.warn(`Page section #page-${page} not found.`);
+    return;
+  }
+
+  // Remove active state from all page sections and nav items
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add('active');
+
+  // Show target section
+  targetSection.classList.add('active');
+
+  // Highlight active sidebar menu item safely
+  if (typeof window !== 'undefined' && window.event && window.event.currentTarget && window.event.currentTarget.classList) {
+    window.event.currentTarget.classList.add('active');
+  } else {
+    const navItem = document.querySelector(`.nav-item[onclick*="'${page}'"]`);
+    if (navItem) navItem.classList.add('active');
   }
+
   const titles = { 
-    dashboard: 'Dashboard', 
+    dashboard: 'Dashboard Overview', 
     database: 'Cơ sở dữ liệu & Nhật ký Canh tác',
     plants: 'Danh sách cây trồng', 
     schemas: 'Cấu hình loại cây', 
     media: 'Thư viện Media', 
-    gis: 'Quản lý GIS', 
-    users: 'Quản lý người dùng',
+    gis: 'Quản lý GIS Trang trại', 
+    users: 'Quản lý Nông hộ & Người dùng',
     devices: 'Quản lý thiết bị IoT',
     cost: 'Quản trị Chi phí Đầu tư'
   };
-  document.getElementById('page-title').textContent = titles[page] || page;
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = titles[page] || page;
 
-  // Auto-close mobile sidebar
+  // Auto-close mobile sidebar if open
   const sidebar = document.querySelector('.sidebar');
   if (sidebar && sidebar.classList.contains('open')) {
     sidebar.classList.remove('open');
@@ -48,22 +127,30 @@ function showPage(page) {
     if (overlay) overlay.style.display = 'none';
   }
 
-  if (page === 'dashboard') loadDashboard();
-  if (page === 'database') initDatabasePage();
-  if (page === 'plants') {
-    initPlantFilters().then(() => loadPlants());
+  // Safe execution of page loaders
+  try {
+    if (page === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
+    if (page === 'database' && typeof initDatabasePage === 'function') initDatabasePage();
+    if (page === 'plants') {
+      if (typeof initPlantFilters === 'function') {
+        initPlantFilters().then(() => { if (typeof loadPlants === 'function') loadPlants(); });
+      } else if (typeof loadPlants === 'function') {
+        loadPlants();
+      }
+    }
+    if (page === 'schemas') {
+      if (typeof loadSchemas === 'function') loadSchemas();
+      if (typeof loadCareConfigs === 'function') loadCareConfigs();
+    }
+    if (page === 'gis' && typeof initGisPage === 'function') initGisPage();
+    if (page === 'users' && typeof loadUsers === 'function') loadUsers();
+    if (page === 'devices' && typeof loadDevices === 'function') loadDevices();
+    if (page === 'media' && typeof initGlobalMediaLibrary === 'function') initGlobalMediaLibrary();
+    if (page === 'cost' && typeof initCostPage === 'function') initCostPage();
+  } catch (err) {
+    console.error(`Error loading page [${page}]:`, err);
   }
-  if (page === 'schemas') {
-    loadSchemas();
-    loadCareConfigs();
-  }
-  if (page === 'gis') initGisPage();
-  if (page === 'users') loadUsers();
-  if (page === 'devices') loadDevices();
-  if (page === 'media') initGlobalMediaLibrary();
-  if (page === 'cost') initCostPage();
 }
-
 
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
@@ -80,32 +167,40 @@ function toggleMobileSidebar() {
 function switchTab(el, tabId) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById(tabId).classList.add('active');
+  if (el) el.classList.add('active');
+  const pane = document.getElementById(tabId);
+  if (pane) pane.classList.add('active');
 
-  if (tabId === 'tab-extra') renderExtraFields();
-  if (tabId === 'tab-media' && editingPlantId) loadPlantMedia(editingPlantId);
-  if (tabId === 'tab-logs' && editingPlantId) loadPlantLogs(editingPlantId);
+  if (tabId === 'tab-extra' && typeof renderExtraFields === 'function') renderExtraFields();
+  if (tabId === 'tab-media' && editingPlantId && typeof loadPlantMedia === 'function') loadPlantMedia(editingPlantId);
+  if (tabId === 'tab-logs' && editingPlantId && typeof loadPlantLogs === 'function') loadPlantLogs(editingPlantId);
 }
-
 
 // ── Configuration tabs & care options ──────────────────────
 
 function switchConfigTab(tab) {
-  document.getElementById('config-tab-schema').classList.toggle('active', tab === 'schema');
-  document.getElementById('config-tab-care').classList.toggle('active', tab === 'care');
-  document.getElementById('pane-config-schema').style.display = tab === 'schema' ? 'block' : 'none';
-  document.getElementById('pane-config-care').style.display = tab === 'care' ? 'block' : 'none';
+  document.getElementById('config-tab-schema')?.classList.toggle('active', tab === 'schema');
+  document.getElementById('config-tab-care')?.classList.toggle('active', tab === 'care');
+  const paneSchema = document.getElementById('pane-config-schema');
+  const paneCare = document.getElementById('pane-config-care');
+  if (paneSchema) paneSchema.style.display = tab === 'schema' ? 'block' : 'none';
+  if (paneCare) paneCare.style.display = tab === 'care' ? 'block' : 'none';
 }
 
 async function loadCareConfigs() {
   try {
     const configs = await api('/config');
-    document.getElementById('cfg-water-methods').value = (configs.water_methods || []).join('\n');
-    document.getElementById('cfg-fertilizers').value = (configs.fertilizers || []).join('\n');
-    document.getElementById('cfg-pesticides').value = (configs.pesticides || []).join('\n');
-    document.getElementById('cfg-leaf-reasons').value = (configs.leaf_cut_reasons || []).join('\n');
-    document.getElementById('cfg-flower-reasons').value = (configs.flower_prune_reasons || []).join('\n');
+    const wEl = document.getElementById('cfg-water-methods');
+    const fEl = document.getElementById('cfg-fertilizers');
+    const pEl = document.getElementById('cfg-pesticides');
+    const lEl = document.getElementById('cfg-leaf-reasons');
+    const flEl = document.getElementById('cfg-flower-reasons');
+
+    if (wEl) wEl.value = (configs.water_methods || []).join('\n');
+    if (fEl) fEl.value = (configs.fertilizers || []).join('\n');
+    if (pEl) pEl.value = (configs.pesticides || []).join('\n');
+    if (lEl) lEl.value = (configs.leaf_cut_reasons || []).join('\n');
+    if (flEl) flEl.value = (configs.flower_prune_reasons || []).join('\n');
   } catch (err) {
     toast('Lỗi tải cấu hình quy trình: ' + err.message, 'error');
   }
@@ -113,15 +208,15 @@ async function loadCareConfigs() {
 
 async function saveCareConfigs() {
   const btn = document.getElementById('save-care-cfg-btn');
+  if (!btn) return;
   const oldText = btn.innerHTML;
   btn.innerHTML = '<span class="spinner"></span> Đang lưu...';
   btn.disabled = true;
 
   const parseTextarea = (id) => {
-    return document.getElementById(id).value
-      .split('\n')
-      .map(x => x.trim())
-      .filter(x => x.length > 0);
+    const el = document.getElementById(id);
+    if (!el) return [];
+    return el.value.split('\n').map(x => x.trim()).filter(x => x.length > 0);
   };
 
   const body = {
@@ -146,3 +241,8 @@ async function saveCareConfigs() {
   }
 }
 
+window.api = api;
+window.toast = toast;
+window.esc = esc;
+window.fmtDate = fmtDate;
+window.showPage = showPage;

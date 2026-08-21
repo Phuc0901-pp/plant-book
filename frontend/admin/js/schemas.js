@@ -218,22 +218,6 @@ async function translateCropName(viName) {
 }
 
 
-function api(path, opts = {}) {
-  return fetch(API + path, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...(opts.headers || {})
-    }
-  }).then(async r => {
-    if (r.status === 401) { logout(); return; }
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Lỗi server');
-    return data;
-  });
-}
-
 function apiForm(path, body) {
   return fetch(API + path, {
     method: 'POST',
@@ -246,24 +230,6 @@ function apiForm(path, body) {
   });
 }
 
-function toast(msg, type = 'success') {
-  const el = document.getElementById('toast');
-  document.getElementById('toast-icon').innerHTML = type === 'success'
-    ? '<i class="fa-solid fa-circle-check" style="color:#4ade80"></i>'
-    : '<i class="fa-solid fa-circle-xmark" style="color:#f87171"></i>';
-  document.getElementById('toast-msg').textContent = msg;
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 3000);
-}
-
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit',year:'numeric'});
-}
 
 function healthBadge(h) {
   const map = { 'Tốt':'badge-green','Bình thường':'badge-blue','Cần chú ý':'badge-amber','Bệnh':'badge-red' };
