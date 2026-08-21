@@ -1,12 +1,25 @@
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — database.js (Cơ sở dữ liệu & Nhật ký Canh tác)
-   Sub-tabs: 1. Dữ liệu canh tác, 2. Vật tư, 3. Thư viện media
+   Sub-tabs: 1. Dữ liệu canh tác, 2. Vật tư & Kho, 3. Thư viện media
    ════════════════════════════════════════════════════════ */
 
 let dbUsersCache = [];
 let dbFarmsCache = [];
 let dbPlantsCache = [];
 let activeDbTab = 'cultivation';
+let supplyGroupMode = 'category'; // 'category', 'farm', 'flat'
+
+// Distinct Category Badge Styles & Colors
+const supplyCategoryConfigs = {
+  'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'fa-seedling', iconColor: '#92400e', label: '🧮 Bón phân' },
+  'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'fa-spray-can-sparkles', iconColor: '#8b5cf6', label: '🧪 Phun thuốc' },
+  'Tiền nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'fa-droplet', iconColor: '#3b82f6', label: '💧 Tiền nước' },
+  'Nhân công': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-user-gear', iconColor: '#10b981', label: '👷 Nhân công' }
+};
+
+function getSupplyCatConfig(catName) {
+  return supplyCategoryConfigs[catName] || { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1', icon: 'fa-box-open', iconColor: '#64748b', label: catName || 'Vật tư khác' };
+}
 
 async function initDatabasePage() {
   try {
@@ -48,6 +61,12 @@ async function initDatabasePage() {
         dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
     }
 
+    const fSupplyUser = document.getElementById('f-supply-user');
+    if (fSupplyUser) {
+      fSupplyUser.innerHTML = '<option value="">— Mặc định (Admin) —</option>' +
+        normalUsers.map(u => `<option value="${u.id}">👤 ${esc(u.full_name)}</option>`).join('');
+    }
+
     switchDatabaseTab('cultivation');
   } catch (err) {
     console.error('Error initializing database page:', err);
@@ -70,6 +89,21 @@ function switchDatabaseTab(tab) {
   } else if (tab === 'supplies') {
     loadSuppliesTab();
   }
+}
+
+function setSupplyGroupMode(mode) {
+  supplyGroupMode = mode;
+  ['cat', 'farm', 'flat'].forEach(m => {
+    const btn = document.getElementById(`btn-supply-group-${m}`);
+    if (btn) {
+      const active = (m === mode || (m === 'cat' && mode === 'category'));
+      btn.style.background = active ? '#059669' : 'transparent';
+      btn.style.color = active ? '#ffffff' : '#475569';
+      btn.style.fontWeight = active ? '800' : '700';
+    }
+  });
+
+  renderSuppliesTable(allSuppliesCache);
 }
 
 function onDbFilterChange() {
@@ -373,21 +407,122 @@ function renderSuppliesTable(supplies) {
     return;
   }
 
-  tbody.innerHTML = supplies.map(s => `
-    <tr>
-      <td>
-        ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">` : `<div style="width:44px; height:44px; border-radius:8px; background:#f1f5f9; color:#94a3b8; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-box"></i></div>`}
-      </td>
-      <td style="font-weight:700; color:#0f172a;">${esc(s.name)}</td>
-      <td><span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700; padding:4px 8px; border-radius:6px;">${esc(s.category || s.type || 'Vật tư')}</span></td>
-      <td style="font-weight:700; color:#047857;">${s.stock_quantity || s.quantity || 0} ${esc(s.unit || '')}</td>
-      <td style="font-weight:800; color:#059669;">${s.unit_price ? parseFloat(s.unit_price).toLocaleString('vi-VN') + ' đ' : (s.package_price ? parseFloat(s.package_price).toLocaleString('vi-VN') + ' đ' : '—')}</td>
-      <td style="font-size:12px; color:#64748b;">${esc(s.creator_name || s.supplier || s.note || 'Nông hộ')}</td>
-      <td>
-        <button class="btn btn-secondary btn-sm" onclick="editSupply(${s.id})"><i class="fa fa-pen"></i> Sửa</button>
-      </td>
-    </tr>
-  `).join('');
+  // Row Renderer Helper
+  const renderRow = (s) => {
+    const cat = s.category || s.type || 'Vật tư';
+    const cfg = getSupplyCatConfig(cat);
+    const priceDisplay = s.unit_price ? parseFloat(s.unit_price).toLocaleString('vi-VN') + ' đ' : (s.package_price ? parseFloat(s.package_price).toLocaleString('vi-VN') + ' đ' : '—');
+    const ownerText = s.creator_name || s.supplier || s.note || 'Admin';
+
+    return `
+      <tr>
+        <td>
+          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` : `<div style="width:44px; height:44px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i class="fa-solid ${cfg.icon}"></i></div>`}
+        </td>
+        <td style="font-weight:700; color:#0f172a;">
+          <a href="javascript:void(0)" onclick="openViewSupplyModal(${s.id})" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#059669'" onmouseout="this.style.color='#0f172a'">
+            ${esc(s.name)}
+          </a>
+        </td>
+        <td>
+          <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;">
+            <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(cat)}
+          </span>
+        </td>
+        <td style="font-weight:800; color:${s.stock_quantity <= 5 ? '#dc2626' : '#047857'};">
+          ${s.stock_quantity || s.quantity || 0} ${esc(s.unit || '')}
+          ${s.stock_quantity <= 5 ? `<span style="font-size:10px; background:#fee2e2; color:#dc2626; padding:1px 5px; border-radius:4px; margin-left:4px;">Gần hết</span>` : ''}
+        </td>
+        <td style="font-weight:800; color:#059669;">${priceDisplay}</td>
+        <td style="font-size:12px; color:#64748b;">👤 ${esc(ownerText)}</td>
+        <td>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-primary btn-sm" onclick="openViewSupplyModal(${s.id})" style="padding:4px 8px; font-size:11.5px; font-weight:700;" title="Xem chi tiết">
+              <i class="fa-solid fa-eye"></i> Xem
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="editSupply(${s.id})" style="padding:4px 8px; font-size:11.5px; font-weight:700;" title="Chỉnh sửa">
+              <i class="fa fa-pen"></i> Sửa
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  };
+
+  // Flat List View
+  if (supplyGroupMode === 'flat') {
+    tbody.innerHTML = supplies.map(renderRow).join('');
+    return;
+  }
+
+  // Category Grouped View
+  if (supplyGroupMode === 'category') {
+    const groups = {};
+    supplies.forEach(s => {
+      const c = s.category || s.type || 'Vật tư khác';
+      if (!groups[c]) groups[c] = [];
+      groups[c].push(s);
+    });
+
+    let html = '';
+    Object.keys(groups).forEach(catName => {
+      const cfg = getSupplyCatConfig(catName);
+      const catItems = groups[catName];
+
+      html += `
+        <tr style="background:#f8fafc; border-top:2px solid ${cfg.border}; border-bottom:1.5px solid ${cfg.border};">
+          <td colspan="7" style="padding:10px 16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="width:24px; height:24px; border-radius:6px; background:${cfg.bg}; color:${cfg.iconColor}; display:inline-flex; align-items:center; justify-content:center; font-size:13px; border:1px solid ${cfg.border};">
+                  <i class="fa-solid ${cfg.icon}"></i>
+                </span>
+                <strong style="font-size:13.5px; color:${cfg.color}; font-weight:800;">HOẠT ĐỘNG / HẠNG MỤC: ${esc(catName).toUpperCase()}</strong>
+              </div>
+              <span class="badge" style="background:#e2e8f0; color:#334155; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px;">
+                ${catItems.length} sản phẩm trong kho
+              </span>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      html += catItems.map(renderRow).join('');
+    });
+
+    tbody.innerHTML = html;
+    return;
+  }
+
+  // Farm / Customer Grouped View
+  if (supplyGroupMode === 'farm') {
+    const groups = {};
+    supplies.forEach(s => {
+      const owner = s.creator_name || s.supplier || 'Mặc định trang trại';
+      if (!groups[owner]) groups[owner] = [];
+      groups[owner].push(s);
+    });
+
+    let html = '';
+    Object.keys(groups).forEach(ownerName => {
+      const items = groups[ownerName];
+      html += `
+        <tr style="background:#f0fdf4; border-top:2px solid #a7f3d0; border-bottom:1.5px solid #a7f3d0;">
+          <td colspan="7" style="padding:10px 16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <strong style="font-size:13.5px; color:#047857; font-weight:800;"><i class="fa-solid fa-house-chimney-window"></i> NÔNG HỘ / TRANG TRẠI: ${esc(ownerName).toUpperCase()}</strong>
+              <span class="badge" style="background:#dcfce7; color:#15803d; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px;">
+                ${items.length} vật tư khai báo
+              </span>
+            </div>
+          </td>
+        </tr>
+      `;
+      html += items.map(renderRow).join('');
+    });
+
+    tbody.innerHTML = html;
+  }
 }
 
 function filterSupplies() {
@@ -399,15 +534,202 @@ function filterSupplies() {
   const filtered = allSuppliesCache.filter(s =>
     (s.name || '').toLowerCase().includes(q) ||
     (s.category || s.type || '').toLowerCase().includes(q) ||
-    (s.creator_name || s.supplier || '').toLowerCase().includes(q)
+    (s.creator_name || s.supplier || s.note || '').toLowerCase().includes(q)
   );
   renderSuppliesTable(filtered);
 }
 
+// ── Supply Action Modals (View & Edit) ──
+
+function openViewSupplyModal(supplyId) {
+  const supply = allSuppliesCache.find(s => s.id == supplyId);
+  if (!supply) return;
+
+  const cfg = getSupplyCatConfig(supply.category);
+  const modalBody = document.getElementById('supply-view-modal-body');
+  const btnEdit = document.getElementById('btn-edit-from-view');
+
+  if (btnEdit) {
+    btnEdit.onclick = () => {
+      closeViewSupplyModal();
+      editSupply(supplyId);
+    };
+  }
+
+  if (modalBody) {
+    modalBody.innerHTML = `
+      <div style="display:flex; gap:16px; align-items:flex-start; margin-bottom:20px;">
+        ${supply.image_url 
+          ? `<img src="${esc(supply.image_url)}" alt="${esc(supply.name)}" style="width:110px; height:110px; object-fit:cover; border-radius:12px; border:2px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.1);">` 
+          : `<div style="width:110px; height:110px; border-radius:12px; background:${cfg.bg}; color:${cfg.iconColor}; border:2px solid ${cfg.border}; display:flex; align-items:center; justify-content:center; font-size:42px;"><i class="fa-solid ${cfg.icon}"></i></div>`
+        }
+        <div style="flex:1;">
+          <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 12px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(supply.category)}
+          </span>
+          <h3 style="font-size:18px; font-weight:800; color:#0f172a; margin:0 0 6px 0; line-height:1.3;">${esc(supply.name)}</h3>
+          <div style="font-size:13px; color:#475569;">Sở hữu / Nông hộ: <strong>${esc(supply.creator_name || supply.supplier || 'Admin')}</strong></div>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Số lượng tồn kho</div>
+            <div style="font-size:18px; font-weight:800; color:${supply.stock_quantity <= 5 ? '#dc2626' : '#047857'}; margin-top:2px;">
+              ${supply.stock_quantity || 0} ${esc(supply.unit || '')}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Đơn giá hiện tại</div>
+            <div style="font-size:18px; font-weight:800; color:#059669; margin-top:2px;">
+              ${supply.unit_price ? parseFloat(supply.unit_price).toLocaleString('vi-VN') + ' đ' : '—'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      ${supply.note ? `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:4px;"><i class="fa-solid fa-note-sticky"></i> Ghi chú sản phẩm & Nhà sản xuất:</div>
+          <div style="font-size:13px; color:#1e293b; background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:10px; line-height:1.5;">${esc(supply.note)}</div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  document.getElementById('supply-view-modal').style.display = 'flex';
+}
+
+function closeViewSupplyModal() {
+  document.getElementById('supply-view-modal').style.display = 'none';
+}
+
+function openSupplyModal(supplyId = null) {
+  document.getElementById('f-supply-id').value = supplyId || '';
+  document.getElementById('f-supply-category').value = 'Bón phân';
+  document.getElementById('f-supply-name').value = '';
+  document.getElementById('f-supply-unit').value = '';
+  document.getElementById('f-supply-stock').value = '';
+  document.getElementById('f-supply-price').value = '';
+  document.getElementById('f-supply-user').value = '';
+  document.getElementById('f-supply-note').value = '';
+  document.getElementById('f-supply-image-url').value = '';
+  document.getElementById('f-supply-img-preview').style.display = 'none';
+
+  document.getElementById('supply-modal-title').innerHTML = supplyId ? '<i class="fa-solid fa-pen"></i> Chỉnh sửa sản phẩm vật tư' : '<i class="fa-solid fa-box-archive"></i> Khai báo Vật tư & Phân bón mới';
+
+  if (supplyId) {
+    const supply = allSuppliesCache.find(s => s.id == supplyId);
+    if (supply) {
+      document.getElementById('f-supply-category').value = supply.category || 'Bón phân';
+      document.getElementById('f-supply-name').value = supply.name || '';
+      document.getElementById('f-supply-unit').value = supply.unit || '';
+      document.getElementById('f-supply-stock').value = supply.stock_quantity || 0;
+      document.getElementById('f-supply-price').value = supply.unit_price || supply.package_price || '';
+      document.getElementById('f-supply-user').value = supply.user_id || '';
+      document.getElementById('f-supply-note').value = supply.note || '';
+
+      if (supply.image_url) {
+        document.getElementById('f-supply-image-url').value = supply.image_url;
+        document.getElementById('f-supply-img-src').src = supply.image_url;
+        document.getElementById('f-supply-img-preview').style.display = 'block';
+      }
+    }
+  }
+
+  document.getElementById('supply-form-modal').style.display = 'flex';
+}
+
+function closeSupplyFormModal() {
+  document.getElementById('supply-form-modal').style.display = 'none';
+}
+
+function editSupply(supplyId) {
+  openSupplyModal(supplyId);
+}
+
+async function uploadSupplyPhoto(input) {
+  if (!input.files || input.files.length === 0) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+
+  toast('Đang tải ảnh sản phẩm...');
+  try {
+    const res = await apiForm('/supplies/upload-image', formData);
+    if (res.url) {
+      document.getElementById('f-supply-image-url').value = res.url;
+      document.getElementById('f-supply-img-src').src = res.url;
+      document.getElementById('f-supply-img-preview').style.display = 'block';
+      toast('Đã tải ảnh vật tư lên thành công!');
+    }
+  } catch (err) {
+    toast('Lỗi tải ảnh: ' + err.message, 'error');
+  }
+}
+
+async function saveSupplySubmit() {
+  const id = document.getElementById('f-supply-id').value;
+  const category = document.getElementById('f-supply-category').value;
+  const name = document.getElementById('f-supply-name').value.trim();
+  const unit = document.getElementById('f-supply-unit').value.trim();
+  const stock_quantity = parseFloat(document.getElementById('f-supply-stock').value) || 0;
+  const unit_price = parseFloat(document.getElementById('f-supply-price').value) || 0;
+  const user_id = document.getElementById('f-supply-user').value;
+  const note = document.getElementById('f-supply-note').value.trim();
+  const image_url = document.getElementById('f-supply-image-url').value;
+
+  if (!name || !unit) {
+    toast('Vui lòng điền Tên sản phẩm và Đơn vị tính!', 'error');
+    return;
+  }
+
+  const payload = {
+    category,
+    name,
+    unit,
+    stock_quantity,
+    unit_price,
+    user_id: user_id ? parseInt(user_id) : null,
+    note,
+    image_url
+  };
+
+  const btn = document.getElementById('btn-save-supply');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang lưu...';
+
+  try {
+    if (id) {
+      await api(`/supplies/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('Đã cập nhật thông tin vật tư thành công!');
+    } else {
+      await api('/supplies', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Đã thêm sản phẩm vật tư mới thành công!');
+    }
+    closeSupplyFormModal();
+    loadSuppliesTab();
+  } catch (err) {
+    toast('Lỗi lưu vật tư: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa fa-floppy-disk"></i> Lưu thông tin vật tư';
+  }
+}
+
 window.initDatabasePage = initDatabasePage;
 window.switchDatabaseTab = switchDatabaseTab;
+window.setSupplyGroupMode = setSupplyGroupMode;
 window.onDbFilterChange = onDbFilterChange;
 window.onSupplyFilterChange = onSupplyFilterChange;
 window.loadPlantCultivationTimeline = loadPlantCultivationTimeline;
 window.loadSuppliesTab = loadSuppliesTab;
 window.filterSupplies = filterSupplies;
+window.openViewSupplyModal = openViewSupplyModal;
+window.closeViewSupplyModal = closeViewSupplyModal;
+window.openSupplyModal = openSupplyModal;
+window.closeSupplyFormModal = closeSupplyFormModal;
+window.editSupply = editSupply;
+window.uploadSupplyPhoto = uploadSupplyPhoto;
+window.saveSupplySubmit = saveSupplySubmit;
