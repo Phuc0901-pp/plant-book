@@ -951,20 +951,21 @@ function renderSupplyUsagesPage() {
                 Tổng số lượng dùng: <strong style="color:#047857;">${formattedQty} ${esc(grp.unit)}</strong> · Đơn giá: <strong>${formatVND(grp.unit_price)}</strong>
               </div>
               <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <span><i class="fa-solid fa-house-chimney" style="color:#059669;"></i> ${esc(targetStr)}</span>
-                ${l.note ? `<span><i class="fa-solid fa-note-sticky" style="color:#eab308;"></i> <em>${esc(l.note)}</em></span>` : ''}
+                <span><i class="fa-solid fa-house-chimney" style="color:#059669;"></i> ${esc(targetsStr)}</span>
+                ${notesStr ? `<span><i class="fa-solid fa-note-sticky" style="color:#eab308;"></i> <em>${esc(notesStr)}</em></span>` : ''}
               </div>
             </div>
 
             <div style="display:flex; align-items:center; gap:12px;">
-              <div style="font-size:14px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0;">
-                ${formatVND(cost)}
+              <div style="font-size:15px; font-weight:900; color:#047857; background:#ecfdf5; padding:6px 14px; border-radius:10px; border:1px solid #a7f3d0; box-shadow:0 2px 6px rgba(4,120,87,0.06);">
+                ${formatVND(grp.total_cost)}
               </div>
-              <button class="btn btn-danger btn-xs" onclick="deleteSupplyUsage(${l.id})" title="Xóa đợt tiêu hao" style="padding:6px 10px;">
+              <button class="btn btn-danger btn-xs" onclick='deleteSupplyUsagesGroup(${idsJson})' title="Xóa đợt tiêu hao" style="padding:6px 10px;">
                 <i class="fa fa-trash"></i>
               </button>
             </div>
           </div>
+
         `;
       });
 
