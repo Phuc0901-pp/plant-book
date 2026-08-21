@@ -1,3 +1,35 @@
+// Helper to sanitize & auto-correct GeoJSON coordinates (prevents Mapbox crashes and swapped lat/lng)
+function sanitizeCoordinates(rawCoords) {
+  if (!rawCoords) return [];
+  let arr = [];
+  try {
+    arr = typeof rawCoords === 'string' ? JSON.parse(rawCoords) : rawCoords;
+  } catch(e) { return []; }
+  
+  if (!Array.isArray(arr) || arr.length === 0) return [];
+
+  const validPts = [];
+  arr.forEach(pt => {
+    if (Array.isArray(pt) && pt.length >= 2) {
+      let lng = parseFloat(pt[0]);
+      let lat = parseFloat(pt[1]);
+
+      // Detect swapped lat/lng (e.g. [11.8333, 106.9167] -> lng=106.9167, lat=11.8333)
+      if ((lng >= -90 && lng <= 90) && (lat > 90 || lat < -90 || lat > 30)) {
+        const tmp = lng;
+        lng = lat;
+        lat = tmp;
+      }
+
+      if (!isNaN(lng) && !isNaN(lat) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        validPts.push([lng, lat]);
+      }
+    }
+  });
+
+  return validPts;
+}
+
 // Helper tính khoảng cách giữa 2 điểm GPS (Haversine Formula)
 function getDist(p1, p2) {
   if (!p1 || !p2) return 0;
@@ -115,75 +147,69 @@ function initDashboardMap(farms, plants) {
   map.addControl(new mapboxgl.NavigationControl());
   map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
-  map.on('load', () => {
+  const onMapLoad = () => {
     const bounds = new mapboxgl.LngLatBounds();
     let hasBounds = false;
 
-    // Render farms boundaries & Customer-colored Pins
     farms.forEach(farm => {
       const farmColor = getCustomerColor(farm.user_id);
-      let coords = [];
-      try {
-        coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
-      } catch(e) {}
-      
+      const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
       let centerLng = null;
       let centerLat = null;
 
-      if (coords && coords.length > 0) {
+      if (validCoords.length >= 3) {
         const farmSourceId = `farm-source-${farm.id}`;
         const farmLayerId = `farm-layer-${farm.id}`;
         const farmOutlineId = `farm-outline-${farm.id}`;
 
-        const polygonCoords = [...coords];
-        if (polygonCoords.length > 0 && 
-            (polygonCoords[0][0] !== polygonCoords[polygonCoords.length - 1][0] || 
-             polygonCoords[0][1] !== polygonCoords[polygonCoords.length - 1][1])) {
+        const polygonCoords = [...validCoords];
+        if (polygonCoords[0][0] !== polygonCoords[polygonCoords.length - 1][0] || 
+            polygonCoords[0][1] !== polygonCoords[polygonCoords.length - 1][1]) {
           polygonCoords.push(polygonCoords[0]);
         }
 
-        map.addSource(farmSourceId, {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            geometry: {
-              type: 'Polygon',
-              coordinates: [polygonCoords]
+        if (!map.getSource(farmSourceId)) {
+          map.addSource(farmSourceId, {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [polygonCoords]
+              }
             }
-          }
-        });
+          });
 
-        map.addLayer({
-          id: farmLayerId,
-          type: 'fill',
-          source: farmSourceId,
-          layout: {},
-          paint: {
-            'fill-color': farmColor,
-            'fill-opacity': 0.35
-          }
-        });
+          map.addLayer({
+            id: farmLayerId,
+            type: 'fill',
+            source: farmSourceId,
+            paint: {
+              'fill-color': farmColor,
+              'fill-opacity': 0.35
+            }
+          });
 
-        map.addLayer({
-          id: farmOutlineId,
-          type: 'line',
-          source: farmSourceId,
-          layout: {},
-          paint: {
-            'line-color': farmColor,
-            'line-width': 2.5
-          }
-        });
+          map.addLayer({
+            id: farmOutlineId,
+            type: 'line',
+            source: farmSourceId,
+            paint: {
+              'line-color': farmColor,
+              'line-width': 2.5
+            }
+          });
+        }
 
         let sumLng = 0, sumLat = 0;
-        coords.forEach(pt => {
+        validCoords.forEach(pt => {
           sumLng += pt[0];
           sumLat += pt[1];
           bounds.extend(pt);
           hasBounds = true;
         });
-        centerLng = sumLng / coords.length;
-        centerLat = sumLat / coords.length;
+        centerLng = sumLng / validCoords.length;
+        centerLat = sumLat / validCoords.length;
 
         map.on('click', farmLayerId, (e) => {
           new mapboxgl.Popup()
@@ -203,8 +229,12 @@ function initDashboardMap(farms, plants) {
 
         map.on('mouseenter', farmLayerId, () => map.getCanvas().style.cursor = 'pointer');
         map.on('mouseleave', farmLayerId, () => map.getCanvas().style.cursor = '');
+      } else if (validCoords.length > 0) {
+        centerLng = validCoords[0][0];
+        centerLat = validCoords[0][1];
+        bounds.extend([centerLng, centerLat]);
+        hasBounds = true;
       } else {
-        // Calculate average lat/lng of farm's plants if polygon is empty
         const farmPlants = plants.filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
         if (farmPlants.length > 0) {
           let sumLng = 0, sumLat = 0, validCnt = 0;
@@ -215,9 +245,11 @@ function initDashboardMap(farms, plants) {
               if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
                 const tmp = lat; lat = lng; lng = tmp;
               }
-              sumLng += lng;
-              sumLat += lat;
-              validCnt++;
+              if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                sumLng += lng;
+                sumLat += lat;
+                validCnt++;
+              }
             }
           });
           if (validCnt > 0) {
@@ -229,7 +261,6 @@ function initDashboardMap(farms, plants) {
         }
       }
 
-      // Render ghim trang trại phân biệt màu theo khách hàng
       if (centerLng !== null && centerLat !== null && !isNaN(centerLng) && !isNaN(centerLat)) {
         const pinEl = document.createElement('div');
         pinEl.className = 'farm-dashboard-pin';
@@ -243,7 +274,7 @@ function initDashboardMap(farms, plants) {
           border-radius: 20px;
           font-size: 11.5px;
           font-weight: 800;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          box-shadow: 0 4px 14px rgba(0,0,0,0.4);
           border: 2px solid #ffffff;
           cursor: pointer;
           white-space: nowrap;
@@ -274,11 +305,8 @@ function initDashboardMap(farms, plants) {
         let lat = parseFloat(plant.latitude);
         let lng = parseFloat(plant.longitude);
         if (!isNaN(lat) && !isNaN(lng)) {
-          // Auto-fix swapped latitude/longitude
           if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
-            const tmp = lat;
-            lat = lng;
-            lng = tmp;
+            const tmp = lat; lat = lng; lng = tmp;
           }
           if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
@@ -323,11 +351,16 @@ function initDashboardMap(farms, plants) {
       map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 1000 });
     }
 
-    // Apply active filter state on load if it was set
     if (currentDashboardFilter !== 'all') {
       filterDashboard(currentDashboardFilter);
     }
-  });
+  };
+
+  if (map.isStyleLoaded() || map.loaded()) {
+    onMapLoad();
+  } else {
+    map.once('load', onMapLoad);
+  }
 }
 
 // Initialize GIS Page
