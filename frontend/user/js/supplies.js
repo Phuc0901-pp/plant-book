@@ -958,8 +958,8 @@ function renderSupplyUsagesPage() {
 
 
 export async function loadSupplyUsagesLog() {
-  const tbody = document.getElementById('supplies-usages-log-body');
-  if (!tbody) return;
+  const container = document.getElementById('supplies-usages-grouped-container');
+  if (!container) return;
 
   try {
     const farmSelect = document.getElementById('supplies-filter-farm');
@@ -977,9 +977,10 @@ export async function loadSupplyUsagesLog() {
 
   } catch (err) {
     console.error('Error loading supply usages log:', err);
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:red;">Lỗi tải lịch sử: ${err.message}</td></tr>`;
+    container.innerHTML = `<div class="empty-state" style="color:red; padding:20px;">Lỗi tải lịch sử: ${err.message}</div>`;
   }
 }
+
 
 export async function deleteSupplyUsage(id) {
   if (!confirm('Bạn có chắc chắn muốn xóa lịch sử tiêu hao này?')) return;
