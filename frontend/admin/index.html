@@ -894,29 +894,58 @@
                 <i class="fa fa-plus"></i> Thêm người dùng mới
               </button>
             </div>
-            <div class="search-bar">
-              <input type="text" id="user-search" placeholder="🔍 Tìm theo tên hoặc email..." oninput="filterUsers()">
+
+            <!-- Group & Tier Filter Bar -->
+            <div style="padding: 14px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="user-filter-pills">
+                <button type="button" class="user-filter-btn active" data-filter="all" onclick="setUserFilterGroup('all')" style="padding: 6px 14px; font-size: 12px; font-weight: 800; border-radius: 20px; border: 1.5px solid #059669; background: #059669; color: #ffffff; cursor: pointer;">
+                  Tất cả (<span id="cnt-user-all">0</span>)
+                </button>
+                <button type="button" class="user-filter-btn" data-filter="admin" onclick="setUserFilterGroup('admin')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #b91c1c; cursor: pointer;">
+                  <i class="fa-solid fa-shield-halved"></i> Quản trị viên (<span id="cnt-user-admin">0</span>)
+                </button>
+                <button type="button" class="user-filter-btn" data-filter="pro" onclick="setUserFilterGroup('pro')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #047857; cursor: pointer;">
+                  <i class="fa-solid fa-crown" style="color: #059669;"></i> Nông hộ PRO (<span id="cnt-user-pro">0</span>)
+                </button>
+                <button type="button" class="user-filter-btn" data-filter="normal" onclick="setUserFilterGroup('normal')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #64748b; cursor: pointer;">
+                  ⚪ Nông hộ NORMAL (<span id="cnt-user-normal">0</span>)
+                </button>
+              </div>
+
+              <div style="flex: 1; max-width: 320px; min-width: 200px;">
+                <input type="text" id="user-search" placeholder="🔍 Tìm theo tên hoặc SĐT/email..." oninput="filterUsers()" style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 13px;">
+              </div>
             </div>
+
             <table>
               <thead>
                 <tr>
                   <th>Họ và tên</th>
-                  <th>Email</th>
+                  <th>Email / Số ĐT</th>
                   <th>Trang trại gán</th>
+                  <th>Gói Cước PRO</th>
                   <th>Vai trò</th>
                   <th>Ngày tạo</th>
-                  <th style="width:150px">Thao tác</th>
+                  <th style="width:220px">Thao tác</th>
                 </tr>
-
               </thead>
               <tbody id="users-table">
-                <tr>
-                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
-                </tr>
+                <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
               </tbody>
             </table>
+
+            <!-- Pagination Controls (10 bản ghi / trang) -->
+            <div style="padding: 14px 20px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;" id="users-pagination-bar">
+              <div style="font-size: 12.5px; color: #64748b; font-weight: 600;" id="users-pagination-info">
+                Hiển thị 1 - 10 trong tổng số 0 người dùng
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;" id="users-pagination-btns">
+                <!-- Populated dynamically by JS -->
+              </div>
+            </div>
           </div>
         </div>
+
 
 
         <!-- Pane: Activity Status -->

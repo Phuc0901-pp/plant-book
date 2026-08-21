@@ -2,13 +2,16 @@
    Plant Book Admin — users.js (User/Farmer Management)
    ════════════════════════════════════════════════════════ */
 let allUsers = [];
+let currentFilterGroup = 'all'; // 'all', 'admin', 'pro', 'normal'
+let currentPage = 1;
+const USERS_PAGE_SIZE = 10;
 
 async function loadUsers() {
   const tbody = document.getElementById('users-table');
   const tbodyStatus = document.getElementById('users-status-table');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>';
   if (tbodyStatus) {
     tbodyStatus.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>';
   }
@@ -16,35 +19,112 @@ async function loadUsers() {
   try {
     const users = await api('/users');
     allUsers = users || [];
-    renderUsersTable(allUsers);
+    updateUserCounters();
+    filterUsers();
     renderUserStatusTable(allUsers);
     loadResetRequests();
   } catch (err) {
     toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
   }
+}
+
+function updateUserCounters() {
+  const cntAll = allUsers.length;
+  const cntAdmin = allUsers.filter(u => u.role === 'admin').length;
+  const cntPro = allUsers.filter(u => u.role !== 'admin' && u.account_tier === 'pro').length;
+  const cntNormal = allUsers.filter(u => u.role !== 'admin' && u.account_tier !== 'pro').length;
+
+  if (document.getElementById('cnt-user-all')) document.getElementById('cnt-user-all').textContent = cntAll;
+  if (document.getElementById('cnt-user-admin')) document.getElementById('cnt-user-admin').textContent = cntAdmin;
+  if (document.getElementById('cnt-user-pro')) document.getElementById('cnt-user-pro').textContent = cntPro;
+  if (document.getElementById('cnt-user-normal')) document.getElementById('cnt-user-normal').textContent = cntNormal;
+}
+
+function setUserFilterGroup(group) {
+  currentFilterGroup = group;
+  currentPage = 1;
+
+  document.querySelectorAll('.user-filter-btn').forEach(btn => {
+    const isAct = btn.dataset.filter === group;
+    btn.classList.toggle('active', isAct);
+    if (isAct) {
+      btn.style.background = '#059669';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = '#059669';
+      btn.style.fontWeight = '800';
+    } else {
+      btn.style.background = '#ffffff';
+      btn.style.borderColor = '#cbd5e1';
+      btn.style.fontWeight = '700';
+      if (btn.dataset.filter === 'admin') btn.style.color = '#b91c1c';
+      else if (btn.dataset.filter === 'pro') btn.style.color = '#047857';
+      else if (btn.dataset.filter === 'normal') btn.style.color = '#64748b';
+      else btn.style.color = '#334155';
+    }
+  });
+
+  filterUsers();
+}
+
+function filterUsers() {
+  const q = (document.getElementById('user-search')?.value || '').toLowerCase().trim();
+
+  let filtered = allUsers;
+
+  // 1. Group Filter
+  if (currentFilterGroup === 'admin') {
+    filtered = filtered.filter(u => u.role === 'admin');
+  } else if (currentFilterGroup === 'pro') {
+    filtered = filtered.filter(u => u.role !== 'admin' && u.account_tier === 'pro');
+  } else if (currentFilterGroup === 'normal') {
+    filtered = filtered.filter(u => u.role !== 'admin' && u.account_tier !== 'pro');
+  }
+
+  // 2. Search Filter
+  if (q) {
+    filtered = filtered.filter(u =>
+      (u.full_name || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.phone || '').toLowerCase().includes(q) ||
+      (u.farm_name || '').toLowerCase().includes(q)
+    );
+  }
+
+  renderUsersTable(filtered);
 }
 
 function renderUsersTable(users) {
   const tbody = document.getElementById('users-table');
+  const pagInfo = document.getElementById('users-pagination-info');
+  const pagBtns = document.getElementById('users-pagination-btns');
   if (!tbody) return;
 
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Không tìm thấy người dùng nào.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Không tìm thấy người dùng nào.</td></tr>';
+    if (pagInfo) pagInfo.textContent = 'Hiển thị 0 người dùng';
+    if (pagBtns) pagBtns.innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = users.map(u => {
-    // Current user label/badge
+  // Pagination Logic (10 items / page)
+  const totalItems = users.length;
+  const totalPages = Math.ceil(totalItems / USERS_PAGE_SIZE);
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const startIdx = (currentPage - 1) * USERS_PAGE_SIZE;
+  const endIdx = Math.min(startIdx + USERS_PAGE_SIZE, totalItems);
+  const pageUsers = users.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageUsers.map(u => {
     const isSelf = currentUser && currentUser.id === u.id;
     const selfBadge = isSelf ? ' <span style="font-size: 10px; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px;">Bạn</span>' : '';
     
-    // Role badge
     const roleBadge = u.role === 'admin' 
       ? '<span class="badge badge-admin" style="background:#fef2f2; color:#b91c1c; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
       : '<span class="badge badge-user" style="background:#fff7ed; color:#ea580c; border: 1px solid #fdba74; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa fa-user"></i> Nông hộ</span>';
 
-    // Tier badge
     let tierBadge = '';
     if (u.account_tier === 'pro') {
       if (u.tier_expires_at) {
@@ -66,7 +146,6 @@ function renderUsersTable(users) {
       tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;">⚪ NORMAL</span>`;
     }
 
-    // Farm badge
     const farmBadge = u.farm_name
       ? `<span class="badge" style="background:#eff6ff; color:#2563eb; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-earth-asia"></i> ${escapeHtml(u.farm_name)}</span>`
       : '<span style="color:var(--gray-400); font-size:12px;">— Chưa gán —</span>';
@@ -75,7 +154,6 @@ function renderUsersTable(users) {
       year: 'numeric', month: '2-digit', day: '2-digit'
     }) : '—';
 
-    // Actions
     const deleteBtn = isSelf 
       ? `<button class="btn btn-secondary btn-sm" disabled style="opacity:0.5; cursor:not-allowed;" title="Bạn không thể tự xóa tài khoản của mình"><i class="fa fa-trash"></i> Xóa</button>`
       : `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})"><i class="fa fa-trash"></i> Xóa</button>`;
@@ -100,22 +178,32 @@ function renderUsersTable(users) {
       </tr>
     `;
   }).join('');
-}
 
-function filterUsers() {
-
-  const q = document.getElementById('user-search').value.toLowerCase().trim();
-  if (!q) {
-    renderUsersTable(allUsers);
-    return;
+  // Render Pagination Bar
+  if (pagInfo) {
+    pagInfo.textContent = `Hiển thị ${startIdx + 1} - ${endIdx} trong tổng số ${totalItems} người dùng (Trang ${currentPage}/${totalPages})`;
   }
-  const filtered = allUsers.filter(u => 
-    (u.full_name || '').toLowerCase().includes(q) || 
-    (u.email || '').toLowerCase().includes(q) ||
-    (u.farm_name || '').toLowerCase().includes(q)
-  );
-  renderUsersTable(filtered);
+
+  if (pagBtns) {
+    let btnsHtml = '';
+    btnsHtml += `<button onclick="changeUsersPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">◄ Trang trước</button>`;
+
+    for (let p = 1; p <= totalPages; p++) {
+      const isAct = p === currentPage;
+      btnsHtml += `<button onclick="changeUsersPage(${p})" style="padding:6px 12px; font-size:12px; font-weight:800; border-radius:8px; border:1px solid ${isAct ? '#059669' : '#cbd5e1'}; background:${isAct ? '#059669' : '#ffffff'}; color:${isAct ? '#ffffff' : '#334155'}; cursor:pointer;">${p}</button>`;
+    }
+
+    btnsHtml += `<button onclick="changeUsersPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">Trang sau ►</button>`;
+
+    pagBtns.innerHTML = btnsHtml;
+  }
 }
+
+function changeUsersPage(page) {
+  currentPage = page;
+  filterUsers();
+}
+
 
 async function openUserModal(userId = null) {
   const modal = document.getElementById('user-modal');
@@ -749,12 +837,16 @@ window.setQuickTierDuration = setQuickTierDuration;
 window.toggleUnlimitedTierDate = toggleUnlimitedTierDate;
 window.onTierOptionChange = onTierOptionChange;
 
+window.setUserFilterGroup = setUserFilterGroup;
+window.changeUsersPage = changeUsersPage;
+
 // Hook loadPendingFarmerUsers on loadUsers
 const originalLoadUsers = loadUsers;
 loadUsers = async function() {
   await originalLoadUsers();
   await loadPendingFarmerUsers();
 };
+
 
 
 
