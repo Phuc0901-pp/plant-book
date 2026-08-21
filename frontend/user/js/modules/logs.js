@@ -10,10 +10,11 @@ import { buildMediaThumbnailsHtml } from './media.js';
 let _logsCache = [];
 let _diseaseOnlyFilterActive = false;
 
-// ── State Phân trang Lịch sử (10 dòng / trang) ───────────────
+// ── State Phân trang Lịch sử (20 dòng / trang) ───────────────
 let _currentLogPage = 1;
-const _logPageSize = 10;
+const _logPageSize = 20;
 let _currentFilteredLogs = [];
+
 
 /**
  * Cập nhật cache nhật ký (30 ngày).

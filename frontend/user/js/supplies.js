@@ -10,10 +10,11 @@ let currentCategoryFilter = 'all';
 let currentPeriodFilter = 'day';
 let cachedSupplies = [];
 
-// ── State Phân trang Lịch sử Tiêu hao Vật tư (10 đợt / trang) ──
+// ── State Phân trang Lịch sử Tiêu hao Vật tư (20 đợt / trang) ──
 let currentUsageLogPage = 1;
-const usageLogPageSize = 10;
+const usageLogPageSize = 20;
 let cachedUsageLogs = [];
+
 
 // ─── Formatting helpers ──────────────────────────────────────────
 function formatVND(amount) {
@@ -893,16 +894,61 @@ function renderSupplyUsagesPage() {
           <div style="display:flex; flex-direction:column; gap:8px;">
       `;
 
+      // Aggregate identical supplies (e.g. Tiền nước across multiple trees on the same day)
+      const aggregatedSupplies = {};
       catItems.forEach(l => {
-        const cost = parseFloat(l.total_cost) || 0;
-        const targetStr = l.plant_id ? `Cây ${l.tree_code || '#' + l.plant_id} (${l.farm_name || ''})` : `Toàn vườn ${l.farm_name || ''}`;
+        const supplyKey = (l.supply_name || `Supply_${l.supply_id || '0'}`).trim();
+        if (!aggregatedSupplies[supplyKey]) {
+          aggregatedSupplies[supplyKey] = {
+            supply_name: l.supply_name || 'Vật tư',
+            unit: l.unit || 'đơn vị',
+            unit_price: l.unit_price || 0,
+            total_quantity: 0,
+            total_cost: 0,
+            ids: [],
+            targets: [],
+            notes: []
+          };
+        }
+
+        const grp = aggregatedSupplies[supplyKey];
+        const qty = parseFloat(l.quantity) || 0;
+        const cost = parseFloat(l.total_cost || (qty * l.unit_price)) || 0;
+
+        grp.total_quantity += qty;
+        grp.total_cost += cost;
+        if (l.id) grp.ids.push(l.id);
+
+        const targetStr = l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : `Toàn vườn`;
+        const fullTarget = l.farm_name ? `${targetStr} (${l.farm_name})` : targetStr;
+        if (!grp.targets.includes(fullTarget)) grp.targets.push(fullTarget);
+
+        if (l.note && !grp.notes.includes(l.note)) grp.notes.push(l.note);
+      });
+
+      Object.values(aggregatedSupplies).forEach(grp => {
+        let formattedQty = parseFloat(grp.total_quantity.toFixed(4));
+        let targetsStr = '';
+        if (grp.targets.length === 1) {
+          targetsStr = grp.targets[0];
+        } else if (grp.targets.length <= 4) {
+          targetsStr = grp.targets.join(', ');
+        } else {
+          targetsStr = `Áp dụng cho ${grp.targets.length} cây trồng / khu vực`;
+        }
+
+        const notesStr = grp.notes.join('; ');
+        const idsJson = JSON.stringify(grp.ids);
 
         html += `
-          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div>
-              <div style="font-size:13.5px; font-weight:800; color:#0f172a;">${esc(l.supply_name)}</div>
-              <div style="font-size:12px; color:#475569; margin-top:2px;">
-                Số lượng: <strong style="color:#047857;">${l.quantity} ${esc(l.unit)}</strong> · Đơn giá: <strong>${formatVND(l.unit_price)}</strong>
+              <div style="font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                ${esc(grp.supply_name)}
+                ${grp.ids.length > 1 ? `<span style="background:#eff6ff; color:#2563eb; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">Gom ${grp.ids.length} đợt</span>` : ''}
+              </div>
+              <div style="font-size:12px; color:#475569; margin-top:3px;">
+                Tổng số lượng dùng: <strong style="color:#047857;">${formattedQty} ${esc(grp.unit)}</strong> · Đơn giá: <strong>${formatVND(grp.unit_price)}</strong>
               </div>
               <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <span><i class="fa-solid fa-house-chimney" style="color:#059669;"></i> ${esc(targetStr)}</span>
@@ -993,6 +1039,22 @@ export async function deleteSupplyUsage(id) {
   }
 }
 
+export async function deleteSupplyUsagesGroup(ids) {
+  if (!ids || !ids.length) return;
+  const countStr = ids.length > 1 ? `${ids.length} đợt tiêu hao` : 'đợt tiêu hao này';
+  if (!confirm(`Bạn có chắc chắn muốn xóa ${countStr}?`)) return;
+
+  try {
+    for (const id of ids) {
+      await api(`/supplies/usages/${id}`, { method: 'DELETE' });
+    }
+    toast(`Đã xóa ${countStr} thành công!`);
+    loadSuppliesAnalytics();
+  } catch (err) {
+    toast('Lỗi xóa lịch sử tiêu hao: ' + err.message, 'error');
+  }
+}
+
 // ─── EXPOSE TO WINDOW FOR HTML ONCLICK ───────────────────────────
 window.autoCalculateSupplyUnits = autoCalculateSupplyUnits;
 window.loadSupplies = loadSupplies;
@@ -1011,3 +1073,5 @@ window.calculateUsageCostPreview = calculateUsageCostPreview;
 window.saveSupplyUsage = saveSupplyUsage;
 window.loadSupplyUsagesLog = loadSupplyUsagesLog;
 window.deleteSupplyUsage = deleteSupplyUsage;
+window.deleteSupplyUsagesGroup = deleteSupplyUsagesGroup;
+
