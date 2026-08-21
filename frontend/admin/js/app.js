@@ -29,8 +29,9 @@ function showPage(page) {
   }
   const titles = { 
     dashboard: 'Dashboard', 
+    database: 'Cơ sở dữ liệu & Nhật ký Canh tác',
     plants: 'Danh sách cây trồng', 
-    schemas: 'Cấu hình', 
+    schemas: 'Cấu hình loại cây', 
     media: 'Thư viện Media', 
     gis: 'Quản lý GIS', 
     users: 'Quản lý người dùng',
@@ -48,6 +49,7 @@ function showPage(page) {
   }
 
   if (page === 'dashboard') loadDashboard();
+  if (page === 'database') initDatabasePage();
   if (page === 'plants') {
     initPlantFilters().then(() => loadPlants());
   }
@@ -61,6 +63,7 @@ function showPage(page) {
   if (page === 'media') initGlobalMediaLibrary();
   if (page === 'cost') initCostPage();
 }
+
 
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');

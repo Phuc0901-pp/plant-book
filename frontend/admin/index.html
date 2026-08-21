@@ -402,31 +402,32 @@
       <div class="nav-item active" onclick="showPage('dashboard')">
         <i class="fa fa-chart-pie"></i> Dashboard
       </div>
-      <div class="nav-section">Quản lý</div>
+      <div class="nav-section">Cơ sở dữ liệu</div>
+      <div class="nav-item" onclick="showPage('database')">
+        <i class="fa-solid fa-database"></i> Cơ sở dữ liệu
+      </div>
+      <div class="nav-section">Quản lý Cây trồng & GIS</div>
       <div class="nav-item" onclick="showPage('gis')">
         <i class="fa fa-earth-asia"></i> Quản lý trang trại
+      </div>
+      <div class="nav-item" onclick="showPage('plants')">
+        <i class="fa fa-seedling"></i> Danh sách cây
       </div>
       <div class="nav-item" onclick="showPage('cost')">
         <i class="fa fa-coins"></i> Quản trị Chi phí
       </div>
       <div class="nav-item" onclick="showPage('devices')">
-        <i class="fa fa-microchip"></i> Quản lý thiết bị
-      </div>
-      <div class="nav-section">Cây trồng</div>
-      <div class="nav-item" onclick="showPage('plants')">
-        <i class="fa fa-seedling"></i> Danh sách cây
-      </div>
-      <div class="nav-item" onclick="showPage('schemas')">
-        <i class="fa fa-sliders"></i> Cấu hình
+        <i class="fa fa-microchip"></i> Thiết bị IoT
       </div>
       <div class="nav-section">Hệ thống</div>
       <div class="nav-item" onclick="showPage('users')">
         <i class="fa fa-users"></i> Người dùng
       </div>
-      <div class="nav-item" onclick="showPage('media')">
-        <i class="fa fa-images"></i> Thư viện media
+      <div class="nav-item" onclick="showPage('schemas')">
+        <i class="fa fa-sliders"></i> Cấu hình loại cây
       </div>
     </nav>
+
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="logout()">
         <i class="fa fa-right-from-bracket"></i> Đăng xuất
@@ -514,10 +515,139 @@
             <tbody id="dashboard-logs-table"><tr><td colspan="5" class="empty-state">Đang tải hoạt động...</td></tr></tbody>
           </table>
         </div>
+      <!-- ── DATABASE (CƠ SỞ DỮ LIỆU) ── -->
+      <div class="page-section" id="page-database">
+        <!-- 3 Sub-tabs in Database section -->
+        <div class="tabs" style="margin-bottom: 20px;">
+          <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
+            <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
+          </div>
+          <div class="tab" id="db-tab-supplies" onclick="switchDatabaseTab('supplies')">
+            <i class="fa-solid fa-boxes-packing"></i> Vật tư & Kho
+          </div>
+          <div class="tab" id="db-tab-media" onclick="switchDatabaseTab('media')">
+            <i class="fa-solid fa-images"></i> Thư viện media
+          </div>
+        </div>
+
+        <!-- ── TAB 1: DỮ LIỆU CANH TÁC (CULTIVATION DATA & TIMELINE) ── -->
+        <div class="tab-pane active" id="db-pane-cultivation">
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+              <h3 style="margin:0; font-size:15px;"><i class="fa-solid fa-filter" style="color:var(--green)"></i> Lọc Dữ liệu canh tác theo Nông hộ ➔ Trang trại ➔ Cây trồng</h3>
+            </div>
+            
+            <div style="padding:16px; display:flex; gap:12px; flex-wrap:wrap; background:#ffffff;">
+              <div style="flex:1; min-width:180px;">
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">1. Khách hàng (Nông hộ)</label>
+                <select id="db-filter-user" onchange="onDbFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600;">
+                  <option value="">— Chọn Khách hàng —</option>
+                </select>
+              </div>
+
+              <div style="flex:1; min-width:180px;">
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">2. Trang trại</label>
+                <select id="db-filter-farm" onchange="onDbFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600;">
+                  <option value="">— Chọn Trang trại —</option>
+                </select>
+              </div>
+
+              <div style="flex:1; min-width:200px;">
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">3. Chọn Cây trồng *</label>
+                <select id="db-filter-plant" onchange="loadPlantCultivationTimeline()" style="width:100%; padding:9px 12px; border:2px solid #059669; border-radius:10px; font-size:13px; font-weight:700; color:#064e3b; background:#ecfdf5;">
+                  <option value="">— Chọn Cây trồng để xem Nhật ký Canh tác —</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Investment Cost Summary Box -->
+          <div id="db-plant-cost-summary" style="display:none; background:linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius:16px; padding:20px; color:#ffffff; margin-bottom:24px; box-shadow:0 8px 24px rgba(4,120,87,0.25);">
+            <!-- Investment Cost Header populated dynamically by JS -->
+          </div>
+
+          <!-- Lifetime Timeline Container -->
+          <div id="db-cultivation-timeline-container">
+            <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
+              <i class="fa-solid fa-tree-city" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
+              <p style="font-size:14px; font-weight:700; color:#475569;">Vui lòng chọn Cây trồng ở bộ lọc phía trên để theo dõi toàn bộ Nhật ký Canh tác & Chi phí từ lúc khởi tạo đến hiện tại.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB 2: VẬT TƯ (SUPPLIES & INVENTORY) ── -->
+        <div class="tab-pane" id="db-pane-supplies" style="display:none;">
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-boxes-packing" style="color:var(--green)"></i> Quản lý Kho Vật tư & Sản phẩm Canh tác</h3>
+              <button class="btn btn-primary" onclick="openSupplyModal()">
+                <i class="fa fa-plus"></i> Thêm vật tư mới
+              </button>
+            </div>
+            
+            <div style="padding:20px;">
+              <div class="search-bar" style="margin-bottom:16px;">
+                <input type="text" id="supply-search" placeholder="🔍 Tìm theo tên phân bón, thuốc bảo vệ thực vật, vật tư..." oninput="filterSupplies()" style="width:100%; padding:10px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px;">
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ảnh sản phẩm</th>
+                    <th>Tên vật tư</th>
+                    <th>Loại vật tư</th>
+                    <th>Số lượng tồn kho</th>
+                    <th>Đơn giá (VNĐ)</th>
+                    <th>Nhà sản xuất / Ghi chú</th>
+                    <th style="width:150px">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="supplies-table-body">
+                  <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu vật tư...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB 3: THƯ VIỆN MEDIA (RELOCATED) ── -->
+        <div class="tab-pane" id="db-pane-media" style="display:none;">
+          <div class="card">
+            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
+              <h3 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media & Quản lý Thư mục (Khách hàng ➔ Trang trại ➔ Cây ➔ Năm ➔ Quý)
+              </h3>
+            </div>
+            
+            <!-- Interactive Breadcrumb Navigation -->
+            <div style="padding: 12px 16px; background: #ecfdf5; border-bottom: 1px solid #a7f3d0; font-size: 13px; font-weight: 700; color: #064e3b; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="media-breadcrumb-nav">
+              <span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder('root')"><i class="fa-solid fa-folder"></i> Thư viện gốc</span>
+            </div>
+
+            <!-- Main View Container -->
+            <div style="padding: 20px;">
+              <!-- Folder Grid Container (Shows Folders when in Folder View) -->
+              <div id="media-folders-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                <!-- Folder cards populated dynamically by JS -->
+              </div>
+
+              <!-- Media Items Grid (Shows Media Files) -->
+              <div id="media-gallery-grid" class="media-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px;">
+                <!-- Media items populated dynamically -->
+              </div>
+
+              <div id="media-gallery-empty" style="display: none; text-align: center; padding: 40px; color: var(--gray-400);">
+                <i class="fa-regular fa-folder-open" style="font-size: 48px; margin-bottom: 12px; display: block; color:#94a3b8;"></i>
+                Chưa có thư mục hoặc phương tiện nào trong cấp này.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── GIS Management ── -->
       <div class="page-section" id="page-gis">
+
         <div class="gis-container">
           <!-- GIS Sidebar: Premium Redesign -->
           <div class="gis-sidebar">
@@ -1908,6 +2038,7 @@
   <script src="/admin/js/auth.js"></script>
   <script src="/admin/js/dashboard.js?v=2.2.0"></script>
   <script src="/admin/js/media.js"></script>
+  <script src="/admin/js/database.js"></script>
   <script src="/admin/js/schemas.js"></script>
   <script src="/admin/js/plants.js?v=2.2.0"></script>
   <script src="/admin/js/gis.js"></script>
@@ -1917,5 +2048,6 @@
   <script src="/admin/js/websocket.js"></script>
   <script src="/admin/js/app.js?v=2.2.0"></script>
 </body>
+
 </html>
 
