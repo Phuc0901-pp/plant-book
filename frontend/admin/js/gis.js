@@ -622,9 +622,17 @@ function drawFarmsAndPlantsLayers(farms, plants) {
   const displayPlants = plants || currentPlants || [];
   displayPlants.forEach(plant => {
     if (plant.latitude && plant.longitude) {
-      const lat = parseFloat(plant.latitude);
-      const lng = parseFloat(plant.longitude);
+      let lat = parseFloat(plant.latitude);
+      let lng = parseFloat(plant.longitude);
       if (!isNaN(lat) && !isNaN(lng)) {
+        // Auto-fix swapped latitude/longitude (lat > 90 or < -90)
+        if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
+          const tmp = lat;
+          lat = lng;
+          lng = tmp;
+        }
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
         let color = '#3b82f6';
         if (plant.health_status === 'Tốt') color = '#22c55e';
         else if (plant.health_status === 'Cần chú ý') color = '#eab308';
