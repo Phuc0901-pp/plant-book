@@ -194,7 +194,22 @@ async function start() {
       console.log(`\n🌿 Plant Book Server running at port ${PORT}`);
       console.log(`📋 Admin panel: /admin`);
       console.log(`🔑 Login: ${process.env.ADMIN_EMAIL} / ${process.env.ADMIN_PASSWORD}\n`);
+
+      // Auto Keep-Alive Self-Ping (Ngăn Render Free-tier tự động ngủ)
+      const appUrl = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
+      if (appUrl) {
+        const pingUrl = `${appUrl.replace(/\/$/, '')}/api/health`;
+        const httpModule = pingUrl.startsWith('https') ? require('https') : require('http');
+        setInterval(() => {
+          httpModule.get(pingUrl, (res) => {
+            console.log(`⏰ [Keep-Alive] Pinged ${pingUrl} - Status: ${res.statusCode}`);
+          }).on('error', (e) => {
+            console.warn(`⚠️ [Keep-Alive Warning] ${e.message}`);
+          });
+        }, 10 * 60 * 1000); // Mỗi 10 phút
+      }
     });
+
   } catch (err) {
     console.error('❌ Startup error:', err);
     process.exit(1);

@@ -1,4 +1,4 @@
-name: Keep Render App Awake
+name: Keep Render App Awake (PROD & DEV)
 
 on:
   schedule:
@@ -10,15 +10,21 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Send ping request to Render
+      - name: Send ping requests to Render (PROD & DEV)
         run: |
-          # URL của dự án Render (thay đổi nếu URL của bạn có hậu tố khác)
-          URL="https://plant-book.onrender.com/api/health"
+          URLS=(
+            "https://plant-book.onrender.com/api/health"
+            "https://dev-plantbook.onrender.com/api/health"
+            "https://dev.plantbook.onrender.com/api/health"
+          )
           
-          echo "Pinging $URL..."
-          response=$(curl -s -w "%{http_code}" -o /dev/null "$URL")
-          if [ "$response" -eq 200 ]; then
-            echo "[SUCCESS] Ping thành công! Dịch vụ đang hoạt động."
-          else
-            echo "[WARMING] Cảnh báo: Phản hồi từ máy chủ nhận được mã $response. Vui lòng kiểm tra lại URL: $URL"
-          fi
+          for URL in "${URLS[@]}"; do
+            echo "----------------------------------------"
+            echo "Pinging $URL..."
+            response=$(curl -s -L -w "%{http_code}" -o /dev/null "$URL")
+            if [ "$response" -eq 200 ]; then
+              echo "[SUCCESS] Ping thành công! Dịch vụ $URL đang hoạt động mượt mà."
+            else
+              echo "[WARNING] Cảnh báo: Phản hồi từ máy chủ $URL nhận được mã $response."
+            fi
+          done
