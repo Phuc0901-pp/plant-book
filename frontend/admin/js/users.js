@@ -102,9 +102,8 @@ function renderUsersTable(users) {
   }).join('');
 }
 
-}
-
 function filterUsers() {
+
   const q = document.getElementById('user-search').value.toLowerCase().trim();
   if (!q) {
     renderUsersTable(allUsers);
