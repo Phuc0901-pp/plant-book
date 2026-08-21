@@ -223,12 +223,13 @@ router.put('/:id', async (req, res) => {
 
 
     const updated = await pool.query(
-      `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies, u.created_at, f.name as farm_name
+      `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies, u.account_tier, u.tier_expires_at, u.tier_admin_note, u.created_at, f.name as farm_name
        FROM users u
        LEFT JOIN farms f ON f.id = u.farm_id
        WHERE u.id=$1`,
-      [id]
+      [targetUserId]
     );
+
 
 
     res.json(updated.rows[0]);

@@ -118,11 +118,15 @@ async function initDB() {
       )
     `);
 
-    // Ensure status columns exist in users table
+    // Ensure status & tier columns exist in users table
     await client.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS account_tier VARCHAR(20) DEFAULT 'normal';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS tier_expires_at TIMESTAMPTZ NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS tier_admin_note TEXT NULL;
     `);
+
 
     // User activities history table
     await client.query(`
