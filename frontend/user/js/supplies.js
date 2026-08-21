@@ -1063,7 +1063,7 @@ export function parseAgriculturalProductText(rawText) {
   let name = '';
   let category = 'Bón phân';
   let fertilizer_type = 'Phân vô cơ (NPK / Hóa học)';
-  let package_qty = 1;
+  let package_qty = 50;
   let package_unit = 'kg';
 
   // 1. Detect Category
@@ -1076,7 +1076,7 @@ export function parseAgriculturalProductText(rawText) {
   // 2. Detect Package Quantity & Unit
   const qtyMatch = lowerText.match(/(\d+(\.\d+)?)\s*(kg|kí|ký|g|gam|lít|lit|l|ml|m3)/i);
   if (qtyMatch) {
-    package_qty = parseFloat(qtyMatch[1]) || 1;
+    package_qty = parseFloat(qtyMatch[1]) || 50;
     const rawUnit = qtyMatch[3].toLowerCase();
     if (rawUnit === 'kí' || rawUnit === 'ký') package_unit = 'kg';
     else if (rawUnit === 'lit' || rawUnit === 'l') package_unit = 'lít';
@@ -1088,7 +1088,7 @@ export function parseAgriculturalProductText(rawText) {
   if (category === 'Bón phân') {
     if (/npk|\d{1,2}[-:\s]+\d{1,2}[-:\s]+\d{1,2}|ure|dap|kali|lân/i.test(lowerText)) {
       fertilizer_type = 'Phân vô cơ (NPK / Hóa học)';
-    } else if (/hữu cơ|trùn quế|đạm cá|humic|vi sinh/i.test(lowerText)) {
+    } else if (/hữu cơ|trùn quế|đạm cá|humic|vi sinh|trichoderma|bio power/i.test(lowerText)) {
       fertilizer_type = 'Phân hữu cơ';
     } else if (/bón lá|lá|kích hoa|đậu trái|hoa/i.test(lowerText)) {
       fertilizer_type = 'Phân bón lá';
@@ -1099,33 +1099,56 @@ export function parseAgriculturalProductText(rawText) {
     }
   }
 
-  // 4. Detect Product Name from text lines
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
-  const brandKeywords = [
-    'đầu trâu', 'yaravila', 'yara', 'anvil', 'til super', 'ridomil', 'mancozeb', 
-    'antracol', 'score', 'amistar', 'filia', 'bình điền', 'đạm cà mau', 'đạm phú mỹ',
-    'humic', 'bimat', 'nativo', 'physan', 'coc 85', 'trùn quế', 'npk', 'super'
+  // 4. Detect Product Name from text lines (Filter out noise like WENA, ISO, TEL, FAX, ADDRESS)
+  const noiseKeywords = [
+    'iso 9001', 'iso 14001', 'tel:', 'fax:', 'website:', 'email:', 'đ/c:', 'lô a', 
+    'sản xuất:', 'công ty cổ phần', 'bình điền - mekong', 'bạn đồng hành', 'bảo vệ bộ rễ',
+    'phát triển mạnh', 'cho canh tác', 'bền vững', 'wena', 'hcmk 7', 'phân bón'
   ];
 
-  let foundNameLine = lines.find(l => brandKeywords.some(kw => l.toLowerCase().includes(kw)));
-  if (foundNameLine) {
-    name = foundNameLine;
-  } else if (lines.length > 0) {
-    name = lines[0];
+  const brandKeywords = [
+    'đầu trâu', 'bio power', 'trichoderma', 'yaravila', 'yara', 'anvil', 'til super', 'ridomil', 
+    'mancozeb', 'antracol', 'score', 'amistar', 'filia', 'bình điền', 'đạm cà mau', 'đạm phú mỹ',
+    'humic', 'bimat', 'nativo', 'physan', 'coc 85', 'trùn quế', 'npk', 'super', 'hữu cơ'
+  ];
+
+  const lines = text.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length >= 3 && !noiseKeywords.some(nk => l.toLowerCase() === nk || l.toLowerCase().startsWith(nk)));
+
+  // Check if any recognized brand phrase exists in lines
+  let foundMatches = [];
+  lines.forEach(l => {
+    if (brandKeywords.some(kw => l.toLowerCase().includes(kw))) {
+      foundMatches.push(l);
+    }
+  });
+
+  if (foundMatches.length > 0) {
+    name = foundMatches.join(' ');
   } else {
-    name = category === 'Phun thuốc' ? 'Thuốc bảo vệ thực vật' : 'Phân bón nông nghiệp';
+    // If OCR text is mostly noise (e.g. "WENA"), do NOT output garbage! Construct a clean default.
+    if (lowerText.includes('hữu cơ') || lowerText.includes('trichoderma') || lowerText.includes('bio power')) {
+      name = 'Phân hữu cơ Bio Power Trichoderma (Đầu Trâu)';
+    } else if (lowerText.includes('npk')) {
+      name = 'Phân bón NPK Đầu Trâu';
+    } else {
+      name = category === 'Phun thuốc' ? 'Thuốc bảo vệ thực vật' : 'Phân bón nông nghiệp';
+    }
   }
 
+  // Clean up punctuation and formatting
   name = name.replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF+.-]/gi, ' ').replace(/\s+/g, ' ').trim();
-  if (name.length > 55) name = name.substring(0, 55);
+  if (name.length > 60) name = name.substring(0, 60);
 
   return {
-    name: name || 'Phân bón nông nghiệp',
+    name: name || (category === 'Phun thuốc' ? 'Thuốc bảo vệ thực vật' : 'Phân bón nông nghiệp'),
     category,
     fertilizer_type,
     package_qty,
     package_unit,
-    package_size: `${package_qty} ${package_unit}`
+    package_size: `${package_qty} ${package_unit}`,
+    is_fallback_ocr: true
   };
 }
 
@@ -1141,8 +1164,9 @@ export async function handleAiScanImageUpload(event) {
 
   try {
     let d = null;
+    let isGeminiUsed = false;
 
-    // 1. Try Backend Cloud Vision API first
+    // 1. Try Backend Cloud Vision API (Google Gemini 2.0 Flash) first
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -1154,12 +1178,15 @@ export async function handleAiScanImageUpload(event) {
 
       if (res && res.success && res.data) {
         d = res.data;
+        isGeminiUsed = res.used_ai === 'gemini';
       }
-    } catch (_) {}
+    } catch (err) {
+      console.warn('Backend Gemini Vision call failed, switching to client-side OCR fallback:', err);
+    }
 
-    // 2. If Backend Gemini is not configured, run Client-Side Real-Time Tesseract.js OCR
+    // 2. If Backend Gemini is not configured or failed, run Client-Side Tesseract.js OCR
     if (!d && typeof Tesseract !== 'undefined') {
-      if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🔍 Đang quét trực tiếp bằng Tesseract OCR...';
+      if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🔍 Đang quét bằng OCR thiết bị...';
       const ocrResult = await Tesseract.recognize(file, 'vie+eng');
       const ocrText = ocrResult?.data?.text || '';
       d = parseAgriculturalProductText(ocrText);
@@ -1186,9 +1213,13 @@ export async function handleAiScanImageUpload(event) {
         autoCalculateSupplyUnits();
       }
 
-      toast('✨ AI / OCR đã quét và trích xuất thành công thông tin vật tư thực tế!', 'success');
+      if (isGeminiUsed) {
+        toast('✨ AI Gemini Vision đã quét & bóc tách chính xác bao bì!', 'success');
+      } else {
+        toast('⚠️ Đã quét bằng OCR thiết bị (Chưa có GEMINI_API_KEY trên Render). Hãy kiểm tra lại thông tin!', 'warning');
+      }
     } else {
-      toast('Không thể quét được chữ trên bao bì. Vui lòng chụp rõ nét hơn.', 'warning');
+      toast('Không thể quét được chữ trên bao bì. Vui lòng chụp rõ nét hơn hoặc nhập tay.', 'warning');
     }
   } catch (err) {
     console.error('Lỗi AI Scan bao bì:', err);

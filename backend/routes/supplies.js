@@ -135,16 +135,15 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
             contents: [{
               parts: [
                 {
-                  text: `Bạn là chuyên gia nông nghiệp Việt Nam. Hãy đọc hình ảnh bao bì phân bón hoặc chai thuốc bảo vệ thực vật này và trích xuất dữ liệu chuẩn JSON không có bất kỳ ký tự thừa nào ngoài JSON.
-JSON schema:
+                  text: `Bạn là chuyên gia bóc tách thông tin bao bì phân bón và thuốc bảo vệ thực vật tại Việt Nam. Hãy đọc kỹ ảnh chụp bao bì/chai thuốc và trả về duy nhất 1 chuỗi JSON thuần tuý (không thêm văn bản ngoài JSON):
 {
-  "name": "Tên đầy đủ sản phẩm phân bón/thuốc (VD: Phân NPK 16-16-8 Đầu Trâu)",
+  "name": "Tên đầy đủ và chuẩn xác của sản phẩm (ví dụ: Phân hữu cơ Bio Power MK 7 Trichoderma +TE Đầu Trâu)",
   "category": "Bón phân" hoặc "Phun thuốc",
   "fertilizer_type": "Phân vô cơ (NPK / Hóa học)" hoặc "Phân hữu cơ" hoặc "Phân bón lá" hoặc "Phân vi lượng / Trung lượng" hoặc "Phân chuồng / Hoai mục" hoặc "Khác",
-  "package_qty": 50 (dạng số),
-  "package_unit": "kg" hoặc "lít" hoặc "g" hoặc "ml" hoặc "m3" hoặc "khác",
-  "package_size": "50 kg" (chuỗi),
-  "manufacturer": "Thương hiệu/Nhà sản xuất"
+  "package_qty": 50,
+  "package_unit": "kg" hoặc "lít" hoặc "g" hoặc "ml" hoặc "m3",
+  "package_size": "50 kg",
+  "manufacturer": "Tên nhà sản xuất"
 }`
                 },
                 {
@@ -158,8 +157,16 @@ JSON schema:
         if (geminiRes.ok) {
           const result = await geminiRes.json();
           const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          let cleanJson = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+          const firstBrace = cleanJson.indexOf('{');
+          const lastBrace = cleanJson.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
+          }
           scannedData = JSON.parse(cleanJson);
+        } else {
+          const errText = await geminiRes.text();
+          console.error('Gemini API HTTP Error:', geminiRes.status, errText);
         }
       } catch (geminiErr) {
         console.error('Gemini Vision API error:', geminiErr);
@@ -170,12 +177,13 @@ JSON schema:
       return res.json({
         success: false,
         fallback_ocr: true,
-        message: 'Yêu cầu chạy Tesseract OCR client-side'
+        message: 'Không tìm thấy API Key Gemini hoặc xử lý AI gặp lỗi, chuyển sang OCR client-side'
       });
     }
 
     res.json({
       success: true,
+      used_ai: 'gemini',
       data: scannedData
     });
 
