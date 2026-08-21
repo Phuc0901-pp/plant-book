@@ -145,13 +145,14 @@ router.post('/register', async (req, res) => {
     const email = `${cleanPhone}@farmer.tanbaocorp.vn`;
     const name = full_name && full_name.trim() ? full_name.trim() : `Nông hộ ${cleanPhone}`;
 
-    // Insert user with approved = true (Auto-approved, no admin review needed)
+    // Insert user with approved = true (Auto-approved, default to 'normal' tier)
     const userRes = await pool.query(
-      `INSERT INTO users (email, password_hash, full_name, role, phone, gender, dob, plant_type, plant_variety, plant_age, farm_area, approved)
-       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, $10, true)
-       RETURNING id, email, full_name, phone, approved, created_at`,
+      `INSERT INTO users (email, password_hash, full_name, role, phone, gender, dob, plant_type, plant_variety, plant_age, farm_area, approved, account_tier)
+       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7, $8, $9, $10, true, 'normal')
+       RETURNING id, email, full_name, phone, approved, account_tier, created_at`,
       [email, hash, name, cleanPhone, gender || null, dob || null, plant_type || null, plant_variety || null, plant_age || null, parsedArea]
     );
+
 
     const newUser = userRes.rows[0];
 
