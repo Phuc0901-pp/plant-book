@@ -33,10 +33,14 @@ async function initCostPage() {
       userSel.innerHTML = '<option value="all">👤 Tất cả khách hàng</option>' +
         users.map(u => '<option value="' + u.id + '">' + esc(u.full_name) + '</option>').join('');
     }
+    const chartFarmSel = document.getElementById('cost-chart-farm');
     if (farmSel && farmSel.options.length <= 1) {
-      farmSel.innerHTML = '<option value="all">🌿 Tất cả trang trại</option>' +
+      const farmOpts = '<option value="all">🌿 Tất cả trang trại</option>' +
         farms.map(f => '<option value="' + f.id + '">' + esc(f.name) + '</option>').join('');
+      farmSel.innerHTML = farmOpts;
+      if (chartFarmSel) chartFarmSel.innerHTML = farmOpts;
     }
+
     const ceFarm = document.getElementById('ce-farm');
     if (ceFarm) {
       ceFarm.innerHTML = '<option value="">— Chọn trang trại —</option>' +
@@ -306,6 +310,7 @@ function renderCostChart() {
 
   const year = parseInt(document.getElementById('cost-chart-year') ? document.getElementById('cost-chart-year').value : new Date().getFullYear());
   const selectedCat = document.getElementById('cost-chart-type') ? document.getElementById('cost-chart-type').value : 'all';
+  const selectedFarm = document.getElementById('cost-chart-farm') ? document.getElementById('cost-chart-farm').value : 'all';
 
   const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 
@@ -326,7 +331,9 @@ function renderCostChart() {
   };
 
   costConsumables.forEach(function(item) {
+    if (selectedFarm !== 'all' && String(item.farm_id) !== String(selectedFarm)) return;
     if (!item.date && !item.usage_date && !item.created_at) return;
+
     const d = new Date(item.date || item.usage_date || item.created_at);
     if (!isNaN(d) && d.getFullYear() === year) {
       const m = d.getMonth();

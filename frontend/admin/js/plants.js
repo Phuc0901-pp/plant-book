@@ -14,46 +14,153 @@ async function loadPlants() {
 
   try {
     const plants = await api(`/plants?${params}`);
-    const tbody = document.getElementById('plants-table');
-    if (!plants.length) {
-      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fa fa-seedling"></i><p>Không có cây nào</p></div></td></tr>';
+    const container = document.getElementById('plants-folder-container');
+    if (!container) return;
+
+    if (!plants || plants.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:14px; border:1px solid #e2e8f0; text-align:center;">
+          <i class="fa-solid fa-seedling" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
+          <p style="font-size:14px; font-weight:700; color:#475569;">Không tìm thấy cây trồng phù hợp.</p>
+        </div>`;
       return;
     }
-    tbody.innerHTML = plants.map(p => `
-      <tr>
-        <td><div class="plant-cover" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--green);background:rgba(34,197,94,0.1);border-radius:10px;"><i class="fa-solid fa-seedling"></i></div></td>
-        <td>
-          <strong>${esc(p.tree_code || '—')}</strong>
-          <br><small style="color:var(--gray-400)">ID: ${p.id}</small>
-        </td>
-        <td>
-          <strong>${esc(p.plant_type)}</strong>
-          ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
-        </td>
-        <td>${esc(p.farm_owner_name || '—')}</td>
-        <td>${esc(p.farm_name || '—')}</td>
-        <td>${esc(p.plant_age||'—')}</td>
-        <td>${healthBadge(p.health_status)}</td>
-        <td>${esc(p.location||'—')}</td>
-        <td>
-          <div class="actions-cell">
-            <button class="btn btn-secondary btn-sm" onclick="openPlantModal(${p.id})" title="Chỉnh sửa">
-              <i class="fa fa-pen"></i>
-            </button>
-            ${p.is_public ? `
-            <a href="/plant/${esc(p.public_slug)}" target="_blank" class="btn btn-primary btn-sm" title="Xem trang công khai">
-              <i class="fa fa-arrow-up-right-from-square"></i>
-            </a>` : ''}
-            <button class="btn btn-danger btn-sm" onclick="deletePlant(${p.id},'${esc(p.plant_type)}')" title="Xóa">
-              <i class="fa fa-trash"></i>
-            </button>
+
+    // Group plants by farm into folder structure
+    const groupedByFarm = {};
+    plants.forEach(p => {
+      const farmKey = p.farm_id ? `farm_${p.farm_id}` : 'unassigned';
+      if (!groupedByFarm[farmKey]) {
+        groupedByFarm[farmKey] = {
+          farm_id: p.farm_id,
+          farm_name: p.farm_name || 'Cây trồng tự do (Chưa gán trang trại)',
+          owner_name: p.farm_owner_name || '—',
+          plants: []
+        };
+      }
+      groupedByFarm[farmKey].plants.push(p);
+    });
+
+    let html = '';
+    Object.values(groupedByFarm).forEach((group) => {
+      const totHealthy = group.plants.filter(p => p.health_status === 'Tốt').length;
+      const totWatch = group.plants.filter(p => p.health_status === 'Cần chú ý').length;
+      const totSick = group.plants.filter(p => p.health_status === 'Bệnh').length;
+
+      const folderId = `farm-folder-content-${group.farm_id || '0'}`;
+
+      html += `
+        <div class="farm-folder-card" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+          <!-- Folder Header -->
+          <div onclick="toggleFarmFolder('${folderId}')" style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <i class="fa-solid fa-folder-open" id="folder-icon-${folderId}" style="font-size:22px; color:#10b981;"></i>
+              <div>
+                <div style="font-size:15px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
+                  ${esc(group.farm_name)}
+                  ${group.owner_name !== '—' ? `<span style="background:rgba(255,255,255,0.15); color:#e2e8f0; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">👤 ${esc(group.owner_name)}</span>` : ''}
+                </div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Tổng quy mô: <strong>${group.plants.length} cây trồng</strong></div>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div style="display:flex; gap:6px; font-size:11px; font-weight:700;">
+                <span style="background:#ecfdf5; color:#047857; padding:3px 10px; border-radius:12px;">🟢 Tốt: ${totHealthy}</span>
+                ${totWatch > 0 ? `<span style="background:#fffbeb; color:#b45309; padding:3px 10px; border-radius:12px;">🟡 Cần chú ý: ${totWatch}</span>` : ''}
+                ${totSick > 0 ? `<span style="background:#fef2f2; color:#b91c1c; padding:3px 10px; border-radius:12px;">🔴 Bệnh: ${totSick}</span>` : ''}
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openPlantModal(null, ${group.farm_id || 'null'})" style="font-size:12px; padding:5px 12px;">
+                <i class="fa fa-plus"></i> Thêm cây
+              </button>
+              <i class="fa-solid fa-chevron-down" id="folder-arrow-${folderId}" style="color:#94a3b8; transition:transform 0.3s;"></i>
+            </div>
           </div>
-        </td>
-      </tr>`).join('');
+
+          <!-- Folder Body Content Table -->
+          <div id="${folderId}" style="display:block; padding:0; border-top:1px solid #e2e8f0;">
+            <table style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-align:left;">
+                  <th style="padding:10px 16px;">Mã cây</th>
+                  <th>Loại &amp; Giống</th>
+                  <th>Sức khỏe</th>
+                  <th>Tuổi cây</th>
+                  <th>Vị trí GPS</th>
+                  <th style="width:140px; text-align:center;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${group.plants.map(p => `
+                  <tr style="border-bottom:1px solid #f1f5f9; font-size:13px;">
+                    <td style="padding:12px 16px;">
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; background:#ecfdf5; color:#10b981; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">
+                          <i class="fa-solid fa-tree"></i>
+                        </div>
+                        <div>
+                          <strong style="color:#0f172a; font-size:13.5px;">#${esc(p.tree_code || p.id)}</strong>
+                          <div style="font-size:10.5px; color:#94a3b8;">ID: ${p.id}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <strong style="color:#0f172a;">${esc(p.plant_type)}</strong>
+                      ${p.plant_variety ? `<div style="font-size:11.5px; color:#64748b;">Giống: ${esc(p.plant_variety)}</div>` : ''}
+                    </td>
+                    <td>${healthBadge(p.health_status)}</td>
+                    <td style="color:#475569;">${esc(p.plant_age || '—')}</td>
+                    <td style="font-size:11.5px; color:#64748b;">
+                      ${p.latitude && p.longitude ? `<i class="fa-solid fa-location-dot" style="color:#10b981;"></i> ${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : '<span style="color:#cbd5e1;">Chưa định vị</span>'}
+                    </td>
+                    <td style="text-align:center;">
+                      <div style="display:inline-flex; gap:6px;">
+                        <button class="btn btn-secondary btn-sm" onclick="openPlantModal(${p.id})" title="Chỉnh sửa">
+                          <i class="fa fa-pen"></i>
+                        </button>
+                        ${p.is_public ? `
+                        <a href="/plant/${esc(p.public_slug)}" target="_blank" class="btn btn-primary btn-sm" title="Trang công khai">
+                          <i class="fa fa-arrow-up-right-from-square"></i>
+                        </a>` : ''}
+                        <button class="btn btn-danger btn-sm" onclick="deletePlant(${p.id},'${esc(p.plant_type)}')" title="Xóa">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
   } catch (err) {
     toast('Lỗi tải danh sách cây: ' + err.message, 'error');
   }
 }
+
+function toggleFarmFolder(folderId) {
+  const content = document.getElementById(folderId);
+  const icon = document.getElementById(`folder-icon-${folderId}`);
+  const arrow = document.getElementById(`folder-arrow-${folderId}`);
+  if (!content) return;
+
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    if (icon) icon.className = 'fa-solid fa-folder-open';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  } else {
+    content.style.display = 'none';
+    if (icon) icon.className = 'fa-solid fa-folder-closed';
+    if (arrow) arrow.style.transform = 'rotate(-90deg)';
+  }
+}
+
+window.toggleFarmFolder = toggleFarmFolder;
+
 
 let _plantFiltersLoaded = false;
 async function initPlantFilters() {

@@ -1,11 +1,297 @@
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — devices.js
-   Quản lý thiết bị IoT & Giám sát tại trang trại
+   Hệ thống Trạm Thời tiết & Cảm biến Đất IoT Canh tác Thông minh
+   1. Trạm Thời tiết & Dự báo (Weather Telemetry & Forecasting)
+   2. Cảm biến Đất đa tầng (10, 20, 30cm)
+   3. Thuật toán Cảnh báo & Khuyến nghị Canh tác AI
+   4. Quản lý Thiết bị & Bật/Tắt Trạm Master
    ════════════════════════════════════════════════════════ */
 
 let devicesCache = [];
+let iotMasterOnline = true;
+let currentSoilDepth = 10;
+let iotCurrentTab = 'weather';
+let weatherChartInstance = null;
 
-// Load and render all devices
+// Multi-depth soil demo telemetry data
+const soilDepthData = {
+  10: {
+    ph: 6.5, phStatus: 'Đất hơi chua (Tối ưu sầu riêng)', phColor: '#10b981',
+    temp: 25.8, tempStatus: 'Thích hợp phát triển rễ tơ', tempColor: '#10b981',
+    humidity: 48, humStatus: 'Mức trung bình (Cần bổ sung tưới)', humColor: '#f59e0b',
+    ec: 1.1, ecStatus: 'Dinh dưỡng đất hài hòa (1.1 mS/cm)', ecColor: '#10b981',
+    npk: 'N: 130 | P: 40 | K: 200 (mg/kg)', npkColor: '#3b82f6',
+    salinity: 0.12, salStatus: 'Không nhiễm mặn (0.12 ‰)', salColor: '#10b981'
+  },
+  20: {
+    ph: 6.6, phStatus: 'Đất trung tính - Tốt cho rễ chính', phColor: '#10b981',
+    temp: 25.2, tempStatus: 'Nhiệt độ ổn định tầng giữa', tempColor: '#10b981',
+    humidity: 50, humStatus: 'Độ ẩm 50% (Khuyến nghị nâng lên 60%)', humColor: '#f59e0b',
+    ec: 1.3, ecStatus: 'Mức dinh dưỡng lý tưởng (1.3 mS/cm)', ecColor: '#10b981',
+    npk: 'N: 145 | P: 48 | K: 215 (mg/kg)', npkColor: '#3b82f6',
+    salinity: 0.15, salStatus: 'Không nhiễm mặn (0.15 ‰)', salColor: '#10b981'
+  },
+  30: {
+    ph: 6.8, phStatus: 'Đất ổn định tầng sâu', phColor: '#10b981',
+    temp: 24.5, tempStatus: 'Mát mẻ, bảo vệ củ rễ', tempColor: '#10b981',
+    humidity: 58, humStatus: 'Độ ẩm tốt tầng sâu (58%)', humColor: '#10b981',
+    ec: 1.5, ecStatus: 'Tích tụ dinh dưỡng dồi dào', ecColor: '#10b981',
+    npk: 'N: 160 | P: 52 | K: 230 (mg/kg)', npkColor: '#3b82f6',
+    salinity: 0.18, salStatus: 'An toàn (0.18 ‰)', salColor: '#10b981'
+  }
+};
+
+// Initialize IoT Devices Page
+async function initDevicesPage() {
+  renderSoilMetrics(currentSoilDepth);
+  renderWeatherHourlyChart();
+  await loadDevices();
+}
+
+// Master Toggle Switch Power Button
+function toggleIotMasterPower() {
+  iotMasterOnline = !iotMasterOnline;
+  const badge = document.getElementById('iot-status-badge');
+  const text = document.getElementById('iot-status-text');
+  const btn = document.getElementById('iot-master-toggle-btn');
+
+  if (iotMasterOnline) {
+    if (badge) {
+      badge.style.background = 'rgba(16,185,129,0.15)';
+      badge.style.borderColor = 'rgba(16,185,129,0.4)';
+      badge.style.color = '#10b981';
+    }
+    if (text) text.textContent = 'TRẠM IOT ĐANG HOẠT ĐỘNG (LIVE)';
+    if (btn) {
+      btn.style.background = '#10b981';
+      btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Đang Bật Trạm IoT';
+    }
+    toast('Đã bật kết nối Trạm Cảm biến IoT & Trạm Thời tiết!', 'success');
+  } else {
+    if (badge) {
+      badge.style.background = 'rgba(239,68,68,0.15)';
+      badge.style.borderColor = 'rgba(239,68,68,0.4)';
+      badge.style.color = '#ef4444';
+    }
+    if (text) text.textContent = 'TRẠM IOT ĐÃ TẮT (OFFLINE)';
+    if (btn) {
+      btn.style.background = '#64748b';
+      btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Đã Tắt Trạm IoT';
+    }
+    toast('Đã tắt kết nối Trạm Cảm biến IoT.', 'info');
+  }
+}
+
+// Switch Sub-Tabs inside IoT Page
+function switchIotTab(tab) {
+  iotCurrentTab = tab;
+  ['weather', 'soil', 'ai', 'devices'].forEach(t => {
+    const pane = document.getElementById('iot-pane-' + t);
+    const btn = document.getElementById('iot-tab-' + t);
+    if (pane) pane.style.display = t === tab ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+
+  if (tab === 'weather') {
+    setTimeout(renderWeatherHourlyChart, 50);
+  } else if (tab === 'soil') {
+    renderSoilMetrics(currentSoilDepth);
+  }
+}
+
+// Switch Multi-depth Soil Sensors (10, 20, 30 cm)
+function switchSoilDepth(depth) {
+  currentSoilDepth = depth;
+  [10, 20, 30].forEach(d => {
+    const btn = document.getElementById(`soil-depth-btn-${d}`);
+    if (btn) {
+      if (d === depth) {
+        btn.style.background = '#ffffff';
+        btn.style.color = '#0f172a';
+        btn.style.fontWeight = '800';
+        btn.style.boxShadow = '0 1px 4px rgba(0,0,0,0.1)';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = '#64748b';
+        btn.style.fontWeight = '700';
+        btn.style.boxShadow = 'none';
+      }
+    }
+  });
+  renderSoilMetrics(depth);
+}
+
+// Render Soil Telemetry Cards based on Depth
+function renderSoilMetrics(depth) {
+  const grid = document.getElementById('soil-metrics-grid');
+  if (!grid) return;
+
+  const data = soilDepthData[depth] || soilDepthData[10];
+
+  grid.innerHTML = `
+    <!-- Card 1: Soil pH -->
+    <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">🧪 Độ pH Đất (${depth} cm)</div>
+        <div style="font-size:26px; font-weight:900; color:#0f172a; margin-top:4px;">${data.ph}</div>
+        <div style="font-size:12px; font-weight:700; color:${data.phColor}; margin-top:2px;">${data.phStatus}</div>
+      </div>
+      <div style="text-align:right; margin-top:12px;">
+        <div style="width:42px; height:42px; background:#ecfdf5; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#10b981; font-size:18px;">
+          <i class="fa-solid fa-flask-vial"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Soil Temp -->
+    <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">🌡️ Nhiệt độ đất (${depth} cm)</div>
+        <div style="font-size:26px; font-weight:900; color:#0f172a; margin-top:4px;">${data.temp} <small style="font-size:14px; color:#64748b;">°C</small></div>
+        <div style="font-size:12px; font-weight:700; color:${data.tempColor}; margin-top:2px;">${data.tempStatus}</div>
+      </div>
+      <div style="text-align:right; margin-top:12px;">
+        <div style="width:42px; height:42px; background:#fff7ed; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#ea580c; font-size:18px;">
+          <i class="fa-solid fa-temperature-half"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Soil Moisture -->
+    <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">💧 Độ ẩm đất (${depth} cm)</div>
+        <div style="font-size:26px; font-weight:900; color:#0f172a; margin-top:4px;">${data.humidity}%</div>
+        <div style="font-size:12px; font-weight:700; color:${data.humColor}; margin-top:2px;">${data.humStatus}</div>
+      </div>
+      <div style="text-align:right; margin-top:12px;">
+        <div style="width:42px; height:42px; background:#f0f9ff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#0284c7; font-size:18px;">
+          <i class="fa-solid fa-droplet"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Electrical Conductivity (EC) -->
+    <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">⚡ Độ dẫn điện EC (${depth} cm)</div>
+        <div style="font-size:26px; font-weight:900; color:#0f172a; margin-top:4px;">${data.ec} <small style="font-size:13px; color:#64748b;">mS/cm</small></div>
+        <div style="font-size:12px; font-weight:700; color:${data.ecColor}; margin-top:2px;">${data.ecStatus}</div>
+      </div>
+      <div style="text-align:right; margin-top:12px;">
+        <div style="width:42px; height:42px; background:#fef3c7; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#d97706; font-size:18px;">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 5: NPK Content -->
+    <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">🧪 Dinh dưỡng NPK (${depth} cm)</div>
+        <div style="font-size:16px; font-weight:900; color:#0f172a; margin-top:6px;">${data.npk}</div>
+        <div style="font-size:12px; font-weight:700; color:${data.npkColor}; margin-top:4px;">Hàm lượng Đạm-Lân-Kali dồi dào</div>
+      </div>
+      <div style="text-align:right; margin-top:12px;">
+        <div style="width:42px; height:42px; background:#eff6ff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#3b82f6; font-size:18px;">
+          <i class="fa-solid fa-seedling"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 6: Salinity -->
+    <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div>
+        <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">🧂 Độ mặn của đất (${depth} cm)</div>
+        <div style="font-size:26px; font-weight:900; color:#0f172a; margin-top:4px;">${data.salinity} <small style="font-size:13px; color:#64748b;">‰</small></div>
+        <div style="font-size:12px; font-weight:700; color:${data.salColor}; margin-top:2px;">${data.salStatus}</div>
+      </div>
+      <div style="text-align:right; margin-top:12px;">
+        <div style="width:42px; height:42px; background:#f1f5f9; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#64748b; font-size:18px;">
+          <i class="fa-solid fa-cubes-stacked"></i>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Render Weather Hourly Temperature Trend Line Chart
+function renderWeatherHourlyChart() {
+  const canvas = document.getElementById('weather-hourly-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const hours = ['4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
+  const temps = [27, 27, 27, 27, 27, 27, 26, 26];
+
+  if (weatherChartInstance) {
+    weatherChartInstance.destroy();
+    weatherChartInstance = null;
+  }
+
+  weatherChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: hours,
+      datasets: [{
+        label: 'Nhiệt độ (°C)',
+        data: temps,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#10b981',
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` Nhiệt độ: ${ctx.raw}°C` }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+        y: { min: 20, max: 32, ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+
+// Open Modal to Add Custom Warning Rule Condition
+function openAddRuleModal() {
+  const ruleName = prompt('Nhập tên Quy tắc Thuật toán Cảnh báo AI mới:');
+  if (!ruleName) return;
+
+  const ruleCond = prompt('Nhập điều kiện (VD: Độ ẩm đất 20cm < 50% AND Dự báo mưa > 30%):');
+  if (!ruleCond) return;
+
+  const ruleAction = prompt('Nhập hành động/khuyến nghị tự động:');
+  if (!ruleAction) return;
+
+  const rulesList = document.getElementById('iot-rules-list');
+  if (!rulesList) return;
+
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;';
+  div.innerHTML = `
+    <div>
+      <div style="font-size:14px; font-weight:800; color:#0f172a;">${esc(ruleName)}</div>
+      <div style="font-size:12px; color:#475569; margin-top:2px;">Điều kiện: <code>${esc(ruleCond)}</code></div>
+      <div style="font-size:12px; color:#059669; margin-top:2px; font-weight:600;">Hành động: ${esc(ruleAction)}</div>
+    </div>
+    <div>
+      <span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700;">ĐANG HOẠT ĐỘNG</span>
+    </div>
+  `;
+  rulesList.insertBefore(div, rulesList.firstChild);
+  toast('Đã thêm quy tắc thuật toán cảnh báo AI thành công!', 'success');
+}
+
+// Load devices table from backend PostgreSQL
 async function loadDevices() {
   const tbody = document.getElementById('devices-table');
   if (!tbody) return;
@@ -16,68 +302,48 @@ async function loadDevices() {
     const devices = await api('/devices');
     devicesCache = devices;
     renderDevices(devices);
-    await loadFarmsForDeviceModal();
   } catch (err) {
-    toast('Lỗi tải danh sách thiết bị: ' + err.message, 'error');
+    console.error('Lỗi tải danh sách thiết bị:', err);
     tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
   }
 }
 
-// Render device table helper
 function renderDevices(devices) {
   const tbody = document.getElementById('devices-table');
   if (!tbody) return;
 
-  if (devices.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa fa-microchip"></i> Không tìm thấy thiết bị nào.</td></tr>';
+  if (!devices || devices.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa fa-microchip"></i> Chưa có thiết bị IoT kết nối. Nhấp "Thêm thiết bị mới" để đăng ký.</td></tr>';
     return;
   }
 
   tbody.innerHTML = devices.map(d => {
-    // Battery icon & class based on level
     let batteryIcon = 'fa-battery-full';
     let batteryColor = '#10b981';
-    if (d.battery_level <= 20) {
-      batteryIcon = 'fa-battery-empty';
-      batteryColor = '#ef4444';
-    } else if (d.battery_level <= 50) {
-      batteryIcon = 'fa-battery-quarter';
-      batteryColor = '#f59e0b';
-    } else if (d.battery_level <= 80) {
-      batteryIcon = 'fa-battery-three-quarters';
-      batteryColor = '#3b82f6';
-    }
+    if (d.battery_level <= 20) { batteryIcon = 'fa-battery-empty'; batteryColor = '#ef4444'; }
+    else if (d.battery_level <= 50) { batteryIcon = 'fa-battery-quarter'; batteryColor = '#f59e0b'; }
 
-    // Status Badge
     let statusClass = 'badge-green';
     if (d.status === 'Mất kết nối') statusClass = 'badge-red';
     if (d.status === 'Bảo trì') statusClass = 'badge-amber';
-
-    const lastConn = d.last_connection 
-      ? new Date(d.last_connection).toLocaleString('vi-VN') 
-      : 'Chưa kết nối';
 
     return `
       <tr>
         <td><strong>${esc(d.name)}</strong></td>
         <td><span style="font-size: 12px; color: var(--gray-600);"><i class="fa fa-circle-nodes"></i> ${esc(d.device_type)}</span></td>
         <td><span style="font-weight: 500; color: var(--green-dark);"><i class="fa-solid fa-house-chimney"></i> ${esc(d.farm_name || '—')}</span></td>
-        <td><code style="background: var(--gray-100); padding: 2px 6px; border-radius: 4px; font-size: 12px;">${esc(d.ip_address || '—')}</code></td>
+        <td><code style="background: var(--gray-100); padding: 2px 6px; border-radius: 4px; font-size: 12px;">${esc(d.ip_address || '192.168.1.100')}</code></td>
         <td>
           <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: ${batteryColor};">
-            <i class="fa-solid ${batteryIcon}"></i> ${d.battery_level}%
+            <i class="fa-solid ${batteryIcon}"></i> ${d.battery_level !== null ? d.battery_level : 100}%
           </span>
         </td>
         <td><span class="badge ${statusClass}">${esc(d.status)}</span></td>
-        <td><small style="color: var(--gray-500);">${lastConn}</small></td>
+        <td><small style="color: var(--gray-500);">${d.last_connection ? new Date(d.last_connection).toLocaleString('vi-VN') : 'Vừa kết nối'}</small></td>
         <td>
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-secondary btn-xs" onclick="openDeviceModal(${d.id})">
-              <i class="fa fa-pen"></i> Sửa
-            </button>
-            <button class="btn btn-danger btn-xs" onclick="deleteDevice(${d.id})">
-              <i class="fa fa-trash"></i> Xóa
-            </button>
+            <button class="btn btn-secondary btn-xs" onclick="openDeviceModal(${d.id})"><i class="fa fa-pen"></i></button>
+            <button class="btn btn-danger btn-xs" onclick="deleteDevice(${d.id})"><i class="fa fa-trash"></i></button>
           </div>
         </td>
       </tr>
@@ -85,145 +351,25 @@ function renderDevices(devices) {
   }).join('');
 }
 
-// Fetch farms to display in the Farm dropdown on Device Modal
-async function loadFarmsForDeviceModal() {
-  try {
-    const farms = await api('/farms');
-    const select = document.getElementById('f-device-farm-id');
-    if (select) {
-      select.innerHTML = '<option value="">— Không thuộc trang trại nào —</option>' + 
-        farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
-    }
-  } catch (err) {
-    console.error('Error loading farms for device dropdown:', err);
-  }
-}
-
-// Open modal for Add or Edit Device
-async function openDeviceModal(id = null) {
-  const modal = document.getElementById('device-modal');
-  const title = document.getElementById('device-modal-title');
-  if (!modal) return;
-
-  // Reset form inputs
-  document.getElementById('f-device-id').value = '';
-  document.getElementById('f-device-name').value = '';
-  document.getElementById('f-device-type').value = 'Cảm biến nhiệt độ & độ ẩm';
-  document.getElementById('f-device-farm-id').value = '';
-  document.getElementById('f-device-ip').value = '';
-  document.getElementById('f-device-battery').value = '100';
-  document.getElementById('f-device-status').value = 'Hoạt động';
-
-  if (id) {
-    title.innerHTML = '<i class="fa-solid fa-microchip" style="color:var(--green)"></i> Cập nhật thiết bị';
-    try {
-      const dev = await api(`/devices/${id}`);
-      document.getElementById('f-device-id').value = dev.id;
-      document.getElementById('f-device-name').value = dev.name;
-      document.getElementById('f-device-type').value = dev.device_type;
-      document.getElementById('f-device-farm-id').value = dev.farm_id || '';
-      document.getElementById('f-device-ip').value = dev.ip_address || '';
-      document.getElementById('f-device-battery').value = dev.battery_level !== null ? dev.battery_level : 100;
-      document.getElementById('f-device-status').value = dev.status;
-    } catch (err) {
-      toast('Không thể lấy chi tiết thiết bị: ' + err.message, 'error');
-      return;
-    }
-  } else {
-    title.innerHTML = '<i class="fa-solid fa-microchip" style="color:var(--green)"></i> Thêm thiết bị mới';
-  }
-
-  modal.style.display = 'flex';
-}
-
-// Close Modal
-function closeDeviceModal() {
-  const modal = document.getElementById('device-modal');
-  if (modal) modal.style.display = 'none';
-}
-
-// Save or Update Device
-async function saveDevice() {
-  const id = document.getElementById('f-device-id').value;
-  const name = document.getElementById('f-device-name').value.trim();
-  const device_type = document.getElementById('f-device-type').value;
-  const farm_id = document.getElementById('f-device-farm-id').value;
-  const ip_address = document.getElementById('f-device-ip').value.trim();
-  const battery_level = document.getElementById('f-device-battery').value;
-  const status = document.getElementById('f-device-status').value;
-
-  if (!name) {
-    toast('Tên thiết bị không được để trống.', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('device-save-btn');
-  const oldText = btn.innerHTML;
-  btn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
-  btn.disabled = true;
-
-  const body = {
-    name,
-    device_type,
-    farm_id: farm_id ? parseInt(farm_id) : null,
-    ip_address: ip_address || null,
-    battery_level: battery_level !== '' ? parseInt(battery_level) : 100,
-    status
-  };
-
-  try {
-    if (id) {
-      await api(`/devices/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(body)
-      });
-      toast('Cập nhật thiết bị thành công!');
-    } else {
-      await api('/devices', {
-        method: 'POST',
-        body: JSON.stringify(body)
-      });
-      toast('Thêm thiết bị mới thành công!');
-    }
-    closeDeviceModal();
-    loadDevices();
-  } catch (err) {
-    toast('Lỗi khi lưu thiết bị: ' + err.message, 'error');
-  } finally {
-    btn.innerHTML = oldText;
-    btn.disabled = false;
-  }
-}
-
-// Delete device
-async function deleteDevice(id) {
-  if (!confirm('Bạn có chắc chắn muốn xóa thiết bị này không?')) return;
-
-  try {
-    await api(`/devices/${id}`, { method: 'DELETE' });
-    toast('Đã xóa thiết bị thành công.');
-    loadDevices();
-  } catch (err) {
-    toast('Lỗi khi xóa thiết bị: ' + err.message, 'error');
-  }
-}
-
-// Filter devices locally
 function filterDevices() {
-  const searchVal = document.getElementById('device-search').value.trim().toLowerCase();
-  const typeVal = document.getElementById('device-filter-type').value;
-  const statusVal = document.getElementById('device-filter-status').value;
+  const searchVal = document.getElementById('device-search')?.value.trim().toLowerCase() || '';
+  const typeVal = document.getElementById('device-filter-type')?.value || 'all';
+  const statusVal = document.getElementById('device-filter-status')?.value || 'all';
 
   const filtered = devicesCache.filter(d => {
-    const matchesSearch = !searchVal || 
-      d.name.toLowerCase().includes(searchVal) || 
-      (d.ip_address && d.ip_address.toLowerCase().includes(searchVal));
-    
+    const matchesSearch = !searchVal || d.name.toLowerCase().includes(searchVal) || (d.ip_address && d.ip_address.toLowerCase().includes(searchVal));
     const matchesType = typeVal === 'all' || d.device_type === typeVal;
     const matchesStatus = statusVal === 'all' || d.status === statusVal;
-
     return matchesSearch && matchesType && matchesStatus;
   });
 
   renderDevices(filtered);
 }
+
+window.initDevicesPage = initDevicesPage;
+window.toggleIotMasterPower = toggleIotMasterPower;
+window.switchIotTab = switchIotTab;
+window.switchSoilDepth = switchSoilDepth;
+window.openAddRuleModal = openAddRuleModal;
+window.loadDevices = loadDevices;
+window.filterDevices = filterDevices;

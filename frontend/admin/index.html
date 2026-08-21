@@ -922,22 +922,13 @@
               <option>Cần chú ý</option><option>Bệnh</option>
             </select>
           </div>
-          <table>
-            <thead><tr>
-              <th>Ảnh</th>
-              <th>Mã cây</th>
-              <th>Loại & Giống</th>
-              <th>Nông hộ phụ trách</th>
-              <th>Trang trại</th>
-              <th>Tuổi cây</th>
-              <th>Sức khỏe</th>
-              <th>Vị trí</th>
-              <th>Thao tác</th>
-            </tr></thead>
-            <tbody id="plants-table"><tr><td colspan="9"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
-          </table>
+          <!-- Farm Folder Structure Explorer -->
+          <div id="plants-folder-container" style="padding:16px; display:flex; flex-direction:column; gap:18px;">
+            <div class="empty-state" style="padding:40px; text-align:center;"><i class="fa fa-spinner fa-spin"></i> Đang tải thư mục trang trại &amp; danh sách cây...</div>
+          </div>
         </div>
       </div>
+
 
       <!-- ── Schemas & Config ── -->
       <div class="page-section" id="page-schemas">
@@ -1199,40 +1190,342 @@
       </div>
 
       <!-- ── Devices management ── -->
+            <!-- ── Devices & IoT Smart Agriculture Management ── -->
       <div class="page-section" id="page-devices">
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; padding:40px 20px;">
-          <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f); border-radius:24px; padding:50px 60px; box-shadow:0 20px 60px rgba(0,0,0,0.15); max-width:520px; width:100%;">
-            <div style="width:80px; height:80px; background:linear-gradient(135deg,#10b981,#059669); border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow:0 8px 24px rgba(16,185,129,0.4);">
-              <i class="fa-solid fa-microchip" style="font-size:36px; color:#fff;"></i>
+        <!-- Header with Master Toggle Switch -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px; background:linear-gradient(135deg, #0f172a, #1e293b); padding:20px 24px; border-radius:18px; color:#ffffff; box-shadow:0 8px 24px rgba(0,0,0,0.12);">
+          <div>
+            <h2 style="font-size:20px; font-weight:800; color:#ffffff; margin:0; display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-satellite-dish" style="color:#10b981;"></i> Trạm Thời Tiết &amp; Hệ Thống Cảm Biến IoT Thông Minh
+            </h2>
+            <p style="font-size:13px; color:#94a3b8; margin:4px 0 0;">Giám sát thời tiết thực địa, Cảm biến đất đa tầng (10, 20, 30cm) &amp; Thuật toán Cảnh báo Canh tác AI</p>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <!-- Live Status Indicator -->
+            <div id="iot-status-badge" style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:700; color:#10b981;">
+              <span style="width:9px; height:9px; background:#10b981; border-radius:50%; box-shadow:0 0 10px #10b981; display:inline-block;"></span>
+              <span id="iot-status-text">TRẠM IOT ĐANG HOẠT ĐỘNG (LIVE)</span>
             </div>
-            <h2 style="color:#f1f5f9; font-size:22px; font-weight:800; margin-bottom:12px;">Quản lý thiết bị IoT</h2>
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:30px; padding:6px 18px; margin-bottom:20px;">
-              <span style="width:8px; height:8px; background:#10b981; border-radius:50%; animation:pulse 1.5s ease-in-out infinite; display:inline-block;"></span>
-              <span style="color:#10b981; font-size:13px; font-weight:700; letter-spacing:0.05em;">ĐANG PHÁT TRIỂN</span>
+
+            <!-- Master Toggle Switch Button -->
+            <button id="iot-master-toggle-btn" class="btn" onclick="toggleIotMasterPower()" style="background:#10b981; color:#ffffff; font-weight:800; padding:8px 18px; border-radius:12px; border:none; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all 0.2s;">
+              <i class="fa-solid fa-power-off"></i> Bật / Tắt Trạm IoT
+            </button>
+          </div>
+        </div>
+
+        <!-- IoT Sub-Tabs Bar -->
+        <div class="card" style="margin-bottom:20px; overflow:hidden;">
+          <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; gap:10px; overflow-x:auto;">
+            <div class="tab active" id="iot-tab-weather" onclick="switchIotTab('weather')" style="padding:14px 18px; font-weight:700;">🌤️ Trạm Thời tiết &amp; Dự báo</div>
+            <div class="tab" id="iot-tab-soil" onclick="switchIotTab('soil')" style="padding:14px 18px; font-weight:700;">🌱 Cảm biến Đất đa tầng (10-20-30cm)</div>
+            <div class="tab" id="iot-tab-ai" onclick="switchIotTab('ai')" style="padding:14px 18px; font-weight:700;">🤖 Thuật toán Cảnh báo &amp; Khuyến nghị AI</div>
+            <div class="tab" id="iot-tab-devices" onclick="switchIotTab('devices')" style="padding:14px 18px; font-weight:700;">⚙️ Danh sách Thiết bị &amp; Cấu hình</div>
+          </div>
+
+          <!-- ── SUB-TAB 1: Weather Station & Forecasting (Matching Image 1) ── -->
+          <div id="iot-pane-weather" style="padding:20px; display:block;">
+            <div style="display:grid; grid-template-columns: 2.4fr 1fr; gap:20px;">
+              <!-- Left Column: Live Weather & Hourly Forecast -->
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <!-- Hero Weather Card -->
+                <div style="background:linear-gradient(135deg, #1e293b, #0f172a); border-radius:16px; padding:20px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 6px 20px rgba(0,0,0,0.1);">
+                  <div>
+                    <div style="font-size:12px; color:#94a3b8; font-weight:600; display:flex; align-items:center; gap:6px;">
+                      <i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Trạm Khí tượng Tây Nguyên · 📍 Đường SB 11
+                    </div>
+                    <div style="display:flex; align-items:center; gap:14px; margin-top:8px;">
+                      <span style="font-size:48px; font-weight:900; color:#ffffff; line-height:1;">27°C</span>
+                      <div>
+                        <div style="font-size:16px; font-weight:800; color:#f1f5f9;">🌤️ Mây rải rác</div>
+                        <div style="font-size:12px; color:#cbd5e1; margin-top:2px;">Khả năng có mưa rào nhẹ về chiều tối</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Hourly Temp Trend Chart Container -->
+                  <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; min-width:240px; text-align:center;">
+                    <div style="font-size:11px; color:#94a3b8; font-weight:700; margin-bottom:6px;">DỰ BÁO NHIỆT ĐỘ THEO GIỜ (HÔM NAY)</div>
+                    <canvas id="weather-hourly-chart" style="max-height:110px;"></canvas>
+                  </div>
+                </div>
+
+                <!-- Telemetry Metrics Grid (Matching Image 1) -->
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;">
+                  <!-- Card 1: Wind Speed & Direction -->
+                  <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Tốc độ &amp; Hướng gió</div>
+                      <div style="font-size:22px; font-weight:900; color:#0f172a; margin-top:4px;">28 <small style="font-size:13px; color:#64748b;">km/h</small></div>
+                      <div style="font-size:12px; font-weight:700; color:#3b82f6; margin-top:2px;">Hướng: ESE (Đông Đông Nam)</div>
+                    </div>
+                    <div style="text-align:right; margin-top:8px;">
+                      <div style="width:42px; height:42px; background:#eff6ff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#3b82f6; font-size:18px;">
+                        <i class="fa-solid fa-compass"></i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Card 2: Today's Rainfall -->
+                  <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Lượng mưa hôm nay</div>
+                      <div style="font-size:22px; font-weight:900; color:#0f172a; margin-top:4px;">0.02 <small style="font-size:13px; color:#64748b;">mm</small></div>
+                      <div style="font-size:12px; font-weight:700; color:#047857; margin-top:2px;">Xác suất mưa 1h tới: 20%</div>
+                    </div>
+                    <div style="text-align:right; margin-top:8px;">
+                      <div style="width:42px; height:42px; background:#ecfdf5; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#10b981; font-size:18px;">
+                        <i class="fa-solid fa-cloud-sun-rain"></i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Card 3: Atmospheric Pressure -->
+                  <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Áp suất khí quyển</div>
+                      <div style="font-size:22px; font-weight:900; color:#0f172a; margin-top:4px;">1012 <small style="font-size:13px; color:#64748b;">hPa</small></div>
+                      <div style="font-size:12px; font-weight:700; color:#64748b; margin-top:2px;">Trạng thái: Ổn định</div>
+                    </div>
+                    <div style="text-align:right; margin-top:8px;">
+                      <div style="width:42px; height:42px; background:#fef3c7; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#d97706; font-size:18px;">
+                        <i class="fa-solid fa-gauge-high"></i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Card 4: UV Index -->
+                  <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Cường độ nắng / UV Index</div>
+                      <div style="font-size:22px; font-weight:900; color:#0f172a; margin-top:4px;">1.1 <small style="font-size:12px; color:#10b981; font-weight:700;">(Thấp / Low)</small></div>
+                      <div style="font-size:12px; color:#64748b; margin-top:2px;">An toàn cho lá sầu riêng</div>
+                    </div>
+                    <div style="text-align:right; margin-top:8px;">
+                      <div style="width:42px; height:42px; background:#fff7ed; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#ea580c; font-size:18px;">
+                        <i class="fa-solid fa-sun"></i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Card 5: Humidity -->
+                  <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Độ ẩm không khí</div>
+                      <div style="font-size:22px; font-weight:900; color:#0f172a; margin-top:4px;">76%</div>
+                      <div style="font-size:12px; color:#3b82f6; font-weight:700; margin-top:2px;">Điểm sương: 22°C (Sương mù)</div>
+                    </div>
+                    <div style="text-align:right; margin-top:8px;">
+                      <div style="width:42px; height:42px; background:#f0f9ff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#0284c7; font-size:18px;">
+                        <i class="fa-solid fa-droplet"></i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Card 6: Spray Rating -->
+                  <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Đánh giá Phun thuốc BVTV</div>
+                      <div style="font-size:16px; font-weight:900; color:#dc2626; margin-top:6px; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> KHÔNG PHÙ HỢP
+                      </div>
+                      <div style="font-size:11.5px; color:#64748b; margin-top:2px;">Cảnh báo: Gió mạnh 28 km/h</div>
+                    </div>
+                    <div style="text-align:right; margin-top:8px;">
+                      <div style="width:42px; height:42px; background:#fef2f2; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#dc2626; font-size:18px;">
+                        <i class="fa-solid fa-spray-can"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: 7-Day Forecast Card List (Matching Image 1) -->
+              <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+                <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid #e2e8f0;">
+                  <span><i class="fa-regular fa-calendar-days" style="color:#10b981;"></i> DỰ BÁO KHI HẬU 7 NGÀY TỚI</span>
+                  <span style="font-size:11px; color:#64748b;">Cập nhật 15:00</span>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:10px; font-size:12.5px;">
+                    <div><strong>Hôm nay</strong> <span style="font-size:11px; color:#64748b;">(21 Aug)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span>🌤️ 20%</span>
+                      <strong style="color:#0f172a;">27° / 26°</strong>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:10px; font-size:12.5px;">
+                    <div><strong>Ngày mai</strong> <span style="font-size:11px; color:#64748b;">(22 Aug)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span>🌧️ 20%</span>
+                      <strong style="color:#0f172a;">27° / 26°</strong>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:10px; font-size:12.5px;">
+                    <div><strong>Chủ nhật</strong> <span style="font-size:11px; color:#64748b;">(23 Aug)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span>🌤️ 20%</span>
+                      <strong style="color:#0f172a;">27° / 26°</strong>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:10px; font-size:12.5px;">
+                    <div><strong>Thứ hai</strong> <span style="font-size:11px; color:#64748b;">(24 Aug)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span>⛈️ 40%</span>
+                      <strong style="color:#0f172a;">27° / 26°</strong>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:10px; font-size:12.5px;">
+                    <div><strong>Thứ ba</strong> <span style="font-size:11px; color:#64748b;">(25 Aug)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span>🌦️ 20%</span>
+                      <strong style="color:#0f172a;">26° / 26°</strong>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:10px; font-size:12.5px;">
+                    <div><strong>Thứ tư</strong> <span style="font-size:11px; color:#64748b;">(26 Aug)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span>🌧️ 40%</span>
+                      <strong style="color:#0f172a;">26° / 26°</strong>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:10px; font-size:12.5px;">
+                    <div><strong>Thứ năm</strong> <span style="font-size:11px; color:#64748b;">(27 Aug)</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span>🌦️ 20%</span>
+                      <strong style="color:#0f172a;">26° / 26°</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p style="color:#94a3b8; font-size:14px; line-height:1.7; margin-bottom:28px;">Tính năng giám sát và điều khiển thiết bị IoT (cảm biến đất, trạm thời tiết, hệ thống tưới tự động) đang được xây dựng và sẽ sớm ra mắt.</p>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:left;">
-              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
-                <i class="fa-solid fa-temperature-half" style="color:#f59e0b; margin-bottom:6px; font-size:18px; display:block;"></i>
-                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Cảm biến môi trường</div>
-                <div style="color:#64748b; font-size:11px;">Nhiệt độ, độ ẩm, ánh sáng</div>
+          </div>
+
+          <!-- ── SUB-TAB 2: Multi-Depth Soil Sensors (10, 20, 30 cm) ── -->
+          <div id="iot-pane-soil" style="padding:20px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-layer-group" style="color:#059669;"></i> Cảm biến Đất đa tầng (Multi-Depth Soil Telemetry)</h4>
+                <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Theo dõi pH, Nhiệt độ, Độ ẩm, EC, NPK và Độ mặn theo 3 độ sâu bộ rễ sầu riêng</p>
               </div>
-              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
-                <i class="fa-solid fa-droplet" style="color:#3b82f6; margin-bottom:6px; font-size:18px; display:block;"></i>
-                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Hệ thống tưới thông minh</div>
-                <div style="color:#64748b; font-size:11px;">Van điện từ, lịch tưới tự động</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
-                <i class="fa-solid fa-camera" style="color:#a855f7; margin-bottom:6px; font-size:18px; display:block;"></i>
-                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Camera giám sát</div>
-                <div style="color:#64748b; font-size:11px;">Quan sát vườn theo thời gian thực</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px;">
-                <i class="fa-solid fa-satellite-dish" style="color:#10b981; margin-bottom:6px; font-size:18px; display:block;"></i>
-                <div style="color:#e2e8f0; font-size:12px; font-weight:600;">Trạm thời tiết</div>
-                <div style="color:#64748b; font-size:11px;">Dữ liệu khí tượng tại chỗ</div>
+
+              <!-- Depth Selector Tabs -->
+              <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:10px;">
+                <button class="btn btn-sm" id="soil-depth-btn-10" onclick="switchSoilDepth(10)" style="background:#ffffff; color:#0f172a; font-weight:800; border-radius:8px; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.1);">🌱 Tầng nông (10 cm)</button>
+                <button class="btn btn-sm" id="soil-depth-btn-20" onclick="switchSoilDepth(20)" style="background:transparent; color:#64748b; font-weight:700; border-radius:8px; border:none;">🌿 Tầng trung (20 cm)</button>
+                <button class="btn btn-sm" id="soil-depth-btn-30" onclick="switchSoilDepth(30)" style="background:transparent; color:#64748b; font-weight:700; border-radius:8px; border:none;">🌳 Tầng sâu (30 cm)</button>
               </div>
             </div>
+
+            <!-- Soil Telemetry Metric Cards Grid -->
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;" id="soil-metrics-grid">
+              <!-- Rendered dynamically by JS based on selected depth -->
+            </div>
+          </div>
+
+          <!-- ── SUB-TAB 3: AI Warning & Advisory Algorithm Engine (Request 4) ── -->
+          <div id="iot-pane-ai" style="padding:20px; display:none;">
+            <!-- Hero Advisory Card (Exactly per Request 4 example!) -->
+            <div style="background:linear-gradient(135deg, #ecfdf5, #d1fae5); border:1.5px solid #10b981; border-radius:16px; padding:20px; margin-bottom:24px; box-shadow:0 4px 16px rgba(16,185,129,0.15);">
+              <div style="display:flex; align-items:center; gap:10px; font-size:15px; font-weight:800; color:#047857; margin-bottom:8px;">
+                <i class="fa-solid fa-robot" style="font-size:20px;"></i> KHUYẾN NGHỊ THUẬT TOÁN CANH TÁC THÔNG MINH (AI ADVISORY ENGINE)
+              </div>
+              <div style="font-size:14px; color:#064e3b; line-height:1.7; background:#ffffff; border-radius:12px; padding:16px; border:1px solid #a7f3d0;">
+                <p style="margin:0 0 8px 0; font-weight:700; color:#047857;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> Cảnh báo Thực địa (Thời gian: 15:00 Chiều hôm nay):</p>
+                <p style="margin:0 0 6px 0;">• <strong>Độ ẩm đất tầng 20cm hiện tại</strong>: <span style="color:#d97706; font-weight:800;">50%</span> (Đang giảm nhanh dưới mức lý tưởng 60%).</p>
+                <p style="margin:0 0 10px 0;">• <strong>Dự báo thời tiết ngày mai</strong>: Có mưa rào nhẹ vào buổi sáng (Xác suất mưa 20%).</p>
+                <div style="background:#ecfdf5; border-left:4px solid #10b981; padding:10px 14px; border-radius:6px; font-weight:700; color:#065f46;">
+                  👉 <strong>Khuyến nghị Thuật toán</strong>: Bật hệ thống tưới bổ sung vào lúc 17:00 chiều nay để nâng độ ẩm đất tăng thêm <strong style="color:#047857;">10% (từ 50% ➔ 60%)</strong>. Việc này giúp rễ cây sầu riêng duy trì sức chống chịu và tránh bị sốc nhiệt khi đón đợt mưa sáng mai.
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Warning Condition Rules List -->
+            <div style="margin-bottom:24px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-sliders" style="color:#059669;"></i> Danh sách Điều kiện Cảnh báo &amp; Thuật toán Đang Bật</h4>
+                <button class="btn btn-primary btn-sm" onclick="openAddRuleModal()"><i class="fa fa-plus"></i> Thêm quy tắc điều kiện mới</button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:12px;" id="iot-rules-list">
+                <!-- Rule 1 -->
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                  <div>
+                    <div style="font-size:14px; font-weight:800; color:#0f172a;">Quy tắc 1: Khuyến nghị Tưới bổ sung trước đợt mưa</div>
+                    <div style="font-size:12px; color:#475569; margin-top:2px;">Điều kiện: <code>Độ ẩm đất (20cm) &lt; 55%</code> AND <code>Dự báo mưa sáng mai &gt; 15%</code></div>
+                    <div style="font-size:12px; color:#059669; margin-top:2px; font-weight:600;">Hành động: Phát thông báo khuyến nghị tưới tăng 10% độ ẩm đất (50% ➔ 60%).</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700;">ĐANG HOẠT ĐỘNG</span>
+                  </div>
+                </div>
+
+                <!-- Rule 2 -->
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                  <div>
+                    <div style="font-size:14px; font-weight:800; color:#0f172a;">Quy tắc 2: Cảnh báo Tốc độ gió không phù hợp phun thuốc BVTV</div>
+                    <div style="font-size:12px; color:#475569; margin-top:2px;">Điều kiện: <code>Tốc độ gió &gt; 25 km/h</code> OR <code>Chỉ số UV Index &gt; 8</code></div>
+                    <div style="font-size:12px; color:#dc2626; margin-top:2px; font-weight:600;">Hành động: Đổi Spray Rating sang UNSUITABLE &amp; Khuyến cáo hoãn lịch phun.</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700;">ĐANG HOẠT ĐỘNG</span>
+                  </div>
+                </div>
+
+                <!-- Rule 3 -->
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                  <div>
+                    <div style="font-size:14px; font-weight:800; color:#0f172a;">Quy tắc 3: Cảnh báo Đất chua &amp; Bón vôi hạ phèn</div>
+                    <div style="font-size:12px; color:#475569; margin-top:2px;">Điều kiện: <code>Độ pH Đất (tầng 10-20cm) &lt; 5.5</code></div>
+                    <div style="font-size:12px; color:#d97706; margin-top:2px; font-weight:600;">Hành động: Phát khuyến nghị bón bổ sung vôi bột 50kg/1000m².</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700;">ĐANG HOẠT ĐỘNG</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SUB-TAB 4: IoT Devices Management Table ── -->
+          <div id="iot-pane-devices" style="padding:20px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+              <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">⚙️ Danh sách Thiết bị &amp; Trạm Cảm biến IoT kết nối</h4>
+              <button class="btn btn-primary btn-sm" onclick="openDeviceModal()"><i class="fa fa-plus"></i> Thêm thiết bị mới</button>
+            </div>
+
+            <div class="search-bar" style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+              <input type="text" id="device-search" placeholder="🔍 Tìm theo tên thiết bị, địa chỉ IP..." oninput="filterDevices()" style="flex:1; min-width:200px;">
+              <select id="device-filter-type" onchange="filterDevices()" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                <option value="all">Tất cả loại thiết bị</option>
+                <option>Trạm thời tiết</option>
+                <option>Cảm biến đất đa tầng</option>
+                <option>Van tưới tự động</option>
+              </select>
+              <select id="device-filter-status" onchange="filterDevices()" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                <option value="all">Tất cả trạng thái</option>
+                <option>Hoạt động</option>
+                <option>Mất kết nối</option>
+                <option>Bảo trì</option>
+              </select>
+            </div>
+
+            <table>
+              <thead><tr>
+                <th>Tên thiết bị</th><th>Loại thiết bị</th><th>Trang trại</th><th>Địa chỉ IP</th><th>Dung lượng Pin</th><th>Trạng thái</th><th>Lần kết nối cuối</th><th style="width:120px">Thao tác</th>
+              </tr></thead>
+              <tbody id="devices-table">
+                <tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1316,6 +1609,9 @@
                 <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Phân tích minh bạch biến động chi phí Phân bón, Phun thuốc, Tiền nước, Nhân công qua từng tháng</p>
               </div>
               <div style="display:flex; gap:8px;">
+                <select id="cost-chart-farm" onchange="renderCostChart()" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; outline:none; background:#fff;">
+                  <option value="all">🌿 Tất cả trang trại</option>
+                </select>
                 <select id="cost-chart-year" onchange="renderCostChart()" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; outline:none; background:#fff;">
                   <option value="2026">Năm 2026</option>
                   <option value="2025">Năm 2025</option>
@@ -1331,6 +1627,7 @@
                 </select>
               </div>
             </div>
+
 
             <div style="background:#ffffff; border-radius:14px; padding:20px; border:1.5px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
               <canvas id="cost-line-chart" style="max-height:380px;"></canvas>
