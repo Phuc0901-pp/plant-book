@@ -70,6 +70,8 @@ export function initUserMap(farms, plants) {
     preserveDrawingBuffer: true
   });
   userMap = map;
+  window.userMap = map;
+
   
   // Force resize trigger on window resize / screen rotate to prevent canvas layout clipping
   window.addEventListener('resize', () => {

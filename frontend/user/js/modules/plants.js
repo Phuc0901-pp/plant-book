@@ -358,7 +358,7 @@ export function openFarmDetailView(farmId) {
   if (masterView) masterView.style.display = 'none';
   if (detailView) detailView.style.display = 'block';
 
-  const farm = (_farmsCache || []).find(f => f.id === farmId);
+  const farm = (_farmsCache || []).find(f => String(f.id) === String(farmId));
   if (farm) {
     const nameEl = document.getElementById('active-farm-name');
     const countEl = document.getElementById('active-farm-plant-count');
@@ -375,29 +375,62 @@ export function openFarmDetailView(farmId) {
       filterUserPlants();
     }
 
-    // Trigger map resize & flyTo
+    // Trigger map resize & navigate/fly directly down to farm A!
     setTimeout(() => {
-      if (window.userMap) {
-        try { window.userMap.resize(); } catch (_) {}
-        if (farm.polygon_coordinates) {
-          try {
-            let coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
-            if (coords && coords.length > 0) {
-              let ptLng = coords[0][0];
-              let ptLat = coords[0][1];
-              if (ptLng < 50 && ptLat > 90) {
-                const tmp = ptLng;
-                ptLng = ptLat;
-                ptLat = tmp;
+      const targetMap = userMap || window.userMap;
+      if (targetMap) {
+        try { targetMap.resize(); } catch (_) {}
+
+        let coords = [];
+        try {
+          coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
+        } catch (_) {}
+
+        const bounds = new mapboxgl.LngLatBounds();
+        let hasPoints = false;
+
+        if (coords && coords.length > 0) {
+          coords.forEach(pt => {
+            if (Array.isArray(pt) && pt.length >= 2) {
+              let lng = parseFloat(pt[0]);
+              let lat = parseFloat(pt[1]);
+              if ((lng >= -90 && lng <= 90) && (lat > 90 || lat < -90 || lat > 30)) {
+                const tmp = lng; lng = lat; lat = tmp;
               }
-              window.userMap.flyTo({ center: [ptLng, ptLat], zoom: 16, essential: true });
+              if (!isNaN(lng) && !isNaN(lat) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                bounds.extend([lng, lat]);
+                hasPoints = true;
+              }
             }
-          } catch (_) {}
+          });
+        }
+
+        // If no polygon points, find plants in this farm
+        if (!hasPoints) {
+          const farmPlants = (_plantsCache || []).filter(p => String(p.farm_id) === String(farm.id) && p.latitude && p.longitude);
+          farmPlants.forEach(p => {
+            let lat = parseFloat(p.latitude);
+            let lng = parseFloat(p.longitude);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
+                const tmp = lat; lat = lng; lng = tmp;
+              }
+              if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                bounds.extend([lng, lat]);
+                hasPoints = true;
+              }
+            }
+          });
+        }
+
+        if (hasPoints) {
+          targetMap.fitBounds(bounds, { padding: 60, maxZoom: 17, duration: 1200 });
         }
       }
-    }, 100);
+    }, 150);
   }
 }
+
 
 export function closeFarmDetailView() {
   const masterView = document.getElementById('farm-master-view');
