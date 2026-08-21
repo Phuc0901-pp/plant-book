@@ -1262,21 +1262,16 @@
         </div>
 
         <!-- KPI Cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px;" id="cost-kpi-row">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;" id="cost-kpi-row">
           <div style="background:linear-gradient(135deg,#10b981,#059669); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(16,185,129,0.25);">
             <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-boxes-stacked"></i> Vật tư tiêu hao</div>
             <div id="kpi-consumable" style="font-size:20px; font-weight:900;">—</div>
-            <div style="font-size:10px; opacity:0.75; margin-top:4px;">VNĐ đã chi</div>
-          </div>
-          <div style="background:linear-gradient(135deg,#3b82f6,#1d4ed8); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(59,130,246,0.25);">
-            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-landmark"></i> Tài sản cố định</div>
-            <div id="kpi-fixed" style="font-size:20px; font-weight:900;">—</div>
-            <div style="font-size:10px; opacity:0.75; margin-top:4px;">Tổng giá trị đầu tư</div>
+            <div style="font-size:10px; opacity:0.75; margin-top:4px;">VNĐ đã đầu tư</div>
           </div>
           <div style="background:linear-gradient(135deg,#f59e0b,#d97706); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(245,158,11,0.25);">
-            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-coins"></i> Tổng chi phí</div>
+            <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-coins"></i> Tổng chi phí đầu tư</div>
             <div id="kpi-total" style="font-size:20px; font-weight:900;">—</div>
-            <div style="font-size:10px; opacity:0.75; margin-top:4px;">Tất cả khoản mục</div>
+            <div style="font-size:10px; opacity:0.75; margin-top:4px;">Tất cả hoạt động</div>
           </div>
           <div style="background:linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius:14px; padding:16px 18px; color:#fff; box-shadow:0 4px 16px rgba(139,92,246,0.25);">
             <div style="font-size:10px; font-weight:700; opacity:0.85; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;"><i class="fa-solid fa-seedling"></i> TB / Cây</div>
@@ -1290,74 +1285,63 @@
           </div>
         </div>
 
-        <!-- Tabs -->
+        <!-- Sub-Tabs -->
         <div class="card" style="overflow:hidden;">
           <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
-            <div class="tab active" id="cost-tab-consumable" onclick="switchCostTab('consumable')" style="padding:14px 20px;">📦 Vật tư tiêu hao</div>
-            <div class="tab" id="cost-tab-fixed" onclick="switchCostTab('fixed')" style="padding:14px 20px;">🏗️ Tài sản cố định</div>
-            <div class="tab" id="cost-tab-chart" onclick="switchCostTab('chart')" style="padding:14px 20px;">📈 Biểu đồ chi phí</div>
+            <div class="tab active" id="cost-tab-consumable" onclick="switchCostTab('consumable')" style="padding:14px 20px;">📦 Vật tư tiêu hao &amp; Chi phí hoạt động</div>
+            <div class="tab" id="cost-tab-chart" onclick="switchCostTab('chart')" style="padding:14px 20px;">📊 Biểu đồ phân tích chi phí</div>
           </div>
 
-          <!-- Tab 1: Vật tư tiêu hao -->
+          <!-- Tab 1: Vật tư tiêu hao (Gom nhóm Ngày -> Loại vật tư -> Tên vật tư) -->
           <div id="cost-pane-consumable" style="padding:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-              <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">📦 Danh sách vật tư tiêu hao</h4>
-              <button class="btn btn-primary btn-sm" onclick="openCostEntryModal('consumable')"><i class="fa fa-plus"></i> Thêm vật tư</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+              <div>
+                <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-boxes-stacked" style="color:#059669;"></i> Danh sách Vật tư Tiêu hao &amp; Chi phí Canh tác</h4>
+                <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Dữ liệu tự động gom nhóm theo Ngày ➔ Loại vật tư ➔ Tên sản phẩm, tính tổng số lượng &amp; chi phí</p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openCostEntryModal('consumable')"><i class="fa fa-plus"></i> Thêm vật tư mới</button>
             </div>
 
-            <table>
-              <thead><tr>
-                <th>Ngày</th><th>Loại vật tư</th><th>Tên vật tư</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá (VNĐ)</th><th>Thành tiền</th><th>Trang trại</th><th>Ghi chú</th>
-              </tr></thead>
-              <tbody id="cost-consumable-table">
-                <tr><td colspan="9" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
-              </tbody>
-              <tfoot id="cost-consumable-footer" style="background:#f0fdf4; font-weight:700;"></tfoot>
-            </table>
-          </div>
-
-          <!-- Tab 2: Tài sản cố định -->
-          <div id="cost-pane-fixed" style="padding:20px; display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-              <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">🏗️ Danh sách tài sản cố định</h4>
-              <button class="btn btn-primary btn-sm" onclick="openCostEntryModal('fixed')"><i class="fa fa-plus"></i> Thêm tài sản</button>
+            <!-- Grouped Cards Container -->
+            <div id="cost-consumable-grouped-container">
+              <div class="empty-state" style="padding:40px; text-align:center;"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu vật tư...</div>
             </div>
-            <table>
-              <thead><tr>
-                <th>Tên tài sản</th><th>Phân loại</th><th>Năm mua</th><th>Nguyên giá (VNĐ)</th><th>Năm sử dụng</th><th>Khấu hao/năm</th><th>Còn lại</th><th>Trang trại</th><th>Ghi chú</th>
-              </tr></thead>
-              <tbody id="cost-fixed-table">
-                <tr><td colspan="9" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
-              </tbody>
-              <tfoot id="cost-fixed-footer" style="background:#eff6ff; font-weight:700;"></tfoot>
-            </table>
           </div>
 
-          <!-- Tab 3: Biểu đồ chi phí -->
+          <!-- Tab 2: Biểu đồ phân tích chi phí theo Loại vật tư -->
           <div id="cost-pane-chart" style="padding:20px; display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
-              <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">📈 Đường biểu diễn chi phí theo tháng</h4>
+              <div>
+                <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-chart-line" style="color:#059669;"></i> Biểu đồ Phân tích Chi phí theo Loại Vật tư &amp; Hoạt động</h4>
+                <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Phân tích minh bạch biến động chi phí Phân bón, Phun thuốc, Tiền nước, Nhân công qua từng tháng</p>
+              </div>
               <div style="display:flex; gap:8px;">
-                <select id="cost-chart-year" onchange="renderCostChart()" style="padding:7px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#fff;">
-                  <option value="2026">2026</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
+                <select id="cost-chart-year" onchange="renderCostChart()" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; outline:none; background:#fff;">
+                  <option value="2026">Năm 2026</option>
+                  <option value="2025">Năm 2025</option>
+                  <option value="2024">Năm 2024</option>
                 </select>
-                <select id="cost-chart-type" onchange="renderCostChart()" style="padding:7px 12px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#fff;">
-                  <option value="all">Tất cả chi phí</option>
-                  <option value="consumable">Vật tư tiêu hao</option>
-                  <option value="fixed">Tài sản cố định</option>
+                <select id="cost-chart-type" onchange="renderCostChart()" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; outline:none; background:#fff;">
+                  <option value="all">— Tất cả loại vật tư —</option>
+                  <option value="Bón phân">🧮 Bón phân</option>
+                  <option value="Phun thuốc">🧪 Phun thuốc</option>
+                  <option value="Tiền nước">💧 Tiền nước</option>
+                  <option value="Nhân công">👷 Nhân công</option>
+                  <option value="Vật tư khác">📦 Vật tư khác</option>
                 </select>
               </div>
             </div>
-            <div style="background:#f8fafc; border-radius:12px; padding:20px; border:1px solid #e2e8f0;">
+
+            <div style="background:#ffffff; border-radius:14px; padding:20px; border:1.5px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
               <canvas id="cost-line-chart" style="max-height:380px;"></canvas>
             </div>
-            <!-- Legend summary -->
-            <div id="cost-chart-summary" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:16px;"></div>
+            
+            <!-- Summary Breakdown Cards by Category -->
+            <div id="cost-chart-summary" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-top:20px;"></div>
           </div>
         </div>
       </div>
+
 
     </div><!-- /content -->
   </main>
