@@ -1056,6 +1056,79 @@ export async function deleteSupplyUsagesGroup(ids) {
   }
 }
 
+export function parseAgriculturalProductText(rawText) {
+  const text = (rawText || '').trim();
+  const lowerText = text.toLowerCase();
+
+  let name = '';
+  let category = 'Bón phân';
+  let fertilizer_type = 'Phân vô cơ (NPK / Hóa học)';
+  let package_qty = 1;
+  let package_unit = 'kg';
+
+  // 1. Detect Category
+  if (/thuốc|phun|trừ sâu|trừ bệnh|trị nấm|diệt|5sc|250ec|750wg|sl|wp|ec|sc|kháng sinh|bảo vệ thực vật/i.test(lowerText) && !/phân bón|npk|hữu cơ/i.test(lowerText)) {
+    category = 'Phun thuốc';
+  } else {
+    category = 'Bón phân';
+  }
+
+  // 2. Detect Package Quantity & Unit
+  const qtyMatch = lowerText.match(/(\d+(\.\d+)?)\s*(kg|kí|ký|g|gam|lít|lit|l|ml|m3)/i);
+  if (qtyMatch) {
+    package_qty = parseFloat(qtyMatch[1]) || 1;
+    const rawUnit = qtyMatch[3].toLowerCase();
+    if (rawUnit === 'kí' || rawUnit === 'ký') package_unit = 'kg';
+    else if (rawUnit === 'lit' || rawUnit === 'l') package_unit = 'lít';
+    else if (rawUnit === 'gam') package_unit = 'g';
+    else package_unit = rawUnit;
+  }
+
+  // 3. Detect Fertilizer Type
+  if (category === 'Bón phân') {
+    if (/npk|\d{1,2}[-:\s]+\d{1,2}[-:\s]+\d{1,2}|ure|dap|kali|lân/i.test(lowerText)) {
+      fertilizer_type = 'Phân vô cơ (NPK / Hóa học)';
+    } else if (/hữu cơ|trùn quế|đạm cá|humic|vi sinh/i.test(lowerText)) {
+      fertilizer_type = 'Phân hữu cơ';
+    } else if (/bón lá|lá|kích hoa|đậu trái|hoa/i.test(lowerText)) {
+      fertilizer_type = 'Phân bón lá';
+    } else if (/vi lượng|trung lượng|canxi|bo|magie|kẽm|te/i.test(lowerText)) {
+      fertilizer_type = 'Phân vi lượng / Trung lượng';
+    } else if (/chuồng|bò|gà|hoai/i.test(lowerText)) {
+      fertilizer_type = 'Phân chuồng / Hoai mục';
+    }
+  }
+
+  // 4. Detect Product Name from text lines
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+  const brandKeywords = [
+    'đầu trâu', 'yaravila', 'yara', 'anvil', 'til super', 'ridomil', 'mancozeb', 
+    'antracol', 'score', 'amistar', 'filia', 'bình điền', 'đạm cà mau', 'đạm phú mỹ',
+    'humic', 'bimat', 'nativo', 'physan', 'coc 85', 'trùn quế', 'npk', 'super'
+  ];
+
+  let foundNameLine = lines.find(l => brandKeywords.some(kw => l.toLowerCase().includes(kw)));
+  if (foundNameLine) {
+    name = foundNameLine;
+  } else if (lines.length > 0) {
+    name = lines[0];
+  } else {
+    name = category === 'Phun thuốc' ? 'Thuốc bảo vệ thực vật' : 'Phân bón nông nghiệp';
+  }
+
+  name = name.replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF+.-]/gi, ' ').replace(/\s+/g, ' ').trim();
+  if (name.length > 55) name = name.substring(0, 55);
+
+  return {
+    name: name || 'Phân bón nông nghiệp',
+    category,
+    fertilizer_type,
+    package_qty,
+    package_unit,
+    package_size: `${package_qty} ${package_unit}`
+  };
+}
+
 export async function handleAiScanImageUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -1064,21 +1137,35 @@ export async function handleAiScanImageUpload(event) {
   const textEl = document.getElementById('sp-ai-scan-text');
 
   if (btn) btn.disabled = true;
-  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🤖 AI đang quét bao bì...';
+  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🤖 AI đang quét chữ bao bì...';
 
   try {
-    const formData = new FormData();
-    formData.append('file', file);
+    let d = null;
 
-    const res = await api('/supplies/scan-image', {
-      method: 'POST',
-      body: formData
-    });
+    // 1. Try Backend Cloud Vision API first
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    if (res && res.success && res.data) {
-      const d = res.data;
+      const res = await api('/supplies/scan-image', {
+        method: 'POST',
+        body: formData
+      });
 
-      // Auto-fill form fields
+      if (res && res.success && res.data) {
+        d = res.data;
+      }
+    } catch (_) {}
+
+    // 2. If Backend Gemini is not configured, run Client-Side Real-Time Tesseract.js OCR
+    if (!d && typeof Tesseract !== 'undefined') {
+      if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🔍 Đang quét trực tiếp bằng Tesseract OCR...';
+      const ocrResult = await Tesseract.recognize(file, 'vie+eng');
+      const ocrText = ocrResult?.data?.text || '';
+      d = parseAgriculturalProductText(ocrText);
+    }
+
+    if (d) {
       if (d.category && document.getElementById('sp-category')) {
         document.getElementById('sp-category').value = d.category;
       }
@@ -1095,14 +1182,13 @@ export async function handleAiScanImageUpload(event) {
         document.getElementById('sp-package-qty').value = d.package_qty;
       }
 
-      // Auto trigger recalculation
       if (typeof autoCalculateSupplyUnits === 'function') {
         autoCalculateSupplyUnits();
       }
 
-      toast('✨ AI đã trích xuất thành công thông tin phân bón / thuốc BVTV!', 'success');
+      toast('✨ AI / OCR đã quét và trích xuất thành công thông tin vật tư thực tế!', 'success');
     } else {
-      toast('Không thể trích xuất dữ liệu từ ảnh bao bì.', 'warning');
+      toast('Không thể quét được chữ trên bao bì. Vui lòng chụp rõ nét hơn.', 'warning');
     }
   } catch (err) {
     console.error('Lỗi AI Scan bao bì:', err);
@@ -1134,5 +1220,7 @@ window.loadSupplyUsagesLog = loadSupplyUsagesLog;
 window.deleteSupplyUsage = deleteSupplyUsage;
 window.deleteSupplyUsagesGroup = deleteSupplyUsagesGroup;
 window.handleAiScanImageUpload = handleAiScanImageUpload;
+window.parseAgriculturalProductText = parseAgriculturalProductText;
+
 
 

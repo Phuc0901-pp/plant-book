@@ -166,23 +166,19 @@ JSON schema:
       }
     }
 
-    // Smart Fallback if Gemini key is not set or parsing failed
     if (!scannedData) {
-      scannedData = {
-        name: "Phân bón NPK 16-16-8+TE Đầu Trâu (Đã quét AI)",
-        category: "Bón phân",
-        fertilizer_type: "Phân vô cơ (NPK / Hóa học)",
-        package_qty: 50,
-        package_unit: "kg",
-        package_size: "50 kg",
-        manufacturer: "Bình Điền"
-      };
+      return res.json({
+        success: false,
+        fallback_ocr: true,
+        message: 'Yêu cầu chạy Tesseract OCR client-side'
+      });
     }
 
     res.json({
       success: true,
       data: scannedData
     });
+
 
   } catch (err) {
     console.error('Error scanning supply image:', err);
