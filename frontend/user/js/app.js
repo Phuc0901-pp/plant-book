@@ -29,6 +29,17 @@ window.closeFarmDetailView = closeFarmDetailView;
 window.getActiveFarm = getActiveFarm;
 window.getFarmsCache = getFarmsCache;
 
+window.openProUpgradeModal = function() {
+  const modal = document.getElementById('pro-upgrade-modal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeProUpgradeModal = function() {
+  const modal = document.getElementById('pro-upgrade-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+
 window.openFeatureDetailModal = function(type) {
   const modal = document.getElementById('feature-detail-modal');
   const titleEl = document.getElementById('feature-modal-title');
