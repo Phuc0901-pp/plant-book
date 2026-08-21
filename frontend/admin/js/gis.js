@@ -121,13 +121,16 @@ function initDashboardMap(farms, plants) {
 
     // Render farms boundaries & Customer-colored Pins
     farms.forEach(farm => {
+      const farmColor = getCustomerColor(farm.user_id);
       let coords = [];
       try {
         coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
       } catch(e) {}
       
+      let centerLng = null;
+      let centerLat = null;
+
       if (coords && coords.length > 0) {
-        const farmColor = getCustomerColor(farm.user_id);
         const farmSourceId = `farm-source-${farm.id}`;
         const farmLayerId = `farm-layer-${farm.id}`;
         const farmOutlineId = `farm-outline-${farm.id}`;
@@ -179,51 +182,15 @@ function initDashboardMap(farms, plants) {
           bounds.extend(pt);
           hasBounds = true;
         });
-        const centerLng = sumLng / coords.length;
-        const centerLat = sumLat / coords.length;
-
-        // Render ghim trang trại phân biệt màu theo khách hàng
-        const pinEl = document.createElement('div');
-        pinEl.className = 'farm-dashboard-pin';
-        pinEl.style.cssText = `
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: ${farmColor};
-          color: #ffffff;
-          padding: 5px 10px;
-          border-radius: 20px;
-          font-size: 11.5px;
-          font-weight: 700;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-          border: 2px solid #ffffff;
-          cursor: pointer;
-          white-space: nowrap;
-        `;
-        pinEl.innerHTML = `<i class="fa-solid fa-wheat-awn"></i> ${esc(farm.name)} ${farm.user_name ? `<small style="opacity:0.85">(${esc(farm.user_name)})</small>` : ''}`;
-
-        new mapboxgl.Marker({ element: pinEl })
-          .setLngLat([centerLng, centerLat])
-          .setPopup(new mapboxgl.Popup({ offset: 25 })
-            .setHTML(`
-              <div class="map-tooltip">
-                <h4 style="color:${farmColor}"><i class="fa-solid fa-wheat-awn"></i> Trang trại: ${esc(farm.name)}</h4>
-                <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
-                <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
-                <div style="margin-top:8px">
-                  <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
-                </div>
-              </div>
-            `)
-          )
-          .addTo(map);
+        centerLng = sumLng / coords.length;
+        centerLat = sumLat / coords.length;
 
         map.on('click', farmLayerId, (e) => {
           new mapboxgl.Popup()
             .setLngLat(e.lngLat)
             .setHTML(`
               <div class="map-tooltip">
-                <h4 style="color:${farmColor}"><i class="fa-solid fa-wheat-awn"></i> Trang trại: ${esc(farm.name)}</h4>
+                <h4 style="color:${farmColor}"><i class="fa-solid fa-house-flag"></i> Trang trại: ${esc(farm.name)}</h4>
                 <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
                 <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
                 <div style="margin-top:8px">
@@ -236,6 +203,68 @@ function initDashboardMap(farms, plants) {
 
         map.on('mouseenter', farmLayerId, () => map.getCanvas().style.cursor = 'pointer');
         map.on('mouseleave', farmLayerId, () => map.getCanvas().style.cursor = '');
+      } else {
+        // Calculate average lat/lng of farm's plants if polygon is empty
+        const farmPlants = plants.filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
+        if (farmPlants.length > 0) {
+          let sumLng = 0, sumLat = 0, validCnt = 0;
+          farmPlants.forEach(p => {
+            let lat = parseFloat(p.latitude);
+            let lng = parseFloat(p.longitude);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
+                const tmp = lat; lat = lng; lng = tmp;
+              }
+              sumLng += lng;
+              sumLat += lat;
+              validCnt++;
+            }
+          });
+          if (validCnt > 0) {
+            centerLng = sumLng / validCnt;
+            centerLat = sumLat / validCnt;
+            bounds.extend([centerLng, centerLat]);
+            hasBounds = true;
+          }
+        }
+      }
+
+      // Render ghim trang trại phân biệt màu theo khách hàng
+      if (centerLng !== null && centerLat !== null && !isNaN(centerLng) && !isNaN(centerLat)) {
+        const pinEl = document.createElement('div');
+        pinEl.className = 'farm-dashboard-pin';
+        pinEl.style.cssText = `
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: ${farmColor};
+          color: #ffffff;
+          padding: 5px 12px;
+          border-radius: 20px;
+          font-size: 11.5px;
+          font-weight: 800;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          border: 2px solid #ffffff;
+          cursor: pointer;
+          white-space: nowrap;
+        `;
+        pinEl.innerHTML = `<i class="fa-solid fa-house-flag"></i> ${esc(farm.name)} ${farm.user_name ? `<small style="background:rgba(255,255,255,0.25); padding:1px 6px; border-radius:10px; font-weight:700;">👤 ${esc(farm.user_name)}</small>` : ''}`;
+
+        new mapboxgl.Marker({ element: pinEl })
+          .setLngLat([centerLng, centerLat])
+          .setPopup(new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+              <div class="map-tooltip">
+                <h4 style="color:${farmColor}"><i class="fa-solid fa-house-flag"></i> Trang trại: ${esc(farm.name)}</h4>
+                <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
+                <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
+                <div style="margin-top:8px">
+                  <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
+                </div>
+              </div>
+            `)
+          )
+          .addTo(map);
       }
     });
 
@@ -536,6 +565,7 @@ window.onPlantSavedHook = function(plant) {
 };
 
 let gisPlantMarkers = [];
+let gisFarmMarkers = [];
 
 function drawFarmsAndPlantsLayers(farms, plants) {
   if (!gMap) return;
@@ -546,14 +576,25 @@ function drawFarmsAndPlantsLayers(farms, plants) {
   });
   gisPlantMarkers = [];
 
+  // Clear existing farm markers on map
+  gisFarmMarkers.forEach(m => {
+    try { m.remove(); } catch(_) {}
+  });
+  gisFarmMarkers = [];
+
   const bounds = new mapboxgl.LngLatBounds();
   let hasBounds = false;
+  const displayPlants = plants || currentPlants || [];
 
   farms.forEach(farm => {
+    const farmColor = getCustomerColor(farm.user_id);
     let coords = [];
     try {
       coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
     } catch(e) {}
+
+    let centerLng = null;
+    let centerLat = null;
 
     if (coords && coords.length > 0) {
       const srcId = `gis-farm-src-${farm.id}`;
@@ -581,18 +622,17 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           type: 'fill',
           source: srcId,
           paint: {
-            'fill-color': '#10b981',
-            'fill-opacity': activeFarmId === farm.id ? 0.45 : 0.25
+            'fill-color': farmColor,
+            'fill-opacity': activeFarmId === farm.id ? 0.5 : 0.28
           }
         });
-
         gMap.addLayer({
           id: outlineId,
           type: 'line',
           source: srcId,
           paint: {
-            'line-color': '#10b981',
-            'line-width': activeFarmId === farm.id ? 3 : 1.5
+            'line-color': farmColor,
+            'line-width': activeFarmId === farm.id ? 3.5 : 2
           }
         });
 
@@ -604,11 +644,12 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         gMap.on('mouseleave', layerId, () => gMap.getCanvas().style.cursor = '');
       } else {
         if (gMap.getLayer(layerId)) {
-          gMap.setPaintProperty(layerId, 'fill-opacity', activeFarmId === farm.id ? 0.45 : 0.25);
+          gMap.setPaintProperty(layerId, 'fill-color', farmColor);
+          gMap.setPaintProperty(layerId, 'fill-opacity', activeFarmId === farm.id ? 0.5 : 0.28);
         }
         if (gMap.getLayer(outlineId)) {
-          gMap.setPaintProperty(outlineId, 'line-width', activeFarmId === farm.id ? 3.5 : 1.5);
-          gMap.setPaintProperty(outlineId, 'line-color', activeFarmId === farm.id ? '#059669' : '#10b981');
+          gMap.setPaintProperty(outlineId, 'line-color', farmColor);
+          gMap.setPaintProperty(outlineId, 'line-width', activeFarmId === farm.id ? 3.5 : 2);
         }
       }
 
@@ -619,7 +660,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
     }
   });
 
-  const displayPlants = plants || currentPlants || [];
   displayPlants.forEach(plant => {
     if (plant.latitude && plant.longitude) {
       let lat = parseFloat(plant.latitude);
