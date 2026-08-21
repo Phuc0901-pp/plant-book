@@ -1600,8 +1600,26 @@
     <div class="modal-body supply-modal-body">
       <input type="hidden" id="sp-id">
 
+      <!-- AI Vision Packaging Scanner Banner -->
+      <div style="background:linear-gradient(135deg, #0f172a, #1e293b); border-radius:14px; padding:14px 18px; color:#ffffff; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 4px 14px rgba(0,0,0,0.1);">
+        <div>
+          <div style="font-size:13.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:#10b981; font-size:16px;"></i> Quét Bao bì Phân bón / Thuốc BVTV bằng AI
+          </div>
+          <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Chụp ảnh bao bì để AI tự động trích xuất Tên, Hạng mục &amp; Quy cách</div>
+        </div>
+
+        <div>
+          <input type="file" id="sp-ai-scan-file" accept="image/*" capture="environment" style="display:none;" onchange="handleAiScanImageUpload(event)">
+          <button type="button" class="btn" id="sp-ai-scan-btn" onclick="document.getElementById('sp-ai-scan-file').click()" style="background:linear-gradient(135deg, #10b981, #059669); color:#ffffff; font-weight:800; border:none; padding:8px 16px; border-radius:10px; font-size:12.5px; display:flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
+            <i class="fa-solid fa-camera"></i> <span id="sp-ai-scan-text">📷 Chụp / Chọn ảnh bao bì</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Row 1: Hạng mục & Đơn vị gói -->
       <div class="form-row-2">
+
         <div class="field" style="margin-bottom:0;">
           <label class="form-label"><i class="fa-solid fa-layer-group"></i> Hạng mục gốc <span class="req-star">*</span></label>
           <select id="sp-category" class="form-control-custom" onchange="autoCalculateSupplyUnits()">

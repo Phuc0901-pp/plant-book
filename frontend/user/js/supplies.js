@@ -1055,6 +1055,64 @@ export async function deleteSupplyUsagesGroup(ids) {
   }
 }
 
+export async function handleAiScanImageUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const btn = document.getElementById('sp-ai-scan-btn');
+  const textEl = document.getElementById('sp-ai-scan-text');
+
+  if (btn) btn.disabled = true;
+  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🤖 AI đang quét bao bì...';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await api('/supplies/scan-image', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (res && res.success && res.data) {
+      const d = res.data;
+
+      // Auto-fill form fields
+      if (d.category && document.getElementById('sp-category')) {
+        document.getElementById('sp-category').value = d.category;
+      }
+      if (d.package_unit && document.getElementById('sp-package-unit')) {
+        document.getElementById('sp-package-unit').value = d.package_unit;
+      }
+      if (d.fertilizer_type && document.getElementById('sp-fertilizer-type')) {
+        document.getElementById('sp-fertilizer-type').value = d.fertilizer_type;
+      }
+      if (d.name && document.getElementById('sp-name')) {
+        document.getElementById('sp-name').value = d.name;
+      }
+      if (d.package_qty && document.getElementById('sp-package-qty')) {
+        document.getElementById('sp-package-qty').value = d.package_qty;
+      }
+
+      // Auto trigger recalculation
+      if (typeof autoCalculateSupplyUnits === 'function') {
+        autoCalculateSupplyUnits();
+      }
+
+      toast('✨ AI đã trích xuất thành công thông tin phân bón / thuốc BVTV!', 'success');
+    } else {
+      toast('Không thể trích xuất dữ liệu từ ảnh bao bì.', 'warning');
+    }
+  } catch (err) {
+    console.error('Lỗi AI Scan bao bì:', err);
+    toast('Lỗi AI quét bao bì: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+    if (textEl) textEl.innerHTML = '📷 Chụp / Chọn ảnh bao bì';
+    event.target.value = '';
+  }
+}
+
 // ─── EXPOSE TO WINDOW FOR HTML ONCLICK ───────────────────────────
 window.autoCalculateSupplyUnits = autoCalculateSupplyUnits;
 window.loadSupplies = loadSupplies;
@@ -1074,4 +1132,6 @@ window.saveSupplyUsage = saveSupplyUsage;
 window.loadSupplyUsagesLog = loadSupplyUsagesLog;
 window.deleteSupplyUsage = deleteSupplyUsage;
 window.deleteSupplyUsagesGroup = deleteSupplyUsagesGroup;
+window.handleAiScanImageUpload = handleAiScanImageUpload;
+
 
