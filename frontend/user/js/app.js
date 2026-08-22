@@ -10,7 +10,7 @@ import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router
 // ── Modules ───────────────────────────────────────────────────
 import './modules/notifications.js';
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache } from './modules/plants.js';
+import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache } from './modules/plants.js';
 
 window.openSelfInitFarmModal = openSelfInitFarmModal;
 window.closeSelfInitFarmModal = closeSelfInitFarmModal;
@@ -22,6 +22,7 @@ window.openEditFarmModal = openEditFarmModal;
 window.closeEditFarmModal = closeEditFarmModal;
 window.getEditDeviceGPSPosition = getEditDeviceGPSPosition;
 window.submitEditFarm = submitEditFarm;
+window.deleteUserFarm = deleteUserFarm;
 window.renderUserFarmsGrid = renderUserFarmsGrid;
 
 window.openFarmDetailView = openFarmDetailView;

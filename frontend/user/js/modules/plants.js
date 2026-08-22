@@ -499,6 +499,9 @@ export function renderUserFarmsGrid(farms) {
             <button onclick="event.stopPropagation(); openEditFarmModal(${f.id})" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; color:#334155; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Chỉnh sửa trang trại">
               <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Sửa
             </button>
+            <button onclick="event.stopPropagation(); deleteUserFarm(${f.id}, '${esc(f.name)}')" style="background:#ffffff; border:1.5px solid #fca5a5; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Xóa đệm (ẩn) trang trại">
+              <i class="fa-solid fa-trash-can" style="color:#dc2626;"></i> Xóa
+            </button>
           </div>
         </div>
       `;
@@ -659,6 +662,24 @@ export async function submitEditFarm() {
     if (btn) btn.disabled = false;
   }
 }
+
+export async function deleteUserFarm(farmId, farmName) {
+  if (!confirm(`Bạn có chắc chắn muốn xóa đệm (ẩn) Trang trại "${farmName}" khỏi danh sách?`)) {
+    return;
+  }
+  try {
+    const res = await api(`/farms/${farmId}`, { method: 'DELETE' });
+    if (res && (res.success || res.message)) {
+      if (window.toast) window.toast('🗑️ Đã xóa đệm (ẩn) trang trại thành công!', 'success');
+      if (typeof window.loadUserDashboard === 'function') {
+        window.loadUserDashboard();
+      }
+    }
+  } catch (err) {
+    alert(err.message || 'Lỗi khi xóa trang trại.');
+  }
+}
+window.deleteUserFarm = deleteUserFarm;
 
 // ── FARM SUBTABS & DEMO IOT / WEATHER FORECAST ──────────────────
 
