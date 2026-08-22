@@ -966,3 +966,176 @@ window.filterHistoryTab = filterHistoryTab;
 window.openViewHistoryModal = openViewHistoryModal;
 window.closeViewHistoryModal = closeViewHistoryModal;
 
+// ── TAB / PAGE: SCHEMA INSPECTOR & LIVE CRUD ───────────────────
+let schemaTelemetryCache = null;
+
+async function loadDbSchemaCheck() {
+  const grid = document.getElementById('db-schema-tables-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#64748b;"><i class="fa fa-spinner fa-spin fa-2x"></i><br><br>Đang thanh tra Schema & Telemetry CSDL PostgreSQL...</div>';
+
+  try {
+    const data = await api('/database/check');
+    schemaTelemetryCache = data;
+
+    if (!data.tables || data.tables.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#64748b;">Không tìm thấy bảng CSDL nào.</div>';
+      return;
+    }
+
+    grid.innerHTML = data.tables.map(t => {
+      return `
+        <div onclick="viewTableRecords('${esc(t.table_name)}')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 14px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-table" style="color:#059669;"></i> ${esc(t.table_name)}
+            </span>
+            <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;">
+              ${t.row_count.toLocaleString('vi-VN')} dòng
+            </span>
+          </div>
+          <div style="font-size:12px; color:#64748b; margin-bottom:12px;">
+            Số cột: <strong>${t.column_count} cột</strong> · Kiểu dữ liệu PostgreSQL
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:#059669; border-top:1px solid #f1f5f9; padding-top:10px;">
+            <span><i class="fa-solid fa-eye"></i> Xem & Thao tác Dữ liệu</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#dc2626;">⚠️ Lỗi thanh tra CSDL: ${esc(err.message)}</div>`;
+  }
+}
+
+async function viewTableRecords(tableName) {
+  const container = document.getElementById('db-table-records-container');
+  if (!container) return;
+
+  container.style.display = 'block';
+  container.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b;"><i class="fa fa-spinner fa-spin fa-2x"></i><br><br>Đang nạp dữ liệu trực tiếp từ bảng <strong>${esc(tableName)}</strong>...</div>`;
+
+  try {
+    const data = await api(`/database/tables/${tableName}/records?limit=50`);
+    const records = data.records || [];
+
+    let colHeaders = [];
+    if (records.length > 0) {
+      colHeaders = Object.keys(records[0]);
+    }
+
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+        <h3 style="margin:0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-database" style="color:#059669;"></i> Dữ liệu Bảng "${esc(tableName)}" (${data.total_records} dòng)
+        </h3>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="adminAddRecord('${esc(tableName)}')" style="background:#059669; border:none; padding:6px 14px; font-weight:700;">
+            <i class="fa-solid fa-plus"></i> Thêm bản ghi mới
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('db-table-records-container').style.display='none'" style="padding:6px 12px;">
+            <i class="fa-solid fa-xmark"></i> Đóng
+          </button>
+        </div>
+      </div>
+
+      ${records.length === 0 ? `
+        <div style="text-align:center; padding:30px; color:#64748b; background:#f8fafc; border-radius:10px;">Bảng "${esc(tableName)}" hiện chưa có dữ liệu nào.</div>
+      ` : `
+        <div style="overflow-x:auto; max-height:500px;">
+          <table class="table" style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+              <tr style="background:#f1f5f9; text-align:left;">
+                <th style="padding:10px; border-bottom:2px solid #cbd5e1;">Thao tác</th>
+                ${colHeaders.map(c => `<th style="padding:10px; border-bottom:2px solid #cbd5e1;">${esc(c)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${records.map(r => `
+                <tr style="border-bottom:1px solid #e2e8f0;">
+                  <td style="padding:8px; white-space:nowrap;">
+                    <button class="btn btn-sm btn-secondary" onclick="adminEditRecord('${esc(tableName)}', ${r.id})" style="padding:3px 8px; font-size:11px; margin-right:4px;">
+                      <i class="fa-solid fa-pen"></i> Sửa
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="adminDeleteRecord('${esc(tableName)}', ${r.id})" style="padding:3px 8px; font-size:11px; background:#dc2626; color:#fff; border:none; border-radius:4px;">
+                      <i class="fa-solid fa-trash"></i> Xóa
+                    </button>
+                  </td>
+                  ${colHeaders.map(c => {
+                    const val = r[c];
+                    const valStr = typeof val === 'object' ? JSON.stringify(val) : String(val ?? '');
+                    return `<td style="padding:8px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(valStr)}">${esc(valStr)}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
+    `;
+  } catch (err) {
+    container.innerHTML = `<div style="color:#dc2626; padding:20px;">Lỗi nạp dữ liệu: ${esc(err.message)}</div>`;
+  }
+}
+
+async function adminDeleteRecord(tableName, recordId) {
+  if (!confirm(`⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn XÓA bản ghi #${recordId} khỏi bảng "${tableName}"?`)) {
+    return;
+  }
+  try {
+    const res = await api(`/database/tables/${tableName}/records/${recordId}`, { method: 'DELETE' });
+    if (res && res.success) {
+      toast(`🗑️ Đã xóa bản ghi #${recordId} khỏi bảng "${tableName}" thành công!`);
+      viewTableRecords(tableName);
+      loadDbSchemaCheck();
+    }
+  } catch (err) {
+    alert(err.message || 'Lỗi khi xóa bản ghi.');
+  }
+}
+
+async function adminEditRecord(tableName, recordId) {
+  const jsonStr = prompt(`Chỉnh sửa bản ghi #${recordId} thuộc bảng "${tableName}" (định dạng JSON):`, '{}');
+  if (!jsonStr) return;
+  try {
+    const bodyData = JSON.parse(jsonStr);
+    const res = await api(`/database/tables/${tableName}/records/${recordId}`, {
+      method: 'PUT',
+      body: JSON.stringify(bodyData)
+    });
+    if (res && res.success) {
+      toast(`✏️ Cập nhật bản ghi #${recordId} thành công!`);
+      viewTableRecords(tableName);
+    }
+  } catch (err) {
+    alert('Lỗi định dạng JSON hoặc server: ' + err.message);
+  }
+}
+
+async function adminAddRecord(tableName) {
+  const jsonStr = prompt(`Thêm bản ghi mới vào bảng "${tableName}" (định dạng JSON):`, '{}');
+  if (!jsonStr) return;
+  try {
+    const bodyData = JSON.parse(jsonStr);
+    const res = await api(`/database/tables/${tableName}/records`, {
+      method: 'POST',
+      body: JSON.stringify(bodyData)
+    });
+    if (res && res.success) {
+      toast(`➕ Thêm bản ghi mới vào bảng "${tableName}" thành công!`);
+      viewTableRecords(tableName);
+      loadDbSchemaCheck();
+    }
+  } catch (err) {
+    alert('Lỗi định dạng JSON hoặc server: ' + err.message);
+  }
+}
+
+window.loadDbSchemaCheck = loadDbSchemaCheck;
+window.viewTableRecords = viewTableRecords;
+window.adminDeleteRecord = adminDeleteRecord;
+window.adminEditRecord = adminEditRecord;
+window.adminAddRecord = adminAddRecord;
+

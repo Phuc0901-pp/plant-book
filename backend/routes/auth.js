@@ -90,6 +90,7 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         id: user.id,
+        public_id: user.role === 'admin' ? `adm-${Buffer.from(String(user.id)).toString('hex')}` : `usr-${Buffer.from(String(user.id)).toString('hex')}`,
         email: user.email,
         role: user.role,
         name: user.full_name,

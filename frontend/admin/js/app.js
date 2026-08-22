@@ -108,6 +108,7 @@ function showPage(page) {
   const titles = { 
     dashboard: 'Dashboard Overview', 
     database: 'Cơ sở dữ liệu & Nhật ký Canh tác',
+    'db-check': 'Kiểm tra CSDL Schema & Quản trị Dữ liệu',
     plants: 'Danh sách cây trồng', 
     schemas: 'Cấu hình loại cây', 
     media: 'Thư viện Media', 
@@ -131,6 +132,7 @@ function showPage(page) {
   try {
     if (page === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
     if (page === 'database' && typeof initDatabasePage === 'function') initDatabasePage();
+    if (page === 'db-check' && typeof loadDbSchemaCheck === 'function') loadDbSchemaCheck();
     if (page === 'plants') {
       if (typeof initPlantFilters === 'function') {
         initPlantFilters().then(() => { if (typeof loadPlants === 'function') loadPlants(); });
