@@ -279,7 +279,11 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
       'SELECT id, email, full_name, role, avatar_url, phone, city, country, gender, created_at, account_tier, tier_expires_at, tier_admin_note FROM users WHERE id=$1',
       [req.user.id]
     );
-    res.json(result.rows[0]);
+    const u = result.rows[0];
+    if (u) {
+      u.public_id = u.role === 'admin' ? `adm-${Buffer.from(String(u.id)).toString('hex')}` : `usr-${Buffer.from(String(u.id)).toString('hex')}`;
+    }
+    res.json(u);
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
   }

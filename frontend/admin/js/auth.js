@@ -142,8 +142,15 @@ async function logout() {
 async function showApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-  document.getElementById('sb-user-name').textContent = currentUser?.name || '';
+  document.getElementById('sb-user-name').textContent = currentUser?.name || currentUser?.full_name || 'Quản trị viên';
   document.getElementById('sb-user-email').textContent = currentUser?.email || '';
+
+  const publicId = currentUser?.public_id || (currentUser?.id ? `adm-${String(currentUser.id).padStart(4, '0')}` : 'adm-sys');
+  const idEl = document.getElementById('sb-user-id');
+  if (idEl) {
+    idEl.textContent = `ID Mã Hóa: ${publicId}`;
+  }
+
   await ensureMapboxToken();
   if (typeof handleAdminUrlRouting === 'function') {
     handleAdminUrlRouting();
