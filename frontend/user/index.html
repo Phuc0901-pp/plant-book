@@ -485,13 +485,19 @@
             <span id="notif-badge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:10px; font-weight:800; border-radius:10px; padding:2px 6px; border:2px solid #ffffff;">0</span>
           </button>
 
-          <!-- Notification Dropdown Panel -->
-          <div id="notif-dropdown" style="display:none; position:absolute; right:0; top:48px; width:340px; max-height:420px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; box-shadow:0 12px 32px rgba(0,0,0,0.15); z-index:1000; overflow:hidden; flex-direction:column;">
+          <!-- Translucent Overlay Backdrop for Mobile/Desktop -->
+          <div id="notif-overlay" onclick="closeNotificationDropdown()"></div>
+
+          <!-- Notification Dropdown Panel / Mobile Centered Modal -->
+          <div id="notif-dropdown" class="notif-panel">
             <div style="padding:14px 16px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
               <strong style="font-size:14px; color:#0f172a; display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-bell" style="color:#059669;"></i> Thông báo Nông hộ
               </strong>
-              <button onclick="markAllNotificationsRead()" style="background:none; border:none; color:#0284c7; font-size:11.5px; font-weight:700; cursor:pointer;">Đánh dấu đã đọc</button>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="markAllNotificationsRead()" style="background:none; border:none; color:#0284c7; font-size:11.5px; font-weight:700; cursor:pointer;">Đánh dấu đã đọc</button>
+                <button onclick="closeNotificationDropdown()" style="background:none; border:none; color:#64748b; font-size:20px; font-weight:800; cursor:pointer; line-height:1; padding:0 4px;">×</button>
+              </div>
             </div>
             <div id="notif-list" style="overflow-y:auto; max-height:320px; padding:8px 12px; display:flex; flex-direction:column; gap:8px;">
               <div style="text-align:center; padding:20px; color:#64748b; font-size:13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải thông báo...</div>

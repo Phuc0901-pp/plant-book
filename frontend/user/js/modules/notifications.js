@@ -74,14 +74,24 @@ export function renderNotificationsUI(unreadCount, list) {
 
 export function toggleNotificationDropdown() {
   const panel = document.getElementById('notif-dropdown');
+  const overlay = document.getElementById('notif-overlay');
   if (!panel) return;
   const isHidden = panel.style.display === 'none' || !panel.style.display;
   panel.style.display = isHidden ? 'flex' : 'none';
+  if (overlay) overlay.style.display = isHidden ? 'block' : 'none';
   if (isHidden) {
     loadNotifications();
   }
 }
 window.toggleNotificationDropdown = toggleNotificationDropdown;
+
+export function closeNotificationDropdown() {
+  const panel = document.getElementById('notif-dropdown');
+  const overlay = document.getElementById('notif-overlay');
+  if (panel) panel.style.display = 'none';
+  if (overlay) overlay.style.display = 'none';
+}
+window.closeNotificationDropdown = closeNotificationDropdown;
 
 export async function markAllNotificationsRead() {
   try {
