@@ -190,6 +190,19 @@ async function initDB() {
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS total_plants INTEGER DEFAULT 0;
     `);
 
+    // Farm IoT Sensors & 6-Day Weather forecast table (Persistent DB per farm)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS farm_iot_sensors (
+        id SERIAL PRIMARY KEY,
+        farm_id INTEGER UNIQUE REFERENCES farms(id) ON DELETE CASCADE,
+        air_data JSONB NOT NULL DEFAULT '{}',
+        soil_data JSONB NOT NULL DEFAULT '{}',
+        water_data JSONB NOT NULL DEFAULT '{}',
+        weather_forecast JSONB NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
 
 
     // User profile extension columns

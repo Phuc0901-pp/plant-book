@@ -716,66 +716,117 @@
               </button>
             </div>
 
-            <!-- SECTION 1: 3 MÔI TRƯỜNG CẢM BIẾN (KHÔNG KHÍ, ĐẤT, NƯỚC) -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-bottom:24px;">
+            <!-- SECTION 1: 3 MÔI TRƯỜNG CẢM BIẾN (KHÔNG KHÍ, ĐẤT ĐA TẦNG, NƯỚC) -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:24px;">
 
               <!-- CARD 1: MÔI TRƯỜNG KHÔNG KHÍ -->
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #f1f5f9;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#0369a1; display:flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-wind" style="color:#0284c7; font-size:18px;"></i> Môi trường Không khí
                   </h4>
-                  <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:10.5px; font-weight:800;">Air-Sensor #01</span>
+                  <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:10.5px; font-weight:800;">Air Station #01</span>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#64748b; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-temperature-half" style="color:#ef4444;"></i> Nhiệt độ không khí</div>
-                    <div style="font-size:22px; font-weight:900; color:#0f172a;" id="iot-air-temp">28.5 °C</div>
-                    <small style="color:#16a34a; font-weight:700; font-size:10.5px;">✓ Mát mẻ, lý tưởng</small>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-temperature-half" style="color:#ef4444;"></i> Nhiệt độ không khí</div>
+                    <div style="font-size:20px; font-weight:900; color:#0f172a;" id="iot-air-temp">28.5 °C</div>
+                    <small style="color:#16a34a; font-weight:700; font-size:10px;">✓ Mát mẻ, lý tưởng</small>
                   </div>
 
-                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#64748b; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-droplet" style="color:#0284c7;"></i> Độ ẩm không khí</div>
-                    <div style="font-size:22px; font-weight:900; color:#0f172a;" id="iot-air-humidity">74 %</div>
-                    <small style="color:#0284c7; font-weight:700; font-size:10.5px;">✓ Độ ẩm tối ưu</small>
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-droplet" style="color:#0284c7;"></i> Độ ẩm không khí</div>
+                    <div style="font-size:20px; font-weight:900; color:#0f172a;" id="iot-air-humidity">74 %</div>
+                    <small style="color:#0284c7; font-weight:700; font-size:10px;">✓ Độ ẩm tối ưu</small>
                   </div>
 
-                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#64748b; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-sun" style="color:#f59e0b;"></i> Chỉ số UV</div>
-                    <div style="font-size:20px; font-weight:900; color:#0f172a;" id="iot-air-uv">4.2 <span style="font-size:12px; color:#64748b; font-weight:600;">(Vừa)</span></div>
-                    <small style="color:#f59e0b; font-weight:700; font-size:10.5px;">An toàn cho lá</small>
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-wind" style="color:#3b82f6;"></i> Tốc độ & Hướng gió</div>
+                    <div style="font-size:15px; font-weight:900; color:#0f172a;" id="iot-air-wind">12 km/h - Đông Nam</div>
+                    <small style="color:#3b82f6; font-weight:700; font-size:10px;">Gió nhẹ dễ chịu</small>
                   </div>
 
-                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#64748b; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-gauge-high" style="color:#8b5cf6;"></i> Áp suất khí quyển</div>
-                    <div style="font-size:20px; font-weight:900; color:#0f172a;" id="iot-air-pressure">1012 hPa</div>
-                    <small style="color:#64748b; font-weight:700; font-size:10.5px;">Ổn định</small>
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-cloud-rain" style="color:#0284c7;"></i> Lượng & Cường độ mưa</div>
+                    <div style="font-size:15px; font-weight:900; color:#0f172a;" id="iot-air-rain">1.5 mm (0.5 mm/h)</div>
+                    <small style="color:#64748b; font-weight:700; font-size:10px;">Mưa nhỏ không đáng kể</small>
+                  </div>
+
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-sun" style="color:#f59e0b;"></i> Chỉ số UV</div>
+                    <div style="font-size:18px; font-weight:900; color:#0f172a;" id="iot-air-uv">4.2 <span style="font-size:11px; color:#64748b;">(Vừa)</span></div>
+                    <small style="color:#f59e0b; font-weight:700; font-size:10px;">An toàn cho lá</small>
+                  </div>
+
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-solar-panel" style="color:#ea580c;"></i> Cường độ nắng / Bức xạ</div>
+                    <div style="font-size:16px; font-weight:900; color:#0f172a;" id="iot-air-solar">650 W/m²</div>
+                    <small style="color:#ea580c; font-weight:700; font-size:10px;">Quang hợp tốt</small>
                   </div>
                 </div>
               </div>
 
-              <!-- CARD 2: MÔI TRƯỜNG ĐẤT -->
+              <!-- CARD 2: MÔI TRƯỜNG ĐẤT ĐA TẦNG (10cm, 20cm, 30cm) -->
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:8px;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-mound" style="color:#d97706; font-size:18px;"></i> Môi trường Đất Trồng
+                    <i class="fa-solid fa-mound" style="color:#d97706; font-size:18px;"></i> Cảm biến Đất Đa tầng
                   </h4>
-                  <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;">Đất 7-in-1</span>
+                  <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;">Multilayer 7-in-1</span>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#854d0e; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-water" style="color:#d97706;"></i> Độ ẩm đất (20cm)</div>
-                    <div style="font-size:22px; font-weight:900; color:#713f12;" id="iot-soil-moisture">68 %</div>
-                    <small style="color:#16a34a; font-weight:700; font-size:10.5px;">✓ Đủ ẩm tưới</small>
+                <!-- Depth selector tabs -->
+                <div style="display:flex; gap:6px; margin-bottom:12px;">
+                  <button id="soil-depth-btn-10cm" onclick="selectSoilDepth('10cm')" style="flex:1; padding:6px 10px; border:1px solid #fde68a; background:#fff; color:#854d0e; font-size:11.5px; font-weight:700; border-radius:8px; cursor:pointer;">
+                    Tầng 10 cm
+                  </button>
+                  <button id="soil-depth-btn-20cm" onclick="selectSoilDepth('20cm')" style="flex:1; padding:6px 10px; border:1px solid #d97706; background:#fef3c7; color:#78350f; font-size:11.5px; font-weight:800; border-radius:8px; cursor:pointer;">
+                    Tầng 20 cm
+                  </button>
+                  <button id="soil-depth-btn-30cm" onclick="selectSoilDepth('30cm')" style="flex:1; padding:6px 10px; border:1px solid #fde68a; background:#fff; color:#854d0e; font-size:11.5px; font-weight:700; border-radius:8px; cursor:pointer;">
+                    Tầng 30 cm
+                  </button>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-water" style="color:#d97706;"></i> Độ ẩm đất</div>
+                    <div style="font-size:20px; font-weight:900; color:#713f12;" id="iot-soil-moisture">68 %</div>
+                    <small style="color:#16a34a; font-weight:700; font-size:10px;">✓ Đủ ẩm rễ</small>
                   </div>
 
-                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#854d0e; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-flask-vial" style="color:#d97706;"></i> Độ pH Đất</div>
-                    <div style="font-size:22px; font-weight:900; color:#713f12;" id="iot-soil-ph">6.5</div>
-                    <small style="color:#16a34a; font-weight:700; font-size:10.5px;">✓ Đất trung tính tốt</small>
+                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-temperature-half" style="color:#d97706;"></i> Nhiệt độ đất</div>
+                    <div style="font-size:20px; font-weight:900; color:#713f12;" id="iot-soil-temp">25.5 °C</div>
+                    <small style="color:#16a34a; font-weight:700; font-size:10px;">✓ Nhiệt độ mát</small>
                   </div>
+
+                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-flask-vial" style="color:#d97706;"></i> Độ pH Đất</div>
+                    <div style="font-size:20px; font-weight:900; color:#713f12;" id="iot-soil-ph">6.5</div>
+                    <small style="color:#16a34a; font-weight:700; font-size:10px;">✓ Đất trung tính</small>
+                  </div>
+
+                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-bolt-lightning" style="color:#d97706;"></i> Độ EC</div>
+                    <div style="font-size:18px; font-weight:900; color:#713f12;" id="iot-soil-ec">1.2 <span style="font-size:11px;">mS/cm</span></div>
+                    <small style="color:#16a34a; font-weight:700; font-size:10px;">Dẫn điện chuẩn</small>
+                  </div>
+
+                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-bottle-droplet" style="color:#d97706;"></i> Độ mặn</div>
+                    <div style="font-size:18px; font-weight:900; color:#713f12;" id="iot-soil-salinity">0.2 ‰</div>
+                    <small style="color:#16a34a; font-weight:700; font-size:10px;">An toàn không mặn</small>
+                  </div>
+
+                  <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-seedling" style="color:#d97706;"></i> Dinh dưỡng N-P-K</div>
+                    <div style="font-size:13px; font-weight:800; color:#713f12; margin-top:2px;" id="iot-soil-npk">N:45 | P:32 | K:58</div>
+                    <small style="color:#854d0e; font-weight:700; font-size:10px;">mg/kg (Cân bằng)</small>
+                  </div>
+                </div>
+              </div>
 
                   <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:12px;">
                     <div style="font-size:11.5px; color:#854d0e; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-bolt-lightning" style="color:#d97706;"></i> Độ mặn EC</div>

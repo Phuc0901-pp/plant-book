@@ -685,156 +685,127 @@ export function refreshIoTDemoData() {
 }
 window.refreshIoTDemoData = refreshIoTDemoData;
 
-export function renderIoTDemoData(farmId, forceRefresh = false) {
-  const farm = (_farmsCache || []).find(f => String(f.id) === String(farmId)) || { name: 'Trang trại Nông hộ' };
+let _currentFarmIoTData = null;
+let _selectedSoilDepth = '20cm';
 
-  // Fluctuating seed for dynamic demo numbers
-  const offset = (parseInt(farmId) || 1) * 3 + (forceRefresh ? Math.floor(Math.random() * 10) : 0);
-  
-  const airTemp = (27.5 + (offset % 3) * 0.7).toFixed(1);
-  const airHumidity = 72 + (offset % 5);
-  const uvIndex = (3.8 + (offset % 4) * 0.3).toFixed(1);
-  const pressure = 1010 + (offset % 4);
+export function selectSoilDepth(depth) {
+  _selectedSoilDepth = depth;
+  const depths = ['10cm', '20cm', '30cm'];
+  depths.forEach(d => {
+    const btn = document.getElementById(`soil-depth-btn-${d}`);
+    if (btn) {
+      if (d === depth) {
+        btn.style.background = '#fef3c7';
+        btn.style.color = '#78350f';
+        btn.style.borderColor = '#d97706';
+        btn.style.fontWeight = '800';
+      } else {
+        btn.style.background = '#ffffff';
+        btn.style.color = '#854d0e';
+        btn.style.borderColor = '#fde68a';
+        btn.style.fontWeight = '700';
+      }
+    }
+  });
 
-  const soilMoisture = 65 + (offset % 6);
-  const soilPh = (6.4 + (offset % 3) * 0.1).toFixed(1);
-  const soilEc = (1.1 + (offset % 3) * 0.1).toFixed(1);
-  const soilN = 40 + (offset % 10);
-  const soilP = 30 + (offset % 8);
-  const soilK = 55 + (offset % 12);
+  if (_currentFarmIoTData && _currentFarmIoTData.soil_data) {
+    const soil = _currentFarmIoTData.soil_data;
+    const levelData = soil[`depth_${depth}`] || soil.depth_20cm || {};
 
-  const waterPh = (6.7 + (offset % 3) * 0.1).toFixed(1);
-  const waterDo = (6.3 + (offset % 3) * 0.2).toFixed(1);
-  const waterTurbidity = 10 + (offset % 5);
-  const waterLevel = 80 + (offset % 15);
+    if (document.getElementById('iot-soil-moisture')) document.getElementById('iot-soil-moisture').textContent = `${levelData.moisture || 68} %`;
+    if (document.getElementById('iot-soil-temp')) document.getElementById('iot-soil-temp').textContent = `${levelData.temperature || 25.5} °C`;
+    if (document.getElementById('iot-soil-ph')) document.getElementById('iot-soil-ph').textContent = levelData.ph || 6.5;
+    if (document.getElementById('iot-soil-ec')) document.getElementById('iot-soil-ec').innerHTML = `${levelData.ec || 1.2} <span style="font-size:11px;">mS/cm</span>`;
+    if (document.getElementById('iot-soil-salinity')) document.getElementById('iot-soil-salinity').textContent = `${levelData.salinity || 0.2} ‰`;
+    if (document.getElementById('iot-soil-npk')) {
+      const npk = levelData.npk || { n: 45, p: 32, k: 58 };
+      document.getElementById('iot-soil-npk').textContent = `N:${npk.n} | P:${npk.p} | K:${npk.k}`;
+    }
+  }
+}
+window.selectSoilDepth = selectSoilDepth;
 
-  // Update DOM elements for 3 IoT environments
-  if (document.getElementById('iot-air-temp')) document.getElementById('iot-air-temp').textContent = `${airTemp} °C`;
-  if (document.getElementById('iot-air-humidity')) document.getElementById('iot-air-humidity').textContent = `${airHumidity} %`;
-  if (document.getElementById('iot-air-uv')) document.getElementById('iot-air-uv').innerHTML = `${uvIndex} <span style="font-size:12px; color:#64748b;">(Vừa)</span>`;
-  if (document.getElementById('iot-air-pressure')) document.getElementById('iot-air-pressure').textContent = `${pressure} hPa`;
+export async function refreshIoTDemoData() {
+  if (!_activeFarmId) return;
+  try {
+    const res = await api(`/farms/${_activeFarmId}/iot-data/refresh`, { method: 'POST' });
+    if (res && res.success) {
+      _currentFarmIoTData = res;
+      _applyIoTDemoDataToUI(res);
+      if (window.toast) window.toast('🔄 Đã lưu & làm mới dữ liệu cảm biến IoT trong Database thành công!', 'success');
+    }
+  } catch (err) {
+    console.warn('Lỗi làm mới dữ liệu IoT:', err);
+  }
+}
+window.refreshIoTDemoData = refreshIoTDemoData;
 
-  if (document.getElementById('iot-soil-moisture')) document.getElementById('iot-soil-moisture').textContent = `${soilMoisture} %`;
-  if (document.getElementById('iot-soil-ph')) document.getElementById('iot-soil-ph').textContent = soilPh;
-  if (document.getElementById('iot-soil-ec')) document.getElementById('iot-soil-ec').innerHTML = `${soilEc} <span style="font-size:11px;">mS/cm</span>`;
-  if (document.getElementById('iot-soil-npk')) document.getElementById('iot-soil-npk').textContent = `N:${soilN} | P:${soilP} | K:${soilK}`;
+export async function renderIoTDemoData(farmId, forceRefresh = false) {
+  if (!farmId) return;
+  try {
+    const endpoint = forceRefresh ? `/farms/${farmId}/iot-data/refresh` : `/farms/${farmId}/iot-data`;
+    const method = forceRefresh ? 'POST' : 'GET';
+    const res = await api(endpoint, { method });
+    if (res && res.success) {
+      _currentFarmIoTData = res;
+      _applyIoTDemoDataToUI(res);
+    }
+  } catch (err) {
+    console.warn('Lỗi tải dữ liệu IoT từ Database:', err);
+  }
+}
+window.renderIoTDemoData = renderIoTDemoData;
 
-  if (document.getElementById('iot-water-ph')) document.getElementById('iot-water-ph').textContent = waterPh;
-  if (document.getElementById('iot-water-do')) document.getElementById('iot-water-do').innerHTML = `${waterDo} <span style="font-size:11px;">mg/L</span>`;
-  if (document.getElementById('iot-water-turbidity')) document.getElementById('iot-water-turbidity').innerHTML = `${waterTurbidity} <span style="font-size:11px;">NTU</span>`;
-  if (document.getElementById('iot-water-level')) document.getElementById('iot-water-level').textContent = `${waterLevel} %`;
+function _applyIoTDemoDataToUI(res) {
+  const air = res.air_data || {};
+  const water = res.water_data || {};
+  const forecast = res.weather_forecast || [];
 
-  // Render 6-day Agricultural Weather Forecast Cards
+  // Update Air Environment
+  if (document.getElementById('iot-air-temp')) document.getElementById('iot-air-temp').textContent = `${air.temperature || 28.5} °C`;
+  if (document.getElementById('iot-air-humidity')) document.getElementById('iot-air-humidity').textContent = `${air.humidity || 74} %`;
+  if (document.getElementById('iot-air-pressure')) document.getElementById('iot-air-pressure').textContent = `${air.pressure || 1012} hPa`;
+  if (document.getElementById('iot-air-wind')) document.getElementById('iot-air-wind').textContent = `${air.wind_speed || 12} km/h - ${air.wind_direction || 'Đông Nam'}`;
+  if (document.getElementById('iot-air-rain')) document.getElementById('iot-air-rain').textContent = `${air.rainfall || 1.5} mm (${air.rain_intensity || 0.5} mm/h)`;
+  if (document.getElementById('iot-air-uv')) document.getElementById('iot-air-uv').innerHTML = `${air.uv_index || 4.2} <span style="font-size:11px; color:#64748b;">(Vừa)</span>`;
+  if (document.getElementById('iot-air-solar')) document.getElementById('iot-air-solar').textContent = `${air.solar_radiation || 650} W/m²`;
+
+  // Update Soil Multi-Depth
+  selectSoilDepth(_selectedSoilDepth || '20cm');
+
+  // Update Water Environment
+  if (document.getElementById('iot-water-ph')) document.getElementById('iot-water-ph').textContent = water.ph || 6.8;
+  if (document.getElementById('iot-water-do')) document.getElementById('iot-water-do').innerHTML = `${water.do || 6.5} <span style="font-size:11px;">mg/L</span>`;
+  if (document.getElementById('iot-water-turbidity')) document.getElementById('iot-water-turbidity').innerHTML = `${water.turbidity || 12} <span style="font-size:11px;">NTU</span>`;
+  if (document.getElementById('iot-water-level')) document.getElementById('iot-water-level').textContent = `${water.level || 85} %`;
+
+  // Render 6-Day Weather Forecast
   const grid = document.getElementById('iot-weather-forecast-grid');
   if (!grid) return;
 
-  const today = new Date();
-  const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-
-  const weatherData = [
-    {
-      icon: 'fa-sun',
-      color: '#f59e0b',
-      title: 'Hôm nay',
-      bg: '#fff7ed',
-      border: '#ffedd5',
-      temp: '25°C - 33°C',
-      rain: '10%',
-      humidity: `${airHumidity}%`,
-      wind: '12 km/h',
-      advice: '☀️ Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.'
-    },
-    {
-      icon: 'fa-cloud-sun-rain',
-      color: '#0284c7',
-      title: 'Ngày 2',
-      bg: '#f0f9ff',
-      border: '#bae6fd',
-      temp: '24°C - 31°C',
-      rain: '65%',
-      humidity: '82%',
-      wind: '15 km/h',
-      advice: '🌦️ Mưa rào rải rác: Hạn chế phun thuốc sâu vì dễ bị rửa trôi.'
-    },
-    {
-      icon: 'fa-cloud-sun',
-      color: '#059669',
-      title: 'Ngày 3',
-      bg: '#f0fdf4',
-      border: '#bbf7d0',
-      temp: '23°C - 30°C',
-      rain: '20%',
-      humidity: '75%',
-      wind: '10 km/h',
-      advice: '⛅ Nhiều mây mát: Thời điểm tốt nhất để làm cỏ & tạo tán cây.'
-    },
-    {
-      icon: 'fa-cloud-sun',
-      color: '#eab308',
-      title: 'Ngày 4',
-      bg: '#fefce8',
-      border: '#fef08a',
-      temp: '25°C - 32°C',
-      rain: '15%',
-      humidity: '68%',
-      wind: '14 km/h',
-      advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng.'
-    },
-    {
-      icon: 'fa-cloud-showers-heavy',
-      color: '#7c3aed',
-      title: 'Ngày 5',
-      bg: '#f5f3ff',
-      border: '#ddd6fe',
-      temp: '23°C - 29°C',
-      rain: '85%',
-      humidity: '88%',
-      wind: '22 km/h',
-      advice: '⛈️ Mưa giông chiều: Khơi thông rãnh tháo nước tránh ngập úng.'
-    },
-    {
-      icon: 'fa-sun',
-      color: '#ea580c',
-      title: 'Ngày 6',
-      bg: '#fff7ed',
-      border: '#ffedd5',
-      temp: '26°C - 34°C',
-      rain: '5%',
-      humidity: '62%',
-      wind: '11 km/h',
-      advice: '☀️ Nắng rực rỡ: Duy trì hệ thống tưới nhỏ giọt tự động.'
-    }
-  ];
-
-  grid.innerHTML = weatherData.map((w, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
-    const dayName = i === 0 ? 'Hôm nay' : dayNames[d.getDay()];
-
+  grid.innerHTML = forecast.map((w) => {
     return `
-      <div style="background:${w.bg}; border:1.5px solid ${w.border}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div style="background:${w.bg || '#fff7ed'}; border:1.5px solid ${w.border || '#ffedd5'}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="font-size:13.5px; color:#0f172a;">${dayName}</strong>
-            <span style="font-size:11px; color:#64748b; font-weight:700;">${dateStr}</span>
+            <strong style="font-size:13.5px; color:#0f172a;">${w.day_label || 'Hôm nay'}</strong>
+            <span style="font-size:11px; color:#64748b; font-weight:700;">${w.date_str || ''}</span>
           </div>
           <div style="text-align:center; padding:10px 0;">
-            <i class="fa-solid ${w.icon}" style="font-size:32px; color:${w.color}; margin-bottom:6px; display:block;"></i>
-            <div style="font-size:16px; font-weight:900; color:#0f172a;">${w.temp}</div>
+            <i class="fa-solid ${w.icon || 'fa-sun'}" style="font-size:32px; color:${w.color || '#f59e0b'}; margin-bottom:6px; display:block;"></i>
+            <div style="font-size:16px; font-weight:900; color:#0f172a;">${w.temp || '25°C - 33°C'}</div>
           </div>
           <div style="font-size:11.5px; color:#475569; display:flex; flex-direction:column; gap:4px; margin-bottom:10px; background:rgba(255,255,255,0.7); padding:8px; border-radius:8px;">
-            <div><i class="fa-solid fa-cloud-rain" style="color:#0284c7;"></i> Tỉ lệ mưa: <strong>${w.rain}</strong></div>
-            <div><i class="fa-solid fa-droplet" style="color:#0284c7;"></i> Độ ẩm: <strong>${w.humidity}</strong></div>
-            <div><i class="fa-solid fa-wind" style="color:#64748b;"></i> Gió: <strong>${w.wind}</strong></div>
+            <div><i class="fa-solid fa-cloud-rain" style="color:#0284c7;"></i> Mưa: <strong>${w.rain || '10%'}</strong></div>
+            <div><i class="fa-solid fa-droplet" style="color:#0284c7;"></i> Độ ẩm: <strong>${w.humidity || '70%'}</strong></div>
+            <div><i class="fa-solid fa-wind" style="color:#64748b;"></i> Gió: <strong>${w.wind || '12 km/h'}</strong></div>
           </div>
         </div>
-        <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border}; padding-top:8px;">
-          ${w.advice}
+        <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px;">
+          ${w.advice || ''}
         </div>
       </div>
     `;
   }).join('');
 }
-window.renderIoTDemoData = renderIoTDemoData;
 
