@@ -1234,6 +1234,22 @@ export async function handleAiScanImageUpload(event) {
       d = parseAgriculturalProductText(ocrText);
     }
 
+    // 3. Automatically upload scanned packaging photo to storage & set form image preview
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', compressedFile);
+      const uploadRes = await api('/supplies/upload-image', {
+        method: 'POST',
+        body: uploadFormData,
+        isFormData: true
+      });
+      if (uploadRes && uploadRes.url) {
+        setSupplyImagePreview(uploadRes.url);
+      }
+    } catch (upErr) {
+      console.warn('Auto-upload scanned packaging image failed:', upErr);
+    }
+
     if (d) {
       if (d.category && document.getElementById('sp-category')) {
         document.getElementById('sp-category').value = d.category;
@@ -1256,11 +1272,11 @@ export async function handleAiScanImageUpload(event) {
       }
 
       if (isCached) {
-        toast('⚡ Trích xuất ngay lập tức từ bộ nhớ đệm (0 token tốn)!', 'success');
+        toast('⚡ Đã bóc tách & tự đính kèm ảnh bao bì từ bộ nhớ đệm!', 'success');
       } else if (isGeminiUsed) {
-        toast('✨ AI Gemini 3.6 Flash đã quét & bóc tách chính xác bao bì!', 'success');
+        toast('✨ AI Gemini 3.6 Flash đã bóc tách & tự đính kèm ảnh bao bì thành công!', 'success');
       } else {
-        toast('⚠️ Đã quét bằng OCR thiết bị (Hạn mức AI hết hoặc chưa có Key). Vui lòng kiểm tra lại!', 'warning');
+        toast('⚠️ Đã quét OCR & tự đính kèm ảnh bao bì! Vui lòng kiểm tra lại thông tin.', 'warning');
       }
     } else {
       toast('Không thể quét được chữ trên bao bì. Vui lòng chụp rõ nét hơn hoặc nhập tay.', 'warning');
