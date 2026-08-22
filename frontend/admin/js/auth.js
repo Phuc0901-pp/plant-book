@@ -145,7 +145,11 @@ async function showApp() {
   document.getElementById('sb-user-name').textContent = currentUser?.name || '';
   document.getElementById('sb-user-email').textContent = currentUser?.email || '';
   await ensureMapboxToken();
-  loadDashboard();
+  if (typeof handleAdminUrlRouting === 'function') {
+    handleAdminUrlRouting();
+  } else {
+    loadDashboard();
+  }
   loadSchemasDropdown();
   connectWebSocket();
 }

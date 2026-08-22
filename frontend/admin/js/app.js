@@ -81,9 +81,42 @@ function fmtDate(d) {
   }
 }
 
-// ── Main Page Switcher ─────────────────────────────────────
+// ── Main Page Switcher & URL Router ─────────────────────────────
 
-function showPage(page) {
+const adminPageRouteMap = {
+  dashboard: '/admin/dashboard',
+  database: '/admin/database',
+  'db-check': '/admin/database-check',
+  gis: '/admin/farms',
+  plants: '/admin/plants',
+  cost: '/admin/costs',
+  devices: '/admin/iot-devices',
+  users: '/admin/users',
+  schemas: '/admin/crop-schemas',
+  media: '/admin/media'
+};
+
+const adminRoutePageMap = {
+  '/admin': 'dashboard',
+  '/admin/': 'dashboard',
+  '/admin/dashboard': 'dashboard',
+  '/admin/database': 'database',
+  '/admin/database-check': 'db-check',
+  '/admin/db-check': 'db-check',
+  '/admin/farms': 'gis',
+  '/admin/gis': 'gis',
+  '/admin/plants': 'plants',
+  '/admin/costs': 'cost',
+  '/admin/cost': 'cost',
+  '/admin/iot-devices': 'devices',
+  '/admin/devices': 'devices',
+  '/admin/users': 'users',
+  '/admin/crop-schemas': 'schemas',
+  '/admin/schemas': 'schemas',
+  '/admin/media': 'media'
+};
+
+function showPage(page, pushUrl = true) {
   const targetSection = document.getElementById(`page-${page}`);
   if (!targetSection) {
     console.warn(`Page section #page-${page} not found.`);
@@ -91,18 +124,26 @@ function showPage(page) {
   }
 
   // Remove active state from all page sections and nav items
-  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.page-section, .page-content').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
   // Show target section
   targetSection.classList.add('active');
+  targetSection.style.display = 'block';
 
   // Highlight active sidebar menu item safely
-  if (typeof window !== 'undefined' && window.event && window.event.currentTarget && window.event.currentTarget.classList) {
-    window.event.currentTarget.classList.add('active');
-  } else {
-    const navItem = document.querySelector(`.nav-item[onclick*="'${page}'"]`);
-    if (navItem) navItem.classList.add('active');
+  const navItem = document.querySelector(`.nav-item[onclick*="'${page}'"]`);
+  if (navItem) navItem.classList.add('active');
+
+  // Push URL to browser address bar for professional standards
+  if (pushUrl && window.history && window.history.pushState) {
+    const targetUrl = adminPageRouteMap[page] || `/admin/${page}`;
+    if (window.location.pathname !== targetUrl) {
+      window.history.pushState({ page }, '', targetUrl);
+    }
   }
 
   const titles = { 
@@ -153,6 +194,22 @@ function showPage(page) {
     console.error(`Error loading page [${page}]:`, err);
   }
 }
+
+function handleAdminUrlRouting() {
+  const rawPath = window.location.pathname.replace(/\/$/, '') || '/admin';
+  const matchedPage = adminRoutePageMap[rawPath] || 'dashboard';
+  showPage(matchedPage, false);
+}
+
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.page) {
+    showPage(e.state.page, false);
+  } else {
+    handleAdminUrlRouting();
+  }
+});
+
+window.handleAdminUrlRouting = handleAdminUrlRouting;
 
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
