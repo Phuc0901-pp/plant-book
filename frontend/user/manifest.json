@@ -1,7 +1,7 @@
 {
-  "name": "Plant Book Farmer Portal",
-  "short_name": "Plant Book",
-  "description": "Cổng thông tin người dùng hệ thống quản lý cây trồng Tanbao Corp",
+  "name": "Sổ Nông Điện Tử - TBSG Agtech",
+  "short_name": "Sổ Nông TBSG",
+  "description": "Hệ thống Sổ Nông Điện Tử & Giám sát Nông nghiệp Thông minh. Phát triển & Sở hữu bởi TBSG Agtech © 2026.",
   "start_url": "/user/",
   "display": "standalone",
   "background_color": "#1b4d3e",
