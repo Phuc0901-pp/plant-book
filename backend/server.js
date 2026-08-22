@@ -50,6 +50,11 @@ app.use(express.static(path.join(__dirname, '../frontend/public'), {
   }
 }));
 
+// ─── Health Check Endpoints (Exempt from Rate Limiting & Anti-Scraper) ──
+app.get(['/health', '/healthz', '/api/health'], (req, res) => {
+  res.status(200).json({ status: 'ok', time: new Date().toISOString(), app: 'Plant Book API v1.0' });
+});
+
 const { antiScraper, apiLimiter } = require('./middleware/antiScraper');
 
 // ─── API Routes (Protected by anti-scraper & rate limiter) ──────────
@@ -67,13 +72,6 @@ app.use('/api/supplies', require('./routes/supplies'));
 app.use('/api/costs', require('./routes/costs'));
 app.use('/api/history', require('./routes/history'));
 app.use('/api', require('./middleware/errorHandler'));
-
-
-// Health check
-app.get('/api/health', (req, res) => {
-
-  res.json({ status: 'ok', time: new Date().toISOString(), app: 'Plant Book API v1.0' });
-});
 
 // ─── SPA fallback ────────────────────────────────────────────────
 app.get('/plant/:slug/report', (req, res) => {
