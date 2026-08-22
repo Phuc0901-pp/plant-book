@@ -8,6 +8,7 @@
 import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router.js';
 
 // ── Modules ───────────────────────────────────────────────────
+import './modules/notifications.js';
 import { loadUserDashboard }          from './modules/dashboard.js';
 import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache } from './modules/plants.js';
 

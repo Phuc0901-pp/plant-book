@@ -203,6 +203,20 @@ async function initDB() {
       );
     `);
 
+    // User Notifications Table (Autonomous In-App & Web Push Notification System)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(50) DEFAULT 'warning',
+        is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
 
 
     // User profile extension columns
