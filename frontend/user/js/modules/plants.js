@@ -350,13 +350,20 @@ document.addEventListener('click', e => {
 
 let _activeFarmId = null;
 
-export function openFarmDetailView(farmId) {
+export function openFarmDetailView(farmId, updateHash = true) {
   _activeFarmId = farmId;
   const masterView = document.getElementById('farm-master-view');
   const detailView = document.getElementById('farm-detail-view');
 
   if (masterView) masterView.style.display = 'none';
   if (detailView) detailView.style.display = 'block';
+
+  // Synchronize URL Hash e.g. #/u/usr-5a9f/farms/farm-5a9e
+  if (updateHash && typeof window.encodeId === 'function' && typeof window.getUserHash === 'function') {
+    const userHash = window.getUserHash();
+    const farmHash = window.encodeId('farm', farmId);
+    window.location.hash = `#/u/${userHash}/farms/${farmHash}`;
+  }
 
   switchFarmSubtab('map');
 
@@ -432,15 +439,22 @@ export function openFarmDetailView(farmId) {
     }, 150);
   }
 }
+window.openFarmDetailView = openFarmDetailView;
 
 
-export function closeFarmDetailView() {
+export function closeFarmDetailView(updateHash = true) {
   const masterView = document.getElementById('farm-master-view');
   const detailView = document.getElementById('farm-detail-view');
 
   if (detailView) detailView.style.display = 'none';
   if (masterView) masterView.style.display = 'block';
+
+  if (updateHash && typeof window.getUserHash === 'function') {
+    const userHash = window.getUserHash();
+    window.location.hash = `#/u/${userHash}/farms`;
+  }
 }
+window.closeFarmDetailView = closeFarmDetailView;
 
 export function renderUserFarmsGrid(farms) {
   const gridContainer = document.getElementById('user-farms-grid');
