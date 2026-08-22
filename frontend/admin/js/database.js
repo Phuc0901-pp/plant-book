@@ -858,7 +858,7 @@ function renderHistoryTable(list) {
   }).join('');
 }
 
-export async function adminHardDeleteFarm(farmId, farmTitle) {
+async function adminHardDeleteFarm(farmId, farmTitle) {
   if (!confirm(`⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn XÓA VĨNH VIỄN Trang trại "${farmTitle}" (ID: #${farmId}) khỏi CSDL PostgreSQL?\n\nThao tác này sẽ xóa triệt để dữ liệu và KHÔNG THỂ KHÔI PHỤC!`)) {
     return;
   }
