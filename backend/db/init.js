@@ -298,6 +298,7 @@ async function initDB() {
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS unit_price_small NUMERIC DEFAULT 0;
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS image_url TEXT;
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS fertilizer_type VARCHAR(100);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE;
 
       UPDATE supplies 
       SET 

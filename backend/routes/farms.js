@@ -404,21 +404,58 @@ router.delete('/:id', auth, async (req, res) => {
     const userName = req.user.full_name || req.user.email || `User #${req.user.id}`;
 
     if (req.user.role === 'admin') {
-      // Admin: PERMANENT HARD DELETE
-      await pool.query('DELETE FROM farms WHERE id = $1', [farmId]);
+      // Admin: PERMANENT HARD DELETE + CASCADE DELETE ALL PLANTS, SUPPLIES, LOGS, IOT & COSTS
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
 
-      // Record in data_audit_logs for Admin DB Audit History ("Lịch sử biến động CSDL")
-      await pool.query(`
-        INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
-        VALUES ($1, $2, 'DELETE', 'Trang trại', $3, $4, $5, 'Xóa vĩnh viễn trang trại khỏi CSDL bởi Quản trị viên (Admin)')
-      `, [req.user.id, userName, farmId, `Xóa vĩnh viễn trang trại ${farm.name}`, JSON.stringify(farm)]);
+        // 1. Delete associated plant logs
+        await client.query(`
+          DELETE FROM plant_logs 
+          WHERE plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
+        `, [farmId]);
+
+        // 2. Delete associated plants
+        await client.query('DELETE FROM plants WHERE farm_id = $1', [farmId]);
+
+        // 3. Delete associated supplies for this farm
+        await client.query('DELETE FROM supplies WHERE farm_id = $1 OR user_id = $2', [farmId, farm.user_id || farm.created_by]);
+
+        // 4. Delete associated IoT sensors
+        await client.query('DELETE FROM farm_iot_sensors WHERE farm_id = $1', [farmId]);
+
+        // 5. Delete associated devices
+        await client.query('DELETE FROM devices WHERE farm_id = $1', [farmId]);
+
+        // 6. Delete associated costs
+        await client.query('DELETE FROM costs WHERE farm_id = $1', [farmId]);
+
+        // 7. Delete the farm itself
+        await client.query('DELETE FROM farms WHERE id = $1', [farmId]);
+
+        // 8. Record in data_audit_logs for Admin DB Audit History ("Lịch sử biến động CSDL")
+        await client.query(`
+          INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
+          VALUES ($1, $2, 'DELETE', 'Trang trại', $3, $4, $5, 'Xóa vĩnh viễn trang trại + Cây trồng + Vật tư đính kèm khỏi CSDL bởi Admin')
+        `, [req.user.id, userName, farmId, `Xóa vĩnh viễn trang trại ${farm.name}`, JSON.stringify(farm)]);
+
+        await client.query('COMMIT');
+      } catch (cascadeErr) {
+        await client.query('ROLLBACK');
+        throw cascadeErr;
+      } finally {
+        client.release();
+      }
 
       await delCacheByPattern('farms_');
+      await delCacheByPattern('plants_');
+      await delCacheByPattern('supplies_');
+      await delCacheByPattern('farm_iot_');
 
       const broadcast = req.app.get('broadcast');
       if (broadcast) broadcast('farms_updated');
 
-      return res.json({ success: true, message: 'Admin đã xóa vĩnh viễn trang trại khỏi CSDL PostgreSQL thành công!' });
+      return res.json({ success: true, message: 'Admin đã xóa vĩnh viễn trang trại cùng toàn bộ cây trồng & vật tư đính kèm khỏi CSDL PostgreSQL thành công!' });
     } else {
       // User: SOFT DELETE / HIDE ("Xóa đệm")
       const isOwner = farm.user_id === req.user.id || farm.created_by === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
