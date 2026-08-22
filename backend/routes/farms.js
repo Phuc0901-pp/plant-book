@@ -3,10 +3,17 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const { getCache, setCache, delCache } = require('../config/redis');
 
 // GET all farms with plant count (requires auth)
 router.get('/', auth, async (req, res) => {
   try {
+    const cacheKey = `farms_user_${req.user.id}_${req.user.role}`;
+    const cachedFarms = await getCache(cacheKey);
+    if (cachedFarms) {
+      return res.json(cachedFarms);
+    }
+
     let query = `
       SELECT f.*, GREATEST(COUNT(p.id)::int, COALESCE(f.total_plants, 0)) as plant_count, u.full_name as user_name, u.email as user_email
       FROM farms f 
@@ -23,6 +30,7 @@ router.get('/', auth, async (req, res) => {
       ORDER BY f.created_at DESC
     `;
     const result = await pool.query(query, params);
+    await setCache(cacheKey, result.rows, 120); // 2 mins TTL
     res.json(result.rows);
   } catch (err) {
     console.error('Error getting farms:', err);
@@ -286,6 +294,12 @@ function generateDefaultFarmIoTData(farmId) {
 router.get('/:id/iot-data', auth, async (req, res) => {
   try {
     const farmId = parseInt(req.params.id);
+    const cacheKey = `farm_iot_${farmId}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     let result = await pool.query('SELECT * FROM farm_iot_sensors WHERE farm_id = $1', [farmId]);
     if (result.rows.length === 0) {
       // Auto-initialize demo IoT sensor & 6-day weather data in DB for this farm
@@ -299,7 +313,7 @@ router.get('/:id/iot-data', auth, async (req, res) => {
     }
 
     const row = result.rows[0];
-    res.json({
+    const payload = {
       success: true,
       farm_id: farmId,
       air_data: typeof row.air_data === 'string' ? JSON.parse(row.air_data) : row.air_data,
@@ -307,7 +321,10 @@ router.get('/:id/iot-data', auth, async (req, res) => {
       water_data: typeof row.water_data === 'string' ? JSON.parse(row.water_data) : row.water_data,
       weather_forecast: typeof row.weather_forecast === 'string' ? JSON.parse(row.weather_forecast) : row.weather_forecast,
       updated_at: row.updated_at
-    });
+    };
+
+    await setCache(cacheKey, payload, 300); // 5 mins TTL
+    res.json(payload);
   } catch (err) {
     console.error('Error fetching farm IoT data:', err);
     res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu cảm biến IoT.' });
@@ -330,7 +347,7 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
     `, [farmId, JSON.stringify(defaultData.air_data), JSON.stringify(defaultData.soil_data), JSON.stringify(defaultData.water_data), JSON.stringify(defaultData.weather_forecast)]);
 
     const row = updateRes.rows[0];
-    res.json({
+    const payload = {
       success: true,
       message: 'Đã làm mới dữ liệu cảm biến IoT thành công!',
       farm_id: farmId,
@@ -339,7 +356,13 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
       water_data: typeof row.water_data === 'string' ? JSON.parse(row.water_data) : row.water_data,
       weather_forecast: typeof row.weather_forecast === 'string' ? JSON.parse(row.weather_forecast) : row.weather_forecast,
       updated_at: row.updated_at
-    });
+    };
+
+    // Invalidate Redis cache
+    await delCache(`farm_iot_${farmId}`);
+    await setCache(`farm_iot_${farmId}`, payload, 300);
+
+    res.json(payload);
   } catch (err) {
     console.error('Error refreshing farm IoT data:', err);
     res.status(500).json({ error: 'Lỗi server khi làm mới dữ liệu cảm biến IoT.' });
