@@ -132,6 +132,9 @@ window.showPage = showPage;
  * Example URL: #/u/usr-5a9f/farms/farm-5a9e
  */
 export function handleRouteFromHash() {
+  const userToken = localStorage.getItem('pb_token');
+  if (!userToken) return; // Do not execute hash routing if user is logged out!
+
   const hash = window.location.hash || '';
   if (!hash.startsWith('#/')) return;
 

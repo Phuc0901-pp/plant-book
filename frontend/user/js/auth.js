@@ -142,6 +142,18 @@ export async function logout() {
   }
   clearToken();
   setCurrentUser(null);
+
+  // Clear login inputs so saved credentials are not auto-filled
+  const emailInput = document.getElementById('login-email');
+  const passInput  = document.getElementById('login-pass');
+  if (emailInput) emailInput.value = '';
+  if (passInput)  passInput.value = '';
+
+  // Clear URL hash to prevent routing/reload loops
+  if (window.location.hash) {
+    history.replaceState('', document.title, window.location.pathname + window.location.search);
+  }
+
   const app       = document.getElementById('app');
   const loginPage = document.getElementById('login-page');
   if (app)       app.style.display       = 'none';

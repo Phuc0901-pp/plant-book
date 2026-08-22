@@ -124,6 +124,17 @@ async function logout() {
   }
   token = '';
   localStorage.removeItem('pb_token');
+
+  // Clear inputs
+  const emailInput = document.getElementById('login-email');
+  const passInput  = document.getElementById('login-pass');
+  if (emailInput) emailInput.value = '';
+  if (passInput)  passInput.value = '';
+
+  if (window.location.hash) {
+    history.replaceState('', document.title, window.location.pathname + window.location.search);
+  }
+
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
 }
