@@ -1152,6 +1152,43 @@ export function parseAgriculturalProductText(rawText) {
   };
 }
 
+function compressImageForAi(file, maxDim = 1280, quality = 0.8) {
+  return new Promise((resolve) => {
+    if (!file || !file.type.startsWith('image/')) return resolve(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) return resolve(file);
+          const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+          resolve(compressedFile);
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 export async function handleAiScanImageUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -1160,16 +1197,20 @@ export async function handleAiScanImageUpload(event) {
   const textEl = document.getElementById('sp-ai-scan-text');
 
   if (btn) btn.disabled = true;
-  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🤖 AI đang quét chữ bao bì...';
+  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🤖 AI đang nén ảnh & quét chữ bao bì...';
 
   try {
     let d = null;
     let isGeminiUsed = false;
+    let isCached = false;
 
-    // 1. Try Backend Cloud Vision API (Google Gemini 2.0 Flash) first
+    // Compress image client-side to reduce payload & token consumption by 80%
+    const compressedFile = await compressImageForAi(file);
+
+    // 1. Try Backend Cloud Vision API (Google Gemini 3.6 Flash) first
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
 
       const res = await api('/supplies/scan-image', {
         method: 'POST',
@@ -1178,16 +1219,17 @@ export async function handleAiScanImageUpload(event) {
 
       if (res && res.success && res.data) {
         d = res.data;
-        isGeminiUsed = res.used_ai === 'gemini';
+        isGeminiUsed = res.used_ai === 'gemini' || res.used_ai === 'gemini_cache';
+        isCached = res.used_ai === 'gemini_cache';
       }
     } catch (err) {
       console.warn('Backend Gemini Vision call failed, switching to client-side OCR fallback:', err);
     }
 
-    // 2. If Backend Gemini is not configured or failed, run Client-Side Tesseract.js OCR
+    // 2. If Backend Gemini is rate-limited or not configured, run Client-Side Tesseract.js OCR
     if (!d && typeof Tesseract !== 'undefined') {
       if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🔍 Đang quét bằng OCR thiết bị...';
-      const ocrResult = await Tesseract.recognize(file, 'vie+eng');
+      const ocrResult = await Tesseract.recognize(compressedFile, 'vie+eng');
       const ocrText = ocrResult?.data?.text || '';
       d = parseAgriculturalProductText(ocrText);
     }
@@ -1213,10 +1255,12 @@ export async function handleAiScanImageUpload(event) {
         autoCalculateSupplyUnits();
       }
 
-      if (isGeminiUsed) {
-        toast('✨ AI Gemini Vision đã quét & bóc tách chính xác bao bì!', 'success');
+      if (isCached) {
+        toast('⚡ Trích xuất ngay lập tức từ bộ nhớ đệm (0 token tốn)!', 'success');
+      } else if (isGeminiUsed) {
+        toast('✨ AI Gemini 3.6 Flash đã quét & bóc tách chính xác bao bì!', 'success');
       } else {
-        toast('⚠️ Đã quét bằng OCR thiết bị (Chưa có GEMINI_API_KEY trên Render). Hãy kiểm tra lại thông tin!', 'warning');
+        toast('⚠️ Đã quét bằng OCR thiết bị (Hạn mức AI hết hoặc chưa có Key). Vui lòng kiểm tra lại!', 'warning');
       }
     } else {
       toast('Không thể quét được chữ trên bao bì. Vui lòng chụp rõ nét hơn hoặc nhập tay.', 'warning');

@@ -108,6 +108,9 @@ router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
 
 // POST /api/supplies/scan-image — AI Vision Quét & Bóc tách Tự động Thông tin Bao Phân Bón / Thuốc BVTV
 
+const crypto = require('crypto');
+const scanResultCache = new Map(); // Cache max 150 scanned image results in memory to save API tokens
+
 router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
   try {
     let base64Image = '';
@@ -123,11 +126,22 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng tải lên hoặc chụp ảnh bao bì phân bón / thuốc BVTV.' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    // 1. Check in-memory hash cache to save API tokens
+    const imgHash = crypto.createHash('md5').update(base64Image).digest('hex');
+    if (scanResultCache.has(imgHash)) {
+      console.log('⚡ Serving scanned supply image from cache (0 API tokens consumed)');
+      return res.json({
+        success: true,
+        used_ai: 'gemini_cache',
+        data: scanResultCache.get(imgHash)
+      });
+    }
+
+    const rawKeys = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+    const apiKeys = rawKeys.split(/[,;]/).map(k => k.trim()).filter(Boolean);
     let scannedData = null;
 
-    if (apiKey) {
-      // Model versions in order of preference (Google updated default to gemini-3.6-flash)
+    if (apiKeys.length > 0) {
       const modelCandidates = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'];
       const promptText = `Bạn là chuyên gia bóc tách thông tin bao bì phân bón và thuốc bảo vệ thực vật tại Việt Nam. Hãy đọc kỹ ảnh chụp bao bì/chai thuốc và trả về duy nhất 1 chuỗi JSON thuần tuý (không thêm văn bản ngoài JSON):
 {
@@ -140,41 +154,55 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
   "manufacturer": "Tên nhà sản xuất"
 }`;
 
-      for (const modelName of modelCandidates) {
-        try {
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: promptText },
-                  { inline_data: { mime_type: mimeType, data: base64Image } }
-                ]
-              }]
-            })
-          });
+      // Iterate through keys (Key Rotation if Rate Limited / 429 / 403)
+      keyLoop:
+      for (const apiKey of apiKeys) {
+        for (const modelName of modelCandidates) {
+          try {
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [
+                    { text: promptText },
+                    { inline_data: { mime_type: mimeType, data: base64Image } }
+                  ]
+                }]
+              })
+            });
 
-          if (geminiRes.ok) {
-            const result = await geminiRes.json();
-            const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            let cleanJson = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
-            const firstBrace = cleanJson.indexOf('{');
-            const lastBrace = cleanJson.lastIndexOf('}');
-            if (firstBrace !== -1 && lastBrace !== -1) {
-              cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
+            if (geminiRes.ok) {
+              const result = await geminiRes.json();
+              const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+              let cleanJson = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+              const firstBrace = cleanJson.indexOf('{');
+              const lastBrace = cleanJson.lastIndexOf('}');
+              if (firstBrace !== -1 && lastBrace !== -1) {
+                cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
+              }
+              scannedData = JSON.parse(cleanJson);
+              if (scannedData && scannedData.name) {
+                console.log(`Gemini Vision AI succeeded using model ${modelName}`);
+                // Save to cache (limit cache size to 150 items)
+                if (scanResultCache.size > 150) {
+                  const firstKey = scanResultCache.keys().next().value;
+                  scanResultCache.delete(firstKey);
+                }
+                scanResultCache.set(imgHash, scannedData);
+                break keyLoop; // Successfully scanned! Exit loop.
+              }
+            } else {
+              const errText = await geminiRes.text();
+              console.warn(`Gemini API HTTP ${geminiRes.status} on key ending ...${apiKey.slice(-6)}:`, errText);
+              // If rate limited 429 or 403 quota, break to try next API key in keyLoop
+              if (geminiRes.status === 429 || geminiRes.status === 403) {
+                break; // try next key
+              }
             }
-            scannedData = JSON.parse(cleanJson);
-            if (scannedData && scannedData.name) {
-              console.log(`Gemini Vision AI succeeded using model: ${modelName}`);
-              break; // Successfully scanned! Exit loop.
-            }
-          } else {
-            const errText = await geminiRes.text();
-            console.warn(`Gemini Model ${modelName} returned HTTP ${geminiRes.status}:`, errText);
+          } catch (mErr) {
+            console.warn(`Gemini Model ${modelName} attempt failed:`, mErr.message);
           }
-        } catch (mErr) {
-          console.warn(`Gemini Model ${modelName} attempt failed:`, mErr.message);
         }
       }
     }
