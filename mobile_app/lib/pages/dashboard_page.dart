@@ -58,6 +58,8 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
+  bool _isProUser = false;
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -68,11 +70,15 @@ class _DashboardPageState extends State<DashboardPage> {
       final data = await Future.wait([
         _apiService.fetchFarms(),
         _apiService.fetchPlants(),
+        _apiService.fetchUserInfo(),
       ]);
+
+      final user = data[2] as Map<String, dynamic>?;
 
       setState(() {
         _farms = data[0] as List<Farm>;
         _plants = data[1] as List<Plant>;
+        _isProUser = user != null && user['account_tier'] == 'pro';
         _isLoading = false;
       });
     } catch (e) {
@@ -81,6 +87,60 @@ class _DashboardPageState extends State<DashboardPage> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showProUpgradeSheet(String featureName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 48),
+            const SizedBox(height: 12),
+            const Text(
+              '👑 Khóa Tính năng Nông hộ PRO',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Bản NORMAL quản lý theo quy mô Toàn Vườn. Tính năng $featureName dành riêng cho Nông hộ PRO.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: AppTheme.textMuted, height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('⚡ Đã gửi yêu cầu Nâng cấp PRO tới Admin!'),
+                      backgroundColor: AppTheme.green,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.star_rounded, size: 18),
+                label: const Text('Gửi Yêu cầu Nâng cấp PRO 👑'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.greenDark,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _triggerQrScan() {
@@ -327,6 +387,28 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Column(
       children: [
+        if (!_isProUser)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.shade200),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 22),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Chế độ Nông hộ NORMAL (Quản lý Toàn Vườn). Nâng cấp PRO 👑 để quản lý riêng từng cây & Mã QR/NFC.',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         // Dropdown to filter by farm
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -374,6 +456,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       return PlantCard(
                         plant: plant,
                         onLogTap: () {
+                          if (!_isProUser) {
+                            _showProUpgradeSheet('quản lý từng cây riêng lẻ & Thẻ QR/NFC');
+                            return;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(

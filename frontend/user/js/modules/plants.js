@@ -47,37 +47,6 @@ export function getActiveFarm() {
   return _farmsCache && _farmsCache.length > 0 ? _farmsCache[0] : null;
 }
 
-/**
- * Chuyển đổi tầng đất Cảm biến IoT (10cm, 20cm, 30cm) với kiểm tra phân quyền PRO
- */
-export function selectSoilDepth(depth) {
-  if (depth > 10 && typeof window.isProUser === 'function' && !window.isProUser()) {
-    if (typeof window.openProUpgradeModal === 'function') {
-      window.openProUpgradeModal('soil_depth');
-    } else {
-      alert('🔒 Tầng đất 20cm & 30cm dành riêng cho Nông hộ PRO. Vui lòng nâng cấp tài khoản!');
-    }
-    return;
-  }
-  const depth10 = document.getElementById('depth-10');
-  const depth20 = document.getElementById('depth-20');
-  const depth30 = document.getElementById('depth-30');
-  
-  if (depth10) depth10.classList.toggle('active', depth === 10);
-  if (depth20) depth20.classList.toggle('active', depth === 20);
-  if (depth30) depth30.classList.toggle('active', depth === 30);
-
-  const valMoisture = depth === 10 ? '65%' : (depth === 20 ? '48%' : '58%');
-  const valTemp = depth === 10 ? '29.5°C' : (depth === 20 ? '27.2°C' : '25.8°C');
-
-  const elMoisture = document.getElementById('iot-soil-moisture-val');
-  const elTemp = document.getElementById('iot-soil-temp-val');
-
-  if (elMoisture) elMoisture.textContent = valMoisture;
-  if (elTemp) elTemp.textContent = valTemp;
-}
-window.selectSoilDepth = selectSoilDepth;
-
 
 
 /** Nạp danh sách trang trại vào select #user-plant-filter-farm */
@@ -726,6 +695,14 @@ let _currentFarmIoTData = null;
 let _selectedSoilDepth = '20cm';
 
 export function selectSoilDepth(depth) {
+  if (depth !== '10cm' && typeof window.isProUser === 'function' && !window.isProUser()) {
+    if (typeof window.openProUpgradeModal === 'function') {
+      window.openProUpgradeModal('soil_depth');
+    } else {
+      alert('🔒 Tầng đất 20cm & 30cm dành riêng cho Nông hộ PRO. Vui lòng nâng cấp tài khoản!');
+    }
+    return;
+  }
   _selectedSoilDepth = depth;
   const depths = ['10cm', '20cm', '30cm'];
   depths.forEach(d => {
