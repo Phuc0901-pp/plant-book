@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
-const { getCache, setCache, delCache } = require('../config/redis');
+const { getCache, setCache, delCache, delCacheByPattern } = require('../config/redis');
 
 // GET all farms with plant count (requires auth)
 router.get('/', auth, async (req, res) => {
@@ -99,6 +99,9 @@ router.post('/self-init', auth, async (req, res) => {
 
     await client.query('COMMIT');
 
+    // Invalidate Redis Cache so GET /api/farms returns the newly created farm immediately!
+    await delCacheByPattern('farms_');
+
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('farms_updated');
@@ -131,6 +134,8 @@ router.post('/', auth, admin, async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, req.user.id, user_id || null]);
+
+    await delCacheByPattern('farms_');
 
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');

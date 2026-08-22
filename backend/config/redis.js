@@ -163,10 +163,43 @@ async function delCache(key) {
   inMemoryCache.delete(key);
 }
 
+/**
+ * Cache Delete Pattern Helper
+ * @param {string} patternPrefix e.g. 'farms_'
+ */
+async function delCacheByPattern(patternPrefix) {
+  for (const k of inMemoryCache.keys()) {
+    if (k.startsWith(patternPrefix)) {
+      inMemoryCache.delete(k);
+    }
+  }
+
+  try {
+    if (isRedisConnected && redisClient) {
+      const keys = await redisClient.keys(`${patternPrefix}*`);
+      if (keys && keys.length > 0) {
+        await redisClient.del(...keys);
+      }
+    }
+  } catch (_) {}
+
+  if (isUpstashConfigured) {
+    try {
+      const keys = await upstashFetch(['KEYS', `${patternPrefix}*`]);
+      if (Array.isArray(keys) && keys.length > 0) {
+        for (const k of keys) {
+          await upstashFetch(['DEL', k]);
+        }
+      }
+    } catch (_) {}
+  }
+}
+
 module.exports = {
   redisClient,
   isRedisConnected: () => isRedisConnected || isUpstashConfigured,
   getCache,
   setCache,
-  delCache
+  delCache,
+  delCacheByPattern
 };

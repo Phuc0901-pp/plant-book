@@ -7,6 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const { uploadFile, deleteFile } = require('../config/supabase');
 const { v4: uuidv4 } = require('uuid');
+const { delCacheByPattern } = require('../config/redis');
 require('dotenv').config();
 
 // Multer for avatar upload (memory storage)
@@ -155,6 +156,24 @@ router.post('/register', async (req, res) => {
 
 
     const newUser = userRes.rows[0];
+
+    // Automatically create a default farm for the newly registered farmer user!
+    try {
+      const defaultFarmName = `Trang trại ${plant_type || 'Nông hộ'} (${cleanPhone})`;
+      const farmRes = await pool.query(
+        `INSERT INTO farms (name, description, area, total_plants, created_by, user_id)
+         VALUES ($1, $2, $3, $4, $5, $5)
+         RETURNING id`,
+        [defaultFarmName, `Trang trại tự động khởi tạo khi đăng ký tài khoản cho ${name}`, parsedArea || 5000, 45, newUser.id]
+      );
+      if (farmRes.rows.length > 0) {
+        const farmId = farmRes.rows[0].id;
+        await pool.query('UPDATE users SET farm_id = $1 WHERE id = $2', [farmId, newUser.id]);
+      }
+      await delCacheByPattern('farms_');
+    } catch (farmErr) {
+      console.warn('⚠️ Auto-creating farm on registration warning:', farmErr.message);
+    }
 
     // Log registration activity
     await pool.query(
