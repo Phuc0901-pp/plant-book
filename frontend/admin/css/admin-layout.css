@@ -518,3 +518,72 @@ div#login-page[style*="display:none"] {
   min-height: 0 !important;
   overflow: hidden !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN PORTAL MOBILE APP RESPONSIVE & TABLE-TO-CARD STYLING
+   Phát triển & Sở hữu bởi Phạm Hoàng Phúc © 2026
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  .content {
+    padding: 14px 12px !important;
+  }
+
+  .topbar {
+    padding: 0 14px !important;
+    height: 58px !important;
+  }
+
+  .topbar h1 {
+    font-size: 16px !important;
+  }
+
+  /* Admin Table-to-Card Responsive Transformation */
+  .table-responsive table,
+  .table-responsive thead,
+  .table-responsive tbody,
+  .table-responsive th,
+  .table-responsive td,
+  .table-responsive tr {
+    display: block !important;
+  }
+
+  .table-responsive thead {
+    display: none !important;
+  }
+
+  .table-responsive tbody tr {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    margin-bottom: 12px !important;
+    padding: 14px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .table-responsive td {
+    border: none !important;
+    padding: 6px 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 13px !important;
+  }
+
+  .table-responsive td::before {
+    content: attr(data-label) !important;
+    font-weight: 800 !important;
+    color: #64748b !important;
+    font-size: 12px !important;
+  }
+
+  .admin-brand-signature {
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #059669;
+    padding: 12px 0;
+    border-top: 1px dashed #cbd5e1;
+    margin-top: 20px;
+  }
+}
