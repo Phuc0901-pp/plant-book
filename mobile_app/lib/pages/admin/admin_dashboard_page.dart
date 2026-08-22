@@ -8,6 +8,9 @@ import 'admin_user_list_page.dart';
 import 'admin_device_list_page.dart';
 import 'admin_schema_list_page.dart';
 import 'admin_cost_page.dart';
+import 'admin_database_page.dart';
+import 'admin_farm_map_page.dart';
+import 'admin_audit_logs_page.dart';
 
 
 class AdminDashboardPage extends StatefulWidget {
@@ -210,9 +213,33 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       },
                     ),
                     _adminMenuTile(
+                      icon: Icons.storage_rounded,
+                      color: Colors.indigo,
+                      title: 'Quản trị CSDL & Redis Cache Telemetry',
+                      subtitle: 'Giám sát 8 bảng dữ liệu PostgreSQL, trạng thái Redis Cache & Xóa Cache 1-Chạm.',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminDatabasePage()),
+                        );
+                      },
+                    ),
+                    _adminMenuTile(
+                      icon: Icons.map_rounded,
+                      color: Colors.blue,
+                      title: 'Bản đồ GIS Trang trại Toàn quốc',
+                      subtitle: 'Bản đồ vệ tinh theo dõi tất cả ranh giới trang trại nông hộ trên toàn quốc.',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminFarmMapPage()),
+                        );
+                      },
+                    ),
+                    _adminMenuTile(
                       icon: Icons.sensors_rounded,
                       color: Colors.orange,
-                      title: 'Quản lý Thiết bị IOT',
+                      title: 'Quản lý Thiết bị IOT & Cảm biến',
                       subtitle: 'Đăng ký thiết bị cảm biến và giám sát trạng thái kết nối mạng.',
                       onTap: () {
                         Navigator.push(
@@ -222,10 +249,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       },
                     ),
                     _adminMenuTile(
+                      icon: Icons.security_rounded,
+                      color: Colors.redAccent,
+                      title: 'Nhật ký An ninh & Lịch sử Hệ thống',
+                      subtitle: 'Xem nhật ký tác vụ người dùng, lịch sử quét bao bì AI & sự kiện hệ thống.',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminAuditLogsPage()),
+                        );
+                      },
+                    ),
+                    _adminMenuTile(
                       icon: Icons.attach_money_rounded,
                       color: AppTheme.green,
                       title: 'Quản trị Chi phí Đầu tư',
-
                       subtitle: 'Giám sát tổng vật tư tiêu hao, tài sản cố định & chi phí trang trại.',
                       onTap: () {
                         Navigator.push(

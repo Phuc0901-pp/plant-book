@@ -279,8 +279,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Sổ Nông Tân Bảo AgTech © 2026',
-                        style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
+                        'Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech',
+                        style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

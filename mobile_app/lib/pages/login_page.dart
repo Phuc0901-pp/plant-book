@@ -262,6 +262,18 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.shield_outlined, size: 13, color: AppTheme.greenDark),
+                            SizedBox(width: 4),
+                            Text(
+                              'Bảo mật SSL/TLS · Phát triển & Sở hữu bởi TBSG Agtech © 2026',
+                              style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
