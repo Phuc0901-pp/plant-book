@@ -22,8 +22,10 @@ router.get('/', auth, async (req, res) => {
     `;
     const params = [];
     if (req.user.role !== 'admin') {
-      query += ` WHERE (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1)) `;
+      query += ` WHERE (f.is_deleted IS NOT TRUE) AND (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1)) `;
       params.push(req.user.id);
+    } else {
+      query += ` WHERE (f.is_deleted IS NOT TRUE) `;
     }
     query += `
       GROUP BY f.id, u.id
@@ -374,18 +376,56 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
   }
 });
 
-// DELETE farm (requires auth, admin)
-router.delete('/:id', auth, admin, async (req, res) => {
+// DELETE farm (User = Soft Delete / Ẩn đệm; Admin = Permanent Delete / Xóa vĩnh viễn)
+router.delete('/:id', auth, async (req, res) => {
   try {
-    const result = await pool.query('DELETE FROM farms WHERE id = $1 RETURNING id', [req.params.id]);
-    if (result.rows.length === 0) {
+    const farmId = parseInt(req.params.id);
+    const farmCheck = await pool.query('SELECT * FROM farms WHERE id = $1', [farmId]);
+    if (farmCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
-    // Broadcast WebSocket event
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast('farms_updated');
 
-    res.json({ message: 'Đã xóa trang trại thành công.' });
+    const farm = farmCheck.rows[0];
+    const userName = req.user.full_name || req.user.email || `User #${req.user.id}`;
+
+    if (req.user.role === 'admin') {
+      // Admin: PERMANENT HARD DELETE
+      await pool.query('DELETE FROM farms WHERE id = $1', [farmId]);
+
+      // Record in data_audit_logs for Admin DB Audit History ("Lịch sử biến động CSDL")
+      await pool.query(`
+        INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
+        VALUES ($1, $2, 'DELETE', 'Trang trại', $3, $4, $5, 'Xóa vĩnh viễn trang trại khỏi CSDL bởi Quản trị viên (Admin)')
+      `, [req.user.id, userName, farmId, `Xóa vĩnh viễn trang trại ${farm.name}`, JSON.stringify(farm)]);
+
+      await delCacheByPattern('farms_');
+
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) broadcast('farms_updated');
+
+      return res.json({ success: true, message: 'Admin đã xóa vĩnh viễn trang trại khỏi CSDL PostgreSQL thành công!' });
+    } else {
+      // User: SOFT DELETE / HIDE ("Xóa đệm")
+      const isOwner = farm.user_id === req.user.id || farm.created_by === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
+      if (!isOwner) {
+        return res.status(403).json({ error: 'Bạn không có quyền xóa trang trại này.' });
+      }
+
+      await pool.query('UPDATE farms SET is_deleted = true, deleted_at = NOW() WHERE id = $1', [farmId]);
+
+      // Record soft-delete in data_audit_logs
+      await pool.query(`
+        INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
+        VALUES ($1, $2, 'DELETE_SOFT', 'Trang trại', $3, $4, $5, 'Nông hộ xóa đệm (ẩn) trang trại')
+      `, [req.user.id, userName, farmId, `Xóa đệm trang trại ${farm.name}`, JSON.stringify(farm)]);
+
+      await delCacheByPattern('farms_');
+
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) broadcast('farms_updated');
+
+      return res.json({ success: true, message: 'Đã xóa đệm (ẩn) trang trại khỏi danh sách thành công!' });
+    }
   } catch (err) {
     console.error('Error deleting farm:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa trang trại.' });

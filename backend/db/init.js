@@ -188,6 +188,8 @@ async function initDB() {
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_shared_history BOOLEAN DEFAULT true;
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_shared_supplies BOOLEAN DEFAULT true;
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS total_plants INTEGER DEFAULT 0;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
     `);
 
     // Farm IoT Sensors & 6-Day Weather forecast table (Persistent DB per farm)
