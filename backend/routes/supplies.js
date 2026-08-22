@@ -127,15 +127,9 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
     let scannedData = null;
 
     if (apiKey) {
-      try {
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                {
-                  text: `Bạn là chuyên gia bóc tách thông tin bao bì phân bón và thuốc bảo vệ thực vật tại Việt Nam. Hãy đọc kỹ ảnh chụp bao bì/chai thuốc và trả về duy nhất 1 chuỗi JSON thuần tuý (không thêm văn bản ngoài JSON):
+      // Model versions in order of preference (Google updated default to gemini-3.6-flash)
+      const modelCandidates = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'];
+      const promptText = `Bạn là chuyên gia bóc tách thông tin bao bì phân bón và thuốc bảo vệ thực vật tại Việt Nam. Hãy đọc kỹ ảnh chụp bao bì/chai thuốc và trả về duy nhất 1 chuỗi JSON thuần tuý (không thêm văn bản ngoài JSON):
 {
   "name": "Tên đầy đủ và chuẩn xác của sản phẩm (ví dụ: Phân hữu cơ Bio Power MK 7 Trichoderma +TE Đầu Trâu)",
   "category": "Bón phân" hoặc "Phun thuốc",
@@ -144,32 +138,44 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
   "package_unit": "kg" hoặc "lít" hoặc "g" hoặc "ml" hoặc "m3",
   "package_size": "50 kg",
   "manufacturer": "Tên nhà sản xuất"
-}`
-                },
-                {
-                  inline_data: { mime_type: mimeType, data: base64Image }
-                }
-              ]
-            }]
-          })
-        });
+}`;
 
-        if (geminiRes.ok) {
-          const result = await geminiRes.json();
-          const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          let cleanJson = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
-          const firstBrace = cleanJson.indexOf('{');
-          const lastBrace = cleanJson.lastIndexOf('}');
-          if (firstBrace !== -1 && lastBrace !== -1) {
-            cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
+      for (const modelName of modelCandidates) {
+        try {
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: promptText },
+                  { inline_data: { mime_type: mimeType, data: base64Image } }
+                ]
+              }]
+            })
+          });
+
+          if (geminiRes.ok) {
+            const result = await geminiRes.json();
+            const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            let cleanJson = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+            const firstBrace = cleanJson.indexOf('{');
+            const lastBrace = cleanJson.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+              cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
+            }
+            scannedData = JSON.parse(cleanJson);
+            if (scannedData && scannedData.name) {
+              console.log(`Gemini Vision AI succeeded using model: ${modelName}`);
+              break; // Successfully scanned! Exit loop.
+            }
+          } else {
+            const errText = await geminiRes.text();
+            console.warn(`Gemini Model ${modelName} returned HTTP ${geminiRes.status}:`, errText);
           }
-          scannedData = JSON.parse(cleanJson);
-        } else {
-          const errText = await geminiRes.text();
-          console.error('Gemini API HTTP Error:', geminiRes.status, errText);
+        } catch (mErr) {
+          console.warn(`Gemini Model ${modelName} attempt failed:`, mErr.message);
         }
-      } catch (geminiErr) {
-        console.error('Gemini Vision API error:', geminiErr);
       }
     }
 
