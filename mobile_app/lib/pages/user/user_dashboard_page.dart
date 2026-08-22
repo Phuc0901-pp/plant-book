@@ -105,9 +105,26 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                   'TRANG TRẠI CỦA BẠN',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
                 ),
-                TextButton(
-                  onPressed: () => widget.onNavigateTab(1),
-                  child: const Text('Xem tất cả →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline_rounded, color: AppTheme.greenDark, size: 20),
+                      tooltip: 'Khởi tạo trang trại mới',
+                      onPressed: () {
+                        if (!isPro && _farms.isNotEmpty) {
+                          ProUpgradeModal.show(context, 'tạo nhiều Trang trại (Tối đa 1 trang trại với bản NORMAL)');
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('🌱 Bạn đã sở hữu Trang trại mặc định của Nông hộ!'), backgroundColor: AppTheme.green),
+                          );
+                        }
+                      },
+                    ),
+                    TextButton(
+                      onPressed: () => widget.onNavigateTab(1),
+                      child: const Text('Xem tất cả →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+                    ),
+                  ],
                 ),
               ],
             ),

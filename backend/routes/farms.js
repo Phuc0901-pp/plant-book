@@ -77,6 +77,21 @@ router.post('/self-init', auth, async (req, res) => {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
+    // Check account tier limit: Normal users can only possess max 1 active farm!
+    const isNormalUser = req.user.role !== 'admin' && req.user.account_tier !== 'pro';
+    if (isNormalUser) {
+      const existingFarmsCount = await pool.query(
+        'SELECT COUNT(*)::int as count FROM farms WHERE (user_id = $1 OR created_by = $1) AND is_deleted IS NOT TRUE',
+        [req.user.id]
+      );
+      if (existingFarmsCount.rows[0].count >= 1) {
+        return res.status(403).json({
+          error: '🔒 Tài khoản Nông hộ NORMAL chỉ được tạo tối đa 1 Trang trại. Vui lòng nâng cấp tài khoản PRO 👑 để sở hữu nhiều trang trại!',
+          require_pro: true
+        });
+      }
+    }
+
     const lat = latitude ? parseFloat(latitude) : null;
     const lng = longitude ? parseFloat(longitude) : null;
     const farmArea = area && parseFloat(area) ? parseFloat(area) : null;
