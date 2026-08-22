@@ -208,6 +208,21 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>?> fetchFarmIoTData(int farmId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/farms/$farmId/iot-data'), headers: headers).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching IoT data: $e');
+      return null;
+    }
+  }
+
   // ── Log Fetching & Modifying ───────────────────────────────────
 
   Future<List<PlantLog>> fetchPlantLogs(int plantId) async {
