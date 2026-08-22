@@ -13,6 +13,8 @@ import 'admin_farm_map_page.dart';
 import 'admin_audit_logs_page.dart';
 
 
+import '../../components/admin_drawer.dart';
+
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
 
@@ -82,6 +84,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: const AdminDrawer(activeRoute: 'dashboard'),
       appBar: AppBar(
         backgroundColor: AppTheme.greenDark,
         title: Row(

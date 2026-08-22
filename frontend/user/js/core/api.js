@@ -34,6 +34,16 @@ export function setCurrentUser(u) {
 }
 
 /**
+ * Kiểm tra xem người dùng hiện tại có phải Hạng PRO hay không.
+ * @returns {boolean}
+ */
+export function isProUser() {
+  const user = currentUser || JSON.parse(localStorage.getItem('user') || '{}');
+  return user && user.account_tier === 'pro';
+}
+window.isProUser = isProUser;
+
+/**
  * Gọi REST API với Bearer token tự động.
  * Ném lỗi nếu response không OK.
  * @param {string} path  — đường dẫn API, ví dụ '/plants'

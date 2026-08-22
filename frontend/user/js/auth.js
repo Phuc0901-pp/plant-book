@@ -431,3 +431,17 @@ async function submitRegister() {
 }
 window.submitRegister = submitRegister;
 
+// ── Pro Upgrade Modal Handlers ────────────────────────────────
+function openProUpgradeModal(featureKey) {
+  const modal = document.getElementById('pro-upgrade-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openProUpgradeModal = openProUpgradeModal;
+
+function closeProUpgradeModal() {
+  const modal = document.getElementById('pro-upgrade-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeProUpgradeModal = closeProUpgradeModal;
+
+
