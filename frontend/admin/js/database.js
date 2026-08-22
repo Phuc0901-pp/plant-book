@@ -823,14 +823,16 @@ function renderHistoryTable(list) {
   }
 
   tbody.innerHTML = list.map(h => {
-    const isDelete = h.action_type === 'DELETE';
+    const isDelete = h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT';
     const actionBadge = isDelete
-      ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-weight:800; padding:4px 10px; border-radius:20px;"><i class="fa-solid fa-trash-can"></i> Xóa dữ liệu</span>`
+      ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-weight:800; padding:4px 10px; border-radius:20px;"><i class="fa-solid fa-trash-can"></i> ${h.action_type === 'DELETE_SOFT' ? 'Xóa đệm' : 'Xóa vĩnh viễn'}</span>`
       : `<span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px;"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa</span>`;
 
     const targetBadge = `<span class="badge" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-weight:700; padding:4px 10px; border-radius:8px;">${esc(h.target_type)}</span>`;
 
     const dateStr = h.created_at ? new Date(h.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+    const isFarmTarget = h.target_type === 'Trang trại' && h.record_id;
 
     return `
       <tr>
@@ -840,14 +842,37 @@ function renderHistoryTable(list) {
         <td style="font-weight:700; color:#0f172a;">${esc(h.title)}</td>
         <td style="font-size:12.5px; color:#475569; font-weight:600;">👤 ${esc(h.user_name || h.current_user_name || 'Hệ thống')}</td>
         <td>
-          <button class="btn btn-secondary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:4px 10px; font-size:11.5px; font-weight:700;">
-            <i class="fa-solid fa-circle-info"></i> Chi tiết
-          </button>
+          <div style="display:inline-flex; gap:6px; align-items:center;">
+            <button class="btn btn-secondary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:4px 10px; font-size:11.5px; font-weight:700;">
+              <i class="fa-solid fa-circle-info"></i> Chi tiết
+            </button>
+            ${isFarmTarget ? `
+              <button class="btn btn-danger btn-sm" onclick="adminHardDeleteFarm(${h.record_id}, '${esc(h.title.replace(/'/g, "\\'"))}')" style="padding:4px 10px; font-size:11.5px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn trang trại khỏi CSDL PostgreSQL">
+                <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn
+              </button>
+            ` : ''}
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 }
+
+export async function adminHardDeleteFarm(farmId, farmTitle) {
+  if (!confirm(`⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn XÓA VĨNH VIỄN Trang trại "${farmTitle}" (ID: #${farmId}) khỏi CSDL PostgreSQL?\n\nThao tác này sẽ xóa triệt để dữ liệu và KHÔNG THỂ KHÔI PHỤC!`)) {
+    return;
+  }
+  try {
+    const res = await api(`/farms/${farmId}`, { method: 'DELETE' });
+    if (res && (res.success || res.message)) {
+      toast('🗑️ Admin đã xóa vĩnh viễn trang trại khỏi CSDL PostgreSQL thành công!');
+      loadHistoryTab();
+    }
+  } catch (err) {
+    alert(err.message || 'Lỗi khi xóa vĩnh viễn trang trại.');
+  }
+}
+window.adminHardDeleteFarm = adminHardDeleteFarm;
 
 function filterHistoryTab() {
   const q = (document.getElementById('db-history-search')?.value || '').toLowerCase().trim();
