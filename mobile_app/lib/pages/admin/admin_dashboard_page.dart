@@ -299,14 +299,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                               border: Border.all(color: AppTheme.greenDark.withOpacity(0.2)),
                             ),
                             child: const Text(
-                              'v1.0.0',
+                              'v1.0.2',
                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.greenDark),
                             ),
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'Sổ Nông Tân Bảo AgTech Admin © 2026',
-                            style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
+                            'Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech',
+                            style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
