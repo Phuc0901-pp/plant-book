@@ -15,7 +15,7 @@ router.get('/', auth, async (req, res) => {
     }
 
     let query = `
-      SELECT f.*, GREATEST(COUNT(p.id)::int, COALESCE(f.total_plants, 0)) as plant_count, u.full_name as user_name, u.email as user_email
+      SELECT f.*, GREATEST(COUNT(p.id)::int, COALESCE(f.total_plants, 0)) as plant_count, u.full_name as user_name, u.email as user_email, u.account_tier as user_account_tier, u.role as user_role
       FROM farms f 
       LEFT JOIN plants p ON p.farm_id = f.id 
       LEFT JOIN users u ON u.id = f.user_id
@@ -28,7 +28,7 @@ router.get('/', auth, async (req, res) => {
       query += ` WHERE (f.is_deleted IS NOT TRUE) `;
     }
     query += `
-      GROUP BY f.id, u.id
+      GROUP BY f.id, u.id, u.account_tier, u.role
       ORDER BY f.created_at DESC
     `;
     const result = await pool.query(query, params);
@@ -44,7 +44,7 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const farmResult = await pool.query(`
-      SELECT f.*, u.full_name as user_name, u.email as user_email
+      SELECT f.*, u.full_name as user_name, u.email as user_email, u.account_tier as user_account_tier, u.role as user_role
       FROM farms f
       LEFT JOIN users u ON u.id = f.user_id
       WHERE f.id = $1

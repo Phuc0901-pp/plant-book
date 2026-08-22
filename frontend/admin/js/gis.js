@@ -890,10 +890,36 @@ async function selectFarm(farmId) {
       window._pendingSelectFarmId = null;
     }
 
+    const isOwnerPro = farm.user_account_tier === 'pro' || farm.user_role === 'admin';
+    const tierBadgeHtml = isOwnerPro
+      ? `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;"><i class="fa-solid fa-crown" style="color:#f59e0b;"></i> Gói PRO</span>`
+      : `<span style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;">⚪ Gói NORMAL</span>`;
+
+    const ownerHtml = `
+      <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:12px;">
+        <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:4px;">Nông hộ phụ trách Trang trại</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:13.5px; font-weight:800; color:#0f172a;"><i class="fa fa-user" style="color:#059669"></i> ${esc(farm.user_name || 'Chưa gán')}</span>
+          ${tierBadgeHtml}
+        </div>
+        ${!isOwnerPro ? `
+          <div style="margin-top:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px; font-size:11.5px; color:#78350f;">
+            <div style="font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation" style="color:#d97706;"></i> Nông hộ NORMAL (Giới hạn GIS)</div>
+            <div>Bản vẽ CAD quy hoạch, Chấm GIS cây lẻ & Đường đồng mức 3D tối ưu cho Gói PRO 👑.</div>
+            <button onclick="openUserTierModalFromGis(${farm.user_id})" style="margin-top:8px; width:100%; background:linear-gradient(135deg, #059669, #047857); color:#fff; border:none; border-radius:8px; padding:7px 10px; font-size:11.5px; font-weight:800; cursor:pointer;">
+              👑 Kích hoạt Gói PRO cho Nông hộ này
+            </button>
+          </div>
+        ` : `
+          <div style="margin-top:8px; font-size:11px; color:#047857; font-weight:700; display:flex; align-items:center; gap:4px;">
+            <i class="fa-solid fa-circle-check"></i> Đã mở khóa 100% Công cụ GIS, Cảm biến IoT & CAD
+          </div>
+        `}
+      </div>
+    `;
+
+    document.getElementById('farm-details-desc').innerHTML = ownerHtml + (farm.description ? `<p class="gis-farm-info" style="margin-top:6px;">${esc(farm.description)}</p>` : '<p class="gis-farm-info" style="font-style:italic; color:#94a3b8; margin-top:6px;">Không có mô tả.</p>');
     document.getElementById('gis-sidebar-title').textContent = farm.name;
-    
-    const ownerHtml = `<div class="gis-farm-info"><i class="fa fa-user" style="color:#ea580c"></i> Nông hộ phụ trách: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></div>`;
-    document.getElementById('farm-details-desc').innerHTML = ownerHtml + (farm.description ? `<p class="gis-farm-info">${esc(farm.description)}</p>` : '<p class="gis-farm-info" style="font-style:italic; color:#94a3b8;">Không có mô tả.</p>');
     
     const areaVal = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
     document.getElementById('farm-details-area').innerHTML = `<i class="fa-solid fa-chart-area"></i> ${areaVal}`;
@@ -955,7 +981,6 @@ async function selectFarm(farmId) {
         });
       }
 
-      // Dự phòng: nếu chưa có ranh giới đa giác, tự động bay tới vị trí các cây trồng thuộc trang trại
       if (!hasBounds && Array.isArray(farm.plants) && farm.plants.length > 0) {
         farm.plants.forEach(p => {
           if (p.latitude && p.longitude) {
@@ -978,7 +1003,6 @@ async function selectFarm(farmId) {
         }, 100);
       }
       
-      // Render 3D contour elevation overlay ONLY for this selected farm
       if (gMap && coords && coords.length > 0) {
         addContourLinesToMap(gMap, { farmCoords: coords });
       } else if (gMap) {
@@ -3226,3 +3250,12 @@ function bindPlantTooltips(plants) {
     });
   }, 100);
 }
+
+function openUserTierModalFromGis(userId) {
+  if (typeof window.openUserTierModal === 'function') {
+    window.openUserTierModal(userId);
+  } else if (typeof window.showPage === 'function') {
+    window.showPage('users');
+  }
+}
+window.openUserTierModalFromGis = openUserTierModalFromGis;
