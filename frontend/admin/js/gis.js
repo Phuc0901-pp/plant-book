@@ -627,63 +627,76 @@ function drawFarmsAndPlantsLayers(farms, plants) {
     } catch(e) {}
 
     let centerLng = null;
-    let centerLat = null;
+    if (coords && Array.isArray(coords) && coords.length > 0) {
+      if (coords.length >= 3) {
+        const srcId = `gis-farm-src-${farm.id}`;
+        const layerId = `gis-farm-layer-${farm.id}`;
+        const outlineId = `gis-farm-outline-${farm.id}`;
 
-    if (coords && coords.length > 0) {
-      const srcId = `gis-farm-src-${farm.id}`;
-      const layerId = `gis-farm-layer-${farm.id}`;
-      const outlineId = `gis-farm-outline-${farm.id}`;
+        const polyCoords = [...coords];
+        if (polyCoords.length > 0 && 
+            (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || 
+             polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1])) {
+          polyCoords.push(polyCoords[0]);
+        }
 
-      const polyCoords = [...coords];
-      if (polyCoords.length > 0 && 
-          (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || 
-           polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1])) {
-        polyCoords.push(polyCoords[0]);
-      }
+        if (!gMap.getSource(srcId)) {
+          gMap.addSource(srcId, {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              geometry: { type: 'Polygon', coordinates: [polyCoords] }
+            }
+          });
 
-      if (!gMap.getSource(srcId)) {
-        gMap.addSource(srcId, {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            geometry: { type: 'Polygon', coordinates: [polyCoords] }
+          gMap.addLayer({
+            id: layerId,
+            type: 'fill',
+            source: srcId,
+            paint: {
+              'fill-color': farmColor,
+              'fill-opacity': activeFarmId === farm.id ? 0.5 : 0.28
+            }
+          });
+          gMap.addLayer({
+            id: outlineId,
+            type: 'line',
+            source: srcId,
+            paint: {
+              'line-color': farmColor,
+              'line-width': activeFarmId === farm.id ? 3.5 : 2
+            }
+          });
+
+          gMap.on('click', layerId, () => {
+            selectFarm(farm.id);
+          });
+          
+          gMap.on('mouseenter', layerId, () => gMap.getCanvas().style.cursor = 'pointer');
+          gMap.on('mouseleave', layerId, () => gMap.getCanvas().style.cursor = '');
+        } else {
+          if (gMap.getLayer(layerId)) {
+            gMap.setPaintProperty(layerId, 'fill-color', farmColor);
+            gMap.setPaintProperty(layerId, 'fill-opacity', activeFarmId === farm.id ? 0.5 : 0.28);
+          }
+          if (gMap.getLayer(outlineId)) {
+            gMap.setPaintProperty(outlineId, 'line-color', farmColor);
+            gMap.setPaintProperty(outlineId, 'line-width', activeFarmId === farm.id ? 3.5 : 2);
+          }
+        }
+
+        coords.forEach(pt => {
+          if (Array.isArray(pt) && pt.length >= 2) {
+            let lng = parseFloat(pt[0]);
+            let lat = parseFloat(pt[1]);
+            if (lng < 50 && lat > 90) { const tmp = lng; lng = lat; lat = tmp; }
+            if (!isNaN(lng) && !isNaN(lat)) {
+              bounds.extend([lng, lat]);
+              hasBounds = true;
+            }
           }
         });
-
-        gMap.addLayer({
-          id: layerId,
-          type: 'fill',
-          source: srcId,
-          paint: {
-            'fill-color': farmColor,
-            'fill-opacity': activeFarmId === farm.id ? 0.5 : 0.28
-          }
-        });
-        gMap.addLayer({
-          id: outlineId,
-          type: 'line',
-          source: srcId,
-          paint: {
-            'line-color': farmColor,
-            'line-width': activeFarmId === farm.id ? 3.5 : 2
-          }
-        });
-
-        gMap.on('click', layerId, () => {
-          selectFarm(farm.id);
-        });
-        
-        gMap.on('mouseenter', layerId, () => gMap.getCanvas().style.cursor = 'pointer');
-        gMap.on('mouseleave', layerId, () => gMap.getCanvas().style.cursor = '');
       } else {
-        if (gMap.getLayer(layerId)) {
-          gMap.setPaintProperty(layerId, 'fill-color', farmColor);
-          gMap.setPaintProperty(layerId, 'fill-opacity', activeFarmId === farm.id ? 0.5 : 0.28);
-        }
-        if (gMap.getLayer(outlineId)) {
-          gMap.setPaintProperty(outlineId, 'line-color', farmColor);
-          gMap.setPaintProperty(outlineId, 'line-width', activeFarmId === farm.id ? 3.5 : 2);
-        }
       }
 
       coords.forEach(pt => {
