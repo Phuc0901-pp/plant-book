@@ -272,19 +272,26 @@ export function renderUserPlantsSummaryTable(plants) {
 export function renderUserPlantsTable(plants) {
   const tbody = document.getElementById('user-plants-table');
   if (!tbody) return;
+
+  const isPro = typeof window.isProUser === 'function' && window.isProUser();
+  const noticeBox = document.getElementById('normal-tier-macro-notice');
+  if (noticeBox) {
+    noticeBox.style.display = isPro ? 'none' : 'block';
+  }
+
   if (!plants.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không tìm thấy cây trồng phù hợp</p></td></tr>';
     return;
   }
   const sorted = sortPlantsByHealthThenId(plants);
-  tbody.innerHTML = sorted.map(p => _plantRow(p)).join('');
+  tbody.innerHTML = sorted.map(p => _plantRow(p, isPro)).join('');
 }
 
 /**
  * Tạo HTML một hàng cây trồng trong bảng.
  * @private
  */
-function _plantRow(p) {
+function _plantRow(p, isPro = true) {
   const nfcBadge = p.nfc_uid
     ? `<span title="Thẻ: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#22c55e;"><i class="fa-solid fa-tag"></i></span>`
     : `<span title="Chưa gắn thẻ NFC" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#d1d5db;"><i class="fa-solid fa-link-slash"></i></span>`;
@@ -293,6 +300,22 @@ function _plantRow(p) {
   const slug      = esc(p.public_slug || '');
   const treeCode  = esc(p.tree_code || String(p.id));
   const plantType = esc(p.plant_type || '');
+
+  if (!isPro) {
+    return `
+      <tr style="opacity: 0.85; background: #fafafa;">
+        <td data-label="Mã cây"><strong>${treeCode}</strong></td>
+        <td data-label="Loại & Giống"><strong>${esc(p.plant_type)}</strong></td>
+        <td data-label="Tuổi cây"><div>${esc(p.plant_age || '—')}</div></td>
+        <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
+        <td data-label="Vị trí"><div>Toàn vườn</div></td>
+        <td data-label="Thao tác">
+          <button class="btn btn-secondary btn-sm" onclick="openProUpgradeModal('individual_plants')" style="font-size:11px; font-weight:700; color:#d97706; background:#fef3c7; border:1px solid #fcd34d;">
+            <i class="fa-solid fa-lock" style="color:#d97706"></i> Khóa PRO 👑
+          </button>
+        </td>
+      </tr>`;
+  }
 
   return `
     <tr>
