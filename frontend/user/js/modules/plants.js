@@ -677,14 +677,6 @@ export function switchFarmSubtab(tab) {
 }
 window.switchFarmSubtab = switchFarmSubtab;
 
-export function refreshIoTDemoData() {
-  renderIoTDemoData(_activeFarmId, true);
-  if (window.toast) {
-    window.toast('🔄 Đã cập nhật dữ liệu cảm biến IoT & Thời tiết 6 ngày mới nhất!', 'success');
-  }
-}
-window.refreshIoTDemoData = refreshIoTDemoData;
-
 let _currentFarmIoTData = null;
 let _selectedSoilDepth = '20cm';
 
