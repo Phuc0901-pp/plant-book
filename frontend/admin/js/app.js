@@ -271,6 +271,13 @@ function showPage(page, pushUrl = true) {
   } catch (err) {
     console.error(`Error loading page [${page}]:`, err);
   }
+
+  // Trigger universal smooth count-up animation on all numbers
+  setTimeout(() => {
+    if (typeof triggerAdminPageCountUpAnimations === 'function') {
+      triggerAdminPageCountUpAnimations(page);
+    }
+  }, 300);
 }
 
 function handleAdminUrlRouting() {
@@ -421,3 +428,21 @@ window.toast = toast;
 window.esc = esc;
 window.fmtDate = fmtDate;
 window.showPage = showPage;
+
+// Initialize 3D Animated Chibi Mascot Assistant for Admin Portal
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    if (typeof initAdminChibiMascot === 'function') {
+      initAdminChibiMascot();
+    }
+  } catch (err) {
+    console.warn('[Admin] Chibi Mascot init warning:', err);
+  }
+});
+
+// Immediate execution fallback
+try {
+  if (typeof initAdminChibiMascot === 'function') {
+    initAdminChibiMascot();
+  }
+} catch (_) {}

@@ -14,10 +14,18 @@ async function loadDashboard() {
 
     const healthy = plants.filter(p => p.health_status === 'Tốt').length;
     const watch = plants.filter(p => ['Cần chú ý','Bệnh'].includes(p.health_status)).length;
-    document.getElementById('stat-plants').textContent = plants.length;
-    document.getElementById('stat-healthy').textContent = healthy;
-    document.getElementById('stat-watch').textContent = watch;
-    document.getElementById('stat-schemas').textContent = schemas.length;
+
+    if (typeof animateValue === 'function') {
+      animateValue(document.getElementById('stat-plants'), 0, plants.length, 1000);
+      animateValue(document.getElementById('stat-healthy'), 0, healthy, 1000);
+      animateValue(document.getElementById('stat-watch'), 0, watch, 1000);
+      animateValue(document.getElementById('stat-schemas'), 0, schemas.length, 1000);
+    } else {
+      document.getElementById('stat-plants').textContent = plants.length;
+      document.getElementById('stat-healthy').textContent = healthy;
+      document.getElementById('stat-watch').textContent = watch;
+      document.getElementById('stat-schemas').textContent = schemas.length;
+    }
 
     // Reset and update filter buttons
     currentDashboardFilter = 'all';
