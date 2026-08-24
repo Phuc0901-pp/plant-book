@@ -262,6 +262,9 @@ async function initDB() {
       ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS check_disease_history BOOLEAN DEFAULT false;
       ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS reconfirm_event_type VARCHAR(100) NULL;
       ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS match_type VARCHAR(10) DEFAULT 'AND';
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS notify_time_type VARCHAR(50) DEFAULT 'instant';
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS custom_time VARCHAR(20) DEFAULT '07:00';
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT 'always';
     `);
 
 

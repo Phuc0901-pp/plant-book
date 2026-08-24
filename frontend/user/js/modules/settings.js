@@ -332,6 +332,10 @@ export function renderThresholdRulesUI(rules) {
               ${r.check_offline_iot ? `<span class="badge" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-rss"></i> Quét IoT Offline/0</span>` : ''}
               ${r.check_disease_history ? `<span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-bug"></i> Tra lịch sử bệnh cây</span>` : ''}
               ${r.reconfirm_event_type ? `<span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-square-check"></i> Reconfirm Hệ thống</span>` : ''}
+              
+              <span class="badge" style="background:#f3e8ff; color:#6b21a8; border:1px solid #e9d5ff; font-size:11px; font-weight:700;">
+                <i class="fa-solid fa-clock"></i> ${r.notify_time_type === 'custom' ? (r.custom_time || '07:00') : (r.notify_time_type === 'morning' ? 'Sáng (06-08h)' : (r.notify_time_type === 'noon' ? 'Trưa (11-13h)' : (r.notify_time_type === 'afternoon' ? 'Chiều (16-18h)' : (r.notify_time_type === 'evening' ? 'Tối (19-21h)' : 'Ngay lập tức'))))}
+              </span>
             </div>
             
             <h4 style="margin:0 0 6px 0; font-size:15.5px; font-weight:900; color:#0f172a; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -446,6 +450,15 @@ export function updateRuleLivePreview() {
 }
 window.updateRuleLivePreview = updateRuleLivePreview;
 
+// ── Notification Timing Helper ────────────────────────────────
+export function onNotifyTimeTypeChange() {
+  const typeSel = document.getElementById('rule-notify-time-type');
+  const customWrapper = document.getElementById('rule-custom-time-wrapper');
+  if (!typeSel || !customWrapper) return;
+  customWrapper.style.display = typeSel.value === 'custom' ? 'block' : 'none';
+}
+window.onNotifyTimeTypeChange = onNotifyTimeTypeChange;
+
 export function openAddThresholdRuleModal() {
   const modal = document.getElementById('threshold-rule-modal');
   if (!modal) {
@@ -478,6 +491,15 @@ export function openAddThresholdRuleModal() {
       const radAnd = form.querySelector('input[name="rule_match_type"][value="AND"]');
       if (radAnd) radAnd.checked = true;
     }
+
+    // Reset notification timing
+    const notifyTimeSel = document.getElementById('rule-notify-time-type');
+    if (notifyTimeSel) notifyTimeSel.value = 'instant';
+    const customTimeInput = document.getElementById('rule-custom-time');
+    if (customTimeInput) customTimeInput.value = '07:00';
+    const freqSel = document.getElementById('rule-frequency');
+    if (freqSel) freqSel.value = 'always';
+    onNotifyTimeTypeChange();
 
     if (titleEl) titleEl.textContent = 'Cấu hình Quy tắc Thông báo Tự động';
 
@@ -548,6 +570,14 @@ export function editThresholdRule(id) {
 
     const actionTypeEl = document.getElementById('rule-action-type');
     if (actionTypeEl && rule.action_type) actionTypeEl.value = rule.action_type;
+
+    const notifyTimeSel = document.getElementById('rule-notify-time-type');
+    if (notifyTimeSel) notifyTimeSel.value = rule.notify_time_type || 'instant';
+    const customTimeInput = document.getElementById('rule-custom-time');
+    if (customTimeInput) customTimeInput.value = rule.custom_time || '07:00';
+    const freqSel = document.getElementById('rule-frequency');
+    if (freqSel) freqSel.value = rule.frequency || 'always';
+    onNotifyTimeTypeChange();
 
     const offIot = document.getElementById('rule-check-offline-iot');
     if (offIot) offIot.checked = Boolean(rule.check_offline_iot);
@@ -642,6 +672,9 @@ export async function saveThresholdRule(e) {
     action_type: document.getElementById('rule-action-type')?.value || 'Canh tác',
     action_recommendation: recVal,
     conditions_json: conditions,
+    notify_time_type: document.getElementById('rule-notify-time-type')?.value || 'instant',
+    custom_time: document.getElementById('rule-custom-time')?.value || '07:00',
+    frequency: document.getElementById('rule-frequency')?.value || 'always',
     check_offline_iot: document.getElementById('rule-check-offline-iot') ? document.getElementById('rule-check-offline-iot').checked : false,
     check_disease_history: document.getElementById('rule-check-disease-history') ? document.getElementById('rule-check-disease-history').checked : false,
     reconfirm_event_type: document.getElementById('rule-reconfirm-event') ? document.getElementById('rule-reconfirm-event').value : null

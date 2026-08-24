@@ -20,7 +20,7 @@ import {
   switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal, 
   closeThresholdRuleModal, saveThresholdRule, addConditionRow, 
   removeConditionRow, onConditionMetricChange, updateRuleConditionsSummary, 
-  getConditionsFromUI 
+  getConditionsFromUI, onNotifyTimeTypeChange 
 } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
 import './supplies.js?v=2.8.0';
@@ -221,6 +221,7 @@ window.removeConditionRow    = removeConditionRow;
 window.onConditionMetricChange = onConditionMetricChange;
 window.updateRuleConditionsSummary = updateRuleConditionsSummary;
 window.getConditionsFromUI   = getConditionsFromUI;
+window.onNotifyTimeTypeChange = onNotifyTimeTypeChange;
 
 window.openNfcModal         = openNfcModal;
 window.closeNfcModal        = closeNfcModal;

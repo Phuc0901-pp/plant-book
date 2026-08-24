@@ -163,7 +163,10 @@ router.post('/rules', auth, async (req, res) => {
       check_disease_history,
       reconfirm_event_type,
       conditions_json,
-      match_type
+      match_type,
+      notify_time_type,
+      custom_time,
+      frequency
     } = req.body;
 
     if (!title || !action_recommendation) {
@@ -177,9 +180,9 @@ router.post('/rules', auth, async (req, res) => {
 
     const insertRes = await pool.query(`
       INSERT INTO user_alert_rules 
-        (user_id, farm_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, conditions_json, match_type, is_enabled)
+        (user_id, farm_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, conditions_json, match_type, notify_time_type, custom_time, frequency, is_enabled)
       VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, true)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, true)
       RETURNING *
     `, [
       userId,
@@ -198,7 +201,10 @@ router.post('/rules', auth, async (req, res) => {
       Boolean(check_disease_history),
       reconfirm_event_type || null,
       JSON.stringify(conditions_json || []),
-      matchOp
+      matchOp,
+      notify_time_type || 'instant',
+      custom_time || '07:00',
+      frequency || 'always'
     ]);
 
     res.json({
@@ -231,7 +237,10 @@ router.put('/rules/:id', auth, async (req, res) => {
       check_disease_history,
       reconfirm_event_type,
       conditions_json,
-      match_type
+      match_type,
+      notify_time_type,
+      custom_time,
+      frequency
     } = req.body;
 
     const existing = await pool.query('SELECT * FROM user_alert_rules WHERE id = $1 AND user_id = $2', [ruleId, userId]);
@@ -254,6 +263,9 @@ router.put('/rules/:id', auth, async (req, res) => {
     const newReconfirm = reconfirm_event_type !== undefined ? reconfirm_event_type : current.reconfirm_event_type;
     const newConds = conditions_json ? JSON.stringify(conditions_json) : current.conditions_json;
     const newMatchType = match_type ? (match_type === 'OR' ? 'OR' : 'AND') : (current.match_type || 'AND');
+    const newNotifyTimeType = notify_time_type || current.notify_time_type || 'instant';
+    const newCustomTime = custom_time || current.custom_time || '07:00';
+    const newFrequency = frequency || current.frequency || 'always';
 
     const updateRes = await pool.query(`
       UPDATE user_alert_rules 
@@ -274,8 +286,11 @@ router.put('/rules/:id', auth, async (req, res) => {
         reconfirm_event_type = $14,
         conditions_json = $15,
         match_type = $16,
+        notify_time_type = $17,
+        custom_time = $18,
+        frequency = $19,
         updated_at = NOW()
-      WHERE id = $17 AND user_id = $18
+      WHERE id = $20 AND user_id = $21
       RETURNING *
     `, [
       newEnabled,
@@ -294,6 +309,9 @@ router.put('/rules/:id', auth, async (req, res) => {
       newReconfirm,
       newConds,
       newMatchType,
+      newNotifyTimeType,
+      newCustomTime,
+      newFrequency,
       ruleId,
       userId
     ]);

@@ -2429,11 +2429,11 @@
           <div id="rule-box-danger-options" style="display:flex; flex-direction:column; gap:8px; margin-top:2px; background:#ffffff; border:1px solid #fed7aa; padding:10px 12px; border-radius:10px;">
             <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#991b1b; cursor:pointer; margin:0;">
               <input type="checkbox" id="rule-check-offline-iot" onchange="updateRuleConditionsSummary()" style="accent-color:#dc2626; width:16px; height:16px; margin:0;" />
-              📡 Kiểm tra & Cảnh báo thiết bị IoT không có dữ liệu (null hoặc bằng 0)
+              📡 Kiểm tra thiết bị IoT không có dữ liệu (null hoặc bằng 0)
             </label>
             <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#92400e; cursor:pointer; margin:0;">
               <input type="checkbox" id="rule-check-weather-tomorrow" onchange="updateRuleConditionsSummary()" style="accent-color:#d97706; width:16px; height:16px; margin:0;" />
-              🌦️ Kết hợp Dự báo Khí tượng Sáng ngày mai có Mưa rào
+              🌦️ Kết hợp Dự báo Khí tượng 
             </label>
           </div>
 
@@ -2481,9 +2481,42 @@
         </select>
       </div>
 
-      <!-- 5. Nội dung Khuyến nghị / Thông báo -->
+      <!-- 5. Thời gian thông báo -->
+      <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px;">
+        <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:8px;">
+          <i class="fa-solid fa-clock" style="color:#059669;"></i> 5. Thời gian Thông báo & Tần suất gửi
+        </label>
+        <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:10px; align-items:start;">
+          <div>
+            <span style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Khung thời gian gửi</span>
+            <select id="rule-notify-time-type" onchange="onNotifyTimeTypeChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none;">
+              <option value="instant">⚡ Thông báo ngay lập tức (Thời gian thực)</option>
+              <option value="morning">🌅 Buổi sáng sớm (06:00 - 08:00)</option>
+              <option value="noon">☀️ Buổi trưa (11:00 - 13:00)</option>
+              <option value="afternoon">🌇 Buổi chiều mát (16:00 - 18:00)</option>
+              <option value="evening">🌙 Buổi tối (19:00 - 21:00)</option>
+              <option value="custom">⏰ Khung giờ tùy chỉnh</option>
+            </select>
+            <div id="rule-custom-time-wrapper" style="display:none; margin-top:6px;">
+              <input type="time" id="rule-custom-time" value="07:00" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; outline:none;" />
+            </div>
+          </div>
+
+          <div>
+            <span style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Tần suất gửi</span>
+            <select id="rule-frequency" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none;">
+              <option value="always">🔄 Mỗi khi có đo đạc vượt ngưỡng</option>
+              <option value="15min">⏱️ Tối đa 1 lần / 15 phút</option>
+              <option value="1hour">⏱️ Tối đa 1 lần / 1 giờ</option>
+              <option value="once_daily">📅 Tối đa 1 lần / ngày</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Nội dung Khuyến nghị / Thông báo -->
       <div>
-        <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:4px;">5. Nội dung Khuyến nghị / Quy trình Thông báo tự động <span style="color:#ef4444">*</span></label>
+        <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:4px;">6. Nội dung Khuyến nghị / Quy trình Thông báo tự động <span style="color:#ef4444">*</span></label>
         <textarea id="rule-recommendation" rows="3" placeholder="Ví dụ: Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!" required style="width:100%; padding:11px 14px; border:1.5px solid #cbd5e1; border-radius:12px; font-size:13px; outline:none; resize:none;"></textarea>
       </div>
 
@@ -2533,9 +2566,9 @@
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=1.1.8"></script>
+<script type="module" src="/user/js/auth.js?v=1.1.9"></script>
 
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=1.1.8"></script>
+<script type="module" src="/user/js/app.js?v=1.1.9"></script>
 </body>
 </html>
