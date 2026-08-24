@@ -25,6 +25,8 @@ import {
 } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
 import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-clock.js';
+import { animateValue, triggerPageCountUpAnimations } from './modules/countup.js';
+import { initChibiMascot, onMascotClick, setMascotState } from './modules/mascot-chibi.js';
 import './supplies.js?v=2.8.0';
 
 window.openSelfInitFarmModal = openSelfInitFarmModal;
@@ -271,12 +273,24 @@ window.closePlantMenu       = closePlantMenu;
 
 window.refreshDeviceWeather = refreshDeviceWeather;
 window.initWeatherClockWidget = initWeatherClockWidget;
+window.animateValue          = animateValue;
+window.triggerPageCountUpAnimations = triggerPageCountUpAnimations;
+window.initChibiMascot      = initChibiMascot;
+window.onMascotClick        = onMascotClick;
+window.setMascotState       = setMascotState;
 
 // Initialize Live Clock & GPS Weather Widget
 try {
   initWeatherClockWidget();
 } catch (err) {
   console.warn('[App] Weather Clock Widget init warning:', err);
+}
+
+// Initialize 3D Chibi Plant Mascot Assistant
+try {
+  initChibiMascot();
+} catch (err) {
+  console.warn('[App] Chibi Mascot init warning:', err);
 }
 
 // ── Field UX Mode (Outdoor Sunlight Mode) ───────────────────

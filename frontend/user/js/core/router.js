@@ -170,6 +170,13 @@ export function showPage(page, updateHash = true) {
   if (targetPage === 'settings') {
     if (typeof window.loadUserSettings === 'function') window.loadUserSettings();
   }
+
+  // Trigger universal smooth count-up animation on all numbers
+  setTimeout(() => {
+    if (typeof window.triggerPageCountUpAnimations === 'function') {
+      window.triggerPageCountUpAnimations(targetPage);
+    }
+  }, 300);
 }
 window.showPage = showPage;
 
