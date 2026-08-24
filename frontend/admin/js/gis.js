@@ -1010,12 +1010,11 @@ async function selectFarm(farmId, syncUrl = true) {
       const bounds = new mapboxgl.LngLatBounds();
       let hasBounds = false;
 
-      if (Array.isArray(coords) && coords.length > 0) {
-        coords.forEach(pt => {
-          if (Array.isArray(pt) && pt.length >= 2 && !isNaN(parseFloat(pt[0])) && !isNaN(parseFloat(pt[1]))) {
-            bounds.extend([parseFloat(pt[0]), parseFloat(pt[1])]);
-            hasBounds = true;
-          }
+      const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
+      if (validCoords.length > 0) {
+        validCoords.forEach(pt => {
+          bounds.extend(pt);
+          hasBounds = true;
         });
       }
 
@@ -2061,20 +2060,7 @@ async function openAdminFarmA4ExportModal(map) {
   let plantCount = selectedFarm && selectedFarm.plant_count ? parseInt(selectedFarm.plant_count) : 0;
 
   if (selectedFarm && selectedFarm.polygon_coordinates) {
-    try {
-      const parsed = typeof selectedFarm.polygon_coordinates === 'string'
-        ? JSON.parse(selectedFarm.polygon_coordinates)
-        : selectedFarm.polygon_coordinates;
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        if (Array.isArray(parsed[0]) && Array.isArray(parsed[0][0])) {
-          farmCoords = parsed[0];
-        } else {
-          farmCoords = parsed;
-        }
-      }
-    } catch (e) {
-      console.warn('Lỗi đọc tọa độ ranh giới:', e);
-    }
+    farmCoords = sanitizeCoordinates(selectedFarm.polygon_coordinates);
   }
 
   if (farmCoords.length === 0 && map.getStyle()) {
