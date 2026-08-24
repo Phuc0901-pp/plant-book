@@ -28,16 +28,21 @@ export function decodeId(hashStr) {
 window.encodeId = encodeId;
 window.decodeId = decodeId;
 
-/** Get current logged-in user hash token */
-/** Get current logged-in user hash token */
+function generateIsoPublicId(role, numId) {
+  const prefix = role === 'user' || !role ? 'usr' : 'adm';
+  const id = parseInt(numId) || 0;
+  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
+  return `${prefix}-${val}`;
+}
+
 export function getUserHash() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.public_id) return user.public_id;
-    if (user.id) return `usr-${user.id}`;
-    return 'usr-1';
+    if (user.id) return generateIsoPublicId(user.role || 'user', user.id);
+    return 'usr-84729104';
   } catch (_) {
-    return 'usr-1';
+    return 'usr-84729104';
   }
 }
 window.getUserHash = getUserHash;

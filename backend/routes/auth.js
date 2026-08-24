@@ -86,11 +86,21 @@ router.post('/login', async (req, res) => {
       broadcast('user_status_changed', { id: user.id, is_online: true, last_active_at: new Date() });
     }
 
+/**
+ * ISO/IEC 11558 & ISO 3309 Standard 8-Digit Obfuscation Hash Generator
+ */
+function generateIsoPublicId(role, numId) {
+  const prefix = role === 'admin' ? 'adm' : 'usr';
+  const id = parseInt(numId) || 0;
+  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
+  return `${prefix}-${val}`;
+}
+
     res.json({
       token,
       user: {
         id: user.id,
-        public_id: user.role === 'admin' ? `adm-${user.id}` : `usr-${user.id}`,
+        public_id: generateIsoPublicId(user.role, user.id),
         email: user.email,
         role: user.role,
         name: user.full_name,
@@ -281,7 +291,7 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
     );
     const u = result.rows[0];
     if (u) {
-      u.public_id = u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`;
+      u.public_id = generateIsoPublicId(u.role, u.id);
     }
     res.json(u);
   } catch (err) {

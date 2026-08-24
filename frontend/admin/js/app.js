@@ -83,10 +83,17 @@ function fmtDate(d) {
 
 // ── Main Page Switcher & URL Router ─────────────────────────────
 
+function generateIsoPublicId(role, numId) {
+  const prefix = role === 'admin' ? 'adm' : 'usr';
+  const id = parseInt(numId) || 0;
+  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
+  return `${prefix}-${val}`;
+}
+
 function getAdminPublicId() {
   if (currentUser && currentUser.public_id) return currentUser.public_id;
-  if (currentUser && currentUser.id) return `adm-${currentUser.id}`;
-  return 'adm-sys';
+  if (currentUser && currentUser.id) return generateIsoPublicId(currentUser.role || 'admin', currentUser.id);
+  return 'adm-84729104';
 }
 
 const adminPageRouteMap = {

@@ -139,13 +139,20 @@ async function logout() {
   document.getElementById('login-page').style.display = 'flex';
 }
 
+function generateIsoPublicId(role, numId) {
+  const prefix = role === 'admin' ? 'adm' : 'usr';
+  const id = parseInt(numId) || 0;
+  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
+  return `${prefix}-${val}`;
+}
+
 async function showApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   document.getElementById('sb-user-name').textContent = currentUser?.name || currentUser?.full_name || 'Quản trị viên';
   document.getElementById('sb-user-email').textContent = currentUser?.email || '';
 
-  const publicId = currentUser?.public_id || (currentUser?.id ? `adm-${String(currentUser.id).padStart(4, '0')}` : 'adm-sys');
+  const publicId = currentUser?.public_id || (currentUser?.id ? generateIsoPublicId(currentUser.role || 'admin', currentUser.id) : 'adm-84729104');
   const idEl = document.getElementById('sb-user-id');
   if (idEl) {
     idEl.textContent = `ID Mã Hóa: ${publicId}`;
