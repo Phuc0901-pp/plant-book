@@ -152,12 +152,6 @@ async function showApp() {
   document.getElementById('sb-user-name').textContent = currentUser?.name || currentUser?.full_name || 'Quản trị viên';
   document.getElementById('sb-user-email').textContent = currentUser?.email || '';
 
-  const publicId = currentUser?.public_id || (currentUser?.id ? generateIsoPublicId(currentUser.role || 'admin', currentUser.id) : 'adm-84729104');
-  const idEl = document.getElementById('sb-user-id');
-  if (idEl) {
-    idEl.textContent = `ID Mã Hóa: ${publicId}`;
-  }
-
   await ensureMapboxToken();
   if (typeof handleAdminUrlRouting === 'function') {
     handleAdminUrlRouting();
