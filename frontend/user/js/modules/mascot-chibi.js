@@ -1,5 +1,5 @@
 ﻿/**
- * modules/mascot-chibi.js - Interactive Bé Mầm Chibi Mascot Widget (Fixed at Bottom-Right)
+ * modules/mascot-chibi.js - Interactive Free-Standing Bé Mầm Chibi Character (Bottom-Right Cutout Mascot)
  */
 
 let _mascotState = 'happy';
@@ -9,7 +9,7 @@ const MASCOT_PRESETS = {
     emoji: '🌱',
     badgeText: 'Vui vẻ & Xanh tốt',
     badgeColor: '#10b981',
-    speech: 'Xin chào chủ vườn! Cây trồng hôm nay đang phát triển rất xanh tốt ạ! ✨',
+    speech: 'Xin chào chủ vườn! Vườn cây hôm nay đang phát triển rất xanh tốt ạ! ✨',
     anim: 'chibi-float 2.5s infinite ease-in-out'
   },
   thirsty: {
@@ -30,7 +30,7 @@ const MASCOT_PRESETS = {
     emoji: '🩺',
     badgeText: 'Bác sĩ cây trồng',
     badgeColor: '#ef4444',
-    speech: 'Có cây đang ủ bệnh hoặc cần xới gốc, em đã chuẩn bị sẵn xẻng làm vườn giúp bác nhé! 🌿',
+    speech: 'Có cây đang ủ bệnh hoặc cần xới đất, em đã chuẩn bị sẵn xẻng làm vườn giúp bác nhé! 🌿',
     anim: 'chibi-bounce 2s infinite ease-in-out'
   },
   sleep: {
@@ -49,8 +49,8 @@ export function initChibiMascot() {
     mascotContainer.id = 'chibi-mascot-widget';
     mascotContainer.style.cssText = `
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      bottom: 16px;
+      right: 20px;
       z-index: 9999;
       display: flex;
       flex-direction: column;
@@ -68,24 +68,27 @@ export function initChibiMascot() {
     style.id = 'chibi-keyframes-style';
     style.textContent = `
       @keyframes chibi-float {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-10px) rotate(2deg); }
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
       }
       @keyframes chibi-bounce {
         0%, 100% { transform: translateY(0) scale(1); }
-        50% { transform: translateY(-14px) scale(1.04); }
+        50% { transform: translateY(-12px) scale(1.03); }
       }
       @keyframes chibi-sleep {
         0%, 100% { transform: translateY(0); opacity: 0.95; }
-        50% { transform: translateY(4px); opacity: 0.85; }
+        50% { transform: translateY(3px); opacity: 0.85; }
       }
       @keyframes pop-in {
         0% { transform: scale(0.6) translateY(20px); opacity: 0; }
         100% { transform: scale(1) translateY(0); opacity: 1; }
       }
-      .chibi-avatar-img:hover {
-        transform: scale(1.12) rotate(4deg) !important;
+      .user-chibi-sprite {
         cursor: pointer;
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .user-chibi-sprite:hover {
+        transform: scale(1.1) translateY(-6px) !important;
       }
       .chibi-state-btn:hover {
         transform: scale(1.1);
@@ -125,7 +128,8 @@ export function renderMascot(customSpeech = null) {
       line-height: 1.45;
       max-width: 260px;
       box-shadow: 0 12px 30px -6px rgba(0,0,0,0.22), 0 6px 12px -4px rgba(0,0,0,0.1);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
+      margin-right: 12px;
       position: relative;
       animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     ">
@@ -147,11 +151,11 @@ export function renderMascot(customSpeech = null) {
         <button class="chibi-state-btn" onclick="setMascotState('sleep')" title="Ngủ đêm" style="background:#faf5ff; border:1px solid #8b5cf6; border-radius:8px; padding:2px 7px; cursor:pointer; font-size:12px;">🌙</button>
       </div>
 
-      <!-- Triangle Pointer to Mascot on the right -->
+      <!-- Triangle Pointer to Mascot Head -->
       <div style="
         position: absolute;
         bottom: -9px;
-        right: 36px;
+        right: 48px;
         width: 0;
         height: 0;
         border-left: 9px solid transparent;
@@ -160,22 +164,19 @@ export function renderMascot(customSpeech = null) {
       "></div>
     </div>
 
-    <!-- Cute Chibi Character Image (From User Artwork) -->
-    <div onclick="onMascotClick()" class="chibi-avatar-img" title="Bấm vào Bé Mầm để trò chuyện!" style="
-      width: 92px;
-      height: 92px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: 3.5px solid ${preset.badgeColor};
-      box-shadow: 0 12px 28px -4px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
+    <!-- Free-standing Cutout Chibi Character Sprite -->
+    <div onclick="onMascotClick()" class="user-chibi-sprite" title="Bấm vào Bé Mầm để trò chuyện!" style="
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       animation: ${preset.anim};
-      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     ">
-      <img src="/user/img/chibi_mascot.png" alt="Bé Mầm AgTech" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block;">
+      <img src="/user/img/chibi_cutout.png" alt="Bé Mầm AgTech" style="
+        width: 120px;
+        height: auto;
+        display: block;
+        filter: drop-shadow(0 10px 16px rgba(0,0,0,0.3)) drop-shadow(0 2px 4px rgba(16,185,129,0.3));
+      ">
     </div>
   `;
 }
@@ -190,11 +191,11 @@ export function onMascotClick() {
   ];
   const randomGreet = greetings[Math.floor(Math.random() * greetings.length)];
   
-  const avatar = document.querySelector('.chibi-avatar-img');
-  if (avatar) {
-    avatar.style.transform = 'scale(1.25) translateY(-16px) rotate(10deg)';
+  const sprite = document.querySelector('.user-chibi-sprite');
+  if (sprite) {
+    sprite.style.transform = 'scale(1.2) translateY(-14px) rotate(6deg)';
     setTimeout(() => {
-      avatar.style.transform = 'scale(1) translateY(0) rotate(0deg)';
+      sprite.style.transform = 'scale(1) translateY(0) rotate(0deg)';
     }, 400);
   }
 

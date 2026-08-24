@@ -1,5 +1,5 @@
 ﻿/**
- * admin/js/mascot-chibi.js - Interactive Bé Mầm Chibi Mascot Widget for Admin (Fixed at Bottom-Right)
+ * admin/js/mascot-chibi.js - Interactive Free-Standing Bé Mầm Chibi Character (Bottom-Right Cutout Mascot)
  */
 
 let _adminMascotState = 'happy';
@@ -9,35 +9,35 @@ const ADMIN_MASCOT_PRESETS = {
     emoji: '🌱',
     badgeText: 'Hệ thống tối ưu',
     badgeColor: '#10b981',
-    speech: 'Xin chào Admin! Toàn bộ hệ thống trang trại & cảm biến IoT đang vận hành ổn định 100%! ✨',
+    speech: 'Xin chào Admin! Em đã kiểm tra và tưới nước cho toàn bộ hệ thống rồi ạ! ✨',
     anim: 'chibi-float 2.5s infinite ease-in-out'
   },
   thirsty: {
     emoji: '💧',
     badgeText: 'Cần tưới nước',
     badgeColor: '#f59e0b',
-    speech: 'Có trang trại ghi nhận độ ẩm đất thấp, cần gửi thông báo nhắc nông hộ tưới! 🚰',
+    speech: 'Có trang trại ghi nhận độ ẩm đất thấp, em xách sẵn bình tưới chuẩn bị hỗ trợ đây ạ! 🚰',
     anim: 'chibi-bounce 1.6s infinite ease-in-out'
   },
   rain: {
     emoji: '🌧️',
     badgeText: 'Khí tượng mưa dông',
     badgeColor: '#3b82f6',
-    speech: 'Hệ thống dự báo khí tượng cảnh báo sắp có mưa dông tại các vùng trồng trọng điểm! ☂️',
+    speech: 'Hệ thống dự báo sắp có mưa dông, Admin nhắc nông hộ tạm hoãn bón phân nhé! ☂️',
     anim: 'chibi-float 2s infinite ease-in-out'
   },
   doctor: {
     emoji: '🩺',
     badgeText: 'Cảnh báo dịch hại',
     badgeColor: '#ef4444',
-    speech: 'Admin ơi, có cây trồng được báo cáo ủ bệnh, hãy kiểm tra danh sách Cây cần theo dõi nhé! 🌿',
+    speech: 'Có cây trồng đang cần theo dõi, em cầm sẵn xẻng làm vườn đi kiểm tra ngay đây! 🌿',
     anim: 'chibi-bounce 2s infinite ease-in-out'
   },
   sleep: {
     emoji: '🌙',
     badgeText: 'Trực đêm 24/7',
     badgeColor: '#8b5cf6',
-    speech: 'Máy chủ CSDL & IoT tự động trực 24/7 an toàn. Chúc Admin buổi tối vui vẻ! zZz',
+    speech: 'Máy chủ CSDL & IoT tự động trực 24/7 an toàn. Chúc Admin buổi tối an lành! zZz',
     anim: 'chibi-sleep 3s infinite ease-in-out'
   }
 };
@@ -49,8 +49,8 @@ function initAdminChibiMascot() {
     mascotContainer.id = 'admin-chibi-mascot-widget';
     mascotContainer.style.cssText = `
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      bottom: 16px;
+      right: 20px;
       z-index: 9999;
       display: flex;
       flex-direction: column;
@@ -68,24 +68,27 @@ function initAdminChibiMascot() {
     style.id = 'admin-chibi-keyframes-style';
     style.textContent = `
       @keyframes chibi-float {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-10px) rotate(2deg); }
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
       }
       @keyframes chibi-bounce {
         0%, 100% { transform: translateY(0) scale(1); }
-        50% { transform: translateY(-14px) scale(1.04); }
+        50% { transform: translateY(-12px) scale(1.03); }
       }
       @keyframes chibi-sleep {
         0%, 100% { transform: translateY(0); opacity: 0.95; }
-        50% { transform: translateY(4px); opacity: 0.85; }
+        50% { transform: translateY(3px); opacity: 0.85; }
       }
       @keyframes pop-in {
         0% { transform: scale(0.6) translateY(20px); opacity: 0; }
         100% { transform: scale(1) translateY(0); opacity: 1; }
       }
-      .admin-chibi-avatar:hover {
-        transform: scale(1.12) rotate(4deg) !important;
+      .admin-chibi-sprite {
         cursor: pointer;
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .admin-chibi-sprite:hover {
+        transform: scale(1.1) translateY(-6px) !important;
       }
       .admin-chibi-btn:hover {
         transform: scale(1.1);
@@ -125,7 +128,8 @@ function renderAdminMascot(customSpeech = null) {
       line-height: 1.45;
       max-width: 260px;
       box-shadow: 0 12px 30px -6px rgba(0,0,0,0.22), 0 6px 12px -4px rgba(0,0,0,0.1);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
+      margin-right: 12px;
       position: relative;
       animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     ">
@@ -147,11 +151,11 @@ function renderAdminMascot(customSpeech = null) {
         <button class="admin-chibi-btn" onclick="setAdminMascotState('sleep')" title="Ngủ đêm" style="background:#faf5ff; border:1px solid #8b5cf6; border-radius:8px; padding:2px 7px; cursor:pointer; font-size:12px;">🌙</button>
       </div>
 
-      <!-- Triangle Pointer to Mascot on the right -->
+      <!-- Triangle Pointer to Mascot Head -->
       <div style="
         position: absolute;
         bottom: -9px;
-        right: 36px;
+        right: 48px;
         width: 0;
         height: 0;
         border-left: 9px solid transparent;
@@ -160,29 +164,26 @@ function renderAdminMascot(customSpeech = null) {
       "></div>
     </div>
 
-    <!-- Cute Chibi Character Image (From User Artwork) -->
-    <div onclick="onAdminMascotClick()" class="admin-chibi-avatar" title="Bấm vào Bé Mầm để tương tác!" style="
-      width: 92px;
-      height: 92px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: 3.5px solid ${preset.badgeColor};
-      box-shadow: 0 12px 28px -4px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
+    <!-- Free-standing Cutout Chibi Character Sprite -->
+    <div onclick="onAdminMascotClick()" class="admin-chibi-sprite" title="Bấm vào Bé Mầm để trò chuyện!" style="
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       animation: ${preset.anim};
-      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     ">
-      <img src="/admin/img/chibi_mascot.png" alt="Bé Mầm AgTech" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block;">
+      <img src="/admin/img/chibi_cutout.png" alt="Bé Mầm AgTech" style="
+        width: 120px;
+        height: auto;
+        display: block;
+        filter: drop-shadow(0 10px 16px rgba(0,0,0,0.3)) drop-shadow(0 2px 4px rgba(16,185,129,0.3));
+      ">
     </div>
   `;
 }
 
 function onAdminMascotClick() {
   const greetings = [
-    'Chào Admin! Em đã chăm sóc và kiểm tra kỹ lưỡng các trạm IoT và luống cây rồi ạ! 📡✨',
+    'Chào Admin! Em đã xách bình tưới và chăm sóc rất kỹ các luống cây rồi ạ! 🌱✨',
     'Admin có muốn lọc danh sách các cây đang bệnh để điều phối nhân sự không? 🩺',
     'Em đang theo dõi ranh giới bản đồ GIS cho tất cả các trang trại! 🗺️',
     'CSDL PostgreSQL đang trong trạng thái hoàn hảo, không có lỗi phân mảnh! 🚀',
@@ -190,11 +191,11 @@ function onAdminMascotClick() {
   ];
   const randomGreet = greetings[Math.floor(Math.random() * greetings.length)];
   
-  const avatar = document.querySelector('.admin-chibi-avatar');
-  if (avatar) {
-    avatar.style.transform = 'scale(1.25) translateY(-16px) rotate(10deg)';
+  const sprite = document.querySelector('.admin-chibi-sprite');
+  if (sprite) {
+    sprite.style.transform = 'scale(1.2) translateY(-14px) rotate(6deg)';
     setTimeout(() => {
-      avatar.style.transform = 'scale(1) translateY(0) rotate(0deg)';
+      sprite.style.transform = 'scale(1) translateY(0) rotate(0deg)';
     }, 400);
   }
 
