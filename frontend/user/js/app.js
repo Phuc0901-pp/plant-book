@@ -183,6 +183,39 @@ window.switchWikiSubtab = function(tabName) {
   }
 };
 
+window.filterGuideTopics = function(topic, btnEl) {
+  // Update button active styles
+  const allBtns = document.querySelectorAll('.guide-filter-btn');
+  allBtns.forEach(btn => {
+    btn.classList.remove('active');
+    btn.style.background = '#ffffff';
+    btn.style.color = '#334155';
+    btn.style.border = '1px solid #cbd5e1';
+    btn.style.boxShadow = 'none';
+    btn.style.fontWeight = '700';
+  });
+
+  if (btnEl) {
+    btnEl.classList.add('active');
+    btnEl.style.background = '#059669';
+    btnEl.style.color = 'white';
+    btnEl.style.border = 'none';
+    btnEl.style.boxShadow = '0 2px 8px rgba(5,150,105,0.2)';
+    btnEl.style.fontWeight = '800';
+  }
+
+  // Filter cards
+  const cards = document.querySelectorAll('.guide-card');
+  cards.forEach(card => {
+    const cardTopic = card.getAttribute('data-guide-topic');
+    if (topic === 'all' || cardTopic === topic) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+};
+
 // ── Expose to Window (for HTML inline onclick="..." handlers) ──
 // Cần thiết vì ES Modules có scope riêng, không tự trở thành global.
 window.showPage             = showPage;
