@@ -10,7 +10,14 @@ import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router
 // ── Modules ───────────────────────────────────────────────────
 import './modules/notifications.js';
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache } from './modules/plants.js';
+import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache, togglePlantMenu, closePlantMenu } from './modules/plants.js';
+import { filterUserLogs }             from './modules/logs.js';
+import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
+import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput } from './modules/care-modal.js?v=2.8.0';
+import { onCareMediaSelected, openLightbox } from './modules/media.js';
+import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal, closeThresholdRuleModal, saveThresholdRule } from './modules/settings.js';
+import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
+import './supplies.js?v=2.8.0';
 
 window.openSelfInitFarmModal = openSelfInitFarmModal;
 window.closeSelfInitFarmModal = closeSelfInitFarmModal;
@@ -169,15 +176,6 @@ window.switchWikiSubtab = function(tabName) {
   }
 };
 
-import { filterUserLogs }             from './modules/logs.js';
-import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
-import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput } from './modules/care-modal.js?v=2.8.0';
-import { onCareMediaSelected, openLightbox } from './modules/media.js';
-import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar } from './modules/settings.js';
-import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
-import { togglePlantMenu, closePlantMenu } from './modules/plants.js';
-import './supplies.js?v=2.8.0';
-
 // ── Expose to Window (for HTML inline onclick="..." handlers) ──
 // Cần thiết vì ES Modules có scope riêng, không tự trở thành global.
 window.showPage             = showPage;
@@ -202,8 +200,6 @@ window.startVoiceInput      = startVoiceInput;
 
 window.onCareMediaSelected  = onCareMediaSelected;
 window.openLightbox         = openLightbox;
-
-import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal, closeThresholdRuleModal, saveThresholdRule } from './modules/settings.js';
 
 window.loadUserSettings     = loadUserSettings;
 window.saveUserProfile      = saveUserProfile;
