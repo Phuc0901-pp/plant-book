@@ -80,18 +80,82 @@ export async function loadThresholdRules() {
 }
 window.loadThresholdRules = loadThresholdRules;
 
-// ── Metric Catalog ─────────────────────────────────────────────
-const METRIC_CATALOG = {
-  soil_moisture_10cm: { name: '🌱 Độ ẩm đất tầng 10cm', unit: '%' },
-  soil_moisture_20cm: { name: '🌱 Độ ẩm đất tầng 20cm', unit: '%' },
-  soil_moisture_50cm: { name: '🪴 Độ ẩm đất tầng 50cm', unit: '%' },
-  air_temp:           { name: '🌡️ Nhiệt độ không khí', unit: '°C' },
-  air_humidity:       { name: '💧 Độ ẩm không khí', unit: '%' },
-  soil_ph:            { name: '🧪 Độ pH đất', unit: 'pH' },
-  soil_ec:            { name: '⚡ Độ EC dẫn điện đất', unit: 'mS/cm' },
-  rain_chance:        { name: '🌦️ Khả năng mưa rào', unit: '%' },
-  water_level:        { name: '🚰 Mực nước bể tưới', unit: '%' }
+// ── Device & Metric Hierarchy Catalog ──────────────────────────
+const DEVICE_GROUPS = {
+  soil: {
+    id: 'soil',
+    name: '🟤 Cảm biến Đất Đa tầng (Multilayer 7-in-1)',
+    badge: 'Đất đa tầng',
+    metrics: {
+      soil_moisture_10cm: { name: '🌱 Độ ẩm đất tầng 10cm', unit: '%' },
+      soil_moisture_20cm: { name: '🌱 Độ ẩm đất tầng 20cm', unit: '%' },
+      soil_moisture_30cm: { name: '🌱 Độ ẩm đất tầng 30cm', unit: '%' },
+      soil_moisture_50cm: { name: '🪴 Độ ẩm đất tầng 50cm', unit: '%' },
+      soil_temp_10cm:     { name: '🌡️ Nhiệt độ đất tầng 10cm', unit: '°C' },
+      soil_temp_20cm:     { name: '🌡️ Nhiệt độ đất tầng 20cm', unit: '°C' },
+      soil_ph:            { name: '🧪 Độ pH Đất', unit: 'pH' },
+      soil_ec:            { name: '⚡ Độ EC dẫn điện đất', unit: 'mS/cm' },
+      soil_salinity:      { name: '🧂 Độ mặn đất', unit: '‰' },
+      soil_nitrogen:      { name: '🧪 Dinh dưỡng Nitơ (N)', unit: 'mg/kg' },
+      soil_phosphorus:    { name: '🧪 Dinh dưỡng Phốt pho (P)', unit: 'mg/kg' },
+      soil_potassium:     { name: '🧪 Dinh dưỡng Kali (K)', unit: 'mg/kg' }
+    }
+  },
+  air: {
+    id: 'air',
+    name: '💨 Trạm Môi trường Không khí (Air Station #01)',
+    badge: 'Không khí',
+    metrics: {
+      air_temp:           { name: '🌡️ Nhiệt độ không khí', unit: '°C' },
+      air_humidity:       { name: '💧 Độ ẩm không khí', unit: '%' },
+      wind_speed:         { name: '💨 Tốc độ gió', unit: 'km/h' },
+      rainfall:           { name: '🌧️ Lượng & Cường độ mưa', unit: 'mm' },
+      uv_index:           { name: '☀️ Chỉ số bức xạ UV', unit: 'Index' },
+      solar_radiation:    { name: '⚡ Cường độ nắng / Bức xạ', unit: 'W/m²' }
+    }
+  },
+  water: {
+    id: 'water',
+    name: '🚰 Môi trường Nước tưới (Bể tưới IoT)',
+    badge: 'Nước tưới',
+    metrics: {
+      water_ph:           { name: '🧪 pH Nước tưới', unit: 'pH' },
+      water_do:           { name: '🫧 Oxy hòa tan (DO)', unit: 'mg/L' },
+      water_turbidity:    { name: '💧 Độ đục nước', unit: 'NTU' },
+      water_level:        { name: '🚰 Mực nước bể lưu', unit: '%' }
+    }
+  },
+  weather: {
+    id: 'weather',
+    name: '🌦️ Dự báo Khí tượng & Thời tiết Nông nghiệp',
+    badge: 'Khí tượng',
+    metrics: {
+      rain_chance:        { name: '🌦️ Khả năng mưa ngày mai', unit: '%' },
+      forecast_temp_max:  { name: '🌡️ Dự báo Nhiệt độ cao nhất', unit: '°C' },
+      forecast_temp_min:  { name: '🌡️ Dự báo Nhiệt độ thấp nhất', unit: '°C' },
+      forecast_humidity:  { name: '💧 Dự báo Độ ẩm không khí', unit: '%' },
+      forecast_wind:      { name: '💨 Dự báo Tốc độ gió', unit: 'km/h' }
+    }
+  },
+  custom: {
+    id: 'custom',
+    name: '✍️ Nguồn dữ liệu Khác (Tự nhập tay)',
+    badge: 'Tự nhập',
+    metrics: {}
+  }
 };
+
+function _findDeviceGroupForMetric(metricKey) {
+  if (!metricKey) return 'soil';
+  for (const [devKey, dev] of Object.entries(DEVICE_GROUPS)) {
+    if (dev.metrics && dev.metrics[metricKey]) return devKey;
+  }
+  return 'custom';
+}
+
+function _getMetricInfo(devKey, metricKey) {
+  return DEVICE_GROUPS[devKey]?.metrics?.[metricKey] || null;
+}
 
 // ── Dynamic Multi-Condition Builder Helpers ───────────────────
 export function addConditionRow(data = null) {
@@ -99,35 +163,72 @@ export function addConditionRow(data = null) {
   if (!container) return;
 
   const rowId = 'cond-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
-  const metricKey = data?.metric_key || 'soil_moisture_10cm';
+  
+  let devKey = data?.device_source || (data?.metric_key ? _findDeviceGroupForMetric(data.metric_key) : 'soil');
+  if (data?.is_custom) devKey = 'custom';
+
+  const isCustom = devKey === 'custom';
+  const customName = data?.custom_name || (isCustom ? data?.metric_name || '' : '');
+  const customUnit = data?.custom_unit || (isCustom ? data?.unit || '' : '');
+
+  const metricKey = isCustom ? '' : (data?.metric_key || Object.keys(DEVICE_GROUPS[devKey]?.metrics || {})[0] || 'soil_moisture_10cm');
   const operator = data?.operator || '<';
   const thresholdVal = data?.threshold_value !== undefined ? data.threshold_value : 50;
-  const unit = METRIC_CATALOG[metricKey]?.unit || '%';
+  
+  const metricInfo = isCustom ? { name: customName, unit: customUnit } : (DEVICE_GROUPS[devKey]?.metrics?.[metricKey] || { name: metricKey, unit: '%' });
+  const unit = metricInfo?.unit || (isCustom ? customUnit : '%');
 
   const row = document.createElement('div');
   row.id = rowId;
   row.className = 'rule-condition-row';
-  row.style.cssText = 'background:#ffffff; border:1px solid #cbd5e1; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,0.02); transition:all 0.2s ease;';
+  row.style.cssText = 'background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 2px 8px rgba(0,0,0,0.03); transition:all 0.2s ease;';
 
   row.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-      <span class="condition-index-badge" style="font-size:11.5px; font-weight:800; color:#047857; background:#dcfce7; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-        <i class="fa-solid fa-code-commit"></i> Điều kiện <span class="cond-num"></span>
-      </span>
-      <button type="button" onclick="removeConditionRow('${rowId}')" title="Xóa điều kiện này" style="background:#fee2e2; border:none; color:#dc2626; width:26px; height:26px; border-radius:6px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">
+    <!-- Row Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed #e2e8f0; padding-bottom:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="condition-index-badge" style="font-size:11.5px; font-weight:800; color:#047857; background:#dcfce7; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+          <i class="fa-solid fa-code-commit"></i> Điều kiện <span class="cond-num"></span>
+        </span>
+        <span class="cond-device-badge" style="font-size:11px; font-weight:700; color:#475569; background:#f1f5f9; padding:3px 8px; border-radius:6px;">
+          ${DEVICE_GROUPS[devKey]?.badge || 'Đất'}
+        </span>
+      </div>
+      <button type="button" onclick="removeConditionRow('${rowId}')" title="Xóa điều kiện này" style="background:#fee2e2; border:none; color:#dc2626; width:26px; height:26px; border-radius:6px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 0.2s;">
         <i class="fa-solid fa-trash-can"></i>
       </button>
     </div>
 
+    <!-- Step 1: Device Source Selector -->
+    <div>
+      <span style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">
+        📡 1. Chọn Thiết bị IoT / Nguồn dữ liệu:
+      </span>
+      <select class="cond-device" onchange="onConditionDeviceChange('${rowId}')" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#0f172a; outline:none; background:#f8fafc;">
+        ${Object.entries(DEVICE_GROUPS).map(([k, v]) => `
+          <option value="${k}" ${k === devKey ? 'selected' : ''}>${v.name}</option>
+        `).join('')}
+      </select>
+    </div>
+
+    <!-- Step 2: Metric Field & Comparison -->
     <div style="display:grid; grid-template-columns: 1.8fr 1fr 1.2fr; gap:8px; align-items:center;">
-      <div>
-        <select class="cond-metric" onchange="onConditionMetricChange('${rowId}')" style="width:100%; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none;">
-          ${Object.entries(METRIC_CATALOG).map(([k, v]) => `
+      
+      <!-- Metric Selector or Custom Inputs -->
+      <div class="cond-metric-wrapper">
+        <select class="cond-metric" onchange="onConditionMetricChange('${rowId}')" style="width:100%; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; display:${isCustom ? 'none' : 'block'};">
+          ${!isCustom && DEVICE_GROUPS[devKey]?.metrics ? Object.entries(DEVICE_GROUPS[devKey].metrics).map(([k, v]) => `
             <option value="${k}" ${k === metricKey ? 'selected' : ''}>${v.name} (${v.unit})</option>
-          `).join('')}
+          `).join('') : ''}
         </select>
+
+        <div class="cond-custom-fields" style="display:${isCustom ? 'flex' : 'none'}; gap:6px;">
+          <input type="text" class="cond-custom-name" value="${customName}" placeholder="Tên chỉ số (VD: CO2)" oninput="updateRuleConditionsSummary()" style="flex:1; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none;" />
+          <input type="text" class="cond-custom-unit" value="${customUnit}" placeholder="Đơn vị (ppm)" oninput="onCustomUnitInput('${rowId}')" style="width:75px; padding:8px 8px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; outline:none; text-align:center;" />
+        </div>
       </div>
 
+      <!-- Operator -->
       <div>
         <select class="cond-operator" onchange="updateRuleConditionsSummary()" style="width:100%; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none;">
           <option value="<" ${operator === '<' ? 'selected' : ''}>Nhỏ hơn (&lt;)</option>
@@ -138,9 +239,10 @@ export function addConditionRow(data = null) {
         </select>
       </div>
 
+      <!-- Threshold Value & Unit -->
       <div style="display:flex; align-items:center; gap:4px;">
         <input type="number" step="any" class="cond-value" value="${thresholdVal}" placeholder="50" oninput="updateRuleConditionsSummary()" style="width:100%; min-width:60px; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; outline:none;" />
-        <span class="cond-unit" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:7px 10px; border-radius:8px; font-size:12px; font-weight:800; color:#475569; min-width:32px; text-align:center;">${unit}</span>
+        <span class="cond-unit" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:7px 10px; border-radius:8px; font-size:12px; font-weight:800; color:#475569; min-width:32px; text-align:center;">${unit || '%'}</span>
       </div>
     </div>
   `;
@@ -150,6 +252,56 @@ export function addConditionRow(data = null) {
   updateRuleConditionsSummary();
 }
 window.addConditionRow = addConditionRow;
+
+export function onConditionDeviceChange(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+
+  const devSel = row.querySelector('.cond-device');
+  const metricSel = row.querySelector('.cond-metric');
+  const customFields = row.querySelector('.cond-custom-fields');
+  const unitSpan = row.querySelector('.cond-unit');
+  const badgeEl = row.querySelector('.cond-device-badge');
+
+  if (!devSel) return;
+  const devKey = devSel.value;
+  if (badgeEl) badgeEl.textContent = DEVICE_GROUPS[devKey]?.badge || 'Cảm biến';
+
+  if (devKey === 'custom') {
+    if (metricSel) metricSel.style.display = 'none';
+    if (customFields) customFields.style.display = 'flex';
+    const customUnitInput = row.querySelector('.cond-custom-unit');
+    if (unitSpan && customUnitInput) unitSpan.textContent = customUnitInput.value || '';
+  } else {
+    if (metricSel) {
+      metricSel.style.display = 'block';
+      const groupMetrics = DEVICE_GROUPS[devKey]?.metrics || {};
+      metricSel.innerHTML = Object.entries(groupMetrics).map(([k, v]) => `
+        <option value="${k}">${v.name} (${v.unit})</option>
+      `).join('');
+
+      const firstKey = Object.keys(groupMetrics)[0];
+      const unit = groupMetrics[firstKey]?.unit || '%';
+      if (unitSpan) unitSpan.textContent = unit;
+    }
+    if (customFields) customFields.style.display = 'none';
+  }
+
+  updateRuleConditionsSummary();
+}
+window.onConditionDeviceChange = onConditionDeviceChange;
+
+export function onCustomUnitInput(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const customUnitInput = row.querySelector('.cond-custom-unit');
+  const unitSpan = row.querySelector('.cond-unit');
+  if (customUnitInput && unitSpan) {
+    unitSpan.textContent = customUnitInput.value.trim() || '';
+  }
+  updateRuleConditionsSummary();
+}
+window.onCustomUnitInput = onCustomUnitInput;
 
 export function removeConditionRow(rowId) {
   const row = document.getElementById(rowId);
@@ -168,10 +320,13 @@ window.removeConditionRow = removeConditionRow;
 export function onConditionMetricChange(rowId) {
   const row = document.getElementById(rowId);
   if (!row) return;
+  const devSel = row.querySelector('.cond-device');
   const metricSel = row.querySelector('.cond-metric');
   const unitSpan = row.querySelector('.cond-unit');
-  if (metricSel && unitSpan) {
-    const unit = METRIC_CATALOG[metricSel.value]?.unit || '%';
+  if (devSel && metricSel && unitSpan) {
+    const devKey = devSel.value;
+    const metricKey = metricSel.value;
+    const unit = DEVICE_GROUPS[devKey]?.metrics?.[metricKey]?.unit || '%';
     unitSpan.textContent = unit;
   }
   updateRuleConditionsSummary();
@@ -196,18 +351,36 @@ export function getConditionsFromUI() {
   const conditions = [];
 
   rows.forEach(r => {
-    const metricKey = r.querySelector('.cond-metric')?.value || 'soil_moisture_10cm';
+    const devKey = r.querySelector('.cond-device')?.value || 'soil';
+    const isCustom = devKey === 'custom';
     const operator = r.querySelector('.cond-operator')?.value || '<';
     const thresholdVal = parseFloat(r.querySelector('.cond-value')?.value) || 0;
-    const metricInfo = METRIC_CATALOG[metricKey] || { name: metricKey, unit: '%' };
 
-    conditions.push({
-      metric_key: metricKey,
-      metric_name: metricInfo.name,
-      operator: operator,
-      threshold_value: thresholdVal,
-      unit: metricInfo.unit
-    });
+    if (isCustom) {
+      const customName = r.querySelector('.cond-custom-name')?.value.trim() || 'Chỉ số tự nhập';
+      const customUnit = r.querySelector('.cond-custom-unit')?.value.trim() || '';
+      conditions.push({
+        device_source: 'custom',
+        is_custom: true,
+        metric_key: 'custom_' + Date.now(),
+        metric_name: `✍️ ${customName}`,
+        operator: operator,
+        threshold_value: thresholdVal,
+        unit: customUnit
+      });
+    } else {
+      const metricKey = r.querySelector('.cond-metric')?.value || 'soil_moisture_10cm';
+      const metricInfo = DEVICE_GROUPS[devKey]?.metrics?.[metricKey] || { name: metricKey, unit: '%' };
+      conditions.push({
+        device_source: devKey,
+        is_custom: false,
+        metric_key: metricKey,
+        metric_name: metricInfo.name,
+        operator: operator,
+        threshold_value: thresholdVal,
+        unit: metricInfo.unit
+      });
+    }
   });
 
   return conditions;
@@ -247,6 +420,7 @@ export function updateRuleConditionsSummary() {
   updateRuleLivePreview();
 }
 window.updateRuleConditionsSummary = updateRuleConditionsSummary;
+
 
 export function renderThresholdRulesUI(rules) {
   const container = document.getElementById('threshold-rules-list');
