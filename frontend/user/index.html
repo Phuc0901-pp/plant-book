@@ -2341,82 +2341,168 @@
     <i class="fa fa-gear"></i>
     <span>Cài đặt</span>
   </div>
-<!-- Modal Thêm/Sửa Quy tắc Cài đặt Ngưỡng Giá trị -->
-<div id="threshold-rule-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:16px;">
-  <div style="background:#ffffff; border-radius:20px; max-width:540px; width:100%; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation:modalSlideUp 0.3s ease;">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:12px; margin-bottom:16px;">
-      <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-sliders-h" style="color:#059669;"></i> <span id="threshold-modal-title">Thêm Quy tắc Cài đặt Ngưỡng</span>
+<!-- Modal Thêm/Sửa Quy tắc Cài đặt Ngưỡng Giá trị & Thông báo Tự động -->
+<div id="threshold-rule-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(3px);">
+  <div style="background:#ffffff; border-radius:24px; max-width:620px; width:100%; padding:26px; box-shadow:0 24px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
+      <h3 style="margin:0; font-size:18px; font-weight:900; color:#0f172a; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-bell-concierge" style="color:#059669; font-size:20px;"></i>
+        <span id="threshold-modal-title">Cấu hình Quy tắc Thông báo Tự động</span>
       </h3>
-      <button onclick="closeThresholdRuleModal()" style="background:none; border:none; font-size:20px; color:#94a3b8; cursor:pointer;">&times;</button>
+      <button type="button" onclick="closeThresholdRuleModal()" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; font-size:18px; color:#64748b; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">&times;</button>
     </div>
 
-    <form id="threshold-rule-form" onsubmit="saveThresholdRule(event)" style="display:flex; flex-direction:column; gap:14px;">
+    <form id="threshold-rule-form" onsubmit="saveThresholdRule(event)" style="display:flex; flex-direction:column; gap:16px;">
       <input type="hidden" id="rule-id" value="" />
       
+      <!-- 1. Tên Thông Báo -->
       <div>
-        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">1. Chỉ số Cảm biến / Khí tượng theo dõi <span style="color:#ef4444">*</span></label>
-        <select id="rule-metric" required style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;" onchange="updateMetricUnitLabel()">
-          <option value="soil_moisture_20cm">🌱 Độ ẩm đất tầng 20cm (%)</option>
-          <option value="soil_moisture_50cm">🪴 Độ ẩm đất tầng 50cm (%)</option>
-          <option value="air_temp">🌡️ Nhiệt độ không khí (°C)</option>
-          <option value="air_humidity">💧 Độ ẩm không khí (%)</option>
-          <option value="soil_ph">🧪 Độ pH đất (pH)</option>
-          <option value="soil_ec">⚡ Độ EC dẫn điện đất (mS/cm)</option>
-          <option value="rain_chance">🌦️ Khả năng mưa rào (%)</option>
-          <option value="water_level">🚰 Mực nước bể tưới (%)</option>
-        </select>
+        <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:6px;">1. Tên quy tắc thông báo <span style="color:#ef4444">*</span></label>
+        <input type="text" id="rule-title" placeholder="Ví dụ: Cảnh báo Độ ẩm Đất Tầng 10cm & Dự báo Mưa rào" required style="width:100%; padding:11px 14px; border:1.5px solid #cbd5e1; border-radius:12px; font-size:13.5px; font-weight:600; outline:none;" />
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">2. Phép so sánh <span style="color:#ef4444">*</span></label>
-          <select id="rule-operator" required style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
-            <option value="<">Nhỏ hơn (&lt;)</option>
-            <option value="<=">Nhỏ hơn hoặc bằng (&le;)</option>
-            <option value=">">Lớn hơn (&gt;)</option>
-            <option value=">=">Lớn hơn hoặc bằng (&ge;)</option>
-            <option value="=">Bằng (=)</option>
+      <!-- 2. Thể loại Thông Báo (Cảnh báo, Khuyến cáo, Thông báo) -->
+      <div>
+        <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:8px;">2. Thể loại quy tắc thông báo <span style="color:#ef4444">*</span></label>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          
+          <label style="position:relative; border:2px solid #fecaca; background:#fef2f2; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
+            <input type="radio" name="rule_category" value="danger" checked onchange="onRuleCategoryChange('danger')" style="position:absolute; top:8px; right:8px; accent-color:#dc2626;" />
+            <i class="fa-solid fa-triangle-exclamation" style="font-size:22px; color:#dc2626; margin-top:2px;"></i>
+            <span style="color:#991b1b; font-size:13px; font-weight:800;">Cảnh báo</span>
+            <span style="font-size:10px; color:#dc2626; font-weight:600;">🚨 Màu Đỏ + Icon ⚠️</span>
+          </label>
+
+          <label style="position:relative; border:2px solid #fed7aa; background:#fff7ed; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
+            <input type="radio" name="rule_category" value="warning" onchange="onRuleCategoryChange('warning')" style="position:absolute; top:8px; right:8px; accent-color:#d97706;" />
+            <i class="fa-solid fa-bullhorn" style="font-size:22px; color:#d97706; margin-top:2px;"></i>
+            <span style="color:#92400e; font-size:13px; font-weight:800;">Khuyến cáo</span>
+            <span style="font-size:10px; color:#d97706; font-weight:600;">📢 Màu Cam + Icon 📢</span>
+          </label>
+
+          <label style="position:relative; border:2px solid #bbf7d0; background:#f0fdf4; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
+            <input type="radio" name="rule_category" value="info" onchange="onRuleCategoryChange('info')" style="position:absolute; top:8px; right:8px; accent-color:#16a34a;" />
+            <i class="fa-solid fa-circle-info" style="font-size:22px; color:#16a34a; margin-top:2px;"></i>
+            <span style="color:#166534; font-size:13px; font-weight:800;">Thông báo</span>
+            <span style="font-size:10px; color:#16a34a; font-weight:600;">ℹ️ Xanh lá + Icon ℹ️</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 3. ĐIỀU KIỆN THÔNG BÁO TỰ ĐỘNG -->
+      <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px;">
+        <label style="font-size:13px; font-weight:800; color:#0f172a; display:block; margin-bottom:10px;">
+          <i class="fa-solid fa-gears" style="color:#059669;"></i> 3. Cấu hình Điều kiện Thông báo Tự động
+        </label>
+
+        <!-- Condition Pane: Sensor / Weather IoT Integration -->
+        <div id="rule-pane-iot" style="display:flex; flex-direction:column; gap:12px;">
+          
+          <div>
+            <span style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Chỉ số Cảm biến IoT & Khí tượng theo dõi</span>
+            <select id="rule-metric" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;" onchange="updateMetricUnitLabel()">
+              <option value="soil_moisture_10cm">🌱 Độ ẩm đất tầng 10cm (%)</option>
+              <option value="soil_moisture_20cm">🌱 Độ ẩm đất tầng 20cm (%)</option>
+              <option value="soil_moisture_50cm">🪴 Độ ẩm đất tầng 50cm (%)</option>
+              <option value="air_temp">🌡️ Nhiệt độ không khí (°C)</option>
+              <option value="air_humidity">💧 Độ ẩm không khí (%)</option>
+              <option value="soil_ph">🧪 Độ pH đất (pH)</option>
+              <option value="soil_ec">⚡ Độ EC dẫn điện đất (mS/cm)</option>
+              <option value="rain_chance">🌦️ Khả năng mưa rào (%)</option>
+              <option value="water_level">🚰 Mực nước bể tưới (%)</option>
+            </select>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <span style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Phép so sánh</span>
+              <select id="rule-operator" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+                <option value="<">Nhỏ hơn (&lt;)</option>
+                <option value="<=">Nhỏ hơn hoặc bằng (&le;)</option>
+                <option value=">">Lớn hơn (&gt;)</option>
+                <option value=">=">Lớn hơn hoặc bằng (&ge;)</option>
+                <option value="=">Bằng (=)</option>
+              </select>
+            </div>
+            <div>
+              <span style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Giá trị Ngưỡng cài đặt</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <input type="number" step="any" id="rule-threshold-value" placeholder="Ví dụ: 50" value="50" style="flex:1; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; outline:none;" />
+                <span id="rule-unit-badge" style="background:#ffffff; border:1px solid #cbd5e1; padding:8px 12px; border-radius:8px; font-weight:800; font-size:12px; color:#475569;">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Checkboxes: Offline IoT & Disease History -->
+          <div id="rule-box-danger-options" style="display:flex; flex-direction:column; gap:8px; margin-top:4px; background:#ffffff; border:1px solid #fed7aa; padding:10px 12px; border-radius:10px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#991b1b; cursor:pointer;">
+              <input type="checkbox" id="rule-check-offline-iot" style="accent-color:#dc2626; width:16px; height:16px;" />
+              📡 Kiểm tra & Cảnh báo thiết bị IoT không có dữ liệu (null hoặc bằng 0)
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#92400e; cursor:pointer;">
+              <input type="checkbox" id="rule-check-weather-tomorrow" style="accent-color:#d97706; width:16px; height:16px;" />
+              🌦️ Kết hợp Dự báo Khí tượng Sáng ngày mai có Mưa rào
+            </label>
+          </div>
+
+          <div id="rule-box-warning-options" style="display:flex; flex-direction:column; gap:8px; margin-top:4px; background:#ffffff; border:1px solid #bbf7d0; padding:10px 12px; border-radius:10px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#166534; cursor:pointer;">
+              <input type="checkbox" id="rule-check-disease-history" checked style="accent-color:#16a34a; width:16px; height:16px;" />
+              🐛 Truy cập Lịch sử canh tác: Tự kiểm tra các cây từng ghi nhận bị bệnh để đưa ra khuyến cáo chăm sóc đặc biệt
+            </label>
+          </div>
+
+        </div>
+
+        <!-- Condition Pane: Info / System Reconfirmation -->
+        <div id="rule-pane-info" style="display:none; flex-direction:column; gap:10px;">
+          <span style="font-size:12px; font-weight:700; color:#334155;">Loại sự kiện Xác nhận Hệ thống (Reconfirm)</span>
+          <select id="rule-reconfirm-event" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+            <option value="log_update">📝 Reconfirm toàn bộ hoạt động cập nhật nhật ký canh tác (Tưới nước, Bón phân, Phun thuốc...)</option>
+            <option value="harvest">🌾 Reconfirm toàn bộ thông tin thu hoạch nông sản</option>
+            <option value="disease">🐛 Reconfirm thông tin ghi nhận tình trạng sâu bệnh hại</option>
+            <option value="auth">🔑 Xác nhận trạng thái Đăng nhập thành công & Bảo mật tài khoản</option>
           </select>
         </div>
-        <div>
-          <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">3. Giá trị Ngưỡng cài đặt <span style="color:#ef4444">*</span></label>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <input type="number" step="any" id="rule-threshold-value" placeholder="Ví dụ: 50" required style="flex:1; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; outline:none;" />
-            <span id="rule-unit-badge" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 12px; border-radius:8px; font-weight:800; font-size:12px; color:#475569;">%</span>
-          </div>
-        </div>
+
       </div>
 
+      <!-- 4. Hoạt động canh tác kết hợp -->
       <div>
-        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">4. Hoạt động Canh tác kết hợp <span style="color:#ef4444">*</span></label>
-        <select id="rule-action-type" required style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+        <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:4px;">4. Hoạt động Canh tác kết hợp</label>
+        <select id="rule-action-type" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
           <option value="Tưới nước">💧 Bật/Tắt hệ thống tưới nước rễ</option>
           <option value="Bón phân">🧪 Bón bổ sung phân hữu cơ / vi sinh</option>
           <option value="Phun thuốc">💊 Phun thuốc phòng trừ sâu bệnh</option>
           <option value="Cắt tỉa">🍃 Cắt tỉa cành lá / che bóng</option>
           <option value="Bơm nước">🚰 Bơm nạp nước bể tưới lưu</option>
-          <option value="Khác">🏷️ Hoạt động canh tác khác</option>
+          <option value="Hệ thống">ℹ️ Xác nhận hoạt động hệ thống</option>
         </select>
       </div>
 
+      <!-- 5. Nội dung Khuyến nghị / Thông báo -->
       <div>
-        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">5. Nội dung Khuyến nghị / Quy trình Thông báo tự động <span style="color:#ef4444">*</span></label>
-        <textarea id="rule-recommendation" rows="3" placeholder="Ví dụ: Độ ẩm đất tại vườn giảm xuống dưới 50%. Khuyến nghị kích hoạt hệ thống tưới rễ buổi sáng!" required style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none; resize:none;"></textarea>
+        <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:4px;">5. Nội dung Khuyến nghị / Quy trình Thông báo tự động <span style="color:#ef4444">*</span></label>
+        <textarea id="rule-recommendation" rows="3" placeholder="Ví dụ: Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!" required style="width:100%; padding:11px 14px; border:1.5px solid #cbd5e1; border-radius:12px; font-size:13px; outline:none; resize:none;"></textarea>
       </div>
 
-      <div>
-        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">6. Cấp độ Cảnh báo & Chuông thông báo</label>
-        <select id="rule-alert-level" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
-          <option value="danger">🚨 Cảnh báo Khẩn cấp (Màu đỏ + Chuông còi)</option>
-          <option value="warning">🌦️ Cảnh báo Thời tiết (Màu cam + Nhạc khuyến cáo)</option>
-          <option value="info">🌱 Khuyến nghị Canh tác (Màu xanh + Nhạc êm)</option>
-        </select>
+      <!-- Live Notification Card Preview -->
+      <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:14px; padding:12px;">
+        <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;">👁️ Mẫu Thông báo hiển thị cho Nông hộ:</span>
+        <div id="rule-live-preview-box" style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:10px 12px; display:flex; align-items:flex-start; gap:10px;">
+          <i id="preview-icon" class="fa-solid fa-triangle-exclamation" style="color:#dc2626; font-size:18px; margin-top:2px;"></i>
+          <div>
+            <div id="preview-title" style="font-size:12.5px; font-weight:800; color:#0f172a;">Cảnh báo Độ ẩm Đất Tầng 10cm & Dự báo Mưa rào</div>
+            <div id="preview-message" style="font-size:12px; color:#475569; margin-top:2px;">Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!</div>
+          </div>
+        </div>
       </div>
 
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
-        <button type="button" onclick="closeThresholdRuleModal()" style="background:#f1f5f9; color:#475569; border:none; padding:10px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer;">Hủy</button>
-        <button type="submit" style="background:#059669; color:white; border:none; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.3);">
+      <!-- Action Buttons -->
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:4px;">
+        <button type="button" onclick="closeThresholdRuleModal()" style="background:#f1f5f9; color:#475569; border:none; padding:11px 20px; border-radius:12px; font-size:13.5px; font-weight:700; cursor:pointer;">Hủy</button>
+        <button type="submit" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:11px 24px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
           <i class="fa-solid fa-check-circle"></i> Lưu Quy tắc Cài đặt
         </button>
       </div>
@@ -2447,9 +2533,9 @@
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=1.1.4"></script>
+<script type="module" src="/user/js/auth.js?v=1.1.5"></script>
 
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=1.1.4"></script>
+<script type="module" src="/user/js/app.js?v=1.1.5"></script>
 </body>
 </html>

@@ -234,18 +234,33 @@ async function initDB() {
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE,
-        metric_key VARCHAR(100) NOT NULL,
-        metric_name VARCHAR(255) NOT NULL,
-        operator VARCHAR(10) NOT NULL,
-        threshold_value NUMERIC NOT NULL,
+        title VARCHAR(255),
+        category_type VARCHAR(50) DEFAULT 'warning',
+        metric_key VARCHAR(100),
+        metric_name VARCHAR(255),
+        operator VARCHAR(10),
+        threshold_value NUMERIC,
         unit VARCHAR(50) DEFAULT '%',
         action_type VARCHAR(100) DEFAULT 'Tưới nước',
         action_recommendation TEXT NOT NULL,
         alert_level VARCHAR(50) DEFAULT 'warning',
+        conditions_json JSONB DEFAULT '[]',
+        check_offline_iot BOOLEAN DEFAULT false,
+        check_disease_history BOOLEAN DEFAULT false,
+        reconfirm_event_type VARCHAR(100) NULL,
         is_enabled BOOLEAN DEFAULT true,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS category_type VARCHAR(50) DEFAULT 'warning';
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS conditions_json JSONB DEFAULT '[]';
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS check_offline_iot BOOLEAN DEFAULT false;
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS check_disease_history BOOLEAN DEFAULT false;
+      ALTER TABLE user_alert_rules ADD COLUMN IF NOT EXISTS reconfirm_event_type VARCHAR(100) NULL;
     `);
 
 

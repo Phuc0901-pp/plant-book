@@ -86,11 +86,11 @@ export function renderThresholdRulesUI(rules) {
 
   if (!rules || rules.length === 0) {
     container.innerHTML = `
-      <div style="background:#ffffff; border:2px dashed #cbd5e1; border-radius:16px; padding:32px 20px; text-align:center;">
-        <i class="fa-solid fa-sliders" style="font-size:32px; color:#cbd5e1; margin-bottom:10px; display:block;"></i>
-        <h4 style="margin:0 0 6px 0; color:#334155; font-size:15px; font-weight:800;">Chưa có quy tắc cài đặt ngưỡng nào</h4>
-        <p style="margin:0 0 16px 0; color:#64748b; font-size:13px;">Bấm nút bên dưới để tạo điều kiện thông báo tự động theo giá trị cảm biến và canh tác.</p>
-        <button onclick="openAddThresholdRuleModal()" style="background:#059669; color:white; border:none; padding:9px 18px; font-size:13px; font-weight:800; border-radius:10px; cursor:pointer;">
+      <div style="background:#ffffff; border:2px dashed #cbd5e1; border-radius:18px; padding:36px 20px; text-align:center;">
+        <i class="fa-solid fa-bell-concierge" style="font-size:36px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <h4 style="margin:0 0 6px 0; color:#334155; font-size:16px; font-weight:800;">Chưa có quy tắc cài đặt thông báo tự động nào</h4>
+        <p style="margin:0 0 18px 0; color:#64748b; font-size:13px;">Bấm nút bên dưới để khởi tạo quy tắc Cảnh báo, Khuyến cáo hoặc Thông báo tự động.</p>
+        <button onclick="openAddThresholdRuleModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:10px 22px; font-size:13.5px; font-weight:800; border-radius:12px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
           + Thêm quy tắc đầu tiên
         </button>
       </div>
@@ -98,47 +98,81 @@ export function renderThresholdRulesUI(rules) {
     return;
   }
 
-  const levelStyles = {
-    danger: { badgeBg: '#fef2f2', badgeText: '#dc2626', border: '#fecaca', label: '🚨 Cảnh báo Khẩn cấp' },
-    warning: { badgeBg: '#fff7ed', badgeText: '#d97706', border: '#fed7aa', label: '🌦️ Cảnh báo Thời tiết' },
-    info: { badgeBg: '#f0fdf4', badgeText: '#16a34a', border: '#bbf7d0', label: '🌱 Khuyến nghị Canh tác' }
+  const categoryStyles = {
+    danger: {
+      bg: '#fef2f2',
+      border: '#fecaca',
+      badgeBg: '#fee2e2',
+      badgeText: '#dc2626',
+      icon: 'fa-triangle-exclamation',
+      label: '🚨 Cảnh báo (Màu Đỏ - Icon ⚠️)'
+    },
+    warning: {
+      bg: '#fff7ed',
+      border: '#fed7aa',
+      badgeBg: '#ffedd5',
+      badgeText: '#d97706',
+      icon: 'fa-bullhorn',
+      label: '📢 Khuyến cáo (Màu Cam - Icon 📢 Cái loa)'
+    },
+    info: {
+      bg: '#f0fdf4',
+      border: '#bbf7d0',
+      badgeBg: '#dcfce7',
+      badgeText: '#16a34a',
+      icon: 'fa-circle-info',
+      label: 'ℹ️ Thông báo (Màu Xanh lá - Icon ℹ️)'
+    }
   };
 
   container.innerHTML = rules.map(r => {
-    const st = levelStyles[r.alert_level] || levelStyles.info;
+    const cat = r.category_type || r.alert_level || 'warning';
+    const st = categoryStyles[cat] || categoryStyles.info;
     const isEnabled = r.is_enabled;
+    const ruleTitle = r.title || r.metric_name || 'Quy tắc Cài đặt Ngưỡng';
 
     return `
-      <div style="background:#ffffff; border:1.5px solid ${r.is_enabled ? '#e2e8f0' : '#f1f5f9'}; border-radius:16px; padding:18px 20px; box-shadow:0 2px 10px rgba(0,0,0,0.02); opacity:${isEnabled ? 1 : 0.65}; transition:all 0.2s ease;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
-          <div style="flex:1; min-width:260px;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
-              <span class="badge" style="background:${st.badgeBg}; color:${st.badgeText}; border:1px solid ${st.border}; font-size:11px; font-weight:800;">${st.label}</span>
-              <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:700;"><i class="fa-solid fa-seedling"></i> ${r.action_type || 'Canh tác'}</span>
+      <div style="background:#ffffff; border:1.5px solid ${isEnabled ? st.border : '#e2e8f0'}; border-radius:18px; padding:20px; box-shadow:0 3px 12px rgba(0,0,0,0.03); opacity:${isEnabled ? 1 : 0.65}; transition:all 0.25s ease; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:0; left:0; width:5px; height:100%; background:${st.badgeText};"></div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; padding-left:6px;">
+          <div style="flex:1; min-width:280px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+              <span class="badge" style="background:${st.badgeBg}; color:${st.badgeText}; border:1px solid ${st.border}; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
+                <i class="fa-solid ${st.icon}"></i> ${st.label}
+              </span>
+              
+              <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:700;">
+                <i class="fa-solid fa-seedling"></i> ${r.action_type || 'Canh tác'}
+              </span>
+
+              ${r.check_offline_iot ? `<span class="badge" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-rss"></i> Quét IoT Offline/0</span>` : ''}
+              ${r.check_disease_history ? `<span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-bug"></i> Tra lịch sử bệnh cây</span>` : ''}
+              ${r.reconfirm_event_type ? `<span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-square-check"></i> Reconfirm Hệ thống</span>` : ''}
             </div>
             
-            <h4 style="margin:0 0 6px 0; font-size:15px; font-weight:900; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <span>${r.metric_name}</span>
-              <span style="background:#f1f5f9; color:#0f172a; padding:2px 8px; border-radius:6px; font-size:13px; font-weight:800;">${r.operator} ${r.threshold_value} ${r.unit || ''}</span>
+            <h4 style="margin:0 0 6px 0; font-size:15.5px; font-weight:900; color:#0f172a; display:flex; align-items:center; gap:10px;">
+              <span>${ruleTitle}</span>
+              ${r.metric_name && r.operator ? `<span style="background:#f1f5f9; color:#0f172a; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:800;">${r.metric_name}: ${r.operator} ${r.threshold_value} ${r.unit || ''}</span>` : ''}
             </h4>
 
-            <p style="margin:0; font-size:13px; color:#475569; line-height:1.5; background:#f8fafc; padding:8px 12px; border-radius:10px; border-left:3px solid #059669;">
-              💬 <strong>Khuyến nghị tự động:</strong> ${r.action_recommendation}
+            <p style="margin:6px 0 0 0; font-size:13px; color:#334155; line-height:1.55; background:${st.bg}; padding:10px 14px; border-radius:12px; border:1px solid ${st.border}; border-left:4px solid ${st.badgeText};">
+              <strong>Nội dung thông báo tự động:</strong> ${r.action_recommendation}
             </p>
           </div>
 
-          <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
             <!-- Toggle Switch -->
-            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:700; color:${isEnabled ? '#059669' : '#94a3b8'};">
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:800; color:${isEnabled ? '#059669' : '#94a3b8'}; background:#f8fafc; padding:6px 12px; border-radius:10px; border:1px solid #e2e8f0;">
               <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleThresholdRuleEnabled(${r.id}, this.checked)" style="width:18px; height:18px; accent-color:#059669; cursor:pointer;" />
-              ${isEnabled ? 'Đang bật' : 'Đã tắt'}
+              ${isEnabled ? 'Đang kích hoạt' : 'Tắt quy tắc'}
             </label>
 
-            <button onclick="editThresholdRule(${r.id})" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+            <button onclick="editThresholdRule(${r.id})" style="background:#ffffff; border:1.5px solid #cbd5e1; color:#334155; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
               <i class="fa-solid fa-pen"></i> Sửa
             </button>
 
-            <button onclick="deleteThresholdRule(${r.id})" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+            <button onclick="deleteThresholdRule(${r.id})" style="background:#fef2f2; border:1.5px solid #fecaca; color:#dc2626; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
               <i class="fa-solid fa-trash-can"></i> Xóa
             </button>
           </div>
@@ -148,6 +182,75 @@ export function renderThresholdRulesUI(rules) {
   }).join('');
 }
 
+export function onRuleCategoryChange(category) {
+  const iotPane = document.getElementById('rule-pane-iot');
+  const infoPane = document.getElementById('rule-pane-info');
+  const dangerBox = document.getElementById('rule-box-danger-options');
+  const warningBox = document.getElementById('rule-box-warning-options');
+  const previewBox = document.getElementById('rule-live-preview-box');
+  const previewIcon = document.getElementById('preview-icon');
+
+  if (!iotPane || !infoPane) return;
+
+  if (category === 'info') {
+    iotPane.style.display = 'none';
+    infoPane.style.display = 'flex';
+  } else {
+    iotPane.style.display = 'flex';
+    infoPane.style.display = 'none';
+  }
+
+  if (category === 'danger') {
+    if (dangerBox) dangerBox.style.display = 'flex';
+    if (warningBox) warningBox.style.display = 'none';
+    if (previewBox) {
+      previewBox.style.background = '#fef2f2';
+      previewBox.style.borderColor = '#fecaca';
+    }
+    if (previewIcon) {
+      previewIcon.className = 'fa-solid fa-triangle-exclamation';
+      previewIcon.style.color = '#dc2626';
+    }
+  } else if (category === 'warning') {
+    if (dangerBox) dangerBox.style.display = 'none';
+    if (warningBox) warningBox.style.display = 'flex';
+    if (previewBox) {
+      previewBox.style.background = '#fff7ed';
+      previewBox.style.borderColor = '#fed7aa';
+    }
+    if (previewIcon) {
+      previewIcon.className = 'fa-solid fa-bullhorn';
+      previewIcon.style.color = '#d97706';
+    }
+  } else if (category === 'info') {
+    if (previewBox) {
+      previewBox.style.background = '#f0fdf4';
+      previewBox.style.borderColor = '#bbf7d0';
+    }
+    if (previewIcon) {
+      previewIcon.className = 'fa-solid fa-circle-info';
+      previewIcon.style.color = '#16a34a';
+    }
+  }
+  updateRuleLivePreview();
+}
+window.onRuleCategoryChange = onRuleCategoryChange;
+
+export function updateRuleLivePreview() {
+  const titleInput = document.getElementById('rule-title');
+  const recInput = document.getElementById('rule-recommendation');
+  const pTitle = document.getElementById('preview-title');
+  const pMsg = document.getElementById('preview-message');
+
+  if (pTitle && titleInput) {
+    pTitle.textContent = titleInput.value.trim() || 'Tên quy tắc thông báo';
+  }
+  if (pMsg && recInput) {
+    pMsg.textContent = recInput.value.trim() || 'Nội dung thông báo tự động hiển thị cho nông hộ...';
+  }
+}
+window.updateRuleLivePreview = updateRuleLivePreview;
+
 export function openAddThresholdRuleModal() {
   const modal = document.getElementById('threshold-rule-modal');
   const form = document.getElementById('threshold-rule-form');
@@ -156,8 +259,21 @@ export function openAddThresholdRuleModal() {
 
   form.reset();
   document.getElementById('rule-id').value = '';
-  if (title) title.textContent = 'Thêm Quy tắc Cài đặt Ngưỡng';
+  document.getElementById('rule-title').value = 'Cảnh báo Độ ẩm Đất Tầng 10cm & Dự báo Mưa rào';
+  document.getElementById('rule-recommendation').value = 'Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!';
+  
+  const radDanger = form.querySelector('input[name="rule_category"][value="danger"]');
+  if (radDanger) radDanger.checked = true;
+
+  if (title) title.textContent = 'Cấu hình Quy tắc Thông báo Tự động';
   updateMetricUnitLabel();
+  onRuleCategoryChange('danger');
+
+  // Bind live typing listener
+  const titleInput = document.getElementById('rule-title');
+  const recInput = document.getElementById('rule-recommendation');
+  if (titleInput) titleInput.oninput = updateRuleLivePreview;
+  if (recInput) recInput.oninput = updateRuleLivePreview;
 
   modal.style.display = 'flex';
 }
@@ -168,19 +284,42 @@ export function editThresholdRule(id) {
   if (!rule) return;
 
   const modal = document.getElementById('threshold-rule-modal');
+  const form = document.getElementById('threshold-rule-form');
   const title = document.getElementById('threshold-modal-title');
-  if (!modal) return;
+  if (!modal || !form) return;
 
   document.getElementById('rule-id').value = rule.id;
-  document.getElementById('rule-metric').value = rule.metric_key;
-  document.getElementById('rule-operator').value = rule.operator;
-  document.getElementById('rule-threshold-value').value = rule.threshold_value;
-  document.getElementById('rule-action-type').value = rule.action_type || 'Tưới nước';
-  document.getElementById('rule-recommendation').value = rule.action_recommendation;
-  document.getElementById('rule-alert-level').value = rule.alert_level || 'warning';
+  document.getElementById('rule-title').value = rule.title || rule.metric_name || '';
+  
+  const cat = rule.category_type || rule.alert_level || 'warning';
+  const rad = form.querySelector(`input[name="rule_category"][value="${cat}"]`);
+  if (rad) rad.checked = true;
+
+  if (rule.metric_key) document.getElementById('rule-metric').value = rule.metric_key;
+  if (rule.operator) document.getElementById('rule-operator').value = rule.operator;
+  if (rule.threshold_value !== undefined) document.getElementById('rule-threshold-value').value = rule.threshold_value;
+  if (rule.action_type) document.getElementById('rule-action-type').value = rule.action_type;
+  if (rule.action_recommendation) document.getElementById('rule-recommendation').value = rule.action_recommendation;
+
+  const offIot = document.getElementById('rule-check-offline-iot');
+  if (offIot) offIot.checked = Boolean(rule.check_offline_iot);
+
+  const disHist = document.getElementById('rule-check-disease-history');
+  if (disHist) disHist.checked = Boolean(rule.check_disease_history);
+
+  if (rule.reconfirm_event_type) {
+    const recEv = document.getElementById('rule-reconfirm-event');
+    if (recEv) recEv.value = rule.reconfirm_event_type;
+  }
 
   if (title) title.textContent = 'Chỉnh sửa Quy tắc Cài đặt Ngưỡng';
   updateMetricUnitLabel();
+  onRuleCategoryChange(cat);
+
+  const titleInput = document.getElementById('rule-title');
+  const recInput = document.getElementById('rule-recommendation');
+  if (titleInput) titleInput.oninput = updateRuleLivePreview;
+  if (recInput) recInput.oninput = updateRuleLivePreview;
 
   modal.style.display = 'flex';
 }
@@ -198,6 +337,7 @@ export function updateMetricUnitLabel() {
   if (!metricSel || !unitBadge) return;
 
   const units = {
+    soil_moisture_10cm: '%',
     soil_moisture_20cm: '%',
     soil_moisture_50cm: '%',
     air_temp: '°C',
@@ -214,14 +354,31 @@ window.updateMetricUnitLabel = updateMetricUnitLabel;
 export async function saveThresholdRule(e) {
   if (e && e.preventDefault) e.preventDefault();
 
+  const form = document.getElementById('threshold-rule-form');
   const id = document.getElementById('rule-id').value;
+  const catRad = form ? form.querySelector('input[name="rule_category"]:checked') : null;
+  const category = catRad ? catRad.value : 'warning';
+
+  const titleVal = document.getElementById('rule-title').value.trim();
+  const recVal = document.getElementById('rule-recommendation').value.trim();
+
+  if (!titleVal || !recVal) {
+    toast('Vui lòng điền đầy đủ Tên quy tắc và Nội dung khuyến nghị.', 'error');
+    return;
+  }
+
   const payload = {
+    title: titleVal,
+    category_type: category,
+    alert_level: category,
     metric_key: document.getElementById('rule-metric').value,
     operator: document.getElementById('rule-operator').value,
-    threshold_value: parseFloat(document.getElementById('rule-threshold-value').value),
+    threshold_value: parseFloat(document.getElementById('rule-threshold-value').value) || 0,
     action_type: document.getElementById('rule-action-type').value,
-    action_recommendation: document.getElementById('rule-recommendation').value,
-    alert_level: document.getElementById('rule-alert-level').value
+    action_recommendation: recVal,
+    check_offline_iot: document.getElementById('rule-check-offline-iot') ? document.getElementById('rule-check-offline-iot').checked : false,
+    check_disease_history: document.getElementById('rule-check-disease-history') ? document.getElementById('rule-check-disease-history').checked : false,
+    reconfirm_event_type: document.getElementById('rule-reconfirm-event') ? document.getElementById('rule-reconfirm-event').value : null
   };
 
   try {
