@@ -64,5 +64,36 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// DELETE /api/history/:id — Xóa một dòng nhật ký biến động
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (req.user.role !== 'admin') {
+      await pool.query('DELETE FROM data_audit_logs WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+    } else {
+      await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
+    }
+    res.json({ success: true, message: 'Đã xóa bản ghi nhật ký biến động thành công.' });
+  } catch (err) {
+    console.error('Error deleting audit log:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa nhật ký biến động.' });
+  }
+});
+
+// DELETE /api/history — Dọn dẹp/Xóa toàn bộ nhật ký biến động
+router.delete('/', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      await pool.query('DELETE FROM data_audit_logs WHERE user_id = $1', [req.user.id]);
+    } else {
+      await pool.query('DELETE FROM data_audit_logs');
+    }
+    res.json({ success: true, message: 'Đã dọn dẹp sạch toàn bộ nhật ký biến động.' });
+  } catch (err) {
+    console.error('Error clearing audit logs:', err);
+    res.status(500).json({ error: 'Lỗi server khi dọn dẹp nhật ký.' });
+  }
+});
+
 module.exports = router;
 module.exports.logAuditAction = logAuditAction;

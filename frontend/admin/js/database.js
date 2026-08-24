@@ -836,7 +836,7 @@ function renderHistoryTable(list) {
 
     const dateStr = h.created_at ? new Date(h.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
-    const isFarmTarget = h.target_type === 'Trang trại' && h.record_id;
+    const isSoftDeletedFarm = h.target_type === 'Trang trại' && h.action_type === 'DELETE_SOFT' && h.record_id;
 
     return `
       <tr>
@@ -846,15 +846,18 @@ function renderHistoryTable(list) {
         <td style="font-weight:700; color:#0f172a;">${esc(h.title)}</td>
         <td style="font-size:12.5px; color:#475569; font-weight:600;">👤 ${esc(h.user_name || h.current_user_name || 'Hệ thống')}</td>
         <td>
-          <div style="display:inline-flex; gap:6px; align-items:center;">
-            <button class="btn btn-secondary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:4px 10px; font-size:11.5px; font-weight:700;">
+          <div style="display:inline-flex; gap:6px; align-items:center; flex-wrap:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:4px 9px; font-size:11px; font-weight:700;" title="Xem chi tiết dữ liệu">
               <i class="fa-solid fa-circle-info"></i> Chi tiết
             </button>
-            ${isFarmTarget ? `
-              <button class="btn btn-danger btn-sm" onclick="adminHardDeleteFarm(${h.record_id}, '${esc(h.title.replace(/'/g, "\\'"))}')" style="padding:4px 10px; font-size:11.5px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn trang trại khỏi CSDL PostgreSQL">
-                <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn
+            ${isSoftDeletedFarm ? `
+              <button class="btn btn-danger btn-sm" onclick="adminHardDeleteFarm(${h.record_id}, '${esc(h.title.replace(/'/g, "\\'"))}', ${h.id})" style="padding:4px 9px; font-size:11px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn trang trại khỏi CSDL">
+                <i class="fa-solid fa-trash-can"></i> Xóa trang trại
               </button>
             ` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="deleteAuditLogItem(${h.id})" style="padding:4px 9px; font-size:11px; font-weight:700; color:#dc2626; border-color:#fca5a5; background:#fff1f2;" title="Xóa bản ghi nhật ký lịch sử này khỏi CSDL">
+              <i class="fa-solid fa-trash"></i> Xóa dòng
+            </button>
           </div>
         </td>
       </tr>
@@ -862,14 +865,17 @@ function renderHistoryTable(list) {
   }).join('');
 }
 
-async function adminHardDeleteFarm(farmId, farmTitle) {
+async function adminHardDeleteFarm(farmId, farmTitle, auditId = null) {
   if (!confirm(`⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn XÓA VĨNH VIỄN Trang trại "${farmTitle}" (ID: #${farmId}) khỏi CSDL PostgreSQL?\n\nThao tác này sẽ xóa triệt để dữ liệu và KHÔNG THỂ KHÔI PHỤC!`)) {
     return;
   }
   try {
     const res = await api(`/farms/${farmId}`, { method: 'DELETE' });
     if (res && (res.success || res.message)) {
-      toast('🗑️ Admin đã xóa vĩnh viễn trang trại khỏi CSDL PostgreSQL thành công!');
+      toast(res.message || '🗑️ Admin đã xóa vĩnh viễn trang trại khỏi CSDL PostgreSQL thành công!');
+      if (auditId) {
+        try { await api(`/history/${auditId}`, { method: 'DELETE' }); } catch(_) {}
+      }
       loadHistoryTab();
     }
   } catch (err) {
@@ -877,6 +883,38 @@ async function adminHardDeleteFarm(farmId, farmTitle) {
   }
 }
 window.adminHardDeleteFarm = adminHardDeleteFarm;
+
+async function deleteAuditLogItem(id) {
+  if (!confirm('Bạn có chắc chắn muốn XÓA bản ghi nhật ký lịch sử này khỏi CSDL?')) {
+    return;
+  }
+  try {
+    const res = await api(`/history/${id}`, { method: 'DELETE' });
+    if (res && (res.success || res.message)) {
+      toast('Đã xóa bản ghi nhật ký lịch sử thành công!');
+      loadHistoryTab();
+    }
+  } catch (err) {
+    alert(err.message || 'Lỗi khi xóa bản ghi nhật ký lịch sử.');
+  }
+}
+window.deleteAuditLogItem = deleteAuditLogItem;
+
+async function clearAllAuditLogs() {
+  if (!confirm('⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn DỌN DẸP SẠCH TOÀN BỘ NHẬT KÝ LỊCH SỬ BIẾN ĐỘNG khỏi CSDL PostgreSQL?\n\nThao tác này sẽ xóa toàn bộ các dòng nhật ký ghi nhận sửa/xóa trước đây!')) {
+    return;
+  }
+  try {
+    const res = await api('/history', { method: 'DELETE' });
+    if (res && (res.success || res.message)) {
+      toast('Đã dọn dẹp sạch toàn bộ nhật ký lịch sử thành công!');
+      loadHistoryTab();
+    }
+  } catch (err) {
+    alert(err.message || 'Lỗi khi dọn dẹp nhật ký lịch sử.');
+  }
+}
+window.clearAllAuditLogs = clearAllAuditLogs;
 
 function filterHistoryTab() {
   const q = (document.getElementById('db-history-search')?.value || '').toLowerCase().trim();

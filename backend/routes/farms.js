@@ -397,6 +397,12 @@ router.delete('/:id', auth, async (req, res) => {
     const farmId = parseInt(req.params.id);
     const farmCheck = await pool.query('SELECT * FROM farms WHERE id = $1', [farmId]);
     if (farmCheck.rows.length === 0) {
+      if (req.user.role === 'admin') {
+        // Farm already gone from farms table, clean up any lingering audit entries or cache
+        await pool.query('DELETE FROM data_audit_logs WHERE target_type = $1 AND record_id = $2', ['Trang trại', farmId]);
+        await delCacheByPattern('farms_');
+        return res.json({ success: true, message: 'Trang trại đã được xóa sạch hoàn toàn khỏi hệ thống.' });
+      }
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
 
