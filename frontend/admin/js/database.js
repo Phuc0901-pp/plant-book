@@ -1019,7 +1019,15 @@ async function viewTableRecords(tableName) {
 
   try {
     const data = await api(`/database/tables/${tableName}/records?limit=50`);
-    const records = data.records || [];
+    let records = data.records || [];
+
+    if (tableName === 'users' && records.length > 0) {
+      records = records.map(r => ({
+        id: r.id,
+        public_id: (typeof generateIsoPublicId === 'function' ? generateIsoPublicId(r.role, r.id) : (r.role === 'admin' ? `adm-${r.id}` : `usr-${r.id}`)),
+        ...r
+      }));
+    }
 
     let colHeaders = [];
     if (records.length > 0) {

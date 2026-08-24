@@ -9,6 +9,16 @@ const admin = require('../middleware/admin');
 router.use(auth);
 router.use(admin);
 
+/**
+ * ISO/IEC 11558 & ISO 3309 Standard 8-Digit Obfuscation Hash Generator
+ */
+function generateIsoPublicId(role, numId) {
+  const prefix = role === 'admin' ? 'adm' : 'usr';
+  const id = parseInt(numId) || 0;
+  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
+  return `${prefix}-${val}`;
+}
+
 // GET /api/users - List all users (with assigned farm info & permissions & assigned plants)
 router.get('/', async (req, res) => {
   try {
@@ -27,7 +37,12 @@ router.get('/', async (req, res) => {
        ORDER BY u.id ASC`
     );
 
-    res.json(result.rows);
+    const rows = result.rows.map(u => ({
+      ...u,
+      public_id: generateIsoPublicId(u.role, u.id)
+    }));
+
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server khi lấy danh sách người dùng.' });

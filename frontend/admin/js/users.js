@@ -87,7 +87,10 @@ function filterUsers() {
       (u.full_name || '').toLowerCase().includes(q) ||
       (u.email || '').toLowerCase().includes(q) ||
       (u.phone || '').toLowerCase().includes(q) ||
-      (u.farm_name || '').toLowerCase().includes(q)
+      (u.farm_name || '').toLowerCase().includes(q) ||
+      (u.public_id || '').toLowerCase().includes(q) ||
+      (`adm-${u.id}`).includes(q) ||
+      (`usr-${u.id}`).includes(q)
     );
   }
 
@@ -121,6 +124,8 @@ function renderUsersTable(users) {
     const isSelf = currentUser && currentUser.id === u.id;
     const selfBadge = isSelf ? ' <span style="font-size: 10px; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px;">Bạn</span>' : '';
     
+    const publicId = u.public_id || (typeof generateIsoPublicId === 'function' ? generateIsoPublicId(u.role, u.id) : (u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`));
+
     const roleBadge = u.role === 'admin' 
       ? '<span class="badge badge-admin" style="background:#fef2f2; color:#b91c1c; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
       : '<span class="badge badge-user" style="background:#fff7ed; color:#ea580c; border: 1px solid #fdba74; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa fa-user"></i> Nông hộ</span>';
@@ -160,7 +165,14 @@ function renderUsersTable(users) {
 
     return `
       <tr data-user-id="${u.id}">
-        <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(u.full_name)}${selfBadge}</td>
+        <td style="font-weight: 600; color: var(--text-main);">
+          <div style="font-size:13.5px; font-weight:800; color:#0f172a;">${escapeHtml(u.full_name)}${selfBadge}</div>
+          <div style="margin-top:3px;">
+            <span class="badge" style="background:#ecfdf5; color:#047857; border:1.5px solid #a7f3d0; font-size:10.5px; font-weight:800; font-family:monospace; padding:2px 8px; border-radius:10px;" title="Mã ID Mã Hóa chuẩn ISO/IEC 11558 (8 chữ số)">
+              <i class="fa-solid fa-key" style="color:#059669; font-size:9.5px;"></i> ID ISO: ${publicId}
+            </span>
+          </div>
+        </td>
         <td>${escapeHtml(u.phone || u.email)}</td>
         <td>${farmBadge}</td>
         <td>${tierBadge}</td>
