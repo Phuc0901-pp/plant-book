@@ -83,38 +83,61 @@ function fmtDate(d) {
 
 // ── Main Page Switcher & URL Router ─────────────────────────────
 
+function getAdminPublicId() {
+  if (currentUser && currentUser.public_id) return currentUser.public_id;
+  if (currentUser && currentUser.id) return `adm-${currentUser.id}`;
+  return 'adm-sys';
+}
+
 const adminPageRouteMap = {
-  dashboard: '/admin/dashboard',
-  database: '/admin/database',
-  'db-check': '/admin/database-check',
-  gis: '/admin/farms',
-  plants: '/admin/plants',
-  cost: '/admin/costs',
-  devices: '/admin/iot-devices',
-  users: '/admin/users',
-  schemas: '/admin/crop-schemas',
-  media: '/admin/media'
+  dashboard: 'dashboard',
+  database: 'database',
+  'db-check': 'database-check',
+  gis: 'farms',
+  plants: 'plants',
+  cost: 'costs',
+  devices: 'iot-devices',
+  users: 'users',
+  schemas: 'crop-schemas',
+  media: 'media'
 };
 
 const adminRoutePageMap = {
-  '/admin': 'dashboard',
-  '/admin/': 'dashboard',
-  '/admin/dashboard': 'dashboard',
-  '/admin/database': 'database',
-  '/admin/database-check': 'db-check',
-  '/admin/db-check': 'db-check',
-  '/admin/farms': 'gis',
-  '/admin/gis': 'gis',
-  '/admin/plants': 'plants',
-  '/admin/costs': 'cost',
-  '/admin/cost': 'cost',
-  '/admin/iot-devices': 'devices',
-  '/admin/devices': 'devices',
-  '/admin/users': 'users',
-  '/admin/crop-schemas': 'schemas',
-  '/admin/schemas': 'schemas',
-  '/admin/media': 'media'
+  '': 'dashboard',
+  'dashboard': 'dashboard',
+  'database': 'database',
+  'database-check': 'db-check',
+  'db-check': 'db-check',
+  'farms': 'gis',
+  'gis': 'gis',
+  'plants': 'plants',
+  'costs': 'cost',
+  'cost': 'cost',
+  'iot-devices': 'devices',
+  'devices': 'devices',
+  'users': 'users',
+  'crop-schemas': 'schemas',
+  'schemas': 'schemas',
+  'media': 'media'
 };
+
+function getAdminPageUrl(page) {
+  const publicId = getAdminPublicId();
+  const routeSlug = adminPageRouteMap[page] || page;
+  return `/${publicId}/${routeSlug}`;
+}
+
+function parseAdminPageFromPath(pathname) {
+  const cleanPath = (pathname || '').replace(/^\/+|\/+$/g, '');
+  if (!cleanPath) return 'dashboard';
+  
+  const parts = cleanPath.split('/');
+  if (parts[0] === 'admin') parts.shift();
+  if (parts[0] && parts[0].startsWith('adm-')) parts.shift();
+
+  const routeSlug = parts[0] || 'dashboard';
+  return adminRoutePageMap[routeSlug] || 'dashboard';
+}
 
 function showPage(page, pushUrl = true) {
   const targetSection = document.getElementById(`page-${page}`);
@@ -140,7 +163,7 @@ function showPage(page, pushUrl = true) {
 
   // Push URL to browser address bar for professional standards
   if (pushUrl && window.history && window.history.pushState) {
-    const targetUrl = adminPageRouteMap[page] || `/admin/${page}`;
+    const targetUrl = getAdminPageUrl(page);
     if (window.location.pathname !== targetUrl) {
       window.history.pushState({ page }, '', targetUrl);
     }
@@ -196,8 +219,11 @@ function showPage(page, pushUrl = true) {
 }
 
 function handleAdminUrlRouting() {
-  const rawPath = window.location.pathname.replace(/\/$/, '') || '/admin';
-  const matchedPage = adminRoutePageMap[rawPath] || 'dashboard';
+  const matchedPage = parseAdminPageFromPath(window.location.pathname);
+  const targetUrl = getAdminPageUrl(matchedPage);
+  if (window.history && window.history.replaceState && window.location.pathname !== targetUrl) {
+    window.history.replaceState({ page: matchedPage }, '', targetUrl);
+  }
   showPage(matchedPage, false);
 }
 

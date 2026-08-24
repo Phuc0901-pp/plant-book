@@ -29,12 +29,15 @@ window.encodeId = encodeId;
 window.decodeId = decodeId;
 
 /** Get current logged-in user hash token */
+/** Get current logged-in user hash token */
 export function getUserHash() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return encodeId('usr', user.id || 1);
+    if (user.public_id) return user.public_id;
+    if (user.id) return `usr-${user.id}`;
+    return 'usr-1';
   } catch (_) {
-    return 'usr-5a9f';
+    return 'usr-1';
   }
 }
 window.getUserHash = getUserHash;
@@ -64,7 +67,7 @@ const PAGE_ALIASES = {
 };
 
 /**
- * Show page section & synchronize URL hash
+ * Show page section & synchronize URL path & hash
  * @param {string} page 
  * @param {boolean} updateHash 
  */
@@ -95,10 +98,14 @@ export function showPage(page, updateHash = true) {
 
   closeMobileSidebar();
 
-  // Synchronize RESTful hash in browser address bar
+  // Synchronize RESTful path & hash in browser address bar (e.g. /usr-15/farms)
   if (updateHash) {
     const userHash = getUserHash();
     const restPageName = targetPage === 'myplants' ? 'farms' : targetPage;
+    const targetUrl = `/${userHash}/${restPageName}`;
+    if (window.history && window.history.pushState && window.location.pathname !== targetUrl) {
+      window.history.pushState({ page: targetPage }, '', targetUrl);
+    }
     window.location.hash = `#/u/${userHash}/${restPageName}`;
   }
 
@@ -128,33 +135,41 @@ export function showPage(page, updateHash = true) {
 window.showPage = showPage;
 
 /**
- * Handle URL hash changes & initial page load routing
- * Example URL: #/u/usr-5a9f/farms/farm-5a9e
+ * Handle URL path & hash changes for initial page load routing
+ * Example URLs: /usr-15/farms or #/u/usr-15/farms
  */
 export function handleRouteFromHash() {
   const userToken = localStorage.getItem('pb_token');
-  if (!userToken) return; // Do not execute hash routing if user is logged out!
+  if (!userToken) return; // Do not execute routing if user is logged out!
 
+  const pathname = window.location.pathname || '';
   const hash = window.location.hash || '';
-  if (!hash.startsWith('#/')) return;
 
-  const parts = hash.replace('#/', '').split('/');
-  // Expected parts: ['u', 'usr-5a9f', 'farms', 'farm-5a9e'] or ['farms', 'farm-5a9e']
   let restPage = 'home';
   let farmHash = null;
 
-  if (parts[0] === 'u' && parts.length >= 3) {
-    restPage = parts[2];
-    if (parts.length >= 4) farmHash = parts[3];
-  } else if (parts.length >= 1) {
-    restPage = parts[0];
-    if (parts.length >= 2) farmHash = parts[1];
+  if (pathname.includes('usr-') || pathname.includes('/user/')) {
+    const cleanPath = pathname.replace(/^\/+|\/+$/g, '');
+    const parts = cleanPath.split('/');
+    if (parts[0] === 'user') parts.shift();
+    if (parts[0] && parts[0].startsWith('usr-')) parts.shift();
+    if (parts[0]) restPage = parts[0];
+    if (parts[1]) farmHash = parts[1];
+  } else if (hash.startsWith('#/')) {
+    const parts = hash.replace('#/', '').split('/');
+    if (parts[0] === 'u' && parts.length >= 3) {
+      restPage = parts[2];
+      if (parts.length >= 4) farmHash = parts[3];
+    } else if (parts.length >= 1) {
+      restPage = parts[0];
+      if (parts.length >= 2) farmHash = parts[1];
+    }
   }
 
   const targetPage = PAGE_ALIASES[restPage] || 'home';
   showPage(targetPage, false);
 
-  // If a specific farm hash is provided in URL (e.g., #/u/usr-5a9f/farms/farm-5a9e)
+  // If a specific farm hash is provided in URL
   if (targetPage === 'myplants' && farmHash) {
     const farmId = decodeId(farmHash);
     if (farmId && typeof window.openFarmDetailView === 'function') {
@@ -165,12 +180,11 @@ export function handleRouteFromHash() {
   }
 }
 
-// Attach Hash change listener for browser Back/Forward & Direct URL entry
+// Attach Hash & Popstate change listeners for browser Back/Forward & Direct URL entry
 window.addEventListener('hashchange', handleRouteFromHash);
+window.addEventListener('popstate', handleRouteFromHash);
 window.addEventListener('DOMContentLoaded', () => {
-  if (window.location.hash) {
-    handleRouteFromHash();
-  }
+  handleRouteFromHash();
 });
 
 export function toggleMobileSidebar() {

@@ -90,7 +90,7 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         id: user.id,
-        public_id: user.role === 'admin' ? `adm-${Buffer.from(String(user.id)).toString('hex')}` : `usr-${Buffer.from(String(user.id)).toString('hex')}`,
+        public_id: user.role === 'admin' ? `adm-${user.id}` : `usr-${user.id}`,
         email: user.email,
         role: user.role,
         name: user.full_name,
@@ -281,7 +281,7 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
     );
     const u = result.rows[0];
     if (u) {
-      u.public_id = u.role === 'admin' ? `adm-${Buffer.from(String(u.id)).toString('hex')}` : `usr-${Buffer.from(String(u.id)).toString('hex')}`;
+      u.public_id = u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`;
     }
     res.json(u);
   } catch (err) {

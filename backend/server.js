@@ -112,17 +112,20 @@ app.get('/plant/:slug', (req, res) => {
 // ─── Hierarchical Public Plant Route: /:farmId/:plantId/:nfcUid? (or legacy /:userId/:farmId/:plantId/:nfcUid?) ───
 app.get(['/:farmId/:plantId/:nfcUid?', '/:userId/:farmId/:plantId/:nfcUid?'], (req, res, next) => {
   const reserved = ['admin', 'user', 'api', 'plant', 'nfc', 'assets', 'public', 'favicon.ico'];
-  if (reserved.includes(req.params.farmId) || reserved.includes(req.params.userId)) return next();
+  const fId = req.params.farmId || '';
+  const uId = req.params.userId || '';
+  if (reserved.includes(fId) || reserved.includes(uId) || fId.startsWith('adm-') || fId.startsWith('usr-') || uId.startsWith('adm-') || uId.startsWith('usr-')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
-
-app.get(['/admin', '/admin/*'], (req, res, next) => {
+app.get(['/adm-*', '/adm-*/*', '/admin', '/admin/*'], (req, res, next) => {
   if (req.path.includes('.')) return next();
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
 });
 
-app.get(['/user', '/user/*'], (req, res, next) => {
+app.get(['/usr-*', '/usr-*/*', '/user', '/user/*'], (req, res, next) => {
   if (req.path.includes('.')) return next();
   res.sendFile(path.join(__dirname, '../frontend/user/index.html'));
 });
