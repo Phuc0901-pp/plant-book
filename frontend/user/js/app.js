@@ -15,7 +15,13 @@ import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput } from './modules/care-modal.js?v=2.8.0';
 import { onCareMediaSelected, openLightbox } from './modules/media.js';
-import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal, closeThresholdRuleModal, saveThresholdRule } from './modules/settings.js';
+import { 
+  loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, 
+  switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal, 
+  closeThresholdRuleModal, saveThresholdRule, addConditionRow, 
+  removeConditionRow, onConditionMetricChange, updateRuleConditionsSummary, 
+  getConditionsFromUI 
+} from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
 import './supplies.js?v=2.8.0';
 
@@ -210,6 +216,11 @@ window.loadThresholdRules   = loadThresholdRules;
 window.openAddThresholdRuleModal = openAddThresholdRuleModal;
 window.closeThresholdRuleModal = closeThresholdRuleModal;
 window.saveThresholdRule    = saveThresholdRule;
+window.addConditionRow       = addConditionRow;
+window.removeConditionRow    = removeConditionRow;
+window.onConditionMetricChange = onConditionMetricChange;
+window.updateRuleConditionsSummary = updateRuleConditionsSummary;
+window.getConditionsFromUI   = getConditionsFromUI;
 
 window.openNfcModal         = openNfcModal;
 window.closeNfcModal        = closeNfcModal;

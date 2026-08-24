@@ -2392,67 +2392,65 @@
         </div>
       </div>
 
-      <!-- 3. ĐIỀU KIỆN THÔNG BÁO TỰ ĐỘNG -->
+      <!-- 3. BỘ XÂY DỰNG ĐA ĐIỀU KIỆN THÔNG BÁO TỰ ĐỘNG -->
       <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px;">
-        <label style="font-size:13px; font-weight:800; color:#0f172a; display:block; margin-bottom:10px;">
-          <i class="fa-solid fa-gears" style="color:#059669;"></i> 3. Cấu hình Điều kiện Thông báo Tự động
-        </label>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+          <label style="font-size:13px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-gears" style="color:#059669;"></i> 3. Cấu hình Điều kiện Kết hợp Tự động
+          </label>
+          
+          <!-- Match Mode: AND vs OR -->
+          <div id="rule-match-type-box" style="display:flex; align-items:center; background:#e2e8f0; padding:2px; border-radius:10px; font-size:11.5px; font-weight:800;">
+            <label style="display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; cursor:pointer; margin:0;" id="label-match-and">
+              <input type="radio" name="rule_match_type" value="AND" checked onchange="updateRuleConditionsSummary()" style="accent-color:#059669; margin:0;" />
+              <span>VÀ (Tất cả thỏa mãn)</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; cursor:pointer; margin:0;" id="label-match-or">
+              <input type="radio" name="rule_match_type" value="OR" onchange="updateRuleConditionsSummary()" style="accent-color:#059669; margin:0;" />
+              <span>HOẶC (Một trong các)</span>
+            </label>
+          </div>
+        </div>
 
         <!-- Condition Pane: Sensor / Weather IoT Integration -->
         <div id="rule-pane-iot" style="display:flex; flex-direction:column; gap:12px;">
           
-          <div>
-            <span style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Chỉ số Cảm biến IoT & Khí tượng theo dõi</span>
-            <select id="rule-metric" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;" onchange="updateMetricUnitLabel()">
-              <option value="soil_moisture_10cm">🌱 Độ ẩm đất tầng 10cm (%)</option>
-              <option value="soil_moisture_20cm">🌱 Độ ẩm đất tầng 20cm (%)</option>
-              <option value="soil_moisture_50cm">🪴 Độ ẩm đất tầng 50cm (%)</option>
-              <option value="air_temp">🌡️ Nhiệt độ không khí (°C)</option>
-              <option value="air_humidity">💧 Độ ẩm không khí (%)</option>
-              <option value="soil_ph">🧪 Độ pH đất (pH)</option>
-              <option value="soil_ec">⚡ Độ EC dẫn điện đất (mS/cm)</option>
-              <option value="rain_chance">🌦️ Khả năng mưa rào (%)</option>
-              <option value="water_level">🚰 Mực nước bể tưới (%)</option>
-            </select>
+          <!-- Dynamic Conditions Container -->
+          <div id="rule-conditions-list" style="display:flex; flex-direction:column; gap:10px;">
+            <!-- Rendered dynamically by JavaScript -->
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <span style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Phép so sánh</span>
-              <select id="rule-operator" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
-                <option value="<">Nhỏ hơn (&lt;)</option>
-                <option value="<=">Nhỏ hơn hoặc bằng (&le;)</option>
-                <option value=">">Lớn hơn (&gt;)</option>
-                <option value=">=">Lớn hơn hoặc bằng (&ge;)</option>
-                <option value="=">Bằng (=)</option>
-              </select>
-            </div>
-            <div>
-              <span style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Giá trị Ngưỡng cài đặt</span>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <input type="number" step="any" id="rule-threshold-value" placeholder="Ví dụ: 50" value="50" style="flex:1; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; outline:none;" />
-                <span id="rule-unit-badge" style="background:#ffffff; border:1px solid #cbd5e1; padding:8px 12px; border-radius:8px; font-weight:800; font-size:12px; color:#475569;">%</span>
-              </div>
-            </div>
-          </div>
+          <!-- Add Condition Button -->
+          <button type="button" onclick="addConditionRow()" style="background:#ffffff; border:1.5px dashed #059669; color:#059669; padding:8px 14px; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s ease;">
+            <i class="fa-solid fa-plus-circle"></i> + Thêm Điều kiện Kết hợp
+          </button>
 
           <!-- Dynamic Checkboxes: Offline IoT & Disease History -->
-          <div id="rule-box-danger-options" style="display:flex; flex-direction:column; gap:8px; margin-top:4px; background:#ffffff; border:1px solid #fed7aa; padding:10px 12px; border-radius:10px;">
-            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#991b1b; cursor:pointer;">
-              <input type="checkbox" id="rule-check-offline-iot" style="accent-color:#dc2626; width:16px; height:16px;" />
+          <div id="rule-box-danger-options" style="display:flex; flex-direction:column; gap:8px; margin-top:2px; background:#ffffff; border:1px solid #fed7aa; padding:10px 12px; border-radius:10px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#991b1b; cursor:pointer; margin:0;">
+              <input type="checkbox" id="rule-check-offline-iot" onchange="updateRuleConditionsSummary()" style="accent-color:#dc2626; width:16px; height:16px; margin:0;" />
               📡 Kiểm tra & Cảnh báo thiết bị IoT không có dữ liệu (null hoặc bằng 0)
             </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#92400e; cursor:pointer;">
-              <input type="checkbox" id="rule-check-weather-tomorrow" style="accent-color:#d97706; width:16px; height:16px;" />
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#92400e; cursor:pointer; margin:0;">
+              <input type="checkbox" id="rule-check-weather-tomorrow" onchange="updateRuleConditionsSummary()" style="accent-color:#d97706; width:16px; height:16px; margin:0;" />
               🌦️ Kết hợp Dự báo Khí tượng Sáng ngày mai có Mưa rào
             </label>
           </div>
 
-          <div id="rule-box-warning-options" style="display:flex; flex-direction:column; gap:8px; margin-top:4px; background:#ffffff; border:1px solid #bbf7d0; padding:10px 12px; border-radius:10px;">
-            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#166534; cursor:pointer;">
-              <input type="checkbox" id="rule-check-disease-history" checked style="accent-color:#16a34a; width:16px; height:16px;" />
+          <div id="rule-box-warning-options" style="display:flex; flex-direction:column; gap:8px; margin-top:2px; background:#ffffff; border:1px solid #bbf7d0; padding:10px 12px; border-radius:10px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#166534; cursor:pointer; margin:0;">
+              <input type="checkbox" id="rule-check-disease-history" checked onchange="updateRuleConditionsSummary()" style="accent-color:#16a34a; width:16px; height:16px; margin:0;" />
               🐛 Truy cập Lịch sử canh tác: Tự kiểm tra các cây từng ghi nhận bị bệnh để đưa ra khuyến cáo chăm sóc đặc biệt
             </label>
+          </div>
+
+          <!-- Live Combined Condition Logic Summary -->
+          <div id="rule-conditions-summary-box" style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:10px; padding:8px 12px; font-size:12px; color:#0369a1; font-weight:600; display:flex; align-items:flex-start; gap:6px;">
+            <i class="fa-solid fa-code-branch" style="margin-top:2px; color:#0284c7;"></i>
+            <div>
+              <span style="font-weight:800; color:#0c4a6e;">Tóm tắt Logic: </span>
+              <span id="rule-conditions-summary">Độ ẩm đất tầng 10cm &lt; 50%</span>
+            </div>
           </div>
 
         </div>
@@ -2460,7 +2458,7 @@
         <!-- Condition Pane: Info / System Reconfirmation -->
         <div id="rule-pane-info" style="display:none; flex-direction:column; gap:10px;">
           <span style="font-size:12px; font-weight:700; color:#334155;">Loại sự kiện Xác nhận Hệ thống (Reconfirm)</span>
-          <select id="rule-reconfirm-event" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+          <select id="rule-reconfirm-event" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;" onchange="updateRuleConditionsSummary()">
             <option value="log_update">📝 Reconfirm toàn bộ hoạt động cập nhật nhật ký canh tác (Tưới nước, Bón phân, Phun thuốc...)</option>
             <option value="harvest">🌾 Reconfirm toàn bộ thông tin thu hoạch nông sản</option>
             <option value="disease">🐛 Reconfirm thông tin ghi nhận tình trạng sâu bệnh hại</option>
@@ -2535,9 +2533,9 @@
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=1.1.6"></script>
+<script type="module" src="/user/js/auth.js?v=1.1.7"></script>
 
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=1.1.6"></script>
+<script type="module" src="/user/js/app.js?v=1.1.7"></script>
 </body>
 </html>

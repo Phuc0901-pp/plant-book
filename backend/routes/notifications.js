@@ -162,7 +162,8 @@ router.post('/rules', auth, async (req, res) => {
       check_offline_iot,
       check_disease_history,
       reconfirm_event_type,
-      conditions_json
+      conditions_json,
+      match_type
     } = req.body;
 
     if (!title || !action_recommendation) {
@@ -172,12 +173,13 @@ router.post('/rules', auth, async (req, res) => {
     const catType = category_type || alert_level || 'warning';
     const metricKey = metric_key || 'soil_moisture_10cm';
     const metricInfo = METRIC_LABELS[metricKey] || { name: metricKey, unit: '%' };
+    const matchOp = (match_type === 'OR') ? 'OR' : 'AND';
 
     const insertRes = await pool.query(`
       INSERT INTO user_alert_rules 
-        (user_id, farm_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, conditions_json, is_enabled)
+        (user_id, farm_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, conditions_json, match_type, is_enabled)
       VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, true)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, true)
       RETURNING *
     `, [
       userId,
@@ -195,7 +197,8 @@ router.post('/rules', auth, async (req, res) => {
       Boolean(check_offline_iot),
       Boolean(check_disease_history),
       reconfirm_event_type || null,
-      JSON.stringify(conditions_json || [])
+      JSON.stringify(conditions_json || []),
+      matchOp
     ]);
 
     res.json({
@@ -227,7 +230,8 @@ router.put('/rules/:id', auth, async (req, res) => {
       check_offline_iot,
       check_disease_history,
       reconfirm_event_type,
-      conditions_json
+      conditions_json,
+      match_type
     } = req.body;
 
     const existing = await pool.query('SELECT * FROM user_alert_rules WHERE id = $1 AND user_id = $2', [ruleId, userId]);
@@ -249,6 +253,7 @@ router.put('/rules/:id', auth, async (req, res) => {
     const newDiseaseHist = check_disease_history !== undefined ? Boolean(check_disease_history) : current.check_disease_history;
     const newReconfirm = reconfirm_event_type !== undefined ? reconfirm_event_type : current.reconfirm_event_type;
     const newConds = conditions_json ? JSON.stringify(conditions_json) : current.conditions_json;
+    const newMatchType = match_type ? (match_type === 'OR' ? 'OR' : 'AND') : (current.match_type || 'AND');
 
     const updateRes = await pool.query(`
       UPDATE user_alert_rules 
@@ -268,8 +273,9 @@ router.put('/rules/:id', auth, async (req, res) => {
         check_disease_history = $13,
         reconfirm_event_type = $14,
         conditions_json = $15,
+        match_type = $16,
         updated_at = NOW()
-      WHERE id = $16 AND user_id = $17
+      WHERE id = $17 AND user_id = $18
       RETURNING *
     `, [
       newEnabled,
@@ -287,6 +293,7 @@ router.put('/rules/:id', auth, async (req, res) => {
       newDiseaseHist,
       newReconfirm,
       newConds,
+      newMatchType,
       ruleId,
       userId
     ]);

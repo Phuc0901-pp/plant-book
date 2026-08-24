@@ -98,6 +98,192 @@ export function renderThresholdRulesUI(rules) {
     return;
   }
 
+// ── Metric Catalog ─────────────────────────────────────────────
+const METRIC_CATALOG = {
+  soil_moisture_10cm: { name: '🌱 Độ ẩm đất tầng 10cm', unit: '%' },
+  soil_moisture_20cm: { name: '🌱 Độ ẩm đất tầng 20cm', unit: '%' },
+  soil_moisture_50cm: { name: '🪴 Độ ẩm đất tầng 50cm', unit: '%' },
+  air_temp:           { name: '🌡️ Nhiệt độ không khí', unit: '°C' },
+  air_humidity:       { name: '💧 Độ ẩm không khí', unit: '%' },
+  soil_ph:            { name: '🧪 Độ pH đất', unit: 'pH' },
+  soil_ec:            { name: '⚡ Độ EC dẫn điện đất', unit: 'mS/cm' },
+  rain_chance:        { name: '🌦️ Khả năng mưa rào', unit: '%' },
+  water_level:        { name: '🚰 Mực nước bể tưới', unit: '%' }
+};
+
+// ── Dynamic Multi-Condition Builder Helpers ───────────────────
+export function addConditionRow(data = null) {
+  const container = document.getElementById('rule-conditions-list');
+  if (!container) return;
+
+  const rowId = 'cond-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+  const metricKey = data?.metric_key || 'soil_moisture_10cm';
+  const operator = data?.operator || '<';
+  const thresholdVal = data?.threshold_value !== undefined ? data.threshold_value : 50;
+  const unit = METRIC_CATALOG[metricKey]?.unit || '%';
+
+  const row = document.createElement('div');
+  row.id = rowId;
+  row.className = 'rule-condition-row';
+  row.style.cssText = 'background:#ffffff; border:1px solid #cbd5e1; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,0.02); transition:all 0.2s ease;';
+
+  row.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <span class="condition-index-badge" style="font-size:11.5px; font-weight:800; color:#047857; background:#dcfce7; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+        <i class="fa-solid fa-code-commit"></i> Điều kiện <span class="cond-num"></span>
+      </span>
+      <button type="button" onclick="removeConditionRow('${rowId}')" title="Xóa điều kiện này" style="background:#fee2e2; border:none; color:#dc2626; width:26px; height:26px; border-radius:6px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">
+        <i class="fa-solid fa-trash-can"></i>
+      </button>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1.8fr 1fr 1.2fr; gap:8px; align-items:center;">
+      <div>
+        <select class="cond-metric" onchange="onConditionMetricChange('${rowId}')" style="width:100%; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none;">
+          ${Object.entries(METRIC_CATALOG).map(([k, v]) => `
+            <option value="${k}" ${k === metricKey ? 'selected' : ''}>${v.name} (${v.unit})</option>
+          `).join('')}
+        </select>
+      </div>
+
+      <div>
+        <select class="cond-operator" onchange="updateRuleConditionsSummary()" style="width:100%; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none;">
+          <option value="<" ${operator === '<' ? 'selected' : ''}>Nhỏ hơn (&lt;)</option>
+          <option value="<=" ${operator === '<=' ? 'selected' : ''}>Nhỏ hơn hoặc bằng (&le;)</option>
+          <option value=">" ${operator === '>' ? 'selected' : ''}>Lớn hơn (&gt;)</option>
+          <option value=">=" ${operator === '>=' ? 'selected' : ''}>Lớn hơn hoặc bằng (&ge;)</option>
+          <option value="=" ${operator === '=' ? 'selected' : ''}>Bằng (=)</option>
+        </select>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:4px;">
+        <input type="number" step="any" class="cond-value" value="${thresholdVal}" placeholder="50" oninput="updateRuleConditionsSummary()" style="width:100%; min-width:60px; padding:9px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; outline:none;" />
+        <span class="cond-unit" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:7px 10px; border-radius:8px; font-size:12px; font-weight:800; color:#475569; min-width:32px; text-align:center;">${unit}</span>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(row);
+  _renumberConditionRows();
+  updateRuleConditionsSummary();
+}
+window.addConditionRow = addConditionRow;
+
+export function removeConditionRow(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const container = document.getElementById('rule-conditions-list');
+  if (container && container.querySelectorAll('.rule-condition-row').length <= 1) {
+    toast('Cần duy trì ít nhất 1 điều kiện cảm biến.', 'info');
+    return;
+  }
+  row.remove();
+  _renumberConditionRows();
+  updateRuleConditionsSummary();
+}
+window.removeConditionRow = removeConditionRow;
+
+export function onConditionMetricChange(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const metricSel = row.querySelector('.cond-metric');
+  const unitSpan = row.querySelector('.cond-unit');
+  if (metricSel && unitSpan) {
+    const unit = METRIC_CATALOG[metricSel.value]?.unit || '%';
+    unitSpan.textContent = unit;
+  }
+  updateRuleConditionsSummary();
+}
+window.onConditionMetricChange = onConditionMetricChange;
+
+function _renumberConditionRows() {
+  const container = document.getElementById('rule-conditions-list');
+  if (!container) return;
+  const rows = container.querySelectorAll('.rule-condition-row');
+  rows.forEach((r, idx) => {
+    const numEl = r.querySelector('.cond-num');
+    if (numEl) numEl.textContent = `#${idx + 1}`;
+  });
+}
+
+export function getConditionsFromUI() {
+  const container = document.getElementById('rule-conditions-list');
+  if (!container) return [];
+
+  const rows = container.querySelectorAll('.rule-condition-row');
+  const conditions = [];
+
+  rows.forEach(r => {
+    const metricKey = r.querySelector('.cond-metric')?.value || 'soil_moisture_10cm';
+    const operator = r.querySelector('.cond-operator')?.value || '<';
+    const thresholdVal = parseFloat(r.querySelector('.cond-value')?.value) || 0;
+    const metricInfo = METRIC_CATALOG[metricKey] || { name: metricKey, unit: '%' };
+
+    conditions.push({
+      metric_key: metricKey,
+      metric_name: metricInfo.name,
+      operator: operator,
+      threshold_value: thresholdVal,
+      unit: metricInfo.unit
+    });
+  });
+
+  return conditions;
+}
+window.getConditionsFromUI = getConditionsFromUI;
+
+export function updateRuleConditionsSummary() {
+  const summaryEl = document.getElementById('rule-conditions-summary');
+  if (!summaryEl) return;
+
+  const matchRadio = document.querySelector('input[name="rule_match_type"]:checked');
+  const matchType = matchRadio ? matchRadio.value : 'AND';
+  const matchWord = matchType === 'OR' ? ' HOẶC ' : ' VÀ ';
+
+  const conditions = getConditionsFromUI();
+  const parts = [];
+
+  conditions.forEach(c => {
+    parts.push(`[${c.metric_name} ${c.operator} ${c.threshold_value}${c.unit}]`);
+  });
+
+  const offIot = document.getElementById('rule-check-offline-iot')?.checked;
+  if (offIot) parts.push(`[📡 Quét IoT mất kết nối/0]`);
+
+  const weatherTom = document.getElementById('rule-check-weather-tomorrow')?.checked;
+  if (weatherTom) parts.push(`[🌦️ Sáng mai có mưa rào]`);
+
+  const disHist = document.getElementById('rule-check-disease-history')?.checked;
+  if (disHist) parts.push(`[🐛 Tra lịch sử bệnh cây]`);
+
+  if (parts.length === 0) {
+    summaryEl.textContent = 'Chưa thiết lập điều kiện nào.';
+  } else {
+    summaryEl.textContent = parts.join(matchWord);
+  }
+
+  updateRuleLivePreview();
+}
+window.updateRuleConditionsSummary = updateRuleConditionsSummary;
+
+export function renderThresholdRulesUI(rules) {
+  const container = document.getElementById('threshold-rules-list');
+  if (!container) return;
+
+  if (!rules || rules.length === 0) {
+    container.innerHTML = `
+      <div style="background:#ffffff; border:2px dashed #cbd5e1; border-radius:18px; padding:36px 20px; text-align:center;">
+        <i class="fa-solid fa-bell-concierge" style="font-size:36px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <h4 style="margin:0 0 6px 0; color:#334155; font-size:16px; font-weight:800;">Chưa có quy tắc cài đặt thông báo tự động nào</h4>
+        <p style="margin:0 0 18px 0; color:#64748b; font-size:13px;">Bấm nút bên dưới để khởi tạo quy tắc Cảnh báo, Khuyến cáo hoặc Thông báo tự động.</p>
+        <button onclick="openAddThresholdRuleModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:10px 22px; font-size:13.5px; font-weight:800; border-radius:12px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+          + Thêm quy tắc đầu tiên
+        </button>
+      </div>
+    `;
+    return;
+  }
+
   const categoryStyles = {
     danger: {
       bg: '#fef2f2',
@@ -131,6 +317,21 @@ export function renderThresholdRulesUI(rules) {
     const isEnabled = r.is_enabled;
     const ruleTitle = r.title || r.metric_name || 'Quy tắc Cài đặt Ngưỡng';
 
+    // Parse multi-conditions
+    let conditions = [];
+    if (r.conditions_json) {
+      try {
+        conditions = typeof r.conditions_json === 'string' ? JSON.parse(r.conditions_json) : r.conditions_json;
+      } catch (_) { conditions = []; }
+    }
+    if (!Array.isArray(conditions) || conditions.length === 0) {
+      if (r.metric_name && r.operator) {
+        conditions = [{ metric_name: r.metric_name, operator: r.operator, threshold_value: r.threshold_value, unit: r.unit }];
+      }
+    }
+
+    const matchWord = (r.match_type === 'OR') ? 'HOẶC' : 'VÀ';
+
     return `
       <div style="background:#ffffff; border:1.5px solid ${isEnabled ? st.border : '#e2e8f0'}; border-radius:18px; padding:20px; box-shadow:0 3px 12px rgba(0,0,0,0.03); opacity:${isEnabled ? 1 : 0.65}; transition:all 0.25s ease; position:relative; overflow:hidden;">
         <div style="position:absolute; top:0; left:0; width:5px; height:100%; background:${st.badgeText};"></div>
@@ -151,10 +352,21 @@ export function renderThresholdRulesUI(rules) {
               ${r.reconfirm_event_type ? `<span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-square-check"></i> Reconfirm Hệ thống</span>` : ''}
             </div>
             
-            <h4 style="margin:0 0 6px 0; font-size:15.5px; font-weight:900; color:#0f172a; display:flex; align-items:center; gap:10px;">
+            <h4 style="margin:0 0 6px 0; font-size:15.5px; font-weight:900; color:#0f172a; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
               <span>${ruleTitle}</span>
-              ${r.metric_name && r.operator ? `<span style="background:#f1f5f9; color:#0f172a; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:800;">${r.metric_name}: ${r.operator} ${r.threshold_value} ${r.unit || ''}</span>` : ''}
             </h4>
+
+            <!-- Conditions Badges List -->
+            ${conditions.length > 0 ? `
+              <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:6px 0 8px 0;">
+                ${conditions.map((c, i) => `
+                  ${i > 0 ? `<span style="font-size:10.5px; font-weight:900; color:#059669; background:#ecfdf5; padding:2px 6px; border-radius:6px;">${matchWord}</span>` : ''}
+                  <span style="background:#f1f5f9; color:#0f172a; border:1px solid #e2e8f0; padding:3px 8px; border-radius:8px; font-size:11.5px; font-weight:800;">
+                    ${c.metric_name || c.metric_key}: ${c.operator} ${c.threshold_value} ${c.unit || ''}
+                  </span>
+                `).join('')}
+              </div>
+            ` : ''}
 
             <p style="margin:6px 0 0 0; font-size:13px; color:#334155; line-height:1.55; background:${st.bg}; padding:10px 14px; border-radius:12px; border:1px solid ${st.border}; border-left:4px solid ${st.badgeText};">
               <strong>Nội dung thông báo tự động:</strong> ${r.action_recommendation}
@@ -187,17 +399,18 @@ export function onRuleCategoryChange(category) {
   const infoPane = document.getElementById('rule-pane-info');
   const dangerBox = document.getElementById('rule-box-danger-options');
   const warningBox = document.getElementById('rule-box-warning-options');
+  const matchBox = document.getElementById('rule-match-type-box');
   const previewBox = document.getElementById('rule-live-preview-box');
   const previewIcon = document.getElementById('preview-icon');
 
-  if (!iotPane || !infoPane) return;
-
   if (category === 'info') {
-    iotPane.style.display = 'none';
-    infoPane.style.display = 'flex';
+    if (iotPane) iotPane.style.display = 'none';
+    if (infoPane) infoPane.style.display = 'flex';
+    if (matchBox) matchBox.style.display = 'none';
   } else {
-    iotPane.style.display = 'flex';
-    infoPane.style.display = 'none';
+    if (iotPane) iotPane.style.display = 'flex';
+    if (infoPane) infoPane.style.display = 'none';
+    if (matchBox) matchBox.style.display = 'flex';
   }
 
   if (category === 'danger') {
@@ -232,7 +445,7 @@ export function onRuleCategoryChange(category) {
       previewIcon.style.color = '#16a34a';
     }
   }
-  updateRuleLivePreview();
+  updateRuleConditionsSummary();
 }
 window.onRuleCategoryChange = onRuleCategoryChange;
 
@@ -260,7 +473,7 @@ export function openAddThresholdRuleModal() {
 
   // Show modal FIRST — guaranteed, before any optional DOM manipulation
   modal.style.display = 'flex';
-  modal.style.zIndex = '9999';
+  modal.style.zIndex = '99999';
 
   try {
     const form = document.getElementById('threshold-rule-form');
@@ -273,27 +486,38 @@ export function openAddThresholdRuleModal() {
     const ruleRec = document.getElementById('rule-recommendation');
 
     if (ruleId) ruleId.value = '';
-    if (ruleTitleInput) ruleTitleInput.value = '';
-    if (ruleRec) ruleRec.value = '';
+    if (ruleTitleInput) ruleTitleInput.value = 'Cảnh báo Độ ẩm Đất Tầng 10cm & Dự báo Mưa rào';
+    if (ruleRec) ruleRec.value = 'Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!';
 
     // Default to 'danger' category
     if (form) {
       const radDanger = form.querySelector('input[name="rule_category"][value="danger"]');
       if (radDanger) radDanger.checked = true;
+      const radAnd = form.querySelector('input[name="rule_match_type"][value="AND"]');
+      if (radAnd) radAnd.checked = true;
     }
 
     if (titleEl) titleEl.textContent = 'Cấu hình Quy tắc Thông báo Tự động';
 
+    // Clear dynamic condition container and seed with default initial condition
+    const conditionsContainer = document.getElementById('rule-conditions-list');
+    if (conditionsContainer) {
+      conditionsContainer.innerHTML = '';
+      addConditionRow({
+        metric_key: 'soil_moisture_10cm',
+        operator: '<',
+        threshold_value: 50,
+        unit: '%'
+      });
+    }
+
     // Safe call to optional helpers
-    try { updateMetricUnitLabel(); } catch(_) {}
     try { onRuleCategoryChange('danger'); } catch(_) {}
-    try { updateRuleLivePreview(); } catch(_) {}
+    try { updateRuleConditionsSummary(); } catch(_) {}
 
     // Bind live typing listeners
-    const titleInput = document.getElementById('rule-title');
-    const recInput = document.getElementById('rule-recommendation');
-    if (titleInput) titleInput.oninput = updateRuleLivePreview;
-    if (recInput) recInput.oninput = updateRuleLivePreview;
+    if (ruleTitleInput) ruleTitleInput.oninput = updateRuleLivePreview;
+    if (ruleRec) ruleRec.oninput = updateRuleLivePreview;
 
   } catch (err) {
     console.warn('[ThresholdRule] openAddThresholdRuleModal helper error (modal already open):', err);
@@ -316,7 +540,7 @@ export function editThresholdRule(id) {
 
   // Show modal FIRST — guaranteed before any DOM manipulation
   modal.style.display = 'flex';
-  modal.style.zIndex = '9999';
+  modal.style.zIndex = '99999';
 
   try {
     const form = document.getElementById('threshold-rule-form');
@@ -334,16 +558,13 @@ export function editThresholdRule(id) {
     if (form) {
       const rad = form.querySelector(`input[name="rule_category"][value="${cat}"]`);
       if (rad) rad.checked = true;
+
+      const matchVal = rule.match_type || 'AND';
+      const radMatch = form.querySelector(`input[name="rule_match_type"][value="${matchVal}"]`);
+      if (radMatch) radMatch.checked = true;
     }
 
-    const metricEl = document.getElementById('rule-metric');
-    const operatorEl = document.getElementById('rule-operator');
-    const thresholdEl = document.getElementById('rule-threshold-value');
     const actionTypeEl = document.getElementById('rule-action-type');
-
-    if (metricEl && rule.metric_key) metricEl.value = rule.metric_key;
-    if (operatorEl && rule.operator) operatorEl.value = rule.operator;
-    if (thresholdEl && rule.threshold_value !== undefined) thresholdEl.value = rule.threshold_value;
     if (actionTypeEl && rule.action_type) actionTypeEl.value = rule.action_type;
 
     const offIot = document.getElementById('rule-check-offline-iot');
@@ -357,18 +578,37 @@ export function editThresholdRule(id) {
       if (recEv) recEv.value = rule.reconfirm_event_type;
     }
 
+    // Populate dynamic condition rows
+    const conditionsContainer = document.getElementById('rule-conditions-list');
+    if (conditionsContainer) {
+      conditionsContainer.innerHTML = '';
+      let conds = [];
+      if (rule.conditions_json) {
+        try {
+          conds = typeof rule.conditions_json === 'string' ? JSON.parse(rule.conditions_json) : rule.conditions_json;
+        } catch (_) { conds = []; }
+      }
+      if (!Array.isArray(conds) || conds.length === 0) {
+        conds = [{
+          metric_key: rule.metric_key || 'soil_moisture_10cm',
+          operator: rule.operator || '<',
+          threshold_value: rule.threshold_value !== undefined ? rule.threshold_value : 50,
+          unit: rule.unit || '%'
+        }];
+      }
+
+      conds.forEach(c => addConditionRow(c));
+    }
+
     if (titleEl) titleEl.textContent = 'Chỉnh sửa Quy tắc Cài đặt Ngưỡng';
 
     // Safe call to optional helpers
-    try { updateMetricUnitLabel(); } catch(_) {}
     try { onRuleCategoryChange(cat); } catch(_) {}
-    try { updateRuleLivePreview(); } catch(_) {}
+    try { updateRuleConditionsSummary(); } catch(_) {}
 
     // Bind live typing listeners
-    const titleInput = document.getElementById('rule-title');
-    const recInput = document.getElementById('rule-recommendation');
-    if (titleInput) titleInput.oninput = updateRuleLivePreview;
-    if (recInput) recInput.oninput = updateRuleLivePreview;
+    if (ruleTitleEl) ruleTitleEl.oninput = updateRuleLivePreview;
+    if (ruleRecEl) ruleRecEl.oninput = updateRuleLivePreview;
 
   } catch (err) {
     console.warn('[ThresholdRule] editThresholdRule helper error (modal already open):', err);
@@ -382,26 +622,6 @@ export function closeThresholdRuleModal() {
 }
 window.closeThresholdRuleModal = closeThresholdRuleModal;
 
-export function updateMetricUnitLabel() {
-  const metricSel = document.getElementById('rule-metric');
-  const unitBadge = document.getElementById('rule-unit-badge');
-  if (!metricSel || !unitBadge) return;
-
-  const units = {
-    soil_moisture_10cm: '%',
-    soil_moisture_20cm: '%',
-    soil_moisture_50cm: '%',
-    air_temp: '°C',
-    air_humidity: '%',
-    soil_ph: 'pH',
-    soil_ec: 'mS/cm',
-    rain_chance: '%',
-    water_level: '%'
-  };
-  unitBadge.textContent = units[metricSel.value] || '%';
-}
-window.updateMetricUnitLabel = updateMetricUnitLabel;
-
 export async function saveThresholdRule(e) {
   if (e && e.preventDefault) e.preventDefault();
 
@@ -409,6 +629,9 @@ export async function saveThresholdRule(e) {
   const id = document.getElementById('rule-id').value;
   const catRad = form ? form.querySelector('input[name="rule_category"]:checked') : null;
   const category = catRad ? catRad.value : 'warning';
+
+  const matchRad = form ? form.querySelector('input[name="rule_match_type"]:checked') : null;
+  const matchType = matchRad ? matchRad.value : 'AND';
 
   const titleVal = document.getElementById('rule-title').value.trim();
   const recVal = document.getElementById('rule-recommendation').value.trim();
@@ -418,15 +641,25 @@ export async function saveThresholdRule(e) {
     return;
   }
 
+  const conditions = getConditionsFromUI();
+  const primaryCond = conditions[0] || {
+    metric_key: 'soil_moisture_10cm',
+    operator: '<',
+    threshold_value: 50,
+    unit: '%'
+  };
+
   const payload = {
     title: titleVal,
     category_type: category,
     alert_level: category,
-    metric_key: document.getElementById('rule-metric').value,
-    operator: document.getElementById('rule-operator').value,
-    threshold_value: parseFloat(document.getElementById('rule-threshold-value').value) || 0,
-    action_type: document.getElementById('rule-action-type').value,
+    match_type: matchType,
+    metric_key: primaryCond.metric_key,
+    operator: primaryCond.operator,
+    threshold_value: primaryCond.threshold_value,
+    action_type: document.getElementById('rule-action-type')?.value || 'Canh tác',
     action_recommendation: recVal,
+    conditions_json: conditions,
     check_offline_iot: document.getElementById('rule-check-offline-iot') ? document.getElementById('rule-check-offline-iot').checked : false,
     check_disease_history: document.getElementById('rule-check-disease-history') ? document.getElementById('rule-check-disease-history').checked : false,
     reconfirm_event_type: document.getElementById('rule-reconfirm-event') ? document.getElementById('rule-reconfirm-event').value : null
