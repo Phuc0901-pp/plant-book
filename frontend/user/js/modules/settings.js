@@ -80,24 +80,6 @@ export async function loadThresholdRules() {
 }
 window.loadThresholdRules = loadThresholdRules;
 
-export function renderThresholdRulesUI(rules) {
-  const container = document.getElementById('threshold-rules-list');
-  if (!container) return;
-
-  if (!rules || rules.length === 0) {
-    container.innerHTML = `
-      <div style="background:#ffffff; border:2px dashed #cbd5e1; border-radius:18px; padding:36px 20px; text-align:center;">
-        <i class="fa-solid fa-bell-concierge" style="font-size:36px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
-        <h4 style="margin:0 0 6px 0; color:#334155; font-size:16px; font-weight:800;">Chưa có quy tắc cài đặt thông báo tự động nào</h4>
-        <p style="margin:0 0 18px 0; color:#64748b; font-size:13px;">Bấm nút bên dưới để khởi tạo quy tắc Cảnh báo, Khuyến cáo hoặc Thông báo tự động.</p>
-        <button onclick="openAddThresholdRuleModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:10px 22px; font-size:13.5px; font-weight:800; border-radius:12px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
-          + Thêm quy tắc đầu tiên
-        </button>
-      </div>
-    `;
-    return;
-  }
-
 // ── Metric Catalog ─────────────────────────────────────────────
 const METRIC_CATALOG = {
   soil_moisture_10cm: { name: '🌱 Độ ẩm đất tầng 10cm', unit: '%' },
