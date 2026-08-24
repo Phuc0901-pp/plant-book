@@ -24,6 +24,7 @@ import {
   onCustomUnitInput 
 } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag } from './modules/nfc.js';
+import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-clock.js';
 import './supplies.js?v=2.8.0';
 
 window.openSelfInitFarmModal = openSelfInitFarmModal;
@@ -267,6 +268,16 @@ window.deactivateNfcTag     = deactivateNfcTag;
 
 window.togglePlantMenu      = togglePlantMenu;
 window.closePlantMenu       = closePlantMenu;
+
+window.refreshDeviceWeather = refreshDeviceWeather;
+window.initWeatherClockWidget = initWeatherClockWidget;
+
+// Initialize Live Clock & GPS Weather Widget
+try {
+  initWeatherClockWidget();
+} catch (err) {
+  console.warn('[App] Weather Clock Widget init warning:', err);
+}
 
 // ── Field UX Mode (Outdoor Sunlight Mode) ───────────────────
 window.toggleFieldMode = function(forceState) {
