@@ -283,6 +283,7 @@ async function initDB() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS view_history_from_date DATE DEFAULT NULL;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_shared_history BOOLEAN DEFAULT true;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_view_supplies BOOLEAN DEFAULT true;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS rules_initialized BOOLEAN DEFAULT false;
     `);
 
 

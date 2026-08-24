@@ -253,75 +253,126 @@ window.updateRuleLivePreview = updateRuleLivePreview;
 
 export function openAddThresholdRuleModal() {
   const modal = document.getElementById('threshold-rule-modal');
-  const form = document.getElementById('threshold-rule-form');
-  const title = document.getElementById('threshold-modal-title');
-  if (!modal || !form) return;
+  if (!modal) {
+    console.error('[ThresholdRule] Modal #threshold-rule-modal không tìm thấy trong DOM.');
+    return;
+  }
 
-  form.reset();
-  document.getElementById('rule-id').value = '';
-  document.getElementById('rule-title').value = 'Cảnh báo Độ ẩm Đất Tầng 10cm & Dự báo Mưa rào';
-  document.getElementById('rule-recommendation').value = 'Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!';
-  
-  const radDanger = form.querySelector('input[name="rule_category"][value="danger"]');
-  if (radDanger) radDanger.checked = true;
-
-  if (title) title.textContent = 'Cấu hình Quy tắc Thông báo Tự động';
-  updateMetricUnitLabel();
-  onRuleCategoryChange('danger');
-
-  // Bind live typing listener
-  const titleInput = document.getElementById('rule-title');
-  const recInput = document.getElementById('rule-recommendation');
-  if (titleInput) titleInput.oninput = updateRuleLivePreview;
-  if (recInput) recInput.oninput = updateRuleLivePreview;
-
+  // Show modal FIRST — guaranteed, before any optional DOM manipulation
   modal.style.display = 'flex';
+  modal.style.zIndex = '9999';
+
+  try {
+    const form = document.getElementById('threshold-rule-form');
+    const titleEl = document.getElementById('threshold-modal-title');
+
+    if (form) form.reset();
+
+    const ruleId = document.getElementById('rule-id');
+    const ruleTitleInput = document.getElementById('rule-title');
+    const ruleRec = document.getElementById('rule-recommendation');
+
+    if (ruleId) ruleId.value = '';
+    if (ruleTitleInput) ruleTitleInput.value = '';
+    if (ruleRec) ruleRec.value = '';
+
+    // Default to 'danger' category
+    if (form) {
+      const radDanger = form.querySelector('input[name="rule_category"][value="danger"]');
+      if (radDanger) radDanger.checked = true;
+    }
+
+    if (titleEl) titleEl.textContent = 'Cấu hình Quy tắc Thông báo Tự động';
+
+    // Safe call to optional helpers
+    try { updateMetricUnitLabel(); } catch(_) {}
+    try { onRuleCategoryChange('danger'); } catch(_) {}
+    try { updateRuleLivePreview(); } catch(_) {}
+
+    // Bind live typing listeners
+    const titleInput = document.getElementById('rule-title');
+    const recInput = document.getElementById('rule-recommendation');
+    if (titleInput) titleInput.oninput = updateRuleLivePreview;
+    if (recInput) recInput.oninput = updateRuleLivePreview;
+
+  } catch (err) {
+    console.warn('[ThresholdRule] openAddThresholdRuleModal helper error (modal already open):', err);
+  }
 }
 window.openAddThresholdRuleModal = openAddThresholdRuleModal;
 
 export function editThresholdRule(id) {
   const rule = _currentRules.find(r => r.id === id);
-  if (!rule) return;
-
-  const modal = document.getElementById('threshold-rule-modal');
-  const form = document.getElementById('threshold-rule-form');
-  const title = document.getElementById('threshold-modal-title');
-  if (!modal || !form) return;
-
-  document.getElementById('rule-id').value = rule.id;
-  document.getElementById('rule-title').value = rule.title || rule.metric_name || '';
-  
-  const cat = rule.category_type || rule.alert_level || 'warning';
-  const rad = form.querySelector(`input[name="rule_category"][value="${cat}"]`);
-  if (rad) rad.checked = true;
-
-  if (rule.metric_key) document.getElementById('rule-metric').value = rule.metric_key;
-  if (rule.operator) document.getElementById('rule-operator').value = rule.operator;
-  if (rule.threshold_value !== undefined) document.getElementById('rule-threshold-value').value = rule.threshold_value;
-  if (rule.action_type) document.getElementById('rule-action-type').value = rule.action_type;
-  if (rule.action_recommendation) document.getElementById('rule-recommendation').value = rule.action_recommendation;
-
-  const offIot = document.getElementById('rule-check-offline-iot');
-  if (offIot) offIot.checked = Boolean(rule.check_offline_iot);
-
-  const disHist = document.getElementById('rule-check-disease-history');
-  if (disHist) disHist.checked = Boolean(rule.check_disease_history);
-
-  if (rule.reconfirm_event_type) {
-    const recEv = document.getElementById('rule-reconfirm-event');
-    if (recEv) recEv.value = rule.reconfirm_event_type;
+  if (!rule) {
+    toast('Không tìm thấy quy tắc cần chỉnh sửa.', 'error');
+    return;
   }
 
-  if (title) title.textContent = 'Chỉnh sửa Quy tắc Cài đặt Ngưỡng';
-  updateMetricUnitLabel();
-  onRuleCategoryChange(cat);
+  const modal = document.getElementById('threshold-rule-modal');
+  if (!modal) {
+    console.error('[ThresholdRule] Modal #threshold-rule-modal không tìm thấy trong DOM.');
+    return;
+  }
 
-  const titleInput = document.getElementById('rule-title');
-  const recInput = document.getElementById('rule-recommendation');
-  if (titleInput) titleInput.oninput = updateRuleLivePreview;
-  if (recInput) recInput.oninput = updateRuleLivePreview;
-
+  // Show modal FIRST — guaranteed before any DOM manipulation
   modal.style.display = 'flex';
+  modal.style.zIndex = '9999';
+
+  try {
+    const form = document.getElementById('threshold-rule-form');
+    const titleEl = document.getElementById('threshold-modal-title');
+
+    const ruleIdEl = document.getElementById('rule-id');
+    const ruleTitleEl = document.getElementById('rule-title');
+    const ruleRecEl = document.getElementById('rule-recommendation');
+
+    if (ruleIdEl) ruleIdEl.value = rule.id;
+    if (ruleTitleEl) ruleTitleEl.value = rule.title || rule.metric_name || '';
+    if (ruleRecEl) ruleRecEl.value = rule.action_recommendation || '';
+
+    const cat = rule.category_type || rule.alert_level || 'warning';
+    if (form) {
+      const rad = form.querySelector(`input[name="rule_category"][value="${cat}"]`);
+      if (rad) rad.checked = true;
+    }
+
+    const metricEl = document.getElementById('rule-metric');
+    const operatorEl = document.getElementById('rule-operator');
+    const thresholdEl = document.getElementById('rule-threshold-value');
+    const actionTypeEl = document.getElementById('rule-action-type');
+
+    if (metricEl && rule.metric_key) metricEl.value = rule.metric_key;
+    if (operatorEl && rule.operator) operatorEl.value = rule.operator;
+    if (thresholdEl && rule.threshold_value !== undefined) thresholdEl.value = rule.threshold_value;
+    if (actionTypeEl && rule.action_type) actionTypeEl.value = rule.action_type;
+
+    const offIot = document.getElementById('rule-check-offline-iot');
+    if (offIot) offIot.checked = Boolean(rule.check_offline_iot);
+
+    const disHist = document.getElementById('rule-check-disease-history');
+    if (disHist) disHist.checked = Boolean(rule.check_disease_history);
+
+    if (rule.reconfirm_event_type) {
+      const recEv = document.getElementById('rule-reconfirm-event');
+      if (recEv) recEv.value = rule.reconfirm_event_type;
+    }
+
+    if (titleEl) titleEl.textContent = 'Chỉnh sửa Quy tắc Cài đặt Ngưỡng';
+
+    // Safe call to optional helpers
+    try { updateMetricUnitLabel(); } catch(_) {}
+    try { onRuleCategoryChange(cat); } catch(_) {}
+    try { updateRuleLivePreview(); } catch(_) {}
+
+    // Bind live typing listeners
+    const titleInput = document.getElementById('rule-title');
+    const recInput = document.getElementById('rule-recommendation');
+    if (titleInput) titleInput.oninput = updateRuleLivePreview;
+    if (recInput) recInput.oninput = updateRuleLivePreview;
+
+  } catch (err) {
+    console.warn('[ThresholdRule] editThresholdRule helper error (modal already open):', err);
+  }
 }
 window.editThresholdRule = editThresholdRule;
 
@@ -415,13 +466,31 @@ export async function toggleThresholdRuleEnabled(id, isEnabled) {
 window.toggleThresholdRuleEnabled = toggleThresholdRuleEnabled;
 
 export async function deleteThresholdRule(id) {
-  if (!confirm('Bạn có chắc chắn muốn xóa quy tắc cài đặt ngưỡng này?')) return;
+  if (!confirm('Bạn có chắc chắn muốn xóa quy tắc cài đặt ngưỡng này?\n\nLưu ý: Sau khi xóa, quy tắc sẽ bị xóa vĩnh viễn và không được tạo lại tự động.')) return;
+
+  // Optimistic UI: remove from local array and rerender immediately
+  const ruleIndex = _currentRules.findIndex(r => r.id === id);
+  const removedRule = ruleIndex !== -1 ? _currentRules[ruleIndex] : null;
+
+  if (ruleIndex !== -1) {
+    _currentRules.splice(ruleIndex, 1);
+    renderThresholdRulesUI(_currentRules);
+  }
+
   try {
-    await api(`/notifications/rules/${id}`, { method: 'DELETE' });
-    toast('Đã xóa quy tắc cảnh báo thành công.', 'success');
-    loadThresholdRules();
+    const res = await api(`/notifications/rules/${id}`, { method: 'DELETE' });
+    if (res && res.success) {
+      toast('✅ Đã xóa quy tắc thành công.', 'success');
+    } else {
+      throw new Error(res?.error || 'Phản hồi không hợp lệ từ server.');
+    }
   } catch (err) {
-    toast('Lỗi xóa quy tắc: ' + err.message, 'error');
+    // Rollback: re-add rule if API failed
+    if (removedRule) {
+      _currentRules.splice(ruleIndex, 0, removedRule);
+      renderThresholdRulesUI(_currentRules);
+    }
+    toast('❌ Lỗi xóa quy tắc: ' + (err.message || 'Lỗi không xác định'), 'error');
   }
 }
 window.deleteThresholdRule = deleteThresholdRule;

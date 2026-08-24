@@ -106,18 +106,27 @@ router.delete('/:id', auth, async (req, res) => {
 router.get('/rules', auth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const checkRes = await pool.query('SELECT COUNT(*)::int as count FROM user_alert_rules WHERE user_id = $1', [userId]);
 
-    if (checkRes.rows[0].count === 0) {
-      // Auto seed default standard rules matching all 3 categories (Cảnh báo, Khuyến cáo, Thông báo)
-      await pool.query(`
-        INSERT INTO user_alert_rules 
-          (user_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, is_enabled)
-        VALUES
-          ($1, '🚨 Cảnh báo Độ ẩm Đất Tầng 10cm & Kiểm tra IoT', 'danger', 'soil_moisture_10cm', 'Độ ẩm đất tầng 10cm', '<', 50, '%', 'Tưới nước', 'Độ ẩm đất tầng 10cm xuống dưới 50%. Tự động quét kiểm tra các thiết bị cảm biến IoT không có dữ liệu (null/0). Khuyến nghị tưới bổ sung đến khi độ ẩm >= 50%!', 'danger', true, false, NULL, true),
-          ($1, '📢 Khuyến cáo Chăm sóc Cây từng ghi nhận Sâu bệnh', 'warning', 'air_humidity', 'Độ ẩm không khí', '>=', 80, '%', 'Phun thuốc', 'Độ ẩm không khí cao (>= 80%) kết hợp kiểm tra lịch sử canh tác các cây từng bị bệnh. Khuyến nghị phun phòng ngừa và chăm sóc đặc biệt!', 'warning', false, true, NULL, true),
-          ($1, 'ℹ️ Thông báo Xác nhận Cập nhật Canh tác', 'info', 'system_event', 'Sự kiện Hệ thống', '=', 1, '', 'Hệ thống', 'Xác nhận toàn bộ hoạt động cập nhật thông tin nhật ký canh tác (Tưới nước, Bón phân, Thu hoạch) được lưu thành công!', 'info', false, false, 'log_update', true)
-      `, [userId]);
+    // Check if this user has ever been initialized with sample rules
+    const userRes = await pool.query('SELECT rules_initialized FROM users WHERE id = $1', [userId]);
+    const rulesInitialized = userRes.rows[0]?.rules_initialized || false;
+
+    // Only auto-seed default sample rules if user has NEVER initialized rules before
+    // Once rules_initialized = true, we NEVER auto-seed again (respects deletions)
+    if (!rulesInitialized) {
+      const countRes = await pool.query('SELECT COUNT(*)::int as count FROM user_alert_rules WHERE user_id = $1', [userId]);
+      if (countRes.rows[0].count === 0) {
+        await pool.query(`
+          INSERT INTO user_alert_rules 
+            (user_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, is_enabled)
+          VALUES
+            ($1, '🚨 Cảnh báo Độ ẩm Đất Tầng 10cm & Kiểm tra IoT', 'danger', 'soil_moisture_10cm', 'Độ ẩm đất tầng 10cm', '<', 50, '%', 'Tưới nước', 'Độ ẩm đất tầng 10cm xuống dưới 50%. Tự động quét kiểm tra các thiết bị cảm biến IoT không có dữ liệu (null/0). Khuyến nghị tưới bổ sung đến khi độ ẩm >= 50%!', 'danger', true, false, NULL, true),
+            ($1, '📢 Khuyến cáo Chăm sóc Cây từng ghi nhận Sâu bệnh', 'warning', 'air_humidity', 'Độ ẩm không khí', '>=', 80, '%', 'Phun thuốc', 'Độ ẩm không khí cao (>= 80%) kết hợp kiểm tra lịch sử canh tác các cây từng bị bệnh. Khuyến nghị phun phòng ngừa và chăm sóc đặc biệt!', 'warning', false, true, NULL, true),
+            ($1, 'ℹ️ Thông báo Xác nhận Cập nhật Canh tác', 'info', 'system_event', 'Sự kiện Hệ thống', '=', 1, '', 'Hệ thống', 'Xác nhận toàn bộ hoạt động cập nhật thông tin nhật ký canh tác (Tưới nước, Bón phân, Thu hoạch) được lưu thành công!', 'info', false, false, 'log_update', true)
+        `, [userId]);
+      }
+      // Mark this user as initialized so we NEVER auto-seed again
+      await pool.query('UPDATE users SET rules_initialized = true WHERE id = $1', [userId]);
     }
 
     const rulesRes = await pool.query(
@@ -134,6 +143,7 @@ router.get('/rules', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi tải quy tắc cài đặt ngưỡng.' });
   }
 });
+
 
 // POST /api/notifications/rules — Create new threshold rule
 router.post('/rules', auth, async (req, res) => {
