@@ -76,6 +76,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/costs', require('./routes/costs'));
 app.use('/api/history', require('./routes/history'));
 app.use('/api/database', require('./routes/database'));
+app.use('/api/ai', require('./routes/ai'));
 app.use('/api', require('./middleware/errorHandler'));
 
 // ─── SPA fallback ────────────────────────────────────────────────
