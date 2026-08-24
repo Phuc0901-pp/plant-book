@@ -71,6 +71,46 @@ const PAGE_ALIASES = {
   settings: 'settings'
 };
 
+export function syncUserUrl(params = {}) {
+  if (!window.history || !window.history.pushState) return;
+
+  const userHash = getUserHash();
+  const matchedPage = params.page || 'home';
+  const restPageName = matchedPage === 'myplants' ? 'farms' : matchedPage;
+
+  const currentSearch = new URLSearchParams(window.location.search);
+  
+  if ('tab' in params) {
+    if (params.tab) currentSearch.set('tab', params.tab);
+    else currentSearch.delete('tab');
+  }
+  if ('farm' in params) {
+    if (params.farm) currentSearch.set('farm', params.farm);
+    else currentSearch.delete('farm');
+  }
+  if ('modal' in params) {
+    if (params.modal) currentSearch.set('modal', params.modal);
+    else currentSearch.delete('modal');
+  }
+  if ('id' in params) {
+    if (params.id) currentSearch.set('id', params.id);
+    else currentSearch.delete('id');
+  }
+
+  const queryString = currentSearch.toString();
+  const basePath = `/${userHash}/${restPageName}`;
+  const finalUrl = queryString ? `${basePath}?${queryString}` : basePath;
+
+  if (window.location.pathname + window.location.search !== finalUrl) {
+    if (params.replace) {
+      window.history.replaceState({ page: matchedPage }, '', finalUrl);
+    } else {
+      window.history.pushState({ page: matchedPage }, '', finalUrl);
+    }
+  }
+}
+window.syncUserUrl = syncUserUrl;
+
 /**
  * Show page section & synchronize URL path & hash
  * @param {string} page 
@@ -105,13 +145,7 @@ export function showPage(page, updateHash = true) {
 
   // Synchronize RESTful path & hash in browser address bar (e.g. /usr-15/farms)
   if (updateHash) {
-    const userHash = getUserHash();
-    const restPageName = targetPage === 'myplants' ? 'farms' : targetPage;
-    const targetUrl = `/${userHash}/${restPageName}`;
-    if (window.history && window.history.pushState && window.location.pathname !== targetUrl) {
-      window.history.pushState({ page: targetPage }, '', targetUrl);
-    }
-    window.location.hash = `#/u/${userHash}/${restPageName}`;
+    syncUserUrl({ page: targetPage, tab: null, farm: null, modal: null, id: null });
   }
 
   // Lazy load dữ liệu khi chuyển tab

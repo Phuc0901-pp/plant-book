@@ -146,6 +146,57 @@ function parseAdminPageFromPath(pathname) {
   return adminRoutePageMap[routeSlug] || 'dashboard';
 }
 
+/**
+ * Synchronize deep URL parameters: page, sub-tabs, hidden detail views, and pop-up modals
+ */
+function syncAdminUrl(params = {}) {
+  if (!window.history || !window.history.pushState) return;
+
+  const publicId = getAdminPublicId();
+  const matchedPage = params.page || parseAdminPageFromPath(window.location.pathname);
+  const routeSlug = adminPageRouteMap[matchedPage] || matchedPage;
+
+  const currentSearch = new URLSearchParams(window.location.search);
+  
+  if ('tab' in params) {
+    if (params.tab) currentSearch.set('tab', params.tab);
+    else currentSearch.delete('tab');
+  }
+  if ('view' in params) {
+    if (params.view) currentSearch.set('view', params.view);
+    else currentSearch.delete('view');
+  }
+  if ('farm' in params) {
+    if (params.farm) currentSearch.set('farm', params.farm);
+    else currentSearch.delete('farm');
+  }
+  if ('table' in params) {
+    if (params.table) currentSearch.set('table', params.table);
+    else currentSearch.delete('table');
+  }
+  if ('modal' in params) {
+    if (params.modal) currentSearch.set('modal', params.modal);
+    else currentSearch.delete('modal');
+  }
+  if ('id' in params) {
+    if (params.id) currentSearch.set('id', params.id);
+    else currentSearch.delete('id');
+  }
+
+  const queryString = currentSearch.toString();
+  const basePath = `/${publicId}/${routeSlug}`;
+  const finalUrl = queryString ? `${basePath}?${queryString}` : basePath;
+
+  if (window.location.pathname + window.location.search !== finalUrl) {
+    if (params.replace) {
+      window.history.replaceState({ page: matchedPage }, '', finalUrl);
+    } else {
+      window.history.pushState({ page: matchedPage }, '', finalUrl);
+    }
+  }
+}
+window.syncAdminUrl = syncAdminUrl;
+
 function showPage(page, pushUrl = true) {
   const targetSection = document.getElementById(`page-${page}`);
   if (!targetSection) {
@@ -169,11 +220,8 @@ function showPage(page, pushUrl = true) {
   if (navItem) navItem.classList.add('active');
 
   // Push URL to browser address bar for professional standards
-  if (pushUrl && window.history && window.history.pushState) {
-    const targetUrl = getAdminPageUrl(page);
-    if (window.location.pathname !== targetUrl) {
-      window.history.pushState({ page }, '', targetUrl);
-    }
+  if (pushUrl) {
+    syncAdminUrl({ page, tab: null, farm: null, table: null, modal: null, id: null });
   }
 
   const titles = { 
@@ -227,19 +275,54 @@ function showPage(page, pushUrl = true) {
 
 function handleAdminUrlRouting() {
   const matchedPage = parseAdminPageFromPath(window.location.pathname);
-  const targetUrl = getAdminPageUrl(matchedPage);
-  if (window.history && window.history.replaceState && window.location.pathname !== targetUrl) {
-    window.history.replaceState({ page: matchedPage }, '', targetUrl);
-  }
   showPage(matchedPage, false);
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const tab = searchParams.get('tab');
+  const farm = searchParams.get('farm');
+  const table = searchParams.get('table');
+  const modal = searchParams.get('modal');
+  const id = searchParams.get('id');
+
+  // Update base path if needed
+  syncAdminUrl({ page: matchedPage, replace: true });
+
+  // 1. Sub-tab routing
+  if (tab) {
+    if (matchedPage === 'database' && typeof window.switchDatabaseTab === 'function') {
+      window.switchDatabaseTab(tab, false);
+    }
+    if (matchedPage === 'cost' && typeof window.switchCostTab === 'function') {
+      window.switchCostTab(tab, false);
+    }
+  }
+
+  // 2. Hidden / Detail View routing
+  if (matchedPage === 'gis' && farm && typeof window.selectFarm === 'function') {
+    setTimeout(() => { window.selectFarm(parseInt(farm), false); }, 300);
+  }
+  if (matchedPage === 'db-check' && table && typeof window.viewTableRecords === 'function') {
+    setTimeout(() => { window.viewTableRecords(table, false); }, 300);
+  }
+
+  // 3. Pop-up Modal routing
+  if (modal) {
+    setTimeout(() => {
+      if (modal === 'plant' && typeof window.openPlantModal === 'function') {
+        window.openPlantModal(id ? parseInt(id) : null, false);
+      } else if (modal === 'user' && typeof window.openUserModal === 'function') {
+        window.openUserModal(id ? parseInt(id) : null, false);
+      } else if (modal === 'user-tier' && typeof window.openUserTierModal === 'function') {
+        window.openUserTierModal(id ? parseInt(id) : null, false);
+      } else if (modal === 'schema' && typeof window.openSchemaModal === 'function') {
+        window.openSchemaModal(id ? parseInt(id) : null, false);
+      }
+    }, 400);
+  }
 }
 
 window.addEventListener('popstate', (e) => {
-  if (e.state && e.state.page) {
-    showPage(e.state.page, false);
-  } else {
-    handleAdminUrlRouting();
-  }
+  handleAdminUrlRouting();
 });
 
 window.handleAdminUrlRouting = handleAdminUrlRouting;

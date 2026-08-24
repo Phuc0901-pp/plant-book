@@ -217,13 +217,17 @@ function changeUsersPage(page) {
 }
 
 
-async function openUserModal(userId = null) {
+async function openUserModal(userId = null, syncUrl = true) {
   const modal = document.getElementById('user-modal');
   const title = document.getElementById('user-modal-title');
   const passLabel = document.getElementById('f-user-pass-label');
   const passHelp = document.getElementById('f-user-pass-help');
   const passInput = document.getElementById('f-user-pass');
   const farmSelect = document.getElementById('f-user-farm-id');
+  
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: 'user', id: userId || null });
+  }
   
   // Clear fields
   document.getElementById('f-user-id').value = '';
@@ -332,8 +336,56 @@ async function toggleAssignedPlantsPicker(userObj = null) {
 }
 window.toggleAssignedPlantsPicker = toggleAssignedPlantsPicker;
 
-function closeUserModal() {
+function closeUserModal(syncUrl = true) {
   document.getElementById('user-modal').style.display = 'none';
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: null, id: null });
+  }
+}
+
+function openUserTierModal(userId, syncUrl = true) {
+  const user = allUsers.find(u => u.id === userId);
+  if (!user) return;
+
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: 'user-tier', id: userId || null });
+  }
+
+  document.getElementById('tier-edit-user-id').value = user.id;
+  document.getElementById('tier-edit-user-name').textContent = user.full_name || 'Nông hộ';
+  document.getElementById('tier-edit-user-email').textContent = user.phone || user.email || '';
+  document.getElementById('tier-admin-note').value = user.tier_admin_note || '';
+
+  const tier = user.account_tier || 'normal';
+  const rads = document.getElementsByName('opt-account-tier');
+  for (const r of rads) {
+    r.checked = (r.value === tier);
+  }
+  onTierOptionChange(tier);
+
+  const dateInput = document.getElementById('tier-expires-date');
+  const chkUnlimited = document.getElementById('chk-tier-unlimited');
+
+  if (user.tier_expires_at) {
+    const dStr = new Date(user.tier_expires_at).toISOString().slice(0, 10);
+    dateInput.value = dStr;
+    chkUnlimited.checked = false;
+    dateInput.disabled = false;
+  } else {
+    dateInput.value = '';
+    chkUnlimited.checked = true;
+    dateInput.disabled = true;
+  }
+
+  document.getElementById('modal-edit-user-tier').style.display = 'flex';
+}
+
+function closeUserTierModal(syncUrl = true) {
+  const modal = document.getElementById('modal-edit-user-tier');
+  if (modal) modal.style.display = 'none';
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: null, id: null });
+  }
 }
 
 async function saveUser() {

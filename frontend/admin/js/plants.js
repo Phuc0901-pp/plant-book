@@ -206,13 +206,17 @@ function onPlantUserFilterChange() {
   loadPlants();
 }
 
-async function openPlantModal(id = null) {
+async function openPlantModal(id = null, syncUrl = true) {
   editingPlantId = id;
   resetPlantForm();
   document.getElementById('plant-modal-title').innerHTML = id
     ? '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa cây'
     : '<i class="fa-solid fa-seedling" style="color:var(--green)"></i> Thêm cây mới';
   document.getElementById('public-url-section').style.display = 'none';
+
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: 'plant', id: id || null });
+  }
 
   // Load farms dropdown
   await loadFarmsDropdown();
@@ -248,10 +252,13 @@ async function openPlantModal(id = null) {
   document.getElementById('plant-modal').style.display = 'flex';
 }
 
-function closePlantModal() {
+function closePlantModal(syncUrl = true) {
   document.getElementById('plant-modal').style.display = 'none';
   editingPlantId = null;
   window._currentPlantData = {};
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: null, id: null });
+  }
 }
 
 function resetPlantForm() {

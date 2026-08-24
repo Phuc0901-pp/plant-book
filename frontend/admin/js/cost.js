@@ -147,7 +147,7 @@ function exportCostPDF() {
   window.print();
 }
 
-function switchCostTab(tab) {
+function switchCostTab(tab, syncUrl = true) {
   costCurrentTab = tab;
   ['consumable', 'chart'].forEach(function(t) {
     const pane = document.getElementById('cost-pane-' + t);
@@ -155,6 +155,9 @@ function switchCostTab(tab) {
     if (pane) pane.style.display = t === tab ? 'block' : 'none';
     if (btn) btn.classList.toggle('active', t === tab);
   });
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ page: 'cost', tab });
+  }
   if (tab === 'chart') setTimeout(renderCostChart, 50);
 }
 

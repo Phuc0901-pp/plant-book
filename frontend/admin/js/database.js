@@ -98,7 +98,7 @@ async function initDatabasePage() {
   }
 }
 
-function switchDatabaseTab(tab) {
+function switchDatabaseTab(tab, syncUrl = true) {
   activeDbTab = tab;
 
   // Update tabs active state
@@ -108,6 +108,10 @@ function switchDatabaseTab(tab) {
     if (tabEl) tabEl.classList.toggle('active', t === tab);
     if (paneEl) paneEl.style.display = (t === tab ? 'block' : 'none');
   });
+
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ page: 'database', tab });
+  }
 
   if (tab === 'media') {
     initGlobalMediaLibrary();
@@ -1010,9 +1014,13 @@ async function loadDbSchemaCheck() {
   }
 }
 
-async function viewTableRecords(tableName) {
+async function viewTableRecords(tableName, syncUrl = true) {
   const container = document.getElementById('db-table-records-container');
   if (!container) return;
+
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ page: 'db-check', table: tableName });
+  }
 
   container.style.display = 'block';
   container.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b;"><i class="fa fa-spinner fa-spin fa-2x"></i><br><br>Đang nạp dữ liệu trực tiếp từ bảng <strong>${esc(tableName)}</strong>...</div>`;

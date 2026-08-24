@@ -306,9 +306,14 @@ function onCsvPlantTypeChange() {
   document.getElementById('csv-schema-id').value = schemaId || '';
 }
 
-async function openSchemaModal(id = null) {
+async function openSchemaModal(id = null, syncUrl = true) {
   editingSchemaId = id;
   schemaFields = [];
+
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: 'schema', id: id || null });
+  }
+
   document.getElementById('schema-modal-title').innerHTML = id
     ? '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa Schema'
     : '<i class="fa-solid fa-sliders" style="color:var(--green)"></i> Tạo Schema loại cây';
@@ -358,7 +363,7 @@ async function openSchemaModal(id = null) {
   document.getElementById('schema-modal').style.display = 'flex';
 }
 
-function closeSchemaModal() {
+function closeSchemaModal(syncUrl = true) {
   document.getElementById('schema-modal').style.display = 'none';
   editingSchemaId = null;
   schemaFields = [];
@@ -366,6 +371,9 @@ function closeSchemaModal() {
   if (imgInput) imgInput.value = '';
   document.getElementById('schema-image-preview-container').style.display = 'none';
   document.getElementById('schema-image-filename').textContent = 'Chưa chọn ảnh';
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ modal: null, id: null });
+  }
 }
 
 function previewSchemaImage(input) {

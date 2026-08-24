@@ -888,10 +888,14 @@ async function saveFarm() {
   }
 }
 
-async function selectFarm(farmId) {
+async function selectFarm(farmId, syncUrl = true) {
   if (!farmId) return;
   activeFarmId = farmId;
   window._pendingSelectFarmId = farmId;
+
+  if (syncUrl && typeof window.syncAdminUrl === 'function') {
+    window.syncAdminUrl({ page: 'gis', farm: farmId });
+  }
 
   document.getElementById('gis-back-btn').style.display = 'block';
   document.getElementById('gis-header-actions').style.display = 'none';
