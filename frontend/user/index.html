@@ -1207,7 +1207,7 @@
             <!-- Khối 1: Bản đồ GIS Vệ tinh & 3D Contour -->
             <div onclick="openFeatureDetailModal('gis')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
-                <img src="img/gis_contour_map.jpg" alt="Bản đồ GIS Vệ tinh & 3D Contour" style="width:100%; height:100%; object-fit:cover;">
+                <img src="/user/img/gis_contour_map.jpg" alt="Bản đồ GIS Vệ tinh & 3D Contour" style="width:100%; height:100%; object-fit:cover;">
                 <span style="position:absolute; top:12px; left:12px; background:rgba(5,150,105,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
                   <i class="fa-solid fa-earth-asia"></i> Bản đồ GIS
                 </span>
@@ -1231,7 +1231,7 @@
             <!-- Khối 2: Thẻ Định danh NFC & Mã QR Cây -->
             <div onclick="openFeatureDetailModal('nfc')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:170px; background:#f8fafc; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; padding:10px;">
-                <img src="img/nfc_tag.png" alt="Thẻ Định danh NFC TANBAO AgTech" style="max-height:100%; object-fit:contain; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));">
+                <img src="/user/img/nfc_tag.png" alt="Thẻ Định danh NFC TANBAO AgTech" style="max-height:100%; object-fit:contain; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));">
                 <span style="position:absolute; top:12px; left:12px; background:rgba(37,99,235,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
                   <i class="fa-solid fa-rss"></i> NFC Chip
                 </span>
@@ -1255,7 +1255,7 @@
             <!-- Khối 3: Tích hợp Thiết bị IoT & Cảm biến Tự động -->
             <div onclick="openFeatureDetailModal('iot')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
               <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
-                <img src="img/iot_sensors.jpg" alt="Tích hợp thiết bị IoT & Cảm biến" style="width:100%; height:100%; object-fit:cover;">
+                <img src="/user/img/iot_sensors.jpg" alt="Tích hợp thiết bị IoT & Cảm biến" style="width:100%; height:100%; object-fit:cover;">
                 <span style="position:absolute; top:12px; left:12px; background:rgba(217,119,6,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
                   <i class="fa-solid fa-microchip"></i> IoT Smart Farm
                 </span>
@@ -1298,7 +1298,12 @@
 
               <!-- Flowchart Diagram Image -->
               <div style="width:100%; border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
-                <img src="/img/guide_step1_gps_farm.jpg" alt="Sơ đồ khối 3 bước Khởi tạo Trang trại GPS" style="width:100%; height:auto; display:block;">
+                <img src="/user/img/guide_step1_gps_farm.jpg" alt="Sơ đồ khối 3 bước Khởi tạo Trang trại GPS" style="width:100%; height:auto; display:block;">
+              </div>
+              
+              <!-- Flowchart Diagram Image 2 -->
+              <div style="width:100%; border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+                <img src="/user/img/guide_step2_care_log.jpg" alt="Sơ đồ khối 3 bước Ghi Nhật ký Canh tác" style="width:100%; height:auto; display:block;">
               </div>
 
               <!-- Sơ đồ khối các bước (Steps Block Chart) -->
@@ -2447,9 +2452,9 @@
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=1.1.2"></script>
+<script type="module" src="/user/js/auth.js?v=1.1.3"></script>
 
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=1.1.2"></script>
+<script type="module" src="/user/js/app.js?v=1.1.3"></script>
 </body>
 </html>

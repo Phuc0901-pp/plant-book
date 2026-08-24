@@ -60,7 +60,7 @@ window.openFeatureDetailModal = function(type) {
 
   if (type === 'gis') {
     titleEl.innerHTML = '<i class="fa-solid fa-earth-asia" style="color:#6ee7b7"></i> Bản đồ GIS Vệ tinh & 3D Contour';
-    imgEl.src = 'img/gis_contour_map.jpg';
+    imgEl.src = '/user/img/gis_contour_map.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
     contentEl.innerHTML = `
@@ -79,7 +79,7 @@ window.openFeatureDetailModal = function(type) {
     `;
   } else if (type === 'nfc') {
     titleEl.innerHTML = '<i class="fa-solid fa-rss" style="color:#93c5fd"></i> Thẻ Định danh NFC & Mã QR Cây';
-    imgEl.src = 'img/nfc_tag.png';
+    imgEl.src = '/user/img/nfc_tag.png';
     imgEl.style.objectFit = 'contain';
     imgEl.style.background = '#f8fafc';
     imgEl.style.padding = '16px';
@@ -100,7 +100,7 @@ window.openFeatureDetailModal = function(type) {
     `;
   } else if (type === 'iot') {
     titleEl.innerHTML = '<i class="fa-solid fa-microchip" style="color:#fde047"></i> Tích hợp Thiết bị IoT & Cảm biến Tự động';
-    imgEl.src = 'img/iot_sensors.jpg';
+    imgEl.src = '/user/img/iot_sensors.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #78350f, #d97706)';
     contentEl.innerHTML = `

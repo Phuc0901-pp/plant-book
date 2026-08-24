@@ -29,6 +29,9 @@ app.get('/favicon.ico', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/assets/logo.png'));
 });
 
+// Serve user portal images across all path prefixes (/user/img, /img, /usr-*/img)
+app.use(['/user/img', '/img', '/usr-*/img', '/usr-*/*/img'], express.static(path.join(__dirname, '../frontend/user/img')));
+
 // Serve frontend static files with no-cache headers for mobile devices
 app.use(express.static(path.join(__dirname, '../frontend'), {
   setHeaders: (res, filePath) => {
