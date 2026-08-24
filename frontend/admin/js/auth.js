@@ -152,7 +152,9 @@ async function showApp() {
   document.getElementById('sb-user-name').textContent = currentUser?.name || currentUser?.full_name || 'Quản trị viên';
   document.getElementById('sb-user-email').textContent = currentUser?.email || '';
 
-  await ensureMapboxToken();
+  if (typeof ensureMapboxToken === 'function') {
+    await ensureMapboxToken();
+  }
   if (typeof handleAdminUrlRouting === 'function') {
     handleAdminUrlRouting();
   } else {

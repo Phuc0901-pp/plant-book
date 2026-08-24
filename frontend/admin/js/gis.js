@@ -701,18 +701,28 @@ function drawFarmsAndPlantsLayers(farms, plants) {
             gMap.setPaintProperty(outlineId, 'line-width', activeFarmId === farm.id ? 3.5 : 2);
           }
         }
+        }
+      }
 
+      if (Array.isArray(coords)) {
+        coords.forEach(pt => {
+          if (Array.isArray(pt) && pt.length >= 2) {
+            let lng = parseFloat(pt[0]);
+            let lat = parseFloat(pt[1]);
+            if (!isNaN(lng) && !isNaN(lat)) {
+              if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
+                const tmp = lat;
+                lat = lng;
+                lng = tmp;
+              }
+              if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                bounds.extend([lng, lat]);
+                hasBounds = true;
+              }
             }
           }
         });
-      } else {
       }
-
-      coords.forEach(pt => {
-        bounds.extend(pt);
-        hasBounds = true;
-      });
-    }
   });
 
   displayPlants.forEach(plant => {
@@ -1437,7 +1447,13 @@ async function deleteFarm() {
   }
 }
 
-  
+function filterFarmsByCustomer() {
+  const userId = document.getElementById('filter-farm-user')?.value || 'all';
+  let filteredFarms = currentFarms;
+  if (userId !== 'all') {
+    filteredFarms = currentFarms.filter(f => f.user_id == userId);
+  }
+
   // Filter the plants to only show those inside the filtered farms
   const filteredPlants = (userId === 'all') 
     ? currentPlants 

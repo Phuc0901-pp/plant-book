@@ -10,6 +10,16 @@ const { v4: uuidv4 } = require('uuid');
 const { delCacheByPattern } = require('../config/redis');
 require('dotenv').config();
 
+/**
+ * ISO/IEC 11558 & ISO 3309 Standard 8-Digit Obfuscation Hash Generator
+ */
+function generateIsoPublicId(role, numId) {
+  const prefix = role === 'admin' ? 'adm' : 'usr';
+  const id = parseInt(numId) || 0;
+  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
+  return `${prefix}-${val}`;
+}
+
 // Multer for avatar upload (memory storage)
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
@@ -85,16 +95,6 @@ router.post('/login', async (req, res) => {
     if (broadcast) {
       broadcast('user_status_changed', { id: user.id, is_online: true, last_active_at: new Date() });
     }
-
-/**
- * ISO/IEC 11558 & ISO 3309 Standard 8-Digit Obfuscation Hash Generator
- */
-function generateIsoPublicId(role, numId) {
-  const prefix = role === 'admin' ? 'adm' : 'usr';
-  const id = parseInt(numId) || 0;
-  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
-  return `${prefix}-${val}`;
-}
 
     res.json({
       token,
