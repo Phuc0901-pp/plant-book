@@ -1,4 +1,4 @@
-﻿/**
+/**
  * modules/weather-clock.js - Live Digital Clock & Real-Time GPS Weather Widget (Open-Meteo API)
  */
 
@@ -158,8 +158,8 @@ export async function refreshDeviceWeather() {
             </div>
             <div>
               <div style="display:flex; align-items:baseline; gap:8px;">
-                <span style="font-size:36px; font-weight:900; line-height:1; letter-spacing:-1px;">${temp}°C</span>
-                <span style="font-size:13px; color:rgba(255,255,255,0.85); font-weight:700;">(Cảm giác: ${feelLike}°C)</span>
+                <span id="weather-val-temp" style="font-size:36px; font-weight:900; line-height:1; letter-spacing:-1px;">0°C</span>
+                <span style="font-size:13px; color:rgba(255,255,255,0.85); font-weight:700;">(Cảm giác: <span id="weather-val-feel">0</span>°C)</span>
               </div>
               <div style="font-size:14.5px; font-weight:800; color:#ffffff; margin-top:4px; display:flex; align-items:center; gap:6px;">
                 <span>${wmo.label}</span>
@@ -175,28 +175,28 @@ export async function refreshDeviceWeather() {
               <div style="font-size:11px; color:rgba(255,255,255,0.75); font-weight:700; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-droplet" style="color:#38bdf8;"></i> Độ ẩm KK
               </div>
-              <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">${humidity}%</div>
+              <div id="weather-val-humidity" style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">0%</div>
             </div>
 
             <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:8px 12px;">
               <div style="font-size:11px; color:rgba(255,255,255,0.75); font-weight:700; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-wind" style="color:#7dd3fc;"></i> Gió & Hướng
               </div>
-              <div style="font-size:13.5px; font-weight:900; color:#ffffff; margin-top:2px;">${windSpeed} km/h <span style="font-size:11px; font-weight:700; color:rgba(255,255,255,0.85);">${windDir}</span></div>
+              <div style="font-size:13.5px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-wind">0</span> km/h <span style="font-size:11px; font-weight:700; color:rgba(255,255,255,0.85);">${windDir}</span></div>
             </div>
 
             <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:8px 12px;">
               <div style="font-size:11px; color:rgba(255,255,255,0.75); font-weight:700; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-cloud-rain" style="color:#60a5fa;"></i> Khả năng mưa
               </div>
-              <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">${rainProb}%</div>
+              <div id="weather-val-rain" style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">0%</div>
             </div>
 
             <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:8px 12px;">
               <div style="font-size:11px; color:rgba(255,255,255,0.75); font-weight:700; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-sun" style="color:#fbbf24;"></i> Chỉ số UV
               </div>
-              <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">${uv} <span style="font-size:11px; font-weight:700; color:${parseFloat(uv) > 6 ? '#fca5a5' : '#86efac'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
+              <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-uv">0.0</span> <span style="font-size:11px; font-weight:700; color:${parseFloat(uv) > 6 ? '#fca5a5' : '#86efac'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
             </div>
 
           </div>
@@ -217,6 +217,25 @@ export async function refreshDeviceWeather() {
           </div>
         </div>
       `;
+
+      // Trigger CountUp animations on weather numbers!
+      if (typeof window.animateValue === 'function') {
+        window.animateValue(document.getElementById('weather-val-temp'), 0, temp, 1000, 0, '°C');
+        window.animateValue(document.getElementById('weather-val-feel'), 0, feelLike, 1000, 0);
+        window.animateValue(document.getElementById('weather-val-humidity'), 0, humidity, 1000, 0, '%');
+        window.animateValue(document.getElementById('weather-val-wind'), 0, windSpeed, 1000, 0);
+        window.animateValue(document.getElementById('weather-val-rain'), 0, rainProb, 1000, 0, '%');
+        window.animateValue(document.getElementById('weather-val-uv'), 0, parseFloat(uv), 1000, 1);
+      }
+
+      // Sync state to 3D Chibi Mascot
+      if (typeof window.setMascotState === 'function') {
+        if (rainProb >= 60) {
+          window.setMascotState('rain');
+        } else if (temp >= 34) {
+          window.setMascotState('thirsty');
+        }
+      }
     }
 
   } catch (err) {

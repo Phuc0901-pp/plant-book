@@ -5,6 +5,7 @@
 
 import { api, currentUser }          from '../core/api.js';
 import { toast }                     from '../core/utils.js';
+import { animateValue }              from './countup.js';
 import { renderUserFarmsList, renderUserPlantsSummaryTable, renderUserPlantsTable, setPlantsCache, setFarmsCache } from './plants.js';
 import { renderUserLogsTable, renderUserLogsTableFull, setLogsCache, populateLogFarmFilter } from './logs.js';
 import { renderUserReminders }       from './reminders.js';
@@ -55,9 +56,9 @@ export async function loadUserDashboard() {
     }
 
     const countEl = document.getElementById('user-plant-count');
-    if (countEl) countEl.textContent = plants.length;
+    if (countEl) animateValue(countEl, 0, plants.length, 1000);
     const countFullEl = document.getElementById('user-plant-count-full');
-    if (countFullEl) countFullEl.textContent = plants.length;
+    if (countFullEl) animateValue(countFullEl, 0, plants.length, 1000);
 
     // ── Render tất cả component ──────────────────────────────
     renderUserFarmsList(farms);

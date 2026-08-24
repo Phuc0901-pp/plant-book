@@ -5,6 +5,7 @@
 
 import { esc, healthBadge } from '../core/utils.js';
 import { api } from '../core/api.js';
+import { animateValue } from './countup.js';
 
 
 // ── State (chia sẻ với các module khác qua getter) ──────────
@@ -374,8 +375,8 @@ export function openFarmDetailView(farmId, updateHash = true) {
     const areaEl = document.getElementById('active-farm-area');
 
     if (nameEl) nameEl.textContent = farm.name;
-    if (countEl) countEl.textContent = farm.plant_count || farm.total_plants || 0;
-    if (areaEl) areaEl.textContent = farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0;
+    if (countEl) animateValue(countEl, 0, farm.plant_count || farm.total_plants || 0, 1000);
+    if (areaEl) animateValue(areaEl, 0, farm.area ? parseFloat(farm.area) : 0, 1000, 1);
 
     // Filter plant table select dropdown for this farm
     const filterSel = document.getElementById('user-plant-filter-farm');

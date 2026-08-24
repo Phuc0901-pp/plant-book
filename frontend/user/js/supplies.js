@@ -511,12 +511,19 @@ export async function loadSuppliesAnalytics() {
     const waterEl = document.getElementById('cost-stat-water');
     const pestLaborEl = document.getElementById('cost-stat-pesticide-labor');
 
-    if (totalEl) totalEl.textContent = formatVND(data.summary.total_expenditure);
-    if (fertEl) fertEl.textContent = formatVND(data.summary.categories['Bón phân']);
-    if (waterEl) waterEl.textContent = formatVND(data.summary.categories['Tiền nước']);
-    
-    const combinedPestLabor = (data.summary.categories['Phun thuốc'] || 0) + (data.summary.categories['Nhân công'] || 0);
-    if (pestLaborEl) pestLaborEl.textContent = formatVND(combinedPestLabor);
+    if (typeof window.animateValue === 'function') {
+      if (totalEl) window.animateValue(totalEl, 0, data.summary.total_expenditure || 0, 1000, 0, ' ₫');
+      if (fertEl) window.animateValue(fertEl, 0, data.summary.categories['Bón phân'] || 0, 1000, 0, ' ₫');
+      if (waterEl) window.animateValue(waterEl, 0, data.summary.categories['Tiền nước'] || 0, 1000, 0, ' ₫');
+      const combinedPestLabor = (data.summary.categories['Phun thuốc'] || 0) + (data.summary.categories['Nhân công'] || 0);
+      if (pestLaborEl) window.animateValue(pestLaborEl, 0, combinedPestLabor || 0, 1000, 0, ' ₫');
+    } else {
+      if (totalEl) totalEl.textContent = formatVND(data.summary.total_expenditure);
+      if (fertEl) fertEl.textContent = formatVND(data.summary.categories['Bón phân']);
+      if (waterEl) waterEl.textContent = formatVND(data.summary.categories['Tiền nước']);
+      const combinedPestLabor = (data.summary.categories['Phun thuốc'] || 0) + (data.summary.categories['Nhân công'] || 0);
+      if (pestLaborEl) pestLaborEl.textContent = formatVND(combinedPestLabor);
+    }
 
     // Render Cost Heatmap Chart
     renderCostHeatmap(data.time_breakdown, data.summary.total_expenditure);

@@ -587,6 +587,52 @@
         <!-- Dashboard Layout Container -->
         <div class="user-dashboard-grid" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
           
+          <!-- 🌿 Thẻ Trợ lý Ảo Nông nghiệp 3D: BÉ MẦM AGTECH -->
+          <div class="card" style="background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); border: 1.5px solid #86efac; border-radius: 18px; padding: 20px; box-shadow: 0 4px 16px rgba(16,185,129,0.08);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+              
+              <!-- Left: 3D Mascot Character with Click Interaction -->
+              <div style="display: flex; align-items: center; gap: 18px;">
+                <div onclick="onMascotClick()" title="Bấm vào Bé Mầm để tương tác!" style="cursor: pointer; width: 68px; height: 68px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #34d399 0%, #10b981 40%, #047857 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px -3px rgba(4,120,87,0.35); border: 3px solid #ffffff; position: relative; animation: mascot-dance 2.2s infinite ease-in-out;">
+                  <!-- Nón lá 3D -->
+                  <div style="position: absolute; top: -14px; left: 16px; width: 36px; height: 20px; background: linear-gradient(135deg, #fef08a 0%, #eab308 70%, #ca8a04 100%); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: rotate(-12deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));"></div>
+                  <!-- Sprout Leaf -->
+                  <div style="position: absolute; top: -18px; right: 16px; font-size: 20px;">🌱</div>
+                  <!-- Chibi Face -->
+                  <div style="text-align: center; color: white; line-height: 1;">
+                    <div style="font-size: 16px; font-weight: 900; letter-spacing: 4px;">^^</div>
+                    <div style="font-size: 12px; font-weight: 900; margin-top: 2px;">ᴗ</div>
+                  </div>
+                  <!-- Rosy Cheeks -->
+                  <div style="position: absolute; bottom: 20px; left: 10px; width: 8px; height: 5px; background: #f43f5e; border-radius: 50%; opacity: 0.65;"></div>
+                  <div style="position: absolute; bottom: 20px; right: 10px; width: 8px; height: 5px; background: #f43f5e; border-radius: 50%; opacity: 0.65;"></div>
+                </div>
+
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #065f46;">Bé Mầm AgTech · Trợ Lý Ảo Vườn Cây 3D</h4>
+                    <span style="background: #10b981; color: white; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 12px;">Đang hoạt động 24/7</span>
+                  </div>
+                  <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.5;">
+                    Tự động đồng bộ với cảm biến đất & thời tiết thực địa để phản hồi cảm xúc và nhắc nhở canh tác thông minh.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Right: Interactive State Testing Buttons -->
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="font-size: 11.5px; font-weight: 700; color: #64748b; margin-right: 4px;">Thử trạng thái:</span>
+                <button type="button" onclick="setMascotState('happy')" style="background: #ecfdf5; border: 1.5px solid #10b981; color: #047857; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer;">🌱 Vui vẻ</button>
+                <button type="button" onclick="setMascotState('thirsty')" style="background: #fffbeb; border: 1.5px solid #f59e0b; color: #b45309; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer;">💧 Khát nước</button>
+                <button type="button" onclick="setMascotState('rain')" style="background: #eff6ff; border: 1.5px solid #3b82f6; color: #1e40af; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer;">🌧️ Trú mưa</button>
+                <button type="button" onclick="setMascotState('doctor')" style="background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer;">🩺 Bác sĩ</button>
+                <button type="button" onclick="setMascotState('sleep')" style="background: #faf5ff; border: 1.5px solid #8b5cf6; color: #6d28d9; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer;">🌙 Ngủ đêm</button>
+                <button type="button" onclick="toggleMascotWalking()" style="background: #f1f5f9; border: 1.5px solid #64748b; color: #334155; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer;">🏃 Tuần tra</button>
+              </div>
+
+            </div>
+          </div>
+          
           <!-- Tóm tắt Danh sách Cây trồng -->
           <div class="card" id="user-plants-summary-card">
             <div class="card-header">
@@ -3000,9 +3046,9 @@
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=1.2.4"></script>
+<script type="module" src="/user/js/auth.js?v=1.2.5"></script>
 
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=1.2.4"></script>
+<script type="module" src="/user/js/app.js?v=1.2.5"></script>
 </body>
 </html>
