@@ -1,4 +1,4 @@
-﻿/**
+/**
  * modules/mascot-chibi.js - Pure Minimal 3D Anime Chibi Plant Mascot with Gemini AI Chatbot for User Portal
  * Vị trí được bố trí thông minh phía trên nút FAB (+) ghi nhật ký, click là mở Chat AI Gemini tư vấn nông nghiệp!
  */
@@ -321,9 +321,17 @@ export async function handleUserAiSubmit(e) {
       if (messagesBox) messagesBox.scrollTop = messagesBox.scrollHeight;
     }, 50);
   }
+export function onMascotClick() {
+  toggleUserAiChat();
 }
 
-window.onMascotClick = toggleUserAiChat;
+export function setMascotState(stateKey) {
+  // Compatibility stub for any legacy state setters
+  if (stateKey) renderMascot();
+}
+
+window.onMascotClick = onMascotClick;
+window.setMascotState = setMascotState;
 window.toggleUserAiChat = toggleUserAiChat;
 window.initChibiMascot = initChibiMascot;
 window.sendUserPrompt = sendUserPrompt;
