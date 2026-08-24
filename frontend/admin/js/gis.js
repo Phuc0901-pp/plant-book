@@ -30,6 +30,25 @@ function sanitizeCoordinates(rawCoords) {
   return validPts;
 }
 
+function removeContourLinesFromMap(map) {
+  if (!map) return;
+  try {
+    const layers = ['dense-1m-contour-lines', 'dense-1m-contour-labels', 'dense-1m-contour-labels-major'];
+    layers.forEach(l => {
+      if (map.getLayer && map.getLayer(l)) map.removeLayer(l);
+    });
+    if (map.getSource && map.getSource('dense-1m-contours')) {
+      map.removeSource('dense-1m-contours');
+    }
+    const container = map.getContainer ? map.getContainer() : null;
+    const legendEl = container ? container.querySelector('.elevation-legend-widget-container') : null;
+    if (legendEl) legendEl.remove();
+  } catch (err) {
+    console.warn('Lỗi gỡ bỏ đường đồng mức:', err);
+  }
+}
+window.removeContourLinesFromMap = removeContourLinesFromMap;
+
 // Helper tính khoảng cách giữa 2 điểm GPS (Haversine Formula)
 function getDist(p1, p2) {
   if (!p1 || !p2) return 0;
@@ -229,11 +248,9 @@ function initDashboardMap(farms, plants) {
 
         map.on('mouseenter', farmLayerId, () => map.getCanvas().style.cursor = 'pointer');
         map.on('mouseleave', farmLayerId, () => map.getCanvas().style.cursor = '');
-      } else if (validCoords.length > 0) {
-        centerLng = validCoords[0][0];
-        centerLat = validCoords[0][1];
-        bounds.extend([centerLng, centerLat]);
-        hasBounds = true;
+      } else if (coords.length > 0) {
+        centerLng = coords[0][0];
+        centerLat = coords[0][1];
       } else {
         const farmPlants = plants.filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
         if (farmPlants.length > 0) {
@@ -685,14 +702,6 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           }
         }
 
-        coords.forEach(pt => {
-          if (Array.isArray(pt) && pt.length >= 2) {
-            let lng = parseFloat(pt[0]);
-            let lat = parseFloat(pt[1]);
-            if (lng < 50 && lat > 90) { const tmp = lng; lng = lat; lat = tmp; }
-            if (!isNaN(lng) && !isNaN(lat)) {
-              bounds.extend([lng, lat]);
-              hasBounds = true;
             }
           }
         });
@@ -1428,12 +1437,6 @@ async function deleteFarm() {
   }
 }
 
-function filterFarmsByCustomer() {
-  const userId = document.getElementById('filter-farm-user').value;
-  let filteredFarms = currentFarms;
-  if (userId !== 'all') {
-    filteredFarms = currentFarms.filter(f => f.user_id == userId);
-  }
   
   // Filter the plants to only show those inside the filtered farms
   const filteredPlants = (userId === 'all') 
