@@ -248,9 +248,11 @@ function initDashboardMap(farms, plants) {
 
         map.on('mouseenter', farmLayerId, () => map.getCanvas().style.cursor = 'pointer');
         map.on('mouseleave', farmLayerId, () => map.getCanvas().style.cursor = '');
-      } else if (coords.length > 0) {
-        centerLng = coords[0][0];
-        centerLat = coords[0][1];
+      } else if (validCoords.length > 0) {
+        centerLng = validCoords[0][0];
+        centerLat = validCoords[0][1];
+        bounds.extend([centerLng, centerLat]);
+        hasBounds = true;
       } else {
         const farmPlants = plants.filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
         if (farmPlants.length > 0) {
