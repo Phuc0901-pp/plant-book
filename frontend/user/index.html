@@ -2341,9 +2341,11 @@
     <i class="fa fa-gear"></i>
     <span>Cài đặt</span>
   </div>
+</nav>
+
 <!-- Modal Thêm/Sửa Quy tắc Cài đặt Ngưỡng Giá trị & Thông báo Tự động -->
-<div id="threshold-rule-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(3px);">
-  <div style="background:#ffffff; border-radius:24px; max-width:620px; width:100%; padding:26px; box-shadow:0 24px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+<div id="threshold-rule-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:99999; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px);">
+  <div style="background:#ffffff; border-radius:24px; max-width:620px; width:100%; padding:26px; box-shadow:0 24px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto; position:relative; z-index:100000;">
     
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
       <h3 style="margin:0; font-size:18px; font-weight:900; color:#0f172a; display:flex; align-items:center; gap:10px;">
@@ -2533,9 +2535,9 @@
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=1.1.5"></script>
+<script type="module" src="/user/js/auth.js?v=1.1.6"></script>
 
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=1.1.5"></script>
+<script type="module" src="/user/js/app.js?v=1.1.6"></script>
 </body>
 </html>
