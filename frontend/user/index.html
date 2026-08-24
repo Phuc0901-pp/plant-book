@@ -947,7 +947,37 @@
               <option value="Bón phân">🧪 Bón phân</option>
               <option value="Phun thuốc">💊 Phun thuốc</option>
               <option value="Cắt lá">🍃 Cắt cành/lá</option>
-              <opti        <!-- Header -->
+              <option value="Tỉa hoa">🌸 Tỉa hoa/quả</option>
+              <option value="Thu hoạch">🌾 Thu hoạch</option>
+              <option value="Bệnh cây">🐛 Bệnh cây</option>
+            </select>
+
+            <select id="user-log-sort-by" onchange="filterUserLogs()" style="flex:1; min-width: 150px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none; font-weight:600; color:#1e293b;">
+              <option value="date_desc">📅 Mới nhất</option>
+              <option value="date_asc">📅 Cũ nhất</option>
+              <option value="disease_first">🚨 Ưu tiên Cây bệnh</option>
+              <option value="plant_asc">🪴 Theo Mã cây (1 ➔ n)</option>
+              <option value="activity_asc">🏷️ Theo loại Hoạt động</option>
+            </select>
+
+            <button type="button" id="user-log-disease-toggle" onclick="toggleDiseaseOnlyFilter()" style="padding:8px 12px; border-radius:8px; border:1.5px solid #fca5a5; background:#fff1f2; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-shield-virus"></i> Chỉ Cây bệnh
+            </button>
+          </div>
+          <!-- Date-Grouped History Logs Container -->
+          <div id="user-logs-grouped-container" style="padding:16px; display:flex; flex-direction:column; gap:18px;">
+            <div class="empty-state" style="padding:40px; text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải nhật ký canh tác...</div>
+          </div>
+
+          <!-- Thanh điều hướng phân trang (10 bản ghi / trang) -->
+          <div id="user-logs-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid #e2e8f0; background:#f8fafc; flex-wrap:wrap; gap:10px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Cài đặt ── -->
+      <div class="page-section" id="page-settings">
+        <!-- Header -->
         <div class="settings-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
           <div style="display:flex; align-items:center; gap:14px;">
             <div class="settings-header-icon"><i class="fa-solid fa-sliders"></i></div>
@@ -1137,36 +1167,6 @@
 
           </div><!-- end settings-grid -->
         </div><!-- end subtab-pane-profile -->
-
-        <!-- Mobile & General Logout Action Box -->
-        <div style="margin-top: 24px; padding: 20px; background:#ffffff; border: 1.5px solid #fecaca; border-radius: 16px; text-align: center; box-shadow: 0 4px 14px rgba(239,68,68,0.06);">
-          <h4 style="margin:0 0 6px 0; color:#991b1b; font-size:14px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Đăng xuất khỏi hệ thống</h4>
-          <p style="margin:0 0 14px 0; color:#64748b; font-size:12.5px;">Bấm nút dưới đây để kết thúc phiên làm việc và đăng xuất tài khoản an toàn.</p>
-          <button onclick="logout()" style="width:100%; max-width:360px; background:linear-gradient(135deg, #ef4444, #dc2626); color:white; font-weight:800; font-size:14px; padding:12px 20px; border-radius:12px; border:none; box-shadow:0 4px 14px rgba(239,68,68,0.3); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
-            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất tài khoản ngay
-          </button>
-        </div>
-      </div>" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" />
-                  <button class="settings-pw-toggle" type="button" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'; this.querySelector('i').className=this.previousElementSibling.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash'">
-                    <i class="fa-solid fa-eye"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <button class="settings-btn settings-btn--security" id="settings-change-password">
-              <i class="fa-solid fa-rotate"></i> Đổi mật khẩu
-            </button>
-
-            <!-- Security tips -->
-            <div class="settings-tips">
-              <div class="settings-tip"><i class="fa-solid fa-circle-check"></i> Sử dụng ít nhất 8 ký tự</div>
-              <div class="settings-tip"><i class="fa-solid fa-circle-check"></i> Kết hợp chữ hoa, chữ thường và số</div>
-              <div class="settings-tip"><i class="fa-solid fa-circle-check"></i> Không dùng thông tin cá nhân dễ đoán</div>
-            </div>
-          </div>
-
-        </div><!-- end settings-grid -->
 
         <!-- Mobile & General Logout Action Box -->
         <div style="margin-top: 24px; padding: 20px; background:#ffffff; border: 1.5px solid #fecaca; border-radius: 16px; text-align: center; box-shadow: 0 4px 14px rgba(239,68,68,0.06);">
@@ -2447,9 +2447,9 @@
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- auth.js phải load trước để xử lý token check khi tải trang -->
-<script type="module" src="/user/js/auth.js?v=1.1.1"></script>
+<script type="module" src="/user/js/auth.js?v=1.1.2"></script>
 
 <!-- app.js là entry point: import tất cả module và expose lên window -->
-<script type="module" src="/user/js/app.js?v=1.1.1"></script>
+<script type="module" src="/user/js/app.js?v=1.1.2"></script>
 </body>
 </html>
