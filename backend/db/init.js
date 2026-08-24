@@ -215,7 +215,36 @@ async function initDB() {
         message TEXT NOT NULL,
         type VARCHAR(50) DEFAULT 'warning',
         is_read BOOLEAN DEFAULT false,
+        is_archived BOOLEAN DEFAULT false,
+        archived_at TIMESTAMPTZ NULL,
+        rule_id INTEGER NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+    await client.query(`
+      ALTER TABLE user_notifications ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
+      ALTER TABLE user_notifications ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ NULL;
+      ALTER TABLE user_notifications ADD COLUMN IF NOT EXISTS rule_id INTEGER NULL;
+    `);
+
+    // User Sensor Threshold & Automated Alert Rules Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_alert_rules (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE,
+        metric_key VARCHAR(100) NOT NULL,
+        metric_name VARCHAR(255) NOT NULL,
+        operator VARCHAR(10) NOT NULL,
+        threshold_value NUMERIC NOT NULL,
+        unit VARCHAR(50) DEFAULT '%',
+        action_type VARCHAR(100) DEFAULT 'Tưới nước',
+        action_recommendation TEXT NOT NULL,
+        alert_level VARCHAR(50) DEFAULT 'warning',
+        is_enabled BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
 

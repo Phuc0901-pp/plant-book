@@ -57,9 +57,12 @@ export function renderNotificationsUI(unreadCount, list) {
     const dateStr = new Date(n.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
     return `
-      <div onclick="readSingleNotification(${n.id})" style="background:${isUnread ? st.bg : '#ffffff'}; border:1px solid ${isUnread ? st.border : '#f1f5f9'}; border-radius:12px; padding:10px 12px; cursor:pointer; transition:all 0.2s ease; position:relative;">
-        ${isUnread ? `<span style="position:absolute; top:12px; right:12px; width:8px; height:8px; background:#ef4444; border-radius:50%;"></span>` : ''}
-        <div style="display:flex; align-items:flex-start; gap:10px;">
+      <div id="notif-item-${n.id}" onclick="readSingleNotification(${n.id})" style="background:${isUnread ? st.bg : '#ffffff'}; border:1px solid ${isUnread ? st.border : '#f1f5f9'}; border-radius:12px; padding:10px 12px; cursor:pointer; transition:all 0.2s ease; position:relative;">
+        <button onclick="dismissSingleNotification(event, ${n.id})" title="Xóa đệm thông báo" style="position:absolute; top:8px; right:8px; background:transparent; border:none; color:#94a3b8; font-size:13px; font-weight:800; cursor:pointer; padding:2px 6px; border-radius:4px; z-index:2;" onmouseenter="this.style.color='#ef4444'; this.style.background='#fee2e2';" onmouseleave="this.style.color='#94a3b8'; this.style.background='transparent';">
+          &times;
+        </button>
+        ${isUnread ? `<span style="position:absolute; top:12px; right:28px; width:8px; height:8px; background:#ef4444; border-radius:50%;"></span>` : ''}
+        <div style="display:flex; align-items:flex-start; gap:10px; padding-right:20px;">
           <i class="fa-solid ${st.icon}" style="color:${st.color}; font-size:16px; margin-top:2px;"></i>
           <div style="flex:1;">
             <div style="font-size:12.5px; font-weight:800; color:#0f172a; margin-bottom:2px;">${n.title}</div>
@@ -71,6 +74,23 @@ export function renderNotificationsUI(unreadCount, list) {
     `;
   }).join('');
 }
+
+export async function dismissSingleNotification(e, id) {
+  if (e) e.stopPropagation();
+  const itemEl = document.getElementById(`notif-item-${id}`);
+  if (itemEl) {
+    itemEl.style.opacity = '0';
+    itemEl.style.transform = 'scale(0.95)';
+  }
+  try {
+    await api(`/notifications/${id}`, { method: 'DELETE' });
+    if (window.toast) window.toast('Đã xóa đệm thông báo.', 'info');
+    loadNotifications();
+  } catch (err) {
+    console.warn('Lỗi xóa đệm thông báo:', err);
+  }
+}
+window.dismissSingleNotification = dismissSingleNotification;
 
 export function toggleNotificationDropdown() {
   const panel = document.getElementById('notif-dropdown');

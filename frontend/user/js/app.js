@@ -203,10 +203,17 @@ window.startVoiceInput      = startVoiceInput;
 window.onCareMediaSelected  = onCareMediaSelected;
 window.openLightbox         = openLightbox;
 
+import { loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, switchSettingsSubtab, loadThresholdRules, openAddThresholdRuleModal, closeThresholdRuleModal, saveThresholdRule } from './modules/settings.js';
+
 window.loadUserSettings     = loadUserSettings;
 window.saveUserProfile      = saveUserProfile;
 window.changeUserPassword   = changeUserPassword;
 window.uploadUserAvatar     = uploadUserAvatar;
+window.switchSettingsSubtab = switchSettingsSubtab;
+window.loadThresholdRules   = loadThresholdRules;
+window.openAddThresholdRuleModal = openAddThresholdRuleModal;
+window.closeThresholdRuleModal = closeThresholdRuleModal;
+window.saveThresholdRule    = saveThresholdRule;
 
 window.openNfcModal         = openNfcModal;
 window.closeNfcModal        = closeNfcModal;
