@@ -321,6 +321,8 @@ export async function handleUserAiSubmit(e) {
       if (messagesBox) messagesBox.scrollTop = messagesBox.scrollHeight;
     }, 50);
   }
+}
+
 export function onMascotClick() {
   toggleUserAiChat();
 }
