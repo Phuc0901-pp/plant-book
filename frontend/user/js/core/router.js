@@ -165,6 +165,7 @@ export function showPage(page, updateHash = true) {
 
   if (targetPage === 'supplies') {
     if (typeof window.loadSupplies === 'function') window.loadSupplies();
+    if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
   }
 
   if (targetPage === 'settings') {

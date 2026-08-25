@@ -493,7 +493,20 @@ export function switchSupplyPeriod(period) {
   loadSuppliesAnalytics();
 }
 
+export function populateSuppliesFilterFarms() {
+  const farmSelect = document.getElementById('supplies-filter-farm');
+  if (!farmSelect) return;
+  const currentVal = farmSelect.value || 'all';
+  const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
+  if (farms.length > 0 && farmSelect.options.length <= 1) {
+    farmSelect.innerHTML = `<option value="all">Tất cả trang trại</option>` +
+      farms.map(f => `<option value="${f.id}" ${String(f.id) === String(currentVal) ? 'selected' : ''}>🏡 ${esc(f.name)}</option>`).join('');
+  }
+}
+window.populateSuppliesFilterFarms = populateSuppliesFilterFarms;
+
 export async function loadSuppliesAnalytics() {
+  populateSuppliesFilterFarms();
   const yearSelect = document.getElementById('supplies-filter-year');
   const monthSelect = document.getElementById('supplies-filter-month');
   const farmSelect = document.getElementById('supplies-filter-farm');

@@ -695,6 +695,7 @@ router.post('/:id/logs', auth, async (req, res) => {
         plant_variety: plantVariety,
         creator_name: req.user.name
       });
+      broadcast('supplies_updated', { userId: req.user.id, log: result.rows[0] });
     }
 
     res.status(201).json(result.rows[0]);
@@ -788,6 +789,7 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('plants_updated', { message: `Care log edited on plant #${plantId}` });
+      broadcast('supplies_updated', { message: `Care log edited on plant #${plantId}` });
     }
 
     res.json(updated.rows[0]);
@@ -813,6 +815,12 @@ router.delete('/:plantId/logs/:logId', auth, admin, async (req, res) => {
         currentLog.rows[0],
         {}
       );
+    }
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('plants_updated', { message: `Care log deleted on plant #${req.params.plantId}` });
+      broadcast('supplies_updated', { message: `Care log deleted on plant #${req.params.plantId}` });
     }
     
     res.json({ message: 'Đã xóa.' });

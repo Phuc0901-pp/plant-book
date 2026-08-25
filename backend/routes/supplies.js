@@ -480,6 +480,12 @@ router.post('/usages', auth, async (req, res) => {
       await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1) WHERE id = $2', [qty, supply.id]);
     }
 
+    // Broadcast WebSocket event for real-time cost and supply update
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('supplies_updated', { userId: req.user.id, usage: result.rows[0] });
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error recording supply usage:', err);
@@ -500,6 +506,13 @@ router.delete('/usages/:id', auth, async (req, res) => {
     }
 
     await pool.query('DELETE FROM supply_usages WHERE id = $1', [id]);
+
+    // Broadcast WebSocket event for real-time cost and supply update
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('supplies_updated', { userId: req.user.id, deletedId: id });
+    }
+
     res.json({ success: true, message: 'Đã xóa bản ghi tiêu hao vật tư.' });
   } catch (err) {
     console.error('Error deleting supply usage:', err);

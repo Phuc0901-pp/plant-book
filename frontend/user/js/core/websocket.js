@@ -56,8 +56,10 @@ export function closeWebSocket() {
 function handleUserRealtimeEvent(msg) {
   const { event } = msg;
 
-  if (event === 'plants_updated' || event === 'farms_updated') {
-    console.log('🔄 Dashboard updated from server event');
-    loadUserDashboard();
+  if (event === 'plants_updated' || event === 'farms_updated' || event === 'supplies_updated' || event === 'new_care_log') {
+    console.log('🔄 Live refresh from server event:', event);
+    if (typeof loadUserDashboard === 'function') loadUserDashboard();
+    if (typeof window.loadSupplies === 'function') window.loadSupplies();
+    if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
   }
 }

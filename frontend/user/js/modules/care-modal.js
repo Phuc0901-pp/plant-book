@@ -933,6 +933,8 @@ export async function saveCareLog() {
 
     closeCareModal();
     if (typeof window.loadUserDashboard === 'function') window.loadUserDashboard();
+    if (typeof window.loadSupplies === 'function') window.loadSupplies();
+    if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
 
   } catch (err) {
     toast('Lỗi lưu nhật ký: ' + err.message, 'error');
