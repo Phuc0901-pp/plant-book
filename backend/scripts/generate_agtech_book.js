@@ -3,7 +3,7 @@ const path = require('path');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType } = require('docx');
 
 async function generateAgTechBookDocx() {
-  console.log('Đang khởi tạo Sách Kỹ Thuật & Nghiên Cứu Phát Triển Sản Phẩm Tân Bảo AgTech (.docx)...');
+  console.log('Đang tái tạo Sách Kỹ Thuật & R&D Tân Bảo AgTech bổ sung Phân Tích Nhược Điểm & Hướng Phát Triển (.docx)...');
 
   const doc = new Document({
     styles: {
@@ -47,9 +47,9 @@ async function generateAgTechBookDocx() {
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: 'SÁCH KỸ THUẬT & NGHIÊN CỨU PHÁT TRIỂN SẢN PHẨM\n', bold: true, size: 22, color: '059669', italics: true }),
-              new TextRun({ text: 'KỶ NGUYÊN SỐ HÓA NÔNG NGHIỆP:\nHỆ THỐNG SỔ NÔNG ĐIỆN TỬ, BẢN ĐỒ GIS VÀ TRỢ LÝ AI AGTECH\n', bold: true, size: 36, color: '065F46' }),
-              new TextRun({ text: '(THE DIGITAL AGTECH COMPENDIUM: ARCHITECTURE, OPERATION & FUTURE R&D ROADMAP)\n', bold: true, size: 20, color: '475569', italics: true }),
+              new TextRun({ text: 'SÁCH KỸ THUẬT & NGHIÊN CỨU PHÁT TRIỂN SẢN PHẨM (R&D WHITEPAPER)\n', bold: true, size: 22, color: '059669', italics: true }),
+              new TextRun({ text: 'KỶ NGUYÊN SỐ HÓA NÔNG NGHIỆP:\nHỆ THỐNG SỔ NÔNG ĐIỆN TỬ, BẢN ĐỒ GIS VÀ TRỢ LÝ AI AGTECH\n', bold: true, size: 34, color: '065F46' }),
+              new TextRun({ text: '(THE DIGITAL AGTECH COMPENDIUM: ARCHITECTURE, OPERATION, LIMITATIONS & FUTURE R&D ROADMAP)\n', bold: true, size: 19, color: '475569', italics: true }),
             ],
             spacing: { before: 200, after: 400 },
           }),
@@ -72,7 +72,7 @@ async function generateAgTechBookDocx() {
                   new TableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, shading: { fill: 'F0FDF4' }, children: [new Paragraph({ children: [new TextRun({ text: 'Mã Xuất Bản:', bold: true, color: '047857' })] })] }),
                   new TableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: 'ISBN-AGTECH-2026-TB', bold: true })] })] }),
                   new TableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, shading: { fill: 'F0FDF4' }, children: [new Paragraph({ children: [new TextRun({ text: 'Phiên Bản:', bold: true, color: '047857' })] })] }),
-                  new TableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: 'Tập 1 - Release v1.1.1' })] })] }),
+                  new TableCell({ width: { size: 25, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: 'Tập 1 - Extended v1.1.2' })] })] }),
                 ],
               }),
               new TableRow({
@@ -179,32 +179,69 @@ async function generateAgTechBookDocx() {
           new Paragraph({ spacing: { after: 300 } }),
 
           // ══════════════════════════════════════════════════════════════
-          // CHƯƠNG 4
+          // CHƯƠNG 4 (MỚI): PHÂN TÍCH NHƯỢC ĐIỂM & ĐIỂM NGHẼN HỆ THỐNG
           // ══════════════════════════════════════════════════════════════
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHƯƠNG 4: HƯỚNG NGHIÊN CỨU & PHÁT TRIỂN TRONG TƯƠNG LAI (R&D ROADMAP)', bold: true, size: 28, color: '065F46' })],
+            children: [new TextRun({ text: 'CHƯƠNG 4: PHÂN TÍCH NHƯỢC ĐIỂM, RỦI RO & ĐIỂM NGHẼN KHI MỞ RỘNG (SYSTEM LIMITATIONS & BOTTLENECKS)', bold: true, size: 28, color: '065F46' })],
             spacing: { before: 300, after: 150 },
           }),
           new Paragraph({
+            children: [new TextRun({ text: '4.1 Nhược Điểm Về Mặt Kỹ Thuật & Hạ Tầng (Technical Constraints):', bold: true, size: 24, color: '047857' })],
+          }),
+          new Paragraph({
             children: [
-              new TextRun({ text: '🚀 Giai Đoạn 1 (2026 - 2027): Ảnh Vệ Tinh Viễn Thám & Chỉ Số Sức Khỏe Cây (NDVI):\n', bold: true, color: '047857' }),
-              new TextRun({ text: 'Tích hợp dữ liệu vệ tinh Sentinel-2 và Landsat để tính toán chỉ số thảm thực vật NDVI, phát hiện sớm tình trạng thiếu nước và suy dinh dưỡng trên quy mô hàng ngàn hecta mà không cần đi bộ kiểm tra từng cây.\n\n' }),
-              new TextRun({ text: '🚀 Giai Đoạn 2 (2027 - 2028): Tự Động Hóa Nông Trại Bằng Drone & IoT LoRaWAN:\n', bold: true, color: '047857' }),
-              new TextRun({ text: 'Kết nối trực tiếp nhật ký số với máy bay không người lái (Drone) để lập trình lộ trình bay phun thuốc tự động và kích hoạt hệ thống van tưới nhỏ giọt tự động dựa trên cảm biến độ ẩm đất.\n\n' }),
-              new TextRun({ text: '🚀 Giai Đoạn 3 (2028 - 2030): Tín Chỉ Carbon Nông Nghiệp (Agri-Carbon Credit) & Web3:\n', bold: true, color: '047857' }),
-              new TextRun({ text: 'Ứng dụng thuật toán đo lường lượng giảm phát thải khí nhà kính từ việc tối ưu hóa phân bón để cấp Chứng chỉ Carbon Nông nghiệp, tạo thêm nguồn doanh thu mới hàng triệu USD cho các nông hộ liên kết.' }),
+              new TextRun({ text: '• Phụ Thuộc API Bên Thứ Ba & Chi Phí Token: Việc sử dụng Google Gemini và Mapbox Tiles khiến hệ thống phải chịu chi phí biến đổi khi số lượng nông hộ tăng vọt lên hàng trăm ngàn người.\n' }),
+              new TextRun({ text: '• Sai Số GPS Dưới Tán Cây Dày: Tại các vườn sầu riêng cổ thụ hoặc vườn bưởi tán rậm, tín hiệu GPS dân dụng của smartphone có thể bị trôi sai số từ 5m - 15m, gây nhầm lẫn vị trí cây nếu không có chip NFC hỗ trợ.\n' }),
+              new TextRun({ text: '• Độ Bền Vật Lý Của Thẻ NFC / Tem QR Thực Địa: Môi trường ngoài trời với nắng gắt, mưa axit và hóa chất BVTV có thể làm giảm tuổi thọ tem nhãn nếu không sử dụng vật liệu Composite cao cấp.\n' }),
+              new TextRun({ text: '• Giới Hạn Bộ Nhớ Trình Duyệt Mobile: Bộ nhớ đệm IndexedDB trên một số dòng điện thoại Android giá rẻ có thể bị hệ điều hành tự động dọn dẹp (Storage Eviction) nếu điện thoại đầy bộ nhớ.' }),
+            ],
+          }),
+
+          new Paragraph({
+            children: [new TextRun({ text: '4.2 Nhược Điểm Về Mặt Hành Vi Nông Dân & Vận Hành (Adoption & Operational Constraints):', bold: true, size: 24, color: '047857' })],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: '• Rào Cản Thói Quen & Tuổi Tác: Đại bộ phận chủ vườn lớn tuổi (50 - 65 tuổi) ngại gõ phím cảm ứng trên điện thoại khi tay đang dính bùn đất ngoài vườn.\n' }),
+              new TextRun({ text: '• Tâm Lý E Ngại Chia Sẻ Dữ Liệu Tài Chính: Một số nông hộ còn e dè khi nhập giá mua vật tư hoặc năng suất thu hoạch vì sợ lộ bí quyết kinh doanh hoặc rủi ro thuế.\n' }),
+              new TextRun({ text: '• Nguy Cơ Gian Lận Dữ Liệu Bù: Nông dân có thể quên ghi chép hàng ngày và ghi bù một lúc vào cuối tuần, làm giảm tính thời gian thực của dữ liệu VietGAP.' }),
             ],
           }),
 
           new Paragraph({ spacing: { after: 300 } }),
 
           // ══════════════════════════════════════════════════════════════
-          // CHƯƠNG 5
+          // CHƯƠNG 5 (MỚI): CHIẾN LƯỢC KHẮC PHỤC & HƯỚNG PHÁT TRIỂN ĐỘT PHÁ
           // ══════════════════════════════════════════════════════════════
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: 'CHƯƠNG 5: MÔ HÌNH KINH DOANH VÀ CHIẾN LƯỢC THƯƠNG MẠI HÓA', bold: true, size: 28, color: '065F46' })],
+            children: [new TextRun({ text: 'CHƯƠNG 5: CHIẾN LƯỢC KHẮC PHỤC VÀ HƯỚNG PHÁT TRIỂN ĐỘT PHÁ (STRATEGIC SOLUTIONS & FUTURE ROADMAP)', bold: true, size: 28, color: '065F46' })],
+            spacing: { before: 300, after: 150 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: '🚀 1. Công Nghệ Trợ Lý Giọng Nói Tiếng Việt 1-Chạm (Voice AI Input Engine):\n', bold: true, color: '047857' }),
+              new TextRun({ text: 'Giải quyết triệt để rào cản gõ phím của nông dân: Tích hợp mô hình nhận diện giọng nói tiếng Việt đa vùng miền (Miền Tây, Miền Trung, Tây Nguyên). Nông dân chỉ cần nhấn giữ nút Bé Mầm và nói: \"Hôm nay tưới 30 lít phân NPK 16-16-8 cho cây sầu riêng 01\" -> AI tự động bóc tách số liệu và lưu nhật ký ngay lập tức mà không cần chạm tay vào bàn phím!\n\n' }),
+              new TextRun({ text: '🚀 2. Tự Chủ Hạ Tầng AI Bằng Mô Hình Ngôn Ngữ Riêng (Private Fine-Tuned LLM):\n', bold: true, color: '047857' }),
+              new TextRun({ text: 'Để giảm 95% chi phí API thương mại khi quy mô đạt 500.000 nông hộ: Tân Bảo AgTech sẽ huấn luyện riêng một mô hình ngôn ngữ chuyên sâu về nông học Việt Nam (Agri-LLM) chạy trực tiếp trên cụm máy chủ nội bộ (On-Premises GPU Server).\n\n' }),
+              new TextRun({ text: '🚀 3. Định Vị Vi Sai Độ Chính Xác Cao (RTK-GPS) & Thị Giác Máy Tính On-Device:\n', bold: true, color: '047857' }),
+              new TextRun({ text: 'Khắc phục sai số dưới tán cây rậm rạp: Tích hợp trạm phát vi sai RTK thu nhỏ giúp hạ độ sai số GPS xuống dưới 20cm; Mô hình Computer Vision (TensorFlow Lite) nhận diện trực tiếp sâu bệnh qua camera với độ trễ <0.1 giây mà không cần internet.\n\n' }),
+              new TextRun({ text: '🚀 4. Cơ Chế Gamification & Tích Điểm Thưởng Nông Hộ Chuẩn VietGAP:\n', bold: true, color: '047857' }),
+              new TextRun({ text: 'Khắc phục việc quên ghi nhật ký: Hệ thống tích hợp cơ chế \"Nông hộ kim cương\": Ghi nhật ký đúng giờ được tặng điểm thưởng đổi lấy phân bón miễn phí hoặc được ưu đãi lãi suất vay vốn ngân hàng liên kết.\n\n' }),
+              new TextRun({ text: '🚀 5. Sàn Giao Dịch Nông Sản B2B & Chuỗi Cung Ứng Khép Kín (From Farm To Fork):\n', bold: true, color: '047857' }),
+              new TextRun({ text: 'Kết nối trực tiếp nông hộ có chứng nhận số hóa với các doanh nghiệp thu mua xuất khẩu uy tín, cắt bỏ tầng lớp thương lái trung gian, đảm bảo bao tiêu đầu ra với giá cao hơn 15-20% thị trường.' }),
+            ],
+          }),
+
+          new Paragraph({ spacing: { after: 300 } }),
+
+          // ══════════════════════════════════════════════════════════════
+          // CHƯƠNG 6: MÔ HÌNH KINH DOANH & THƯƠNG MẠI HÓA
+          // ══════════════════════════════════════════════════════════════
+          new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+            children: [new TextRun({ text: 'CHƯƠNG 6: MÔ HÌNH KINH DOANH VÀ CHIẾN LƯỢC THƯƠNG MẠI HÓA', bold: true, size: 28, color: '065F46' })],
             spacing: { before: 300, after: 150 },
           }),
           new Paragraph({
@@ -235,7 +272,7 @@ async function generateAgTechBookDocx() {
   const buffer = await Packer.toBuffer(doc);
   const outPath = path.join(__dirname, '../../SACH_KY_THUAT_NGHIEN_CUU_VA_PHAT_TRIEN_TANBAO_AGTECH.docx');
   fs.writeFileSync(outPath, buffer);
-  console.log('✅ ĐÃ XUẤT BẢN THÀNH CÔNG SÁCH KỸ THUẬT WORD (.docx) TẠI:\n', outPath);
+  console.log('✅ ĐÃ XUẤT BẢN THÀNH CÔNG SÁCH KỸ THUẬT WORD BỔ SUNG NHƯỢC ĐIỂM & HƯỚNG PHÁT TRIỂN TẠI:\n', outPath);
 }
 
 generateAgTechBookDocx().catch(console.error);
