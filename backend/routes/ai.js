@@ -11,7 +11,6 @@ const auth = require('../middleware/auth');
 function classifyQueryComplexity(message) {
   const lower = message.toLowerCase().trim();
 
-  // Dấu hiệu câu hỏi phức tạp (chuyên sâu, phác đồ, lập kế hoạch, triệu chứng lạ)
   const complexKeywords = [
     'nguyên nhân', 'tại sao', 'phác đồ', 'kết hợp', 'ra hoa nghịch vụ', 'trái vụ',
     'cháy múi', 'sượng cơm', 'vừa bị', 'triệu chứng', 'phèn mặn', 'hoạt chất', 
@@ -22,15 +21,15 @@ function classifyQueryComplexity(message) {
   const isLongQuery = lower.split(/\s+/).length >= 18;
 
   if (hasComplexKeywords || isLongQuery) {
-    return 'complex'; // -> Route tới Flagship Models
+    return 'complex'; // -> Route tới Flagship Models trước
   }
 
-  return 'standard'; // -> Route tới Standard / Light Models (tiết kiệm quota)
+  return 'standard'; // -> Route tới Standard / Light Models trước
 }
 
 /**
  * POST /api/ai/chat
- * Trợ lý ảo AI Bé Mầm AgTech - Điều hướng mô hình thông minh (Dynamic Multi-Tier Router)
+ * Trợ lý ảo AI Bé Mầm AgTech - Tự động nhảy model khi hết quota (Auto Failover Multi-Tier Loop)
  */
 router.post('/chat', auth, async (req, res) => {
   try {
@@ -215,7 +214,7 @@ ${logLines || '- Chưa có nhật ký chăm sóc nào gần đây.'}
 
 [VẬT TƯ & CHI PHÍ TIÊU HAO ĐÃ DÙNG]:
 - Tổng chi phí vật tư đã chi: ${userSuppliesCost.toLocaleString('vi-VN')} VNĐ.
-${supplyLines || '- Chưa ghi nhận tiêuaho vật tư gần đây.'}`;
+${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
       }
 
     } catch (dbErr) {
@@ -246,29 +245,32 @@ Khi người dùng hỏi "App này sài sao?", "Chưa biết dùng", "Hướng d
 
 ${systemContext}`;
 
-    // 3. ĐIỀU HƯỚNG MÔ HÌNH THÔNG MINH (DYNAMIC MODEL ROUTER)
+    // 3. ĐIỀU HƯỚNG MÔ HÌNH & TỰ ĐỘNG CHUYỂN TIẾP (AUTO FAILOVER LOOP)
     const queryComplexity = classifyQueryComplexity(message);
     let modelCandidates = [];
 
     if (queryComplexity === 'complex') {
-      // 🌟 Câu hỏi khó/chuyên sâu: Ưu tiên Model Siêu Cấp (3.7 / 3.5 / Pro)
+      // 🌟 Câu hỏi khó/chuyên sâu: Ưu tiên Model Siêu Cấp trước, nếu hết quota tự động nhảy sang toàn bộ model còn lại
       modelCandidates = [
         'gemini-3.7-flash',
         'gemini-3.5-flash',
         'gemini-pro-latest',
         'gemini-2.5-flash',
         'gemini-2.5-flash-lite',
-        'gemini-2.0-flash'
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro'
       ];
     } else {
-      // ⚡ Câu hỏi dễ/tra cứu/thường ngày: Ưu tiên Model Standard/Lite (Quota lớn 1.500 RPD, phản hồi siêu tốc)
+      // ⚡ Câu hỏi thường: Ưu tiên Model Standard/Lite (Quota lớn 1.500 RPD), nếu cần vẫn có thể nhảy sang model khác
       modelCandidates = [
         'gemini-2.5-flash-lite',
         'gemini-2.0-flash',
         'gemini-2.5-flash',
         'gemini-flash-latest',
         'gemini-1.5-flash',
-        'gemini-3.5-flash'
+        'gemini-3.5-flash',
+        'gemini-3.7-flash'
       ];
     }
 
@@ -323,9 +325,12 @@ ${systemContext}`;
                   source: 'gemini_ai'
                 });
               }
+            } else {
+              // 429 Too Many Requests hoặc model hết quota -> Tự động chuyển model tiếp theo
+              console.warn(`[AI Router] Model ${modelName} trả về HTTP ${geminiRes.status} (Hết quota hoặc bận) -> Tự động nhảy sang model kế tiếp...`);
             }
           } catch (err) {
-            // Tự động chuyển tiếp sang model kế tiếp trong danh sách phân tầng
+            // Lỗi mạng hoặc timeout -> Nhảy tiếp model sau
           }
         }
       }
