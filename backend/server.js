@@ -10,12 +10,14 @@ const { ensureBucket } = require('./config/supabase');
 const initDB = require('./db/init');
 const http = require('http');
 const WebSocket = require('ws');
+const compression = require('compression');
 
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 // ─── Middleware ───────────────────────────────────────────────────
+app.use(compression()); // Gzip compression: giảm 70%-85% kích thước payload truyền tải
 app.use(cors({
   origin: '*',
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],

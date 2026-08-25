@@ -17,8 +17,14 @@
 
   <link rel="apple-touch-icon" href="/assets/logo.png">
 
-  <!-- Fonts -->
+  <!-- Fonts & Resource Preconnects -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.mapbox.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://api.mapbox.com">
+  <link rel="dns-prefetch" href="https://events.mapbox.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Icons -->
@@ -323,6 +329,7 @@
         <span id="reg-error-text"></span>
       </div>
 
+      <form id="reg-form" onsubmit="return false;">
       <!-- BƯỚC 1: TÀI KHOẢN & MẬT KHẨU (BẮT BUỘC) -->
       <div id="reg-step-1">
         <div class="form-group" style="margin-bottom:16px;">
@@ -381,6 +388,7 @@
           <input type="number" id="reg-farm-area" step="0.1" placeholder="Ví dụ: 2.5 ha" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
       </div>
+      </form>
 
       <!-- BƯỚC 3: XÁC NHẬN & GỬI YÊU CẦU -->
       <div id="reg-step-3" style="display:none;">

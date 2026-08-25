@@ -11,6 +11,12 @@
 
 <link rel="apple-touch-icon" href="/assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://api.mapbox.com">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://api.mapbox.com">
+<link rel="dns-prefetch" href="https://events.mapbox.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -293,6 +299,7 @@
         <span id="reg-error-text"></span>
       </div>
 
+      <form id="reg-form" onsubmit="return false;">
       <!-- BƯỚC 1: TÀI KHOẢN & MẬT KHẨU (BẮT BUỘC) -->
       <div id="reg-step-1">
         <div class="form-group" style="margin-bottom:16px;">
@@ -351,6 +358,7 @@
           <input type="number" id="reg-farm-area" step="0.1" placeholder="Ví dụ: 2.5 ha" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
       </div>
+      </form>
 
       <!-- BƯỚC 3: XÁC NHẬN & GỬI YÊU CẦU -->
       <div id="reg-step-3" style="display:none;">
@@ -665,7 +673,7 @@
           <div class="card">
             <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
               <h3 style="display: flex; align-items: center; gap: 8px; margin: 0;">
-                <i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media & Quản lý Thư mục Khách hàng
+                <i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media & Quản lý Thư mục Trang trại
               </h3>
             </div>
             
@@ -1969,6 +1977,7 @@
       <button class="modal-close" onclick="closeCsvImportModal()">×</button>
     </div>
     <div class="modal-body">
+      <form id="f-csv-form" onsubmit="return false;">
       <p style="font-size:12px;color:var(--gray-600);margin-bottom:16px;line-height:1.5">
         Phương thức này giúp tự động tạo hàng loạt cây trồng từ file tọa độ CSV.
         File CSV cần có các cột tiêu đề: <strong>STT</strong>, <strong>E</strong> (Kinh độ/Lng), <strong>N</strong> (Vĩ độ/Lat).
@@ -2035,6 +2044,7 @@
           </table>
         </div>
       </div>
+      </form>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCsvImportModal()">Hủy</button>
@@ -2053,6 +2063,7 @@
       <button class="modal-close" onclick="closeUserModal()">×</button>
     </div>
     <div class="modal-body">
+      <form id="f-user-form" onsubmit="return false;">
       <input type="hidden" id="f-user-id">
       
       <div class="field">
@@ -2132,6 +2143,7 @@
           <span>📦 Được xem Vật tư hiện hữu & Tồn kho chung của trang trại</span>
         </label>
       </div>
+      </form>
     </div>
 
 

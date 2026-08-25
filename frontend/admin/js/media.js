@@ -410,8 +410,7 @@ function renderMediaView() {
 
   // Apply breadcrumb filters
   currentFolderPath.forEach(p => {
-    if (p.level === 'user') scopedMedia = scopedMedia.filter(m => (m.farm_owner_id || m.user_id) == p.id);
-    else if (p.level === 'farm') scopedMedia = scopedMedia.filter(m => m.farm_id == p.id);
+    if (p.level === 'farm') scopedMedia = scopedMedia.filter(m => (m.farm_id || 0) == p.id);
     else if (p.level === 'plant') scopedMedia = scopedMedia.filter(m => m.plant_id == p.id);
     else if (p.level === 'year') scopedMedia = scopedMedia.filter(m => new Date(m.uploaded_at).getFullYear() == p.id);
     else if (p.level === 'quarter') scopedMedia = scopedMedia.filter(m => getQuarterFromDate(new Date(m.uploaded_at)) === p.id);
@@ -422,49 +421,53 @@ function renderMediaView() {
     return;
   }
 
-  // LEVEL 0: Subfolders by Khách hàng (User)
+  // LEVEL 0: Subfolders by Trang Trại (Farm)
   if (depth === 0) {
-    const userGroups = {};
+    const farmGroups = {};
     scopedMedia.forEach(m => {
-      const uId = m.farm_owner_id || m.user_id || 0;
-      const uName = m.owner_name || 'Khách hàng chưa gán';
-      if (!userGroups[uId]) userGroups[uId] = { id: uId, name: uName, items: [] };
-      userGroups[uId].items.push(m);
+      const fId = m.farm_id || 0;
+      const fName = m.farm_name || (fId === 0 ? '📁 Media chưa gán trang trại' : `Trang trại #${fId}`);
+      const owner = m.owner_name ? `Chủ hộ: ${m.owner_name}` : 'Hệ thống Tân Bảo';
+      if (!farmGroups[fId]) farmGroups[fId] = { id: fId, name: fName, owner, items: [] };
+      farmGroups[fId].items.push(m);
     });
 
-    foldersGrid.innerHTML = Object.values(userGroups).map(g => `
-      <div class="folder-card" onclick="enterMediaFolder('user', ${g.id}, '${esc(g.name)}', '👤')" style="background:#ffffff; border:2px solid #a7f3d0; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="this.style.borderColor='#a7f3d0'">
+    foldersGrid.innerHTML = Object.values(farmGroups).map(g => `
+      <div class="folder-card" onclick="enterMediaFolder('farm', ${g.id}, '${esc(g.name)}', '🏡')" style="background:#ffffff; border:2px solid #a7f3d0; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="this.style.borderColor='#a7f3d0'">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:44px; height:44px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-            <i class="fa-solid fa-folder"></i>
+            <i class="fa-solid fa-folder-tree"></i>
           </div>
           <div style="flex:1;">
-            <div style="font-size:13.5px; font-weight:800; color:#0f172a;">👤 ${esc(g.name)}</div>
-            <div style="font-size:11.5px; color:#047857; font-weight:700; margin-top:2px;">${g.items.length} tệp phương tiện</div>
+            <div style="font-size:13.5px; font-weight:800; color:#0f172a;">🏡 ${esc(g.name)}</div>
+            <div style="font-size:11.5px; color:#64748b; margin-top:2px;">👤 ${esc(g.owner)}</div>
+            <div style="font-size:11px; color:#047857; font-weight:700; margin-top:3px;">
+              <span class="badge" style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px;">${g.items.length} tệp phương tiện</span>
+            </div>
           </div>
         </div>
       </div>
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 1: Subfolders by Trang trại (Farm)
+  // LEVEL 1: Subfolders by Cây trồng (Plant)
   else if (depth === 1) {
-    const farmGroups = {};
+    const plantGroups = {};
     scopedMedia.forEach(m => {
-      const fId = m.farm_id || 0;
-      const fName = m.farm_name || 'Trang trại khác';
-      if (!farmGroups[fId]) farmGroups[fId] = { id: fId, name: fName, items: [] };
-      farmGroups[fId].items.push(m);
+      const pId = m.plant_id || 0;
+      const pCode = m.tree_code ? `Cây #${m.tree_code} (${m.plant_type || 'Cây trồng'})` : (pId === 0 ? 'Ảnh chung vườn' : `Cây #${pId}`);
+      if (!plantGroups[pId]) plantGroups[pId] = { id: pId, name: pCode, items: [] };
+      plantGroups[pId].items.push(m);
     });
 
-    foldersGrid.innerHTML = Object.values(farmGroups).map(g => `
-      <div class="folder-card" onclick="enterMediaFolder('farm', ${g.id}, '${esc(g.name)}', '🏡')" style="background:#ffffff; border:2px solid #bfdbfe; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(37,99,235,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#bfdbfe'">
+    foldersGrid.innerHTML = Object.values(plantGroups).map(g => `
+      <div class="folder-card" onclick="enterMediaFolder('plant', ${g.id}, '${esc(g.name)}', '🌳')" style="background:#ffffff; border:2px solid #bfdbfe; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(37,99,235,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#bfdbfe'">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:44px; height:44px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
             <i class="fa-solid fa-folder-closed"></i>
           </div>
           <div style="flex:1;">
-            <div style="font-size:13.5px; font-weight:800; color:#0f172a;">🏡 ${esc(g.name)}</div>
+            <div style="font-size:13.5px; font-weight:800; color:#0f172a;">🌳 ${esc(g.name)}</div>
             <div style="font-size:11.5px; color:#1d4ed8; font-weight:700; margin-top:2px;">${g.items.length} tệp phương tiện</div>
           </div>
         </div>
@@ -472,33 +475,8 @@ function renderMediaView() {
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 2: Subfolders by Cây trồng (Plant)
+  // LEVEL 2: Subfolders by Năm (Year)
   else if (depth === 2) {
-    const plantGroups = {};
-    scopedMedia.forEach(m => {
-      const pId = m.plant_id;
-      const pCode = `Cây #${m.tree_code || m.plant_id} (${m.plant_type})`;
-      if (!plantGroups[pId]) plantGroups[pId] = { id: pId, name: pCode, items: [] };
-      plantGroups[pId].items.push(m);
-    });
-
-    foldersGrid.innerHTML = Object.values(plantGroups).map(g => `
-      <div class="folder-card" onclick="enterMediaFolder('plant', ${g.id}, '${esc(g.name)}', '🌳')" style="background:#ffffff; border:2px solid #fde68a; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(217,119,6,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#d97706'" onmouseout="this.style.borderColor='#fde68a'">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:44px; height:44px; border-radius:12px; background:#fffbeb; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-            <i class="fa-solid fa-folder"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:13.5px; font-weight:800; color:#0f172a;">🌳 ${esc(g.name)}</div>
-            <div style="font-size:11.5px; color:#b45309; font-weight:700; margin-top:2px;">${g.items.length} tệp phương tiện</div>
-          </div>
-        </div>
-      </div>
-    `).join('');
-    grid.style.display = 'none';
-  }
-  // LEVEL 3: Subfolders by Năm (Year)
-  else if (depth === 3) {
     const yearGroups = {};
     scopedMedia.forEach(m => {
       const yr = new Date(m.uploaded_at).getFullYear();
@@ -507,22 +485,22 @@ function renderMediaView() {
     });
 
     foldersGrid.innerHTML = Object.values(yearGroups).map(g => `
-      <div class="folder-card" onclick="enterMediaFolder('year', ${g.id}, '${esc(g.name)}', '📅')" style="background:#ffffff; border:2px solid #ddd6fe; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(139,92,246,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#ddd6fe'">
+      <div class="folder-card" onclick="enterMediaFolder('year', ${g.id}, '${esc(g.name)}', '📅')" style="background:#ffffff; border:2px solid #fde68a; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(217,119,6,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#d97706'" onmouseout="this.style.borderColor='#fde68a'">
         <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:44px; height:44px; border-radius:12px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px;">
-            <i class="fa-solid fa-folder-closed"></i>
+          <div style="width:44px; height:44px; border-radius:12px; background:#fffbeb; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
+            <i class="fa-solid fa-folder"></i>
           </div>
           <div style="flex:1;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a;">📅 ${esc(g.name)}</div>
-            <div style="font-size:11.5px; color:#6d28d9; font-weight:700; margin-top:2px;">${g.items.length} tệp phương tiện</div>
+            <div style="font-size:11.5px; color:#b45309; font-weight:700; margin-top:2px;">${g.items.length} tệp phương tiện</div>
           </div>
         </div>
       </div>
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 4: Subfolders by Quý (Quarter: Q1, Q2, Q3, Q4)
-  else if (depth === 4) {
+  // LEVEL 3: Subfolders by Quý (Quarter: Q1, Q2, Q3, Q4)
+  else if (depth === 3) {
     const qtrGroups = {};
     scopedMedia.forEach(m => {
       const qName = getQuarterFromDate(new Date(m.uploaded_at));
@@ -531,22 +509,22 @@ function renderMediaView() {
     });
 
     foldersGrid.innerHTML = Object.values(qtrGroups).map(g => `
-      <div class="folder-card" onclick="enterMediaFolder('quarter', '${esc(g.id)}', '${esc(g.name)}', '📊')" style="background:#ffffff; border:2px solid #fbcfe8; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(219,39,119,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#db2777'" onmouseout="this.style.borderColor='#fbcfe8'">
+      <div class="folder-card" onclick="enterMediaFolder('quarter', '${esc(g.id)}', '${esc(g.name)}', '📊')" style="background:#ffffff; border:2px solid #ddd6fe; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(139,92,246,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#ddd6fe'">
         <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:44px; height:44px; border-radius:12px; background:#fdf2f8; color:#db2777; display:flex; align-items:center; justify-content:center; font-size:22px;">
+          <div style="width:44px; height:44px; border-radius:12px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px;">
             <i class="fa-solid fa-folder-open"></i>
           </div>
           <div style="flex:1;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a;">📊 ${esc(g.name)}</div>
-            <div style="font-size:11.5px; color:#be185d; font-weight:700; margin-top:2px;">${g.items.length} tệp phương tiện</div>
+            <div style="font-size:11.5px; color:#6d28d9; font-weight:700; margin-top:2px;">${g.items.length} tệp phương tiện</div>
           </div>
         </div>
       </div>
     `).join('');
     grid.style.display = 'none';
   }
-  // LEVEL 5: Display Media Cards inside the Quarter!
-  else if (depth >= 5) {
+  // LEVEL 4: Hiển thị trực tiếp danh sách Media Cards
+  else if (depth >= 4) {
     foldersGrid.style.display = 'none';
     grid.style.display = 'grid';
     renderMediaCardsList(scopedMedia);

@@ -1,6 +1,23 @@
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — app.js (Core Application Router & Globals)
    ════════════════════════════════════════════════════════ */
+// Passive Event Listeners Patch for 60fps smooth scrolling
+(function() {
+  const originalAddEventListener = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function(type, listener, options) {
+    if (['touchstart', 'touchmove', 'wheel', 'mousewheel'].includes(type)) {
+      if (typeof options === 'boolean') {
+        options = { capture: options, passive: true };
+      } else if (typeof options === 'object' && options !== null && options.passive === undefined) {
+        options = Object.assign({}, options, { passive: true });
+      } else if (options === undefined) {
+        options = { passive: true };
+      }
+    }
+    return originalAddEventListener.call(this, type, listener, options);
+  };
+})();
+
 var API = '/api';
 var token = localStorage.getItem('pb_token') || '';
 var currentUser = null;
