@@ -4,9 +4,33 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 
 /**
+ * Phân loại độ khó câu hỏi (Smart Dynamic Model Routing)
+ * - Câu hỏi dễ/tra cứu dữ liệu/thao tác app: Dùng Model Tiêu Chuẩn (2.5 Flash Lite / 2.0 Flash) -> Quota 1.500 lượt/ngày!
+ * - Câu hỏi khó/phân tích sâu/bệnh hại phức tạp: Kích hoạt Model Siêu Cấp (Gemini 3.7 / 3.5 / Pro)
+ */
+function classifyQueryComplexity(message) {
+  const lower = message.toLowerCase().trim();
+
+  // Dấu hiệu câu hỏi phức tạp (chuyên sâu, phác đồ, lập kế hoạch, triệu chứng lạ)
+  const complexKeywords = [
+    'nguyên nhân', 'tại sao', 'phác đồ', 'kết hợp', 'ra hoa nghịch vụ', 'trái vụ',
+    'cháy múi', 'sượng cơm', 'vừa bị', 'triệu chứng', 'phèn mặn', 'hoạt chất', 
+    'nồng độ', 'kế hoạch', 'tối ưu', 'phân tích', 'xuất khẩu', 'globalgap', 'lập bảng',
+    'tính toán', 'phối trộn', 'ủ phân', 'ức chế đọt', 'nứt thân xì mủ diện rộng'
+  ];
+  const hasComplexKeywords = complexKeywords.some(k => lower.includes(k));
+  const isLongQuery = lower.split(/\s+/).length >= 18;
+
+  if (hasComplexKeywords || isLongQuery) {
+    return 'complex'; // -> Route tới Flagship Models
+  }
+
+  return 'standard'; // -> Route tới Standard / Light Models (tiết kiệm quota)
+}
+
+/**
  * POST /api/ai/chat
- * Trợ lý ảo AI Bé Mầm AgTech - Chuyên gia Nông nghiệp & Cố vấn Hệ thống Tanbao AgTech
- * Được huấn luyện đầy đủ cẩm nang hệ thống, kỹ thuật canh tác VietGAP & CSDL thực tế
+ * Trợ lý ảo AI Bé Mầm AgTech - Điều hướng mô hình thông minh (Dynamic Multi-Tier Router)
  */
 router.post('/chat', auth, async (req, res) => {
   try {
@@ -191,7 +215,7 @@ ${logLines || '- Chưa có nhật ký chăm sóc nào gần đây.'}
 
 [VẬT TƯ & CHI PHÍ TIÊU HAO ĐÃ DÙNG]:
 - Tổng chi phí vật tư đã chi: ${userSuppliesCost.toLocaleString('vi-VN')} VNĐ.
-${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
+${supplyLines || '- Chưa ghi nhận tiêuaho vật tư gần đây.'}`;
       }
 
     } catch (dbErr) {
@@ -222,20 +246,36 @@ Khi người dùng hỏi "App này sài sao?", "Chưa biết dùng", "Hướng d
 
 ${systemContext}`;
 
-    // 3. Gọi Google Gemini AI
+    // 3. ĐIỀU HƯỚNG MÔ HÌNH THÔNG MINH (DYNAMIC MODEL ROUTER)
+    const queryComplexity = classifyQueryComplexity(message);
+    let modelCandidates = [];
+
+    if (queryComplexity === 'complex') {
+      // 🌟 Câu hỏi khó/chuyên sâu: Ưu tiên Model Siêu Cấp (3.7 / 3.5 / Pro)
+      modelCandidates = [
+        'gemini-3.7-flash',
+        'gemini-3.5-flash',
+        'gemini-pro-latest',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-2.0-flash'
+      ];
+    } else {
+      // ⚡ Câu hỏi dễ/tra cứu/thường ngày: Ưu tiên Model Standard/Lite (Quota lớn 1.500 RPD, phản hồi siêu tốc)
+      modelCandidates = [
+        'gemini-2.5-flash-lite',
+        'gemini-2.0-flash',
+        'gemini-2.5-flash',
+        'gemini-flash-latest',
+        'gemini-1.5-flash',
+        'gemini-3.5-flash'
+      ];
+    }
+
     const rawKeys = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
     const apiKeys = rawKeys.split(/[,;\s]+/).map(k => k.trim()).filter(Boolean);
 
     if (apiKeys.length > 0) {
-      const modelCandidates = [
-        'gemini-flash-latest',
-        'gemini-3.5-flash',
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
-        'gemini-3.7-flash',
-        'gemini-pro-latest'
-      ];
-      
       const contents = [];
       if (Array.isArray(history) && history.length > 0) {
         for (const h of history.slice(-4)) {
@@ -264,7 +304,7 @@ ${systemContext}`;
               body: JSON.stringify({
                 contents,
                 generationConfig: {
-                  temperature: 0.2,
+                  temperature: queryComplexity === 'complex' ? 0.3 : 0.15,
                   maxOutputTokens: 2500
                 }
               })
@@ -279,13 +319,13 @@ ${systemContext}`;
                 return res.json({
                   success: true,
                   reply: reply.trim(),
-                  model: modelName,
+                  model: `${modelName} (${queryComplexity})`,
                   source: 'gemini_ai'
                 });
               }
             }
           } catch (err) {
-            // Thử model kế tiếp
+            // Tự động chuyển tiếp sang model kế tiếp trong danh sách phân tầng
           }
         }
       }
