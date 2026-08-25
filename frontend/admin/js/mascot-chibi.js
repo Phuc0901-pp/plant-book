@@ -9,11 +9,11 @@ let _isAiResponding = false;
 
 function isAdminLoggedIn() {
   const token = localStorage.getItem('pb_token');
-  const loginPage = document.getElementById('login-page');
-  const app = document.getElementById('app');
   if (!token) return false;
-  if (loginPage && loginPage.style.display !== 'none') return false;
-  if (app && app.style.display === 'none') return false;
+  const loginPage = document.getElementById('login-page');
+  if (loginPage && loginPage.style.display !== 'none' && getComputedStyle(loginPage).display !== 'none') {
+    return false;
+  }
   return true;
 }
 
@@ -37,17 +37,11 @@ function initAdminChibiMascot() {
     document.body.appendChild(mascotContainer);
   }
 
-  // Inject styles & animations with Login Guard
+  // Inject styles & animations
   if (!document.getElementById('admin-chibi-clean-style')) {
     const style = document.createElement('style');
     style.id = 'admin-chibi-clean-style';
     style.textContent = `
-      #login-page:not([style*="display: none"]) ~ #admin-chibi-mascot-widget,
-      #login-page:not([style*="display:none"]) ~ #admin-chibi-mascot-widget,
-      #app[style*="display: none"] ~ #admin-chibi-mascot-widget,
-      #app[style*="display:none"] ~ #admin-chibi-mascot-widget {
-        display: none !important;
-      }
       @keyframes mascot-float-bounce {
         0%, 100% { transform: translateY(0) rotate(0deg); }
         50% { transform: translateY(-10px) rotate(2.5deg); }
@@ -356,6 +350,7 @@ async function handleAdminAiSubmit(e) {
   }
 }
 
+window.renderAdminMascot = renderAdminMascot;
 window.onAdminMascotClick = toggleAdminAiChat;
 window.toggleAdminAiChat = toggleAdminAiChat;
 window.initAdminChibiMascot = initAdminChibiMascot;

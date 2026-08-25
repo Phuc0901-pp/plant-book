@@ -137,6 +137,9 @@ async function logout() {
 
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
+  if (typeof window.renderAdminMascot === 'function') {
+    window.renderAdminMascot();
+  }
 }
 
 function generateIsoPublicId(role, numId) {
@@ -162,6 +165,9 @@ async function showApp() {
   }
   loadSchemasDropdown();
   connectWebSocket();
+  if (typeof window.renderAdminMascot === 'function') {
+    window.renderAdminMascot();
+  }
 }
 
 // Check existing token on load – guard: chỉ admin mới được ở /admin

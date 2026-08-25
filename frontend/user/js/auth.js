@@ -158,6 +158,9 @@ export async function logout() {
   const loginPage = document.getElementById('login-page');
   if (app)       app.style.display       = 'none';
   if (loginPage) loginPage.style.display = 'flex';
+  if (typeof window.renderMascot === 'function') {
+    window.renderMascot();
+  }
 }
 
 window.logout = logout;
@@ -196,9 +199,11 @@ function showApp() {
   if (settingNameEl)  settingNameEl.textContent  = user?.full_name || user?.name || '—';
   if (settingEmailEl) settingEmailEl.textContent = user?.phone || user?.email || '—';
 
-
   showPage('home');
   connectWebSocket();
+  if (typeof window.renderMascot === 'function') {
+    window.renderMascot();
+  }
 }
 
 // ── Kiểm tra token lưu sẵn khi tải trang ──────────────────────

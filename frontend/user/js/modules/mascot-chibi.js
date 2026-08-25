@@ -14,11 +14,11 @@ let _isUserAiResponding = false;
 
 export function isUserLoggedIn() {
   const token = localStorage.getItem('pb_token');
-  const loginPage = document.getElementById('login-page');
-  const app = document.getElementById('app');
   if (!token) return false;
-  if (loginPage && loginPage.style.display !== 'none') return false;
-  if (app && app.style.display === 'none') return false;
+  const loginPage = document.getElementById('login-page');
+  if (loginPage && loginPage.style.display !== 'none' && getComputedStyle(loginPage).display !== 'none') {
+    return false;
+  }
   return true;
 }
 
@@ -37,18 +37,12 @@ export function initChibiMascot() {
     oldFab.style.display = 'none';
   }
 
-  // Inject styles & animations with Login Guard
+  // Inject styles & animations
   if (!document.getElementById('user-chibi-unified-style')) {
     const style = document.createElement('style');
     style.id = 'user-chibi-unified-style';
     style.textContent = `
       #fab-btn {
-        display: none !important;
-      }
-      #login-page:not([style*="display: none"]) ~ #chibi-mascot-widget,
-      #login-page:not([style*="display:none"]) ~ #chibi-mascot-widget,
-      #app[style*="display: none"] ~ #chibi-mascot-widget,
-      #app[style*="display:none"] ~ #chibi-mascot-widget {
         display: none !important;
       }
       .user-unified-mascot-container {
@@ -545,6 +539,7 @@ export async function handleUserAiSubmit(e) {
   }
 }
 
+window.renderMascot = renderMascot;
 window.onMascotClick = onMascotClick;
 window.selectAction = selectAction;
 window.toggleUserAiChat = toggleUserAiChat;
