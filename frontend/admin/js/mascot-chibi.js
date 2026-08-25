@@ -1,11 +1,21 @@
 ﻿/**
  * admin/js/mascot-chibi.js - Pure Minimal 3D Anime Chibi Plant Mascot with Gemini AI Chatbot
- * Xóa hoàn toàn bong bóng thông tin rườm rà; chỉ hiển thị Bé Mầm Chibi góc phải, click là mở Chat AI Gemini!
+ * 🔒 Ẩn hoàn toàn khi ở màn hình đăng nhập, chỉ hiển thị sau khi Admin đăng nhập thành công.
  */
 
 let _isChatOpen = false;
 let _chatHistory = [];
 let _isAiResponding = false;
+
+function isAdminLoggedIn() {
+  const token = localStorage.getItem('pb_token');
+  const loginPage = document.getElementById('login-page');
+  const app = document.getElementById('app');
+  if (!token) return false;
+  if (loginPage && loginPage.style.display !== 'none') return false;
+  if (app && app.style.display === 'none') return false;
+  return true;
+}
 
 function initAdminChibiMascot() {
   let mascotContainer = document.getElementById('admin-chibi-mascot-widget');
@@ -27,11 +37,17 @@ function initAdminChibiMascot() {
     document.body.appendChild(mascotContainer);
   }
 
-  // Inject styles & animations
+  // Inject styles & animations with Login Guard
   if (!document.getElementById('admin-chibi-clean-style')) {
     const style = document.createElement('style');
     style.id = 'admin-chibi-clean-style';
     style.textContent = `
+      #login-page:not([style*="display: none"]) ~ #admin-chibi-mascot-widget,
+      #login-page:not([style*="display:none"]) ~ #admin-chibi-mascot-widget,
+      #app[style*="display: none"] ~ #admin-chibi-mascot-widget,
+      #app[style*="display:none"] ~ #admin-chibi-mascot-widget {
+        display: none !important;
+      }
       @keyframes mascot-float-bounce {
         0%, 100% { transform: translateY(0) rotate(0deg); }
         50% { transform: translateY(-10px) rotate(2.5deg); }
@@ -64,10 +80,20 @@ function initAdminChibiMascot() {
     document.head.appendChild(style);
   }
 
+  // Watch for login / logout state changes to auto show/hide mascot
+  const loginObserver = new MutationObserver(() => {
+    renderAdminMascot();
+  });
+  const loginPage = document.getElementById('login-page');
+  const app = document.getElementById('app');
+  if (loginPage) loginObserver.observe(loginPage, { attributes: true, attributeFilter: ['style', 'class'] });
+  if (app) loginObserver.observe(app, { attributes: true, attributeFilter: ['style', 'class'] });
+
   renderAdminMascot();
 }
 
-function toggleAdminAiChat() {
+function toggleAdminAiChat(e) {
+  if (e) e.stopPropagation();
   _isChatOpen = !_isChatOpen;
   renderAdminMascot();
   if (_isChatOpen) {
@@ -167,10 +193,18 @@ function renderAdminMascot() {
   const container = document.getElementById('admin-chibi-mascot-widget');
   if (!container) return;
 
+  // 🔒 Login Guard: Hide mascot if not logged in
+  if (!isAdminLoggedIn()) {
+    container.style.display = 'none';
+    return;
+  } else {
+    container.style.display = 'flex';
+  }
+
   if (_isChatOpen) {
     // 💬 CHATBOX GEMINI AI DRAWER
     container.innerHTML = `
-      <div id="admin-ai-chat-box" style="
+      <div id="admin-ai-chat-box" onclick="event.stopPropagation()" style="
         width: 380px;
         max-width: calc(100vw - 32px);
         height: 520px;
@@ -198,7 +232,7 @@ function renderAdminMascot() {
               <div style="font-size: 11px; color: #a7f3d0; font-weight: 600;">Hỏi đáp mọi kiến thức & quản trị trang trại</div>
             </div>
           </div>
-          <button onclick="toggleAdminAiChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
+          <button onclick="toggleAdminAiChat(event)" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -262,7 +296,7 @@ function renderAdminMascot() {
   } else {
     // 🌿 ONLY RENDER CUTE 3D ANIME CHIBI MASCOT AT BOTTOM-RIGHT
     container.innerHTML = `
-      <div onclick="toggleAdminAiChat()" class="admin-clean-avatar" title="Nhấn vào Bé Mầm để mở Khung Chat AI Gemini!" style="
+      <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào Bé Mầm để mở Khung Chat AI Gemini!" style="
         display: flex;
         align-items: flex-end;
         justify-content: center;
@@ -327,3 +361,4 @@ window.toggleAdminAiChat = toggleAdminAiChat;
 window.initAdminChibiMascot = initAdminChibiMascot;
 window.sendAdminPrompt = sendAdminPrompt;
 window.handleAdminAiSubmit = handleAdminAiSubmit;
+window.isAdminLoggedIn = isAdminLoggedIn;

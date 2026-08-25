@@ -4,12 +4,23 @@
  * Khi bấm vào -> Mở Menu 2 mục:
  * 1. 📝 Ghi nhật ký chăm sóc (mở modal ghi chép chăm sóc cây)
  * 2. 🌱 Bé Mầm tư vấn & hỏi đáp (mở khung Chat Google Gemini AI)
+ * 🔒 Ẩn hoàn toàn khi ở màn hình đăng nhập, chỉ hiển thị sau khi đã đăng nhập thành công.
  */
 
 let _isUserChatOpen = false;
 let _isActionMenuOpen = false;
 let _userChatHistory = [];
 let _isUserAiResponding = false;
+
+export function isUserLoggedIn() {
+  const token = localStorage.getItem('pb_token');
+  const loginPage = document.getElementById('login-page');
+  const app = document.getElementById('app');
+  if (!token) return false;
+  if (loginPage && loginPage.style.display !== 'none') return false;
+  if (app && app.style.display === 'none') return false;
+  return true;
+}
 
 export function initChibiMascot() {
   let mascotContainer = document.getElementById('chibi-mascot-widget');
@@ -26,12 +37,18 @@ export function initChibiMascot() {
     oldFab.style.display = 'none';
   }
 
-  // Inject styles & animations
+  // Inject styles & animations with Login Guard
   if (!document.getElementById('user-chibi-unified-style')) {
     const style = document.createElement('style');
     style.id = 'user-chibi-unified-style';
     style.textContent = `
       #fab-btn {
+        display: none !important;
+      }
+      #login-page:not([style*="display: none"]) ~ #chibi-mascot-widget,
+      #login-page:not([style*="display:none"]) ~ #chibi-mascot-widget,
+      #app[style*="display: none"] ~ #chibi-mascot-widget,
+      #app[style*="display:none"] ~ #chibi-mascot-widget {
         display: none !important;
       }
       .user-unified-mascot-container {
@@ -104,6 +121,15 @@ export function initChibiMascot() {
       renderMascot();
     }
   });
+
+  // Watch for login / logout state changes to auto show/hide mascot
+  const loginObserver = new MutationObserver(() => {
+    renderMascot();
+  });
+  const loginPage = document.getElementById('login-page');
+  const app = document.getElementById('app');
+  if (loginPage) loginObserver.observe(loginPage, { attributes: true, attributeFilter: ['style', 'class'] });
+  if (app) loginObserver.observe(app, { attributes: true, attributeFilter: ['style', 'class'] });
 
   renderMascot();
 }
@@ -270,6 +296,14 @@ function _renderChibiHuggingPlusSVG() {
 export function renderMascot() {
   const container = document.getElementById('chibi-mascot-widget');
   if (!container) return;
+
+  // 🔒 Login Guard: Hide mascot if not logged in
+  if (!isUserLoggedIn()) {
+    container.style.display = 'none';
+    return;
+  } else {
+    container.style.display = 'flex';
+  }
 
   if (_isUserChatOpen) {
     // 💬 1. CHATBOX GEMINI AI DRAWER
@@ -518,3 +552,4 @@ window.initChibiMascot = initChibiMascot;
 window.sendUserPrompt = sendUserPrompt;
 window.handleUserAiSubmit = handleUserAiSubmit;
 window.setMascotState = setMascotState;
+window.isUserLoggedIn = isUserLoggedIn;
