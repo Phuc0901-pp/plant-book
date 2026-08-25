@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 /**
  * POST /api/ai/chat
  * Trợ lý ảo AI Bé Mầm AgTech hỗ trợ Quản trị viên & Nông hộ
- * Phân quyền dữ liệu chặt chẽ theo tài khoản đăng nhập (Per-User Scoped Data)
+ * Phân quyền dữ liệu chặt chẽ theo tài khoản đăng nhập + Hướng dẫn Onboarding người dùng mới
  */
 router.post('/chat', auth, async (req, res) => {
   try {
@@ -184,7 +184,7 @@ ${farmLines}
         systemContext = `[THÔNG TIN TÀI KHOẢN ĐANG ĐĂNG NHẬP]:
 - Chủ tài khoản Nông hộ: ${currentUser.name} (${currentUser.email})
 - Bác đang sở hữu/quản lý: ${userFarms.length} trang trại:
-${farmLines || '- Bác chưa tạo trang trại nào.'}
+${farmLines || '- Bác chưa tạo trang trại nào (Tài khoản mới).'}
 
 [NHẬT KÝ CANH TÁC & CHĂM SÓC GẦN ĐÂY]:
 ${logLines || '- Chưa có nhật ký chăm sóc nào gần đây.'}
@@ -199,17 +199,18 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
       systemContext = `[THÔNG TIN]: Đang hỗ trợ tài khoản ${currentUser.name}.`;
     }
 
-    const systemPrompt = `Bạn là "Bé Mầm AgTech" - Trợ lý số AI chuyên gia nông nghiệp thông minh của hệ thống Tanbao AgTech.
+    const systemPrompt = `Bạn là "Bé Mầm AgTech" - Trợ lý số AI chuyên gia nông nghiệp thông minh của hệ thống Sổ Nông Tân Bảo AgTech.
 Xưng hô: Xưng là "Bé Mầm" hoặc "em", gọi người dùng là "${isAdmin ? 'Admin' : 'Bác ' + (currentUser.name || 'nông hộ')}".
 
-NGUYÊN TẮC QUAN TRỌNG:
+NGUYÊN TẮC PHẢN HỒI:
 1. ĐI THẲNG VÀO CÂU TRẢ LỜI, KHÔNG CHÀO HỎI RƯỜM RÀ LẶP LẠI.
-2. BẢO MẬT & ĐÚNG PHẠM VI: Chỉ truy cập và trả lời dựa trên [DỮ LIỆU CỦA USER] bên dưới. Nếu người dùng sở hữu 1 hay nhiều trang trại (ví dụ 2 trang trại), hãy trả lời đầy đủ thông tin chi tiết từng trang trại, cây trồng, chi phí, nhật ký canh tác của user đó.
-3. Khi người dùng hỏi về:
-   - "Tôi có mấy trang trại?" / "Trang trại của tôi trồng gì?": Liệt kê chính xác tên các trang trại và giống cây của user.
-   - "Chi phí vật tư / tiêu hao?": Báo cáo tổng tiền và các đợt dùng vật tư của user.
-   - "Nhật ký chăm sóc gần đây?": Tóm tắt các lần tưới/bón phân/phun thuốc gần nhất của user.
-4. Với câu hỏi kỹ thuật canh tác (sâu bệnh, liều lượng tưới, NPK, cách ly PHI VietGAP), trả lời ngắn gọn, chuẩn xác.
+2. HƯỚNG DẪN NGƯỜI DÙNG MỚI (ONBOARDING): Nếu người dùng hỏi "App này sài sao?", "Hướng dẫn sử dụng", "Cách tạo trang trại", "Làm sao thêm cây/ghi nhật ký", hãy hướng dẫn quy trình 4 bước đơn giản, thân thiện:
+   - Bước 1: Vào menu "Trang trại" -> Nhấn "+ Khởi tạo Trang trại mới (GPS)" -> Đặt tên vườn và lấy vị trí GPS vệ tinh.
+   - Bước 2: Thêm cây trồng và gán mã cây (hoặc gắn thẻ NFC/QR).
+   - Bước 3: Bấm nút dấu cộng (+) màu xanh ở góc phải bất kỳ lúc nào để ghi nhật ký tưới nước, bón phân, phun thuốc.
+   - Bước 4: Vào mục "Vật tư" chụp ảnh quét OCR bao bì phân bón/thuốc để tự động tính toán chi phí.
+3. BẢO MẬT & ĐÚNG PHẠM VI DỮ LIỆU: Chỉ truy cập và trả lời dựa trên [DỮ LIỆU CỦA USER] bên dưới.
+4. Trình bày bằng markdown đẹp mắt (gạch đầu dòng, in đậm các nút bấm trên giao diện).
 
 ${systemContext}`;
 
@@ -282,13 +283,26 @@ ${systemContext}`;
       }
     }
 
-    // 3. Fallback Engine Thông Minh Trả Lời Chuẩn Xác Theo Dữ Liệu Của User
+    // 3. Fallback Engine Hướng Dẫn Từng Bước Cho Người Mới
     const lower = message.toLowerCase();
     let fallbackReply = '';
 
-    if (lower.includes('trang trại') || lower.includes('vườn') || lower.includes('mấy trang trại') || lower.includes('trồng cây gì') || lower.includes('trồng gì')) {
+    if (lower.includes('sài sao') || lower.includes('dùng sao') || lower.includes('hướng dẫn') || lower.includes('tạo trang trại') || lower.includes('bắt đầu')) {
+      fallbackReply = `🌱 **Chào mừng Bác đến với Sổ Nông Tân Bảo AgTech! Dưới đây là 4 bước sử dụng cực kỳ đơn giản:**\n\n` +
+        `📍 **Bước 1: Tạo Trang Trại Đầu Tiên:**\n` +
+        `- Vào menu **"Trang trại"** ở cột bên trái.\n` +
+        `- Nhấn nút xanh **"+ Khởi tạo Trang trại mới (GPS)"**.\n` +
+        `- Nhập tên vườn, diện tích (ha) và nhấn **"Lấy GPS"** để hệ thống tự động ghim vị trí và kết nối trạm dự báo thời tiết!\n\n` +
+        `🌳 **Bước 2: Thêm Cây Trồng & Gán Mã Cây:**\n` +
+        `- Mở trang trại vừa tạo, bấm **"+ Thêm cây"** để lưu giống cây (Sầu riêng, Bưởi, Mít...) và mã định danh cây (ví dụ: SR-001).\n\n` +
+        `📝 **Bước 3: Ghi Nhật Ký Canh Tác Hàng Ngày:**\n` +
+        `- Bấm nút tròn màu xanh **dấu cộng (+)** ở góc dưới bên phải màn hình bất cứ lúc nào để ghi lại hoạt động: Tưới nước, bón phân NPK, phun thuốc hoặc chụp ảnh kiểm tra vườn.\n\n` +
+        `📦 **Bước 4: Quản Lý Vật Tư & Chi Phí Tiêu Hao:**\n` +
+        `- Vào mục **"Vật tư"**, chụp ảnh bao bì phân bón/thuốc để AI tự động nhận diện và tính toán chi phí mùa vụ cho Bác!\n\n` +
+        `💡 Trong quá trình sử dụng, Bác cần hỏi bất kỳ thông tin nào cứ nhấn vào em (Bé Mầm) nhé! ✨`;
+    } else if (lower.includes('trang trại') || lower.includes('vườn') || lower.includes('mấy trang trại') || lower.includes('trồng cây gì') || lower.includes('trồng gì')) {
       if (userFarms.length === 0) {
-        fallbackReply = `🏡 Hiện tại tài khoản của ${isAdmin ? 'Admin' : 'Bác'} chưa có trang trại nào được gán hoặc tạo mới. Bác có thể vào mục **"Trang trại"** để thêm trang trại đầu tiên nhé!`;
+        fallbackReply = `🏡 Bác chưa tạo trang trại nào. Bác vào mục **"Trang trại"** ➔ bấm **"+ Khởi tạo Trang trại mới (GPS)"** để tạo trang trại đầu tiên nhé!`;
       } else {
         fallbackReply = `🏡 **${isAdmin ? 'Toàn bộ trang trại' : 'Danh sách các trang trại của Bác (' + userFarms.length + ' trang trại)'}:**\n` +
           userFarms.map((f, idx) => `• **${idx + 1}. ${f.name}**:\n  - Diện tích: ${f.area ? f.area + ' ha' : 'Chưa cập nhật'}\n  - Loại cây trồng: **${f.crops}** (${f.total} cây)`).join('\n\n');
@@ -310,14 +324,14 @@ ${systemContext}`;
         `• Giữ độ ẩm đất vùng rễ cây ở mức **65% - 75%**.\n` +
         `• Tưới vào sáng sớm hoặc chiều mát, lượng nước khoảng 20 - 40 lít/gốc tùy độ tuổi cây.`;
     } else {
-      fallbackReply = `Dạ ${isAdmin ? 'Admin' : 'Bác ' + currentUser.name}! Về **"${message}"**, Bé Mầm đã nắm thông tin. Bác có thể hỏi Bé Mầm về: danh sách trang trại, các loại cây đang trồng, tổng chi phí vật tư hoặc nhật ký canh tác của mình nhé! 🌱✨`;
+      fallbackReply = `Dạ ${isAdmin ? 'Admin' : 'Bác ' + currentUser.name}! Về **"${message}"**, Bé Mầm đã nắm thông tin. Bác có thể hỏi Bé Mầm về: cách tạo trang trại, danh sách cây trồng, tổng chi phí vật tư hoặc nhật ký canh tác của mình nhé! 🌱✨`;
     }
 
     return res.json({
       success: true,
       reply: fallbackReply,
-      model: 'smart_scoped_engine',
-      source: 'smart_scoped_db'
+      model: 'smart_onboarding_engine',
+      source: 'smart_onboarding_db'
     });
 
   } catch (err) {
