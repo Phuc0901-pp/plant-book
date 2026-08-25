@@ -95,10 +95,11 @@ export function initChibiMascot() {
     document.head.appendChild(style);
   }
 
-  // Close menu if clicking outside
+  // Close menu only when clicking truly outside the widget
   document.addEventListener('click', (e) => {
     const widget = document.getElementById('chibi-mascot-widget');
-    if (widget && !widget.contains(e.target) && _isActionMenuOpen) {
+    if (!widget) return;
+    if (_isActionMenuOpen && !widget.contains(e.target)) {
       _isActionMenuOpen = false;
       renderMascot();
     }
@@ -107,13 +108,19 @@ export function initChibiMascot() {
   renderMascot();
 }
 
-export function onMascotClick() {
+export function onMascotClick(e) {
+  if (e) {
+    e.stopPropagation();
+  }
   if (_isUserChatOpen) return;
   _isActionMenuOpen = !_isActionMenuOpen;
   renderMascot();
 }
 
-export function toggleUserAiChat() {
+export function toggleUserAiChat(e) {
+  if (e) {
+    e.stopPropagation();
+  }
   _isActionMenuOpen = false;
   _isUserChatOpen = !_isUserChatOpen;
   renderMascot();
@@ -127,7 +134,10 @@ export function toggleUserAiChat() {
   }
 }
 
-export function selectAction(actionType) {
+export function selectAction(actionType, e) {
+  if (e) {
+    e.stopPropagation();
+  }
   _isActionMenuOpen = false;
   renderMascot();
   if (actionType === 'log') {
@@ -264,7 +274,7 @@ export function renderMascot() {
   if (_isUserChatOpen) {
     // 💬 1. CHATBOX GEMINI AI DRAWER
     container.innerHTML = `
-      <div id="user-ai-chat-box" style="
+      <div id="user-ai-chat-box" onclick="event.stopPropagation()" style="
         width: 380px;
         max-width: calc(100vw - 32px);
         height: 520px;
@@ -292,7 +302,7 @@ export function renderMascot() {
               <div style="font-size: 11px; color: #a7f3d0; font-weight: 600;">Tư vấn canh tác, sâu bệnh & kỹ thuật vườn</div>
             </div>
           </div>
-          <button onclick="toggleUserAiChat()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
+          <button onclick="toggleUserAiChat(event)" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -357,14 +367,14 @@ export function renderMascot() {
     // 📋 2. QUICK ACTION POPUP MENU (2 MỤC: GHI NHẬT KÝ & CHAT AI)
     container.innerHTML = `
       <!-- Action Popup Box -->
-      <div id="mascot-action-menu-box" style="
+      <div id="mascot-action-menu-box" onclick="event.stopPropagation()" style="
         background: #ffffff;
-        border: 2px solid #10b981;
+        border: 2.5px solid #10b981;
         border-radius: 20px;
         padding: 14px;
         margin-bottom: 12px;
-        width: 290px;
-        box-shadow: 0 16px 36px -6px rgba(0,0,0,0.25), 0 8px 16px rgba(16,185,129,0.15);
+        width: 300px;
+        box-shadow: 0 20px 40px -6px rgba(0,0,0,0.3), 0 8px 16px rgba(16,185,129,0.2);
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -373,64 +383,64 @@ export function renderMascot() {
       ">
         <div style="font-size: 12px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
           <span>🌱 BÉ MẦM AGTECH</span>
-          <span style="background: #ecfdf5; color: #10b981; font-size: 10px; padding: 2px 6px; border-radius: 8px; font-weight: 700;">Chọn thao tác</span>
+          <span style="background: #ecfdf5; color: #10b981; font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 800;">Chọn thao tác</span>
         </div>
 
         <!-- Option 1: Ghi nhật ký chăm sóc -->
-        <div onclick="selectAction('log')" class="chibi-action-item" style="
+        <div onclick="selectAction('log', event)" class="chibi-action-item" style="
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 10px 12px;
+          padding: 12px 14px;
           background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
           border: 1.5px solid #86efac;
           border-radius: 14px;
           cursor: pointer;
         ">
-          <div style="width: 38px; height: 38px; border-radius: 12px; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(16,185,129,0.3);">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(16,185,129,0.35);">
             <i class="fa-solid fa-pen-to-square"></i>
           </div>
           <div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #065f46;">Ghi nhật ký chăm sóc</div>
-            <div style="font-size: 11px; color: #475569; font-weight: 500;">Tưới nước, bón phân, xịt thuốc</div>
+            <div style="font-size: 14px; font-weight: 800; color: #065f46;">Ghi nhật ký chăm sóc</div>
+            <div style="font-size: 11px; color: #475569; font-weight: 600;">Tưới nước, bón phân, xịt thuốc</div>
           </div>
         </div>
 
         <!-- Option 2: Bé Mầm tư vấn & hỏi đáp (Gemini AI) -->
-        <div onclick="selectAction('chat')" class="chibi-action-item" style="
+        <div onclick="selectAction('chat', event)" class="chibi-action-item" style="
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 10px 12px;
+          padding: 12px 14px;
           background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
           border: 1.5px solid #7dd3fc;
           border-radius: 14px;
           cursor: pointer;
         ">
-          <div style="width: 38px; height: 38px; border-radius: 12px; background: #0284c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(2,132,199,0.3);">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #0284c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(2,132,199,0.35);">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
           </div>
           <div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #075985;">Bé Mầm tư vấn & hỏi đáp</div>
-            <div style="font-size: 11px; color: #475569; font-weight: 500;">Hỏi sâu bệnh, thời tiết & chi phí AI</div>
+            <div style="font-size: 14px; font-weight: 800; color: #075985;">Bé Mầm tư vấn & hỏi đáp</div>
+            <div style="font-size: 11px; color: #475569; font-weight: 600;">Hỏi sâu bệnh, thời tiết & chi phí AI</div>
           </div>
         </div>
 
         <!-- Triangle Pointer -->
         <div style="
           position: absolute;
-          bottom: -9px;
+          bottom: -10px;
           right: 38px;
           width: 0;
           height: 0;
-          border-left: 9px solid transparent;
-          border-right: 9px solid transparent;
-          border-top: 9px solid #10b981;
+          border-left: 10px solid transparent;
+          border-right: 10px solid transparent;
+          border-top: 10px solid #10b981;
         "></div>
       </div>
 
       <!-- 🌟 UNIFIED MASCOT HUGGING PLUS BUTTON -->
-      <div onclick="onMascotClick()" class="chibi-hugging-avatar" title="Bấm vào để chọn: Ghi nhật ký hoặc Chat với Bé Mầm AI!" style="
+      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để chọn: Ghi nhật ký chăm sóc hoặc Chat với Bé Mầm AI!" style="
         display: flex;
         align-items: flex-end;
         justify-content: center;
@@ -442,7 +452,7 @@ export function renderMascot() {
   } else {
     // 🌟 3. NORMAL STATE: BÉ MẦM ÔM NÚT DẤU CỘNG (+) NẰM GÓC PHẢI
     container.innerHTML = `
-      <div onclick="onMascotClick()" class="chibi-hugging-avatar" title="Bấm vào để chọn: Ghi nhật ký chăm sóc hoặc Chat với Bé Mầm AI!" style="
+      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để chọn: Ghi nhật ký chăm sóc hoặc Chat với Bé Mầm AI!" style="
         display: flex;
         align-items: flex-end;
         justify-content: center;
