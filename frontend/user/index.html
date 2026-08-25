@@ -8,9 +8,11 @@
 
   <!-- PWA & Mobile Web App support -->
   <link rel="manifest" href="/user/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Sổ Nông Tân Bảo">
+  <meta http-equiv="content-language" content="vi">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="shortcut icon" type="image/svg+xml" href="/assets/favicon.svg">
 
@@ -201,37 +203,40 @@
         <span id="login-error-text"></span>
       </div>
 
-      <!-- Email -->
-      <div class="form-group">
-        <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
-        <div class="lf-input-wrap">
-          <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
+      <!-- Login Form -->
+      <form onsubmit="event.preventDefault(); doLogin();" style="display:contents;">
+        <!-- Email -->
+        <div class="form-group">
+          <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
+          <div class="lf-input-wrap">
+            <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
+          </div>
         </div>
-      </div>
 
-      <!-- Password -->
-      <div class="form-group">
-        <div class="form-label-row">
-          <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
-          <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
-            <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
-          </a>
+        <!-- Password -->
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
+            <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
+              <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
+            </a>
+          </div>
+          <div class="password-input-wrap">
+            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
+              <i id="toggle-pass-icon" class="fa fa-eye"></i>
+            </button>
+          </div>
         </div>
-        <div class="password-input-wrap">
-          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
-          <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
-            <i id="toggle-pass-icon" class="fa fa-eye"></i>
-          </button>
-        </div>
-      </div>
 
-      <!-- Submit -->
-      <button class="btn-login" id="login-btn" onclick="doLogin()">
-        <span id="login-btn-text">
-          <i class="fa fa-right-to-bracket"></i> Đăng nhập
-        </span>
-        <span class="btn-login-shimmer" aria-hidden="true"></span>
-      </button>
+        <!-- Submit -->
+        <button type="submit" class="btn-login" id="login-btn">
+          <span id="login-btn-text">
+            <i class="fa fa-right-to-bracket"></i> Đăng nhập
+          </span>
+          <span class="btn-login-shimmer" aria-hidden="true"></span>
+        </button>
+      </form>
 
       <!-- Register Account Link -->
       <div style="text-align:center; margin-top:16px;">
