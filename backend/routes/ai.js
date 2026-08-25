@@ -2,6 +2,7 @@
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const memoryCache = require('../config/cache');
 
 /**
  * Phân loại độ khó câu hỏi (Smart Dynamic Model Routing)
@@ -29,7 +30,7 @@ function classifyQueryComplexity(message) {
 
 /**
  * POST /api/ai/chat
- * Trợ lý ảo AI Bé Mầm AgTech - Tự động nhảy model khi hết quota (Auto Failover Multi-Tier Loop)
+ * Trợ lý ảo AI Bé Mầm AgTech - Tự động nhảy model khi hết quota & Cache RAM Scoped Context ($0)
  */
 router.post('/chat', auth, async (req, res) => {
   try {
@@ -41,6 +42,10 @@ router.post('/chat', auth, async (req, res) => {
     }
 
     const isAdmin = currentUser.role === 'admin';
+    const cacheKey = `ai_context_${currentUser.id}_${isAdmin ? 'adm' : 'usr'}`;
+    
+    // 1. Kiểm tra RAM Cache trước (Độ trễ <0.1ms)
+    let cachedContextData = memoryCache.get(cacheKey);
     let systemContext = '';
     let userFarms = [];
     let userPlants = [];
@@ -48,163 +53,169 @@ router.post('/chat', auth, async (req, res) => {
     let userSuppliesCost = 0;
     let userRecentSupplies = [];
 
-    // 1. Truy vấn Dữ liệu Theo Đúng Quyền Sở Hữu Của User Đang Đăng Nhập
-    try {
-      if (isAdmin) {
-        // ADMIN: Toàn quyền truy cập tất cả trang trại & số liệu hệ thống
-        const [farmsRes, plantsRes, sickRes, costRes] = await Promise.all([
-          pool.query(`
-            SELECT f.id, f.name, f.area, f.total_plants, COALESCE(u.full_name, 'Nông hộ') as owner_name 
-            FROM farms f 
-            LEFT JOIN users u ON f.user_id = u.id 
-            WHERE (f.is_deleted IS NOT TRUE)
-          `),
-          pool.query(`
-            SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
-            FROM plants p 
-            LEFT JOIN farms f ON p.farm_id = f.id
-          `),
-          pool.query("SELECT COUNT(*) as count FROM plants WHERE health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
-          pool.query("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages")
-        ]);
+    if (cachedContextData) {
+      systemContext = cachedContextData.systemContext;
+      userFarms = cachedContextData.userFarms;
+      userSuppliesCost = cachedContextData.userSuppliesCost;
+      userRecentSupplies = cachedContextData.userRecentSupplies;
+      userLogs = cachedContextData.userLogs;
+    } else {
+      // 2. Truy vấn từ Read Replica Pool (Tách tải khỏi Master)
+      try {
+        if (isAdmin) {
+          const [farmsRes, plantsRes, sickRes, costRes] = await Promise.all([
+            pool.readQuery(`
+              SELECT f.id, f.name, f.area, f.total_plants, COALESCE(u.full_name, 'Nông hộ') as owner_name 
+              FROM farms f 
+              LEFT JOIN users u ON f.user_id = u.id 
+              WHERE (f.is_deleted IS NOT TRUE)
+            `),
+            pool.readQuery(`
+              SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
+              FROM plants p 
+              LEFT JOIN farms f ON p.farm_id = f.id
+            `),
+            pool.readQuery("SELECT COUNT(*) as count FROM plants WHERE health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
+            pool.readQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages")
+          ]);
 
-        const farmMap = {};
-        (farmsRes.rows || []).forEach(f => {
-          farmMap[f.id] = {
-            id: f.id,
+          const farmMap = {};
+          (farmsRes.rows || []).forEach(f => {
+            farmMap[f.id] = {
+              id: f.id,
+              name: f.name,
+              owner: f.owner_name,
+              area: f.area,
+              total: f.total_plants || 0,
+              plantCount: 0,
+              crops: new Set()
+            };
+          });
+
+          (plantsRes.rows || []).forEach(p => {
+            if (p.farm_id && farmMap[p.farm_id]) {
+              farmMap[p.farm_id].plantCount++;
+              const crop = [p.plant_type, p.plant_variety].filter(Boolean).join(' - ');
+              if (crop) farmMap[p.farm_id].crops.add(crop);
+            }
+          });
+
+          userFarms = Object.values(farmMap).map(f => ({
             name: f.name,
-            owner: f.owner_name,
+            owner: f.owner,
             area: f.area,
-            total: f.total_plants || 0,
-            plantCount: 0,
-            crops: new Set()
-          };
-        });
+            total: f.plantCount || f.total || 0,
+            crops: f.crops.size > 0 ? Array.from(f.crops).join(', ') : 'Đang cập nhật danh sách cây'
+          }));
 
-        (plantsRes.rows || []).forEach(p => {
-          if (p.farm_id && farmMap[p.farm_id]) {
-            farmMap[p.farm_id].plantCount++;
-            const crop = [p.plant_type, p.plant_variety].filter(Boolean).join(' - ');
-            if (crop) farmMap[p.farm_id].crops.add(crop);
-          }
-        });
+          const sickCount = sickRes.rows?.[0]?.count || 0;
+          const totalExpense = costRes.rows?.[0]?.total || 0;
 
-        userFarms = Object.values(farmMap).map(f => ({
-          name: f.name,
-          owner: f.owner,
-          area: f.area,
-          total: f.plantCount || f.total || 0,
-          crops: f.crops.size > 0 ? Array.from(f.crops).join(', ') : 'Đang cập nhật danh sách cây'
-        }));
+          const farmLines = userFarms.map(f => 
+            `- Trang trại: "${f.name}" | Chủ hộ: ${f.owner} | Diện tích: ${f.area ? f.area + ' ha' : 'N/A'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
+          ).join('\n');
 
-        const sickCount = sickRes.rows?.[0]?.count || 0;
-        const totalExpense = costRes.rows?.[0]?.total || 0;
-
-        const farmLines = userFarms.map(f => 
-          `- Trang trại: "${f.name}" | Chủ hộ: ${f.owner} | Diện tích: ${f.area ? f.area + ' ha' : 'N/A'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
-        ).join('\n');
-
-        systemContext = `[QUYỀN HẠN: QUẢN TRỊ VIÊN TOÀN HỆ THỐNG]:
+          systemContext = `[QUYỀN HẠN: QUẢN TRỊ VIÊN TOÀN HỆ THỐNG]:
 Admin: ${currentUser.name} (${currentUser.email})
 Tổng số trang trại đang quản lý: ${userFarms.length} trang trại.
 ${farmLines}
 - Cây đang ủ bệnh/cần theo dõi: ${sickCount} cây.
 - Tổng chi phí vật tư toàn hệ thống: ${Number(totalExpense).toLocaleString('vi-VN')} VNĐ.`;
 
-      } else {
-        // NÔNG HỘ / USER: CHỈ TRUY CẬP DỮ LIỆU CÁC TRANG TRẠI THUỘC SỞ HỮU CỦA USER NÀY
-        const [farmsRes, plantsRes, logsRes, costRes, usagesRes] = await Promise.all([
-          pool.query(`
-            SELECT f.id, f.name, f.area, f.total_plants, u.full_name as owner_name 
-            FROM farms f 
-            LEFT JOIN users u ON f.user_id = u.id 
-            WHERE (f.is_deleted IS NOT TRUE) 
-              AND (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
-          `, [currentUser.id]),
+        } else {
+          // NÔNG HỘ / USER: CHỈ TRUY CẬP DỮ LIỆU CÁC TRANG TRẠI THUỘC SỞ HỮU CỦA USER NÀY
+          const [farmsRes, plantsRes, logsRes, costRes, usagesRes] = await Promise.all([
+            pool.readQuery(`
+              SELECT f.id, f.name, f.area, f.total_plants, u.full_name as owner_name 
+              FROM farms f 
+              LEFT JOIN users u ON f.user_id = u.id 
+              WHERE (f.is_deleted IS NOT TRUE) 
+                AND (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
+            `, [currentUser.id]),
 
-          pool.query(`
-            SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
-            FROM plants p 
-            JOIN farms f ON p.farm_id = f.id 
-            WHERE (f.is_deleted IS NOT TRUE) 
-              AND (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1) OR p.created_by = $1 OR p.assigned_to_user_id = $1)
-          `, [currentUser.id]),
+            pool.readQuery(`
+              SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
+              FROM plants p 
+              JOIN farms f ON p.farm_id = f.id 
+              WHERE (f.is_deleted IS NOT TRUE) 
+                AND (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1) OR p.created_by = $1 OR p.assigned_to_user_id = $1)
+            `, [currentUser.id]),
 
-          pool.query(`
-            SELECT pl.log_date, pl.log_type, pl.note, p.tree_code, p.plant_type, f.name as farm_name 
-            FROM plant_logs pl 
-            JOIN plants p ON pl.plant_id = p.id 
-            JOIN farms f ON p.farm_id = f.id 
-            WHERE (f.user_id = $1 OR pl.created_by = $1) 
-            ORDER BY pl.log_date DESC, pl.created_at DESC 
-            LIMIT 10
-          `, [currentUser.id]),
+            pool.readQuery(`
+              SELECT pl.log_date, pl.log_type, pl.note, p.tree_code, p.plant_type, f.name as farm_name 
+              FROM plant_logs pl 
+              JOIN plants p ON pl.plant_id = p.id 
+              JOIN farms f ON p.farm_id = f.id 
+              WHERE (f.user_id = $1 OR pl.created_by = $1) 
+              ORDER BY pl.log_date DESC, pl.created_at DESC 
+              LIMIT 10
+            `, [currentUser.id]),
 
-          pool.query(`
-            SELECT COALESCE(SUM(su.total_cost), 0) as total 
-            FROM supply_usages su 
-            LEFT JOIN farms f ON su.farm_id = f.id 
-            WHERE su.user_id = $1 OR f.user_id = $1
-          `, [currentUser.id]),
+            pool.readQuery(`
+              SELECT COALESCE(SUM(su.total_cost), 0) as total 
+              FROM supply_usages su 
+              LEFT JOIN farms f ON su.farm_id = f.id 
+              WHERE su.user_id = $1 OR f.user_id = $1
+            `, [currentUser.id]),
 
-          pool.query(`
-            SELECT s.name, s.category, su.quantity, s.unit, su.unit_price, su.total_cost, su.usage_date, f.name as farm_name 
-            FROM supply_usages su 
-            JOIN supplies s ON su.supply_id = s.id 
-            LEFT JOIN farms f ON su.farm_id = f.id 
-            WHERE su.user_id = $1 OR f.user_id = $1 
-            ORDER BY su.usage_date DESC 
-            LIMIT 8
-          `, [currentUser.id])
-        ]);
+            pool.readQuery(`
+              SELECT s.name, s.category, su.quantity, s.unit, su.unit_price, su.total_cost, su.usage_date, f.name as farm_name 
+              FROM supply_usages su 
+              JOIN supplies s ON su.supply_id = s.id 
+              LEFT JOIN farms f ON su.farm_id = f.id 
+              WHERE su.user_id = $1 OR f.user_id = $1 
+              ORDER BY su.usage_date DESC 
+              LIMIT 8
+            `, [currentUser.id])
+          ]);
 
-        const farmMap = {};
-        (farmsRes.rows || []).forEach(f => {
-          farmMap[f.id] = {
-            id: f.id,
+          const farmMap = {};
+          (farmsRes.rows || []).forEach(f => {
+            farmMap[f.id] = {
+              id: f.id,
+              name: f.name,
+              owner: f.owner_name,
+              area: f.area,
+              total: f.total_plants || 0,
+              plantCount: 0,
+              crops: new Set()
+            };
+          });
+
+          userPlants = plantsRes.rows || [];
+          userPlants.forEach(p => {
+            if (p.farm_id && farmMap[p.farm_id]) {
+              farmMap[p.farm_id].plantCount++;
+              const crop = [p.plant_type, p.plant_variety].filter(Boolean).join(' - ');
+              if (crop) farmMap[p.farm_id].crops.add(crop);
+            }
+          });
+
+          userFarms = Object.values(farmMap).map(f => ({
             name: f.name,
-            owner: f.owner_name,
+            owner: f.owner,
             area: f.area,
-            total: f.total_plants || 0,
-            plantCount: 0,
-            crops: new Set()
-          };
-        });
+            total: f.plantCount || f.total || 0,
+            crops: f.crops.size > 0 ? Array.from(f.crops).join(', ') : 'Đang cập nhật danh sách cây'
+          }));
 
-        userPlants = plantsRes.rows || [];
-        userPlants.forEach(p => {
-          if (p.farm_id && farmMap[p.farm_id]) {
-            farmMap[p.farm_id].plantCount++;
-            const crop = [p.plant_type, p.plant_variety].filter(Boolean).join(' - ');
-            if (crop) farmMap[p.farm_id].crops.add(crop);
-          }
-        });
+          userLogs = logsRes.rows || [];
+          userSuppliesCost = Number(costRes.rows?.[0]?.total || 0);
+          userRecentSupplies = usagesRes.rows || [];
 
-        userFarms = Object.values(farmMap).map(f => ({
-          name: f.name,
-          owner: f.owner,
-          area: f.area,
-          total: f.plantCount || f.total || 0,
-          crops: f.crops.size > 0 ? Array.from(f.crops).join(', ') : 'Đang cập nhật danh sách cây'
-        }));
+          const farmLines = userFarms.map(f => 
+            `- Trang trại của Bác: "${f.name}" | Diện tích: ${f.area ? f.area + ' ha' : 'Chưa nhập'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
+          ).join('\n');
 
-        userLogs = logsRes.rows || [];
-        userSuppliesCost = Number(costRes.rows?.[0]?.total || 0);
-        userRecentSupplies = usagesRes.rows || [];
+          const logLines = userLogs.map(l => 
+            `- Ngày ${new Date(l.log_date).toLocaleDateString('vi-VN')}: [${l.log_type}] trên cây ${l.tree_code || l.plant_type} (${l.farm_name}) - Ghi chú: ${l.note || 'Bình thường'}`
+          ).join('\n');
 
-        const farmLines = userFarms.map(f => 
-          `- Trang trại của Bác: "${f.name}" | Diện tích: ${f.area ? f.area + ' ha' : 'Chưa nhập'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
-        ).join('\n');
+          const supplyLines = userRecentSupplies.map(s => 
+            `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} - Thành tiền: ${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ (${s.farm_name})`
+          ).join('\n');
 
-        const logLines = userLogs.map(l => 
-          `- Ngày ${new Date(l.log_date).toLocaleDateString('vi-VN')}: [${l.log_type}] trên cây ${l.tree_code || l.plant_type} (${l.farm_name}) - Ghi chú: ${l.note || 'Bình thường'}`
-        ).join('\n');
-
-        const supplyLines = userRecentSupplies.map(s => 
-          `- ${s.name} (${s.category}): ${s.quantity} ${s.unit} - Thành tiền: ${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ (${s.farm_name})`
-        ).join('\n');
-
-        systemContext = `[THÔNG TIN TÀI KHOẢN ĐANG ĐĂNG NHẬP]:
+          systemContext = `[THÔNG TIN TÀI KHOẢN ĐANG ĐĂNG NHẬP]:
 - Chủ tài khoản Nông hộ: ${currentUser.name} (${currentUser.email})
 - Bác đang sở hữu/quản lý: ${userFarms.length} trang trại:
 ${farmLines || '- Bác chưa tạo trang trại nào (Tài khoản mới).'}
@@ -215,11 +226,21 @@ ${logLines || '- Chưa có nhật ký chăm sóc nào gần đây.'}
 [VẬT TƯ & CHI PHÍ TIÊU HAO ĐÃ DÙNG]:
 - Tổng chi phí vật tư đã chi: ${userSuppliesCost.toLocaleString('vi-VN')} VNĐ.
 ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
-      }
+        }
 
-    } catch (dbErr) {
-      console.warn('Lỗi đọc database cho scoped AI context:', dbErr.message);
-      systemContext = `[THÔNG TIN]: Đang hỗ trợ tài khoản ${currentUser.name}.`;
+        // Lưu vào RAM Cache trong 45 giây để phục vụ các câu chat tiếp theo tức thì
+        memoryCache.set(cacheKey, {
+          systemContext,
+          userFarms,
+          userSuppliesCost,
+          userRecentSupplies,
+          userLogs
+        }, 45);
+
+      } catch (dbErr) {
+        console.warn('Lỗi đọc database cho scoped AI context:', dbErr.message);
+        systemContext = `[THÔNG TIN]: Đang hỗ trợ tài khoản ${currentUser.name}.`;
+      }
     }
 
     // 2. TẬP HUẤN TOÀN BỘ KIẾN THỨC NÔNG NGHIỆP & CẨM NANG HỆ THỐNG
@@ -327,7 +348,7 @@ ${systemContext}`;
               }
             } else {
               // 429 Too Many Requests hoặc model hết quota -> Tự động chuyển model tiếp theo
-              console.warn(`[AI Router] Model ${modelName} trả về HTTP ${geminiRes.status} (Hết quota hoặc bận) -> Tự động nhảy sang model kế tiếp...`);
+              console.warn(`[AI Router] Model ${modelName} trả về HTTP ${geminiRes.status} -> Tự động nhảy sang model kế tiếp...`);
             }
           } catch (err) {
             // Lỗi mạng hoặc timeout -> Nhảy tiếp model sau
