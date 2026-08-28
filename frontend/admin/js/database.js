@@ -96,7 +96,7 @@ function switchDatabaseTab(tab, syncUrl = true) {
   activeDbTab = tab;
 
   // Update tabs active state
-  ['cultivation', 'devices', 'supplies', 'media', 'history'].forEach(t => {
+  ['cultivation', 'devices', 'schemas', 'supplies', 'media', 'history'].forEach(t => {
     const tabEl = document.getElementById(`db-tab-${t}`);
     const paneEl = document.getElementById(`db-pane-${t}`);
     if (tabEl) tabEl.classList.toggle('active', t === tab);
@@ -109,6 +109,8 @@ function switchDatabaseTab(tab, syncUrl = true) {
 
   if (tab === 'devices') {
     if (typeof initDevicesPage === 'function') initDevicesPage();
+  } else if (tab === 'schemas') {
+    if (typeof loadSchemasTab === 'function') loadSchemasTab();
   } else if (tab === 'media') {
     initGlobalMediaLibrary();
   } else if (tab === 'supplies') {

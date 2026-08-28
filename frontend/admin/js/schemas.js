@@ -237,33 +237,110 @@ function healthBadge(h) {
 }
 
 
-// ── Schemas ─────────────────────────────────────────────────
+// ── Schemas (Enterprise Plant Catalog & Agronomic Schemas) ──
+
+async function loadSchemasTab() {
+  await Promise.all([
+    loadSchemas(),
+    loadCareConfigs()
+  ]);
+}
+
+function updateSchemaKpis() {
+  if (!schemasCache) return;
+  const totalSchemas = schemasCache.length;
+  let totalFields = 0;
+  schemasCache.forEach(s => {
+    totalFields += (s.fields || []).length;
+  });
+  if (document.getElementById('kpi-schema-count')) {
+    document.getElementById('kpi-schema-count').textContent = totalSchemas;
+  }
+  if (document.getElementById('kpi-schema-fields-count')) {
+    document.getElementById('kpi-schema-fields-count').textContent = `${totalFields} trường`;
+  }
+}
 
 async function loadSchemas() {
   try {
     const schemas = await api('/schemas');
-    schemasCache = schemas;
-    const tbody = document.getElementById('schemas-table');
-    if (!schemas.length) {
-      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa fa-layer-group"></i><p>Chưa có schema nào</p></div></td></tr>';
-      return;
-    }
-    tbody.innerHTML = schemas.map(s => `
-      <tr>
-        <td><strong>${esc(s.name)}</strong></td>
-        <td style="color:var(--gray-600);font-size:12px">${esc(s.description||'—')}</td>
-        <td><span class="badge badge-blue">${(s.fields||[]).length} trường</span></td>
-        <td>${fmtDate(s.created_at)}</td>
-        <td>
-          <div class="actions-cell">
-            <button class="btn btn-secondary btn-sm" onclick="openSchemaModal(${s.id})"><i class="fa fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteSchema(${s.id},'${esc(s.name)}')"><i class="fa fa-trash"></i></button>
+    schemasCache = schemas || [];
+    renderSchemasTable(schemasCache);
+    updateSchemaKpis();
+  } catch (err) {
+    toast('Lỗi tải danh mục schema: ' + err.message, 'error');
+  }
+}
+
+function filterSchemasList() {
+  const q = (document.getElementById('schema-search-input')?.value || '').toLowerCase().trim();
+  if (!schemasCache) return;
+  if (!q) {
+    renderSchemasTable(schemasCache);
+    return;
+  }
+  const filtered = schemasCache.filter(s =>
+    (s.name || '').toLowerCase().includes(q) ||
+    (s.description || '').toLowerCase().includes(q)
+  );
+  renderSchemasTable(filtered);
+}
+
+function renderSchemasTable(schemas) {
+  const tbody = document.getElementById('schemas-table');
+  if (!tbody) return;
+  if (!schemas.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:24px; text-align:center; color:#94a3b8;"><i class="fa fa-layer-group" style="font-size:32px; margin-bottom:8px; display:block;"></i><p>Chưa có loại cây hoặc schema nào phù hợp</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = schemas.map(s => {
+    const fields = s.fields || [];
+    const fieldsBadges = fields.length > 0
+      ? `<div style="display:flex; flex-wrap:wrap; gap:4px;">` +
+        fields.slice(0, 4).map(f => `<span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-size:11px; font-weight:600; padding:2px 7px; border-radius:6px;">${escapeHtml(f.label || f.key)}</span>`).join('') +
+        (fields.length > 4 ? `<span style="background:#e0f2fe; color:#0369a1; font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:6px;">+${fields.length - 4}</span>` : '') +
+        `</div>`
+      : '<span style="color:#94a3b8; font-size:12px;">Mặc định (chưa cấu hình thêm)</span>';
+
+    const dateStr = s.created_at ? new Date(s.created_at).toLocaleDateString('vi-VN', {
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    }) : '—';
+
+    return `
+      <tr style="border-bottom:1px solid #f1f5f9; font-size:13px;">
+        <td style="padding:12px 16px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:16px; border:1px solid #a7f3d0; flex-shrink:0;">
+              🌳
+            </div>
+            <div>
+              <div style="font-weight:800; color:#0f172a; font-size:13.5px;">${escapeHtml(s.name)}</div>
+              <div style="font-size:11px; color:#059669; font-weight:700; font-family:monospace;">SCHEMA-ID: #${s.id}</div>
+            </div>
           </div>
         </td>
-      </tr>`).join('');
-  } catch (err) {
-    toast('Lỗi tải schema: ' + err.message, 'error');
-  }
+        <td style="color:#64748b; font-size:12.5px; max-width:260px;">
+          ${escapeHtml(s.description || '—')}
+        </td>
+        <td>
+          ${fieldsBadges}
+        </td>
+        <td style="color:#64748b; font-size:12px;">
+          ${dateStr}
+        </td>
+        <td style="text-align:center;">
+          <div style="display:inline-flex; gap:6px;">
+            <button class="btn btn-sm" onclick="openSchemaModal(${s.id})" style="background:#f8fafc; border:1px solid #cbd5e1; color:#0284c7; font-weight:700; padding:5px 9px; font-size:11.5px; border-radius:6px; cursor:pointer;" title="Chỉnh sửa Schema">
+              <i class="fa fa-pen"></i> Sửa
+            </button>
+            <button class="btn btn-sm" onclick="deleteSchema(${s.id}, '${escapeHtml(s.name)}')" style="background:#fef2f2; border:1px solid #fca5a5; color:#dc2626; font-weight:700; padding:5px 9px; font-size:11.5px; border-radius:6px; cursor:pointer;" title="Xóa Schema">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 async function loadSchemasDropdown() {

@@ -544,12 +544,9 @@
       <div class="nav-item" onclick="showPage('database')">
         <i class="fa-solid fa-database"></i> Cơ sở dữ liệu &amp; Vận hành
       </div>
-      <div class="nav-section">Hệ thống</div>
+      <div class="nav-section">Hệ thống &amp; Nhân sự</div>
       <div class="nav-item" onclick="showPage('users')">
-        <i class="fa fa-users"></i> Người dùng
-      </div>
-      <div class="nav-item" onclick="showPage('schemas')">
-        <i class="fa fa-sliders"></i> Cấu hình loại cây
+        <i class="fa fa-users"></i> Người dùng &amp; Nông hộ
       </div>
     </nav>
 
@@ -830,13 +827,16 @@
       <!-- ── DATABASE (CƠ SỞ DỮ LIỆU) ── -->
       <div class="page-section" id="page-database">
 
-        <!-- 5 Sub-tabs in Database section -->
+        <!-- 6 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
             <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
           </div>
           <div class="tab" id="db-tab-devices" onclick="switchDatabaseTab('devices')">
             <i class="fa-solid fa-microchip"></i> Thiết bị IoT &amp; Cảm biến
+          </div>
+          <div class="tab" id="db-tab-schemas" onclick="switchDatabaseTab('schemas')">
+            <i class="fa-solid fa-sliders"></i> Cấu hình &amp; Quy trình Loại cây
           </div>
           <div class="tab" id="db-tab-supplies" onclick="switchDatabaseTab('supplies')">
             <i class="fa-solid fa-boxes-packing"></i> Vật tư &amp; Kho
@@ -1192,7 +1192,173 @@
           </div>
         </div>
 
-        <!-- ── TAB 3: VẬT TƯ & KHO (ENTERPRISE AGTECH ERP INVENTORY SUITE) ── -->
+        <!-- ── TAB 3: CẤU HÌNH LOẠI CÂY & QUY TRÌNH CANH TÁC CHUẨN (SCHEMAS & SOPS) ── -->
+        <div class="tab-pane" id="db-pane-schemas" style="display:none;">
+
+          <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Loại Cây (Schema)</div>
+                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-schema-count">0</div>
+              </div>
+            </div>
+
+            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="fa-solid fa-list-check"></i>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:#2563eb; text-transform:uppercase; letter-spacing:0.04em;">Thuộc Tính Tùy Biến</div>
+                <div style="font-size:22px; font-weight:800; color:#1e40af; margin-top:2px;" id="kpi-schema-fields-count">0</div>
+              </div>
+            </div>
+
+            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="fa-solid fa-clipboard-list"></i>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.04em;">Quy Trình SOP Canh Tác</div>
+                <div style="font-size:22px; font-weight:800; color:#16a34a; margin-top:2px;">5 Quy trình chuẩn</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TẦNG 2: CONTROL BAR & SUB-TABS -->
+          <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
+            <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; gap:10px;">
+                <div class="tab active" id="config-tab-schema" onclick="switchConfigTab('schema')" style="padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer;">
+                  🌳 Danh Mục Loại Cây &amp; Schema
+                </div>
+                <div class="tab" id="config-tab-care" onclick="switchConfigTab('care')" style="padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer;">
+                  🛠️ Quy Trình Chăm Sóc &amp; SOP Canh Tác
+                </div>
+              </div>
+
+              <!-- Top Action Button -->
+              <div style="padding:8px 0;" id="schema-top-actions">
+                <button class="btn btn-primary btn-sm" onclick="openSchemaModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
+                  <i class="fa fa-plus"></i> + Tạo Loại Cây Mới
+                </button>
+              </div>
+            </div>
+
+            <!-- Sub-pane 1: Schema Catalog Table & Grid -->
+            <div class="tab-pane active" id="pane-config-schema" style="padding:20px; display:block;">
+              <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="font-size:13px; color:#64748b;">
+                  Quản lý danh mục loại cây, tên khoa học, icon đại diện và các trường thuộc tính tùy biến cho từng giống cây.
+                </div>
+                <div style="max-width:280px; width:100%;">
+                  <input type="text" id="schema-search-input" placeholder="🔍 Tìm loại cây..." oninput="filterSchemasList()" style="width:100%; padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px;">
+                </div>
+              </div>
+
+              <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                  <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-transform:uppercase;">
+                    <th style="padding:12px 16px;">Tên loại cây / Giống</th>
+                    <th>Tên khoa học / Mô tả</th>
+                    <th>Thuộc tính tùy biến</th>
+                    <th>Ngày cấu hình</th>
+                    <th style="width:120px; text-align:center;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="schemas-table">
+                  <tr><td colspan="5"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách loại cây...</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Sub-pane 2: Care SOP Procedures Configuration -->
+            <div class="tab-pane" id="pane-config-care" style="padding:20px; display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                  <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-screwdriver-wrench" style="color:#059669"></i> Quy Trình Kỹ Thuật Canh Tác Chuẩn (SOP)</h4>
+                  <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Cấu hình các phương pháp, lý do canh tác mẫu hiển thị trong nhật ký nông hộ</p>
+                </div>
+                <button class="btn btn-primary btn-sm" id="save-care-cfg-btn" onclick="saveCareConfigs()" style="background:#059669; border:none; border-radius:8px; padding:8px 16px; font-weight:800; font-size:12.5px; cursor:pointer;">
+                  <i class="fa fa-floppy-disk"></i> Lưu Cấu Hình SOP
+                </button>
+              </div>
+
+              <div class="alert alert-success" style="margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.5; background: #ecfdf5; color: #064e3b; border: 1.5px solid #a7f3d0; display: flex; gap: 8px; align-items: flex-start;">
+                <i class="fa fa-circle-info" style="margin-top: 2px;"></i>
+                <span>Các cấu hình danh mục dưới đây sẽ hiển thị trực tiếp làm tùy chọn nhanh khi Nông hộ thực hiện ghi nhận nhật ký canh tác hàng ngày. Hãy nhập <strong>mỗi dòng một phương pháp / lý do</strong>.</span>
+              </div>
+
+              <div class="care-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+                <!-- Card 1: Tưới nước -->
+                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <i class="fa-solid fa-droplet" style="color:#3b82f6; font-size:18px;"></i>
+                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Tưới nước</h4>
+                  </div>
+                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Phương pháp tưới nước áp dụng tại trang trại (tưới nhỏ giọt, tưới tay...).</p>
+                  <div class="field">
+                    <textarea id="cfg-water-methods" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Tưới tay thủ công&#10;Tưới nhỏ giọt&#10;Tưới phun mưa"></textarea>
+                  </div>
+                </div>
+
+                <!-- Card 2: Bón phân -->
+                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <i class="fa-solid fa-flask" style="color:#8b5cf6; font-size:18px;"></i>
+                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Bón phân</h4>
+                  </div>
+                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Danh mục các loại phân bón hóa học hoặc phân hữu cơ sử dụng cho cây.</p>
+                  <div class="field">
+                    <textarea id="cfg-fertilizers" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Phân NPK 16-16-8&#10;Phân hữu cơ trùn quế&#10;Phân chuồng hoai mục"></textarea>
+                  </div>
+                </div>
+
+                <!-- Card 3: Phun thuốc -->
+                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <i class="fa-solid fa-shield-virus" style="color:#ef4444; font-size:18px;"></i>
+                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Phun thuốc</h4>
+                  </div>
+                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Các loại thuốc bảo vệ thực vật, chế phẩm diệt nấm hoặc trừ sâu bệnh.</p>
+                  <div class="field">
+                    <textarea id="cfg-pesticides" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Thuốc trừ sâu sinh học&#10;Thuốc trừ bệnh Anvil&#10;Thuốc trừ nấm Ridomil Gold"></textarea>
+                  </div>
+                </div>
+
+                <!-- Card 4: Cắt cành / Cắt lá -->
+                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <i class="fa-solid fa-scissors" style="color:#f59e0b; font-size:18px;"></i>
+                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Cắt cành & Cắt lá</h4>
+                  </div>
+                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Lý do thực hiện tỉa cành tạo tán hoặc loại bỏ các lá bệnh, lá già úa.</p>
+                  <div class="field">
+                    <textarea id="cfg-leaf-reasons" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Lá già úa/vàng&#10;Lá bị sâu bệnh hại&#10;Tỉa cành tạo tán"></textarea>
+                  </div>
+                </div>
+
+                <!-- Card 5: Tỉa hoa -->
+                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <i class="fa-solid fa-seedling" style="color:#10b981; font-size:18px;"></i>
+                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Tỉa hoa</h4>
+                  </div>
+                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Lý do thực hiện tỉa bớt hoa/nụ còi để tập trung dinh dưỡng nuôi trái.</p>
+                  <div class="field">
+                    <textarea id="cfg-flower-reasons" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Tỉa hoa tàn&#10;Tỉa bớt nụ còi&#10;Kích thích ra chồi mới"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── TAB 4: VẬT TƯ & KHO (ENTERPRISE AGTECH ERP INVENTORY SUITE) ── -->
         <div class="tab-pane" id="db-pane-supplies" style="display:none;">
 
           <!-- TẦNG 1: EXECUTIVE KPI & WAREHOUSE TELEMETRY -->
@@ -1553,110 +1719,6 @@
 
 
 
-      <!-- ── Schemas & Config ── -->
-      <div class="page-section" id="page-schemas">
-        <div class="tabs" style="margin-bottom: 20px;">
-          <div class="tab active" id="config-tab-schema" onclick="switchConfigTab('schema')">Schema loại cây</div>
-          <div class="tab" id="config-tab-care" onclick="switchConfigTab('care')">Quy trình chăm sóc</div>
-        </div>
-
-        <div class="tab-pane active" id="pane-config-schema">
-          <div class="card">
-            <div class="card-header">
-              <h3>⚙️ Cấu hình loại cây (Schema)</h3>
-              <button class="btn btn-primary" onclick="openSchemaModal()">
-                <i class="fa fa-plus"></i> Tạo schema mới
-              </button>
-            </div>
-            <table>
-              <thead><tr>
-                <th>Tên schema</th><th>Mô tả</th><th>Số trường</th><th>Ngày tạo</th><th>Thao tác</th>
-              </tr></thead>
-              <tbody id="schemas-table"><tr><td colspan="5"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div></td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="tab-pane" id="pane-config-care">
-          <div class="card">
-            <div class="card-header">
-              <h3><i class="fa-solid fa-screwdriver-wrench" style="color:var(--green)"></i> Quy trình chăm sóc & canh tác</h3>
-              <button class="btn btn-primary" id="save-care-cfg-btn" onclick="saveCareConfigs()">
-                <i class="fa fa-floppy-disk"></i> Lưu cấu hình
-              </button>
-            </div>
-            
-            <div style="padding:24px">
-              <div class="alert alert-success" style="margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.5; background: var(--green-light); color: var(--green-dark); border: 1.5px solid rgba(34, 197, 94, 0.2); display: flex; gap: 8px; align-items: flex-start;">
-                <i class="fa fa-circle-info" style="margin-top: 2px;"></i>
-                <span>Các cấu hình danh mục dưới đây sẽ hiển thị trực tiếp làm tùy chọn nhanh khi Nông hộ thực hiện ghi nhận nhật ký canh tác hàng ngày. Hãy nhập <strong>mỗi dòng một phương pháp / lý do</strong>.</span>
-              </div>
-
-              <div class="care-grid">
-                <!-- Card 1: Tưới nước -->
-                <div class="care-card">
-                  <div class="care-card-header">
-                    <i class="fa-solid fa-droplet" style="color:#3b82f6"></i>
-                    <h4>Tưới nước</h4>
-                  </div>
-                  <p class="care-card-desc">Các phương pháp tưới nước áp dụng tại trang trại (ví dụ: tưới nhỏ giọt, tưới tay...).</p>
-                  <div class="field">
-                    <textarea id="cfg-water-methods" rows="5" placeholder="Tưới tay thủ công&#10;Tưới nhỏ giọt&#10;Tưới phun mưa"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 2: Bón phân -->
-                <div class="care-card">
-                  <div class="care-card-header">
-                    <i class="fa-solid fa-flask" style="color:#8b5cf6"></i>
-                    <h4>Bón phân</h4>
-                  </div>
-                  <p class="care-card-desc">Danh mục các loại phân bón hóa học hoặc phân bón hữu cơ sử dụng cho cây trồng.</p>
-                  <div class="field">
-                    <textarea id="cfg-fertilizers" rows="5" placeholder="Phân NPK 16-16-8&#10;Phân hữu cơ trùn quế&#10;Phân chuồng hoai mục"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 3: Phun thuốc -->
-                <div class="care-card">
-                  <div class="care-card-header">
-                    <i class="fa-solid fa-shield-virus" style="color:#ef4444"></i>
-                    <h4>Phun thuốc</h4>
-                  </div>
-                  <p class="care-card-desc">Các loại thuốc bảo vệ thực vật, chế phẩm diệt nấm hoặc trừ sâu bệnh.</p>
-                  <div class="field">
-                    <textarea id="cfg-pesticides" rows="5" placeholder="Thuốc trừ sâu sinh học&#10;Thuốc trừ bệnh Anvil&#10;Thuốc trừ nấm Ridomil Gold"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 4: Cắt cành / Cắt lá -->
-                <div class="care-card">
-                  <div class="care-card-header">
-                    <i class="fa-solid fa-scissors" style="color:#f59e0b"></i>
-                    <h4>Cắt cành & Cắt lá</h4>
-                  </div>
-                  <p class="care-card-desc">Các lý do thực hiện tỉa cành tạo tán hoặc loại bỏ các lá bệnh, lá vàng úa.</p>
-                  <div class="field">
-                    <textarea id="cfg-leaf-reasons" rows="5" placeholder="Lá già úa/vàng&#10;Lá bị sâu bệnh hại&#10;Tỉa cành tạo tán"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 5: Tỉa hoa -->
-                <div class="care-card">
-                  <div class="care-card-header">
-                    <i class="fa-solid fa-seedling" style="color:#10b981"></i>
-                    <h4>Tỉa hoa</h4>
-                  </div>
-                  <p class="care-card-desc">Lý do thực hiện tỉa bớt hoa/nụ còi để tập trung chất dinh dưỡng nuôi quả.</p>
-                  <div class="field">
-                    <textarea id="cfg-flower-reasons" rows="5" placeholder="Tỉa hoa tàn&#10;Tỉa bớt nụ còi&#10;Kích thích ra chồi mới"></textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- ── Users management (Enterprise ERP Governance) ── -->
       <div class="page-section" id="page-users">
@@ -2827,19 +2889,19 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.6.5"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.6.5"></script>
-  <script src="/admin/js/app.js?v=3.6.5"></script>
-  <script src="/admin/js/auth.js?v=3.6.5"></script>
-  <script src="/admin/js/dashboard.js?v=3.6.5"></script>
-  <script src="/admin/js/media.js?v=3.6.5"></script>
-  <script src="/admin/js/database.js?v=3.6.5"></script>
-  <script src="/admin/js/schemas.js?v=3.6.5"></script>
-  <script src="/admin/js/plants.js?v=3.6.5"></script>
-  <script src="/admin/js/gis.js?v=3.6.5"></script>
-  <script src="/admin/js/users.js?v=3.6.5"></script>
-  <script src="/admin/js/devices.js?v=3.6.5"></script>
-  <script src="/admin/js/websocket.js?v=3.6.5"></script>
+  <script src="/admin/js/countup.js?v=3.6.6"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.6.6"></script>
+  <script src="/admin/js/app.js?v=3.6.6"></script>
+  <script src="/admin/js/auth.js?v=3.6.6"></script>
+  <script src="/admin/js/dashboard.js?v=3.6.6"></script>
+  <script src="/admin/js/media.js?v=3.6.6"></script>
+  <script src="/admin/js/database.js?v=3.6.6"></script>
+  <script src="/admin/js/schemas.js?v=3.6.6"></script>
+  <script src="/admin/js/plants.js?v=3.6.6"></script>
+  <script src="/admin/js/gis.js?v=3.6.6"></script>
+  <script src="/admin/js/users.js?v=3.6.6"></script>
+  <script src="/admin/js/devices.js?v=3.6.6"></script>
+  <script src="/admin/js/websocket.js?v=3.6.6"></script>
 </body>
 
 

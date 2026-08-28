@@ -227,6 +227,11 @@ function showPage(page, pushUrl = true) {
     if (typeof switchDatabaseTab === 'function') {
       setTimeout(() => switchDatabaseTab('devices'), 50);
     }
+  } else if (page === 'schemas') {
+    page = 'database';
+    if (typeof switchDatabaseTab === 'function') {
+      setTimeout(() => switchDatabaseTab('schemas'), 50);
+    }
   }
 
   const targetSection = document.getElementById(`page-${page}`);
