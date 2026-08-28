@@ -1211,9 +1211,11 @@ function closeViewHistoryModal() {
 window.initDatabasePage = initDatabasePage;
 window.switchDatabaseTab = switchDatabaseTab;
 window.setSupplyGroupMode = setSupplyGroupMode;
-window.onDbFilterChange = onDbFilterChange;
-window.onSupplyFilterChange = onSupplyFilterChange;
-window.loadPlantCultivationTimeline = loadPlantCultivationTimeline;
+window.selectTreeForDetail = selectTreeForDetail;
+window.filterMasterPlantList = filterMasterPlantList;
+window.filterTimelineByActivity = filterTimelineByActivity;
+window.exportCultivationPDF = exportCultivationPDF;
+window.loadPlantCultivationTimeline = selectTreeForDetail;
 window.loadSuppliesTab = loadSuppliesTab;
 window.filterSupplies = filterSupplies;
 window.openViewSupplyModal = openViewSupplyModal;
