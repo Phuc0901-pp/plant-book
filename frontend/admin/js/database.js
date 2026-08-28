@@ -1220,8 +1220,59 @@ async function saveSupplySubmit() {
   }
 }
 
-// ── Tab 4: Audit History (Lịch sử biến động dữ liệu bị sửa/xóa) ──
+// ── Tab 4: Audit History (Enterprise Security Audit Trail & Visual Diff) ──
 let allHistoryCache = [];
+let currentDbActiveHistoryChip = 'all';
+
+const AUDIT_FIELD_LABELS = {
+  name: 'Tên / Tiêu đề',
+  title: 'Tiêu đề bản ghi',
+  category: 'Phân loại',
+  type: 'Loại hạng mục',
+  unit: 'Đơn vị tính',
+  quantity: 'Số lượng',
+  stock_quantity: 'Số lượng tồn kho',
+  unit_price: 'Đơn giá (VNĐ)',
+  package_price: 'Giá đóng gói',
+  supplier: 'Nhà cung cấp / Nông hộ',
+  note: 'Ghi chú / Mô tả',
+  image_url: 'Đường dẫn ảnh',
+  activity_type: 'Loại hoạt động',
+  activity_date: 'Ngày thực hiện',
+  description: 'Mô tả chi tiết',
+  cost: 'Chi phí (VNĐ)',
+  health_status: 'Tình trạng sức khỏe',
+  tree_age_years: 'Tuổi cây (năm)',
+  planting_date: 'Ngày trồng',
+  location: 'Vị trí địa lý',
+  farm_id: 'Mã Trang trại (ID)',
+  farm_name: 'Tên Trang trại',
+  user_id: 'Mã Khách hàng (ID)',
+  creator_name: 'Người tạo',
+  creator_phone: 'SĐT Người tạo',
+  phone: 'Số điện thoại',
+  email: 'Email',
+  full_name: 'Họ và tên',
+  address: 'Địa chỉ',
+  area_m2: 'Diện tích (m²)',
+  soil_type: 'Loại đất',
+  water_source: 'Nguồn nước'
+};
+
+function formatRelativeTime(dateInput) {
+  if (!dateInput) return '—';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '—';
+  const now = new Date();
+  const diffSec = Math.floor((now - d) / 1000);
+
+  if (diffSec < 60) return 'Vừa xong';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} phút trước`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} giờ trước`;
+  if (diffSec < 172800) return `Hôm qua lúc ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+
+  return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 
 async function loadHistoryTab() {
   const tbody = document.getElementById('db-history-table-body');
@@ -1236,57 +1287,175 @@ async function loadHistoryTab() {
   if (targetType) params.set('target_type', targetType);
   if (search) params.set('search', search);
 
-  tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký lịch sử dữ liệu...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>';
 
   try {
     const historyList = await api(`/history?${params.toString()}`) || [];
     allHistoryCache = historyList;
-    renderHistoryTable(historyList);
+    updateHistoryKPICards(historyList);
+    renderHistoryChipsBar(historyList);
+    filterHistoryTab();
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
   }
 }
+
+function updateHistoryKPICards(list) {
+  const totalEl = document.getElementById('kpi-history-total-events');
+  const updateEl = document.getElementById('kpi-history-update-events');
+  const deleteEl = document.getElementById('kpi-history-delete-events');
+  const actorEl = document.getElementById('kpi-history-recent-actor');
+
+  const totalEvents = list.length;
+  const updateCount = list.filter(h => h.action_type === 'UPDATE').length;
+  const deleteCount = list.filter(h => h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT').length;
+  const recentItem = list[0];
+  const actorName = recentItem ? (recentItem.user_name || recentItem.current_user_name || 'Admin') : 'Chưa có';
+
+  if (totalEl) totalEl.textContent = totalEvents;
+  if (updateEl) updateEl.textContent = updateCount;
+  if (deleteEl) deleteEl.textContent = deleteCount;
+  if (actorEl) {
+    actorEl.innerHTML = recentItem 
+      ? `<strong>👤 ${esc(actorName)}</strong> <div style="font-size:11px; color:#64748b; font-weight:600;">${formatRelativeTime(recentItem.created_at)}</div>` 
+      : 'Chưa có dữ liệu';
+  }
+}
+
+function renderHistoryChipsBar(list) {
+  const container = document.getElementById('db-history-chips-bar');
+  if (!container) return;
+
+  const counts = { all: list.length, UPDATE: 0, DELETE: 0 };
+  const targetCounts = {};
+
+  list.forEach(h => {
+    if (h.action_type === 'UPDATE') counts.UPDATE++;
+    if (h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT') counts.DELETE++;
+
+    const t = h.target_type || 'Khác';
+    targetCounts[t] = (targetCounts[t] || 0) + 1;
+  });
+
+  let chips = [
+    { id: 'all', label: 'Tất cả biến động', icon: 'fa-layer-group', count: counts.all },
+    { id: 'UPDATE', label: 'Lượt chỉnh sửa (UPDATE)', icon: 'fa-pen-to-square', count: counts.UPDATE, isUpdate: true },
+    { id: 'DELETE', label: 'Lượt xóa (DELETE)', icon: 'fa-trash-can', count: counts.DELETE, isDelete: true }
+  ];
+
+  const targetIconMap = {
+    'Vật tư': 'fa-boxes-packing',
+    'Nhật ký canh tác': 'fa-book-open-reader',
+    'Thư viện media': 'fa-photo-film',
+    'Cây trồng': 'fa-tree',
+    'Trang trại': 'fa-house-chimney-window'
+  };
+
+  Object.keys(targetCounts).forEach(t => {
+    chips.push({
+      id: `target_${t}`,
+      targetName: t,
+      label: t,
+      icon: targetIconMap[t] || 'fa-database',
+      count: targetCounts[t]
+    });
+  });
+
+  container.innerHTML = chips.map(c => {
+    const isActive = (currentDbActiveHistoryChip === c.id);
+    let chipStyle = '';
+    if (isActive) {
+      if (c.isDelete) {
+        chipStyle = 'background:#dc2626; color:#ffffff; border:1.5px solid #dc2626;';
+      } else if (c.isUpdate) {
+        chipStyle = 'background:#d97706; color:#ffffff; border:1.5px solid #d97706;';
+      } else {
+        chipStyle = 'background:#059669; color:#ffffff; border:1.5px solid #059669;';
+      }
+    } else {
+      if (c.isDelete) {
+        chipStyle = 'background:#fffafb; color:#dc2626; border:1.5px solid #fecaca;';
+      } else if (c.isUpdate) {
+        chipStyle = 'background:#fffdfa; color:#b45309; border:1.5px solid #fde68a;';
+      } else {
+        chipStyle = 'background:#ffffff; color:#475569; border:1.5px solid #cbd5e1;';
+      }
+    }
+
+    return `
+      <button type="button" onclick="filterHistoryByChip('${esc(c.id)}')"
+              style="padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s ease; ${chipStyle} display:inline-flex; align-items:center; gap:6px;">
+        <i class="fa-solid ${c.icon}"></i> ${esc(c.label)} <span style="opacity:0.85; font-size:11px;">(${c.count})</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function filterHistoryByChip(chipType) {
+  currentDbActiveHistoryChip = chipType;
+  renderHistoryChipsBar(allHistoryCache);
+  filterHistoryTab();
+}
+window.filterHistoryByChip = filterHistoryByChip;
 
 function renderHistoryTable(list) {
   const tbody = document.getElementById('db-history-table-body');
   if (!tbody) return;
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có dữ liệu biến động (sửa/xóa) nào được ghi nhận.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:40px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-clock-rotate-left" style="font-size:36px; margin-bottom:10px; display:block;"></i>Chưa có dữ liệu biến động nào phù hợp với bộ lọc đã chọn.</td></tr>';
     return;
   }
+
+  const targetIconMap = {
+    'Vật tư': { icon: 'fa-boxes-packing', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
+    'Nhật ký canh tác': { icon: 'fa-book-open-reader', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' },
+    'Thư viện media': { icon: 'fa-photo-film', bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe' },
+    'Cây trồng': { icon: 'fa-tree', bg: '#fef3c7', color: '#78350f', border: '#fde68a' },
+    'Trang trại': { icon: 'fa-house-chimney-window', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' }
+  };
 
   tbody.innerHTML = list.map(h => {
     const isDelete = h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT';
     const actionBadge = isDelete
-      ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-weight:800; padding:4px 10px; border-radius:20px;"><i class="fa-solid fa-trash-can"></i> ${h.action_type === 'DELETE_SOFT' ? 'Xóa đệm' : 'Xóa vĩnh viễn'}</span>`
-      : `<span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px;"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa</span>`;
+      ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-trash-can"></i> ${h.action_type === 'DELETE_SOFT' ? 'XÓA ĐỆM' : 'XÓA DỮ LIỆU'}</span>`
+      : `<span class="badge" style="background:#fef3c7; color:#b45309; border:1.5px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-pen-to-square"></i> CẬP NHẬT</span>`;
 
-    const targetBadge = `<span class="badge" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-weight:700; padding:4px 10px; border-radius:8px;">${esc(h.target_type)}</span>`;
+    const tCfg = targetIconMap[h.target_type] || { icon: 'fa-database', bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
+    const targetBadge = `<span class="badge" style="background:${tCfg.bg}; color:${tCfg.color}; border:1px solid ${tCfg.border}; font-weight:800; padding:4px 10px; border-radius:8px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid ${tCfg.icon}"></i> ${esc(h.target_type)}</span>`;
 
-    const dateStr = h.created_at ? new Date(h.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-
+    const relTime = formatRelativeTime(h.created_at);
+    const absDateStr = h.created_at ? new Date(h.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
     const isSoftDeletedFarm = h.target_type === 'Trang trại' && h.action_type === 'DELETE_SOFT' && h.record_id;
 
     return `
-      <tr>
-        <td style="font-size:12px; font-weight:700; color:#64748b;"><i class="fa-regular fa-clock"></i> ${dateStr}</td>
-        <td>${actionBadge}</td>
-        <td>${targetBadge}</td>
-        <td style="font-weight:700; color:#0f172a;">${esc(h.title)}</td>
-        <td style="font-size:12.5px; color:#475569; font-weight:600;">👤 ${esc(h.user_name || h.current_user_name || 'Hệ thống')}</td>
-        <td>
+      <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+        <td style="padding:12px 14px;">
+          <div style="font-size:12.5px; font-weight:800; color:#0f172a;">${relTime}</div>
+          <div style="font-size:11px; color:#64748b; margin-top:2px;"><i class="fa-regular fa-clock"></i> ${absDateStr}</div>
+        </td>
+        <td style="padding:12px 14px;">${actionBadge}</td>
+        <td style="padding:12px 14px;">${targetBadge}</td>
+        <td style="padding:12px 14px; font-weight:700; color:#0f172a; line-height:1.4;">
+          <a href="javascript:void(0)" onclick="openViewHistoryModal(${h.id})" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#059669'" onmouseout="this.style.color='#0f172a'">
+            ${esc(h.title)}
+          </a>
+        </td>
+        <td style="padding:12px 14px; font-size:12.5px; color:#475569; font-weight:600;">
+          👤 <strong>${esc(h.user_name || h.current_user_name || 'Admin')}</strong>
+        </td>
+        <td style="padding:12px 14px; text-align:center;">
           <div style="display:inline-flex; gap:6px; align-items:center; flex-wrap:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:4px 9px; font-size:11px; font-weight:700;" title="Xem chi tiết dữ liệu">
-              <i class="fa-solid fa-circle-info"></i> Chi tiết
+            <button class="btn btn-primary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:5px 10px; font-size:11.5px; font-weight:700; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:6px;" title="Xem đối chiếu thay đổi dữ liệu">
+              <i class="fa-solid fa-code-compare"></i> Đối chiếu
             </button>
             ${isSoftDeletedFarm ? `
-              <button class="btn btn-danger btn-sm" onclick="adminHardDeleteFarm(${h.record_id}, '${esc(h.title.replace(/'/g, "\\'"))}', ${h.id})" style="padding:4px 9px; font-size:11px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn trang trại khỏi CSDL">
-                <i class="fa-solid fa-trash-can"></i> Xóa trang trại
+              <button class="btn btn-danger btn-sm" onclick="adminHardDeleteFarm(${h.record_id}, '${esc(h.title.replace(/'/g, "\\'"))}', ${h.id})" style="padding:5px 9px; font-size:11px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn trang trại khỏi CSDL">
+                <i class="fa-solid fa-trash-can"></i> Xóa CSDL
               </button>
             ` : ''}
-            <button class="btn btn-secondary btn-sm" onclick="deleteAuditLogItem(${h.id})" style="padding:4px 9px; font-size:11px; font-weight:700; color:#dc2626; border-color:#fca5a5; background:#fff1f2;" title="Xóa bản ghi nhật ký lịch sử này khỏi CSDL">
-              <i class="fa-solid fa-trash"></i> Xóa dòng
+            <button class="btn btn-secondary btn-sm" onclick="deleteAuditLogItem(${h.id})" style="padding:5px 9px; font-size:11px; font-weight:700; color:#dc2626; border-color:#fca5a5; background:#fff1f2; border-radius:6px;" title="Xóa bản ghi nhật ký kiểm toán này">
+              <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </td>
@@ -1294,6 +1463,41 @@ function renderHistoryTable(list) {
     `;
   }).join('');
 }
+
+function filterHistoryTab() {
+  const q = (document.getElementById('db-history-search')?.value || '').toLowerCase().trim();
+  let filtered = allHistoryCache;
+
+  // Filter by active chip
+  if (currentDbActiveHistoryChip !== 'all') {
+    if (currentDbActiveHistoryChip === 'UPDATE') {
+      filtered = filtered.filter(h => h.action_type === 'UPDATE');
+    } else if (currentDbActiveHistoryChip === 'DELETE') {
+      filtered = filtered.filter(h => h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT');
+    } else if (currentDbActiveHistoryChip.startsWith('target_')) {
+      const targetName = currentDbActiveHistoryChip.replace('target_', '');
+      filtered = filtered.filter(h => h.target_type === targetName);
+    }
+  }
+
+  // Filter by query string
+  if (q) {
+    filtered = filtered.filter(h =>
+      (h.title || '').toLowerCase().includes(q) ||
+      (h.user_name || h.current_user_name || '').toLowerCase().includes(q) ||
+      (h.target_type || '').toLowerCase().includes(q) ||
+      (h.action_type || '').toLowerCase().includes(q)
+    );
+  }
+
+  renderHistoryTable(filtered);
+}
+window.filterHistoryTab = filterHistoryTab;
+
+function exportAuditPDF() {
+  window.print();
+}
+window.exportAuditPDF = exportAuditPDF;
 
 async function adminHardDeleteFarm(farmId, farmTitle, auditId = null) {
   if (!confirm(`⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn XÓA VĨNH VIỄN Trang trại "${farmTitle}" (ID: #${farmId}) khỏi CSDL PostgreSQL?\n\nThao tác này sẽ xóa triệt để dữ liệu và KHÔNG THỂ KHÔI PHỤC!`)) {
@@ -1315,50 +1519,38 @@ async function adminHardDeleteFarm(farmId, farmTitle, auditId = null) {
 window.adminHardDeleteFarm = adminHardDeleteFarm;
 
 async function deleteAuditLogItem(id) {
-  if (!confirm('Bạn có chắc chắn muốn XÓA bản ghi nhật ký lịch sử này khỏi CSDL?')) {
+  if (!confirm('Bạn có chắc chắn muốn XÓA bản ghi nhật ký kiểm toán này khỏi CSDL?')) {
     return;
   }
   try {
     const res = await api(`/history/${id}`, { method: 'DELETE' });
     if (res && (res.success || res.message)) {
-      toast('Đã xóa bản ghi nhật ký lịch sử thành công!');
+      toast('Đã xóa bản ghi nhật ký kiểm toán thành công!');
       loadHistoryTab();
     }
   } catch (err) {
-    alert(err.message || 'Lỗi khi xóa bản ghi nhật ký lịch sử.');
+    alert(err.message || 'Lỗi khi xóa bản ghi nhật ký.');
   }
 }
 window.deleteAuditLogItem = deleteAuditLogItem;
 
 async function clearAllAuditLogs() {
-  if (!confirm('⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn DỌN DẸP SẠCH TOÀN BỘ NHẬT KÝ LỊCH SỬ BIẾN ĐỘNG khỏi CSDL PostgreSQL?\n\nThao tác này sẽ xóa toàn bộ các dòng nhật ký ghi nhận sửa/xóa trước đây!')) {
+  if (!confirm('⚠️ CẢNH BÁO QUẢN TRỊ VIÊN:\n\nBạn có chắc chắn muốn DỌN DẸP SẠCH TOÀN BỘ NHẬT KÝ KIỂM TOÁN CSDL PostgreSQL?\n\nThao tác này sẽ xóa toàn bộ các dòng nhật ký ghi nhận sửa/xóa trước đây!')) {
     return;
   }
   try {
     const res = await api('/history', { method: 'DELETE' });
     if (res && (res.success || res.message)) {
-      toast('Đã dọn dẹp sạch toàn bộ nhật ký lịch sử thành công!');
+      toast('Đã dọn dẹp sạch toàn bộ nhật ký kiểm toán thành công!');
       loadHistoryTab();
     }
   } catch (err) {
-    alert(err.message || 'Lỗi khi dọn dẹp nhật ký lịch sử.');
+    alert(err.message || 'Lỗi khi dọn dẹp nhật ký.');
   }
 }
 window.clearAllAuditLogs = clearAllAuditLogs;
 
-function filterHistoryTab() {
-  const q = (document.getElementById('db-history-search')?.value || '').toLowerCase().trim();
-  if (!q) {
-    renderHistoryTable(allHistoryCache);
-    return;
-  }
-  const filtered = allHistoryCache.filter(h =>
-    (h.title || '').toLowerCase().includes(q) ||
-    (h.user_name || h.current_user_name || '').toLowerCase().includes(q) ||
-    (h.target_type || '').toLowerCase().includes(q)
-  );
-  renderHistoryTable(filtered);
-}
+// ── Visual Diff Inspector Modal Logic ──
 
 function openViewHistoryModal(id) {
   const item = allHistoryCache.find(h => h.id == id);
@@ -1367,56 +1559,164 @@ function openViewHistoryModal(id) {
   const modalBody = document.getElementById('history-view-modal-body');
   if (!modalBody) return;
 
-  const isDelete = item.action_type === 'DELETE';
-  const actionText = isDelete ? '🗑️ Xóa dữ liệu (DELETE)' : '✏️ Chỉnh sửa dữ liệu (UPDATE)';
+  const isDelete = item.action_type === 'DELETE' || item.action_type === 'DELETE_SOFT';
+  const actionText = isDelete ? '🗑️ XÓA DỮ LIỆU (DELETE)' : '✏️ CHỈNH SỬA DỮ LIỆU (UPDATE)';
   const dateStr = item.created_at ? new Date(item.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  const relTime = formatRelativeTime(item.created_at);
 
-  let oldDataStr = '{}';
-  let newDataStr = '{}';
+  let oldData = {};
+  let newData = {};
+
   try {
-    oldDataStr = typeof item.old_data === 'string' ? item.old_data : JSON.stringify(item.old_data, null, 2);
-  } catch(e) {}
+    oldData = typeof item.old_data === 'string' ? JSON.parse(item.old_data) : (item.old_data || {});
+  } catch(e) {
+    oldData = { raw_data: String(item.old_data) };
+  }
+
   try {
-    newDataStr = typeof item.new_data === 'string' ? item.new_data : JSON.stringify(item.new_data, null, 2);
-  } catch(e) {}
+    newData = typeof item.new_data === 'string' ? JSON.parse(item.new_data) : (item.new_data || {});
+  } catch(e) {
+    newData = { raw_data: String(item.new_data) };
+  }
+
+  let diffContentHtml = '';
+
+  if (isDelete) {
+    // Render Deleted Entity Inspector Card
+    const keys = Object.keys(oldData);
+    diffContentHtml = `
+      <div style="background:#fff1f2; border:1.5px solid #fecdd3; border-radius:12px; padding:16px; margin-bottom:16px;">
+        <div style="font-size:13px; font-weight:800; color:#dc2626; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-triangle-exclamation"></i> Bản ghi đã bị xóa khỏi hệ thống:
+        </div>
+        
+        <table style="width:100%; border-collapse:collapse; background:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #fecdd3;">
+          <thead>
+            <tr style="background:#ffe4e6; text-align:left; font-size:11.5px; text-transform:uppercase; color:#9f1239;">
+              <th style="padding:8px 12px; width:40%;">Trường dữ liệu</th>
+              <th style="padding:8px 12px;">Giá trị tại thời điểm xóa</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${keys.length > 0 ? keys.map(k => {
+              const label = AUDIT_FIELD_LABELS[k] || k;
+              let val = oldData[k];
+              if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
+              return `
+                <tr style="border-bottom:1px solid #ffe4e6; font-size:12px;">
+                  <td style="padding:8px 12px; font-weight:700; color:#475569;">${esc(label)} <span style="font-size:10px; color:#94a3b8;">(${esc(k)})</span></td>
+                  <td style="padding:8px 12px; font-weight:700; color:#0f172a;">${esc(String(val ?? '—'))}</td>
+                </tr>
+              `;
+            }).join('') : `<tr><td colspan="2" style="padding:12px; text-align:center; color:#94a3b8;">Không có dữ liệu chi tiết.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    // Render Visual Diff Matrix (Before vs After)
+    const allKeys = Array.from(new Set([...Object.keys(oldData), ...Object.keys(newData)]));
+    const noiseKeys = ['updated_at'];
+    const filteredKeys = allKeys.filter(k => !noiseKeys.includes(k));
+
+    let diffRows = '';
+    let changedCount = 0;
+
+    filteredKeys.forEach(k => {
+      const label = AUDIT_FIELD_LABELS[k] || k;
+      let oldVal = oldData[k];
+      let newVal = newData[k];
+
+      const oldValStr = (typeof oldVal === 'object' && oldVal !== null) ? JSON.stringify(oldVal) : String(oldVal ?? '—');
+      const newValStr = (typeof newVal === 'object' && newVal !== null) ? JSON.stringify(newVal) : String(newVal ?? '—');
+
+      const isChanged = (oldValStr !== newValStr && oldVal !== undefined && newVal !== undefined) || (oldVal === undefined && newVal !== undefined) || (oldVal !== undefined && newVal === undefined);
+      if (isChanged) changedCount++;
+
+      diffRows += `
+        <tr style="border-bottom:1px solid #e2e8f0; font-size:12.5px; ${isChanged ? 'background:#fffdfa;' : ''}">
+          <td style="padding:10px 14px; font-weight:700; color:#334155; width:30%;">
+            ${esc(label)}
+            <div style="font-size:10.5px; color:#94a3b8; font-family:monospace;">${esc(k)}</div>
+          </td>
+          <td style="padding:10px 14px; width:35%; ${isChanged ? 'background:#fff1f2; color:#be123c; font-weight:700;' : 'color:#64748b;'}">
+            ${isChanged ? `<span style="font-size:10px; background:#fecdd3; color:#9f1239; padding:1px 5px; border-radius:4px; margin-right:4px;">Cũ</span>` : ''}
+            ${esc(oldValStr)}
+          </td>
+          <td style="padding:10px 14px; width:35%; ${isChanged ? 'background:#f0fdf4; color:#15803d; font-weight:800;' : 'color:#334155;'}">
+            ${isChanged ? `<span style="font-size:10px; background:#bbf7d0; color:#166534; padding:1px 5px; border-radius:4px; margin-right:4px;"><i class="fa-solid fa-arrow-right"></i> Mới</span>` : ''}
+            ${esc(newValStr)}
+          </td>
+        </tr>
+      `;
+    });
+
+    diffContentHtml = `
+      <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; font-weight:800; color:#0f172a;">
+          <i class="fa-solid fa-sliders" style="color:#059669;"></i> Ma trận đối chiếu chi tiết:
+        </span>
+        <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:800; padding:3px 10px; border-radius:12px; font-size:11.5px;">
+          ${changedCount} trường có sự thay đổi
+        </span>
+      </div>
+
+      <div style="border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; text-align:left;">
+          <thead>
+            <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; font-size:11.5px; text-transform:uppercase; color:#475569;">
+              <th style="padding:10px 14px;">Trường Dữ Liệu</th>
+              <th style="padding:10px 14px; color:#be123c;">Giá Trị Ban Đầu (Before)</th>
+              <th style="padding:10px 14px; color:#15803d;">Giá Trị Sau Khi Sửa (After)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${diffRows || `<tr><td colspan="3" style="padding:20px; text-align:center; color:#94a3b8;">Không có dữ liệu đối chiếu.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
 
   modalBody.innerHTML = `
-    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
-      <div style="font-size:14px; font-weight:800; color:#0f172a; margin-bottom:6px;">${esc(item.title)}</div>
-      <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b;">
-        <span>Thao tác: <strong>${actionText}</strong></span>
-        <span>Thời gian: <strong>${dateStr}</strong></span>
+    <!-- Top Metadata Header -->
+    <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;">
+        <div>
+          <span class="badge" style="background:#e2e8f0; color:#334155; font-weight:800; padding:3px 10px; border-radius:12px; font-size:11px; margin-bottom:6px; display:inline-block;">
+            ${esc(item.target_type || 'Dữ liệu')}
+          </span>
+          <h3 style="font-size:16px; font-weight:800; color:#0f172a; margin:0; line-height:1.3;">${esc(item.title)}</h3>
+        </div>
+        <div style="text-align:right;">
+          <span class="badge" style="background:${isDelete ? '#fee2e2' : '#fef3c7'}; color:${isDelete ? '#dc2626' : '#b45309'}; border:1px solid ${isDelete ? '#fecaca' : '#fde68a'}; font-weight:800; padding:4px 10px; border-radius:20px; font-size:12px;">
+            ${actionText}
+          </span>
+        </div>
       </div>
-      <div style="font-size:12px; color:#64748b; margin-top:4px;">
-        Người thực hiện: <strong>${esc(item.user_name || item.current_user_name || 'Admin')}</strong>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; border-top:1px solid #e2e8f0; padding-top:10px; font-size:12px; color:#64748b;">
+        <div>
+          <i class="fa-regular fa-clock"></i> Thời gian: <strong style="color:#0f172a;">${dateStr}</strong> <span style="color:#059669;">(${relTime})</span>
+        </div>
+        <div>
+          <i class="fa-regular fa-user"></i> Người thực hiện: <strong style="color:#0f172a;">${esc(item.user_name || item.current_user_name || 'Admin')}</strong>
+        </div>
       </div>
     </div>
 
-    ${!isDelete ? `
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-        <div>
-          <div style="font-size:11.5px; font-weight:800; color:#dc2626; margin-bottom:4px;"><i class="fa-solid fa-rotate-left"></i> Dữ liệu cũ trước khi sửa:</div>
-          <pre style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:10px; font-size:11px; max-height:220px; overflow:auto; color:#9f1239;">${esc(oldDataStr)}</pre>
-        </div>
-        <div>
-          <div style="font-size:11.5px; font-weight:800; color:#16a34a; margin-bottom:4px;"><i class="fa-solid fa-circle-check"></i> Dữ liệu mới sau khi sửa:</div>
-          <pre style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; font-size:11px; max-height:220px; overflow:auto; color:#14532d;">${esc(newDataStr)}</pre>
-        </div>
-      </div>
-    ` : `
-      <div style="margin-bottom:16px;">
-        <div style="font-size:11.5px; font-weight:800; color:#dc2626; margin-bottom:4px;"><i class="fa-solid fa-trash-can"></i> Dữ liệu chi tiết đã bị xóa:</div>
-        <pre style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:10px; font-size:11px; max-height:260px; overflow:auto; color:#9f1239;">${esc(oldDataStr)}</pre>
-      </div>
-    `}
+    <!-- Main Diff Body -->
+    ${diffContentHtml}
   `;
 
   document.getElementById('history-view-modal').style.display = 'flex';
 }
+window.openViewHistoryModal = openViewHistoryModal;
 
 function closeViewHistoryModal() {
   document.getElementById('history-view-modal').style.display = 'none';
 }
+window.closeViewHistoryModal = closeViewHistoryModal;
 
 window.initDatabasePage = initDatabasePage;
 window.switchDatabaseTab = switchDatabaseTab;
@@ -1439,6 +1739,8 @@ window.uploadSupplyPhoto = uploadSupplyPhoto;
 window.saveSupplySubmit = saveSupplySubmit;
 window.loadHistoryTab = loadHistoryTab;
 window.filterHistoryTab = filterHistoryTab;
+window.filterHistoryByChip = filterHistoryByChip;
+window.exportAuditPDF = exportAuditPDF;
 window.openViewHistoryModal = openViewHistoryModal;
 window.closeViewHistoryModal = closeViewHistoryModal;
 
