@@ -246,8 +246,8 @@ function initDashboardMap(farms, plants) {
   const map = new mapboxgl.Map({
     container: mapDiv,
     style: 'mapbox://styles/mapbox/satellite-streets-v12',
-    center: [106.3, 12.5],
-    zoom: 5,
+    center: [107.1, 11.6],
+    zoom: 6.2,
     preserveDrawingBuffer: true
   });
   dashboardMap = map;
@@ -352,13 +352,13 @@ function initDashboardMap(farms, plants) {
       // 2. Add Pin Marker at exact GPS Center
       if (center) {
         const [centerLng, centerLat] = center;
-        if (centerLng >= 100 && centerLng <= 115 && centerLat >= 8 && centerLat <= 24) {
+        if (centerLng >= 102 && centerLng <= 112 && centerLat >= 9 && centerLat <= 23) {
           bounds.extend([centerLng, centerLat]);
           hasBounds = true;
         }
 
         const pinEl = document.createElement('div');
-        const initialZoom = map.getZoom ? map.getZoom() : 5;
+        const initialZoom = map.getZoom ? map.getZoom() : 6.2;
         pinEl.className = `farm-dashboard-pin ${initialZoom >= 12 ? 'is-full' : 'is-dot'}`;
         
         pinEl.innerHTML = `
@@ -382,7 +382,7 @@ function initDashboardMap(farms, plants) {
               center: [centerLng, centerLat],
               zoom: 15.5,
               essential: true,
-              duration: 1200
+              duration: 1000
             });
           }
         });
@@ -407,59 +407,10 @@ function initDashboardMap(farms, plants) {
       }
     });
 
-    // Render plant markers
-    plants.forEach(plant => {
-      if (plant.latitude && plant.longitude) {
-        let v1 = parseFloat(plant.longitude);
-        let v2 = parseFloat(plant.latitude);
-        if (!isNaN(v1) && !isNaN(v2)) {
-          let lng = v1 > 50 ? v1 : v2;
-          let lat = v2 < 50 ? v2 : v1;
-
-          if (lng >= 100 && lng <= 115 && lat >= 8 && lat <= 24) {
-            bounds.extend([lng, lat]);
-            hasBounds = true;
-          }
-
-          let color = '#22c55e';
-          if (plant.health_status === 'Cần chú ý') color = '#eab308';
-          else if (plant.health_status === 'Bệnh') color = '#ef4444';
-
-          const wrapper = document.createElement('div');
-          wrapper.className = 'dashboard-plant-marker-wrap';
-
-          const el = document.createElement('div');
-          el.className = 'dashboard-plant-marker';
-          el.style.backgroundColor = color;
-          el.title = `Cây #${esc(plant.tree_code || plant.id)} - ${esc(plant.health_status)}`;
-          wrapper.appendChild(el);
-
-          const marker = new mapboxgl.Marker(wrapper)
-            .setLngLat([lng, lat])
-            .setPopup(new mapboxgl.Popup({ offset: 25 })
-              .setHTML(`
-                <div class="map-tooltip">
-                  <h4 style="color:${color}"><i class="fa-solid fa-tree"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
-                  ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
-                  <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
-                  <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
-                  <div style="margin-top:8px">
-                    <button class="btn btn-primary btn-sm" onclick="showPage('plants'); openPlantModal(${plant.id});">Chi tiết cây</button>
-                  </div>
-                </div>
-              `)
-            )
-            .addTo(map);
-
-          dashboardMarkers.push({ marker, plant, element: wrapper });
-        }
-      }
-    });
-
     if (hasBounds) {
-      map.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 1000 });
+      map.fitBounds(bounds, { padding: 50, minZoom: 6.0, maxZoom: 13, duration: 800 });
     } else {
-      map.flyTo({ center: [106.8, 11.5], zoom: 7 });
+      map.flyTo({ center: [107.1, 11.6], zoom: 6.2, duration: 800 });
     }
 
     updateDashboardFarmPins(map.getZoom());
