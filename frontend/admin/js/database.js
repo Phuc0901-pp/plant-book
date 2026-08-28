@@ -776,15 +776,144 @@ function renderStockGauge(stockQty, unit, isEndless) {
   `;
 }
 
+let dbSupplyCostChartInstance = null;
+let dbSupplyConsumablesCache = [];
+
+async function loadSupplyCostData() {
+  try {
+    const userId = document.getElementById('db-supply-filter-user')?.value;
+    const farmId = document.getElementById('db-supply-filter-farm')?.value;
+
+    let query = '/costs/consumables?';
+    if (userId) query += `user_id=${userId}&`;
+    if (farmId) query += `farm_id=${farmId}&`;
+
+    const data = await api(query);
+    dbSupplyConsumablesCache = data || [];
+    renderSupplyCostChart();
+  } catch (err) {
+    console.error('loadSupplyCostData error:', err);
+  }
+}
+window.loadSupplyCostData = loadSupplyCostData;
+
+function renderSupplyCostChart() {
+  const canvas = document.getElementById('db-supply-cost-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const year = parseInt(document.getElementById('db-supply-chart-year')?.value || new Date().getFullYear());
+  const selectedCat = document.getElementById('db-supply-chart-cat')?.value || 'all';
+
+  const months = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+  const categoryConfigs = {
+    'Bón phân': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', icon: 'fa-seedling' },
+    'Phun thuốc': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)', icon: 'fa-spray-can-sparkles' },
+    'Tiền nước': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)', icon: 'fa-droplet' },
+    'Nhân công': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', icon: 'fa-user-gear' },
+    'Vật tư khác': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.12)', icon: 'fa-box-open' }
+  };
+
+  const monthlyTotals = {
+    'Bón phân': Array(12).fill(0),
+    'Phun thuốc': Array(12).fill(0),
+    'Tiền nước': Array(12).fill(0),
+    'Nhân công': Array(12).fill(0),
+    'Vật tư khác': Array(12).fill(0)
+  };
+
+  dbSupplyConsumablesCache.forEach(item => {
+    if (!item.date && !item.usage_date && !item.created_at) return;
+    const d = new Date(item.date || item.usage_date || item.created_at);
+    if (!isNaN(d) && d.getFullYear() === year) {
+      const m = d.getMonth();
+      const cat = item.category || item.type || 'Vật tư khác';
+      const normCat = monthlyTotals[cat] ? cat : 'Vật tư khác';
+      monthlyTotals[normCat][m] += parseFloat(item.total || item.total_cost || (item.qty * item.price) || 0);
+    }
+  });
+
+  const datasets = [];
+  Object.keys(monthlyTotals).forEach(cat => {
+    if (selectedCat !== 'all' && selectedCat !== cat) return;
+    const cfg = categoryConfigs[cat];
+    const totalYear = monthlyTotals[cat].reduce((s, v) => s + v, 0);
+
+    if (selectedCat !== 'all' || totalYear > 0 || ['Bón phân', 'Phun thuốc', 'Tiền nước', 'Nhân công'].includes(cat)) {
+      datasets.push({
+        label: cat,
+        data: monthlyTotals[cat],
+        borderColor: cfg.color,
+        backgroundColor: cfg.bg,
+        borderWidth: 3,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: cfg.color,
+        tension: 0.35,
+        fill: false
+      });
+    }
+  });
+
+  if (dbSupplyCostChartInstance) {
+    dbSupplyCostChartInstance.destroy();
+    dbSupplyCostChartInstance = null;
+  }
+
+  dbSupplyCostChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: { labels: months, datasets: datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 12, family: 'Inter', weight: '700' }, padding: 16, usePointStyle: true } },
+        tooltip: {
+          backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
+          borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 12,
+          callbacks: { label: function(ctx) { return ' ' + ctx.dataset.label + ': ' + ctx.raw.toLocaleString('vi-VN') + ' ₫'; } }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 12, family: 'Inter', weight: '600' }, color: '#64748b' } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 11, family: 'Inter' }, color: '#64748b', callback: function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M ₫' : v >= 1000 ? (v/1000).toFixed(0)+'K ₫' : v + ' ₫'; } } }
+      }
+    }
+  });
+
+  // Render Summary Cards Breakdown by Category
+  const summary = document.getElementById('db-supply-chart-summary');
+  if (summary) {
+    const cardsHtml = Object.keys(monthlyTotals).map(cat => {
+      const cfg = categoryConfigs[cat];
+      const totalYear = monthlyTotals[cat].reduce((s, v) => s + v, 0);
+      return `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; align-items:center; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+          <div style="width:44px; height:44px; background:${cfg.bg}; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fa-solid ${cfg.icon}" style="color:${cfg.color}; font-size:18px;"></i>
+          </div>
+          <div>
+            <div style="font-size:11.5px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">${esc(cat)}</div>
+            <div style="font-size:17px; font-weight:800; color:#0f172a; margin-top:2px;">${totalYear.toLocaleString('vi-VN')} ₫</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    summary.innerHTML = cardsHtml;
+  }
+}
+window.renderSupplyCostChart = renderSupplyCostChart;
+
 function setSupplyGroupMode(mode) {
   supplyGroupMode = mode;
 
   const btnFlat = document.getElementById('btn-supply-group-flat');
   const btnGrid = document.getElementById('btn-supply-group-grid');
+  const btnChart = document.getElementById('btn-supply-group-chart');
   const btnCat = document.getElementById('btn-supply-group-cat');
   const btnFarm = document.getElementById('btn-supply-group-farm');
 
-  [btnFlat, btnGrid, btnCat, btnFarm].forEach(b => {
+  [btnFlat, btnGrid, btnChart, btnCat, btnFarm].forEach(b => {
     if (b) {
       b.style.background = 'transparent';
       b.style.color = '#475569';
@@ -792,11 +921,25 @@ function setSupplyGroupMode(mode) {
     }
   });
 
-  const activeBtn = mode === 'flat' ? btnFlat : (mode === 'grid' ? btnGrid : (mode === 'category' ? btnCat : btnFarm));
+  const activeBtn = mode === 'flat' ? btnFlat : (mode === 'grid' ? btnGrid : (mode === 'chart' ? btnChart : (mode === 'category' ? btnCat : btnFarm)));
   if (activeBtn) {
     activeBtn.style.background = '#059669';
     activeBtn.style.color = '#ffffff';
     activeBtn.style.fontWeight = '800';
+  }
+
+  const tableContainer = document.getElementById('supplies-table-container');
+  const gridContainer = document.getElementById('supplies-grid-container');
+  const chartContainer = document.getElementById('supplies-chart-container');
+
+  if (mode === 'chart') {
+    if (tableContainer) tableContainer.style.display = 'none';
+    if (gridContainer) gridContainer.style.display = 'none';
+    if (chartContainer) chartContainer.style.display = 'block';
+    loadSupplyCostData();
+    return;
+  } else {
+    if (chartContainer) chartContainer.style.display = 'none';
   }
 
   filterSupplies();
@@ -806,8 +949,18 @@ window.setSupplyGroupMode = setSupplyGroupMode;
 function renderSuppliesTable(supplies) {
   const tableContainer = document.getElementById('supplies-table-container');
   const gridContainer = document.getElementById('supplies-grid-container');
+  const chartContainer = document.getElementById('supplies-chart-container');
   const tbody = document.getElementById('supplies-table-body');
   if (!tbody) return;
+
+  if (supplyGroupMode === 'chart') {
+    if (tableContainer) tableContainer.style.display = 'none';
+    if (gridContainer) gridContainer.style.display = 'none';
+    if (chartContainer) chartContainer.style.display = 'block';
+    return;
+  } else {
+    if (chartContainer) chartContainer.style.display = 'none';
+  }
 
   if (supplies.length === 0) {
     if (tableContainer) tableContainer.style.display = 'block';

@@ -751,12 +751,15 @@
                 </div>
 
                 <!-- View Mode Switcher -->
-                <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0;">
+                <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
                   <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
                     <i class="fa-solid fa-table-list"></i> Bảng ERP
                   </button>
                   <button type="button" id="btn-supply-group-grid" onclick="setSupplyGroupMode('grid')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-grip"></i> Lưới Thẻ Card
+                    <i class="fa-solid fa-grip"></i> Lưới Thẻ
+                  </button>
+                  <button type="button" id="btn-supply-group-chart" onclick="setSupplyGroupMode('chart')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
+                    <i class="fa-solid fa-chart-line"></i> Biểu đồ Chi phí
                   </button>
                   <button type="button" id="btn-supply-group-cat" onclick="setSupplyGroupMode('category')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
                     <i class="fa-solid fa-layer-group"></i> Nhóm Loại
@@ -770,7 +773,7 @@
             </div>
           </div>
 
-          <!-- TẦNG 3: ERP DATA MATRIX TABLE & GRID CONTAINER -->
+          <!-- TẦNG 3: ERP DATA MATRIX TABLE & GRID CONTAINER & CHART SUITE -->
           <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
             
             <!-- Table View Container -->
@@ -797,6 +800,44 @@
             <!-- Grid Cards View Container (Shown when mode is 'grid') -->
             <div id="supplies-grid-container" style="display:none; padding:20px; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; background:#f8fafc;">
               <!-- Populated dynamically by database.js -->
+            </div>
+
+            <!-- Chart View Container (Shown when mode is 'chart') -->
+            <div id="supplies-chart-container" style="display:none; padding:24px; background:#ffffff;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+                <div>
+                  <h4 style="margin:0 0 4px 0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-chart-area" style="color:#059669;"></i> Xu Hướng Chi Phí Tiêu Hao Vật Tư Canh Tác Theo 12 Tháng
+                  </h4>
+                  <div style="font-size:12.5px; color:#64748b;">Dữ liệu hạch toán thực tế từ nhật ký canh tác và xuất kho vật tư</div>
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <select id="db-supply-chart-year" onchange="renderSupplyCostChart()" style="padding:7px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; background:#f8fafc;">
+                    <option value="2026">Năm 2026</option>
+                    <option value="2025">Năm 2025</option>
+                    <option value="2024">Năm 2024</option>
+                  </select>
+
+                  <select id="db-supply-chart-cat" onchange="renderSupplyCostChart()" style="padding:7px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; background:#f8fafc;">
+                    <option value="all">— Tất cả nhóm chi phí —</option>
+                    <option value="Bón phân">🌱 Phân bón</option>
+                    <option value="Phun thuốc">🧪 Thuốc BVTV</option>
+                    <option value="Tiền nước">💧 Tiền nước</option>
+                    <option value="Nhân công">👷 Nhân công & Dịch vụ</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Main Canvas Chart -->
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:20px;">
+                <canvas id="db-supply-cost-chart" height="95"></canvas>
+              </div>
+
+              <!-- Category Breakdown Summary Cards -->
+              <div id="db-supply-chart-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+                <!-- Populated dynamically with category cost breakdown -->
+              </div>
             </div>
 
           </div>
@@ -2740,20 +2781,20 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.5.1"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.5.1"></script>
-  <script src="/admin/js/app.js?v=3.5.1"></script>
-  <script src="/admin/js/auth.js?v=3.5.1"></script>
-  <script src="/admin/js/dashboard.js?v=3.5.1"></script>
-  <script src="/admin/js/media.js?v=3.5.1"></script>
-  <script src="/admin/js/database.js?v=3.5.1"></script>
-  <script src="/admin/js/schemas.js?v=3.5.1"></script>
-  <script src="/admin/js/plants.js?v=3.5.1"></script>
-  <script src="/admin/js/gis.js?v=3.5.1"></script>
-  <script src="/admin/js/users.js?v=3.5.1"></script>
-  <script src="/admin/js/devices.js?v=3.5.1"></script>
-  <script src="/admin/js/cost.js?v=3.5.1"></script>
-  <script src="/admin/js/websocket.js?v=3.5.1"></script>
+  <script src="/admin/js/countup.js?v=3.5.2"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.5.2"></script>
+  <script src="/admin/js/app.js?v=3.5.2"></script>
+  <script src="/admin/js/auth.js?v=3.5.2"></script>
+  <script src="/admin/js/dashboard.js?v=3.5.2"></script>
+  <script src="/admin/js/media.js?v=3.5.2"></script>
+  <script src="/admin/js/database.js?v=3.5.2"></script>
+  <script src="/admin/js/schemas.js?v=3.5.2"></script>
+  <script src="/admin/js/plants.js?v=3.5.2"></script>
+  <script src="/admin/js/gis.js?v=3.5.2"></script>
+  <script src="/admin/js/users.js?v=3.5.2"></script>
+  <script src="/admin/js/devices.js?v=3.5.2"></script>
+  <script src="/admin/js/cost.js?v=3.5.2"></script>
+  <script src="/admin/js/websocket.js?v=3.5.2"></script>
 </body>
 
 

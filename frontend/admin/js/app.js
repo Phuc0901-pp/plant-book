@@ -284,7 +284,14 @@ function showPage(page, pushUrl = true) {
     if (page === 'users' && typeof loadUsers === 'function') loadUsers();
     if (page === 'devices' && typeof loadDevices === 'function') loadDevices();
     if (page === 'media' && typeof initGlobalMediaLibrary === 'function') initGlobalMediaLibrary();
-    if (page === 'cost' && typeof initCostPage === 'function') initCostPage();
+    if (page === 'cost') {
+      showPage('database');
+      setTimeout(() => {
+        if (typeof switchDatabaseTab === 'function') switchDatabaseTab('supplies');
+        if (typeof setSupplyGroupMode === 'function') setSupplyGroupMode('chart');
+      }, 50);
+      return;
+    }
   } catch (err) {
     console.error(`Error loading page [${page}]:`, err);
   }
