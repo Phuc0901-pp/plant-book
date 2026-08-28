@@ -101,14 +101,25 @@ export function renderUserFarmsList(farms) {
 
 // ── GPS Self-Init Farm Functions ──────────────────────────────
 export function openSelfInitFarmModal() {
+  const user = window.currentUser || {};
+  const isNormal = user.role !== 'admin' && user.account_tier !== 'pro';
+  if (isNormal && _farmsCache && _farmsCache.length >= 1) {
+    alert('🔒 Tài khoản Nông hộ NORMAL chỉ được tạo tối đa 1 Trang trại. Bạn có thể bấm nút "Sửa" để thay đổi thông tin trang trại và số lượng cây của mình!');
+    return;
+  }
+
   const modal = document.getElementById('self-init-farm-modal');
   if (!modal) return;
   modal.style.display = 'flex';
   
   const nameInput = document.getElementById('self-farm-name');
   if (nameInput && !nameInput.value) {
-    const user = window.currentUser || {};
     nameInput.value = user.full_name || user.name ? `Trang trại ${user.full_name || user.name}` : 'Trang trại Nông hộ';
+  }
+
+  const areaInput = document.getElementById('self-farm-area');
+  if (areaInput && !areaInput.value && user.farm_area) {
+    areaInput.value = user.farm_area;
   }
   
   getDeviceGPSPosition();
@@ -508,16 +519,20 @@ export function renderUserFarmsGrid(farms) {
       `;
     }).join('');
 
-    // Add + Khởi tạo Trang trại mới card
-    html += `
-      <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:all 0.2s ease; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:150px; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
-        <div style="width:42px; height:42px; border-radius:50%; background:#dcfce7; color:#059669; font-size:20px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px;">
-          <i class="fa-solid fa-plus"></i>
+    // Add + Khởi tạo Trang trại mới card (only if user is PRO/Admin OR hasn't created any farm yet)
+    const user = window.currentUser || {};
+    const isNormal = user.role !== 'admin' && user.account_tier !== 'pro';
+    if (!isNormal || farms.length === 0) {
+      html += `
+        <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:all 0.2s ease; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:150px; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
+          <div style="width:42px; height:42px; border-radius:50%; background:#dcfce7; color:#059669; font-size:20px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px;">
+            <i class="fa-solid fa-plus"></i>
+          </div>
+          <div style="font-size:14px; font-weight:800; color:#047857;">+ Khởi tạo Trang trại mới (GPS)</div>
+          <div style="font-size:12px; color:#166534; margin-top:2px;">Bấm để định vị GPS thêm trang trại</div>
         </div>
-        <div style="font-size:14px; font-weight:800; color:#047857;">+ Khởi tạo Trang trại mới (GPS)</div>
-        <div style="font-size:12px; color:#166534; margin-top:2px;">Bấm để định vị GPS thêm trang trại</div>
-      </div>
-    `;
+      `;
+    }
 
     gridContainer.innerHTML = html;
   }
