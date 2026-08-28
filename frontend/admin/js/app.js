@@ -215,6 +215,10 @@ function syncAdminUrl(params = {}) {
 window.syncAdminUrl = syncAdminUrl;
 
 function showPage(page, pushUrl = true) {
+  if (page === 'gis' || page === 'farms') {
+    page = 'dashboard';
+  }
+
   const targetSection = document.getElementById(`page-${page}`);
   if (!targetSection) {
     console.warn(`Page section #page-${page} not found.`);
@@ -242,13 +246,12 @@ function showPage(page, pushUrl = true) {
   }
 
   const titles = { 
-    dashboard: 'Dashboard Overview', 
+    dashboard: 'Dashboard & Không Gian GIS Trang Trại', 
     database: 'Cơ sở dữ liệu & Nhật ký Canh tác',
     'db-check': 'Kiểm tra CSDL Schema & Quản trị Dữ liệu',
     plants: 'Danh sách cây trồng', 
     schemas: 'Cấu hình loại cây', 
     media: 'Thư viện Media', 
-    gis: 'Quản lý GIS Trang trại', 
     users: 'Quản lý Nông hộ & Người dùng',
     devices: 'Quản lý thiết bị IoT',
     cost: 'Quản trị Chi phí Đầu tư'

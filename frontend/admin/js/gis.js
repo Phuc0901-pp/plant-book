@@ -511,6 +511,7 @@ function initGisMap(farms, plants) {
     style: 'mapbox://styles/mapbox/satellite-streets-v12',
     center: [106.3, 12.5],
     zoom: 5,
+    maxZoom: 17.5,
     preserveDrawingBuffer: true
   });
 
@@ -573,6 +574,10 @@ function initGisMap(farms, plants) {
   gMap.on('load', () => {
     drawFarmsAndPlantsLayers(farms, plants);
   });
+
+  setTimeout(() => {
+    try { if (gMap) gMap.resize(); } catch(_) {}
+  }, 300);
 }
 
 // Chuyển đổi Bật/Tắt chế độ Import GIS (Click chọn vị trí cây trên bản đồ)

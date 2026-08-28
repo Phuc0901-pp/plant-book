@@ -36,9 +36,8 @@ async function loadDashboard() {
     const farmerUsers = (users || []).filter(u => u.role !== 'admin');
     const totalFarmers = farmerUsers.length > 0 ? farmerUsers.length : (users || []).length;
     
-    // Total plants:
-    const totalFarmPlants = (farms || []).reduce((s, f) => s + (parseInt(f.plant_count || f.total_plants || 0)), 0);
-    const totalPlantsCount = Math.max((plants || []).length, totalFarmPlants);
+    // Total farms count:
+    const totalFarmsCount = (farms || []).length;
 
     // Schemas count:
     const cropSchemasCount = (schemas || []).length;
@@ -63,26 +62,18 @@ async function loadDashboard() {
     // Render General Governance Stats
     if (typeof animateValue === 'function') {
       animateValue(document.getElementById('stat-farmers'), 0, totalFarmers, 1000);
-      animateValue(document.getElementById('stat-plants'), 0, totalPlantsCount, 1000);
+      animateValue(document.getElementById('stat-farms'), 0, totalFarmsCount, 1000);
       animateValue(document.getElementById('stat-schemas'), 0, cropSchemasCount, 1000);
       animateValue(document.getElementById('stat-regions'), 0, totalRegionsCount, 1000);
     } else {
       if (document.getElementById('stat-farmers')) document.getElementById('stat-farmers').textContent = totalFarmers;
-      if (document.getElementById('stat-plants')) document.getElementById('stat-plants').textContent = totalPlantsCount;
+      if (document.getElementById('stat-farms')) document.getElementById('stat-farms').textContent = totalFarmsCount;
       if (document.getElementById('stat-schemas')) document.getElementById('stat-schemas').textContent = cropSchemasCount;
       if (document.getElementById('stat-regions')) document.getElementById('stat-regions').textContent = totalRegionsCount;
     }
     if (document.getElementById('stat-regions-sub')) {
       document.getElementById('stat-regions-sub').textContent = detectedRegions.slice(0, 3).join(', ') + (detectedRegions.length > 3 ? '...' : '');
     }
-
-    // Health Telemetry
-    const healthyPlantsCount = (plants || []).filter(p => !['Bệnh', 'Cần chú ý'].includes(p.health_status)).length;
-    const healthRate = (plants && plants.length > 0) ? ((healthyPlantsCount / plants.length) * 100).toFixed(1) : '96.8';
-    const elHealthRate = document.getElementById('stat-plants-health-rate');
-    const elHealthProg = document.getElementById('stat-plants-progress');
-    if (elHealthRate) elHealthRate.textContent = `${healthRate}%`;
-    if (elHealthProg) elHealthProg.style.width = `${healthRate}%`;
 
     // 2. Incident & Critical Alerts Telemetry
     const sickPlants = (plants || []).filter(p => ['Bệnh', 'Cần chú ý'].includes(p.health_status));
@@ -117,21 +108,10 @@ async function loadDashboard() {
     if (elCalib) elCalib.textContent = `${calibrationDevices.length} cảm biến`;
     if (elTotalInc) elTotalInc.textContent = `${totalIncidents} sự cố cần theo dõi`;
 
-    // 3. Reset and update filter buttons
-    currentDashboardFilter = 'all';
-    document.querySelectorAll('.dashboard-filter-bar .filter-chip').forEach(btn => btn.classList.remove('active'));
-    const btnAll = document.getElementById('btn-filter-all');
-    if (btnAll) btnAll.classList.add('active');
-
-    // 4. Load Overview map
-    initDashboardMap(allFarms, allPlants);
-
-    // 5. Render Split-View Insights (Cột 30%)
-    renderDashboardRegionBreakdown(allFarms, allPlants);
-    renderDashboardVarietyBreakdown(allPlants, schemas);
-
-    // 6. Initial render of dashboard logs table
-    renderDashboardLogsTable(allRecentLogs);
+    // 3. Initialize Master GIS Cockpit
+    if (typeof initGisPage === 'function') {
+      initGisPage();
+    }
   } catch (err) {
     console.error('loadDashboard error:', err);
     toast('Lỗi tải dashboard: ' + err.message, 'error');
