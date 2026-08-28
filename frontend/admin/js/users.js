@@ -33,7 +33,7 @@ async function loadUsers() {
     updateUserCounters();
     filterUsers();
     renderUserStatusTable(allUsers);
-    loadPendingUsers();
+    loadPendingFarmerUsers();
     loadResetRequests();
   } catch (err) {
     toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
@@ -938,7 +938,8 @@ function switchUserTab(tab) {
   if (tab === 'resets') loadResetRequests();
 }
 window.switchUserTab = switchUserTab;
-
+window.loadUsers = loadUsers;
+window.loadPendingUsers = loadPendingFarmerUsers;
 window.loadPendingFarmerUsers = loadPendingFarmerUsers;
 window.approveFarmerUser = approveFarmerUser;
 window.openUserTierModal = openUserTierModal;
@@ -950,13 +951,6 @@ window.onTierOptionChange = onTierOptionChange;
 
 window.setUserFilterGroup = setUserFilterGroup;
 window.changeUsersPage = changeUsersPage;
-
-// Hook loadPendingFarmerUsers on loadUsers
-const originalLoadUsers = loadUsers;
-loadUsers = async function() {
-  await originalLoadUsers();
-  await loadPendingFarmerUsers();
-};
 
 
 
