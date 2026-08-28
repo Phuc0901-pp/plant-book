@@ -425,6 +425,10 @@ function initDashboardMap(farms, plants) {
   } else {
     map.once('load', onMapLoad);
   }
+
+  setTimeout(() => {
+    try { if (map) map.resize(); } catch(_) {}
+  }, 250);
 }
 
 // Initialize GIS Page

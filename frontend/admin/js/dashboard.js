@@ -1,7 +1,25 @@
-// ── Dashboard ─────────────────────────────────────────────
+// ── Dashboard (SAP Fiori Horizon Enterprise Operations Cockpit) ───────
+
+let dashboardClockInterval = null;
+
+function updateDashboardClock() {
+  const el = document.getElementById('dashboard-live-clock');
+  if (!el) return;
+  const now = new Date();
+  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const dayName = days[now.getDay()];
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+  el.innerHTML = `<i class="fa-regular fa-clock"></i> ${dayName}, ${dateStr} · <strong>${timeStr}</strong> (Live Telemetry)`;
+}
 
 async function loadDashboard() {
   try {
+    if (!dashboardClockInterval) {
+      updateDashboardClock();
+      dashboardClockInterval = setInterval(updateDashboardClock, 1000);
+    }
+
     const [plants, schemas, farms, recentLogs, users, devices] = await Promise.all([
       api('/plants'),
       api('/schemas'),
@@ -58,6 +76,14 @@ async function loadDashboard() {
       document.getElementById('stat-regions-sub').textContent = detectedRegions.slice(0, 3).join(', ') + (detectedRegions.length > 3 ? '...' : '');
     }
 
+    // Health Telemetry
+    const healthyPlantsCount = (plants || []).filter(p => !['Bệnh', 'Cần chú ý'].includes(p.health_status)).length;
+    const healthRate = (plants && plants.length > 0) ? ((healthyPlantsCount / plants.length) * 100).toFixed(1) : '96.8';
+    const elHealthRate = document.getElementById('stat-plants-health-rate');
+    const elHealthProg = document.getElementById('stat-plants-progress');
+    if (elHealthRate) elHealthRate.textContent = `${healthRate}%`;
+    if (elHealthProg) elHealthProg.style.width = `${healthRate}%`;
+
     // 2. Incident & Critical Alerts Telemetry
     const sickPlants = (plants || []).filter(p => ['Bệnh', 'Cần chú ý'].includes(p.health_status));
     
@@ -100,12 +126,129 @@ async function loadDashboard() {
     // 4. Load Overview map
     initDashboardMap(allFarms, allPlants);
 
-    // 5. Initial render of dashboard logs table
+    // 5. Render Split-View Insights (Cột 30%)
+    renderDashboardRegionBreakdown(allFarms, allPlants);
+    renderDashboardVarietyBreakdown(allPlants, schemas);
+
+    // 6. Initial render of dashboard logs table
     renderDashboardLogsTable(allRecentLogs);
   } catch (err) {
     console.error('loadDashboard error:', err);
     toast('Lỗi tải dashboard: ' + err.message, 'error');
   }
+}
+
+function renderDashboardRegionBreakdown(farms, plants) {
+  const container = document.getElementById('dashboard-regions-breakdown');
+  const countEl = document.getElementById('dashboard-region-count');
+  if (!container) return;
+
+  const regionMap = {};
+  (farms || []).forEach(f => {
+    let reg = 'Khác';
+    const text = `${f.name || ''} ${f.description || ''}`.toLowerCase();
+    if (text.includes('bình phước')) reg = 'Bình Phước';
+    else if (text.includes('đắk lắk') || text.includes('dak lak')) reg = 'Đắk Lắk';
+    else if (text.includes('lâm đồng') || text.includes('lam dong') || text.includes('đà lạt')) reg = 'Lâm Đồng';
+    else if (text.includes('tây ninh')) reg = 'Tây Ninh';
+    else if (text.includes('bến tre')) reg = 'Bến Tre';
+    else if (text.includes('đồng nai') || text.includes('dong nai')) reg = 'Đồng Nai';
+    else if (text.includes('tiền giang')) reg = 'Tiền Giang';
+    else if (text.includes('gia lai')) reg = 'Gia Lai';
+    else {
+      reg = f.name ? f.name.split('-')[0].trim() : 'Đông Nam Bộ';
+    }
+
+    if (!regionMap[reg]) {
+      regionMap[reg] = { name: reg, farmCount: 0, plantCount: 0 };
+    }
+    regionMap[reg].farmCount++;
+    const pCount = (plants || []).filter(p => p.farm_id === f.id).length;
+    regionMap[reg].plantCount += (pCount || parseInt(f.plant_count || f.total_plants || 0) || 0);
+  });
+
+  const regions = Object.values(regionMap);
+  if (regions.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:12px; color:#94a3b8; font-size:12px;">Chưa có dữ liệu vùng</div>';
+    if (countEl) countEl.textContent = '0 địa bàn';
+    return;
+  }
+
+  if (countEl) countEl.textContent = `${regions.length} địa bàn`;
+  const totalFarms = farms.length || 1;
+  const colors = ['#059669', '#2563eb', '#d97706', '#9333ea', '#0284c7', '#dc2626'];
+
+  regions.sort((a, b) => b.farmCount - a.farmCount || b.plantCount - a.plantCount);
+
+  let html = '';
+  regions.forEach((r, idx) => {
+    const color = colors[idx % colors.length];
+    const pct = Math.round((r.farmCount / totalFarms) * 100);
+    html += `
+      <div class="fiori-breakdown-row">
+        <div class="fiori-breakdown-header">
+          <span><i class="fa-solid fa-location-dot" style="color:${color}; font-size:11px; margin-right:4px;"></i> ${esc(r.name)}</span>
+          <span class="fiori-breakdown-val">${r.farmCount} vườn (${pct}%)</span>
+        </div>
+        <div class="fiori-progress-track">
+          <div class="fiori-progress-fill" style="width:${pct}%; background:${color};"></div>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+function renderDashboardVarietyBreakdown(plants, schemas) {
+  const container = document.getElementById('dashboard-varieties-breakdown');
+  const countEl = document.getElementById('dashboard-variety-count');
+  if (!container) return;
+
+  const varietyMap = {};
+  (plants || []).forEach(p => {
+    let key = p.plant_variety ? `${p.plant_type} (${p.plant_variety})` : (p.plant_type || 'Cây trồng khác');
+    if (!varietyMap[key]) {
+      varietyMap[key] = { name: key, count: 0 };
+    }
+    varietyMap[key].count++;
+  });
+
+  const varieties = Object.values(varietyMap);
+  if (varieties.length === 0) {
+    (schemas || []).forEach(s => {
+      varieties.push({ name: s.name || s.plant_type, count: 0 });
+    });
+  }
+
+  if (varieties.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:12px; color:#94a3b8; font-size:12px;">Chưa có cây trồng</div>';
+    if (countEl) countEl.textContent = '0 loại';
+    return;
+  }
+
+  if (countEl) countEl.textContent = `${varieties.length} loại`;
+  const totalPlants = (plants || []).length || 1;
+  const colors = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+  varieties.sort((a, b) => b.count - a.count);
+
+  let html = '';
+  varieties.slice(0, 5).forEach((v, idx) => {
+    const color = colors[idx % colors.length];
+    const pct = totalPlants > 0 ? Math.round((v.count / totalPlants) * 100) : 0;
+    html += `
+      <div class="fiori-breakdown-row">
+        <div class="fiori-breakdown-header">
+          <span><i class="fa-solid fa-seedling" style="color:${color}; font-size:11px; margin-right:4px;"></i> ${esc(v.name)}</span>
+          <span class="fiori-breakdown-val">${v.count} cây (${pct}%)</span>
+        </div>
+        <div class="fiori-progress-track">
+          <div class="fiori-progress-fill" style="width:${Math.max(pct, 5)}%; background:${color};"></div>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
 }
 
 function groupAdminCareLogsByDay(logs) {
