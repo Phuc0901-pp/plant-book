@@ -494,7 +494,7 @@ async function selectTreeForDetail(plantId) {
     // Render Activity Filter Chips
     if (filterBar) {
       filterBar.style.display = 'flex';
-      renderActivityFilterChips(logs);
+      renderActivityFilterChips(currentDbPlantLogsCache || []);
     }
 
     // Render Timeline Feed
@@ -507,6 +507,97 @@ async function selectTreeForDetail(plantId) {
   }
 }
 window.selectTreeForDetail = selectTreeForDetail;
+
+// ── QR Code & NFC Modal Logic ──
+async function openQrModal(plantId) {
+  let plant = (dbPlantsCache || []).find(p => p.id == plantId);
+  if (!plant || !plant.tree_code) {
+    try {
+      plant = await api(`/plants/${plantId}`);
+    } catch(e) {}
+  }
+  if (!plant) {
+    toast('Không tìm thấy dữ liệu cây trồng!', 'error');
+    return;
+  }
+
+  const farm = (dbFarmsCache || []).find(f => f.id == plant.farm_id);
+  const slug = plant.public_slug || plant.id;
+  const url = `${window.location.origin}/plant/${slug}`;
+  const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(url)}`;
+
+  document.getElementById('qr-modal-farm-name').textContent = (farm ? farm.name : 'TÂN BẢO AGTECH').toUpperCase();
+  document.getElementById('qr-modal-tree-title').textContent = `CÂY #${plant.tree_code || plant.id}`;
+  document.getElementById('qr-modal-image').src = qrImgUrl;
+  document.getElementById('qr-modal-variety-info').textContent = `${plant.plant_type || ''} ${plant.plant_variety ? `(${plant.plant_variety})` : ''} · Tuổi: ${plant.plant_age || '—'}`;
+  document.getElementById('qr-modal-gps-info').textContent = (plant.latitude && plant.longitude) 
+    ? `📍 GPS: ${parseFloat(plant.latitude).toFixed(6)}, ${parseFloat(plant.longitude).toFixed(6)}` 
+    : `📍 Vị trí: ${plant.location || 'Chưa định vị'}`;
+
+  document.getElementById('qr-modal-url-input').value = url;
+  document.getElementById('qr-modal-public-link').href = url;
+
+  document.getElementById('qr-modal').style.display = 'flex';
+}
+window.openQrModal = openQrModal;
+
+function closeQrModal() {
+  const modal = document.getElementById('qr-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeQrModal = closeQrModal;
+
+function copyQrUrl() {
+  const input = document.getElementById('qr-modal-url-input');
+  if (input) {
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+      toast('Đã sao chép liên kết công khai!');
+    }).catch(() => {
+      document.execCommand('copy');
+      toast('Đã sao chép liên kết công khai!');
+    });
+  }
+}
+window.copyQrUrl = copyQrUrl;
+
+function printQrModalCode() {
+  const printArea = document.getElementById('qr-printable-area');
+  if (!printArea) return;
+  const printWindow = window.open('', '', 'width=600,height=700');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>In Mã QR - Cây Trồng</title>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 40px; margin: 0; }
+          .card { border: 2px solid #059669; border-radius: 16px; padding: 24px; max-width: 320px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+          .farm { font-size: 13px; font-weight: 800; color: #059669; text-transform: uppercase; margin-bottom: 6px; }
+          .title { font-size: 22px; font-weight: 900; color: #0f172a; margin-bottom: 16px; }
+          img { width: 220px; height: 220px; border-radius: 8px; }
+          .meta { font-size: 13px; font-weight: 700; color: #334155; margin-top: 14px; }
+          .gps { font-size: 11px; color: #64748b; margin-top: 4px; }
+          @media print {
+            body { padding: 0; }
+            .card { border: 2px solid #000; box-shadow: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          ${printArea.innerHTML}
+        </div>
+        <script>
+          window.onload = function() { window.print(); window.close(); }
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+window.printQrModalCode = printQrModalCode;
 
 function renderActivityFilterChips(logs) {
   const container = document.getElementById('db-activity-chips-container');

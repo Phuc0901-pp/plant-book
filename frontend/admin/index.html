@@ -2800,6 +2800,48 @@
   </div>
 </div>
 
+<!-- ════════════ QR CODE & NFC TAG MODAL ════════════ -->
+<div class="modal-overlay" id="qr-modal" style="display:none" onclick="if(event.target===this)closeQrModal()">
+  <div class="modal" style="max-width: 460px; width: 92%; border-radius:14px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.2);">
+    <div class="modal-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="font-size:15px; margin:0; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-qrcode" style="color:#059669"></i> Thẻ Định Danh & Mã QR Cây Trồng
+      </h2>
+      <button class="modal-close" onclick="closeQrModal()" style="color:#64748b; font-size:22px; cursor:pointer; background:none; border:none;">×</button>
+    </div>
+    <div class="modal-body" style="padding:22px; background:#ffffff; text-align:center;">
+      <div id="qr-printable-area" style="padding:16px; border:1.5px dashed #cbd5e1; border-radius:12px; background:#f8fafc; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:#059669; text-transform:uppercase; letter-spacing:0.05em;" id="qr-modal-farm-name">TÂN BẢO AGTECH</div>
+        <div style="font-size:18px; font-weight:900; color:#0f172a; margin:4px 0 12px 0;" id="qr-modal-tree-title">Cây #1</div>
+        <div style="display:flex; justify-content:center; margin-bottom:12px;">
+          <img id="qr-modal-image" src="" alt="Mã QR Cây" style="width:190px; height:190px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; padding:6px;">
+        </div>
+        <div style="font-size:12.5px; color:#0f172a; font-weight:700;" id="qr-modal-variety-info">Sầu riêng Ri6</div>
+        <div style="font-size:11px; color:#64748b; margin-top:2px;" id="qr-modal-gps-info">GPS: 106.3, 12.5</div>
+      </div>
+
+      <!-- Public URL -->
+      <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+        <input type="text" id="qr-modal-url-input" readonly style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:#f8fafc; color:#334155;">
+        <button onclick="copyQrUrl()" class="btn btn-secondary btn-sm" style="font-weight:700; padding:8px 12px; font-size:12px; cursor:pointer;">
+          <i class="fa-solid fa-copy"></i> Sao chép
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:12px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <a href="#" id="qr-modal-public-link" target="_blank" class="btn btn-sm" style="font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:7px 12px; text-decoration:none;">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trang web
+      </a>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="printQrModalCode()" style="background:#059669; color:#fff; font-weight:700; border-radius:8px; padding:7px 14px; border:none; cursor:pointer;">
+          <i class="fa-solid fa-print"></i> In Mã QR
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="closeQrModal()" style="font-weight:600; border-radius:8px; padding:7px 12px; cursor:pointer;">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:none">
 
@@ -2813,19 +2855,19 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.6.2"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.6.2"></script>
-  <script src="/admin/js/app.js?v=3.6.2"></script>
-  <script src="/admin/js/auth.js?v=3.6.2"></script>
-  <script src="/admin/js/dashboard.js?v=3.6.2"></script>
-  <script src="/admin/js/media.js?v=3.6.2"></script>
-  <script src="/admin/js/database.js?v=3.6.2"></script>
-  <script src="/admin/js/schemas.js?v=3.6.2"></script>
-  <script src="/admin/js/plants.js?v=3.6.2"></script>
-  <script src="/admin/js/gis.js?v=3.6.2"></script>
-  <script src="/admin/js/users.js?v=3.6.2"></script>
-  <script src="/admin/js/devices.js?v=3.6.2"></script>
-  <script src="/admin/js/websocket.js?v=3.6.2"></script>
+  <script src="/admin/js/countup.js?v=3.6.3"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.6.3"></script>
+  <script src="/admin/js/app.js?v=3.6.3"></script>
+  <script src="/admin/js/auth.js?v=3.6.3"></script>
+  <script src="/admin/js/dashboard.js?v=3.6.3"></script>
+  <script src="/admin/js/media.js?v=3.6.3"></script>
+  <script src="/admin/js/database.js?v=3.6.3"></script>
+  <script src="/admin/js/schemas.js?v=3.6.3"></script>
+  <script src="/admin/js/plants.js?v=3.6.3"></script>
+  <script src="/admin/js/gis.js?v=3.6.3"></script>
+  <script src="/admin/js/users.js?v=3.6.3"></script>
+  <script src="/admin/js/devices.js?v=3.6.3"></script>
+  <script src="/admin/js/websocket.js?v=3.6.3"></script>
 </body>
 
 
