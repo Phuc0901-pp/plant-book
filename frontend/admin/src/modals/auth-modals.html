@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="content-language" content="vi">
+<meta name="google" content="notranslate">
+<title>Sổ Nông Tân Bảo Agtech v1.1.1 — Quản trị</title>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="shortcut icon" type="image/svg+xml" href="/assets/favicon.svg">
+
+<link rel="apple-touch-icon" href="/assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://api.mapbox.com">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://api.mapbox.com">
+<link rel="dns-prefetch" href="https://events.mapbox.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css">
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/admin/css/admin-layout.css">
+  <link rel="stylesheet" href="/admin/css/admin-components.css">
+  <link rel="stylesheet" href="/admin/css/admin-dashboard.css">
+  <link rel="stylesheet" href="/admin/css/admin-gis.css">
+<style>
+/* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
+#register-modal .modal, #forgot-modal .modal {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+#register-modal label, #forgot-modal label {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-bottom: 6px !important;
+}
+
+#register-modal input, #register-modal select, #register-modal textarea,
+#forgot-modal input, #forgot-modal textarea {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border: 2px solid #475569 !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  -webkit-text-fill-color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+#register-modal input::placeholder,
+#forgot-modal input::placeholder,
+#register-modal textarea::placeholder {
+  color: #64748b !important;
+  opacity: 0.8 !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+#register-modal input:focus, #register-modal select:focus, #register-modal textarea:focus,
+#forgot-modal input:focus, #forgot-modal textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #059669 !important;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.25) !important;
+  outline: none !important;
+}
+
+#register-modal .modal-header, #forgot-modal .modal-header {
+  background: linear-gradient(135deg, #064e3b, #047857) !important;
+  color: #ffffff !important;
+  padding: 16px 20px !important;
+}
+
+#register-modal .modal-header h2, #forgot-modal .modal-header h2 {
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+
+#register-modal .modal-close, #forgot-modal .modal-close {
+  color: #ffffff !important;
+  opacity: 0.9 !important;
+  font-size: 24px !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+/* ════════ Multi-Scale Adaptive GIS Farm Markers ════════ */
+.farm-dashboard-pin {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  /* Never put transition: transform or all on this root marker element */
+}
+/* Dot mode (Zoom < 12) */
+.farm-dashboard-pin.is-dot .farm-pin-badge {
+  display: none !important;
+}
+.farm-dashboard-pin.is-dot .farm-pin-dot-wrap {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+.farm-dashboard-pin.is-dot .farm-pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.15s ease;
+}
+.farm-dashboard-pin.is-dot:hover .farm-pin-dot {
+  transform: scale(1.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+.farm-dashboard-pin.is-dot .farm-pin-pulse {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  opacity: 0.55;
+  animation: farmPinPulseAnim 2s infinite ease-out;
+  z-index: 1;
+  pointer-events: none;
+}
+@keyframes farmPinPulseAnim {
+  0% { transform: scale(0.6); opacity: 0.85; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* Full Badge mode (Zoom >= 12) */
+.farm-dashboard-pin.is-full .farm-pin-dot-wrap {
+  display: none !important;
+}
+.farm-dashboard-pin.is-full .farm-pin-badge {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 800;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+  border: 2px solid #ffffff;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.farm-dashboard-pin.is-full:hover .farm-pin-badge {
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+.farm-dashboard-pin.is-full .farm-pin-user {
+  background: rgba(255,255,255,0.25);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 10.5px;
+}
+
+/* Dashboard Fiori Responsive & Progress meter styles */
+@media (max-width: 1024px) {
+  .dashboard-split-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+.fiori-breakdown-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.fiori-breakdown-row:last-child {
+  margin-bottom: 0;
+}
+.fiori-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.fiori-breakdown-val {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #475569;
+}
+.fiori-progress-track {
+  width: 100%;
+  height: 7px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.fiori-progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>
+</head>
+
+<body>
+
+<!-- ════════════════ LOGIN ════════════════ -->
+<div id="login-page">
+
+  <!-- CỘT TRÁI: Hero Image -->
+  <div class="login-hero">
+    <img src="/assets/login-hero.jpg" alt="Vườn cây Tanbao Corp" class="login-hero-img">
+    <div class="login-hero-overlay"></div>
+
+    <!-- Particles lá cây -->
+    <div class="login-particles">
+      <div class="leaf-particle"></div>
+      <div class="leaf-particle"></div>
+      <div class="leaf-particle"></div>
+      <div class="leaf-particle"></div>
+      <div class="leaf-particle"></div>
+      <div class="leaf-particle"></div>
+    </div>
+
+    <!-- NFC badge -->
+    <div class="hero-nfc-badge">
+      <i class="fa-solid fa-wifi"></i>
+      <span>NFC Ready</span>
+    </div>
+
+    <!-- Nội dung hero -->
+    <div class="login-hero-content">
+      <div class="login-hero-tag">
+        <span class="dot-live"></span> Hệ thống đang hoạt động
+      </div>
+      <h2 class="login-hero-title">
+        Quản lý <span>cây trồng</span><br>thông minh
+      </h2>
+      <p class="login-hero-sub">
+        Nền tảng số hóa toàn diện giúp theo dõi sức khỏe, nhật ký canh tác
+        và bản đồ GIS của từng cây trồng trong trang trại Tanbao Corp.
+      </p>
+
+      <!-- Floating stats -->
+      <div class="login-stats">
+        <div class="stat-float">
+          <div class="stat-float-icon"><i class="fa fa-seedling"></i></div>
+          <div>
+            <div class="stat-float-val">1,200+</div>
+            <div class="stat-float-label">Cây trồng</div>
+          </div>
+        </div>
+        <div class="stat-float">
+          <div class="stat-float-icon"><i class="fa fa-earth-asia"></i></div>
+          <div>
+            <div class="stat-float-val">24</div>
+            <div class="stat-float-label">Trang trại</div>
+          </div>
+        </div>
+        <div class="stat-float">
+          <div class="stat-float-icon"><i class="fa fa-heart-pulse"></i></div>
+          <div>
+            <div class="stat-float-val">98%</div>
+            <div class="stat-float-label">Sức khỏe tốt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CỘT PHẢI: Form đăng nhập -->
+  <div class="login-form-panel">
+    <!-- Decorative orbs -->
+    <div class="lf-orb lf-orb--1" aria-hidden="true"></div>
+    <div class="lf-orb lf-orb--2" aria-hidden="true"></div>
+
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-wrap">
+          <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
+          <div class="login-logo-glow" aria-hidden="true"></div>
+        </div>
+        <h1>Hệ thống quản lý cây trồng</h1>
+        <p class="login-subtitle">Đăng nhập để tiếp tục</p>
+      </div>
+
+      <div class="login-divider"></div>
+
+      <div class="login-error" id="login-error">
+        <i class="fa fa-circle-exclamation"></i>
+        <span id="login-error-text"></span>
+      </div>
+
+      <form id="admin-login-form" onsubmit="event.preventDefault(); doLogin();">
+        <div class="form-group">
+          <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
+          <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
+            <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
+              <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
+            </a>
+          </div>
+          <div class="password-input-wrap">
+            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
+              <i id="toggle-pass-icon" class="fa fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="login-btn">
+          <span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>
+          <span class="btn-login-shimmer" aria-hidden="true"></span>
+        </button>
+      </form>
+
+      <!-- Register Account Link -->
+      <div style="text-align:center; margin-top:16px;">
+        <span style="font-size:13px; color:var(--text-muted);">Chưa có tài khoản Nông hộ?</span>
+        <a href="javascript:void(0)" onclick="openRegisterModal()" style="font-size:13px; font-weight:700; color:var(--green); margin-left:6px; text-decoration:none;">
+          <i class="fa-solid fa-user-plus"></i> Đăng ký ngay
+        </a>
+      </div>
+
+      <div class="login-footer-note">
+        <i class="fa-solid fa-shield-halved" style="color:#22c55e;"></i>
+        Kết nối bảo mật SSL/TLS &nbsp;·&nbsp; Tanbao AgTech © 2026
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════ FORGOT PASSWORD MODAL ════════════ -->
+<div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgotPasswordModal()">
+  <div class="modal" style="max-width:440px; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#fff;">
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i class="fa-solid fa-key" style="color:#6ee7b7"></i> Yêu cầu cấp lại mật khẩu</h2>
+      <button class="modal-close" onclick="closeForgotPasswordModal()" style="color:#fff; opacity:0.9; font-size:22px;">×</button>
+    </div>
+    <div class="modal-body" style="padding:20px; background:#ffffff;">
+      <p style="font-size:13px; color:#475569; margin-bottom:16px; line-height:1.5;">
+        Vui lòng nhập Email hoặc Số điện thoại đăng ký. Yêu cầu sẽ được gửi tới Quản trị viên phê duyệt và gửi mật khẩu mới về email của bạn.
+      </p>
+      <div class="login-error" id="forgot-error" style="display:none; margin-bottom:14px;">
+        <i class="fa fa-circle-exclamation"></i>
+        <span id="forgot-error-text"></span>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-user" style="color:#059669"></i> Email hoặc Số điện thoại *</label>
+        <input type="text" id="forgot-identity" placeholder="email@tanbaocorp.vn hoặc 0901234567" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
+      </div>
+      <div class="form-group">
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-note-sticky" style="color:#059669"></i> Ghi chú thêm (Không bắt buộc)</label>
+        <textarea id="forgot-note" rows="2" placeholder="Nhập ghi chú chi tiết nếu cần..." style="width:100%; border:2px solid #64748b; border-radius:10px; padding:10px 14px; font-family:inherit; font-size:13px; outline:none; background:#ffffff; color:#0f172a; font-weight:500;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc; border-top:1px solid #e2e8f0;">
+      <button class="btn btn-secondary" onclick="closeForgotPasswordModal()" style="padding:10px 18px; font-weight:600; border-radius:10px;">Hủy</button>
+      <button class="btn btn-primary" id="forgot-submit-btn" onclick="submitForgotPasswordRequest()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:10px 22px; font-size:14px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+        <span id="forgot-submit-text"><i class="fa fa-paper-plane"></i> Gửi yêu cầu</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ 3-STEP FARMER REGISTRATION MODAL ════════════ -->
+<div class="modal-overlay" id="register-modal" style="display:none" onclick="if(event.target===this)closeRegisterModal()">
+  <div class="modal" style="max-width:500px; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); border-bottom:none; padding:16px 20px; color:#ffffff;">
+      <h2 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;" id="reg-modal-title">
+        <i class="fa-solid fa-user-plus" style="color:#6ee7b7"></i> Đăng ký tài khoản Nông hộ (Bước 1/3)
+      </h2>
+      <button class="modal-close" onclick="closeRegisterModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
+    </div>
+    
+    <div class="modal-body" style="padding:22px; background:#ffffff;">
+      <!-- Step Indicator Bar -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px;">
+        <div style="flex:1; text-align:center;">
+          <div id="step-dot-1" style="width:30px; height:30px; border-radius:50%; background:#059669; color:white; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px; box-shadow:0 2px 6px rgba(5,150,105,0.3);">1</div>
+          <div style="font-size:11px; font-weight:800; color:#047857;">Tài khoản *</div>
+        </div>
+        <div style="width:30px; height:2px; background:#cbd5e1; margin-top:-14px;"></div>
+        <div style="flex:1; text-align:center;">
+          <div id="step-dot-2" style="width:30px; height:30px; border-radius:50%; background:#ffffff; border:2px solid #94a3b8; color:#475569; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px;">2</div>
+          <div style="font-size:11px; font-weight:700; color:#64748b;">Thông tin phụ</div>
+        </div>
+        <div style="width:30px; height:2px; background:#cbd5e1; margin-top:-14px;"></div>
+        <div style="flex:1; text-align:center;">
+          <div id="step-dot-3" style="width:30px; height:30px; border-radius:50%; background:#ffffff; border:2px solid #94a3b8; color:#475569; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px;">3</div>
+          <div style="font-size:11px; font-weight:700; color:#64748b;">Xác nhận</div>
+        </div>
+      </div>
+
+      <div class="login-error" id="reg-error" style="display:none; margin-bottom:14px;">
+        <i class="fa fa-circle-exclamation"></i>
+        <span id="reg-error-text"></span>
+      </div>
+
+      <form id="reg-form" onsubmit="return false;">
+      <!-- BƯỚC 1: TÀI KHOẢN & MẬT KHẨU (BẮT BUỘC) -->
+      <div id="reg-step-1">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-phone" style="color:#059669"></i> Số điện thoại đăng ký *</label>
+          <input type="tel" id="reg-phone" placeholder="Ví dụ: 0901234567" autocomplete="username" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-lock" style="color:#059669"></i> Mật khẩu đăng nhập *</label>
+          <input type="password" id="reg-pass" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+        </div>
+        <div class="form-group" style="margin-bottom:6px;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-key" style="color:#059669"></i> Xác nhận mật khẩu *</label>
+          <input type="password" id="reg-pass-confirm" placeholder="Nhập lại mật khẩu" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+        </div>
+      </div>
+
+      <!-- BƯỚC 2: THÔNG TIN CÁ NHÂN & CÂY TRỒNG (KHÔNG BẮT BUỘC) -->
+      <div id="reg-step-2" style="display:none;">
+        <p style="font-size:12px; color:#065f46; margin-bottom:14px; background:#ecfdf5; padding:10px 14px; border-radius:10px; border:1px solid #a7f3d0; font-weight:600; line-height:1.4;">
+          💡 Các thông tin dưới đây là tùy chọn, giúp Admin hỗ trợ và cấu hình trang trại chuẩn xác hơn.
+        </p>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-user" style="color:#059669"></i> Tên người dùng / Tên Nông hộ</label>
+          <input type="text" id="reg-name" placeholder="Ví dụ: Nguyễn Văn An" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+        </div>
+        <div style="display:flex; gap:12px; margin-bottom:14px;">
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-venus-mars" style="color:#059669"></i> Giới tính</label>
+            <select id="reg-gender" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:11px 12px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+              <option value="Nam">Nam</option>
+              <option value="Nữ">Nữ</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-cake-candles" style="color:#059669"></i> Ngày sinh</label>
+            <input type="date" id="reg-dob" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px 12px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-seedling" style="color:#059669"></i> Loại cây đang trồng</label>
+          <input type="text" id="reg-plant-type" placeholder="Ví dụ: Sầu riêng, Cà phê, Cao su..." style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+        </div>
+        <div style="display:flex; gap:12px; margin-bottom:14px;">
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-dna" style="color:#059669"></i> Giống cây</label>
+            <input type="text" id="reg-plant-variety" placeholder="Ri6, Monthong..." style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-hourglass-half" style="color:#059669"></i> Tuổi cây (Năm)</label>
+            <input type="number" id="reg-plant-age" placeholder="VD: 5" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-ruler-combined" style="color:#059669"></i> Diện tích vườn (ha)</label>
+          <input type="number" id="reg-farm-area" step="0.1" placeholder="Ví dụ: 2.5 ha" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+        </div>
+      </div>
+      </form>
+
+      <!-- BƯỚC 3: XÁC NHẬN & GỬI YÊU CẦU -->
+      <div id="reg-step-3" style="display:none;">
+        <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:16px;">
+          <h4 style="font-size:13px; margin:0 0 12px 0; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-clipboard-check" style="color:#059669"></i> Kiểm tra lại thông tin đăng ký</h4>
+          <div style="font-size:13px; color:#1e293b; display:flex; flex-direction:column; gap:8px;">
+            <div><strong>Số điện thoại:</strong> <span id="review-phone" style="color:#047857; font-weight:700;">—</span></div>
+            <div><strong>Tên người dùng:</strong> <span id="review-name" style="font-weight:600;">—</span></div>
+            <div><strong>Cây trồng:</strong> <span id="review-crop" style="font-weight:600;">—</span></div>
+            <div><strong>Diện tích vườn:</strong> <span id="review-area" style="font-weight:600;">—</span></div>
+          </div>
+        </div>
+
+        <div style="background:#eff6ff; border:1.5px solid #93c5fd; color:#1e40af; padding:12px 14px; border-radius:10px; font-size:12px; line-height:1.5; font-weight:500;">
+          <i class="fa-solid fa-info-circle"></i> <strong>Lưu ý:</strong> Ngay sau khi gửi yêu cầu, tài khoản của bạn sẽ được gửi tới Ban Quản trị. Admin sẽ kiểm tra và kích hoạt tài khoản cho bạn sớm nhất!
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border-top:1px solid #e2e8f0;">
+      <button class="btn btn-secondary" id="reg-prev-btn" onclick="prevRegStep()" style="display:none; padding:10px 18px; font-weight:600; border-radius:10px;"><i class="fa fa-arrow-left"></i> Quay lại</button>
+      <div style="flex:1;"></div>
+      <button class="btn btn-primary" id="reg-next-btn" onclick="nextRegStep()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:12px 24px; font-size:14px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">Tiếp theo <i class="fa fa-arrow-right"></i></button>
+    </div>
+  </div>
+</div>

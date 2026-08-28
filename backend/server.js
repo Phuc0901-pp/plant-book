@@ -16,6 +16,14 @@ const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
+// Automatically assemble modular HTML components on server startup
+try {
+  const { buildAll } = require('./scripts/build-html');
+  buildAll();
+} catch (e) {
+  console.warn('[server] Warning running HTML component builder:', e.message);
+}
+
 // ─── Middleware ───────────────────────────────────────────────────
 app.use(compression()); // Gzip compression: giảm 70%-85% kích thước payload truyền tải
 app.use(cors({

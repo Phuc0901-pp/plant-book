@@ -1,0 +1,212 @@
+<!-- ── Page Supplies (Quản lý & Giám sát Vật tư) ── -->
+      <div class="page-section" id="page-supplies">
+
+
+        <!-- Header Banner -->
+        <div class="welcome-banner supplies-banner">
+          <div class="banner-content">
+            <h2><i class="fa-solid fa-boxes-packing" style="color:#86efac; margin-right:8px;"></i> Quản lý & Giám sát Vật tư</h2>
+            <p>Khai báo đơn giá vật tư đầu vào (Phân bón, Tiền nước m³, Phun thuốc, Nhân công) và tự động giám sát tổng chi phí tiêu hao.</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs (2 Tabs) -->
+        <div class="tabs supplies-tabs" style="margin-bottom: 20px; display:flex; gap:10px;">
+          <div class="tab active" id="supplies-tab-manage" onclick="switchSuppliesTab('manage')">
+            <i class="fa-solid fa-list-check"></i> Quản lý vật tư
+          </div>
+          <div class="tab" id="supplies-tab-monitor" onclick="switchSuppliesTab('monitor')">
+            <i class="fa-solid fa-chart-line"></i> Giám sát vật tư & Chi phí
+          </div>
+        </div>
+
+        <!-- ════ TAB 1: QUẢN LÝ VẬT TƯ (manage) ════ -->
+        <div class="tab-pane active" id="pane-supplies-manage">
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <h3><i class="fa-solid fa-warehouse" style="color:var(--green)"></i> Danh mục Khai báo Vật tư</h3>
+              <button class="btn btn-primary" onclick="openSupplyModal()">
+                <i class="fa-solid fa-plus"></i> Khai báo vật tư mới
+              </button>
+            </div>
+
+            <!-- Filter bar by root categories -->
+            <div class="supplies-cat-filter-bar" style="margin: 16px 0; display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="cat-filter-btn active" data-cat="all" onclick="filterSupplyCategory('all')">Tất cả</button>
+              <button class="cat-filter-btn" data-cat="Bón phân" onclick="filterSupplyCategory('Bón phân')">🧪 Bón phân</button>
+              <button class="cat-filter-btn" data-cat="Tiền nước" onclick="filterSupplyCategory('Tiền nước')">💧 Tiền nước (m³)</button>
+              <button class="cat-filter-btn" data-cat="Phun thuốc" onclick="filterSupplyCategory('Phun thuốc')">🛡️ Phun thuốc</button>
+              <button class="cat-filter-btn" data-cat="Nhân công" onclick="filterSupplyCategory('Nhân công')">👷 Nhân công</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table" id="supplies-list-table">
+                <thead>
+                  <tr>
+                    <th><i class="fa-solid fa-layer-group"></i> Hạng mục gốc</th>
+                    <th><i class="fa-solid fa-box"></i> Tên vật tư / Dịch vụ</th>
+                    <th><i class="fa-solid fa-weight-hanging"></i> Quy cách / Khối lượng</th>
+                    <th><i class="fa-solid fa-scale-balanced"></i> Đơn vị tính</th>
+                    <th><i class="fa-solid fa-tag"></i> Đơn giá (VNĐ)</th>
+                    <th><i class="fa-solid fa-coins"></i> Tổng chi đã dùng</th>
+                    <th><i class="fa-solid fa-note-sticky"></i> Ghi chú</th>
+                    <th style="width:140px; text-align:center;"><i class="fa-solid fa-sliders"></i> Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="supplies-table-body">
+                  <tr>
+                    <td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu vật tư...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ TAB 2: GIÁM SÁT VẬT TƯ & CHI PHÍ (monitor) ════ -->
+        <div class="tab-pane" id="pane-supplies-monitor" style="display:none;">
+          
+          <!-- Time Filter Controls (Theo Ngày, Theo Tháng, Theo Quý, Theo Năm) -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <h3><i class="fa-solid fa-filter" style="color:var(--green)"></i> Bộ lọc Giám sát Chi phí</h3>
+              <button class="btn btn-primary btn-sm" onclick="openRecordUsageModal()">
+                <i class="fa-solid fa-pen-to-square"></i> Ghi nhận tiêu hao vật tư
+              </button>
+            </div>
+            
+            <div class="supplies-time-filter-row" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:12px;">
+              <!-- Period Switcher Buttons -->
+              <div class="btn-group-period" style="display:flex; border:1px solid var(--gray-300); border-radius:10px; overflow:hidden; background:#fff;">
+                <button class="period-btn active" data-period="day" onclick="switchSupplyPeriod('day')">📅 Theo Ngày</button>
+                <button class="period-btn" data-period="month" onclick="switchSupplyPeriod('month')">📆 Theo Tháng</button>
+                <button class="period-btn" data-period="quarter" onclick="switchSupplyPeriod('quarter')">🗓️ Theo Quý</button>
+                <button class="period-btn" data-period="year" onclick="switchSupplyPeriod('year')">📊 Theo Năm</button>
+              </div>
+
+              <!-- Month Selector (dành cho bộ lọc Theo Ngày) -->
+              <div id="supplies-month-wrap" style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:13px; font-weight:600; color:var(--text-secondary);">Tháng:</label>
+                <select id="supplies-filter-month" onchange="loadSuppliesAnalytics()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--gray-300); outline:none;">
+                  <option value="all">Tất cả các tháng</option>
+                  <option value="1">Tháng 1</option>
+                  <option value="2">Tháng 2</option>
+                  <option value="3">Tháng 3</option>
+                  <option value="4">Tháng 4</option>
+                  <option value="5">Tháng 5</option>
+                  <option value="6">Tháng 6</option>
+                  <option value="7" selected>Tháng 7</option>
+                  <option value="8">Tháng 8</option>
+                  <option value="9">Tháng 9</option>
+                  <option value="10">Tháng 10</option>
+                  <option value="11">Tháng 11</option>
+                  <option value="12">Tháng 12</option>
+                </select>
+              </div>
+
+              <!-- Year Selector -->
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:13px; font-weight:600; color:var(--text-secondary);">Năm:</label>
+                <select id="supplies-filter-year" onchange="loadSuppliesAnalytics()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--gray-300); outline:none;">
+                  <option value="2026" selected>2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                </select>
+              </div>
+
+              <!-- Farm Selector -->
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:13px; font-weight:600; color:var(--text-secondary);">Trang trại:</label>
+                <select id="supplies-filter-farm" onchange="loadSuppliesAnalytics()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--gray-300); outline:none;">
+                  <option value="all">Tất cả trang trại</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Expenditure Cards -->
+          <div class="user-dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
+            <div class="stat-card stat-card--total" style="background:linear-gradient(135deg, #091e15 0%, #1b4d3e 100%); color:#fff; padding:18px; border-radius:16px;">
+              <div class="stat-icon" style="background:rgba(255,255,255,0.15); color:#86efac; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-coins"></i></div>
+              <div class="stat-label" style="font-size:12px; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8;">TỔNG CHI PHÍ TIÊU HAO</div>
+              <div class="stat-value" id="cost-stat-total" style="font-size:22px; font-weight:700; color:#fff; margin-top:4px;">0 VNĐ</div>
+            </div>
+
+            <div class="stat-card" style="background:#fff; border:1px solid var(--gray-200); padding:18px; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div class="stat-icon" style="background:#f3e8ff; color:#9333ea; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-flask"></i></div>
+              <div class="stat-label" style="font-size:12px; color:var(--text-muted);">🧪 CHI PHÍ BÓN PHÂN</div>
+              <div class="stat-value" id="cost-stat-fertilizer" style="font-size:20px; font-weight:700; color:#1e293b; margin-top:4px;">0 VNĐ</div>
+            </div>
+
+            <div class="stat-card" style="background:#fff; border:1px solid var(--gray-200); padding:18px; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div class="stat-icon" style="background:#e0f2fe; color:#0284c7; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-droplet"></i></div>
+              <div class="stat-label" style="font-size:12px; color:var(--text-muted);">💧 CHI PHÍ TIỀN NƯỚC</div>
+              <div class="stat-value" id="cost-stat-water" style="font-size:20px; font-weight:700; color:#1e293b; margin-top:4px;">0 VNĐ</div>
+            </div>
+
+            <div class="stat-card" style="background:#fff; border:1px solid var(--gray-200); padding:18px; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div class="stat-icon" style="background:#fef2f2; color:#ef4444; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-shield-virus"></i></div>
+              <div class="stat-label" style="font-size:12px; color:var(--text-muted);">🛡️ PHUN THUỐC & NHÂN CÔNG</div>
+              <div class="stat-value" id="cost-stat-pesticide-labor" style="font-size:20px; font-weight:700; color:#1e293b; margin-top:4px;">0 VNĐ</div>
+            </div>
+          </div>
+
+          <!-- Cost Expenditure Heatmap Chart Card -->
+          <div class="card" style="margin-bottom:20px; background:#ffffff; border:1px solid var(--gray-200); border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-fire-flame-curved" style="color:#ef4444;"></i> Biểu đồ Nhiệt Chi phí tiêu hao (Expenditure Heatmap)</h3>
+              <div style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+                <span>Ít: <span style="display:inline-block; width:12px; height:12px; background:#dcfce7; border-radius:3px;"></span></span>
+                <span>Vừa: <span style="display:inline-block; width:12px; height:12px; background:#fef08a; border-radius:3px;"></span></span>
+                <span>Nhiều: <span style="display:inline-block; width:12px; height:12px; background:#ef4444; border-radius:3px;"></span></span>
+              </div>
+            </div>
+            <div id="supplies-cost-heatmap-container" style="padding:16px;">
+              <div style="text-align:center; color:var(--text-muted); padding:20px;"><i class="fa fa-spinner fa-spin"></i> Đang nạp biểu đồ nhiệt...</div>
+            </div>
+          </div>
+
+          <!-- Breakdown Table by Period -->
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <h3 id="breakdown-table-title"><i class="fa-solid fa-chart-bar" style="color:var(--green)"></i> Bảng tổng hợp chi tiết tiêu hao theo thời gian</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Khoảng thời gian</th>
+                    <th>Hạng mục vật tư</th>
+                    <th>Tổng số lượng dùng</th>
+                    <th>Tổng thành tiền (VNĐ)</th>
+                    <th>Tỷ lệ chi phí</th>
+                  </tr>
+                </thead>
+                <tbody id="supplies-breakdown-table-body">
+                  <tr>
+                    <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tính toán dữ liệu...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recent Usage Transactions Log Table -->
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử các đợt tiêu hao vật tư</h3>
+              <button class="btn btn-secondary btn-sm" onclick="loadSupplyUsagesLog()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+            </div>
+            <!-- Date-Grouped Supplies Usage Container (Date -> Category -> Supply Name & Total Cost) -->
+            <div id="supplies-usages-grouped-container" style="padding:16px;">
+              <div class="empty-state" style="padding:40px; text-align:center;"><i class="fa fa-spinner fa-spin"></i> Đang tải lịch sử tiêu hao vật tư...</div>
+            </div>
+
+            <!-- Thanh điều hướng phân trang (10 đợt tiêu hao / trang) -->
+            <div id="supplies-usages-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid #e2e8f0; background:#f8fafc; flex-wrap:wrap; gap:10px;">
+            </div>
+          </div>
+
+        </div>
+
+      </div>

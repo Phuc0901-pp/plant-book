@@ -1,0 +1,129 @@
+<div class="tab-pane" id="db-pane-history" style="display:none;">
+
+          <!-- TẦNG 1: EXECUTIVE AUDIT KPI & TELEMETRY -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
+            <!-- KPI 1: Tổng Sự Kiện Biến Động -->
+            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
+              <div style="width:48px; height:48px; border-radius:12px; background:#f0fdf4; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Sự Kiện Biến Động</div>
+                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-history-total-events">0</div>
+              </div>
+            </div>
+
+            <!-- KPI 2: Lượt Cập Nhật (UPDATE) -->
+            <div class="card" onclick="filterHistoryByChip('UPDATE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fef3c7; background:#fffdfa; box-shadow:0 2px 10px rgba(217,119,6,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện chỉnh sửa">
+              <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#b45309; text-transform:uppercase; letter-spacing:0.5px;">Lượt Chỉnh Sửa (UPDATE)</div>
+                <div style="font-size:22px; font-weight:800; color:#d97706; margin-top:2px;" id="kpi-history-update-events">0</div>
+              </div>
+            </div>
+
+            <!-- KPI 3: Lượt Xóa Dữ Liệu (DELETE) -->
+            <div class="card" onclick="filterHistoryByChip('DELETE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện xóa dữ liệu">
+              <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-trash-can"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Lượt Xóa Dữ Liệu (DELETE)</div>
+                <div style="font-size:22px; font-weight:800; color:#dc2626; margin-top:2px;" id="kpi-history-delete-events">0</div>
+              </div>
+            </div>
+
+            <!-- KPI 4: Nhân Sự Thao Tác Gần Nhất -->
+            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
+              <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-user-shield"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Thao Tác Gần Nhất</div>
+                <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:4px;" id="kpi-history-recent-actor">
+                  Chưa có dữ liệu
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TẦNG 2: CONTROL BAR & SMART FILTER CHIPS -->
+          <div class="card" style="margin-bottom:20px; border-radius:14px; border:1px solid #e2e8f0;">
+            <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:14px;">
+              
+              <!-- Row 1: Dropdown Filters & Search & ERP Action Buttons -->
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                
+                <!-- Left: 2-Level Filter & Search -->
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
+                  <div style="min-width:180px; flex:1;">
+                    <select id="db-history-filter-action" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
+                      <option value="">— Tất cả thao tác —</option>
+                      <option value="UPDATE">✏️ Chỉnh sửa (UPDATE)</option>
+                      <option value="DELETE">🗑️ Xóa dữ liệu (DELETE)</option>
+                    </select>
+                  </div>
+
+                  <div style="min-width:180px; flex:1;">
+                    <select id="db-history-filter-target" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
+                      <option value="">— Tất cả hạng mục —</option>
+                      <option value="Vật tư">📦 Kho vật tư</option>
+                      <option value="Nhật ký canh tác">🌱 Nhật ký canh tác</option>
+                      <option value="Thư viện media">📸 Thư viện Media</option>
+                      <option value="Cây trồng">🌳 Cây trồng & GIS</option>
+                      <option value="Trang trại">🏡 Trang trại</option>
+                    </select>
+                  </div>
+
+                  <div style="min-width:220px; flex:1.2;">
+                    <input type="text" id="db-history-search" placeholder="🔍 Tìm theo tiêu đề, người thực hiện..." oninput="filterHistoryTab()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                  </div>
+                </div>
+
+                <!-- Right: Action Buttons -->
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <button class="btn btn-secondary btn-sm" onclick="exportAuditPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
+                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
+                  </button>
+
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllAuditLogs()" style="color:#dc2626; border-color:#fca5a5; background:#fff1f2; font-size:12.5px; font-weight:800; border-radius:10px; padding:8px 14px;">
+                    <i class="fa-solid fa-trash-can"></i> Dọn dẹp sạch nhật ký
+                  </button>
+                </div>
+              </div>
+
+              <!-- Row 2: Smart Filter Chips Bar -->
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-history-chips-bar">
+                  <!-- Generated dynamically: Tất cả, Chỉnh sửa, Đã xóa, Vật tư, Canh tác, Media... -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- TẦNG 3: ERP AUDIT MATRIX TABLE -->
+          <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
+            <div style="overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; text-align:left;">
+                <thead>
+                  <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; color:#475569; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                    <th style="padding:12px 14px; width:160px;">Thời Gian</th>
+                    <th style="padding:12px 14px; width:140px;">Hành Động</th>
+                    <th style="padding:12px 14px; width:160px;">Hạng Mục CSDL</th>
+                    <th style="padding:12px 14px;">Chi Tiết Biến Động / Tiêu Đề</th>
+                    <th style="padding:12px 14px; width:180px;">Người Thực Hiện</th>
+                    <th style="padding:12px 14px; width:140px; text-align:center;">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="db-history-table-body">
+                  <tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>

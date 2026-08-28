@@ -1,0 +1,247 @@
+<div class="page-section active" id="page-dashboard">
+        
+        <!-- HEADER: STRIPE MINIMALIST WHITE HERO -->
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px 24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+              <span style="background:#ecfdf5; color:#047857; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:6px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span> Hệ thống hoạt động bình thường
+              </span>
+              <span style="font-size:12px; color:#64748b; font-weight:600;" id="dashboard-live-clock">Thời gian thực</span>
+            </div>
+            <h2 style="font-size:20px; font-weight:800; margin:0; letter-spacing:-0.02em; color:#0f172a;">
+              Trung Tâm Điều Hành Chuỗi Trang Trại
+            </h2>
+            <p style="margin:2px 0 0 0; font-size:13px; color:#64748b;">Giám sát không gian GIS, định danh tài sản nông hộ và cảnh báo vận hành thời gian thực</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button onclick="loadDashboard()" class="btn" style="background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:10px; padding:9px 16px; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:all 0.15s ease;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1';">
+              <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới dữ liệu
+            </button>
+          </div>
+        </div>
+
+        <!-- TẦNG 1: 4 THẺ METRIC TILES TỐI GIẢN CHUẨN STRIPE / LINEAR -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
+          <!-- 1. Số Nông Hộ -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Nông Hộ Liên Kết</span>
+              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Hồ sơ</span>
+            </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farmers">—</div>
+            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-circle-check" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
+            </div>
+          </div>
+
+          <!-- 2. Tổng Số Trang Trại -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Số Trang Trại</span>
+              <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #a7f3d0;">GIS Hub</span>
+            </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farms">—</div>
+            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-draw-polygon" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
+            </div>
+          </div>
+
+          <!-- 3. Loại Cây & Giống -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Chủng Loại Cây</span>
+              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Quy chuẩn</span>
+            </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-schemas">—</div>
+            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-schemas-sub">
+              Sầu riêng, Cà phê, Bơ...
+            </div>
+          </div>
+
+          <!-- 4. Địa Bàn Chính -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Địa Bàn Trọng Điểm</span>
+              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Khu vực</span>
+            </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-regions">—</div>
+            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-regions-sub">
+              Bình Phước, Đắk Lắk, Lâm Đồng...
+            </div>
+          </div>
+        </div>
+
+        <!-- TẦNG 2: THANH TRẠNG THÁI GIÁM SÁT RỦI RO & THIẾT BỊ TỐI GIẢN (MINIMAL STATUS STRIP) -->
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:13px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">Trạng Thái Vận Hành &amp; Thiết Bị:</span>
+            <span style="font-size:12px; font-weight:700; color:#64748b;" id="stat-total-incidents">0 sự cố cần theo dõi</span>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <!-- Cây Bệnh -->
+            <button onclick="showPage('plants')" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#f87171'" onmouseout="this.style.borderColor='#fecaca'">
+              <span>🐛 Cây bệnh:</span>
+              <strong id="stat-sick-plants">0</strong>
+            </button>
+
+            <!-- Thiết Bị Offline -->
+            <button onclick="showPage('devices')" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#fbbf24'" onmouseout="this.style.borderColor='#fde68a'">
+              <span>🔌 Thiết bị offline:</span>
+              <strong id="stat-broken-devices">0</strong>
+            </button>
+
+            <!-- Thiết Bị Cần Bảo Trì -->
+            <button onclick="showPage('devices')" style="background:#f0f9ff; border:1px solid #bae6fd; color:#075985; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#bae6fd'">
+              <span>🔧 Cần bảo dưỡng:</span>
+              <strong id="stat-maintenance-devices">0</strong>
+            </button>
+
+            <!-- Cảm Biến Hiệu Chuẩn -->
+            <button onclick="showPage('devices')" style="background:#faf5ff; border:1px solid #e9d5ff; color:#6b21a8; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#c084fc'" onmouseout="this.style.borderColor='#e9d5ff'">
+              <span>⚙️ Cần hiệu chuẩn:</span>
+              <strong id="stat-calibration-devices">0</strong>
+            </button>
+          </div>
+        </div>
+
+        <!-- TẦNG 3: TRUNG TÂM KHÔNG GIAN GIS HỢP NHẤT (MASTER GIS COCKPIT) -->
+        <div class="gis-container" style="min-height:640px; height:660px; margin-bottom:20px;">
+          <!-- GIS Sidebar -->
+          <div class="gis-sidebar">
+            <!-- Dark Gradient Header -->
+            <div class="gis-sidebar-header">
+              <button class="gis-back-btn" id="gis-back-btn" style="display:none;" onclick="backToFarmsList()">
+                <i class="fa fa-arrow-left"></i>
+              </button>
+              <h3 id="gis-sidebar-title">🗺️ Quản lý Trang trại</h3>
+              <div id="gis-header-actions">
+                <button class="btn btn-primary btn-sm" onclick="openFarmForm()">
+                  <i class="fa fa-plus"></i> Thêm mới
+                </button>
+              </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="gis-sidebar-content" id="gis-sidebar-content">
+
+              <!-- ── Farm list view ── -->
+              <div id="gis-view-list">
+                <div class="gis-section-card" style="animation-delay:0.05s;">
+                  <div class="gis-section-label">
+                    <i class="fa-solid fa-filter"></i> Lọc theo Nông hộ
+                  </div>
+                  <select id="filter-farm-user" onchange="filterFarmsByCustomer()" style="width:100%; padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#f8fafc; color:#0f172a; transition:border-color 0.2s;">
+                    <option value="all">Tất cả khách hàng (nông hộ)</option>
+                  </select>
+                </div>
+                <div id="farms-list-container">
+                  <div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách trang trại...</div>
+                </div>
+              </div>
+
+              <!-- ── Farm create/edit form ── -->
+              <div id="gis-view-form" style="display:none;">
+                <div class="gis-section-card">
+                  <div class="field">
+                    <label>Tên trang trại *</label>
+                    <input type="text" id="farm-name" placeholder="VD: Nông trại Tây Nguyên, Farm A...">
+                  </div>
+                  <div class="field">
+                    <label>Mô tả</label>
+                    <textarea id="farm-desc" rows="3" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
+                  </div>
+                  <div class="field">
+                    <label>Gán cho Nông hộ / Người dùng</label>
+                    <select id="farm-user-id" style="width:100%; padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:8px;">
+                      <option value="">— Chưa gán cho ai —</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label>Ranh giới bản đồ</label>
+                    <div class="alert alert-success" style="padding:8px 12px; margin-bottom:8px; font-size:11px; line-height:1.4;">
+                      <i class="fa fa-circle-info"></i> Vẽ ranh giới (đa giác) trên bản đồ. Nhấp đỉnh đầu tiên để khép kín đa giác.
+                    </div>
+                    <div style="font-size:11.5px; color:#475569; margin-bottom:8px;">
+                      Diện tích: <strong id="farm-area-display" style="color:#047857;">0 m²</strong> (<span id="farm-area-ha">0</span> ha)
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="cancelFarmForm()">Hủy</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="saveFarm()">Lưu</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Farm detail view ── -->
+              <div id="gis-view-details" style="display:none;">
+
+                <!-- Farm info -->
+                <div class="gis-section-card" style="animation-delay:0.05s;">
+                  <p id="farm-details-desc" class="gis-farm-info" style="font-style:italic; min-height:16px;"></p>
+                  <p id="farm-details-area" class="gis-farm-area-badge"><i class="fa-solid fa-chart-area"></i> 0 m²</p>
+                </div>
+
+                <!-- Thêm cây -->
+                <div class="gis-section-card" style="animation-delay:0.10s;">
+                  <div class="gis-section-label" style="color:#047857;">
+                    <i class="fa-solid fa-seedling" style="color:#10b981;"></i> Thêm cây vào trang trại
+                  </div>
+                  <button id="btn-gis-import-mode" class="gis-action-btn gis-btn-green" onclick="toggleGisImportMode()">
+                    <i class="fa-solid fa-map-pin"></i> Import GIS — Chọn vị trí cây
+                  </button>
+                  <div class="gis-btn-row">
+                    <button class="gis-action-btn gis-btn-ghost" onclick="openAddPlantsManual()">
+                      <i class="fa fa-keyboard"></i> Thủ công
+                    </button>
+                    <button class="gis-action-btn gis-btn-ghost" onclick="openCsvImportModal()">
+                      <i class="fa fa-file-csv"></i> Import CSV
+                    </button>
+                  </div>
+                  <button id="btn-toggle-plant-markers" class="gis-action-btn gis-btn-ghost" style="margin-top:4px;" onclick="togglePlantMarkers()">
+                    <i class="fa-solid fa-eye"></i> Hiện / Ẩn Vị Trí Cây
+                  </button>
+                </div>
+
+                <!-- Hồ sơ bản vẽ CAD -->
+                <div class="gis-section-card" style="animation-delay:0.15s;">
+                  <div class="gis-section-label" style="color:#1d4ed8;">
+                    <i class="fa-solid fa-compass-drafting" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD)
+                  </div>
+                  <button class="gis-action-btn gis-btn-blue" onclick="openDesignDrawingModal()">
+                    <i class="fa-solid fa-file-import"></i> Import Bản Vẽ Thiết Kế (CAD / Overlay)
+                  </button>
+                </div>
+
+                <!-- Danh sách cây -->
+                <div class="gis-section-card" style="animation-delay:0.20s;">
+                  <div class="gis-section-label">
+                    <i class="fa-solid fa-tree" style="color:#10b981;"></i>
+                    Cây trồng — <span id="farm-details-plant-count" style="color:#047857;">0</span> cây
+                  </div>
+                  <div id="farm-details-plants-list" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent;">
+                    <!-- Filled by JS -->
+                  </div>
+                </div>
+
+              </div><!-- /gis-view-details -->
+            </div><!-- /gis-sidebar-content -->
+
+            <!-- Footer: Sửa / Xóa -->
+            <div class="gis-footer-actions" id="gis-detail-footer" style="display:none;">
+              <button class="btn btn-secondary btn-sm" onclick="editFarm()"><i class="fa fa-pen"></i> Sửa</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteFarm()"><i class="fa fa-trash"></i> Xóa</button>
+            </div>
+          </div>
+          <!-- GIS Map Container -->
+          <div class="gis-map-container" style="position: relative;">
+            <div id="gis-import-active-banner" style="display:none; position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:12; background:linear-gradient(135deg, #059669, #10b981); color:#fff; padding:10px 18px; border-radius:30px; font-size:12.5px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.4); pointer-events:auto; display:flex; align-items:center; gap:10px;">
+              <span><i class="fa-solid fa-location-crosshairs fa-bounce"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!</span>
+              <button class="btn btn-sm" style="background:rgba(0,0,0,0.3); border:none; color:#fff; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer;" onclick="toggleGisImportMode(false)">Tắt Chế Độ</button>
+            </div>
+            <div id="gis-map" class="gis-map"></div>
+          </div>
+        </div>
+      </div>

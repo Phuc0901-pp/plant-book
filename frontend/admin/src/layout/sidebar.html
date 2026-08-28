@@ -1,0 +1,40 @@
+<aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="sidebar-logo-wrap">
+          <img src="/assets/logo.png" alt="TANBAO AgTech" class="sidebar-logo">
+        </div>
+        <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
+      </div>
+    </div>
+    <!-- Thanh menu quan tri -->
+    <div class="sidebar-user">
+      <div class="user-name" id="sb-user-name">—</div>
+      <div class="user-email" id="sb-user-email">—</div>
+    </div>
+    <nav>
+      <div class="nav-section">Tổng quan &amp; Vận hành</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <i class="fa fa-chart-pie"></i> Dashboard &amp; Trang trại
+      </div>
+      <div class="nav-section">Quản trị Nông nghiệp &amp; CSDL</div>
+      <div class="nav-item" onclick="showPage('database')">
+        <i class="fa-solid fa-database"></i> Cơ sở dữ liệu &amp; Vận hành
+      </div>
+      <div class="nav-section">Hệ thống &amp; Nhân sự</div>
+      <div class="nav-item" onclick="showPage('users')">
+        <i class="fa fa-users"></i> Người dùng &amp; Nông hộ
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <i class="fa fa-right-from-bracket"></i> Đăng xuất
+      </button>
+      <div style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">
+        <span style="background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:100px; border:1px solid rgba(34,197,94,0.25);">v1.1.1</span> Tân Bảo AgTech Admin
+      </div>
+
+    </div>
+
+  </aside>

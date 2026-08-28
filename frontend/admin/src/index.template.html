@@ -1,0 +1,75 @@
+<!-- ====================================================================
+     PLANT BOOK ENTERPRISE ERP — ADMIN PORTAL
+     Auto-assembled via backend/scripts/build-html.js
+     DO NOT edit index.html directly; edit modular files in src/
+     ==================================================================== -->
+<!-- @include 'layout/head.html' -->
+
+<!-- @include 'modals/auth-modals.html' -->
+
+<!-- ════════════════ APP ════════════════ -->
+<div id="app" style="display:none;flex-direction:row">
+  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+  
+  <!-- @include 'layout/sidebar.html' -->
+
+  <!-- Main -->
+  <main class="main">
+    <!-- @include 'layout/topbar.html' -->
+
+    <div class="content">
+      <!-- ── 1. DASHBOARD & GIS COCKPIT ── -->
+      <!-- @include 'views/dashboard.html' -->
+
+      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (6 SUB-VIEWS) ── -->
+      <div class="page-section" id="page-database">
+        <!-- 6 Sub-tabs in Database section -->
+        <div class="tabs" style="margin-bottom: 20px;">
+          <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
+            <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
+          </div>
+          <div class="tab" id="db-tab-devices" onclick="switchDatabaseTab('devices')">
+            <i class="fa-solid fa-microchip"></i> Thiết bị IoT &amp; Cảm biến
+          </div>
+          <div class="tab" id="db-tab-schemas" onclick="switchDatabaseTab('schemas')">
+            <i class="fa-solid fa-sliders"></i> Cấu hình &amp; Quy trình Loại cây
+          </div>
+          <div class="tab" id="db-tab-supplies" onclick="switchDatabaseTab('supplies')">
+            <i class="fa-solid fa-boxes-packing"></i> Vật tư &amp; Kho
+          </div>
+          <div class="tab" id="db-tab-media" onclick="switchDatabaseTab('media')">
+            <i class="fa-solid fa-images"></i> Thư viện media
+          </div>
+          <div class="tab" id="db-tab-history" onclick="switchDatabaseTab('history')">
+            <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động
+          </div>
+        </div>
+
+        <!-- @include 'views/database/cultivation.html' -->
+        <!-- @include 'views/database/devices.html' -->
+        <!-- @include 'views/database/schemas.html' -->
+        <!-- @include 'views/database/supplies.html' -->
+        <!-- @include 'views/database/media.html' -->
+        <!-- @include 'views/database/history.html' -->
+      </div>
+
+      <!-- ── 3. USERS & GOVERNANCE ── -->
+      <!-- @include 'views/users.html' -->
+
+      <!-- ── 4. DB CHECK & SCHEMA TELEMETRY ── -->
+      <!-- @include 'views/db-check.html' -->
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<!-- ════════════════ MODALS & POPUPS ════════════════ -->
+<!-- @include 'modals/plant-modal.html' -->
+<!-- @include 'modals/schema-modal.html' -->
+<!-- @include 'modals/user-modal.html' -->
+<!-- @include 'modals/user-tier-modal.html' -->
+<!-- @include 'modals/supply-modals.html' -->
+<!-- @include 'modals/qr-modal.html' -->
+<!-- @include 'modals/utility-modals.html' -->
+
+<!-- @include 'layout/scripts.html' -->

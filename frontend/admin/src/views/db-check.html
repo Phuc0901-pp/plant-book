@@ -1,0 +1,28 @@
+<!-- ── DB Schema Check & Live CRUD ── -->
+      <div class="page-section" id="page-db-check">
+        <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h1 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 6px 0; display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-server" style="color:#059669;"></i> Kiểm tra CSDL PostgreSQL Schema & Quản trị Dữ liệu
+            </h1>
+            <p style="margin:0; font-size:13px; color:#64748b;">
+              Thanh tra cấu trúc các bảng, kiểu dữ liệu, số lượng dòng và thực thi Thêm/Sửa/Xóa dữ liệu trực tiếp trong CSDL.
+            </p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="loadDbSchemaCheck()" style="background:linear-gradient(135deg, #064e3b, #047857); border:none; padding:10px 18px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(4,120,87,0.25);">
+              <i class="fa-solid fa-rotate"></i> Tải lại Telemetry CSDL
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Cards Telemetry Grid -->
+        <div id="db-schema-tables-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
+          <!-- Populated dynamically by database.js -->
+        </div>
+
+        <!-- Selected Table Records Live Viewer & CRUD Container -->
+        <div id="db-table-records-container" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.03); display:none;">
+          <!-- Populated dynamically by database.js -->
+        </div>
+      </div>
