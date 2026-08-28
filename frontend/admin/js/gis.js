@@ -1,39 +1,133 @@
-// Helper to sanitize & auto-correct GeoJSON coordinates (prevents Mapbox crashes and swapped lat/lng)
-function sanitizeCoordinates(rawCoords) {
-  if (!rawCoords) return [];
-  let arr = [];
+// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
+function getFarmExactGpsCenter(farm, plants) {
+  if (!farm) return null;
+
+  // 1. Try to extract from polygon_coordinates
+  let raw = farm.polygon_coordinates;
+  let coords = [];
   try {
-    arr = typeof rawCoords === 'string' ? JSON.parse(rawCoords) : rawCoords;
-  } catch(e) { return []; }
-  
-  if (!Array.isArray(arr) || arr.length === 0) return [];
+    coords = typeof raw === 'string' ? JSON.parse(raw) : (raw || []);
+  } catch(e) { coords = []; }
 
-  const validPts = [];
-  arr.forEach(pt => {
-    if (Array.isArray(pt) && pt.length >= 2) {
-      let a = parseFloat(pt[0]);
-      let b = parseFloat(pt[1]);
-      if (isNaN(a) || isNaN(b)) return;
+  while (Array.isArray(coords) && coords.length > 0 && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+    coords = coords[0];
+  }
 
-      let lng = a, lat = b;
-      // In Vietnam: Longitude is between 102 and 115, Latitude is between 8 and 24
-      if ((a >= 90 && a <= 125) && (b >= -10 && b <= 40)) {
-        lng = a;
-        lat = b;
-      } else if ((b >= 90 && b <= 125) && (a >= -10 && a <= 40)) {
-        lng = b;
-        lat = a;
-      } else if (a <= 40 && b > 40) {
-        lng = b;
-        lat = a;
+  if (Array.isArray(coords) && coords.length > 0) {
+    let sumLng = 0, sumLat = 0, count = 0;
+    coords.forEach(pt => {
+      if (Array.isArray(pt) && pt.length >= 2) {
+        let v1 = parseFloat(pt[0]);
+        let v2 = parseFloat(pt[1]);
+        if (!isNaN(v1) && !isNaN(v2)) {
+          let lng = v1 > 50 ? v1 : v2;
+          let lat = v2 < 50 ? v2 : v1;
+          sumLng += lng;
+          sumLat += lat;
+          count++;
+        }
       }
+    });
+    if (count > 0) {
+      return [sumLng / count, sumLat / count];
+    }
+  }
 
-      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-        validPts.push([lng, lat]);
+  // 2. Try farm's direct latitude / longitude fields if present
+  if (farm.latitude && farm.longitude) {
+    let v1 = parseFloat(farm.longitude);
+    let v2 = parseFloat(farm.latitude);
+    if (!isNaN(v1) && !isNaN(v2)) {
+      let lng = v1 > 50 ? v1 : v2;
+      let lat = v2 < 50 ? v2 : v1;
+      return [lng, lat];
+    }
+  }
+
+  // 3. Try to calculate average from farm's plants
+  const farmPlants = (plants || []).filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
+  if (farmPlants.length > 0) {
+    let sumLng = 0, sumLat = 0, count = 0;
+    farmPlants.forEach(p => {
+      let v1 = parseFloat(p.longitude);
+      let v2 = parseFloat(p.latitude);
+      if (!isNaN(v1) && !isNaN(v2)) {
+        let lng = v1 > 50 ? v1 : v2;
+        let lat = v2 < 50 ? v2 : v1;
+        sumLng += lng;
+        sumLat += lat;
+        count++;
+      }
+    });
+    if (count > 0) {
+      return [sumLng / count, sumLat / count];
+    }
+  }
+
+  return null;
+}
+
+// Universal Helper to extract closed Polygon GeoJSON Ring [[lng, lat], ...]
+function getFarmPolygonGeoJson(farm) {
+  let raw = farm.polygon_coordinates;
+  let coords = [];
+  try {
+    coords = typeof raw === 'string' ? JSON.parse(raw) : (raw || []);
+  } catch(e) { coords = []; }
+
+  while (Array.isArray(coords) && coords.length > 0 && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+    coords = coords[0];
+  }
+
+  if (!Array.isArray(coords) || coords.length < 3) return null;
+
+  const validRing = [];
+  coords.forEach(pt => {
+    if (Array.isArray(pt) && pt.length >= 2) {
+      let v1 = parseFloat(pt[0]);
+      let v2 = parseFloat(pt[1]);
+      if (!isNaN(v1) && !isNaN(v2)) {
+        let lng = v1 > 50 ? v1 : v2;
+        let lat = v2 < 50 ? v2 : v1;
+        validRing.push([lng, lat]);
       }
     }
   });
 
+  if (validRing.length >= 3) {
+    if (validRing[0][0] !== validRing[validRing.length - 1][0] || 
+        validRing[0][1] !== validRing[validRing.length - 1][1]) {
+      validRing.push(validRing[0]);
+    }
+    return validRing;
+  }
+  return null;
+}
+
+function sanitizeCoordinates(rawCoords) {
+  let coords = [];
+  try {
+    coords = typeof rawCoords === 'string' ? JSON.parse(rawCoords) : (rawCoords || []);
+  } catch(e) { return []; }
+
+  while (Array.isArray(coords) && coords.length > 0 && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+    coords = coords[0];
+  }
+
+  if (!Array.isArray(coords)) return [];
+
+  const validPts = [];
+  coords.forEach(pt => {
+    if (Array.isArray(pt) && pt.length >= 2) {
+      let v1 = parseFloat(pt[0]);
+      let v2 = parseFloat(pt[1]);
+      if (!isNaN(v1) && !isNaN(v2)) {
+        let lng = v1 > 50 ? v1 : v2;
+        let lat = v2 < 50 ? v2 : v1;
+        validPts.push([lng, lat]);
+      }
+    }
+  });
   return validPts;
 }
 
@@ -193,20 +287,14 @@ function initDashboardMap(farms, plants) {
 
     farms.forEach(farm => {
       const farmColor = getCustomerColor(farm.user_id);
-      const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
-      let centerLng = null;
-      let centerLat = null;
-
-      if (validCoords.length >= 3) {
+      const center = getFarmExactGpsCenter(farm, plants);
+      
+      // 1. Draw polygon if available
+      const polyRing = getFarmPolygonGeoJson(farm);
+      if (polyRing) {
         const farmSourceId = `farm-source-${farm.id}`;
         const farmLayerId = `farm-layer-${farm.id}`;
         const farmOutlineId = `farm-outline-${farm.id}`;
-
-        const polygonCoords = [...validCoords];
-        if (polygonCoords[0][0] !== polygonCoords[polygonCoords.length - 1][0] || 
-            polygonCoords[0][1] !== polygonCoords[polygonCoords.length - 1][1]) {
-          polygonCoords.push(polygonCoords[0]);
-        }
 
         if (!map.getSource(farmSourceId)) {
           map.addSource(farmSourceId, {
@@ -215,7 +303,7 @@ function initDashboardMap(farms, plants) {
               type: 'Feature',
               geometry: {
                 type: 'Polygon',
-                coordinates: [polygonCoords]
+                coordinates: [polyRing]
               }
             }
           });
@@ -239,83 +327,34 @@ function initDashboardMap(farms, plants) {
               'line-width': 2.5
             }
           });
-        }
 
-        let sumLng = 0, sumLat = 0;
-        validCoords.forEach(pt => {
-          sumLng += pt[0];
-          sumLat += pt[1];
-          bounds.extend(pt);
-          hasBounds = true;
-        });
-        centerLng = sumLng / validCoords.length;
-        centerLat = sumLat / validCoords.length;
-
-        map.on('click', farmLayerId, (e) => {
-          new mapboxgl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div class="map-tooltip">
-                <h4 style="color:${farmColor}"><i class="fa-solid fa-house-flag"></i> Trang trại: ${esc(farm.name)}</h4>
-                <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
-                <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
-                <div style="margin-top:8px">
-                  <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
+          map.on('click', farmLayerId, (e) => {
+            new mapboxgl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(`
+                <div class="map-tooltip">
+                  <h4 style="color:${farmColor}"><i class="fa-solid fa-house-flag"></i> Trang trại: ${esc(farm.name)}</h4>
+                  <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
+                  <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
+                  <div style="margin-top:8px">
+                    <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
+                  </div>
                 </div>
-              </div>
-            `)
-            .addTo(map);
-        });
-
-        map.on('mouseenter', farmLayerId, () => map.getCanvas().style.cursor = 'pointer');
-        map.on('mouseleave', farmLayerId, () => map.getCanvas().style.cursor = '');
-      } else if (validCoords.length > 0) {
-        centerLng = validCoords[0][0];
-        centerLat = validCoords[0][1];
-        if (centerLng >= 100 && centerLng <= 115 && centerLat >= 8 && centerLat <= 24) {
-          bounds.extend([centerLng, centerLat]);
-          hasBounds = true;
-        }
-      } else {
-        const farmPlants = plants.filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
-        if (farmPlants.length > 0) {
-          let sumLng = 0, sumLat = 0, validCnt = 0;
-          farmPlants.forEach(p => {
-            let a = parseFloat(p.longitude);
-            let b = parseFloat(p.latitude);
-            if (!isNaN(a) && !isNaN(b)) {
-              let lng = a, lat = b;
-              if ((a >= 90 && a <= 125) && (b >= -10 && b <= 40)) {
-                lng = a; lat = b;
-              } else if ((b >= 90 && b <= 125) && (a >= -10 && a <= 40)) {
-                lng = b; lat = a;
-              } else if (a <= 40 && b > 40) {
-                lng = b; lat = a;
-              }
-              if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-                sumLng += lng;
-                sumLat += lat;
-                validCnt++;
-              }
-            }
+              `)
+              .addTo(map);
           });
-          if (validCnt > 0) {
-            centerLng = sumLng / validCnt;
-            centerLat = sumLat / validCnt;
-            if (centerLng >= 100 && centerLng <= 115 && centerLat >= 8 && centerLat <= 24) {
-              bounds.extend([centerLng, centerLat]);
-              hasBounds = true;
-            }
-          }
+
+          map.on('mouseenter', farmLayerId, () => map.getCanvas().style.cursor = 'pointer');
+          map.on('mouseleave', farmLayerId, () => map.getCanvas().style.cursor = '');
         }
       }
 
-      if (centerLng !== null && centerLat !== null && !isNaN(centerLng) && !isNaN(centerLat)) {
-        if ((centerLat > 90 || centerLat < -90 || centerLat > 35) && (centerLng >= -10 && centerLng <= 35)) {
-          const tmp = centerLng; centerLng = centerLat; centerLat = tmp;
-        }
-        if (centerLng < 40 && centerLat > 40) {
-          const tmp = centerLng; centerLng = centerLat; centerLat = tmp;
+      // 2. Add Pin Marker at exact GPS Center
+      if (center) {
+        const [centerLng, centerLat] = center;
+        if (centerLng >= 100 && centerLng <= 115 && centerLat >= 8 && centerLat <= 24) {
+          bounds.extend([centerLng, centerLat]);
+          hasBounds = true;
         }
 
         const pinEl = document.createElement('div');
@@ -371,13 +410,16 @@ function initDashboardMap(farms, plants) {
     // Render plant markers
     plants.forEach(plant => {
       if (plant.latitude && plant.longitude) {
-        let lat = parseFloat(plant.latitude);
-        let lng = parseFloat(plant.longitude);
-        if (!isNaN(lat) && !isNaN(lng)) {
-          if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
-            const tmp = lat; lat = lng; lng = tmp;
+        let v1 = parseFloat(plant.longitude);
+        let v2 = parseFloat(plant.latitude);
+        if (!isNaN(v1) && !isNaN(v2)) {
+          let lng = v1 > 50 ? v1 : v2;
+          let lat = v2 < 50 ? v2 : v1;
+
+          if (lng >= 100 && lng <= 115 && lat >= 8 && lat <= 24) {
+            bounds.extend([lng, lat]);
+            hasBounds = true;
           }
-          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
           let color = '#22c55e';
           if (plant.health_status === 'Cần chú ý') color = '#eab308';
@@ -415,7 +457,9 @@ function initDashboardMap(farms, plants) {
     });
 
     if (hasBounds) {
-      map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 1000 });
+      map.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 1000 });
+    } else {
+      map.flyTo({ center: [106.8, 11.5], zoom: 7 });
     }
 
     updateDashboardFarmPins(map.getZoom());
