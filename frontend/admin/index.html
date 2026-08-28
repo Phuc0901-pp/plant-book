@@ -463,68 +463,182 @@
     </div>
     <div class="content">
 
-      <!-- ── Dashboard ── -->
+      <!-- ── Dashboard (BẢNG ĐIỀU KHIỂN QUẢN TRỊ VẬN HÀNH) ── -->
       <div class="page-section active" id="page-dashboard">
-        <div class="stats-grid" id="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon green"><i class="fa fa-seedling"></i></div>
-            <div><div class="stat-val" id="stat-plants">—</div><div class="stat-label">Tổng cây trồng</div></div>
+        
+        <!-- TẦNG 1: THỐNG KÊ QUẢN TRỊ NÔNG NGHIỆP TỔNG THỂ -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;">
+          <!-- 1. Số Nông Hộ -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; align-items:center; gap:16px; transition:transform 0.2s ease;">
+            <div style="width:54px; height:54px; border-radius:14px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
+              <i class="fa-solid fa-users-rectangle"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Số Nông Hộ</div>
+              <div style="font-size:24px; font-weight:900; color:#0f172a; margin-top:2px;" id="stat-farmers">—</div>
+              <div style="font-size:11.5px; color:#059669; font-weight:600; margin-top:2px;" id="stat-farmers-sub">Đang kết nối &amp; đồng bộ</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon green"><i class="fa fa-circle-check"></i></div>
-            <div><div class="stat-val" id="stat-healthy">—</div><div class="stat-label">Sức khỏe tốt</div></div>
+
+          <!-- 2. Tổng Số Cây -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; align-items:center; gap:16px; transition:transform 0.2s ease;">
+            <div style="width:54px; height:54px; border-radius:14px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
+              <i class="fa-solid fa-seedling"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Số Cây Trồng</div>
+              <div style="font-size:24px; font-weight:900; color:#0f172a; margin-top:2px;" id="stat-plants">—</div>
+              <div style="font-size:11.5px; color:#16a34a; font-weight:600; margin-top:2px;" id="stat-plants-sub">Toàn bộ vùng dự án</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon amber"><i class="fa fa-triangle-exclamation"></i></div>
-            <div><div class="stat-val" id="stat-watch">—</div><div class="stat-label">Cần theo dõi</div></div>
+
+          <!-- 3. Loại Cây & Giống -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; align-items:center; gap:16px; transition:transform 0.2s ease;">
+            <div style="width:54px; height:54px; border-radius:14px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Chủng Loại Cây</div>
+              <div style="font-size:24px; font-weight:900; color:#0f172a; margin-top:2px;" id="stat-schemas">—</div>
+              <div style="font-size:11.5px; color:#2563eb; font-weight:600; margin-top:2px;" id="stat-schemas-sub">Sầu riêng, Cà phê, Hồ tiêu...</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon blue"><i class="fa fa-layer-group"></i></div>
-            <div><div class="stat-val" id="stat-schemas">—</div><div class="stat-label">Loại cây</div></div>
+
+          <!-- 4. Địa Bàn Chính -->
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; align-items:center; gap:16px; transition:transform 0.2s ease;">
+            <div style="width:54px; height:54px; border-radius:14px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
+              <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Địa Bàn Trọng Điểm</div>
+              <div style="font-size:24px; font-weight:900; color:#0f172a; margin-top:2px;" id="stat-regions">—</div>
+              <div style="font-size:11.5px; color:#d97706; font-weight:600; margin-top:2px;" id="stat-regions-sub">Bình Phước, Đắk Lắk, Lâm Đồng...</div>
+            </div>
           </div>
         </div>
 
-        <!-- Bản đồ Tổng quan -->
-        <div class="card" style="margin-bottom: 24px;">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-map-location-dot" style="color:var(--green)"></i> Bản đồ Tổng quan (Dự án & Trang trại)</h3>
-            <span style="font-size: 11px; color: var(--gray-400);">Vị trí cây trồng và ranh giới trang trại</span>
+        <!-- TẦNG 2: VẤN ĐỀ PHÁT SINH & CẢNH BÁO VẬN HÀNH KHẨN CẤP -->
+        <div class="card" style="margin-bottom:24px; border-radius:16px; overflow:hidden; border:1.5px solid #fee2e2; box-shadow:0 4px 20px rgba(220,38,38,0.04);">
+          <div style="background:linear-gradient(135deg, #7f1d1d, #991b1b); color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="font-size:16px; font-weight:800; margin:0; display:flex; align-items:center; gap:8px; color:#ffffff;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#fca5a5;"></i> TRUNG TÂM GIÁM SÁT SỰ CỐ &amp; VẤN ĐỀ PHÁT SINH
+              </h3>
+              <div style="font-size:12px; color:#fecaca; margin-top:3px;">Theo dõi thời gian thực cây trồng suy yếu, bệnh dịch và thiết bị IoT cần can thiệp kỹ thuật</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="badge" id="stat-total-incidents" style="background:#ef4444; color:#ffffff; font-weight:800; padding:5px 12px; border-radius:20px; font-size:12px;">
+                0 sự cố cần xử lý
+              </span>
+            </div>
           </div>
-          <div style="padding: 12px;">
-            <!-- Bộ lọc nhanh -->
-            <div class="dashboard-filter-bar">
+
+          <div style="padding:18px; background:#ffffff;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+              <!-- Cây Bệnh & Cần Theo Dõi -->
+              <div onclick="filterDashboard('sick')" style="background:#fff5f5; border:1.5px solid #fed7d7; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#e53e3e'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#fed7d7'; this.style.transform='none'">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#c53030; text-transform:uppercase;">🐛 Cây Bệnh / Sâu Hại</span>
+                  <div style="width:32px; height:32px; border-radius:8px; background:#fed7d7; color:#e53e3e; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-bug"></i></div>
+                </div>
+                <div style="font-size:22px; font-weight:900; color:#9b2c2c;" id="stat-sick-plants">0 cây</div>
+                <div style="font-size:11.5px; color:#742a2a; margin-top:4px;">Nấm hồng, rỉ sắt, xì mủ, thối rễ...</div>
+              </div>
+
+              <!-- Thiết Bị Hỏng / Offline -->
+              <div onclick="showPage('devices')" style="background:#fffaf0; border:1.5px solid #feebc8; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#dd6b20'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#feebc8'; this.style.transform='none'">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#c05621; text-transform:uppercase;">🔌 Thiết Bị Hỏng / Mất Kết Nối</span>
+                  <div style="width:32px; height:32px; border-radius:8px; background:#feebc8; color:#dd6b20; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-plug-circle-xmark"></i></div>
+                </div>
+                <div style="font-size:22px; font-weight:900; color:#7b341e;" id="stat-broken-devices">0 thiết bị</div>
+                <div style="font-size:11.5px; color:#7b341e; margin-top:4px;">Mất tín hiệu LoRa / 4G hoặc cảm biến hỏng</div>
+              </div>
+
+              <!-- Thiết Bị Cần Bảo Trì -->
+              <div onclick="showPage('devices')" style="background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#0284c7'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#bae6fd'; this.style.transform='none'">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#0369a1; text-transform:uppercase;">🔧 Thiết Bị Cần Bảo Trì</span>
+                  <div style="width:32px; height:32px; border-radius:8px; background:#e0f2fe; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                </div>
+                <div style="font-size:22px; font-weight:900; color:#0c4a6e;" id="stat-maintenance-devices">0 thiết bị</div>
+                <div style="font-size:11.5px; color:#0369a1; margin-top:4px;">Pin yếu &lt; 20% hoặc quá hạn bảo dưỡng</div>
+              </div>
+
+              <!-- Thiết Bị Cần Hiệu Chỉnh -->
+              <div onclick="showPage('devices')" style="background:#faf5ff; border:1.5px solid #e9d5ff; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#9333ea'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#e9d5ff'; this.style.transform='none'">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:12px; font-weight:800; color:#7e22ce; text-transform:uppercase;">⚙️ Cần Hiệu Chỉnh Cảm Biến</span>
+                  <div style="width:32px; height:32px; border-radius:8px; background:#f3e8ff; color:#9333ea; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-sliders"></i></div>
+                </div>
+                <div style="font-size:22px; font-weight:900; color:#581c87;" id="stat-calibration-devices">0 cảm biến</div>
+                <div style="font-size:11.5px; color:#6b21a8; margin-top:4px;">Độ lệch chỉ số pH, EC, NPK cần cân chỉnh</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TẦNG 3: BẢN ĐỒ KHÔNG GIAN GIS TOÀN HỆ THỐNG -->
+        <div class="card" style="margin-bottom:24px; border-radius:16px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+          <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h3 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-map-location-dot" style="color:#059669;"></i> Bản Đồ Không Gian Vùng Canh Tác &amp; Ranh Giới Trang Trại
+              </h3>
+              <span style="font-size:12px; color:#64748b;">Giám sát phân bổ cây trồng và ranh giới định vị GPS các nông hộ</span>
+            </div>
+            <div style="font-size:12px; color:#059669; font-weight:700; background:#ecfdf5; border:1px solid #a7f3d0; padding:4px 10px; border-radius:20px;">
+              🛰️ Vệ tinh Mapbox High-Res
+            </div>
+          </div>
+          <div style="padding:16px;">
+            <!-- Bộ lọc nhanh trên bản đồ -->
+            <div class="dashboard-filter-bar" style="margin-bottom:12px;">
               <button class="filter-chip active" id="btn-filter-all" onclick="filterDashboard('all')">
                 <i class="fa-solid fa-border-all"></i> Tất cả
               </button>
               <button class="filter-chip" id="btn-filter-sick" onclick="filterDashboard('sick')">
-                <span class="dot red-dot"></span> Đang bệnh
+                <span class="dot red-dot"></span> 🐛 Đang bệnh
               </button>
               <button class="filter-chip" id="btn-filter-watch" onclick="filterDashboard('watch')">
-                <span class="dot yellow-dot"></span> Cần chú ý
+                <span class="dot yellow-dot"></span> ⚠️ Cần chú ý
               </button>
               <button class="filter-chip" id="btn-filter-not-watered" onclick="filterDashboard('not-watered')">
-                <i class="fa-solid fa-droplet" style="color:#3b82f6"></i> Chưa tưới hôm nay
+                <i class="fa-solid fa-droplet" style="color:#3b82f6"></i> 💧 Chưa tưới hôm nay
               </button>
               <button class="filter-chip" id="btn-filter-not-fertilized" onclick="filterDashboard('not-fertilized')">
-                <i class="fa-solid fa-flask" style="color:#8b5cf6"></i> Chưa bón phân 7 ngày
+                <i class="fa-solid fa-flask" style="color:#8b5cf6"></i> 🧪 Chưa bón phân 7 ngày
               </button>
             </div>
             
-            <div id="dashboard-map" style="width: 100%; height: 380px; border-radius: 8px; background: #e5e7eb; overflow: hidden;"></div>
+            <div id="dashboard-map" style="width:100%; height:420px; border-radius:12px; background:#e5e7eb; overflow:hidden; border:1px solid #cbd5e1;"></div>
           </div>
         </div>
-          <div class="card">
-          <div class="card-header"><h3><i class="fa-solid fa-list-check" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3></div>
-          <table>
-            <thead><tr>
-              <th style="width:140px">Thời gian</th>
-              <th style="width:200px">Cây trồng</th>
-              <th style="width:150px">Hoạt động</th>
-              <th>Chi tiết / Ghi chú</th>
-              <th style="width:160px">Người thực hiện</th>
-            </tr></thead>
-            <tbody id="dashboard-logs-table"><tr><td colspan="5" class="empty-state">Đang tải hoạt động...</td></tr></tbody>
-          </table>
+
+        <!-- TẦNG 4: NHẬT KÝ VẬN HÀNH & HOẠT ĐỘNG CANH TÁC GẦN ĐÂY -->
+        <div class="card" style="border-radius:16px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+          <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-list-check" style="color:#059669;"></i> Hoạt Động Canh Tác Gần Đây (3 Ngày Qua)
+            </h3>
+            <span style="font-size:12px; color:#64748b; font-weight:600;">Dữ liệu thời gian thực từ các nông hộ</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0; color:#475569; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                  <th style="width:140px; padding:12px 14px;">Thời gian</th>
+                  <th style="width:200px; padding:12px 14px;">Cây trồng / Trang trại</th>
+                  <th style="width:150px; padding:12px 14px;">Hoạt động</th>
+                  <th style="padding:12px 14px;">Chi tiết / Hoạt chất / Liều lượng</th>
+                  <th style="width:180px; padding:12px 14px;">Người thực hiện</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-logs-table">
+                <tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải hoạt động...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -2671,19 +2785,19 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.5.3"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.5.3"></script>
-  <script src="/admin/js/app.js?v=3.5.3"></script>
-  <script src="/admin/js/auth.js?v=3.5.3"></script>
-  <script src="/admin/js/dashboard.js?v=3.5.3"></script>
-  <script src="/admin/js/media.js?v=3.5.3"></script>
-  <script src="/admin/js/database.js?v=3.5.3"></script>
-  <script src="/admin/js/schemas.js?v=3.5.3"></script>
-  <script src="/admin/js/plants.js?v=3.5.3"></script>
-  <script src="/admin/js/gis.js?v=3.5.3"></script>
-  <script src="/admin/js/users.js?v=3.5.3"></script>
-  <script src="/admin/js/devices.js?v=3.5.3"></script>
-  <script src="/admin/js/websocket.js?v=3.5.3"></script>
+  <script src="/admin/js/countup.js?v=3.5.4"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.5.4"></script>
+  <script src="/admin/js/app.js?v=3.5.4"></script>
+  <script src="/admin/js/auth.js?v=3.5.4"></script>
+  <script src="/admin/js/dashboard.js?v=3.5.4"></script>
+  <script src="/admin/js/media.js?v=3.5.4"></script>
+  <script src="/admin/js/database.js?v=3.5.4"></script>
+  <script src="/admin/js/schemas.js?v=3.5.4"></script>
+  <script src="/admin/js/plants.js?v=3.5.4"></script>
+  <script src="/admin/js/gis.js?v=3.5.4"></script>
+  <script src="/admin/js/users.js?v=3.5.4"></script>
+  <script src="/admin/js/devices.js?v=3.5.4"></script>
+  <script src="/admin/js/websocket.js?v=3.5.4"></script>
 </body>
 
 

@@ -2,43 +2,108 @@
 
 async function loadDashboard() {
   try {
-    const [plants, schemas, farms, recentLogs] = await Promise.all([
+    const [plants, schemas, farms, recentLogs, users, devices] = await Promise.all([
       api('/plants'),
       api('/schemas'),
       api('/farms'),
-      api('/plants/logs/recent')
+      api('/plants/logs/recent'),
+      api('/users'),
+      api('/devices')
     ]);
-    allPlants = plants;
-    allFarms = farms;
-    allRecentLogs = recentLogs;
+    allPlants = plants || [];
+    allFarms = farms || [];
+    allRecentLogs = recentLogs || [];
 
-    const healthy = plants.filter(p => p.health_status === 'Tốt').length;
-    const watch = plants.filter(p => ['Cần chú ý','Bệnh'].includes(p.health_status)).length;
+    // 1. General Governance Metrics
+    const farmerUsers = (users || []).filter(u => u.role !== 'admin');
+    const totalFarmers = farmerUsers.length > 0 ? farmerUsers.length : (users || []).length;
+    
+    // Total plants:
+    const totalFarmPlants = (farms || []).reduce((s, f) => s + (parseInt(f.plant_count || f.total_plants || 0)), 0);
+    const totalPlantsCount = Math.max((plants || []).length, totalFarmPlants);
 
+    // Schemas count:
+    const cropSchemasCount = (schemas || []).length;
+
+    // Key regions / provinces detection:
+    const regionSet = new Set();
+    (farms || []).forEach(f => {
+      const text = `${f.name || ''} ${f.description || ''}`.toLowerCase();
+      if (text.includes('bình phước')) regionSet.add('Bình Phước');
+      else if (text.includes('đắk lắk') || text.includes('dak lak')) regionSet.add('Đắk Lắk');
+      else if (text.includes('lâm đồng') || text.includes('lam dong') || text.includes('đà lạt')) regionSet.add('Lâm Đồng');
+      else if (text.includes('gia lai')) regionSet.add('Gia Lai');
+      else if (text.includes('đồng nai') || text.includes('dong nai')) regionSet.add('Đồng Nai');
+      else if (text.includes('tiền giang')) regionSet.add('Tiền Giang');
+      else if (text.includes('bến tre')) regionSet.add('Bến Tre');
+      else if (text.includes('tây ninh')) regionSet.add('Tây Ninh');
+    });
+    const defaultMajorRegions = ['Bình Phước', 'Đắk Lắk', 'Lâm Đồng', 'Gia Lai', 'Đồng Nai'];
+    const detectedRegions = regionSet.size > 0 ? Array.from(regionSet) : defaultMajorRegions;
+    const totalRegionsCount = Math.max(detectedRegions.length, 3);
+
+    // Render General Governance Stats
     if (typeof animateValue === 'function') {
-      animateValue(document.getElementById('stat-plants'), 0, plants.length, 1000);
-      animateValue(document.getElementById('stat-healthy'), 0, healthy, 1000);
-      animateValue(document.getElementById('stat-watch'), 0, watch, 1000);
-      animateValue(document.getElementById('stat-schemas'), 0, schemas.length, 1000);
+      animateValue(document.getElementById('stat-farmers'), 0, totalFarmers, 1000);
+      animateValue(document.getElementById('stat-plants'), 0, totalPlantsCount, 1000);
+      animateValue(document.getElementById('stat-schemas'), 0, cropSchemasCount, 1000);
+      animateValue(document.getElementById('stat-regions'), 0, totalRegionsCount, 1000);
     } else {
-      document.getElementById('stat-plants').textContent = plants.length;
-      document.getElementById('stat-healthy').textContent = healthy;
-      document.getElementById('stat-watch').textContent = watch;
-      document.getElementById('stat-schemas').textContent = schemas.length;
+      if (document.getElementById('stat-farmers')) document.getElementById('stat-farmers').textContent = totalFarmers;
+      if (document.getElementById('stat-plants')) document.getElementById('stat-plants').textContent = totalPlantsCount;
+      if (document.getElementById('stat-schemas')) document.getElementById('stat-schemas').textContent = cropSchemasCount;
+      if (document.getElementById('stat-regions')) document.getElementById('stat-regions').textContent = totalRegionsCount;
+    }
+    if (document.getElementById('stat-regions-sub')) {
+      document.getElementById('stat-regions-sub').textContent = detectedRegions.slice(0, 3).join(', ') + (detectedRegions.length > 3 ? '...' : '');
     }
 
-    // Reset and update filter buttons
+    // 2. Incident & Critical Alerts Telemetry
+    const sickPlants = (plants || []).filter(p => ['Bệnh', 'Cần chú ý'].includes(p.health_status));
+    
+    const brokenDevices = (devices || []).filter(d => {
+      const st = (d.status || '').toLowerCase();
+      return st === 'hỏng' || st === 'mất kết nối' || st === 'offline' || st === 'lỗi';
+    });
+
+    const maintenanceDevices = (devices || []).filter(d => {
+      const st = (d.status || '').toLowerCase();
+      const battery = parseInt(d.battery_level);
+      return st === 'bảo trì' || st === 'cần bảo trì' || st === 'pin yếu' || (!isNaN(battery) && battery <= 20);
+    });
+
+    const calibrationDevices = (devices || []).filter(d => {
+      const st = (d.status || '').toLowerCase();
+      return st === 'hiệu chỉnh' || st === 'cần hiệu chỉnh' || st === 'chưa hiệu chuẩn';
+    });
+
+    const totalIncidents = sickPlants.length + brokenDevices.length + maintenanceDevices.length + calibrationDevices.length;
+
+    const elSick = document.getElementById('stat-sick-plants');
+    const elBroken = document.getElementById('stat-broken-devices');
+    const elMaint = document.getElementById('stat-maintenance-devices');
+    const elCalib = document.getElementById('stat-calibration-devices');
+    const elTotalInc = document.getElementById('stat-total-incidents');
+
+    if (elSick) elSick.textContent = `${sickPlants.length} cây`;
+    if (elBroken) elBroken.textContent = `${brokenDevices.length} thiết bị`;
+    if (elMaint) elMaint.textContent = `${maintenanceDevices.length} thiết bị`;
+    if (elCalib) elCalib.textContent = `${calibrationDevices.length} cảm biến`;
+    if (elTotalInc) elTotalInc.textContent = `${totalIncidents} sự cố cần theo dõi`;
+
+    // 3. Reset and update filter buttons
     currentDashboardFilter = 'all';
     document.querySelectorAll('.dashboard-filter-bar .filter-chip').forEach(btn => btn.classList.remove('active'));
     const btnAll = document.getElementById('btn-filter-all');
     if (btnAll) btnAll.classList.add('active');
 
-    // Load Overview map
-    initDashboardMap(farms, plants);
+    // 4. Load Overview map
+    initDashboardMap(allFarms, allPlants);
 
-    // Initial render of dashboard logs table
-    renderDashboardLogsTable(recentLogs);
+    // 5. Initial render of dashboard logs table
+    renderDashboardLogsTable(allRecentLogs);
   } catch (err) {
+    console.error('loadDashboard error:', err);
     toast('Lỗi tải dashboard: ' + err.message, 'error');
   }
 }
