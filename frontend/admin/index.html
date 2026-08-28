@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta http-equiv="content-language" content="vi">
+<meta name="google" content="notranslate">
 <title>Sổ Nông Tân Bảo Agtech v1.1.1 — Quản trị</title>
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <link rel="shortcut icon" type="image/svg+xml" href="/assets/favicon.svg">
@@ -191,29 +192,31 @@
         <span id="login-error-text"></span>
       </div>
 
-      <div class="form-group">
-        <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
-        <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
-      </div>
-      <div class="form-group">
-        <div class="form-label-row">
-          <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
-          <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
-            <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
-          </a>
+      <form id="admin-login-form" onsubmit="event.preventDefault(); doLogin();">
+        <div class="form-group">
+          <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
+          <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
         </div>
-        <div class="password-input-wrap">
-          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
-          <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
-            <i id="toggle-pass-icon" class="fa fa-eye"></i>
-          </button>
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
+            <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
+              <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
+            </a>
+          </div>
+          <div class="password-input-wrap">
+            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
+              <i id="toggle-pass-icon" class="fa fa-eye"></i>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <button class="btn-login" id="login-btn" onclick="doLogin()">
-        <span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>
-        <span class="btn-login-shimmer" aria-hidden="true"></span>
-      </button>
+        <button type="submit" class="btn-login" id="login-btn">
+          <span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>
+          <span class="btn-login-shimmer" aria-hidden="true"></span>
+        </button>
+      </form>
 
       <!-- Register Account Link -->
       <div style="text-align:center; margin-top:16px;">
@@ -308,11 +311,11 @@
         </div>
         <div class="form-group" style="margin-bottom:16px;">
           <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-lock" style="color:#059669"></i> Mật khẩu đăng nhập *</label>
-          <input type="password" id="reg-pass" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+          <input type="password" id="reg-pass" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
         <div class="form-group" style="margin-bottom:6px;">
           <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-key" style="color:#059669"></i> Xác nhận mật khẩu *</label>
-          <input type="password" id="reg-pass-confirm" placeholder="Nhập lại mật khẩu" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
+          <input type="password" id="reg-pass-confirm" placeholder="Nhập lại mật khẩu" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
       </div>
 
@@ -2100,7 +2103,7 @@
       
       <div class="field">
         <label id="f-user-pass-label">Mật khẩu *</label>
-        <input type="password" id="f-user-pass" placeholder="••••••••">
+        <input type="password" id="f-user-pass" placeholder="••••••••" autocomplete="new-password">
         <small id="f-user-pass-help" style="display:none; font-size:11px; color:var(--gray-400); margin-top:4px;">
           Để trống nếu không muốn thay đổi mật khẩu
         </small>
