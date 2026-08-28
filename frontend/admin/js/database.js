@@ -8,7 +8,6 @@ let dbUsersCache = [];
 let dbFarmsCache = [];
 let dbPlantsCache = [];
 let activeDbTab = 'cultivation';
-let supplyGroupMode = 'category'; // 'category', 'farm', 'flat'
 
 // Distinct Category Badge Styles & Colors
 const supplyCategoryConfigs = {
@@ -111,20 +110,6 @@ function switchDatabaseTab(tab, syncUrl = true) {
 }
 
 
-function setSupplyGroupMode(mode) {
-  supplyGroupMode = mode;
-  ['cat', 'farm', 'flat'].forEach(m => {
-    const btn = document.getElementById(`btn-supply-group-${m}`);
-    if (btn) {
-      const active = (m === mode || (m === 'cat' && mode === 'category'));
-      btn.style.background = active ? '#059669' : 'transparent';
-      btn.style.color = active ? '#ffffff' : '#475569';
-      btn.style.fontWeight = active ? '800' : '700';
-    }
-  });
-
-  renderSuppliesTable(allSuppliesCache);
-}
 
 // ── Tab 1: Dữ liệu Canh tác (Split-View Master-Detail AgTech ERP) ──
 let currentDbSelectedFarmId = null;
@@ -646,8 +631,10 @@ function onSupplyFilterChange() {
   loadSuppliesTab();
 }
 
-// ── Tab 2: Supplies Catalog ──
+// ── Tab 2: Supplies Catalog & ERP Inventory Suite ──
 let allSuppliesCache = [];
+let supplyGroupMode = 'flat';
+let currentDbActiveSupplyChip = 'all';
 
 async function loadSuppliesTab() {
   const tbody = document.getElementById('supplies-table-body');
@@ -660,23 +647,172 @@ async function loadSuppliesTab() {
   if (userId) queryParams.set('user_id', userId);
   if (farmId) queryParams.set('farm_id', farmId);
 
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải kho vật tư...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải kho vật tư...</td></tr>';
 
   try {
     const supplies = await api(`/supplies?${queryParams.toString()}`) || [];
     allSuppliesCache = supplies;
-    renderSuppliesTable(supplies);
+    updateSuppliesKPICards(supplies);
+    renderSupplyChipsBar(supplies);
+    filterSupplies();
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
   }
 }
 
+function updateSuppliesKPICards(supplies) {
+  const totalCountEl = document.getElementById('kpi-supply-total-count');
+  const totalValEl = document.getElementById('kpi-supply-total-value');
+  const lowStockEl = document.getElementById('kpi-supply-low-stock');
+  const catEl = document.getElementById('kpi-supply-categories');
+
+  let totalSKU = supplies.length;
+  let totalValue = 0;
+  let lowStockCount = 0;
+  const catMap = {};
+
+  supplies.forEach(s => {
+    const cat = s.category || s.type || 'Vật tư';
+    catMap[cat] = (catMap[cat] || 0) + 1;
+    const isEndless = ['Nhân công', 'Tiền nước'].includes(cat);
+    const qty = parseFloat(s.stock_quantity || s.quantity || 0);
+    const price = parseFloat(s.unit_price || s.package_price || 0);
+
+    if (!isNaN(qty) && !isNaN(price) && !isEndless && qty > 0 && price > 0) {
+      totalValue += (qty * price);
+    }
+    if (!isEndless && qty <= 5) {
+      lowStockCount++;
+    }
+  });
+
+  if (totalCountEl) totalCountEl.textContent = totalSKU;
+  if (totalValEl) totalValEl.textContent = totalValue > 0 ? totalValue.toLocaleString('vi-VN') + ' đ' : '0 đ';
+  if (lowStockEl) lowStockEl.textContent = lowStockCount;
+  if (catEl) catEl.textContent = `${Object.keys(catMap).length} Nhóm hàng`;
+}
+
+function renderSupplyChipsBar(supplies) {
+  const container = document.getElementById('db-supply-chips-bar');
+  if (!container) return;
+
+  const counts = { all: supplies.length, low_stock: 0, endless: 0 };
+  supplies.forEach(s => {
+    const cat = s.category || s.type || 'Khác';
+    counts[cat] = (counts[cat] || 0) + 1;
+    const isEndless = ['Nhân công', 'Tiền nước'].includes(cat);
+    const qty = parseFloat(s.stock_quantity || s.quantity || 0);
+    if (!isEndless && qty <= 5) counts.low_stock++;
+    if (isEndless) counts.endless++;
+  });
+
+  const availableCategories = Object.keys(counts).filter(k => !['all', 'low_stock', 'endless'].includes(k) && counts[k] > 0);
+
+  let chips = [
+    { id: 'all', label: 'Tất cả mặt hàng', icon: 'fa-boxes-stacked', count: counts.all },
+    { id: 'low_stock', label: 'Cảnh báo tồn thấp (≤ 5)', icon: 'fa-triangle-exclamation', count: counts.low_stock, isAlert: true }
+  ];
+
+  availableCategories.forEach(cat => {
+    const cfg = getSupplyCatConfig(cat);
+    chips.push({ id: cat, label: cat, icon: cfg.icon, count: counts[cat] });
+  });
+
+  if (counts.endless > 0) {
+    chips.push({ id: 'endless', label: 'Dịch vụ & Vô hạn', icon: 'fa-infinity', count: counts.endless });
+  }
+
+  container.innerHTML = chips.map(c => {
+    const isActive = (currentDbActiveSupplyChip === c.id);
+    let chipStyle = '';
+    if (isActive) {
+      chipStyle = c.isAlert 
+        ? 'background:#dc2626; color:#ffffff; border:1.5px solid #dc2626;' 
+        : 'background:#059669; color:#ffffff; border:1.5px solid #059669;';
+    } else {
+      chipStyle = c.isAlert 
+        ? 'background:#fffafb; color:#dc2626; border:1.5px solid #fecaca;' 
+        : 'background:#ffffff; color:#475569; border:1.5px solid #cbd5e1;';
+    }
+
+    return `
+      <button type="button" onclick="filterSuppliesByChip('${esc(c.id)}')"
+              style="padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s ease; ${chipStyle} display:inline-flex; align-items:center; gap:6px;">
+        <i class="fa-solid ${c.icon}"></i> ${esc(c.label)} <span style="opacity:0.85; font-size:11px;">(${c.count})</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function filterSuppliesByChip(chipType) {
+  currentDbActiveSupplyChip = chipType;
+  renderSupplyChipsBar(allSuppliesCache);
+  filterSupplies();
+}
+window.filterSuppliesByChip = filterSuppliesByChip;
+
+function renderStockGauge(stockQty, unit, isEndless) {
+  if (isEndless) {
+    return `<span class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; padding:4px 10px; border-radius:20px; border:1px solid #a7f3d0; font-size:11.5px;"><i class="fa-solid fa-infinity"></i> Vô hạn ∞</span>`;
+  }
+  const qty = parseFloat(stockQty || 0);
+  const isLow = qty <= 5;
+  const isMed = qty > 5 && qty <= 20;
+  const barColor = isLow ? '#dc2626' : (isMed ? '#f59e0b' : '#059669');
+  const barPct = Math.min(100, Math.max(12, isLow ? 20 : (isMed ? 55 : 90)));
+
+  return `
+    <div style="display:flex; flex-direction:column; gap:4px; min-width:140px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:800; font-size:13px; color:${barColor};">
+          ${qty} ${esc(unit || '')}
+        </span>
+        ${isLow ? `<span style="font-size:10px; font-weight:800; background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:6px; border:1px solid #fecaca;"><i class="fa-solid fa-triangle-exclamation"></i> Cần nhập</span>` : ''}
+      </div>
+      <div style="width:100%; height:6px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+        <div style="width:${barPct}%; height:100%; background:${barColor}; border-radius:4px;"></div>
+      </div>
+    </div>
+  `;
+}
+
+function setSupplyGroupMode(mode) {
+  supplyGroupMode = mode;
+
+  const btnFlat = document.getElementById('btn-supply-group-flat');
+  const btnGrid = document.getElementById('btn-supply-group-grid');
+  const btnCat = document.getElementById('btn-supply-group-cat');
+  const btnFarm = document.getElementById('btn-supply-group-farm');
+
+  [btnFlat, btnGrid, btnCat, btnFarm].forEach(b => {
+    if (b) {
+      b.style.background = 'transparent';
+      b.style.color = '#475569';
+      b.style.fontWeight = '700';
+    }
+  });
+
+  const activeBtn = mode === 'flat' ? btnFlat : (mode === 'grid' ? btnGrid : (mode === 'category' ? btnCat : btnFarm));
+  if (activeBtn) {
+    activeBtn.style.background = '#059669';
+    activeBtn.style.color = '#ffffff';
+    activeBtn.style.fontWeight = '800';
+  }
+
+  filterSupplies();
+}
+window.setSupplyGroupMode = setSupplyGroupMode;
+
 function renderSuppliesTable(supplies) {
+  const tableContainer = document.getElementById('supplies-table-container');
+  const gridContainer = document.getElementById('supplies-grid-container');
   const tbody = document.getElementById('supplies-table-body');
   if (!tbody) return;
 
   if (supplies.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Kho vật tư hiện chưa có sản phẩm nào theo bộ lọc đã chọn.</td></tr>';
+    if (tableContainer) tableContainer.style.display = 'block';
+    if (gridContainer) gridContainer.style.display = 'none';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-box-open" style="font-size:36px; margin-bottom:10px; display:block;"></i>Kho vật tư hiện chưa có sản phẩm nào theo bộ lọc đã chọn.</td></tr>';
     return;
   }
 
@@ -685,47 +821,39 @@ function renderSuppliesTable(supplies) {
     const cat = s.category || s.type || 'Vật tư';
     const cfg = getSupplyCatConfig(cat);
     const priceDisplay = s.unit_price ? parseFloat(s.unit_price).toLocaleString('vi-VN') + ' đ' : (s.package_price ? parseFloat(s.package_price).toLocaleString('vi-VN') + ' đ' : '—');
+    const isEndless = ['Nhân công', 'Tiền nước'].includes(cat);
+    const qty = parseFloat(s.stock_quantity || s.quantity || 0);
+    const price = parseFloat(s.unit_price || s.package_price || 0);
+    const totalAssetVal = (!isEndless && qty > 0 && price > 0) ? (qty * price).toLocaleString('vi-VN') + ' đ' : '—';
     const ownerText = s.creator_name || s.supplier || s.note || 'Admin';
 
-    const isEndlessCategory = ['Nhân công', 'Tiền nước'].includes(cat);
-
-    let stockDisplay = '';
-    if (isEndlessCategory) {
-      stockDisplay = `<span class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; padding:4px 10px; border-radius:20px; border:1px solid #a7f3d0; font-size:11.5px;"><i class="fa-solid fa-infinity"></i> Vô hạn ∞</span>`;
-    } else {
-      const isLowStock = (s.stock_quantity <= 5);
-      stockDisplay = `
-        <span style="font-weight:800; color:${isLowStock ? '#dc2626' : '#047857'};">
-          ${s.stock_quantity || s.quantity || 0} ${esc(s.unit || '')}
-        </span>
-        ${isLowStock ? `<span style="font-size:10px; background:#fee2e2; color:#dc2626; padding:1px 5px; border-radius:4px; margin-left:4px;">Gần hết</span>` : ''}
-      `;
-    }
-
     return `
-      <tr>
-        <td>
-          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` : `<div style="width:44px; height:44px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i class="fa-solid ${cfg.icon}"></i></div>`}
+      <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+        <td style="padding:12px 14px;">
+          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:46px; height:46px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` : `<div style="width:46px; height:46px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i class="fa-solid ${cfg.icon}"></i></div>`}
         </td>
-        <td style="font-weight:700; color:#0f172a;">
+        <td style="padding:12px 14px; font-weight:700; color:#0f172a;">
           <a href="javascript:void(0)" onclick="openViewSupplyModal(${s.id})" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#059669'" onmouseout="this.style.color='#0f172a'">
             ${esc(s.name)}
           </a>
         </td>
-        <td>
+        <td style="padding:12px 14px;">
           <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;">
             <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(cat)}
           </span>
         </td>
-        <td>${stockDisplay}</td>
-        <td style="font-weight:800; color:#059669;">${priceDisplay}</td>
-        <td style="font-size:12px; color:#64748b;">👤 ${esc(ownerText)}</td>
-        <td>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-primary btn-sm" onclick="openViewSupplyModal(${s.id})" style="padding:4px 8px; font-size:11.5px; font-weight:700;" title="Xem chi tiết">
+        <td style="padding:12px 14px;">
+          ${renderStockGauge(s.stock_quantity, s.unit, isEndless)}
+        </td>
+        <td style="padding:12px 14px; font-weight:800; color:#059669;">${priceDisplay}</td>
+        <td style="padding:12px 14px; font-weight:800; color:#0f172a;">${totalAssetVal}</td>
+        <td style="padding:12px 14px; font-size:12px; color:#64748b;">👤 ${esc(ownerText)}</td>
+        <td style="padding:12px 14px; text-align:center;">
+          <div style="display:inline-flex; gap:6px;">
+            <button class="btn btn-primary btn-sm" onclick="openViewSupplyModal(${s.id})" style="padding:5px 10px; font-size:11.5px; font-weight:700;" title="Xem chi tiết">
               <i class="fa-solid fa-eye"></i> Xem
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="editSupply(${s.id})" style="padding:4px 8px; font-size:11.5px; font-weight:700;" title="Chỉnh sửa">
+            <button class="btn btn-secondary btn-sm" onclick="editSupply(${s.id})" style="padding:5px 10px; font-size:11.5px; font-weight:700;" title="Chỉnh sửa">
               <i class="fa fa-pen"></i> Sửa
             </button>
           </div>
@@ -734,13 +862,72 @@ function renderSuppliesTable(supplies) {
     `;
   };
 
-  // Flat List View
+  // 1. Grid Cards View Mode
+  if (supplyGroupMode === 'grid') {
+    if (tableContainer) tableContainer.style.display = 'none';
+    if (gridContainer) {
+      gridContainer.style.display = 'grid';
+      gridContainer.innerHTML = supplies.map(s => {
+        const cat = s.category || s.type || 'Vật tư';
+        const cfg = getSupplyCatConfig(cat);
+        const priceDisplay = s.unit_price ? parseFloat(s.unit_price).toLocaleString('vi-VN') + ' đ' : (s.package_price ? parseFloat(s.package_price).toLocaleString('vi-VN') + ' đ' : '—');
+        const isEndless = ['Nhân công', 'Tiền nước'].includes(cat);
+
+        return `
+          <div class="card" style="border-radius:14px; overflow:hidden; border:1.5px solid #e2e8f0; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;">
+                <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:3px 10px; border-radius:20px; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
+                  <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(cat)}
+                </span>
+                <span style="font-size:14px; font-weight:800; color:#059669;">${priceDisplay}</span>
+              </div>
+
+              <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+                ${s.image_url 
+                  ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:54px; height:54px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` 
+                  : `<div style="width:54px; height:54px; border-radius:10px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i class="fa-solid ${cfg.icon}"></i></div>`
+                }
+                <div style="flex:1;">
+                  <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:800; color:#0f172a; line-height:1.3; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">
+                    ${esc(s.name)}
+                  </h4>
+                  <div style="font-size:11.5px; color:#64748b;">👤 ${esc(s.creator_name || s.supplier || 'Admin')}</div>
+                </div>
+              </div>
+
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px; margin-top:8px;">
+                <div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:4px;">Mức Tồn Kho</div>
+                ${renderStockGauge(s.stock_quantity, s.unit, isEndless)}
+              </div>
+            </div>
+
+            <div style="padding:10px 16px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+              <button class="btn btn-secondary btn-sm" onclick="openViewSupplyModal(${s.id})" style="font-size:11.5px; font-weight:700; padding:4px 10px;">
+                <i class="fa-solid fa-eye"></i> Chi tiết
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="editSupply(${s.id})" style="font-size:11.5px; font-weight:700; padding:4px 10px;">
+                <i class="fa fa-pen"></i> Sửa
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    return;
+  }
+
+  // Table Modes
+  if (tableContainer) tableContainer.style.display = 'block';
+  if (gridContainer) gridContainer.style.display = 'none';
+
+  // 2. Flat List View
   if (supplyGroupMode === 'flat') {
     tbody.innerHTML = supplies.map(renderRow).join('');
     return;
   }
 
-  // Category Grouped View
+  // 3. Category Grouped View
   if (supplyGroupMode === 'category') {
     const groups = {};
     supplies.forEach(s => {
@@ -756,16 +943,16 @@ function renderSuppliesTable(supplies) {
 
       html += `
         <tr style="background:#f8fafc; border-top:2px solid ${cfg.border}; border-bottom:1.5px solid ${cfg.border};">
-          <td colspan="7" style="padding:10px 16px;">
+          <td colspan="8" style="padding:10px 16px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="width:24px; height:24px; border-radius:6px; background:${cfg.bg}; color:${cfg.iconColor}; display:inline-flex; align-items:center; justify-content:center; font-size:13px; border:1px solid ${cfg.border};">
                   <i class="fa-solid ${cfg.icon}"></i>
                 </span>
-                <strong style="font-size:13.5px; color:${cfg.color}; font-weight:800;">HOẠT ĐỘNG / HẠNG MỤC: ${esc(catName).toUpperCase()}</strong>
+                <strong style="font-size:13px; color:${cfg.color}; font-weight:800;">NHÓM VẬT TƯ: ${esc(catName).toUpperCase()}</strong>
               </div>
               <span class="badge" style="background:#e2e8f0; color:#334155; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px;">
-                ${catItems.length} sản phẩm trong kho
+                ${catItems.length} sản phẩm
               </span>
             </div>
           </td>
@@ -779,7 +966,7 @@ function renderSuppliesTable(supplies) {
     return;
   }
 
-  // Farm / Customer Grouped View
+  // 4. Farm / Customer Grouped View
   if (supplyGroupMode === 'farm') {
     const groups = {};
     supplies.forEach(s => {
@@ -793,9 +980,9 @@ function renderSuppliesTable(supplies) {
       const items = groups[ownerName];
       html += `
         <tr style="background:#f0fdf4; border-top:2px solid #a7f3d0; border-bottom:1.5px solid #a7f3d0;">
-          <td colspan="7" style="padding:10px 16px;">
+          <td colspan="8" style="padding:10px 16px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <strong style="font-size:13.5px; color:#047857; font-weight:800;"><i class="fa-solid fa-house-chimney-window"></i> NÔNG HỘ / TRANG TRẠI: ${esc(ownerName).toUpperCase()}</strong>
+              <strong style="font-size:13px; color:#047857; font-weight:800;"><i class="fa-solid fa-house-chimney-window"></i> NÔNG HỘ / TRANG TRẠI: ${esc(ownerName).toUpperCase()}</strong>
               <span class="badge" style="background:#dcfce7; color:#15803d; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px;">
                 ${items.length} vật tư khai báo
               </span>
@@ -812,17 +999,40 @@ function renderSuppliesTable(supplies) {
 
 function filterSupplies() {
   const q = (document.getElementById('supply-search')?.value || '').toLowerCase().trim();
-  if (!q) {
-    renderSuppliesTable(allSuppliesCache);
-    return;
+  let filtered = allSuppliesCache;
+
+  // Filter by active chip
+  if (currentDbActiveSupplyChip !== 'all') {
+    if (currentDbActiveSupplyChip === 'low_stock') {
+      filtered = filtered.filter(s => {
+        const isEndless = ['Nhân công', 'Tiền nước'].includes(s.category || s.type);
+        const qty = parseFloat(s.stock_quantity || s.quantity || 0);
+        return !isEndless && qty <= 5;
+      });
+    } else if (currentDbActiveSupplyChip === 'endless') {
+      filtered = filtered.filter(s => ['Nhân công', 'Tiền nước'].includes(s.category || s.type));
+    } else {
+      filtered = filtered.filter(s => (s.category || s.type) === currentDbActiveSupplyChip);
+    }
   }
-  const filtered = allSuppliesCache.filter(s =>
-    (s.name || '').toLowerCase().includes(q) ||
-    (s.category || s.type || '').toLowerCase().includes(q) ||
-    (s.creator_name || s.supplier || s.note || '').toLowerCase().includes(q)
-  );
+
+  // Filter by query string
+  if (q) {
+    filtered = filtered.filter(s =>
+      (s.name || '').toLowerCase().includes(q) ||
+      (s.category || s.type || '').toLowerCase().includes(q) ||
+      (s.creator_name || s.supplier || s.note || '').toLowerCase().includes(q)
+    );
+  }
+
   renderSuppliesTable(filtered);
 }
+window.filterSupplies = filterSupplies;
+
+function exportSuppliesPDF() {
+  window.print();
+}
+window.exportSuppliesPDF = exportSuppliesPDF;
 
 // ── Supply Action Modals (View & Edit) ──
 
@@ -1211,6 +1421,8 @@ function closeViewHistoryModal() {
 window.initDatabasePage = initDatabasePage;
 window.switchDatabaseTab = switchDatabaseTab;
 window.setSupplyGroupMode = setSupplyGroupMode;
+window.filterSuppliesByChip = filterSuppliesByChip;
+window.exportSuppliesPDF = exportSuppliesPDF;
 window.selectTreeForDetail = selectTreeForDetail;
 window.filterMasterPlantList = filterMasterPlantList;
 window.filterTimelineByActivity = filterTimelineByActivity;

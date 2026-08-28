@@ -653,77 +653,152 @@
           </div>
         </div>
 
-        <!-- ── TAB 2: VẬT TƯ (SUPPLIES & INVENTORY) ── -->
+        <!-- ── TAB 2: VẬT TƯ & KHO (ENTERPRISE AGTECH ERP INVENTORY SUITE) ── -->
         <div class="tab-pane" id="db-pane-supplies" style="display:none;">
-          <div class="card" style="margin-bottom:20px;">
-            <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
-              <h3 style="margin:0; font-size:15px;"><i class="fa-solid fa-filter" style="color:var(--green)"></i> Lọc vật tư theo Khách hàng</h3>
-            </div>
-            
-            <div style="padding:16px; display:flex; gap:12px; flex-wrap:wrap; background:#ffffff;">
-              <div style="flex:1; min-width:200px;">
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">1. Khách hàng (Nông hộ)</label>
-                <select id="db-supply-filter-user" onchange="onSupplyFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600;">
-                  <option value="">— Tất cả Khách hàng —</option>
-                </select>
-              </div>
 
-              <div style="flex:1; min-width:200px;">
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">2. Trang trại</label>
-                <select id="db-supply-filter-farm" onchange="loadSuppliesTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600;">
-                  <option value="">— Tất cả Trang trại —</option>
-                </select>
+          <!-- TẦNG 1: EXECUTIVE KPI & WAREHOUSE TELEMETRY -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
+            <!-- KPI 1: Tổng Mặt Hàng -->
+            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
+              <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-boxes-stacked"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Mặt Hàng (SKU)</div>
+                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-supply-total-count">0</div>
+              </div>
+            </div>
+
+            <!-- KPI 2: Tổng Giá Trị Tồn Kho -->
+            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
+              <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-coins"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Giá Trị Tồn Kho</div>
+                <div style="font-size:20px; font-weight:800; color:#059669; margin-top:2px;" id="kpi-supply-total-value">0 đ</div>
+              </div>
+            </div>
+
+            <!-- KPI 3: Cảnh Báo Sắp Hết Hàng (Low Stock) -->
+            <div class="card" onclick="filterSuppliesByChip('low_stock')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc ngay các mặt hàng sắp hết">
+              <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Cảnh Báo Tồn Thấp (≤ 5)</div>
+                <div style="font-size:22px; font-weight:800; color:#dc2626; margin-top:2px;" id="kpi-supply-low-stock">0</div>
+              </div>
+            </div>
+
+            <!-- KPI 4: Phân Loại Danh Mục -->
+            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
+              <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Phân Loại Danh Mục</div>
+                <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:4px;" id="kpi-supply-categories">
+                  0 Nhóm hàng
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-              <h3 style="margin:0;"><i class="fa-solid fa-boxes-packing" style="color:var(--green)"></i> Quản lý Kho Vật tư & Sản phẩm Canh tác</h3>
+          <!-- TẦNG 2: CONTROL BAR & SMART FILTER CHIPS -->
+          <div class="card" style="margin-bottom:20px; border-radius:14px; border:1px solid #e2e8f0;">
+            <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:14px;">
               
-              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <!-- Grouping View Switcher -->
-                <div style="display:flex; background:#e2e8f0; padding:3px; border-radius:10px; gap:4px;">
-                  <button type="button" id="btn-supply-group-cat" onclick="setSupplyGroupMode('category')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
-                    <i class="fa-solid fa-layer-group"></i> Nhóm theo Loại vật tư
-                  </button>
-                  <button type="button" id="btn-supply-group-farm" onclick="setSupplyGroupMode('farm')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-house-chimney-window"></i> Nhóm theo Trang trại
-                  </button>
-                  <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-list-ul"></i> Dạng danh sách
-                  </button>
+              <!-- Row 1: Dropdown Filters & Search & ERP Action Buttons -->
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                
+                <!-- Left: 2-Level Filter & Search -->
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
+                  <div style="min-width:180px; flex:1;">
+                    <select id="db-supply-filter-user" onchange="onSupplyFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
+                      <option value="">— Tất cả Khách hàng —</option>
+                    </select>
+                  </div>
+
+                  <div style="min-width:180px; flex:1;">
+                    <select id="db-supply-filter-farm" onchange="loadSuppliesTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
+                      <option value="">— Tất cả Trang trại / Kho —</option>
+                    </select>
+                  </div>
+
+                  <div style="min-width:220px; flex:1.2;">
+                    <input type="text" id="supply-search" placeholder="🔍 Tìm theo tên, hoạt chất, quy cách..." oninput="filterSupplies()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                  </div>
                 </div>
 
-                <button class="btn btn-primary" onclick="openSupplyModal()">
-                  <i class="fa fa-plus"></i> Thêm vật tư mới
-                </button>
+                <!-- Right: Action Buttons -->
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
+                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kho
+                  </button>
+
+                  <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+                    <i class="fa fa-plus"></i> + Nhập Vật Tư Mới
+                  </button>
+                </div>
               </div>
+
+              <!-- Row 2: Smart Filter Chips Bar & View Switcher -->
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
+                <!-- Filter Chips -->
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-supply-chips-bar">
+                  <!-- Generated dynamically: Tất cả, Phân bón, Thuốc BVTV, Tồn thấp, Vô hạn... -->
+                </div>
+
+                <!-- View Mode Switcher -->
+                <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0;">
+                  <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
+                    <i class="fa-solid fa-table-list"></i> Bảng ERP
+                  </button>
+                  <button type="button" id="btn-supply-group-grid" onclick="setSupplyGroupMode('grid')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
+                    <i class="fa-solid fa-grip"></i> Lưới Thẻ Card
+                  </button>
+                  <button type="button" id="btn-supply-group-cat" onclick="setSupplyGroupMode('category')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
+                    <i class="fa-solid fa-layer-group"></i> Nhóm Loại
+                  </button>
+                  <button type="button" id="btn-supply-group-farm" onclick="setSupplyGroupMode('farm')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
+                    <i class="fa-solid fa-house-chimney-window"></i> Nhóm Trang Trại
+                  </button>
+                </div>
+              </div>
+
             </div>
+          </div>
 
+          <!-- TẦNG 3: ERP DATA MATRIX TABLE & GRID CONTAINER -->
+          <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
             
-            <div style="padding:20px;">
-              <div class="search-bar" style="margin-bottom:16px;">
-                <input type="text" id="supply-search" placeholder="🔍 Tìm theo tên phân bón, thuốc bảo vệ thực vật, vật tư..." oninput="filterSupplies()" style="width:100%; padding:10px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px;">
-              </div>
-
-              <table>
+            <!-- Table View Container -->
+            <div id="supplies-table-container" style="overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; text-align:left;">
                 <thead>
-                  <tr>
-                    <th>Ảnh sản phẩm</th>
-                    <th>Tên vật tư</th>
-                    <th>Loại vật tư</th>
-                    <th>Số lượng tồn kho</th>
-                    <th>Đơn giá (VNĐ)</th>
-                    <th>Nông hộ / Ghi chú</th>
-                    <th style="width:150px">Thao tác</th>
+                  <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; color:#475569; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                    <th style="padding:12px 14px; width:70px;">Ảnh</th>
+                    <th style="padding:12px 14px;">Tên Vật Tư / Sản Phẩm</th>
+                    <th style="padding:12px 14px;">Phân Loại</th>
+                    <th style="padding:12px 14px; min-width:180px;">Mức Tồn Kho & Dung Lượng</th>
+                    <th style="padding:12px 14px;">Đơn Giá</th>
+                    <th style="padding:12px 14px;">Tổng Giá Trị Tồn</th>
+                    <th style="padding:12px 14px;">Kho / Nông Hộ</th>
+                    <th style="padding:12px 14px; width:130px; text-align:center;">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody id="supplies-table-body">
-                  <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu vật tư...</td></tr>
+                  <tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu kho vật tư...</td></tr>
                 </tbody>
               </table>
             </div>
+
+            <!-- Grid Cards View Container (Shown when mode is 'grid') -->
+            <div id="supplies-grid-container" style="display:none; padding:20px; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; background:#f8fafc;">
+              <!-- Populated dynamically by database.js -->
+            </div>
+
           </div>
         </div>
 
@@ -2597,20 +2672,20 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.4.1"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.4.1"></script>
-  <script src="/admin/js/app.js?v=3.4.1"></script>
-  <script src="/admin/js/auth.js?v=3.4.1"></script>
-  <script src="/admin/js/dashboard.js?v=3.4.1"></script>
-  <script src="/admin/js/media.js?v=3.4.1"></script>
-  <script src="/admin/js/database.js?v=3.4.1"></script>
-  <script src="/admin/js/schemas.js?v=3.4.1"></script>
-  <script src="/admin/js/plants.js?v=3.4.1"></script>
-  <script src="/admin/js/gis.js?v=3.4.1"></script>
-  <script src="/admin/js/users.js?v=3.4.1"></script>
-  <script src="/admin/js/devices.js?v=3.4.1"></script>
-  <script src="/admin/js/cost.js?v=3.4.1"></script>
-  <script src="/admin/js/websocket.js?v=3.4.1"></script>
+  <script src="/admin/js/countup.js?v=3.5.0"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.5.0"></script>
+  <script src="/admin/js/app.js?v=3.5.0"></script>
+  <script src="/admin/js/auth.js?v=3.5.0"></script>
+  <script src="/admin/js/dashboard.js?v=3.5.0"></script>
+  <script src="/admin/js/media.js?v=3.5.0"></script>
+  <script src="/admin/js/database.js?v=3.5.0"></script>
+  <script src="/admin/js/schemas.js?v=3.5.0"></script>
+  <script src="/admin/js/plants.js?v=3.5.0"></script>
+  <script src="/admin/js/gis.js?v=3.5.0"></script>
+  <script src="/admin/js/users.js?v=3.5.0"></script>
+  <script src="/admin/js/devices.js?v=3.5.0"></script>
+  <script src="/admin/js/cost.js?v=3.5.0"></script>
+  <script src="/admin/js/websocket.js?v=3.5.0"></script>
 </body>
 
 
