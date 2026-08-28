@@ -151,6 +151,19 @@ function initDashboardMap(farms, plants) {
   });
   dashboardMap = map;
 
+  function updateDashboardFarmPins(currentZoom) {
+    const isCloseZoom = currentZoom >= 12;
+    document.querySelectorAll('.farm-dashboard-pin').forEach(el => {
+      if (isCloseZoom) {
+        el.classList.remove('is-dot');
+        el.classList.add('is-full');
+      } else {
+        el.classList.remove('is-full');
+        el.classList.add('is-dot');
+      }
+    });
+  }
+
   map.on('zoom', () => {
     const zoom = map.getZoom();
     if (zoom < 16.5) {
@@ -158,6 +171,7 @@ function initDashboardMap(farms, plants) {
     } else {
       mapDiv.classList.remove('low-zoom');
     }
+    updateDashboardFarmPins(zoom);
   });
   if (map.getZoom() < 16.5) {
     mapDiv.classList.add('low-zoom');
@@ -282,27 +296,38 @@ function initDashboardMap(farms, plants) {
 
       if (centerLng !== null && centerLat !== null && !isNaN(centerLng) && !isNaN(centerLat)) {
         const pinEl = document.createElement('div');
-        pinEl.className = 'farm-dashboard-pin';
-        pinEl.style.cssText = `
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: ${farmColor};
-          color: #ffffff;
-          padding: 5px 12px;
-          border-radius: 20px;
-          font-size: 11.5px;
-          font-weight: 800;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-          border: 2px solid #ffffff;
-          cursor: pointer;
-          white-space: nowrap;
+        const initialZoom = map.getZoom ? map.getZoom() : 5;
+        pinEl.className = `farm-dashboard-pin ${initialZoom >= 12 ? 'is-full' : 'is-dot'}`;
+        
+        pinEl.innerHTML = `
+          <div class="farm-pin-dot-wrap" title="Trang trại: ${esc(farm.name)} (Bấm để phóng to)">
+            <div class="farm-pin-pulse" style="background:${farmColor};"></div>
+            <div class="farm-pin-dot" style="background:${farmColor};">
+              <i class="fa-solid fa-house" style="font-size:7.5px; color:#ffffff;"></i>
+            </div>
+          </div>
+          <div class="farm-pin-badge" style="background:${farmColor};">
+            <i class="fa-solid fa-house-flag"></i> ${esc(farm.name)}
+            ${farm.user_name ? `<small class="farm-pin-user">👤 ${esc(farm.user_name)}</small>` : ''}
+          </div>
         `;
-        pinEl.innerHTML = `<i class="fa-solid fa-house-flag"></i> ${esc(farm.name)} ${farm.user_name ? `<small style="background:rgba(255,255,255,0.25); padding:1px 6px; border-radius:10px; font-weight:700;">👤 ${esc(farm.user_name)}</small>` : ''}`;
 
-        new mapboxgl.Marker({ element: pinEl })
+        // Click to smoothly fly in when in Dot mode
+        pinEl.addEventListener('click', (ev) => {
+          if (map.getZoom() < 12) {
+            ev.stopPropagation();
+            map.flyTo({
+              center: [centerLng, centerLat],
+              zoom: 15.5,
+              essential: true,
+              duration: 1200
+            });
+          }
+        });
+
+        new mapboxgl.Marker({ element: pinEl, anchor: 'center' })
           .setLngLat([centerLng, centerLat])
-          .setPopup(new mapboxgl.Popup({ offset: 25 })
+          .setPopup(new mapboxgl.Popup({ offset: 20 })
             .setHTML(`
               <div class="map-tooltip">
                 <h4 style="color:${farmColor}"><i class="fa-solid fa-house-flag"></i> Trang trại: ${esc(farm.name)}</h4>
@@ -329,17 +354,17 @@ function initDashboardMap(farms, plants) {
           }
           if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
+          let color = '#22c55e';
+          if (plant.health_status === 'Cần chú ý') color = '#eab308';
+          else if (plant.health_status === 'Bệnh') color = '#ef4444';
+
           const wrapper = document.createElement('div');
-          wrapper.className = 'plant-marker-wrap';
+          wrapper.className = 'dashboard-plant-marker-wrap';
 
           const el = document.createElement('div');
-          let healthClass = 'health-default';
-          if (plant.health_status === 'Tốt') healthClass = 'health-tot';
-          else if (plant.health_status === 'Cần chú ý') healthClass = 'health-watch';
-          else if (plant.health_status === 'Bệnh') healthClass = 'health-sick';
-
-          el.className = `plant-id-marker ${healthClass}`;
-          el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
+          el.className = 'dashboard-plant-marker';
+          el.style.backgroundColor = color;
+          el.title = `Cây #${esc(plant.tree_code || plant.id)} - ${esc(plant.health_status)}`;
           wrapper.appendChild(el);
 
           const marker = new mapboxgl.Marker(wrapper)
@@ -347,21 +372,19 @@ function initDashboardMap(farms, plants) {
             .setPopup(new mapboxgl.Popup({ offset: 25 })
               .setHTML(`
                 <div class="map-tooltip">
-                  <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
+                  <h4 style="color:${color}"><i class="fa-solid fa-tree"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
                   ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                   <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                   <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
                   <div style="margin-top:8px">
-                    <button class="btn btn-primary btn-sm" onclick="openPlantModal(${plant.id})">Chi tiết</button>
+                    <button class="btn btn-primary btn-sm" onclick="showPage('plants'); openPlantModal(${plant.id});">Chi tiết cây</button>
                   </div>
                 </div>
               `)
             )
             .addTo(map);
 
-          dashboardMarkers.push({ marker, plant, element: el });
-          bounds.extend([lng, lat]);
-          hasBounds = true;
+          dashboardMarkers.push({ marker, plant, element: wrapper });
         }
       }
     });
@@ -369,6 +392,8 @@ function initDashboardMap(farms, plants) {
     if (hasBounds) {
       map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 1000 });
     }
+
+    updateDashboardFarmPins(map.getZoom());
 
     if (currentDashboardFilter !== 'all') {
       filterDashboard(currentDashboardFilter);

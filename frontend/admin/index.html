@@ -100,6 +100,92 @@
   border: none !important;
   cursor: pointer !important;
 }
+
+/* ════════ Multi-Scale Adaptive GIS Farm Markers ════════ */
+.farm-dashboard-pin {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+/* Dot mode (Zoom < 12) */
+.farm-dashboard-pin.is-dot .farm-pin-badge {
+  display: none !important;
+}
+.farm-dashboard-pin.is-dot .farm-pin-dot-wrap {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+.farm-dashboard-pin.is-dot .farm-pin-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.farm-dashboard-pin.is-dot:hover .farm-pin-dot {
+  transform: scale(1.35);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.55);
+}
+.farm-dashboard-pin.is-dot .farm-pin-pulse {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: farmPinRipple 2.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+  z-index: 1;
+  pointer-events: none;
+}
+@keyframes farmPinRipple {
+  0% { transform: scale(0.5); opacity: 0.85; }
+  100% { transform: scale(2.0); opacity: 0; }
+}
+
+/* Full Badge mode (Zoom >= 12) */
+.farm-dashboard-pin.is-full .farm-pin-dot-wrap {
+  display: none !important;
+}
+.farm-dashboard-pin.is-full .farm-pin-badge {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  border: 2px solid #ffffff;
+  white-space: nowrap;
+  animation: farmBadgeFadeIn 0.25s ease-out;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.farm-dashboard-pin.is-full:hover .farm-pin-badge {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+}
+.farm-dashboard-pin.is-full .farm-pin-user {
+  background: rgba(255,255,255,0.25);
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 11px;
+}
+@keyframes farmBadgeFadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
 </style>
 </head>
 
@@ -2785,19 +2871,19 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.5.4"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.5.4"></script>
-  <script src="/admin/js/app.js?v=3.5.4"></script>
-  <script src="/admin/js/auth.js?v=3.5.4"></script>
-  <script src="/admin/js/dashboard.js?v=3.5.4"></script>
-  <script src="/admin/js/media.js?v=3.5.4"></script>
-  <script src="/admin/js/database.js?v=3.5.4"></script>
-  <script src="/admin/js/schemas.js?v=3.5.4"></script>
-  <script src="/admin/js/plants.js?v=3.5.4"></script>
-  <script src="/admin/js/gis.js?v=3.5.4"></script>
-  <script src="/admin/js/users.js?v=3.5.4"></script>
-  <script src="/admin/js/devices.js?v=3.5.4"></script>
-  <script src="/admin/js/websocket.js?v=3.5.4"></script>
+  <script src="/admin/js/countup.js?v=3.5.5"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.5.5"></script>
+  <script src="/admin/js/app.js?v=3.5.5"></script>
+  <script src="/admin/js/auth.js?v=3.5.5"></script>
+  <script src="/admin/js/dashboard.js?v=3.5.5"></script>
+  <script src="/admin/js/media.js?v=3.5.5"></script>
+  <script src="/admin/js/database.js?v=3.5.5"></script>
+  <script src="/admin/js/schemas.js?v=3.5.5"></script>
+  <script src="/admin/js/plants.js?v=3.5.5"></script>
+  <script src="/admin/js/gis.js?v=3.5.5"></script>
+  <script src="/admin/js/users.js?v=3.5.5"></script>
+  <script src="/admin/js/devices.js?v=3.5.5"></script>
+  <script src="/admin/js/websocket.js?v=3.5.5"></script>
 </body>
 
 
