@@ -54,23 +54,11 @@ async function initDatabasePage() {
 
     const normalUsers = dbUsersCache.filter(u => u.role === 'user');
 
-    // Populate Tab 1 Filters
-    const uSelect = document.getElementById('db-filter-user');
-    if (uSelect) {
-      uSelect.innerHTML = '<option value="">— tất cả khách hàng —</option>' +
-        normalUsers.map(u => `<option value="${u.id}">👤 ${esc(u.full_name)} (${esc(u.phone || u.email)})</option>`).join('');
-    }
-
+    // Populate Tab 1 Farm Filter (Primary Step)
     const fSelect = document.getElementById('db-filter-farm');
     if (fSelect) {
-      fSelect.innerHTML = '<option value="">— tất cả trang trại —</option>' +
-        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
-    }
-
-    const pSelect = document.getElementById('db-filter-plant');
-    if (pSelect) {
-      pSelect.innerHTML = '<option value="">— Chọn Cây trồng để xem Nhật ký Canh tác —</option>' +
-        dbPlantsCache.map(p => `<option value="${p.id}">🌳 Cây #${p.tree_code || p.id} (${esc(p.plant_type)})</option>`).join('');
+      fSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại trước —</option>' +
+        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
     // Populate Tab 2 Supplies Filters
@@ -138,40 +126,129 @@ function setSupplyGroupMode(mode) {
   renderSuppliesTable(allSuppliesCache);
 }
 
-function onDbFilterChange() {
-  const userId = document.getElementById('db-filter-user')?.value;
-  const farmSelect = document.getElementById('db-filter-farm');
+function onDbFarmChange() {
+  const farmId = document.getElementById('db-filter-farm')?.value;
+  const statusBadge = document.getElementById('db-farm-status-badge');
+  const detailsSection = document.getElementById('db-farm-details-section');
+  const personnelList = document.getElementById('db-farm-personnel-list');
+  const personnelCount = document.getElementById('db-farm-personnel-count');
+  const plantsCount = document.getElementById('db-farm-plants-count');
   const plantSelect = document.getElementById('db-filter-plant');
+  const summaryBox = document.getElementById('db-plant-cost-summary');
+  const timelineContainer = document.getElementById('db-cultivation-timeline-container');
 
-  let filteredFarms = dbFarmsCache;
-  if (userId) {
-    filteredFarms = dbFarmsCache.filter(f => f.user_id == userId);
-    if (farmSelect && farmSelect.value && !filteredFarms.some(f => f.id == farmSelect.value)) {
-      farmSelect.value = '';
+  if (!farmId) {
+    if (statusBadge) statusBadge.textContent = 'Chưa chọn trang trại';
+    if (detailsSection) detailsSection.style.display = 'none';
+    if (summaryBox) summaryBox.style.display = 'none';
+    if (timelineContainer) {
+      timelineContainer.innerHTML = `
+        <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
+          <i class="fa-solid fa-house-chimney-window" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
+          <p style="font-size:14px; font-weight:700; color:#475569;">Vui lòng chọn Trang trại ở Bước 1 để bắt đầu theo dõi nhân sự, cây trồng và nhật ký canh tác.</p>
+        </div>`;
+    }
+    return;
+  }
+
+  const farm = dbFarmsCache.find(f => f.id == farmId);
+  if (statusBadge) statusBadge.textContent = `Đang chọn: ${farm ? farm.name : ''}`;
+
+  // 1. Find all users in this farm (Owner + assigned farmers) - NO ROLES DISPLAYED
+  const farmUsersMap = new Map();
+
+  // Farm owner
+  if (farm && farm.user_id) {
+    const ownerUser = dbUsersCache.find(u => u.id == farm.user_id);
+    if (ownerUser) {
+      farmUsersMap.set(ownerUser.id, {
+        id: ownerUser.id,
+        name: ownerUser.full_name || farm.owner_name || 'Chủ trang trại',
+        phone: ownerUser.phone || farm.phone || ownerUser.email || 'Chưa có SĐT'
+      });
+    } else if (farm.owner_name) {
+      farmUsersMap.set(`farm_owner_${farm.id}`, {
+        id: farm.user_id,
+        name: farm.owner_name,
+        phone: farm.phone || 'Chưa có SĐT'
+      });
+    }
+  } else if (farm && farm.owner_name) {
+    farmUsersMap.set(`farm_owner_${farm.id}`, {
+      id: null,
+      name: farm.owner_name,
+      phone: farm.phone || 'Chưa có SĐT'
+    });
+  }
+
+  // Users assigned to this farm
+  dbUsersCache.forEach(u => {
+    if (u.farm_id == farmId) {
+      if (!farmUsersMap.has(u.id)) {
+        farmUsersMap.set(u.id, {
+          id: u.id,
+          name: u.full_name || 'Nông hộ',
+          phone: u.phone || u.email || 'Chưa có SĐT'
+        });
+      }
+    }
+  });
+
+  const farmPersonnel = Array.from(farmUsersMap.values());
+
+  // Render Personnel Card (Name & Phone only - No Role)
+  if (personnelCount) personnelCount.textContent = `${farmPersonnel.length} người`;
+  if (personnelList) {
+    if (farmPersonnel.length === 0) {
+      personnelList.innerHTML = '<div style="color:#64748b; font-size:13px; font-style:italic;">Chưa có thông tin người tham gia trong trang trại này.</div>';
+    } else {
+      personnelList.innerHTML = `
+        <div style="display:flex; flex-wrap:wrap; gap:10px;">
+          ${farmPersonnel.map(p => `
+            <div style="display:flex; align-items:center; gap:8px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:8px 14px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+              <div style="width:32px; height:32px; border-radius:50%; background:#059669; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800;">
+                <i class="fa fa-user"></i>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(p.name)}</div>
+                <div style="font-size:12px; color:#475569; font-weight:600;"><i class="fa fa-phone" style="font-size:10px; color:#059669;"></i> ${esc(p.phone)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
   }
 
-  if (farmSelect) {
-    farmSelect.innerHTML = '<option value="">— tất cả trang trại —</option>' +
-      filteredFarms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
-  }
-
-  let filteredPlants = dbPlantsCache;
-  const activeFarmId = farmSelect?.value;
-  if (activeFarmId) {
-    filteredPlants = dbPlantsCache.filter(p => p.farm_id == activeFarmId);
-  } else if (userId) {
-    const userFarmIds = filteredFarms.map(f => f.id);
-    filteredPlants = dbPlantsCache.filter(p => userFarmIds.includes(p.farm_id));
-  }
+  // 2. Filter Plants in this Farm
+  const farmPlants = dbPlantsCache.filter(p => p.farm_id == farmId);
+  if (plantsCount) plantsCount.textContent = `${farmPlants.length} cây`;
 
   if (plantSelect) {
-    plantSelect.innerHTML = '<option value="">— Chọn Cây trồng để xem Nhật ký Canh tác —</option>' +
-      filteredPlants.map(p => `<option value="${p.id}">🌳 Cây #${p.tree_code || p.id} (${esc(p.plant_type)})</option>`).join('');
+    if (farmPlants.length === 0) {
+      plantSelect.innerHTML = '<option value="">— Trang trại này chưa có cây trồng nào —</option>';
+    } else {
+      plantSelect.innerHTML = '<option value="">— Chọn Cây trồng để xem Dữ liệu Canh tác —</option>' +
+        farmPlants.map(p => `<option value="${p.id}">🌳 Cây #${p.tree_code || p.id} (${esc(p.plant_type)}) ${p.location ? `· ${esc(p.location)}` : ''}</option>`).join('');
+    }
   }
 
-  loadPlantCultivationTimeline();
+  // Show details section
+  if (detailsSection) detailsSection.style.display = 'block';
+
+  // Reset cultivation timeline
+  if (summaryBox) summaryBox.style.display = 'none';
+  if (timelineContainer) {
+    timelineContainer.innerHTML = `
+      <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
+        <i class="fa-solid fa-tree" style="font-size:42px; color:#0284c7; margin-bottom:12px;"></i>
+        <p style="font-size:14px; font-weight:700; color:#0f172a;">Đã chọn trang trại <strong>${esc(farm ? farm.name : '')}</strong> (${farmPlants.length} cây trồng, ${farmPersonnel.length} người tham gia).</p>
+        <p style="font-size:13px; color:#64748b; margin-top:4px;">Vui lòng chọn 1 Cây trồng ở Bước 2 phía trên để theo dõi toàn bộ Dữ liệu Canh tác & Chi phí đầu tư.</p>
+      </div>`;
+  }
 }
+window.onDbFarmChange = onDbFarmChange;
+window.onDbFilterChange = onDbFarmChange;
 
 function onSupplyFilterChange() {
   const userId = document.getElementById('db-supply-filter-user')?.value;
@@ -402,7 +479,10 @@ async function loadPlantCultivationTimeline() {
                 </span>
                 ${timeStr ? `<span style="font-size:12px; font-weight:700; color:#64748b;"><i class="fa-regular fa-clock"></i> ${timeStr}</span>` : ''}
               </div>
-              ${l.creator_name ? `<small style="color:#475569; font-weight:700; background:#f1f5f9; padding:3px 10px; border-radius:8px;"><i class="fa fa-user"></i> ${esc(l.creator_name)}</small>` : ''}
+              ${(l.creator_name || l.creator_phone) ? `
+                <div style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; color:#064e3b; padding:4px 12px; border-radius:8px; font-size:12px; font-weight:700;">
+                  <i class="fa-solid fa-user-check" style="color:#059669;"></i> 👤 Thực hiện bởi: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.creator_phone ? `· 📞 <strong>${esc(l.creator_phone)}</strong>` : ''}
+                </div>` : ''}
             </div>
 
             ${l.note ? `<div style="font-size:13.5px; color:#1e293b; margin-top:8px; line-height:1.5; font-weight:500;">${esc(l.note)}</div>` : ''}

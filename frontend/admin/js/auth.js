@@ -1,12 +1,21 @@
 // ── Auth ─────────────────────────────────────────────────
 
+function resetAdminLoginBtnState() {
+  const btn = document.getElementById('login-btn');
+  if (btn) {
+    btn.innerHTML = '<span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>';
+    btn.disabled = false;
+  }
+}
+window.resetAdminLoginBtnState = resetAdminLoginBtnState;
+
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
   errEl.style.display = 'none';
-  btn.innerHTML = '<span class="spinner"></span>';
+  btn.innerHTML = '<span class="spinner"></span> Đang đăng nhập...';
   btn.disabled  = true;
 
   try {
@@ -21,13 +30,15 @@ async function doLogin() {
     /* Phân luồng theo role */
     if (data.user.role !== 'admin') {
       localStorage.setItem('pb_token', data.token);
-      window.location.href = '/user';
+      btn.innerHTML = '<span class="spinner"></span> Đang chuyển hướng Nông hộ...';
+      window.location.replace('/user');
       return;
     }
 
     token = data.token;
     localStorage.setItem('pb_token', token);
     currentUser = data.user;
+    resetAdminLoginBtnState();
     showApp();
 
   } catch (err) {
@@ -35,8 +46,7 @@ async function doLogin() {
     if (errText) errText.textContent = err.message;
     else errEl.textContent = err.message;
     errEl.style.display  = 'flex';
-    btn.innerHTML = '<span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>';
-    btn.disabled  = false;
+    resetAdminLoginBtnState();
   }
 }
 
@@ -125,11 +135,16 @@ async function logout() {
   token = '';
   localStorage.removeItem('pb_token');
 
+  resetAdminLoginBtnState();
+
   // Clear inputs
   const emailInput = document.getElementById('login-email');
   const passInput  = document.getElementById('login-pass');
   if (emailInput) emailInput.value = '';
   if (passInput)  passInput.value = '';
+
+  const errEl = document.getElementById('login-error');
+  if (errEl) errEl.style.display = 'none';
 
   if (window.location.hash) {
     history.replaceState('', document.title, window.location.pathname + window.location.search);
@@ -150,6 +165,7 @@ function generateIsoPublicId(role, numId) {
 }
 
 async function showApp() {
+  resetAdminLoginBtnState();
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   document.getElementById('sb-user-name').textContent = currentUser?.name || currentUser?.full_name || 'Quản trị viên';
@@ -172,12 +188,13 @@ async function showApp() {
 
 // Check existing token on load – guard: chỉ admin mới được ở /admin
 window.addEventListener('load', async () => {
+  resetAdminLoginBtnState();
   if (token) {
     try {
       const me = await api('/auth/me');
       if (me.role !== 'admin') {
         /* Token hợp lệ nhưng không phải admin → redirect /user */
-        window.location.href = '/user';
+        window.location.replace('/user');
         return;
       }
       currentUser = me;

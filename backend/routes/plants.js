@@ -211,7 +211,7 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
 
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [req.params.id]);
     const logs = await pool.query(
-      `SELECT pl.*, u.full_name as creator_name 
+      `SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email 
        FROM plant_logs pl 
        LEFT JOIN users u ON u.id = pl.created_by 
        WHERE pl.plant_id=$1 
@@ -243,7 +243,7 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     }
 
 
-    let logsQuery = 'SELECT pl.*, u.full_name as creator_name FROM plant_logs pl LEFT JOIN users u ON u.id = pl.created_by WHERE pl.plant_id = $1';
+    let logsQuery = 'SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email FROM plant_logs pl LEFT JOIN users u ON u.id = pl.created_by WHERE pl.plant_id = $1';
     const logsParams = [req.params.id];
     let idx = 2;
 

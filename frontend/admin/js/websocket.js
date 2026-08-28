@@ -4,10 +4,18 @@
    ════════════════════════════════════════════════════════ */
 
 let socket = null;
+let reconnectTimer = null;
+let isManualClose = false;
 
 function connectWebSocket() {
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
     return;
+  }
+
+  isManualClose = false;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -31,18 +39,27 @@ function connectWebSocket() {
   };
 
   socket.onclose = () => {
-    console.log('❌ WebSocket connection closed. Reconnecting in 3s...');
     socket = null;
-    setTimeout(connectWebSocket, 3000);
+    if (!isManualClose && token) {
+      console.log('❌ WebSocket connection closed. Reconnecting in 3s...');
+      reconnectTimer = setTimeout(connectWebSocket, 3000);
+    } else {
+      console.log('ℹ️ WebSocket closed cleanly (logged out).');
+    }
   };
 
   socket.onerror = (err) => {
     console.error('WebSocket error:', err);
-    socket.close();
+    if (socket) socket.close();
   };
 }
 
 function closeWebSocket() {
+  isManualClose = true;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
   if (socket) {
     socket.close();
     socket = null;

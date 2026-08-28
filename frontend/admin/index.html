@@ -550,31 +550,53 @@
 
         <!-- ── TAB 1: DỮ LIỆU CANH TÁC (CULTIVATION DATA & TIMELINE) ── -->
         <div class="tab-pane active" id="db-pane-cultivation">
+          <!-- Step 1: Farm Selector Filter Card -->
           <div class="card" style="margin-bottom:20px;">
-            <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
-              <h3 style="margin:0; font-size:15px;"><i class="fa-solid fa-filter" style="color:var(--green)"></i> Lọc dữ liệu theo khách hàng</h3>
+            <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+              <h3 style="margin:0; font-size:15px;"><i class="fa-solid fa-house-chimney-window" style="color:var(--green)"></i> Bước 1: Chọn Trang trại canh tác</h3>
+              <span id="db-farm-status-badge" style="font-size:12px; font-weight:700; color:#64748b;">Chưa chọn trang trại</span>
             </div>
             
-            <div style="padding:16px; display:flex; gap:12px; flex-wrap:wrap; background:#ffffff;">
-              <div style="flex:1; min-width:180px;">
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">1. Khách hàng (Nông hộ)</label>
-                <select id="db-filter-user" onchange="onDbFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600;">
-                  <option value="">— Chọn Khách hàng —</option>
+            <div style="padding:16px; background:#ffffff;">
+              <div style="max-width:520px;">
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">🏡 Danh sách Trang trại trong hệ thống *</label>
+                <select id="db-filter-farm" onchange="onDbFarmChange()" style="width:100%; padding:10px 14px; border:2px solid #059669; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#f0fdf4;">
+                  <option value="">— Vui lòng chọn Trang trại trước —</option>
                 </select>
               </div>
+            </div>
+          </div>
 
-              <div style="flex:1; min-width:180px;">
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">2. Trang trại</label>
-                <select id="db-filter-farm" onchange="onDbFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600;">
-                  <option value="">— Chọn Trang trại —</option>
-                </select>
+          <!-- Step 2: Farm Personnel & Plant Selector Card (Hidden until farm is selected) -->
+          <div id="db-farm-details-section" style="display:none; margin-bottom:20px;">
+            <!-- Farm Personnel Card -->
+            <div class="card" style="margin-bottom:16px; border-left:4px solid #059669;">
+              <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <h4 style="margin:0; font-size:14px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-users" style="color:#059669;"></i> Danh sách người tham gia trong trang trại này
+                </h4>
+                <span id="db-farm-personnel-count" class="badge" style="background:#059669; color:#fff; font-weight:800; font-size:12px; padding:4px 12px; border-radius:20px;">0 người</span>
               </div>
+              <div style="padding:16px; background:#ffffff;" id="db-farm-personnel-list">
+                <!-- Populated dynamically: List of personnel with Name & Phone (no role) -->
+              </div>
+            </div>
 
-              <div style="flex:1; min-width:200px;">
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">3. Chọn Cây trồng *</label>
-                <select id="db-filter-plant" onchange="loadPlantCultivationTimeline()" style="width:100%; padding:9px 12px; border:2px solid #059669; border-radius:10px; font-size:13px; font-weight:700; color:#064e3b; background:#ecfdf5;">
-                  <option value="">— Chọn Cây trồng để xem Nhật ký Canh tác —</option>
-                </select>
+            <!-- Plant Selector Card -->
+            <div class="card">
+              <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <h4 style="margin:0; font-size:14px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-tree" style="color:#059669;"></i> Bước 2: Chọn Cây trồng để xem Dữ liệu Canh tác
+                </h4>
+                <span id="db-farm-plants-count" class="badge" style="background:#0284c7; color:#fff; font-weight:800; font-size:12px; padding:4px 12px; border-radius:20px;">0 cây</span>
+              </div>
+              <div style="padding:16px; background:#ffffff;">
+                <div style="max-width:540px;">
+                  <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">🌳 Danh sách Cây trồng thuộc trang trại này *</label>
+                  <select id="db-filter-plant" onchange="loadPlantCultivationTimeline()" style="width:100%; padding:10px 14px; border:2px solid #0284c7; border-radius:10px; font-size:13.5px; font-weight:700; color:#0369a1; background:#f0f9ff;">
+                    <option value="">— Chọn Cây trồng để xem Nhật ký Canh tác —</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -587,8 +609,8 @@
           <!-- Lifetime Timeline Container -->
           <div id="db-cultivation-timeline-container">
             <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
-              <i class="fa-solid fa-tree-city" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
-              <p style="font-size:14px; font-weight:700; color:#475569;">Vui lòng chọn Cây trồng ở bộ lọc phía trên để theo dõi toàn bộ Nhật ký Canh tác & Chi phí từ lúc khởi tạo đến hiện tại.</p>
+              <i class="fa-solid fa-house-chimney-window" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
+              <p style="font-size:14px; font-weight:700; color:#475569;">Vui lòng chọn Trang trại ở Bước 1 để bắt đầu theo dõi nhân sự, cây trồng và nhật ký canh tác.</p>
             </div>
           </div>
         </div>
@@ -2537,20 +2559,20 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.1.0"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.1.0"></script>
-  <script src="/admin/js/app.js?v=3.1.0"></script>
-  <script src="/admin/js/auth.js?v=3.1.0"></script>
-  <script src="/admin/js/dashboard.js?v=3.1.0"></script>
-  <script src="/admin/js/media.js?v=3.1.0"></script>
-  <script src="/admin/js/database.js?v=3.1.0"></script>
-  <script src="/admin/js/schemas.js?v=3.1.0"></script>
-  <script src="/admin/js/plants.js?v=3.1.0"></script>
-  <script src="/admin/js/gis.js?v=3.1.0"></script>
-  <script src="/admin/js/users.js?v=3.1.0"></script>
-  <script src="/admin/js/devices.js?v=3.1.0"></script>
-  <script src="/admin/js/cost.js?v=3.1.0"></script>
-  <script src="/admin/js/websocket.js?v=3.1.0"></script>
+  <script src="/admin/js/countup.js?v=3.3.0"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.3.0"></script>
+  <script src="/admin/js/app.js?v=3.3.0"></script>
+  <script src="/admin/js/auth.js?v=3.3.0"></script>
+  <script src="/admin/js/dashboard.js?v=3.3.0"></script>
+  <script src="/admin/js/media.js?v=3.3.0"></script>
+  <script src="/admin/js/database.js?v=3.3.0"></script>
+  <script src="/admin/js/schemas.js?v=3.3.0"></script>
+  <script src="/admin/js/plants.js?v=3.3.0"></script>
+  <script src="/admin/js/gis.js?v=3.3.0"></script>
+  <script src="/admin/js/users.js?v=3.3.0"></script>
+  <script src="/admin/js/devices.js?v=3.3.0"></script>
+  <script src="/admin/js/cost.js?v=3.3.0"></script>
+  <script src="/admin/js/websocket.js?v=3.3.0"></script>
 </body>
 
 

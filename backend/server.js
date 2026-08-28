@@ -183,17 +183,31 @@ async function start() {
 
     wss.on('connection', (ws) => {
       clients.add(ws);
+      ws.on('error', (err) => {
+        console.warn('⚠️ WebSocket client error:', err.message);
+        clients.delete(ws);
+      });
       ws.on('close', () => {
         clients.delete(ws);
       });
     });
 
     const broadcast = (event, data) => {
-      const payload = JSON.stringify({ event, data });
-      for (const client of clients) {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(payload);
+      try {
+        const payload = JSON.stringify({ event, data });
+        for (const client of clients) {
+          if (client.readyState === WebSocket.OPEN) {
+            try {
+              client.send(payload, (err) => {
+                if (err) clients.delete(client);
+              });
+            } catch (e) {
+              clients.delete(client);
+            }
+          }
         }
+      } catch (err) {
+        console.error('⚠️ Broadcast error:', err);
       }
     };
 
@@ -223,8 +237,18 @@ async function start() {
 
   } catch (err) {
     console.error('❌ Startup error:', err);
-    process.exit(1);
+    // Thay vì exit(1) gây chết vĩnh viễn, thử khởi động lại sau 5s
+    setTimeout(start, 5000);
   }
 }
+
+// ─── Global Process Crash Guards ─────────────────────────────────
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ [Process Guard] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ [Process Guard] Uncaught Exception:', err);
+});
 
 start();

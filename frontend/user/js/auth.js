@@ -7,6 +7,16 @@ import { API, api, token, setToken, clearToken, setCurrentUser, currentUser } fr
 import { showPage } from './core/router.js';
 import { connectWebSocket, closeWebSocket } from './core/websocket.js';
 
+// ── Helper Reset Login Button ─────────────────────────────────
+export function resetLoginBtnState() {
+  const btn = document.getElementById('login-btn');
+  if (btn) {
+    btn.innerHTML = '<span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>';
+    btn.disabled = false;
+  }
+}
+window.resetLoginBtnState = resetLoginBtnState;
+
 // ── Đăng nhập ──────────────────────────────────────────────────
 async function doLogin() {
   const email = document.getElementById('login-email')?.value.trim();
@@ -15,7 +25,7 @@ async function doLogin() {
   const btn   = document.getElementById('login-btn');
 
   if (errEl) errEl.style.display = 'none';
-  if (btn)   { btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true; }
+  if (btn)   { btn.innerHTML = '<span class="spinner"></span> Đang đăng nhập...'; btn.disabled = true; }
 
   try {
     const res  = await fetch(`${API}/auth/login`, {
@@ -29,13 +39,15 @@ async function doLogin() {
     // Phân luồng theo role
     if (data.user.role === 'admin') {
       localStorage.setItem('pb_token', data.token);
-      window.location.href = '/admin';
+      if (btn) btn.innerHTML = '<span class="spinner"></span> Đang chuyển hướng Quản trị...';
+      window.location.replace('/admin');
       return;
     }
 
     // Role user (hoặc bất kỳ role nào không phải admin)
     setToken(data.token);
     setCurrentUser(data.user);
+    resetLoginBtnState();
     showApp();
 
   } catch (err) {
@@ -45,7 +57,7 @@ async function doLogin() {
       else errEl.textContent = err.message;
       errEl.style.display = 'flex';
     }
-    if (btn)   { btn.innerHTML = '<span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>'; btn.disabled = false; }
+    resetLoginBtnState();
   }
 }
 
@@ -143,11 +155,17 @@ export async function logout() {
   clearToken();
   setCurrentUser(null);
 
+  // Reset login button state to clean normal state
+  resetLoginBtnState();
+
   // Clear login inputs so saved credentials are not auto-filled
   const emailInput = document.getElementById('login-email');
   const passInput  = document.getElementById('login-pass');
   if (emailInput) emailInput.value = '';
   if (passInput)  passInput.value = '';
+
+  const errEl = document.getElementById('login-error');
+  if (errEl) errEl.style.display = 'none';
 
   // Clear URL hash to prevent routing/reload loops
   if (window.location.hash) {
@@ -167,6 +185,7 @@ window.logout = logout;
 
 // ── Hiển thị App sau đăng nhập thành công ─────────────────────
 function showApp() {
+  resetLoginBtnState();
   const app       = document.getElementById('app');
   const loginPage = document.getElementById('login-page');
   if (loginPage) loginPage.style.display = 'none';
@@ -208,6 +227,7 @@ function showApp() {
 
 // ── Kiểm tra token lưu sẵn khi tải trang ──────────────────────
 window.addEventListener('load', async () => {
+  resetLoginBtnState();
   if (!token) return; // không có token → hiện màn login
 
   try {
@@ -215,7 +235,7 @@ window.addEventListener('load', async () => {
 
     // Admin nhầm vào trang user → chuyển về admin
     if (me.role === 'admin') {
-      window.location.href = '/admin';
+      window.location.replace('/admin');
       return;
     }
 

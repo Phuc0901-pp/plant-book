@@ -7,11 +7,19 @@ import { token } from './api.js';
 import { loadUserDashboard } from '../modules/dashboard.js';
 
 let socket = null;
+let reconnectTimer = null;
+let isManualClose = false;
 
 export function connectWebSocket() {
   if (!token) return;
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
     return;
+  }
+
+  isManualClose = false;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -35,18 +43,27 @@ export function connectWebSocket() {
   };
 
   socket.onclose = () => {
-    console.log('❌ [User] WebSocket connection closed. Reconnecting in 3s...');
     socket = null;
-    setTimeout(connectWebSocket, 3000);
+    if (!isManualClose && token) {
+      console.log('❌ [User] WebSocket connection closed. Reconnecting in 3s...');
+      reconnectTimer = setTimeout(connectWebSocket, 3000);
+    } else {
+      console.log('ℹ️ [User] WebSocket closed cleanly (logged out).');
+    }
   };
 
   socket.onerror = (err) => {
     console.error('[User] WebSocket error:', err);
-    socket.close();
+    if (socket) socket.close();
   };
 }
 
 export function closeWebSocket() {
+  isManualClose = true;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
   if (socket) {
     socket.close();
     socket = null;
