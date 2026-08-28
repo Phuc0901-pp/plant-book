@@ -294,18 +294,37 @@ function openAddRuleModal() {
 // Load devices table from backend PostgreSQL
 async function loadDevices() {
   const tbody = document.getElementById('devices-table');
-  if (!tbody) return;
-
-  tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>';
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách thiết bị...</td></tr>';
+  }
 
   try {
-    const devices = await api('/devices');
+    const devices = await api('/devices') || [];
     devicesCache = devices;
-    renderDevices(devices);
+    filterDbDevices();
   } catch (err) {
     console.error('Lỗi tải danh sách thiết bị:', err);
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${esc(err.message)}</td></tr>`;
+    }
   }
+}
+
+function updateIotKpis(devices) {
+  const total = devices.length;
+  const online = devices.filter(d => d.status !== 'Mất kết nối').length;
+  const offline = devices.filter(d => d.status === 'Mất kết nối').length;
+  const battGood = devices.filter(d => (d.battery_level === null || d.battery_level >= 80)).length;
+
+  const totalEl = document.getElementById('kpi-iot-total');
+  const onlineEl = document.getElementById('kpi-iot-online');
+  const offlineEl = document.getElementById('kpi-iot-offline');
+  const battEl = document.getElementById('kpi-iot-battery');
+
+  if (totalEl) totalEl.textContent = total;
+  if (onlineEl) onlineEl.textContent = online;
+  if (offlineEl) offlineEl.textContent = offline;
+  if (battEl) battEl.textContent = `${battGood}/${total}`;
 }
 
 function renderDevices(devices) {
@@ -313,37 +332,50 @@ function renderDevices(devices) {
   if (!tbody) return;
 
   if (!devices || devices.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa fa-microchip"></i> Chưa có thiết bị IoT kết nối. Nhấp "Thêm thiết bị mới" để đăng ký.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-microchip"></i> Không tìm thấy thiết bị nào phù hợp với bộ lọc. Nhấp "+ Đăng ký thiết bị mới" để thêm.</td></tr>';
     return;
   }
 
   tbody.innerHTML = devices.map(d => {
     let batteryIcon = 'fa-battery-full';
-    let batteryColor = '#10b981';
-    if (d.battery_level <= 20) { batteryIcon = 'fa-battery-empty'; batteryColor = '#ef4444'; }
-    else if (d.battery_level <= 50) { batteryIcon = 'fa-battery-quarter'; batteryColor = '#f59e0b'; }
+    let batteryColor = '#059669';
+    if (d.battery_level <= 20) { batteryIcon = 'fa-battery-empty'; batteryColor = '#dc2626'; }
+    else if (d.battery_level <= 50) { batteryIcon = 'fa-battery-quarter'; batteryColor = '#d97706'; }
 
-    let statusClass = 'badge-green';
-    if (d.status === 'Mất kết nối') statusClass = 'badge-red';
-    if (d.status === 'Bảo trì') statusClass = 'badge-amber';
+    let statusStyle = 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;';
+    if (d.status === 'Mất kết nối') statusStyle = 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;';
+    else if (d.status === 'Bảo trì') statusStyle = 'background:#fffbeb; color:#b45309; border:1px solid #fde68a;';
 
     return `
-      <tr>
-        <td><strong>${esc(d.name)}</strong></td>
-        <td><span style="font-size: 12px; color: var(--gray-600);"><i class="fa fa-circle-nodes"></i> ${esc(d.device_type)}</span></td>
-        <td><span style="font-weight: 500; color: var(--green-dark);"><i class="fa-solid fa-house-chimney"></i> ${esc(d.farm_name || '—')}</span></td>
-        <td><code style="background: var(--gray-100); padding: 2px 6px; border-radius: 4px; font-size: 12px;">${esc(d.ip_address || '192.168.1.100')}</code></td>
+      <tr style="border-bottom:1px solid #f1f5f9; font-size:13px;">
+        <td style="padding:12px 14px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:34px; height:34px; border-radius:8px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">
+              <i class="fa-solid fa-microchip"></i>
+            </div>
+            <div>
+              <div style="font-weight:800; color:#0f172a; font-size:13.5px;">${esc(d.name)}</div>
+              <div style="font-size:11px; color:#64748b;">Node/IP: <code>${esc(d.ip_address || '192.168.1.100')}</code></div>
+            </div>
+          </div>
+        </td>
+        <td><span style="font-size:12px; font-weight:700; color:#334155; background:#f8fafc; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">${esc(d.device_type)}</span></td>
+        <td><strong style="color:#059669; font-size:12.5px;"><i class="fa-solid fa-house-chimney" style="font-size:11px;"></i> ${esc(d.farm_name || 'Toàn hệ thống')}</strong></td>
         <td>
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: ${batteryColor};">
+          <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; color:${batteryColor}; font-size:12.5px;">
             <i class="fa-solid ${batteryIcon}"></i> ${d.battery_level !== null ? d.battery_level : 100}%
           </span>
         </td>
-        <td><span class="badge ${statusClass}">${esc(d.status)}</span></td>
-        <td><small style="color: var(--gray-500);">${d.last_connection ? new Date(d.last_connection).toLocaleString('vi-VN') : 'Vừa kết nối'}</small></td>
-        <td>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-secondary btn-xs" onclick="openDeviceModal(${d.id})"><i class="fa fa-pen"></i></button>
-            <button class="btn btn-danger btn-xs" onclick="deleteDevice(${d.id})"><i class="fa fa-trash"></i></button>
+        <td><span class="badge" style="font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; ${statusStyle}">${esc(d.status || 'Hoạt động')}</span></td>
+        <td style="font-size:11.5px; color:#64748b;">${d.last_connection ? new Date(d.last_connection).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) + ' ' + new Date(d.last_connection).toLocaleDateString('vi-VN') : 'Vừa cập nhật'}</td>
+        <td style="text-align:center;">
+          <div style="display:inline-flex; gap:6px;">
+            <button class="btn btn-sm" onclick="openDeviceModal(${d.id})" title="Chỉnh sửa" style="padding:4px 8px; font-size:11px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; color:#0284c7; cursor:pointer;">
+              <i class="fa fa-pen"></i>
+            </button>
+            <button class="btn btn-sm" onclick="deleteDevice(${d.id})" title="Xóa" style="padding:4px 8px; font-size:11px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#dc2626; cursor:pointer;">
+              <i class="fa fa-trash"></i>
+            </button>
           </div>
         </td>
       </tr>
@@ -351,19 +383,30 @@ function renderDevices(devices) {
   }).join('');
 }
 
-function filterDevices() {
-  const searchVal = document.getElementById('device-search')?.value.trim().toLowerCase() || '';
-  const typeVal = document.getElementById('device-filter-type')?.value || 'all';
-  const statusVal = document.getElementById('device-filter-status')?.value || 'all';
+function filterDbDevices() {
+  const farmVal = document.getElementById('db-iot-filter-farm')?.value || 'all';
+  const typeVal = document.getElementById('db-iot-filter-type')?.value || 'all';
+  const statusVal = document.getElementById('db-iot-filter-status')?.value || 'all';
+  const searchVal = document.getElementById('db-iot-search-input')?.value.trim().toLowerCase() || '';
 
-  const filtered = devicesCache.filter(d => {
-    const matchesSearch = !searchVal || d.name.toLowerCase().includes(searchVal) || (d.ip_address && d.ip_address.toLowerCase().includes(searchVal));
-    const matchesType = typeVal === 'all' || d.device_type === typeVal;
-    const matchesStatus = statusVal === 'all' || d.status === statusVal;
-    return matchesSearch && matchesType && matchesStatus;
+  const filtered = (devicesCache || []).filter(d => {
+    const matchesFarm = (farmVal === 'all') || (d.farm_id == farmVal);
+    const matchesType = (typeVal === 'all') || (d.device_type === typeVal);
+    const matchesStatus = (statusVal === 'all') || (d.status === statusVal);
+    const matchesSearch = !searchVal || 
+      (d.name && d.name.toLowerCase().includes(searchVal)) || 
+      (d.ip_address && d.ip_address.toLowerCase().includes(searchVal)) ||
+      (d.device_type && d.device_type.toLowerCase().includes(searchVal));
+
+    return matchesFarm && matchesType && matchesStatus && matchesSearch;
   });
 
   renderDevices(filtered);
+  updateIotKpis(filtered);
+}
+
+function filterDevices() {
+  filterDbDevices();
 }
 
 window.initDevicesPage = initDevicesPage;
@@ -373,3 +416,6 @@ window.switchSoilDepth = switchSoilDepth;
 window.openAddRuleModal = openAddRuleModal;
 window.loadDevices = loadDevices;
 window.filterDevices = filterDevices;
+window.filterDbDevices = filterDbDevices;
+window.renderDevices = renderDevices;
+window.updateIotKpis = updateIotKpis;

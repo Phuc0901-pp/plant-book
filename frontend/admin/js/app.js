@@ -222,6 +222,11 @@ function showPage(page, pushUrl = true) {
     if (typeof switchDatabaseTab === 'function') {
       setTimeout(() => switchDatabaseTab('cultivation'), 50);
     }
+  } else if (page === 'devices') {
+    page = 'database';
+    if (typeof switchDatabaseTab === 'function') {
+      setTimeout(() => switchDatabaseTab('devices'), 50);
+    }
   }
 
   const targetSection = document.getElementById(`page-${page}`);

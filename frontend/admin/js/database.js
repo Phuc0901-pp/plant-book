@@ -60,7 +60,14 @@ async function initDatabasePage() {
         dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
-    // Populate Tab 2 Supplies Filters
+    // Populate Tab IoT Farm Filter
+    const iotFarmSelect = document.getElementById('db-iot-filter-farm');
+    if (iotFarmSelect) {
+      iotFarmSelect.innerHTML = '<option value="all">🌐 Tất cả Trang trại (Toàn bộ IoT)</option>' +
+        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+    }
+
+    // Populate Tab Supplies Filters
     const suUserSelect = document.getElementById('db-supply-filter-user');
     if (suUserSelect) {
       suUserSelect.innerHTML = '<option value="">— Tất cả Khách hàng —</option>' +
@@ -89,7 +96,7 @@ function switchDatabaseTab(tab, syncUrl = true) {
   activeDbTab = tab;
 
   // Update tabs active state
-  ['cultivation', 'supplies', 'media', 'history'].forEach(t => {
+  ['cultivation', 'devices', 'supplies', 'media', 'history'].forEach(t => {
     const tabEl = document.getElementById(`db-tab-${t}`);
     const paneEl = document.getElementById(`db-pane-${t}`);
     if (tabEl) tabEl.classList.toggle('active', t === tab);
@@ -100,7 +107,9 @@ function switchDatabaseTab(tab, syncUrl = true) {
     window.syncAdminUrl({ page: 'database', tab });
   }
 
-  if (tab === 'media') {
+  if (tab === 'devices') {
+    if (typeof initDevicesPage === 'function') initDevicesPage();
+  } else if (tab === 'media') {
     initGlobalMediaLibrary();
   } else if (tab === 'supplies') {
     loadSuppliesTab();
