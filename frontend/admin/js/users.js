@@ -11,21 +11,33 @@ async function loadUsers() {
   const tbodyStatus = document.getElementById('users-status-table');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách tài khoản...</td></tr>';
   if (tbodyStatus) {
     tbodyStatus.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>';
   }
 
   try {
-    const users = await api('/users');
+    const [users, farms] = await Promise.all([
+      api('/users'),
+      api('/farms').catch(() => [])
+    ]);
     allUsers = users || [];
+
+    // Populate Farm Filter Dropdown
+    const farmSelect = document.getElementById('user-filter-farm');
+    if (farmSelect) {
+      farmSelect.innerHTML = '<option value="all">🌐 Tất cả Trang trại</option>' +
+        (farms || []).map(f => `<option value="${f.id}">🏡 ${escapeHtml(f.name)}</option>`).join('');
+    }
+
     updateUserCounters();
     filterUsers();
     renderUserStatusTable(allUsers);
+    loadPendingUsers();
     loadResetRequests();
   } catch (err) {
     toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -36,8 +48,14 @@ function updateUserCounters() {
   const cntNormal = allUsers.filter(u => u.role !== 'admin' && u.account_tier !== 'pro').length;
 
   if (document.getElementById('cnt-user-all')) document.getElementById('cnt-user-all').textContent = cntAll;
+  if (document.getElementById('cnt-user-all-kpi')) document.getElementById('cnt-user-all-kpi').textContent = cntAll;
+
   if (document.getElementById('cnt-user-admin')) document.getElementById('cnt-user-admin').textContent = cntAdmin;
+  if (document.getElementById('cnt-user-admin-kpi')) document.getElementById('cnt-user-admin-kpi').textContent = cntAdmin;
+
   if (document.getElementById('cnt-user-pro')) document.getElementById('cnt-user-pro').textContent = cntPro;
+  if (document.getElementById('cnt-user-pro-kpi')) document.getElementById('cnt-user-pro-kpi').textContent = cntPro;
+
   if (document.getElementById('cnt-user-normal')) document.getElementById('cnt-user-normal').textContent = cntNormal;
 }
 
@@ -69,6 +87,7 @@ function setUserFilterGroup(group) {
 
 function filterUsers() {
   const q = (document.getElementById('user-search')?.value || '').toLowerCase().trim();
+  const farmFilter = document.getElementById('user-filter-farm')?.value || 'all';
 
   let filtered = allUsers;
 
@@ -81,7 +100,12 @@ function filterUsers() {
     filtered = filtered.filter(u => u.role !== 'admin' && u.account_tier !== 'pro');
   }
 
-  // 2. Search Filter
+  // 2. Farm Filter
+  if (farmFilter !== 'all') {
+    filtered = filtered.filter(u => u.farm_id == farmFilter);
+  }
+
+  // 3. Search Filter
   if (q) {
     filtered = filtered.filter(u =>
       (u.full_name || '').toLowerCase().includes(q) ||
@@ -104,7 +128,7 @@ function renderUsersTable(users) {
   if (!tbody) return;
 
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Không tìm thấy người dùng nào.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Không tìm thấy tài khoản người dùng nào phù hợp.</td></tr>';
     if (pagInfo) pagInfo.textContent = 'Hiển thị 0 người dùng';
     if (pagBtns) pagBtns.innerHTML = '';
     return;
@@ -122,13 +146,13 @@ function renderUsersTable(users) {
 
   tbody.innerHTML = pageUsers.map(u => {
     const isSelf = currentUser && currentUser.id === u.id;
-    const selfBadge = isSelf ? ' <span style="font-size: 10px; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px;">Bạn</span>' : '';
+    const selfBadge = isSelf ? ' <span style="font-size: 10px; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">Bạn</span>' : '';
     
     const publicId = u.public_id || (typeof generateIsoPublicId === 'function' ? generateIsoPublicId(u.role, u.id) : (u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`));
 
     const roleBadge = u.role === 'admin' 
-      ? '<span class="badge badge-admin" style="background:#fef2f2; color:#b91c1c; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
-      : '<span class="badge badge-user" style="background:#fff7ed; color:#ea580c; border: 1px solid #fdba74; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa fa-user"></i> Nông hộ</span>';
+      ? '<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
+      : '<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i class="fa-solid fa-seedling"></i> Nông hộ</span>';
 
     let tierBadge = '';
     if (u.account_tier === 'pro') {
@@ -140,50 +164,64 @@ function renderUsersTable(users) {
           const bg = isWarning ? '#fffbeb' : '#ecfdf5';
           const color = isWarning ? '#b45309' : '#047857';
           const border = isWarning ? '#fde68a' : '#a7f3d0';
-          tierBadge = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (${diffDays}d)</span>`;
+          tierBadge = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (${diffDays}d)</span>`;
         } else {
-          tierBadge = `<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> PRO (Hết hạn)</span>`;
+          tierBadge = `<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> PRO (Hết hạn)</span>`;
         }
       } else {
-        tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (Vĩnh viễn)</span>`;
+        tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (Vĩnh viễn)</span>`;
       }
     } else {
-      tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;">⚪ NORMAL</span>`;
+      tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;">⚪ Standard</span>`;
     }
 
     const farmBadge = u.farm_name
-      ? `<span class="badge" style="background:#eff6ff; color:#2563eb; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i class="fa-solid fa-earth-asia"></i> ${escapeHtml(u.farm_name)}</span>`
-      : '<span style="color:var(--gray-400); font-size:12px;">— Chưa gán —</span>';
+      ? `<span style="font-weight:700; color:#059669; font-size:12.5px;"><i class="fa-solid fa-house-chimney" style="font-size:11px;"></i> ${escapeHtml(u.farm_name)}</span>`
+      : '<span style="color:#94a3b8; font-size:12px;">— Chưa gán —</span>';
 
     const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN', {
       year: 'numeric', month: '2-digit', day: '2-digit'
     }) : '—';
 
+    const initialLetter = (u.full_name || 'U').charAt(0).toUpperCase();
+
     const deleteBtn = isSelf 
-      ? `<button class="btn btn-secondary btn-sm" disabled style="opacity:0.5; cursor:not-allowed;" title="Bạn không thể tự xóa tài khoản của mình"><i class="fa fa-trash"></i> Xóa</button>`
-      : `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})"><i class="fa fa-trash"></i> Xóa</button>`;
+      ? `<button class="btn btn-secondary btn-sm" disabled style="opacity:0.4; cursor:not-allowed; padding:4px 8px; font-size:11px;" title="Bạn không thể tự xóa tài khoản của mình"><i class="fa fa-trash"></i></button>`
+      : `<button class="btn btn-sm" onclick="deleteUser(${u.id})" style="background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#dc2626; padding:4px 8px; font-size:11px; cursor:pointer;" title="Xóa tài khoản"><i class="fa fa-trash"></i></button>`;
 
     return `
-      <tr data-user-id="${u.id}">
-        <td style="font-weight: 600; color: var(--text-main);">
-          <div style="font-size:13.5px; font-weight:800; color:#0f172a;">${escapeHtml(u.full_name)}${selfBadge}</div>
-          <div style="margin-top:3px;">
-            <span class="badge" style="background:#ecfdf5; color:#047857; border:1.5px solid #a7f3d0; font-size:10.5px; font-weight:800; font-family:monospace; padding:2px 8px; border-radius:10px;" title="Mã ID Mã Hóa chuẩn ISO/IEC 11558 (8 chữ số)">
-              <i class="fa-solid fa-key" style="color:#059669; font-size:9.5px;"></i> ID ISO: ${publicId}
-            </span>
+      <tr data-user-id="${u.id}" style="border-bottom:1px solid #f1f5f9; font-size:13px;">
+        <td style="padding:12px 16px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:34px; height:34px; border-radius:50%; background:#ecfdf5; color:#059669; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; border:1.5px solid #a7f3d0;">
+              ${initialLetter}
+            </div>
+            <div>
+              <div style="font-weight:800; color:#0f172a; font-size:13.5px;">${escapeHtml(u.full_name)}${selfBadge}</div>
+              <div style="margin-top:2px;">
+                <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-size:10px; font-weight:700; font-family:monospace; padding:1px 6px; border-radius:6px;" title="Mã ID chuẩn ISO">
+                  ID: ${publicId}
+                </span>
+              </div>
+            </div>
           </div>
         </td>
-        <td>${escapeHtml(u.phone || u.email)}</td>
+        <td style="color:#334155;">
+          <div style="font-weight:600;"><i class="fa-solid fa-phone" style="font-size:10.5px; color:#64748b;"></i> ${escapeHtml(u.phone || '—')}</div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:2px;"><i class="fa-solid fa-envelope" style="font-size:10px;"></i> ${escapeHtml(u.email || '—')}</div>
+        </td>
         <td>${farmBadge}</td>
         <td>${tierBadge}</td>
         <td>${roleBadge}</td>
-        <td style="color: var(--text-muted); font-size: 13px;">${dateStr}</td>
-        <td>
-          <div style="display:flex; gap:4px; flex-wrap:wrap;">
-            <button class="btn btn-secondary btn-sm" onclick="openUserTierModal(${u.id})" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-weight:800;" title="Quản lý gói cước PRO">
-              <i class="fa-solid fa-crown" style="color:#059669"></i> Gói PRO
+        <td style="color:#64748b; font-size:12px;">${dateStr}</td>
+        <td style="text-align:center;">
+          <div style="display:inline-flex; gap:6px;">
+            <button class="btn btn-sm" onclick="openUserTierModal(${u.id})" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-weight:700; padding:4px 8px; font-size:11px; border-radius:6px; cursor:pointer;" title="Quản lý gói cước PRO">
+              <i class="fa-solid fa-crown" style="color:#059669"></i> PRO
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="openUserModal(${u.id})"><i class="fa fa-pen"></i> Sửa</button>
+            <button class="btn btn-sm" onclick="openUserModal(${u.id})" style="background:#f8fafc; border:1px solid #cbd5e1; color:#0284c7; font-weight:700; padding:4px 8px; font-size:11px; border-radius:6px; cursor:pointer;" title="Chỉnh sửa hồ sơ & gán trại">
+              <i class="fa fa-pen"></i>
+            </button>
             ${deleteBtn}
           </div>
         </td>
@@ -625,6 +663,10 @@ async function loadResetRequests() {
     const requests = await api('/auth/reset-requests');
     const pendingCount = (requests || []).filter(r => r.status === 'pending').length;
 
+    if (document.getElementById('cnt-user-resets-kpi')) {
+      document.getElementById('cnt-user-resets-kpi').textContent = pendingCount;
+    }
+
     if (badge) {
       if (pendingCount > 0) {
         badge.textContent = pendingCount;
@@ -695,6 +737,11 @@ async function loadPendingFarmerUsers() {
   try {
     const pendingUsers = await api('/users/pending');
     const count = pendingUsers ? pendingUsers.length : 0;
+
+    if (document.getElementById('cnt-user-pending-kpi')) {
+      document.getElementById('cnt-user-pending-kpi').textContent = count;
+    }
+
     if (badge) {
       badge.textContent = count;
       badge.style.display = count > 0 ? 'inline-block' : 'none';
