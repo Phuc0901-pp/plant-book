@@ -585,195 +585,112 @@
     </div>
     <div class="content">
 
-      <!-- ── Dashboard (SAP FIORI HORIZON ENTERPRISE OPERATIONS COCKPIT) ── -->
+      <!-- ── Dashboard (STRIPE / LINEAR ULTRA-CLEAN ENTERPRISE COCKPIT) ── -->
       <div class="page-section active" id="page-dashboard">
         
-        <!-- HEADER ĐIỀU HÀNH EXECUTIVE OPERATIONS HEADER -->
-        <div style="background:linear-gradient(135deg, #0f172a, #1e293b); border-radius:18px; padding:22px 26px; color:#ffffff; margin-bottom:24px; box-shadow:0 10px 25px -5px rgba(15,23,42,0.25); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <!-- HEADER: STRIPE MINIMALIST WHITE HERO -->
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px 24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
           <div>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-              <span style="background:rgba(16,185,129,0.2); color:#34d399; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; border:1px solid rgba(16,185,129,0.4); display:inline-flex; align-items:center; gap:6px;">
-                <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span> Online
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+              <span style="background:#ecfdf5; color:#047857; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:6px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span> Hệ thống hoạt động bình thường
               </span>
-              <span style="font-size:12px; color:#94a3b8;" id="dashboard-live-clock">Thời gian thực</span>
+              <span style="font-size:12px; color:#64748b; font-weight:600;" id="dashboard-live-clock">Thời gian thực</span>
             </div>
-            <h2 style="font-size:22px; font-weight:900; margin:0; letter-spacing:-0.5px; color:#ffffff; display:flex; align-items:center; gap:10px;">
-              Trung Tâm Điều Hành Nông Nghiệp Số
+            <h2 style="font-size:20px; font-weight:800; margin:0; letter-spacing:-0.02em; color:#0f172a;">
+              Trung Tâm Điều Hành Chuỗi Trang Trại
             </h2>
-            <p style="margin:4px 0 0 0; font-size:13px; color:#cbd5e1;">Giám sát phân bổ nông hộ, tài sản cây trồng, tình trạng sâu bệnh và cảm biến IoT thời gian thực</p>
+            <p style="margin:2px 0 0 0; font-size:13px; color:#64748b;">Giám sát không gian GIS, định danh tài sản nông hộ và cảnh báo vận hành thời gian thực</p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
-            <button onclick="loadDashboard()" class="btn" style="background:rgba(255,255,255,0.1); color:#ffffff; border:1px solid rgba(255,255,255,0.2); border-radius:12px; padding:10px 16px; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; backdrop-filter:blur(8px); transition:all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-              <i class="fa-solid fa-arrows-rotate"></i> Reload data
+            <button onclick="loadDashboard()" class="btn" style="background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:10px; padding:9px 16px; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:all 0.15s ease;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1';">
+              <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới dữ liệu
             </button>
           </div>
         </div>
 
-        <!-- TẦNG 1: 4 THẺ FIORI ANALYTICAL KPI TILES -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:18px; margin-bottom:24px;">
+        <!-- TẦNG 1: 4 THẺ METRIC TILES TỐI GIẢN CHUẨN STRIPE / LINEAR -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
           <!-- 1. Số Nông Hộ -->
-          <div class="stat-card" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:18px; padding:22px; box-shadow:0 4px 20px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, #059669, #10b981);"></div>
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-              <div>
-                <div style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng số Nông hộ</div>
-                <div style="font-size:28px; font-weight:900; color:#0f172a; margin-top:4px;" id="stat-farmers">—</div>
-              </div>
-              <div style="width:48px; height:48px; border-radius:14px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-users-rectangle"></i>
-              </div>
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Nông Hộ Liên Kết</span>
+              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Hồ sơ</span>
             </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px;">
-                <span>Hồ sơ hợp lệ</span>
-                <span style="color:#059669;" id="stat-farmers-rate">100%</span>
-              </div>
-              <div class="fiori-progress-track">
-                <div class="fiori-progress-fill" style="width:100%; background:#059669;"></div>
-              </div>
-              <div style="font-size:11.5px; color:#059669; font-weight:700; margin-top:8px; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-circle-check"></i> Đang hoạt động
-              </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farmers">—</div>
+            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-circle-check" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
             </div>
           </div>
 
           <!-- 2. Tổng Số Trang Trại -->
-          <div class="stat-card" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:18px; padding:22px; box-shadow:0 4px 20px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, #16a34a, #22c55e);"></div>
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-              <div>
-                <div style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Số Trang Trại</div>
-                <div style="font-size:28px; font-weight:900; color:#0f172a; margin-top:4px;" id="stat-farms">—</div>
-              </div>
-              <div style="width:48px; height:48px; border-radius:14px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-house-chimney-window"></i>
-              </div>
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Số Trang Trại</span>
+              <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #a7f3d0;">GIS Hub</span>
             </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px;">
-                <span>Định vị GIS &amp; Ranh giới CAD</span>
-                <span style="color:#16a34a;">100%</span>
-              </div>
-              <div class="fiori-progress-track">
-                <div class="fiori-progress-fill" style="width:100%; background:#16a34a;"></div>
-              </div>
-              <div style="font-size:11.5px; color:#16a34a; font-weight:700; margin-top:8px; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-draw-polygon"></i> Phân bổ chuỗi vùng trồng
-              </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farms">—</div>
+            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-draw-polygon" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
             </div>
           </div>
 
           <!-- 3. Loại Cây & Giống -->
-          <div class="stat-card" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:18px; padding:22px; box-shadow:0 4px 20px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, #2563eb, #3b82f6);"></div>
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-              <div>
-                <div style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Chủng Loại Cây</div>
-                <div style="font-size:28px; font-weight:900; color:#0f172a; margin-top:4px;" id="stat-schemas">—</div>
-              </div>
-              <div style="width:48px; height:48px; border-radius:14px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-layer-group"></i>
-              </div>
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Chủng Loại Cây</span>
+              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Quy chuẩn</span>
             </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px;">
-                <span>Đa dạng sinh thái</span>
-                <span style="color:#2563eb;">Đạt chuẩn</span>
-              </div>
-              <div class="fiori-progress-track">
-                <div class="fiori-progress-fill" style="width:100%; background:#2563eb;"></div>
-              </div>
-              <div style="font-size:11.5px; color:#2563eb; font-weight:700; margin-top:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-schemas-sub">
-                Sầu riêng, Cà phê, Hồ tiêu, Bơ...
-              </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-schemas">—</div>
+            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-schemas-sub">
+              Sầu riêng, Cà phê, Bơ...
             </div>
           </div>
 
           <!-- 4. Địa Bàn Chính -->
-          <div class="stat-card" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:18px; padding:22px; box-shadow:0 4px 20px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, #d97706, #f59e0b);"></div>
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-              <div>
-                <div style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Địa Bàn Trọng Điểm</div>
-                <div style="font-size:28px; font-weight:900; color:#0f172a; margin-top:4px;" id="stat-regions">—</div>
-              </div>
-              <div style="width:48px; height:48px; border-radius:14px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-map-location-dot"></i>
-              </div>
+          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Địa Bàn Trọng Điểm</span>
+              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Khu vực</span>
             </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px;">
-                <span>Định vị vệ tinh</span>
-                <span style="color:#d97706;">100% GIS</span>
-              </div>
-              <div class="fiori-progress-track">
-                <div class="fiori-progress-fill" style="width:100%; background:#d97706;"></div>
-              </div>
-              <div style="font-size:11.5px; color:#d97706; font-weight:700; margin-top:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-regions-sub">
-                Bình Phước, Đắk Lắk, Lâm Đồng...
-              </div>
+            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-regions">—</div>
+            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-regions-sub">
+              Bình Phước, Đắk Lắk, Lâm Đồng...
             </div>
           </div>
         </div>
 
-        <!-- TẦNG 2: VẤN ĐỀ PHÁT SINH & CẢNH BÁO VẬN HÀNH KHẨN CẤP (INCIDENT & RISK CENTER) -->
-        <div class="card" style="margin-bottom:24px; border-radius:18px; overflow:hidden; border:1.5px solid #fed7d7; box-shadow:0 4px 20px rgba(220,38,38,0.04);">
-          <div style="background:linear-gradient(135deg, #881337, #9f1239); color:#ffffff; padding:16px 22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div>
-              <h3 style="font-size:15px; font-weight:900; margin:0; display:flex; align-items:center; gap:8px; color:#ffffff; letter-spacing:0.3px;">
-                <i class="fa-solid fa-triangle-exclamation" style="color:#fecdd3;"></i> TRUNG TÂM GIÁM SÁT RỦI RO &amp; SỰ CỐ VẬN HÀNH
-              </h3>
-              <div style="font-size:12px; color:#ffe4e6; margin-top:2px;">Theo dõi thời gian thực sâu bệnh, rủi ro sinh trưởng và tình trạng thiết bị IoT</div>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <span class="badge" id="stat-total-incidents" style="background:#e11d48; color:#ffffff; font-weight:800; padding:6px 14px; border-radius:20px; font-size:12px; border:1px solid rgba(255,255,255,0.3);">
-                0 sự cố cần theo dõi
-              </span>
-            </div>
+        <!-- TẦNG 2: THANH TRẠNG THÁI GIÁM SÁT RỦI RO & THIẾT BỊ TỐI GIẢN (MINIMAL STATUS STRIP) -->
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:13px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">Trạng Thái Vận Hành &amp; Thiết Bị:</span>
+            <span style="font-size:12px; font-weight:700; color:#64748b;" id="stat-total-incidents">0 sự cố cần theo dõi</span>
           </div>
 
-          <div style="padding:18px; background:#ffffff;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
-              <!-- Cây Bệnh & Cần Theo Dõi -->
-              <div onclick="showPage('plants')" style="background:#fff1f2; border:1.5px solid #fecdd3; border-radius:16px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#e11d48'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#fecdd3'; this.style.transform='none'">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                  <span style="font-size:12px; font-weight:800; color:#be123c; text-transform:uppercase;">🐛 Cây Bệnh / Sâu Hại</span>
-                  <div style="width:32px; height:32px; border-radius:10px; background:#ffe4e6; color:#e11d48; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-bug"></i></div>
-                </div>
-                <div style="font-size:24px; font-weight:900; color:#881337;" id="stat-sick-plants">0 cây</div>
-                <div style="font-size:11.5px; color:#9f1239; margin-top:4px;">Nấm hồng, rỉ sắt, xì mủ, thối rễ...</div>
-              </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <!-- Cây Bệnh -->
+            <button onclick="showPage('plants')" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#f87171'" onmouseout="this.style.borderColor='#fecaca'">
+              <span>🐛 Cây bệnh:</span>
+              <strong id="stat-sick-plants">0</strong>
+            </button>
 
-              <!-- Thiết Bị Hỏng / Offline -->
-              <div onclick="showPage('devices')" style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:16px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#d97706'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#fde68a'; this.style.transform='none'">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                  <span style="font-size:12px; font-weight:800; color:#b45309; text-transform:uppercase;">🔌 Thiết Bị Hỏng / Offline</span>
-                  <div style="width:32px; height:32px; border-radius:10px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-plug-circle-xmark"></i></div>
-                </div>
-                <div style="font-size:24px; font-weight:900; color:#78350f;" id="stat-broken-devices">0 thiết bị</div>
-                <div style="font-size:11.5px; color:#92400e; margin-top:4px;">Mất tín hiệu LoRa / 4G hoặc nguồn</div>
-              </div>
+            <!-- Thiết Bị Offline -->
+            <button onclick="showPage('devices')" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#fbbf24'" onmouseout="this.style.borderColor='#fde68a'">
+              <span>🔌 Thiết bị offline:</span>
+              <strong id="stat-broken-devices">0</strong>
+            </button>
 
-              <!-- Thiết Bị Cần Bảo Trì -->
-              <div onclick="showPage('devices')" style="background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:16px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#0284c7'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#bae6fd'; this.style.transform='none'">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                  <span style="font-size:12px; font-weight:800; color:#0369a1; text-transform:uppercase;">🔧 Thiết Bị Cần Bảo Trì</span>
-                  <div style="width:32px; height:32px; border-radius:10px; background:#e0f2fe; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-screwdriver-wrench"></i></div>
-                </div>
-                <div style="font-size:24px; font-weight:900; color:#0c4a6e;" id="stat-maintenance-devices">0 thiết bị</div>
-                <div style="font-size:11.5px; color:#075985; margin-top:4px;">Pin yếu &lt; 20% hoặc quá hạn bảo dưỡng</div>
-              </div>
+            <!-- Thiết Bị Cần Bảo Trì -->
+            <button onclick="showPage('devices')" style="background:#f0f9ff; border:1px solid #bae6fd; color:#075985; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#bae6fd'">
+              <span>🔧 Cần bảo dưỡng:</span>
+              <strong id="stat-maintenance-devices">0</strong>
+            </button>
 
-              <!-- Thiết Bị Cần Hiệu Chỉnh -->
-              <div onclick="showPage('devices')" style="background:#faf5ff; border:1.5px solid #e9d5ff; border-radius:16px; padding:16px; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.borderColor='#9333ea'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#e9d5ff'; this.style.transform='none'">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                  <span style="font-size:12px; font-weight:800; color:#7e22ce; text-transform:uppercase;">⚙️ Cần Hiệu Chỉnh Cảm Biến</span>
-                  <div style="width:32px; height:32px; border-radius:10px; background:#f3e8ff; color:#9333ea; display:flex; align-items:center; justify-content:center; font-size:14px;"><i class="fa-solid fa-sliders"></i></div>
-                </div>
-                <div style="font-size:24px; font-weight:900; color:#581c87;" id="stat-calibration-devices">0 cảm biến</div>
-                <div style="font-size:11.5px; color:#6b21a8; margin-top:4px;">Độ lệch chỉ số pH, EC, NPK cần cân chỉnh</div>
-              </div>
-            </div>
+            <!-- Cảm Biến Hiệu Chuẩn -->
+            <button onclick="showPage('devices')" style="background:#faf5ff; border:1px solid #e9d5ff; color:#6b21a8; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#c084fc'" onmouseout="this.style.borderColor='#e9d5ff'">
+              <span>⚙️ Cần hiệu chuẩn:</span>
+              <strong id="stat-calibration-devices">0</strong>
+            </button>
           </div>
         </div>
 
@@ -2918,19 +2835,19 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=3.6.0"></script>
-  <script src="/admin/js/mascot-chibi.js?v=3.6.0"></script>
-  <script src="/admin/js/app.js?v=3.6.0"></script>
-  <script src="/admin/js/auth.js?v=3.6.0"></script>
-  <script src="/admin/js/dashboard.js?v=3.6.0"></script>
-  <script src="/admin/js/media.js?v=3.6.0"></script>
-  <script src="/admin/js/database.js?v=3.6.0"></script>
-  <script src="/admin/js/schemas.js?v=3.6.0"></script>
-  <script src="/admin/js/plants.js?v=3.6.0"></script>
-  <script src="/admin/js/gis.js?v=3.6.0"></script>
-  <script src="/admin/js/users.js?v=3.6.0"></script>
-  <script src="/admin/js/devices.js?v=3.6.0"></script>
-  <script src="/admin/js/websocket.js?v=3.6.0"></script>
+  <script src="/admin/js/countup.js?v=3.6.1"></script>
+  <script src="/admin/js/mascot-chibi.js?v=3.6.1"></script>
+  <script src="/admin/js/app.js?v=3.6.1"></script>
+  <script src="/admin/js/auth.js?v=3.6.1"></script>
+  <script src="/admin/js/dashboard.js?v=3.6.1"></script>
+  <script src="/admin/js/media.js?v=3.6.1"></script>
+  <script src="/admin/js/database.js?v=3.6.1"></script>
+  <script src="/admin/js/schemas.js?v=3.6.1"></script>
+  <script src="/admin/js/plants.js?v=3.6.1"></script>
+  <script src="/admin/js/gis.js?v=3.6.1"></script>
+  <script src="/admin/js/users.js?v=3.6.1"></script>
+  <script src="/admin/js/devices.js?v=3.6.1"></script>
+  <script src="/admin/js/websocket.js?v=3.6.1"></script>
 </body>
 
 

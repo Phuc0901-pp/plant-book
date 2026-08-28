@@ -1565,11 +1565,20 @@ function addContourLinesToMap(map, options = {}) {
       };
 
       const buildDynamicColorRamp = (minEle, maxEle) => {
+        if (maxEle <= minEle || isNaN(minEle) || isNaN(maxEle)) {
+          return SPECTRUM_COLORS[Math.floor(SPECTRUM_COLORS.length / 2)];
+        }
         const rampStops = [];
         const count = SPECTRUM_COLORS.length;
+        let lastVal = -Infinity;
         for (let i = 0; i < count; i++) {
-          const val = minEle + (i / (count - 1)) * (maxEle - minEle);
-          rampStops.push(Math.round(val * 10) / 10, SPECTRUM_COLORS[i]);
+          let val = minEle + (i / (count - 1)) * (maxEle - minEle);
+          val = Math.round(val * 10) / 10;
+          if (val <= lastVal) {
+            val = Math.round((lastVal + 0.1) * 10) / 10;
+          }
+          lastVal = val;
+          rampStops.push(val, SPECTRUM_COLORS[i]);
         }
         return ['interpolate', ['linear'], ['get', 'ele'], ...rampStops];
       };
@@ -1582,8 +1591,16 @@ function addContourLinesToMap(map, options = {}) {
         if (options.farmCoords && Array.isArray(options.farmCoords) && options.farmCoords.length > 0) {
           options.farmCoords.forEach(pt => {
             if (Array.isArray(pt) && pt.length >= 2) {
-              lngs.push(pt[0]);
-              lats.push(pt[1]);
+              let v1 = parseFloat(pt[0]);
+              let v2 = parseFloat(pt[1]);
+              if (!isNaN(v1) && !isNaN(v2)) {
+                let lng = v1 > 50 ? v1 : v2;
+                let lat = v2 < 50 ? v2 : v1;
+                if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                  lngs.push(lng);
+                  lats.push(lat);
+                }
+              }
             }
           });
         }
@@ -1603,8 +1620,16 @@ function addContourLinesToMap(map, options = {}) {
                   const coords = geom.type === 'Polygon' ? geom.coordinates.flat() : geom.coordinates.flat(2);
                   coords.forEach(pt => {
                     if (pt && pt.length >= 2) {
-                      lngs.push(pt[0]);
-                      lats.push(pt[1]);
+                      let v1 = parseFloat(pt[0]);
+                      let v2 = parseFloat(pt[1]);
+                      if (!isNaN(v1) && !isNaN(v2)) {
+                        let lng = v1 > 50 ? v1 : v2;
+                        let lat = v2 < 50 ? v2 : v1;
+                        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                          lngs.push(lng);
+                          lats.push(lat);
+                        }
+                      }
                     }
                   });
                 }
@@ -1625,8 +1650,8 @@ function addContourLinesToMap(map, options = {}) {
           return {
             west: minLng - marginLng,
             east: maxLng + marginLng,
-            south: minLat - marginLat,
-            north: maxLat + marginLat
+            south: Math.max(-89.9, minLat - marginLat),
+            north: Math.min(89.9, maxLat + marginLat)
           };
         }
 
