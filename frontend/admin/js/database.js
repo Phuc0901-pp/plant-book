@@ -220,6 +220,44 @@ async function onDbFarmChange() {
 window.onDbFarmChange = onDbFarmChange;
 window.onDbFilterChange = onDbFarmChange;
 
+function openPlantModalForActiveDbFarm() {
+  if (typeof openPlantModal === 'function') {
+    openPlantModal(null, currentDbSelectedFarmId);
+  }
+}
+window.openPlantModalForActiveDbFarm = openPlantModalForActiveDbFarm;
+
+async function deletePlantFromDb(id, name) {
+  if (!confirm(`Xóa cây "${name}"? Hành động này không thể hoàn tác.`)) return;
+  try {
+    await api(`/plants/${id}`, { method: 'DELETE' });
+    toast('Đã xóa cây thành công.');
+    dbPlantsCache = await api('/plants') || [];
+    onDbFarmChange();
+    if (typeof loadDashboard === 'function') loadDashboard();
+  } catch (err) {
+    toast('Lỗi xóa: ' + err.message, 'error');
+  }
+}
+window.deletePlantFromDb = deletePlantFromDb;
+
+window.onPlantSavedHook = async (savedPlant) => {
+  try {
+    dbPlantsCache = await api('/plants') || [];
+    if (currentDbSelectedFarmId) {
+      currentDbFarmPlantsCache = dbPlantsCache.filter(p => p.farm_id == currentDbSelectedFarmId);
+      const heroPlantsCount = document.getElementById('db-hero-plants-count');
+      const masterPlantBadge = document.getElementById('db-master-plant-count-badge');
+      if (heroPlantsCount) heroPlantsCount.textContent = currentDbFarmPlantsCache.length;
+      if (masterPlantBadge) masterPlantBadge.textContent = `${currentDbFarmPlantsCache.length} cây`;
+      renderMasterPlantsList(currentDbFarmPlantsCache);
+      if (savedPlant && savedPlant.id) {
+        selectTreeForDetail(savedPlant.id);
+      }
+    }
+  } catch(e) { console.warn('Hook error:', e); }
+};
+
 function renderMasterPlantsList(plants) {
   const container = document.getElementById('db-master-plants-list');
   if (!container) return;
@@ -229,49 +267,81 @@ function renderMasterPlantsList(plants) {
     return;
   }
 
-  container.innerHTML = plants.map(p => {
+  const isAllSelected = (currentDbSelectedPlantId === 'all');
+  let html = `
+    <div class="db-tree-card" id="db-tree-card-all" onclick="selectTreeForDetail('all')"
+         style="padding:10px 12px; border-radius:10px; cursor:pointer; transition:all 0.15s ease; border:${isAllSelected ? '2px solid #059669' : '1px solid #e2e8f0'}; background:${isAllSelected ? '#ecfdf5' : '#f8fafc'}; margin-bottom:4px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:12.5px; color:${isAllSelected ? '#064e3b' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-layer-group" style="color:${isAllSelected ? '#059669' : '#64748b'};"></i> Toàn bộ trang trại
+        </strong>
+        <span style="font-size:11px; font-weight:700; color:#059669; background:#ffffff; padding:2px 8px; border-radius:10px; border:1px solid #a7f3d0;">
+          Tất cả (${plants.length})
+        </span>
+      </div>
+    </div>
+  `;
+
+  html += plants.map(p => {
     const isSelected = (p.id === currentDbSelectedPlantId);
     const healthStatus = p.health_status || 'Tốt';
     let healthBadgeStyle = 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;';
     if (healthStatus === 'Bệnh') healthBadgeStyle = 'background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;';
-    else if (healthStatus === 'Cần theo dõi') healthBadgeStyle = 'background:#fef3c7; color:#d97706; border:1px solid #fde68a;';
+    else if (healthStatus === 'Cần chú ý' || healthStatus === 'Cần theo dõi') healthBadgeStyle = 'background:#fef3c7; color:#d97706; border:1px solid #fde68a;';
 
     return `
       <div class="db-tree-card" id="db-tree-card-${p.id}" onclick="selectTreeForDetail(${p.id})"
-           style="padding:12px 14px; border-radius:12px; cursor:pointer; transition:all 0.2s ease; border:${isSelected ? '2px solid #059669' : '1.5px solid #e2e8f0'}; background:${isSelected ? '#f0fdf4' : '#ffffff'}; box-shadow:${isSelected ? '0 4px 14px rgba(5,150,105,0.15)' : '0 2px 6px rgba(0,0,0,0.02)'};">
+           style="padding:10px 12px; border-radius:10px; cursor:pointer; transition:all 0.15s ease; border:${isSelected ? '2px solid #059669' : '1px solid #e2e8f0'}; background:${isSelected ? '#f0fdf4' : '#ffffff'}; box-shadow:${isSelected ? '0 2px 8px rgba(5,150,105,0.12)' : '0 1px 2px rgba(0,0,0,0.02)'};">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <strong style="font-size:13.5px; color:${isSelected ? '#064e3b' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-tree" style="color:${isSelected ? '#059669' : '#64748b'};"></i> Cây #${esc(p.tree_code || p.id)}
+          <strong style="font-size:13px; color:${isSelected ? '#064e3b' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-tree" style="color:${isSelected ? '#059669' : '#64748b'};"></i> #${esc(p.tree_code || p.id)}
           </strong>
-          <span style="font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; ${healthBadgeStyle}">
+          <span style="font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; ${healthBadgeStyle}">
             ${esc(healthStatus)}
           </span>
         </div>
-        <div style="font-size:12px; color:#475569; font-weight:700;">
-          ${esc(p.plant_type)} ${p.plant_variety ? `(${esc(p.plant_variety)})` : ''}
+        <div style="font-size:11.5px; color:#475569; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${esc(p.plant_type)} ${p.plant_variety ? `· ${esc(p.plant_variety)}` : ''}
         </div>
-        <div style="font-size:11px; color:#64748b; margin-top:4px; display:flex; justify-content:space-between; align-items:center;">
-          <span><i class="fa-solid fa-location-dot" style="font-size:10px; color:#059669;"></i> ${esc(p.location || 'Chưa gán vị trí')}</span>
-          ${p.plant_age ? `<span style="font-weight:600; color:#0f172a;">${esc(p.plant_age)}</span>` : ''}
+        <div style="font-size:11px; color:#64748b; margin-top:6px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:6px;">
+          <span>${esc(p.location || 'Chưa gán vị trí')}</span>
+          <div style="display:flex; gap:4px;" onclick="event.stopPropagation();">
+            <button onclick="openQrModal(${p.id})" class="btn btn-sm" title="Mã QR" style="padding:3px 7px; font-size:10.5px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:5px; color:#0f172a; cursor:pointer;">
+              <i class="fa-solid fa-qrcode"></i>
+            </button>
+            <button onclick="openPlantModal(${p.id}, ${currentDbSelectedFarmId})" class="btn btn-sm" title="Chỉnh sửa" style="padding:3px 7px; font-size:10.5px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:5px; color:#0284c7; cursor:pointer;">
+              <i class="fa fa-pen"></i>
+            </button>
+            <button onclick="deletePlantFromDb(${p.id}, '${esc(p.plant_type)}')" class="btn btn-sm" title="Xóa" style="padding:3px 7px; font-size:10.5px; background:#fef2f2; border:1px solid #fca5a5; border-radius:5px; color:#dc2626; cursor:pointer;">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;
   }).join('');
+
+  container.innerHTML = html;
 }
 
 function filterMasterPlantList() {
   const query = (document.getElementById('db-plant-search-input')?.value || '').toLowerCase().trim();
-  if (!query) {
-    renderMasterPlantsList(currentDbFarmPlantsCache);
-    return;
+  const health = (document.getElementById('db-plant-filter-health')?.value || '').trim();
+
+  let filtered = currentDbFarmPlantsCache;
+
+  if (query) {
+    filtered = filtered.filter(p => 
+      String(p.tree_code || p.id).toLowerCase().includes(query) ||
+      String(p.plant_type || '').toLowerCase().includes(query) ||
+      String(p.plant_variety || '').toLowerCase().includes(query) ||
+      String(p.location || '').toLowerCase().includes(query)
+    );
   }
 
-  const filtered = currentDbFarmPlantsCache.filter(p => 
-    String(p.tree_code || p.id).toLowerCase().includes(query) ||
-    String(p.plant_type || '').toLowerCase().includes(query) ||
-    String(p.plant_variety || '').toLowerCase().includes(query) ||
-    String(p.location || '').toLowerCase().includes(query)
-  );
+  if (health) {
+    filtered = filtered.filter(p => (p.health_status || 'Tốt') === health);
+  }
 
   renderMasterPlantsList(filtered);
 }
@@ -283,15 +353,15 @@ async function selectTreeForDetail(plantId) {
 
   // Highlight card in left column
   document.querySelectorAll('.db-tree-card').forEach(card => {
-    card.style.border = '1.5px solid #e2e8f0';
+    card.style.border = '1px solid #e2e8f0';
     card.style.background = '#ffffff';
-    card.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
+    card.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)';
   });
   const activeCard = document.getElementById(`db-tree-card-${plantId}`);
   if (activeCard) {
     activeCard.style.border = '2px solid #059669';
     activeCard.style.background = '#f0fdf4';
-    activeCard.style.boxShadow = '0 4px 14px rgba(5,150,105,0.15)';
+    activeCard.style.boxShadow = '0 2px 8px rgba(5,150,105,0.12)';
   }
 
   const summaryBox = document.getElementById('db-plant-cost-summary');
@@ -301,70 +371,124 @@ async function selectTreeForDetail(plantId) {
   if (summaryBox) summaryBox.style.display = 'none';
   if (filterBar) filterBar.style.display = 'none';
   if (container) {
-    container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fa fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px;"></i> Đang tải dữ liệu canh tác & chi phí đầu tư cây...</div>';
+    container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fa fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px;"></i> Đang tải dữ liệu canh tác & chi phí đầu tư...</div>';
   }
 
   try {
-    const plant = await api(`/plants/${plantId}`);
-    currentDbPlantProfileCache = plant;
-    const logs = plant.logs || [];
-    currentDbPlantLogsCache = logs;
+    if (plantId === 'all') {
+      // Load entire farm logs
+      const farm = dbFarmsCache.find(f => f.id == currentDbSelectedFarmId);
+      const allLogs = await api(`/plants/logs/farm/${currentDbSelectedFarmId}`).catch(() => []);
+      currentDbPlantLogsCache = allLogs || [];
+      currentDbPlantProfileCache = {
+        id: 'all',
+        tree_code: 'ALL',
+        plant_type: `Toàn bộ ${currentDbFarmPlantsCache.length} Cây Trồng`,
+        plant_variety: 'Đa dạng',
+        farm_name: farm ? farm.name : 'Trang trại',
+        health_status: 'Tổng hợp',
+        location: 'Khuôn viên trang trại'
+      };
 
-    // Calculate Costs Breakdown
-    let totalConsumableCost = 0; // Phân bón, Thuốc
-    let totalFixedCost = 0;      // Tưới nước, Tỉa cành, Thuế/Nhân công
-
-    logs.forEach(l => {
-      let details = {};
-      try {
-        details = typeof l.details === 'string' ? JSON.parse(l.details) : (l.details || {});
-      } catch (e) { details = {}; }
-
-      const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
-      if (!isNaN(cost) && cost > 0) {
-        if (['Bón phân', 'Phun thuốc'].includes(l.log_type)) {
-          totalConsumableCost += cost;
-        } else {
-          totalFixedCost += cost;
+      // Calculate whole farm costs
+      let totalConsumableCost = 0;
+      let totalFixedCost = 0;
+      (currentDbPlantLogsCache || []).forEach(l => {
+        let details = {};
+        try { details = typeof l.details === 'string' ? JSON.parse(l.details) : (l.details || {}); } catch(e){}
+        const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
+        if (!isNaN(cost) && cost > 0) {
+          if (['Bón phân', 'Phun thuốc'].includes(l.log_type)) totalConsumableCost += cost;
+          else totalFixedCost += cost;
         }
-      }
-    });
+      });
+      const totalInvestmentCost = totalConsumableCost + totalFixedCost;
 
-    const totalInvestmentCost = totalConsumableCost + totalFixedCost;
-
-    // Render Profile & Cost Summary Header Box
-    if (summaryBox) {
-      summaryBox.style.display = 'block';
-      summaryBox.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-          <div>
-            <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
-              🌳 HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
-            </div>
-            <div style="font-size:20px; font-weight:800; margin-top:2px;">
-              ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''}
-            </div>
-            <div style="font-size:12.5px; opacity:0.9; margin-top:2px;">
-              Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status || 'Tốt')}</strong> · Tuổi: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong>
-            </div>
-          </div>
-
-          <!-- Total Cost Pills -->
-          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-            <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:10px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
-              <div style="font-size:10.5px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG ĐẦU TƯ</div>
-              <div style="font-size:18px; font-weight:800; color:#fde047; margin-top:2px;">
-                ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
+      if (summaryBox) {
+        summaryBox.style.display = 'block';
+        summaryBox.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+              <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
+                🏡 TỔNG HỢP CANH TÁC TOÀN TRANG TRẠI · ${esc(farm ? farm.name : '')}
+              </div>
+              <div style="font-size:20px; font-weight:800; margin-top:2px;">
+                ${currentDbFarmPlantsCache.length} Cây Trồng Đang Hoạt Động
+              </div>
+              <div style="font-size:12.5px; opacity:0.9; margin-top:2px;">
+                Chủ hộ: <strong>${esc(farm && farm.owner_name ? farm.owner_name : '—')}</strong> · Diện tích: <strong>${farm && farm.area ? Math.round(farm.area).toLocaleString('vi-VN') + ' m²' : '—'}</strong>
               </div>
             </div>
 
-            <div style="background:rgba(255,255,255,0.1); padding:8px 12px; border-radius:12px; font-size:11.5px; display:flex; flex-direction:column; justify-content:center;">
-              <div>🧪 Phân & Thuốc: <strong>${totalConsumableCost.toLocaleString('vi-VN')} đ</strong></div>
-              <div>💧 Công & Điện nước: <strong>${totalFixedCost.toLocaleString('vi-VN')} đ</strong></div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+              <button onclick="openPlantModalForActiveDbFarm()" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:8px 14px; cursor:pointer;">
+                <i class="fa fa-plus"></i> Thêm cây mới
+              </button>
+              <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:10px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
+                <div style="font-size:10.5px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG CHI PHÍ</div>
+                <div style="font-size:18px; font-weight:800; color:#fde047; margin-top:2px;">
+                  ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      `;
+        `;
+      }
+    } else {
+      const plant = await api(`/plants/${plantId}`);
+      currentDbPlantProfileCache = plant;
+      const logs = plant.logs || [];
+      currentDbPlantLogsCache = logs;
+
+      let totalConsumableCost = 0;
+      let totalFixedCost = 0;
+      logs.forEach(l => {
+        let details = {};
+        try { details = typeof l.details === 'string' ? JSON.parse(l.details) : (l.details || {}); } catch (e) {}
+        const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
+        if (!isNaN(cost) && cost > 0) {
+          if (['Bón phân', 'Phun thuốc'].includes(l.log_type)) totalConsumableCost += cost;
+          else totalFixedCost += cost;
+        }
+      });
+      const totalInvestmentCost = totalConsumableCost + totalFixedCost;
+
+      if (summaryBox) {
+        summaryBox.style.display = 'block';
+        summaryBox.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+              <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
+                🌳 HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
+              </div>
+              <div style="font-size:20px; font-weight:800; margin-top:2px;">
+                ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''}
+              </div>
+              <div style="font-size:12.5px; opacity:0.9; margin-top:2px;">
+                Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status || 'Tốt')}</strong> · Tuổi: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button onclick="openQrModal(${plant.id})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="In mã QR">
+                <i class="fa-solid fa-qrcode"></i> In QR
+              </button>
+              <button onclick="openPlantModal(${plant.id}, ${currentDbSelectedFarmId})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="Chỉnh sửa cây">
+                <i class="fa fa-pen"></i> Sửa cây
+              </button>
+              <button onclick="deletePlantFromDb(${plant.id}, '${esc(plant.plant_type)}')" class="btn" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="Xóa cây">
+                <i class="fa fa-trash"></i> Xóa
+              </button>
+              <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
+                <div style="font-size:10px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG ĐẦU TƯ</div>
+                <div style="font-size:16px; font-weight:800; color:#fde047; margin-top:2px;">
+                  ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
     }
 
     // Render Activity Filter Chips

@@ -217,6 +217,11 @@ window.syncAdminUrl = syncAdminUrl;
 function showPage(page, pushUrl = true) {
   if (page === 'gis' || page === 'farms') {
     page = 'dashboard';
+  } else if (page === 'plants') {
+    page = 'database';
+    if (typeof switchDatabaseTab === 'function') {
+      setTimeout(() => switchDatabaseTab('cultivation'), 50);
+    }
   }
 
   const targetSection = document.getElementById(`page-${page}`);
