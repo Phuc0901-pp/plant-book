@@ -126,62 +126,66 @@ function setSupplyGroupMode(mode) {
   renderSuppliesTable(allSuppliesCache);
 }
 
-function onDbFarmChange() {
+// ── Tab 1: Dữ liệu Canh tác (Split-View Master-Detail AgTech ERP) ──
+let currentDbSelectedFarmId = null;
+let currentDbSelectedPlantId = null;
+let currentDbPlantLogsCache = [];
+let currentDbActiveActivityFilter = 'all';
+let currentDbFarmPlantsCache = [];
+let currentDbPlantProfileCache = null;
+
+async function onDbFarmChange() {
   const farmId = document.getElementById('db-filter-farm')?.value;
-  const statusBadge = document.getElementById('db-farm-status-badge');
-  const detailsSection = document.getElementById('db-farm-details-section');
+  const heroBar = document.getElementById('db-farm-hero-bar');
+  const splitView = document.getElementById('db-cultivation-split-view');
+  const emptyPlaceholder = document.getElementById('db-farm-empty-placeholder');
+  const farmTitle = document.getElementById('db-active-farm-title');
   const personnelList = document.getElementById('db-farm-personnel-list');
-  const personnelCount = document.getElementById('db-farm-personnel-count');
-  const plantsCount = document.getElementById('db-farm-plants-count');
-  const plantSelect = document.getElementById('db-filter-plant');
-  const summaryBox = document.getElementById('db-plant-cost-summary');
-  const timelineContainer = document.getElementById('db-cultivation-timeline-container');
+  const heroPlantsCount = document.getElementById('db-hero-plants-count');
+  const masterPlantBadge = document.getElementById('db-master-plant-count-badge');
+
+  currentDbSelectedFarmId = farmId ? parseInt(farmId) : null;
+  currentDbSelectedPlantId = null;
+  currentDbPlantLogsCache = [];
 
   if (!farmId) {
-    if (statusBadge) statusBadge.textContent = 'Chưa chọn trang trại';
-    if (detailsSection) detailsSection.style.display = 'none';
-    if (summaryBox) summaryBox.style.display = 'none';
-    if (timelineContainer) {
-      timelineContainer.innerHTML = `
-        <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
-          <i class="fa-solid fa-house-chimney-window" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
-          <p style="font-size:14px; font-weight:700; color:#475569;">Vui lòng chọn Trang trại ở Bước 1 để bắt đầu theo dõi nhân sự, cây trồng và nhật ký canh tác.</p>
-        </div>`;
-    }
+    if (farmTitle) farmTitle.textContent = 'Vui lòng chọn Trang trại';
+    if (heroBar) heroBar.style.display = 'none';
+    if (splitView) splitView.style.display = 'none';
+    if (emptyPlaceholder) emptyPlaceholder.style.display = 'block';
     return;
   }
 
   const farm = dbFarmsCache.find(f => f.id == farmId);
-  if (statusBadge) statusBadge.textContent = `Đang chọn: ${farm ? farm.name : ''}`;
+  if (farmTitle) {
+    farmTitle.textContent = `🏡 ${farm ? farm.name : 'Trang trại'} ${farm && farm.owner_name ? `· Nông hộ: ${farm.owner_name}` : ''}`;
+  }
 
-  // 1. Find all users in this farm (Owner + assigned farmers) - NO ROLES DISPLAYED
+  // 1. Gather Personnel (Owner + assigned users) - NO ROLE DISPLAYED
   const farmUsersMap = new Map();
-
-  // Farm owner
   if (farm && farm.user_id) {
-    const ownerUser = dbUsersCache.find(u => u.id == farm.user_id);
-    if (ownerUser) {
-      farmUsersMap.set(ownerUser.id, {
-        id: ownerUser.id,
-        name: ownerUser.full_name || farm.owner_name || 'Chủ trang trại',
-        phone: ownerUser.phone || farm.phone || ownerUser.email || 'Chưa có SĐT'
+    const owner = dbUsersCache.find(u => u.id == farm.user_id);
+    if (owner) {
+      farmUsersMap.set(owner.id, {
+        id: owner.id,
+        name: owner.full_name || farm.owner_name || 'Chủ trang trại',
+        phone: owner.phone || farm.phone || owner.email || 'Chưa có SĐT'
       });
     } else if (farm.owner_name) {
-      farmUsersMap.set(`farm_owner_${farm.id}`, {
+      farmUsersMap.set(`owner_${farm.id}`, {
         id: farm.user_id,
         name: farm.owner_name,
         phone: farm.phone || 'Chưa có SĐT'
       });
     }
   } else if (farm && farm.owner_name) {
-    farmUsersMap.set(`farm_owner_${farm.id}`, {
+    farmUsersMap.set(`owner_${farm.id}`, {
       id: null,
       name: farm.owner_name,
       phone: farm.phone || 'Chưa có SĐT'
     });
   }
 
-  // Users assigned to this farm
   dbUsersCache.forEach(u => {
     if (u.farm_id == farmId) {
       if (!farmUsersMap.has(u.id)) {
@@ -196,102 +200,130 @@ function onDbFarmChange() {
 
   const farmPersonnel = Array.from(farmUsersMap.values());
 
-  // Render Personnel Card (Name & Phone only - No Role)
-  if (personnelCount) personnelCount.textContent = `${farmPersonnel.length} người`;
   if (personnelList) {
     if (farmPersonnel.length === 0) {
-      personnelList.innerHTML = '<div style="color:#64748b; font-size:13px; font-style:italic;">Chưa có thông tin người tham gia trong trang trại này.</div>';
+      personnelList.innerHTML = '<span style="font-size:12px; color:#64748b; font-style:italic;">Chưa có người tham gia</span>';
     } else {
-      personnelList.innerHTML = `
-        <div style="display:flex; flex-wrap:wrap; gap:10px;">
-          ${farmPersonnel.map(p => `
-            <div style="display:flex; align-items:center; gap:8px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:8px 14px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
-              <div style="width:32px; height:32px; border-radius:50%; background:#059669; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800;">
-                <i class="fa fa-user"></i>
-              </div>
-              <div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(p.name)}</div>
-                <div style="font-size:12px; color:#475569; font-weight:600;"><i class="fa fa-phone" style="font-size:10px; color:#059669;"></i> ${esc(p.phone)}</div>
-              </div>
-            </div>
-          `).join('')}
+      personnelList.innerHTML = farmPersonnel.map(p => `
+        <div style="display:inline-flex; align-items:center; gap:6px; background:#ffffff; border:1.5px solid #a7f3d0; border-radius:20px; padding:4px 12px; font-size:12px; font-weight:700; color:#064e3b; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+          <i class="fa-solid fa-user-check" style="color:#059669; font-size:11px;"></i> ${esc(p.name)} <span style="color:#64748b; font-weight:500;">(${esc(p.phone)})</span>
         </div>
-      `;
+      `).join('');
     }
   }
 
-  // 2. Filter Plants in this Farm
-  const farmPlants = dbPlantsCache.filter(p => p.farm_id == farmId);
-  if (plantsCount) plantsCount.textContent = `${farmPlants.length} cây`;
+  // 2. Filter Plants for this Farm
+  currentDbFarmPlantsCache = dbPlantsCache.filter(p => p.farm_id == farmId);
+  if (heroPlantsCount) heroPlantsCount.textContent = currentDbFarmPlantsCache.length;
+  if (masterPlantBadge) masterPlantBadge.textContent = `${currentDbFarmPlantsCache.length} cây`;
 
-  if (plantSelect) {
-    if (farmPlants.length === 0) {
-      plantSelect.innerHTML = '<option value="">— Trang trại này chưa có cây trồng nào —</option>';
-    } else {
-      plantSelect.innerHTML = '<option value="">— Chọn Cây trồng để xem Dữ liệu Canh tác —</option>' +
-        farmPlants.map(p => `<option value="${p.id}">🌳 Cây #${p.tree_code || p.id} (${esc(p.plant_type)}) ${p.location ? `· ${esc(p.location)}` : ''}</option>`).join('');
-    }
-  }
+  // Show Split-view, hide placeholder
+  if (heroBar) heroBar.style.display = 'flex';
+  if (splitView) splitView.style.display = 'grid';
+  if (emptyPlaceholder) emptyPlaceholder.style.display = 'none';
 
-  // Show details section
-  if (detailsSection) detailsSection.style.display = 'block';
+  // Render Master list
+  renderMasterPlantsList(currentDbFarmPlantsCache);
 
-  // Reset cultivation timeline
-  if (summaryBox) summaryBox.style.display = 'none';
-  if (timelineContainer) {
-    timelineContainer.innerHTML = `
-      <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
-        <i class="fa-solid fa-tree" style="font-size:42px; color:#0284c7; margin-bottom:12px;"></i>
-        <p style="font-size:14px; font-weight:700; color:#0f172a;">Đã chọn trang trại <strong>${esc(farm ? farm.name : '')}</strong> (${farmPlants.length} cây trồng, ${farmPersonnel.length} người tham gia).</p>
-        <p style="font-size:13px; color:#64748b; margin-top:4px;">Vui lòng chọn 1 Cây trồng ở Bước 2 phía trên để theo dõi toàn bộ Dữ liệu Canh tác & Chi phí đầu tư.</p>
-      </div>`;
+  // Auto select first plant if available
+  if (currentDbFarmPlantsCache.length > 0) {
+    selectTreeForDetail(currentDbFarmPlantsCache[0].id);
+  } else {
+    renderEmptyDetailView('Trang trại này chưa có cây trồng nào được khởi tạo.');
   }
 }
 window.onDbFarmChange = onDbFarmChange;
 window.onDbFilterChange = onDbFarmChange;
 
-function onSupplyFilterChange() {
-  const userId = document.getElementById('db-supply-filter-user')?.value;
-  const farmSelect = document.getElementById('db-supply-filter-farm');
-
-  let filteredFarms = dbFarmsCache;
-  if (userId) {
-    filteredFarms = dbFarmsCache.filter(f => f.user_id == userId);
-    if (farmSelect && farmSelect.value && !filteredFarms.some(f => f.id == farmSelect.value)) {
-      farmSelect.value = '';
-    }
-  }
-
-  if (farmSelect) {
-    farmSelect.innerHTML = '<option value="">— Tất cả Trang trại —</option>' +
-      filteredFarms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
-  }
-
-  loadSuppliesTab();
-}
-
-async function loadPlantCultivationTimeline() {
-  const plantId = document.getElementById('db-filter-plant')?.value;
-  const summaryBox = document.getElementById('db-plant-cost-summary');
-  const container = document.getElementById('db-cultivation-timeline-container');
-
+function renderMasterPlantsList(plants) {
+  const container = document.getElementById('db-master-plants-list');
   if (!container) return;
 
-  if (!plantId) {
-    if (summaryBox) summaryBox.style.display = 'none';
-    container.innerHTML = `
-      <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
-        <i class="fa-solid fa-tree-city" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
-        <p style="font-size:14px; font-weight:700; color:#475569;">Vui lòng chọn Cây trồng ở bộ lọc phía trên để theo dõi toàn bộ Nhật ký Canh tác & Chi phí từ lúc khởi tạo đến hiện tại.</p>
-      </div>`;
+  if (plants.length === 0) {
+    container.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8; font-size:12.5px;">Không tìm thấy cây trồng phù hợp.</div>';
     return;
   }
 
-  container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fa fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px;"></i> Đang tải dữ liệu canh tác & chi phí đầu tư cây...</div>';
+  container.innerHTML = plants.map(p => {
+    const isSelected = (p.id === currentDbSelectedPlantId);
+    const healthStatus = p.health_status || 'Tốt';
+    let healthBadgeStyle = 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;';
+    if (healthStatus === 'Bệnh') healthBadgeStyle = 'background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;';
+    else if (healthStatus === 'Cần theo dõi') healthBadgeStyle = 'background:#fef3c7; color:#d97706; border:1px solid #fde68a;';
+
+    return `
+      <div class="db-tree-card" id="db-tree-card-${p.id}" onclick="selectTreeForDetail(${p.id})"
+           style="padding:12px 14px; border-radius:12px; cursor:pointer; transition:all 0.2s ease; border:${isSelected ? '2px solid #059669' : '1.5px solid #e2e8f0'}; background:${isSelected ? '#f0fdf4' : '#ffffff'}; box-shadow:${isSelected ? '0 4px 14px rgba(5,150,105,0.15)' : '0 2px 6px rgba(0,0,0,0.02)'};">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <strong style="font-size:13.5px; color:${isSelected ? '#064e3b' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-tree" style="color:${isSelected ? '#059669' : '#64748b'};"></i> Cây #${esc(p.tree_code || p.id)}
+          </strong>
+          <span style="font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; ${healthBadgeStyle}">
+            ${esc(healthStatus)}
+          </span>
+        </div>
+        <div style="font-size:12px; color:#475569; font-weight:700;">
+          ${esc(p.plant_type)} ${p.plant_variety ? `(${esc(p.plant_variety)})` : ''}
+        </div>
+        <div style="font-size:11px; color:#64748b; margin-top:4px; display:flex; justify-content:space-between; align-items:center;">
+          <span><i class="fa-solid fa-location-dot" style="font-size:10px; color:#059669;"></i> ${esc(p.location || 'Chưa gán vị trí')}</span>
+          ${p.plant_age ? `<span style="font-weight:600; color:#0f172a;">${esc(p.plant_age)}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterMasterPlantList() {
+  const query = (document.getElementById('db-plant-search-input')?.value || '').toLowerCase().trim();
+  if (!query) {
+    renderMasterPlantsList(currentDbFarmPlantsCache);
+    return;
+  }
+
+  const filtered = currentDbFarmPlantsCache.filter(p => 
+    String(p.tree_code || p.id).toLowerCase().includes(query) ||
+    String(p.plant_type || '').toLowerCase().includes(query) ||
+    String(p.plant_variety || '').toLowerCase().includes(query) ||
+    String(p.location || '').toLowerCase().includes(query)
+  );
+
+  renderMasterPlantsList(filtered);
+}
+window.filterMasterPlantList = filterMasterPlantList;
+
+async function selectTreeForDetail(plantId) {
+  currentDbSelectedPlantId = plantId;
+  currentDbActiveActivityFilter = 'all';
+
+  // Highlight card in left column
+  document.querySelectorAll('.db-tree-card').forEach(card => {
+    card.style.border = '1.5px solid #e2e8f0';
+    card.style.background = '#ffffff';
+    card.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
+  });
+  const activeCard = document.getElementById(`db-tree-card-${plantId}`);
+  if (activeCard) {
+    activeCard.style.border = '2px solid #059669';
+    activeCard.style.background = '#f0fdf4';
+    activeCard.style.boxShadow = '0 4px 14px rgba(5,150,105,0.15)';
+  }
+
+  const summaryBox = document.getElementById('db-plant-cost-summary');
+  const filterBar = document.getElementById('db-activity-filter-bar');
+  const container = document.getElementById('db-cultivation-timeline-container');
+
+  if (summaryBox) summaryBox.style.display = 'none';
+  if (filterBar) filterBar.style.display = 'none';
+  if (container) {
+    container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fa fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px;"></i> Đang tải dữ liệu canh tác & chi phí đầu tư cây...</div>';
+  }
 
   try {
     const plant = await api(`/plants/${plantId}`);
+    currentDbPlantProfileCache = plant;
     const logs = plant.logs || [];
+    currentDbPlantLogsCache = logs;
 
     // Calculate Costs Breakdown
     let totalConsumableCost = 0; // Phân bón, Thuốc
@@ -315,195 +347,303 @@ async function loadPlantCultivationTimeline() {
 
     const totalInvestmentCost = totalConsumableCost + totalFixedCost;
 
-    // Render Cost Summary Box
+    // Render Profile & Cost Summary Header Box
     if (summaryBox) {
       summaryBox.style.display = 'block';
       summaryBox.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
           <div>
-            <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.85;">
-              🌳 HỒ SƠ TỔNG DỮ LIỆU CANH TÁC & CHI PHÍ ĐẦU TƯ CÂY #${esc(plant.tree_code || plant.id)}
+            <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
+              🌳 HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
             </div>
-            <div style="font-size:22px; font-weight:800; margin-top:4px;">
-              ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''} · Trang trại: ${esc(plant.farm_name || 'Vườn Nông hộ')}
+            <div style="font-size:20px; font-weight:800; margin-top:2px;">
+              ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''}
             </div>
-            <div style="font-size:13px; opacity:0.9; margin-top:2px;">
-              Khách hàng: <strong>${esc(plant.owner_name || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status)}</strong> · Tuổi cây: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong>
+            <div style="font-size:12.5px; opacity:0.9; margin-top:2px;">
+              Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status || 'Tốt')}</strong> · Tuổi: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong>
             </div>
           </div>
 
           <!-- Total Cost Pills -->
-          <div style="display:flex; gap:12px; flex-wrap:wrap;">
-            <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:12px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
-              <div style="font-size:11px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG CHI PHÍ ĐẦU TƯ</div>
-              <div style="font-size:20px; font-weight:800; color:#fde047; margin-top:2px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:10px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
+              <div style="font-size:10.5px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG ĐẦU TƯ</div>
+              <div style="font-size:18px; font-weight:800; color:#fde047; margin-top:2px;">
                 ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
               </div>
             </div>
 
-            <div style="background:rgba(255,255,255,0.1); padding:10px 14px; border-radius:12px; font-size:12px; display:flex; flex-direction:column; justify-content:center;">
-              <div>🧪 Phân bón & Thuốc: <strong>${totalConsumableCost.toLocaleString('vi-VN')} đ</strong></div>
-              <div>💧 Nhân công & Điện nước: <strong>${totalFixedCost.toLocaleString('vi-VN')} đ</strong></div>
+            <div style="background:rgba(255,255,255,0.1); padding:8px 12px; border-radius:12px; font-size:11.5px; display:flex; flex-direction:column; justify-content:center;">
+              <div>🧪 Phân & Thuốc: <strong>${totalConsumableCost.toLocaleString('vi-VN')} đ</strong></div>
+              <div>💧 Công & Điện nước: <strong>${totalFixedCost.toLocaleString('vi-VN')} đ</strong></div>
             </div>
           </div>
         </div>
       `;
     }
 
-    if (logs.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
-          <i class="fa-solid fa-clipboard-list" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
-          <p style="font-size:14px; font-weight:700; color:#475569;">Cây này chưa có nhật ký canh tác nào được ghi nhận.</p>
-        </div>`;
-      return;
+    // Render Activity Filter Chips
+    if (filterBar) {
+      filterBar.style.display = 'flex';
+      renderActivityFilterChips(logs);
     }
 
-    // Activity Items Config (Color & Icon Mapping)
-    const typeConfigs = {
-      'Tưới nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'fa-droplet', iconColor: '#3b82f6' },
-      'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'fa-seedling', iconColor: '#92400e' },
-      'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'fa-spray-can-sparkles', iconColor: '#8b5cf6' },
-      'Cắt lá': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-scissors', iconColor: '#10b981' },
-      'Tỉa hoa': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: 'fa-scissors', iconColor: '#ea580c' },
-      'Bệnh cây': { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5', icon: 'fa-bug', iconColor: '#ef4444' },
-      'Thu hoạch': { bg: '#fefce8', color: '#a16207', border: '#fef08a', icon: 'fa-basket-shopping', iconColor: '#f59e0b' }
-    };
+    // Render Timeline Feed
+    renderDetailTimeline();
 
-    // Group Logs By Date (Newest Date First)
-    const groupedByDate = {};
-    logs.forEach(l => {
-      const dObj = new Date(l.log_date || l.created_at);
-      const dateKey = !isNaN(dObj) ? dObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Không rõ ngày';
-      if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
-      groupedByDate[dateKey].push(l);
+  } catch (err) {
+    if (container) {
+      container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--red);"><i class="fa fa-circle-xmark"></i> Lỗi: ${esc(err.message)}</div>`;
+    }
+  }
+}
+window.selectTreeForDetail = selectTreeForDetail;
+
+function renderActivityFilterChips(logs) {
+  const container = document.getElementById('db-activity-chips-container');
+  if (!container) return;
+
+  const counts = { all: logs.length };
+  logs.forEach(l => {
+    const t = l.log_type || 'Khác';
+    counts[t] = (counts[t] || 0) + 1;
+  });
+
+  const chipTypes = ['all', 'Tưới nước', 'Bón phân', 'Phun thuốc', 'Cắt lá', 'Tỉa hoa', 'Bệnh cây', 'Thu hoạch'];
+  const availableTypes = chipTypes.filter(t => t === 'all' || counts[t] > 0);
+
+  const typeIcons = {
+    all: 'fa-list-ul',
+    'Tưới nước': 'fa-droplet',
+    'Bón phân': 'fa-seedling',
+    'Phun thuốc': 'fa-spray-can-sparkles',
+    'Cắt lá': 'fa-scissors',
+    'Tỉa hoa': 'fa-scissors',
+    'Bệnh cây': 'fa-bug',
+    'Thu hoạch': 'fa-basket-shopping'
+  };
+
+  container.innerHTML = availableTypes.map(t => {
+    const isActive = (currentDbActiveActivityFilter === t);
+    const label = t === 'all' ? 'Tất cả hoạt động' : t;
+    const count = counts[t] || 0;
+    const icon = typeIcons[t] || 'fa-tag';
+
+    return `
+      <button type="button" onclick="filterTimelineByActivity('${esc(t)}')"
+              style="padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s ease; border:${isActive ? '1.5px solid #059669' : '1.5px solid #cbd5e1'}; background:${isActive ? '#059669' : '#ffffff'}; color:${isActive ? '#ffffff' : '#475569'}; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fa-solid ${icon}"></i> ${esc(label)} <span style="opacity:0.85; font-size:11px;">(${count})</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function filterTimelineByActivity(type) {
+  currentDbActiveActivityFilter = type;
+  renderActivityFilterChips(currentDbPlantLogsCache);
+  renderDetailTimeline();
+}
+window.filterTimelineByActivity = filterTimelineByActivity;
+
+function renderDetailTimeline() {
+  const container = document.getElementById('db-cultivation-timeline-container');
+  if (!container) return;
+
+  const plant = currentDbPlantProfileCache;
+  let logs = currentDbPlantLogsCache;
+
+  if (currentDbActiveActivityFilter !== 'all') {
+    logs = logs.filter(l => l.log_type === currentDbActiveActivityFilter);
+  }
+
+  if (logs.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
+        <i class="fa-solid fa-clipboard-list" style="font-size:36px; color:#94a3b8; margin-bottom:12px;"></i>
+        <p style="font-size:13.5px; font-weight:700; color:#475569;">
+          ${currentDbActiveActivityFilter === 'all' ? 'Cây này chưa có nhật ký canh tác nào.' : `Không có hoạt động "${currentDbActiveActivityFilter}" nào được ghi nhận.`}
+        </p>
+      </div>`;
+    return;
+  }
+
+  const typeConfigs = {
+    'Tưới nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'fa-droplet', iconColor: '#3b82f6' },
+    'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'fa-seedling', iconColor: '#92400e' },
+    'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'fa-spray-can-sparkles', iconColor: '#8b5cf6' },
+    'Cắt lá': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-scissors', iconColor: '#10b981' },
+    'Tỉa hoa': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: 'fa-scissors', iconColor: '#ea580c' },
+    'Bệnh cây': { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5', icon: 'fa-bug', iconColor: '#ef4444' },
+    'Thu hoạch': { bg: '#fefce8', color: '#a16207', border: '#fef08a', icon: 'fa-basket-shopping', iconColor: '#f59e0b' }
+  };
+
+  const groupedByDate = {};
+  logs.forEach(l => {
+    const dObj = new Date(l.log_date || l.created_at);
+    const dateKey = !isNaN(dObj) ? dObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Không rõ ngày';
+    if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+    groupedByDate[dateKey].push(l);
+  });
+
+  let timelineHtml = `
+    <!-- Initiation Node -->
+    <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:14px; padding:14px 16px; color:#064e3b; margin-bottom:20px; box-shadow:0 4px 12px rgba(16,185,129,0.06); display:flex; align-items:center; gap:12px;">
+      <div style="width:38px; height:38px; border-radius:10px; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 10px rgba(5,150,105,0.25);">
+        <i class="fa-solid fa-flag"></i>
+      </div>
+      <div>
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#047857;">🌱 THÔNG TIN KHỞI TẠO VĨNH VIỄN CÂY TRỒNG</div>
+        <div style="font-size:13.5px; font-weight:800; color:#064e3b; margin-top:2px;">Cây #${esc(plant.tree_code || plant.id)} (${esc(plant.plant_type)}) · Ngày tạo: ${fmtDate(plant.created_at)}</div>
+      </div>
+    </div>
+  `;
+
+  Object.keys(groupedByDate).forEach(dateStr => {
+    const dayLogs = groupedByDate[dateStr];
+    dayLogs.sort((a, b) => new Date(a.log_date || a.created_at) - new Date(b.log_date || b.created_at));
+
+    timelineHtml += `
+      <div style="margin-bottom:24px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.02);">
+        <!-- Date Header -->
+        <div style="background:linear-gradient(135deg, #f8fafc, #f1f5f9); padding:10px 16px; border-bottom:1.5px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+            <i class="fa-regular fa-calendar-check" style="color:#059669;"></i> Ngày ${esc(dateStr)}
+          </div>
+          <span class="badge" style="background:#059669; color:#ffffff; font-weight:800; font-size:11px; padding:2px 10px; border-radius:20px;">
+            ${dayLogs.length} hoạt động
+          </span>
+        </div>
+
+        <div style="padding:14px 16px; display:flex; flex-direction:column; gap:14px;">
+    `;
+
+    dayLogs.forEach(l => {
+      const cfg = typeConfigs[l.log_type] || { bg: '#f8fafc', color: '#334155', border: '#e2e8f0', icon: 'fa-clipboard-check', iconColor: '#059669' };
+
+      let details = {};
+      try {
+        details = typeof l.details === 'string' ? JSON.parse(l.details) : (l.details || {});
+      } catch (e) { details = {}; }
+
+      const timeStr = l.log_date ? new Date(l.log_date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
+      const supplyName = details.supply_name || details.product_name || details.fertilizer_name || details.pesticide_name || '';
+      const supplyImg = details.supply_image || details.product_image || details.image_url || '';
+      const quantity = details.quantity || details.dosage || details.amount || '';
+      const unit = details.unit || details.dosage_unit || '';
+      const method = details.method || details.water_method || '';
+      const reason = details.reason || '';
+      const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
+
+      let logMediaList = [];
+      if (l.media_urls) {
+        try {
+          const raw = typeof l.media_urls === 'string' ? JSON.parse(l.media_urls) : l.media_urls;
+          if (Array.isArray(raw)) logMediaList = raw;
+        } catch(e) {}
+      }
+
+      let supplyBoxHtml = '';
+      if (supplyName || cost > 0 || quantity || method || reason) {
+        supplyBoxHtml = `
+          <div style="margin-top:10px; background:#f8fafc; border:1px solid ${cfg.border}; border-radius:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              ${supplyImg 
+                ? `<img src="${esc(supplyImg)}" alt="${esc(supplyName)}" style="width:42px; height:42px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">` 
+                : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i class="fa-solid ${cfg.icon}"></i></div>`
+              }
+              <div>
+                <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(supplyName || l.log_type)}</div>
+                ${quantity ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Liều lượng: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
+                ${method ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Phương thức: <strong>${esc(method)}</strong></div>` : ''}
+                ${reason ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mục đích: <strong>${esc(reason)}</strong></div>` : ''}
+              </div>
+            </div>
+            ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0;"><i class="fa-solid fa-coins"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
+          </div>
+        `;
+      }
+
+      let attachedMediaHtml = '';
+      if (logMediaList.length > 0) {
+        attachedMediaHtml = `
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            ${logMediaList.map(renderMediaThumbnail).join('')}
+          </div>
+        `;
+      }
+
+      timelineHtml += `
+        <div style="background:#ffffff; border:1px solid ${cfg.border}; border-radius:12px; padding:12px 14px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
+                <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(l.log_type)}
+              </span>
+              ${timeStr ? `<span style="font-size:11.5px; font-weight:700; color:#64748b;"><i class="fa-regular fa-clock"></i> ${timeStr}</span>` : ''}
+            </div>
+            ${(l.creator_name || l.creator_phone) ? `
+              <div style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; color:#064e3b; padding:3px 10px; border-radius:8px; font-size:11.5px; font-weight:700;">
+                <i class="fa-solid fa-user-check" style="color:#059669;"></i> 👤 Thực hiện bởi: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.creator_phone ? `· 📞 <strong>${esc(l.creator_phone)}</strong>` : ''}
+              </div>` : ''}
+          </div>
+
+          ${l.note ? `<div style="font-size:13px; color:#1e293b; margin-top:8px; line-height:1.5; font-weight:500;">${esc(l.note)}</div>` : ''}
+
+          ${supplyBoxHtml}
+          ${attachedMediaHtml}
+        </div>
+      `;
     });
 
-    let timelineHtml = `
-      <!-- Initiation Node -->
-      <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:14px; padding:16px; color:#064e3b; margin-bottom:24px; box-shadow:0 4px 14px rgba(16,185,129,0.08); display:flex; align-items:center; gap:14px;">
-        <div style="width:42px; height:42px; border-radius:12px; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 4px 10px rgba(5,150,105,0.3);">
-          <i class="fa-solid fa-flag"></i>
-        </div>
-        <div>
-          <div style="font-size:12px; font-weight:800; text-transform:uppercase; color:#047857;">🌱 THÔNG TIN KHỞI TẠO VĨNH VIỄN CÂY TRỒNG</div>
-          <div style="font-size:14px; font-weight:800; color:#064e3b; margin-top:2px;">Cây #${esc(plant.tree_code || plant.id)} (${esc(plant.plant_type)}) · Ngày tạo: ${fmtDate(plant.created_at)}</div>
+    timelineHtml += `
         </div>
       </div>
     `;
+  });
 
-    Object.keys(groupedByDate).forEach(dateStr => {
-      const dayLogs = groupedByDate[dateStr];
-      // Sort within the day chronologically
-      dayLogs.sort((a, b) => new Date(a.log_date || a.created_at) - new Date(b.log_date || b.created_at));
+  container.innerHTML = timelineHtml;
+}
 
-      timelineHtml += `
-        <div style="margin-bottom:28px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,0.03);">
-          <!-- Date Header Card -->
-          <div style="background:linear-gradient(135deg, #f8fafc, #f1f5f9); padding:12px 18px; border-bottom:1.5px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-size:14px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i class="fa-regular fa-calendar-check" style="color:#059669; font-size:16px;"></i> Ngày ${esc(dateStr)}
-            </div>
-            <span class="badge" style="background:#059669; color:#ffffff; font-weight:800; font-size:11.5px; padding:3px 12px; border-radius:20px;">
-              ${dayLogs.length} hoạt động canh tác
-            </span>
-          </div>
+function renderEmptyDetailView(msg) {
+  const container = document.getElementById('db-cultivation-timeline-container');
+  const summaryBox = document.getElementById('db-plant-cost-summary');
+  const filterBar = document.getElementById('db-activity-filter-bar');
 
-          <div style="padding:16px 18px; display:flex; flex-direction:column; gap:16px;">
-      `;
-
-      dayLogs.forEach(l => {
-        const cfg = typeConfigs[l.log_type] || { bg: '#f8fafc', color: '#334155', border: '#e2e8f0', icon: 'fa-clipboard-check', iconColor: '#059669' };
-
-        let details = {};
-        try {
-          details = typeof l.details === 'string' ? JSON.parse(l.details) : (l.details || {});
-        } catch (e) { details = {}; }
-
-        const timeStr = l.log_date ? new Date(l.log_date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
-        const supplyName = details.supply_name || details.product_name || details.fertilizer_name || details.pesticide_name || '';
-        const supplyImg = details.supply_image || details.product_image || details.image_url || '';
-        const quantity = details.quantity || details.dosage || details.amount || '';
-        const unit = details.unit || details.dosage_unit || '';
-        const method = details.method || details.water_method || '';
-        const reason = details.reason || '';
-        const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
-
-        // Parse attached log media photos & videos
-        let logMediaList = [];
-        if (l.media_urls) {
-          try {
-            const raw = typeof l.media_urls === 'string' ? JSON.parse(l.media_urls) : l.media_urls;
-            if (Array.isArray(raw)) logMediaList = raw;
-          } catch(e) {}
-        }
-
-        // Supply details box
-        let supplyBoxHtml = '';
-        if (supplyName || cost > 0 || quantity || method || reason) {
-          supplyBoxHtml = `
-            <div style="margin-top:10px; background:#f8fafc; border:1px solid ${cfg.border}; border-radius:10px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-              <div style="display:flex; align-items:center; gap:12px;">
-                ${supplyImg 
-                  ? `<img src="${esc(supplyImg)}" alt="${esc(supplyName)}" style="width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">` 
-                  : `<div style="width:44px; height:44px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:20px;"><i class="fa-solid ${cfg.icon}"></i></div>`
-                }
-                <div>
-                  <div style="font-size:13.5px; font-weight:800; color:#0f172a;">${esc(supplyName || l.log_type)}</div>
-                  ${quantity ? `<div style="font-size:12px; color:#475569; font-weight:600;">Số lượng / Liều lượng: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
-                  ${method ? `<div style="font-size:12px; color:#475569; font-weight:600;">Phương thức: <strong>${esc(method)}</strong></div>` : ''}
-                  ${reason ? `<div style="font-size:12px; color:#475569; font-weight:600;">Mục đích / Lý do: <strong>${esc(reason)}</strong></div>` : ''}
-                </div>
-              </div>
-              ${cost > 0 ? `<div style="font-size:13.5px; font-weight:800; color:#047857; background:#ecfdf5; padding:6px 14px; border-radius:8px; border:1px solid #a7f3d0;"><i class="fa-solid fa-coins"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
-            </div>
-          `;
-        }
-
-        // Media attachments (Supports Image & HTML5 Video)
-        let attachedMediaHtml = '';
-        if (logMediaList.length > 0) {
-          attachedMediaHtml = `
-            <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-              ${logMediaList.map(renderMediaThumbnail).join('')}
-            </div>
-          `;
-        }
-
-        timelineHtml += `
-          <div style="background:#ffffff; border:1px solid ${cfg.border}; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:800; display:inline-flex; align-items:center; gap:6px;">
-                  <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(l.log_type)}
-                </span>
-                ${timeStr ? `<span style="font-size:12px; font-weight:700; color:#64748b;"><i class="fa-regular fa-clock"></i> ${timeStr}</span>` : ''}
-              </div>
-              ${(l.creator_name || l.creator_phone) ? `
-                <div style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; color:#064e3b; padding:4px 12px; border-radius:8px; font-size:12px; font-weight:700;">
-                  <i class="fa-solid fa-user-check" style="color:#059669;"></i> 👤 Thực hiện bởi: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.creator_phone ? `· 📞 <strong>${esc(l.creator_phone)}</strong>` : ''}
-                </div>` : ''}
-            </div>
-
-            ${l.note ? `<div style="font-size:13.5px; color:#1e293b; margin-top:8px; line-height:1.5; font-weight:500;">${esc(l.note)}</div>` : ''}
-
-            ${supplyBoxHtml}
-            ${attachedMediaHtml}
-          </div>
-        `;
-      });
-
-      timelineHtml += `
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = timelineHtml;
-
-  } catch (err) {
-    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--red);"><i class="fa fa-circle-xmark"></i> Lỗi: ${esc(err.message)}</div>`;
+  if (summaryBox) summaryBox.style.display = 'none';
+  if (filterBar) filterBar.style.display = 'none';
+  if (container) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:50px 20px; background:#ffffff; border-radius:16px; border:1.5px solid #e2e8f0; text-align:center;">
+        <i class="fa-solid fa-tree" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
+        <p style="font-size:13.5px; font-weight:700; color:#475569;">${esc(msg)}</p>
+      </div>`;
   }
+}
+
+function exportCultivationPDF() {
+  if (!currentDbPlantProfileCache) return;
+  window.print();
+}
+window.exportCultivationPDF = exportCultivationPDF;
+
+function onSupplyFilterChange() {
+  const userId = document.getElementById('db-supply-filter-user')?.value;
+  const farmSelect = document.getElementById('db-supply-filter-farm');
+
+  let filteredFarms = dbFarmsCache;
+  if (userId) {
+    filteredFarms = dbFarmsCache.filter(f => f.user_id == userId);
+    if (farmSelect && farmSelect.value && !filteredFarms.some(f => f.id == farmSelect.value)) {
+      farmSelect.value = '';
+    }
+  }
+
+  if (farmSelect) {
+    farmSelect.innerHTML = '<option value="">— Tất cả Trang trại —</option>' +
+      filteredFarms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+  }
+
+  loadSuppliesTab();
 }
 
 // ── Tab 2: Supplies Catalog ──
