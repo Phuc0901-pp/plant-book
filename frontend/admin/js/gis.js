@@ -11,17 +11,24 @@ function sanitizeCoordinates(rawCoords) {
   const validPts = [];
   arr.forEach(pt => {
     if (Array.isArray(pt) && pt.length >= 2) {
-      let lng = parseFloat(pt[0]);
-      let lat = parseFloat(pt[1]);
+      let a = parseFloat(pt[0]);
+      let b = parseFloat(pt[1]);
+      if (isNaN(a) || isNaN(b)) return;
 
-      // Detect swapped lat/lng (e.g. [11.8333, 106.9167] -> lng=106.9167, lat=11.8333)
-      if ((lng >= -90 && lng <= 90) && (lat > 90 || lat < -90 || lat > 30)) {
-        const tmp = lng;
-        lng = lat;
-        lat = tmp;
+      let lng = a, lat = b;
+      // In Vietnam: Longitude is between 102 and 115, Latitude is between 8 and 24
+      if ((a >= 90 && a <= 125) && (b >= -10 && b <= 40)) {
+        lng = a;
+        lat = b;
+      } else if ((b >= 90 && b <= 125) && (a >= -10 && a <= 40)) {
+        lng = b;
+        lat = a;
+      } else if (a <= 40 && b > 40) {
+        lng = b;
+        lat = a;
       }
 
-      if (!isNaN(lng) && !isNaN(lat) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
         validPts.push([lng, lat]);
       }
     }
@@ -265,18 +272,25 @@ function initDashboardMap(farms, plants) {
       } else if (validCoords.length > 0) {
         centerLng = validCoords[0][0];
         centerLat = validCoords[0][1];
-        bounds.extend([centerLng, centerLat]);
-        hasBounds = true;
+        if (centerLng >= 100 && centerLng <= 115 && centerLat >= 8 && centerLat <= 24) {
+          bounds.extend([centerLng, centerLat]);
+          hasBounds = true;
+        }
       } else {
         const farmPlants = plants.filter(p => p.farm_id === farm.id && p.latitude && p.longitude);
         if (farmPlants.length > 0) {
           let sumLng = 0, sumLat = 0, validCnt = 0;
           farmPlants.forEach(p => {
-            let lat = parseFloat(p.latitude);
-            let lng = parseFloat(p.longitude);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
-                const tmp = lat; lat = lng; lng = tmp;
+            let a = parseFloat(p.longitude);
+            let b = parseFloat(p.latitude);
+            if (!isNaN(a) && !isNaN(b)) {
+              let lng = a, lat = b;
+              if ((a >= 90 && a <= 125) && (b >= -10 && b <= 40)) {
+                lng = a; lat = b;
+              } else if ((b >= 90 && b <= 125) && (a >= -10 && a <= 40)) {
+                lng = b; lat = a;
+              } else if (a <= 40 && b > 40) {
+                lng = b; lat = a;
               }
               if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
                 sumLng += lng;
@@ -288,13 +302,22 @@ function initDashboardMap(farms, plants) {
           if (validCnt > 0) {
             centerLng = sumLng / validCnt;
             centerLat = sumLat / validCnt;
-            bounds.extend([centerLng, centerLat]);
-            hasBounds = true;
+            if (centerLng >= 100 && centerLng <= 115 && centerLat >= 8 && centerLat <= 24) {
+              bounds.extend([centerLng, centerLat]);
+              hasBounds = true;
+            }
           }
         }
       }
 
       if (centerLng !== null && centerLat !== null && !isNaN(centerLng) && !isNaN(centerLat)) {
+        if ((centerLat > 90 || centerLat < -90 || centerLat > 35) && (centerLng >= -10 && centerLng <= 35)) {
+          const tmp = centerLng; centerLng = centerLat; centerLat = tmp;
+        }
+        if (centerLng < 40 && centerLat > 40) {
+          const tmp = centerLng; centerLng = centerLat; centerLat = tmp;
+        }
+
         const pinEl = document.createElement('div');
         const initialZoom = map.getZoom ? map.getZoom() : 5;
         pinEl.className = `farm-dashboard-pin ${initialZoom >= 12 ? 'is-full' : 'is-dot'}`;
@@ -325,7 +348,7 @@ function initDashboardMap(farms, plants) {
           }
         });
 
-        new mapboxgl.Marker({ element: pinEl, anchor: 'center' })
+        const farmMarker = new mapboxgl.Marker({ element: pinEl, anchor: 'center' })
           .setLngLat([centerLng, centerLat])
           .setPopup(new mapboxgl.Popup({ offset: 20 })
             .setHTML(`
@@ -340,6 +363,8 @@ function initDashboardMap(farms, plants) {
             `)
           )
           .addTo(map);
+
+        dashboardMarkers.push({ marker: farmMarker, element: pinEl });
       }
     });
 
