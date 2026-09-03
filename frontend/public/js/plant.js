@@ -722,114 +722,96 @@ async function renderPlant(plant) {
 
         mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    // Determine the initial center of the map
-    let centerLng = 105.0;
-    let centerLat = 16.0;
-    let initialZoom = 16;
+    // Validate coordinates
+    const hasValidPlantCoords = plant.latitude && plant.longitude && 
+      !isNaN(parseFloat(plant.latitude)) && !isNaN(parseFloat(plant.longitude)) &&
+      Math.abs(parseFloat(plant.latitude)) <= 90 && Math.abs(parseFloat(plant.longitude)) <= 180;
+
+    let centerLng = 107.241850;
+    let centerLat = 10.941520;
+    let initialZoom = 17;
     
-    if (plant.longitude && plant.latitude) {
+    if (hasValidPlantCoords) {
       centerLng = parseFloat(plant.longitude);
       centerLat = parseFloat(plant.latitude);
     } else if (plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
       const firstRing = plant.farm_boundary.coordinates[0];
-      if (firstRing && firstRing[0]) {
+      if (firstRing && firstRing[0] && Math.abs(parseFloat(firstRing[0][1])) <= 90) {
         centerLng = parseFloat(firstRing[0][0]);
         centerLat = parseFloat(firstRing[0][1]);
-        initialZoom = 14;
+        initialZoom = 15;
       }
     }
 
-    const plantMap = new mapboxgl.Map({
-      container: 'plant-location-map',
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [centerLng, centerLat],
-      zoom: initialZoom,
-      attributionControl: false,
-      preserveDrawingBuffer: true
-    });
-    plantMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-    plantMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-    plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
-
-    // Bản đồ vị trí cây trồng trên trang Public hiển thị bản đồ mượt mà (Không hiển thị đường đồng mức)
-    // addContourLinesToMap(plantMap);
-
-    // Add plant marker
-    if (plant.latitude && plant.longitude) {
-      const el = document.createElement('div');
-      el.className = 'plant-map-marker';
-      el.innerHTML = '<i class="fa-solid fa-seedling"></i>';
-      new mapboxgl.Marker({ element: el })
-        .setLngLat([parseFloat(plant.longitude), parseFloat(plant.latitude)])
-        .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
-          .setHTML(`<strong>${esc(plant.plant_type)}</strong>${plant.plant_variety ? '<br><small>'+esc(plant.plant_variety)+'</small>' : ''}`))
-        .addTo(plantMap);
-    }
-
-    // Draw farm polygon if available
-    if (plant.farm_boundary && plant.farm_boundary.coordinates) {
-      plantMap.on('load', () => {
-        plantMap.addSource('farm-poly', {
-          type: 'geojson',
-          data: { type: 'Feature', geometry: plant.farm_boundary, properties: {} }
-        });
-        plantMap.addLayer({
-          id: 'farm-poly-fill',
-          type: 'fill',
-          source: 'farm-poly',
-          paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.15 }
-        });
-        plantMap.addLayer({
-          id: 'farm-poly-line',
-          type: 'line',
-          source: 'farm-poly',
-          paint: { 'line-color': '#22c55e', 'line-width': 2, 'line-opacity': 0.8 }
-        });
+    try {
+      const plantMap = new mapboxgl.Map({
+        container: 'plant-location-map',
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        center: [centerLng, centerLat],
+        zoom: initialZoom,
+        attributionControl: false,
+        preserveDrawingBuffer: true
       });
-    }
 
-    // Request and show device GPS location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const devLat = position.coords.latitude;
-          const devLng = position.coords.longitude;
+      plantMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+      plantMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+      plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-          // Create a marker for the device's position
-          const devEl = document.createElement('div');
-          devEl.className = 'device-location-marker';
-          new mapboxgl.Marker({ element: devEl })
-            .setLngLat([devLng, devLat])
-            .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
-              .setHTML(`<strong>Vị trí của bạn</strong><br><small>Thiết bị mở URL</small>`))
-            .addTo(plantMap);
+      // Add plant marker
+      if (hasValidPlantCoords) {
+        const el = document.createElement('div');
+        el.className = 'plant-map-marker';
+        el.innerHTML = '<i class="fa-solid fa-seedling"></i>';
+        new mapboxgl.Marker({ element: el })
+          .setLngLat([parseFloat(plant.longitude), parseFloat(plant.latitude)])
+          .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
+            .setHTML(`<strong>${esc(plant.plant_type)}</strong>${plant.plant_variety ? '<br><small>'+esc(plant.plant_variety)+'</small>' : ''}`))
+          .addTo(plantMap);
+      }
 
-          // Adjust map bounds to show both the plant/farm and the device
-          const bounds = new mapboxgl.LngLatBounds();
-          let hasPoints = false;
-
-          if (plant.longitude && plant.latitude) {
-            bounds.extend([parseFloat(plant.longitude), parseFloat(plant.latitude)]);
-            hasPoints = true;
-          }
-
-          if (plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
-            plant.farm_boundary.coordinates[0].forEach(coord => {
-              bounds.extend([parseFloat(coord[0]), parseFloat(coord[1])]);
-              hasPoints = true;
+      // Draw farm polygon if available
+      if (plant.farm_boundary && plant.farm_boundary.coordinates) {
+        plantMap.on('load', () => {
+          try {
+            plantMap.addSource('farm-poly', {
+              type: 'geojson',
+              data: { type: 'Feature', geometry: plant.farm_boundary, properties: {} }
             });
+            plantMap.addLayer({
+              id: 'farm-poly-fill',
+              type: 'fill',
+              source: 'farm-poly',
+              paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.18 }
+            });
+            plantMap.addLayer({
+              id: 'farm-poly-line',
+              type: 'line',
+              source: 'farm-poly',
+              paint: { 'line-color': '#22c55e', 'line-width': 2.5, 'line-opacity': 0.9 }
+            });
+          } catch(e) {
+            console.warn('Lỗi vẽ ranh giới trang trại:', e);
           }
+        });
+      }
 
-          if (hasPoints) {
-            bounds.extend([devLng, devLat]);
-            plantMap.fitBounds(bounds, { padding: 50, maxZoom: 16 });
-          }
-        },
-        (error) => {
-          console.warn('Không thể lấy vị trí thiết bị:', error);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+      plantMap.on('load', () => {
+        plantMap.resize();
+      });
+
+      setTimeout(() => {
+        try { plantMap.resize(); } catch(_) {}
+      }, 300);
+      setTimeout(() => {
+        try { plantMap.resize(); } catch(_) {}
+      }, 1000);
+
+      window.addEventListener('resize', () => {
+        try { plantMap.resize(); } catch(_) {}
+      });
+
+    } catch (mapErr) {
+      console.error('Lỗi khởi tạo bản đồ Mapbox:', mapErr);
     }
       })();
     }

@@ -33,17 +33,28 @@ async function seedDurianRi6LK() {
       farmName = targetFarm.name || 'LK';
       userId = targetFarm.user_id;
 
-      // Cập nhật thông số VietGAP cho trang trại LK hiện hữu
+      // Cập nhật thông số VietGAP và tọa độ GIS chuẩn WGS-84 cho trang trại LK hiện hữu
+      const defaultPolygon = JSON.stringify([
+        [107.240500, 10.940500],
+        [107.243500, 10.940800],
+        [107.243200, 10.942500],
+        [107.240200, 10.942200],
+        [107.240500, 10.940500]
+      ]);
+
       await client.query(`
         UPDATE farms SET 
           puc_code = 'VN-LK-001',
           vietgap_cert_number = 'VG-2026-LK88',
           vietgap_cert_org = 'Quacert Việt Nam',
+          latitude = COALESCE(latitude, 10.941200),
+          longitude = COALESCE(longitude, 107.241500),
+          polygon_coordinates = COALESCE(polygon_coordinates, $2),
           allow_shared_supplies = true,
           allow_shared_history = true,
           updated_at = NOW()
         WHERE id = $1
-      `, [farmId]);
+      `, [farmId, defaultPolygon]);
       console.log(`🏡 Đã tìm thấy và cập nhật chứng nhận VietGAP cho Trang Trại "${farmName}" (ID: ${farmId}, User ID: ${userId})`);
     } else {
       const uRes = await client.query(`
@@ -373,6 +384,8 @@ async function seedDurianRi6LK() {
           tree_code = $1,
           nfc_uid = COALESCE(nfc_uid, '04:A2:3B:8C:9F:5D:80'),
           public_slug = COALESCE(public_slug, 'flk-sr01-ri6-longkhanh'),
+          latitude = 10.941520,
+          longitude = 107.241850,
           cover_image = $2,
           is_public = true,
           data = $3,
