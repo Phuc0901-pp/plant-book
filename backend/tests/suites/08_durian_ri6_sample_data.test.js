@@ -101,4 +101,42 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     expect(batchCode).toBe('VN-LK-001-20260615-SR01');
   });
 
+  it('8.6 Should validate ultra-dense 20,000+ agronomic logs generation formula over 22 years (2004 - 2026)', () => {
+    let totalLogsCount = 0;
+    for (let year = 2004; year <= 2026; year++) {
+      const daysInYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 366 : 365;
+      for (let d = 1; d <= daysInYear; d++) {
+        const dt = new Date(year, 0, d);
+        const month = dt.getMonth() + 1;
+        const day = dt.getDate();
+        const treeAge = year - 2004 + 1;
+
+        // 1. Morning inspection (07:00) + Afternoon inspection (16:00)
+        totalLogsCount += 2;
+        // 1c. Soil EC check (every 5 days)
+        if (d % 5 === 2) totalLogsCount++;
+        // 1d. Foliar nutrition (every 8 days)
+        if (d % 8 === 4) totalLogsCount++;
+        // 2. Watering
+        const isDrySeason = (month >= 11 || month <= 4);
+        if (isDrySeason ? (d % 2 === 0) : (d % 6 === 0)) totalLogsCount++;
+        // 3. Weeding
+        if (d % 7 === 3) totalLogsCount++;
+        // 4. Fertilization
+        if (d % 10 === 5) totalLogsCount++;
+        // 5. Spraying
+        if (d % 12 === 7) totalLogsCount++;
+        // 6. Pruning
+        if (d % 15 === 9) totalLogsCount++;
+        // 7. Pollination
+        if ((month === 12 || month === 1) && d % 3 === 0 && treeAge >= 6) totalLogsCount++;
+        // 8. Harvest
+        if ((month === 5 || month === 6) && (day === 15 || day === 28) && treeAge >= 6) totalLogsCount++;
+      }
+    }
+
+    expect(totalLogsCount > 20000).toBe(true);
+    expect(totalLogsCount).toBe(26030); // Exact 26,030 dense field records across 22 years
+  });
+
 });

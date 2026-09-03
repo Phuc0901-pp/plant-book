@@ -1,6 +1,7 @@
 /**
- * Seed Script: Dữ liệu canh tác mẫu Cây Sầu Riêng Ri6 STT 1 Trọn Vẹn 20 Năm (2004 - 2026)
- * Trang trại Long Khánh (LK Farm) - Chuẩn VietGAP 100% & Quản trị Doanh nghiệp Agri-ERP
+ * Seed Script: Dữ liệu canh tác mẫu Cây Sầu Riêng Ri6 STT 1 Trọn Vẹn 22 Năm (2004 - 2026)
+ * Trang trại Long Khánh (LK Farm) - Siêu Mật Độ 20,000+ Nhật Ký Canh Tác Thực Địa
+ * Chuẩn VietGAP 100% & Quản trị Doanh nghiệp Agri-ERP
  * Chạy: node scripts/seed_durian_ri6_lk.js
  */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
@@ -9,7 +10,7 @@ const pool = require('../config/db');
 async function seedDurianRi6LK() {
   const client = await pool.connect();
   try {
-    console.log('🌱 Bắt đầu tạo/cập nhật dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (Trang trại LK) Trọn Vẹn 20 Năm (2004 - 2026)...');
+    console.log('🌱 Bắt đầu tạo siêu dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (Trang trại LK) với 20,000+ Nhật Ký Canh Tác...');
     await client.query('BEGIN');
 
     // ── 1. TÌM TRANG TRẠI "LK" HIỆN HỮU VÀ TÀI KHOẢN NÔNG HỘ SỞ HỮU ──
@@ -45,7 +46,6 @@ async function seedDurianRi6LK() {
       `, [farmId]);
       console.log(`🏡 Đã tìm thấy và cập nhật chứng nhận VietGAP cho Trang Trại "${farmName}" (ID: ${farmId}, User ID: ${userId})`);
     } else {
-      // Tìm user Mathew hoặc admin
       const uRes = await client.query(`
         SELECT id FROM users 
         WHERE full_name ILIKE '%Mathew%' 
@@ -293,7 +293,7 @@ async function seedDurianRi6LK() {
     }
     console.log(`📦 Đã đồng bộ danh mục 9 vật tư sầu riêng Ri6 cho các tài khoản liên quan`);
 
-    // ── 3. THIẾT LẬP DỮ LIỆU LỊCH SỬ NĂNG SUẤT & DOANH THU 20 MÙA VỤ (2007 - 2026) ──
+    // ── 3. THIẾT LẬP DỮ LIỆU LỊCH SỬ NĂNG SUẤT & DOANH THU 20 MÙA VỤ (2009 - 2026) ──
     const historicalYieldRecords = [
       { year: 2009, tree_age: 6, fruit_count: 18, yield_kg: 54, avg_price_vnd: 30000, revenue_vnd: 1620000, expense_vnd: 450000, profit_vnd: 1170000, grade_1_pct: 75, brix: '30°', note: 'Vụ bói đầu tiên (dưỡng cây)' },
       { year: 2010, tree_age: 7, fruit_count: 35, yield_kg: 105, avg_price_vnd: 32000, revenue_vnd: 3360000, expense_vnd: 620000, profit_vnd: 2740000, grade_1_pct: 80, brix: '31°', note: 'Bắt đầu cho trái thương phẩm' },
@@ -402,366 +402,377 @@ async function seedDurianRi6LK() {
       console.log(`🌳 Đã tạo mới Cây Sầu Riêng STT 1 (ID: ${plantId}) trong Trang trại "${farmName}"`);
     }
 
-    // ── 5. TẠO TOÀN BỘ NHẬT KÝ CANH TÁC TRỌNG YẾU TỪ 2004 ĐẾN 2026 (22 BẢN GHI) ──
+    // ── 5. THUẬT TOÁN SINH SIÊU MẬT ĐỘ 20,000+ NHẬT KÝ CANH TÁC THỰC ĐỊA (2004 - 2026) ──
+    console.log('⚡ Đang khởi tạo bộ dữ liệu 20,000+ nhật ký canh tác theo giờ giấc chi tiết...');
     await client.query(`DELETE FROM plant_logs WHERE plant_id = $1`, [plantId]);
 
-    const logsList = [
-      // ── GIAI ĐOẠN 1: KIẾN THIẾT CƠ BẢN (2004 - 2009) ──
-      {
-        log_date: '2004-06-18',
-        log_type: 'Khác',
-        operator_name: 'Ông Nguyễn Văn An (Chủ vườn đời đầu)',
-        equipment_used: 'Cuốc đào hố & Cọc tre định vị',
-        note: 'Xuống giống cây con ghép mắt Sầu riêng Ri6 thuần chủng. Đào hố 80x80x80cm, bón lót 10kg phân chuồng hoai mục + 0.5kg lân nung chảy Văn Điển. Cắm 3 cọc tre chéo giữ gốc và che lưới lan 50% chống nắng hướng tây.',
-        media_urls: ['https://images.unsplash.com/photo-1592417817098-8f3d6910985c?w=600&auto=format&fit=crop&q=80'],
-        details: { phase: 'Xuống giống khởi tạo', planting_cost: 120000, rootstock: 'Gốc sầu riêng hạt' }
-      },
-      {
-        log_date: '2005-05-20',
-        log_type: 'Cắt tỉa',
-        operator_name: 'Nguyễn Văn An',
-        equipment_used: 'Kéo cắt cành mũi nhọn',
-        note: 'Cây được 1 năm tuổi, đạt chiều cao 1.0m. Tiến hành bấm ngọn thân chính để kích thích phát triển 4 cành cấp 1 tỏa đều 4 hướng. Bón thúc NPK 30-10-10 kích cơi đọt 2 bung mạnh.',
-        media_urls: ['https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=600&auto=format&fit=crop&q=80'],
-        details: { phase: 'Bấm đọt tạo cành cấp 1', trunk_diameter_cm: 12, height_m: 2.2 }
-      },
-      {
-        log_date: '2006-08-15',
-        log_type: 'Cắt tỉa',
-        operator_name: 'Nguyễn Văn Long',
-        equipment_used: 'Kéo cắt tỉa & Chổi quét vôi',
-        note: 'Tỉa cành tạo tán hình tháp thông thoáng. Cắt bỏ cành tăm, cành mọc hướng tâm trong thân. Quét vôi gốc cây phòng trừ nấm hồng và rệp sáp đầu mùa mưa.',
-        media_urls: ['https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=600&auto=format&fit=crop&q=80'],
-        details: { phase: 'Định hình tán tháp 3 năm tuổi', trunk_diameter_cm: 16, height_m: 3.2 }
-      },
-      {
-        log_date: '2007-07-10',
-        log_type: 'Bón phân',
-        operator_name: 'Nguyễn Văn Long',
-        equipment_used: 'Thùng rải phân',
-        note: 'Cây 4 năm tuổi phát triển sinh khối mạnh mẽ. Bón 10kg phân hữu cơ vi sinh Bỉ kết hợp rải 2kg vôi bột khử chua, nâng pH đất từ 4.8 lên 6.2.',
-        media_urls: ['https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80'],
-        details: { phase: 'Nuôi khung tán 4 năm tuổi', trunk_diameter_cm: 22, height_m: 4.5 }
-      },
-      {
-        log_date: '2008-11-25',
-        log_type: 'Khác',
-        operator_name: 'Nguyễn Văn Long',
-        equipment_used: 'Kéo cắt cành & Bạt phủ đất',
-        note: 'Chuẩn bị thể trạng đón vụ trái bói. Tỉa sạch toàn bộ cành la sát đất (cách mặt đất 0.8m). Thử nghiệm xiết nước tạo hạn 15 ngày kích mắt cua.',
-        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-        details: { phase: 'Chuẩn bị đón trái bói 5 năm tuổi', trunk_diameter_cm: 28, height_m: 5.8 }
-      },
-      {
-        log_date: '2009-06-20',
-        log_type: 'Thu hoạch',
-        operator_name: 'Nguyễn Văn Long',
-        equipment_used: 'Dao cắt sầu riêng & Thùng lót rơm',
-        note: 'VỤ THU HOẠCH BÓI ĐẦU TIÊN (Năm thứ 6): Thu hoạch 18 trái bói (~54kg). Chủ động tỉa bỏ 70% trái non từ trước để dưỡng cây không bị suy kiệt. Doanh thu đầu đời: 1,620,000 VNĐ.',
-        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-        batch_code: 'VN-LK-001-20090620-SR01',
-        details: { phase: 'Vụ bói đầu đời', yield_kg: 54, fruit_count: 18, price_vnd: 30000, revenue_vnd: 1620000, net_profit_vnd: 1170000 }
-      },
-
-      // ── GIAI ĐOẠN 2: TĂNG TRƯỞNG KINH DOANH & CỘT MỐC LỊCH SỬ (2011 - 2023) ──
-      {
-        log_date: '2011-04-10',
-        log_type: 'Khác',
-        operator_name: 'Đội thi công AgriTech',
-        equipment_used: 'Máy hàn ống HDPE & Béc tưới bù áp',
-        note: 'Lắp đặt hệ thống tưới tự động bù áp 3 béc quanh gốc cây. Cây 8 năm tuổi đạt sản lượng 50 trái (~150kg), doanh thu 5,250,000 VNĐ.',
-        media_urls: ['https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80'],
-        details: { phase: 'Hiện đại hóa tưới tự động', yield_kg: 150, fruit_count: 50, revenue_vnd: 5250000 }
-      },
-      {
-        log_date: '2013-06-25',
-        log_type: 'Thu hoạch',
-        operator_name: 'Kỹ sư Nguyễn Văn Long',
-        equipment_used: 'Dao cắt chuyên dụng',
-        note: 'CỘT MỐC 10 NĂM TUỔI: Đường kính gốc đạt 42cm, tán lá 8m. Vụ mùa đạt 85 trái (~255kg), doanh thu vượt mốc 10.7 triệu VNĐ. Bắt đầu áp dụng quy trình canh tác an toàn VietGAP.',
-        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-        batch_code: 'VN-LK-001-20130625-SR01',
-        details: { phase: 'Cột mốc 10 năm tuổi', yield_kg: 255, fruit_count: 85, price_vnd: 42000, revenue_vnd: 10710000, net_profit_vnd: 9560000 }
-      },
-      {
-        log_date: '2017-06-18',
-        log_type: 'Thu hoạch',
-        operator_name: 'Nguyễn Văn Long & Đội thu hoạch',
-        equipment_used: 'Dao cắt sầu riêng & Xe tải thùng lạnh',
-        note: 'CỘT MỐC CẤP MÃ PUC XUẤT KHẨU: Trang trại chính thức được cấp Mã số Vùng trồng VN-LK-001. Thu hoạch 132 trái (~396kg), doanh thu đạt 23,760,000 VNĐ.',
-        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-        batch_code: 'VN-LK-001-20170618-SR01',
-        puc_code: 'VN-LK-001',
-        details: { phase: 'Cột mốc cấp mã PUC xuất khẩu', yield_kg: 396, fruit_count: 132, price_vnd: 60000, revenue_vnd: 23760000, net_profit_vnd: 21960000 }
-      },
-      {
-        log_date: '2021-03-12',
-        log_type: 'Khác',
-        operator_name: 'Tân Bảo AgTech IoT Team',
-        equipment_used: 'Trạm cảm biến NPK & Độ ẩm đất đa tầng',
-        note: 'Lắp đặt đầu dò cảm biến IoT đo độ ẩm tầng 10-20-50cm và độ pH/EC đất dưới tán cây. Cây 18 năm tuổi cho 152 trái (~456kg), doanh thu đạt 32.8 triệu VNĐ.',
-        media_urls: ['https://images.unsplash.com/photo-1589923188900-85dae523342b?w=600&auto=format&fit=crop&q=80'],
-        details: { phase: 'Tích hợp cảm biến IoT Smart Farm', yield_kg: 456, fruit_count: 152, price_vnd: 72000, revenue_vnd: 32832000 }
-      },
-      {
-        log_date: '2023-06-22',
-        log_type: 'Thu hoạch',
-        operator_name: 'Nguyễn Văn Long & Đội xuất khẩu',
-        equipment_used: 'Dao cắt mũi cong & Giỏ đệm mút xốp',
-        note: 'CỘT MỐC 20 NĂM TUỔI KỶ LỤC: Cây đạt năng suất cao nhất lịch sử với 162 trái (~486kg), cơm vàng hạt lép 95%, doanh thu đạt kỷ lục 39,852,000 VNĐ.',
-        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-        batch_code: 'VN-LK-001-20230622-SR01',
-        puc_code: 'VN-LK-001',
-        details: { phase: 'Kỷ lục năng suất 20 năm tuổi', yield_kg: 486, fruit_count: 162, price_vnd: 82000, revenue_vnd: 39852000, net_profit_vnd: 37102000 }
-      },
-
-      // ── GIAI ĐOẠN 3: VỤ MÙA CANH TÁC HIỆN TẠI (2025 - 2026 CHUẨN VIETGAP 100%) ──
-      {
-        log_date: '2025-09-10',
-        log_type: 'Cắt tỉa',
-        operator_name: 'Kỹ sư Nguyễn Văn Long',
-        equipment_used: 'Kéo cắt cành Gardena & Thang nhôm rút',
-        note: 'Cắt tỉa cành tăm, cành sâu bệnh, chồi vượt trong thân và hạ ngọn thông thoáng tán sau khi kết thúc thu hoạch vụ trước.',
-        media_urls: ['https://images.unsplash.com/photo-1592417817098-8f3d6910985c?w=600&auto=format&fit=crop&q=80'],
-        details: { activity: 'Tỉa cành phục hồi', labor_cost: 150000, note: 'Cắt bỏ 12 cành khô và bôi keo liền sẹo Tiến Nông vào các vết cắt lớn' }
-      },
-      {
-        log_date: '2025-09-25',
-        log_type: 'Bón phân',
-        operator_name: 'Trần Văn Ba (Thợ vườn)',
-        equipment_used: 'Cuốc xới nhẹ & Thùng rải phân',
-        note: 'Bón lót phục hồi bộ rễ tơ bằng Phân hữu cơ vi sinh nở Bỉ quanh hình chiếu tán cây, tưới đẫm nước.',
-        media_urls: ['https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          supply_id: supplyMap['Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)'],
-          supply_name: 'Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)',
-          quantity: 15,
-          unit: 'kg',
-          unit_price: 15200,
-          total_cost: 228000,
-          note: 'Rải đều cách gốc 1.5m đến mép tán lá'
-        }
-      },
-      {
-        log_date: '2025-10-15',
-        log_type: 'Tưới nước',
-        operator_name: 'Hệ thống tự động',
-        equipment_used: 'Trạm bơm điều khiển van thông minh',
-        note: 'Tưới định kỳ duy trì ẩm độ đất tầng rễ 65% - 75% giúp cây bung cơi đọt 1 đồng loạt khỏe mạnh.',
-        media_urls: ['https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          supply_id: supplyMap['Tiền nước tưới giếng khoan công nghiệp'],
-          supply_name: 'Tiền nước tưới giếng khoan công nghiệp',
-          quantity: 0.6,
-          unit: 'm3',
-          unit_price: 3500,
-          total_cost: 2100,
-          soil_moisture_before: '52%',
-          soil_moisture_after: '72%'
-        }
-      },
-      {
-        log_date: '2025-11-20',
-        log_type: 'Bón phân',
-        operator_name: 'Kỹ sư Nguyễn Văn Long',
-        equipment_used: 'Máy bay phun thuốc nông nghiệp DJI Agras T40',
-        note: 'Xiết nước tạo khô hạn 25 ngày và phun phân bón lá MKP 0-52-34 ức chế đọt non, kích thích phân hóa mầm hoa (mắt cua).',
-        media_urls: ['https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          supply_id: supplyMap['Phân bón lá tạo mầm hoa MKP 0-52-34 Haifa Israel'],
-          supply_name: 'Phân bón lá tạo mầm hoa MKP 0-52-34 Haifa Israel',
-          quantity: 0.5,
-          unit: 'kg',
-          unit_price: 50000,
-          total_cost: 25000,
-          phi_days: 0,
-          note: 'Phun mặt dưới lá già và toàn bộ cành mang trái'
-        }
-      },
-      {
-        log_date: '2025-12-25',
-        log_type: 'Bón phân',
-        operator_name: 'Nguyễn Văn Long',
-        equipment_used: 'Bình xịt điện Stihl SR-420',
-        note: 'Mắt cua sáng đều dài 3cm. Phun Canxi Bo Sữa Yara nuôi dưỡng chùm hoa mập mạp, tăng độ dai cuống và chống rụng nụ.',
-        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          supply_id: supplyMap['Phân bón lá Canxi Bo Sữa Bo-Trac Yara Anh Quốc'],
-          supply_name: 'Phân bón lá Canxi Bo Sữa Bo-Trac Yara Anh Quốc',
-          quantity: 100,
-          unit: 'ml',
-          unit_price: 180,
-          total_cost: 18000,
-          phi_days: 0
-        }
-      },
-      {
-        log_date: '2026-01-15',
-        log_type: 'Thụ phấn',
-        operator_name: 'Tổ kỹ thuật vườn (3 nhân công)',
-        equipment_used: 'Chổi lông cọ mềm & Đèn đội đầu siêu sáng',
-        note: 'Thực hiện quét phấn bổ sung nhân tạo chéo từ 18h30 đến 20h00 tối. Tỷ lệ hoa thụ phấn đạt trên 90%, hạt phấn bung đều 5 hộc.',
-        media_urls: ['https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          activity: 'Thụ phấn chéo nhân tạo',
-          labor_cost: 120000,
-          note: 'Lấy hạt phấn từ giống sầu riêng Monthong quét sang nhụy hoa Ri6 để tăng tỷ lệ đậu trái hộc đầy đặn'
-        }
-      },
-      {
-        log_date: '2026-02-10',
-        log_type: 'Cắt tỉa',
-        operator_name: 'Kỹ sư Nguyễn Văn Long',
-        equipment_used: 'Kéo tỉa cuống chuyên dụng & Thang chữ A',
-        note: 'Tỉa định trái đợt 1 (trái cỡ quả trứng ngỗng). Cắt bỏ toàn bộ trái vẹo, méo hộc, sâu cuống. Tuyển chọn giữ lại 140 trái tròn đẹp trên cành cấp 1.',
-        media_urls: ['https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          activity: 'Tỉa định trái non',
-          total_fruits_retained: 140,
-          total_fruits_culled: 180,
-          labor_cost: 100000
-        }
-      },
-      {
-        log_date: '2026-02-28',
-        log_type: 'Bón phân',
-        operator_name: 'Trần Văn Ba',
-        equipment_used: 'Thùng bón phân gốc',
-        note: 'Bón phân NPK 20-20-15+TE Đầu Trâu nuôi trái non lớn nhanh, bổ sung vi lượng Bo và Kẽm chống nứt gai.',
-        media_urls: ['https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          supply_id: supplyMap['Phân NPK 20-20-15+TE Đầu Trâu Chuyên Cây Ăn Trái'],
-          supply_name: 'Phân NPK 20-20-15+TE Đầu Trâu Chuyên Cây Ăn Trái',
-          quantity: 2.0,
-          unit: 'kg',
-          unit_price: 17800,
-          total_cost: 35600,
-          note: 'Bón rải quanh mép tán lá sau đó bật béc tưới 30 phút'
-        }
-      },
-      {
-        log_date: '2026-03-20',
-        log_type: 'Phun thuốc',
-        operator_name: 'Nguyễn Văn Long',
-        equipment_used: 'Bình xịt điện Stihl SR-420',
-        note: 'Phun phòng trừ rầy phấn trắng và bọ trĩ chích hút cuống trái bằng thuốc trừ sâu sinh học Radiant 60SC. Thời gian cách ly PHI an toàn 3 ngày.',
-        media_urls: ['https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          supply_id: supplyMap['Thuốc trừ sâu rầy sinh học Radiant 60SC'],
-          supply_name: 'Thuốc trừ sâu rầy sinh học Radiant 60SC',
-          quantity: 50,
-          unit: 'ml',
-          unit_price: 780,
-          total_cost: 39000,
-          phi_days: 3,
-          phi_until_date: '2026-03-23',
-          active_ingredient: 'Spinetoram 60g/L'
-        }
-      },
-      {
-        log_date: '2026-04-15',
-        log_type: 'Xử lý bệnh',
-        operator_name: 'Kỹ sư Nguyễn Văn Long',
-        equipment_used: 'Dao nạo vỏ cây chuyên dụng & Cọ quét sơn',
-        note: 'Phát hiện vết xì mủ 4cm ở mặt bắc gốc cây (nấm Phytophthora palmivora). Cạo sạch lớp vỏ hoại tử đến phần gỗ trắng, quét thuốc Ridomil Gold 68WG nguyên chất.',
-        media_urls: ['https://images.unsplash.com/photo-1589923188900-85dae523342b?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          disease_name: 'Nứt thân xì mủ (Phytophthora)',
-          supply_id: supplyMap['Thuốc đặc trị nứt thân xì mủ Ridomil Gold 68WG'],
-          supply_name: 'Thuốc đặc trị nứt thân xì mủ Ridomil Gold 68WG',
-          quantity: 50,
-          unit: 'g',
-          unit_price: 320,
-          total_cost: 16000,
-          phi_days: 14,
-          treatment_result: 'Vết thương khô ráo, kéo da non khỏe mạnh sau 5 ngày'
-        }
-      },
-      {
-        log_date: '2026-05-20',
-        log_type: 'Phun thuốc',
-        operator_name: 'Nguyễn Văn Long',
-        equipment_used: 'Máy nén áp lực cao',
-        note: 'Phun phòng thán thư cuống và bảo vệ vỏ trái trước thu hoạch bằng Anvil 5SC (Cách ly PHI 14 ngày). Kết hợp bón 1.5kg Kali Sunfat SoluPotasse vỗ béo cơm vàng.',
-        media_urls: ['https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          supply_id: supplyMap['Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)'],
-          supply_name: 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)',
-          quantity: 100,
-          unit: 'ml',
-          unit_price: 260,
-          total_cost: 26000,
-          phi_days: 14,
-          phi_until_date: '2026-06-03',
-          active_ingredient: 'Hexaconazole 50g/L'
-        }
-      },
-      {
-        log_date: '2026-06-15',
-        log_type: 'Thu hoạch',
-        operator_name: 'Kỹ sư Nguyễn Văn Long & Đội thu hái',
-        equipment_used: 'Dao cắt sầu riêng mũi cong & Giỏ lót mút xốp chống trầy',
-        note: 'Thu hoạch sầu riêng Ri6 đợt 1 chính vụ (Cắt trái già đạt độ chín 8.5 tuổi). Đã qua thời gian cách ly PHI (An toàn tuyệt đối). Sinh Mã Lô Nông Sản VietGAP: VN-LK-001-20260615-SR01.',
-        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-        batch_code: 'VN-LK-001-20260615-SR01',
-        puc_code: 'VN-LK-001',
-        is_phi_violation: false,
-        details: {
-          yield_kg: 255.0,
-          fruit_count: 85,
-          grade_1_kg: 220.0,
-          grade_2_kg: 35.0,
-          unit_price_vnd: 85000,
-          total_revenue: 21675000,
-          brix_sweetness: '32° Brix',
-          batch_code: 'VN-LK-001-20260615-SR01',
-          puc_code: 'VN-LK-001',
-          is_phi_violation: false,
-          phi_status: 'safe',
-          note: 'Cơm sầu riêng vàng đậm, dẻo béo, hạt lép 95%, hương thơm đặc trưng đạt chuẩn xuất khẩu'
-        }
-      }
+    const generatedLogs = [];
+    const operators = [
+      'Nguyễn Văn Long (Kỹ sư trưởng)',
+      'Trần Văn Ba (Tổ trưởng làm vườn)',
+      'Lê Văn Tám (Kỹ thuật viên VietGAP)',
+      'Nguyễn Thị Mai (Tổ thụ phấn & chăm sóc)',
+      'Hệ thống tưới tự động bù áp IoT'
     ];
 
-    for (const log of logsList) {
-      await client.query(`
+    const equipmentList = {
+      'Tưới nước': ['Trạm bơm điều khiển van thông minh', 'Hệ thống béc bù áp 120L/h', 'Đồng hồ đo áp suất lưu lượng'],
+      'Bón phân': ['Thùng rải phân gốc cải tiến', 'Máy bay phun thuốc DJI Agras T40', 'Bình xịt điện Stihl SR-420'],
+      'Phun thuốc': ['Máy nén áp lực cao 50 bar', 'Bình xịt điện Stihl SR-420', 'Cần phun áp lực cao inox 304'],
+      'Cắt tỉa': ['Kéo cắt cành Gardena cán nhôm', 'Cưa cắt cành mini Makita', 'Kéo tỉa cuống trái mũi cong'],
+      'Thụ phấn': ['Chổi lông cọ mềm chuyên dụng', 'Đèn đội đầu siêu sáng LED', 'Ống đựng phấn hoa sấy khô'],
+      'Thu hoạch': ['Dao cắt sầu riêng mũi cong', 'Giỏ đệm mút xốp chống trầy', 'Cân điện tử VietGAP 100kg'],
+      'Khác': ['Đầu dò cảm biến IoT độ ẩm đất', 'Máy đo pH/EC đất Hanna', 'Dao nạo vỏ cây chuyên dụng']
+    };
+
+    // Chu trình canh tác chi tiết mỗi năm từ 2004 đến 2026
+    for (let year = 2004; year <= 2026; year++) {
+      const treeAge = year - 2004 + 1;
+      const daysInYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 366 : 365;
+
+      // Mỗi năm sinh ~950 hoạt động thực địa trải đều 365 ngày
+      for (let d = 1; d <= daysInYear; d++) {
+        const dateObj = new Date(year, 0, d);
+        const month = dateObj.getMonth() + 1;
+        const day = dateObj.getDate();
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // 1. Hoạt động kiểm tra vườn buổi sáng (07:00 sáng)
+        const hourMorning = '07:00';
+        let checkNoteMorning = `07:00 ${dateStr}: Kiểm tra thực địa tán cây và đo độ ẩm đất (${55 + (d % 25)}%). `;
+        if (month >= 11 || month <= 1) {
+          checkNoteMorning += `Giai đoạn phân hóa mầm hoa & nhú mắt cua. Tình trạng mắt cua sáng khỏe, không nghẽn bông.`;
+        } else if (month >= 2 && month <= 4) {
+          checkNoteMorning += `Giai đoạn nuôi trái non & định hình trái. Trái tròn đều, gai xanh, cuống dai.`;
+        } else if (month >= 5 && month <= 7) {
+          checkNoteMorning += `Giai đoạn vỗ béo cơm vàng & chuẩn bị thu hoạch. Đo chỉ số cơm ráo, không nứt gai.`;
+        } else {
+          checkNoteMorning += `Giai đoạn phục hồi cây sau thu hoạch & kích cơi đọt mới. Tán lá xanh đậm dày bóng.`;
+        }
+
+        generatedLogs.push({
+          plant_id: plantId,
+          log_date: dateStr,
+          log_type: 'Khác',
+          operator_name: operators[d % 4],
+          equipment_used: equipmentList['Khác'][d % 3],
+          note: checkNoteMorning,
+          media_urls: [],
+          details: { time: hourMorning, soil_moisture: `${55 + (d % 25)}%`, soil_ph: 6.2, tree_age: `${treeAge} năm tuổi` },
+          puc_code: 'VN-LK-001',
+          created_by: userId
+        });
+
+        // 1b. Quan trắc vi khí hậu & Cảm biến lá chiều muộn (16:00 chiều)
+        const hourAfternoon = '16:00';
+        generatedLogs.push({
+          plant_id: plantId,
+          log_date: dateStr,
+          log_type: 'Khác',
+          operator_name: 'Nguyễn Văn Long (Kỹ sư trưởng)',
+          equipment_used: 'Đầu dò cảm biến IoT độ ẩm đất',
+          note: `16:00 ${dateStr}: Quan trắc bức xạ nhiệt và độ thoát hơi nước qua tán lá. Tình trạng lá quang hợp tốt, không cháy chóp.`,
+          media_urls: [],
+          details: { time: hourAfternoon, canopy_temp: `${28 + (d % 6)}°C`, humidity: `${68 + (d % 15)}%` },
+          puc_code: 'VN-LK-001',
+          created_by: userId
+        });
+
+        // 1c. Kiểm tra độ dẫn điện EC & độ chua đất tầng sâu (5 ngày/lần)
+        if (d % 5 === 2) {
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Khác',
+            operator_name: 'Lê Văn Tám (Kỹ thuật viên VietGAP)',
+            equipment_used: 'Máy đo pH/EC đất Hanna',
+            note: `09:15 ${dateStr}: Đo chỉ số EC đất (${(0.8 + (d % 10) * 0.05).toFixed(2)} mS/cm) và pH (${(6.0 + (d % 5) * 0.1).toFixed(1)}). Độ phì nhiêu tầng đất đạt chuẩn VietGAP.`,
+            media_urls: [],
+            details: { time: '09:15', ec_value: `${(0.8 + (d % 10) * 0.05).toFixed(2)} mS/cm`, ph_value: (6.0 + (d % 5) * 0.1).toFixed(1) },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 1d. Phun sương dưỡng ẩm vi lượng cơi đọt (8 ngày/lần)
+        if (d % 8 === 4) {
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Bón phân',
+            operator_name: 'Trần Văn Ba (Tổ trưởng làm vườn)',
+            equipment_used: 'Bình xịt điện Stihl SR-420',
+            note: `07:15 ${dateStr}: Phun sương dưỡng cơi đọt bằng vi lượng chelate (Bo, Kẽm, Magie). Lá bóng khỏe, cơi đọt vươn đều.`,
+            media_urls: [],
+            details: { time: '07:15', foliar_nutrition: 'Chelate Micro TE', quantity: 50, unit: 'ml', total_cost: 15000 },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 2. Tưới nước định kỳ (Cách 2-3 ngày/lần vào mùa khô; cách 5-7 ngày vào mùa mưa) (06:30 sáng hoặc 16:30 chiều)
+        const isDrySeason = (month >= 11 || month <= 4);
+        const shouldWater = isDrySeason ? (d % 2 === 0) : (d % 6 === 0);
+        if (shouldWater) {
+          const waterTime = (d % 2 === 0) ? '06:30' : '16:30';
+          const waterLiters = isDrySeason ? 550 : 300;
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Tưới nước',
+            operator_name: 'Hệ thống tưới tự động bù áp IoT',
+            equipment_used: 'Trạm bơm điều khiển van thông minh',
+            note: `${waterTime} ${dateStr}: Bật hệ thống béc tưới bù áp tự động quanh tán cây (${waterLiters} lít nước). Cân bằng độ ẩm tầng rễ tơ.`,
+            media_urls: [],
+            details: {
+              time: waterTime,
+              supply_id: supplyMap['Tiền nước tưới giếng khoan công nghiệp'],
+              supply_name: 'Tiền nước tưới giếng khoan công nghiệp',
+              quantity: waterLiters / 1000,
+              unit: 'm3',
+              unit_price: 3500,
+              total_cost: Math.round((waterLiters / 1000) * 3500)
+            },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 3. Làm cỏ gốc, xới đất & vệ sinh tán (1 tuần/lần) (08:00 sáng)
+        if (d % 7 === 3) {
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Khác',
+            operator_name: 'Trần Văn Ba (Tổ trưởng làm vườn)',
+            equipment_used: 'Máy cắt cỏ mini & Cuốc xới răng cào',
+            note: `08:00 ${dateStr}: Cắt cỏ duy trì thảm cỏ tự nhiên quanh tán 1.5m, xới rãnh thông thoáng thoát nước gốc cây.`,
+            media_urls: [],
+            details: { time: '08:00', activity: 'Vệ sinh thảm cỏ gốc', labor_cost: 60000 },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 4. Bón phân định kỳ (Bón hữu cơ Bỉ, NPK Đầu Trâu, MKP, Kali SoluPotasse) (10 ngày/lần)
+        if (d % 10 === 5) {
+          let supName = 'Phân NPK 20-20-15+TE Đầu Trâu Chuyên Cây Ăn Trái';
+          let qty = 1.5;
+          let unit = 'kg';
+          let price = 17800;
+
+          if (month >= 8 && month <= 10) {
+            supName = 'Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)';
+            qty = 10;
+            price = 15200;
+          } else if (month === 11 || month === 12) {
+            supName = 'Phân bón lá tạo mầm hoa MKP 0-52-34 Haifa Israel';
+            qty = 0.5;
+            price = 50000;
+          } else if (month === 1) {
+            supName = 'Phân bón lá Canxi Bo Sữa Bo-Trac Yara Anh Quốc';
+            qty = 100;
+            unit = 'ml';
+            price = 180;
+          } else if (month >= 5 && month <= 6) {
+            supName = 'Phân Kali Trắng Sunfat K2SO4 SoluPotasse 0-0-50';
+            qty = 1.2;
+            price = 30000;
+          }
+
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Bón phân',
+            operator_name: operators[d % 3],
+            equipment_used: equipmentList['Bón phân'][d % 3],
+            note: `07:30 ${dateStr}: Bón ${qty} ${unit} ${supName} quanh hình chiếu tán cây. Bổ sung dưỡng chất tối ưu cho cơi đọt và trái.`,
+            media_urls: [],
+            details: {
+              time: '07:30',
+              supply_id: supplyMap[supName],
+              supply_name: supName,
+              quantity: qty,
+              unit: unit,
+              unit_price: price,
+              total_cost: Math.round(qty * price),
+              phi_days: 0
+            },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 5. Phun phòng thuốc trừ sâu sinh học & Trừ nấm bệnh VietGAP (12 ngày/lần)
+        if (d % 12 === 7) {
+          let pestName = 'Thuốc trừ sâu rầy sinh học Radiant 60SC';
+          let pQty = 50;
+          let pUnit = 'ml';
+          let pPrice = 780;
+          let phiDays = 3;
+
+          if (month >= 3 && month <= 6) {
+            pestName = (d % 24 === 7) ? 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)' : 'Thuốc đặc trị nứt thân xì mủ Ridomil Gold 68WG';
+            pQty = (pestName.includes('Anvil')) ? 100 : 50;
+            pUnit = (pestName.includes('Anvil')) ? 'ml' : 'g';
+            pPrice = (pestName.includes('Anvil')) ? 260 : 320;
+            phiDays = 14;
+          }
+
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Phun thuốc',
+            operator_name: 'Nguyễn Văn Long (Kỹ sư trưởng)',
+            equipment_used: 'Bình xịt điện Stihl SR-420',
+            note: `06:15 ${dateStr}: Phun phòng trừ sâu bệnh bằng ${pestName}. Tuân thủ cách ly PHI ${phiDays} ngày an toàn VietGAP.`,
+            media_urls: [],
+            details: {
+              time: '06:15',
+              supply_id: supplyMap[pestName],
+              supply_name: pestName,
+              quantity: pQty,
+              unit: pUnit,
+              unit_price: pPrice,
+              total_cost: Math.round(pQty * pPrice),
+              phi_days: phiDays
+            },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 6. Cắt tỉa cành, tỉa hoa, tỉa trái non (15 ngày/lần)
+        if (d % 15 === 9) {
+          let pruneType = 'Tỉa cành thông thoáng tán';
+          if (month === 12 || month === 1) pruneType = 'Tỉa bớt nụ hoa còi cọc ở đầu cành';
+          if (month === 2 || month === 3) pruneType = 'Tỉa định trái non tròn đều, loại bỏ trái vẹo';
+          if (month >= 8 && month <= 9) pruneType = 'Cắt tỉa cành tăm, cành sâu bệnh phục hồi sau thu hoạch';
+
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Cắt tỉa',
+            operator_name: 'Nguyễn Văn Long',
+            equipment_used: 'Kéo cắt cành Gardena cán nhôm',
+            note: `08:45 ${dateStr}: Tiến hành ${pruneType}. Bôi keo liền sẹo vết cắt lớn.`,
+            media_urls: [],
+            details: { time: '08:45', activity: pruneType, labor_cost: 80000 },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 7. Thụ phấn nhân tạo ban đêm vào mùa hoa nở rộ (Tháng 12 & Tháng 1: 18:30 - 20:30)
+        if ((month === 12 || month === 1) && d % 3 === 0 && treeAge >= 6) {
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Thụ phấn',
+            operator_name: 'Tổ kỹ thuật thụ phấn (Nguyễn Thị Mai)',
+            equipment_used: 'Chổi lông cọ mềm chuyên dụng & Đèn LED',
+            note: `18:30 ${dateStr}: Quét phấn hoa chéo bổ sung từ giống Monthong sang nhụy hoa Ri6 lúc 18h30 - 20h00 tối. Hạt phấn tiếp nhận tròn đầy 5 hộc.`,
+            media_urls: [],
+            details: { time: '18:30', activity: 'Thụ phấn chéo ban đêm', pollination_rate: '94%', labor_cost: 100000 },
+            puc_code: 'VN-LK-001',
+            created_by: userId
+          });
+        }
+
+        // 8. Thu hoạch chính vụ theo đợt (Tháng 5 & Tháng 6 hàng năm từ năm 2009)
+        if ((month === 5 || month === 6) && (day === 15 || day === 28) && treeAge >= 6) {
+          const seasonYield = historicalYieldRecords.find(h => h.year === year) || { yield_kg: 250, fruit_count: 80, avg_price_vnd: 80000, revenue_vnd: 20000000 };
+          const harvestBatch = `VN-LK-001-${year}${String(month).padStart(2,'0')}${String(day).padStart(2,'0')}-SR01`;
+          const cutFruits = Math.round(seasonYield.fruit_count / 2);
+          const cutKg = Math.round(seasonYield.yield_kg / 2);
+          const revenue = Math.round(cutKg * seasonYield.avg_price_vnd);
+
+          generatedLogs.push({
+            plant_id: plantId,
+            log_date: dateStr,
+            log_type: 'Thu hoạch',
+            operator_name: 'Nguyễn Văn Long & Đội thu hái',
+            equipment_used: 'Dao cắt sầu riêng mũi cong & Cân điện tử VietGAP',
+            note: `06:00 ${dateStr}: THU HOẠCH CHÍNH VỤ SẦU RIÊNG RI6 (Đợt ${day === 15 ? '1' : '2'}). Cắt ${cutFruits} trái (~${cutKg} kg) đạt độ chín 8.5 tuổi. Cơm vàng, hạt lép, dán tem truy xuất Mã Lô: ${harvestBatch}.`,
+            media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
+            batch_code: harvestBatch,
+            puc_code: 'VN-LK-001',
+            is_phi_violation: false,
+            details: {
+              time: '06:00',
+              yield_kg: cutKg,
+              fruit_count: cutFruits,
+              unit_price_vnd: seasonYield.avg_price_vnd,
+              total_revenue: revenue,
+              batch_code: harvestBatch,
+              brix_sweetness: '33° Brix',
+              phi_status: 'safe'
+            },
+            created_by: userId
+          });
+        }
+      }
+    }
+
+    console.log(`📊 Tổng số lượng nhật ký được khởi tạo: ${generatedLogs.length} bản ghi (Đạt chỉ tiêu 20,000+)!`);
+
+    // ── 6. THỰC THI CHÈN HÀNG LOẠT HIỆU NĂNG CAO (BATCH CHUNKS OF 1,000 ROWS) ──
+    const chunkSize = 1000;
+    for (let i = 0; i < generatedLogs.length; i += chunkSize) {
+      const chunk = generatedLogs.slice(i, i + chunkSize);
+      const valuePlaceholders = [];
+      const queryParams = [];
+      let paramIndex = 1;
+
+      for (const log of chunk) {
+        valuePlaceholders.push(
+          `($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4}, $${paramIndex+5}, $${paramIndex+6}, $${paramIndex+7}, $${paramIndex+8}, $${paramIndex+9}, $${paramIndex+10}, $${paramIndex+11})`
+        );
+        queryParams.push(
+          log.plant_id,
+          log.log_date,
+          log.log_type,
+          log.note,
+          JSON.stringify(log.media_urls || []),
+          JSON.stringify(log.details || {}),
+          log.created_by,
+          log.batch_code || null,
+          log.puc_code || 'VN-LK-001',
+          log.operator_name || 'Kỹ thuật viên',
+          log.equipment_used || 'Dụng cụ làm vườn',
+          log.is_phi_violation || false
+        );
+        paramIndex += 12;
+      }
+
+      const insertSql = `
         INSERT INTO plant_logs (
           plant_id, log_date, log_type, note, media_urls, details, created_by,
           batch_code, puc_code, operator_name, equipment_used, is_phi_violation
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      `, [
-        plantId,
-        log.log_date,
-        log.log_type,
-        log.note,
-        JSON.stringify(log.media_urls || []),
-        JSON.stringify(log.details || {}),
-        userId,
-        log.batch_code || null,
-        log.puc_code || 'VN-LK-001',
-        log.operator_name || 'Kỹ thuật viên',
-        log.equipment_used || 'Dụng cụ làm vườn',
-        log.is_phi_violation || false
-      ]);
+        ) VALUES ${valuePlaceholders.join(', ')}
+      `;
+
+      await client.query(insertSql, queryParams);
+      process.stdout.write(`⏳ Đã nạp thành công: ${Math.min(i + chunkSize, generatedLogs.length)} / ${generatedLogs.length} nhật ký...\r`);
     }
 
-    console.log(`📝 Đã tạo thành công ${logsList.length} Nhật ký Canh tác lịch sử 20 năm cho Cây Sầu Riêng STT 1 trong Trang trại "${farmName}"!`);
+    console.log(`\n📝 Đã nạp thành công toàn bộ ${generatedLogs.length} Nhật ký Canh tác thực địa (2004 - 2026) vào CSDL!`);
 
     await client.query('COMMIT');
-    console.log(`🎉 HOÀN THÀNH ĐỒNG BỘ DỮ LIỆU CÂY SẦU RIÊNG RI6 20 NĂM TUỔI CHO TRANG TRẠI "${farmName}" (ID: ${farmId}) THÀNH CÔNG 100%!`);
+    console.log(`🎉 HOÀN THÀNH NẠP SIÊU DỮ LIỆU CÂY SẦU RIÊNG RI6 20,000+ NHẬT KÝ CHO TRANG TRẠI "${farmName}" (ID: ${farmId}) THÀNH CÔNG 100%!`);
     return {
       farm_id: farmId,
       farm_name: farmName,
       plant_id: plantId,
       supplies_count: suppliesData.length,
-      logs_count: logsList.length,
+      logs_count: generatedLogs.length,
       historical_seasons: historicalYieldRecords.length,
       lifetime_yield_kg: treeData.lifetime_summary.total_yield_kg,
       lifetime_revenue_vnd: treeData.lifetime_summary.total_revenue_vnd
     };
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('❌ Lỗi khi seed dữ liệu:', err);
+    console.error('❌ Lỗi khi seed siêu dữ liệu:', err);
     throw err;
   } finally {
     client.release();
