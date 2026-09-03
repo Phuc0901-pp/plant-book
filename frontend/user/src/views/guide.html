@@ -1,94 +1,252 @@
+      <!-- ════════════════════════════════════════════════════════════════════════
+           ENTERPRISE OPERATIONS & KNOWLEDGE CENTER (TÍNH NĂNG NÂNG CAO & HDSD)
+           Chuẩn ERP Nông nghiệp Công nghệ cao Tân Bảo AgTech
+           ════════════════════════════════════════════════════════════════════════ -->
       <div class="page-section" id="page-wiki">
-        <div class="page-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:18px 22px; border-radius:14px; margin-bottom:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-          <h2 style="margin:0; font-size:18px; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:10px;">
-            <i class="fa-solid fa-book-open" style="color:#059669"></i> Bách khoa & Trung tâm Hướng dẫn
-          </h2>
-          <p style="margin:6px 0 0 0; font-size:13px; color:#64748b;">
-            Khám phá các tính năng nâng cao và hướng dẫn vận hành trang trại thông minh Tân Bảo AgTech.
-          </p>
+
+        <!-- TẦNG 1: ERP EXECUTIVE COCKPIT BANNER -->
+        <div class="card" style="margin-bottom:22px; border-radius:18px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 10px 25px rgba(0,0,0,0.04); background:#ffffff;">
+          <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 50%, #0284c7 100%); padding:24px 28px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
+            <div style="max-width:680px;">
+              <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#d1fae5; border:1px solid rgba(255,255,255,0.25); margin-bottom:8px;">
+                <i class="fa-solid fa-graduation-cap"></i> TRUNG TÂM TRI THỨC & VẬN HÀNH ERP NÔNG NGHIỆP
+              </div>
+              <h2 style="font-size:22px; font-weight:900; margin:0 0 6px 0; color:#ffffff; letter-spacing:-0.02em;">
+                Tính Năng Nâng Cao &amp; Sổ Tay Hướng Dẫn Vận Hành
+              </h2>
+              <p style="margin:0; font-size:13.5px; color:#e0f2fe; line-height:1.6; opacity:0.95;">
+                Khám phá hệ thống giải pháp công nghệ cao (GIS 3D, NFC, IoT, VietGAP 100%, AI Voice) và cẩm nang 10 quy trình thao tác chuẩn (SOP) phục vụ sản xuất nông nghiệp thông minh.
+              </p>
+            </div>
+
+            <!-- Quick Search Bar -->
+            <div style="min-width:280px; max-width:360px; flex:1;">
+              <div style="position:relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748b; font-size:14px;"></i>
+                <input type="text" id="guide-search-input" placeholder="Tìm kiếm tính năng, quy trình SOP..." oninput="searchGuideContent(this.value)" style="width:100%; padding:11px 14px 11px 38px; border:2px solid rgba(255,255,255,0.8); border-radius:12px; font-size:13px; font-weight:600; outline:none; background:#ffffff; color:#0f172a; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+              </div>
+            </div>
+          </div>
+
+          <!-- ERP KPI Summary Metric Bar -->
+          <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 24px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:17px;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Module Công Nghệ</div>
+                <div style="font-size:14px; font-weight:800; color:#0f172a;">6 Module Cao Cấp</div>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:17px;">
+                <i class="fa-solid fa-clipboard-check"></i>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Quy Trình Chuẩn (SOP)</div>
+                <div style="font-size:14px; font-weight:800; color:#1e40af;">10 Hướng Dẫn Chi Tiết</div>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:17px;">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Tiêu Chuẩn Nông Nghiệp</div>
+                <div style="font-size:14px; font-weight:800; color:#b45309;">VietGAP &amp; GlobalGAP</div>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#f1f5f9; color:#475569; display:flex; align-items:center; justify-content:center; font-size:17px;">
+                <i class="fa-solid fa-headset"></i>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Hỗ Trợ Chuyên Gia</div>
+                <div style="font-size:14px; font-weight:800; color:#059669;">0908 904 895 (24/7)</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Sub-tabs bar -->
-        <div style="display:flex; gap:12px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:12px;">
-          <button class="wiki-subtab active" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')" style="padding:10px 20px; font-weight:800; font-size:13px; border-radius:10px; border:none; background:#059669; color:white; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Tính năng Nâng cao
+        <!-- TẦNG 2: ERP SEGMENTED SUB-TABS NAVIGATION -->
+        <div class="tabs" style="display:flex; gap:10px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:12px; flex-wrap:wrap;">
+          <button class="wiki-subtab active" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')" style="padding:10px 22px; font-weight:800; font-size:13.5px; border-radius:10px; border:none; background:#059669; color:white; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.25); display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-microchip"></i> 1. Module Công Nghệ &amp; Giải Pháp Nâng Cao
           </button>
-          <button class="wiki-subtab" id="btn-wiki-sub-guide" onclick="switchWikiSubtab('guide')" style="padding:10px 20px; font-weight:700; font-size:13px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">
-            <i class="fa-solid fa-circle-question"></i> Hướng dẫn sử dụng
+          <button class="wiki-subtab" id="btn-wiki-sub-guide" onclick="switchWikiSubtab('guide')" style="padding:10px 22px; font-weight:700; font-size:13.5px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-book-bookmark"></i> 2. Sổ Tay 10 Quy Trình Thao Tác Chuẩn (SOP)
+          </button>
+          <button class="wiki-subtab" id="btn-wiki-sub-vietgap" onclick="switchWikiSubtab('vietgap')" style="padding:10px 22px; font-weight:700; font-size:13.5px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-shield-halved"></i> 3. Cẩm Nang Tiêu Chuẩn VietGAP &amp; Kỹ Thuật
           </button>
         </div>
 
-        <!-- Sub-tab 1: TÍNH NĂNG NÂNG CAO -->
+
+        <!-- ════════════════ SUB-TAB 1: MODULE CÔNG NGHỆ NÂNG CAO ════════════════ -->
         <div id="wiki-subtab-advanced" style="display:block;">
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:20px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:22px;">
             
-            <!-- Khối 1: Bản đồ GIS Vệ tinh & 3D Contour -->
-            <div onclick="openFeatureDetailModal('gis')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
-              <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
+            <!-- Module 1: Bản đồ GIS Vệ tinh & 3D Contour -->
+            <div class="guide-searchable-card" onclick="openFeatureDetailModal('gis')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:175px; background:#e2e8f0; overflow:hidden; position:relative;">
                 <img src="/user/img/gis_contour_map.jpg" alt="Bản đồ GIS Vệ tinh & 3D Contour" style="width:100%; height:100%; object-fit:cover;">
-                <span style="position:absolute; top:12px; left:12px; background:rgba(5,150,105,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
-                  <i class="fa-solid fa-earth-asia"></i> Bản đồ GIS
+                <span style="position:absolute; top:12px; left:12px; background:rgba(5,150,105,0.92); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px); box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                  <i class="fa-solid fa-earth-asia"></i> Module GIS 3D
+                </span>
+                <span style="position:absolute; bottom:10px; right:12px; background:rgba(15,23,42,0.85); color:#ffffff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-layer-group"></i> Đo Đạc Thực Địa
                 </span>
               </div>
               <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
                   <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-map-location-dot" style="color:#059669"></i> Bản đồ GIS Vệ tinh & 3D Contour
+                    <i class="fa-solid fa-map-location-dot" style="color:#059669"></i> Bản đồ GIS Vệ tinh &amp; 3D Contour
                   </h3>
-                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
-                    Vẽ ranh giới vườn chuẩn xác và bản đồ đồng mức độ cao địa hình 3D, đo kích thước cạnh thực địa.
+                  <p style="font-size:13px; color:#475569; line-height:1.6; margin:0 0 14px 0;">
+                    Vẽ ranh giới thửa đất chuẩn xác, hiển thị độ dài từng cạnh thực địa (AB, BC...), đo chu vi, diện tích và dựng bản đồ đường đồng mức địa hình 3D giúp thiết kế hướng thoát nước và quy hoạch vườn.
                   </p>
                 </div>
                 <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#059669; font-size:13px; font-weight:800;">
-                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <span><i class="fa-solid fa-circle-info"></i> Xem giải pháp &amp; Kích hoạt</span>
                   <i class="fa-solid fa-arrow-right"></i>
                 </div>
               </div>
             </div>
 
-            <!-- Khối 2: Thẻ Định danh NFC & Mã QR Cây -->
-            <div onclick="openFeatureDetailModal('nfc')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
-              <div style="height:170px; background:#f8fafc; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; padding:10px;">
+            <!-- Module 2: Thẻ Định danh NFC & Mã QR Cây -->
+            <div class="guide-searchable-card" onclick="openFeatureDetailModal('nfc')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:175px; background:#f8fafc; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; padding:10px;">
                 <img src="/user/img/nfc_tag.png" alt="Thẻ Định danh NFC TANBAO AgTech" style="max-height:100%; object-fit:contain; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));">
-                <span style="position:absolute; top:12px; left:12px; background:rgba(37,99,235,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
-                  <i class="fa-solid fa-rss"></i> NFC Chip
+                <span style="position:absolute; top:12px; left:12px; background:rgba(37,99,235,0.92); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px); box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                  <i class="fa-solid fa-rss"></i> Module NFC Chip
+                </span>
+                <span style="position:absolute; bottom:10px; right:12px; background:rgba(15,23,42,0.85); color:#ffffff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-bolt"></i> Tra Cứu 1-Chạm
                 </span>
               </div>
               <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
                   <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-qrcode" style="color:#2563eb"></i> Thẻ Định danh NFC & Mã QR Cây
+                    <i class="fa-solid fa-qrcode" style="color:#2563eb"></i> Thẻ Định danh NFC &amp; Mã QR Cây Trồng
                   </h3>
-                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
-                    Sử dụng thẻ chip NFC & QR Code độc bản để làm bản đồ số hóa từng cây trồng và tra cứu 1 chạm thực địa.
+                  <p style="font-size:13px; color:#475569; line-height:1.6; margin:0 0 14px 0;">
+                    Thẻ chip NFC chống nước chống tia UV cao cấp kết hợp mã QR độc bản gắn cố định trên từng gốc cây, mở nhật ký canh tác 1 chạm thực địa và minh bạch nguồn gốc cho khách hàng scan.
                   </p>
                 </div>
                 <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#2563eb; font-size:13px; font-weight:800;">
-                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <span><i class="fa-solid fa-circle-info"></i> Xem giải pháp &amp; Kích hoạt</span>
                   <i class="fa-solid fa-arrow-right"></i>
                 </div>
               </div>
             </div>
 
-            <!-- Khối 3: Tích hợp Thiết bị IoT & Cảm biến Tự động -->
-            <div onclick="openFeatureDetailModal('iot')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
-              <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
+            <!-- Module 3: Tích hợp Thiết bị IoT & Cảm biến Tự động -->
+            <div class="guide-searchable-card" onclick="openFeatureDetailModal('iot')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:175px; background:#e2e8f0; overflow:hidden; position:relative;">
                 <img src="/user/img/iot_sensors.jpg" alt="Tích hợp thiết bị IoT & Cảm biến" style="width:100%; height:100%; object-fit:cover;">
-                <span style="position:absolute; top:12px; left:12px; background:rgba(217,119,6,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
-                  <i class="fa-solid fa-microchip"></i> IoT Smart Farm
+                <span style="position:absolute; top:12px; left:12px; background:rgba(217,119,6,0.92); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px); box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                  <i class="fa-solid fa-microchip"></i> Module Smart IoT
+                </span>
+                <span style="position:absolute; bottom:10px; right:12px; background:rgba(15,23,42,0.85); color:#ffffff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-cloud-sun-rain"></i> Dự Báo 6 Ngày
                 </span>
               </div>
               <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
                   <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-tower-cell" style="color:#d97706"></i> Tích hợp Thiết bị IoT & Cảm biến
+                    <i class="fa-solid fa-tower-cell" style="color:#d97706"></i> Trạm Cảm Biến IoT &amp; Tự Động Hóa Nông Trại
                   </h3>
-                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
-                    Mô hình tích hợp dữ liệu cảm biến đất và cảm biến thời tiết... tạo nên 1 nền sinh thái đa dạng tự động hóa.
+                  <p style="font-size:13px; color:#475569; line-height:1.6; margin:0 0 14px 0;">
+                    Tích hợp cảm biến đất đa tầng (ẩm độ, pH, EC dinh dưỡng), trạm thời tiết vi khí hậu và dự báo 6 ngày giúp tự động kích hoạt tưới tiêu thông minh, tiết kiệm đến 40% chi phí điện nước.
                   </p>
                 </div>
                 <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#d97706; font-size:13px; font-weight:800;">
-                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <span><i class="fa-solid fa-circle-info"></i> Xem giải pháp &amp; Kích hoạt</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 4: Bộ Tiêu chuẩn VietGAP 100% & Quản lý PHI -->
+            <div class="guide-searchable-card" onclick="openFeatureDetailModal('vietgap')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:175px; background:linear-gradient(135deg, #064e3b, #047857); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; color:#ffffff;">
+                <div style="text-align:center;">
+                  <i class="fa-solid fa-shield-halved" style="font-size:48px; color:#34d399; margin-bottom:8px;"></i>
+                  <div style="font-size:14px; font-weight:800; letter-spacing:0.5px;">VIETGAP COMPLIANCE SUITE</div>
+                </div>
+                <span style="position:absolute; top:12px; left:12px; background:rgba(5,150,105,0.92); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-certificate"></i> Module VietGAP 100%
+                </span>
+              </div>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-shield-virus" style="color:#059669"></i> Quản Lý Thời Gian Cách Ly (PHI) &amp; Mã Lô Thu Hoạch
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.6; margin:0 0 14px 0;">
+                    Tự động tính ngày cách ly thuốc BVTV, hiển thị cảnh báo đỏ ngăn chặn thu hoạch sớm, quản lý Mã số Vùng trồng (PUC Code) và sinh Mã Lô Nông Sản truy xuất nguồn gốc đạt chuẩn VietGAP.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#059669; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Xem giải pháp &amp; Kích hoạt</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 5: Nhập Giọng Nói AI (Voice-to-Text) -->
+            <div class="guide-searchable-card" onclick="openFeatureDetailModal('voice')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:175px; background:linear-gradient(135deg, #1e3a8a, #3b82f6); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; color:#ffffff;">
+                <div style="text-align:center;">
+                  <i class="fa-solid fa-microphone-lines" style="font-size:48px; color:#93c5fd; margin-bottom:8px;"></i>
+                  <div style="font-size:14px; font-weight:800; letter-spacing:0.5px;">AI VOICE RECOGNITION</div>
+                </div>
+                <span style="position:absolute; top:12px; left:12px; background:rgba(37,99,235,0.92); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-robot"></i> Module AI Voice
+                </span>
+              </div>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-microphone" style="color:#2563eb"></i> Nhập Nhật Ký Bằng Giọng Nói AI Rảnh Tay
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.6; margin:0 0 14px 0;">
+                    Hỗ trợ người nông dân ghi sổ nhật ký rảnh tay ngay tại vườn khi đang dính bùn đất. Trí tuệ nhân tạo tự động bóc tách loại hoạt động (Tưới/Bón/Thuốc), số lượng và vật tư tương ứng trong kho.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#2563eb; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Xem giải pháp &amp; Kích hoạt</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module 6: Hạch toán Chi phí & Quản trị Tồn kho ERP -->
+            <div class="guide-searchable-card" onclick="openFeatureDetailModal('cost')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:175px; background:linear-gradient(135deg, #7c2d12, #ea580c); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; color:#ffffff;">
+                <div style="text-align:center;">
+                  <i class="fa-solid fa-calculator" style="font-size:48px; color:#fed7aa; margin-bottom:8px;"></i>
+                  <div style="font-size:14px; font-weight:800; letter-spacing:0.5px;">AGRI-ERP COST ACCOUNTING</div>
+                </div>
+                <span style="position:absolute; top:12px; left:12px; background:rgba(234,88,12,0.92); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-coins"></i> Module Agri-ERP
+                </span>
+              </div>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-money-bill-trend-up" style="color:#ea580c"></i> Kế Toán Chi Phí Canh Tác &amp; Tồn Kho Tự Động
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.6; margin:0 0 14px 0;">
+                    Hạch toán minh bạch 4 nhóm vật tư chiến lược (Phân bón, Phun thuốc, Tiền nước m³, Nhân công), tự động trừ tồn kho và tính toán chính xác chi phí đầu tư trên từng gốc cây và từng vụ mùa.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#ea580c; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Xem giải pháp &amp; Kích hoạt</span>
                   <i class="fa-solid fa-arrow-right"></i>
                 </div>
               </div>
@@ -98,33 +256,36 @@
         </div>
 
 
-        <!-- Sub-tab 2: HƯỚNG DẪN SỬ DỤNG (10 QUY TRÌNH THAO TÁC & KHỞI TẠO CHO NÔNG DÂN) -->
+        <!-- ════════════════ SUB-TAB 2: 10 QUY TRÌNH THAO TÁC CHUẨN (SOP) ════════════════ -->
         <div id="wiki-subtab-guide" style="display:none;">
           
           <!-- Topic Filter Bar -->
           <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; -webkit-overflow-scrolling:touch;">
-            <button class="guide-filter-btn active" onclick="filterGuideTopics('all', this)" style="background:#059669; color:white; border:none; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(5,150,105,0.2);">
+            <button class="guide-filter-btn active" onclick="filterGuideTopics('all', this)" style="background:#059669; color:white; border:none; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(5,150,105,0.2);">
               🌟 Tất cả (10 quy trình)
             </button>
-            <button class="guide-filter-btn" onclick="filterGuideTopics('setup', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
-              🚀 Khởi tạo & Thiết lập ban đầu
+            <button class="guide-filter-btn" onclick="filterGuideTopics('setup', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              🚀 Khởi tạo &amp; Thiết lập ban đầu
             </button>
-            <button class="guide-filter-btn" onclick="filterGuideTopics('care', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
-              🧑‍🌾 Chăm sóc & Vận hành hàng ngày
+            <button class="guide-filter-btn" onclick="filterGuideTopics('care', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              🧑‍🌾 Chăm sóc &amp; Vận hành hàng ngày
             </button>
-            <button class="guide-filter-btn" onclick="filterGuideTopics('iot', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
-              📡 IoT & Cảnh báo Tự động
+            <button class="guide-filter-btn" onclick="filterGuideTopics('vietgap', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              🛡️ Tiêu chuẩn VietGAP &amp; Thu hoạch
+            </button>
+            <button class="guide-filter-btn" onclick="filterGuideTopics('iot', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              📡 IoT &amp; Cảnh báo Tự động
             </button>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:24px;" id="guide-cards-container">
 
             <!-- HƯỚNG DẪN 1: KHỞI TẠO TRANG TRẠI & ĐỊNH VỊ GPS -->
-            <div class="guide-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">1</span>
-                  Hướng dẫn Khởi tạo Trang trại & Định vị ranh giới GPS
+                  Hướng dẫn Khởi tạo Trang trại &amp; Định vị ranh giới GPS
                 </h3>
                 <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
                   <i class="fa-solid fa-location-crosshairs"></i> Bước đầu tiên khi sử dụng
@@ -134,7 +295,7 @@
               <!-- Sơ đồ Lưu đồ Giải thuật Khởi tạo Trang trại GPS -->
               <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
+                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
                   <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
@@ -143,7 +304,7 @@
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;">🔶 Tọa độ hợp lệ?</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-pen"></i> Nhập Tên, Diện tích (ha), Cây</div>
+                  <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-pen"></i> Nhập Tên, Diện tích (ha), Mã PUC</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-floppy-disk"></i> Lưu CSDL PostgreSQL</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
@@ -158,7 +319,7 @@
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KHAI BÁO VƯỜN</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Điền <strong>Tên trang trại</strong> (VD: Vườn Bưởi An Phú), <strong>Diện tích (ha)</strong> và <strong>Tổng số cây</strong>.</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Điền <strong>Tên trang trại</strong> (VD: Vườn Bưởi An Phú), <strong>Diện tích (ha)</strong>, <strong>Mã số Vùng trồng (PUC Code)</strong> và <strong>Tổng số cây</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: KÍCH HOẠT VƯỜN</div>
@@ -171,17 +332,17 @@
                   <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
                 </div>
                 <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
-                  Anh Nguyễn Văn An cầm điện thoại ra giữa vườn bưởi tại Bến Tre. Anh bật GPS, ứng dụng tự động lấy tọa độ vị trí <code>10.2415, 106.3752</code>. Anh nhập tên <strong>"Trang trại Bưởi Da Xanh An Phú"</strong>, diện tích <strong>2.5 ha</strong>, tổng số <strong>500 cây</strong>. Bấm lưu là vườn của anh hiển thị chuẩn xác trên bản đồ vệ tinh!
+                  Anh Nguyễn Văn An cầm điện thoại ra giữa vườn bưởi tại Bến Tre. Anh bật GPS, ứng dụng tự động lấy tọa độ vị trí <code>10.2415, 106.3752</code>. Anh nhập tên <strong>"Trang trại Bưởi Da Xanh An Phú"</strong>, diện tích <strong>2.5 ha</strong>, mã vùng trồng <strong>VN-BT-00124</strong>, tổng số <strong>500 cây</strong>. Bấm lưu là vườn của anh hiển thị chuẩn xác trên bản đồ vệ tinh!
                 </p>
               </div>
             </div>
 
             <!-- HƯỚNG DẪN 2: GHI NHẬT KÝ CANH TÁC & VOICE AI -->
-            <div class="guide-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">2</span>
-                  Hướng dẫn Ghi Nhật ký Canh tác & Nhập Giọng nói AI (Voice-to-Text)
+                  Hướng dẫn Ghi Nhật ký Canh tác &amp; Nhập Giọng nói AI (Voice-to-Text)
                 </h3>
                 <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
                   <i class="fa-solid fa-microphone"></i> Hỗ trợ Giọng nói Tiếng Việt
@@ -191,7 +352,7 @@
               <!-- Sơ đồ Lưu đồ Giải thuật Ghi Nhật ký Voice AI -->
               <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
+                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
                   <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
@@ -214,11 +375,11 @@
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>(+) Tròn xanh</strong> nổi ở góc dưới, hoặc bấm biểu tượng <strong>Microphone</strong> để đọc bằng giọng nói.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN HOẠT ĐỘNG & ẢNH</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn Tưới nước, Bón phân, Phun thuốc... Chọn vật tư trong kho, nhập liều lượng và chụp ảnh thực địa.</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN HOẠT ĐỘNG &amp; ẢNH</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn Tưới nước, Bón phân, Phun thuốc... Nhập Người thực hiện, Dụng cụ và chọn vật tư trong kho.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: LƯU & TỰ TRỪ TỒN KHO</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: LƯU &amp; TỰ TRỪ TỒN KHO</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Lưu nhật ký</strong>. Dữ liệu ghi vào sổ điện tử VietGAP và tự động trừ số lượng phân/thuốc trong kho!</div>
                 </div>
               </div>
@@ -233,48 +394,47 @@
               </div>
             </div>
 
-            <!-- HƯỚNG DẪN 3: QUẢN LÝ VẬT TƯ & QUÉT OCR BAO BÌ -->
-            <div class="guide-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <!-- HƯỚNG DẪN 3: QUẢN LÝ VẬT TƯ & PHÂN THUỐC VIETGAP -->
+            <div class="guide-card guide-searchable-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">3</span>
-                  Hướng dẫn Quản lý Kho Vật tư & Quét Bao bì OCR bằng Camera AI
+                  Hướng dẫn Quản lý Kho Vật tư, Phân Thuốc &amp; Khai Báo Thời Gian Cách Ly PHI
                 </h3>
                 <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
-                  <i class="fa-solid fa-camera"></i> Nhận diện Nhãn bao bì AI
+                  <i class="fa-solid fa-boxes-stacked"></i> Quản trị vật tư 4 nhóm
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Quét OCR Bao bì -->
               <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
+                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
                   <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-camera"></i> Chụp nhãn bao bì phân/thuốc</div>
+                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-layer-group"></i> Chọn nhóm (Bón phân/Thuốc/Nước/Công)</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">⚡ OCR đọc Tên & NPK & PHI</div>
+                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">🛡️ Khai báo PHI &amp; Hoạt chất</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #d97706; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-coins"></i> Nhập đơn giá + Tiền nước m³</div>
+                  <div style="background:#ffffff; border:1.5px solid #d97706; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-coins"></i> Nhập giá mua &amp; Tồn kho</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 NHẬP KHO VẬT TƯ</div>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 NHẬP KHO ERP</div>
                 </div>
               </div>
 
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: VÀO TAB VẬT TƯ</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Vật tư</strong> ➔ Bấm nút <strong>+ Thêm vật tư mới</strong>.</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Vật tư</strong> ➔ Bấm nút <strong>+ Khai báo vật tư mới</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: QUÉT OCR BAO BÌ</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>Quét nhãn bao bì</strong> ➔ Chụp mặt trước bao phân/chai thuốc. AI tự động đọc tên, hàm lượng NPK, thời gian cách ly PHI.</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KHAI BÁO VIETGAP</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn phân loại (Bón phân, Phun thuốc, Tiền nước, Nhân công). Nhập <strong>Số ngày cách ly PHI</strong> và <strong>Hoạt chất chính</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: NHẬP ĐƠN GIÁ & TIỀN NƯỚC</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Khai báo số lượng tồn kho và đơn giá (gồm cả tiền nước m³). Mỗi lần tưới/bón hệ thống tự quy đổi chi phí!</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: QUY ĐỔI ĐƠN GIÁ</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Hệ thống tự động quy đổi giá mua theo bao sang đơn giá gram/ml/lít giúp tự động tính toán chi phí chính xác trong từng lần sử dụng!</div>
                 </div>
               </div>
 
@@ -283,27 +443,26 @@
                   <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
                 </div>
                 <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
-                  Bác Sáu mua chai thuốc trị rầy mới, tên thuốc chữ nhỏ khó đọc. Bác đưa camera quét nhãn chai, ứng dụng tự động nhận diện tên thuốc <strong>"Confidor 100SL"</strong>, hoạt chất Imidacloprid và thời gian cách ly <strong>7 ngày</strong>. Bác không cần nhập tay một chữ nào!
+                  Bác Sáu mua chai thuốc trừ nấm Anvil 5SC giá 250.000đ/chai 1 lít. Bác khai báo số ngày cách ly <strong>14 ngày</strong> và hoạt chất <strong>Hexaconazole</strong>. Khi phun thuốc cho cây, hệ thống tự động khóa thời gian thu hoạch an toàn trong 14 ngày chuẩn VietGAP!
                 </p>
               </div>
             </div>
 
             <!-- HƯỚNG DẪN 4: TRA CỨU LỊCH SỬ & XUẤT BÁO CÁO VIETGAP -->
-            <div class="guide-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="vietgap" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">4</span>
-                  Hướng dẫn Tra cứu Lịch sử & Xuất Báo cáo VietGAP / GlobalGAP
+                  Hướng dẫn Tra cứu Lịch sử &amp; Xuất Báo cáo VietGAP / GlobalGAP
                 </h3>
                 <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
                   <i class="fa-solid fa-file-export"></i> Minh bạch xuất xứ nông sản
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Xuất Báo cáo VietGAP -->
               <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
+                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
                   <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
@@ -344,21 +503,20 @@
             </div>
 
             <!-- HƯỚNG DẪN 5: CÀI ĐẶT QUY TẮC NGƯỠNG & THÔNG BÁO TỰ ĐỘNG -->
-            <div class="guide-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">5</span>
-                  Hướng dẫn Cài đặt Quy tắc Ngưỡng & Thông báo Tự động (Cảnh báo - Khuyến cáo - Thông báo)
+                  Hướng dẫn Cài đặt Quy tắc Ngưỡng &amp; Thông báo Tự động IoT
                 </h3>
                 <span style="background:#fee2e2; color:#dc2626; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; border:1px solid #fecaca;">
                   <i class="fa-solid fa-bell-concierge"></i> Tự động hóa IoT Nông trại
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Cài đặt Ngưỡng Tự động -->
               <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
                 <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
+                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
                   <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
@@ -366,8 +524,6 @@
                   <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-microchip"></i> Chọn trạm (Đất/Không khí/Nước)</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">⚙️ Ghép logic (VÀ / HOẶC)</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;">⏰ Chọn giờ gửi (Sáng/Trưa/Tối)</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#fee2e2; border:1.5px solid #dc2626; color:#b91c1c; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">🚨 Chọn loại (Cảnh báo/Khuyến cáo)</div>
                   <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
@@ -378,15 +534,15 @@
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: VÀO CÀI ĐẶT NGƯỠNG</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Cài đặt</strong> ➔ Chọn tab con <strong>Cài đặt Ngưỡng & Cảnh báo</strong> ➔ Bấm <strong>+ Thêm quy tắc mới</strong>.</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Cài đặt</strong> ➔ Chọn tab con <strong>Cài đặt Ngưỡng &amp; Cảnh báo</strong> ➔ Bấm <strong>+ Thêm quy tắc mới</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN THIẾT BỊ & GHÉP ĐIỀU KIỆN</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn trạm (Đất, Không khí, Nước, Khí tượng hoặc Tự nhập tay), chọn chỉ số, phép so sánh và bấm <strong>+ Thêm điều kiện</strong> ghép logic (VÀ / HOẶC).</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN THIẾT BỊ &amp; GHÉP ĐIỀU KIỆN</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn trạm (Đất, Không khí, Nước), chọn chỉ số, phép so sánh và bấm <strong>+ Thêm điều kiện</strong> ghép logic (VÀ / HOẶC).</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: CÀI GIỜ & LƯU QUY TẮC</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn thể loại (🚨 Cảnh báo, 📢 Khuyến cáo, ℹ️ Thông báo), chọn giờ gửi (Sáng, Trưa, Tối, Tùy chỉnh) và bấm <strong>Lưu quy tắc</strong>.</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: CÀI GIỜ &amp; LƯU QUY TẮC</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn thể loại (🚨 Cảnh báo, 📢 Khuyến cáo, ℹ️ Thông báo), chọn giờ gửi và bấm <strong>Lưu quy tắc</strong>.</div>
                 </div>
               </div>
 
@@ -395,42 +551,24 @@
                   <i class="fa-solid fa-lightbulb" style="color:#ea580c;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
                 </div>
                 <p style="margin:0; font-size:13px; color:#7c2d12; line-height:1.6;">
-                  Bác Năm tạo quy tắc: <strong>[Độ ẩm đất tầng 10cm &lt; 50%] VÀ [Dự báo sáng mai có mưa rào &gt;= 60%]</strong>, thể loại <strong>Khuyến cáo (Màu Cam)</strong>, khung giờ <strong>Buổi sáng (06:00 - 08:00)</strong>. Mỗi sáng, nếu đất khô nhưng dự báo sắp mưa, app tự nhắn bác chỉ tưới nhẹ vừa đủ ẩm rễ để tiết kiệm điện nước!
+                  Bác Năm tạo quy tắc: <strong>[Độ ẩm đất tầng 10cm &lt; 50%] VÀ [Dự báo sáng mai có mưa rào &gt;= 60%]</strong>. Mỗi sáng, nếu đất khô nhưng sắp mưa, app tự nhắn bác chỉ tưới nhẹ vừa đủ ẩm rễ để tiết kiệm điện nước!
                 </p>
               </div>
             </div>
 
             <!-- HƯỚNG DẪN 6: KHỞI TẠO & QUẢN LÝ DANH MỤC CÂY TRỒNG -->
-            <div class="guide-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">6</span>
-                  Hướng dẫn Khởi tạo & Quản lý Danh mục Cây trồng (Sơ đồ Vườn & Lô)
+                  Hướng dẫn Khởi tạo &amp; Quản lý Danh mục Cây trồng (Sơ đồ Vườn &amp; Lô)
                 </h3>
                 <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
                   <i class="fa-solid fa-tree"></i> Số hóa từng gốc cây
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Quản lý Lô Cây trồng -->
-              <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
-                <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
-                </div>
-                <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-seedling"></i> Khai báo Giống cây & Năm trồng</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-location-crosshairs"></i> Gán tọa độ GIS lô vườn</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-tag"></i> Tạo mã định danh (SR-01)</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 THEO DÕI SƠ ĐỒ SỐ</div>
-                </div>
-              </div>
-
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+              <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: CHỌN TRANG TRẠI</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Trang trại</strong> ➔ Bấm vào thẻ trang trại để mở màn hình chi tiết lô vườn.</div>
@@ -444,48 +582,21 @@
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Theo dõi tuổi thọ cây, chuyển đổi giai đoạn sinh trưởng (Kiến thiết, Ra hoa, Nuôi trái, Phục hồi sau thu hoạch).</div>
                 </div>
               </div>
-
-              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
-                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
-                </div>
-                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
-                  Vườn sầu riêng của chú Bảy có 120 cây gồm 80 cây Ri6 và 40 cây Musang King. Chú khai báo mã cây từ <code>SR-01</code> đến <code>SR-120</code>, gắn năm trồng 2021. Khi mở ứng dụng, chú nhìn thấy ngay tình trạng từng cây xanh tốt hay đang điều trị bệnh!
-                </p>
-              </div>
             </div>
 
             <!-- HƯỚNG DẪN 7: QUÉT THẺ NFC & MÃ QR THỰC ĐỊA -->
-            <div class="guide-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">7</span>
-                  Hướng dẫn Quét Thẻ Chip NFC & Mã QR Cây Trồng Thực Địa 1-Chạm
+                  Hướng dẫn Quét Thẻ Chip NFC &amp; Mã QR Cây Trồng Thực Địa 1-Chạm
                 </h3>
                 <span style="background:#eff6ff; color:#2563eb; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #bfdbfe;">
                   <i class="fa-solid fa-rss"></i> Truy xuất hồ sơ 1 giây
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Quét NFC / QR Thực địa -->
-              <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
-                <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
-                </div>
-                <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-mobile-screen"></i> Chạm NFC / Quét QR tại gốc</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">⚡ Đọc UID Chip độc bản</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-notes-medical"></i> Mở Hồ sơ & Lịch sử chăm sóc</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 GHI NHẬT KÝ TẠI GỐC</div>
-                </div>
-              </div>
-
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+              <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: BẬT NFC TRÊN ĐIỆN THOẠI</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Vào cài đặt điện thoại bật tính năng <strong>NFC</strong> (hoặc mở camera quét mã QR trên thẻ).</div>
@@ -499,74 +610,38 @@
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Xem ngay lịch sử bón phân gần nhất của cây và bấm ghi nhật ký chăm sóc trực tiếp tại gốc cây đó!</div>
                 </div>
               </div>
-
-              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
-                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
-                </div>
-                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
-                  Đi thăm vườn thấy cây sầu riêng <code>SR-15</code> có dấu hiệu vàng lá, anh Thành chỉ cần cầm điện thoại chạm vào thẻ NFC trên cây. Màn hình hiện ra ngay: <em>"Cây đã bón vi lượng cách đây 14 ngày"</em>. Anh lập tức chụp ảnh lá vàng và ghi nhận điều trị nấm rễ ngay tại gốc!
-                </p>
-              </div>
             </div>
 
-            <!-- HƯỚNG DẪN 8: KHAI BÁO THU HOẠCH & NĂNG SUẤT NÔNG SẢN -->
-            <div class="guide-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <!-- HƯỚNG DẪN 8: THU HOẠCH NÔNG SẢN & SINH MÃ LÔ VIETGAP -->
+            <div class="guide-card guide-searchable-card" data-guide-topic="vietgap" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">8</span>
-                  Hướng dẫn Khai báo Thu hoạch Nông sản, Tính Năng suất & Sản lượng Vườn
+                  Hướng dẫn Khai báo Thu hoạch Nông sản, Kiểm tra PHI &amp; Sinh Mã Lô VietGAP
                 </h3>
                 <span style="background:#fef3c7; color:#b45309; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #fde68a;">
-                  <i class="fa-solid fa-wheat-awn"></i> Thống kê mùa vụ & Doanh thu
+                  <i class="fa-solid fa-wheat-awn"></i> Truy xuất nguồn gốc chuẩn
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Thu hoạch & Doanh thu -->
-              <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
-                <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
-                </div>
-                <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-basket-shopping"></i> Nhập sản lượng cắt (Kg/Tấn)</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #d97706; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">⚖️ Phân cấp Loại 1 / Loại 2 / Dạt</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">💵 Nhập giá bán thương lái</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 TÍNH LỢI NHUẬN RÒNG</div>
-                </div>
-              </div>
-
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+              <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: BẤM (+) CHỌN THU HOẠCH</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>(+)</strong> ➔ Chọn loại hoạt động là <strong>Thu hoạch nông sản</strong>.</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: KIỂM TRA TRẠNG THÁI PHI</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Hệ thống kiểm tra cây có đang trong thời gian cách ly thuốc BVTV không. Nếu còn cách ly, hệ thống sẽ cảnh báo đỏ!</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: NHẬP SẢN LƯỢNG & PHẨM CẤP</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Điền tổng sản lượng cắt (kg hoặc tấn), chia theo phẩm cấp (Loại 1, Loại 2, Hàng dạt) và giá bán tại vườn.</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: NHẬP SẢN LƯỢNG &amp; PHẨM CẤP</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Điền sản lượng cắt (kg/tấn), chia theo phẩm cấp (Loại 1, Loại 2) và giá bán tại vườn.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: TỔNG KẾT VỤ MÙA</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Hệ thống tự động cộng dồn doanh thu, so sánh với chi phí vật tư để tính ra lợi nhuận ròng của vụ mùa!</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: SINH MÃ LÔ TỰ ĐỘNG</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Hệ thống tự động sinh <strong>Mã Lô VietGAP ([PUC]-[YYYYMMDD]-[Mã Cây])</strong> sẵn sàng dán tem truy xuất nguồn gốc!</div>
                 </div>
-              </div>
-
-              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
-                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
-                </div>
-                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
-                  Đợt cắt bưởi Tết, chị Hạnh thu hoạch được <strong>1.500 kg bưởi Loại 1</strong> (giá 45.000đ/kg) và <strong>500 kg Loại 2</strong> (giá 25.000đ/kg). Chị nhập nhật ký thu hoạch, ứng dụng tự động tính tổng doanh thu đợt này là <strong>80.000.000 VNĐ</strong> và xuất hóa đơn giao nhận cho thương lái.
-                </p>
               </div>
             </div>
 
             <!-- HƯỚNG DẪN 9: CHẾ ĐỘ NGOÀI VƯỜN (FIELD MODE SIÊU SÁNG) -->
-            <div class="guide-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">9</span>
@@ -577,103 +652,47 @@
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Chế độ Ngoài Vườn -->
-              <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
-                <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
-                </div>
-                <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #f59e0b; color:#d97706; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-sun"></i> Bật Chế độ ngoài vườn</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">🖥️ Tăng tương phản cao (High-Contrast)</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-hand-pointer"></i> Phóng to nút bấm 1 tay</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 CHỐNG CHÓI HOÀN TẤT</div>
-                </div>
-              </div>
-
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+              <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: BẬT NÚT CHẾ ĐỘ VƯỜN</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút biểu tượng <strong>Mặt trời / Chế độ ngoài vườn</strong> ở thanh tiêu đề trên cùng.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: TỰ ĐỘNG TĂNG TƯƠNG PHẢN</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Toàn bộ giao diện chuyển sang chế độ siêu tương phản, chữ đậm, nền sáng rõ giúp mắt nhìn rõ ràng ngay cả khi ánh nắng chiếu trực tiếp vào màn hình.</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Toàn bộ giao diện chuyển sang chế độ siêu tương phản, chữ đậm, nền sáng rõ giúp mắt nhìn rõ ràng ngay cả khi ánh nắng chiếu trực tiếp.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: NÚT BẤM TO DỄ THAO TÁC</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Các phím bấm phóng to giúp người nông dân dễ dàng bấm chính xác bằng 1 tay khi đang mang bao tay làm vườn.</div>
                 </div>
               </div>
-
-              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
-                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
-                </div>
-                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
-                  Lúc 11h trưa nắng gắt ngoài vườn, màn hình điện thoại bình thường rất tối và lóa. Bác Tám bật <strong>Chế độ ngoài vườn</strong>, toàn bộ thông số độ ẩm đất và nút ghi nhật ký hiện lên sắc nét, bác thao tác ghi nhật ký dễ dàng mà không cần phải chạy vào bóng râm!
-                </p>
-              </div>
             </div>
 
             <!-- HƯỚNG DẪN 10: KHAI THÁC TRẠM IOT & DỰ BÁO KHÍ TƯỢNG 6 NGÀY -->
-            <div class="guide-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div class="guide-card guide-searchable-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">10</span>
-                  Hướng dẫn Đọc hiểu Cảm biến IoT Đa tầng & Ra Quyết định Canh tác theo Khí tượng 6 Ngày
+                  Hướng dẫn Đọc hiểu Cảm biến IoT Đa tầng &amp; Ra Quyết định Canh tác theo Khí tượng 6 Ngày
                 </h3>
                 <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
                   <i class="fa-solid fa-cloud-sun-rain"></i> Canh tác chính xác theo dữ liệu
                 </span>
               </div>
 
-              <!-- Sơ đồ Lưu đồ Giải thuật Canh tác theo IoT & Khí tượng -->
-              <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
-                <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
-                </div>
-                <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-droplet"></i> Đọc ẩm đất 10-20-50cm</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-cloud-sun-rain"></i> Đối chiếu Khí tượng 6 ngày</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;">🔶 Mưa dông > 60%?</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;">(Có: Hoãn bón / Không: Tưới đúng liều)</div>
-                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 QUYẾT ĐỊNH CHÍNH XÁC</div>
-                </div>
-              </div>
-
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+              <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: ĐỌC ĐỘ ẨM ĐẤT ĐA TẦNG</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Xem độ ẩm tầng 10cm (mặt đất), 20cm (rễ tơ hút nước) và 50cm (tích trữ nước ngầm). Giữ độ ẩm rễ 20cm từ <strong>65% - 75%</strong> là lý tưởng.</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Xem độ ẩm tầng 10cm, 20cm (rễ tơ hút nước) và 50cm. Giữ độ ẩm rễ 20cm từ <strong>65% - 75%</strong> là lý tưởng.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KIỂM TRA ĐỘ PH & EC</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">pH đất chuẩn từ <strong>5.5 - 6.8</strong> (nếu &lt; 5.0 cần bón vôi hạ phèn). Độ dẫn điện EC từ <strong>1.0 - 1.8 mS/cm</strong> thể hiện mức độ dinh dưỡng đất.</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KIỂM TRA ĐỘ PH &amp; EC</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">pH đất chuẩn từ <strong>5.5 - 6.8</strong>. Độ dẫn điện EC từ <strong>1.0 - 1.8 mS/cm</strong> thể hiện mức độ dinh dưỡng đất.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
                   <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: KẾT HỢP DỰ BÁO MƯA 6 NGÀY</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Xem bảng dự báo 6 ngày: Nếu ngày mai có <strong>mưa dông &gt; 70%</strong>, tuyệt đối hoãn phun thuốc sâu và hoãn bón phân để tránh bị mưa rửa trôi lãng phí!</div>
                 </div>
-              </div>
-
-              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
-                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
-                </div>
-                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
-                  Sáng nay anh Tuấn định mua 10 bao phân NPK về bón cho vườn mít. Anh mở app thấy bảng dự báo thời tiết báo: <em>"Chiều mai có mưa dông lớn lượng mưa 25mm"</em>, đồng thời độ ẩm tầng 20cm đang đạt 72%. Anh quyết định hoãn bón phân sang tuần sau, vừa tiết kiệm được tiền phân không bị trôi vừa bảo vệ rễ cây khỏe mạnh!
-                </p>
               </div>
             </div>
 
@@ -681,6 +700,110 @@
         </div>
 
 
-      </div>
+        <!-- ════════════════ SUB-TAB 3: CẨM NANG TIÊU CHUẨN VIETGAP & KỸ THUẬT CANH TÁC ════════════════ -->
+        <div id="wiki-subtab-vietgap" style="display:none;">
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            
+            <!-- Banner VietGAP -->
+            <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; border-radius:16px; padding:24px; box-shadow:0 6px 20px rgba(4,120,87,0.15);">
+              <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                <div style="width:64px; height:64px; border-radius:14px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:32px; color:#a7f3d0;">
+                  <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div style="flex:1;">
+                  <h3 style="font-size:18px; font-weight:900; margin:0 0 6px 0; color:#ffffff;">
+                    Quy Chuẩn Thực Hành Nông Nghiệp Tốt Việt Nam (VietGAP)
+                  </h3>
+                  <p style="margin:0; font-size:13.5px; color:#d1fae5; line-height:1.6;">
+                    Hệ thống các nguyên tắc, trình tự và thủ tục hướng dẫn tổ chức, cá nhân sản xuất nông sản an toàn nhằm nâng cao chất lượng sản phẩm, bảo vệ sức khỏe người sản xuất &amp; tiêu dùng, bảo vệ môi trường và truy xuất nguồn gốc.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-      <!-- ── Page Supplies (Quản lý & Giám sát Vật tư) ── -->
+            <!-- Khối 1: Nguyên Tắc 4 Đúng -->
+            <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+              <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 14px 0; display:flex; align-items:center; gap:10px;">
+                <span style="background:#ecfdf5; color:#059669; padding:6px 10px; border-radius:8px; font-size:13px;"><i class="fa-solid fa-check-double"></i></span>
+                Nguyên Tắc "4 Đúng" Trong Sử Dụng Thuốc Bảo Vệ Thực Vật &amp; Phân Bón
+              </h4>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:14px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div style="font-size:13px; font-weight:800; color:#059669; margin-bottom:6px;">🎯 1. ĐÚNG THUỐC / ĐÚNG PHÂN</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Chỉ sử dụng các loại thuốc BVTV và phân bón nằm trong danh mục được phép sử dụng tại Việt Nam. Không dùng hoạt chất cấm.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div style="font-size:13px; font-weight:800; color:#0284c7; margin-bottom:6px;">⚖️ 2. ĐÚNG LIỀU LƯỢNG &amp; NỒNG ĐỘ</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Pha đúng theo khuyến cáo của nhà sản xuất ghi trên nhãn bao bì. Không tăng liều gây kháng thuốc hoặc cháy lá.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div style="font-size:13px; font-weight:800; color:#d97706; margin-bottom:6px;">⏰ 3. ĐÚNG THỜI ĐIỂM &amp; ĐỦ THỜI GIAN PHI</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Phun vào lúc sáng sớm hoặc chiều mát khi sâu hại đang ở tuổi 1-2. Tuân thủ nghiêm ngặt thời gian cách ly (PHI) trước khi thu hoạch.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px;">
+                  <div style="font-size:13px; font-weight:800; color:#7c3aed; margin-bottom:6px;">🛡️ 4. ĐÚNG PHƯƠNG PHÁP &amp; BẢO HỘ</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Trang bị bảo hộ lao động (khẩu trang, kính, bao tay, áo mưa). Phun xuôi theo chiều gió, không ăn uống khi đang làm việc.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Khối 2: Bảng Tra Cứu Thời Gian Cách Ly (PHI) Tiêu Chuẩn -->
+            <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
+              <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 14px 0; display:flex; align-items:center; gap:10px;">
+                <span style="background:#eff6ff; color:#2563eb; padding:6px 10px; border-radius:8px; font-size:13px;"><i class="fa-solid fa-table-list"></i></span>
+                Bảng Tra Cứu Thời Gian Cách Ly (PHI) Của Các Nhóm Hoạt Chất Điển Hình
+              </h4>
+
+              <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                  <thead>
+                    <tr style="background:#f8fafc; color:#475569; text-transform:uppercase; font-size:11.5px; border-bottom:2px solid #e2e8f0;">
+                      <th style="padding:12px 16px; text-align:left;">Nhóm Hoạt Chất</th>
+                      <th style="padding:12px 16px; text-align:left;">Tên Hoạt Chất Điển Hình</th>
+                      <th style="padding:12px 16px; text-align:left;">Đối Tượng Phòng Trừ</th>
+                      <th style="padding:12px 16px; text-align:center;">Thời Gian Cách Ly (PHI)</th>
+                      <th style="padding:12px 16px; text-align:center;">Mức Độ Độc</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                      <td style="padding:12px 16px; font-weight:700; color:#0f172a;">Thuốc Sinh học / Vi sinh</td>
+                      <td style="padding:12px 16px; color:#059669;">Bacillus thuringiensis (Bt), Trichoderma</td>
+                      <td style="padding:12px 16px;">Sâu tơ, sâu xanh, nấm rễ</td>
+                      <td style="padding:12px 16px; text-align:center;"><span class="badge" style="background:#ecfdf5; color:#065f46; font-weight:800; padding:4px 10px; border-radius:20px;">1 - 3 ngày</span></td>
+                      <td style="padding:12px 16px; text-align:center;"><span style="color:#059669; font-weight:700;">🟢 Rất an toàn (GHS V)</span></td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                      <td style="padding:12px 16px; font-weight:700; color:#0f172a;">Thuốc Trừ Sâu Nhóm Abamectin</td>
+                      <td style="padding:12px 16px; color:#2563eb;">Abamectin, Emamectin benzoate</td>
+                      <td style="padding:12px 16px;">Nhện đỏ, bọ trĩ, sâu vẽ bùa</td>
+                      <td style="padding:12px 16px; text-align:center;"><span class="badge" style="background:#eff6ff; color:#1e40af; font-weight:800; padding:4px 10px; border-radius:20px;">3 - 7 ngày</span></td>
+                      <td style="padding:12px 16px; text-align:center;"><span style="color:#2563eb; font-weight:700;">🔵 Nhẹ (GHS IV)</span></td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                      <td style="padding:12px 16px; font-weight:700; color:#0f172a;">Thuốc Trừ Nấm Triazole</td>
+                      <td style="padding:12px 16px; color:#d97706;">Hexaconazole, Difenoconazole</td>
+                      <td style="padding:12px 16px;">Thán thư, rỉ sắt, đốm lá, nấm hồng</td>
+                      <td style="padding:12px 16px; text-align:center;"><span class="badge" style="background:#fffbeb; color:#b45309; font-weight:800; padding:4px 10px; border-radius:20px;">14 ngày</span></td>
+                      <td style="padding:12px 16px; text-align:center;"><span style="color:#d97706; font-weight:700;">🟡 Cẩn trọng (GHS III)</span></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:12px 16px; font-weight:700; color:#0f172a;">Thuốc Trừ Nấm Gốc Đồng &amp; Mancozeb</td>
+                      <td style="padding:12px 16px; color:#dc2626;">Mancozeb, Đồng Oxychloride (Coc 85)</td>
+                      <td style="padding:12px 16px;">Xì mủ thân, nứt thân xì mủ, Phytophthora</td>
+                      <td style="padding:12px 16px; text-align:center;"><span class="badge" style="background:#fee2e2; color:#991b1b; font-weight:800; padding:4px 10px; border-radius:20px;">14 - 21 ngày</span></td>
+                      <td style="padding:12px 16px; text-align:center;"><span style="color:#dc2626; font-weight:700;">🔴 Nghiêm ngặt (GHS III)</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- end page-wiki -->

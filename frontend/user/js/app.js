@@ -143,6 +143,64 @@ window.openFeatureDetailModal = function(type) {
         💡 Tích hợp trọn gói phần cứng cảm biến và van điều khiển thông minh tận vườn.
       </div>
     `;
+  } else if (type === 'vietgap') {
+    titleEl.innerHTML = '<i class="fa-solid fa-shield-halved" style="color:#6ee7b7"></i> Tiêu Chuẩn VietGAP & Quản Lý PHI';
+    imgEl.src = '/user/img/gis_contour_map.jpg';
+    imgEl.style.objectFit = 'cover';
+    headerEl.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
+    contentEl.innerHTML = `
+      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Bộ Tiêu Chuẩn VietGAP 100% & Quản Lý Cách Ly PHI</h4>
+      <p style="margin-bottom:12px; color:#475569;">
+        Giải pháp phần mềm tự động hóa toàn bộ quy trình kiểm soát an toàn vệ sinh thực phẩm theo tiêu chuẩn VietGAP:
+      </p>
+      <ul style="margin:0 0 16px 0; padding-left:20px; color:#334155; line-height:1.7;">
+        <li><strong>Tự động quản lý PHI:</strong> Khi phun thuốc BVTV, hệ thống tự động tính ngày hết hạn cách ly và khóa thu hoạch đối với từng gốc cây.</li>
+        <li><strong>Cảnh báo vi phạm đỏ:</strong> Cảnh báo ngăn chặn thu hoạch sớm trong thời gian cách ly và tự động ghi nhận cờ vi phạm chất lượng.</li>
+        <li><strong>Mã Lô Nông Sản Tự Động:</strong> Tự động sinh mã lô theo cú pháp [Mã PUC]-[YYYYMMDD]-[Mã Cây] phục vụ dán tem QR truy xuất.</li>
+        <li><strong>Ghi nhận Người & Dụng cụ:</strong> Đầy đủ thông tin người thực hiện và thiết bị phục vụ kiểm tra chứng nhận.</li>
+      </ul>
+      <div style="background:#ecfdf5; border-left:4px solid #059669; padding:10px 14px; font-size:13px; color:#065f46; border-radius:0 8px 8px 0; font-weight:600;">
+        💡 Hỗ trợ hồ sơ số hóa 100% chuẩn bị cho các đợt đánh giá chứng nhận VietGAP / GlobalGAP.
+      </div>
+    `;
+  } else if (type === 'voice') {
+    titleEl.innerHTML = '<i class="fa-solid fa-microphone-lines" style="color:#93c5fd"></i> AI Voice-to-Text Nông Nghiệp';
+    imgEl.src = '/user/img/gis_contour_map.jpg';
+    imgEl.style.objectFit = 'cover';
+    headerEl.style.background = 'linear-gradient(135deg, #1e3a8a, #3b82f6)';
+    contentEl.innerHTML = `
+      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Nhận Diện Giọng Nói Nông Nghiệp Bằng AI</h4>
+      <p style="margin-bottom:12px; color:#475569;">
+        Công nghệ xử lý ngôn ngữ tự nhiên tối ưu riêng cho phương ngữ nông dân 3 miền:
+      </p>
+      <ul style="margin:0 0 16px 0; padding-left:20px; color:#334155; line-height:1.7;">
+        <li><strong>Ghi sổ rảnh tay ngoài vườn:</strong> Không cần gõ phím khi tay đang dính bùn đất hay đeo găng tay.</li>
+        <li><strong>Trích xuất dữ liệu thông minh:</strong> Tự động nhận diện hoạt động (Tưới nước, Bón phân NPK, Phun thuốc) và số lượng.</li>
+        <li><strong>Tự động điền biểu mẫu:</strong> Khớp nối tên vật tư có sẵn trong kho nông hộ.</li>
+      </ul>
+      <div style="background:#eff6ff; border-left:4px solid #2563eb; padding:10px 14px; font-size:13px; color:#1e40af; border-radius:0 8px 8px 0; font-weight:600;">
+        💡 Bấm nút Microphone ở thanh tiêu đề hoặc trong modal nhật ký để trải nghiệm ngay.
+      </div>
+    `;
+  } else if (type === 'cost') {
+    titleEl.innerHTML = '<i class="fa-solid fa-calculator" style="color:#fed7aa"></i> Kế Toán Chi Phí Agri-ERP';
+    imgEl.src = '/user/img/gis_contour_map.jpg';
+    imgEl.style.objectFit = 'cover';
+    headerEl.style.background = 'linear-gradient(135deg, #7c2d12, #ea580c)';
+    contentEl.innerHTML = `
+      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Hạch Toán Chi Phí Canh Tác Chuẩn Agri-ERP</h4>
+      <p style="margin-bottom:12px; color:#475569;">
+        Kiểm soát dòng tiền và chi phí sản xuất từng vụ mùa theo tiêu chuẩn ERP doanh nghiệp:
+      </p>
+      <ul style="margin:0 0 16px 0; padding-left:20px; color:#334155; line-height:1.7;">
+        <li><strong>Quản lý 4 nhóm chi phí:</strong> Bón phân, Phun thuốc, Tiền nước m³ và Chi phí Nhân công.</li>
+        <li><strong>Tự động trừ kho & tính giá vốn:</strong> Quy đổi giá theo từng gram/ml và trừ tồn kho ngay khi ghi nhật ký.</li>
+        <li><strong>Báo cáo Lợi nhuận Ròng:</strong> Tự động so sánh Doanh thu thu hoạch với Tổng chi phí vật tư đã chi.</li>
+      </ul>
+      <div style="background:#fff7ed; border-left:4px solid #ea580c; padding:10px 14px; font-size:13px; color:#9a3412; border-radius:0 8px 8px 0; font-weight:600;">
+        💡 Quản lý tài chính rõ ràng, minh bạch giúp tối ưu hóa lợi nhuận mùa vụ.
+      </div>
+    `;
   }
 
   modal.style.display = 'flex';
@@ -153,53 +211,67 @@ window.closeFeatureDetailModal = function() {
   if (modal) modal.style.display = 'none';
 };
 
-
-
-
-
 window.switchWikiSubtab = function(tabName) {
   const btnAdv = document.getElementById('btn-wiki-sub-advanced');
   const btnGuide = document.getElementById('btn-wiki-sub-guide');
+  const btnVietgap = document.getElementById('btn-wiki-sub-vietgap');
+
   const paneAdv = document.getElementById('wiki-subtab-advanced');
   const paneGuide = document.getElementById('wiki-subtab-guide');
+  const paneVietgap = document.getElementById('wiki-subtab-vietgap');
+
+  // Reset all panes
+  if (paneAdv) paneAdv.style.display = 'none';
+  if (paneGuide) paneGuide.style.display = 'none';
+  if (paneVietgap) paneVietgap.style.display = 'none';
+
+  // Reset all buttons
+  const resetBtn = (btn) => {
+    if (!btn) return;
+    btn.className = 'wiki-subtab';
+    btn.style.background = '#ffffff';
+    btn.style.color = '#334155';
+    btn.style.border = '1.5px solid #cbd5e1';
+    btn.style.boxShadow = 'none';
+  };
+
+  const activateBtn = (btn) => {
+    if (!btn) return;
+    btn.className = 'wiki-subtab active';
+    btn.style.background = '#059669';
+    btn.style.color = 'white';
+    btn.style.border = 'none';
+    btn.style.boxShadow = '0 4px 12px rgba(5,150,105,0.25)';
+  };
+
+  resetBtn(btnAdv);
+  resetBtn(btnGuide);
+  resetBtn(btnVietgap);
 
   if (tabName === 'guide') {
-    if (paneAdv) paneAdv.style.display = 'none';
     if (paneGuide) paneGuide.style.display = 'block';
-
-    if (btnAdv) {
-      btnAdv.className = 'wiki-subtab';
-      btnAdv.style.background = '#ffffff';
-      btnAdv.style.color = '#334155';
-      btnAdv.style.border = '1.5px solid #cbd5e1';
-      btnAdv.style.boxShadow = 'none';
-    }
-    if (btnGuide) {
-      btnGuide.className = 'wiki-subtab active';
-      btnGuide.style.background = '#059669';
-      btnGuide.style.color = 'white';
-      btnGuide.style.border = 'none';
-      btnGuide.style.boxShadow = '0 4px 12px rgba(5,150,105,0.25)';
-    }
+    activateBtn(btnGuide);
+  } else if (tabName === 'vietgap') {
+    if (paneVietgap) paneVietgap.style.display = 'block';
+    activateBtn(btnVietgap);
   } else {
     if (paneAdv) paneAdv.style.display = 'block';
-    if (paneGuide) paneGuide.style.display = 'none';
-
-    if (btnAdv) {
-      btnAdv.className = 'wiki-subtab active';
-      btnAdv.style.background = '#059669';
-      btnAdv.style.color = 'white';
-      btnAdv.style.border = 'none';
-      btnAdv.style.boxShadow = '0 4px 12px rgba(5,150,105,0.25)';
-    }
-    if (btnGuide) {
-      btnGuide.className = 'wiki-subtab';
-      btnGuide.style.background = '#ffffff';
-      btnGuide.style.color = '#334155';
-      btnGuide.style.border = '1.5px solid #cbd5e1';
-      btnGuide.style.boxShadow = 'none';
-    }
+    activateBtn(btnAdv);
   }
+};
+
+window.searchGuideContent = function(query) {
+  const q = (query || '').trim().toLowerCase();
+  const cards = document.querySelectorAll('.guide-searchable-card');
+
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    if (!q || text.includes(q)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
 };
 
 window.filterGuideTopics = function(topic, btnEl) {
