@@ -462,6 +462,15 @@ async function initDB() {
 
     await client.query('COMMIT');
     console.log('✅ Database schema initialized');
+
+    // Tự động khởi tạo / cập nhật dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (20 năm tuổi) trang trại Long Khánh
+    try {
+      const { seedDurianRi6LK } = require('../scripts/seed_durian_ri6_lk');
+      await seedDurianRi6LK();
+      console.log('✅ Dữ liệu mẫu Cây Sầu Riêng Ri6 20 năm tuổi (Trang trại Long Khánh) đã được cập nhật vào CSDL');
+    } catch (seedErr) {
+      console.warn('⚠️ Cảnh báo khởi tạo dữ liệu mẫu sầu riêng:', seedErr.message);
+    }
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('❌ DB init error:', err);
