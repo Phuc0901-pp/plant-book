@@ -8,30 +8,34 @@
 <!-- @include 'modals/auth-modals.html' -->
 
 <!-- ════════════════ APP ════════════════ -->
-<div id="app" style="display:none">
-  <!-- @include 'layout/navbar.html' -->
+<div id="app" style="display:none; flex-direction:row">
+  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-  <main class="container">
-    <!-- ── 1. DASHBOARD ── -->
-    <!-- @include 'views/dashboard.html' -->
+  <!-- @include 'layout/sidebar.html' -->
 
-    <!-- ── 2. PLANTS (SỔ CÂY TRỒNG) ── -->
-    <!-- @include 'views/plants.html' -->
+  <!-- ── Main ── -->
+  <main class="main">
+    <!-- @include 'layout/topbar.html' -->
 
-    <!-- ── 3. LOGS (NHẬT KÝ CANH TÁC) ── -->
-    <!-- @include 'views/logs.html' -->
+    <div class="content">
+      <!-- ── 1. DASHBOARD / HOME ── -->
+      <!-- @include 'views/dashboard.html' -->
 
-    <!-- ── 4. REMINDERS (LỊCH NHẮC VIỆC) ── -->
-    <!-- @include 'views/reminders.html' -->
+      <!-- ── 2. PLANTS (SỔ CÂY TRỒNG & GIS) ── -->
+      <!-- @include 'views/plants.html' -->
 
-    <!-- ── 5. MAP (BẢN ĐỒ GIS THỰC ĐỊA) ── -->
-    <!-- @include 'views/map.html' -->
+      <!-- ── 3. SUPPLIES (KHO & CHI PHÍ VẬT TƯ) ── -->
+      <!-- @include 'views/supplies.html' -->
 
-    <!-- ── 6. GUIDE (HƯỚNG DẪN KỸ THUẬT & SOP) ── -->
-    <!-- @include 'views/guide.html' -->
+      <!-- ── 4. LOGS (NHẬT KÝ CANH TÁC) ── -->
+      <!-- @include 'views/logs.html' -->
 
-    <!-- ── 7. SUPPLIES (KHO & CHI PHÍ VẬT TƯ) ── -->
-    <!-- @include 'views/supplies.html' -->
+      <!-- ── 5. WIKI (HƯỚNG DẪN KỸ THUẬT & SOP) ── -->
+      <!-- @include 'views/guide.html' -->
+
+      <!-- ── 6. SETTINGS & PROFILE ── -->
+      <!-- @include 'views/profile.html' -->
+    </div>
   </main>
 
   <!-- @include 'layout/bottom-nav.html' -->

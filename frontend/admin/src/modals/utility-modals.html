@@ -1,10 +1,354 @@
+</div>
+
+<!-- ════════════ COST ENTRY MODAL ════════════ -->
+<div class="modal-overlay" id="cost-entry-modal" style="display:none" onclick="if(event.target===this)closeCostEntryModal()">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h2 id="cost-entry-modal-title"><i class="fa-solid fa-coins" style="color:var(--green)"></i> Thêm khoản chi</h2>
+      <button class="modal-close" onclick="closeCostEntryModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ce-type">
+      <div class="form-row">
+        <div class="field">
+          <label>Trang trại</label>
+          <select id="ce-farm" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+            <option value="">— Chọn trang trại —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ngày</label>
+          <input type="date" id="ce-date" style="width:100%;">
+        </div>
+      </div>
+      <div id="ce-fields-consumable">
+        <div class="form-row">
+          <div class="field">
+            <label>Loại vật tư</label>
+            <select id="ce-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+              <option value="Phân bón">Phân bón</option>
+              <option value="Thuốc BVTV">Thuốc BVTV</option>
+              <option value="Nhiên liệu">Nhiên liệu</option>
+              <option value="Nước tưới">Nước tưới</option>
+              <option value="Lao động">Lao động</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tên vật tư *</label>
+            <input type="text" id="ce-name" placeholder="VD: Ure 46%, DAP...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Số lượng</label>
+            <input type="number" id="ce-qty" placeholder="0" min="0" step="0.1">
+          </div>
+          <div class="field">
+            <label>Đơn vị</label>
+            <input type="text" id="ce-unit" placeholder="kg, lít, công...">
+          </div>
+          <div class="field">
+            <label>Đơn giá (VNĐ)</label>
+            <input type="number" id="ce-price" placeholder="0" min="0">
+          </div>
+        </div>
+      </div>
+      <div id="ce-fields-fixed" style="display:none;">
+        <div class="form-row">
+          <div class="field">
+            <label>Phân loại tài sản</label>
+            <select id="ce-fixed-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+              <option value="Máy móc thiết bị">Máy móc thiết bị</option>
+              <option value="Công trình">Công trình</option>
+              <option value="Cây giống">Cây giống ban đầu</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Năm mua</label>
+            <input type="number" id="ce-fixed-year" placeholder="2024" min="2000" max="2100">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Nguyên giá (VNĐ) *</label>
+            <input type="number" id="ce-fixed-price" placeholder="0" min="0">
+          </div>
+          <div class="field">
+            <label>Thời gian sử dụng (năm)</label>
+            <input type="number" id="ce-fixed-life" placeholder="5" min="1">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ghi chú</label>
+        <textarea id="ce-note" rows="2" placeholder="Ghi chú thêm..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCostEntryModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveCostEntry()"><i class="fa fa-check"></i> Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ PLANT MODAL ════════════ -->
+
+<!-- ════════════ CSV IMPORT MODAL ════════════ -->
+<div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-file-import" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
+      <button class="modal-close" onclick="closeCsvImportModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="f-csv-form" onsubmit="return false;">
+      <p style="font-size:12px;color:var(--gray-600);margin-bottom:16px;line-height:1.5">
+        Phương thức này giúp tự động tạo hàng loạt cây trồng từ file tọa độ CSV.
+        File CSV cần có các cột tiêu đề: <strong>STT</strong>, <strong>E</strong> (Kinh độ/Lng), <strong>N</strong> (Vĩ độ/Lat).
+      </p>
+
+      <div class="field">
+        <label>Chọn file CSV *</label>
+        <input type="file" id="csv-file-input" accept=".csv" style="padding: 8px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px; width: 100%;">
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="field">
+          <label>Loại cây *</label>
+          <select id="csv-plant-type" onchange="onCsvPlantTypeChange()" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <option value="">— Chọn loại cây —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Giống cây</label>
+          <input type="text" id="csv-plant-variety" placeholder="VD: Ri6, Monthong...">
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="field">
+          <label>Tuổi cây</label>
+          <input type="text" id="csv-plant-age" placeholder="VD: 3 năm, 6 tháng...">
+        </div>
+        <div class="field">
+          <label>Tình trạng sức khỏe</label>
+          <select id="csv-health-status" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <option>Tốt</option>
+            <option>Bình thường</option>
+            <option>Cần chú ý</option>
+            <option>Bệnh</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <input type="hidden" id="csv-schema-id">
+        <div class="field">
+          <label>Trạng thái công khai</label>
+          <select id="csv-is-public" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+              <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
+              <option value="false">🔒 Riêng tư</option>
+          </select>
+        </div>
+      </div>
+      
+      <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
+        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i class="fa-solid fa-table"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
+        <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
+          <table style="width:100%; border-collapse:collapse; text-align:left;">
+            <thead>
+              <tr style="border-bottom:1px solid #ddd; color:var(--gray-600);">
+                <th style="padding:4px 6px;">STT</th>
+                <th style="padding:4px 6px;">E (Kinh độ)</th>
+                <th style="padding:4px 6px;">N (Vĩ độ)</th>
+              </tr>
+            </thead>
+            <tbody id="csv-preview-table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCsvImportModal()">Hủy</button>
+      <button class="btn btn-primary" id="csv-import-submit-btn" onclick="submitCsvImport()" disabled>
+        <i class="fa fa-upload"></i> Thực hiện Import
+      </button>
+    </div>
+  </div>
+</div>
 
 
+<!-- ════════════ DEVICE MODAL ════════════ -->
+<div class="modal-overlay" id="device-modal" style="display:none" onclick="if(event.target===this)closeDeviceModal()">
+
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <h2 id="device-modal-title"><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
+      <button class="modal-close" onclick="closeDeviceModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-device-id">
+      
+      <div class="field">
+        <label>Tên thiết bị *</label>
+        <input type="text" id="f-device-name" placeholder="VD: Cảm biến nhiệt ẩm số 1, Van tưới A2...">
+      </div>
+      
+      <div class="field">
+        <label>Loại thiết bị *</label>
+        <select id="f-device-type" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="Cảm biến nhiệt độ & độ ẩm">Cảm biến nhiệt độ & độ ẩm</option>
+          <option value="Hệ thống tưới tự động">Hệ thống tưới tự động</option>
+          <option value="Camera giám sát">Camera giám sát</option>
+          <option value="Bộ điều khiển trung tâm (Gateway)">Bộ điều khiển trung tâm (Gateway)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Trang trại gán thiết bị</label>
+        <select id="f-device-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="">— Không thuộc trang trại nào —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Địa chỉ IP</label>
+        <input type="text" id="f-device-ip" placeholder="VD: 192.168.1.105...">
+      </div>
+
+      <div class="field">
+        <label>Dung lượng Pin (%)</label>
+        <input type="number" id="f-device-battery" value="100" min="0" max="100">
+      </div>
+      
+      <div class="field">
+        <label>Trạng thái *</label>
+        <select id="f-device-status" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="Hoạt động">🟢 Hoạt động</option>
+          <option value="Mất kết nối">🔴 Mất kết nối</option>
+          <option value="Bảo trì">🟡 Bảo trì</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeviceModal()">Hủy</button>
+      <button class="btn btn-primary" id="device-save-btn" onclick="saveDevice()">
+        <span id="device-save-text"><i class="fa fa-floppy-disk"></i> Lưu thiết bị</span>
+      </button>
+    </div>
+  </div>
+</div>
 
 
+<!-- ════════════ USER ACTIVITY MODAL ════════════ -->
+<div class="modal-overlay" id="user-activity-modal" style="display:none" onclick="if(event.target===this)closeUserActivityModal()">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
+      <button class="modal-close" onclick="closeUserActivityModal()">×</button>
+    </div>
+    <div class="modal-body" style="max-height: 450px; overflow-y: auto;">
+      <div id="user-activity-timeline" class="timeline" style="padding: 10px 0;">
+        <!-- Activities rendered dynamically here -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUserActivityModal()">Đóng</button>
+    </div>
+  </div>
+</div>
 
 
+<!-- ════════════ DESIGN DRAWING / CAD OVERLAY MODAL ════════════ -->
+<div class="modal-overlay" id="design-drawing-modal" style="display:none" onclick="if(event.target===this)closeDesignDrawingModal()">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-compass-drafting" style="color:var(--green)"></i> Import Bản Vẽ Thiết Kế Trang Trại (CAD / Overlay)</h2>
+      <button class="modal-close" onclick="closeDesignDrawingModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#1e40af;">
+        <i class="fa-solid fa-circle-info"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
+      </div>
+      
+      <div class="field">
+        <label>Tên hồ sơ / Bản vẽ thiết kế *</label>
+        <input type="text" id="f-drawing-title" placeholder="VD: Bản vẽ Quy hoạch Hệ thống Tưới & Phân lô 2026">
+      </div>
 
+      <div class="field">
+        <label>Chọn Tệp Bản Vẽ (GeoJSON / KML / CAD DXF / Hình ảnh Sơ đồ) *</label>
+        <input type="file" id="f-drawing-file" accept=".geojson,.json,.kml,.dxf,.png,.jpg,.jpeg,.pdf" onchange="previewDrawingFile(this)">
+        <small style="color:var(--gray-400); font-size:11px; display:block; margin-top:4px;">
+          Hỗ trợ dữ liệu vector GIS (GeoJSON/KML) hoặc hình ảnh sơ đồ thiết kế kiến trúc quy hoạch.
+        </small>
+      </div>
 
+      <div class="field">
+        <label>Độ trong suốt bản vẽ (Opacity): <strong id="drawing-opacity-val">80%</strong></label>
+        <input type="range" id="f-drawing-opacity" min="10" max="100" value="80" oninput="document.getElementById('drawing-opacity-val').textContent = this.value + '%'">
+      </div>
 
+      <div id="drawing-preview-box" style="display:none; padding:10px; background:var(--gray-50); border:1px dashed var(--gray-300); border-radius:8px; font-size:12px; margin-top:10px;">
+        <i class="fa-solid fa-file-contract" style="color:#2563eb"></i> Tệp đã chọn: <strong id="drawing-filename">-</strong>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDesignDrawingModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="submitDesignDrawingImport()">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Áp Dụng Bản Vẽ Lên Bản Đồ
+      </button>
+    </div>
+  </div>
+</div>
 
+<!-- ════════════ VIEW AUDIT HISTORY DETAILS MODAL (VISUAL DIFF INSPECTOR) ════════════ -->
+<div class="modal-overlay" id="history-view-modal" style="display:none" onclick="if(event.target===this)closeViewHistoryModal()">
+  <div class="modal" style="max-width: 780px; width: 92%; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.25);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:800; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-code-compare" style="color:#6ee7b7"></i> Đối Chiếu Biến Động Dữ Liệu (Visual Diff Inspector)
+      </h2>
+      <button class="modal-close" onclick="closeViewHistoryModal()" style="color:#fff; opacity:0.9; font-size:22px;">×</button>
+    </div>
+    <div class="modal-body" id="history-view-modal-body" style="padding:22px; background:#ffffff; max-height:75vh; overflow-y:auto;">
+      <!-- Populated dynamically by JS -->
+    </div>
+    <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeViewHistoryModal()" style="font-weight:700; border-radius:8px; padding:8px 18px;">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ PAGE: DB SCHEMA CHECK & LIVE CRUD ════════════════ -->
+<div id="page-db-check" class="page-content" style="display:none">
+  <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h1 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 6px 0; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-server" style="color:#059669;"></i> Kiểm tra CSDL PostgreSQL Schema & Quản trị Dữ liệu
+      </h1>
+      <p style="margin:0; font-size:13px; color:#64748b;">
+        Thanh tra cấu trúc các bảng, kiểu dữ liệu, số lượng dòng và thực thi Thêm/Sửa/Xóa dữ liệu trực tiếp trong CSDL.
+      </p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" onclick="loadDbSchemaCheck()" style="background:linear-gradient(135deg, #064e3b, #047857); border:none; padding:10px 18px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(4,120,87,0.25);">
+        <i class="fa-solid fa-rotate"></i> Tải lại Telemetry CSDL
+      </button>
+    </div>
+  </div>
+
+  <!-- Table Cards Telemetry Grid -->
+  <div id="db-schema-tables-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
+    <!-- Populated dynamically by database.js -->
+  </div>
+
+  <!-- Selected Table Records Live Viewer & CRUD Container -->
+  <div id="db-table-records-container" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.03); display:none;">
+    <!-- Populated dynamically by database.js -->
+  </div>
+</div>

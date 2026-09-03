@@ -1,0 +1,141 @@
+              </div>
+            </div>
+
+            <!-- Khối 2: Thẻ Định danh NFC & Mã QR Cây -->
+            <div onclick="openFeatureDetailModal('nfc')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:170px; background:#f8fafc; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; padding:10px;">
+                <img src="/user/img/nfc_tag.png" alt="Thẻ Định danh NFC TANBAO AgTech" style="max-height:100%; object-fit:contain; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));">
+                <span style="position:absolute; top:12px; left:12px; background:rgba(37,99,235,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-rss"></i> NFC Chip
+                </span>
+              </div>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-qrcode" style="color:#2563eb"></i> Thẻ Định danh NFC & Mã QR Cây
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
+                    Sử dụng thẻ chip NFC & QR Code độc bản để làm bản đồ số hóa từng cây trồng và tra cứu 1 chạm thực địa.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#2563eb; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Khối 3: Tích hợp Thiết bị IoT & Cảm biến Tự động -->
+            <div onclick="openFeatureDetailModal('iot')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
+              <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
+                <img src="/user/img/iot_sensors.jpg" alt="Tích hợp thiết bị IoT & Cảm biến" style="width:100%; height:100%; object-fit:cover;">
+                <span style="position:absolute; top:12px; left:12px; background:rgba(217,119,6,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
+                  <i class="fa-solid fa-microchip"></i> IoT Smart Farm
+                </span>
+              </div>
+              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-tower-cell" style="color:#d97706"></i> Tích hợp Thiết bị IoT & Cảm biến
+                  </h3>
+                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
+                    Mô hình tích hợp dữ liệu cảm biến đất và cảm biến thời tiết... tạo nên 1 nền sinh thái đa dạng tự động hóa.
+                  </p>
+                </div>
+                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#d97706; font-size:13px; font-weight:800;">
+                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- Sub-tab 2: HƯỚNG DẪN SỬ DỤNG (10 QUY TRÌNH THAO TÁC & KHỞI TẠO CHO NÔNG DÂN) -->
+        <div id="wiki-subtab-guide" style="display:none;">
+          
+          <!-- Topic Filter Bar -->
+          <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; -webkit-overflow-scrolling:touch;">
+            <button class="guide-filter-btn active" onclick="filterGuideTopics('all', this)" style="background:#059669; color:white; border:none; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(5,150,105,0.2);">
+              🌟 Tất cả (10 quy trình)
+            </button>
+            <button class="guide-filter-btn" onclick="filterGuideTopics('setup', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              🚀 Khởi tạo & Thiết lập ban đầu
+            </button>
+            <button class="guide-filter-btn" onclick="filterGuideTopics('care', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              🧑‍🌾 Chăm sóc & Vận hành hàng ngày
+            </button>
+            <button class="guide-filter-btn" onclick="filterGuideTopics('iot', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              📡 IoT & Cảnh báo Tự động
+            </button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:24px;" id="guide-cards-container">
+
+            <!-- HƯỚNG DẪN 1: KHỞI TẠO TRANG TRẠI & ĐỊNH VỊ GPS -->
+            <div class="guide-card" data-guide-topic="setup" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                  <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">1</span>
+                  Hướng dẫn Khởi tạo Trang trại & Định vị ranh giới GPS
+                </h3>
+                <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
+                  <i class="fa-solid fa-location-crosshairs"></i> Bước đầu tiên khi sử dụng
+                </span>
+              </div>
+
+              <!-- Sơ đồ Lưu đồ Giải thuật Khởi tạo Trang trại GPS -->
+              <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
+                <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-diagram-project"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT & QUY TRÌNH THỰC HIỆN:
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
+                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🟢 BẮT ĐẦU</div>
+                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-location-dot"></i> Bật GPS thiết bị</div>
+                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;">🔶 Tọa độ hợp lệ?</div>
+                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-pen"></i> Nhập Tên, Diện tích (ha), Cây</div>
+                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i class="fa-solid fa-floppy-disk"></i> Lưu CSDL PostgreSQL</div>
+                  <i class="fa-solid fa-arrow-right" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;">🏁 KÍCH HOẠT GIS</div>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: ĐỊNH VỊ GPS</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Trang trại</strong> ➔ Bấm nút <strong>Khởi tạo Trang trại mới (GPS)</strong> ➔ Bấm <strong>Bật GPS</strong>.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KHAI BÁO VƯỜN</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Điền <strong>Tên trang trại</strong> (VD: Vườn Bưởi An Phú), <strong>Diện tích (ha)</strong> và <strong>Tổng số cây</strong>.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: KÍCH HOẠT VƯỜN</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Lưu khởi tạo</strong>. Trang trại được kích hoạt đưa lên Bản đồ Vệ tinh GIS ngay lập tức!</div>
+                </div>
+              </div>
+
+              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1.5px solid #7dd3fc; border-radius:14px; padding:16px;">
+                <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> VÍ DỤ THỰC TẾ ĐIỂN HÌNH:
+                </div>
+                <p style="margin:0; font-size:13px; color:#0c4a6e; line-height:1.6;">
+                  Anh Nguyễn Văn An cầm điện thoại ra giữa vườn bưởi tại Bến Tre. Anh bật GPS, ứng dụng tự động lấy tọa độ vị trí <code>10.2415, 106.3752</code>. Anh nhập tên <strong>"Trang trại Bưởi Da Xanh An Phú"</strong>, diện tích <strong>2.5 ha</strong>, tổng số <strong>500 cây</strong>. Bấm lưu là vườn của anh hiển thị chuẩn xác trên bản đồ vệ tinh!
+                </p>
+              </div>
+            </div>
+
+            <!-- HƯỚNG DẪN 2: GHI NHẬT KÝ CANH TÁC & VOICE AI -->
+            <div class="guide-card" data-guide-topic="care" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                  <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">2</span>
+                  Hướng dẫn Ghi Nhật ký Canh tác & Nhập Giọng nói AI (Voice-to-Text)
+                </h3>
+                <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">

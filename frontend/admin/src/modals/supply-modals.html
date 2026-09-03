@@ -1,0 +1,93 @@
+
+<!-- ════════════ VIEW SUPPLY DETAILS MODAL ════════════ -->
+
+<div class="modal-overlay" id="supply-view-modal" style="display:none" onclick="if(event.target===this)closeViewSupplyModal()">
+  <div class="modal" style="max-width: 500px; border-radius:16px; overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px;">
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i class="fa-solid fa-eye" style="color:#6ee7b7"></i> Chi tiết Sản phẩm Vật tư & Tồn kho</h2>
+      <button class="modal-close" onclick="closeViewSupplyModal()" style="color:#fff; opacity:0.9;">×</button>
+    </div>
+    <div class="modal-body" id="supply-view-modal-body" style="padding:20px; background:#ffffff;">
+      <!-- Populated dynamically by JS -->
+    </div>
+    <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn btn-secondary" onclick="closeViewSupplyModal()">Đóng</button>
+      <button class="btn btn-primary" id="btn-edit-from-view" onclick="">
+        <i class="fa fa-pen"></i> Chỉnh sửa vật tư này
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ ADD / EDIT SUPPLY MODAL ════════════ -->
+<div class="modal-overlay" id="supply-form-modal" style="display:none" onclick="if(event.target===this)closeSupplyFormModal()">
+  <div class="modal" style="max-width: 520px; border-radius:16px; overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px;">
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;" id="supply-modal-title"><i class="fa-solid fa-box-archive"></i> Khai báo Vật tư & Phân bón</h2>
+      <button class="modal-close" onclick="closeSupplyFormModal()" style="color:#fff; opacity:0.9;">×</button>
+    </div>
+    <div class="modal-body" style="padding:20px; background:#ffffff;">
+      <input type="hidden" id="f-supply-id">
+      
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">1. Loại vật tư / Hạng mục *</label>
+        <select id="f-supply-category" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600;">
+          <option value="Bón phân">🧮 Bón phân (Phân bón hữu cơ/NPK/Dinh dưỡng)</option>
+          <option value="Phun thuốc">🧪 Phun thuốc (Thuốc bảo vệ thực vật/Nấm bệnh)</option>
+          <option value="Tiền nước">💧 Tiền nước (Nước tưới giếng/Hệ thống)</option>
+          <option value="Nhân công">👷 Nhân công (Tỉa cành/Tỉa hoa/Làm cỏ)</option>
+        </select>
+      </div>
+
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">2. Tên sản phẩm vật tư *</label>
+        <input type="text" id="f-supply-name" placeholder="VD: Phân Bón NPK 20-20-15 Đầu Trâu, Thuốc Ridomil Gold..." style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px;">
+      </div>
+
+      <div style="display:flex; gap:12px; margin-bottom:14px;">
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Đơn vị tính *</label>
+          <input type="text" id="f-supply-unit" placeholder="VD: kg, bao, chai, lít, m3, ngày công" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Số lượng tồn kho *</label>
+          <input type="number" step="0.1" id="f-supply-stock" placeholder="VD: 50" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#047857;">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-bottom:14px;">
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Đơn giá (VNĐ) *</label>
+          <input type="number" id="f-supply-price" placeholder="VD: 34000" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#059669;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Gán Nông hộ (Khách hàng)</label>
+          <select id="f-supply-user" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px;">
+            <option value="">— Mặc định (Admin) —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Hình ảnh bao bì / Chai thuốc sản phẩm</label>
+        <input type="file" id="f-supply-image-file" accept="image/*" onchange="uploadSupplyPhoto(this)" style="margin-bottom:6px;">
+        <input type="hidden" id="f-supply-image-url">
+        <div id="f-supply-img-preview" style="display:none; margin-top:6px;">
+          <img src="" id="f-supply-img-src" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+        </div>
+      </div>
+
+      <div class="field">
+        <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Ghi chú / Nhà sản xuất</label>
+        <input type="text" id="f-supply-note" placeholder="Nhà sản xuất, công dụng, lưu ý khi sử dụng..." style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px;">
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn btn-secondary" onclick="closeSupplyFormModal()">Hủy</button>
+      <button class="btn btn-primary" id="btn-save-supply" onclick="saveSupplySubmit()">
+        <i class="fa fa-floppy-disk"></i> Lưu thông tin vật tư
+      </button>
+    </div>
+  </div>
+</div>

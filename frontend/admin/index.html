@@ -3,8 +3,6 @@
      Auto-assembled via backend/scripts/build-html.js
      DO NOT edit index.html directly; edit modular files in src/
      ==================================================================== -->
-
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -236,6 +234,7 @@
 </head>
 
 <body>
+
 
 <!-- ════════════════ LOGIN ════════════════ -->
 <div id="login-page">
@@ -521,12 +520,16 @@
     </div>
   </div>
 </div>
+
+
+
+<!-- ════════════════ APP ════════════════ -->
 
 <!-- ════════════════ APP ════════════════ -->
 <div id="app" style="display:none;flex-direction:row">
   <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
   
-  <aside class="sidebar">
+    <aside class="sidebar">
     <div class="sidebar-header">
       <div class="brand">
         <div class="sidebar-logo-wrap">
@@ -569,6 +572,7 @@
 
   <!-- Main -->
   <main class="main">
+      <main class="main">
     <div class="topbar">
       <div style="display:flex;align-items:center;">
         <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none;">
@@ -578,1998 +582,12 @@
       </div>
       <div class="topbar-actions" id="topbar-actions"></div>
     </div>
+    <div class="content">
+
 
     <div class="content">
       <!-- ── 1. DASHBOARD & GIS COCKPIT ── -->
-      <div class="page-section active" id="page-dashboard">
-        
-        <!-- HEADER: STRIPE MINIMALIST WHITE HERO -->
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px 24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-          <div>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-              <span style="background:#ecfdf5; color:#047857; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:6px;">
-                <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span> Hệ thống hoạt động bình thường
-              </span>
-              <span style="font-size:12px; color:#64748b; font-weight:600;" id="dashboard-live-clock">Thời gian thực</span>
-            </div>
-            <h2 style="font-size:20px; font-weight:800; margin:0; letter-spacing:-0.02em; color:#0f172a;">
-              Trung Tâm Điều Hành Chuỗi Trang Trại
-            </h2>
-            <p style="margin:2px 0 0 0; font-size:13px; color:#64748b;">Giám sát không gian GIS, định danh tài sản nông hộ và cảnh báo vận hành thời gian thực</p>
-          </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <button onclick="loadDashboard()" class="btn" style="background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:10px; padding:9px 16px; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:all 0.15s ease;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1';">
-              <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới dữ liệu
-            </button>
-          </div>
-        </div>
-
-        <!-- TẦNG 1: 4 THẺ METRIC TILES TỐI GIẢN CHUẨN STRIPE / LINEAR -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
-          <!-- 1. Số Nông Hộ -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Nông Hộ Liên Kết</span>
-              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Hồ sơ</span>
-            </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farmers">—</div>
-            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-circle-check" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
-            </div>
-          </div>
-
-          <!-- 2. Tổng Số Trang Trại -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Số Trang Trại</span>
-              <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #a7f3d0;">GIS Hub</span>
-            </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farms">—</div>
-            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-draw-polygon" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
-            </div>
-          </div>
-
-          <!-- 3. Loại Cây & Giống -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Chủng Loại Cây</span>
-              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Quy chuẩn</span>
-            </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-schemas">—</div>
-            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-schemas-sub">
-              Sầu riêng, Cà phê, Bơ...
-            </div>
-          </div>
-
-          <!-- 4. Địa Bàn Chính -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Địa Bàn Trọng Điểm</span>
-              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Khu vực</span>
-            </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-regions">—</div>
-            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-regions-sub">
-              Bình Phước, Đắk Lắk, Lâm Đồng...
-            </div>
-          </div>
-        </div>
-
-        <!-- TẦNG 2: THANH TRẠNG THÁI GIÁM SÁT RỦI RO & THIẾT BỊ TỐI GIẢN (MINIMAL STATUS STRIP) -->
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:13px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">Trạng Thái Vận Hành &amp; Thiết Bị:</span>
-            <span style="font-size:12px; font-weight:700; color:#64748b;" id="stat-total-incidents">0 sự cố cần theo dõi</span>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <!-- Cây Bệnh -->
-            <button onclick="showPage('plants')" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#f87171'" onmouseout="this.style.borderColor='#fecaca'">
-              <span>🐛 Cây bệnh:</span>
-              <strong id="stat-sick-plants">0</strong>
-            </button>
-
-            <!-- Thiết Bị Offline -->
-            <button onclick="showPage('devices')" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#fbbf24'" onmouseout="this.style.borderColor='#fde68a'">
-              <span>🔌 Thiết bị offline:</span>
-              <strong id="stat-broken-devices">0</strong>
-            </button>
-
-            <!-- Thiết Bị Cần Bảo Trì -->
-            <button onclick="showPage('devices')" style="background:#f0f9ff; border:1px solid #bae6fd; color:#075985; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#bae6fd'">
-              <span>🔧 Cần bảo dưỡng:</span>
-              <strong id="stat-maintenance-devices">0</strong>
-            </button>
-
-            <!-- Cảm Biến Hiệu Chuẩn -->
-            <button onclick="showPage('devices')" style="background:#faf5ff; border:1px solid #e9d5ff; color:#6b21a8; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#c084fc'" onmouseout="this.style.borderColor='#e9d5ff'">
-              <span>⚙️ Cần hiệu chuẩn:</span>
-              <strong id="stat-calibration-devices">0</strong>
-            </button>
-          </div>
-        </div>
-
-        <!-- TẦNG 3: TRUNG TÂM KHÔNG GIAN GIS HỢP NHẤT (MASTER GIS COCKPIT) -->
-        <div class="gis-container" style="min-height:640px; height:660px; margin-bottom:20px;">
-          <!-- GIS Sidebar -->
-          <div class="gis-sidebar">
-            <!-- Dark Gradient Header -->
-            <div class="gis-sidebar-header">
-              <button class="gis-back-btn" id="gis-back-btn" style="display:none;" onclick="backToFarmsList()">
-                <i class="fa fa-arrow-left"></i>
-              </button>
-              <h3 id="gis-sidebar-title">🗺️ Quản lý Trang trại</h3>
-              <div id="gis-header-actions">
-                <button class="btn btn-primary btn-sm" onclick="openFarmForm()">
-                  <i class="fa fa-plus"></i> Thêm mới
-                </button>
-              </div>
-            </div>
-
-            <!-- Scrollable Content -->
-            <div class="gis-sidebar-content" id="gis-sidebar-content">
-
-              <!-- ── Farm list view ── -->
-              <div id="gis-view-list">
-                <div class="gis-section-card" style="animation-delay:0.05s;">
-                  <div class="gis-section-label">
-                    <i class="fa-solid fa-filter"></i> Lọc theo Nông hộ
-                  </div>
-                  <select id="filter-farm-user" onchange="filterFarmsByCustomer()" style="width:100%; padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#f8fafc; color:#0f172a; transition:border-color 0.2s;">
-                    <option value="all">Tất cả khách hàng (nông hộ)</option>
-                  </select>
-                </div>
-                <div id="farms-list-container">
-                  <div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách trang trại...</div>
-                </div>
-              </div>
-
-              <!-- ── Farm create/edit form ── -->
-              <div id="gis-view-form" style="display:none;">
-                <div class="gis-section-card">
-                  <div class="field">
-                    <label>Tên trang trại *</label>
-                    <input type="text" id="farm-name" placeholder="VD: Nông trại Tây Nguyên, Farm A...">
-                  </div>
-                  <div class="field">
-                    <label>Mô tả</label>
-                    <textarea id="farm-desc" rows="3" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
-                  </div>
-                  <div class="field">
-                    <label>Gán cho Nông hộ / Người dùng</label>
-                    <select id="farm-user-id" style="width:100%; padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:8px;">
-                      <option value="">— Chưa gán cho ai —</option>
-                    </select>
-                  </div>
-
-                  <div class="field">
-                    <label>Ranh giới bản đồ</label>
-                    <div class="alert alert-success" style="padding:8px 12px; margin-bottom:8px; font-size:11px; line-height:1.4;">
-                      <i class="fa fa-circle-info"></i> Vẽ ranh giới (đa giác) trên bản đồ. Nhấp đỉnh đầu tiên để khép kín đa giác.
-                    </div>
-                    <div style="font-size:11.5px; color:#475569; margin-bottom:8px;">
-                      Diện tích: <strong id="farm-area-display" style="color:#047857;">0 m²</strong> (<span id="farm-area-ha">0</span> ha)
-                    </div>
-                  </div>
-                  <div style="display:flex; gap:8px;">
-                    <button class="btn btn-secondary" style="flex:1;" onclick="cancelFarmForm()">Hủy</button>
-                    <button class="btn btn-primary" style="flex:1;" onclick="saveFarm()">Lưu</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ── Farm detail view ── -->
-              <div id="gis-view-details" style="display:none;">
-
-                <!-- Farm info -->
-                <div class="gis-section-card" style="animation-delay:0.05s;">
-                  <p id="farm-details-desc" class="gis-farm-info" style="font-style:italic; min-height:16px;"></p>
-                  <p id="farm-details-area" class="gis-farm-area-badge"><i class="fa-solid fa-chart-area"></i> 0 m²</p>
-                </div>
-
-                <!-- Thêm cây -->
-                <div class="gis-section-card" style="animation-delay:0.10s;">
-                  <div class="gis-section-label" style="color:#047857;">
-                    <i class="fa-solid fa-seedling" style="color:#10b981;"></i> Thêm cây vào trang trại
-                  </div>
-                  <button id="btn-gis-import-mode" class="gis-action-btn gis-btn-green" onclick="toggleGisImportMode()">
-                    <i class="fa-solid fa-map-pin"></i> Import GIS — Chọn vị trí cây
-                  </button>
-                  <div class="gis-btn-row">
-                    <button class="gis-action-btn gis-btn-ghost" onclick="openAddPlantsManual()">
-                      <i class="fa fa-keyboard"></i> Thủ công
-                    </button>
-                    <button class="gis-action-btn gis-btn-ghost" onclick="openCsvImportModal()">
-                      <i class="fa fa-file-csv"></i> Import CSV
-                    </button>
-                  </div>
-                  <button id="btn-toggle-plant-markers" class="gis-action-btn gis-btn-ghost" style="margin-top:4px;" onclick="togglePlantMarkers()">
-                    <i class="fa-solid fa-eye"></i> Hiện / Ẩn Vị Trí Cây
-                  </button>
-                </div>
-
-                <!-- Hồ sơ bản vẽ CAD -->
-                <div class="gis-section-card" style="animation-delay:0.15s;">
-                  <div class="gis-section-label" style="color:#1d4ed8;">
-                    <i class="fa-solid fa-compass-drafting" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD)
-                  </div>
-                  <button class="gis-action-btn gis-btn-blue" onclick="openDesignDrawingModal()">
-                    <i class="fa-solid fa-file-import"></i> Import Bản Vẽ Thiết Kế (CAD / Overlay)
-                  </button>
-                </div>
-
-                <!-- Danh sách cây -->
-                <div class="gis-section-card" style="animation-delay:0.20s;">
-                  <div class="gis-section-label">
-                    <i class="fa-solid fa-tree" style="color:#10b981;"></i>
-                    Cây trồng — <span id="farm-details-plant-count" style="color:#047857;">0</span> cây
-                  </div>
-                  <div id="farm-details-plants-list" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent;">
-                    <!-- Filled by JS -->
-                  </div>
-                </div>
-
-              </div><!-- /gis-view-details -->
-            </div><!-- /gis-sidebar-content -->
-
-            <!-- Footer: Sửa / Xóa -->
-            <div class="gis-footer-actions" id="gis-detail-footer" style="display:none;">
-              <button class="btn btn-secondary btn-sm" onclick="editFarm()"><i class="fa fa-pen"></i> Sửa</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteFarm()"><i class="fa fa-trash"></i> Xóa</button>
-            </div>
-          </div>
-          <!-- GIS Map Container -->
-          <div class="gis-map-container" style="position: relative;">
-            <div id="gis-import-active-banner" style="display:none; position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:12; background:linear-gradient(135deg, #059669, #10b981); color:#fff; padding:10px 18px; border-radius:30px; font-size:12.5px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.4); pointer-events:auto; display:flex; align-items:center; gap:10px;">
-              <span><i class="fa-solid fa-location-crosshairs fa-bounce"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!</span>
-              <button class="btn btn-sm" style="background:rgba(0,0,0,0.3); border:none; color:#fff; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer;" onclick="toggleGisImportMode(false)">Tắt Chế Độ</button>
-            </div>
-            <div id="gis-map" class="gis-map"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (6 SUB-VIEWS) ── -->
-      <div class="page-section" id="page-database">
-        <!-- 6 Sub-tabs in Database section -->
-        <div class="tabs" style="margin-bottom: 20px;">
-          <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
-            <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
-          </div>
-          <div class="tab" id="db-tab-devices" onclick="switchDatabaseTab('devices')">
-            <i class="fa-solid fa-microchip"></i> Thiết bị IoT &amp; Cảm biến
-          </div>
-          <div class="tab" id="db-tab-schemas" onclick="switchDatabaseTab('schemas')">
-            <i class="fa-solid fa-sliders"></i> Cấu hình &amp; Quy trình Loại cây
-          </div>
-          <div class="tab" id="db-tab-supplies" onclick="switchDatabaseTab('supplies')">
-            <i class="fa-solid fa-boxes-packing"></i> Vật tư &amp; Kho
-          </div>
-          <div class="tab" id="db-tab-media" onclick="switchDatabaseTab('media')">
-            <i class="fa-solid fa-images"></i> Thư viện media
-          </div>
-          <div class="tab" id="db-tab-history" onclick="switchDatabaseTab('history')">
-            <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động
-          </div>
-        </div>
-
-        <!-- ── TAB 1: DỮ LIỆU CANH TÁC (CULTIVATION DATA & MASTER-DETAIL SPLIT-VIEW) ── -->
-        <div class="tab-pane active" id="db-pane-cultivation">
-          <!-- TOP BAR: FARM SELECTOR & HERO BANNER -->
-          <div class="card" style="margin-bottom:20px; border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 6px 20px rgba(0,0,0,0.03);">
-            <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-              <div>
-                <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#a7f3d0;">
-                  <i class="fa-solid fa-house-chimney-window"></i> CƠ SỞ DỮ LIỆU CANH TÁC & NHẬT KÝ NÔNG NGHIỆP
-                </div>
-                <h2 style="font-size:20px; font-weight:800; margin:6px 0 0 0; color:#ffffff;" id="db-active-farm-title">
-                  Vui lòng chọn Trang trại
-                </h2>
-              </div>
-
-              <!-- Farm Selector Dropdown -->
-              <div style="min-width:300px; max-width:440px; flex:1;">
-                <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;">🏡 CHỌN TRANG TRẠI CANH TÁC *</label>
-                <select id="db-filter-farm" onchange="onDbFarmChange()" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
-                  <option value="">— Vui lòng chọn Trang trại trước —</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Farm Overview Hero Bar (Personnel & Quick Stats) -->
-            <div id="db-farm-hero-bar" style="display:none; background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-              <!-- Personnel Pills (Name & Phone only - No Role) -->
-              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
-                <span style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                  <i class="fa-solid fa-users" style="color:#059669;"></i> Người tham gia:
-                </span>
-                <div id="db-farm-personnel-list" style="display:flex; flex-wrap:wrap; gap:8px;">
-                  <!-- Populated dynamically with name & phone pills -->
-                </div>
-              </div>
-
-              <!-- Quick Stats & Actions -->
-              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="openPlantModalForActiveDbFarm()" style="background:#059669; color:#ffffff; border:none; border-radius:8px; font-weight:700; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
-                  <i class="fa fa-plus"></i> + Thêm Cây Mới
-                </button>
-                <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:800; padding:6px 12px; border-radius:8px;">
-                  🌱 <strong id="db-hero-plants-count">0</strong> cây trồng
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- MASTER-DETAIL SPLIT-VIEW CONTAINER -->
-          <div id="db-cultivation-split-view" style="display:none; grid-template-columns: 340px 1fr; gap: 20px; align-items: start;">
-            
-            <!-- LEFT COLUMN: MASTER LIST (Danh mục Cây trồng & Tìm kiếm nhanh) -->
-            <div class="card" style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; max-height: calc(100vh - 180px); position:sticky; top:20px;">
-              <div style="padding:14px 16px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; flex-direction:column; gap:8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <h4 style="margin:0; font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                    <i class="fa-solid fa-tree" style="color:#059669;"></i> Danh mục cây trồng
-                  </h4>
-                  <span id="db-master-plant-count-badge" class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:800; font-size:11px; padding:2px 8px; border-radius:6px;">0 cây</span>
-                </div>
-                
-                <!-- Search Input & Health Filter -->
-                <div style="display:flex; gap:6px;">
-                  <input type="text" id="db-plant-search-input" placeholder="🔍 Tìm mã (#101), giống..." oninput="filterMasterPlantList()" style="flex:1; min-width:120px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff;">
-                  <select id="db-plant-filter-health" onchange="filterMasterPlantList()" style="width:105px; padding:8px 6px; border:1px solid #cbd5e1; border-radius:8px; font-size:11.5px; font-weight:600; background:#ffffff; outline:none; cursor:pointer;">
-                    <option value="">Tất cả SK</option>
-                    <option value="Tốt">🟢 Tốt</option>
-                    <option value="Cần chú ý">🟡 Chú ý</option>
-                    <option value="Bệnh">🔴 Bệnh</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Scrollable Tree Cards List -->
-              <div id="db-master-plants-list" style="overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; flex:1;">
-                <!-- Populated dynamically with plant cards -->
-              </div>
-            </div>
-
-            <!-- RIGHT COLUMN: DETAIL VIEW (Hồ sơ cây, Chi phí đầu tư & Dòng thời gian canh tác) -->
-            <div id="db-detail-view-container" style="display:flex; flex-direction:column; gap:16px;">
-              <!-- Cost & Profile Header Box -->
-              <div id="db-plant-cost-summary" style="display:none; background:linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius:16px; padding:20px; color:#ffffff; box-shadow:0 8px 24px rgba(4,120,87,0.25);">
-                <!-- Populated dynamically with tree profile, cost stats & Print button -->
-              </div>
-
-              <!-- Activity Filter Chips Bar -->
-              <div id="db-activity-filter-bar" style="display:none; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:12px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-activity-chips-container">
-                  <!-- Chips: Tất cả, Tưới nước, Bón phân, Phun thuốc, Cắt tỉa, Bệnh cây, Thu hoạch -->
-                </div>
-                <button class="btn btn-secondary btn-sm" onclick="exportCultivationPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px;">
-                  <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Hồ sơ
-                </button>
-              </div>
-
-              <!-- Timeline Feed Container -->
-              <div id="db-cultivation-timeline-container">
-                <!-- Populated dynamically by database.js -->
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Empty Initial State (Shown when no farm is selected) -->
-          <div id="db-farm-empty-placeholder" class="empty-state" style="padding:60px 20px; background:#ffffff; border-radius:16px; border:1.5px solid #e2e8f0; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
-            <i class="fa-solid fa-house-chimney-window" style="font-size:54px; color:#94a3b8; margin-bottom:16px; display:inline-block;"></i>
-            <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 8px 0;">Vui lòng chọn Trang trại để mở Bảng điều khiển Split-View</h3>
-            <p style="font-size:13.5px; color:#64748b; max-width:480px; margin:0 auto; line-height:1.5;">
-              Sau khi chọn trang trại, hệ thống sẽ tự động hiển thị danh sách cây trồng (Cột trái) và hồ sơ nhật ký canh tác chi tiết cùng chi phí đầu tư (Cột phải).
-            </p>
-          </div>
-        </div>
-        <!-- ── TAB 2: THIẾT BỊ IOT & CẢM BIẾN (ENTERPRISE AGTECH IOT SUITE) ── -->
-        <div class="tab-pane" id="db-pane-devices" style="display:none;">
-
-          <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
-                <i class="fa-solid fa-microchip"></i>
-              </div>
-              <div>
-                <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Thiết Bị IoT</div>
-                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-iot-total">0</div>
-              </div>
-            </div>
-
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
-                <i class="fa-solid fa-signal"></i>
-              </div>
-              <div>
-                <div style="font-size:11px; font-weight:700; color:#059669; text-transform:uppercase; letter-spacing:0.04em;">Đang Online (Live)</div>
-                <div style="font-size:22px; font-weight:800; color:#059669; margin-top:2px;" id="kpi-iot-online">0</div>
-              </div>
-            </div>
-
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:20px;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-              </div>
-              <div>
-                <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.04em;">Mất Kết Nối</div>
-                <div style="font-size:22px; font-weight:800; color:#dc2626; margin-top:2px;" id="kpi-iot-offline">0</div>
-              </div>
-            </div>
-
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px;">
-                <i class="fa-solid fa-battery-three-quarters"></i>
-              </div>
-              <div>
-                <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Pin Đạt Chuẩn (&gt;80%)</div>
-                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-iot-battery">0/0</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- TẦNG 2: CONTROL BAR & SMART FILTERING -->
-          <div class="card" style="margin-bottom:20px; border-radius:12px; border:1px solid #e2e8f0;">
-            <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:12px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                
-                <!-- Filters -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
-                  <!-- Farm Selector -->
-                  <div style="min-width:220px; flex:1.2;">
-                    <select id="db-iot-filter-farm" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#064e3b; background:#f8fafc;">
-                      <option value="all">🌐 Tất cả Trang trại (Toàn bộ IoT)</option>
-                    </select>
-                  </div>
-
-                  <!-- Category Selector -->
-                  <div style="min-width:170px; flex:1;">
-                    <select id="db-iot-filter-type" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; background:#ffffff;">
-                      <option value="all">Tất cả phân loại</option>
-                      <option>Trạm thời tiết</option>
-                      <option>Cảm biến đất đa tầng</option>
-                      <option>Van tưới tự động</option>
-                    </select>
-                  </div>
-
-                  <!-- Status Selector -->
-                  <div style="min-width:140px; flex:0.8;">
-                    <select id="db-iot-filter-status" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; background:#ffffff;">
-                      <option value="all">Tất cả trạng thái</option>
-                      <option>Hoạt động</option>
-                      <option>Mất kết nối</option>
-                      <option>Bảo trì</option>
-                    </select>
-                  </div>
-
-                  <!-- Search Input -->
-                  <div style="min-width:180px; flex:1;">
-                    <input type="text" id="db-iot-search-input" placeholder="🔍 Tìm theo IP, tên, mã..." oninput="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; outline:none; background:#ffffff;">
-                  </div>
-                </div>
-
-                <!-- Right Action Buttons -->
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="loadDbDevicesTab()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:12px; cursor:pointer;">
-                    <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới
-                  </button>
-
-                  <button class="btn btn-primary btn-sm" onclick="openDeviceModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:800; background:#059669; border:none; border-radius:8px; padding:8px 14px; font-size:12px; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
-                    <i class="fa fa-plus"></i> + Đăng Ký Thiết Bị Mới
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- TẦNG 3: TELEMETRY TRỰC QUAN & DANH SÁCH THIẾT BỊ PHÂN TẦNG -->
-          <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
-            <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; gap:10px; overflow-x:auto;">
-              <div class="tab active" id="iot-tab-weather" onclick="switchIotTab('weather')" style="padding:12px 16px; font-weight:700; font-size:13px;">🌤️ Trạm Thời Tiết &amp; Dự Báo Khí Tượng</div>
-              <div class="tab" id="iot-tab-soil" onclick="switchIotTab('soil')" style="padding:12px 16px; font-weight:700; font-size:13px;">🌱 Cảm Biến Đất Đa Tầng (10-20-30cm)</div>
-              <div class="tab" id="iot-tab-ai" onclick="switchIotTab('ai')" style="padding:12px 16px; font-weight:700; font-size:13px;">🤖 Khuyến Nghị Thuật Toán Canh Tác AI</div>
-              <div class="tab" id="iot-tab-devices" onclick="switchIotTab('devices')" style="padding:12px 16px; font-weight:700; font-size:13px;">⚙️ Sổ Đăng Ký Thiết Bị Phân Tầng</div>
-            </div>
-
-            <!-- Sub-tab 1: Weather Station -->
-            <div id="iot-pane-weather" style="padding:20px; display:block;">
-              <div style="display:grid; grid-template-columns: 2.4fr 1fr; gap:20px;">
-                <div style="display:flex; flex-direction:column; gap:16px;">
-                  <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-                    <div>
-                      <div style="font-size:12px; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-location-dot" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp · 📍 Live Sensor Station
-                      </div>
-                      <div style="display:flex; align-items:center; gap:14px; margin-top:6px;">
-                        <span style="font-size:42px; font-weight:900; color:#0f172a; line-height:1;">27°C</span>
-                        <div>
-                          <div style="font-size:15px; font-weight:800; color:#0f172a;">🌤️ Mây rải rác</div>
-                          <div style="font-size:12px; color:#64748b; margin-top:2px;">Khả năng có mưa rào nhẹ về chiều tối</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; min-width:240px; text-align:center;">
-                      <div style="font-size:10.5px; color:#64748b; font-weight:700; margin-bottom:4px;">DỰ BÁO NHIỆT ĐỘ THEO GIỜ (HÔM NAY)</div>
-                      <canvas id="weather-hourly-chart" style="max-height:100px;"></canvas>
-                    </div>
-                  </div>
-
-                  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
-                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Tốc độ &amp; Hướng gió</div>
-                      <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">28 <small style="font-size:12px; color:#64748b;">km/h</small></div>
-                      <div style="font-size:11px; color:#0284c7; font-weight:600; margin-top:2px;">Hướng: ESE (Đông Đông Nam)</div>
-                    </div>
-                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Lượng mưa hôm nay</div>
-                      <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">0.02 <small style="font-size:12px; color:#64748b;">mm</small></div>
-                      <div style="font-size:11px; color:#059669; font-weight:600; margin-top:2px;">Xác suất mưa 1h tới: 20%</div>
-                    </div>
-                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Độ ẩm không khí</div>
-                      <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">76%</div>
-                      <div style="font-size:11px; color:#0284c7; font-weight:600; margin-top:2px;">Điểm sương: 22°C (Sương mù)</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 7-day Forecast -->
-                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
-                  <div style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; padding-bottom:6px; border-bottom:1px solid #f1f5f9;">
-                    <span><i class="fa-regular fa-calendar-days" style="color:#059669;"></i> DỰ BÁO 7 NGÀY TỚI</span>
-                    <span style="font-size:11px; color:#64748b;">Cập nhật 15:00</span>
-                  </div>
-                  <div style="display:flex; flex-direction:column; gap:6px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#f8fafc; border-radius:8px; font-size:12px;">
-                      <div><strong>Hôm nay</strong> <span style="font-size:11px; color:#64748b;">(21 Aug)</span></div>
-                      <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#f8fafc; border-radius:8px; font-size:12px;">
-                      <div><strong>Ngày mai</strong> <span style="font-size:11px; color:#64748b;">(22 Aug)</span></div>
-                      <div><span>🌧️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#f8fafc; border-radius:8px; font-size:12px;">
-                      <div><strong>Chủ nhật</strong> <span style="font-size:11px; color:#64748b;">(23 Aug)</span></div>
-                      <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sub-tab 2: Soil Telemetry -->
-            <div id="iot-pane-soil" style="padding:20px; display:none;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:12px;">
-                <div>
-                  <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-layer-group" style="color:#059669;"></i> Cảm biến Đất đa tầng (Multi-Depth Soil Telemetry)</h4>
-                  <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Theo dõi pH, Nhiệt độ, Độ ẩm, EC, NPK và Độ mặn theo 3 độ sâu bộ rễ sầu riêng</p>
-                </div>
-                <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:8px;">
-                  <button class="btn btn-sm" id="soil-depth-btn-10" onclick="switchSoilDepth(10)" style="background:#ffffff; color:#0f172a; font-weight:800; border-radius:6px; border:none; box-shadow:0 1px 2px rgba(0,0,0,0.06); padding:4px 10px; font-size:11.5px;">🌱 Tầng 10cm</button>
-                  <button class="btn btn-sm" id="soil-depth-btn-20" onclick="switchSoilDepth(20)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌿 Tầng 20cm</button>
-                  <button class="btn btn-sm" id="soil-depth-btn-30" onclick="switchSoilDepth(30)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌳 Tầng 30cm</button>
-                </div>
-              </div>
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;" id="soil-metrics-grid"></div>
-            </div>
-
-            <!-- Sub-tab 3: AI Advisory -->
-            <div id="iot-pane-ai" style="padding:20px; display:none;">
-              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px; margin-bottom:18px;">
-                <div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:#15803d; margin-bottom:6px;">
-                  <i class="fa-solid fa-robot"></i> KHUYẾN NGHỊ THUẬT TOÁN CANH TÁC AI
-                </div>
-                <div style="background:#ffffff; border-radius:8px; padding:12px; border:1px solid #dcfce7; font-size:13px; color:#14532d; line-height:1.6;">
-                  • <strong>Độ ẩm đất tầng 20cm hiện tại</strong>: <span style="color:#d97706; font-weight:800;">50%</span> (Đang giảm nhanh dưới mức 60%).<br>
-                  • <strong>Dự báo thời tiết</strong>: Có mưa rào nhẹ vào sáng mai (Xác suất 20%).<br>
-                  <div style="margin-top:8px; padding:8px 12px; background:#ecfdf5; border-left:3px solid #059669; border-radius:4px; font-weight:700;">
-                    👉 Khuyến nghị: Bật hệ thống tưới bổ sung 15 phút chiều nay để nâng độ ẩm đất lên 60% giúp rễ cây không bị sốc nhiệt khi đón mưa sáng mai.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sub-tab 4: Device Table Registry -->
-            <div id="iot-pane-devices" style="padding:20px; display:none;">
-              <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                  <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-align:left;">
-                    <th style="padding:10px 14px;">Tên thiết bị &amp; Node</th>
-                    <th>Phân loại</th>
-                    <th>Trang trại gán</th>
-                    <th>Mức Pin</th>
-                    <th>Trạng thái</th>
-                    <th>Lần kết nối</th>
-                    <th style="text-align:center; width:100px;">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody id="devices-table">
-                  <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <!-- ── TAB 3: CẤU HÌNH LOẠI CÂY & QUY TRÌNH CANH TÁC CHUẨN (SCHEMAS & SOPS) ── -->
-        <div class="tab-pane" id="db-pane-schemas" style="display:none;">
-
-          <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
-                <i class="fa-solid fa-layer-group"></i>
-              </div>
-              <div>
-                <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Loại Cây (Schema)</div>
-                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-schema-count">0</div>
-              </div>
-            </div>
-
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:20px;">
-                <i class="fa-solid fa-list-check"></i>
-              </div>
-              <div>
-                <div style="font-size:11px; font-weight:700; color:#2563eb; text-transform:uppercase; letter-spacing:0.04em;">Thuộc Tính Tùy Biến</div>
-                <div style="font-size:22px; font-weight:800; color:#1e40af; margin-top:2px;" id="kpi-schema-fields-count">0</div>
-              </div>
-            </div>
-
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px;">
-                <i class="fa-solid fa-clipboard-list"></i>
-              </div>
-              <div>
-                <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.04em;">Quy Trình SOP Canh Tác</div>
-                <div style="font-size:22px; font-weight:800; color:#16a34a; margin-top:2px;">5 Quy trình chuẩn</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- TẦNG 2: CONTROL BAR & SUB-TABS -->
-          <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
-            <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-              <div style="display:flex; gap:10px;">
-                <div class="tab active" id="config-tab-schema" onclick="switchConfigTab('schema')" style="padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer;">
-                  🌳 Danh Mục Loại Cây &amp; Schema
-                </div>
-                <div class="tab" id="config-tab-care" onclick="switchConfigTab('care')" style="padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer;">
-                  🛠️ Quy Trình Chăm Sóc &amp; SOP Canh Tác
-                </div>
-              </div>
-
-              <!-- Top Action Button -->
-              <div style="padding:8px 0;" id="schema-top-actions">
-                <button class="btn btn-primary btn-sm" onclick="openSchemaModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
-                  <i class="fa fa-plus"></i> + Tạo Loại Cây Mới
-                </button>
-              </div>
-            </div>
-
-            <!-- Sub-pane 1: Schema Catalog Table & Grid -->
-            <div class="tab-pane active" id="pane-config-schema" style="padding:20px; display:block;">
-              <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <div style="font-size:13px; color:#64748b;">
-                  Quản lý danh mục loại cây, tên khoa học, icon đại diện và các trường thuộc tính tùy biến cho từng giống cây.
-                </div>
-                <div style="max-width:280px; width:100%;">
-                  <input type="text" id="schema-search-input" placeholder="🔍 Tìm loại cây..." oninput="filterSchemasList()" style="width:100%; padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px;">
-                </div>
-              </div>
-
-              <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                  <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-transform:uppercase;">
-                    <th style="padding:12px 16px;">Tên loại cây / Giống</th>
-                    <th>Tên khoa học / Mô tả</th>
-                    <th>Thuộc tính tùy biến</th>
-                    <th>Ngày cấu hình</th>
-                    <th style="width:120px; text-align:center;">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody id="schemas-table">
-                  <tr><td colspan="5"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách loại cây...</div></td></tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Sub-pane 2: Care SOP Procedures Configuration -->
-            <div class="tab-pane" id="pane-config-care" style="padding:20px; display:none;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
-                <div>
-                  <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-screwdriver-wrench" style="color:#059669"></i> Quy Trình Kỹ Thuật Canh Tác Chuẩn (SOP)</h4>
-                  <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Cấu hình các phương pháp, lý do canh tác mẫu hiển thị trong nhật ký nông hộ</p>
-                </div>
-                <button class="btn btn-primary btn-sm" id="save-care-cfg-btn" onclick="saveCareConfigs()" style="background:#059669; border:none; border-radius:8px; padding:8px 16px; font-weight:800; font-size:12.5px; cursor:pointer;">
-                  <i class="fa fa-floppy-disk"></i> Lưu Cấu Hình SOP
-                </button>
-              </div>
-
-              <div class="alert alert-success" style="margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.5; background: #ecfdf5; color: #064e3b; border: 1.5px solid #a7f3d0; display: flex; gap: 8px; align-items: flex-start;">
-                <i class="fa fa-circle-info" style="margin-top: 2px;"></i>
-                <span>Các cấu hình danh mục dưới đây sẽ hiển thị trực tiếp làm tùy chọn nhanh khi Nông hộ thực hiện ghi nhận nhật ký canh tác hàng ngày. Hãy nhập <strong>mỗi dòng một phương pháp / lý do</strong>.</span>
-              </div>
-
-              <div class="care-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-                <!-- Card 1: Tưới nước -->
-                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-droplet" style="color:#3b82f6; font-size:18px;"></i>
-                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Tưới nước</h4>
-                  </div>
-                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Phương pháp tưới nước áp dụng tại trang trại (tưới nhỏ giọt, tưới tay...).</p>
-                  <div class="field">
-                    <textarea id="cfg-water-methods" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Tưới tay thủ công&#10;Tưới nhỏ giọt&#10;Tưới phun mưa"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 2: Bón phân -->
-                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-flask" style="color:#8b5cf6; font-size:18px;"></i>
-                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Bón phân</h4>
-                  </div>
-                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Danh mục các loại phân bón hóa học hoặc phân hữu cơ sử dụng cho cây.</p>
-                  <div class="field">
-                    <textarea id="cfg-fertilizers" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Phân NPK 16-16-8&#10;Phân hữu cơ trùn quế&#10;Phân chuồng hoai mục"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 3: Phun thuốc -->
-                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-shield-virus" style="color:#ef4444; font-size:18px;"></i>
-                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Phun thuốc</h4>
-                  </div>
-                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Các loại thuốc bảo vệ thực vật, chế phẩm diệt nấm hoặc trừ sâu bệnh.</p>
-                  <div class="field">
-                    <textarea id="cfg-pesticides" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Thuốc trừ sâu sinh học&#10;Thuốc trừ bệnh Anvil&#10;Thuốc trừ nấm Ridomil Gold"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 4: Cắt cành / Cắt lá -->
-                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-scissors" style="color:#f59e0b; font-size:18px;"></i>
-                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Cắt cành & Cắt lá</h4>
-                  </div>
-                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Lý do thực hiện tỉa cành tạo tán hoặc loại bỏ các lá bệnh, lá già úa.</p>
-                  <div class="field">
-                    <textarea id="cfg-leaf-reasons" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Lá già úa/vàng&#10;Lá bị sâu bệnh hại&#10;Tỉa cành tạo tán"></textarea>
-                  </div>
-                </div>
-
-                <!-- Card 5: Tỉa hoa -->
-                <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-                  <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-seedling" style="color:#10b981; font-size:18px;"></i>
-                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Tỉa hoa</h4>
-                  </div>
-                  <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Lý do thực hiện tỉa bớt hoa/nụ còi để tập trung dinh dưỡng nuôi trái.</p>
-                  <div class="field">
-                    <textarea id="cfg-flower-reasons" rows="5" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; box-sizing:border-box;" placeholder="Tỉa hoa tàn&#10;Tỉa bớt nụ còi&#10;Kích thích ra chồi mới"></textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-        <!-- ── TAB 4: VẬT TƯ & KHO (ENTERPRISE AGTECH ERP INVENTORY SUITE) ── -->
-        <div class="tab-pane" id="db-pane-supplies" style="display:none;">
-
-          <!-- TẦNG 1: EXECUTIVE KPI & WAREHOUSE TELEMETRY -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
-            <!-- KPI 1: Tổng Mặt Hàng -->
-            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
-              <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-boxes-stacked"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Mặt Hàng (SKU)</div>
-                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-supply-total-count">0</div>
-              </div>
-            </div>
-
-            <!-- KPI 2: Tổng Giá Trị Tồn Kho -->
-            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
-              <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-coins"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Giá Trị Tồn Kho</div>
-                <div style="font-size:20px; font-weight:800; color:#059669; margin-top:2px;" id="kpi-supply-total-value">0 đ</div>
-              </div>
-            </div>
-
-            <!-- KPI 3: Cảnh Báo Sắp Hết Hàng (Low Stock) -->
-            <div class="card" onclick="filterSuppliesByChip('low_stock')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc ngay các mặt hàng sắp hết">
-              <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Cảnh Báo Tồn Thấp (≤ 5)</div>
-                <div style="font-size:22px; font-weight:800; color:#dc2626; margin-top:2px;" id="kpi-supply-low-stock">0</div>
-              </div>
-            </div>
-
-            <!-- KPI 4: Phân Loại Danh Mục -->
-            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
-              <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-layer-group"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Phân Loại Danh Mục</div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:4px;" id="kpi-supply-categories">
-                  0 Nhóm hàng
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- TẦNG 2: CONTROL BAR & SMART FILTER CHIPS -->
-          <div class="card" style="margin-bottom:20px; border-radius:14px; border:1px solid #e2e8f0;">
-            <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:14px;">
-              
-              <!-- Row 1: Dropdown Filters & Search & ERP Action Buttons -->
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                
-                <!-- Left: 2-Level Filter & Search -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
-                  <div style="min-width:180px; flex:1;">
-                    <select id="db-supply-filter-user" onchange="onSupplyFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
-                      <option value="">— Tất cả Khách hàng —</option>
-                    </select>
-                  </div>
-
-                  <div style="min-width:180px; flex:1;">
-                    <select id="db-supply-filter-farm" onchange="loadSuppliesTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
-                      <option value="">— Tất cả Trang trại / Kho —</option>
-                    </select>
-                  </div>
-
-                  <div style="min-width:220px; flex:1.2;">
-                    <input type="text" id="supply-search" placeholder="🔍 Tìm theo tên, hoạt chất, quy cách..." oninput="filterSupplies()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
-                  </div>
-                </div>
-
-                <!-- Right: Action Buttons -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kho
-                  </button>
-
-                  <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
-                    <i class="fa fa-plus"></i> + Nhập Vật Tư Mới
-                  </button>
-                </div>
-              </div>
-
-              <!-- Row 2: Smart Filter Chips Bar & View Switcher -->
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
-                <!-- Filter Chips -->
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-supply-chips-bar">
-                  <!-- Generated dynamically: Tất cả, Phân bón, Thuốc BVTV, Tồn thấp, Vô hạn... -->
-                </div>
-
-                <!-- View Mode Switcher -->
-                <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
-                  <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
-                    <i class="fa-solid fa-table-list"></i> Bảng ERP
-                  </button>
-                  <button type="button" id="btn-supply-group-grid" onclick="setSupplyGroupMode('grid')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-grip"></i> Lưới Thẻ
-                  </button>
-                  <button type="button" id="btn-supply-group-chart" onclick="setSupplyGroupMode('chart')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-chart-line"></i> Biểu đồ Chi phí
-                  </button>
-                  <button type="button" id="btn-supply-group-cat" onclick="setSupplyGroupMode('category')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-layer-group"></i> Nhóm Loại
-                  </button>
-                  <button type="button" id="btn-supply-group-farm" onclick="setSupplyGroupMode('farm')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-house-chimney-window"></i> Nhóm Trang Trại
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- TẦNG 3: ERP DATA MATRIX TABLE & GRID CONTAINER & CHART SUITE -->
-          <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
-            
-            <!-- Table View Container -->
-            <div id="supplies-table-container" style="overflow-x:auto;">
-              <table style="width:100%; border-collapse:collapse; text-align:left;">
-                <thead>
-                  <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; color:#475569; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
-                    <th style="padding:12px 14px; width:70px;">Ảnh</th>
-                    <th style="padding:12px 14px;">Tên Vật Tư / Sản Phẩm</th>
-                    <th style="padding:12px 14px;">Phân Loại</th>
-                    <th style="padding:12px 14px; min-width:180px;">Mức Tồn Kho & Dung Lượng</th>
-                    <th style="padding:12px 14px;">Đơn Giá</th>
-                    <th style="padding:12px 14px;">Tổng Giá Trị Tồn</th>
-                    <th style="padding:12px 14px;">Kho / Nông Hộ</th>
-                    <th style="padding:12px 14px; width:130px; text-align:center;">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody id="supplies-table-body">
-                  <tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu kho vật tư...</td></tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Grid Cards View Container (Shown when mode is 'grid') -->
-            <div id="supplies-grid-container" style="display:none; padding:20px; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; background:#f8fafc;">
-              <!-- Populated dynamically by database.js -->
-            </div>
-
-            <!-- Chart View Container (Shown when mode is 'chart') -->
-            <div id="supplies-chart-container" style="display:none; padding:24px; background:#ffffff;">
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
-                <div>
-                  <h4 style="margin:0 0 4px 0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-chart-area" style="color:#059669;"></i> Xu Hướng Chi Phí Tiêu Hao Vật Tư Canh Tác Theo 12 Tháng
-                  </h4>
-                  <div style="font-size:12.5px; color:#64748b;">Dữ liệu hạch toán thực tế từ nhật ký canh tác và xuất kho vật tư</div>
-                </div>
-
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                  <select id="db-supply-chart-year" onchange="renderSupplyCostChart()" style="padding:7px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; background:#f8fafc;">
-                    <option value="2026">Năm 2026</option>
-                    <option value="2025">Năm 2025</option>
-                    <option value="2024">Năm 2024</option>
-                  </select>
-
-                  <select id="db-supply-chart-cat" onchange="renderSupplyCostChart()" style="padding:7px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; background:#f8fafc;">
-                    <option value="all">— Tất cả nhóm chi phí —</option>
-                    <option value="Bón phân">🌱 Phân bón</option>
-                    <option value="Phun thuốc">🧪 Thuốc BVTV</option>
-                    <option value="Tiền nước">💧 Tiền nước</option>
-                    <option value="Nhân công">👷 Nhân công & Dịch vụ</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Main Canvas Chart -->
-              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:20px;">
-                <canvas id="db-supply-cost-chart" height="95"></canvas>
-              </div>
-
-              <!-- Category Breakdown Summary Cards -->
-              <div id="db-supply-chart-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
-                <!-- Populated dynamically with category cost breakdown -->
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-
-        <!-- ── TAB 3: THƯ VIỆN MEDIA (RELOCATED) ── -->
-        <div class="tab-pane" id="db-pane-media" style="display:none;">
-          <div class="card">
-            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
-              <h3 style="display: flex; align-items: center; gap: 8px; margin: 0;">
-                <i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media & Quản lý Thư mục Trang trại
-              </h3>
-            </div>
-            
-            <!-- Interactive Breadcrumb Navigation -->
-            <div style="padding: 12px 16px; background: #ecfdf5; border-bottom: 1px solid #a7f3d0; font-size: 13px; font-weight: 700; color: #064e3b; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="media-breadcrumb-nav">
-              <span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder('root')"><i class="fa-solid fa-folder"></i> Thư viện gốc</span>
-            </div>
-
-            <!-- Main View Container -->
-            <div style="padding: 20px;">
-              <!-- Folder Grid Container (Shows Folders when in Folder View) -->
-              <div id="media-folders-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
-                <!-- Folder cards populated dynamically by JS -->
-              </div>
-
-              <!-- Media Items Grid (Shows Media Files) -->
-              <div id="media-gallery-grid" class="media-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px;">
-                <!-- Media items populated dynamically -->
-              </div>
-
-              <div id="media-gallery-empty" style="display: none; text-align: center; padding: 40px; color: var(--gray-400);">
-                <i class="fa-regular fa-folder-open" style="font-size: 48px; margin-bottom: 12px; display: block; color:#94a3b8;"></i>
-                Chưa có thư mục hoặc phương tiện nào trong cấp này.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── TAB 4: LỊCH SỬ BIẾN ĐỘNG (ENTERPRISE SECURITY AUDIT TRAIL & VISUAL DIFF) ── -->
-        <div class="tab-pane" id="db-pane-history" style="display:none;">
-
-          <!-- TẦNG 1: EXECUTIVE AUDIT KPI & TELEMETRY -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
-            <!-- KPI 1: Tổng Sự Kiện Biến Động -->
-            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
-              <div style="width:48px; height:48px; border-radius:12px; background:#f0fdf4; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Sự Kiện Biến Động</div>
-                <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="kpi-history-total-events">0</div>
-              </div>
-            </div>
-
-            <!-- KPI 2: Lượt Cập Nhật (UPDATE) -->
-            <div class="card" onclick="filterHistoryByChip('UPDATE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fef3c7; background:#fffdfa; box-shadow:0 2px 10px rgba(217,119,6,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện chỉnh sửa">
-              <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#b45309; text-transform:uppercase; letter-spacing:0.5px;">Lượt Chỉnh Sửa (UPDATE)</div>
-                <div style="font-size:22px; font-weight:800; color:#d97706; margin-top:2px;" id="kpi-history-update-events">0</div>
-              </div>
-            </div>
-
-            <!-- KPI 3: Lượt Xóa Dữ Liệu (DELETE) -->
-            <div class="card" onclick="filterHistoryByChip('DELETE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện xóa dữ liệu">
-              <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-trash-can"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Lượt Xóa Dữ Liệu (DELETE)</div>
-                <div style="font-size:22px; font-weight:800; color:#dc2626; margin-top:2px;" id="kpi-history-delete-events">0</div>
-              </div>
-            </div>
-
-            <!-- KPI 4: Nhân Sự Thao Tác Gần Nhất -->
-            <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
-              <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-user-shield"></i>
-              </div>
-              <div>
-                <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Thao Tác Gần Nhất</div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:4px;" id="kpi-history-recent-actor">
-                  Chưa có dữ liệu
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- TẦNG 2: CONTROL BAR & SMART FILTER CHIPS -->
-          <div class="card" style="margin-bottom:20px; border-radius:14px; border:1px solid #e2e8f0;">
-            <div style="padding:16px 20px; background:#ffffff; display:flex; flex-direction:column; gap:14px;">
-              
-              <!-- Row 1: Dropdown Filters & Search & ERP Action Buttons -->
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                
-                <!-- Left: 2-Level Filter & Search -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
-                  <div style="min-width:180px; flex:1;">
-                    <select id="db-history-filter-action" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
-                      <option value="">— Tất cả thao tác —</option>
-                      <option value="UPDATE">✏️ Chỉnh sửa (UPDATE)</option>
-                      <option value="DELETE">🗑️ Xóa dữ liệu (DELETE)</option>
-                    </select>
-                  </div>
-
-                  <div style="min-width:180px; flex:1;">
-                    <select id="db-history-filter-target" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
-                      <option value="">— Tất cả hạng mục —</option>
-                      <option value="Vật tư">📦 Kho vật tư</option>
-                      <option value="Nhật ký canh tác">🌱 Nhật ký canh tác</option>
-                      <option value="Thư viện media">📸 Thư viện Media</option>
-                      <option value="Cây trồng">🌳 Cây trồng & GIS</option>
-                      <option value="Trang trại">🏡 Trang trại</option>
-                    </select>
-                  </div>
-
-                  <div style="min-width:220px; flex:1.2;">
-                    <input type="text" id="db-history-search" placeholder="🔍 Tìm theo tiêu đề, người thực hiện..." oninput="filterHistoryTab()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
-                  </div>
-                </div>
-
-                <!-- Right: Action Buttons -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="exportAuditPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
-                  </button>
-
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllAuditLogs()" style="color:#dc2626; border-color:#fca5a5; background:#fff1f2; font-size:12.5px; font-weight:800; border-radius:10px; padding:8px 14px;">
-                    <i class="fa-solid fa-trash-can"></i> Dọn dẹp sạch nhật ký
-                  </button>
-                </div>
-              </div>
-
-              <!-- Row 2: Smart Filter Chips Bar -->
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-history-chips-bar">
-                  <!-- Generated dynamically: Tất cả, Chỉnh sửa, Đã xóa, Vật tư, Canh tác, Media... -->
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- TẦNG 3: ERP AUDIT MATRIX TABLE -->
-          <div class="card" style="border-radius:14px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
-            <div style="overflow-x:auto;">
-              <table style="width:100%; border-collapse:collapse; text-align:left;">
-                <thead>
-                  <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; color:#475569; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
-                    <th style="padding:12px 14px; width:160px;">Thời Gian</th>
-                    <th style="padding:12px 14px; width:140px;">Hành Động</th>
-                    <th style="padding:12px 14px; width:160px;">Hạng Mục CSDL</th>
-                    <th style="padding:12px 14px;">Chi Tiết Biến Động / Tiêu Đề</th>
-                    <th style="padding:12px 14px; width:180px;">Người Thực Hiện</th>
-                    <th style="padding:12px 14px; width:140px; text-align:center;">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody id="db-history-table-body">
-                  <tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      </div>
-
-      <!-- ── 3. USERS & GOVERNANCE ── -->
-      <!-- ── Users management (Enterprise ERP Governance) ── -->
-      <div class="page-section" id="page-users">
-
-        <!-- TẦNG 1: EXECUTIVE KPI SUMMARY STRIP -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:20px;">
-          <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-            <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-users"></i>
-            </div>
-            <div>
-              <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Tài Khoản</div>
-              <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:2px;" id="cnt-user-all-kpi">0</div>
-            </div>
-          </div>
-
-          <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-            <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#b91c1c; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <div>
-              <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.04em;">Quản Trị Viên</div>
-              <div style="font-size:22px; font-weight:800; color:#b91c1c; margin-top:2px;" id="cnt-user-admin-kpi">0</div>
-            </div>
-          </div>
-
-          <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-            <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#047857; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-crown"></i>
-            </div>
-            <div>
-              <div style="font-size:11px; font-weight:700; color:#047857; text-transform:uppercase; letter-spacing:0.04em;">Nông Hộ PRO</div>
-              <div style="font-size:22px; font-weight:800; color:#047857; margin-top:2px;" id="cnt-user-pro-kpi">0</div>
-            </div>
-          </div>
-
-          <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-            <div style="width:44px; height:44px; border-radius:10px; background:#fffbeb; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-user-clock"></i>
-            </div>
-            <div>
-              <div style="font-size:11px; font-weight:700; color:#b45309; text-transform:uppercase; letter-spacing:0.04em;">Đăng Ký Chờ Duyệt</div>
-              <div style="font-size:22px; font-weight:800; color:#d97706; margin-top:2px;" id="cnt-user-pending-kpi">0</div>
-            </div>
-          </div>
-
-          <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-            <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-key"></i>
-            </div>
-            <div>
-              <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.04em;">Yêu Cầu Mật Khẩu</div>
-              <div style="font-size:22px; font-weight:800; color:#dc2626; margin-top:2px;" id="cnt-user-resets-kpi">0</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TẦNG 2: NAVIGATION TABS -->
-        <div class="tabs" style="margin-bottom: 20px;">
-          <div class="tab active" id="user-tab-manage" onclick="switchUserTab('manage')">
-            <i class="fa-solid fa-users"></i> Quản lý Tài khoản &amp; Nông hộ
-          </div>
-          <div class="tab" id="user-tab-pending" onclick="switchUserTab('pending')">
-            <i class="fa-solid fa-user-clock"></i> ⏳ Đăng ký chờ duyệt <span class="badge" id="pending-users-count-badge" style="display:none; background:#f59e0b; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
-          </div>
-          <div class="tab" id="user-tab-status" onclick="switchUserTab('status')">
-            <i class="fa-solid fa-signal"></i> Trạng thái hoạt động thực địa
-          </div>
-          <div class="tab" id="user-tab-resets" onclick="switchUserTab('resets')">
-            <i class="fa-solid fa-key"></i> 🔑 Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
-          </div>
-        </div>
-
-        <!-- Pane: Pending Farmer Registrations -->
-        <div class="tab-pane" id="pane-user-pending" style="display:none;">
-          <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
-            <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
-              <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-user-clock" style="color:#d97706"></i> Danh sách Nông hộ mới Đăng ký chờ Phê duyệt
-              </h3>
-            </div>
-            <table>
-              <thead>
-                <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-transform:uppercase;">
-                  <th>Nông hộ / Số ĐT</th>
-                  <th>Trạng thái</th>
-                  <th>Cây trồng khai báo</th>
-                  <th>Giới tính / Ngày sinh</th>
-                  <th>Thời gian đăng ký</th>
-                  <th style="width:220px; text-align:center;">Thao tác duyệt</th>
-                </tr>
-              </thead>
-              <tbody id="pending-users-table">
-                <tr>
-                  <td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách chờ duyệt...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Pane: Manage Users -->
-        <div class="tab-pane active" id="pane-user-manage">
-          <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
-            <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-              <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-users" style="color:#059669"></i> Danh sách Tài khoản &amp; Phân quyền Nông hộ
-              </h3>
-              <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="loadUsers()" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer;">
-                  <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới
-                </button>
-                <button class="btn btn-primary btn-sm" onclick="openUserModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; cursor:pointer; box-shadow:0 1px 2px rgba(5,150,105,0.2);">
-                  <i class="fa fa-plus"></i> + Thêm Người Dùng Mới
-                </button>
-              </div>
-            </div>
-
-            <!-- Group & Tier Filter Bar -->
-            <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-              
-              <!-- Filter Pills -->
-              <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="user-filter-pills">
-                <button type="button" class="user-filter-btn active" data-filter="all" onclick="setUserFilterGroup('all')" style="padding: 6px 14px; font-size: 12px; font-weight: 800; border-radius: 20px; border: 1.5px solid #059669; background: #059669; color: #ffffff; cursor: pointer;">
-                  Tất cả (<span id="cnt-user-all">0</span>)
-                </button>
-                <button type="button" class="user-filter-btn" data-filter="admin" onclick="setUserFilterGroup('admin')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #b91c1c; cursor: pointer;">
-                  <i class="fa-solid fa-shield-halved"></i> Quản trị viên (<span id="cnt-user-admin">0</span>)
-                </button>
-                <button type="button" class="user-filter-btn" data-filter="pro" onclick="setUserFilterGroup('pro')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #047857; cursor: pointer;">
-                  <i class="fa-solid fa-crown" style="color: #059669;"></i> Nông hộ PRO (<span id="cnt-user-pro">0</span>)
-                </button>
-                <button type="button" class="user-filter-btn" data-filter="normal" onclick="setUserFilterGroup('normal')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #64748b; cursor: pointer;">
-                  ⚪ Standard (<span id="cnt-user-normal">0</span>)
-                </button>
-              </div>
-
-              <!-- Farm & Search Controls -->
-              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; flex:1; max-width:520px; min-width:260px;">
-                <select id="user-filter-farm" onchange="filterUsers()" style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#064e3b; background:#ffffff;">
-                  <option value="all">🌐 Tất cả Trang trại</option>
-                </select>
-
-                <input type="text" id="user-search" placeholder="🔍 Tìm theo tên, SĐT, email, mã ISO..." oninput="filterUsers()" style="flex:1; min-width:180px; padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; background:#ffffff;">
-              </div>
-            </div>
-
-            <table>
-              <thead>
-                <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">
-                  <th style="padding:12px 16px;">Họ và tên &amp; Mã ISO</th>
-                  <th>Email / Số ĐT</th>
-                  <th>Trang trại gán</th>
-                  <th>Gói Cước PRO</th>
-                  <th>Vai trò</th>
-                  <th>Ngày tạo</th>
-                  <th style="width:200px; text-align:center;">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="users-table">
-                <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
-              </tbody>
-            </table>
-
-            <!-- Pagination Controls (10 bản ghi / trang) -->
-            <div style="padding: 14px 20px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;" id="users-pagination-bar">
-              <div style="font-size: 12.5px; color: #64748b; font-weight: 600;" id="users-pagination-info">
-                Hiển thị 1 - 10 trong tổng số 0 người dùng
-              </div>
-              <div style="display: flex; gap: 6px; align-items: center;" id="users-pagination-btns">
-                <!-- Populated dynamically by JS -->
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pane: Activity Status -->
-        <div class="tab-pane" id="pane-user-status" style="display:none;">
-          <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
-            <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
-              <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-signal" style="color:#059669"></i> Theo dõi Trạng thái Hoạt động Thực địa
-              </h3>
-            </div>
-            <div class="search-bar" style="padding:12px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
-              <input type="text" id="user-status-search" placeholder="🔍 Tìm nông hộ theo tên, email..." oninput="filterUserStatuses()" style="max-width:320px; padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px;">
-            </div>
-            <table>
-              <thead>
-                <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-transform:uppercase;">
-                  <th style="padding:12px 16px;">Nông hộ</th>
-                  <th>Email</th>
-                  <th>Trạng thái</th>
-                  <th>Hoạt động cuối</th>
-                  <th style="width:150px; text-align:center;">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="users-status-table">
-                <tr>
-                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Pane: Password Reset Requests -->
-        <div class="tab-pane" id="pane-user-resets" style="display:none;">
-          <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
-            <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
-              <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-key" style="color:#dc2626"></i> Danh sách Yêu cầu Cấp lại Mật khẩu
-              </h3>
-              <button class="btn btn-secondary btn-sm" onclick="loadResetRequests()" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer;">
-                <i class="fa-solid fa-rotate"></i> Làm mới
-              </button>
-            </div>
-            <table>
-              <thead>
-                <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-transform:uppercase;">
-                  <th style="padding:12px 16px;">Tài khoản / Nông hộ</th>
-                  <th>Thông tin đã gửi</th>
-                  <th>Thời gian gửi</th>
-                  <th>Trạng thái</th>
-                  <th style="width:140px; text-align:center;">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="reset-requests-table">
-                <tr>
-                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── 4. DB CHECK & SCHEMA TELEMETRY ── -->
-      <!-- ── DB Schema Check & Live CRUD ── -->
-      <div class="page-section" id="page-db-check">
-        <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-          <div>
-            <h1 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 6px 0; display:flex; align-items:center; gap:10px;">
-              <i class="fa-solid fa-server" style="color:#059669;"></i> Kiểm tra CSDL PostgreSQL Schema & Quản trị Dữ liệu
-            </h1>
-            <p style="margin:0; font-size:13px; color:#64748b;">
-              Thanh tra cấu trúc các bảng, kiểu dữ liệu, số lượng dòng và thực thi Thêm/Sửa/Xóa dữ liệu trực tiếp trong CSDL.
-            </p>
-          </div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-primary" onclick="loadDbSchemaCheck()" style="background:linear-gradient(135deg, #064e3b, #047857); border:none; padding:10px 18px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(4,120,87,0.25);">
-              <i class="fa-solid fa-rotate"></i> Tải lại Telemetry CSDL
-            </button>
-          </div>
-        </div>
-
-        <!-- Table Cards Telemetry Grid -->
-        <div id="db-schema-tables-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
-          <!-- Populated dynamically by database.js -->
-        </div>
-
-        <!-- Selected Table Records Live Viewer & CRUD Container -->
-        <div id="db-table-records-container" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.03); display:none;">
-          <!-- Populated dynamically by database.js -->
-        </div>
-      </div>
-
-    </div><!-- /content -->
-  </main>
-</div>
-
-<!-- ════════════════ MODALS & POPUPS ════════════════ -->
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="mobile-web-app-capable" content="yes">
-<meta http-equiv="content-language" content="vi">
-<meta name="google" content="notranslate">
-<title>Sổ Nông Tân Bảo Agtech v1.1.1 — Quản trị</title>
-<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-<link rel="shortcut icon" type="image/svg+xml" href="/assets/favicon.svg">
-
-<link rel="apple-touch-icon" href="/assets/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://api.mapbox.com">
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
-<link rel="dns-prefetch" href="https://api.mapbox.com">
-<link rel="dns-prefetch" href="https://events.mapbox.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
-<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css">
-<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
-<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="/admin/css/admin-layout.css">
-  <link rel="stylesheet" href="/admin/css/admin-components.css">
-  <link rel="stylesheet" href="/admin/css/admin-dashboard.css">
-  <link rel="stylesheet" href="/admin/css/admin-gis.css">
-<style>
-/* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
-#register-modal .modal, #forgot-modal .modal {
-  background: #ffffff !important;
-  color: #0f172a !important;
-}
-
-#register-modal label, #forgot-modal label {
-  color: #0f172a !important;
-  font-weight: 700 !important;
-  font-size: 13px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  margin-bottom: 6px !important;
-}
-
-#register-modal input, #register-modal select, #register-modal textarea,
-#forgot-modal input, #forgot-modal textarea {
-  color: #0f172a !important;
-  background-color: #ffffff !important;
-  border: 2px solid #475569 !important;
-  border-radius: 10px !important;
-  padding: 12px 14px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  -webkit-text-fill-color: #0f172a !important;
-  opacity: 1 !important;
-}
-
-#register-modal input::placeholder,
-#forgot-modal input::placeholder,
-#register-modal textarea::placeholder {
-  color: #64748b !important;
-  opacity: 0.8 !important;
-  -webkit-text-fill-color: #64748b !important;
-}
-
-#register-modal input:focus, #register-modal select:focus, #register-modal textarea:focus,
-#forgot-modal input:focus, #forgot-modal textarea:focus {
-  background-color: #ffffff !important;
-  border-color: #059669 !important;
-  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.25) !important;
-  outline: none !important;
-}
-
-#register-modal .modal-header, #forgot-modal .modal-header {
-  background: linear-gradient(135deg, #064e3b, #047857) !important;
-  color: #ffffff !important;
-  padding: 16px 20px !important;
-}
-
-#register-modal .modal-header h2, #forgot-modal .modal-header h2 {
-  color: #ffffff !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  margin: 0 !important;
-}
-
-#register-modal .modal-close, #forgot-modal .modal-close {
-  color: #ffffff !important;
-  opacity: 0.9 !important;
-  font-size: 24px !important;
-  background: none !important;
-  border: none !important;
-  cursor: pointer !important;
-}
-
-/* ════════ Multi-Scale Adaptive GIS Farm Markers ════════ */
-.farm-dashboard-pin {
-  cursor: pointer;
-  position: relative;
-  user-select: none;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  /* Never put transition: transform or all on this root marker element */
-}
-/* Dot mode (Zoom < 12) */
-.farm-dashboard-pin.is-dot .farm-pin-badge {
-  display: none !important;
-}
-.farm-dashboard-pin.is-dot .farm-pin-dot-wrap {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  width: 22px;
-  height: 22px;
-}
-.farm-dashboard-pin.is-dot .farm-pin-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.45);
-  position: relative;
-  z-index: 2;
-  transition: transform 0.15s ease;
-}
-.farm-dashboard-pin.is-dot:hover .farm-pin-dot {
-  transform: scale(1.3);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-}
-.farm-dashboard-pin.is-dot .farm-pin-pulse {
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  opacity: 0.55;
-  animation: farmPinPulseAnim 2s infinite ease-out;
-  z-index: 1;
-  pointer-events: none;
-}
-@keyframes farmPinPulseAnim {
-  0% { transform: scale(0.6); opacity: 0.85; }
-  100% { transform: scale(1.9); opacity: 0; }
-}
-
-/* Full Badge mode (Zoom >= 12) */
-.farm-dashboard-pin.is-full .farm-pin-dot-wrap {
-  display: none !important;
-}
-.farm-dashboard-pin.is-full .farm-pin-badge {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 6px;
-  color: #ffffff;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 800;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.35);
-  border: 2px solid #ffffff;
-  white-space: nowrap;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.farm-dashboard-pin.is-full:hover .farm-pin-badge {
-  transform: scale(1.05);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
-}
-.farm-dashboard-pin.is-full .farm-pin-user {
-  background: rgba(255,255,255,0.25);
-  padding: 1px 6px;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 10.5px;
-}
-
-/* Dashboard Fiori Responsive & Progress meter styles */
-@media (max-width: 1024px) {
-  .dashboard-split-layout {
-    grid-template-columns: 1fr !important;
-  }
-}
-.fiori-breakdown-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-.fiori-breakdown-row:last-child {
-  margin-bottom: 0;
-}
-.fiori-breakdown-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #1e293b;
-}
-.fiori-breakdown-val {
-  font-size: 11.5px;
-  font-weight: 800;
-  color: #475569;
-}
-.fiori-progress-track {
-  width: 100%;
-  height: 7px;
-  background: #f1f5f9;
-  border-radius: 10px;
-  overflow: hidden;
-}
-.fiori-progress-fill {
-  height: 100%;
-  border-radius: 10px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-</style>
-</head>
-
-<body>
-
-<!-- ════════════════ LOGIN ════════════════ -->
-<div id="login-page">
-
-  <!-- CỘT TRÁI: Hero Image -->
-  <div class="login-hero">
-    <img src="/assets/login-hero.jpg" alt="Vườn cây Tanbao Corp" class="login-hero-img">
-    <div class="login-hero-overlay"></div>
-
-    <!-- Particles lá cây -->
-    <div class="login-particles">
-      <div class="leaf-particle"></div>
-      <div class="leaf-particle"></div>
-      <div class="leaf-particle"></div>
-      <div class="leaf-particle"></div>
-      <div class="leaf-particle"></div>
-      <div class="leaf-particle"></div>
-    </div>
-
-    <!-- NFC badge -->
-    <div class="hero-nfc-badge">
-      <i class="fa-solid fa-wifi"></i>
-      <span>NFC Ready</span>
-    </div>
-
-    <!-- Nội dung hero -->
-    <div class="login-hero-content">
-      <div class="login-hero-tag">
-        <span class="dot-live"></span> Hệ thống đang hoạt động
-      </div>
-      <h2 class="login-hero-title">
-        Quản lý <span>cây trồng</span><br>thông minh
-      </h2>
-      <p class="login-hero-sub">
-        Nền tảng số hóa toàn diện giúp theo dõi sức khỏe, nhật ký canh tác
-        và bản đồ GIS của từng cây trồng trong trang trại Tanbao Corp.
-      </p>
-
-      <!-- Floating stats -->
-      <div class="login-stats">
-        <div class="stat-float">
-          <div class="stat-float-icon"><i class="fa fa-seedling"></i></div>
-          <div>
-            <div class="stat-float-val">1,200+</div>
-            <div class="stat-float-label">Cây trồng</div>
-          </div>
-        </div>
-        <div class="stat-float">
-          <div class="stat-float-icon"><i class="fa fa-earth-asia"></i></div>
-          <div>
-            <div class="stat-float-val">24</div>
-            <div class="stat-float-label">Trang trại</div>
-          </div>
-        </div>
-        <div class="stat-float">
-          <div class="stat-float-icon"><i class="fa fa-heart-pulse"></i></div>
-          <div>
-            <div class="stat-float-val">98%</div>
-            <div class="stat-float-label">Sức khỏe tốt</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CỘT PHẢI: Form đăng nhập -->
-  <div class="login-form-panel">
-    <!-- Decorative orbs -->
-    <div class="lf-orb lf-orb--1" aria-hidden="true"></div>
-    <div class="lf-orb lf-orb--2" aria-hidden="true"></div>
-
-    <div class="login-card">
-      <div class="login-logo">
-        <div class="login-logo-wrap">
-          <img src="/assets/logo.png" alt="TANBAO AgTech" class="company-logo">
-          <div class="login-logo-glow" aria-hidden="true"></div>
-        </div>
-        <h1>Hệ thống quản lý cây trồng</h1>
-        <p class="login-subtitle">Đăng nhập để tiếp tục</p>
-      </div>
-
-      <div class="login-divider"></div>
-
-      <div class="login-error" id="login-error">
-        <i class="fa fa-circle-exclamation"></i>
-        <span id="login-error-text"></span>
-      </div>
-
-      <form id="admin-login-form" onsubmit="event.preventDefault(); doLogin();">
-        <div class="form-group">
-          <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
-          <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
-        </div>
-        <div class="form-group">
-          <div class="form-label-row">
-            <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
-            <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
-              <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
-            </a>
-          </div>
-          <div class="password-input-wrap">
-            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
-            <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
-              <i id="toggle-pass-icon" class="fa fa-eye"></i>
-            </button>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-login" id="login-btn">
-          <span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>
-          <span class="btn-login-shimmer" aria-hidden="true"></span>
-        </button>
-      </form>
-
-      <!-- Register Account Link -->
-      <div style="text-align:center; margin-top:16px;">
-        <span style="font-size:13px; color:var(--text-muted);">Chưa có tài khoản Nông hộ?</span>
-        <a href="javascript:void(0)" onclick="openRegisterModal()" style="font-size:13px; font-weight:700; color:var(--green); margin-left:6px; text-decoration:none;">
-          <i class="fa-solid fa-user-plus"></i> Đăng ký ngay
-        </a>
-      </div>
-
-      <div class="login-footer-note">
-        <i class="fa-solid fa-shield-halved" style="color:#22c55e;"></i>
-        Kết nối bảo mật SSL/TLS &nbsp;·&nbsp; Tanbao AgTech © 2026
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ════════════ FORGOT PASSWORD MODAL ════════════ -->
-<div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgotPasswordModal()">
-  <div class="modal" style="max-width:440px; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
-    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#fff;">
-      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i class="fa-solid fa-key" style="color:#6ee7b7"></i> Yêu cầu cấp lại mật khẩu</h2>
-      <button class="modal-close" onclick="closeForgotPasswordModal()" style="color:#fff; opacity:0.9; font-size:22px;">×</button>
-    </div>
-    <div class="modal-body" style="padding:20px; background:#ffffff;">
-      <p style="font-size:13px; color:#475569; margin-bottom:16px; line-height:1.5;">
-        Vui lòng nhập Email hoặc Số điện thoại đăng ký. Yêu cầu sẽ được gửi tới Quản trị viên phê duyệt và gửi mật khẩu mới về email của bạn.
-      </p>
-      <div class="login-error" id="forgot-error" style="display:none; margin-bottom:14px;">
-        <i class="fa fa-circle-exclamation"></i>
-        <span id="forgot-error-text"></span>
-      </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-user" style="color:#059669"></i> Email hoặc Số điện thoại *</label>
-        <input type="text" id="forgot-identity" placeholder="email@tanbaocorp.vn hoặc 0901234567" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
-      </div>
-      <div class="form-group">
-        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-note-sticky" style="color:#059669"></i> Ghi chú thêm (Không bắt buộc)</label>
-        <textarea id="forgot-note" rows="2" placeholder="Nhập ghi chú chi tiết nếu cần..." style="width:100%; border:2px solid #64748b; border-radius:10px; padding:10px 14px; font-family:inherit; font-size:13px; outline:none; background:#ffffff; color:#0f172a; font-weight:500;"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc; border-top:1px solid #e2e8f0;">
-      <button class="btn btn-secondary" onclick="closeForgotPasswordModal()" style="padding:10px 18px; font-weight:600; border-radius:10px;">Hủy</button>
-      <button class="btn btn-primary" id="forgot-submit-btn" onclick="submitForgotPasswordRequest()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:10px 22px; font-size:14px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
-        <span id="forgot-submit-text"><i class="fa fa-paper-plane"></i> Gửi yêu cầu</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════ 3-STEP FARMER REGISTRATION MODAL ════════════ -->
-<div class="modal-overlay" id="register-modal" style="display:none" onclick="if(event.target===this)closeRegisterModal()">
-  <div class="modal" style="max-width:500px; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35);">
-    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); border-bottom:none; padding:16px 20px; color:#ffffff;">
-      <h2 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;" id="reg-modal-title">
-        <i class="fa-solid fa-user-plus" style="color:#6ee7b7"></i> Đăng ký tài khoản Nông hộ (Bước 1/3)
-      </h2>
-      <button class="modal-close" onclick="closeRegisterModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
-    </div>
-    
-    <div class="modal-body" style="padding:22px; background:#ffffff;">
-      <!-- Step Indicator Bar -->
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px;">
-        <div style="flex:1; text-align:center;">
-          <div id="step-dot-1" style="width:30px; height:30px; border-radius:50%; background:#059669; color:white; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px; box-shadow:0 2px 6px rgba(5,150,105,0.3);">1</div>
-          <div style="font-size:11px; font-weight:800; color:#047857;">Tài khoản *</div>
-        </div>
-        <div style="width:30px; height:2px; background:#cbd5e1; margin-top:-14px;"></div>
-        <div style="flex:1; text-align:center;">
-          <div id="step-dot-2" style="width:30px; height:30px; border-radius:50%; background:#ffffff; border:2px solid #94a3b8; color:#475569; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px;">2</div>
-          <div style="font-size:11px; font-weight:700; color:#64748b;">Thông tin phụ</div>
-        </div>
-        <div style="width:30px; height:2px; background:#cbd5e1; margin-top:-14px;"></div>
-        <div style="flex:1; text-align:center;">
-          <div id="step-dot-3" style="width:30px; height:30px; border-radius:50%; background:#ffffff; border:2px solid #94a3b8; color:#475569; font-size:13px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px;">3</div>
-          <div style="font-size:11px; font-weight:700; color:#64748b;">Xác nhận</div>
-        </div>
-      </div>
-
-      <div class="login-error" id="reg-error" style="display:none; margin-bottom:14px;">
-        <i class="fa fa-circle-exclamation"></i>
-        <span id="reg-error-text"></span>
-      </div>
-
-      <form id="reg-form" onsubmit="return false;">
-      <!-- BƯỚC 1: TÀI KHOẢN & MẬT KHẨU (BẮT BUỘC) -->
-      <div id="reg-step-1">
-        <div class="form-group" style="margin-bottom:16px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-phone" style="color:#059669"></i> Số điện thoại đăng ký *</label>
-          <input type="tel" id="reg-phone" placeholder="Ví dụ: 0901234567" autocomplete="username" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-        </div>
-        <div class="form-group" style="margin-bottom:16px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-lock" style="color:#059669"></i> Mật khẩu đăng nhập *</label>
-          <input type="password" id="reg-pass" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-        </div>
-        <div class="form-group" style="margin-bottom:6px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-key" style="color:#059669"></i> Xác nhận mật khẩu *</label>
-          <input type="password" id="reg-pass-confirm" placeholder="Nhập lại mật khẩu" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-        </div>
-      </div>
-
-      <!-- BƯỚC 2: THÔNG TIN CÁ NHÂN & CÂY TRỒNG (KHÔNG BẮT BUỘC) -->
-      <div id="reg-step-2" style="display:none;">
-        <p style="font-size:12px; color:#065f46; margin-bottom:14px; background:#ecfdf5; padding:10px 14px; border-radius:10px; border:1px solid #a7f3d0; font-weight:600; line-height:1.4;">
-          💡 Các thông tin dưới đây là tùy chọn, giúp Admin hỗ trợ và cấu hình trang trại chuẩn xác hơn.
-        </p>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-user" style="color:#059669"></i> Tên người dùng / Tên Nông hộ</label>
-          <input type="text" id="reg-name" placeholder="Ví dụ: Nguyễn Văn An" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:14px;">
-          <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-venus-mars" style="color:#059669"></i> Giới tính</label>
-            <select id="reg-gender" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:11px 12px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-              <option value="Nam">Nam</option>
-              <option value="Nữ">Nữ</option>
-              <option value="Khác">Khác</option>
-            </select>
-          </div>
-          <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-cake-candles" style="color:#059669"></i> Ngày sinh</label>
-            <input type="date" id="reg-dob" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px 12px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-seedling" style="color:#059669"></i> Loại cây đang trồng</label>
-          <input type="text" id="reg-plant-type" placeholder="Ví dụ: Sầu riêng, Cà phê, Cao su..." style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:14px;">
-          <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-dna" style="color:#059669"></i> Giống cây</label>
-            <input type="text" id="reg-plant-variety" placeholder="Ri6, Monthong..." style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-          </div>
-          <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-hourglass-half" style="color:#059669"></i> Tuổi cây (Năm)</label>
-            <input type="number" id="reg-plant-age" placeholder="VD: 5" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:14px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-ruler-combined" style="color:#059669"></i> Diện tích vườn (ha)</label>
-          <input type="number" id="reg-farm-area" step="0.1" placeholder="Ví dụ: 2.5 ha" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
-        </div>
-      </div>
-      </form>
-
-      <!-- BƯỚC 3: XÁC NHẬN & GỬI YÊU CẦU -->
-      <div id="reg-step-3" style="display:none;">
-        <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:16px;">
-          <h4 style="font-size:13px; margin:0 0 12px 0; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-clipboard-check" style="color:#059669"></i> Kiểm tra lại thông tin đăng ký</h4>
-          <div style="font-size:13px; color:#1e293b; display:flex; flex-direction:column; gap:8px;">
-            <div><strong>Số điện thoại:</strong> <span id="review-phone" style="color:#047857; font-weight:700;">—</span></div>
-            <div><strong>Tên người dùng:</strong> <span id="review-name" style="font-weight:600;">—</span></div>
-            <div><strong>Cây trồng:</strong> <span id="review-crop" style="font-weight:600;">—</span></div>
-            <div><strong>Diện tích vườn:</strong> <span id="review-area" style="font-weight:600;">—</span></div>
-          </div>
-        </div>
-
-        <div style="background:#eff6ff; border:1.5px solid #93c5fd; color:#1e40af; padding:12px 14px; border-radius:10px; font-size:12px; line-height:1.5; font-weight:500;">
-          <i class="fa-solid fa-info-circle"></i> <strong>Lưu ý:</strong> Ngay sau khi gửi yêu cầu, tài khoản của bạn sẽ được gửi tới Ban Quản trị. Admin sẽ kiểm tra và kích hoạt tài khoản cho bạn sớm nhất!
-        </div>
-      </div>
-
-    </div>
-
-    <div class="modal-footer" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border-top:1px solid #e2e8f0;">
-      <button class="btn btn-secondary" id="reg-prev-btn" onclick="prevRegStep()" style="display:none; padding:10px 18px; font-weight:600; border-radius:10px;"><i class="fa fa-arrow-left"></i> Quay lại</button>
-      <div style="flex:1;"></div>
-      <button class="btn btn-primary" id="reg-next-btn" onclick="nextRegStep()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:12px 24px; font-size:14px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">Tiếp theo <i class="fa fa-arrow-right"></i></button>
-    </div>
-  </div>
-</div>
-
-
-
-<!-- ════════════════ APP ════════════════ -->
-<div id="app" style="display:none;flex-direction:row">
-  <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="brand">
-        <div class="sidebar-logo-wrap">
-          <img src="/assets/logo.png" alt="TANBAO AgTech" class="sidebar-logo">
-        </div>
-        <span class="brand-subtitle">Hệ thống quản lý cây trồng</span>
-      </div>
-    </div>
-    <!-- Thanh menu quan tri -->
-    <div class="sidebar-user">
-      <div class="user-name" id="sb-user-name">—</div>
-      <div class="user-email" id="sb-user-email">—</div>
-    </div>
-    <nav>
-      <div class="nav-section">Tổng quan &amp; Vận hành</div>
-      <div class="nav-item active" onclick="showPage('dashboard')">
-        <i class="fa fa-chart-pie"></i> Dashboard &amp; Trang trại
-      </div>
-      <div class="nav-section">Quản trị Nông nghiệp &amp; CSDL</div>
-      <div class="nav-item" onclick="showPage('database')">
-        <i class="fa-solid fa-database"></i> Cơ sở dữ liệu &amp; Vận hành
-      </div>
-      <div class="nav-section">Hệ thống &amp; Nhân sự</div>
-      <div class="nav-item" onclick="showPage('users')">
-        <i class="fa fa-users"></i> Người dùng &amp; Nông hộ
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <button class="btn-logout" onclick="logout()">
-        <i class="fa fa-right-from-bracket"></i> Đăng xuất
-      </button>
-      <div style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">
-        <span style="background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:100px; border:1px solid rgba(34,197,94,0.25);">v1.1.1</span> Tân Bảo AgTech Admin
-      </div>
-
-    </div>
-
-  </aside>
-
-  <!-- Main -->
-  <main class="main">
-    <div class="topbar">
-      <div style="display:flex;align-items:center;">
-        <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none;">
-          <i class="fa fa-bars"></i>
-        </button>
-        <h1 id="page-title" style="margin:0;">Dashboard</h1>
-      </div>
-      <div class="topbar-actions" id="topbar-actions"></div>
-    </div>
-    <div class="content">
-
-      <!-- ── Dashboard (STRIPE / LINEAR ULTRA-CLEAN ENTERPRISE COCKPIT) ── -->
+            <!-- ── Dashboard (STRIPE / LINEAR ULTRA-CLEAN ENTERPRISE COCKPIT) ── -->
       <div class="page-section active" id="page-dashboard">
         
         <!-- HEADER: STRIPE MINIMALIST WHITE HERO -->
@@ -2819,8 +837,9 @@
       </div>
 
       <!-- ── DATABASE (CƠ SỞ DỮ LIỆU) ── -->
-      <div class="page-section" id="page-database">
 
+      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (6 SUB-VIEWS) ── -->
+      <div class="page-section" id="page-database">
         <!-- 6 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
@@ -2842,6 +861,8 @@
             <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động
           </div>
         </div>
+
+                </div>
 
 
         <!-- ── TAB 1: DỮ LIỆU CANH TÁC (CULTIVATION DATA & MASTER-DETAIL SPLIT-VIEW) ── -->
@@ -2954,7 +975,7 @@
             <p style="font-size:13.5px; color:#64748b; max-width:480px; margin:0 auto; line-height:1.5;">
               Sau khi chọn trang trại, hệ thống sẽ tự động hiển thị danh sách cây trồng (Cột trái) và hồ sơ nhật ký canh tác chi tiết cùng chi phí đầu tư (Cột phải).
             </p>
-          </div>
+                  </div>
         </div>
 
         <!-- ── TAB 2: THIẾT BỊ IOT & CẢM BIẾN (ENTERPRISE AGTECH IOT SUITE) ── -->
@@ -3184,7 +1205,7 @@
               </table>
             </div>
           </div>
-        </div>
+                </div>
 
         <!-- ── TAB 3: CẤU HÌNH LOẠI CÂY & QUY TRÌNH CANH TÁC CHUẨN (SCHEMAS & SOPS) ── -->
         <div class="tab-pane" id="db-pane-schemas" style="display:none;">
@@ -3350,7 +1371,7 @@
             </div>
 
           </div>
-        </div>
+                </div>
 
         <!-- ── TAB 4: VẬT TƯ & KHO (ENTERPRISE AGTECH ERP INVENTORY SUITE) ── -->
         <div class="tab-pane" id="db-pane-supplies" style="display:none;">
@@ -3540,7 +1561,7 @@
             </div>
 
           </div>
-        </div>
+                </div>
 
 
         <!-- ── TAB 3: THƯ VIỆN MEDIA (RELOCATED) ── -->
@@ -3577,7 +1598,7 @@
           </div>
         </div>
 
-        <!-- ── TAB 4: LỊCH SỬ BIẾN ĐỘNG (ENTERPRISE SECURITY AUDIT TRAIL & VISUAL DIFF) ── -->
+                <!-- ── TAB 4: LỊCH SỬ BIẾN ĐỘNG (ENTERPRISE SECURITY AUDIT TRAIL & VISUAL DIFF) ── -->
         <div class="tab-pane" id="db-pane-history" style="display:none;">
 
           <!-- TẦNG 1: EXECUTIVE AUDIT KPI & TELEMETRY -->
@@ -3714,7 +1735,10 @@
 
 
 
-      <!-- ── Users management (Enterprise ERP Governance) ── -->
+      </div>
+
+      <!-- ── 3. USERS & GOVERNANCE ── -->
+            <!-- ── Users management (Enterprise ERP Governance) ── -->
       <div class="page-section" id="page-users">
 
         <!-- TẦNG 1: EXECUTIVE KPI SUMMARY STRIP -->
@@ -3954,7 +1978,9 @@
 
 
 
-      <!-- ── DB Schema Check & Live CRUD ── -->
+
+      <!-- ── 4. DB CHECK & SCHEMA TELEMETRY ── -->
+            <!-- ── DB Schema Check & Live CRUD ── -->
       <div class="page-section" id="page-db-check">
         <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
           <div>
@@ -3984,103 +2010,12 @@
       </div>
 
     </div><!-- /content -->
+
+    </div><!-- /content -->
   </main>
 </div>
 
-<!-- ════════════ COST ENTRY MODAL ════════════ -->
-<div class="modal-overlay" id="cost-entry-modal" style="display:none" onclick="if(event.target===this)closeCostEntryModal()">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-header">
-      <h2 id="cost-entry-modal-title"><i class="fa-solid fa-coins" style="color:var(--green)"></i> Thêm khoản chi</h2>
-      <button class="modal-close" onclick="closeCostEntryModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="ce-type">
-      <div class="form-row">
-        <div class="field">
-          <label>Trang trại</label>
-          <select id="ce-farm" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
-            <option value="">— Chọn trang trại —</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Ngày</label>
-          <input type="date" id="ce-date" style="width:100%;">
-        </div>
-      </div>
-      <div id="ce-fields-consumable">
-        <div class="form-row">
-          <div class="field">
-            <label>Loại vật tư</label>
-            <select id="ce-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
-              <option value="Phân bón">Phân bón</option>
-              <option value="Thuốc BVTV">Thuốc BVTV</option>
-              <option value="Nhiên liệu">Nhiên liệu</option>
-              <option value="Nước tưới">Nước tưới</option>
-              <option value="Lao động">Lao động</option>
-              <option value="Khác">Khác</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Tên vật tư *</label>
-            <input type="text" id="ce-name" placeholder="VD: Ure 46%, DAP...">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Số lượng</label>
-            <input type="number" id="ce-qty" placeholder="0" min="0" step="0.1">
-          </div>
-          <div class="field">
-            <label>Đơn vị</label>
-            <input type="text" id="ce-unit" placeholder="kg, lít, công...">
-          </div>
-          <div class="field">
-            <label>Đơn giá (VNĐ)</label>
-            <input type="number" id="ce-price" placeholder="0" min="0">
-          </div>
-        </div>
-      </div>
-      <div id="ce-fields-fixed" style="display:none;">
-        <div class="form-row">
-          <div class="field">
-            <label>Phân loại tài sản</label>
-            <select id="ce-fixed-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
-              <option value="Máy móc thiết bị">Máy móc thiết bị</option>
-              <option value="Công trình">Công trình</option>
-              <option value="Cây giống">Cây giống ban đầu</option>
-              <option value="Khác">Khác</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Năm mua</label>
-            <input type="number" id="ce-fixed-year" placeholder="2024" min="2000" max="2100">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Nguyên giá (VNĐ) *</label>
-            <input type="number" id="ce-fixed-price" placeholder="0" min="0">
-          </div>
-          <div class="field">
-            <label>Thời gian sử dụng (năm)</label>
-            <input type="number" id="ce-fixed-life" placeholder="5" min="1">
-          </div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Ghi chú</label>
-        <textarea id="ce-note" rows="2" placeholder="Ghi chú thêm..."></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeCostEntryModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveCostEntry()"><i class="fa fa-check"></i> Lưu</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════ PLANT MODAL ════════════ -->
+<!-- ════════════════ MODALS & POPUPS ════════════════ -->
 
 <div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
   <div class="modal">
@@ -4266,92 +2201,6 @@
       <button class="btn btn-secondary" onclick="closeSchemaModal()">Hủy</button>
       <button class="btn btn-primary" onclick="saveSchema()">
         <i class="fa fa-floppy-disk"></i> Lưu Schema
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════ CSV IMPORT MODAL ════════════ -->
-<div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
-  <div class="modal" style="max-width: 520px;">
-    <div class="modal-header">
-      <h2><i class="fa-solid fa-file-import" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
-      <button class="modal-close" onclick="closeCsvImportModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <form id="f-csv-form" onsubmit="return false;">
-      <p style="font-size:12px;color:var(--gray-600);margin-bottom:16px;line-height:1.5">
-        Phương thức này giúp tự động tạo hàng loạt cây trồng từ file tọa độ CSV.
-        File CSV cần có các cột tiêu đề: <strong>STT</strong>, <strong>E</strong> (Kinh độ/Lng), <strong>N</strong> (Vĩ độ/Lat).
-      </p>
-
-      <div class="field">
-        <label>Chọn file CSV *</label>
-        <input type="file" id="csv-file-input" accept=".csv" style="padding: 8px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px; width: 100%;">
-      </div>
-
-      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-        <div class="field">
-          <label>Loại cây *</label>
-          <select id="csv-plant-type" onchange="onCsvPlantTypeChange()" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
-            <option value="">— Chọn loại cây —</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Giống cây</label>
-          <input type="text" id="csv-plant-variety" placeholder="VD: Ri6, Monthong...">
-        </div>
-      </div>
-
-      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-        <div class="field">
-          <label>Tuổi cây</label>
-          <input type="text" id="csv-plant-age" placeholder="VD: 3 năm, 6 tháng...">
-        </div>
-        <div class="field">
-          <label>Tình trạng sức khỏe</label>
-          <select id="csv-health-status" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
-            <option>Tốt</option>
-            <option>Bình thường</option>
-            <option>Cần chú ý</option>
-            <option>Bệnh</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-        <input type="hidden" id="csv-schema-id">
-        <div class="field">
-          <label>Trạng thái công khai</label>
-          <select id="csv-is-public" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
-              <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
-              <option value="false">🔒 Riêng tư</option>
-          </select>
-        </div>
-      </div>
-      
-      <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
-        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i class="fa-solid fa-table"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
-        <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
-          <table style="width:100%; border-collapse:collapse; text-align:left;">
-            <thead>
-              <tr style="border-bottom:1px solid #ddd; color:var(--gray-600);">
-                <th style="padding:4px 6px;">STT</th>
-                <th style="padding:4px 6px;">E (Kinh độ)</th>
-                <th style="padding:4px 6px;">N (Vĩ độ)</th>
-              </tr>
-            </thead>
-            <tbody id="csv-preview-table-body">
-            </tbody>
-          </table>
-        </div>
-      </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeCsvImportModal()">Hủy</button>
-      <button class="btn btn-primary" id="csv-import-submit-btn" onclick="submitCsvImport()" disabled>
-        <i class="fa fa-upload"></i> Thực hiện Import
       </button>
     </div>
   </div>
@@ -4566,127 +2415,6 @@
   </div>
 </div>
 
-<!-- ════════════ DEVICE MODAL ════════════ -->
-<div class="modal-overlay" id="device-modal" style="display:none" onclick="if(event.target===this)closeDeviceModal()">
-
-  <div class="modal" style="max-width: 480px;">
-    <div class="modal-header">
-      <h2 id="device-modal-title"><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
-      <button class="modal-close" onclick="closeDeviceModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="f-device-id">
-      
-      <div class="field">
-        <label>Tên thiết bị *</label>
-        <input type="text" id="f-device-name" placeholder="VD: Cảm biến nhiệt ẩm số 1, Van tưới A2...">
-      </div>
-      
-      <div class="field">
-        <label>Loại thiết bị *</label>
-        <select id="f-device-type" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
-          <option value="Cảm biến nhiệt độ & độ ẩm">Cảm biến nhiệt độ & độ ẩm</option>
-          <option value="Hệ thống tưới tự động">Hệ thống tưới tự động</option>
-          <option value="Camera giám sát">Camera giám sát</option>
-          <option value="Bộ điều khiển trung tâm (Gateway)">Bộ điều khiển trung tâm (Gateway)</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Trang trại gán thiết bị</label>
-        <select id="f-device-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
-          <option value="">— Không thuộc trang trại nào —</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Địa chỉ IP</label>
-        <input type="text" id="f-device-ip" placeholder="VD: 192.168.1.105...">
-      </div>
-
-      <div class="field">
-        <label>Dung lượng Pin (%)</label>
-        <input type="number" id="f-device-battery" value="100" min="0" max="100">
-      </div>
-      
-      <div class="field">
-        <label>Trạng thái *</label>
-        <select id="f-device-status" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
-          <option value="Hoạt động">🟢 Hoạt động</option>
-          <option value="Mất kết nối">🔴 Mất kết nối</option>
-          <option value="Bảo trì">🟡 Bảo trì</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeDeviceModal()">Hủy</button>
-      <button class="btn btn-primary" id="device-save-btn" onclick="saveDevice()">
-        <span id="device-save-text"><i class="fa fa-floppy-disk"></i> Lưu thiết bị</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════ USER ACTIVITY MODAL ════════════ -->
-<div class="modal-overlay" id="user-activity-modal" style="display:none" onclick="if(event.target===this)closeUserActivityModal()">
-  <div class="modal" style="max-width: 600px;">
-    <div class="modal-header">
-      <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
-      <button class="modal-close" onclick="closeUserActivityModal()">×</button>
-    </div>
-    <div class="modal-body" style="max-height: 450px; overflow-y: auto;">
-      <div id="user-activity-timeline" class="timeline" style="padding: 10px 0;">
-        <!-- Activities rendered dynamically here -->
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeUserActivityModal()">Đóng</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════ DESIGN DRAWING / CAD OVERLAY MODAL ════════════ -->
-<div class="modal-overlay" id="design-drawing-modal" style="display:none" onclick="if(event.target===this)closeDesignDrawingModal()">
-  <div class="modal" style="max-width: 520px;">
-    <div class="modal-header">
-      <h2><i class="fa-solid fa-compass-drafting" style="color:var(--green)"></i> Import Bản Vẽ Thiết Kế Trang Trại (CAD / Overlay)</h2>
-      <button class="modal-close" onclick="closeDesignDrawingModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#1e40af;">
-        <i class="fa-solid fa-circle-info"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
-      </div>
-      
-      <div class="field">
-        <label>Tên hồ sơ / Bản vẽ thiết kế *</label>
-        <input type="text" id="f-drawing-title" placeholder="VD: Bản vẽ Quy hoạch Hệ thống Tưới & Phân lô 2026">
-      </div>
-
-      <div class="field">
-        <label>Chọn Tệp Bản Vẽ (GeoJSON / KML / CAD DXF / Hình ảnh Sơ đồ) *</label>
-        <input type="file" id="f-drawing-file" accept=".geojson,.json,.kml,.dxf,.png,.jpg,.jpeg,.pdf" onchange="previewDrawingFile(this)">
-        <small style="color:var(--gray-400); font-size:11px; display:block; margin-top:4px;">
-          Hỗ trợ dữ liệu vector GIS (GeoJSON/KML) hoặc hình ảnh sơ đồ thiết kế kiến trúc quy hoạch.
-        </small>
-      </div>
-
-      <div class="field">
-        <label>Độ trong suốt bản vẽ (Opacity): <strong id="drawing-opacity-val">80%</strong></label>
-        <input type="range" id="f-drawing-opacity" min="10" max="100" value="80" oninput="document.getElementById('drawing-opacity-val').textContent = this.value + '%'">
-      </div>
-
-      <div id="drawing-preview-box" style="display:none; padding:10px; background:var(--gray-50); border:1px dashed var(--gray-300); border-radius:8px; font-size:12px; margin-top:10px;">
-        <i class="fa-solid fa-file-contract" style="color:#2563eb"></i> Tệp đã chọn: <strong id="drawing-filename">-</strong>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeDesignDrawingModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="submitDesignDrawingImport()">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Áp Dụng Bản Vẽ Lên Bản Đồ
-      </button>
-    </div>
-  </div>
-</div>
 
 <!-- ════════════ VIEW SUPPLY DETAILS MODAL ════════════ -->
 
@@ -4781,6 +2509,356 @@
   </div>
 </div>
 
+<!-- ════════════ QR CODE & NFC TAG MODAL ════════════ -->
+<div class="modal-overlay" id="qr-modal" style="display:none" onclick="if(event.target===this)closeQrModal()">
+  <div class="modal" style="max-width: 460px; width: 92%; border-radius:14px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.2);">
+    <div class="modal-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="font-size:15px; margin:0; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-qrcode" style="color:#059669"></i> Thẻ Định Danh & Mã QR Cây Trồng
+      </h2>
+      <button class="modal-close" onclick="closeQrModal()" style="color:#64748b; font-size:22px; cursor:pointer; background:none; border:none;">×</button>
+    </div>
+    <div class="modal-body" style="padding:22px; background:#ffffff; text-align:center;">
+      <div id="qr-printable-area" style="padding:16px; border:1.5px dashed #cbd5e1; border-radius:12px; background:#f8fafc; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:#059669; text-transform:uppercase; letter-spacing:0.05em;" id="qr-modal-farm-name">TÂN BẢO AGTECH</div>
+        <div style="font-size:18px; font-weight:900; color:#0f172a; margin:4px 0 12px 0;" id="qr-modal-tree-title">Cây #1</div>
+        <div style="display:flex; justify-content:center; margin-bottom:12px;">
+          <img id="qr-modal-image" src="" alt="Mã QR Cây" style="width:190px; height:190px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; padding:6px;">
+        </div>
+        <div style="font-size:12.5px; color:#0f172a; font-weight:700;" id="qr-modal-variety-info">Sầu riêng Ri6</div>
+        <div style="font-size:11px; color:#64748b; margin-top:2px;" id="qr-modal-gps-info">GPS: 106.3, 12.5</div>
+      </div>
+
+      <!-- Public URL -->
+      <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+        <input type="text" id="qr-modal-url-input" readonly style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:#f8fafc; color:#334155;">
+        <button onclick="copyQrUrl()" class="btn btn-secondary btn-sm" style="font-weight:700; padding:8px 12px; font-size:12px; cursor:pointer;">
+          <i class="fa-solid fa-copy"></i> Sao chép
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:12px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <a href="#" id="qr-modal-public-link" target="_blank" class="btn btn-sm" style="font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:7px 12px; text-decoration:none;">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trang web
+      </a>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="printQrModalCode()" style="background:#059669; color:#fff; font-weight:700; border-radius:8px; padding:7px 14px; border:none; cursor:pointer;">
+          <i class="fa-solid fa-print"></i> In Mã QR
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="closeQrModal()" style="font-weight:600; border-radius:8px; padding:7px 12px; cursor:pointer;">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ════════════ COST ENTRY MODAL ════════════ -->
+<div class="modal-overlay" id="cost-entry-modal" style="display:none" onclick="if(event.target===this)closeCostEntryModal()">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h2 id="cost-entry-modal-title"><i class="fa-solid fa-coins" style="color:var(--green)"></i> Thêm khoản chi</h2>
+      <button class="modal-close" onclick="closeCostEntryModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ce-type">
+      <div class="form-row">
+        <div class="field">
+          <label>Trang trại</label>
+          <select id="ce-farm" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+            <option value="">— Chọn trang trại —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ngày</label>
+          <input type="date" id="ce-date" style="width:100%;">
+        </div>
+      </div>
+      <div id="ce-fields-consumable">
+        <div class="form-row">
+          <div class="field">
+            <label>Loại vật tư</label>
+            <select id="ce-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+              <option value="Phân bón">Phân bón</option>
+              <option value="Thuốc BVTV">Thuốc BVTV</option>
+              <option value="Nhiên liệu">Nhiên liệu</option>
+              <option value="Nước tưới">Nước tưới</option>
+              <option value="Lao động">Lao động</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tên vật tư *</label>
+            <input type="text" id="ce-name" placeholder="VD: Ure 46%, DAP...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Số lượng</label>
+            <input type="number" id="ce-qty" placeholder="0" min="0" step="0.1">
+          </div>
+          <div class="field">
+            <label>Đơn vị</label>
+            <input type="text" id="ce-unit" placeholder="kg, lít, công...">
+          </div>
+          <div class="field">
+            <label>Đơn giá (VNĐ)</label>
+            <input type="number" id="ce-price" placeholder="0" min="0">
+          </div>
+        </div>
+      </div>
+      <div id="ce-fields-fixed" style="display:none;">
+        <div class="form-row">
+          <div class="field">
+            <label>Phân loại tài sản</label>
+            <select id="ce-fixed-category" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+              <option value="Máy móc thiết bị">Máy móc thiết bị</option>
+              <option value="Công trình">Công trình</option>
+              <option value="Cây giống">Cây giống ban đầu</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Năm mua</label>
+            <input type="number" id="ce-fixed-year" placeholder="2024" min="2000" max="2100">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Nguyên giá (VNĐ) *</label>
+            <input type="number" id="ce-fixed-price" placeholder="0" min="0">
+          </div>
+          <div class="field">
+            <label>Thời gian sử dụng (năm)</label>
+            <input type="number" id="ce-fixed-life" placeholder="5" min="1">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ghi chú</label>
+        <textarea id="ce-note" rows="2" placeholder="Ghi chú thêm..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCostEntryModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveCostEntry()"><i class="fa fa-check"></i> Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ PLANT MODAL ════════════ -->
+
+<!-- ════════════ CSV IMPORT MODAL ════════════ -->
+<div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-file-import" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
+      <button class="modal-close" onclick="closeCsvImportModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="f-csv-form" onsubmit="return false;">
+      <p style="font-size:12px;color:var(--gray-600);margin-bottom:16px;line-height:1.5">
+        Phương thức này giúp tự động tạo hàng loạt cây trồng từ file tọa độ CSV.
+        File CSV cần có các cột tiêu đề: <strong>STT</strong>, <strong>E</strong> (Kinh độ/Lng), <strong>N</strong> (Vĩ độ/Lat).
+      </p>
+
+      <div class="field">
+        <label>Chọn file CSV *</label>
+        <input type="file" id="csv-file-input" accept=".csv" style="padding: 8px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px; width: 100%;">
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="field">
+          <label>Loại cây *</label>
+          <select id="csv-plant-type" onchange="onCsvPlantTypeChange()" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <option value="">— Chọn loại cây —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Giống cây</label>
+          <input type="text" id="csv-plant-variety" placeholder="VD: Ri6, Monthong...">
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="field">
+          <label>Tuổi cây</label>
+          <input type="text" id="csv-plant-age" placeholder="VD: 3 năm, 6 tháng...">
+        </div>
+        <div class="field">
+          <label>Tình trạng sức khỏe</label>
+          <select id="csv-health-status" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+            <option>Tốt</option>
+            <option>Bình thường</option>
+            <option>Cần chú ý</option>
+            <option>Bệnh</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <input type="hidden" id="csv-schema-id">
+        <div class="field">
+          <label>Trạng thái công khai</label>
+          <select id="csv-is-public" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
+              <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
+              <option value="false">🔒 Riêng tư</option>
+          </select>
+        </div>
+      </div>
+      
+      <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
+        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i class="fa-solid fa-table"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
+        <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
+          <table style="width:100%; border-collapse:collapse; text-align:left;">
+            <thead>
+              <tr style="border-bottom:1px solid #ddd; color:var(--gray-600);">
+                <th style="padding:4px 6px;">STT</th>
+                <th style="padding:4px 6px;">E (Kinh độ)</th>
+                <th style="padding:4px 6px;">N (Vĩ độ)</th>
+              </tr>
+            </thead>
+            <tbody id="csv-preview-table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCsvImportModal()">Hủy</button>
+      <button class="btn btn-primary" id="csv-import-submit-btn" onclick="submitCsvImport()" disabled>
+        <i class="fa fa-upload"></i> Thực hiện Import
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ DEVICE MODAL ════════════ -->
+<div class="modal-overlay" id="device-modal" style="display:none" onclick="if(event.target===this)closeDeviceModal()">
+
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <h2 id="device-modal-title"><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
+      <button class="modal-close" onclick="closeDeviceModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-device-id">
+      
+      <div class="field">
+        <label>Tên thiết bị *</label>
+        <input type="text" id="f-device-name" placeholder="VD: Cảm biến nhiệt ẩm số 1, Van tưới A2...">
+      </div>
+      
+      <div class="field">
+        <label>Loại thiết bị *</label>
+        <select id="f-device-type" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="Cảm biến nhiệt độ & độ ẩm">Cảm biến nhiệt độ & độ ẩm</option>
+          <option value="Hệ thống tưới tự động">Hệ thống tưới tự động</option>
+          <option value="Camera giám sát">Camera giám sát</option>
+          <option value="Bộ điều khiển trung tâm (Gateway)">Bộ điều khiển trung tâm (Gateway)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Trang trại gán thiết bị</label>
+        <select id="f-device-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="">— Không thuộc trang trại nào —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Địa chỉ IP</label>
+        <input type="text" id="f-device-ip" placeholder="VD: 192.168.1.105...">
+      </div>
+
+      <div class="field">
+        <label>Dung lượng Pin (%)</label>
+        <input type="number" id="f-device-battery" value="100" min="0" max="100">
+      </div>
+      
+      <div class="field">
+        <label>Trạng thái *</label>
+        <select id="f-device-status" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
+          <option value="Hoạt động">🟢 Hoạt động</option>
+          <option value="Mất kết nối">🔴 Mất kết nối</option>
+          <option value="Bảo trì">🟡 Bảo trì</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeviceModal()">Hủy</button>
+      <button class="btn btn-primary" id="device-save-btn" onclick="saveDevice()">
+        <span id="device-save-text"><i class="fa fa-floppy-disk"></i> Lưu thiết bị</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ USER ACTIVITY MODAL ════════════ -->
+<div class="modal-overlay" id="user-activity-modal" style="display:none" onclick="if(event.target===this)closeUserActivityModal()">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
+      <button class="modal-close" onclick="closeUserActivityModal()">×</button>
+    </div>
+    <div class="modal-body" style="max-height: 450px; overflow-y: auto;">
+      <div id="user-activity-timeline" class="timeline" style="padding: 10px 0;">
+        <!-- Activities rendered dynamically here -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUserActivityModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ DESIGN DRAWING / CAD OVERLAY MODAL ════════════ -->
+<div class="modal-overlay" id="design-drawing-modal" style="display:none" onclick="if(event.target===this)closeDesignDrawingModal()">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-compass-drafting" style="color:var(--green)"></i> Import Bản Vẽ Thiết Kế Trang Trại (CAD / Overlay)</h2>
+      <button class="modal-close" onclick="closeDesignDrawingModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#1e40af;">
+        <i class="fa-solid fa-circle-info"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
+      </div>
+      
+      <div class="field">
+        <label>Tên hồ sơ / Bản vẽ thiết kế *</label>
+        <input type="text" id="f-drawing-title" placeholder="VD: Bản vẽ Quy hoạch Hệ thống Tưới & Phân lô 2026">
+      </div>
+
+      <div class="field">
+        <label>Chọn Tệp Bản Vẽ (GeoJSON / KML / CAD DXF / Hình ảnh Sơ đồ) *</label>
+        <input type="file" id="f-drawing-file" accept=".geojson,.json,.kml,.dxf,.png,.jpg,.jpeg,.pdf" onchange="previewDrawingFile(this)">
+        <small style="color:var(--gray-400); font-size:11px; display:block; margin-top:4px;">
+          Hỗ trợ dữ liệu vector GIS (GeoJSON/KML) hoặc hình ảnh sơ đồ thiết kế kiến trúc quy hoạch.
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Độ trong suốt bản vẽ (Opacity): <strong id="drawing-opacity-val">80%</strong></label>
+        <input type="range" id="f-drawing-opacity" min="10" max="100" value="80" oninput="document.getElementById('drawing-opacity-val').textContent = this.value + '%'">
+      </div>
+
+      <div id="drawing-preview-box" style="display:none; padding:10px; background:var(--gray-50); border:1px dashed var(--gray-300); border-radius:8px; font-size:12px; margin-top:10px;">
+        <i class="fa-solid fa-file-contract" style="color:#2563eb"></i> Tệp đã chọn: <strong id="drawing-filename">-</strong>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDesignDrawingModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="submitDesignDrawingImport()">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Áp Dụng Bản Vẽ Lên Bản Đồ
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════ VIEW AUDIT HISTORY DETAILS MODAL (VISUAL DIFF INSPECTOR) ════════════ -->
 <div class="modal-overlay" id="history-view-modal" style="display:none" onclick="if(event.target===this)closeViewHistoryModal()">
   <div class="modal" style="max-width: 780px; width: 92%; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.25);">
@@ -4828,58 +2906,6 @@
   </div>
 </div>
 
-<!-- ════════════ QR CODE & NFC TAG MODAL ════════════ -->
-<div class="modal-overlay" id="qr-modal" style="display:none" onclick="if(event.target===this)closeQrModal()">
-  <div class="modal" style="max-width: 460px; width: 92%; border-radius:14px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.2);">
-    <div class="modal-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
-      <h2 style="font-size:15px; margin:0; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-qrcode" style="color:#059669"></i> Thẻ Định Danh & Mã QR Cây Trồng
-      </h2>
-      <button class="modal-close" onclick="closeQrModal()" style="color:#64748b; font-size:22px; cursor:pointer; background:none; border:none;">×</button>
-    </div>
-    <div class="modal-body" style="padding:22px; background:#ffffff; text-align:center;">
-      <div id="qr-printable-area" style="padding:16px; border:1.5px dashed #cbd5e1; border-radius:12px; background:#f8fafc; margin-bottom:16px;">
-        <div style="font-size:12px; font-weight:800; color:#059669; text-transform:uppercase; letter-spacing:0.05em;" id="qr-modal-farm-name">TÂN BẢO AGTECH</div>
-        <div style="font-size:18px; font-weight:900; color:#0f172a; margin:4px 0 12px 0;" id="qr-modal-tree-title">Cây #1</div>
-        <div style="display:flex; justify-content:center; margin-bottom:12px;">
-          <img id="qr-modal-image" src="" alt="Mã QR Cây" style="width:190px; height:190px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; padding:6px;">
-        </div>
-        <div style="font-size:12.5px; color:#0f172a; font-weight:700;" id="qr-modal-variety-info">Sầu riêng Ri6</div>
-        <div style="font-size:11px; color:#64748b; margin-top:2px;" id="qr-modal-gps-info">GPS: 106.3, 12.5</div>
-      </div>
-
-      <!-- Public URL -->
-      <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-        <input type="text" id="qr-modal-url-input" readonly style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:#f8fafc; color:#334155;">
-        <button onclick="copyQrUrl()" class="btn btn-secondary btn-sm" style="font-weight:700; padding:8px 12px; font-size:12px; cursor:pointer;">
-          <i class="fa-solid fa-copy"></i> Sao chép
-        </button>
-      </div>
-    </div>
-    <div class="modal-footer" style="padding:12px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <a href="#" id="qr-modal-public-link" target="_blank" class="btn btn-sm" style="font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:7px 12px; text-decoration:none;">
-        <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trang web
-      </a>
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-primary btn-sm" onclick="printQrModalCode()" style="background:#059669; color:#fff; font-weight:700; border-radius:8px; padding:7px 14px; border:none; cursor:pointer;">
-          <i class="fa-solid fa-print"></i> In Mã QR
-        </button>
-        <button class="btn btn-secondary btn-sm" onclick="closeQrModal()" style="font-weight:600; border-radius:8px; padding:7px 12px; cursor:pointer;">Đóng</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-
-
-
-
-
-
-
-
 
 <!-- Toast -->
 <div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:none">
@@ -4911,3 +2937,5 @@
 
 
 </html>
+
+

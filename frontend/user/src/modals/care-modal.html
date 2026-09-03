@@ -1,0 +1,67 @@
+<div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="care-modal-title"><i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký chăm sóc</h2>
+      <button class="modal-close" onclick="closeCareModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="c-plant-id">
+      
+      <div class="field">
+        <label>Cây trồng *</label>
+        <div id="c-plant-selection-wrap">
+          <input type="text" id="c-plant-display" readonly style="display:none; background:var(--gray-50); font-weight:600;">
+          <select id="c-plant-id-select" style="display:none; width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600; background:#fff;"></select>
+          <div id="c-plant-multi-select" style="display:none; max-height: 260px; overflow-y: auto; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; background: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            <div id="c-plant-checkboxes-list"></div>
+          </div>
+          <div id="c-selected-trees-count" style="display:none; margin-top: 8px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 13px; font-weight: 700; color: #15803d;">
+            <i class="fa-solid fa-circle-check" style="font-size: 15px;"></i>
+            <span>Đã chọn: <strong id="c-selected-count-number" style="font-size: 14px; color:#166534;">0</strong> cây trồng.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ngày thực hiện *</label>
+        <input type="date" id="c-log-date" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
+      </div>
+
+      <div class="field">
+        <label>Loại hoạt động *</label>
+        <select id="c-log-type" onchange="onCareLogTypeChange()">
+          <option value="Tưới nước">Tưới nước</option>
+          <option value="Bón phân">Bón phân</option>
+          <option value="Phun thuốc">Phun thuốc</option>
+          <option value="Cắt lá">Cắt cành/lá</option>
+          <option value="Tỉa hoa">Tỉa hoa/quả</option>
+          <option value="Thu hoạch">🌾 Thu hoạch</option>
+          <option value="Bệnh cây">Bệnh cây</option>
+        </select>
+      </div>
+
+      <div id="care-detail-fields">
+        <!-- Rendered dynamically based on selected activity type -->
+      </div>
+
+      <div class="field">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="margin:0;">Ghi chú thêm</label>
+          <button type="button" class="btn btn-secondary btn-xs" id="btn-voice-dictate" onclick="startVoiceInput()" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; padding:4px 10px; font-size:12px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5;">
+            <i class="fa-solid fa-microphone" id="mic-icon"></i> <span id="mic-label">Đọc giọng nói</span>
+          </button>
+        </div>
+        <textarea id="c-note" rows="3" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCareModal()">Hủy</button>
+      <button class="btn btn-primary" id="care-save-btn" onclick="saveCareLog()">
+        <span id="care-save-text"><i class="fa fa-floppy-disk"></i> Lưu nhật ký</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL KHAI BÁO VẬT TƯ ════════════ -->

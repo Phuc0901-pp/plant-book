@@ -1,0 +1,217 @@
+<div class="modal-overlay" id="modal-supply" style="display:none" onclick="if(event.target===this)closeSupplyModal()">
+  <div class="modal supply-modal-custom">
+    <div class="modal-header supply-modal-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="supply-modal-icon-wrap"><i class="fa-solid fa-boxes-packing"></i></div>
+        <div>
+          <h2 id="modal-supply-title" style="margin:0; font-size:18px; font-weight:700; color:#fff; display:block !important;">Khai báo vật tư mới</h2>
+          <p style="margin:2px 0 0 0; font-size:12px; color:rgba(255,255,255,0.85); font-weight:400;">Nhập khối lượng và giá mua để tự động suy ra đơn giá chi tiết</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeSupplyModal()" style="color:#fff; opacity:0.85;">×</button>
+    </div>
+
+    <div class="modal-body supply-modal-body">
+      <input type="hidden" id="sp-id">
+
+      <!-- AI Vision Packaging Scanner Banner -->
+      <div style="background:linear-gradient(135deg, #0f172a, #1e293b); border-radius:14px; padding:14px 18px; color:#ffffff; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 4px 14px rgba(0,0,0,0.1);">
+        <div>
+          <div style="font-size:13.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:#10b981; font-size:16px;"></i> Quét Bao bì Phân bón / Thuốc BVTV bằng AI
+          </div>
+          <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Chụp ảnh bao bì để AI tự động trích xuất Tên, Hạng mục &amp; Quy cách</div>
+        </div>
+
+        <div>
+          <input type="file" id="sp-ai-scan-file" accept="image/*" capture="environment" style="display:none;" onchange="handleAiScanImageUpload(event)">
+          <button type="button" class="btn" id="sp-ai-scan-btn" onclick="document.getElementById('sp-ai-scan-file').click()" style="background:linear-gradient(135deg, #10b981, #059669); color:#ffffff; font-weight:800; border:none; padding:8px 16px; border-radius:10px; font-size:12.5px; display:flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
+            <i class="fa-solid fa-camera"></i> <span id="sp-ai-scan-text">📷 Chụp / Chọn ảnh bao bì</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 1: Hạng mục & Đơn vị gói -->
+      <div class="form-row-2">
+
+        <div class="field" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-layer-group"></i> Hạng mục gốc <span class="req-star">*</span></label>
+          <select id="sp-category" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
+            <option value="Bón phân">🧪 Bón phân</option>
+            <option value="Tiền nước">💧 Tiền nước (m³)</option>
+            <option value="Phun thuốc">🛡️ Phun thuốc</option>
+            <option value="Nhân công">👷 Nhân công</option>
+          </select>
+        </div>
+
+        <div class="field" id="field-package-unit" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-scale-balanced"></i> Quy cách / Đơn vị gói <span class="req-star">*</span></label>
+          <select id="sp-package-unit" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
+            <option value="kg">kg (Bao / Túi kg)</option>
+            <option value="g">g (Gam / Gram)</option>
+            <option value="lít">lít (Chai / Can lít)</option>
+            <option value="ml">ml (Mililít)</option>
+            <option value="m3">m³ (Khối nước)</option>
+            <option value="ngày công">ngày công (Nhân công)</option>
+            <option value="khác">khác (Cái, Khối...)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fertilizer Type dropdown (when category = 'Bón phân') -->
+      <div class="field" id="field-fertilizer-type" style="margin-top:12px; margin-bottom:16px;">
+        <label class="form-label"><i class="fa-solid fa-tags"></i> Loại phân bón <span class="req-star">*</span></label>
+        <select id="sp-fertilizer-type" class="form-control-custom">
+          <option value="Phân vô cơ (NPK / Hóa học)">🧪 Phân vô cơ / Hóa học (NPK, Ure, DAP, Kali...)</option>
+          <option value="Phân hữu cơ">🌱 Phân hữu cơ (Trùn quế, Vi sinh, Đạm cá...)</option>
+          <option value="Phân bón lá">🍃 Phân bón lá / Kích thích ra hoa, đậu trái</option>
+          <option value="Phân vi lượng / Trung lượng">🔬 Phân vi lượng / Trung lượng (Bo, Canxi, Magie...)</option>
+          <option value="Phân chuồng / Hoai mục">🐂 Phân chuồng hoai mục / Vi sinh</option>
+          <option value="Khác">🏷️ Khác / Phân loại riêng</option>
+        </select>
+      </div>
+
+      <!-- Row 2: Tên vật tư -->
+      <div class="field" id="field-name" style="margin-bottom:16px;">
+        <label class="form-label"><i class="fa-solid fa-box-open"></i> Tên vật tư / Dịch vụ <span class="req-star">*</span></label>
+        <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
+      </div>
+
+      <!-- Row 3: Khối lượng 1 gói, Số lượng bao/chai & Tổng giá tiền -->
+      <div class="form-row-2" id="row-package-qty-price" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+        <div class="field" id="field-package-qty" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-weight-hanging"></i> Khối lượng 1 gói <span class="req-star">*</span></label>
+          <input type="number" id="sp-package-qty" class="form-control-custom" value="50" min="0.001" step="any" oninput="autoCalculateSupplyUnits()" placeholder="VD: 50">
+        </div>
+
+        <div class="field" id="field-stock-count" style="margin-bottom:0;">
+          <label class="form-label"><i class="fa-solid fa-boxes-stacked"></i> Số bao/chai mua <span class="req-star">*</span></label>
+          <input type="number" id="sp-stock-count" class="form-control-custom" value="1" min="1" step="1" oninput="autoCalculateSupplyUnits()" placeholder="VD: 1 bao/chai">
+        </div>
+
+        <div class="field" id="field-package-price" style="margin-bottom:0;">
+          <label class="form-label" id="label-package-price"><i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span></label>
+          <input type="number" id="sp-package-price" class="form-control-custom" min="0" step="100" oninput="autoCalculateSupplyUnits()" placeholder="VD: 1530000" style="font-weight:700; color:var(--green-dark);">
+        </div>
+      </div>
+
+      <!-- Live Auto Calculation Breakdown Card -->
+      <div class="calc-breakdown-card" id="card-breakdown">
+        <div class="calc-card-title">
+          <i class="fa-solid fa-calculator"></i> BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT
+        </div>
+        <div class="calc-card-grid">
+          <div class="calc-metric-box">
+            <div class="calc-metric-label">Đơn giá chuẩn / <span id="calc-unit-large-name">kg</span></div>
+            <div class="calc-metric-value value-green" id="calc-price-large">0 VNĐ / kg</div>
+          </div>
+          <div class="calc-metric-box">
+            <div class="calc-metric-label">Đơn giá chi tiết / <span id="calc-unit-small-name">g</span></div>
+            <div class="calc-metric-value value-blue" id="calc-price-small">0 VNĐ / g</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Hình ảnh bao bì / nhãn hiệu phân bón / thuốc BVTV -->
+      <div class="field" id="field-image-upload" style="margin-bottom:16px;">
+        <label class="form-label"><i class="fa-solid fa-camera"></i> Hình ảnh bao bì / Nhãn hiệu sản phẩm (Tùy chọn)</label>
+        <div class="sp-image-upload-card">
+          <div class="sp-img-preview-box">
+            <i class="fa-solid fa-image" style="color:#94a3b8; font-size:24px;" id="sp-image-placeholder-icon"></i>
+            <img id="sp-image-preview" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+          </div>
+          <div style="flex:1;">
+            <input type="file" id="sp-image-file" accept="image/*" style="display:none;" onchange="uploadSupplyImage(this)">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="sp-upload-btn" onclick="document.getElementById('sp-image-file').click()" style="display:inline-flex; align-items:center; gap:6px; background:#fff; border:1.5px solid #cbd5e1; font-weight:600;">
+                <i class="fa-solid fa-cloud-arrow-up" style="color:var(--green); font-size:15px;"></i> <span id="sp-upload-btn-text">Tải ảnh bao bì sản phẩm...</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="sp-remove-img-btn" onclick="removeSupplyImage()" style="display:none; align-items:center; gap:4px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca;">
+                <i class="fa-solid fa-trash"></i> Xóa ảnh
+              </button>
+            </div>
+            <input type="hidden" id="sp-image-url" value="">
+            <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">Chụp hoặc tải ảnh bao phân NPK, chai thuốc Anvil...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden form values -->
+      <input type="hidden" id="sp-unit" value="kg">
+      <input type="hidden" id="sp-unit-price" value="0">
+      <input type="hidden" id="sp-package-size" value="">
+      <input type="hidden" id="sp-unit-price-small" value="0">
+
+      <!-- Row 5: Ghi chú -->
+      <div class="field" style="margin-bottom:0;">
+        <label class="form-label"><i class="fa-solid fa-note-sticky"></i> Ghi chú / Thông tin thêm</label>
+        <textarea id="sp-note" class="form-control-custom" rows="2" placeholder="Ví dụ: Phân bón đợt 1 cho sầu riêng; Đơn giá 5.000đ/m3 nước..."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer supply-modal-footer">
+      <button class="btn btn-secondary" onclick="closeSupplyModal()">Hủy bỏ</button>
+      <button class="btn btn-primary" id="supply-save-btn" onclick="saveSupply()">
+        <span id="supply-save-text"><i class="fa-solid fa-floppy-disk"></i> Lưu vật tư</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL GHI NHẬN TIÊU HAO VẬT TƯ ════════════ -->
+<div class="modal-overlay" id="modal-supply-usage" style="display:none" onclick="if(event.target===this)closeRecordUsageModal()">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-pen-to-square" style="color:var(--green)"></i> Ghi nhận tiêu hao vật tư</h2>
+      <button class="modal-close" onclick="closeRecordUsageModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Chọn Vật tư / Dịch vụ *</label>
+        <select id="su-supply-id" onchange="onSupplySelectionChange()" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600; background:#fff;">
+          <!-- Loaded dynamically -->
+        </select>
+      </div>
+
+      <div class="field-row" style="display:flex; gap:12px;">
+        <div class="field" style="flex:1;">
+          <label>Ngày tiêu hao *</label>
+          <input type="date" id="su-usage-date" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
+        </div>
+        <div class="field" style="flex:1;">
+          <label>Số lượng tiêu hao *</label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="number" id="su-quantity" min="0.01" step="any" placeholder="Ví dụ: 10" oninput="calculateUsageCostPreview()" style="flex:1; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
+            <span id="su-unit-label" style="font-weight:600; font-size:13px; color:var(--text-secondary);">đơn vị</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Trang trại (Không bắt buộc)</label>
+        <select id="su-farm-id" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; background:#fff;">
+          <!-- Loaded dynamically -->
+        </select>
+      </div>
+
+      <!-- Preview calculated cost box -->
+      <div style="background:var(--gray-50); border:1.5px dashed var(--gray-300); border-radius:10px; padding:12px; margin-top:8px;">
+        <div style="font-size:12px; color:var(--text-muted);">Đơn giá áp dụng: <strong id="su-price-preview">0 VNĐ</strong></div>
+        <div style="font-size:14px; font-weight:700; color:var(--green); margin-top:4px;">Tổng thành tiền: <span id="su-total-preview" style="font-size:16px;">0 VNĐ</span></div>
+      </div>
+
+      <div class="field" style="margin-top:12px;">
+        <label>Ghi chú thêm</label>
+        <input type="text" id="su-note" placeholder="Nhập ghi chú chi tiết đợt tiêu hao..." style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px;">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeRecordUsageModal()">Hủy</button>
+      <button class="btn btn-primary" id="su-save-btn" onclick="saveSupplyUsage()">
+        <span id="su-save-text"><i class="fa fa-floppy-disk"></i> Ghi nhận tiêu hao</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->

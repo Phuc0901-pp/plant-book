@@ -1,0 +1,131 @@
+
+<div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="plant-modal-title"><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Thêm cây mới</h2>
+      <button class="modal-close" onclick="closePlantModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-info')">Thông tin cơ bản</div>
+        <div class="tab" onclick="switchTab(this,'tab-extra')">Dữ liệu mở rộng</div>
+        <div class="tab" onclick="switchTab(this,'tab-media')">Ảnh / Video</div>
+        <div class="tab" onclick="switchTab(this,'tab-logs')">Nhật ký</div>
+      </div>
+
+      <!-- Tab: Info -->
+      <div class="tab-pane active" id="tab-info">
+        <div class="form-row">
+          <div class="field">
+            <label>Mã số cây (ID trong trang trại)</label>
+            <input type="text" id="f-tree-code" placeholder="VD: 01, A-02, 105...">
+          </div>
+          <div class="field">
+            <label>Loại cây *</label>
+            <select id="f-plant-type" onchange="onPlantTypeChange()">
+              <option value="">— Chọn loại cây —</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Giống cây</label>
+            <input type="text" id="f-plant-variety" placeholder="VD: IR50404, Thiên Lý...">
+          </div>
+          <div class="field">
+            <label>Tuổi cây</label>
+            <input type="text" id="f-plant-age" placeholder="VD: 2 năm, 6 tháng...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Tình trạng sức khỏe</label>
+            <select id="f-health-status">
+              <option>Tốt</option>
+              <option>Bình thường</option>
+              <option>Cần chú ý</option>
+              <option>Bệnh</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Vị trí / Lô trồng</label>
+            <input type="text" id="f-location" placeholder="VD: Lô A1 - Vườn Tây, Tọa độ 10.xxx...">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Thuộc trang trại (GIS)</label>
+            <select id="f-farm-id">
+              <option value="">— Không thuộc trang trại nào —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tọa độ GPS (Vĩ độ, Kinh độ)</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="number" step="any" id="f-latitude" placeholder="Vĩ độ (Latitude) VD: 10.762...">
+              <input type="number" step="any" id="f-longitude" placeholder="Kinh độ (Longitude) VD: 106.682...">
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="f-schema-id">
+        <div class="field">
+          <label>Công khai URL</label>
+          <select id="f-is-public">
+            <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
+            <option value="false">🔒 Riêng tư</option>
+          </select>
+        </div>
+        <!-- Public URL display -->
+        <div class="public-url-box" id="public-url-section" style="display:none">
+          <label><i class="fa-solid fa-link"></i> Đường dẫn công khai của cây</label>
+          <div class="url-copy-row">
+            <input type="text" id="public-url-input" readonly>
+            <button class="btn btn-secondary btn-sm" onclick="copyURL()"><i class="fa fa-copy"></i> Copy</button>
+            <a id="public-url-link" href="#" target="_blank" class="btn btn-primary btn-sm">
+              <i class="fa fa-arrow-up-right-from-square"></i> Mở
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Extra data -->
+      <div class="tab-pane" id="tab-extra">
+        <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">
+          Các trường dữ liệu được định nghĩa bởi schema. Nhấn vào tab <strong>Thông tin cơ bản</strong> để chọn schema trước.
+        </p>
+        <div id="extra-fields-container">
+          <div class="empty-state" style="padding:24px">
+            <i class="fa fa-layer-group"></i>
+            <p>Chọn schema ở tab Thông tin cơ bản để hiển thị các trường mở rộng</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Media -->
+      <div class="tab-pane" id="tab-media">
+        <div id="plant-media-container">
+          <p style="font-size:13px;color:var(--gray-400);margin-bottom:16px">
+            Lưu cây trước để có thể upload ảnh/video.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab: Logs -->
+      <div class="tab-pane" id="tab-logs">
+        <div id="plant-logs-container">
+          <p style="font-size:13px;color:var(--gray-400);margin-bottom:16px">
+            Lưu cây trước để ghi nhật ký chăm sóc.
+          </p>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePlantModal()">Hủy</button>
+      <button class="btn btn-primary" id="plant-save-btn" onclick="savePlant()">
+        <span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu cây</span>
+      </button>
+    </div>
+  </div>
+</div>

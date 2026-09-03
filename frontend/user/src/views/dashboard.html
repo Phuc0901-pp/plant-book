@@ -1,0 +1,122 @@
+      <div class="page-section active" id="page-home">
+        <!-- Welcome banner with Live Digital Clock & GPS Real-Time Weather -->
+        <div class="welcome-banner" style="background: linear-gradient(135deg, #064e3b 0%, #047857 45%, #0f766e 100%); border-radius: 20px; padding: 24px 28px; margin-bottom: 24px; color: #fff; position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(6, 78, 59, 0.3), 0 8px 10px -6px rgba(6, 78, 59, 0.3); border: 1px solid rgba(255,255,255,0.15);">
+          <!-- Decorative circles -->
+          <div style="position:absolute; right:-40px; top:-40px; width:240px; height:240px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, rgba(255,255,255,0) 70%); border-radius:50%; pointer-events:none;"></div>
+          
+          <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:18px;">
+            
+            <!-- Top Row: Greetings & Live Digital Clock -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:16px;">
+              <div>
+                <div style="font-size:12px; color:rgba(255,255,255,0.75); margin-bottom:4px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                  <i class="fa fa-leaf" style="color:#a7f3d0;"></i> Plant Book · Cổng Quản Trị Nông Hộ Thông Minh
+                </div>
+                <h2 style="font-size:22px; font-weight:900; margin:0; display:flex; align-items:center; gap:8px;">
+                  Xin chào, <span id="welcome-name">nông hộ</span> 👋
+                </h2>
+              </div>
+
+              <!-- Live Digital Clock & GPS Refresh Button -->
+              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                
+                <!-- Live Clock Card -->
+                <div style="background:rgba(255,255,255,0.14); backdrop-filter:blur(10px); border:1.5px solid rgba(255,255,255,0.22); border-radius:14px; padding:8px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+                  <div style="color:#fde047; font-size:18px;">
+                    <i class="fa-regular fa-clock"></i>
+                  </div>
+                  <div>
+                    <div style="display:flex; align-items:baseline;">
+                      <span id="live-clock-time" style="font-size:22px; font-weight:900; font-family:'Segoe UI', monospace; letter-spacing:0.5px; color:#ffffff;">--:--</span>
+                      <span id="live-clock-seconds" style="font-size:13px; font-weight:800; color:#a7f3d0; margin-left:1px;">:--</span>
+                    </div>
+                    <div id="live-clock-date" style="font-size:11px; font-weight:700; color:rgba(255,255,255,0.85); white-space:nowrap;">
+                      Đang tải...
+                    </div>
+                  </div>
+                </div>
+
+                <!-- GPS Weather Refresh Button -->
+                <button type="button" onclick="refreshDeviceWeather()" title="Quét lại tọa độ GPS thiết bị & cập nhật thời tiết" style="background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.3); color:#ffffff; padding:10px 14px; border-radius:12px; font-size:12.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s; backdrop-filter:blur(8px);">
+                  <i id="btn-refresh-weather" class="fa-solid fa-arrows-rotate"></i>
+                  <span>Làm mới GPS</span>
+                </button>
+
+              </div>
+            </div>
+
+            <!-- Bottom Row: Real-Time GPS Weather Widget Content -->
+            <div id="weather-widget-content" style="background:rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.15); border-radius:16px; padding:16px; backdrop-filter:blur(8px);">
+              <div style="display:flex; align-items:center; gap:10px; color:rgba(255,255,255,0.9); font-size:13px; font-weight:700;">
+                <i class="fa-solid fa-spinner fa-spin"></i> <span id="weather-status-text">Đang kết nối trạm vệ tinh GPS & Dự báo Khí tượng Open-Meteo...</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Dashboard Layout Container -->
+        <div class="user-dashboard-grid" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+          
+          <!-- Tóm tắt Danh sách Cây trồng -->
+          <div class="card" id="user-plants-summary-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Danh sách Cây trồng</h3>
+              <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count">0</strong> cây</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mã cây</th>
+                    <th>Loại & Giống</th>
+                    <th>Tuổi cây</th>
+                    <th>Sức khỏe</th>
+                    <th>Vị trí</th>
+                    <th style="width:110px">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="user-plants-summary-table">
+                  <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="padding: 12px 16px; border-top: 1px solid var(--gray-100);">
+              <button class="btn btn-secondary btn-sm" onclick="showPage('myplants')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+                Xem tất cả cây trồng <i class="fa fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Hoạt động canh tác gần đây (Tối đa 3 dòng) -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-clipboard-list" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3>
+            </div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Thời gian</th>
+                    <th>Cây trồng</th>
+                    <th>Hoạt động</th>
+                    <th>Chi tiết / Ghi chú</th>
+                    <th>Người thực hiện</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="user-logs-table">
+                  <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="padding: 12px 16px; border-top: 1px solid var(--gray-100);" id="user-logs-more-btn-wrap">
+              <button class="btn btn-secondary btn-sm" onclick="showPage('logs')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+                Xem chi tiết lịch sử <i class="fa-solid fa-clock-rotate-left"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div><!-- end page-home -->
+
+      <!-- ── TRANG TRẠI (Bản đồ & Danh sách đầy đủ cây) ── -->

@@ -1,3 +1,28 @@
+      <div class="page-section" id="page-settings">
+        <!-- Header -->
+        <div class="settings-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div class="settings-header-icon"><i class="fa-solid fa-sliders"></i></div>
+            <div>
+              <h2 class="settings-header-title">Cài đặt tài khoản & Cấu hình Cảnh báo</h2>
+              <p class="settings-header-sub">Quản lý hồ sơ cá nhân và cấu hình ngưỡng giá trị thông báo tự động</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-Tabs Navigation Bar -->
+        <div class="user-subtabs-nav" style="display:flex; gap:12px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:2px; flex-wrap:wrap;">
+          <button id="subtab-btn-thresholds" class="user-subtab-btn active" onclick="switchSettingsSubtab('thresholds')" style="padding:10px 20px; border:none; background:transparent; border-bottom:3px solid #059669; font-weight:800; color:#059669; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-sliders-h"></i> Cài đặt ngưỡng giá trị
+          </button>
+          <button id="subtab-btn-profile" class="user-subtab-btn" onclick="switchSettingsSubtab('profile')" style="padding:10px 20px; border:none; background:transparent; border-bottom:3px solid transparent; font-weight:700; color:#64748b; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-user-gear"></i> Thông tin cá nhân
+          </button>
+        </div>
+
+        <!-- SUB-TAB 1: CÀI ĐẶT NGƯỠNG GIÁ TRỊ (AUTOMATED SENSOR ALERT RULES) -->
+        <div id="subtab-pane-thresholds" class="subtab-pane" style="display:block;">
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
               <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
                 <i class="fa-solid fa-bell-concierge" style="color:#059669;"></i> Cấu hình Cảnh báo Tự động theo Ngưỡng cảm biến & Canh tác
@@ -177,48 +202,3 @@
 
 
       <!-- ── PAGE 5: BÁCH KHOA (ENCYCLOPEDIA & GUIDES) ── -->
-      <div class="page-section" id="page-wiki">
-        <div class="page-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:18px 22px; border-radius:14px; margin-bottom:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-          <h2 style="margin:0; font-size:18px; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:10px;">
-            <i class="fa-solid fa-book-open" style="color:#059669"></i> Bách khoa & Trung tâm Hướng dẫn
-          </h2>
-          <p style="margin:6px 0 0 0; font-size:13px; color:#64748b;">
-            Khám phá các tính năng nâng cao và hướng dẫn vận hành trang trại thông minh Tân Bảo AgTech.
-          </p>
-        </div>
-
-        <!-- Sub-tabs bar -->
-        <div style="display:flex; gap:12px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:12px;">
-          <button class="wiki-subtab active" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')" style="padding:10px 20px; font-weight:800; font-size:13px; border-radius:10px; border:none; background:#059669; color:white; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Tính năng Nâng cao
-          </button>
-          <button class="wiki-subtab" id="btn-wiki-sub-guide" onclick="switchWikiSubtab('guide')" style="padding:10px 20px; font-weight:700; font-size:13px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">
-            <i class="fa-solid fa-circle-question"></i> Hướng dẫn sử dụng
-          </button>
-        </div>
-
-        <!-- Sub-tab 1: TÍNH NĂNG NÂNG CAO -->
-        <div id="wiki-subtab-advanced" style="display:block;">
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:20px;">
-            
-            <!-- Khối 1: Bản đồ GIS Vệ tinh & 3D Contour -->
-            <div onclick="openFeatureDetailModal('gis')" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; display:flex; flex-direction:column; position:relative;">
-              <div style="height:170px; background:#e2e8f0; overflow:hidden; position:relative;">
-                <img src="/user/img/gis_contour_map.jpg" alt="Bản đồ GIS Vệ tinh & 3D Contour" style="width:100%; height:100%; object-fit:cover;">
-                <span style="position:absolute; top:12px; left:12px; background:rgba(5,150,105,0.9); color:white; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px);">
-                  <i class="fa-solid fa-earth-asia"></i> Bản đồ GIS
-                </span>
-              </div>
-              <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
-                <div>
-                  <h3 style="font-size:16px; color:#0f172a; margin:0 0 8px 0; font-weight:800; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-map-location-dot" style="color:#059669"></i> Bản đồ GIS Vệ tinh & 3D Contour
-                  </h3>
-                  <p style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 14px 0;">
-                    Vẽ ranh giới vườn chuẩn xác và bản đồ đồng mức độ cao địa hình 3D, đo kích thước cạnh thực địa.
-                  </p>
-                </div>
-                <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; align-items:center; justify-content:space-between; color:#059669; font-size:13px; font-weight:800;">
-                  <span><i class="fa-solid fa-circle-info"></i> Bấm xem chi tiết & Liên hệ</span>
-                  <i class="fa-solid fa-arrow-right"></i>
-                </div>
