@@ -76,6 +76,7 @@ function buildAll() {
   buildAdminHtml();
   buildUserHtml();
   console.log('[build-html] All HTML portals assembled successfully.');
+  return { admin: true, user: true };
 }
 
 // If executed directly from CLI: node backend/scripts/build-html.js

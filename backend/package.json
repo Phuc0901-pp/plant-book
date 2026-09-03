@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node --dns-result-order=ipv4first server.js",
     "dev": "nodemon server.js",
-    "build:html": "node scripts/build-html.js"
+    "build:html": "node scripts/build-html.js",
+    "test": "node tests/run-all-tests.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
