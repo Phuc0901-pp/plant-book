@@ -30,13 +30,15 @@ async function doLogin() {
     /* Phân luồng theo role */
     if (data.user.role !== 'admin') {
       localStorage.setItem('pb_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       btn.innerHTML = '<span class="spinner"></span> Đang chuyển hướng Nông hộ...';
-      window.location.replace('/user');
+      window.location.href = '/user';
       return;
     }
 
     token = data.token;
     localStorage.setItem('pb_token', token);
+    localStorage.setItem('user', JSON.stringify(data.user));
     currentUser = data.user;
     resetAdminLoginBtnState();
     showApp();

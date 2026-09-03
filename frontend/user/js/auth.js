@@ -39,14 +39,16 @@ async function doLogin() {
     // Phân luồng theo role
     if (data.user.role === 'admin') {
       localStorage.setItem('pb_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       if (btn) btn.innerHTML = '<span class="spinner"></span> Đang chuyển hướng Quản trị...';
-      window.location.replace('/admin');
+      window.location.href = '/admin';
       return;
     }
 
     // Role user (hoặc bất kỳ role nào không phải admin)
     setToken(data.token);
     setCurrentUser(data.user);
+    localStorage.setItem('user', JSON.stringify(data.user));
     resetLoginBtnState();
     showApp();
 

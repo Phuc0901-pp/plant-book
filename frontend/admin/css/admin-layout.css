@@ -145,16 +145,24 @@
 
 /* Container */
 #login-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   min-height: 100vh;
   display: flex;
+  flex-direction: row;
   animation: loginPageIn .4s ease forwards;
   background: var(--green-dark);
   overflow: hidden;
+  z-index: 10000;
 }
 
 /* ─── LEFT: Hero ─── */
 .login-hero {
   flex: 0 0 55%;
+  width: 55%;
+  height: 100%;
   position: relative;
   overflow: hidden;
   display: flex;
