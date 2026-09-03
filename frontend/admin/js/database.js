@@ -465,6 +465,10 @@ async function selectTreeForDetail(plantId) {
       const totalInvestmentCost = totalConsumableCost + totalFixedCost;
 
       if (summaryBox) {
+        const isQuarantine = (plant.current_phi_status === 'quarantine') || (plant.phi_until_date && new Date(plant.phi_until_date) >= new Date());
+        const remainingDays = plant.phi_remaining_days || 0;
+        const pucCode = plant.farm_puc_code || 'VN-TB';
+
         summaryBox.style.display = 'block';
         summaryBox.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -476,7 +480,7 @@ async function selectTreeForDetail(plantId) {
                 ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''}
               </div>
               <div style="font-size:12.5px; opacity:0.9; margin-top:2px;">
-                Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status || 'Tốt')}</strong> · Tuổi: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong>
+                Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status || 'Tốt')}</strong> · Tuổi: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong> · Mã PUC: <span style="font-family:monospace; font-weight:800;">${esc(pucCode)}</span>
               </div>
             </div>
 
@@ -496,6 +500,25 @@ async function selectTreeForDetail(plantId) {
                   ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- VietGAP Compliance Status Bar -->
+          <div style="margin-top:12px; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            ${isQuarantine ? `
+              <div style="background:rgba(220,38,38,0.3); border:1px solid rgba(254,202,202,0.6); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:800; color:#ffffff; display:inline-flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#fca5a5; font-size:14px;"></i> 
+                ĐANG CÁCH LY THUỐC BVTV (Còn ${remainingDays} ngày · Hết hạn: ${plant.phi_until_date ? new Date(plant.phi_until_date).toLocaleDateString('vi-VN') : '—'}) · ⛔ CẤM THU HOẠCH SỚM
+              </div>
+            ` : `
+              <div style="background:rgba(16,185,129,0.3); border:1px solid rgba(167,243,208,0.6); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:800; color:#ffffff; display:inline-flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-shield-halved" style="color:#86efac; font-size:14px;"></i> 
+                TIÊU CHUẨN VIETGAP: AN TOÀN · ĐƯỢC PHÉP THU HOẠCH & XUẤT BÁN
+              </div>
+            `}
+
+            <div style="font-size:12px; opacity:0.9;">
+              <i class="fa-solid fa-barcode"></i> Mã Lô VietGAP khi thu hoạch: <strong style="font-family:monospace; color:#fde047;">${pucCode}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${(plant.tree_code || plant.id).toString().replace(/[^a-zA-Z0-9]/g,'')}</strong>
             </div>
           </div>
         `;
@@ -1215,6 +1238,8 @@ function renderSuppliesTable(supplies) {
           <a href="javascript:void(0)" onclick="openViewSupplyModal(${s.id})" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#059669'" onmouseout="this.style.color='#0f172a'">
             ${esc(s.name)}
           </a>
+          ${s.active_ingredient ? `<div style="font-size:11px; color:#047857; font-weight:600; margin-top:2px;">🧪 Hoạt chất: ${esc(s.active_ingredient)}</div>` : ''}
+          ${(s.phi_days && parseInt(s.phi_days) > 0) ? `<div style="margin-top:3px;"><span class="badge" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px;"><i class="fa-solid fa-shield-halved"></i> Cách ly PHI: ${s.phi_days} ngày</span></div>` : ''}
         </td>
         <td style="padding:12px 14px;">
           <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;">
@@ -1464,6 +1489,29 @@ function openViewSupplyModal(supplyId) {
         </div>
       </div>
 
+      <!-- VietGAP Specifications Box -->
+      <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu Chuẩn Nông Nghiệp VietGAP:
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12.5px;">
+          <div>
+            <span style="color:#64748b; font-size:11px; display:block;">Thời gian cách ly (PHI):</span>
+            <strong style="color:#047857; font-size:14px;">${supply.phi_days ? supply.phi_days + ' Ngày' : '0 Ngày (Không áp dụng)'}</strong>
+          </div>
+          <div>
+            <span style="color:#64748b; font-size:11px; display:block;">Hoạt chất chính:</span>
+            <strong style="color:#0f172a;">${esc(supply.active_ingredient || 'Chưa khai báo')}</strong>
+          </div>
+        </div>
+        ${supply.target_pests ? `
+          <div style="margin-top:8px; font-size:12px; color:#064e3b;">
+            <span style="color:#64748b; font-size:11px; display:block;">Đối tượng sâu bệnh hại phòng trừ:</span>
+            <strong>${esc(supply.target_pests)}</strong>
+          </div>
+        ` : ''}
+      </div>
+
       ${supply.note ? `
         <div style="margin-bottom:14px;">
           <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:4px;"><i class="fa-solid fa-note-sticky"></i> Ghi chú sản phẩm & Nhà sản xuất:</div>
@@ -1491,6 +1539,9 @@ function openSupplyModal(supplyId = null) {
   document.getElementById('f-supply-note').value = '';
   document.getElementById('f-supply-image-url').value = '';
   document.getElementById('f-supply-img-preview').style.display = 'none';
+  if (document.getElementById('f-supply-phi-days')) document.getElementById('f-supply-phi-days').value = '';
+  if (document.getElementById('f-supply-active-ing')) document.getElementById('f-supply-active-ing').value = '';
+  if (document.getElementById('f-supply-target-pests')) document.getElementById('f-supply-target-pests').value = '';
 
   document.getElementById('supply-modal-title').innerHTML = supplyId ? '<i class="fa-solid fa-pen"></i> Chỉnh sửa sản phẩm vật tư' : '<i class="fa-solid fa-box-archive"></i> Khai báo Vật tư & Phân bón mới';
 
@@ -1504,6 +1555,9 @@ function openSupplyModal(supplyId = null) {
       document.getElementById('f-supply-price').value = supply.unit_price || supply.package_price || '';
       document.getElementById('f-supply-user').value = supply.user_id || '';
       document.getElementById('f-supply-note').value = supply.note || '';
+      if (document.getElementById('f-supply-phi-days')) document.getElementById('f-supply-phi-days').value = supply.phi_days || '';
+      if (document.getElementById('f-supply-active-ing')) document.getElementById('f-supply-active-ing').value = supply.active_ingredient || '';
+      if (document.getElementById('f-supply-target-pests')) document.getElementById('f-supply-target-pests').value = supply.target_pests || '';
 
       if (supply.image_url) {
         document.getElementById('f-supply-image-url').value = supply.image_url;
@@ -1554,6 +1608,9 @@ async function saveSupplySubmit() {
   const user_id = document.getElementById('f-supply-user').value;
   const note = document.getElementById('f-supply-note').value.trim();
   const image_url = document.getElementById('f-supply-image-url').value;
+  const phi_days = parseInt(document.getElementById('f-supply-phi-days')?.value) || 0;
+  const active_ingredient = document.getElementById('f-supply-active-ing')?.value.trim() || null;
+  const target_pests = document.getElementById('f-supply-target-pests')?.value.trim() || null;
 
   if (['Nhân công', 'Tiền nước'].includes(category)) {
     stock_quantity = 999999;
@@ -1574,7 +1631,10 @@ async function saveSupplySubmit() {
     unit_price,
     user_id: user_id ? parseInt(user_id) : null,
     note,
-    image_url
+    image_url,
+    phi_days,
+    active_ingredient,
+    target_pests
   };
 
   const btn = document.getElementById('btn-save-supply');

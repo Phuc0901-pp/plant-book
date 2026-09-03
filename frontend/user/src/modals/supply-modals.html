@@ -77,6 +77,27 @@
         <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
       </div>
 
+      <!-- ════ VietGAP Compliance Specifications (PHI & Active Ingredients) ════ -->
+      <div id="field-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Thời Gian Cách Ly (PHI) & Hoạt Chất
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:11px; color:#065f46; margin-bottom:3px; display:block;">Thời gian cách ly PHI (ngày)</label>
+            <input type="number" id="sp-phi-days" min="0" placeholder="VD: 7 hoặc 14" class="form-control-custom" style="background:#fff; font-weight:800; color:#047857;">
+          </div>
+          <div style="flex:1.5;">
+            <label style="font-weight:700; font-size:11px; color:#065f46; margin-bottom:3px; display:block;">Hoạt chất chính (Active Ingredient)</label>
+            <input type="text" id="sp-active-ingredient" placeholder="VD: Hexaconazole, Mancozeb..." class="form-control-custom" style="background:#fff;">
+          </div>
+        </div>
+        <div>
+          <label style="font-weight:700; font-size:11px; color:#065f46; margin-bottom:3px; display:block;">Đối tượng sâu bệnh hại phòng trừ</label>
+          <input type="text" id="sp-target-pests" placeholder="VD: Bệnh thán thư, rầy phấn trắng, đốm lá..." class="form-control-custom" style="background:#fff;">
+        </div>
+      </div>
+
       <!-- Row 3: Khối lượng 1 gói, Số lượng bao/chai & Tổng giá tiền -->
       <div class="form-row-2" id="row-package-qty-price" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
         <div class="field" id="field-package-qty" style="margin-bottom:0;">

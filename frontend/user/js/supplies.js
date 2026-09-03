@@ -273,6 +273,14 @@ export async function loadSupplies() {
             ? '<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; padding:2px 6px; border:1px solid #fca5a5; margin-top:3px; display:inline-block;"><i class="fa-solid fa-triangle-exclamation"></i> HẾT HÀNG</span>' 
             : `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; padding:2px 6px; margin-top:3px; display:inline-block;"><i class="fa-solid fa-boxes-stacked"></i> Tồn: ${stock} ${sp.unit}</span>`);
 
+      const phiBadge = (sp.phi_days && parseInt(sp.phi_days) > 0)
+        ? `<div style="margin-top:3px;"><span class="badge" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px;"><i class="fa-solid fa-shield-halved"></i> Cách ly PHI: ${sp.phi_days} ngày</span></div>`
+        : '';
+
+      const activeIngDisplay = sp.active_ingredient 
+        ? `<div style="font-size:10.5px; color:#047857; font-weight:600; margin-top:2px;">🧪 Hoạt chất: ${esc(sp.active_ingredient)}</div>` 
+        : '';
+
       return `
         <tr>
           <td>${getCategoryBadge(sp.category)}</td>
@@ -283,8 +291,10 @@ export async function loadSupplies() {
                 : `<div style="width:38px; height:38px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:16px;"><i class="fa-solid fa-boxes-packing"></i></div>`}
               <div>
                 <strong>${esc(sp.name)}</strong>
+                ${activeIngDisplay}
                 <br>
                 ${stockBadge}
+                ${phiBadge}
               </div>
             </div>
           </td>
@@ -340,6 +350,9 @@ export function openSupplyModal(id = null) {
   document.getElementById('sp-package-unit').value = 'kg';
   document.getElementById('sp-package-price').value = '1530000';
   document.getElementById('sp-note').value = '';
+  if (document.getElementById('sp-phi-days')) document.getElementById('sp-phi-days').value = '';
+  if (document.getElementById('sp-active-ingredient')) document.getElementById('sp-active-ingredient').value = '';
+  if (document.getElementById('sp-target-pests')) document.getElementById('sp-target-pests').value = '';
   setSupplyImagePreview('');
 
   if (id) {
@@ -360,6 +373,9 @@ export function openSupplyModal(id = null) {
       if (document.getElementById('sp-fertilizer-type')) {
         document.getElementById('sp-fertilizer-type').value = sp.fertilizer_type || 'Phân vô cơ (NPK / Hóa học)';
       }
+      if (document.getElementById('sp-phi-days')) document.getElementById('sp-phi-days').value = sp.phi_days || '';
+      if (document.getElementById('sp-active-ingredient')) document.getElementById('sp-active-ingredient').value = sp.active_ingredient || '';
+      if (document.getElementById('sp-target-pests')) document.getElementById('sp-target-pests').value = sp.target_pests || '';
       setSupplyImagePreview(sp.image_url || '');
     }
   } else {
@@ -395,6 +411,9 @@ export async function saveSupply() {
   const note = document.getElementById('sp-note').value.trim();
   const image_url = document.getElementById('sp-image-url')?.value || '';
   const fertilizer_type = (category === 'Bón phân') ? (document.getElementById('sp-fertilizer-type')?.value || 'Phân vô cơ (NPK / Hóa học)') : null;
+  const phi_days = parseInt(document.getElementById('sp-phi-days')?.value) || 0;
+  const active_ingredient = document.getElementById('sp-active-ingredient')?.value.trim() || null;
+  const target_pests = document.getElementById('sp-target-pests')?.value.trim() || null;
 
   const isWaterOrLabor = (category === 'Tiền nước' || category === 'Nhân công');
   const stock_quantity = isWaterOrLabor ? 999999 : (package_qty * stock_count);
@@ -420,7 +439,10 @@ export async function saveSupply() {
     stock_quantity,
     note,
     image_url,
-    fertilizer_type
+    fertilizer_type,
+    phi_days,
+    active_ingredient,
+    target_pests
   };
 
   try {

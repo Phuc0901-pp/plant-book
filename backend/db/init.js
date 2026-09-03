@@ -393,10 +393,35 @@ async function initDB() {
 
 
 
+    // ════════════════ VIETGAP COMPLIANCE SCHEMAS ════════════════
+    await client.query(`
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS phi_days INTEGER DEFAULT 0;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS active_ingredient VARCHAR(255);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS target_pests VARCHAR(255);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS safety_interval_note TEXT;
+
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS puc_code VARCHAR(100);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_number VARCHAR(100);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_date DATE;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_org VARCHAR(255);
+
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS phi_until_date DATE;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS phi_status VARCHAR(50) DEFAULT 'safe';
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS last_pesticide_date DATE;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS last_pesticide_name VARCHAR(255);
+
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS batch_code VARCHAR(150);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS puc_code VARCHAR(100);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS operator_name VARCHAR(255);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS equipment_used VARCHAR(255);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS is_phi_violation BOOLEAN DEFAULT false;
+    `);
+
     // Database Performance Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_plants_farm_id ON plants(farm_id);
       CREATE INDEX IF NOT EXISTS idx_plants_health ON plants(health_status);
+      CREATE INDEX IF NOT EXISTS idx_plants_phi_status ON plants(phi_status);
       CREATE INDEX IF NOT EXISTS idx_farms_user_id ON farms(user_id);
       CREATE INDEX IF NOT EXISTS idx_supply_usages_farm_date ON supply_usages(farm_id, usage_date);
       CREATE INDEX IF NOT EXISTS idx_fixed_assets_farm_year ON fixed_assets(farm_id, year);

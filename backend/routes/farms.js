@@ -139,18 +139,28 @@ router.post('/self-init', auth, async (req, res) => {
 
 // POST create farm (requires auth, admin)
 router.post('/', auth, admin, async (req, res) => {
-
   try {
-    const { name, description, polygon_coordinates, area, user_id } = req.body;
+    const { name, description, polygon_coordinates, area, user_id, puc_code, vietgap_cert_number, vietgap_cert_date, vietgap_cert_org } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     const result = await pool.query(`
-      INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id, puc_code, vietgap_cert_number, vietgap_cert_date, vietgap_cert_org)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
-    `, [name, description || '', JSON.stringify(polygon_coordinates || []), area || null, req.user.id, user_id || null]);
+    `, [
+      name, 
+      description || '', 
+      JSON.stringify(polygon_coordinates || []), 
+      area || null, 
+      req.user.id, 
+      user_id || null,
+      puc_code ? puc_code.trim() : null,
+      vietgap_cert_number ? vietgap_cert_number.trim() : null,
+      vietgap_cert_date || null,
+      vietgap_cert_org ? vietgap_cert_org.trim() : null
+    ]);
 
     await delCacheByPattern('farms_');
 
@@ -181,7 +191,11 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa trang trại này.' });
     }
 
-    const { name, description, polygon_coordinates, area, total_plants, user_id, latitude, longitude } = req.body;
+    const { 
+      name, description, polygon_coordinates, area, total_plants, user_id, latitude, longitude,
+      puc_code, vietgap_cert_number, vietgap_cert_date, vietgap_cert_org
+    } = req.body;
+    
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
@@ -202,10 +216,23 @@ router.put('/:id', auth, async (req, res) => {
 
     const result = await pool.query(`
       UPDATE farms 
-      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, total_plants = $5, user_id = $6, updated_at = NOW() 
-      WHERE id = $7 
+      SET name = $1, description = $2, polygon_coordinates = $3, area = $4, total_plants = $5, user_id = $6, 
+          puc_code = $7, vietgap_cert_number = $8, vietgap_cert_date = $9, vietgap_cert_org = $10, updated_at = NOW() 
+      WHERE id = $11 
       RETURNING *
-    `, [name.trim(), description || '', coordsJson, parsedArea, parsedTotalPlants, assignedUserId, farmId]);
+    `, [
+      name.trim(), 
+      description || '', 
+      coordsJson, 
+      parsedArea, 
+      parsedTotalPlants, 
+      assignedUserId, 
+      puc_code !== undefined ? (puc_code ? puc_code.trim() : null) : farm.puc_code,
+      vietgap_cert_number !== undefined ? (vietgap_cert_number ? vietgap_cert_number.trim() : null) : farm.vietgap_cert_number,
+      vietgap_cert_date !== undefined ? (vietgap_cert_date || null) : farm.vietgap_cert_date,
+      vietgap_cert_org !== undefined ? (vietgap_cert_org ? vietgap_cert_org.trim() : null) : farm.vietgap_cert_org,
+      farmId
+    ]);
 
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');

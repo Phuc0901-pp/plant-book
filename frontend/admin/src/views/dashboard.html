@@ -149,9 +149,31 @@
                     <label>Tên trang trại *</label>
                     <input type="text" id="farm-name" placeholder="VD: Nông trại Tây Nguyên, Farm A...">
                   </div>
+
+                  <!-- VietGAP Production Unit Code (PUC) & Certification -->
+                  <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px; margin-bottom:12px;">
+                    <div style="font-size:11.5px; font-weight:800; color:#047857; margin-bottom:6px;">
+                      <i class="fa-solid fa-shield-halved"></i> Thông Tin Chứng Nhận VietGAP:
+                    </div>
+                    <div class="field" style="margin-bottom:8px;">
+                      <label style="font-size:11px; color:#065f46; font-weight:700;">Mã số Vùng trồng (PUC Code)</label>
+                      <input type="text" id="farm-puc-code" placeholder="VD: VN-DL-00124, VN-BP-0056..." style="font-size:12px; font-family:monospace; font-weight:700; background:#ffffff;">
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                      <div style="flex:1;">
+                        <label style="font-size:11px; color:#065f46; font-weight:700;">Số chứng nhận VietGAP</label>
+                        <input type="text" id="farm-vietgap-cert" placeholder="VD: VG-2026-88" style="font-size:12px; background:#ffffff;">
+                      </div>
+                      <div style="flex:1;">
+                        <label style="font-size:11px; color:#065f46; font-weight:700;">Tổ chức cấp</label>
+                        <input type="text" id="farm-vietgap-org" placeholder="VD: Quacert, VinaCert" style="font-size:12px; background:#ffffff;">
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="field">
                     <label>Mô tả</label>
-                    <textarea id="farm-desc" rows="3" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
+                    <textarea id="farm-desc" rows="2" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
                   </div>
                   <div class="field">
                     <label>Gán cho Nông hộ / Người dùng</label>

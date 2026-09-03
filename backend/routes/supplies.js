@@ -229,11 +229,17 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
 });
 
 
-// POST /api/supplies — Khai báo vật tư mới
+// POST /api/supplies — Khai báo vật tư mới (kèm chuẩn VietGAP: PHI, hoạt chất, đối tượng phòng trừ)
 router.post('/', auth, async (req, res) => {
   try {
     console.log('POST /api/supplies body:', req.body);
-    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, fertilizer_type, user_id } = req.body;
+    const { 
+      category, name, unit, package_size, package_qty, package_unit, 
+      package_price, unit_price, unit_price_small, stock_quantity, note, 
+      image_url, fertilizer_type, user_id,
+      phi_days, active_ingredient, target_pests, safety_interval_note
+    } = req.body;
+    
     if (!category || !name || !unit) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });
     }
@@ -252,6 +258,7 @@ router.post('/', auth, async (req, res) => {
       stock = (category === 'Tiền nước' || category === 'Nhân công') ? 999999 : pkgQty;
     }
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
+    const phiDaysInt = parseInt(phi_days) || 0;
 
     // Kiểm tra nếu sản phẩm cùng loại & cùng tên đã tồn tại -> Cộng dồn số lượng tồn kho
     const existingCheck = await pool.query(
@@ -266,8 +273,11 @@ router.post('/', auth, async (req, res) => {
         `UPDATE supplies 
          SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4,
              package_qty = $5, package_unit = $6, package_size = $7,
-             image_url = COALESCE($8, image_url), note = COALESCE($9, note), fertilizer_type = COALESCE($10, fertilizer_type), updated_at = NOW()
-         WHERE id = $11
+             image_url = COALESCE($8, image_url), note = COALESCE($9, note), fertilizer_type = COALESCE($10, fertilizer_type),
+             phi_days = COALESCE($11, phi_days), active_ingredient = COALESCE($12, active_ingredient),
+             target_pests = COALESCE($13, target_pests), safety_interval_note = COALESCE($14, safety_interval_note),
+             updated_at = NOW()
+         WHERE id = $15
          RETURNING *`,
         [
           updatedStock,
@@ -280,6 +290,10 @@ router.post('/', auth, async (req, res) => {
           image_url || null,
           note || null,
           fertilizer_type || null,
+          phiDaysInt || existing.phi_days,
+          active_ingredient || null,
+          target_pests || null,
+          safety_interval_note || null,
           existing.id
         ]
       );
@@ -287,8 +301,12 @@ router.post('/', auth, async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO supplies (user_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, fertilizer_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      `INSERT INTO supplies (
+        user_id, category, name, unit, package_size, package_qty, package_unit, 
+        package_price, unit_price, unit_price_small, stock_quantity, note, 
+        image_url, fertilizer_type, phi_days, active_ingredient, target_pests, safety_interval_note
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
        RETURNING *`,
       [
         targetUserId,
@@ -304,7 +322,11 @@ router.post('/', auth, async (req, res) => {
         stock,
         note || null,
         image_url || null,
-        fertilizer_type ? fertilizer_type.trim() : null
+        fertilizer_type ? fertilizer_type.trim() : null,
+        phiDaysInt,
+        active_ingredient ? active_ingredient.trim() : null,
+        target_pests ? target_pests.trim() : null,
+        safety_interval_note ? safety_interval_note.trim() : null
       ]
     );
 
@@ -319,7 +341,11 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note, image_url, fertilizer_type } = req.body;
+    const { 
+      category, name, unit, package_size, package_qty, package_unit, 
+      package_price, unit_price, unit_price_small, stock_quantity, note, 
+      image_url, fertilizer_type, phi_days, active_ingredient, target_pests, safety_interval_note
+    } = req.body;
 
     const check = await pool.query('SELECT * FROM supplies WHERE id = $1', [id]);
     if (check.rows.length === 0) {
@@ -339,10 +365,15 @@ router.put('/:id', auth, async (req, res) => {
       stock = (check.rows[0].stock_quantity > 0) ? check.rows[0].stock_quantity : pkgQty;
     }
 
+    const phiDaysInt = phi_days !== undefined ? (parseInt(phi_days) || 0) : check.rows[0].phi_days;
+
     const result = await pool.query(
       `UPDATE supplies 
-       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, image_url = $12, fertilizer_type = $13, updated_at = NOW()
-       WHERE id = $14
+       SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, 
+           package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, 
+           image_url = $12, fertilizer_type = $13, phi_days = $14, active_ingredient = $15, target_pests = $16,
+           safety_interval_note = $17, updated_at = NOW()
+       WHERE id = $18
        RETURNING *`,
       [
         category || check.rows[0].category,
@@ -358,6 +389,10 @@ router.put('/:id', auth, async (req, res) => {
         note !== undefined ? note : check.rows[0].note,
         image_url !== undefined ? image_url : check.rows[0].image_url,
         fertilizer_type !== undefined ? fertilizer_type : check.rows[0].fertilizer_type,
+        phiDaysInt,
+        active_ingredient !== undefined ? active_ingredient : check.rows[0].active_ingredient,
+        target_pests !== undefined ? target_pests : check.rows[0].target_pests,
+        safety_interval_note !== undefined ? safety_interval_note : check.rows[0].safety_interval_note,
         id
       ]
     );

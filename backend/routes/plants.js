@@ -39,11 +39,21 @@ router.get('/', auth, async (req, res) => {
     const { search, health_status, plant_type, user_id, farm_id } = req.query;
     let query = `
       SELECT p.*, ps.name as schema_name, u.full_name as creator_name,
-             f.name as farm_name, fu.full_name as farm_owner_name, fu.id as farm_owner_id,
+             f.name as farm_name, f.puc_code as farm_puc_code, f.vietgap_cert_number, fu.full_name as farm_owner_name, fu.id as farm_owner_id,
              (SELECT COUNT(*) FROM plant_media pm WHERE pm.plant_id = p.id) as media_count,
              (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id) as log_count,
              TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước'), 'YYYY-MM-DD') as last_watered,
-             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân'), 'YYYY-MM-DD') as last_fertilized
+             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân'), 'YYYY-MM-DD') as last_fertilized,
+             CASE 
+               WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
+               THEN (p.phi_until_date - CURRENT_DATE) 
+               ELSE 0 
+             END as phi_remaining_days,
+             CASE 
+               WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
+               THEN 'quarantine' 
+               ELSE 'safe' 
+             END as current_phi_status
       FROM plants p
       LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
       LEFT JOIN users u ON u.id = p.created_by
@@ -639,16 +649,23 @@ router.post('/:plantId/media/:mediaId/reject-delete', auth, admin, async (req, r
 
 router.post('/:id/logs', auth, async (req, res) => {
   try {
-    const { log_date, log_type, note, media_urls, details } = req.body;
+    const { 
+      log_date, log_type, note, media_urls, details, 
+      operator_name, equipment_used, phi_days: customPhiDays 
+    } = req.body;
     const plantIdRaw = req.params.id;
     
     let targetPlantId = null;
     let plantType = 'Toàn vườn';
     let plantVariety = '';
+    let farmId = null;
+    let farmPuc = 'VN-TB';
+    let treeCode = '';
+    let existingPlant = null;
 
     if (plantIdRaw && plantIdRaw !== '0') {
       const plant = await pool.query(
-        `SELECT p.id, p.plant_type, p.plant_variety, p.farm_id, f.user_id 
+        `SELECT p.*, f.user_id as farm_owner_id, f.puc_code as farm_puc_code
          FROM plants p 
          LEFT JOIN farms f ON f.id = p.farm_id 
          WHERE p.id=$1`, [plantIdRaw]
@@ -656,19 +673,88 @@ router.post('/:id/logs', auth, async (req, res) => {
       if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
       
       const isAssignedFarmer = req.user.farm_id && plant.rows[0].farm_id && req.user.farm_id === plant.rows[0].farm_id;
-      if (req.user.role !== 'admin' && plant.rows[0].user_id !== req.user.id && !isAssignedFarmer) {
+      if (req.user.role !== 'admin' && plant.rows[0].farm_owner_id !== req.user.id && !isAssignedFarmer) {
         return res.status(403).json({ error: 'Bạn không có quyền ghi nhật ký cho cây này.' });
       }
-      targetPlantId = plant.rows[0].id;
-      plantType = plant.rows[0].plant_type;
-      plantVariety = plant.rows[0].plant_variety;
+      existingPlant = plant.rows[0];
+      targetPlantId = existingPlant.id;
+      plantType = existingPlant.plant_type;
+      plantVariety = existingPlant.plant_variety;
+      farmId = existingPlant.farm_id;
+      farmPuc = existingPlant.farm_puc_code || 'VN-TB';
+      treeCode = existingPlant.tree_code || `#${existingPlant.id}`;
+    }
+
+    const effectiveDate = log_date || new Date().toISOString().slice(0, 10);
+    const parsedDetails = typeof details === 'string' ? JSON.parse(details || '{}') : (details || {});
+    let generatedBatchCode = null;
+    let isPhiViolation = false;
+
+    // ── 1. VIETGAP PHUN THUỐC BVTV & TÍNH TOÁN CÁCH LY PHI ──
+    if (log_type === 'Phun thuốc' && targetPlantId) {
+      let phiDays = parseInt(customPhiDays || parsedDetails.phi_days) || 0;
+      const pesticideName = parsedDetails.name || parsedDetails.pesticide_name || note || 'Thuốc BVTV';
+
+      // Nếu chưa có phi_days trực tiếp, tự động tra cứu từ kho vật tư
+      if (phiDays <= 0 && pesticideName) {
+        const supplyLookup = await pool.query(
+          `SELECT phi_days FROM supplies WHERE category = 'Phun thuốc' AND (name ILIKE $1 OR $2 ILIKE '%' || name || '%') AND phi_days > 0 LIMIT 1`,
+          [pesticideName.trim(), pesticideName.trim()]
+        );
+        if (supplyLookup.rows.length > 0) {
+          phiDays = supplyLookup.rows[0].phi_days;
+        }
+      }
+
+      // Nếu có số ngày cách ly, tính ngày hết hạn PHI và cập nhật cây trồng
+      if (phiDays > 0) {
+        parsedDetails.phi_days = phiDays;
+        const sprayDateObj = new Date(effectiveDate);
+        sprayDateObj.setDate(sprayDateObj.getDate() + phiDays);
+        const phiUntilDateStr = sprayDateObj.toISOString().slice(0, 10);
+        parsedDetails.phi_until_date = phiUntilDateStr;
+
+        await pool.query(
+          `UPDATE plants 
+           SET phi_until_date = $1, phi_status = 'quarantine', last_pesticide_date = $2, last_pesticide_name = $3, updated_at = NOW() 
+           WHERE id = $4`,
+          [phiUntilDateStr, effectiveDate, pesticideName, targetPlantId]
+        );
+      }
+    }
+
+    // ── 2. VIETGAP THU HOẠCH & SINH MÃ LÔ TRUY XUẤT NGUỒN GỐC ──
+    if (log_type === 'Thu hoạch') {
+      const dateClean = effectiveDate.replace(/-/g, '');
+      const codeClean = (treeCode || 'TB').replace(/[^a-zA-Z0-9]/g, '');
+      generatedBatchCode = `${farmPuc}-${dateClean}-${codeClean}`;
+      parsedDetails.batch_code = generatedBatchCode;
+      parsedDetails.puc_code = farmPuc;
+
+      // Kiểm tra xem cây có đang trong thời gian cách ly PHI hay không
+      if (existingPlant && existingPlant.phi_until_date) {
+        const harvestTime = new Date(effectiveDate).getTime();
+        const phiUntilTime = new Date(existingPlant.phi_until_date).getTime();
+        if (harvestTime <= phiUntilTime) {
+          isPhiViolation = true;
+          parsedDetails.is_phi_violation = true;
+          parsedDetails.phi_violation_warning = `CẢNH BÁO VI PHẠM VIETGAP: Thu hoạch sớm trong thời gian cách ly thuốc BVTV (Hết hạn cách ly: ${existingPlant.phi_until_date})`;
+        }
+      }
     }
 
     const result = await pool.query(
-      `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [targetPlantId, log_date || new Date().toISOString().slice(0,10), log_type, note,
-       JSON.stringify(media_urls || []), JSON.stringify(details || {}), req.user.id]
+      `INSERT INTO plant_logs (
+        plant_id, log_date, log_type, note, media_urls, details, created_by,
+        batch_code, puc_code, operator_name, equipment_used, is_phi_violation
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [
+        targetPlantId, effectiveDate, log_type, note,
+        JSON.stringify(media_urls || []), JSON.stringify(parsedDetails), req.user.id,
+        generatedBatchCode, farmPuc, operator_name || req.user.full_name || req.user.name,
+        equipment_used || null, isPhiViolation
+      ]
     );
 
     // Tự động chuyển trạng thái cây thành Bệnh nếu ghi nhật ký Bệnh cây
@@ -683,7 +769,7 @@ router.post('/:id/logs', auth, async (req, res) => {
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
        VALUES ($1, 'Ghi nhật ký', $2)`,
-      [req.user.id, `Ghi nhận nhật ký chăm sóc [${log_type}] cho ${targetPlantId ? 'cây #' + targetPlantId : 'Toàn vườn'}`]
+      [req.user.id, `Ghi nhận nhật ký [${log_type}] cho ${targetPlantId ? 'cây ' + treeCode : 'Toàn vườn'}${generatedBatchCode ? ' (Lô: ' + generatedBatchCode + ')' : ''}`]
     );
 
     // Broadcast WebSocket event
@@ -696,6 +782,7 @@ router.post('/:id/logs', auth, async (req, res) => {
         creator_name: req.user.name
       });
       broadcast('supplies_updated', { userId: req.user.id, log: result.rows[0] });
+      broadcast('plants_updated');
     }
 
     res.status(201).json(result.rows[0]);

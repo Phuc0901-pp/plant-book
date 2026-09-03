@@ -738,9 +738,31 @@
                     <label>Tên trang trại *</label>
                     <input type="text" id="farm-name" placeholder="VD: Nông trại Tây Nguyên, Farm A...">
                   </div>
+
+                  <!-- VietGAP Production Unit Code (PUC) & Certification -->
+                  <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px; margin-bottom:12px;">
+                    <div style="font-size:11.5px; font-weight:800; color:#047857; margin-bottom:6px;">
+                      <i class="fa-solid fa-shield-halved"></i> Thông Tin Chứng Nhận VietGAP:
+                    </div>
+                    <div class="field" style="margin-bottom:8px;">
+                      <label style="font-size:11px; color:#065f46; font-weight:700;">Mã số Vùng trồng (PUC Code)</label>
+                      <input type="text" id="farm-puc-code" placeholder="VD: VN-DL-00124, VN-BP-0056..." style="font-size:12px; font-family:monospace; font-weight:700; background:#ffffff;">
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                      <div style="flex:1;">
+                        <label style="font-size:11px; color:#065f46; font-weight:700;">Số chứng nhận VietGAP</label>
+                        <input type="text" id="farm-vietgap-cert" placeholder="VD: VG-2026-88" style="font-size:12px; background:#ffffff;">
+                      </div>
+                      <div style="flex:1;">
+                        <label style="font-size:11px; color:#065f46; font-weight:700;">Tổ chức cấp</label>
+                        <input type="text" id="farm-vietgap-org" placeholder="VD: Quacert, VinaCert" style="font-size:12px; background:#ffffff;">
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="field">
                     <label>Mô tả</label>
-                    <textarea id="farm-desc" rows="3" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
+                    <textarea id="farm-desc" rows="2" placeholder="Mô tả ranh giới, sản phẩm chính..."></textarea>
                   </div>
                   <div class="field">
                     <label>Gán cho Nông hộ / Người dùng</label>
@@ -2468,6 +2490,29 @@
           <select id="f-supply-user" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px;">
             <option value="">— Mặc định (Admin) —</option>
           </select>
+        </div>
+      </div>
+
+      <!-- ════ VietGAP Compliance Fields (Pre-Harvest Interval & Active Ingredients) ════ -->
+      <div id="f-supply-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
+        <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Thời Gian Cách Ly (PHI) & Hoạt Chất
+        </div>
+
+        <div style="display:flex; gap:12px; margin-bottom:10px;">
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:11.5px; color:#065f46; margin-bottom:4px; display:block;">Thời gian cách ly PHI (Ngày)</label>
+            <input type="number" id="f-supply-phi-days" min="0" placeholder="VD: 7 hoặc 14" style="width:100%; padding:8px 12px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:13px; font-weight:800; color:#047857; background:#ffffff;">
+          </div>
+          <div style="flex:1.5;">
+            <label style="font-weight:700; font-size:11.5px; color:#065f46; margin-bottom:4px; display:block;">Hoạt chất chính (Active Ingredient)</label>
+            <input type="text" id="f-supply-active-ing" placeholder="VD: Hexaconazole, Mancozeb..." style="width:100%; padding:8px 12px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; background:#ffffff;">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-weight:700; font-size:11.5px; color:#065f46; margin-bottom:4px; display:block;">Đối tượng dịch hại phòng trừ (Target Pests)</label>
+          <input type="text" id="f-supply-target-pests" placeholder="VD: Bệnh thán thư, nấm hồng, rầy phấn trắng..." style="width:100%; padding:8px 12px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; background:#ffffff;">
         </div>
       </div>
 

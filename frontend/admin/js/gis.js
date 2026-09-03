@@ -891,6 +891,9 @@ async function openFarmForm() {
   
   document.getElementById('farm-name').value = '';
   document.getElementById('farm-desc').value = '';
+  if (document.getElementById('farm-puc-code')) document.getElementById('farm-puc-code').value = '';
+  if (document.getElementById('farm-vietgap-cert')) document.getElementById('farm-vietgap-cert').value = '';
+  if (document.getElementById('farm-vietgap-org')) document.getElementById('farm-vietgap-org').value = '';
   document.getElementById('farm-area-display').textContent = '0 m²';
   document.getElementById('farm-area-ha').textContent = '0';
   if (document.getElementById('farm-perm-plants')) document.getElementById('farm-perm-plants').checked = true;
@@ -914,6 +917,9 @@ async function saveFarm() {
   const name = document.getElementById('farm-name').value.trim();
   const description = document.getElementById('farm-desc').value.trim();
   const user_id = document.getElementById('farm-user-id').value;
+  const puc_code = document.getElementById('farm-puc-code')?.value.trim() || null;
+  const vietgap_cert_number = document.getElementById('farm-vietgap-cert')?.value.trim() || null;
+  const vietgap_cert_org = document.getElementById('farm-vietgap-org')?.value.trim() || null;
   const allow_view_plants = document.getElementById('farm-perm-plants')?.checked;
   const allow_shared_history = document.getElementById('farm-perm-history')?.checked;
   const allow_shared_supplies = document.getElementById('farm-perm-supplies')?.checked;
@@ -937,7 +943,10 @@ async function saveFarm() {
     description,
     polygon_coordinates: coordinates,
     area,
-    user_id: user_id ? parseInt(user_id) : null
+    user_id: user_id ? parseInt(user_id) : null,
+    puc_code,
+    vietgap_cert_number,
+    vietgap_cert_org
   };
 
   try {
@@ -1455,6 +1464,9 @@ async function editFarm() {
     document.getElementById('gis-sidebar-title').textContent = 'Sửa Trang trại';
     document.getElementById('farm-name').value = farm.name;
     document.getElementById('farm-desc').value = farm.description || '';
+    if (document.getElementById('farm-puc-code')) document.getElementById('farm-puc-code').value = farm.puc_code || '';
+    if (document.getElementById('farm-vietgap-cert')) document.getElementById('farm-vietgap-cert').value = farm.vietgap_cert_number || '';
+    if (document.getElementById('farm-vietgap-org')) document.getElementById('farm-vietgap-org').value = farm.vietgap_cert_org || '';
     document.getElementById('farm-area-display').textContent = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
     document.getElementById('farm-area-ha').textContent = ((farm.area || 0) / 10000).toFixed(2);
     window._lastDrawnArea = farm.area || 0;

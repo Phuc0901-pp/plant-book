@@ -2312,6 +2312,23 @@
         <!-- Rendered dynamically based on selected activity type -->
       </div>
 
+      <!-- ════ VietGAP Operator & Equipment Personnel Box ════ -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:12px;">
+        <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+          <i class="fa-solid fa-user-check"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện & Thiết Bị
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thực hiện</label>
+            <input type="text" id="c-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Thiết bị / Dụng cụ</label>
+            <input type="text" id="c-equipment-used" placeholder="VD: Bình phun 20L, Kéo chuyên dụng..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+        </div>
+      </div>
+
       <div class="field">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <label style="margin:0;">Ghi chú thêm</label>
@@ -2319,7 +2336,7 @@
             <i class="fa-solid fa-microphone" id="mic-icon"></i> <span id="mic-label">Đọc giọng nói</span>
           </button>
         </div>
-        <textarea id="c-note" rows="3" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>
+        <textarea id="c-note" rows="2" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>
       </div>
 
     </div>
@@ -2410,6 +2427,27 @@
       <div class="field" id="field-name" style="margin-bottom:16px;">
         <label class="form-label"><i class="fa-solid fa-box-open"></i> Tên vật tư / Dịch vụ <span class="req-star">*</span></label>
         <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
+      </div>
+
+      <!-- ════ VietGAP Compliance Specifications (PHI & Active Ingredients) ════ -->
+      <div id="field-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Thời Gian Cách Ly (PHI) & Hoạt Chất
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:11px; color:#065f46; margin-bottom:3px; display:block;">Thời gian cách ly PHI (ngày)</label>
+            <input type="number" id="sp-phi-days" min="0" placeholder="VD: 7 hoặc 14" class="form-control-custom" style="background:#fff; font-weight:800; color:#047857;">
+          </div>
+          <div style="flex:1.5;">
+            <label style="font-weight:700; font-size:11px; color:#065f46; margin-bottom:3px; display:block;">Hoạt chất chính (Active Ingredient)</label>
+            <input type="text" id="sp-active-ingredient" placeholder="VD: Hexaconazole, Mancozeb..." class="form-control-custom" style="background:#fff;">
+          </div>
+        </div>
+        <div>
+          <label style="font-weight:700; font-size:11px; color:#065f46; margin-bottom:3px; display:block;">Đối tượng sâu bệnh hại phòng trừ</label>
+          <input type="text" id="sp-target-pests" placeholder="VD: Bệnh thán thư, rầy phấn trắng, đốm lá..." class="form-control-custom" style="background:#fff;">
+        </div>
       </div>
 
       <!-- Row 3: Khối lượng 1 gói, Số lượng bao/chai & Tổng giá tiền -->

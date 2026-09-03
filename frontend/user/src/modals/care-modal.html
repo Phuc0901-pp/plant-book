@@ -44,6 +44,23 @@
         <!-- Rendered dynamically based on selected activity type -->
       </div>
 
+      <!-- ════ VietGAP Operator & Equipment Personnel Box ════ -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:12px;">
+        <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+          <i class="fa-solid fa-user-check"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện & Thiết Bị
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thực hiện</label>
+            <input type="text" id="c-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Thiết bị / Dụng cụ</label>
+            <input type="text" id="c-equipment-used" placeholder="VD: Bình phun 20L, Kéo chuyên dụng..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+        </div>
+      </div>
+
       <div class="field">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <label style="margin:0;">Ghi chú thêm</label>
@@ -51,7 +68,7 @@
             <i class="fa-solid fa-microphone" id="mic-icon"></i> <span id="mic-label">Đọc giọng nói</span>
           </button>
         </div>
-        <textarea id="c-note" rows="3" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>
+        <textarea id="c-note" rows="2" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>
       </div>
 
     </div>
