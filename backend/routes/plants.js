@@ -929,7 +929,10 @@ router.get('/public/:slug', async (req, res) => {
   try {
     const slugParam = req.params.slug.trim();
     const plant = await pool.query(
-      `SELECT p.*, ps.name as schema_name, ps.fields as schema_fields,
+      `SELECT p.*, 
+              COALESCE(p.latitude, 10.941520) as latitude,
+              COALESCE(p.longitude, 107.241850) as longitude,
+              ps.name as schema_name, ps.fields as schema_fields,
               f.name as farm_name, f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id
        FROM plants p 
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id

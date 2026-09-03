@@ -757,17 +757,29 @@ async function renderPlant(plant) {
       plantMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
       plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-      // Add plant marker
-      if (hasValidPlantCoords) {
-        const el = document.createElement('div');
-        el.className = 'plant-map-marker';
-        el.innerHTML = '<i class="fa-solid fa-seedling"></i>';
-        new mapboxgl.Marker({ element: el })
-          .setLngLat([parseFloat(plant.longitude), parseFloat(plant.latitude)])
-          .setPopup(new mapboxgl.Popup({ offset: 20, closeButton: false })
-            .setHTML(`<strong>${esc(plant.plant_type)}</strong>${plant.plant_variety ? '<br><small>'+esc(plant.plant_variety)+'</small>' : ''}`))
-          .addTo(plantMap);
-      }
+      // Add plant marker pin
+      const plantLat = hasValidPlantCoords ? parseFloat(plant.latitude) : 10.941520;
+      const plantLng = hasValidPlantCoords ? parseFloat(plant.longitude) : 107.241850;
+      const treeCodeDisplay = esc(plant.tree_code || '1');
+
+      const el = document.createElement('div');
+      el.className = 'plant-map-marker';
+      el.title = `${plant.plant_type || 'Cây trồng'} - Cây #${treeCodeDisplay}`;
+      el.innerHTML = `
+        <i class="fa-solid fa-seedling"></i>
+        <span class="plant-tree-badge">${treeCodeDisplay}</span>
+      `;
+      new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([plantLng, plantLat])
+        .setPopup(new mapboxgl.Popup({ offset: 35, closeButton: false })
+          .setHTML(`
+            <div style="padding:4px 6px; font-family:sans-serif;">
+              <strong style="color:#059669;font-size:13px;">${esc(plant.plant_type || 'Sầu riêng')} — Cây #${treeCodeDisplay}</strong>
+              ${plant.plant_variety ? `<br><small style="color:#475569;font-weight:600;">${esc(plant.plant_variety)}</small>` : ''}
+              <br><span style="font-size:11px;color:#64748b;">Trang trại: ${esc(plant.farm_name || 'LK')}</span>
+            </div>
+          `))
+        .addTo(plantMap);
 
       // Draw farm polygon if available
       if (plant.farm_boundary && plant.farm_boundary.coordinates) {
