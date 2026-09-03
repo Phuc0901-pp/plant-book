@@ -270,22 +270,22 @@ function _plantRow(p) {
     ? `<span title="Thẻ: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#22c55e;"><i class="fa-solid fa-tag"></i></span>`
     : `<span title="Chưa gắn thẻ NFC" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#d1d5db;"><i class="fa-solid fa-link-slash"></i></span>`;
 
-  const uid       = p.nfc_uid  ? `'${esc(p.nfc_uid)}'`  : 'null';
-  const slug      = esc(p.public_slug || '');
-  const treeCode  = esc(p.tree_code || String(p.id));
-  const plantType = esc(p.plant_type || '');
+  const treeCodeSafe = esc(p.tree_code || String(p.id));
+  const plantTypeSafe = esc(p.plant_type || '');
+  const slugSafe = esc(p.public_slug || '');
+  const uidVal = p.nfc_uid ? `'${esc(p.nfc_uid)}'` : 'null';
 
   return `
     <tr>
       <td data-label="Mã cây">
         <div style="display:flex;align-items:center;gap:6px;">
-          <strong>${treeCode}</strong>
+          <strong>${treeCodeSafe}</strong>
           ${nfcBadge}
         </div>
       </td>
       <td data-label="Loại & Giống">
         <div>
-          <strong>${esc(p.plant_type)}</strong>
+          <strong>${esc(p.plant_type || '')}</strong>
           ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
         </div>
       </td>
@@ -293,15 +293,15 @@ function _plantRow(p) {
       <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
       <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="Thao tác">
-        <div class="plant-action-menu" id="pam-${p.id}">
-          <button class="btn-icon-dots" onclick="togglePlantMenu(${p.id})" title="Thao tác" aria-label="Menu thao tác cây">
+        <div class="plant-action-menu">
+          <button type="button" class="btn-icon-dots" onclick="togglePlantMenu(this, event)" title="Thao tác" aria-label="Menu thao tác cây">
             <i class="fa-solid fa-ellipsis-vertical"></i>
           </button>
-          <div class="plant-action-dropdown" id="pad-${p.id}">
-            <button onclick="openCareModal(${p.id},'${treeCode}','${plantType}'); closePlantMenu(${p.id})">
+          <div class="plant-action-dropdown">
+            <button type="button" onclick="openCareModal(${p.id}, '${treeCodeSafe}', '${plantTypeSafe}'); closePlantMenu(this)">
               <i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký
             </button>
-            <button onclick="openNfcModal(${p.id},'${treeCode}','${slug}',${uid}); closePlantMenu(${p.id})">
+            <button type="button" onclick="openNfcModal(${p.id}, '${treeCodeSafe}', '${slugSafe}', ${uidVal}); closePlantMenu(this)">
               <i class="fa-solid fa-tag" style="color:#3b82f6"></i> Định danh thẻ NFC
             </button>
           </div>
@@ -337,18 +337,36 @@ export function filterUserPlants() {
 }
 
 // ── Action Menu Toggle ─────────────────────────────────────────
-export function togglePlantMenu(plantId) {
+export function togglePlantMenu(elOrId, event) {
+  if (event && event.stopPropagation) {
+    event.stopPropagation();
+  }
+  let menu = null;
+  if (typeof elOrId === 'object' && elOrId !== null) {
+    menu = elOrId.closest('.plant-action-menu')?.querySelector('.plant-action-dropdown');
+  } else if (elOrId) {
+    menu = document.getElementById(`pad-${elOrId}`);
+  }
+
+  const isOpen = menu && menu.classList.contains('open');
+
   // Close all other open menus first
   document.querySelectorAll('.plant-action-dropdown.open').forEach(d => {
-    if (d.id !== `pad-${plantId}`) d.classList.remove('open');
+    d.classList.remove('open');
   });
-  const dropdown = document.getElementById(`pad-${plantId}`);
-  if (dropdown) dropdown.classList.toggle('open');
+
+  if (menu && !isOpen) {
+    menu.classList.add('open');
+  }
 }
 
-export function closePlantMenu(plantId) {
-  const dropdown = document.getElementById(`pad-${plantId}`);
-  if (dropdown) dropdown.classList.remove('open');
+export function closePlantMenu(elOrId) {
+  if (typeof elOrId === 'object' && elOrId !== null) {
+    elOrId.closest('.plant-action-dropdown')?.classList.remove('open');
+  } else if (elOrId) {
+    const dropdown = document.getElementById(`pad-${elOrId}`);
+    if (dropdown) dropdown.classList.remove('open');
+  }
 }
 
 // Close menus on outside click
