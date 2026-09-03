@@ -1,6 +1,6 @@
 /**
- * Seed Script: Dữ liệu canh tác mẫu Cây Sầu Riêng Ri6 STT 1 (20 năm tuổi) - Trang trại Long Khánh (LK)
- * Tiêu chuẩn VietGAP 100% & Quản trị AgTech ERP
+ * Seed Script: Dữ liệu canh tác mẫu Cây Sầu Riêng Ri6 STT 1 Trọn Vẹn 20 Năm (2004 - 2026)
+ * Trang trại Long Khánh (LK Farm) - Chuẩn VietGAP 100% & Quản trị Doanh nghiệp Agri-ERP
  * Chạy: node scripts/seed_durian_ri6_lk.js
  */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
@@ -9,7 +9,7 @@ const pool = require('../config/db');
 async function seedDurianRi6LK() {
   const client = await pool.connect();
   try {
-    console.log('🌱 Bắt đầu tạo dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (20 Năm Tuổi) - Trang Trại Long Khánh...');
+    console.log('🌱 Bắt đầu tạo dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 Trọn Vẹn 20 Năm (2004 - 2026)...');
     await client.query('BEGIN');
 
     // ── 1. KIỂM TRA HOẶC TẠO USER NÔNG HỘ TRANG TRẠI LK ──
@@ -278,18 +278,61 @@ async function seedDurianRi6LK() {
         supplyMap[sup.name] = ins.rows[0].id;
       }
     }
-    console.log(`📦 Đã khởi tạo danh mục 9 vật tư sầu riêng Ri6 VietGAP`);
+    console.log(`📦 Đã cập nhật danh mục 9 vật tư sầu riêng Ri6 VietGAP`);
 
-    // ── 4. TẠO HOẶC CẬP NHẬT CÂY SẦU RIÊNG STT 1 (20 NĂM TUỔI) ──
+    // ── 4. THIẾT LẬP DỮ LIỆU LỊCH SỬ NĂNG SUẤT & DOANH THU 20 MÙA VỤ (2007 - 2026) ──
+    const historicalYieldRecords = [
+      { year: 2009, tree_age: 6, fruit_count: 18, yield_kg: 54, avg_price_vnd: 30000, revenue_vnd: 1620000, expense_vnd: 450000, profit_vnd: 1170000, grade_1_pct: 75, brix: '30°', note: 'Vụ bói đầu tiên (dưỡng cây)' },
+      { year: 2010, tree_age: 7, fruit_count: 35, yield_kg: 105, avg_price_vnd: 32000, revenue_vnd: 3360000, expense_vnd: 620000, profit_vnd: 2740000, grade_1_pct: 80, brix: '31°', note: 'Bắt đầu cho trái thương phẩm' },
+      { year: 2011, tree_age: 8, fruit_count: 50, yield_kg: 150, avg_price_vnd: 35000, revenue_vnd: 5250000, expense_vnd: 780000, profit_vnd: 4470000, grade_1_pct: 82, brix: '31°', note: 'Lắp béc tưới gốc tự động' },
+      { year: 2012, tree_age: 9, fruit_count: 68, yield_kg: 204, avg_price_vnd: 38000, revenue_vnd: 7752000, expense_vnd: 950000, profit_vnd: 6802000, grade_1_pct: 85, brix: '32°', note: 'Xử lý nứt thân xì mủ thành công' },
+      { year: 2013, tree_age: 10, fruit_count: 85, yield_kg: 255, avg_price_vnd: 42000, revenue_vnd: 10710000, expense_vnd: 1150000, profit_vnd: 9560000, grade_1_pct: 85, brix: '32°', note: 'Cây đạt 10 năm, gốc tròn 40cm' },
+      { year: 2014, tree_age: 11, fruit_count: 98, yield_kg: 294, avg_price_vnd: 48000, revenue_vnd: 14112000, expense_vnd: 1300000, profit_vnd: 12812000, grade_1_pct: 86, brix: '32°', note: 'Bắt đầu đạt tiêu chuẩn VietGAP' },
+      { year: 2015, tree_age: 12, fruit_count: 112, yield_kg: 336, avg_price_vnd: 52000, revenue_vnd: 17472000, expense_vnd: 1480000, profit_vnd: 15992000, grade_1_pct: 88, brix: '32°', note: 'Buộc dây chống gió giông lốc' },
+      { year: 2016, tree_age: 13, fruit_count: 125, yield_kg: 375, avg_price_vnd: 55000, revenue_vnd: 20625000, expense_vnd: 1650000, profit_vnd: 18975000, grade_1_pct: 88, brix: '33°', note: 'Năng suất vào giai đoạn ổn định' },
+      { year: 2017, tree_age: 14, fruit_count: 132, yield_kg: 396, avg_price_vnd: 60000, revenue_vnd: 23760000, expense_vnd: 1800000, profit_vnd: 21960000, grade_1_pct: 90, brix: '33°', note: 'Đăng ký Mã vùng trồng xuất khẩu' },
+      { year: 2018, tree_age: 15, fruit_count: 140, yield_kg: 420, avg_price_vnd: 65000, revenue_vnd: 27300000, expense_vnd: 2100000, profit_vnd: 25200000, grade_1_pct: 90, brix: '33°', note: 'Vụ mùa bội thu giá cao' },
+      { year: 2019, tree_age: 16, fruit_count: 148, yield_kg: 444, avg_price_vnd: 68000, revenue_vnd: 30192000, expense_vnd: 2250000, profit_vnd: 27942000, grade_1_pct: 92, brix: '33°', note: 'Chuyển đổi phân hữu cơ Bỉ 100%' },
+      { year: 2020, tree_age: 17, fruit_count: 138, yield_kg: 414, avg_price_vnd: 62000, revenue_vnd: 25668000, expense_vnd: 2100000, profit_vnd: 23568000, grade_1_pct: 88, brix: '32°', note: 'Thời tiết khô hạn kéo dài' },
+      { year: 2021, tree_age: 18, fruit_count: 152, yield_kg: 456, avg_price_vnd: 72000, revenue_vnd: 32832000, expense_vnd: 2400000, profit_vnd: 30432000, grade_1_pct: 92, brix: '33°', note: 'Lắp trạm cảm biến IoT đất' },
+      { year: 2022, tree_age: 19, fruit_count: 158, yield_kg: 474, avg_price_vnd: 78000, revenue_vnd: 36972000, expense_vnd: 2600000, profit_vnd: 34372000, grade_1_pct: 94, brix: '34°', note: 'Gắn thẻ định danh chip NFC' },
+      { year: 2023, tree_age: 20, fruit_count: 162, yield_kg: 486, avg_price_vnd: 82000, revenue_vnd: 39852000, expense_vnd: 2750000, profit_vnd: 37102000, grade_1_pct: 95, brix: '34°', note: 'Đạt năng suất kỷ lục vụ chính' },
+      { year: 2024, tree_age: 21, fruit_count: 155, yield_kg: 465, avg_price_vnd: 85000, revenue_vnd: 39525000, expense_vnd: 2700000, profit_vnd: 36825000, grade_1_pct: 95, brix: '34°', note: 'Xuất khẩu chính ngạch sang TQ' },
+      { year: 2025, tree_age: 22, fruit_count: 150, yield_kg: 450, avg_price_vnd: 88000, revenue_vnd: 39600000, expense_vnd: 2650000, profit_vnd: 36950000, grade_1_pct: 95, brix: '34°', note: 'Canh tác VietGAP toàn diện' },
+      { year: 2026, tree_age: 23, fruit_count: 85, yield_kg: 255, avg_price_vnd: 85000, revenue_vnd: 21675000, expense_vnd: 759700, profit_vnd: 20915300, grade_1_pct: 95, brix: '32°', note: 'Vụ mùa hiện tại (Đợt 1 VietGAP)' }
+    ];
+
+    const biometricTimeline = [
+      { year: 2004, age: 1, trunk_diameter_cm: 8, height_m: 1.2, canopy_m: 0.8, phase: 'Xuống giống cây con' },
+      { year: 2005, age: 2, trunk_diameter_cm: 12, height_m: 2.2, canopy_m: 1.8, phase: 'Bấm đọt phân cành cấp 1' },
+      { year: 2006, age: 3, trunk_diameter_cm: 16, height_m: 3.2, canopy_m: 2.8, phase: 'Tạo tán hình tháp thông thoáng' },
+      { year: 2007, age: 4, trunk_diameter_cm: 22, height_m: 4.5, canopy_m: 4.0, phase: 'Sinh khối phát triển vượt bậc' },
+      { year: 2008, age: 5, trunk_diameter_cm: 28, height_m: 5.8, canopy_m: 5.5, phase: 'Chuẩn bị thể trạng đón trái bói' },
+      { year: 2009, age: 6, trunk_diameter_cm: 32, height_m: 6.8, canopy_m: 6.5, phase: 'Vụ bói đầu tiên (18 trái)' },
+      { year: 2013, age: 10, trunk_diameter_cm: 42, height_m: 8.5, canopy_m: 8.0, phase: 'Cây 10 năm tuổi thương phẩm' },
+      { year: 2018, age: 15, trunk_diameter_cm: 54, height_m: 10.5, canopy_m: 9.8, phase: 'Đạt đỉnh cao sinh học' },
+      { year: 2024, age: 20, trunk_diameter_cm: 65, height_m: 12.5, canopy_m: 11.0, phase: 'Cổ thụ 20 năm kinh doanh cực thịnh' }
+    ];
+
     const treeData = {
       trunk_diameter_cm: 65,
       height_m: 12.5,
       canopy_diameter_m: 11.0,
-      average_yield_kg: 420,
+      average_yield_kg: 450,
       planting_year: 2004,
       rootstock: 'Gốc ghép sầu riêng hạt bản địa Long Khánh',
       current_season_target_fruits: 140,
-      irrigation_system: 'Béc tưới bù áp tự động 120L/h (3 béc quanh tán)'
+      irrigation_system: 'Béc tưới bù áp tự động 120L/h (3 béc quanh tán)',
+      historical_yield_records: historicalYieldRecords,
+      biometric_timeline: biometricTimeline,
+      lifetime_summary: {
+        total_seasons: historicalYieldRecords.length,
+        total_fruits_harvested: 2011,
+        total_yield_kg: 6033,
+        total_revenue_vnd: 398277000,
+        total_expense_vnd: 30269700,
+        total_net_profit_vnd: 368007300
+      }
     };
 
     let plantId = null;
@@ -324,7 +367,7 @@ async function seedDurianRi6LK() {
           updated_at = NOW()
         WHERE id = $3
       `, [coverImg, JSON.stringify(treeData), plantId]);
-      console.log(`🌳 Đã cập nhật Cây Sầu Riêng STT 1 (ID: ${plantId})`);
+      console.log(`🌳 Đã cập nhật Cây Sầu Riêng STT 1 Trọn Vẹn 20 Năm (ID: ${plantId})`);
     } else {
       const newPlant = await client.query(`
         INSERT INTO plants (
@@ -340,14 +383,123 @@ async function seedDurianRi6LK() {
         ) RETURNING id
       `, [farmId, userId, coverImg, JSON.stringify(treeData)]);
       plantId = newPlant.rows[0].id;
-      console.log(`🌳 Đã tạo mới Cây Sầu Riêng STT 1 (ID: ${plantId})`);
+      console.log(`🌳 Đã tạo mới Cây Sầu Riêng STT 1 Trọn Vẹn 20 Năm (ID: ${plantId})`);
     }
 
-    // ── 5. TẠO 12 NHẬT KÝ CANH TÁC TRỌN VẸN VÒNG ĐỜI MÙA VỤ RI6 20 NĂM TUỔI ──
-    // Xóa các logs cũ của cây này để làm mới dữ liệu chuẩn
+    // ── 5. TẠO TOÀN BỘ NHẬT KÝ CANH TÁC TRỌNG YẾU TỪ 2004 ĐẾN 2026 (22 BẢN GHI) ──
     await client.query(`DELETE FROM plant_logs WHERE plant_id = $1`, [plantId]);
 
     const logsList = [
+      // ── GIAI ĐOẠN 1: KIẾN THIẾT CƠ BẢN (2004 - 2009) ──
+      {
+        log_date: '2004-06-18',
+        log_type: 'Khác',
+        operator_name: 'Ông Nguyễn Văn An (Chủ vườn đời đầu)',
+        equipment_used: 'Cuốc đào hố & Cọc tre định vị',
+        note: 'Xuống giống cây con ghép mắt Sầu riêng Ri6 thuần chủng. Đào hố 80x80x80cm, bón lót 10kg phân chuồng hoai mục + 0.5kg lân nung chảy Văn Điển. Cắm 3 cọc tre chéo giữ gốc và che lưới lan 50% chống nắng hướng tây.',
+        media_urls: ['https://images.unsplash.com/photo-1592417817098-8f3d6910985c?w=600&auto=format&fit=crop&q=80'],
+        details: { phase: 'Xuống giống khởi tạo', planting_cost: 120000, rootstock: 'Gốc sầu riêng hạt' }
+      },
+      {
+        log_date: '2005-05-20',
+        log_type: 'Cắt tỉa',
+        operator_name: 'Nguyễn Văn An',
+        equipment_used: 'Kéo cắt cành mũi nhọn',
+        note: 'Cây được 1 năm tuổi, đạt chiều cao 1.0m. Tiến hành bấm ngọn thân chính để kích thích phát triển 4 cành cấp 1 tỏa đều 4 hướng. Bón thúc NPK 30-10-10 kích cơi đọt 2 bung mạnh.',
+        media_urls: ['https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?w=600&auto=format&fit=crop&q=80'],
+        details: { phase: 'Bấm đọt tạo cành cấp 1', trunk_diameter_cm: 12, height_m: 2.2 }
+      },
+      {
+        log_date: '2006-08-15',
+        log_type: 'Cắt tỉa',
+        operator_name: 'Nguyễn Văn Long',
+        equipment_used: 'Kéo cắt tỉa & Chổi quét vôi',
+        note: 'Tỉa cành tạo tán hình tháp thông thoáng. Cắt bỏ cành tăm, cành mọc hướng tâm trong thân. Quét vôi gốc cây phòng trừ nấm hồng và rệp sáp đầu mùa mưa.',
+        media_urls: ['https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=600&auto=format&fit=crop&q=80'],
+        details: { phase: 'Định hình tán tháp 3 năm tuổi', trunk_diameter_cm: 16, height_m: 3.2 }
+      },
+      {
+        log_date: '2007-07-10',
+        log_type: 'Bón phân',
+        operator_name: 'Nguyễn Văn Long',
+        equipment_used: 'Thùng rải phân',
+        note: 'Cây 4 năm tuổi phát triển sinh khối mạnh mẽ. Bón 10kg phân hữu cơ vi sinh Bỉ kết hợp rải 2kg vôi bột khử chua, nâng pH đất từ 4.8 lên 6.2.',
+        media_urls: ['https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80'],
+        details: { phase: 'Nuôi khung tán 4 năm tuổi', trunk_diameter_cm: 22, height_m: 4.5 }
+      },
+      {
+        log_date: '2008-11-25',
+        log_type: 'Khác',
+        operator_name: 'Nguyễn Văn Long',
+        equipment_used: 'Kéo cắt cành & Bạt phủ đất',
+        note: 'Chuẩn bị thể trạng đón vụ trái bói. Tỉa sạch toàn bộ cành la sát đất (cách mặt đất 0.8m). Thử nghiệm xiết nước tạo hạn 15 ngày kích mắt cua.',
+        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
+        details: { phase: 'Chuẩn bị đón trái bói 5 năm tuổi', trunk_diameter_cm: 28, height_m: 5.8 }
+      },
+      {
+        log_date: '2009-06-20',
+        log_type: 'Thu hoạch',
+        operator_name: 'Nguyễn Văn Long',
+        equipment_used: 'Dao cắt sầu riêng & Thùng lót rơm',
+        note: 'VỤ THU HOẠCH BÓI ĐẦU TIÊN (Năm thứ 6): Thu hoạch 18 trái bói (~54kg). Chủ động tỉa bỏ 70% trái non từ trước để dưỡng cây không bị suy kiệt. Doanh thu đầu đời: 1,620,000 VNĐ.',
+        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
+        batch_code: 'VN-LK-001-20090620-SR01',
+        details: { phase: 'Vụ bói đầu đời', yield_kg: 54, fruit_count: 18, price_vnd: 30000, revenue_vnd: 1620000, net_profit_vnd: 1170000 }
+      },
+
+      // ── GIAI ĐOẠN 2: TĂNG TRƯỞNG KINH DOANH & CỘT MỐC LỊCH SỬ (2011 - 2023) ──
+      {
+        log_date: '2011-04-10',
+        log_type: 'Khác',
+        operator_name: 'Đội thi công AgriTech',
+        equipment_used: 'Máy hàn ống HDPE & Béc tưới bù áp',
+        note: 'Lắp đặt hệ thống tưới tự động bù áp 3 béc quanh gốc cây. Cây 8 năm tuổi đạt sản lượng 50 trái (~150kg), doanh thu 5,250,000 VNĐ.',
+        media_urls: ['https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80'],
+        details: { phase: 'Hiện đại hóa tưới tự động', yield_kg: 150, fruit_count: 50, revenue_vnd: 5250000 }
+      },
+      {
+        log_date: '2013-06-25',
+        log_type: 'Thu hoạch',
+        operator_name: 'Kỹ sư Nguyễn Văn Long',
+        equipment_used: 'Dao cắt chuyên dụng',
+        note: 'CỘT MỐC 10 NĂM TUỔI: Đường kính gốc đạt 42cm, tán lá 8m. Vụ mùa đạt 85 trái (~255kg), doanh thu vượt mốc 10.7 triệu VNĐ. Bắt đầu áp dụng quy trình canh tác an toàn VietGAP.',
+        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
+        batch_code: 'VN-LK-001-20130625-SR01',
+        details: { phase: 'Cột mốc 10 năm tuổi', yield_kg: 255, fruit_count: 85, price_vnd: 42000, revenue_vnd: 10710000, net_profit_vnd: 9560000 }
+      },
+      {
+        log_date: '2017-06-18',
+        log_type: 'Thu hoạch',
+        operator_name: 'Nguyễn Văn Long & Đội thu hoạch',
+        equipment_used: 'Dao cắt sầu riêng & Xe tải thùng lạnh',
+        note: 'CỘT MỐC CẤP MÃ PUC XUẤT KHẨU: Trang trại chính thức được cấp Mã số Vùng trồng VN-LK-001. Thu hoạch 132 trái (~396kg), doanh thu đạt 23,760,000 VNĐ.',
+        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
+        batch_code: 'VN-LK-001-20170618-SR01',
+        puc_code: 'VN-LK-001',
+        details: { phase: 'Cột mốc cấp mã PUC xuất khẩu', yield_kg: 396, fruit_count: 132, price_vnd: 60000, revenue_vnd: 23760000, net_profit_vnd: 21960000 }
+      },
+      {
+        log_date: '2021-03-12',
+        log_type: 'Khác',
+        operator_name: 'Tân Bảo AgTech IoT Team',
+        equipment_used: 'Trạm cảm biến NPK & Độ ẩm đất đa tầng',
+        note: 'Lắp đặt đầu dò cảm biến IoT đo độ ẩm tầng 10-20-50cm và độ pH/EC đất dưới tán cây. Cây 18 năm tuổi cho 152 trái (~456kg), doanh thu đạt 32.8 triệu VNĐ.',
+        media_urls: ['https://images.unsplash.com/photo-1589923188900-85dae523342b?w=600&auto=format&fit=crop&q=80'],
+        details: { phase: 'Tích hợp cảm biến IoT Smart Farm', yield_kg: 456, fruit_count: 152, price_vnd: 72000, revenue_vnd: 32832000 }
+      },
+      {
+        log_date: '2023-06-22',
+        log_type: 'Thu hoạch',
+        operator_name: 'Nguyễn Văn Long & Đội xuất khẩu',
+        equipment_used: 'Dao cắt mũi cong & Giỏ đệm mút xốp',
+        note: 'CỘT MỐC 20 NĂM TUỔI KỶ LỤC: Cây đạt năng suất cao nhất lịch sử với 162 trái (~486kg), cơm vàng hạt lép 95%, doanh thu đạt kỷ lục 39,852,000 VNĐ.',
+        media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
+        batch_code: 'VN-LK-001-20230622-SR01',
+        puc_code: 'VN-LK-001',
+        details: { phase: 'Kỷ lục năng suất 20 năm tuổi', yield_kg: 486, fruit_count: 162, price_vnd: 82000, revenue_vnd: 39852000, net_profit_vnd: 37102000 }
+      },
+
+      // ── GIAI ĐOẠN 3: VỤ MÙA CANH TÁC HIỆN TẠI (2025 - 2026 CHUẨN VIETGAP 100%) ──
       {
         log_date: '2025-09-10',
         log_type: 'Cắt tỉa',
@@ -355,11 +507,7 @@ async function seedDurianRi6LK() {
         equipment_used: 'Kéo cắt cành Gardena & Thang nhôm rút',
         note: 'Cắt tỉa cành tăm, cành sâu bệnh, chồi vượt trong thân và hạ ngọn thông thoáng tán sau khi kết thúc thu hoạch vụ trước.',
         media_urls: ['https://images.unsplash.com/photo-1592417817098-8f3d6910985c?w=600&auto=format&fit=crop&q=80'],
-        details: {
-          activity: 'Tỉa cành phục hồi',
-          labor_cost: 150000,
-          note: 'Cắt bỏ 12 cành khô và bôi keo liền sẹo Tiến Nông vào các vết cắt lớn'
-        }
+        details: { activity: 'Tỉa cành phục hồi', labor_cost: 150000, note: 'Cắt bỏ 12 cành khô và bôi keo liền sẹo Tiến Nông vào các vết cắt lớn' }
       },
       {
         log_date: '2025-09-25',
@@ -581,14 +729,18 @@ async function seedDurianRi6LK() {
       ]);
     }
 
-    console.log(`📝 Đã tạo thành công 12 Nhật ký Canh tác cho Cây Sầu Riêng Ri6 STT 1!`);
+    console.log(`📝 Đã tạo thành công ${logsList.length} Nhật ký Canh tác lịch sử 20 năm cho Cây Sầu Riêng Ri6 STT 1!`);
 
-    console.log('🎉 HOÀN THÀNH SEED DỮ LIỆU CÂY SẦU RIÊNG RI6 20 NĂM TUỔI TRANG TRẠI LONG KHÁNH THÀNH CÔNG 100%!');
+    await client.query('COMMIT');
+    console.log('🎉 HOÀN THÀNH SEED DỮ LIỆU CÂY SẦU RIÊNG RI6 20 NĂM TUỔI (2004 - 2026) TRANG TRẠI LONG KHÁNH THÀNH CÔNG 100%!');
     return {
       farm_id: farmId,
       plant_id: plantId,
       supplies_count: suppliesData.length,
-      logs_count: logsList.length
+      logs_count: logsList.length,
+      historical_seasons: historicalYieldRecords.length,
+      lifetime_yield_kg: treeData.lifetime_summary.total_yield_kg,
+      lifetime_revenue_vnd: treeData.lifetime_summary.total_revenue_vnd
     };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -606,4 +758,3 @@ if (require.main === module) {
 }
 
 module.exports = { seedDurianRi6LK };
-
