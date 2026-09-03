@@ -243,35 +243,66 @@ async function loadPlant() {
 
 // Helper: Get fertilizer / supply / pesticide name from details
 function getFertilizerName(details) {
-  return (details.fertilizer_name || details.supply_name || details.fertilizer || details.type || details.product_name || details.name || '').trim();
+  return (details.supply_name || details.fertilizer_name || details.fertilizer || details.foliar_nutrition || details.type || details.product_name || details.name || '').trim();
 }
 
 function getPesticideName(details) {
-  return (details.pesticide_name || details.supply_name || details.pesticide || details.type || details.product_name || details.name || '').trim();
+  return (details.supply_name || details.pesticide_name || details.pesticide || details.type || details.product_name || details.name || '').trim();
+}
+
+function getQuantity(details) {
+  const q = details.quantity ?? details.amount ?? details.qty ?? details.dosage ?? details.volume ?? details.water_volume ?? details.cut_count ?? details.yield_kg;
+  return (q !== undefined && q !== null && q !== '') ? q : '';
+}
+
+function getUnit(details, defaultUnit = '') {
+  return details.unit || details.package_unit || defaultUnit;
 }
 
 // Helper: Get structured text from care logs
 function getCareLogSummary(log) {
   const details = log.details || {};
+  const qty = getQuantity(details);
+  const unit = getUnit(details, log.log_type === 'Tưới nước' ? 'm³' : 'kg');
+  const method = details.method || (log.equipment_used ? log.equipment_used : 'Tự động');
+
   if (log.log_type === 'Tưới nước') {
-    return `Đã tưới nước bằng phương pháp <strong>${esc(details.method || 'Thủ công')}</strong>. Lượng nước: <strong>${esc(details.amount || '—')} ${esc(details.unit || 'Lít')}</strong>.`;
+    const qtyStr = qty ? `${qty} ${unit}` : (details.water_liters ? `${details.water_liters} Lít` : 'Định mức tiêu chuẩn');
+    const costStr = details.total_cost ? ` (Chi phí: ${Number(details.total_cost).toLocaleString('vi-VN')} đ)` : '';
+    return `Đã tưới nước bằng <strong>${esc(method)}</strong>. Lượng nước: <strong>${esc(qtyStr)}</strong>${costStr}.`;
   }
   if (log.log_type === 'Bón phân') {
-    const fertName = getFertilizerName(details) || 'Phân bón';
-    const methodStr = details.method ? ` bằng phương pháp <strong>${esc(details.method)}</strong>` : '';
-    return `Đã bón phân <strong>${esc(fertName)}</strong>. Liều lượng: <strong>${esc(details.amount || '—')} ${esc(details.unit || 'kg')}</strong>${methodStr}.`;
+    const fertName = getFertilizerName(details) || 'Phân bón chuyên dụng';
+    const qtyStr = qty ? `${qty} ${unit}` : 'Định lượng tiêu chuẩn';
+    const costStr = details.total_cost ? ` (Chi phí: ${Number(details.total_cost).toLocaleString('vi-VN')} đ)` : '';
+    return `Đã bón phân <strong>${esc(fertName)}</strong>. Liều lượng: <strong>${esc(qtyStr)}</strong>${costStr}.`;
   }
   if (log.log_type === 'Phun thuốc') {
     const pestName = getPesticideName(details) || 'Thuốc bảo vệ thực vật';
-    const purposeStr = details.purpose ? ` (Mục đích: ${esc(details.purpose)})` : '';
+    const qtyStr = qty ? `${qty} ${unit}` : 'Định lượng';
+    const phiStr = details.phi_days ? ` [Cách ly PHI: ${details.phi_days} ngày]` : '';
     const waterStr = details.water_volume ? ` pha với <strong>${esc(details.water_volume)}L</strong> nước` : '';
-    return `Đã phun thuốc <strong>${esc(pestName)}</strong>${purposeStr}. Liều lượng: <strong>${esc(details.amount || '—')} ${esc(details.unit || '')}</strong>${waterStr}.`;
+    return `Đã phun thuốc <strong>${esc(pestName)}</strong>. Liều lượng: <strong>${esc(qtyStr)}</strong>${waterStr}${phiStr}.`;
   }
-  if (log.log_type === 'Cắt lá') {
-    return `Đã cắt tỉa lá/cành. Số lượng: <strong>${esc(details.amount || '—')}</strong>. Lý do: <strong>${esc(details.reason || 'Cắt tỉa định kỳ')}</strong>.`;
+  if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
+    const actStr = details.activity || details.reason || 'Cắt tỉa cành/lá định kỳ';
+    const qtyStr = qty ? `Số lượng: <strong>${qty} ${unit || 'cành'}</strong>. ` : '';
+    return `Đã thực hiện cắt tỉa. ${qtyStr}Nội dung: <strong>${esc(actStr)}</strong>.`;
   }
   if (log.log_type === 'Tỉa hoa') {
-    return `Đã tỉa hoa/quả. Số lượng: <strong>${esc(details.amount || '—')}</strong>. Lý do: <strong>${esc(details.reason || 'Tỉa thưa')}</strong>.`;
+    const actStr = details.activity || details.reason || 'Tỉa bớt nụ còi / trái non';
+    const qtyStr = qty ? `Số lượng: <strong>${qty} ${unit || 'bông/trái'}</strong>. ` : '';
+    return `Đã tỉa hoa/quả. ${qtyStr}Nội dung: <strong>${esc(actStr)}</strong>.`;
+  }
+  if (log.log_type === 'Thụ phấn') {
+    return `Đã thụ phấn chéo ban đêm. Tỷ lệ tiếp nhận phấn: <strong>${esc(details.pollination_rate || '95%')}</strong>.`;
+  }
+  if (log.log_type === 'Thu hoạch') {
+    const yieldKg = details.yield_kg || qty || '—';
+    const fruitCount = details.fruit_count ? ` (${details.fruit_count} trái)` : '';
+    const revStr = details.total_revenue ? ` · Doanh thu: <strong>${Number(details.total_revenue).toLocaleString('vi-VN')} đ</strong>` : '';
+    const batchStr = log.batch_code || details.batch_code ? ` · Mã Lô VietGAP: <strong>${esc(log.batch_code || details.batch_code)}</strong>` : '';
+    return `Đã thu hoạch: <strong>${esc(yieldKg)} kg</strong>${fruitCount}${revStr}${batchStr}.`;
   }
   if (log.log_type === 'Bệnh cây') {
     const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
@@ -284,30 +315,45 @@ function getCareLogSummary(log) {
 
 function getShortSummary(log) {
   const details = log.details || {};
+  const qty = getQuantity(details);
+  const unit = getUnit(details, log.log_type === 'Tưới nước' ? 'm³' : 'kg');
+
   if (log.log_type === 'Tưới nước') {
-    return `Tưới bằng ${esc(details.method || 'Thủ công')} (${esc(details.amount || '—')} ${esc(details.unit || 'Lít')})`;
+    const method = details.method || (log.equipment_used ? 'Béc bù áp IoT' : 'Thủ công');
+    const qtyStr = qty ? `${qty} ${unit}` : (details.water_liters ? `${details.water_liters}L` : 'Định mức chuẩn');
+    return `Tưới nước bằng ${esc(method)} (${esc(qtyStr)})`;
   }
   if (log.log_type === 'Bón phân') {
     const fertName = getFertilizerName(details) || 'Phân bón';
-    const unitStr = details.unit ? ` ${details.unit}` : '';
-    return `Bón ${esc(fertName)} — (${esc(details.amount || '—')}${esc(unitStr)})`;
+    const qtyStr = qty ? `${qty} ${unit}` : '';
+    return `Bón ${esc(fertName)}${qtyStr ? ` — (${esc(qtyStr)})` : ''}`;
   }
   if (log.log_type === 'Phun thuốc') {
     const pestName = getPesticideName(details) || 'Thuốc BVTV';
-    const amountStr = details.amount ? ` (Liều: ${details.amount}${details.unit ? ' ' + details.unit : ''})` : '';
-    return `Phun ${esc(pestName)}${esc(amountStr)}`;
+    const qtyStr = qty ? ` (Liều: ${qty} ${unit})` : '';
+    return `Phun ${esc(pestName)}${esc(qtyStr)}`;
   }
-  if (log.log_type === 'Cắt lá') {
-    return `Cắt tỉa (${esc(details.amount || '—')} cành/lá) - ${esc(details.reason || 'Định kỳ')}`;
+  if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
+    const actStr = details.activity || details.reason || 'Cắt tỉa tán';
+    return `${esc(actStr)}${qty ? ` (${qty} cành)` : ''}`;
   }
   if (log.log_type === 'Tỉa hoa') {
-    return `Tỉa bớt (${esc(details.amount || '—')} bông/trái) - ${esc(details.reason || 'Định kỳ')}`;
+    const actStr = details.activity || details.reason || 'Tỉa hoa/quả';
+    return `${esc(actStr)}${qty ? ` (${qty} trái)` : ''}`;
+  }
+  if (log.log_type === 'Thụ phấn') {
+    return `Thụ phấn hoa chéo ban đêm (${esc(details.pollination_rate || 'Đạt 95%')})`;
+  }
+  if (log.log_type === 'Thu hoạch') {
+    const yieldKg = details.yield_kg || qty || '';
+    const fruitCount = details.fruit_count ? ` · ${details.fruit_count} trái` : '';
+    return `Thu hoạch ${yieldKg ? yieldKg + ' kg' : ''}${fruitCount} — Mã Lô: ${esc(log.batch_code || details.batch_code || 'VietGAP')}`;
   }
   if (log.log_type === 'Bệnh cây') {
     const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
     return `${sevEmoji} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
   }
-  return esc(log.note || '').slice(0, 40) + (log.note && log.note.length > 40 ? '...' : '');
+  return esc(log.note || '').slice(0, 50) + (log.note && log.note.length > 50 ? '...' : '');
 }
 
 function _renderTimelineItemHtml(log) {
@@ -327,7 +373,7 @@ function _renderTimelineItemHtml(log) {
     markerClass = 'marker-pesticide';
     tagClass = 'tag-pesticide';
     icon = 'fa-solid fa-flask';
-  } else if (log.log_type === 'Cắt lá') {
+  } else if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
     markerClass = 'marker-leaf';
     tagClass = 'tag-leaf';
     icon = 'fa-solid fa-scissors';
@@ -335,6 +381,14 @@ function _renderTimelineItemHtml(log) {
     markerClass = 'marker-flower';
     tagClass = 'tag-flower';
     icon = 'fa-solid fa-spa';
+  } else if (log.log_type === 'Thụ phấn') {
+    markerClass = 'marker-flower';
+    tagClass = 'tag-flower';
+    icon = 'fa-solid fa-wand-magic-sparkles';
+  } else if (log.log_type === 'Thu hoạch') {
+    markerClass = 'marker-fertilize';
+    tagClass = 'tag-fertilize';
+    icon = 'fa-solid fa-wheat-awn';
   } else if (log.log_type === 'Bệnh cây') {
     markerClass = 'marker-disease';
     tagClass = 'tag-disease';

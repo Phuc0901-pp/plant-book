@@ -391,13 +391,20 @@ function _renderLogPage() {
       let detailsStr = esc(l.note || '');
       if (l.details && Object.keys(l.details).length > 0) {
         const parts = [];
+        const qtyVal = l.details.quantity ?? l.details.amount ?? l.details.qty ?? l.details.dosage ?? l.details.volume ?? l.details.yield_kg;
+        const unitVal = l.details.unit || l.details.package_unit || '';
+        const supName = l.details.supply_name || l.details.fertilizer_name || l.details.pesticide_name || l.details.foliar_nutrition || l.details.fertilizer || l.details.pesticide;
+
+        if (supName) parts.push(`Vật tư: ${supName}`);
+        if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: ${qtyVal} ${unitVal}`);
+        if (l.details.fruit_count)     parts.push(`Số trái: ${l.details.fruit_count}`);
+        if (l.details.total_revenue)   parts.push(`Doanh thu: ${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ`);
+        if (l.details.total_cost)      parts.push(`Chi phí: ${Number(l.details.total_cost).toLocaleString('vi-VN')} đ`);
         if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
-        if (l.details.amount)          parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
-        if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
-        if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
         if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
         if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
         if (l.details.severity)        parts.push(`Mức độ: ${l.details.severity}`);
+        if (l.details.phi_days)        parts.push(`Cách ly PHI: ${l.details.phi_days} ngày`);
         if (parts.length > 0) {
           detailsStr = `[${parts.join(', ')}]` + (l.note ? ` - ${esc(l.note)}` : '');
         }
