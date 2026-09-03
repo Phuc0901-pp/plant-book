@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 const { runAllTests } = require('../tests/run-all-tests');
 const os = require('os');
 
@@ -34,7 +35,7 @@ router.get('/health', (req, res) => {
  * Trigger all 7 automated test suites and return structured report
  * Protected: Requires Admin authentication
  */
-router.post('/run-tests', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/run-tests', auth, admin, async (req, res) => {
   try {
     const results = await runAllTests();
     res.json({
