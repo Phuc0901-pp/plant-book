@@ -39,26 +39,14 @@ router.get('/', auth, async (req, res) => {
     } else {
 
       // Non-admin farmer
-      if (req.user.farm_id && req.user.allow_view_supplies !== false) {
-        // Check if shared supplies is enabled for this farm
-        const farmRes = await pool.query('SELECT allow_shared_supplies FROM farms WHERE id=$1', [req.user.farm_id]);
-        const allowShared = farmRes.rows.length > 0 && farmRes.rows[0].allow_shared_supplies !== false;
-
-        if (allowShared) {
-          query += ` AND (s.user_id = $${idx} OR s.user_id IN (SELECT id FROM users WHERE farm_id = $${idx + 1}) OR s.user_id = (SELECT user_id FROM farms WHERE id = $${idx + 1}))`;
-          params.push(req.user.id, req.user.farm_id);
-          idx += 2;
-        } else {
-          query += ` AND s.user_id = $${idx}`;
-          params.push(req.user.id);
-          idx++;
-        }
-      } else {
-        query += ` AND s.user_id = $${idx}`;
-        params.push(req.user.id);
-        idx++;
-      }
-
+      query += ` AND (
+        s.user_id = $${idx}
+        OR s.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${idx}))
+        OR s.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${idx}))
+        OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${idx} OR id = (SELECT farm_id FROM users WHERE id = $${idx}))
+      )`;
+      params.push(req.user.id);
+      idx++;
     }
 
     if (category) {

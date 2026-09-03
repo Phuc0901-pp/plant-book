@@ -9,74 +9,85 @@ const pool = require('../config/db');
 async function seedDurianRi6LK() {
   const client = await pool.connect();
   try {
-    console.log('🌱 Bắt đầu tạo dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 Trọn Vẹn 20 Năm (2004 - 2026)...');
+    console.log('🌱 Bắt đầu tạo/cập nhật dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (Trang trại LK) Trọn Vẹn 20 Năm (2004 - 2026)...');
     await client.query('BEGIN');
 
-    // ── 1. KIỂM TRA HOẶC TẠO USER NÔNG HỘ TRANG TRẠI LK ──
-    let userId = null;
-    const userRes = await client.query(`SELECT id FROM users WHERE email = 'nongho.longkhanh@tanbaocorp.vn' OR email = 'user@tanbaocorp.vn' ORDER BY id ASC LIMIT 1`);
-    if (userRes.rows.length > 0) {
-      userId = userRes.rows[0].id;
-    } else {
-      const adminRes = await client.query(`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
-      if (adminRes.rows.length > 0) {
-        userId = adminRes.rows[0].id;
-      } else {
-        const newUser = await client.query(`
-          INSERT INTO users (email, password_hash, full_name, role, phone)
-          VALUES ('nongho.longkhanh@tanbaocorp.vn', '$2a$12$eA8O...mock', 'Nguyễn Văn Long (Nông Hộ Long Khánh)', 'user', '0918123456')
-          RETURNING id
-        `);
-        userId = newUser.rows[0].id;
-      }
-    }
-
-    // ── 2. TẠO HOẶC CẬP NHẬT TRANG TRẠI LONG KHÁNH (LK FARM) ──
-    const farmPolygon = JSON.stringify([
-      [107.240500, 10.940500],
-      [107.243500, 10.940800],
-      [107.243200, 10.942500],
-      [107.240200, 10.942200],
-      [107.240500, 10.940500]
-    ]);
+    // ── 1. TÌM TRANG TRẠI "LK" HIỆN HỮU VÀ TÀI KHOẢN NÔNG HỘ SỞ HỮU ──
+    const farmRes = await client.query(`
+      SELECT * FROM farms 
+      WHERE name = 'LK' 
+         OR name ILIKE '%LK%' 
+         OR name ILIKE '%Long Khánh%' 
+         OR puc_code = 'VN-LK-001'
+      ORDER BY CASE WHEN name = 'LK' THEN 1 WHEN name ILIKE '%LK%' THEN 2 ELSE 3 END, id ASC
+    `);
 
     let farmId = null;
-    const existingFarm = await client.query(`SELECT id FROM farms WHERE puc_code = 'VN-LK-001' OR name ILIKE '%Long Khánh%' LIMIT 1`);
-    if (existingFarm.rows.length > 0) {
-      farmId = existingFarm.rows[0].id;
+    let userId = null;
+    let farmName = 'LK';
+
+    if (farmRes.rows.length > 0) {
+      const targetFarm = farmRes.rows[0];
+      farmId = targetFarm.id;
+      farmName = targetFarm.name || 'LK';
+      userId = targetFarm.user_id;
+
+      // Cập nhật thông số VietGAP cho trang trại LK hiện hữu
       await client.query(`
         UPDATE farms SET 
-          name = 'Trang Trại Sầu Riêng Long Khánh (LK Farm)',
           puc_code = 'VN-LK-001',
           vietgap_cert_number = 'VG-2026-LK88',
           vietgap_cert_org = 'Quacert Việt Nam',
-          area = 4.5,
-          total_plants = 450,
-          latitude = 10.941200,
-          longitude = 107.241500,
-          polygon_coordinates = $1,
           allow_shared_supplies = true,
           allow_shared_history = true,
           updated_at = NOW()
-        WHERE id = $2
-      `, [farmPolygon, farmId]);
-      console.log(`🏡 Đã cập nhật Trang Trại Long Khánh (ID: ${farmId})`);
+        WHERE id = $1
+      `, [farmId]);
+      console.log(`🏡 Đã tìm thấy và cập nhật chứng nhận VietGAP cho Trang Trại "${farmName}" (ID: ${farmId}, User ID: ${userId})`);
     } else {
+      // Tìm user Mathew hoặc admin
+      const uRes = await client.query(`
+        SELECT id FROM users 
+        WHERE full_name ILIKE '%Mathew%' 
+           OR phone = '0123456789' 
+           OR email = 'nongho.longkhanh@tanbaocorp.vn' 
+           OR role = 'admin' 
+        ORDER BY id ASC LIMIT 1
+      `);
+      userId = uRes.rows.length > 0 ? uRes.rows[0].id : 1;
+
+      const farmPolygon = JSON.stringify([
+        [107.240500, 10.940500],
+        [107.243500, 10.940800],
+        [107.243200, 10.942500],
+        [107.240200, 10.942200],
+        [107.240500, 10.940500]
+      ]);
+
       const newFarm = await client.query(`
         INSERT INTO farms (
           user_id, name, area, total_plants, puc_code, vietgap_cert_number, vietgap_cert_org,
           latitude, longitude, polygon_coordinates, allow_shared_supplies, allow_shared_history
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, true)
+        ) VALUES ($1, 'LK', 0.57, 6, 'VN-LK-001', 'VG-2026-LK88', 'Quacert Việt Nam', 10.941200, 107.241500, $2, true, true)
         RETURNING id
-      `, [
-        userId, 'Trang Trại Sầu Riêng Long Khánh (LK Farm)', 4.5, 450, 'VN-LK-001',
-        'VG-2026-LK88', 'Quacert Việt Nam', 10.941200, 107.241500, farmPolygon
-      ]);
+      `, [userId, farmPolygon]);
       farmId = newFarm.rows[0].id;
-      console.log(`🏡 Đã tạo mới Trang Trại Long Khánh (ID: ${farmId})`);
+      farmName = 'LK';
+      console.log(`🏡 Đã tạo mới Trang Trại "LK" (ID: ${farmId})`);
     }
 
-    // ── 3. TẠO 9 VẬT TƯ CHUYÊN DỤNG CANH TÁC SẦU RIÊNG RI6 ──
+    // Lấy danh sách tất cả User IDs liên quan (Chủ vườn Mathew, Admin, Nông hộ liên kết)
+    const allRelatedUsersRes = await client.query(`
+      SELECT id FROM users 
+      WHERE id = $1 
+         OR farm_id = $2 
+         OR full_name ILIKE '%Mathew%' 
+         OR phone = '0123456789'
+         OR role = 'admin'
+    `, [userId, farmId]);
+    const userIdsToSeed = allRelatedUsersRes.rows.map(r => r.id);
+
+    // ── 2. TẠO 9 VẬT TƯ CHUYÊN DỤNG CANH TÁC SẦU RIÊNG RI6 CHO CÁC TÀI KHOẢN LIÊN QUAN ──
     const suppliesData = [
       {
         name: 'Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)',
@@ -239,48 +250,50 @@ async function seedDurianRi6LK() {
     ];
 
     const supplyMap = {};
-    for (const sup of suppliesData) {
-      const existing = await client.query(
-        `SELECT id FROM supplies WHERE user_id = $1 AND category = $2 AND LOWER(name) = LOWER($3)`,
-        [userId, sup.category, sup.name.trim()]
-      );
+    for (const uId of userIdsToSeed) {
+      for (const sup of suppliesData) {
+        const existing = await client.query(
+          `SELECT id FROM supplies WHERE user_id = $1 AND category = $2 AND LOWER(name) = LOWER($3)`,
+          [uId, sup.category, sup.name.trim()]
+        );
 
-      if (existing.rows.length > 0) {
-        supplyMap[sup.name] = existing.rows[0].id;
-        await client.query(`
-          UPDATE supplies SET
-            package_size = $1, package_qty = $2, package_unit = $3,
-            package_price = $4, unit_price = $5, unit_price_small = $6,
-            stock_quantity = $7, image_url = $8, phi_days = $9,
-            active_ingredient = $10, target_pests = $11, note = $12, fertilizer_type = $13,
-            updated_at = NOW()
-          WHERE id = $14
-        `, [
-          sup.package_size, sup.package_qty, sup.package_unit,
-          sup.package_price, sup.unit_price, sup.unit_price_small,
-          sup.stock_quantity, sup.image_url, sup.phi_days,
-          sup.active_ingredient, sup.target_pests, sup.note, sup.fertilizer_type || null,
-          existing.rows[0].id
-        ]);
-      } else {
-        const ins = await client.query(`
-          INSERT INTO supplies (
-            user_id, category, name, unit, package_size, package_qty, package_unit,
-            package_price, unit_price, unit_price_small, stock_quantity, note,
-            image_url, fertilizer_type, phi_days, active_ingredient, target_pests
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-          RETURNING id
-        `, [
-          userId, sup.category, sup.name, sup.unit, sup.package_size, sup.package_qty, sup.package_unit,
-          sup.package_price, sup.unit_price, sup.unit_price_small, sup.stock_quantity, sup.note,
-          sup.image_url, sup.fertilizer_type || null, sup.phi_days, sup.active_ingredient, sup.target_pests
-        ]);
-        supplyMap[sup.name] = ins.rows[0].id;
+        if (existing.rows.length > 0) {
+          supplyMap[sup.name] = existing.rows[0].id;
+          await client.query(`
+            UPDATE supplies SET
+              package_size = $1, package_qty = $2, package_unit = $3,
+              package_price = $4, unit_price = $5, unit_price_small = $6,
+              stock_quantity = $7, image_url = $8, phi_days = $9,
+              active_ingredient = $10, target_pests = $11, note = $12, fertilizer_type = $13,
+              farm_id = $14, updated_at = NOW()
+            WHERE id = $15
+          `, [
+            sup.package_size, sup.package_qty, sup.package_unit,
+            sup.package_price, sup.unit_price, sup.unit_price_small,
+            sup.stock_quantity, sup.image_url, sup.phi_days,
+            sup.active_ingredient, sup.target_pests, sup.note, sup.fertilizer_type || null,
+            farmId, existing.rows[0].id
+          ]);
+        } else {
+          const ins = await client.query(`
+            INSERT INTO supplies (
+              user_id, category, name, unit, package_size, package_qty, package_unit,
+              package_price, unit_price, unit_price_small, stock_quantity, note,
+              image_url, fertilizer_type, phi_days, active_ingredient, target_pests, farm_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+            RETURNING id
+          `, [
+            uId, sup.category, sup.name, sup.unit, sup.package_size, sup.package_qty, sup.package_unit,
+            sup.package_price, sup.unit_price, sup.unit_price_small, sup.stock_quantity, sup.note,
+            sup.image_url, sup.fertilizer_type || null, sup.phi_days, sup.active_ingredient, sup.target_pests, farmId
+          ]);
+          supplyMap[sup.name] = ins.rows[0].id;
+        }
       }
     }
-    console.log(`📦 Đã cập nhật danh mục 9 vật tư sầu riêng Ri6 VietGAP`);
+    console.log(`📦 Đã đồng bộ danh mục 9 vật tư sầu riêng Ri6 cho các tài khoản liên quan`);
 
-    // ── 4. THIẾT LẬP DỮ LIỆU LỊCH SỬ NĂNG SUẤT & DOANH THU 20 MÙA VỤ (2007 - 2026) ──
+    // ── 3. THIẾT LẬP DỮ LIỆU LỊCH SỬ NĂNG SUẤT & DOANH THU 20 MÙA VỤ (2007 - 2026) ──
     const historicalYieldRecords = [
       { year: 2009, tree_age: 6, fruit_count: 18, yield_kg: 54, avg_price_vnd: 30000, revenue_vnd: 1620000, expense_vnd: 450000, profit_vnd: 1170000, grade_1_pct: 75, brix: '30°', note: 'Vụ bói đầu tiên (dưỡng cây)' },
       { year: 2010, tree_age: 7, fruit_count: 35, yield_kg: 105, avg_price_vnd: 32000, revenue_vnd: 3360000, expense_vnd: 620000, profit_vnd: 2740000, grade_1_pct: 80, brix: '31°', note: 'Bắt đầu cho trái thương phẩm' },
@@ -335,39 +348,42 @@ async function seedDurianRi6LK() {
       }
     };
 
+    // ── 4. TÌM HOẶC CẬP NHẬT CÂY SẦU RIÊNG STT 1 TRONG TRANG TRẠI LK ──
     let plantId = null;
-    const existingPlant = await client.query(
-      `SELECT id FROM plants WHERE farm_id = $1 AND (tree_code = 'SR-01' OR tree_code = '1' OR tree_code = 'STT 1') LIMIT 1`,
-      [farmId]
-    );
+    const existingPlantsInFarm = await client.query(`
+      SELECT * FROM plants 
+      WHERE farm_id = $1 
+      ORDER BY CASE WHEN tree_code = '1' OR tree_code = 'SR-01' OR tree_code ILIKE '%1%' THEN 1 ELSE 2 END, id ASC
+    `, [farmId]);
 
     const coverImg = 'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=800&auto=format&fit=crop&q=80';
 
-    if (existingPlant.rows.length > 0) {
-      plantId = existingPlant.rows[0].id;
+    if (existingPlantsInFarm.rows.length > 0) {
+      const targetPlant = existingPlantsInFarm.rows[0];
+      plantId = targetPlant.id;
+      const originalTreeCode = targetPlant.tree_code || '1';
+
       await client.query(`
         UPDATE plants SET
           plant_type = 'Sầu riêng',
           plant_variety = 'Ri6 Cổ Thụ (20 Năm Tuổi)',
           plant_age = '20 năm tuổi',
           health_status = 'Tốt',
-          location = 'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)',
-          tree_code = 'SR-01',
-          nfc_uid = '04:A2:3B:8C:9F:5D:80',
-          public_slug = 'flk-sr01-ri6-longkhanh',
-          latitude = 10.941520,
-          longitude = 107.241850,
-          cover_image = $1,
+          location = COALESCE(location, 'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)'),
+          tree_code = $1,
+          nfc_uid = COALESCE(nfc_uid, '04:A2:3B:8C:9F:5D:80'),
+          public_slug = COALESCE(public_slug, 'flk-sr01-ri6-longkhanh'),
+          cover_image = $2,
           is_public = true,
-          data = $2,
+          data = $3,
           phi_status = 'safe',
           phi_until_date = '2026-06-04',
           last_pesticide_date = '2026-05-20',
           last_pesticide_name = 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)',
           updated_at = NOW()
-        WHERE id = $3
-      `, [coverImg, JSON.stringify(treeData), plantId]);
-      console.log(`🌳 Đã cập nhật Cây Sầu Riêng STT 1 Trọn Vẹn 20 Năm (ID: ${plantId})`);
+        WHERE id = $4
+      `, [originalTreeCode, coverImg, JSON.stringify(treeData), plantId]);
+      console.log(`🌳 Đã cập nhật Cây Sầu Riêng STT ${originalTreeCode} (ID: ${plantId}) trong Trang trại "${farmName}"`);
     } else {
       const newPlant = await client.query(`
         INSERT INTO plants (
@@ -377,13 +393,13 @@ async function seedDurianRi6LK() {
           last_pesticide_date, last_pesticide_name
         ) VALUES (
           $1, $2, 'Sầu riêng', 'Ri6 Cổ Thụ (20 Năm Tuổi)', '20 năm tuổi', 'Tốt',
-          'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)', 'SR-01',
+          'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)', '1',
           '04:A2:3B:8C:9F:5D:80', 'flk-sr01-ri6-longkhanh', 10.941520, 107.241850,
           $3, true, $4, 'safe', '2026-06-04', '2026-05-20', 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)'
         ) RETURNING id
       `, [farmId, userId, coverImg, JSON.stringify(treeData)]);
       plantId = newPlant.rows[0].id;
-      console.log(`🌳 Đã tạo mới Cây Sầu Riêng STT 1 Trọn Vẹn 20 Năm (ID: ${plantId})`);
+      console.log(`🌳 Đã tạo mới Cây Sầu Riêng STT 1 (ID: ${plantId}) trong Trang trại "${farmName}"`);
     }
 
     // ── 5. TẠO TOÀN BỘ NHẬT KÝ CANH TÁC TRỌNG YẾU TỪ 2004 ĐẾN 2026 (22 BẢN GHI) ──
@@ -729,12 +745,13 @@ async function seedDurianRi6LK() {
       ]);
     }
 
-    console.log(`📝 Đã tạo thành công ${logsList.length} Nhật ký Canh tác lịch sử 20 năm cho Cây Sầu Riêng Ri6 STT 1!`);
+    console.log(`📝 Đã tạo thành công ${logsList.length} Nhật ký Canh tác lịch sử 20 năm cho Cây Sầu Riêng STT 1 trong Trang trại "${farmName}"!`);
 
     await client.query('COMMIT');
-    console.log('🎉 HOÀN THÀNH SEED DỮ LIỆU CÂY SẦU RIÊNG RI6 20 NĂM TUỔI (2004 - 2026) TRANG TRẠI LONG KHÁNH THÀNH CÔNG 100%!');
+    console.log(`🎉 HOÀN THÀNH ĐỒNG BỘ DỮ LIỆU CÂY SẦU RIÊNG RI6 20 NĂM TUỔI CHO TRANG TRẠI "${farmName}" (ID: ${farmId}) THÀNH CÔNG 100%!`);
     return {
       farm_id: farmId,
+      farm_name: farmName,
       plant_id: plantId,
       supplies_count: suppliesData.length,
       logs_count: logsList.length,

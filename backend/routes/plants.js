@@ -116,7 +116,7 @@ router.get('/', auth, async (req, res) => {
 
 router.get('/logs/recent', auth, async (req, res) => {
   try {
-    const daysLimit = parseInt(req.query.days) || 30;
+    const isDashboardShortSummary = req.query.days === '3';
     let query = `
       SELECT pl.*, 
              COALESCE(p.plant_type, 'Toàn vườn') as plant_type, 
@@ -130,12 +130,19 @@ router.get('/logs/recent', auth, async (req, res) => {
       LEFT JOIN plants p ON pl.plant_id = p.id
       LEFT JOIN farms f ON f.id = p.farm_id
       LEFT JOIN users u ON pl.created_by = u.id
-      WHERE pl.log_date >= CURRENT_DATE - $1::integer
+      WHERE 1=1
     `;
-    const params = [daysLimit];
+    const params = [];
+    let idx = 1;
+
+    if (isDashboardShortSummary) {
+      query += ` AND pl.log_date >= CURRENT_DATE - 7::integer `;
+    }
+
     if (req.user.role !== 'admin') {
-      query += ` AND (pl.created_by = $2 OR f.user_id = $2 OR f.id = (SELECT farm_id FROM users WHERE id = $2)) `;
+      query += ` AND (pl.created_by = $${idx} OR f.user_id = $${idx} OR f.id = (SELECT farm_id FROM users WHERE id = $${idx})) `;
       params.push(req.user.id);
+      idx++;
     }
     query += ` ORDER BY pl.log_date DESC, pl.id DESC `;
     const result = await pool.query(query, params);
