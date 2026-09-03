@@ -15,6 +15,7 @@ require('./suites/04_supplies.test');
 require('./suites/05_vietgap.test');
 require('./suites/06_iot_notifications.test');
 require('./suites/07_html_integrity.test');
+require('./suites/08_durian_ri6_sample_data.test');
 
 async function main() {
   try {

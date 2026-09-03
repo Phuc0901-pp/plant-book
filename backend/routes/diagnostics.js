@@ -50,4 +50,26 @@ router.post('/run-tests', auth, admin, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/diagnostics/seed-durian-lk
+ * Initialize sample dataset for Durian Ri6 STT 1 (20 years old) at Long Khanh Farm
+ * Protected: Requires Admin authentication
+ */
+router.post('/seed-durian-lk', auth, admin, async (req, res) => {
+  try {
+    const { seedDurianRi6LK } = require('../scripts/seed_durian_ri6_lk');
+    const result = await seedDurianRi6LK();
+    res.json({
+      success: true,
+      message: 'Đã khởi tạo dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (20 năm tuổi) trang trại Long Khánh thành công!',
+      data: result
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi khởi tạo dữ liệu mẫu: ' + err.message
+    });
+  }
+});
+
 module.exports = router;
