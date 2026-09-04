@@ -608,6 +608,108 @@
 
         <!-- Dashboard Layout Container -->
         <div class="user-dashboard-grid" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+
+          <!-- ════════════════════════════════════════════════════════════════
+               TẦNG 1: EXECUTIVE FARMER & FARM MATRIX COCKPIT
+               Thông tin chung của nông hộ, quy mô trang trại, cơ cấu cây trồng
+               ════════════════════════════════════════════════════════════════ -->
+          <div class="card" id="user-farm-cockpit-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
+            <!-- Cockpit Header -->
+            <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 800; letter-spacing: 0.3px;">
+                <i class="fa-solid fa-id-card-clip" style="color: #10b981; font-size: 16px;"></i>
+                <span>HỒ SƠ NÔNG HỘ &amp; NĂNG LỰC SẢN XUẤT VIETGAP</span>
+              </div>
+              <div id="cockpit-tier-badge">
+                <span style="background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.4); font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-crown" style="color: #fde047;"></i> Gói Nông Hộ PRO 👑
+                </span>
+              </div>
+            </div>
+
+            <!-- Cockpit Body Grid -->
+            <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; background: #ffffff;">
+              
+              <!-- Cột 1: Thông tin chủ hộ & Liên hệ -->
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
+                    <i class="fa-solid fa-user-tie" style="color: #059669;"></i> Chủ Hộ &amp; Định Danh
+                  </div>
+                  <div id="cockpit-farmer-name" style="font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                    Đang tải...
+                  </div>
+                  <div id="cockpit-farmer-phone" style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-phone" style="color: #0284c7; font-size: 11px;"></i> <span>--</span>
+                  </div>
+                  <div id="cockpit-farmer-address" style="font-size: 12.5px; color: #64748b; line-height: 1.4; display: flex; align-items: flex-start; gap: 6px;">
+                    <i class="fa-solid fa-location-dot" style="color: #ea580c; font-size: 12px; margin-top: 2px;"></i>
+                    <span>Đang xác định vị trí...</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột 2: Quy mô vườn & Mã PUC VietGAP -->
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
+                    <i class="fa-solid fa-tree" style="color: #059669;"></i> Quy Mô &amp; Chứng Nhận
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;">
+                    <span id="cockpit-farm-count" style="font-size: 20px; font-weight: 900; color: #059669;">1</span>
+                    <span style="font-size: 13px; font-weight: 700; color: #334155;">Trang trại sở hữu</span>
+                  </div>
+                  <div id="cockpit-total-area" style="font-size: 13px; font-weight: 700; color: #0284c7; margin-bottom: 4px;">
+                    Diện tích: <span style="font-weight: 900;">0.57 ha</span> (5,733.9 m²)
+                  </div>
+                  <div id="cockpit-puc-badge" style="font-size: 12px; font-weight: 700; color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content;">
+                    <i class="fa-solid fa-shield-halved"></i> Mã PUC: VN-LK-001 (VietGAP)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột 3: Cơ cấu cây trồng & Nút mở GIS Map 1-Chạm -->
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
+                    <i class="fa-solid fa-chart-pie" style="color: #059669;"></i> Cơ Cấu Cây Trồng
+                  </div>
+                  <div id="cockpit-crop-breakdown" style="font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
+                    🌱 100% Sầu riêng Ri6 (6 cây)
+                  </div>
+                  <div style="font-size: 12px; color: #16a34a; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
+                    <i class="fa-solid fa-circle-check"></i> 100% Cây sinh trưởng tốt
+                  </div>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-primary" onclick="showPage('farms')" style="width: 100%; padding: 8px 12px; font-size: 12.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(5,150,105,0.25);">
+                    <i class="fa-solid fa-earth-asia"></i> <span>Mở Bản Đồ GIS Thửa Đất</span> <i class="fa-solid fa-arrow-right" style="font-size: 11px;"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════════════════════════════
+               TẦNG 2: TRUNG TÂM GIÁM SÁT CẢNH BÁO & RỦI RO PHÂN CẤP
+               Sắp xếp ưu tiên từ NẶNG (Đỏ) -> TRUNG BÌNH (Vàng) -> NHẸ (Xanh)
+               ════════════════════════════════════════════════════════════════ -->
+          <div class="card" id="user-priority-alerts-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
+            <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <h3 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #eab308; font-size: 17px;"></i>
+                <span>Trung Tâm Giám Sát Cảnh Báo &amp; Sức Khỏe Vườn Cây</span>
+              </h3>
+              <div id="alerts-count-badge" style="font-size: 12px; font-weight: 700; color: #64748b;">
+                <!-- Filled dynamically -->
+              </div>
+            </div>
+
+            <div id="alerts-list-container" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+              <!-- Filled dynamically by renderPriorityAlertsCenter -->
+            </div>
+          </div>
           
           <!-- Tóm tắt Danh sách Cây trồng -->
           <div class="card" id="user-plants-summary-card">
