@@ -545,56 +545,86 @@ async function renderPlant(plant) {
   const logs = plant.logs || [];
   const hasMap = (plant.latitude && plant.longitude) || (plant.farm_boundary && plant.farm_boundary.coordinates);
   
-  // Default high-definition crop photos mapped by species / variety
+  // English crop asset mappings
+  const CROP_NAME_TO_ENGLISH = {
+    'sau_rieng': 'durian', 'sau rieng': 'durian', 'saurieng': 'durian', 'durian': 'durian',
+    'ca_phe': 'coffee', 'ca phe': 'coffee', 'caphe': 'coffee', 'coffee': 'coffee',
+    'ca_cao': 'cacao', 'ca cao': 'cacao', 'cacao': 'cacao', 'cocoa': 'cacao',
+    'cao_su': 'rubber', 'cao su': 'rubber', 'caosu': 'rubber', 'rubber': 'rubber',
+    'tao': 'apple', 'cay_tao': 'apple', 'apple': 'apple',
+    'xoai': 'mango', 'cay_xoai': 'mango', 'mango': 'mango',
+    'bo': 'avocado', 'cay_bo': 'avocado', 'avocado': 'avocado',
+    'buoi': 'pomelo', 'cay_buoi': 'pomelo', 'pomelo': 'pomelo',
+    'cam': 'orange', 'cay_cam': 'orange', 'orange': 'orange',
+    'mit': 'jackfruit', 'cay_mit': 'jackfruit', 'jackfruit': 'jackfruit',
+    'thanh_long': 'dragon_fruit', 'thanh long': 'dragon_fruit', 'dragon_fruit': 'dragon_fruit',
+    'chuoi': 'banana', 'cay_chuoi': 'banana', 'banana': 'banana',
+    'chanh': 'lemon', 'lemon': 'lemon', 'lime': 'lemon',
+    'oi': 'guava', 'cay_oi': 'guava', 'guava': 'guava',
+    'chanh_day': 'passion_fruit', 'chanh day': 'passion_fruit', 'passion_fruit': 'passion_fruit',
+    'tra': 'tea', 'che': 'tea', 'cay_che': 'tea', 'tea': 'tea',
+    'tieu': 'pepper', 'ho_tieu': 'pepper', 'ho tieu': 'pepper', 'pepper': 'pepper',
+    'dieu': 'cashew', 'cay_dieu': 'cashew', 'cashew': 'cashew',
+    'dau_tay': 'strawberry', 'strawberry': 'strawberry',
+    'mac_ca': 'macadamia', 'macadamia': 'macadamia',
+    'dua': 'pineapple', 'thom': 'pineapple', 'khom': 'pineapple', 'pineapple': 'pineapple',
+    'vai': 'lychee', 'lychee': 'lychee',
+    'nhan': 'longan', 'longan': 'longan',
+    'dua_xiem': 'coconut', 'coconut': 'coconut'
+  };
+
+  const LOCAL_CROP_ICONS = new Set(['durian', 'coffee', 'cacao', 'rubber']);
+
+  // Helper to resolve English crop identifier
+  function resolveCropEnglishName(term) {
+    if (!term) return 'durian';
+    const raw = String(term).toLowerCase().trim();
+    const match = raw.match(/\(([^)]+)\)/);
+    if (match && match[1]) {
+      const inside = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+      if (inside) return inside;
+    }
+    const clean = raw
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[đĐ]/g, "d")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (CROP_NAME_TO_ENGLISH[clean]) return CROP_NAME_TO_ENGLISH[clean];
+    const under = clean.replace(/\s+/g, '_');
+    if (CROP_NAME_TO_ENGLISH[under]) return CROP_NAME_TO_ENGLISH[under];
+
+    for (const [k, v] of Object.entries(CROP_NAME_TO_ENGLISH)) {
+      if (clean.includes(k) || k.includes(clean)) return v;
+    }
+    return under || 'durian';
+  }
+
+  // Default high-definition crop photos mapped by species
   const CROP_DEFAULT_PHOTOS = {
     durian: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
-    sau_rieng: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
     apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
-    tao: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
-    cay_tao: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
     coffee: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
-    ca_phe: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
-    cay_ca_phe: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
     cacao: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=80',
-    ca_cao: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=80',
     rubber: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=1200&auto=format&fit=crop&q=80',
-    cao_su: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=1200&auto=format&fit=crop&q=80',
     mango: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=1200&auto=format&fit=crop&q=80',
-    xoai: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=1200&auto=format&fit=crop&q=80',
     avocado: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&auto=format&fit=crop&q=80',
-    bo: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&auto=format&fit=crop&q=80',
     pomelo: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=1200&auto=format&fit=crop&q=80',
-    buoi: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=1200&auto=format&fit=crop&q=80',
     orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=1200&auto=format&fit=crop&q=80',
-    cam: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=1200&auto=format&fit=crop&q=80',
     dragon_fruit: 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=1200&auto=format&fit=crop&q=80',
-    thanh_long: 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=1200&auto=format&fit=crop&q=80',
     jackfruit: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
-    mit: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
     banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=1200&auto=format&fit=crop&q=80',
-    chuoi: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=1200&auto=format&fit=crop&q=80',
     lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=1200&auto=format&fit=crop&q=80',
-    chanh: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=1200&auto=format&fit=crop&q=80',
     guava: 'https://images.unsplash.com/photo-1536511135899-738a081598f4?w=1200&auto=format&fit=crop&q=80',
-    oi: 'https://images.unsplash.com/photo-1536511135899-738a081598f4?w=1200&auto=format&fit=crop&q=80',
     passion_fruit: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200&auto=format&fit=crop&q=80',
-    chanh_day: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200&auto=format&fit=crop&q=80',
     tea: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
-    tra: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
-    che: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
     pepper: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
-    tieu: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
-    ho_tieu: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
     cashew: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
-    dieu: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
     strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1200&auto=format&fit=crop&q=80',
-    dau_tay: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1200&auto=format&fit=crop&q=80',
     macadamia: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
-    mac_ca: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
-    pineapple: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80',
-    dua: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80',
-    thom: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80',
-    khom: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80'
+    pineapple: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80'
   };
 
   // Helper to resolve crop cover image from plant type (schema)
@@ -602,45 +632,38 @@ async function renderPlant(plant) {
     if (p.cover_image && !p.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
       return esc(p.cover_image);
     }
-    const term = (p.plant_type || '').toLowerCase();
-    if (!term) return '/assets/logo.png';
-    
-    // Extract text in parentheses, e.g. "Sầu riêng(durian)" -> "durian"
-    const match = term.match(/\(([^)]+)\)/);
-    let baseName = (match && match[1]) ? match[1].trim() : term;
-    
-    const normalized = baseName
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[đĐ]/g, "d")
-      .replace(/[^a-z0-9]/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_+|_+$/g, "");
-    
-    if (CROP_DEFAULT_PHOTOS[normalized]) {
-      return CROP_DEFAULT_PHOTOS[normalized];
+    const englishName = resolveCropEnglishName(p.plant_type || '');
+    if (LOCAL_CROP_ICONS.has(englishName)) {
+      return `/assets/crop/${englishName}.png`;
     }
-    for (const [key, photo] of Object.entries(CROP_DEFAULT_PHOTOS)) {
-      if (normalized.includes(key) || key.includes(normalized)) {
-        return photo;
-      }
+    if (CROP_DEFAULT_PHOTOS[englishName]) {
+      return CROP_DEFAULT_PHOTOS[englishName];
     }
-    return `/assets/crop/${normalized}.png`;
+    return `/assets/crop/${englishName}.png`;
   }
 
   window.tryNextCropExt = function(img, cropType) {
     if (!img) return;
+    const retryCount = parseInt(img.getAttribute('data-retry-count') || '0');
+    if (retryCount >= 3) {
+      img.onerror = null;
+      img.src = '/assets/logo.png';
+      img.className = 'cover-image-fallback';
+      return;
+    }
+    img.setAttribute('data-retry-count', retryCount + 1);
+
+    const eng = resolveCropEnglishName(cropType || img.alt || '');
     const currentSrc = img.src || '';
-    if (currentSrc.startsWith('http') && (cropType || img.alt)) {
-      const norm = (cropType || img.alt || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").replace(/[^a-z0-9]/g, "_");
-      img.src = `/assets/crop/${norm}.png`;
+
+    if (currentSrc.startsWith('http')) {
+      img.src = `/assets/crop/${eng}.png`;
     } else if (currentSrc.endsWith('.png')) {
-      img.src = currentSrc.replace('.png', '.jpg');
+      img.src = `/assets/crop/${eng}.jpg`;
     } else if (currentSrc.endsWith('.jpg')) {
-      img.src = currentSrc.replace('.jpg', '.jpeg');
+      img.src = `/assets/crop/${eng}.jpeg`;
     } else if (currentSrc.endsWith('.jpeg')) {
-      img.src = currentSrc.replace('.jpeg', '.webp');
+      img.src = `/assets/crop/${eng}.webp`;
     } else {
       img.onerror = null;
       img.src = '/assets/logo.png';

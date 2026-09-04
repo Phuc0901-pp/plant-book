@@ -411,10 +411,18 @@ async function openSchemaModal(id = null, syncUrl = true) {
       document.getElementById('s-desc').value = schema.description || '';
       schemaFields = schema.fields || [];
 
-      // Check if schema name has English translation in parentheses for cover image preview
+      // Resolve crop image from schema name
+      let englishName = '';
       const match = name.match(/\(([^)]+)\)/);
       if (match && match[1]) {
-        const englishName = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+        englishName = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+      } else {
+        const clean = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").replace(/[^a-z0-9]/g, "_");
+        const map = { sau_rieng: 'durian', ca_phe: 'coffee', ca_cao: 'cacao', cao_su: 'rubber', tao: 'apple', xoai: 'mango' };
+        englishName = map[clean] || clean;
+      }
+
+      if (englishName) {
         const imgEl = document.getElementById('schema-image-preview');
         imgEl.src = `/assets/crop/${englishName}.png`;
         imgEl.setAttribute('data-ext-idx', '0');
@@ -426,7 +434,6 @@ async function openSchemaModal(id = null, syncUrl = true) {
             this.setAttribute('data-ext-idx', extIdx + 1);
             this.src = `/assets/crop/${englishName}${nextExt}`;
           } else {
-            // Failed to load any extension, hide preview
             document.getElementById('schema-image-preview-container').style.display = 'none';
             document.getElementById('schema-image-filename').textContent = 'Chưa có ảnh đại diện';
           }
