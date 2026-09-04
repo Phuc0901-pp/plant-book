@@ -184,6 +184,12 @@ async function initDB() {
     // Alter farms table to assign a user/farmer & permission toggles for farmers
     await client.query(`
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS latitude NUMERIC;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS longitude NUMERIC;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS puc_code VARCHAR(100);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_number VARCHAR(100);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_org VARCHAR(255);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS address TEXT;
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_view_plants BOOLEAN DEFAULT true;
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_shared_history BOOLEAN DEFAULT true;
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_shared_supplies BOOLEAN DEFAULT true;
