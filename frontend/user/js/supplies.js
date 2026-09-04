@@ -925,19 +925,72 @@ export function switchSuppliesTab(tab) {
 
 // ─── TAB 2: GIÁM SÁT VẬT TƯ & CHI PHÍ ────────────────────────────
 
+function toIsoDateStr(date) {
+  const d = new Date(date);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
 export function switchSupplyPeriod(period) {
   currentPeriodFilter = period;
   document.querySelectorAll('.period-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.period === period);
   });
 
-  const monthWrap = document.getElementById('supplies-month-wrap');
-  if (monthWrap) {
-    monthWrap.style.display = (period === 'day') ? 'flex' : 'none';
+  const dayWrap = document.getElementById('supplies-filter-day-wrap');
+  const monthWrap = document.getElementById('supplies-filter-month-wrap');
+  const quarterWrap = document.getElementById('supplies-filter-quarter-wrap');
+  const yearWrap = document.getElementById('supplies-filter-year-wrap');
+
+  if (dayWrap) dayWrap.style.display = (period === 'day') ? 'flex' : 'none';
+  if (monthWrap) monthWrap.style.display = (period === 'month') ? 'flex' : 'none';
+  if (quarterWrap) quarterWrap.style.display = (period === 'quarter') ? 'flex' : 'none';
+  if (yearWrap) yearWrap.style.display = (period === 'year') ? 'flex' : 'none';
+
+  if (period === 'day') {
+    const fromInput = document.getElementById('supplies-filter-from-date');
+    const toInput = document.getElementById('supplies-filter-to-date');
+    if (fromInput && !fromInput.value) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      fromInput.value = toIsoDateStr(thirtyDaysAgo);
+    }
+    if (toInput && !toInput.value) {
+      toInput.value = toIsoDateStr(new Date());
+    }
   }
 
   loadSuppliesAnalytics();
 }
+
+export function setSupplyDatePreset(preset) {
+  const fromInput = document.getElementById('supplies-filter-from-date');
+  const toInput = document.getElementById('supplies-filter-to-date');
+  if (!fromInput || !toInput) return;
+
+  const now = new Date();
+  toInput.value = toIsoDateStr(now);
+
+  if (preset === '7d') {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    fromInput.value = toIsoDateStr(d);
+  } else if (preset === '30d') {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    fromInput.value = toIsoDateStr(d);
+  } else if (preset === 'this_month') {
+    const d = new Date(now.getFullYear(), now.getMonth(), 1);
+    fromInput.value = toIsoDateStr(d);
+  } else if (preset === 'this_year') {
+    const d = new Date(now.getFullYear(), 0, 1);
+    fromInput.value = toIsoDateStr(d);
+  }
+
+  loadSuppliesAnalytics();
+}
+window.setSupplyDatePreset = setSupplyDatePreset;
 
 export function populateSuppliesFilterFarms() {
   const farmSelect = document.getElementById('supplies-filter-farm');
@@ -945,7 +998,7 @@ export function populateSuppliesFilterFarms() {
   const currentVal = farmSelect.value || 'all';
   const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
   if (farms.length > 0 && farmSelect.options.length <= 1) {
-    farmSelect.innerHTML = `<option value="all">Tất cả trang trại</option>` +
+    farmSelect.innerHTML = `<option value="all">🏡 Tất cả trang trại</option>` +
       farms.map(f => `<option value="${f.id}" ${String(f.id) === String(currentVal) ? 'selected' : ''}>🏡 ${esc(f.name)}</option>`).join('');
   }
 }
@@ -953,16 +1006,52 @@ window.populateSuppliesFilterFarms = populateSuppliesFilterFarms;
 
 export async function loadSuppliesAnalytics() {
   populateSuppliesFilterFarms();
-  const yearSelect = document.getElementById('supplies-filter-year');
-  const monthSelect = document.getElementById('supplies-filter-month');
+
   const farmSelect = document.getElementById('supplies-filter-farm');
-  
-  const year = yearSelect ? yearSelect.value : new Date().getFullYear();
-  const month = (currentPeriodFilter === 'day' && monthSelect) ? monthSelect.value : 'all';
   const farm_id = farmSelect ? farmSelect.value : 'all';
 
+  const params = new URLSearchParams();
+  params.append('period', currentPeriodFilter);
+  if (farm_id && farm_id !== 'all') params.append('farm_id', farm_id);
+
+  if (currentPeriodFilter === 'day') {
+    const fromInput = document.getElementById('supplies-filter-from-date');
+    const toInput = document.getElementById('supplies-filter-to-date');
+    if (fromInput && fromInput.value) params.append('from_date', fromInput.value);
+    if (toInput && toInput.value) params.append('to_date', toInput.value);
+
+  } else if (currentPeriodFilter === 'month') {
+    const fromM = document.getElementById('supplies-from-month')?.value || '1';
+    const fromY = document.getElementById('supplies-from-year-month')?.value || new Date().getFullYear();
+    const toM = document.getElementById('supplies-to-month')?.value || (new Date().getMonth() + 1);
+    const toY = document.getElementById('supplies-to-year-month')?.value || new Date().getFullYear();
+
+    params.append('from_month', fromM);
+    params.append('from_year', fromY);
+    params.append('to_month', toM);
+    params.append('to_year', toY);
+
+  } else if (currentPeriodFilter === 'quarter') {
+    const fromQ = document.getElementById('supplies-from-quarter')?.value || '1';
+    const fromY = document.getElementById('supplies-from-year-quarter')?.value || new Date().getFullYear();
+    const toQ = document.getElementById('supplies-to-quarter')?.value || Math.ceil((new Date().getMonth() + 1) / 3);
+    const toY = document.getElementById('supplies-to-year-quarter')?.value || new Date().getFullYear();
+
+    params.append('from_quarter', fromQ);
+    params.append('from_year', fromY);
+    params.append('to_quarter', toQ);
+    params.append('to_year', toY);
+
+  } else if (currentPeriodFilter === 'year') {
+    const fromY = document.getElementById('supplies-from-year')?.value || (new Date().getFullYear() - 2);
+    const toY = document.getElementById('supplies-to-year')?.value || new Date().getFullYear();
+
+    params.append('from_year', fromY);
+    params.append('to_year', toY);
+  }
+
   try {
-    const data = await api(`/supplies/analytics?period=${currentPeriodFilter}&year=${year}&month=${month}&farm_id=${farm_id}`);
+    const data = await api(`/supplies/analytics?${params.toString()}`);
 
     // Update Stats Cards
     const totalEl = document.getElementById('cost-stat-total');
@@ -1105,10 +1194,10 @@ function renderBreakdownTable(breakdown, grandTotal) {
   const title = document.getElementById('breakdown-table-title');
 
   const periodNames = {
-    day: 'Ngày trong tháng',
-    month: 'Tháng trong năm',
-    quarter: 'Quý trong năm',
-    year: 'Năm'
+    day: 'Theo Khoảng Ngày',
+    month: 'Theo Khoảng Tháng',
+    quarter: 'Theo Khoảng Quý',
+    year: 'Theo Khoảng Năm'
   };
 
   if (title) {

@@ -1375,50 +1375,139 @@
               </button>
             </div>
             
-            <div class="supplies-time-filter-row" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding: 0 20px 16px 20px;">
+            <div class="supplies-time-filter-row" style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; padding: 0 20px 18px 20px;">
               <!-- Period Switcher Buttons -->
-              <div class="btn-group-period" style="display:flex; border:1px solid var(--gray-300); border-radius:10px; overflow:hidden; background:#fff;">
+              <div class="btn-group-period" style="display:flex; border:1.5px solid #cbd5e1; border-radius:10px; overflow:hidden; background:#fff; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                 <button class="period-btn active" data-period="day" onclick="switchSupplyPeriod('day')">📅 Theo Ngày</button>
                 <button class="period-btn" data-period="month" onclick="switchSupplyPeriod('month')">📆 Theo Tháng</button>
                 <button class="period-btn" data-period="quarter" onclick="switchSupplyPeriod('quarter')">🗓️ Theo Quý</button>
                 <button class="period-btn" data-period="year" onclick="switchSupplyPeriod('year')">📊 Theo Năm</button>
               </div>
 
-              <!-- Month Selector -->
-              <div id="supplies-month-wrap" style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:13px; font-weight:700; color:#475569;">Tháng:</label>
-                <select id="supplies-filter-month" onchange="loadSuppliesAnalytics()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--gray-300); outline:none;">
-                  <option value="all">Tất cả các tháng</option>
-                  <option value="1">Tháng 1</option>
-                  <option value="2">Tháng 2</option>
-                  <option value="3">Tháng 3</option>
-                  <option value="4">Tháng 4</option>
-                  <option value="5">Tháng 5</option>
-                  <option value="6">Tháng 6</option>
-                  <option value="7">Tháng 7</option>
-                  <option value="8">Tháng 8</option>
-                  <option value="9" selected>Tháng 9</option>
-                  <option value="10">Tháng 10</option>
-                  <option value="11">Tháng 11</option>
-                  <option value="12">Tháng 12</option>
-                </select>
+              <!-- 1. Day Range Wrapper -->
+              <div id="supplies-filter-day-wrap" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:4px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Từ ngày:</label>
+                  <input type="date" id="supplies-filter-from-date" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;">➜</span>
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Đến ngày:</label>
+                  <input type="date" id="supplies-filter-to-date" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                </div>
+                <div style="display:flex; gap:4px; align-items:center;">
+                  <button type="button" class="preset-pill-btn" onclick="setSupplyDatePreset('7d')">7 ngày</button>
+                  <button type="button" class="preset-pill-btn" onclick="setSupplyDatePreset('30d')">30 ngày</button>
+                  <button type="button" class="preset-pill-btn" onclick="setSupplyDatePreset('this_month')">Tháng này</button>
+                </div>
               </div>
 
-              <!-- Year Selector -->
-              <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:13px; font-weight:700; color:#475569;">Năm:</label>
-                <select id="supplies-filter-year" onchange="loadSuppliesAnalytics()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--gray-300); outline:none;">
-                  <option value="2026" selected>2026</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                </select>
+              <!-- 2. Month Range Wrapper -->
+              <div id="supplies-filter-month-wrap" style="display:none; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:4px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Từ:</label>
+                  <select id="supplies-from-month" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="1">Tháng 1</option>
+                    <option value="2">Tháng 2</option>
+                    <option value="3">Tháng 3</option>
+                    <option value="4">Tháng 4</option>
+                    <option value="5">Tháng 5</option>
+                    <option value="6">Tháng 6</option>
+                    <option value="7">Tháng 7</option>
+                    <option value="8">Tháng 8</option>
+                    <option value="9">Tháng 9</option>
+                    <option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option>
+                    <option value="12">Tháng 12</option>
+                  </select>
+                  <select id="supplies-from-year-month" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="2026">2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                  </select>
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;">➜</span>
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Đến:</label>
+                  <select id="supplies-to-month" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="1">Tháng 1</option>
+                    <option value="2">Tháng 2</option>
+                    <option value="3">Tháng 3</option>
+                    <option value="4">Tháng 4</option>
+                    <option value="5">Tháng 5</option>
+                    <option value="6">Tháng 6</option>
+                    <option value="7">Tháng 7</option>
+                    <option value="8">Tháng 8</option>
+                    <option value="9" selected>Tháng 9</option>
+                    <option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option>
+                    <option value="12">Tháng 12</option>
+                  </select>
+                  <select id="supplies-to-year-month" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="2026" selected>2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 3. Quarter Range Wrapper -->
+              <div id="supplies-filter-quarter-wrap" style="display:none; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:4px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Từ:</label>
+                  <select id="supplies-from-quarter" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="1" selected>Quý 1</option>
+                    <option value="2">Quý 2</option>
+                    <option value="3">Quý 3</option>
+                    <option value="4">Quý 4</option>
+                  </select>
+                  <select id="supplies-from-year-quarter" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="2026">2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                  </select>
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;">➜</span>
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Đến:</label>
+                  <select id="supplies-to-quarter" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="1">Quý 1</option>
+                    <option value="2">Quý 2</option>
+                    <option value="3" selected>Quý 3</option>
+                    <option value="4">Quý 4</option>
+                  </select>
+                  <select id="supplies-to-year-quarter" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="2026" selected>2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 4. Year Range Wrapper -->
+              <div id="supplies-filter-year-wrap" style="display:none; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:4px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Từ năm:</label>
+                  <select id="supplies-from-year" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;">➜</span>
+                  <label style="font-size:12.5px; font-weight:700; color:#475569;">Đến năm:</label>
+                  <select id="supplies-to-year" onchange="loadSuppliesAnalytics()" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; background:#fff; outline:none;">
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Farm Selector -->
               <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:13px; font-weight:700; color:#475569;">Trang trại:</label>
-                <select id="supplies-filter-farm" onchange="loadSuppliesAnalytics()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--gray-300); outline:none;">
-                  <option value="all">Tất cả trang trại</option>
+                <label style="font-size:12.5px; font-weight:700; color:#475569;">Trang trại:</label>
+                <select id="supplies-filter-farm" onchange="loadSuppliesAnalytics()" style="padding:7px 12px; border-radius:8px; border:1.5px solid #cbd5e1; outline:none; background:#fff; font-size:12.5px; font-weight:600; color:#334155;">
+                  <option value="all">🏡 Tất cả trang trại</option>
                 </select>
               </div>
             </div>

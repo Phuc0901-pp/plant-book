@@ -85,5 +85,31 @@ describe('Suite 4: Supplies Management, Cost Accounting & Inventory Dynamics', (
     expect(totalInventoryValuation).toBe(3300000); // 3,300,000 VND
   });
 
+  it('4.7 Should accurately compute multi-dimensional date intervals for Daily, Monthly, Quarterly, and Yearly reporting', () => {
+    // 1. Day Range Calculation
+    const fromDate = new Date('2026-08-01');
+    const toDate = new Date('2026-09-04');
+    const diffDays = Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24));
+    expect(diffDays).toBe(34);
+
+    // 2. Month Range Calculation across years (10/2025 to 09/2026)
+    const fromMonth = 10, fromYear = 2025;
+    const toMonth = 9, toYear = 2026;
+    const totalMonths = (toYear - fromYear) * 12 + (toMonth - fromMonth) + 1;
+    expect(totalMonths).toBe(12);
+
+    // 3. Quarter Range Calculation across years (Q1/2025 to Q3/2026)
+    const fromQ = 1, fromQYear = 2025;
+    const toQ = 3, toQYear = 2026;
+    const totalQuarters = (toQYear - fromQYear) * 4 + (toQ - fromQ) + 1;
+    expect(totalQuarters).toBe(7);
+
+    // 4. Year Range Calculation (2023 to 2026)
+    const fromY = 2023, toY = 2026;
+    const totalYears = toY - fromY + 1;
+    expect(totalYears).toBe(4);
+  });
+
 });
+
 

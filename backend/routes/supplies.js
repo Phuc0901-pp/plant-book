@@ -619,10 +619,25 @@ router.delete('/usages/:id', auth, async (req, res) => {
 
 // ─── 3. ANALYTICS & COST MONITORING ──────────────────────────────
 
-// GET /api/supplies/analytics — Thống kê chi phí vật tư
+// GET /api/supplies/analytics — Thống kê chi phí vật tư theo khoảng thời gian linh hoạt
 router.get('/analytics', auth, async (req, res) => {
   try {
-    const { period = 'month', year = new Date().getFullYear(), month, farm_id, user_id } = req.query;
+    const { 
+      period = 'month', 
+      year = new Date().getFullYear(), 
+      month, 
+      farm_id, 
+      user_id,
+      from_date,
+      to_date,
+      from_month,
+      from_year,
+      to_month,
+      to_year,
+      from_quarter,
+      to_quarter
+    } = req.query;
+
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     
     let baseWhere = `WHERE su.user_id = $1`;
@@ -636,21 +651,83 @@ router.get('/analytics', auth, async (req, res) => {
     }
 
     let filterTimeClause = '';
+    let timeGroupSelect = '';
+    let timeGroupOrderBy = '';
 
     if (period === 'day') {
-      filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
-      params.push(parseInt(year));
-      idx++;
+      if (from_date && to_date) {
+        filterTimeClause += ` AND su.usage_date::date >= $${idx}::date AND su.usage_date::date <= $${idx+1}::date`;
+        params.push(from_date, to_date);
+        idx += 2;
+      } else {
+        filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
+        params.push(parseInt(year));
+        idx++;
 
-      if (month && month !== 'all') {
-        filterTimeClause += ` AND EXTRACT(MONTH FROM su.usage_date) = $${idx}`;
-        params.push(parseInt(month));
+        if (month && month !== 'all') {
+          filterTimeClause += ` AND EXTRACT(MONTH FROM su.usage_date) = $${idx}`;
+          params.push(parseInt(month));
+          idx++;
+        }
+      }
+
+      timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY-MM-DD') as period_key, TO_CHAR(su.usage_date, 'DD/MM/YYYY') as period_label, TO_CHAR(su.usage_date, 'YYYY-MM-DD') as sort_order`;
+      timeGroupOrderBy = `ORDER BY period_key ASC`;
+
+    } else if (period === 'month') {
+      if (from_month && from_year && to_month && to_year) {
+        const startMonthStr = `${from_year}-${String(from_month).padStart(2, '0')}-01`;
+        const endMonthStartStr = `${to_year}-${String(to_month).padStart(2, '0')}-01`;
+        filterTimeClause += ` AND su.usage_date::date >= $${idx}::date AND su.usage_date::date <= ($${idx+1}::date + INTERVAL '1 month' - INTERVAL '1 day')`;
+        params.push(startMonthStr, endMonthStartStr);
+        idx += 2;
+      } else {
+        filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
+        params.push(parseInt(year));
         idx++;
       }
-    } else if (period === 'month' || period === 'quarter') {
-      filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
-      params.push(parseInt(year));
-      idx++;
+
+      timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY-MM') as period_key, 'Tháng ' || TO_CHAR(su.usage_date, 'MM/YYYY') as period_label, TO_CHAR(su.usage_date, 'YYYY-MM') as sort_order`;
+      timeGroupOrderBy = `ORDER BY period_key ASC`;
+
+    } else if (period === 'quarter') {
+      if (from_quarter && from_year && to_quarter && to_year) {
+        const qMonths = { '1': '01', '2': '04', '3': '07', '4': '10' };
+        const startQMonth = qMonths[String(from_quarter)] || '01';
+        const endQMonth = qMonths[String(to_quarter)] || '10';
+
+        const startQDate = `${from_year}-${startQMonth}-01`;
+        const endQDate = `${to_year}-${endQMonth}-01`;
+
+        filterTimeClause += ` AND su.usage_date::date >= $${idx}::date AND su.usage_date::date <= ($${idx+1}::date + INTERVAL '3 months' - INTERVAL '1 day')`;
+        params.push(startQDate, endQDate);
+        idx += 2;
+      } else {
+        filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
+        params.push(parseInt(year));
+        idx++;
+      }
+
+      timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY') || '-Q' || EXTRACT(QUARTER FROM su.usage_date) as period_key, 'Quý ' || EXTRACT(QUARTER FROM su.usage_date) || '/' || TO_CHAR(su.usage_date, 'YYYY') as period_label, TO_CHAR(su.usage_date, 'YYYY') || EXTRACT(QUARTER FROM su.usage_date) as sort_order`;
+      timeGroupOrderBy = `ORDER BY period_key ASC`;
+
+    } else if (period === 'year') {
+      if (from_year && to_year) {
+        filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) >= $${idx} AND EXTRACT(YEAR FROM su.usage_date) <= $${idx+1}`;
+        params.push(parseInt(from_year), parseInt(to_year));
+        idx += 2;
+      } else {
+        filterTimeClause += ` AND EXTRACT(YEAR FROM su.usage_date) = $${idx}`;
+        params.push(parseInt(year));
+        idx++;
+      }
+
+      timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY') as period_key, 'Năm ' || TO_CHAR(su.usage_date, 'YYYY') as period_label, EXTRACT(YEAR FROM su.usage_date) as sort_order`;
+      timeGroupOrderBy = `ORDER BY period_key ASC`;
+
+    } else {
+      timeGroupSelect = `'Tháng ' || EXTRACT(MONTH FROM su.usage_date) as period_key, 'Tháng ' || EXTRACT(MONTH FROM su.usage_date) as period_label, EXTRACT(MONTH FROM su.usage_date) as sort_order`;
+      timeGroupOrderBy = `ORDER BY sort_order ASC`;
     }
 
     // 1. Overall Category Totals for Selected Time Period & Farm
@@ -678,24 +755,7 @@ router.get('/analytics', auth, async (req, res) => {
       totalExpenditure += parseFloat(r.total_cost) || 0;
     });
 
-    // 2. Time Grouping Breakdown (Theo Ngày, Theo Tháng, Theo Quý, Theo Năm)
-    let timeGroupSelect = '';
-    let timeGroupOrderBy = '';
-
-    if (period === 'day') {
-      timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY-MM-DD') as period_label, EXTRACT(DAY FROM su.usage_date) as period_num`;
-      timeGroupOrderBy = `ORDER BY period_label ASC`;
-    } else if (period === 'quarter') {
-      timeGroupSelect = `'Quý ' || EXTRACT(QUARTER FROM su.usage_date) as period_label, EXTRACT(QUARTER FROM su.usage_date) as period_num`;
-      timeGroupOrderBy = `ORDER BY period_num ASC`;
-    } else if (period === 'year') {
-      timeGroupSelect = `TO_CHAR(su.usage_date, 'YYYY') as period_label, EXTRACT(YEAR FROM su.usage_date) as period_num`;
-      timeGroupOrderBy = `ORDER BY period_num ASC`;
-    } else {
-      timeGroupSelect = `'Tháng ' || EXTRACT(MONTH FROM su.usage_date) as period_label, EXTRACT(MONTH FROM su.usage_date) as period_num`;
-      timeGroupOrderBy = `ORDER BY period_num ASC`;
-    }
-
+    // 2. Time Grouping Breakdown
     const breakdownQuery = `
       SELECT ${timeGroupSelect},
              s.category,
@@ -704,7 +764,7 @@ router.get('/analytics', auth, async (req, res) => {
       FROM supply_usages su
       JOIN supplies s ON su.supply_id = s.id
       ${baseWhere} ${filterTimeClause}
-      GROUP BY period_label, period_num, s.category
+      GROUP BY period_key, period_label, sort_order, s.category
       ${timeGroupOrderBy}
     `;
 
@@ -712,8 +772,6 @@ router.get('/analytics', auth, async (req, res) => {
 
     res.json({
       period,
-      selected_year: parseInt(year),
-      selected_month: month ? parseInt(month) : null,
       summary: {
         total_expenditure: totalExpenditure,
         categories: categorySummary,
@@ -727,3 +785,4 @@ router.get('/analytics', auth, async (req, res) => {
 });
 
 module.exports = router;
+

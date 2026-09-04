@@ -2926,6 +2926,49 @@ td[data-label="Thao tác"] {
   transform: translateX(2px);
 }
 
+.preset-pill-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 4px 9px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-pill-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.btn-group-period .period-btn {
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-group-period .period-btn:not(:last-child) {
+  border-right: 1px solid #e2e8f0;
+}
+
+.btn-group-period .period-btn:hover {
+  background: #f8fafc;
+  color: #059669;
+}
+
+.btn-group-period .period-btn.active {
+  background: #059669;
+  color: #ffffff;
+}
+
 @media (max-width: 768px) {
   .inventory-cockpit-grid {
     grid-template-columns: 1fr 1fr !important;
@@ -2942,5 +2985,6 @@ td[data-label="Thao tác"] {
     grid-template-columns: 1fr !important;
   }
 }
+
 
 
