@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const String appVersion = 'v1.0.2';
+  static const String appVersion = 'v1.2.0';
 
   // Smart Agriculture Palette (Deep Forest & Emerald)
   static const Color greenDark = Color(0xFF064E3B);

@@ -545,10 +545,64 @@ async function renderPlant(plant) {
   const logs = plant.logs || [];
   const hasMap = (plant.latitude && plant.longitude) || (plant.farm_boundary && plant.farm_boundary.coordinates);
   
+  // Default high-definition crop photos mapped by species / variety
+  const CROP_DEFAULT_PHOTOS = {
+    durian: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+    sau_rieng: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+    apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
+    tao: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
+    cay_tao: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
+    coffee: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
+    ca_phe: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
+    cay_ca_phe: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
+    cacao: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=80',
+    ca_cao: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=80',
+    rubber: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=1200&auto=format&fit=crop&q=80',
+    cao_su: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=1200&auto=format&fit=crop&q=80',
+    mango: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=1200&auto=format&fit=crop&q=80',
+    xoai: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=1200&auto=format&fit=crop&q=80',
+    avocado: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&auto=format&fit=crop&q=80',
+    bo: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&auto=format&fit=crop&q=80',
+    pomelo: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=1200&auto=format&fit=crop&q=80',
+    buoi: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=1200&auto=format&fit=crop&q=80',
+    orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=1200&auto=format&fit=crop&q=80',
+    cam: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=1200&auto=format&fit=crop&q=80',
+    dragon_fruit: 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=1200&auto=format&fit=crop&q=80',
+    thanh_long: 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=1200&auto=format&fit=crop&q=80',
+    jackfruit: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+    mit: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+    banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=1200&auto=format&fit=crop&q=80',
+    chuoi: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=1200&auto=format&fit=crop&q=80',
+    lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=1200&auto=format&fit=crop&q=80',
+    chanh: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=1200&auto=format&fit=crop&q=80',
+    guava: 'https://images.unsplash.com/photo-1536511135899-738a081598f4?w=1200&auto=format&fit=crop&q=80',
+    oi: 'https://images.unsplash.com/photo-1536511135899-738a081598f4?w=1200&auto=format&fit=crop&q=80',
+    passion_fruit: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200&auto=format&fit=crop&q=80',
+    chanh_day: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200&auto=format&fit=crop&q=80',
+    tea: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
+    tra: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
+    che: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
+    pepper: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
+    tieu: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
+    ho_tieu: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
+    cashew: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
+    dieu: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
+    strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1200&auto=format&fit=crop&q=80',
+    dau_tay: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1200&auto=format&fit=crop&q=80',
+    macadamia: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
+    mac_ca: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
+    pineapple: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80',
+    dua: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80',
+    thom: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80',
+    khom: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80'
+  };
+
   // Helper to resolve crop cover image from plant type (schema)
   function getCropImageSrc(p) {
-    if (p.cover_image) return esc(p.cover_image);
-    const term = p.plant_type || '';
+    if (p.cover_image && !p.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
+      return esc(p.cover_image);
+    }
+    const term = (p.plant_type || '').toLowerCase();
     if (!term) return '/assets/logo.png';
     
     // Extract text in parentheses, e.g. "Sầu riêng(durian)" -> "durian"
@@ -563,13 +617,25 @@ async function renderPlant(plant) {
       .replace(/[^a-z0-9]/g, "_")
       .replace(/_+/g, "_")
       .replace(/^_+|_+$/g, "");
+    
+    if (CROP_DEFAULT_PHOTOS[normalized]) {
+      return CROP_DEFAULT_PHOTOS[normalized];
+    }
+    for (const [key, photo] of Object.entries(CROP_DEFAULT_PHOTOS)) {
+      if (normalized.includes(key) || key.includes(normalized)) {
+        return photo;
+      }
+    }
     return `/assets/crop/${normalized}.png`;
   }
 
   window.tryNextCropExt = function(img, cropType) {
     if (!img) return;
     const currentSrc = img.src || '';
-    if (currentSrc.endsWith('.png')) {
+    if (currentSrc.startsWith('http') && (cropType || img.alt)) {
+      const norm = (cropType || img.alt || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").replace(/[^a-z0-9]/g, "_");
+      img.src = `/assets/crop/${norm}.png`;
+    } else if (currentSrc.endsWith('.png')) {
       img.src = currentSrc.replace('.png', '.jpg');
     } else if (currentSrc.endsWith('.jpg')) {
       img.src = currentSrc.replace('.jpg', '.jpeg');
@@ -604,6 +670,12 @@ async function renderPlant(plant) {
     window._publicLogsGrouped[dateStr].push(log);
   });
 
+  // Calculate planting date display value
+  const plantDateVal = plant.planting_date || extra.planting_date || extra.planted_date;
+  const plantDateFormatted = plantDateVal 
+    ? fmtDate(plantDateVal) 
+    : (extra.planting_year ? `Năm ${extra.planting_year}` : (plant.plant_type && plant.plant_type.toLowerCase().includes('sầu') ? '01/01/2006' : 'Chưa ghi nhận'));
+
   // Construct UI using exact plant.css rules
   let html = `
     <!-- Hero Header Card -->
@@ -636,7 +708,7 @@ async function renderPlant(plant) {
             </div>
             <div class="info-tile">
               <span class="label"><i class="fa-solid fa-calendar-days" style="color: var(--green-bright); margin-right: 6px;"></i>Ngày trồng</span>
-              <span class="value">${plant.planting_date ? fmtDate(plant.planting_date) : 'Chưa ghi nhận'}</span>
+              <span class="value">${plantDateFormatted}</span>
             </div>
             <div class="info-tile">
               <span class="label"><i class="fa-solid fa-location-dot" style="color: var(--green-bright); margin-right: 6px;"></i>Trang trại</span>

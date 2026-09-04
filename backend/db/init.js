@@ -308,9 +308,10 @@ async function initDB() {
 
 
 
-    // NFC Tag UID column for plants (physical tag serial, unique system-wide)
+    // NFC Tag UID column and planting_date for plants
     await client.query(`
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(100) UNIQUE;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS planting_date DATE;
     `);
 
     // Devices table

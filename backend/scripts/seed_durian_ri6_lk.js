@@ -363,15 +363,15 @@ async function seedDurianRi6LK() {
     ];
 
     const biometricTimeline = [
-      { year: 2004, age: 1, trunk_diameter_cm: 8, height_m: 1.2, canopy_m: 0.8, phase: 'Xuống giống cây con' },
-      { year: 2005, age: 2, trunk_diameter_cm: 12, height_m: 2.2, canopy_m: 1.8, phase: 'Bấm đọt phân cành cấp 1' },
-      { year: 2006, age: 3, trunk_diameter_cm: 16, height_m: 3.2, canopy_m: 2.8, phase: 'Tạo tán hình tháp thông thoáng' },
-      { year: 2007, age: 4, trunk_diameter_cm: 22, height_m: 4.5, canopy_m: 4.0, phase: 'Sinh khối phát triển vượt bậc' },
-      { year: 2008, age: 5, trunk_diameter_cm: 28, height_m: 5.8, canopy_m: 5.5, phase: 'Chuẩn bị thể trạng đón trái bói' },
-      { year: 2009, age: 6, trunk_diameter_cm: 32, height_m: 6.8, canopy_m: 6.5, phase: 'Vụ bói đầu tiên (18 trái)' },
-      { year: 2013, age: 10, trunk_diameter_cm: 42, height_m: 8.5, canopy_m: 8.0, phase: 'Cây 10 năm tuổi thương phẩm' },
-      { year: 2018, age: 15, trunk_diameter_cm: 54, height_m: 10.5, canopy_m: 9.8, phase: 'Đạt đỉnh cao sinh học' },
-      { year: 2024, age: 20, trunk_diameter_cm: 65, height_m: 12.5, canopy_m: 11.0, phase: 'Cổ thụ 20 năm kinh doanh cực thịnh' }
+      { year: 2006, age: 1, trunk_diameter_cm: 8, height_m: 1.2, canopy_m: 0.8, phase: 'Xuống giống cây con tại vườn Long Khánh' },
+      { year: 2007, age: 2, trunk_diameter_cm: 14, height_m: 2.2, canopy_m: 1.8, phase: 'Bấm đọt phân cành cấp 1' },
+      { year: 2008, age: 3, trunk_diameter_cm: 20, height_m: 3.4, canopy_m: 2.8, phase: 'Tạo tán hình tháp thông thoáng' },
+      { year: 2009, age: 4, trunk_diameter_cm: 26, height_m: 4.6, canopy_m: 4.0, phase: 'Sinh khối phát triển vượt bậc' },
+      { year: 2010, age: 5, trunk_diameter_cm: 32, height_m: 5.8, canopy_m: 5.5, phase: 'Chuẩn bị thể trạng đón trái bói' },
+      { year: 2011, age: 6, trunk_diameter_cm: 36, height_m: 6.8, canopy_m: 6.5, phase: 'Vụ bói đầu tiên (18 trái)' },
+      { year: 2015, age: 10, trunk_diameter_cm: 45, height_m: 8.5, canopy_m: 8.0, phase: 'Cây 10 năm tuổi thương phẩm' },
+      { year: 2020, age: 15, trunk_diameter_cm: 56, height_m: 10.5, canopy_m: 9.8, phase: 'Đạt đỉnh cao sinh học' },
+      { year: 2026, age: 20, trunk_diameter_cm: 65, height_m: 12.5, canopy_m: 11.0, phase: 'Cổ thụ 20 năm kinh doanh cực thịnh' }
     ];
 
     const treeData = {
@@ -379,7 +379,9 @@ async function seedDurianRi6LK() {
       height_m: 12.5,
       canopy_diameter_m: 11.0,
       average_yield_kg: 450,
-      planting_year: 2004,
+      planting_date: '2006-01-01',
+      planted_date: '2006-01-01',
+      planting_year: 2006,
       rootstock: 'Gốc ghép sầu riêng hạt bản địa Long Khánh',
       current_season_target_fruits: 140,
       irrigation_system: 'Béc tưới bù áp tự động 120L/h (3 béc quanh tán)',
@@ -403,7 +405,7 @@ async function seedDurianRi6LK() {
       ORDER BY CASE WHEN tree_code = '1' OR tree_code = 'SR-01' OR tree_code ILIKE '%1%' THEN 1 ELSE 2 END, id ASC
     `, [farmId]);
 
-    const coverImg = 'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=800&auto=format&fit=crop&q=80';
+    const coverImg = 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80';
 
     if (existingPlantsInFarm.rows.length > 0) {
       const targetPlant = existingPlantsInFarm.rows[0];
@@ -415,6 +417,7 @@ async function seedDurianRi6LK() {
           plant_type = 'Sầu riêng',
           plant_variety = 'Ri6 Cổ Thụ (20 Năm Tuổi)',
           plant_age = '20 năm tuổi',
+          planting_date = '2006-01-01',
           health_status = 'Tốt',
           location = COALESCE(location, 'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)'),
           tree_code = $1,
@@ -436,12 +439,12 @@ async function seedDurianRi6LK() {
     } else {
       const newPlant = await client.query(`
         INSERT INTO plants (
-          farm_id, created_by, plant_type, plant_variety, plant_age, health_status,
+          farm_id, created_by, plant_type, plant_variety, plant_age, planting_date, health_status,
           location, tree_code, nfc_uid, public_slug, latitude, longitude,
           cover_image, is_public, data, phi_status, phi_until_date,
           last_pesticide_date, last_pesticide_name
         ) VALUES (
-          $1, $2, 'Sầu riêng', 'Ri6 Cổ Thụ (20 Năm Tuổi)', '20 năm tuổi', 'Tốt',
+          $1, $2, 'Sầu riêng', 'Ri6 Cổ Thụ (20 Năm Tuổi)', '20 năm tuổi', '2006-01-01', 'Tốt',
           'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)', '1',
           '04:A2:3B:8C:9F:5D:80', 'flk-sr01-ri6-longkhanh', 10.941520, 107.241850,
           $3, true, $4, 'safe', '2026-06-04', '2026-05-20', 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)'

@@ -299,7 +299,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                               border: Border.all(color: AppTheme.greenDark.withOpacity(0.2)),
                             ),
                             child: const Text(
-                              'v1.0.2',
+                              'v1.2.0',
                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.greenDark),
                             ),
                           ),

@@ -273,7 +273,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           border: Border.all(color: AppTheme.green.withOpacity(0.3)),
                         ),
                         child: const Text(
-                          'v1.0.2',
+                          'v1.2.0',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.green),
                         ),
                       ),
