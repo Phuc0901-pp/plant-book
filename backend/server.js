@@ -152,40 +152,7 @@ app.get('/', (req, res) => {
 // ─── Start ────────────────────────────────────────────────────────
 async function start() {
   try {
-    await initDB();
-    await ensureBucket();
-
-    // Setup interval to mark users offline after 30 minutes of inactivity
-    const pool = require('./config/db');
-    setInterval(async () => {
-      try {
-        const res = await pool.query(`
-          UPDATE users 
-          SET is_online = false 
-          WHERE is_online = true 
-            AND last_active_at < NOW() - INTERVAL '30 minutes'
-          RETURNING id, email
-        `);
-        if (res.rows.length > 0) {
-          console.log(`🧹 Marked ${res.rows.length} inactive users as offline:`, res.rows.map(r => r.email));
-          for (const u of res.rows) {
-            await pool.query(`
-              INSERT INTO user_activities (user_id, activity_type, description)
-              VALUES ($1, 'Đăng xuất', 'Hệ thống tự động đăng xuất do không hoạt động (quá 30 phút)')
-            `, [u.id]);
-            
-            // Broadcast real-time status change
-            if (global.broadcastWS) {
-              global.broadcastWS('user_status_changed', { id: u.id, is_online: false, last_active_at: new Date() });
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error cleaning up inactive users:', err);
-      }
-    }, 30 * 60 * 1000); // 30 minutes
-
-    // Create HTTP Server wrapped around Express
+    // 1. Create HTTP Server wrapped around Express
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ server });
     const clients = new Set();
@@ -224,10 +191,54 @@ async function start() {
     global.broadcastWS = broadcast;
     app.set('broadcast', broadcast);
 
-    server.listen(PORT, () => {
+    // 2. Start listening on PORT immediately (Health Check responds in < 1s)
+    server.listen(PORT, async () => {
       console.log(`\n🌿 Plant Book Server running at port ${PORT}`);
       console.log(`📋 Admin panel: /admin`);
       console.log(`🔑 Login: ${process.env.ADMIN_EMAIL} / ${process.env.ADMIN_PASSWORD}\n`);
+
+      // 3. Initialize DB & Storage in background (Non-blocking for Render Health Check)
+      try {
+        await initDB();
+        await ensureBucket();
+        console.log('✅ Database & Supabase Storage Initialized Successfully');
+      } catch (dbErr) {
+        console.error('⚠️ Database/Storage Init Warning:', dbErr.message);
+      }
+
+      // Setup interval to mark users offline after 30 minutes of inactivity
+      try {
+        const pool = require('./config/db');
+        setInterval(async () => {
+          try {
+            const res = await pool.query(`
+              UPDATE users 
+              SET is_online = false 
+              WHERE is_online = true 
+                AND last_active_at < NOW() - INTERVAL '30 minutes'
+              RETURNING id, email
+            `);
+            if (res.rows.length > 0) {
+              console.log(`🧹 Marked ${res.rows.length} inactive users as offline:`, res.rows.map(r => r.email));
+              for (const u of res.rows) {
+                await pool.query(`
+                  INSERT INTO user_activities (user_id, activity_type, description)
+                  VALUES ($1, 'Đăng xuất', 'Hệ thống tự động đăng xuất do không hoạt động (quá 30 phút)')
+                `, [u.id]);
+                
+                // Broadcast real-time status change
+                if (global.broadcastWS) {
+                  global.broadcastWS('user_status_changed', { id: u.id, is_online: false, last_active_at: new Date() });
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Error cleaning up inactive users:', err.message);
+          }
+        }, 30 * 60 * 1000); // 30 minutes
+      } catch (poolErr) {
+        console.error('Inactive cleanup timer init warning:', poolErr.message);
+      }
 
       // Auto Keep-Alive Self-Ping (Ngăn Render Free-tier tự động ngủ)
       const appUrl = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
