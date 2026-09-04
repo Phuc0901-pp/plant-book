@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve favicon
 app.get('/favicon.ico', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/assets/logo.png'));
+  res.sendFile(path.join(__dirname, '../frontend/assets/favicon.ico'));
 });
 
 // Serve user portal images across all path prefixes (/user/img, /img, /usr-*/img)
