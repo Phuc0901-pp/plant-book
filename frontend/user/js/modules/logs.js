@@ -64,10 +64,11 @@ window.toggleDiseaseOnlyFilter = toggleDiseaseOnlyFilter;
 // ── Grouping Algorithm ────────────────────────────────────────
 
 /**
- * Gom nhóm các nhật ký canh tác theo Ngày + Loại hoạt động + Nông trại.
- * - Ngoại trừ 'Bệnh cây' (giữ nguyên từng dòng riêng biệt).
- * - Nếu gom được tất cả cây thuộc nông trại/nông hộ -> Hiển thị "Toàn vườn [Tên vườn]".
- * - Nếu gom được nhiều cây -> Hiển thị "Cây #1, #2, #4".
+ * Gom nhóm các nhật ký canh tác theo Ngày + Loại hoạt động + Nông trại + Vật tư.
+ * - Tự động cộng dồn tổng dung tích/khối lượng vật tư cùng ngày.
+ * - Tự động cộng dồn tổng chi phí & doanh thu.
+ * - Tóm gọn chú thích theo các mốc thời gian không trùng lặp.
+ * - Ngoại trừ 'Bệnh cây' (giữ nguyên từng dòng riêng biệt phục vụ dịch tễ).
  */
 export function groupCareLogs(logs) {
   if (!Array.isArray(logs) || logs.length === 0) return [];
@@ -75,8 +76,11 @@ export function groupCareLogs(logs) {
   const grouped = [];
   const regularGroups = new Map();
 
-  for (const log of logs) {
-    // Bệnh cây: Không gom nhóm, giữ nguyên dòng riêng biệt
+  for (const rawLog of logs) {
+    // Clone log để không mutate cache gốc
+    const log = JSON.parse(JSON.stringify(rawLog));
+
+    // Bệnh cây: Không gom nhóm, giữ nguyên dòng riêng biệt phục vụ điều tra dịch tễ
     if (log.log_type === 'Bệnh cây') {
       grouped.push({
         ...log,
@@ -87,24 +91,73 @@ export function groupCareLogs(logs) {
     }
 
     const dateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
-    const detailsKey = JSON.stringify(log.details || {});
-    const key = `${dateStr}_${log.log_type}_${log.farm_id || 0}_${log.created_by || 0}_${detailsKey}_${log.note || ''}`;
+    const farmId = log.farm_id || 0;
+    const logType = log.log_type || 'Chăm sóc';
+    
+    // Tên vật tư hoặc hoạt chất chính
+    const supplyName = (log.details?.supply_name || log.details?.fertilizer_name || log.details?.pesticide_name || log.details?.foliar_nutrition || log.details?.fertilizer || log.details?.pesticide || '').trim().toLowerCase();
+    
+    // Khóa gom nhóm chính: Cùng ngày + Cùng nông trại + Cùng loại hoạt động + Cùng vật tư
+    const key = `${dateStr}__${farmId}__${logType}__${supplyName}`;
 
     if (!regularGroups.has(key)) {
       regularGroups.set(key, {
         baseLog: log,
         plantsMap: new Map(),
         farmId: log.farm_id,
-        farmName: log.farm_name
+        farmName: log.farm_name,
+        totalQuantity: 0,
+        unit: log.details?.unit || log.details?.package_unit || '',
+        totalCost: 0,
+        totalRevenue: 0,
+        totalFruitCount: 0,
+        timesList: [],
+        notesList: [],
+        occurrenceCount: 0
       });
     }
 
     const groupObj = regularGroups.get(key);
-    groupObj.plantsMap.set(log.plant_id, log.tree_code || String(log.plant_id));
+    groupObj.occurrenceCount += 1;
+
+    // Track plants
+    if (log.plant_id) {
+      groupObj.plantsMap.set(log.plant_id, log.tree_code || String(log.plant_id));
+    }
+
+    // Accumulate Quantity
+    const qVal = parseFloat(log.details?.quantity ?? log.details?.amount ?? log.details?.qty ?? log.details?.dosage ?? log.details?.volume ?? log.details?.yield_kg ?? 0) || 0;
+    groupObj.totalQuantity += qVal;
+    if (!groupObj.unit && (log.details?.unit || log.details?.package_unit)) {
+      groupObj.unit = log.details?.unit || log.details?.package_unit;
+    }
+
+    // Accumulate Cost & Revenue
+    const cVal = parseFloat(log.details?.total_cost || 0) || 0;
+    groupObj.totalCost += cVal;
+
+    const rVal = parseFloat(log.details?.total_revenue || 0) || 0;
+    groupObj.totalRevenue += rVal;
+
+    const fVal = parseInt(log.details?.fruit_count || 0) || 0;
+    groupObj.totalFruitCount += fVal;
+
+    // Track Time
+    const logTime = log.details?.time || (log.log_date ? new Date(log.log_date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
+    if (logTime && !groupObj.timesList.includes(logTime)) {
+      groupObj.timesList.push(logTime);
+    }
+
+    // Track Notes
+    if (log.note && log.note.trim() && !groupObj.notesList.includes(log.note.trim())) {
+      groupObj.notesList.push(log.note.trim());
+    }
   }
 
   for (const [key, groupObj] of regularGroups.entries()) {
     const log = { ...groupObj.baseLog };
+    log.details = { ...(log.details || {}) };
+
     const plantIds = Array.from(groupObj.plantsMap.keys());
     const treeCodes = Array.from(groupObj.plantsMap.values());
 
@@ -123,21 +176,47 @@ export function groupCareLogs(logs) {
       targetDisplay = `Toàn vườn${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
     } else if (treeCodes.length > 1) {
       targetDisplay = `Cây #${treeCodes.join(', #')}${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
+    } else if (treeCodes.length === 1) {
+      targetDisplay = `Cây #${treeCodes[0]}${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
     } else {
-      targetDisplay = `Cây #${treeCodes[0] || log.plant_id}${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
+      targetDisplay = `Toàn vườn${groupObj.farmName ? ' (' + groupObj.farmName + ')' : ''}`;
     }
 
+    // Apply accumulated quantity and costs
+    if (groupObj.totalQuantity > 0) {
+      log.details.quantity = Number(groupObj.totalQuantity.toFixed(2));
+      log.details.amount = Number(groupObj.totalQuantity.toFixed(2));
+      log.details.unit = groupObj.unit;
+    }
+    if (groupObj.totalCost > 0) {
+      log.details.total_cost = groupObj.totalCost;
+    }
+    if (groupObj.totalRevenue > 0) {
+      log.details.total_revenue = groupObj.totalRevenue;
+    }
+    if (groupObj.totalFruitCount > 0) {
+      log.details.fruit_count = groupObj.totalFruitCount;
+    }
+
+    // Format merged notes
+    if (groupObj.occurrenceCount > 1) {
+      const timesStr = groupObj.timesList.length > 0 ? `[${groupObj.timesList.join(', ')}] ` : '';
+      const notesCombined = groupObj.notesList.length > 0 ? groupObj.notesList.join('; ') : 'Thực hiện định kỳ trong ngày';
+      log.note = `${timesStr}Tổng hợp ${groupObj.occurrenceCount} lượt: ${notesCombined}`;
+      log.details.time = groupObj.timesList.join(', ');
+    }
 
     log.targetDisplay = targetDisplay;
-    log.isGrouped = treeCodes.length > 1 || targetDisplay.startsWith('Toàn vườn');
+    log.isGrouped = treeCodes.length > 1 || targetDisplay.startsWith('Toàn vườn') || groupObj.occurrenceCount > 1;
     log.groupedPlantCount = treeCodes.length;
+    log.occurrenceCount = groupObj.occurrenceCount;
 
     grouped.push(log);
   }
 
   grouped.sort((a, b) => {
-    const timeA = new Date(a.log_date).getTime();
-    const timeB = new Date(b.log_date).getTime();
+    const timeA = new Date(a.log_date || a.created_at).getTime();
+    const timeB = new Date(b.log_date || b.created_at).getTime();
     if (timeB !== timeA) return timeB - timeA;
     return (b.id || 0) - (a.id || 0);
   });
@@ -355,6 +434,7 @@ export function renderUserLogsTable(logs) {
           <span class="badge ${badgeClass}" style="font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;">
             <i class="${icon}"></i> ${esc(l.log_type)}
           </span>
+          ${l.occurrenceCount > 1 ? `<span class="badge" style="font-size: 10px; font-weight: 800; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 10px; margin-left: 4px;" title="Gom nhóm ${l.occurrenceCount} lượt trong cùng ngày"><i class="fa-solid fa-layer-group" style="font-size: 9px;"></i> ${l.occurrenceCount} lượt</span>` : ''}
         </td>
         <td data-label="Chi tiết / Ghi chú" style="vertical-align: middle; padding: 12px 14px; font-size: 13px; color: #334155; line-height: 1.5;">
           <div>${detailsStr || 'Đã hoàn thành công việc theo quy trình chuẩn.'}</div>

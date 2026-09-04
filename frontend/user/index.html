@@ -628,10 +628,10 @@
             </div>
 
             <!-- Cockpit Body Grid -->
-            <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; background: #ffffff;">
+            <div class="cockpit-grid" style="padding: 20px; background: #ffffff;">
               
               <!-- Cột 1: Thông tin chủ hộ & Liên hệ -->
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div class="cockpit-col cockpit-col-1" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                   <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
                     <i class="fa-solid fa-user-tie" style="color: #059669;"></i> Chủ Hộ &amp; Định Danh
@@ -649,38 +649,79 @@
                 </div>
               </div>
 
-              <!-- Cột 2: Quy mô vườn & Mã PUC VietGAP -->
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+              <!-- Cột 2: Quy mô vườn & Mã PUC VietGAP kèm Popover Danh Sách Trang Trại -->
+              <div class="cockpit-col cockpit-col-2" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
                 <div>
-                  <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
-                    <i class="fa-solid fa-tree" style="color: #059669;"></i> Quy Mô &amp; Chứng Nhận
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">
+                      <i class="fa-solid fa-tree" style="color: #059669;"></i> Quy Mô &amp; Chứng Nhận
+                    </div>
+                    <span class="badge" id="btn-farm-detail-badge" style="font-size: 10.5px; background: #e0f2fe; color: #0284c7; padding: 2px 7px; border-radius: 6px; font-weight: 700; cursor: pointer;" title="Nhấn để xem danh sách chi tiết trang trại">
+                      <i class="fa-solid fa-circle-info"></i> Chi tiết
+                    </span>
                   </div>
-                  <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;">
-                    <span id="cockpit-farm-count" style="font-size: 20px; font-weight: 900; color: #059669;">1</span>
-                    <span style="font-size: 13px; font-weight: 700; color: #334155;">Trang trại sở hữu</span>
+
+                  <!-- Tương tác Rê chuột / Bấm xem danh sách trang trại -->
+                  <div id="cockpit-farm-trigger" class="farm-interactive-trigger" title="Xem danh sách chi tiết các trang trại sở hữu">
+                    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                      <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="cockpit-farm-count" style="font-size: 22px; font-weight: 900; color: #059669;">1</span>
+                        <span style="font-size: 13.5px; font-weight: 800; color: #334155;">Trang trại sở hữu</span>
+                      </div>
+                      <i class="fa-solid fa-chevron-down" style="font-size: 11px; color: #94a3b8; transition: transform 0.2s;" id="farm-chevron-icon"></i>
+                    </div>
+                    <div id="cockpit-total-area" style="font-size: 13px; font-weight: 700; color: #0284c7; margin-top: 2px;">
+                      Diện tích: <span style="font-weight: 900;">0.57 ha</span> (5,733.9 m²)
+                    </div>
                   </div>
-                  <div id="cockpit-total-area" style="font-size: 13px; font-weight: 700; color: #0284c7; margin-bottom: 4px;">
-                    Diện tích: <span style="font-weight: 900;">0.57 ha</span> (5,733.9 m²)
-                  </div>
-                  <div id="cockpit-puc-badge" style="font-size: 12px; font-weight: 700; color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content;">
+
+                  <div id="cockpit-puc-badge" style="font-size: 12px; font-weight: 700; color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content; margin-top: 4px;">
                     <i class="fa-solid fa-shield-halved"></i> Mã PUC: VN-LK-001 (VietGAP)
+                  </div>
+                </div>
+
+                <!-- Farm Popover Floating Dropdown -->
+                <div id="cockpit-farm-popover" class="farm-popover-dropdown" style="display: none;">
+                  <div class="farm-popover-header">
+                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 12.5px; color: #0f172a;">
+                      <i class="fa-solid fa-layer-group" style="color: #059669;"></i> Danh Sách Trang Trại Sở Hữu
+                    </div>
+                    <button type="button" id="btn-close-farm-popover" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 4px;" title="Đóng">&times;</button>
+                  </div>
+                  <div id="cockpit-farm-popover-list" class="farm-popover-list">
+                    <!-- Danh sách trang trại được render động từ JS -->
                   </div>
                 </div>
               </div>
 
-              <!-- Cột 3: Cơ cấu cây trồng & Nút mở GIS Map 1-Chạm -->
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+              <!-- Cột 3: Cơ cấu cây trồng chuẩn ERP & Nút mở GIS Map 1-Chạm -->
+              <div class="cockpit-col cockpit-col-3" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
-                  <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
-                    <i class="fa-solid fa-chart-pie" style="color: #059669;"></i> Cơ Cấu Cây Trồng
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">
+                      <i class="fa-solid fa-chart-pie" style="color: #059669;"></i> Cơ Cấu Cây Trồng
+                    </div>
+                    <div id="cockpit-crop-total-badge" style="font-size: 11px; font-weight: 800; color: #059669; background: #d1fae5; padding: 2px 8px; border-radius: 12px;">
+                      <!-- 6 cây -->
+                    </div>
                   </div>
-                  <div id="cockpit-crop-breakdown" style="font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
-                    🌱 100% Sầu riêng Ri6 (6 cây)
+
+                  <!-- Thanh phân bổ đa sắc (Multi-segment Progress Bar) -->
+                  <div id="cockpit-crop-progress-bar" class="crop-progress-bar" style="margin-bottom: 8px;">
+                    <!-- Segmented bars dynamically injected -->
                   </div>
-                  <div style="font-size: 12px; color: #16a34a; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
-                    <i class="fa-solid fa-circle-check"></i> 100% Cây sinh trưởng tốt
+
+                  <!-- Ma trận thẻ giống cây thu gọn (Compact Matrix Chips) -->
+                  <div id="cockpit-crop-chips-matrix" class="crop-chips-matrix" style="margin-bottom: 8px;">
+                    <!-- Chips dynamically injected -->
+                  </div>
+
+                  <!-- Tình trạng sinh trưởng -->
+                  <div id="cockpit-health-status-row" style="font-size: 12px; color: #16a34a; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
+                    <i class="fa-solid fa-circle-check"></i> <span id="cockpit-health-status-text">100% Cây sinh trưởng tốt</span>
                   </div>
                 </div>
+
                 <div>
                   <button type="button" class="btn btn-primary" onclick="showPage('farms')" style="width: 100%; padding: 8px 12px; font-size: 12.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(5,150,105,0.25);">
                     <i class="fa-solid fa-earth-asia"></i> <span>Mở Bản Đồ GIS Thửa Đất</span> <i class="fa-solid fa-arrow-right" style="font-size: 11px;"></i>

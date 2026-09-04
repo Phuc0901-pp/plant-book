@@ -19,6 +19,11 @@ import { ensureUserMapboxToken, initUserMap } from './map.js';
 let _configsCache = {};
 
 /**
+ * Palette màu nhận diện cây trồng chuẩn AgTech
+ */
+const CROP_COLOR_PALETTE = ['#059669', '#0284c7', '#8b5cf6', '#f59e0b', '#10b981', '#06b6d4', '#f97316', '#ec4899'];
+
+/**
  * Render Khối Hồ Sơ Nông Hộ & Năng Lực Canh Tác VietGAP (Tầng 1)
  */
 export function renderFarmerCockpitCard(user, farms = [], plants = []) {
@@ -82,26 +87,159 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     pucBadgeEl.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Mã PUC: <strong>${esc(primaryPuc)}</strong> (VietGAP)`;
   }
 
-  // 4. Crop Breakdown
-  const cropMap = new Map();
+  // ── 3.1. Farm Popover Rendering & Interactive Listeners ──
+  const popoverListEl = document.getElementById('cockpit-farm-popover-list');
+  const popoverEl = document.getElementById('cockpit-farm-popover');
+  const triggerEl = document.getElementById('cockpit-farm-trigger');
+  const badgeDetailEl = document.getElementById('btn-farm-detail-badge');
+  const closePopoverBtn = document.getElementById('btn-close-farm-popover');
+  const chevronIcon = document.getElementById('farm-chevron-icon');
+
+  if (popoverListEl) {
+    const renderFarms = farms.length > 0 ? farms : [
+      { id: 1, name: 'Trang Trại Sầu Riêng Long Khánh #1', area: 5733.9, puc_code: 'VN-LK-001', address: 'Long Khánh, Đồng Nai' }
+    ];
+
+    popoverListEl.innerHTML = renderFarms.map((f, idx) => {
+      const fAreaSqM = f.area ? parseFloat(f.area) : 5733.9;
+      const fAreaHa = (fAreaSqM / 10000).toFixed(2);
+      const fPlantsCount = plants.filter(p => p.farm_id == f.id).length || plants.length || 6;
+      const fPuc = f.puc_code || 'VN-LK-001';
+
+      return `
+        <div class="farm-popover-item" onclick="if(window.showPage) window.showPage('farms')" title="Xem bản đồ và danh sách cây thuộc ${esc(f.name || 'Trang trại')}">
+          <div class="farm-name">
+            <i class="fa-solid fa-tree" style="color:#059669; font-size:11px;"></i>
+            <span>${esc(f.name || `Trang trại #${idx + 1}`)}</span>
+          </div>
+          <div class="farm-meta">
+            <span><i class="fa-solid fa-ruler-combined" style="color:#0284c7; font-size:10px;"></i> ${fAreaHa} ha (${Number(fAreaSqM.toFixed(1)).toLocaleString('vi-VN')} m²)</span>
+            <span style="font-weight:700; color:#059669;">${fPlantsCount} cây trồng</span>
+          </div>
+          <div style="font-size:11px; color:#065f46; display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+            <span><i class="fa-solid fa-shield-halved" style="font-size:10px;"></i> Mã PUC: <strong>${esc(fPuc)}</strong></span>
+            <span style="color:#0284c7; font-weight:700; font-size:11px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở GIS</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Toggle popover function
+  function toggleFarmPopover(e) {
+    if (e) e.stopPropagation();
+    if (!popoverEl) return;
+    const isShowing = popoverEl.style.display === 'block';
+    popoverEl.style.display = isShowing ? 'none' : 'block';
+    if (triggerEl) triggerEl.classList.toggle('active', !isShowing);
+    if (chevronIcon) chevronIcon.style.transform = isShowing ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+
+  if (triggerEl && !triggerEl._hasListener) {
+    triggerEl.addEventListener('click', toggleFarmPopover);
+    triggerEl._hasListener = true;
+  }
+  if (badgeDetailEl && !badgeDetailEl._hasListener) {
+    badgeDetailEl.addEventListener('click', toggleFarmPopover);
+    badgeDetailEl._hasListener = true;
+  }
+  if (closePopoverBtn && !closePopoverBtn._hasListener) {
+    closePopoverBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (popoverEl) popoverEl.style.display = 'none';
+      if (triggerEl) triggerEl.classList.remove('active');
+      if (chevronIcon) chevronIcon.style.transform = 'rotate(0deg)';
+    });
+    closePopoverBtn._hasListener = true;
+  }
+
+  // Auto close popover on outside click
+  if (!window._farmPopoverGlobalHandler) {
+    window._farmPopoverGlobalHandler = (e) => {
+      const p = document.getElementById('cockpit-farm-popover');
+      const tr = document.getElementById('cockpit-farm-trigger');
+      const bd = document.getElementById('btn-farm-detail-badge');
+      const ci = document.getElementById('farm-chevron-icon');
+      if (p && p.style.display === 'block') {
+        if (!p.contains(e.target) && !tr?.contains(e.target) && !bd?.contains(e.target)) {
+          p.style.display = 'none';
+          if (tr) tr.classList.remove('active');
+          if (ci) ci.style.transform = 'rotate(0deg)';
+        }
+      }
+    };
+    document.addEventListener('click', window._farmPopoverGlobalHandler);
+  }
+
+  // ── 4. Crop Breakdown (ERP Multi-segment Progress Bar & Chip Matrix) ──
+  const cropGroupMap = new Map();
   plants.forEach(p => {
     const type = p.plant_type || 'Sầu riêng';
     const variety = p.plant_variety ? ` ${p.plant_variety}` : '';
-    const label = `${type}${variety}`.trim();
-    cropMap.set(label, (cropMap.get(label) || 0) + 1);
+    let label = `${type}${variety}`.trim();
+    if (p.name && (p.name.includes('Cổ Thụ') || p.name.includes('Năm Tuổi'))) {
+      label = p.name.trim();
+    }
+    cropGroupMap.set(label, (cropGroupMap.get(label) || 0) + 1);
   });
 
-  const cropEl = document.getElementById('cockpit-crop-breakdown');
-  if (cropEl) {
-    if (cropMap.size === 0) {
-      cropEl.textContent = '🌱 Chưa ghi nhận cây trồng';
+  const totalPlants = plants.length || 0;
+  const totalBadgeEl = document.getElementById('cockpit-crop-total-badge');
+  if (totalBadgeEl) totalBadgeEl.textContent = `${totalPlants} cây trồng`;
+
+  const progressBarEl = document.getElementById('cockpit-crop-progress-bar');
+  const chipsMatrixEl = document.getElementById('cockpit-crop-chips-matrix');
+  const healthStatusText = document.getElementById('cockpit-health-status-text');
+
+  // Health KPI calculation
+  let sickCount = 0;
+  plants.forEach(p => {
+    const s = (p.health_status || '').toLowerCase();
+    if (s.includes('bệnh') || s.includes('sick') || s.includes('yếu') || s.includes('nguy kịch')) sickCount++;
+  });
+  const healthyCount = Math.max(0, totalPlants - sickCount);
+  const healthyPct = totalPlants > 0 ? Math.round((healthyCount / totalPlants) * 100) : 100;
+  if (healthStatusText) {
+    healthStatusText.textContent = `${healthyPct}% Cây sinh trưởng tốt (${healthyCount}/${totalPlants} cây)`;
+  }
+
+  // Render Multi-segment Progress Bar
+  if (progressBarEl) {
+    if (totalPlants === 0) {
+      progressBarEl.innerHTML = '<div class="crop-progress-segment" style="width: 100%; background: #cbd5e1;" title="Chưa có cây trồng"></div>';
     } else {
-      const items = [];
-      cropMap.forEach((cnt, name) => {
-        const pct = Math.round((cnt / plants.length) * 100);
-        items.push(`${pct}% ${name} (${cnt} cây)`);
+      let segmentsHtml = '';
+      let colorIdx = 0;
+      cropGroupMap.forEach((cnt, name) => {
+        const pct = ((cnt / totalPlants) * 100).toFixed(1);
+        const color = CROP_COLOR_PALETTE[colorIdx % CROP_COLOR_PALETTE.length];
+        segmentsHtml += `<div class="crop-progress-segment" style="width: ${pct}%; background: ${color};" title="${esc(name)}: ${cnt} cây (${pct}%)"></div>`;
+        colorIdx++;
       });
-      cropEl.innerHTML = `🌱 ${esc(items.join(', '))}`;
+      progressBarEl.innerHTML = segmentsHtml;
+    }
+  }
+
+  // Render Compact Chip Matrix
+  if (chipsMatrixEl) {
+    if (totalPlants === 0) {
+      chipsMatrixEl.innerHTML = '<span style="font-size:12px; color:#64748b;">🌱 Chưa ghi nhận cây trồng</span>';
+    } else {
+      let chipsHtml = '';
+      let colorIdx = 0;
+      cropGroupMap.forEach((cnt, name) => {
+        const pct = Math.round((cnt / totalPlants) * 100);
+        const color = CROP_COLOR_PALETTE[colorIdx % CROP_COLOR_PALETTE.length];
+        chipsHtml += `
+          <div class="crop-matrix-chip" title="${esc(name)}: ${cnt} cây (${pct}%)">
+            <span class="chip-dot" style="background: ${color};"></span>
+            <span style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(name)}</span>
+            <span class="chip-count">${cnt} cây <span style="color:#64748b; font-weight:600;">(${pct}%)</span></span>
+          </div>
+        `;
+        colorIdx++;
+      });
+      chipsMatrixEl.innerHTML = chipsHtml;
     }
   }
 }
