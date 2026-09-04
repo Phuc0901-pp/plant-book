@@ -13,6 +13,42 @@ async function seedDurianRi6LK() {
     console.log('🌱 Bắt đầu tạo siêu dữ liệu mẫu Cây Sầu Riêng Ri6 STT 1 (Trang trại LK) với 20,000+ Nhật Ký Canh Tác...');
     await client.query('BEGIN');
 
+    // Đảm bảo tất cả các cột cần thiết trên các bảng đã tồn tại trước khi seed
+    await client.query(`
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS user_id INTEGER;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS latitude NUMERIC;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS longitude NUMERIC;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS puc_code VARCHAR(100);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_number VARCHAR(100);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_org VARCHAR(255);
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_date DATE;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS address TEXT;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_view_plants BOOLEAN DEFAULT true;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_shared_history BOOLEAN DEFAULT true;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS allow_shared_supplies BOOLEAN DEFAULT true;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS total_plants INTEGER DEFAULT 0;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
+
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS farm_id INTEGER;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS latitude NUMERIC;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS longitude NUMERIC;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS tree_code VARCHAR(100);
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS assigned_to_user_id INTEGER;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS phi_until_date TIMESTAMPTZ;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS phi_active_supply_name VARCHAR(255);
+
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS safety_interval_days INTEGER DEFAULT 0;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS safety_interval_note TEXT;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS default_dosage NUMERIC;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS dosage_unit VARCHAR(50);
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS is_unlimited BOOLEAN DEFAULT false;
+
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS batch_code VARCHAR(150);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS puc_code VARCHAR(100);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS operator_name VARCHAR(255);
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS equipment_used VARCHAR(255);
+    `);
+
     // ── 1. TÌM TRANG TRẠI "LK" HIỆN HỮU VÀ TÀI KHOẢN NÔNG HỘ SỞ HỮU ──
     const farmRes = await client.query(`
       SELECT * FROM farms 
