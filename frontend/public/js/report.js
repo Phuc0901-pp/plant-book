@@ -244,6 +244,15 @@
         attributionControl: false
       });
 
+      map.on('error', (e) => {
+        if (e && e.error) {
+          const msg = String(e.error.message || e.error).toLowerCase();
+          if (msg.includes('image') || msg.includes('send') || msg.includes('ajax') || msg.includes('sprite') || msg.includes('svg')) {
+            return;
+          }
+        }
+      });
+
       map.on('load', () => {
         addContourLinesToMap(map);
         const bounds = new mapboxgl.LngLatBounds();

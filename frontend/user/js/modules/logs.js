@@ -198,13 +198,16 @@ export function groupCareLogs(logs) {
       log.details.fruit_count = groupObj.totalFruitCount;
     }
 
-    // Format merged notes
+    // Format merged notes & times
     if (groupObj.occurrenceCount > 1) {
       const timesStr = groupObj.timesList.length > 0 ? `[${groupObj.timesList.join(', ')}] ` : '';
       const notesCombined = groupObj.notesList.length > 0 ? groupObj.notesList.join('; ') : 'Thực hiện định kỳ trong ngày';
       log.note = `${timesStr}Tổng hợp ${groupObj.occurrenceCount} lượt: ${notesCombined}`;
       log.details.time = groupObj.timesList.join(', ');
+    } else if (groupObj.timesList.length > 0) {
+      log.details.time = groupObj.timesList[0];
     }
+    log.timesList = groupObj.timesList || [];
 
     log.targetDisplay = targetDisplay;
     log.isGrouped = treeCodes.length > 1 || targetDisplay.startsWith('Toàn vườn') || groupObj.occurrenceCount > 1;
@@ -331,7 +334,9 @@ export function groupCareLogsByDay(logs) {
 // ── Render ────────────────────────────────────────────────────
 
 /**
- * Render tóm tắt Hoạt động Canh tác gần đây trên Trang chủ (Bảng 6 cột chuẩn ERP thẳng hàng).
+ * Render tóm tắt Hoạt động Canh tác gần đây trên Trang chủ.
+ * Gom cụm theo từng Ngày (tối đa 3 ngày gần nhất), hiển thị thanh tiêu đề Ngày,
+ * bên dưới tách riêng từng loại hoạt động, hiển thị các mốc giờ [07:00, 16:00] và chi tiết/chú thích.
  * @param {Array} logs
  */
 export function renderUserLogsTable(logs) {
@@ -347,113 +352,175 @@ export function renderUserLogsTable(logs) {
 
   if (moreWrap) moreWrap.style.display = 'block';
 
-  // Group raw logs into normalized individual activities (up to top 8 items)
-  const groupedLogs = groupCareLogs(logs).slice(0, 8);
+  // 1. Phân chia raw logs theo từng Ngày
+  const daysMap = new Map();
+  for (const log of logs) {
+    const dateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
+    if (!dateStr) continue;
+    if (!daysMap.has(dateStr)) {
+      daysMap.set(dateStr, []);
+    }
+    daysMap.get(dateStr).push(log);
+  }
+
+  const sortedDates = Array.from(daysMap.keys())
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+    .slice(0, 3); // Lấy 3 ngày gần nhất
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayObj = new Date();
+  yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+  const yesterdayStr = yesterdayObj.toISOString().slice(0, 10);
 
   let html = '';
-  groupedLogs.forEach(l => {
-    // 1. Time & Date
-    const dObj = new Date(l.log_date || l.created_at);
-    const dateStr = !isNaN(dObj) ? dObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
-    const timeStr = l.details?.time || (!isNaN(dObj) ? dObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
 
-    // 2. Plant Target
-    const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
-    const farmName = l.farm_name ? ` (${esc(l.farm_name)})` : '';
-
-    // 3. Activity Type Badge & Icon
-    let badgeClass = 'badge-green';
-    let icon = 'fa-solid fa-leaf';
-    if (l.log_type === 'Tưới nước') {
-      badgeClass = 'badge-blue';
-      icon = 'fa-solid fa-droplet';
-    } else if (l.log_type === 'Phun thuốc') {
-      badgeClass = 'badge-orange';
-      icon = 'fa-solid fa-flask';
-    } else if (l.log_type === 'Bệnh cây') {
-      badgeClass = 'badge-red';
-      icon = 'fa-solid fa-virus';
-    } else if (l.log_type === 'Thu hoạch') {
-      badgeClass = 'badge-yellow';
-      icon = 'fa-solid fa-wheat-awn';
-    } else if (l.log_type === 'Cắt lá' || l.log_type === 'Cắt tỉa') {
-      badgeClass = 'badge-gray';
-      icon = 'fa-solid fa-scissors';
+  for (const dateStr of sortedDates) {
+    const dayLogs = daysMap.get(dateStr) || [];
+    const dObj = new Date(dateStr);
+    const dateFormatted = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}/${dObj.getFullYear()}`;
+    
+    let dateTag = '';
+    if (dateStr === todayStr) {
+      dateTag = '<span style="background:#dcfce7; color:#15803d; font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; margin-left:6px; border:1px solid #86efac;">Hôm nay</span>';
+    } else if (dateStr === yesterdayStr) {
+      dateTag = '<span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; margin-left:6px; border:1px solid #7dd3fc;">Hôm qua</span>';
     }
 
-    // 4. Details & Notes
-    let detailsStr = esc(l.note || '');
-    if (l.details && Object.keys(l.details).length > 0) {
-      const parts = [];
-      const qtyVal = l.details.quantity ?? l.details.amount ?? l.details.qty ?? l.details.dosage ?? l.details.volume ?? l.details.yield_kg;
-      const unitVal = l.details.unit || l.details.package_unit || '';
-      const supName = l.details.supply_name || l.details.fertilizer_name || l.details.pesticide_name || l.details.foliar_nutrition || l.details.fertilizer || l.details.pesticide;
+    // Gom cụm hoạt động bên trong ngày (theo cùng loại + cùng vật tư + cùng cây/vườn)
+    const dayGroupedItems = groupCareLogs(dayLogs);
 
-      if (supName) parts.push(`Vật tư: <strong>${esc(supName)}</strong>`);
-      if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: <strong>${qtyVal} ${unitVal}</strong>`);
-      if (l.details.fruit_count)     parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
-      if (l.details.total_revenue)   parts.push(`Doanh thu: <strong>${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ</strong>`);
-      if (l.details.total_cost)      parts.push(`Chi phí: <strong>${Number(l.details.total_cost).toLocaleString('vi-VN')} đ</strong>`);
-      if (l.details.method)          parts.push(`Cách: ${esc(l.details.method)}`);
-      if (l.details.disease_name)    parts.push(`Bệnh: <span style="color:#dc2626; font-weight:700;">${esc(l.details.disease_name)}</span>`);
-      if (l.details.severity)        parts.push(`Mức độ: ${esc(l.details.severity)}`);
-      if (l.details.phi_days)        parts.push(`Cách ly PHI: ${l.details.phi_days} ngày`);
-      if (parts.length > 0) {
-        detailsStr = parts.join(' · ') + (l.note ? ` — <span style="color:#64748b;">${esc(l.note)}</span>` : '');
-      }
-    }
-
-    const mediaHtml = buildMediaThumbnailsHtml(l.media_urls, 32);
-
-    // 5. Operator Name
-    const creatorName = l.creator_name || 'Nông hộ';
-
-    // 6. Row HTML
-    const isDisease = l.log_type === 'Bệnh cây' || l.isDiseaseLog;
-    const rowBg = isDisease ? 'background: #fff5f5;' : '';
-
+    // Render Date Group Header Row
     html += `
-      <tr style="border-bottom: 1px solid var(--gray-200); ${rowBg}">
-        <td data-label="Thời gian" style="white-space: nowrap; vertical-align: middle; padding: 12px 14px;">
-          <div style="font-weight: 800; font-size: 13px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-regular fa-clock" style="color: #059669;"></i>
-            <span>${timeStr || 'Trong ngày'}</span>
+      <tr class="date-group-header-row" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-top: 2px solid #cbd5e1; border-bottom: 1.5px solid #e2e8f0;">
+        <td colspan="6" style="padding: 10px 16px; font-weight: 800; font-size: 13px; color: #0f172a;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-regular fa-calendar-days" style="color: #059669; font-size: 15px;"></i>
+              <span style="font-size: 13.5px; font-weight: 900; color: #0f172a;">Ngày ${dateFormatted}</span>
+              ${dateTag}
+            </div>
+            <div style="font-size: 12px; color: #64748b; font-weight: 700;">
+              <span class="badge" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; font-size: 11.5px; padding: 2px 8px; border-radius: 12px;">
+                ${dayGroupedItems.length} nhóm hoạt động (${dayLogs.length} lượt ghi)
+              </span>
+            </div>
           </div>
-          <div style="font-size: 11.5px; color: #64748b; font-weight: 600; margin-top: 2px;">
-            ${dateStr}
-          </div>
-        </td>
-        <td data-label="Cây trồng" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
-          <strong style="color: ${isDisease ? '#dc2626' : '#0f172a'}; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-tree" style="color: ${isDisease ? '#ef4444' : '#10b981'}; font-size: 12px;"></i>
-            <span>${esc(targetDisplay)}</span>
-          </strong>
-          ${farmName ? `<span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">${farmName}</span>` : ''}
-        </td>
-        <td data-label="Hoạt động" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
-          <span class="badge ${badgeClass}" style="font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;">
-            <i class="${icon}"></i> ${esc(l.log_type)}
-          </span>
-          ${l.occurrenceCount > 1 ? `<span class="badge" style="font-size: 10px; font-weight: 800; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 10px; margin-left: 4px;" title="Gom nhóm ${l.occurrenceCount} lượt trong cùng ngày"><i class="fa-solid fa-layer-group" style="font-size: 9px;"></i> ${l.occurrenceCount} lượt</span>` : ''}
-        </td>
-        <td data-label="Chi tiết / Ghi chú" style="vertical-align: middle; padding: 12px 14px; font-size: 13px; color: #334155; line-height: 1.5;">
-          <div>${detailsStr || 'Đã hoàn thành công việc theo quy trình chuẩn.'}</div>
-          ${mediaHtml ? `<div style="margin-top: 4px;">${mediaHtml}</div>` : ''}
-        </td>
-        <td data-label="Người thực hiện" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap; font-size: 12.5px; color: #475569;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-user" style="color: #94a3b8; font-size: 11px;"></i>
-            <span style="font-weight: 600; color: #334155;">${esc(creatorName)}</span>
-          </div>
-        </td>
-        <td data-label="Thao tác" style="vertical-align: middle; padding: 12px 14px; text-align: right; white-space: nowrap;">
-          <button type="button" class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id || 'null'}, '${esc(l.tree_code || '')}', '${esc(l.plant_type || '')}', ${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
-            <i class="fa-solid fa-pen" style="color: #059669;"></i> Sửa
-          </button>
         </td>
       </tr>
     `;
-  });
+
+    // Render từng dòng hoạt động đã gom cụm trong ngày
+    dayGroupedItems.forEach(l => {
+      // 1. Mốc thời gian (Chips)
+      let timeList = [];
+      if (l.timesList && Array.isArray(l.timesList) && l.timesList.length > 0) {
+        timeList = l.timesList;
+      } else if (l.details?.time) {
+        timeList = String(l.details.time).split(',').map(t => t.trim()).filter(Boolean);
+      }
+      if (timeList.length === 0) {
+        const d = new Date(l.log_date || l.created_at);
+        if (!isNaN(d)) timeList.push(d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }));
+      }
+
+      const timeChipsHtml = timeList.length > 0 
+        ? timeList.map(t => `<span class="log-time-chip" style="display:inline-flex; align-items:center; gap:3px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:6px; padding:2px 6px; font-family:monospace; font-size:11.5px; font-weight:700;"><i class="fa-regular fa-clock" style="color:#059669; font-size:10px;"></i>${esc(t)}</span>`).join(' ')
+        : `<span style="color:#94a3b8; font-size:12px;">Trong ngày</span>`;
+
+      // 2. Đối tượng Cây trồng / Toàn vườn
+      const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
+      const farmName = l.farm_name ? ` (${esc(l.farm_name)})` : '';
+
+      // 3. Activity Type Badge & Icon
+      let badgeClass = 'badge-green';
+      let icon = 'fa-solid fa-leaf';
+      if (l.log_type === 'Tưới nước') {
+        badgeClass = 'badge-blue';
+        icon = 'fa-solid fa-droplet';
+      } else if (l.log_type === 'Phun thuốc') {
+        badgeClass = 'badge-orange';
+        icon = 'fa-solid fa-flask';
+      } else if (l.log_type === 'Bón phân') {
+        badgeClass = 'badge-brown';
+        icon = 'fa-solid fa-seedling';
+      } else if (l.log_type === 'Bệnh cây') {
+        badgeClass = 'badge-red';
+        icon = 'fa-solid fa-virus';
+      } else if (l.log_type === 'Thu hoạch') {
+        badgeClass = 'badge-yellow';
+        icon = 'fa-solid fa-wheat-awn';
+      } else if (l.log_type === 'Cắt lá' || l.log_type === 'Cắt tỉa') {
+        badgeClass = 'badge-gray';
+        icon = 'fa-solid fa-scissors';
+      }
+
+      // 4. Chi tiết, Vật tư, Khối lượng & Chú thích
+      let detailsStr = esc(l.note || '');
+      if (l.details && Object.keys(l.details).length > 0) {
+        const parts = [];
+        const qtyVal = l.details.quantity ?? l.details.amount ?? l.details.qty ?? l.details.dosage ?? l.details.volume ?? l.details.yield_kg;
+        const unitVal = l.details.unit || l.details.package_unit || '';
+        const supName = l.details.supply_name || l.details.fertilizer_name || l.details.pesticide_name || l.details.foliar_nutrition || l.details.fertilizer || l.details.pesticide;
+
+        if (supName) parts.push(`Vật tư: <strong style="color:#0f172a;">${esc(supName)}</strong>`);
+        if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '' && qtyVal > 0) parts.push(`Tổng lượng: <strong style="color:#059669;">${qtyVal} ${unitVal}</strong>`);
+        if (l.details.fruit_count) parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
+        if (l.details.total_cost) parts.push(`Chi phí: <strong style="color:#dc2626;">${Number(l.details.total_cost).toLocaleString('vi-VN')} đ</strong>`);
+        if (l.details.total_revenue) parts.push(`Doanh thu: <strong style="color:#059669;">${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ</strong>`);
+        if (l.details.method) parts.push(`Cách thức: ${esc(l.details.method)}`);
+        if (l.details.disease_name) parts.push(`Bệnh: <strong style="color:#dc2626;">${esc(l.details.disease_name)}</strong>`);
+        if (l.details.severity) parts.push(`Mức độ: ${esc(l.details.severity)}`);
+        if (l.details.phi_days) parts.push(`Cách ly PHI: ${l.details.phi_days} ngày`);
+        
+        if (parts.length > 0) {
+          detailsStr = parts.join(' · ') + (l.note ? ` — <span style="color:#64748b;">${esc(l.note)}</span>` : '');
+        }
+      }
+
+      const mediaHtml = buildMediaThumbnailsHtml(l.media_urls, 32);
+      const creatorName = l.creator_name || 'Nông hộ';
+      const isDisease = l.log_type === 'Bệnh cây' || l.isDiseaseLog;
+      const rowBg = isDisease ? 'background: #fff5f5;' : 'background: #ffffff;';
+
+      html += `
+        <tr style="border-bottom: 1px solid var(--gray-200); ${rowBg}">
+          <td data-label="Thời gian" style="vertical-align: middle; padding: 12px 14px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+              ${timeChipsHtml}
+            </div>
+          </td>
+          <td data-label="Cây trồng" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
+            <strong style="color: ${isDisease ? '#dc2626' : '#0f172a'}; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-tree" style="color: ${isDisease ? '#ef4444' : '#10b981'}; font-size: 12px;"></i>
+              <span>${esc(targetDisplay)}</span>
+            </strong>
+            ${farmName ? `<span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">${farmName}</span>` : ''}
+          </td>
+          <td data-label="Hoạt động" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
+            <span class="badge ${badgeClass}" style="font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;">
+              <i class="${icon}"></i> ${esc(l.log_type)}
+            </span>
+            ${l.occurrenceCount > 1 ? `<span class="badge" style="font-size: 10px; font-weight: 800; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 10px; margin-left: 4px;" title="Gom nhóm ${l.occurrenceCount} lượt trong cùng ngày"><i class="fa-solid fa-layer-group" style="font-size: 9px;"></i> ${l.occurrenceCount} lượt</span>` : ''}
+          </td>
+          <td data-label="Chi tiết / Ghi chú" style="vertical-align: middle; padding: 12px 14px; font-size: 13px; color: #334155; line-height: 1.5;">
+            <div>${detailsStr || 'Đã hoàn thành công việc theo quy trình chuẩn.'}</div>
+            ${mediaHtml ? `<div style="margin-top: 4px;">${mediaHtml}</div>` : ''}
+          </td>
+          <td data-label="Người thực hiện" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap; font-size: 12.5px; color: #475569;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-user" style="color: #94a3b8; font-size: 11px;"></i>
+              <span style="font-weight: 600; color: #334155;">${esc(creatorName)}</span>
+            </div>
+          </td>
+          <td data-label="Thao tác" style="vertical-align: middle; padding: 12px 14px; text-align: right; white-space: nowrap;">
+            <button type="button" class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id || 'null'}, '${esc(l.tree_code || '')}', '${esc(l.plant_type || '')}', ${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
+              <i class="fa-solid fa-pen" style="color: #059669;"></i> Sửa
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+  }
 
   tbody.innerHTML = html;
 }

@@ -72,7 +72,17 @@ export function initUserMap(farms, plants) {
   userMap = map;
   window.userMap = map;
 
-  
+  // Suppress non-fatal Mapbox sprite/image/tile load errors in console
+  map.on('error', (e) => {
+    if (e && e.error) {
+      const msg = String(e.error.message || e.error).toLowerCase();
+      if (msg.includes('image') || msg.includes('send') || msg.includes('ajax') || msg.includes('sprite') || msg.includes('svg')) {
+        return; // Silently ignore non-fatal sprite or ajax image errors
+      }
+      console.warn('Mapbox non-fatal:', e.error.message || e);
+    }
+  });
+
   // Force resize trigger on window resize / screen rotate to prevent canvas layout clipping
   window.addEventListener('resize', () => {
     if (userMap) {

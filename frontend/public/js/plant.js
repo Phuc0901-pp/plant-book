@@ -807,6 +807,15 @@ async function renderPlant(plant) {
         preserveDrawingBuffer: true
       });
 
+      plantMap.on('error', (e) => {
+        if (e && e.error) {
+          const msg = String(e.error.message || e.error).toLowerCase();
+          if (msg.includes('image') || msg.includes('send') || msg.includes('ajax') || msg.includes('sprite') || msg.includes('svg')) {
+            return;
+          }
+        }
+      });
+
       plantMap.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
       plantMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
       plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
