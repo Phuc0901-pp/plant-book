@@ -414,6 +414,80 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// POST /api/supplies/:id/restock — Nhập thêm hàng vào kho (Stock Replenishment)
+router.post('/:id/restock', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { added_qty, new_package_price, note, batch_no } = req.body;
+
+    const qty = parseFloat(added_qty);
+    if (isNaN(qty) || qty <= 0) {
+      return res.status(400).json({ error: 'Số lượng nhập thêm phải lớn hơn 0.' });
+    }
+
+    const check = await pool.query('SELECT * FROM supplies WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy vật tư.' });
+    }
+    const supply = check.rows[0];
+
+    if (req.user.role !== 'admin' && supply.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền nhập kho cho vật tư này.' });
+    }
+
+    let updatedPkgPrice = supply.package_price;
+    let updatedUnitPrice = supply.unit_price;
+    let updatedUnitPriceSmall = supply.unit_price_small;
+
+    if (new_package_price && parseFloat(new_package_price) > 0) {
+      updatedPkgPrice = parseFloat(new_package_price);
+      const pkgQty = parseFloat(supply.package_qty) || 1;
+      updatedUnitPrice = updatedPkgPrice / pkgQty;
+      updatedUnitPriceSmall = (pkgQty > 0) ? updatedUnitPrice / pkgQty : 0;
+    }
+
+    const newStock = (parseFloat(supply.stock_quantity) || 0) + qty;
+    const restockNote = note ? `${supply.note ? supply.note + ' | ' : ''}Nhập kho +${qty} (${new Date().toLocaleDateString('vi-VN')}): ${note}${batch_no ? ' [Lô: ' + batch_no + ']' : ''}` : supply.note;
+
+    const updatedRes = await pool.query(
+      `UPDATE supplies 
+       SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4, note = $5, updated_at = NOW()
+       WHERE id = $6
+       RETURNING *`,
+      [newStock, updatedPkgPrice, updatedUnitPrice, updatedUnitPriceSmall, restockNote, id]
+    );
+
+    const updatedSupply = updatedRes.rows[0];
+
+    // Log audit
+    logAuditAction(
+      req.user.id,
+      req.user.full_name || req.user.email,
+      'RESTOCK',
+      'Vật tư',
+      id,
+      `Nhập thêm +${qty} ${supply.package_unit || supply.unit} cho vật tư "${supply.name}" (Tồn mới: ${newStock})`,
+      supply,
+      updatedSupply
+    );
+
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('supplies_updated', { userId: req.user.id, supplyId: id, restock: { added_qty: qty, new_stock: newStock } });
+    }
+
+    res.json({
+      success: true,
+      message: `Đã nhập thêm +${qty} ${supply.package_unit || supply.unit} vào kho thành công!`,
+      supply: updatedSupply
+    });
+  } catch (err) {
+    console.error('Error restocking supply:', err);
+    res.status(500).json({ error: 'Lỗi server khi nhập thêm hàng vào kho: ' + err.message });
+  }
+});
+
 
 // GET /api/supplies/usages — Lấy nhật ký tiêu hao vật tư
 router.get('/usages', auth, async (req, res) => {

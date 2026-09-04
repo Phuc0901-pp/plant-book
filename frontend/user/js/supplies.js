@@ -7,6 +7,8 @@ import { api } from './core/api.js';
 import { toast, esc } from './core/utils.js';
 
 let currentCategoryFilter = 'all';
+let currentStockStatusFilter = 'all';
+let currentSearchQuery = '';
 let currentPeriodFilter = 'day';
 let cachedSupplies = [];
 
@@ -245,88 +247,56 @@ export async function loadSupplies() {
 
     cachedSupplies = await api(`/supplies?${params.toString()}`);
 
-    if (!cachedSupplies || cachedSupplies.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" class="empty-state">
-            <i class="fa-solid fa-boxes-packing" style="font-size:32px; color:var(--gray-300); margin-bottom:8px; display:block;"></i>
-            Chưa có vật tư nào được khai báo${currentCategoryFilter !== 'all' ? ` trong hạng mục "${currentCategoryFilter}"` : ''}.<br>
-            <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="margin-top:10px;">
-              <i class="fa-solid fa-plus"></i> Khai báo vật tư mới
-            </button>
-          </td>
-        </tr>
-      `;
-      return;
-    }
+    // 1. Tính toán và cập nhật Executive Inventory Cockpit KPI
+    renderSuppliesCockpitKpi(cachedSupplies);
 
-    tbody.innerHTML = cachedSupplies.map(sp => {
-      const priceLarge = parseFloat(sp.unit_price) || 0;
-      const priceSmall = parseFloat(sp.unit_price_small) || (sp.package_qty > 0 ? priceLarge / sp.package_qty : priceLarge);
-      const smallUnit = (sp.unit === 'kg' ? 'g' : (sp.unit === 'lít' ? 'ml' : (sp.unit === 'm³' || sp.unit === 'm3' ? 'lít' : sp.unit)));
+    // 2. Lọc theo Stock Status và Search Query
+    const filtered = applySuppliesFilters(cachedSupplies);
 
-      const stock = parseFloat(sp.stock_quantity) || 0;
-      const isPermanent = sp.category === 'Tiền nước' || sp.category === 'Nhân công';
-      const stockBadge = isPermanent
-        ? '<span class="badge" style="background:#e0f2fe; color:#0284c7; font-size:10px; padding:2px 6px; margin-top:3px; display:inline-block;"><i class="fa-solid fa-infinity"></i> Vật tư vĩnh cửu</span>'
-        : (stock <= 0 
-            ? '<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; padding:2px 6px; border:1px solid #fca5a5; margin-top:3px; display:inline-block;"><i class="fa-solid fa-triangle-exclamation"></i> HẾT HÀNG</span>' 
-            : `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; padding:2px 6px; margin-top:3px; display:inline-block;"><i class="fa-solid fa-boxes-stacked"></i> Tồn: ${stock} ${sp.unit}</span>`);
-
-      const phiBadge = (sp.phi_days && parseInt(sp.phi_days) > 0)
-        ? `<div style="margin-top:3px;"><span class="badge" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px;"><i class="fa-solid fa-shield-halved"></i> Cách ly PHI: ${sp.phi_days} ngày</span></div>`
-        : '';
-
-      const activeIngDisplay = sp.active_ingredient 
-        ? `<div style="font-size:10.5px; color:#047857; font-weight:600; margin-top:2px;">🧪 Hoạt chất: ${esc(sp.active_ingredient)}</div>` 
-        : '';
-
-      return `
-        <tr>
-          <td>${getCategoryBadge(sp.category)}</td>
-          <td>
-            <div style="display:flex; align-items:center; gap:10px;">
-              ${sp.image_url 
-                ? `<img src="${esc(sp.image_url)}" style="width:38px; height:38px; border-radius:8px; object-fit:cover; border:1px solid var(--gray-200); box-shadow:0 2px 4px rgba(0,0,0,0.05);" onclick="openLightbox('${esc(sp.image_url)}', 'image')" class="clickable">` 
-                : `<div style="width:38px; height:38px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:16px;"><i class="fa-solid fa-boxes-packing"></i></div>`}
-              <div>
-                <strong>${esc(sp.name)}</strong>
-                ${activeIngDisplay}
-                <br>
-                ${stockBadge}
-                ${phiBadge}
-              </div>
-            </div>
-          </td>
-          <td>
-            <span class="badge-gray" style="background:#f1f5f9; color:#334155; font-weight:700;">
-              <i class="fa-solid fa-weight-hanging"></i> ${sp.package_qty || 1} ${sp.package_unit || sp.unit}
-            </span>
-          </td>
-          <td><span class="badge-gray">${sp.unit}</span></td>
-          <td>
-            <strong style="color:var(--green-dark);">${formatVND(priceLarge)}</strong> / ${sp.unit}
-            <br>
-            <small style="color:#2563eb; font-weight:600;">
-              (<i class="fa-solid fa-calculator"></i> ${priceSmall > 0 && priceSmall < 1 ? priceSmall.toFixed(2) + 'đ' : formatVND(priceSmall)} / ${smallUnit})
-            </small>
-          </td>
-          <td><strong style="color:#2563eb;">${formatVND(sp.total_spent)}</strong> <br><small style="color:var(--text-muted);">(${sp.total_used_qty} ${sp.unit})</small></td>
-          <td>${sp.note ? sp.note : '<span style="color:var(--gray-300);">—</span>'}</td>
-          <td style="text-align:center;">
-            <div style="display:flex; gap:6px; justify-content:center;">
-              <button class="btn btn-secondary btn-sm" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn btn-danger btn-sm" onclick="deleteSupply(${sp.id})" title="Xóa vật tư"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    // 3. Render Enterprise Data Grid Table
+    renderSuppliesTable(filtered);
 
   } catch (err) {
     console.error('Error loading supplies:', err);
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:red;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:red;">Lỗi tải dữ liệu vật tư: ${err.message}</td></tr>`;
   }
+}
+
+function applySuppliesFilters(supplies) {
+  if (!supplies || !Array.isArray(supplies)) return [];
+
+  return supplies.filter(sp => {
+    // 1. Stock Status Filter
+    const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
+    const stock = parseFloat(sp.stock_quantity) || 0;
+    const pkgQty = parseFloat(sp.package_qty) || 1;
+
+    if (currentStockStatusFilter === 'in_stock') {
+      if (isPermanent || stock < 0.2 * pkgQty) return false;
+    } else if (currentStockStatusFilter === 'low_stock') {
+      if (isPermanent || stock <= 0 || stock >= 0.2 * pkgQty) return false;
+    } else if (currentStockStatusFilter === 'out_of_stock') {
+      if (isPermanent || stock > 0) return false;
+    } else if (currentStockStatusFilter === 'infinite') {
+      if (!isPermanent) return false;
+    }
+
+    // 2. Search Query Filter
+    if (currentSearchQuery) {
+      const q = currentSearchQuery.toLowerCase().trim();
+      const sku = `VT-${String(sp.id).padStart(3, '0')}`.toLowerCase();
+      const name = (sp.name || '').toLowerCase();
+      const category = (sp.category || '').toLowerCase();
+      const activeIng = (sp.active_ingredient || '').toLowerCase();
+      const note = (sp.note || '').toLowerCase();
+
+      if (!sku.includes(q) && !name.includes(q) && !category.includes(q) && !activeIng.includes(q) && !note.includes(q)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 }
 
 export function filterSupplyCategory(cat) {
@@ -335,6 +305,259 @@ export function filterSupplyCategory(cat) {
     btn.classList.toggle('active', btn.dataset.cat === cat);
   });
   loadSupplies();
+}
+
+export function filterSupplyStockStatus(status) {
+  currentStockStatusFilter = status;
+  const filtered = applySuppliesFilters(cachedSupplies);
+  renderSuppliesTable(filtered);
+}
+
+export function onSupplySearchInput(query) {
+  currentSearchQuery = query;
+  const filtered = applySuppliesFilters(cachedSupplies);
+  renderSuppliesTable(filtered);
+}
+
+export function renderSuppliesCockpitKpi(supplies) {
+  const totalValuationEl = document.getElementById('erp-kpi-total-valuation');
+  const skuCountEl = document.getElementById('erp-kpi-sku-count');
+  const totalConsumedEl = document.getElementById('erp-kpi-total-consumed');
+  const usageCountEl = document.getElementById('erp-kpi-usage-count');
+  const lowStockCountEl = document.getElementById('erp-kpi-low-stock-count');
+  const lowStockDescEl = document.getElementById('erp-kpi-low-stock-desc');
+  const phiActiveEl = document.getElementById('erp-kpi-phi-active-count');
+
+  if (!supplies || !Array.isArray(supplies)) return;
+
+  let totalValuation = 0;
+  let totalConsumed = 0;
+  let lowStockCount = 0;
+  let outOfStockCount = 0;
+  let phiCount = 0;
+
+  supplies.forEach(sp => {
+    const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
+    const stock = parseFloat(sp.stock_quantity) || 0;
+    const unitPrice = parseFloat(sp.unit_price) || 0;
+    const pkgQty = parseFloat(sp.package_qty) || 1;
+    const spent = parseFloat(sp.total_spent) || 0;
+
+    totalConsumed += spent;
+
+    if (!isPermanent) {
+      totalValuation += stock * unitPrice;
+      if (stock <= 0) {
+        outOfStockCount++;
+        lowStockCount++;
+      } else if (stock < 0.2 * pkgQty) {
+        lowStockCount++;
+      }
+    }
+
+    if (sp.phi_days && parseInt(sp.phi_days) > 0) {
+      phiCount++;
+    }
+  });
+
+  if (totalValuationEl) totalValuationEl.textContent = formatVND(totalValuation);
+  if (skuCountEl) skuCountEl.innerHTML = `Tổng số: <strong>${supplies.length}</strong> mặt hàng lưu kho`;
+  if (totalConsumedEl) totalConsumedEl.textContent = formatVND(totalConsumed);
+  if (usageCountEl) usageCountEl.innerHTML = `Đã xuất tiêu hao lũy kế`;
+  
+  if (lowStockCountEl) {
+    if (lowStockCount > 0) {
+      lowStockCountEl.innerHTML = `${lowStockCount} mặt hàng ⚠️`;
+      if (lowStockDescEl) lowStockDescEl.innerHTML = outOfStockCount > 0 ? `Có <strong>${outOfStockCount}</strong> mặt hàng đã hết kho` : `Có <strong>${lowStockCount}</strong> mặt hàng sắp hết`;
+    } else {
+      lowStockCountEl.innerHTML = `0 mặt hàng 🟢`;
+      if (lowStockDescEl) lowStockDescEl.innerHTML = `Đầy đủ tồn kho an toàn`;
+    }
+  }
+
+  if (phiActiveEl) {
+    phiActiveEl.innerHTML = phiCount > 0 ? `${phiCount} Thuốc BVTV` : `100% Đạt Chuẩn`;
+  }
+}
+
+export function renderSuppliesTable(supplies) {
+  const tbody = document.getElementById('supplies-table-body');
+  const countLabel = document.getElementById('supplies-table-count-label');
+  if (!tbody) return;
+
+  if (!supplies || supplies.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="empty-state" style="padding: 40px; text-align: center;">
+          <i class="fa-solid fa-boxes-packing" style="font-size:32px; color:var(--gray-300); margin-bottom:8px; display:block;"></i>
+          Không tìm thấy vật tư nào phù hợp với bộ lọc hiện tại.<br>
+          <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="margin-top:10px;">
+            <i class="fa-solid fa-plus"></i> Khai báo vật tư mới
+          </button>
+        </td>
+      </tr>
+    `;
+    if (countLabel) countLabel.textContent = 'Hiển thị 0 mặt hàng';
+    return;
+  }
+
+  if (countLabel) countLabel.textContent = `Hiển thị ${supplies.length} mặt hàng`;
+
+  tbody.innerHTML = supplies.map(sp => {
+    const isPermanent = sp.category === 'Tiền nước' || sp.category === 'Nhân công';
+    const priceLarge = parseFloat(sp.unit_price) || 0;
+    const priceSmall = parseFloat(sp.unit_price_small) || (sp.package_qty > 0 ? priceLarge / sp.package_qty : priceLarge);
+    const smallUnit = (sp.unit === 'kg' ? 'g' : (sp.unit === 'lít' ? 'ml' : (sp.unit === 'm³' || sp.unit === 'm3' ? 'lít' : sp.unit)));
+    const stock = parseFloat(sp.stock_quantity) || 0;
+    const pkgQty = parseFloat(sp.package_qty) || 1;
+    const pkgPrice = parseFloat(sp.package_price) || (priceLarge * pkgQty);
+    const valuation = isPermanent ? 0 : (stock * priceLarge);
+
+    // 1. SKU & Icon
+    let sku = `VT-${String(sp.id).padStart(3, '0')}`;
+    let categoryIcon = 'fa-solid fa-flask';
+    let categoryColor = '#059669';
+    if (sp.category === 'Tiền nước') {
+      sku = `NUOC-${String(sp.id).padStart(2, '0')}`;
+      categoryIcon = 'fa-solid fa-droplet';
+      categoryColor = '#0284c7';
+    } else if (sp.category === 'Phun thuốc') {
+      sku = `THUOC-${String(sp.id).padStart(2, '0')}`;
+      categoryIcon = 'fa-solid fa-shield-virus';
+      categoryColor = '#ea580c';
+    } else if (sp.category === 'Nhân công') {
+      sku = `CONG-${String(sp.id).padStart(2, '0')}`;
+      categoryIcon = 'fa-solid fa-user-gear';
+      categoryColor = '#8b5cf6';
+    }
+
+    const skuHtml = `
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <span class="badge" style="background:#f1f5f9; color:#334155; font-family:monospace; font-weight:800; font-size:11px; border:1px solid #cbd5e1; width:fit-content;">
+          ${sku}
+        </span>
+        <span style="font-size:10px; font-weight:700; color:${categoryColor}; display:inline-flex; align-items:center; gap:4px;">
+          <i class="${categoryIcon}"></i> ${esc(sp.category)}
+        </span>
+      </div>
+    `;
+
+    // 2. Name & Specs
+    const activeIngDisplay = sp.active_ingredient 
+      ? `<div style="font-size:11px; color:#047857; font-weight:600; margin-top:2px;"><i class="fa-solid fa-flask-vial"></i> Hoạt chất: ${esc(sp.active_ingredient)}</div>` 
+      : (sp.fertilizer_type ? `<div style="font-size:11px; color:#64748b; font-weight:600; margin-top:2px;">${esc(sp.fertilizer_type)}</div>` : '');
+
+    const nameHtml = `
+      <div style="display:flex; align-items:center; gap:10px;">
+        ${sp.image_url 
+          ? `<img src="${esc(sp.image_url)}" style="width:42px; height:42px; border-radius:10px; object-fit:cover; border:1.5px solid #e2e8f0; box-shadow:0 2px 5px rgba(0,0,0,0.04); flex-shrink:0;" onclick="openLightbox('${esc(sp.image_url)}', 'image')" class="clickable" title="Xem ảnh bao bì">` 
+          : `<div style="width:42px; height:42px; border-radius:10px; background:#f8fafc; border:1.5px solid #e2e8f0; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:18px; flex-shrink:0;"><i class="fa-solid fa-boxes-packing"></i></div>`}
+        <div>
+          <strong style="font-size:13.5px; color:#0f172a; display:block;">${esc(sp.name)}</strong>
+          <div style="font-size:11.5px; color:#64748b; font-weight:600; margin-top:2px;">
+            Quy cách: <span style="color:#334155; font-weight:700;">${pkgQty} ${sp.package_unit || sp.unit}</span>
+          </div>
+          ${activeIngDisplay}
+        </div>
+      </div>
+    `;
+
+    // 3. Stock Level & Progress Bar
+    let stockProgressHtml = '';
+    if (isPermanent) {
+      stockProgressHtml = `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:12.5px; font-weight:900; color:#0284c7;"><i class="fa-solid fa-infinity"></i> Vô tận</span>
+            <span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;">Vĩnh cửu</span>
+          </div>
+          <div class="stock-level-bar" style="height:6px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+            <div style="width:100%; height:100%; background:linear-gradient(90deg, #38bdf8, #0284c7); border-radius:4px;"></div>
+          </div>
+          <div style="font-size:10.5px; color:#64748b; margin-top:4px;">Đo theo đồng hồ / công nhật</div>
+        </div>
+      `;
+    } else {
+      const benchmark = Math.max(stock + (parseFloat(sp.total_used_qty) || 0), pkgQty);
+      const pct = benchmark > 0 ? Math.min(100, Math.round((stock / benchmark) * 100)) : 0;
+      
+      let barColor = 'linear-gradient(90deg, #34d399, #10b981)';
+      let statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;">🟢 Còn hàng</span>`;
+      
+      if (stock <= 0) {
+        barColor = '#ef4444';
+        statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px; border:1px solid #fca5a5;">🚫 HẾT HÀNG</span>`;
+      } else if (pct < 20) {
+        barColor = 'linear-gradient(90deg, #f87171, #ef4444)';
+        statusBadge = `<span class="badge" style="background:#fff7ed; color:#ea580c; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px; border:1px solid #fed7aa;">⚠️ Sắp hết</span>`;
+      } else if (pct < 50) {
+        barColor = 'linear-gradient(90deg, #fbbf24, #f59e0b)';
+        statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;">🟡 Mức TB</span>`;
+      }
+
+      const packageUnitsCount = pkgQty > 0 ? Number((stock / pkgQty).toFixed(1)) : stock;
+
+      stockProgressHtml = `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <strong style="font-size:13px; color:#0f172a;">${stock} ${sp.unit}</strong>
+            ${statusBadge}
+          </div>
+          <div class="stock-level-bar" style="height:6px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+            <div style="width:${Math.max(4, pct)}%; height:100%; background:${barColor}; border-radius:4px; transition:width 0.3s;"></div>
+          </div>
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">
+            Tương đương: <strong>${packageUnitsCount}</strong> ${sp.package_unit || 'gói/bao'}
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. Prices
+    const priceHtml = `
+      <div>
+        <strong style="font-size:13px; color:#0f172a;">${formatVND(pkgPrice)}</strong>
+        <div style="font-size:11px; color:#059669; font-weight:700; margin-top:2px;">
+          ${formatVND(priceLarge)} / ${sp.unit}
+        </div>
+        ${!isPermanent && priceSmall > 0 ? `<div style="font-size:10.5px; color:#64748b; font-weight:600;">(${priceSmall < 1 ? priceSmall.toFixed(2) + 'đ' : formatVND(priceSmall)} / ${smallUnit})</div>` : ''}
+      </div>
+    `;
+
+    // 5. Valuation
+    const valuationHtml = isPermanent 
+      ? `<span style="font-size:12px; color:#64748b; font-style:italic;">Theo thực tế</span>`
+      : `<strong style="font-size:13.5px; color:#0284c7;">${formatVND(valuation)}</strong>`;
+
+    // 6. VietGAP / PHI
+    const vietgapHtml = (sp.phi_days && parseInt(sp.phi_days) > 0)
+      ? `<span class="badge" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3; font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Thời gian cách ly trước thu hoạch"><i class="fa-solid fa-shield-halved"></i> PHI: ${sp.phi_days} ngày</span>`
+      : `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle-check"></i> Đạt chuẩn</span>`;
+
+    // 7. Actions
+    const restockBtn = !isPermanent 
+      ? `<button type="button" class="btn btn-primary btn-xs" onclick="openRestockModal(${sp.id})" title="Nhập thêm hàng vào kho" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px; background:#059669; border-color:#059669;"><i class="fa-solid fa-truck-ramp-box"></i> Nhập</button>`
+      : '';
+
+    return `
+      <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: middle;">
+        <td style="padding: 12px 14px;">${skuHtml}</td>
+        <td style="padding: 12px 14px;">${nameHtml}</td>
+        <td style="padding: 12px 14px;">${stockProgressHtml}</td>
+        <td style="padding: 12px 14px;">${priceHtml}</td>
+        <td style="padding: 12px 14px;">${valuationHtml}</td>
+        <td style="padding: 12px 14px;">${vietgapHtml}</td>
+        <td style="padding: 12px 14px; text-align: right; white-space: nowrap;">
+          <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
+            ${restockBtn}
+            <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho chi tiết" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i class="fa-solid fa-book-bookmark" style="color:#0284c7;"></i> Thẻ kho</button>
+            <button type="button" class="btn btn-secondary btn-xs" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" class="btn btn-danger btn-xs" onclick="deleteSupply(${sp.id})" title="Xóa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 export function openSupplyModal(id = null) {
@@ -482,22 +705,223 @@ export async function deleteSupply(id) {
   }
 }
 
+// ─── MODAL NHẬP THÊM KHO (RESTOCK) ──────────────────────────────
+
+export function openRestockModal(id) {
+  const modal = document.getElementById('modal-restock-supply');
+  if (!modal) return;
+
+  const sp = cachedSupplies.find(item => item.id == id);
+  if (!sp) return;
+
+  document.getElementById('restock-supply-id').value = id;
+  document.getElementById('restock-supply-name').textContent = sp.name;
+  document.getElementById('restock-supply-spec').textContent = `Hạng mục: ${sp.category} • Quy cách: ${sp.package_qty} ${sp.package_unit || sp.unit}`;
+  document.getElementById('restock-current-stock').textContent = `${sp.stock_quantity || 0} ${sp.unit}`;
+  
+  const unitLabel = document.getElementById('restock-unit-label');
+  if (unitLabel) unitLabel.textContent = `${sp.package_unit || sp.unit}`;
+
+  document.getElementById('restock-added-qty').value = '10';
+  document.getElementById('restock-package-price').value = sp.package_price || '';
+  document.getElementById('restock-batch-no').value = '';
+  document.getElementById('restock-note').value = '';
+
+  calculateRestockPreview();
+  modal.style.display = 'flex';
+}
+
+export function closeRestockModal() {
+  const modal = document.getElementById('modal-restock-supply');
+  if (modal) modal.style.display = 'none';
+}
+
+export function calculateRestockPreview() {
+  const id = document.getElementById('restock-supply-id')?.value;
+  const sp = cachedSupplies.find(item => item.id == id);
+  if (!sp) return;
+
+  const currentStock = parseFloat(sp.stock_quantity) || 0;
+  const addedQty = parseFloat(document.getElementById('restock-added-qty')?.value) || 0;
+  const pkgPrice = parseFloat(document.getElementById('restock-package-price')?.value) || parseFloat(sp.package_price) || 0;
+  const pkgQty = parseFloat(sp.package_qty) || 1;
+
+  const newStock = currentStock + (addedQty * pkgQty);
+  const totalCost = addedQty * pkgPrice;
+
+  const newStockEl = document.getElementById('restock-new-stock-preview');
+  const totalAmountEl = document.getElementById('restock-total-amount-preview');
+
+  if (newStockEl) newStockEl.textContent = `${Number(newStock.toFixed(2))} ${sp.unit} (+${addedQty} ${sp.package_unit || 'gói'})`;
+  if (totalAmountEl) totalAmountEl.textContent = formatVND(totalCost);
+}
+
+export async function submitRestockSupply() {
+  const id = document.getElementById('restock-supply-id')?.value;
+  const addedQty = parseFloat(document.getElementById('restock-added-qty')?.value);
+  const newPackagePrice = document.getElementById('restock-package-price')?.value;
+  const batchNo = document.getElementById('restock-batch-no')?.value.trim();
+  const note = document.getElementById('restock-note')?.value.trim();
+
+  if (!id || isNaN(addedQty) || addedQty <= 0) {
+    toast('Vui lòng nhập số lượng nhập thêm hợp lệ (> 0)!', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('restock-save-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await api(`/supplies/${id}/restock`, {
+      method: 'POST',
+      body: JSON.stringify({
+        added_qty: addedQty,
+        new_package_price: newPackagePrice ? parseFloat(newPackagePrice) : null,
+        batch_no: batchNo || null,
+        note: note || null
+      })
+    });
+
+    toast(res.message || 'Đã nhập thêm hàng vào kho thành công!');
+    closeRestockModal();
+    loadSupplies();
+    loadSuppliesAnalytics();
+  } catch (err) {
+    toast('Lỗi nhập kho: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ─── MODAL SỔ THẺ KHO (STOCK LEDGER) ─────────────────────────────
+
+export async function openStockLedgerModal(id) {
+  const modal = document.getElementById('modal-stock-ledger');
+  const title = document.getElementById('ledger-modal-title');
+  const subtitle = document.getElementById('ledger-modal-subtitle');
+  const container = document.getElementById('ledger-timeline-container');
+  if (!modal) return;
+
+  const sp = cachedSupplies.find(item => item.id == id);
+  if (!sp) return;
+
+  if (title) title.innerHTML = `<i class="fa-solid fa-book-bookmark" style="color:#38bdf8;"></i> Sổ Thẻ Kho: ${esc(sp.name)}`;
+  if (subtitle) subtitle.textContent = `Hạng mục: ${sp.category} • Mã SKU: VT-${String(sp.id).padStart(3, '0')}`;
+
+  const currentStock = parseFloat(sp.stock_quantity) || 0;
+  const totalUsed = parseFloat(sp.total_used_qty) || 0;
+  const unitPrice = parseFloat(sp.unit_price) || 0;
+  const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
+
+  document.getElementById('ledger-stat-current-stock').textContent = isPermanent ? 'Vô tận ♾️' : `${currentStock} ${sp.unit}`;
+  document.getElementById('ledger-stat-total-used').textContent = `${totalUsed} ${sp.unit} (${formatVND(sp.total_spent || 0)})`;
+  document.getElementById('ledger-stat-valuation').textContent = isPermanent ? 'Theo thực tế' : formatVND(currentStock * unitPrice);
+
+  modal.style.display = 'flex';
+  if (container) container.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu biến động thẻ kho...</div>';
+
+  try {
+    const usages = await api(`/supplies/usages?limit=100`);
+    const supplyUsages = (usages || []).filter(u => u.supply_id == id);
+
+    let timelineHtml = '<div class="stock-timeline" style="display:flex; flex-direction:column; gap:14px; position:relative; padding-left:24px; border-left:2px solid #e2e8f0; margin-left:10px;">';
+
+    // 1. Initial creation entry
+    const createdDate = sp.created_at ? new Date(sp.created_at).toLocaleDateString('vi-VN') : 'Đầu kỳ';
+    timelineHtml += `
+      <div class="stock-timeline-item" style="position:relative;">
+        <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#10b981; border:3px solid #fff; box-shadow:0 0 0 2px #10b981;"></div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#059669; font-size:13px;"><i class="fa-solid fa-flag-checkered"></i> Khai báo &amp; Nhập kho ban đầu</strong>
+            <span style="font-size:11.5px; color:#64748b; font-weight:600;">${createdDate}</span>
+          </div>
+          <div style="font-size:12px; color:#334155; margin-top:4px;">
+            Số lượng: <strong style="color:#059669;">+${sp.package_qty} ${sp.package_unit || sp.unit}</strong> • Đơn giá: <strong>${formatVND(sp.package_price)}</strong>
+          </div>
+          ${sp.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;">Ghi chú: ${esc(sp.note)}</div>` : ''}
+        </div>
+      </div>
+    `;
+
+    // 2. Usage Entries
+    if (supplyUsages.length > 0) {
+      supplyUsages.forEach(u => {
+        const uDate = u.usage_date ? new Date(u.usage_date).toLocaleDateString('vi-VN') : '—';
+        const targetTree = u.tree_code ? `Cây #${u.tree_code} (${u.plant_type || 'Cây trồng'})` : (u.farm_name ? `Toàn vườn (${u.farm_name})` : 'Toàn vườn');
+
+        timelineHtml += `
+          <div class="stock-timeline-item" style="position:relative;">
+            <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#dc2626; border:3px solid #fff; box-shadow:0 0 0 2px #dc2626;"></div>
+            <div style="background:#fff; border:1px solid #fecaca; border-radius:10px; padding:10px 14px; box-shadow:0 2px 4px rgba(220,38,38,0.02);">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:#dc2626; font-size:13px;"><i class="fa-solid fa-arrow-up-from-bracket"></i> Xuất dùng chăm sóc cây</strong>
+                <span style="font-size:11.5px; color:#64748b; font-weight:600;">${uDate}</span>
+              </div>
+              <div style="font-size:12.5px; color:#1e293b; margin-top:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span>Đối tượng: <strong>${esc(targetTree)}</strong></span>
+                <span style="color:#dc2626; font-weight:800;">-${u.quantity} ${sp.unit} (${formatVND(u.total_cost || 0)})</span>
+              </div>
+              ${u.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;">Ghi chú: ${esc(u.note)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // 3. Current Balance
+    timelineHtml += `
+      <div class="stock-timeline-item" style="position:relative;">
+        <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#0284c7; border:3px solid #fff; box-shadow:0 0 0 2px #0284c7;"></div>
+        <div style="background:linear-gradient(135deg, #eff6ff, #f8fafc); border:1.5px solid #bfdbfe; border-radius:10px; padding:10px 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#0369a1; font-size:13px;"><i class="fa-solid fa-boxes-stacked"></i> Tồn kho cuối kỳ thời gian thực</strong>
+            <span class="badge" style="background:#0284c7; color:#fff; font-size:10.5px; font-weight:800;">Hiện tại</span>
+          </div>
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:4px;">
+            Số lượng còn: <span style="color:#059669;">${isPermanent ? 'Vô tận ♾️' : `${currentStock} ${sp.unit}`}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    timelineHtml += '</div>';
+    if (container) container.innerHTML = timelineHtml;
+
+  } catch (err) {
+    if (container) container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Lỗi tải dữ liệu thẻ kho: ${err.message}</div>`;
+  }
+}
+
+export function closeStockLedgerModal() {
+  const modal = document.getElementById('modal-stock-ledger');
+  if (modal) modal.style.display = 'none';
+}
+
 // ─── TAB SWITCHER ────────────────────────────────────────────────
 
 export function switchSuppliesTab(tab) {
   const tabManage = document.getElementById('supplies-tab-manage');
+  const tabLedger = document.getElementById('supplies-tab-ledger');
   const tabMonitor = document.getElementById('supplies-tab-monitor');
+
   const paneManage = document.getElementById('pane-supplies-manage');
+  const paneLedger = document.getElementById('pane-supplies-ledger');
   const paneMonitor = document.getElementById('pane-supplies-monitor');
 
   if (tabManage) tabManage.classList.toggle('active', tab === 'manage');
+  if (tabLedger) tabLedger.classList.toggle('active', tab === 'ledger');
   if (tabMonitor) tabMonitor.classList.toggle('active', tab === 'monitor');
+
   if (paneManage) paneManage.style.display = tab === 'manage' ? 'block' : 'none';
+  if (paneLedger) paneLedger.style.display = tab === 'ledger' ? 'block' : 'none';
   if (paneMonitor) paneMonitor.style.display = tab === 'monitor' ? 'block' : 'none';
 
   if (tab === 'manage') loadSupplies();
+  if (tab === 'ledger') loadSupplyUsagesLog();
   if (tab === 'monitor') loadSuppliesAnalytics();
 }
+
 
 // ─── TAB 2: GIÁM SÁT VẬT TƯ & CHI PHÍ ────────────────────────────
 
@@ -1354,6 +1778,13 @@ window.deleteSupplyUsage = deleteSupplyUsage;
 window.deleteSupplyUsagesGroup = deleteSupplyUsagesGroup;
 window.handleAiScanImageUpload = handleAiScanImageUpload;
 window.parseAgriculturalProductText = parseAgriculturalProductText;
-
-
-
+window.filterSupplyStockStatus = filterSupplyStockStatus;
+window.onSupplySearchInput = onSupplySearchInput;
+window.openRestockModal = openRestockModal;
+window.closeRestockModal = closeRestockModal;
+window.calculateRestockPreview = calculateRestockPreview;
+window.submitRestockSupply = submitRestockSupply;
+window.openStockLedgerModal = openStockLedgerModal;
+window.closeStockLedgerModal = closeStockLedgerModal;
+window.renderSuppliesCockpitKpi = renderSuppliesCockpitKpi;
+window.renderSuppliesTable = renderSuppliesTable;

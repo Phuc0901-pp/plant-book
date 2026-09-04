@@ -68,4 +68,22 @@ describe('Suite 4: Supplies Management, Cost Accounting & Inventory Dynamics', (
     expect(isLowStock(currentStock)).toBe(true);
   });
 
+  it('4.6 Should handle quick restock increments and valuation recalculations', () => {
+    let currentStock = 10; // 10 kg
+    const packageQty = 25; // 25 kg / bag
+    const addedBags = 4; // restocked 4 bags
+    const newPackagePrice = 750000; // 750,000 VND / bag (30,000 VND / kg)
+
+    const restockAmount = addedBags * packageQty;
+    currentStock += restockAmount;
+    const unitPrice = newPackagePrice / packageQty;
+    const totalInventoryValuation = currentStock * unitPrice;
+
+    expect(restockAmount).toBe(100);
+    expect(currentStock).toBe(110);
+    expect(unitPrice).toBe(30000);
+    expect(totalInventoryValuation).toBe(3300000); // 3,300,000 VND
+  });
+
 });
+

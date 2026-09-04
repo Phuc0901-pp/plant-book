@@ -235,4 +235,141 @@
   </div>
 </div>
 
+<!-- ════════════ MODAL NHẬP THÊM HÀNG VÀO KHO (RESTOCK) ════════════ -->
+<div class="modal-overlay" id="modal-restock-supply" style="display:none" onclick="if(event.target===this)closeRestockModal()">
+  <div class="modal" style="max-width:500px; border-radius:18px; overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color:#ffffff; padding:16px 20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:rgba(52,211,153,0.2); color:#34d399; display:flex; align-items:center; justify-content:center; font-size:18px;">
+          <i class="fa-solid fa-boxes-packing"></i>
+        </div>
+        <div>
+          <h2 style="margin:0; font-size:17px; font-weight:800; color:#fff;">Nhập Thêm Hàng Vào Kho</h2>
+          <p style="margin:2px 0 0 0; font-size:11.5px; color:#cbd5e1;">Cộng dồn số lượng tồn kho và cập nhật đơn giá lô mới</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeRestockModal()" style="color:#fff; opacity:0.85;">×</button>
+    </div>
+
+    <div class="modal-body" style="padding:20px;">
+      <input type="hidden" id="restock-supply-id">
+
+      <!-- Selected Supply Summary Card -->
+      <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Vật tư được chọn</div>
+            <div id="restock-supply-name" style="font-size:15px; font-weight:800; color:#0f172a; margin-top:2px;">...</div>
+            <div id="restock-supply-spec" style="font-size:12px; color:#475569; margin-top:2px;">...</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Tồn hiện tại</div>
+            <div id="restock-current-stock" style="font-size:15px; font-weight:900; color:#059669; margin-top:2px;">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input: Added Quantity -->
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+          <i class="fa-solid fa-plus-circle" style="color:#059669;"></i> Số lượng nhập thêm <span style="color:#ef4444;">*</span>
+        </label>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="number" id="restock-added-qty" min="0.01" step="any" placeholder="VD: 10" oninput="calculateRestockPreview()" style="flex:1; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:14px; font-weight:700; color:#0f172a; outline:none;">
+          <span id="restock-unit-label" style="font-weight:700; font-size:13px; color:#475569; background:#f1f5f9; padding:10px 14px; border:1.5px solid #cbd5e1; border-radius:8px;">bao/chai</span>
+        </div>
+      </div>
+
+      <!-- Input: New Package Price -->
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+          <i class="fa-solid fa-money-bill-wave" style="color:#0284c7;"></i> Đơn giá mua đợt này (VNĐ / bao/chai) <span style="font-size:11px; color:#64748b; font-weight:400;">(Tùy chọn)</span>
+        </label>
+        <input type="number" id="restock-package-price" min="0" step="100" placeholder="VD: 850000" oninput="calculateRestockPreview()" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13.5px; font-weight:700; color:#0f172a; outline:none;">
+      </div>
+
+      <!-- Input: Batch No / Supplier -->
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+          <i class="fa-solid fa-barcode" style="color:#64748b;"></i> Số lô sản xuất / Nhà cung cấp (Tùy chọn)
+        </label>
+        <input type="text" id="restock-batch-no" placeholder="VD: Lô NPK-2026-09 / Đại lý Nông Dược Hưng Phát" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none;">
+      </div>
+
+      <!-- Preview Box -->
+      <div style="background:#ecfdf5; border:1.5px dashed #10b981; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12.5px; font-weight:700; color:#065f46;">Tồn kho mới sau khi nhập:</span>
+          <span id="restock-new-stock-preview" style="font-size:16px; font-weight:900; color:#047857;">0</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span style="font-size:11.5px; color:#047857;">Tổng tiền đợt nhập:</span>
+          <span id="restock-total-amount-preview" style="font-size:13px; font-weight:800; color:#047857;">0 VNĐ</span>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="field" style="margin-bottom:0;">
+        <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+          <i class="fa-solid fa-note-sticky" style="color:#64748b;"></i> Ghi chú đợt nhập
+        </label>
+        <input type="text" id="restock-note" placeholder="Nhập ghi chú thêm nếu có..." style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none;">
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-secondary" onclick="closeRestockModal()">Hủy bỏ</button>
+      <button class="btn btn-primary" id="restock-save-btn" onclick="submitRestockSupply()" style="font-weight:800;">
+        <span id="restock-save-text"><i class="fa-solid fa-truck-ramp-box"></i> Xác Nhận Nhập Kho</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL SỔ THẺ KHO (STOCK LEDGER TIMELINE) ════════════ -->
+<div class="modal-overlay" id="modal-stock-ledger" style="display:none" onclick="if(event.target===this)closeStockLedgerModal()">
+  <div class="modal" style="max-width:680px; max-height:90vh; display:flex; flex-direction:column; border-radius:18px; overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:16px 20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:rgba(56,189,248,0.2); color:#38bdf8; display:flex; align-items:center; justify-content:center; font-size:18px;">
+          <i class="fa-solid fa-book-bookmark"></i>
+        </div>
+        <div>
+          <h2 id="ledger-modal-title" style="margin:0; font-size:17px; font-weight:800; color:#fff;">Sổ Thẻ Kho Vật Tư</h2>
+          <p id="ledger-modal-subtitle" style="margin:2px 0 0 0; font-size:11.5px; color:#cbd5e1;">Lịch sử chi tiết Nhập - Xuất - Tồn theo dòng thời gian</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeStockLedgerModal()" style="color:#fff; opacity:0.85;">×</button>
+    </div>
+
+    <!-- Summary Stats Bar inside Ledger Modal -->
+    <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:12px 20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px; text-align:center;">
+        <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Tồn kho hiện tại</div>
+        <div id="ledger-stat-current-stock" style="font-size:15px; font-weight:900; color:#059669; margin-top:2px;">--</div>
+      </div>
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px; text-align:center;">
+        <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Tổng đã xuất dùng</div>
+        <div id="ledger-stat-total-used" style="font-size:15px; font-weight:900; color:#dc2626; margin-top:2px;">--</div>
+      </div>
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px 12px; text-align:center;">
+        <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Giá trị vốn tồn</div>
+        <div id="ledger-stat-valuation" style="font-size:15px; font-weight:900; color:#0284c7; margin-top:2px;">--</div>
+      </div>
+    </div>
+
+    <!-- Ledger Timeline Body -->
+    <div class="modal-body" style="padding:20px; overflow-y:auto; flex:1;">
+      <div id="ledger-timeline-container" class="stock-timeline-wrap">
+        <div style="text-align:center; padding:30px; color:#64748b;"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu thẻ kho...</div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:12px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:11.5px; color:#64748b;"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> Dữ liệu tự động đồng bộ theo thời gian thực</span>
+      <button class="btn btn-secondary btn-sm" onclick="closeStockLedgerModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast container -->
