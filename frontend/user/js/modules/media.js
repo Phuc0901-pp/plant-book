@@ -150,7 +150,13 @@ export function openLightbox(url, type) {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '20px'
   });
-  overlay.onclick = () => overlay.remove();
+  let activeVideo = null;
+  overlay.onclick = () => {
+    if (activeVideo) {
+      try { activeVideo.pause(); } catch(e){}
+    }
+    overlay.remove();
+  };
 
   const closeBtn = document.createElement('button');
   closeBtn.innerHTML = '×';
@@ -162,11 +168,22 @@ export function openLightbox(url, type) {
   overlay.appendChild(closeBtn);
 
   if (type === 'video') {
-    const video = Object.assign(document.createElement('video'), {
-      src: url, controls: true, autoplay: true
-    });
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
     Object.assign(video.style, { maxWidth: '100%', maxHeight: '90vh' });
+    activeVideo = video;
     overlay.appendChild(video);
+    try {
+      const p = video.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(err => {
+          if (err && err.name !== 'AbortError') console.warn(err);
+        });
+      }
+    } catch(e){}
   } else {
     const img = Object.assign(document.createElement('img'), { src: url });
     Object.assign(img.style, { maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain' });
@@ -189,7 +206,7 @@ export function buildMediaThumbnailsHtml(mediaUrls, size = 40) {
     const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
     if (isVideo) {
       return `<div style="width:${size}px;height:${size}px;border-radius:4px;overflow:hidden;position:relative;cursor:pointer;background:#000;flex-shrink:0;" onclick="openLightbox('${esc(url)}','video')">
-        <video src="${esc(url)}" style="width:100%;height:100%;object-fit:cover;"></video>
+        <video src="${esc(url)}" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
         <i class="fa fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:11px;"></i>
       </div>`;
     }

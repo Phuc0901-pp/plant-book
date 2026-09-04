@@ -108,6 +108,17 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
     }
     if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
 
+    const switchWrap = document.getElementById('c-plant-single-switch-wrap');
+
+    window.enableMultiTreeSelect = function() {
+      const curId = idEl ? idEl.value : null;
+      if (idEl) idEl.value = '';
+      if (displayEl) displayEl.style.display = 'none';
+      if (switchWrap) switchWrap.style.display = 'none';
+      window._activePlantTreeCode = '';
+      _renderMultiTreeSelector(checkboxListEl, multiEl, curId);
+    };
+
     if (plantId) {
       window._activePlantTreeCode = treeCode;
       if (idEl) idEl.value = plantId;
@@ -117,6 +128,7 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
         displayEl.value = `Cây ${treeCode}${farmName ? ' - ' + farmName : ''}`;
         displayEl.style.display = 'block';
       }
+      if (switchWrap) switchWrap.style.display = 'flex';
       if (selectEl) selectEl.style.display = 'none';
       if (multiEl) multiEl.style.display = 'none';
       const wrapEl = document.getElementById('c-selected-trees-count');
@@ -125,152 +137,10 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
       window._activePlantTreeCode = '';
       if (idEl) idEl.value = '';
       if (displayEl) displayEl.style.display = 'none';
+      if (switchWrap) switchWrap.style.display = 'none';
       if (selectEl) selectEl.style.display = 'none';
 
-      if (multiEl && checkboxListEl) {
-        // Group plants by farm
-        const plantsByFarm = {};
-        _plants().forEach(p => {
-          const farmId = p.farm_id || 0;
-          const farmName = p.farm_name || 'Khác';
-          if (!plantsByFarm[farmId]) {
-            plantsByFarm[farmId] = { name: farmName, list: [] };
-          }
-          plantsByFarm[farmId].list.push(p);
-        });
-
-        // Register farm select all toggler
-        window.toggleFarmSelectAll = function(masterCb, farmId) {
-          const checkboxes = document.querySelectorAll(`.c-plant-checkbox-farm-${farmId}`);
-          checkboxes.forEach(cb => {
-            cb.checked = masterCb.checked;
-            if (typeof window.syncChipStyle === 'function') {
-              window.syncChipStyle(cb);
-            }
-          });
-          if (typeof window.updateSelectedCount === 'function') {
-            window.updateSelectedCount();
-          }
-        };
-
-        // Master select all across all farms
-        window.toggleSelectAllGlobal = function(status) {
-          const checkboxes = document.querySelectorAll('.c-plant-checkbox');
-          checkboxes.forEach(cb => {
-            cb.checked = status;
-            if (typeof window.syncChipStyle === 'function') {
-              window.syncChipStyle(cb);
-            }
-          });
-          document.querySelectorAll('.farm-select-all-cb').forEach(fcb => {
-            fcb.checked = status;
-          });
-          if (typeof window.updateSelectedCount === 'function') {
-            window.updateSelectedCount();
-          }
-        };
-
-        // Sync chip style on check/uncheck
-        window.syncChipStyle = function(cb) {
-          const label = cb.closest('.plant-chip-item');
-          if (label) {
-            if (cb.checked) {
-              label.style.borderColor = '#22c55e';
-              label.style.backgroundColor = '#f0fdf4';
-              label.style.boxShadow = '0 2px 6px rgba(34, 197, 94, 0.15)';
-            } else {
-              label.style.borderColor = '#cbd5e1';
-              label.style.backgroundColor = '#ffffff';
-              label.style.boxShadow = 'none';
-            }
-          }
-        };
-
-        // Register selected count updater
-        window.updateSelectedCount = function() {
-          const checkboxes = document.querySelectorAll('.c-plant-checkbox:checked');
-          const count = checkboxes.length;
-          const countEl = document.getElementById('c-selected-count-number');
-          const wrapEl = document.getElementById('c-selected-trees-count');
-          if (countEl && wrapEl) {
-            countEl.textContent = count;
-            wrapEl.style.display = count > 0 ? 'flex' : 'none';
-          }
-          if (typeof calculateWaterCostPreview === 'function') {
-            calculateWaterCostPreview();
-          }
-        };
-
-        const totalPlantsCount = _plants().length;
-
-        let html = '';
-
-        if (totalPlantsCount === 0) {
-          const farm = typeof window.getActiveFarm === 'function' 
-            ? (window.getActiveFarm() || {}) 
-            : (window._allFarmsCache && window._allFarmsCache.length ? window._allFarmsCache[0] : {});
-          const farmName = farm.name || 'Trang trại Nông hộ';
-          const count = farm.plant_count || farm.total_plants || 0;
-
-
-          html = `
-            <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:16px; text-align:center; box-shadow:0 4px 12px rgba(5,150,105,0.08);">
-              <div style="font-size:15px; font-weight:800; color:#047857; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                <i class="fa-solid fa-house-chimney"></i> PHẠM VI: TOÀN VƯỜN — ${esc(farmName)}
-              </div>
-              <div style="font-size:13px; color:#065f46; font-weight:600;">
-                Áp dụng nhật ký chăm sóc cho tổng số <strong style="color:#047857; font-size:15px; text-decoration:underline;">${count} cây trồng</strong> trong trang trại.
-              </div>
-            </div>
-          `;
-        } else {
-          html = `
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #e2e8f0;">
-              <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh sách Cây trồng (${totalPlantsCount})</span>
-              <div style="display:flex; gap:6px;">
-                <button type="button" onclick="window.toggleSelectAllGlobal(true)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:6px; cursor:pointer;">
-                  <i class="fa-solid fa-check-double"></i> Chọn tất cả
-                </button>
-                <button type="button" onclick="window.toggleSelectAllGlobal(false)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#475569; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
-                  <i class="fa-solid fa-xmark"></i> Bỏ chọn
-                </button>
-              </div>
-            </div>
-          `;
-        }
-
-
-        Object.keys(plantsByFarm).forEach(farmId => {
-          const group = plantsByFarm[farmId];
-          html += `
-            <div style="margin-bottom: 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div style="font-weight: 700; font-size: 13px; color: #15803d; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
-                <span style="display:flex; align-items:center; gap:6px;">
-                  <i class="fa-solid fa-tree" style="color:#22c55e;"></i> Vườn: ${esc(group.name)} (${group.list.length} cây)
-                </span>
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; font-weight: 600; color: #475569; margin: 0; background: #f8fafc; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                  <input type="checkbox" class="farm-select-all-cb" onchange="toggleFarmSelectAll(this, ${farmId})" style="accent-color: #22c55e; cursor: pointer;"> Chọn cả vườn
-                </label>
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">
-                ${group.list.map(p => `
-                  <label for="chk-plant-${p.id}" class="plant-chip-item" style="display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none;">
-                    <input type="checkbox" class="c-plant-checkbox c-plant-checkbox-farm-${farmId}" value="${p.id}" data-code="${esc(p.tree_code || p.id)}" id="chk-plant-${p.id}" style="accent-color: #22c55e; width: 15px; height: 15px; cursor: pointer; flex-shrink:0;" onchange="window.updateSelectedCount(); window.syncChipStyle(this);">
-                    <div style="display: flex; flex-direction: column; min-width: 0;">
-                      <span style="font-size: 12px; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Cây ${esc(p.tree_code || p.id)}</span>
-                      <span style="font-size: 10px; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${esc(p.plant_type)}</span>
-                    </div>
-                  </label>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        });
-
-        checkboxListEl.innerHTML = html || '<div style="font-size:13px; color:var(--text-muted);">Không có cây trồng nào.</div>';
-        multiEl.style.display = 'block';
-        window.updateSelectedCount(); // initial run
-      }
+      _renderMultiTreeSelector(checkboxListEl, multiEl, null);
     }
 
     onCareLogTypeChange();
@@ -278,6 +148,152 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
 
   const modal = document.getElementById('care-modal');
   if (modal) modal.style.display = 'flex';
+}
+
+function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = null) {
+  if (!multiEl || !checkboxListEl) return;
+
+  // Group plants by farm
+  const plantsByFarm = {};
+  _plants().forEach(p => {
+    const farmId = p.farm_id || 0;
+    const farmName = p.farm_name || 'Khác';
+    if (!plantsByFarm[farmId]) {
+      plantsByFarm[farmId] = { name: farmName, list: [] };
+    }
+    plantsByFarm[farmId].list.push(p);
+  });
+
+  // Register farm select all toggler
+  window.toggleFarmSelectAll = function(masterCb, farmId) {
+    const checkboxes = document.querySelectorAll(`.c-plant-checkbox-farm-${farmId}`);
+    checkboxes.forEach(cb => {
+      cb.checked = masterCb.checked;
+      if (typeof window.syncChipStyle === 'function') {
+        window.syncChipStyle(cb);
+      }
+    });
+    if (typeof window.updateSelectedCount === 'function') {
+      window.updateSelectedCount();
+    }
+  };
+
+  // Master select all across all farms
+  window.toggleSelectAllGlobal = function(status) {
+    const checkboxes = document.querySelectorAll('.c-plant-checkbox');
+    checkboxes.forEach(cb => {
+      cb.checked = status;
+      if (typeof window.syncChipStyle === 'function') {
+        window.syncChipStyle(cb);
+      }
+    });
+    document.querySelectorAll('.farm-select-all-cb').forEach(fcb => {
+      fcb.checked = status;
+    });
+    if (typeof window.updateSelectedCount === 'function') {
+      window.updateSelectedCount();
+    }
+  };
+
+  // Sync chip style on check/uncheck
+  window.syncChipStyle = function(cb) {
+    const label = cb.closest('.plant-chip-item');
+    if (label) {
+      if (cb.checked) {
+        label.style.borderColor = '#22c55e';
+        label.style.backgroundColor = '#f0fdf4';
+        label.style.boxShadow = '0 2px 6px rgba(34, 197, 94, 0.15)';
+      } else {
+        label.style.borderColor = '#cbd5e1';
+        label.style.backgroundColor = '#ffffff';
+        label.style.boxShadow = 'none';
+      }
+    }
+  };
+
+  // Register selected count updater
+  window.updateSelectedCount = function() {
+    const checkboxes = document.querySelectorAll('.c-plant-checkbox:checked');
+    const count = checkboxes.length;
+    const countEl = document.getElementById('c-selected-count-number');
+    const wrapEl = document.getElementById('c-selected-trees-count');
+    if (countEl && wrapEl) {
+      countEl.textContent = count;
+      wrapEl.style.display = count > 0 ? 'flex' : 'none';
+    }
+    if (typeof calculateWaterCostPreview === 'function') {
+      calculateWaterCostPreview();
+    }
+  };
+
+  const totalPlantsCount = _plants().length;
+  let html = '';
+
+  if (totalPlantsCount === 0) {
+    const farm = typeof window.getActiveFarm === 'function' 
+      ? (window.getActiveFarm() || {}) 
+      : (window._allFarmsCache && window._allFarmsCache.length ? window._allFarmsCache[0] : {});
+    const farmName = farm.name || 'Trang trại Nông hộ';
+    const count = farm.plant_count || farm.total_plants || 0;
+
+    html = `
+      <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:16px; text-align:center; box-shadow:0 4px 12px rgba(5,150,105,0.08);">
+        <div style="font-size:15px; font-weight:800; color:#047857; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="fa-solid fa-house-chimney"></i> PHẠM VI: TOÀN VƯỜN — ${esc(farmName)}
+        </div>
+        <div style="font-size:13px; color:#065f46; font-weight:600;">
+          Áp dụng nhật ký chăm sóc cho tổng số <strong style="color:#047857; font-size:15px; text-decoration:underline;">${count} cây trồng</strong> trong trang trại.
+        </div>
+      </div>
+    `;
+  } else {
+    html = `
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #e2e8f0;">
+        <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh sách Cây trồng (${totalPlantsCount})</span>
+        <div style="display:flex; gap:6px;">
+          <button type="button" onclick="window.toggleSelectAllGlobal(true)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:6px; cursor:pointer;">
+            <i class="fa-solid fa-check-double"></i> Chọn tất cả
+          </button>
+          <button type="button" onclick="window.toggleSelectAllGlobal(false)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#475569; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
+            <i class="fa-solid fa-xmark"></i> Bỏ chọn
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  Object.keys(plantsByFarm).forEach(farmId => {
+    const group = plantsByFarm[farmId];
+    html += `
+      <div style="margin-bottom: 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="font-weight: 700; font-size: 13px; color: #15803d; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
+          <span style="display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-tree" style="color:#22c55e;"></i> Vườn: ${esc(group.name)} (${group.list.length} cây)
+          </span>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; font-weight: 600; color: #475569; margin: 0; background: #f8fafc; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+            <input type="checkbox" class="farm-select-all-cb" onchange="toggleFarmSelectAll(this, ${farmId})" style="accent-color: #22c55e; cursor: pointer;" ${(!preselectedPlantId) ? 'checked' : ''}> Chọn cả vườn
+          </label>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">
+          ${group.list.map(p => {
+            const isChecked = (!preselectedPlantId) || (p.id == preselectedPlantId);
+            return `
+            <label for="chk-plant-${p.id}" class="plant-chip-item" style="display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: ${isChecked ? '#f0fdf4' : '#ffffff'}; border: 1.5px solid ${isChecked ? '#22c55e' : '#cbd5e1'}; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none;">
+              <input type="checkbox" class="c-plant-checkbox c-plant-checkbox-farm-${farmId}" value="${p.id}" data-code="${esc(p.tree_code || p.id)}" id="chk-plant-${p.id}" ${isChecked ? 'checked' : ''} style="accent-color: #22c55e; width: 15px; height: 15px; cursor: pointer; flex-shrink:0;" onchange="window.updateSelectedCount(); window.syncChipStyle(this);">
+              <div style="display: flex; flex-direction: column; min-width: 0;">
+                <span style="font-size: 12px; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Cây ${esc(p.tree_code || p.id)}</span>
+                <span style="font-size: 10px; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${esc(p.plant_type)}</span>
+              </div>
+            </label>
+          `}).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  checkboxListEl.innerHTML = html || '<div style="font-size:13px; color:var(--text-muted);">Không có cây trồng nào.</div>';
+  multiEl.style.display = 'block';
+  window.updateSelectedCount();
 }
 
 /**

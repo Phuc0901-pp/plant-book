@@ -252,7 +252,11 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
             <button type="button" class="btn btn-secondary btn-sm" onclick="openCareModal(${al.plantId}, '${esc(al.treeCode)}', '${esc(al.plantType)}')" style="font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 8px; background: #ffffff; border-color: #cbd5e1; color: #0f172a; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
               <i class="fa-solid fa-bolt" style="color: #059669;"></i> <span>${al.actionText}</span>
             </button>
-          ` : ''}
+          ` : `
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openCareModal()" style="font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 8px; background: #ffffff; border-color: #cbd5e1; color: #0f172a; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <i class="fa-solid fa-bolt" style="color: #059669;"></i> <span>${al.actionText}</span>
+            </button>
+          `}
         </div>
       </div>
     `;
@@ -261,10 +265,30 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
   container.innerHTML = html;
 }
 
+// ── 15-Minute Smooth Auto-Refresh ────────────────────────────
+let _autoRefreshInterval = null;
+
+export function initAutoRefreshTimer() {
+  if (_autoRefreshInterval) clearInterval(_autoRefreshInterval);
+  _autoRefreshInterval = setInterval(() => {
+    const isDocVisible = (document.visibilityState === 'visible');
+    const careModal = document.getElementById('care-modal');
+    const isCareOpen = careModal && careModal.style.display !== 'none' && getComputedStyle(careModal).display !== 'none';
+    const isEditing = Boolean(window._activeEditLogId);
+
+    // Only refresh if tab is visible and user is not currently in an open modal
+    if (isDocVisible && !isCareOpen && !isEditing) {
+      console.log('🔄 [Dashboard] Tự động tải lại dữ liệu ngầm (15 phút/lần) mượt mà...');
+      loadUserDashboard(true /* isSilent */);
+    }
+  }, 15 * 60 * 1000); // 15 minutes = 900,000ms
+}
+
 /**
  * Tải toàn bộ dữ liệu cần thiết cho cổng nông hộ và dispatch sang các module render.
+ * @param {boolean} isSilent — true: tải ngầm mượt mà không nháy giao diện
  */
-export async function loadUserDashboard() {
+export async function loadUserDashboard(isSilent = false) {
   try {
     const [farms, plants, recentLogs, configs] = await Promise.all([
       api('/farms'),
@@ -296,9 +320,15 @@ export async function loadUserDashboard() {
     }
 
     const countEl = document.getElementById('user-plant-count');
-    if (countEl) animateValue(countEl, 0, plants.length, 1000);
+    if (countEl) {
+      if (isSilent) countEl.textContent = plants.length;
+      else animateValue(countEl, 0, plants.length, 1000);
+    }
     const countFullEl = document.getElementById('user-plant-count-full');
-    if (countFullEl) animateValue(countFullEl, 0, plants.length, 1000);
+    if (countFullEl) {
+      if (isSilent) countFullEl.textContent = plants.length;
+      else animateValue(countFullEl, 0, plants.length, 1000);
+    }
 
     // ── Render Tầng 1: Thẻ Hồ Sơ Nông Hộ & Cơ Cấu Trang Trại ──
     renderFarmerCockpitCard(currentUser, farms, plants);
@@ -316,10 +346,17 @@ export async function loadUserDashboard() {
     initFloatingActionButton();
 
     // ── Bản đồ GIS ───────────────────────────────────────────
-    await ensureUserMapboxToken();
-    initUserMap(farms, plants);
+    if (!isSilent) {
+      await ensureUserMapboxToken();
+      initUserMap(farms, plants);
+    }
+
+    // ── Khởi động hẹn giờ 15 phút tải lại ngầm ────────────────
+    initAutoRefreshTimer();
 
   } catch (err) {
-    toast('Lỗi tải dữ liệu: ' + err.message, 'error');
+    if (!isSilent) {
+      toast('Lỗi tải dữ liệu: ' + err.message, 'error');
+    }
   }
 }
