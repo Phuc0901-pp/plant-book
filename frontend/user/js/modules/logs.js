@@ -252,7 +252,7 @@ export function groupCareLogsByDay(logs) {
 // ── Render ────────────────────────────────────────────────────
 
 /**
- * Render tóm tắt Hoạt động Canh tác gần đây trên Trang chủ (Nhóm theo 3 ngày gần nhất).
+ * Render tóm tắt Hoạt động Canh tác gần đây trên Trang chủ (Bảng 6 cột chuẩn ERP thẳng hàng).
  * @param {Array} logs
  */
 export function renderUserLogsTable(logs) {
@@ -266,60 +266,114 @@ export function renderUserLogsTable(logs) {
     return;
   }
 
-  const daySummaries = groupCareLogsByDay(logs);
-
-  if (!daySummaries.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></td></tr>';
-    if (moreWrap) moreWrap.style.display = 'none';
-    return;
-  }
-
   if (moreWrap) moreWrap.style.display = 'block';
 
+  // Group raw logs into normalized individual activities (up to top 8 items)
+  const groupedLogs = groupCareLogs(logs).slice(0, 8);
+
   let html = '';
-  for (const day of daySummaries) {
+  groupedLogs.forEach(l => {
+    // 1. Time & Date
+    const dObj = new Date(l.log_date || l.created_at);
+    const dateStr = !isNaN(dObj) ? dObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+    const timeStr = l.details?.time || (!isNaN(dObj) ? dObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
+
+    // 2. Plant Target
+    const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
+    const farmName = l.farm_name ? ` (${esc(l.farm_name)})` : '';
+
+    // 3. Activity Type Badge & Icon
+    let badgeClass = 'badge-green';
+    let icon = 'fa-solid fa-leaf';
+    if (l.log_type === 'Tưới nước') {
+      badgeClass = 'badge-blue';
+      icon = 'fa-solid fa-droplet';
+    } else if (l.log_type === 'Phun thuốc') {
+      badgeClass = 'badge-orange';
+      icon = 'fa-solid fa-flask';
+    } else if (l.log_type === 'Bệnh cây') {
+      badgeClass = 'badge-red';
+      icon = 'fa-solid fa-virus';
+    } else if (l.log_type === 'Thu hoạch') {
+      badgeClass = 'badge-yellow';
+      icon = 'fa-solid fa-wheat-awn';
+    } else if (l.log_type === 'Cắt lá' || l.log_type === 'Cắt tỉa') {
+      badgeClass = 'badge-gray';
+      icon = 'fa-solid fa-scissors';
+    }
+
+    // 4. Details & Notes
+    let detailsStr = esc(l.note || '');
+    if (l.details && Object.keys(l.details).length > 0) {
+      const parts = [];
+      const qtyVal = l.details.quantity ?? l.details.amount ?? l.details.qty ?? l.details.dosage ?? l.details.volume ?? l.details.yield_kg;
+      const unitVal = l.details.unit || l.details.package_unit || '';
+      const supName = l.details.supply_name || l.details.fertilizer_name || l.details.pesticide_name || l.details.foliar_nutrition || l.details.fertilizer || l.details.pesticide;
+
+      if (supName) parts.push(`Vật tư: <strong>${esc(supName)}</strong>`);
+      if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: <strong>${qtyVal} ${unitVal}</strong>`);
+      if (l.details.fruit_count)     parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
+      if (l.details.total_revenue)   parts.push(`Doanh thu: <strong>${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ</strong>`);
+      if (l.details.total_cost)      parts.push(`Chi phí: <strong>${Number(l.details.total_cost).toLocaleString('vi-VN')} đ</strong>`);
+      if (l.details.method)          parts.push(`Cách: ${esc(l.details.method)}`);
+      if (l.details.disease_name)    parts.push(`Bệnh: <span style="color:#dc2626; font-weight:700;">${esc(l.details.disease_name)}</span>`);
+      if (l.details.severity)        parts.push(`Mức độ: ${esc(l.details.severity)}`);
+      if (l.details.phi_days)        parts.push(`Cách ly PHI: ${l.details.phi_days} ngày`);
+      if (parts.length > 0) {
+        detailsStr = parts.join(' · ') + (l.note ? ` — <span style="color:#64748b;">${esc(l.note)}</span>` : '');
+      }
+    }
+
+    const mediaHtml = buildMediaThumbnailsHtml(l.media_urls, 32);
+
+    // 5. Operator Name
+    const creatorName = l.creator_name || 'Nông hộ';
+
+    // 6. Row HTML
+    const isDisease = l.log_type === 'Bệnh cây' || l.isDiseaseLog;
+    const rowBg = isDisease ? 'background: #fff5f5;' : '';
+
     html += `
-      <tr style="border-bottom: 1px solid var(--gray-200);">
-        <td data-label="Thời gian" style="vertical-align: top; width: 140px; padding: 12px 10px;">
-          <div style="font-size: 14px; font-weight: 700; color: #1e293b;"><i class="fa-regular fa-calendar-days" style="color:var(--green)"></i> ${day.dateStr}</div>
-          <div style="font-size: 11px; font-weight: 700; color: var(--green-dark); margin-top: 2px;">${day.dateTag}</div>
-          <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">${day.totalActivities} hoạt động</small>
-        </td>
-        <td colspan="5" data-label="Tóm tắt công việc trong ngày" style="padding: 10px 10px;">
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            ${day.items.map(item => `
-              ${item.isDiseaseLog ? `
-                <div style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border: 1px solid #fca5a5; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 12px; gap: 10px; flex-wrap: wrap;">
-                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:700; box-shadow:0 2px 6px rgba(220,38,38,0.3); font-size:11px; text-transform:none;">🐛 Bệnh cây</span>
-                    <strong style="color:#dc2626; font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(item.targetDisplay)}</strong>
-                    ${item.detailsStr ? `<span style="font-size:12px; color:#7f1d1d; font-weight:600;">[${item.detailsStr}]</span>` : ''}
-                    ${item.mediaHtml || ''}
-                  </div>
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <small style="color:#991b1b; font-weight:600; font-size:11px;"><i class="fa-solid fa-user"></i> ${esc(item.creatorName)}</small>
-                    <button class="btn btn-secondary btn-xs" onclick="openCareModal(${item.plantId}, '${esc(item.treeCode)}', '${esc(item.plantType)}', ${item.id})" style="padding:3px 8px; font-size:11px; border-color:#fca5a5; color:#dc2626;">Sửa</button>
-                  </div>
-                </div>
-              ` : `
-                <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; gap: 10px; flex-wrap: wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="badge ${item.badgeClass}" style="text-transform:none; font-weight:600; font-size:11px;">${esc(item.type)}</span>
-                    <strong style="color:#1e293b; font-size:13px;">${esc(item.targetDisplay)}</strong>
-                    ${item.detailsStr ? `<span style="font-size:12px; color:#475569; background:#f8fafc; padding:2px 8px; border-radius:6px; border:1px solid #e2e8f0;">[${item.detailsStr}]</span>` : ''}
-                  </div>
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <small style="color:var(--text-muted); font-size:11px;"><i class="fa-solid fa-user"></i> ${esc(item.creatorName)}</small>
-                    <button class="btn btn-secondary btn-xs" onclick="openCareModal(${item.plantId}, '${esc(item.treeCode)}', '${esc(item.plantType)}', ${item.id})" style="padding:3px 8px; font-size:11px;">Sửa</button>
-                  </div>
-                </div>
-              `}
-            `).join('')}
+      <tr style="border-bottom: 1px solid var(--gray-200); ${rowBg}">
+        <td data-label="Thời gian" style="white-space: nowrap; vertical-align: middle; padding: 12px 14px;">
+          <div style="font-weight: 800; font-size: 13px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-regular fa-clock" style="color: #059669;"></i>
+            <span>${timeStr || 'Trong ngày'}</span>
           </div>
+          <div style="font-size: 11.5px; color: #64748b; font-weight: 600; margin-top: 2px;">
+            ${dateStr}
+          </div>
+        </td>
+        <td data-label="Cây trồng" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
+          <strong style="color: ${isDisease ? '#dc2626' : '#0f172a'}; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-tree" style="color: ${isDisease ? '#ef4444' : '#10b981'}; font-size: 12px;"></i>
+            <span>${esc(targetDisplay)}</span>
+          </strong>
+          ${farmName ? `<span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">${farmName}</span>` : ''}
+        </td>
+        <td data-label="Hoạt động" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
+          <span class="badge ${badgeClass}" style="font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;">
+            <i class="${icon}"></i> ${esc(l.log_type)}
+          </span>
+        </td>
+        <td data-label="Chi tiết / Ghi chú" style="vertical-align: middle; padding: 12px 14px; font-size: 13px; color: #334155; line-height: 1.5;">
+          <div>${detailsStr || 'Đã hoàn thành công việc theo quy trình chuẩn.'}</div>
+          ${mediaHtml ? `<div style="margin-top: 4px;">${mediaHtml}</div>` : ''}
+        </td>
+        <td data-label="Người thực hiện" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap; font-size: 12.5px; color: #475569;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-user" style="color: #94a3b8; font-size: 11px;"></i>
+            <span style="font-weight: 600; color: #334155;">${esc(creatorName)}</span>
+          </div>
+        </td>
+        <td data-label="Thao tác" style="vertical-align: middle; padding: 12px 14px; text-align: right; white-space: nowrap;">
+          <button type="button" class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id || 'null'}, '${esc(l.tree_code || '')}', '${esc(l.plant_type || '')}', ${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
+            <i class="fa-solid fa-pen" style="color: #059669;"></i> Sửa
+          </button>
         </td>
       </tr>
     `;
-  }
+  });
 
   tbody.innerHTML = html;
 }
