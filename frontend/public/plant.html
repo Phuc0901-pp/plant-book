@@ -1,10 +1,21 @@
 <!DOCTYPE html>
-<html lang="vi" translate="no" class="notranslate">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="google" content="notranslate">
+<meta http-equiv="content-language" content="vi">
 <title>Sổ Nông Tân Bảo Agtech — Hồ sơ cây trồng</title>
+<script>
+  // Global silent error handler for browser internal translation/extension promises
+  window.addEventListener('unhandledrejection', function(event) {
+    if (event.reason && (
+      String(event.reason.message || event.reason).includes('Language detection') ||
+      String(event.reason.message || event.reason).includes('not supported for this page')
+    )) {
+      event.preventDefault();
+    }
+  });
+</script>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="shortcut icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/favicon.png">

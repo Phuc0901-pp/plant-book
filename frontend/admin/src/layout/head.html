@@ -1,11 +1,20 @@
 <!DOCTYPE html>
-<html lang="vi" translate="no" class="notranslate">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta http-equiv="content-language" content="vi">
-<meta name="google" content="notranslate">
+<script>
+  window.addEventListener('unhandledrejection', function(event) {
+    if (event.reason && (
+      String(event.reason.message || event.reason).includes('Language detection') ||
+      String(event.reason.message || event.reason).includes('not supported for this page')
+    )) {
+      event.preventDefault();
+    }
+  });
+</script>
 <title>{{ADMIN_PORTAL_TITLE}}</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="shortcut icon" type="image/png" href="/assets/favicon.png">

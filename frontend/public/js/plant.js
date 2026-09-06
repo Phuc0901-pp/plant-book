@@ -1,3 +1,13 @@
+// Global silent error handler for browser translation and extension promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+  if (event.reason && (
+    String(event.reason.message || event.reason).includes('Language detection') ||
+    String(event.reason.message || event.reason).includes('not supported for this page')
+  )) {
+    event.preventDefault();
+  }
+});
+
 // Parse Slug info from /:farmId/:plantId/:nfcUid, /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
 function getPublicSlugInfoFromUrl() {
   const pathParts = location.pathname.split('/').filter(p => p.length > 0);
