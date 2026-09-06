@@ -5,18 +5,15 @@ const WebSocket = require('ws');
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('\n❌ ERROR: Thieu SUPABASE_URL hoac SUPABASE_SERVICE_KEY trong file .env!');
-  console.error('👉 Vui long tao file .env trong thu muc backend (sao chep tu .env.example) va dien day du cac thong tin ket noi Supabase.\n');
-  process.exit(1);
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false },
+    realtime: { transport: WebSocket },
+  });
+} else {
+  console.warn('ℹ️  SUPABASE_URL or SUPABASE_SERVICE_KEY not provided. Supabase storage will fallback to storageService.');
 }
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { persistSession: false },
-  realtime: {
-    transport: WebSocket,
-  },
-});
 
 const BUCKET = process.env.SUPABASE_BUCKET || 'plant-media';
 

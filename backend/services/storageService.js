@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – Backend
    services/storageService.js — Universal Cloud Storage Adapter
    Supports: Cloudflare R2, AWS S3, Supabase Storage, and Local Disk Fallback
@@ -14,6 +14,13 @@ class StorageService {
     this.bucket = process.env.STORAGE_BUCKET_NAME || process.env.SUPABASE_BUCKET || 'plant-media';
     this.publicUrlBase = process.env.STORAGE_PUBLIC_URL || '';
 
+    this.localUploadDir = path.join(__dirname, '../../frontend/assets/uploads');
+    if (!fs.existsSync(this.localUploadDir)) {
+      try {
+        fs.mkdirSync(this.localUploadDir, { recursive: true });
+      } catch (_) {}
+    }
+
     // Initialize driver
     if (this.driver === 'supabase') {
       try {
@@ -25,15 +32,6 @@ class StorageService {
       } catch (err) {
         console.warn('⚠️ Supabase config not available, falling back to local storage driver.');
         this.driver = 'local';
-      }
-    }
-
-    if (this.driver === 'local') {
-      this.localUploadDir = path.join(__dirname, '../../frontend/assets/uploads');
-      if (!fs.existsSync(this.localUploadDir)) {
-        try {
-          fs.mkdirSync(this.localUploadDir, { recursive: true });
-        } catch (_) {}
       }
     }
   }
