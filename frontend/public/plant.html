@@ -6,14 +6,37 @@
 <meta http-equiv="content-language" content="vi">
 <title>Sổ Nông Tân Bảo Agtech — Hồ sơ cây trồng</title>
 <script>
-  // Suppress benign browser extension & web-vitals observer errors (e.g. startTime at reportAllChanges)
-  window.addEventListener('error', function(event) {
-    const msg = String(event.message || '');
-    const src = String(event.filename || '');
+  // 1. window.onerror explicitly suppresses console printing in Chrome when returning true
+  window.onerror = function(message, source, lineno, colno, error) {
+    const msg = String(message || '');
+    const src = String(source || '');
+    const stack = String(error?.stack || '');
     if (
       msg.includes('startTime') ||
       msg.includes('reportAllChanges') ||
-      msg.includes('ResizeObserver loop') ||
+      stack.includes('reportAllChanges') ||
+      stack.includes('startTime') ||
+      msg.includes('ResizeObserver') ||
+      src.includes('chrome-extension://') ||
+      src.includes('moz-extension://') ||
+      src.includes('web-vitals')
+    ) {
+      return true; // Suppress from console
+    }
+    return false;
+  };
+
+  // 2. Global error event listener
+  window.addEventListener('error', function(event) {
+    const msg = String(event.message || '');
+    const src = String(event.filename || '');
+    const stack = String(event.error?.stack || '');
+    if (
+      msg.includes('startTime') ||
+      msg.includes('reportAllChanges') ||
+      stack.includes('reportAllChanges') ||
+      stack.includes('startTime') ||
+      msg.includes('ResizeObserver') ||
       src.includes('chrome-extension://') ||
       src.includes('moz-extension://') ||
       src.includes('web-vitals')
@@ -24,13 +47,16 @@
     }
   }, true);
 
+  // 3. Unhandled promise rejections
   window.addEventListener('unhandledrejection', function(event) {
     const reason = String(event.reason?.message || event.reason || '');
+    const stack = String(event.reason?.stack || '');
     if (
       reason.includes('Language detection') ||
       reason.includes('not supported for this page') ||
       reason.includes('startTime') ||
       reason.includes('reportAllChanges') ||
+      stack.includes('reportAllChanges') ||
       reason.includes('chrome-extension://') ||
       reason.includes('moz-extension://')
     ) {
