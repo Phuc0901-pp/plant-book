@@ -108,32 +108,32 @@
 
 ```mermaid
 flowchart TD
-    Start([Người dùng truy cập Hệ thống]) --> CheckType{Loại truy cập?}
+    Start["Người dùng truy cập Hệ thống"] --> CheckType{"Loại truy cập?"}
 
     %% Khách quét mã QR
-    CheckType -->|Quét mã QR / Link công khai| PublicView["Trang Hồ Sơ Cây Trồng Công Khai (/plant/:slug)"]
+    CheckType -->|"Quét mã QR / Link công khai"| PublicView["Trang Hồ Sơ Cây Trồng Công Khai (/plant/:slug)"]
     PublicView --> ViewBio["Xem lý lịch cây, hình thái học, xuất xứ"]
     PublicView --> ViewLogs["Xem nhật ký VietGAP minh bạch & An toàn PHI"]
     PublicView --> ViewGPS["Xem vị trí nông trại trên bản đồ vệ tinh"]
 
     %% Đăng nhập hệ thống
-    CheckType -->|Truy cập Ứng dụng Quản lý| LoginPage["Màn hình Đăng nhập (/login)"]
+    CheckType -->|"Truy cập Ứng dụng Quản lý"| LoginPage["Màn hình Đăng nhập (/login)"]
     LoginPage --> SubmitAuth["Nhập Email & Mật khẩu -> POST /api/auth/login"]
-    SubmitAuth --> TokenVerify{Xác thực JWT?}
+    SubmitAuth --> TokenVerify{"Xác thực JWT?"}
     
-    TokenVerify -->|Thất bại| LoginFail["Báo lỗi sai tài khoản / mật khẩu"]
-    TokenVerify -->|Thành công| RoleCheck{Kiểm tra Vai trò (Role) & Gói (Tier)}
+    TokenVerify -->|"Thất bại"| LoginFail["Báo lỗi sai tài khoản / mật khẩu"]
+    TokenVerify -->|"Thành công"| RoleCheck{"Kiểm tra Vai trò (Role) & Gói (Tier)"}
 
     %% Phân luồng Admin
-    RoleCheck -->|Role: 'admin'| AdminRoute["Điều hướng về /admin (Admin Dashboard)"]
+    RoleCheck -->|"Role: admin"| AdminRoute["Điều hướng về /admin (Admin Dashboard)"]
     AdminRoute --> AdminFeatures["Quản trị hệ thống, Duyệt nông hộ, Quản lý vật tư, Cấu hình GIS & Xuất báo cáo"]
 
     %% Phân luồng User Pro
-    RoleCheck -->|Role: 'user' & Tier: 'pro'| UserProRoute["Điều hướng về /user (Chế độ Chuyên nghiệp)"]
+    RoleCheck -->|"Role: user & Tier: pro"| UserProRoute["Điều hướng về /user (Chế độ Chuyên nghiệp)"]
     UserProRoute --> ProFeatures["Quản lý nhiều nông trại, Phân tích tài chính đầu tư, Bách khoa cây trồng, Offline-First"]
 
     %% Phân luồng User Normal
-    RoleCheck -->|Role: 'user' & Tier: 'normal'| UserNorRoute["Điều hướng về /user (Chế độ Nông dân Tinh gọn)"]
+    RoleCheck -->|"Role: user & Tier: normal"| UserNorRoute["Điều hướng về /user (Chế độ Nông dân Tinh gọn)"]
     UserNorRoute --> NorFeatures["Ghi nhật ký 1 chạm, Quét QR cây, Báo bệnh có Watermark, Nhắc việc tự động"]
 ```
 
@@ -163,27 +163,27 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Admin as Quản trị viên / Chủ vườn Pro
-    participant Client as Giao diện Bản đồ GIS
-    participant Backend as Express API Engine
-    participant DB as PostgreSQL GIS Storage
+    actor A as Quản trị viên / Chủ vườn Pro
+    participant C as Giao diện Bản đồ GIS
+    participant B as Express API Engine
+    participant D as PostgreSQL GIS Storage
 
-    Admin->>Client: Mở tab Bản đồ Vùng trồng & Chọn "Tạo Nông trại"
-    Client->>Admin: Kích hoạt công cụ vẽ Đa giác (Polygon Tool)
-    Admin->>Client: Chấm các điểm tọa độ bao quanh ranh giới đất
-    Client->>Client: Tính toán diện tích thực tế (m²) & tự đổi sang Hecta (ha)
-    Admin->>Client: Nhập Tên trang trại, Mã số Vùng trồng (PUC Code), Gán Nông hộ phụ trách
-    Client->>Backend: POST /api/farms (Kèm polygon_coords JSON)
-    Backend->>DB: Lưu ranh giới Farm & Đánh Spatial Index
-    DB-->>Backend: Khởi tạo thành công
-    Backend-->>Client: Trả về Farm ID
-    Admin->>Client: Chọn "Thêm Cây Trồng" & Click vào vị trí trên bản đồ
-    Client->>Client: Tự động lấy tọa độ GPS (Latitude, Longitude)
-    Admin->>Client: Nhập Mã cây (tree_code), Giống cây (vd: Sầu riêng Ri6), Năm trồng
-    Client->>Backend: POST /api/plants (Kèm tọa độ & Farm ID)
-    Backend->>Backend: Tự động sinh Public Slug & Mã QR Code duy nhất
-    Backend->>DB: Lưu cây vào CSDL
-    Backend-->>Client: Cây hiển thị tức thì trên bản đồ với Marker Trạng thái
+    A->>C: Mở tab Bản đồ Vùng trồng & Chọn Tạo Nông trại
+    C->>A: Kích hoạt công cụ vẽ Đa giác (Polygon Tool)
+    A->>C: Chấm các điểm tọa độ bao quanh ranh giới đất
+    C->>C: Tính diện tích thực tế (m²) & tự đổi sang Hecta (ha)
+    A->>C: Nhập Tên trang trại, Mã số Vùng trồng (PUC Code), Gán Nông hộ
+    C->>B: POST /api/farms (Kèm polygon_coords JSON)
+    B->>D: Lưu ranh giới Farm & Đánh Spatial Index
+    D-->>B: Khởi tạo thành công
+    B-->>C: Trả về Farm ID
+    A->>C: Chọn Thêm Cây Trồng & Click vị trí trên bản đồ
+    C->>C: Tự động lấy tọa độ GPS (Latitude, Longitude)
+    A->>C: Nhập Mã cây (tree_code), Giống cây, Năm trồng
+    C->>B: POST /api/plants (Kèm tọa độ & Farm ID)
+    B->>B: Tự động sinh Public Slug & Mã QR Code duy nhất
+    B->>D: Lưu cây vào CSDL
+    B-->>C: Cây hiển thị tức thì trên bản đồ với Marker Trạng thái
 ```
 
 ---
@@ -192,33 +192,36 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[Nông dân chọn Cây trồng hoặc Quét mã QR/NFC] --> B[Mở Modal Ghi Nhật Ký Chăm Sóc]
-    B --> C{Chọn loại hoạt động canh tác}
+    A["Nông dân chọn Cây trồng hoặc Quét mã QR/NFC"] --> B["Mở Modal Ghi Nhật Ký Chăm Sóc"]
+    B --> C{"Chọn loại hoạt động canh tác"}
 
     %% Tưới nước
-    C -->|💧 Tưới nước| D1[Nhập thời gian tưới / Thể tích nước m³]
-    D1 --> D2[Hệ thống tự động quy đổi: Thể tích x Đơn giá nước = Chi phí tưới]
+    C -->|"Tưới nước"| D1["Nhập thời gian tưới / Thể tích nước m³"]
+    D1 --> D2["Tự động tính: Thể tích × Đơn giá nước = Chi phí tưới"]
 
     %% Bón phân
-    C -->|🌱 Bón phân| E1[Chọn loại phân bón từ Danh mục kho]
-    E1 --> E2[Nhập liều lượng bón ví dụ: 500g NPK 16-16-8]
-    E2 --> E3[Tự động trừ số dư tồn kho & Cộng chi phí phân vào Cây]
+    C -->|"Bón phân"| E1["Chọn loại phân bón từ Danh mục kho"]
+    E1 --> E2["Nhập liều lượng bón (ví dụ: 500g NPK 16-16-8)"]
+    E2 --> E3["Tự động trừ tồn kho & Cộng chi phí phân vào Cây"]
 
     %% Phun thuốc BVTV
-    C -->|🛡️ Phun thuốc BVTV| F1[Chọn thuốc BVTV trong danh mục được cấp phép]
-    F1 --> F2[Nhập nồng độ/liều lượng pha & Mục đích phòng trị]
-    F2 --> F3[Tự động tính Ngày hết cách ly PHI = Ngày phun + Số ngày PHI]
-    F3 --> F4[Khóa cảnh báo thu hoạch & Đổi trạng thái cây sang CÁCH LY PHI]
+    C -->|"Phun thuốc BVTV"| F1["Chọn thuốc BVTV trong danh mục được cấp phép"]
+    F1 --> F2["Nhập nồng độ/liều lượng pha & Mục đích phòng trị"]
+    F2 --> F3["Tự động tính Ngày hết cách ly PHI = Ngày phun + Số ngày PHI"]
+    F3 --> F4["Khóa cảnh báo thu hoạch & Đổi trạng thái sang CÁCH LY PHI"]
 
     %% Báo bệnh cây
-    C -->|⚠️ Báo Bệnh cây| G1[Chọn triệu chứng bệnh & Mức độ nghiêm trọng]
-    G1 --> G2[Chụp ảnh / Quay video thực địa]
-    G2 --> G3[Canvas API đóng dấu Watermark: Mã Cây · Ngày Giờ · Tọa độ GPS]
-    G3 --> G4[Upload ảnh lên Cloud Storage & Gửi cảnh báo về Admin]
+    C -->|"Báo Bệnh cây"| G1["Chọn triệu chứng bệnh & Mức độ nghiêm trọng"]
+    G1 --> G2["Chụp ảnh / Quay video thực địa"]
+    G2 --> G3["Canvas API đóng dấu Watermark: Mã Cây · Ngày Giờ · Tọa độ GPS"]
+    G3 --> G4["Upload ảnh lên Cloud Storage & Gửi cảnh báo về Admin"]
 
     %% Ghi nhận vào DB
-    D2 & E3 & F4 & G4 --> H[Lưu Nhật Ký -> POST /api/plants/:id/logs]
-    H --> I[Cập nhật Dòng thời gian Sinh trưởng & Chi phí Lũy kế của Cây]
+    D2 --> H["Lưu Nhật Ký -> POST /api/plants/:id/logs"]
+    E3 --> H
+    F4 --> H
+    G4 --> H
+    H --> I["Cập nhật Dòng thời gian Sinh trưởng & Chi phí Lũy kế của Cây"]
 ```
 
 ---
@@ -226,22 +229,16 @@ flowchart TD
 ### 4.3 Quy trình Kiểm soát Thời gian Cách ly Thuốc BVTV (VietGAP PHI)
 
 ```mermaid
-stateDiagram-v2
-    [*] --> AnToan: Trạng thái bình thường (Cây khỏe / An toàn)
+flowchart TD
+    S1["Trạng thái An Toàn (Cây khỏe mạnh / Bình thường)"] -->|"Phun thuốc BVTV"| S2["Bắt đầu Chu kỳ Cách ly PHI"]
+    S2 --> S3["Đếm ngược: Ngày kết thúc PHI = Ngày phun + Số ngày PHI"]
     
-    AnToan --> DangCachLy: Phun thuốc BVTV (Bắt đầu tính chu kỳ PHI)
+    S3 --> S4{"Nông dân thao tác Thu Hoạch?"}
+    S4 -->|"Thời gian < Ngày kết thúc PHI"| S5["CẢNH BÁO ĐỎ: Vi phạm an toàn VietGAP (Hủy thao tác)"]
+    S5 --> S3
     
-    state DangCachLy {
-        [*] --> DemNguocPHI: Ngày kết thúc PHI = Ngày phun + PHI_days
-        DemNguocPHI --> KiemTraThuHoach: Nông dân thao tác "Thu Hoạch"?
-        KiemTraThuHoach --> CanhBaoViPham: Nếu Thời gian < Ngày kết thúc PHI
-        CanhBaoViPham --> HuyThuHoach: Cảnh báo đỏ vi phạm an toàn thực phẩm VietGAP
-    }
-    
-    DangCachLy --> HetCachLy: Thời gian hiện tại >= Ngày kết thúc PHI
-    HetCachLy --> AnToanThuHoach: Cho phép thu hoạch nông sản
-    AnToanThuHoach --> XuatMaLo: Sinh Mã Lô Nông Sản (Traceability Batch Code)
-    XuatMaLo --> [*]
+    S4 -->|"Thời gian >= Ngày kết thúc PHI"| S6["Cho phép Thu Hoạch An Toàn"]
+    S6 --> S7["Tự động cấp Mã Lô Nông Sản (Traceability Batch Code)"]
 ```
 
 ---
@@ -257,24 +254,24 @@ sequenceDiagram
     participant Sync as Sync Engine
     participant Server as Backend Express Server
 
-    Note over Farmer,IDB: [Giai đoạn Mất Sóng / Không có Internet]
+    Note over Farmer,IDB: Giai đoạn Mất Sóng / Không có Internet
     Farmer->>SW: Mở ứng dụng Sổ Nông Tân Bảo
-    SW-->>Farmer: Trả về UI từ Service Worker Cache (Tải tức thì 0.1s)
+    SW-->>Farmer: Trả về UI từ Service Worker Cache (0.1s)
     Farmer->>IDB: Xem danh sách cây & vật tư (Lấy từ Local Store)
     Farmer->>IDB: Ghi nhật ký chăm sóc / Bón phân / Phun thuốc
-    IDB->>IDB: Lưu bản ghi vào bảng "offline_outbox_queue" với cờ sync_status = 'pending'
-    IDB-->>Farmer: Thông báo: "Đã lưu offline an toàn. Sẽ tự đồng bộ khi có mạng!"
+    IDB->>IDB: Lưu bản ghi vào offline_outbox_queue (sync_status = pending)
+    IDB-->>Farmer: Thông báo: Đã lưu offline an toàn. Sẽ tự đồng bộ khi có mạng!
 
-    Note over Farmer,Server: [Giai đoạn Kết Nối Mạng Trở Lại]
-    Sync->>Sync: Lắng nghe sự kiện 'online' của trình duyệt
-    Sync->>IDB: Quét toàn bộ bản ghi chờ trong "offline_outbox_queue"
+    Note over Farmer,Server: Giai đoạn Kết Nối Mạng Trở Lại
+    Sync->>Sync: Lắng nghe sự kiện online của trình duyệt
+    Sync->>IDB: Quét toàn bộ bản ghi chờ trong offline_outbox_queue
     loop Từng bản ghi trong hàng đợi
         Sync->>Server: POST /api/plants/:id/logs (Đẩy dữ liệu lên Cloud)
         Server-->>Sync: Phản hồi Thành công (201 Created)
         Sync->>IDB: Xóa bản ghi đã đồng bộ khỏi Outbox
     end
     Sync->>Server: Kéo dữ liệu mới nhất về cập nhật vào IndexedDB
-    Sync-->>Farmer: Đổi huy hiệu Topbar sang "✅ Đã đồng bộ hoàn tất"
+    Sync-->>Farmer: Đổi huy hiệu Topbar sang: Đã đồng bộ hoàn tất
 ```
 
 ---
@@ -283,17 +280,17 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    QR[Khách hàng / Đối tác quét mã QR trên quả/thân cây] --> URL["GET /plant/:slug"]
-    URL --> Query[Backend truy vấn CSDL theo public_slug]
-    Query --> CheckPub{Cây có bật is_public?}
+    QR["Khách hàng quét mã QR trên quả/thân cây"] --> URL["GET /plant/:slug"]
+    URL --> Query["Backend truy vấn CSDL theo public_slug"]
+    Query --> CheckPub{"Cây có bật is_public?"}
     
-    CheckPub -->|Không| Deny["Hiển thị thông báo: Hồ sơ cây đang ở chế độ bảo mật nội bộ"]
-    CheckPub -->|Có| Render["Hiển thị Trang Hồ Sơ Nông Sản Chuẩn VietGAP"]
+    CheckPub -->|"Không"| Deny["Hiển thị: Hồ sơ cây đang ở chế độ bảo mật"]
+    CheckPub -->|"Có"| Render["Hiển thị Trang Hồ Sơ Nông Sản Chuẩn VietGAP"]
     
-    Render --> D1["🌳 Thông tin Giống, Tuổi cây, Vườn trồng"]
-    Render --> D2["📜 Nhật ký Canh tác minh bạch (Đã lọc bỏ thông tin bảo mật)"]
-    Render --> D3["🛡️ Chứng thực An Toàn Cách Ly PHI & Mã Lô Thu Hoạch"]
-    Render --> D4["📍 Bản đồ Vệ tinh xác thực Nguồn gốc Địa lý"]
+    Render --> D1["Thông tin Giống, Tuổi cây, Vườn trồng"]
+    Render --> D2["Nhật ký Canh tác minh bạch (Đã lọc bỏ bí mật)"]
+    Render --> D3["Chứng thực An Toàn Cách Ly PHI & Mã Lô"]
+    Render --> D4["Bản đồ Vệ tinh xác thực Nguồn gốc Địa lý"]
 ```
 
 ---
@@ -532,6 +529,6 @@ MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoi...
 ---
 
 <p align="center">
-  <b>© 2026 Tân Bảo Sài Gòn AgTech Corporation. All rights reserved.</b><br>
-  <i>Hệ thống Quản lý Vườn Cây & Nhật Ký Canh Tác Nông Nghiệp Thông Minh Chuẩn VietGAP.</i>
+  <b>© 2026 Công ty TNHH Công nghệ Nông nghiệp Tân Bảo Sài Gòn - Phạm Hoàng Phúc.</b><br>
+  <i>Sổ Nông Nhàn - TBSGA.</i>
 </p>
