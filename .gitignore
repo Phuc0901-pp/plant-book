@@ -2,6 +2,14 @@ node_modules/
 backend/node_modules/
 .env
 *.log
+*.tmp
+*.bak
+*.docx
+*.pdf
 .DS_Store
 bi-mat-he-thong.md
-
+mobile_app/build/
+mobile_app/.dart_tool/
+mobile_app/.flutter-plugins
+mobile_app/.flutter-plugins-dependencies
+frontend/assets/uploads/test_verification_*
