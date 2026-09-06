@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 
 // GET Mapbox public token (served from env, avoids hardcoding in frontend)
 router.get('/mapbox-token', (req, res) => {
-  const fallback = ['pk.eyJ1IjoicGh1Y21lb21leSIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
+  const fallback = ['pk.eyJ1IjoicGh1Y21lb21lbyIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
   const token = process.env.MAPBOX_TOKEN || fallback;
   res.json({ token });
 });

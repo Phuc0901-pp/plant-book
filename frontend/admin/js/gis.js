@@ -193,7 +193,7 @@ function getCustomerColor(userId) {
   return CUSTOMER_PALETTE[Math.abs(idNum) % CUSTOMER_PALETTE.length];
 }
 
-const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxlU0lzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
+const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxieUlzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
 let mapboxTokenFetched = false;
 async function ensureMapboxToken() {
   if (mapboxTokenFetched && mapboxgl.accessToken) return;

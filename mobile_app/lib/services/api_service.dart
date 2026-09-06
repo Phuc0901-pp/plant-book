@@ -510,7 +510,7 @@ class ApiService {
       print('Error fetching mapbox token: $e');
     }
 
-    final fallback = ['pk.eyJ1IjoicGh1Y21lb21leSIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
+    final fallback = ['pk.eyJ1IjoicGh1Y21lb21lbyIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
     _cachedMapboxToken = fallback;
     return _cachedMapboxToken!;
   }
