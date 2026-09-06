@@ -226,37 +226,19 @@ window.switchWikiSubtab = function(tabName) {
   if (paneVietgap) paneVietgap.style.display = 'none';
 
   // Reset all buttons
-  const resetBtn = (btn) => {
-    if (!btn) return;
-    btn.className = 'wiki-subtab';
-    btn.style.background = '#ffffff';
-    btn.style.color = '#334155';
-    btn.style.border = '1.5px solid #cbd5e1';
-    btn.style.boxShadow = 'none';
-  };
-
-  const activateBtn = (btn) => {
-    if (!btn) return;
-    btn.className = 'wiki-subtab active';
-    btn.style.background = '#059669';
-    btn.style.color = 'white';
-    btn.style.border = 'none';
-    btn.style.boxShadow = '0 4px 12px rgba(5,150,105,0.25)';
-  };
-
-  resetBtn(btnAdv);
-  resetBtn(btnGuide);
-  resetBtn(btnVietgap);
+  [btnAdv, btnGuide, btnVietgap].forEach(btn => {
+    if (btn) btn.classList.remove('active');
+  });
 
   if (tabName === 'guide') {
     if (paneGuide) paneGuide.style.display = 'block';
-    activateBtn(btnGuide);
+    if (btnGuide) btnGuide.classList.add('active');
   } else if (tabName === 'vietgap') {
     if (paneVietgap) paneVietgap.style.display = 'block';
-    activateBtn(btnVietgap);
+    if (btnVietgap) btnVietgap.classList.add('active');
   } else {
     if (paneAdv) paneAdv.style.display = 'block';
-    activateBtn(btnAdv);
+    if (btnAdv) btnAdv.classList.add('active');
   }
 };
 

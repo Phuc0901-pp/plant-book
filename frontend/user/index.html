@@ -18,11 +18,34 @@
   <meta name="apple-mobile-web-app-title" content="Sổ Nông Tân Bảo">
   <meta http-equiv="content-language" content="vi">
   <script>
+    // Suppress benign browser extension & web-vitals observer errors (e.g. startTime at reportAllChanges)
+    window.addEventListener('error', function(event) {
+      const msg = String(event.message || '');
+      const src = String(event.filename || '');
+      if (
+        msg.includes('startTime') ||
+        msg.includes('reportAllChanges') ||
+        msg.includes('ResizeObserver loop') ||
+        src.includes('chrome-extension://') ||
+        src.includes('moz-extension://') ||
+        src.includes('web-vitals')
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    }, true);
+
     window.addEventListener('unhandledrejection', function(event) {
-      if (event.reason && (
-        String(event.reason.message || event.reason).includes('Language detection') ||
-        String(event.reason.message || event.reason).includes('not supported for this page')
-      )) {
+      const reason = String(event.reason?.message || event.reason || '');
+      if (
+        reason.includes('Language detection') ||
+        reason.includes('not supported for this page') ||
+        reason.includes('startTime') ||
+        reason.includes('reportAllChanges') ||
+        reason.includes('chrome-extension://') ||
+        reason.includes('moz-extension://')
+      ) {
         event.preventDefault();
       }
     });
@@ -1725,14 +1748,14 @@
         </div>
 
         <!-- TẦNG 2: ERP SEGMENTED SUB-TABS NAVIGATION -->
-        <div class="tabs" style="display:flex; gap:10px; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:12px; flex-wrap:wrap;">
-          <button class="wiki-subtab active" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')" style="padding:10px 22px; font-weight:800; font-size:13.5px; border-radius:10px; border:none; background:#059669; color:white; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.25); display:inline-flex; align-items:center; gap:8px;">
+        <div class="wiki-subtabs-nav">
+          <button class="wiki-subtab active" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')">
             <i class="fa-solid fa-microchip"></i> 1. Module Công Nghệ &amp; Giải Pháp Nâng Cao
           </button>
-          <button class="wiki-subtab" id="btn-wiki-sub-guide" onclick="switchWikiSubtab('guide')" style="padding:10px 22px; font-weight:700; font-size:13.5px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+          <button class="wiki-subtab" id="btn-wiki-sub-guide" onclick="switchWikiSubtab('guide')">
             <i class="fa-solid fa-book-bookmark"></i> 2. Sổ Tay 10 Quy Trình Thao Tác Chuẩn (SOP)
           </button>
-          <button class="wiki-subtab" id="btn-wiki-sub-vietgap" onclick="switchWikiSubtab('vietgap')" style="padding:10px 22px; font-weight:700; font-size:13.5px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+          <button class="wiki-subtab" id="btn-wiki-sub-vietgap" onclick="switchWikiSubtab('vietgap')">
             <i class="fa-solid fa-shield-halved"></i> 3. Cẩm Nang Tiêu Chuẩn VietGAP &amp; Kỹ Thuật
           </button>
         </div>

@@ -686,6 +686,9 @@ export async function saveSupply() {
     closeSupplyModal();
     loadSupplies();
     loadSuppliesAnalytics();
+    if (typeof window.refreshCareSuppliesDropdowns === 'function') {
+      window.refreshCareSuppliesDropdowns(true);
+    }
   } catch (err) {
     toast('Lỗi lưu vật tư: ' + err.message, 'error');
   } finally {
@@ -700,6 +703,9 @@ export async function deleteSupply(id) {
     toast('Đã xóa vật tư thành công!');
     loadSupplies();
     loadSuppliesAnalytics();
+    if (typeof window.refreshCareSuppliesDropdowns === 'function') {
+      window.refreshCareSuppliesDropdowns(true);
+    }
   } catch (err) {
     toast('Lỗi xóa vật tư: ' + err.message, 'error');
   }
@@ -786,6 +792,9 @@ export async function submitRestockSupply() {
     closeRestockModal();
     loadSupplies();
     loadSuppliesAnalytics();
+    if (typeof window.refreshCareSuppliesDropdowns === 'function') {
+      window.refreshCareSuppliesDropdowns(true);
+    }
   } catch (err) {
     toast('Lỗi nhập kho: ' + err.message, 'error');
   } finally {

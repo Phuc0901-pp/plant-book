@@ -9,10 +9,24 @@ import { loadUserDashboard } from '../modules/dashboard.js';
 let socket = null;
 let reconnectTimer = null;
 let isManualClose = false;
+let isConnecting = false;
 let retryCount = 0;
 
-export function connectWebSocket() {
+async function checkServerHealth() {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch('/api/health', { credentials: 'omit', signal: controller.signal });
+    clearTimeout(timer);
+    return res.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+export async function connectWebSocket() {
   if (!token) return;
+  if (isConnecting) return;
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
     return;
   }
@@ -21,6 +35,20 @@ export function connectWebSocket() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
+  }
+
+  isConnecting = true;
+  // Pre-flight check: ensure backend is alive before opening WebSocket (prevents cold-start red console errors)
+  const isHealthy = await checkServerHealth();
+  isConnecting = false;
+
+  if (isManualClose || !token) return;
+
+  if (!isHealthy) {
+    retryCount++;
+    const delay = Math.min(3000 * Math.pow(1.5, retryCount - 1), 30000);
+    reconnectTimer = setTimeout(connectWebSocket, delay);
+    return;
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -87,5 +115,6 @@ function handleUserRealtimeEvent(msg) {
     if (typeof loadUserDashboard === 'function') loadUserDashboard();
     if (typeof window.loadSupplies === 'function') window.loadSupplies();
     if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
+    if (typeof window.refreshCareSuppliesDropdowns === 'function') window.refreshCareSuppliesDropdowns(true);
   }
 }

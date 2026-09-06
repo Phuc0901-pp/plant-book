@@ -148,6 +148,9 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
 
   const modal = document.getElementById('care-modal');
   if (modal) modal.style.display = 'flex';
+
+  // Tự động tải lại vật tư mới nhất từ server trong nền
+  refreshCareSuppliesDropdowns(true).catch(() => {});
 }
 
 function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = null) {
@@ -368,6 +371,75 @@ export function updatePesticidePhiNotice(selectEl) {
   if (ingEl) ingEl.textContent = activeIng || 'Chưa khai báo';
 }
 window.updatePesticidePhiNotice = updatePesticidePhiNotice;
+
+/**
+ * Tự động reload danh sách vật tư vào modal chăm sóc (không làm gián đoạn giao diện/dữ liệu đang nhập).
+ * @param {boolean} forceFetch
+ */
+export async function refreshCareSuppliesDropdowns(forceFetch = true) {
+  try {
+    if (forceFetch || !window._declaredSuppliesCache) {
+      window._declaredSuppliesCache = await api('/supplies');
+    }
+  } catch (_) {
+    if (!window._declaredSuppliesCache) window._declaredSuppliesCache = [];
+  }
+
+  const supplies = window._declaredSuppliesCache || [];
+  const careModal = document.getElementById('care-modal');
+  if (!careModal || careModal.style.display === 'none') return;
+
+  const logType = document.getElementById('c-log-type')?.value;
+  const supplySelect = document.getElementById('c-detail-supply-id');
+
+  if (logType === 'Tưới nước' && supplySelect) {
+    const waterSupplies = supplies.filter(s => s.category === 'Tiền nước');
+    const currentVal = supplySelect.value;
+    let html = waterSupplies.map(s => `<option value="${s.id}">💧 ${_formatSupplyOptionText(s)}</option>`).join('');
+    html += '<option value="">Không hạch toán tiền nước</option>';
+    supplySelect.innerHTML = html;
+    if (currentVal && waterSupplies.some(s => String(s.id) === String(currentVal))) {
+      supplySelect.value = currentVal;
+    }
+    calculateWaterCostPreview();
+  } else if (logType === 'Bón phân' && supplySelect) {
+    const declaredFertilizers = supplies.filter(s => s.category === 'Bón phân');
+    if (declaredFertilizers.length > 0) {
+      const currentVal = supplySelect.value;
+      supplySelect.innerHTML = declaredFertilizers.map(s => {
+        const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+        return `
+          <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+            🧪 ${_formatSupplyOptionText(s)}
+          </option>
+        `;
+      }).join('');
+      if (currentVal && declaredFertilizers.some(s => String(s.id) === String(currentVal))) {
+        supplySelect.value = currentVal;
+      }
+      onCareSupplySelected(supplySelect, 'c-detail-fertilizer');
+    }
+  } else if (logType === 'Phun thuốc' && supplySelect) {
+    const declaredPesticides = supplies.filter(s => s.category === 'Phun thuốc');
+    if (declaredPesticides.length > 0) {
+      const currentVal = supplySelect.value;
+      supplySelect.innerHTML = declaredPesticides.map(s => {
+        const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+        return `
+          <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-phi="${s.phi_days || 0}" data-ing="${esc(s.active_ingredient || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+            🛡️ ${_formatSupplyOptionText(s)} ${s.phi_days ? `[Cách ly PHI: ${s.phi_days} ngày]` : ''}
+          </option>
+        `;
+      }).join('');
+      if (currentVal && declaredPesticides.some(s => String(s.id) === String(currentVal))) {
+        supplySelect.value = currentVal;
+      }
+      onCareSupplySelected(supplySelect, 'c-detail-pesticide');
+      updatePesticidePhiNotice(supplySelect);
+    }
+  }
+}
+window.refreshCareSuppliesDropdowns = refreshCareSuppliesDropdowns;
 
 function _formatSupplyOptionText(s) {
   const pkgQty = parseFloat(s.package_qty) || 1;

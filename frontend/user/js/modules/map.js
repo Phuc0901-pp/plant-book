@@ -156,15 +156,14 @@ export function initUserMap(farms, plants) {
         }
 
         const farmMarkerWrap = document.createElement('div');
-        farmMarkerWrap.className = 'farm-gps-marker';
+        farmMarkerWrap.className = 'farm-gps-point-marker';
+        farmMarkerWrap.title = `${farm.name} (${farm.plant_count || farm.total_plants || 0} cây)`;
         farmMarkerWrap.innerHTML = `
-          <div style="background:linear-gradient(135deg, #10b981, #047857); color:white; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; border:2px solid white; box-shadow:0 4px 12px rgba(0,0,0,0.35); display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap;">
-            <i class="fa-solid fa-house-chimney"></i> ${esc(farm.name)} (${farm.plant_count || farm.total_plants || 0} cây)
-          </div>
+          <div style="width:14px; height:14px; border-radius:50%; background:#10b981; border:2.5px solid #ffffff; box-shadow:0 0 0 3px rgba(16,185,129,0.4), 0 2px 6px rgba(0,0,0,0.4); cursor:pointer; transition:transform 0.2s ease;"></div>
         `;
         new mapboxgl.Marker(farmMarkerWrap)
           .setLngLat([ptLng, ptLat])
-          .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`
+          .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(`
             <div class="map-tooltip" style="font-family:inherit;font-size:12px;">
               <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(farm.name)}</h4>
               <p style="margin-bottom:2px;">Tổng số cây: <strong>${farm.plant_count || farm.total_plants || 0} cây</strong></p>

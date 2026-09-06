@@ -6,9 +6,23 @@
 let socket = null;
 let reconnectTimer = null;
 let isManualClose = false;
+let isConnecting = false;
 let retryCount = 0;
 
-function connectWebSocket() {
+async function checkServerHealth() {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch('/api/health', { credentials: 'omit', signal: controller.signal });
+    clearTimeout(timer);
+    return res.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function connectWebSocket() {
+  if (isConnecting) return;
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
     return;
   }
@@ -17,6 +31,20 @@ function connectWebSocket() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
+  }
+
+  isConnecting = true;
+  // Pre-flight check: ensure backend is alive before opening WebSocket (prevents cold-start red console errors)
+  const isHealthy = await checkServerHealth();
+  isConnecting = false;
+
+  if (isManualClose || (typeof token !== 'undefined' && !token)) return;
+
+  if (!isHealthy) {
+    retryCount++;
+    const delay = Math.min(3000 * Math.pow(1.5, retryCount - 1), 30000);
+    reconnectTimer = setTimeout(connectWebSocket, delay);
+    return;
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -41,7 +69,7 @@ function connectWebSocket() {
 
     socket.onclose = () => {
       socket = null;
-      if (!isManualClose && token) {
+      if (!isManualClose && typeof token !== 'undefined' && token) {
         retryCount++;
         // Exponential backoff: 3s, 6s, 12s, max 30s
         const delay = Math.min(3000 * Math.pow(1.5, retryCount - 1), 30000);
@@ -56,7 +84,7 @@ function connectWebSocket() {
     };
   } catch (_) {
     socket = null;
-    if (!isManualClose && token) {
+    if (!isManualClose && typeof token !== 'undefined' && token) {
       reconnectTimer = setTimeout(connectWebSocket, 5000);
     }
   }
