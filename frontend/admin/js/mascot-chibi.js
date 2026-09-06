@@ -34,10 +34,11 @@ function attachAdminMascotDraggable(container, storageKey) {
     if (saved) {
       const pos = JSON.parse(saved);
       if (typeof pos.left === 'number' && typeof pos.top === 'number') {
-        const containerW = container.offsetWidth || 105;
-        const containerH = container.offsetHeight || 120;
+        const isMobile = window.innerWidth <= 768;
+        const containerW = 105;
+        const containerH = 120;
         const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-        const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+        const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
         const clampedLeft = Math.min(Math.max(10, pos.left), maxLeft);
         const clampedTop = Math.min(Math.max(10, pos.top), maxTop);
         container.style.left = clampedLeft + 'px';
@@ -95,11 +96,12 @@ function attachAdminMascotDraggable(container, storageKey) {
       const newLeft = initialLeft + deltaX;
       const newTop = initialTop + deltaY;
 
-      const containerW = container.offsetWidth || 105;
-      const containerH = container.offsetHeight || 120;
+      const isMobile = window.innerWidth <= 768;
+      const containerW = 105;
+      const containerH = 120;
 
       const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-      const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+      const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
 
       const clampedLeft = Math.min(Math.max(10, newLeft), maxLeft);
       const clampedTop = Math.min(Math.max(10, newTop), maxTop);
@@ -139,11 +141,12 @@ function attachAdminMascotDraggable(container, storageKey) {
 
   window.addEventListener('resize', () => {
     const rect = container.getBoundingClientRect();
-    const containerW = container.offsetWidth || 105;
-    const containerH = container.offsetHeight || 120;
+    const isMobile = window.innerWidth <= 768;
+    const containerW = 105;
+    const containerH = 120;
 
     const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-    const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+    const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
 
     if (container.style.left && container.style.left !== 'auto') {
       const currentLeft = parseFloat(container.style.left) || rect.left;
@@ -156,25 +159,47 @@ function attachAdminMascotDraggable(container, storageKey) {
   });
 }
 
+function _adjustPopupPlacement(popupEl, containerEl) {
+  if (!popupEl || !containerEl) return;
+  const rect = containerEl.getBoundingClientRect();
+  const isTopHalf = rect.top < window.innerHeight / 2;
+  const isLeftHalf = rect.left < window.innerWidth / 2;
+
+  if (isTopHalf) {
+    popupEl.style.top = 'calc(100% + 10px)';
+    popupEl.style.bottom = 'auto';
+  } else {
+    popupEl.style.bottom = 'calc(100% + 10px)';
+    popupEl.style.top = 'auto';
+  }
+
+  if (isLeftHalf) {
+    popupEl.style.left = '0px';
+    popupEl.style.right = 'auto';
+  } else {
+    popupEl.style.right = '0px';
+    popupEl.style.left = 'auto';
+  }
+
+  // Viewport Horizontal Boundary Clamp
+  requestAnimationFrame(() => {
+    const pRect = popupEl.getBoundingClientRect();
+    if (pRect.left < 10) {
+      popupEl.style.left = `${10 - rect.left}px`;
+      popupEl.style.right = 'auto';
+    } else if (pRect.right > window.innerWidth - 10) {
+      popupEl.style.right = `${rect.right - window.innerWidth + 10}px`;
+      popupEl.style.left = 'auto';
+    }
+  });
+}
+
 function initAdminChibiMascot() {
   let mascotContainer = document.getElementById('admin-chibi-mascot-widget');
   if (!mascotContainer) {
     mascotContainer = document.createElement('div');
     mascotContainer.id = 'admin-chibi-mascot-widget';
     mascotContainer.className = 'admin-unified-mascot-container';
-    mascotContainer.style.cssText = `
-      position: fixed;
-      bottom: 18px;
-      right: 22px;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      pointer-events: auto;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      user-select: none;
-      touch-action: none;
-    `;
     document.body.appendChild(mascotContainer);
     attachAdminMascotDraggable(mascotContainer, ADMIN_MASCOT_POS_KEY);
   }
@@ -184,6 +209,18 @@ function initAdminChibiMascot() {
     const style = document.createElement('style');
     style.id = 'admin-chibi-clean-style';
     style.textContent = `
+      .admin-unified-mascot-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 105px;
+        height: 120px;
+        z-index: 9999;
+        pointer-events: auto;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        user-select: none;
+        touch-action: none;
+      }
       .admin-unified-mascot-container.is-dragging {
         cursor: grabbing !important;
         opacity: 0.92;
@@ -192,6 +229,12 @@ function initAdminChibiMascot() {
       }
       .admin-unified-mascot-container.is-dragging * {
         cursor: grabbing !important;
+      }
+      @media (max-width: 768px) {
+        .admin-unified-mascot-container:not([style*="left"]) {
+          bottom: 20px;
+          right: 16px;
+        }
       }
       @keyframes mascot-float-bounce {
         0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -202,11 +245,16 @@ function initAdminChibiMascot() {
         50% { transform: rotate(14deg); }
       }
       @keyframes chat-pop-in {
-        0% { transform: scale(0.85) translateY(30px); opacity: 0; }
+        0% { transform: scale(0.85) translateY(20px); opacity: 0; }
         100% { transform: scale(1) translateY(0); opacity: 1; }
       }
       .admin-clean-avatar {
+        width: 100%;
+        height: 100%;
         cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
       .admin-clean-avatar:hover {
@@ -344,25 +392,20 @@ function renderAdminMascot() {
     container.style.display = 'none';
     return;
   } else {
-    container.style.display = 'flex';
+    container.style.display = 'block';
   }
 
-  // Determine smart popup orientation based on current dragged position
-  const rect = container.getBoundingClientRect();
-  const isTopHalf = rect.top < window.innerHeight / 2;
-  const isLeftHalf = rect.left < window.innerWidth / 2;
-
-  container.style.flexDirection = isTopHalf ? 'column-reverse' : 'column';
-  container.style.alignItems = isLeftHalf ? 'flex-start' : 'flex-end';
+  let innerHTML = '';
 
   if (_isChatOpen) {
     // 💬 CHATBOX GEMINI AI DRAWER
-    container.innerHTML = `
+    innerHTML = `
       <div id="admin-ai-chat-box" onclick="event.stopPropagation()" style="
+        position: absolute;
         width: 380px;
-        max-width: calc(100vw - 32px);
+        max-width: calc(100vw - 28px);
         height: 520px;
-        max-height: calc(100vh - 90px);
+        max-height: calc(100vh - 110px);
         background: #ffffff;
         border: 2px solid #10b981;
         border-radius: 20px;
@@ -370,8 +413,8 @@ function renderAdminMascot() {
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        margin-${isTopHalf ? 'top' : 'bottom'}: 12px;
-        animation: chat-pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 10000;
+        animation: chat-pop-in 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       ">
         <!-- Chat Header -->
         <div style="background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%); color: white; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
@@ -447,19 +490,27 @@ function renderAdminMascot() {
           </button>
         </form>
       </div>
-    `;
-  } else {
-    // 🌿 ONLY RENDER CUTE 3D ANIME CHIBI MASCOT AT BOTTOM-RIGHT
-    container.innerHTML = `
-      <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào để chat hoặc KÉO THẢ di chuyển Bé Mầm!" style="
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        animation: mascot-float-bounce 2.5s infinite ease-in-out;
-      ">
+
+      <!-- Avatar Anchor -->
+      <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào để chat hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-float-bounce 2.5s infinite ease-in-out;">
         ${_renderCleanAnimeMascotSVG()}
       </div>
     `;
+  } else {
+    // 🌿 ONLY RENDER CUTE 3D ANIME CHIBI MASCOT AT BASE ANCHOR
+    innerHTML = `
+      <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào để chat hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-float-bounce 2.5s infinite ease-in-out;">
+        ${_renderCleanAnimeMascotSVG()}
+      </div>
+    `;
+  }
+
+  container.innerHTML = innerHTML;
+
+  // Reposition chat popup relative to current container coordinates
+  if (_isChatOpen) {
+    const chatEl = document.getElementById('admin-ai-chat-box');
+    _adjustPopupPlacement(chatEl, container);
   }
 }
 

@@ -5,7 +5,7 @@
  * 1. 📝 Ghi nhật ký chăm sóc (mở modal ghi chép chăm sóc cây)
  * 2. 🌱 Bé Mầm tư vấn & hỏi đáp (mở khung Chat Google Gemini AI)
  * 🔒 Ẩn hoàn toàn khi ở màn hình đăng nhập, chỉ hiển thị sau khi đã đăng nhập thành công.
- * 🚀 NÂNG CẤP: Kéo thả di chuyển tự do (Draggable) trên mọi thiết bị (Desktop, Tablet, Mobile)
+ * 🚀 NÂNG CẤP: Kéo thả di chuyển tự do (Draggable) không bao giờ bị tràn/lệch khung hình.
  */
 
 let _isUserChatOpen = false;
@@ -25,7 +25,7 @@ export function isUserLoggedIn() {
 }
 
 /**
- * Helper to attach full Touch & Mouse Draggable capability to mascot container
+ * Attach full Touch & Mouse Draggable capability to mascot container
  */
 function attachMascotDraggable(container, storageKey) {
   let isDragging = false;
@@ -39,10 +39,11 @@ function attachMascotDraggable(container, storageKey) {
     if (saved) {
       const pos = JSON.parse(saved);
       if (typeof pos.left === 'number' && typeof pos.top === 'number') {
-        const containerW = container.offsetWidth || 100;
-        const containerH = container.offsetHeight || 115;
+        const isMobile = window.innerWidth <= 768;
+        const containerW = 100;
+        const containerH = 115;
         const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-        const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+        const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
         const clampedLeft = Math.min(Math.max(10, pos.left), maxLeft);
         const clampedTop = Math.min(Math.max(10, pos.top), maxTop);
         container.style.left = clampedLeft + 'px';
@@ -91,7 +92,7 @@ function attachMascotDraggable(container, storageKey) {
     const deltaX = clientX - startX;
     const deltaY = clientY - startY;
 
-    if (!hasMoved && Math.hypot(deltaX, deltaY) > 5) {
+    if (!hasMoved && Math.hypot(deltaX, deltaY) > 6) {
       hasMoved = true;
       container.classList.add('is-dragging');
     }
@@ -102,11 +103,12 @@ function attachMascotDraggable(container, storageKey) {
       const newLeft = initialLeft + deltaX;
       const newTop = initialTop + deltaY;
 
-      const containerW = container.offsetWidth || 100;
-      const containerH = container.offsetHeight || 115;
+      const isMobile = window.innerWidth <= 768;
+      const containerW = 100;
+      const containerH = 115;
 
       const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-      const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+      const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
 
       const clampedLeft = Math.min(Math.max(10, newLeft), maxLeft);
       const clampedTop = Math.min(Math.max(10, newTop), maxTop);
@@ -146,11 +148,12 @@ function attachMascotDraggable(container, storageKey) {
 
   window.addEventListener('resize', () => {
     const rect = container.getBoundingClientRect();
-    const containerW = container.offsetWidth || 100;
-    const containerH = container.offsetHeight || 115;
+    const isMobile = window.innerWidth <= 768;
+    const containerW = 100;
+    const containerH = 115;
 
     const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-    const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+    const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
 
     if (container.style.left && container.style.left !== 'auto') {
       const currentLeft = parseFloat(container.style.left) || rect.left;
@@ -159,6 +162,41 @@ function attachMascotDraggable(container, storageKey) {
       const clampedTop = Math.min(Math.max(10, currentTop), maxTop);
       container.style.left = clampedLeft + 'px';
       container.style.top = clampedTop + 'px';
+    }
+  });
+}
+
+function _adjustPopupPlacement(popupEl, containerEl) {
+  if (!popupEl || !containerEl) return;
+  const rect = containerEl.getBoundingClientRect();
+  const isTopHalf = rect.top < window.innerHeight / 2;
+  const isLeftHalf = rect.left < window.innerWidth / 2;
+
+  if (isTopHalf) {
+    popupEl.style.top = 'calc(100% + 10px)';
+    popupEl.style.bottom = 'auto';
+  } else {
+    popupEl.style.bottom = 'calc(100% + 10px)';
+    popupEl.style.top = 'auto';
+  }
+
+  if (isLeftHalf) {
+    popupEl.style.left = '0px';
+    popupEl.style.right = 'auto';
+  } else {
+    popupEl.style.right = '0px';
+    popupEl.style.left = 'auto';
+  }
+
+  // Viewport Horizontal Boundary Clamp
+  requestAnimationFrame(() => {
+    const pRect = popupEl.getBoundingClientRect();
+    if (pRect.left < 10) {
+      popupEl.style.left = `${10 - rect.left}px`;
+      popupEl.style.right = 'auto';
+    } else if (pRect.right > window.innerWidth - 10) {
+      popupEl.style.right = `${rect.right - window.innerWidth + 10}px`;
+      popupEl.style.left = 'auto';
     }
   });
 }
@@ -191,10 +229,9 @@ export function initChibiMascot() {
         position: fixed;
         bottom: 24px;
         right: 24px;
+        width: 100px;
+        height: 115px;
         z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
         pointer-events: auto;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         user-select: none;
@@ -211,8 +248,8 @@ export function initChibiMascot() {
       }
       @media (max-width: 768px) {
         .user-unified-mascot-container:not([style*="left"]) {
-          bottom: 74px;
-          right: 18px;
+          bottom: 80px;
+          right: 16px;
         }
       }
       @keyframes mascot-hugging-pulse {
@@ -224,25 +261,30 @@ export function initChibiMascot() {
         50% { transform: rotate(14deg); }
       }
       @keyframes menu-pop-up {
-        0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+        0% { transform: scale(0.85) translateY(14px); opacity: 0; }
         100% { transform: scale(1) translateY(0); opacity: 1; }
       }
       @keyframes chat-pop-in {
-        0% { transform: scale(0.85) translateY(30px); opacity: 0; }
+        0% { transform: scale(0.85) translateY(20px); opacity: 0; }
         100% { transform: scale(1) translateY(0); opacity: 1; }
       }
       .chibi-hugging-avatar {
+        width: 100%;
+        height: 100%;
         cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
       .chibi-hugging-avatar:hover {
-        transform: scale(1.15) translateY(-6px) !important;
+        transform: scale(1.12) translateY(-4px) !important;
       }
       .chibi-action-item {
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .chibi-action-item:hover {
-        transform: translateY(-3px) scale(1.02);
+        transform: translateY(-2px) scale(1.02);
         box-shadow: 0 8px 20px -4px rgba(16,185,129,0.25) !important;
       }
       .ai-user-prompt-pill {
@@ -438,25 +480,20 @@ export function renderMascot() {
     container.style.display = 'none';
     return;
   } else {
-    container.style.display = 'flex';
+    container.style.display = 'block';
   }
 
-  // Determine smart popup orientation based on current dragged position
-  const rect = container.getBoundingClientRect();
-  const isTopHalf = rect.top < window.innerHeight / 2;
-  const isLeftHalf = rect.left < window.innerWidth / 2;
-
-  container.style.flexDirection = isTopHalf ? 'column-reverse' : 'column';
-  container.style.alignItems = isLeftHalf ? 'flex-start' : 'flex-end';
+  let innerHTML = '';
 
   if (_isUserChatOpen) {
     // 💬 1. CHATBOX GEMINI AI DRAWER
-    container.innerHTML = `
+    innerHTML = `
       <div id="user-ai-chat-box" onclick="event.stopPropagation()" style="
-        width: 380px;
-        max-width: calc(100vw - 32px);
-        height: 520px;
-        max-height: calc(100vh - 90px);
+        position: absolute;
+        width: 360px;
+        max-width: calc(100vw - 28px);
+        height: 500px;
+        max-height: calc(100vh - 110px);
         background: #ffffff;
         border: 2px solid #10b981;
         border-radius: 20px;
@@ -464,13 +501,13 @@ export function renderMascot() {
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        margin-${isTopHalf ? 'top' : 'bottom'}: 12px;
-        animation: chat-pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 10000;
+        animation: chat-pop-in 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       ">
         <!-- Chat Header -->
         <div style="background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%); color: white; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #a7f3d0;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #a7f3d0;">
               ${_renderChibiHuggingPlusSVG()}
             </div>
             <div>
@@ -541,23 +578,29 @@ export function renderMascot() {
           </button>
         </form>
       </div>
+
+      <!-- Avatar Anchor -->
+      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-hugging-pulse 2.5s infinite ease-in-out;">
+        ${_renderChibiHuggingPlusSVG()}
+      </div>
     `;
   } else if (_isActionMenuOpen) {
-    // 📋 2. QUICK ACTION POPUP MENU (2 MỤC: GHI NHẬT KÝ & CHAT AI)
-    container.innerHTML = `
+    // 📋 2. QUICK ACTION POPUP MENU
+    innerHTML = `
       <div id="mascot-action-menu-box" onclick="event.stopPropagation()" style="
+        position: absolute;
+        width: 290px;
+        max-width: calc(100vw - 28px);
         background: #ffffff;
         border: 2.5px solid #10b981;
         border-radius: 20px;
         padding: 14px;
-        margin-${isTopHalf ? 'top' : 'bottom'}: 12px;
-        width: 300px;
         box-shadow: 0 20px 40px -6px rgba(0,0,0,0.3), 0 8px 16px rgba(16,185,129,0.2);
         display: flex;
         flex-direction: column;
         gap: 10px;
-        animation: menu-pop-up 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        position: relative;
+        z-index: 10000;
+        animation: menu-pop-up 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       ">
         <div style="font-size: 12px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
           <span>🌱 BÉ MẦM AGTECH</span>
@@ -605,28 +648,29 @@ export function renderMascot() {
         </div>
       </div>
 
-      <!-- 🌟 UNIFIED MASCOT HUGGING PLUS BUTTON -->
-      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        animation: mascot-hugging-pulse 2.5s infinite ease-in-out;
-      ">
+      <!-- Avatar Anchor -->
+      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-hugging-pulse 2.5s infinite ease-in-out;">
         ${_renderChibiHuggingPlusSVG()}
       </div>
     `;
   } else {
     // 🌟 3. NORMAL STATE: BÉ MẦM ÔM NÚT DẤU CỘNG (+)
-    container.innerHTML = `
-      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        animation: mascot-hugging-pulse 2.5s infinite ease-in-out;
-      ">
+    innerHTML = `
+      <div onclick="onMascotClick(event)" class="chibi-hugging-avatar" title="Bấm vào để mở menu hoặc KÉO THẢ di chuyển Bé Mầm!" style="animation: mascot-hugging-pulse 2.5s infinite ease-in-out;">
         ${_renderChibiHuggingPlusSVG()}
       </div>
     `;
+  }
+
+  container.innerHTML = innerHTML;
+
+  // Reposition popup relative to current container coordinates
+  if (_isActionMenuOpen) {
+    const menuEl = document.getElementById('mascot-action-menu-box');
+    _adjustPopupPlacement(menuEl, container);
+  } else if (_isUserChatOpen) {
+    const chatEl = document.getElementById('user-ai-chat-box');
+    _adjustPopupPlacement(chatEl, container);
   }
 }
 
