@@ -467,6 +467,15 @@ async function initDB() {
       console.log(`ℹ️  Admin user already exists: ${adminEmail}`);
     }
 
+    // Tự động hoán đổi và sửa lỗi tọa độ nếu latitude > 90 (bị lưu ngược với longitude)
+    try {
+      await client.query(`
+        UPDATE plants 
+        SET latitude = longitude, longitude = latitude 
+        WHERE latitude > 90 AND longitude <= 90;
+      `);
+    } catch (_) {}
+
     await client.query('COMMIT');
     console.log('✅ Database schema initialized');
 

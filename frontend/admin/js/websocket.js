@@ -6,6 +6,7 @@
 let socket = null;
 let reconnectTimer = null;
 let isManualClose = false;
+let retryCount = 0;
 
 function connectWebSocket() {
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
@@ -20,38 +21,45 @@ function connectWebSocket() {
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}`;
-  console.log('🔌 Connecting to WebSocket:', wsUrl);
-  
-  socket = new WebSocket(wsUrl);
 
-  socket.onopen = () => {
-    console.log('✅ WebSocket connected');
-  };
+  try {
+    socket = new WebSocket(wsUrl);
 
-  socket.onmessage = (event) => {
-    try {
-      const msg = JSON.parse(event.data);
-      console.log('📥 WebSocket message received:', msg);
-      handleRealtimeEvent(msg);
-    } catch (e) {
-      console.error('Error handling WebSocket message:', e);
-    }
-  };
+    socket.onopen = () => {
+      retryCount = 0;
+      console.log('✅ WebSocket connected');
+    };
 
-  socket.onclose = () => {
+    socket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        handleRealtimeEvent(msg);
+      } catch (e) {
+        console.warn('Error handling WebSocket message:', e.message);
+      }
+    };
+
+    socket.onclose = () => {
+      socket = null;
+      if (!isManualClose && token) {
+        retryCount++;
+        // Exponential backoff: 3s, 6s, 12s, max 30s
+        const delay = Math.min(3000 * Math.pow(1.5, retryCount - 1), 30000);
+        reconnectTimer = setTimeout(connectWebSocket, delay);
+      }
+    };
+
+    socket.onerror = () => {
+      if (socket) {
+        try { socket.close(); } catch (_) {}
+      }
+    };
+  } catch (_) {
     socket = null;
     if (!isManualClose && token) {
-      console.log('❌ WebSocket connection closed. Reconnecting in 3s...');
-      reconnectTimer = setTimeout(connectWebSocket, 3000);
-    } else {
-      console.log('ℹ️ WebSocket closed cleanly (logged out).');
+      reconnectTimer = setTimeout(connectWebSocket, 5000);
     }
-  };
-
-  socket.onerror = (err) => {
-    console.error('WebSocket error:', err);
-    if (socket) socket.close();
-  };
+  }
 }
 
 function closeWebSocket() {

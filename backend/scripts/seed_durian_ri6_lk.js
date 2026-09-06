@@ -553,9 +553,14 @@ async function seedDurianRi6LK() {
 
       if (existingPlant) {
         currentPlantId = existingPlant.id;
-        // BẢO TOÀN 100% TỌA ĐỘ GPS HIỆN HỮU NẾU ĐÃ CÓ
-        const finalLat = existingPlant.latitude != null ? Number(existingPlant.latitude) : treeCfg.default_lat;
-        const finalLng = existingPlant.longitude != null ? Number(existingPlant.longitude) : treeCfg.default_lng;
+        // BẢO TOÀN 100% TỌA ĐỘ GPS HIỆN HỮU NẾU ĐÃ CÓ (Tự động sửa nếu bị lưu ngược)
+        let finalLat = existingPlant.latitude != null ? Number(existingPlant.latitude) : treeCfg.default_lat;
+        let finalLng = existingPlant.longitude != null ? Number(existingPlant.longitude) : treeCfg.default_lng;
+        if (Math.abs(finalLat) > 90 && Math.abs(finalLng) <= 90) {
+          const tmp = finalLat;
+          finalLat = finalLng;
+          finalLng = tmp;
+        }
 
         await client.query(`
           UPDATE plants SET

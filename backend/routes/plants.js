@@ -946,16 +946,45 @@ router.get('/public/:slug', async (req, res) => {
 
     // Build GeoJSON geometry for the farm boundary polygon
     const row = plant.rows[0];
+
+    // Tự động kiểm tra và hoán đổi tọa độ nếu latitude > 90 (bị lưu ngược)
+    let plantLat = parseFloat(row.latitude);
+    let plantLng = parseFloat(row.longitude);
+    if (!isNaN(plantLat) && !isNaN(plantLng)) {
+      if (Math.abs(plantLat) > 90 && Math.abs(plantLng) <= 90) {
+        const tmp = plantLat;
+        plantLat = plantLng;
+        plantLng = tmp;
+      }
+      row.latitude = plantLat;
+      row.longitude = plantLng;
+    }
+
     let farm_boundary = null;
     if (row.farm_polygon) {
       try {
-        const coords = typeof row.farm_polygon === 'string' ? JSON.parse(row.farm_polygon) : row.farm_polygon;
+        let coords = typeof row.farm_polygon === 'string' ? JSON.parse(row.farm_polygon) : row.farm_polygon;
         if (Array.isArray(coords) && coords.length > 0) {
+          // Chuẩn hóa tọa độ [lng, lat] cho từng điểm polygon
+          const sanitizeRing = (ring) => {
+            return ring.map(pt => {
+              if (Array.isArray(pt) && pt.length >= 2) {
+                let pLng = parseFloat(pt[0]);
+                let pLat = parseFloat(pt[1]);
+                if (Math.abs(pLat) > 90 && Math.abs(pLng) <= 90) {
+                  const tmp = pLat; pLat = pLng; pLng = tmp;
+                }
+                return [pLng, pLat];
+              }
+              return pt;
+            });
+          };
+
           // If coords is 2D [[lng, lat], ...], wrap it in an outer array to make it a valid GeoJSON Polygon coordinates array
           if (Array.isArray(coords[0]) && !Array.isArray(coords[0][0])) {
-            farm_boundary = { type: 'Polygon', coordinates: [coords] };
+            farm_boundary = { type: 'Polygon', coordinates: [sanitizeRing(coords)] };
           } else {
-            farm_boundary = { type: 'Polygon', coordinates: coords };
+            farm_boundary = { type: 'Polygon', coordinates: coords.map(r => Array.isArray(r) ? sanitizeRing(r) : r) };
           }
         }
       } catch(e) { /* ignore parse errors */ }

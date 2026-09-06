@@ -9,6 +9,7 @@ import { loadUserDashboard } from '../modules/dashboard.js';
 let socket = null;
 let reconnectTimer = null;
 let isManualClose = false;
+let retryCount = 0;
 
 export function connectWebSocket() {
   if (!token) return;
@@ -24,38 +25,46 @@ export function connectWebSocket() {
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}`;
-  console.log('🔌 [User] Connecting to WebSocket:', wsUrl);
 
-  socket = new WebSocket(wsUrl);
+  try {
+    socket = new WebSocket(wsUrl);
 
-  socket.onopen = () => {
-    console.log('✅ [User] WebSocket connected');
-  };
+    socket.onopen = () => {
+      retryCount = 0;
+      console.log('✅ [User] WebSocket connected');
+    };
 
-  socket.onmessage = (event) => {
-    try {
-      const msg = JSON.parse(event.data);
-      console.log('📥 [User] WebSocket message received:', msg);
-      handleUserRealtimeEvent(msg);
-    } catch (e) {
-      console.error('Error parsing user WS message:', e);
-    }
-  };
+    socket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        handleUserRealtimeEvent(msg);
+      } catch (e) {
+        console.warn('Error parsing user WS message:', e.message);
+      }
+    };
 
-  socket.onclose = () => {
+    socket.onclose = () => {
+      socket = null;
+      if (!isManualClose && token) {
+        retryCount++;
+        // Exponential backoff: 3s, 6s, 12s, max 30s
+        const delay = Math.min(3000 * Math.pow(1.5, retryCount - 1), 30000);
+        reconnectTimer = setTimeout(connectWebSocket, delay);
+      }
+    };
+
+    socket.onerror = () => {
+      // Khi server đang khởi động, im lặng đóng socket và để onclose xử lý backoff
+      if (socket) {
+        try { socket.close(); } catch (_) {}
+      }
+    };
+  } catch (_) {
     socket = null;
     if (!isManualClose && token) {
-      console.log('❌ [User] WebSocket connection closed. Reconnecting in 3s...');
-      reconnectTimer = setTimeout(connectWebSocket, 3000);
-    } else {
-      console.log('ℹ️ [User] WebSocket closed cleanly (logged out).');
+      reconnectTimer = setTimeout(connectWebSocket, 5000);
     }
-  };
-
-  socket.onerror = (err) => {
-    console.error('[User] WebSocket error:', err);
-    if (socket) socket.close();
-  };
+  }
 }
 
 export function closeWebSocket() {

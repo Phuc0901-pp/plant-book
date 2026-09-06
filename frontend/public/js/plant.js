@@ -873,24 +873,38 @@ async function renderPlant(plant) {
 
         mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    // Validate coordinates
-    const hasValidPlantCoords = plant.latitude && plant.longitude && 
-      !isNaN(parseFloat(plant.latitude)) && !isNaN(parseFloat(plant.longitude)) &&
-      Math.abs(parseFloat(plant.latitude)) <= 90 && Math.abs(parseFloat(plant.longitude)) <= 180;
+    // Validate coordinates with auto-fix for swapped latitude/longitude
+    let plantLat = parseFloat(plant.latitude);
+    let plantLng = parseFloat(plant.longitude);
 
-    let centerLng = 107.241850;
-    let centerLat = 10.941520;
+    if (!isNaN(plantLat) && !isNaN(plantLng)) {
+      if (Math.abs(plantLat) > 90 && Math.abs(plantLng) <= 90) {
+        const tmp = plantLat;
+        plantLat = plantLng;
+        plantLng = tmp;
+      }
+    }
+
+    const hasValidPlantCoords = !isNaN(plantLat) && !isNaN(plantLng) &&
+      Math.abs(plantLat) <= 90 && Math.abs(plantLng) <= 180;
+
+    let centerLng = hasValidPlantCoords ? plantLng : 107.241850;
+    let centerLat = hasValidPlantCoords ? plantLat : 10.941520;
     let initialZoom = 17;
     
-    if (hasValidPlantCoords) {
-      centerLng = parseFloat(plant.longitude);
-      centerLat = parseFloat(plant.latitude);
-    } else if (plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
+    if (!hasValidPlantCoords && plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
       const firstRing = plant.farm_boundary.coordinates[0];
-      if (firstRing && firstRing[0] && Math.abs(parseFloat(firstRing[0][1])) <= 90) {
-        centerLng = parseFloat(firstRing[0][0]);
-        centerLat = parseFloat(firstRing[0][1]);
-        initialZoom = 15;
+      if (firstRing && firstRing[0]) {
+        let fLng = parseFloat(firstRing[0][0]);
+        let fLat = parseFloat(firstRing[0][1]);
+        if (Math.abs(fLat) > 90 && Math.abs(fLng) <= 90) {
+          const tmp = fLat; fLat = fLng; fLng = tmp;
+        }
+        if (!isNaN(fLng) && !isNaN(fLat) && Math.abs(fLat) <= 90) {
+          centerLng = fLng;
+          centerLat = fLat;
+          initialZoom = 16;
+        }
       }
     }
 
@@ -918,8 +932,6 @@ async function renderPlant(plant) {
       plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
       // Add plant marker pin
-      const plantLat = hasValidPlantCoords ? parseFloat(plant.latitude) : 10.941520;
-      const plantLng = hasValidPlantCoords ? parseFloat(plant.longitude) : 107.241850;
       const treeCodeDisplay = esc(plant.tree_code || '1');
 
       const wrapper = document.createElement('div');
@@ -935,7 +947,7 @@ async function renderPlant(plant) {
       wrapper.appendChild(el);
 
       new mapboxgl.Marker({ element: wrapper, anchor: 'bottom' })
-        .setLngLat([plantLng, plantLat])
+        .setLngLat([centerLng, centerLat])
         .setPopup(new mapboxgl.Popup({ offset: 35, closeButton: false })
           .setHTML(`
             <div style="padding:4px 6px; font-family:sans-serif;">
@@ -969,14 +981,30 @@ async function renderPlant(plant) {
 
             // Fit bounds to perfectly frame farm boundary and plant marker
             const bounds = new mapboxgl.LngLatBounds();
+            let hasValidBounds = false;
             const coords = plant.farm_boundary.coordinates[0];
             if (Array.isArray(coords)) {
               coords.forEach(pt => {
-                if (Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1])) bounds.extend(pt);
+                if (Array.isArray(pt) && pt.length >= 2) {
+                  let pLng = parseFloat(pt[0]);
+                  let pLat = parseFloat(pt[1]);
+                  if (Math.abs(pLat) > 90 && Math.abs(pLng) <= 90) {
+                    const tmp = pLat; pLat = pLng; pLng = tmp;
+                  }
+                  if (!isNaN(pLng) && !isNaN(pLat) && Math.abs(pLat) <= 90 && Math.abs(pLng) <= 180) {
+                    bounds.extend([pLng, pLat]);
+                    hasValidBounds = true;
+                  }
+                }
               });
             }
-            bounds.extend([plantLng, plantLat]);
-            plantMap.fitBounds(bounds, { padding: 35, maxZoom: 18, animate: false });
+            if (hasValidPlantCoords) {
+              bounds.extend([centerLng, centerLat]);
+              hasValidBounds = true;
+            }
+            if (hasValidBounds) {
+              plantMap.fitBounds(bounds, { padding: 45, maxZoom: 18, animate: false });
+            }
           } catch(e) {
             console.warn('Lỗi vẽ ranh giới trang trại:', e);
           }
