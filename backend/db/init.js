@@ -432,6 +432,15 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_farms_user_id ON farms(user_id);
       CREATE INDEX IF NOT EXISTS idx_supply_usages_farm_date ON supply_usages(farm_id, usage_date);
       CREATE INDEX IF NOT EXISTS idx_fixed_assets_farm_year ON fixed_assets(farm_id, year);
+
+      -- GIN Index for JSONB details and data
+      CREATE INDEX IF NOT EXISTS idx_plant_logs_details_gin ON plant_logs USING gin (details jsonb_path_ops);
+      CREATE INDEX IF NOT EXISTS idx_plants_data_gin ON plants USING gin (data jsonb_path_ops);
+
+      -- Composite indexes for time series and GPS spatial mapping
+      CREATE INDEX IF NOT EXISTS idx_plant_logs_plant_date ON plant_logs(plant_id, log_date DESC);
+      CREATE INDEX IF NOT EXISTS idx_plant_logs_type ON plant_logs(log_type);
+      CREATE INDEX IF NOT EXISTS idx_plants_coords ON plants(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
     `);
 
     // Seed default configurations

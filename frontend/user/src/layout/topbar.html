@@ -47,6 +47,14 @@
           </div>
         </div>
 
+        <!-- PWA Offline / Online Sync Status Indicator -->
+        <div id="offline-sync-wrap" style="display:inline-flex; align-items:center;">
+          <button id="offline-sync-badge" onclick="if(typeof window.triggerOfflineSync==='function')window.triggerOfflineSync(true)" title="Trạng thái kết nối & Đồng bộ dữ liệu" style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:20px; padding:6px 12px; font-size:12px; font-weight:700; color:#047857; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+            <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+            <span id="sync-status-text">Trực tuyến</span>
+          </button>
+        </div>
+
         <button class="btn btn-secondary btn-sm" onclick="toggleFieldMode()" id="btn-field-mode" style="display:inline-flex; align-items:center; gap:6px; font-weight:600;">
           <i class="fa-solid fa-sun" style="color:#f59e0b;"></i> Chế độ ngoài vườn
         </button>

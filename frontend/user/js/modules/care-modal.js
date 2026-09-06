@@ -1058,8 +1058,6 @@ export async function saveCareLog() {
       toast('Đã cập nhật nhật ký thành công!');
     } else {
       // CHẾ ĐỘ GHI MỚI (CREATE MODE) - hỗ trợ lưu cho nhiều cây cùng lúc
-      if (btn) btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
-
       const supplyId = document.getElementById('c-detail-supply-id')?.value;
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value) || 1;
       const unit = document.getElementById('c-detail-unit')?.value || 'kg';
@@ -1070,6 +1068,28 @@ export async function saveCareLog() {
       } else if (unit === 'gam' || unit === 'g' || unit === 'ml') {
         usageQty = amount / 1000;
       }
+
+      // Offline check: nếu đang mất mạng, lưu thẳng vào IndexedDB
+      if (!navigator.onLine) {
+        if (typeof window.saveOfflineCareLog === 'function') {
+          const offlinePayload = {
+            ...body,
+            plant_ids: selectedPlants.map(p => p.id),
+            plant_id: selectedPlants.length === 1 ? selectedPlants[0].id : null,
+            supply_id: supplyId || null,
+            usage_qty: usageQty || 0
+          };
+          await window.saveOfflineCareLog(offlinePayload);
+          if (typeof window.updateOfflineSyncBadge === 'function') {
+            window.updateOfflineSyncBadge();
+          }
+          toast('💾 Đã lưu nhật ký vào bộ nhớ máy (Ngoại tuyến). Dữ liệu sẽ tự động gửi khi có kết nối mạng!', 'info');
+          closeCareModal();
+          return;
+        }
+      }
+
+      if (btn) btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
 
       let lastSavedResult = null;
       for (const plant of selectedPlants) {
@@ -1114,6 +1134,33 @@ export async function saveCareLog() {
     if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
 
   } catch (err) {
+    const isNetworkErr = !navigator.onLine || 
+      String(err.message || '').toLowerCase().includes('fetch') || 
+      String(err.message || '').toLowerCase().includes('network') || 
+      String(err.message || '').toLowerCase().includes('offline');
+
+    if (isNetworkErr && typeof window.saveOfflineCareLog === 'function' && !window._activeEditLogId) {
+      const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      const amount = parseFloat(document.getElementById('c-detail-amount')?.value) || 1;
+      const unit = document.getElementById('c-detail-unit')?.value || 'kg';
+      let usageQty = (logType === 'Tưới nước' || unit === 'gam' || unit === 'g' || unit === 'ml') ? (amount / 1000) : amount;
+
+      const offlinePayload = {
+        ...body,
+        plant_ids: selectedPlants.map(p => p.id),
+        plant_id: selectedPlants.length === 1 ? selectedPlants[0].id : null,
+        supply_id: supplyId || null,
+        usage_qty: usageQty || 0
+      };
+      await window.saveOfflineCareLog(offlinePayload);
+      if (typeof window.updateOfflineSyncBadge === 'function') {
+        window.updateOfflineSyncBadge();
+      }
+      toast('💾 Đã lưu nhật ký vào bộ nhớ máy (Ngoại tuyến). Dữ liệu sẽ tự động gửi khi có kết nối mạng!', 'info');
+      closeCareModal();
+      return;
+    }
+
     toast('Lỗi lưu nhật ký: ' + err.message, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = oldText; }

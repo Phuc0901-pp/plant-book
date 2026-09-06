@@ -22,6 +22,8 @@
 
 // ── Core ──────────────────────────────────────────────────────
 import { showPage, toggleMobileSidebar, closeMobileSidebar } from './core/router.js';
+import './core/offline-db.js';
+import { updateOfflineSyncBadge, triggerOfflineSync } from './core/offline-sync.js';
 
 // ── Modules ───────────────────────────────────────────────────
 import './modules/notifications.js';
@@ -348,6 +350,8 @@ window.triggerPageCountUpAnimations = triggerPageCountUpAnimations;
 window.initChibiMascot      = initChibiMascot;
 window.onMascotClick        = onMascotClick;
 window.setMascotState       = setMascotState;
+window.updateOfflineSyncBadge = updateOfflineSyncBadge;
+window.triggerOfflineSync   = triggerOfflineSync;
 
 // Initialize Live Clock & GPS Weather Widget
 try {

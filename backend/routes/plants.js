@@ -8,7 +8,11 @@ const { logAuditAction } = require('./history');
 const checkTier = require('../middleware/checkTier');
 
 const multer = require('multer');
-const { uploadFile, deleteFile } = require('../config/supabase');
+const storageService = require('../services/storageService');
+const { uploadFile, deleteFile } = {
+  uploadFile: (name, buf, mime) => storageService.uploadFile(name, buf, mime),
+  deleteFile: (name) => storageService.deleteFile(name)
+};
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 
