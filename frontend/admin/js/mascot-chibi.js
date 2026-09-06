@@ -1,11 +1,13 @@
-﻿/**
+/**
  * admin/js/mascot-chibi.js - Pure Minimal 3D Anime Chibi Plant Mascot with Gemini AI Chatbot
  * 🔒 Ẩn hoàn toàn khi ở màn hình đăng nhập, chỉ hiển thị sau khi Admin đăng nhập thành công.
+ * 🚀 NÂNG CẤP: Kéo thả di chuyển tự do (Draggable) trên mọi thiết bị (Desktop, Laptop, Tablet, Mobile)
  */
 
 let _isChatOpen = false;
 let _chatHistory = [];
 let _isAiResponding = false;
+const ADMIN_MASCOT_POS_KEY = 'tanbao_mascot_pos_admin';
 
 function isAdminLoggedIn() {
   const token = localStorage.getItem('pb_token');
@@ -17,11 +19,149 @@ function isAdminLoggedIn() {
   return true;
 }
 
+/**
+ * Attach full Touch & Mouse Draggable capability to Admin mascot
+ */
+function attachAdminMascotDraggable(container, storageKey) {
+  let isDragging = false;
+  let hasMoved = false;
+  let startX = 0, startY = 0;
+  let initialLeft = 0, initialTop = 0;
+
+  // Restore saved position if any
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const pos = JSON.parse(saved);
+      if (typeof pos.left === 'number' && typeof pos.top === 'number') {
+        const containerW = container.offsetWidth || 105;
+        const containerH = container.offsetHeight || 120;
+        const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
+        const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+        const clampedLeft = Math.min(Math.max(10, pos.left), maxLeft);
+        const clampedTop = Math.min(Math.max(10, pos.top), maxTop);
+        container.style.left = clampedLeft + 'px';
+        container.style.top = clampedTop + 'px';
+        container.style.right = 'auto';
+        container.style.bottom = 'auto';
+      }
+    }
+  } catch (_) {}
+
+  function onPointerDown(e) {
+    if (
+      e.target.closest('#admin-ai-chat-box') || 
+      e.target.closest('input') || 
+      e.target.closest('button') || 
+      e.target.closest('textarea')
+    ) {
+      return;
+    }
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const rect = container.getBoundingClientRect();
+    startX = clientX;
+    startY = clientY;
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    isDragging = true;
+    hasMoved = false;
+
+    window.addEventListener('mousemove', onPointerMove, { passive: false });
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('touchend', onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    if (!isDragging) return;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const deltaX = clientX - startX;
+    const deltaY = clientY - startY;
+
+    if (!hasMoved && Math.hypot(deltaX, deltaY) > 5) {
+      hasMoved = true;
+      container.classList.add('is-dragging');
+    }
+
+    if (hasMoved) {
+      if (e.cancelable) e.preventDefault();
+
+      const newLeft = initialLeft + deltaX;
+      const newTop = initialTop + deltaY;
+
+      const containerW = container.offsetWidth || 105;
+      const containerH = container.offsetHeight || 120;
+
+      const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
+      const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+
+      const clampedLeft = Math.min(Math.max(10, newLeft), maxLeft);
+      const clampedTop = Math.min(Math.max(10, newTop), maxTop);
+
+      container.style.left = clampedLeft + 'px';
+      container.style.top = clampedTop + 'px';
+      container.style.right = 'auto';
+      container.style.bottom = 'auto';
+    }
+  }
+
+  function onPointerUp() {
+    if (!isDragging) return;
+    isDragging = false;
+    container.classList.remove('is-dragging');
+
+    window.removeEventListener('mousemove', onPointerMove);
+    window.removeEventListener('mouseup', onPointerUp);
+    window.removeEventListener('touchmove', onPointerMove);
+    window.removeEventListener('touchend', onPointerUp);
+
+    if (hasMoved) {
+      const rect = container.getBoundingClientRect();
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ left: rect.left, top: rect.top }));
+      } catch (_) {}
+
+      window.__adminMascotJustDragged = true;
+      setTimeout(() => {
+        window.__adminMascotJustDragged = false;
+      }, 150);
+    }
+  }
+
+  container.addEventListener('mousedown', onPointerDown);
+  container.addEventListener('touchstart', onPointerDown, { passive: true });
+
+  window.addEventListener('resize', () => {
+    const rect = container.getBoundingClientRect();
+    const containerW = container.offsetWidth || 105;
+    const containerH = container.offsetHeight || 120;
+
+    const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
+    const maxTop = Math.max(10, window.innerHeight - containerH - 10);
+
+    if (container.style.left && container.style.left !== 'auto') {
+      const currentLeft = parseFloat(container.style.left) || rect.left;
+      const currentTop = parseFloat(container.style.top) || rect.top;
+      const clampedLeft = Math.min(Math.max(10, currentLeft), maxLeft);
+      const clampedTop = Math.min(Math.max(10, currentTop), maxTop);
+      container.style.left = clampedLeft + 'px';
+      container.style.top = clampedTop + 'px';
+    }
+  });
+}
+
 function initAdminChibiMascot() {
   let mascotContainer = document.getElementById('admin-chibi-mascot-widget');
   if (!mascotContainer) {
     mascotContainer = document.createElement('div');
     mascotContainer.id = 'admin-chibi-mascot-widget';
+    mascotContainer.className = 'admin-unified-mascot-container';
     mascotContainer.style.cssText = `
       position: fixed;
       bottom: 18px;
@@ -33,8 +173,10 @@ function initAdminChibiMascot() {
       pointer-events: auto;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       user-select: none;
+      touch-action: none;
     `;
     document.body.appendChild(mascotContainer);
+    attachAdminMascotDraggable(mascotContainer, ADMIN_MASCOT_POS_KEY);
   }
 
   // Inject styles & animations
@@ -42,6 +184,15 @@ function initAdminChibiMascot() {
     const style = document.createElement('style');
     style.id = 'admin-chibi-clean-style';
     style.textContent = `
+      .admin-unified-mascot-container.is-dragging {
+        cursor: grabbing !important;
+        opacity: 0.92;
+        transform: scale(1.06);
+        transition: none !important;
+      }
+      .admin-unified-mascot-container.is-dragging * {
+        cursor: grabbing !important;
+      }
       @keyframes mascot-float-bounce {
         0%, 100% { transform: translateY(0) rotate(0deg); }
         50% { transform: translateY(-10px) rotate(2.5deg); }
@@ -55,7 +206,7 @@ function initAdminChibiMascot() {
         100% { transform: scale(1) translateY(0); opacity: 1; }
       }
       .admin-clean-avatar {
-        cursor: pointer;
+        cursor: grab;
         transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
       .admin-clean-avatar:hover {
@@ -88,6 +239,7 @@ function initAdminChibiMascot() {
 
 function toggleAdminAiChat(e) {
   if (e) e.stopPropagation();
+  if (window.__adminMascotJustDragged) return; // Prevent open chat on drag drop
   _isChatOpen = !_isChatOpen;
   renderAdminMascot();
   if (_isChatOpen) {
@@ -195,6 +347,14 @@ function renderAdminMascot() {
     container.style.display = 'flex';
   }
 
+  // Determine smart popup orientation based on current dragged position
+  const rect = container.getBoundingClientRect();
+  const isTopHalf = rect.top < window.innerHeight / 2;
+  const isLeftHalf = rect.left < window.innerWidth / 2;
+
+  container.style.flexDirection = isTopHalf ? 'column-reverse' : 'column';
+  container.style.alignItems = isLeftHalf ? 'flex-start' : 'flex-end';
+
   if (_isChatOpen) {
     // 💬 CHATBOX GEMINI AI DRAWER
     container.innerHTML = `
@@ -210,6 +370,7 @@ function renderAdminMascot() {
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        margin-${isTopHalf ? 'top' : 'bottom'}: 12px;
         animation: chat-pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       ">
         <!-- Chat Header -->
@@ -290,7 +451,7 @@ function renderAdminMascot() {
   } else {
     // 🌿 ONLY RENDER CUTE 3D ANIME CHIBI MASCOT AT BOTTOM-RIGHT
     container.innerHTML = `
-      <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào Bé Mầm để mở Khung Chat AI Gemini!" style="
+      <div onclick="toggleAdminAiChat(event)" class="admin-clean-avatar" title="Nhấn vào để chat hoặc KÉO THẢ di chuyển Bé Mầm!" style="
         display: flex;
         align-items: flex-end;
         justify-content: center;
@@ -315,7 +476,6 @@ async function handleAdminAiSubmit(e) {
   const userText = input.value.trim();
   if (!userText || _isAiResponding) return;
 
-  // Add user message to history
   _chatHistory.push({ role: 'user', text: userText });
   input.value = '';
   _isAiResponding = true;
