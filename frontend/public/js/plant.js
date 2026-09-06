@@ -922,6 +922,9 @@ async function renderPlant(plant) {
       const plantLng = hasValidPlantCoords ? parseFloat(plant.longitude) : 107.241850;
       const treeCodeDisplay = esc(plant.tree_code || '1');
 
+      const wrapper = document.createElement('div');
+      wrapper.className = 'plant-map-marker-wrap';
+
       const el = document.createElement('div');
       el.className = 'plant-map-marker';
       el.title = `${plant.plant_type || 'Cây trồng'} - Cây #${treeCodeDisplay}`;
@@ -929,7 +932,9 @@ async function renderPlant(plant) {
         <i class="fa-solid fa-seedling"></i>
         <span class="plant-tree-badge">${treeCodeDisplay}</span>
       `;
-      new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+      wrapper.appendChild(el);
+
+      new mapboxgl.Marker({ element: wrapper, anchor: 'bottom' })
         .setLngLat([plantLng, plantLat])
         .setPopup(new mapboxgl.Popup({ offset: 35, closeButton: false })
           .setHTML(`
@@ -961,6 +966,17 @@ async function renderPlant(plant) {
               source: 'farm-poly',
               paint: { 'line-color': '#22c55e', 'line-width': 2.5, 'line-opacity': 0.9 }
             });
+
+            // Fit bounds to perfectly frame farm boundary and plant marker
+            const bounds = new mapboxgl.LngLatBounds();
+            const coords = plant.farm_boundary.coordinates[0];
+            if (Array.isArray(coords)) {
+              coords.forEach(pt => {
+                if (Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1])) bounds.extend(pt);
+              });
+            }
+            bounds.extend([plantLng, plantLat]);
+            plantMap.fitBounds(bounds, { padding: 35, maxZoom: 18, animate: false });
           } catch(e) {
             console.warn('Lỗi vẽ ranh giới trang trại:', e);
           }
