@@ -116,7 +116,18 @@ router.get('/', auth, async (req, res) => {
 
 router.get('/logs/recent', auth, async (req, res) => {
   try {
-    const isDashboardShortSummary = req.query.days === '3';
+    const rawDays = req.query.days;
+    let daysLimit = 30; // default 30 days
+    let isAll = false;
+
+    if (rawDays === '3') {
+      daysLimit = 7; // Dashboard short summary
+    } else if (rawDays === 'all') {
+      isAll = true;
+    } else if (rawDays && !isNaN(parseInt(rawDays, 10))) {
+      daysLimit = parseInt(rawDays, 10);
+    }
+
     let query = `
       SELECT pl.*, 
              COALESCE(p.plant_type, 'Toàn vườn') as plant_type, 
@@ -135,8 +146,10 @@ router.get('/logs/recent', auth, async (req, res) => {
     const params = [];
     let idx = 1;
 
-    if (isDashboardShortSummary) {
-      query += ` AND pl.log_date >= CURRENT_DATE - 7::integer `;
+    if (!isAll) {
+      query += ` AND pl.log_date >= CURRENT_DATE - $${idx}::integer `;
+      params.push(daysLimit);
+      idx++;
     }
 
     if (req.user.role !== 'admin') {
@@ -145,6 +158,7 @@ router.get('/logs/recent', auth, async (req, res) => {
       idx++;
     }
     query += ` ORDER BY pl.log_date DESC, pl.id DESC `;
+    query += ` LIMIT 300 `;
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -778,6 +792,46 @@ router.post('/:id/logs', auth, async (req, res) => {
        VALUES ($1, 'Ghi nhật ký', $2)`,
       [req.user.id, `Ghi nhận nhật ký [${log_type}] cho ${targetPlantId ? 'cây ' + treeCode : 'Toàn vườn'}${generatedBatchCode ? ' (Lô: ' + generatedBatchCode + ')' : ''}`]
     );
+
+    // Tự động ghi nhận tiêu hao vật tư nếu có supply_id hoặc thông tin vật tư trong details
+    try {
+      let resolvedSupplyId = parsedDetails.supply_id || null;
+      const usageQty = parseFloat(parsedDetails.quantity || parsedDetails.volume || parsedDetails.amount || 0);
+
+      // Nếu chưa có supply_id nhưng có tên vật tư, tự tìm supply_id
+      const supplyName = parsedDetails.supply_name || parsedDetails.fertilizer_name || parsedDetails.pesticide_name || null;
+      if (!resolvedSupplyId && supplyName) {
+        const foundSup = await pool.query(
+          `SELECT id, unit_price FROM supplies WHERE (user_id = $1 OR farm_id = $2) AND (name ILIKE $3 OR $3 ILIKE '%' || name || '%') LIMIT 1`,
+          [req.user.id, farmId || null, supplyName]
+        );
+        if (foundSup.rows.length > 0) {
+          resolvedSupplyId = foundSup.rows[0].id;
+        }
+      }
+
+      if (resolvedSupplyId && usageQty > 0) {
+        const supInfo = await pool.query('SELECT * FROM supplies WHERE id = $1', [resolvedSupplyId]);
+        if (supInfo.rows.length > 0) {
+          const sup = supInfo.rows[0];
+          const uPrice = parseFloat(parsedDetails.unit_price) || parseFloat(sup.unit_price) || 0;
+          const totCost = parseFloat(parsedDetails.total_cost) || (usageQty * uPrice);
+
+          await pool.query(
+            `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [req.user.id, sup.id, farmId || null, targetPlantId || null, effectiveDate, usageQty, uPrice, totCost, `Tự động trích xuất từ nhật ký [${log_type}]`]
+          );
+
+          // Trừ kho nếu là phân bón / thuốc
+          if (sup.category !== 'Tiền nước' && sup.category !== 'Nhân công' && sup.stock_quantity > 0) {
+            await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1) WHERE id = $2', [usageQty, sup.id]);
+          }
+        }
+      }
+    } catch (supErr) {
+      console.warn('Cảnh báo ghi nhận tiêu hao vật tư từ nhật ký:', supErr.message);
+    }
 
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');

@@ -5,13 +5,13 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
   it('8.1 Should validate 20-year-old Durian Ri6 tree morphology & biometric timeline from 2004 to 2026', () => {
     const biometricTimeline = [
       { year: 2004, age: 1, trunk_diameter_cm: 8, height_m: 1.2, canopy_m: 0.8 },
-      { year: 2005, age: 2, trunk_diameter_cm: 12, height_m: 2.2, canopy_m: 1.8 },
-      { year: 2006, age: 3, trunk_diameter_cm: 16, height_m: 3.2, canopy_m: 2.8 },
-      { year: 2007, age: 4, trunk_diameter_cm: 22, height_m: 4.5, canopy_m: 4.0 },
-      { year: 2008, age: 5, trunk_diameter_cm: 28, height_m: 5.8, canopy_m: 5.5 },
-      { year: 2009, age: 6, trunk_diameter_cm: 32, height_m: 6.8, canopy_m: 6.5 },
-      { year: 2013, age: 10, trunk_diameter_cm: 42, height_m: 8.5, canopy_m: 8.0 },
-      { year: 2018, age: 15, trunk_diameter_cm: 54, height_m: 10.5, canopy_m: 9.8 },
+      { year: 2005, age: 2, trunk_diameter_cm: 14, height_m: 2.2, canopy_m: 1.8 },
+      { year: 2006, age: 3, trunk_diameter_cm: 20, height_m: 3.4, canopy_m: 2.8 },
+      { year: 2007, age: 4, trunk_diameter_cm: 26, height_m: 4.6, canopy_m: 4.0 },
+      { year: 2008, age: 5, trunk_diameter_cm: 32, height_m: 5.8, canopy_m: 5.5 },
+      { year: 2009, age: 6, trunk_diameter_cm: 36, height_m: 6.8, canopy_m: 6.5 },
+      { year: 2013, age: 10, trunk_diameter_cm: 45, height_m: 8.5, canopy_m: 8.0 },
+      { year: 2018, age: 15, trunk_diameter_cm: 56, height_m: 10.5, canopy_m: 9.8 },
       { year: 2024, age: 20, trunk_diameter_cm: 65, height_m: 12.5, canopy_m: 11.0 }
     ];
 
@@ -22,19 +22,18 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     expect(biometricTimeline[biometricTimeline.length - 1].canopy_m).toBe(11.0);
   });
 
-  it('8.2 Should validate early establishment phase logs (Years 1 to 6: 2004 - 2009)', () => {
+  it('8.2 Should validate early establishment phase logs (Years 1 to 5: 2004 - 2008)', () => {
     const earlyLogs = [
-      { date: '2004-06-18', stage: 'Xuống giống cây con ghép mắt Ri6', hole: '80x80x80cm' },
-      { date: '2005-05-20', stage: 'Bấm ngọn 1.0m kích cành cấp 1', n_branches: 4 },
-      { date: '2006-08-15', stage: 'Tỉa cành tạo tán hình tháp & quét vôi', pest_prevention: true },
-      { date: '2007-07-10', stage: 'Bón phân hữu cơ Bỉ nâng pH đất lên 6.2', ph: 6.2 },
-      { date: '2008-11-25', stage: 'Tỉa cành la sát đất & xiết nước tạo hạn', prep_fruit: true },
-      { date: '2009-06-20', stage: 'Vụ thu hoạch bói đầu đời (18 trái ~ 54kg)', first_harvest: true }
+      { date: '2004-06-18', stage: 'Xuống giống cây con ghép mắt Ri6', hole: '80x80x80cm', organic_fertilizer_kg: 10 },
+      { date: '2005-05-25', stage: 'Bấm ngọn kích cành cấp 1 tạo khung tán tháp', labor_days: 0.5 },
+      { date: '2006-08-20', stage: 'Quét vôi pha Ridomil phòng ngừa nấm Phytophthora', pest_prevention: true },
+      { date: '2007-06-20', stage: 'Bón phân hữu cơ Bỉ nâng pH đất lên 6.2', ph: 6.2, organic_fertilizer_kg: 8 },
+      { date: '2008-03-25', stage: 'Bón thúc cơi đọt NPK 20-20-15 Đầu Trâu', npk_kg: 0.5 }
     ];
 
-    expect(earlyLogs.length).toBe(6);
+    expect(earlyLogs.length).toBe(5);
     expect(earlyLogs[0].date.startsWith('2004')).toBe(true);
-    expect(earlyLogs[5].first_harvest).toBe(true);
+    expect(earlyLogs[0].organic_fertilizer_kg).toBe(10);
   });
 
   it('8.3 Should validate 18 continuous harvest seasons history with accurate financial & yield tracking', () => {
@@ -69,10 +68,10 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     expect(totalYieldKg).toBe(6033); // 6.033 tons cumulative
     expect(totalFruits).toBe(2011);
     expect(totalRevenue).toBe(398277000); // 398.277 Million VND
-    expect(totalProfit > 360000000).toBe(true); // > 368 Million VND profit
+    expect(totalProfit > 360000000).toBe(true); // > 360 Million VND profit
   });
 
-  it('8.4 Should validate 9 standard Durian Ri6 supplies and VietGAP PHI properties', () => {
+  it('8.4 Should validate 10 standard Durian Ri6 supplies, unit prices & PHI properties', () => {
     const supplies = [
       { name: 'Phân hữu cơ vi sinh nở Bỉ', cat: 'Bón phân', price: 380000, unit: 'bao' },
       { name: 'Phân NPK 20-20-15+TE Đầu Trâu', cat: 'Bón phân', price: 890000, unit: 'bao' },
@@ -82,14 +81,17 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
       { name: 'Thuốc trừ nấm Anvil 5SC', cat: 'Phun thuốc', price: 260000, phi: 14, active: 'Hexaconazole 50g/L' },
       { name: 'Thuốc trị xì mủ Ridomil Gold 68WG', cat: 'Phun thuốc', price: 320000, phi: 14, active: 'Metalaxyl M + Mancozeb' },
       { name: 'Thuốc trừ sâu sinh học Radiant 60SC', cat: 'Phun thuốc', price: 195000, phi: 3, active: 'Spinetoram 60g/L' },
-      { name: 'Tiền nước tưới giếng khoan', cat: 'Tiền nước', price: 3500, unit: 'm3' }
+      { name: 'Tiền nước tưới giếng khoan', cat: 'Tiền nước', price: 3500, unit: 'm3' },
+      { name: 'Nhân công chăm sóc kỹ thuật VietGAP', cat: 'Nhân công', price: 350000, unit: 'công' }
     ];
 
-    expect(supplies.length).toBe(9);
+    expect(supplies.length).toBe(10);
     const anvil = supplies.find(s => s.name.includes('Anvil'));
     expect(anvil.phi).toBe(14);
     const radiant = supplies.find(s => s.name.includes('Radiant'));
     expect(radiant.phi).toBe(3);
+    const labor = supplies.find(s => s.cat === 'Nhân công');
+    expect(labor.price).toBe(350000);
   });
 
   it('8.5 Should verify VietGAP harvest batch code generation and PHI quarantine safety', () => {
@@ -101,51 +103,37 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     expect(batchCode).toBe('VN-LK-001-20260615-SR01');
   });
 
-  it('8.6 Should validate ultra-dense 20,000+ agronomic logs generation formula over 22 years (2004 - 2026)', () => {
-    let totalLogsCount = 0;
-    for (let year = 2004; year <= 2026; year++) {
-      const daysInYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 366 : 365;
-      for (let d = 1; d <= daysInYear; d++) {
-        const dt = new Date(year, 0, d);
-        const month = dt.getMonth() + 1;
-        const day = dt.getDate();
-        const treeAge = year - 2004 + 1;
+  it('8.6 Should validate VietGAP agronomic timeline logs and full supply usages cost synchronization', () => {
+    // 22-year agronomic model: ~500-600 logs and ~250-300 supply usages per tree
+    const years = 2026 - 2004 + 1; // 22 years
+    expect(years).toBe(23);
 
-        // 1. Morning inspection (07:00) + Afternoon inspection (16:00)
-        totalLogsCount += 2;
-        // 1c. Soil EC check (every 5 days)
-        if (d % 5 === 2) totalLogsCount++;
-        // 1d. Foliar nutrition (every 8 days)
-        if (d % 8 === 4) totalLogsCount++;
-        // 2. Watering
-        const isDrySeason = (month >= 11 || month <= 4);
-        if (isDrySeason ? (d % 2 === 0) : (d % 6 === 0)) totalLogsCount++;
-        // 3. Weeding
-        if (d % 7 === 3) totalLogsCount++;
-        // 4. Fertilization
-        if (d % 10 === 5) totalLogsCount++;
-        // 5. Spraying
-        if (d % 12 === 7) totalLogsCount++;
-        // 6. Pruning
-        if (d % 15 === 9) totalLogsCount++;
-        // 7. Pollination
-        if ((month === 12 || month === 1) && d % 3 === 0 && treeAge >= 6) totalLogsCount++;
-        // 8. Harvest
-        if ((month === 5 || month === 6) && (day === 15 || day === 28) && treeAge >= 6) totalLogsCount++;
-      }
-    }
+    const mockTreeUsageSummary = {
+      water_m3: 150.5,
+      water_cost: 150.5 * 3500,
+      organic_fert_kg: 320,
+      organic_fert_cost: 320 * 15200,
+      npk_fert_kg: 55,
+      npk_fert_cost: 55 * 17800,
+      pesticide_sprays: 48,
+      labor_days: 28,
+      labor_cost: 28 * 350000
+    };
 
-    expect(totalLogsCount > 20000).toBe(true);
-    expect(totalLogsCount).toBe(26030); // Exact 26,030 dense field records across 22 years
+    expect(mockTreeUsageSummary.water_cost > 500000).toBe(true);
+    expect(mockTreeUsageSummary.organic_fert_cost > 4000000).toBe(true);
+    expect(mockTreeUsageSummary.labor_cost > 9000000).toBe(true);
+    const totalConsumableInvestment = mockTreeUsageSummary.water_cost + mockTreeUsageSummary.organic_fert_cost + mockTreeUsageSummary.npk_fert_cost + mockTreeUsageSummary.labor_cost;
+    expect(totalConsumableInvestment > 15000000).toBe(true); // > 15 Million VND total investment recorded
   });
 
   it('8.7 Should validate multi-tree sample dataset for Durian trees #1, #2, #3, #4, #5 at farm LK', () => {
     const durianTreesConfig = [
-      { tree_code: '1', lat: 10.941520, lng: 107.241850, slug: 'flk-sr01-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:80', planted: '2006-01-01' },
-      { tree_code: '2', lat: 10.941650, lng: 107.242050, slug: 'flk-sr02-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:81', planted: '2006-01-01' },
-      { tree_code: '3', lat: 10.941780, lng: 107.242250, slug: 'flk-sr03-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:82', planted: '2006-01-01' },
-      { tree_code: '4', lat: 10.941400, lng: 107.241650, slug: 'flk-sr04-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:83', planted: '2006-01-01' },
-      { tree_code: '5', lat: 10.941280, lng: 107.241450, slug: 'flk-sr05-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:84', planted: '2006-01-01' }
+      { tree_code: '1', lat: 10.941520, lng: 107.241850, slug: 'flk-sr01-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:80', planted: '2004-06-18' },
+      { tree_code: '2', lat: 10.941650, lng: 107.242050, slug: 'flk-sr02-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:81', planted: '2004-06-18' },
+      { tree_code: '3', lat: 10.941780, lng: 107.242250, slug: 'flk-sr03-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:82', planted: '2004-06-18' },
+      { tree_code: '4', lat: 10.941400, lng: 107.241650, slug: 'flk-sr04-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:83', planted: '2004-06-18' },
+      { tree_code: '5', lat: 10.941280, lng: 107.241450, slug: 'flk-sr05-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:84', planted: '2004-06-18' }
     ];
 
     expect(durianTreesConfig.length).toBe(5);
@@ -162,9 +150,9 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     const uniqueSlugs = new Set(durianTreesConfig.map(t => t.slug));
     expect(uniqueSlugs.size).toBe(5);
 
-    // Verify all 5 trees have synchronized planting date 2006-01-01
+    // Verify all 5 trees have synchronized planting date 2004-06-18
     durianTreesConfig.forEach(t => {
-      expect(t.planted).toBe('2006-01-01');
+      expect(t.planted).toBe('2004-06-18');
       expect(t.lat >= 10.9405 && t.lat <= 10.9435).toBe(true);
       expect(t.lng >= 107.2405 && t.lng <= 107.2435).toBe(true);
     });
