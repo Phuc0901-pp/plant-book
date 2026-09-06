@@ -26,17 +26,28 @@ export function getShortTreeCode(treeCode, plantId) {
   return code;
 }
 
+const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxlU0lzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
+
 /**
- * Tải Mapbox access token từ server (chỉ tải một lần).
- * Throws nếu không lấy được token.
+ * Tải Mapbox access token từ server với cơ chế dự phòng an toàn (Failover).
+ * Tự động chuyển sang fallback token nếu backend đang khởi động (Cold Start 502) hoặc offline.
  */
 export async function ensureUserMapboxToken() {
-  if (mapboxTokenFetched) return;
-  const res  = await fetch(API + '/config/mapbox-token');
-  if (!res.ok) throw new Error('Không thể lấy cấu hình Mapbox từ server');
-  const data = await res.json();
-  if (!data || !data.token) throw new Error('Cấu hình Mapbox không hợp lệ');
-  mapboxgl.accessToken = data.token;
+  if (mapboxTokenFetched && mapboxgl.accessToken) return;
+  try {
+    const res = await fetch(API + '/config/mapbox-token');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.token) {
+        mapboxgl.accessToken = data.token;
+        mapboxTokenFetched = true;
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('[Mapbox] Không thể lấy token từ backend (đang khởi động/offline), kích hoạt token dự phòng:', err.message);
+  }
+  mapboxgl.accessToken = DEFAULT_MAPBOX_TOKEN;
   mapboxTokenFetched = true;
 }
 

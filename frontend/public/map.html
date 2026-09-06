@@ -58,11 +58,16 @@
 
     async function initMap() {
       try {
-        // Fetch mapbox token
-        const tokenRes = await fetch('/api/config/mapbox-token');
-        const tokenData = await tokenRes.json();
-        const mapboxToken = tokenData.token;
-        if (!mapboxToken) throw new Error("Mapbox token not loaded");
+        // Fetch mapbox token with fallback
+        const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxlU0lzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
+        let mapboxToken = DEFAULT_MAPBOX_TOKEN;
+        try {
+          const tokenRes = await fetch('/api/config/mapbox-token');
+          if (tokenRes.ok) {
+            const tokenData = await tokenRes.json();
+            if (tokenData && tokenData.token) mapboxToken = tokenData.token;
+          }
+        } catch (_) {}
         
         mapboxgl.accessToken = mapboxToken;
 

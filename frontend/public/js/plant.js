@@ -859,15 +859,17 @@ async function renderPlant(plant) {
     const mapContainerEl = document.getElementById('plant-location-map');
     if (mapContainerEl) {
       (async () => {
-        let MAPBOX_TOKEN = '';
+        const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxlU0lzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
+        let MAPBOX_TOKEN = DEFAULT_MAPBOX_TOKEN;
         try {
           const tokenRes = await fetch('/api/config/mapbox-token');
-          const tokenData = await tokenRes.json();
-          MAPBOX_TOKEN = tokenData.token;
+          if (tokenRes.ok) {
+            const tokenData = await tokenRes.json();
+            if (tokenData && tokenData.token) MAPBOX_TOKEN = tokenData.token;
+          }
         } catch(e) {
-          console.error('Lỗi tải Mapbox token:', e);
+          console.warn('Lỗi tải Mapbox token từ server, dùng token dự phòng:', e.message);
         }
-        if (!MAPBOX_TOKEN) return;
 
         mapboxgl.accessToken = MAPBOX_TOKEN;
 

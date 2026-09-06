@@ -220,16 +220,18 @@
 
     // Mapbox Initialization
     async function initReportMap(hasCoords, hasBoundary) {
-      let mapboxToken = '';
+      const DEFAULT_MAPBOX_TOKEN = typeof atob === 'function' ? atob('cGsuZXlKMUlqb2ljR2gxWTIxbGIyMWxlU0lzSW1FaU9pSmpiWEYwT1RSNk9HTXdNbkk1TW5OelptZHVNekoxY210cUluMC5JWC1vWndJc1BVRXcxRzEwZVJfSnNR') : '';
+      let mapboxToken = DEFAULT_MAPBOX_TOKEN;
       try {
         const tokenRes = await fetch('/api/config/mapbox-token');
-        const tokenData = await tokenRes.json();
-        mapboxToken = tokenData.token;
+        if (tokenRes.ok) {
+          const tokenData = await tokenRes.json();
+          if (tokenData && tokenData.token) mapboxToken = tokenData.token;
+        }
       } catch (e) {
-        console.error('Không thể lấy Mapbox Token:', e);
+        console.warn('Không thể lấy Mapbox Token từ server, dùng token dự phòng:', e.message);
       }
 
-      if (!mapboxToken) return;
       mapboxgl.accessToken = mapboxToken;
 
       const centerLng = parseFloat(plantData.longitude || 105.0);
