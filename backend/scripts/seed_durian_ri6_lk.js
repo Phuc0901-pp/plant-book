@@ -340,8 +340,91 @@ async function seedDurianRi6LK() {
     }
     console.log(`📦 Đã đồng bộ danh mục 9 vật tư sầu riêng Ri6 cho các tài khoản liên quan`);
 
-    // ── 3. THIẾT LẬP DỮ LIỆU LỊCH SỬ NĂNG SUẤT & DOANH THU 20 MÙA VỤ (2009 - 2026) ──
-    const historicalYieldRecords = [
+    // ── 3. CẤU HÌNH BỘ 5 CÂY SẦU RIÊNG RI6 (STT 1 ĐẾN 5) TẠI TRANG TRẠI LK ──
+    const durianTreesConfig = [
+      {
+        tree_code: '1',
+        code_match: ['1', 'SR-01', 'SR-1', '01'],
+        location: 'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)',
+        default_lat: 10.941520,
+        default_lng: 107.241850,
+        nfc_uid: '04:A2:3B:8C:9F:5D:80',
+        public_slug: 'flk-sr01-ri6-longkhanh',
+        plant_variety: 'Ri6 Cổ Thụ (20 Năm Tuổi)',
+        trunk_diameter_cm: 65,
+        height_m: 12.5,
+        canopy_diameter_m: 11.0,
+        average_yield_kg: 450,
+        yield_multiplier: 1.0,
+        health_status: 'Tốt'
+      },
+      {
+        tree_code: '2',
+        code_match: ['2', 'SR-02', 'SR-2', '02'],
+        location: 'Lô A1 - Hàng 1 - Cây STT 2 (Cây giữa hàng 1)',
+        default_lat: 10.941650,
+        default_lng: 107.242050,
+        nfc_uid: '04:A2:3B:8C:9F:5D:81',
+        public_slug: 'flk-sr02-ri6-longkhanh',
+        plant_variety: 'Ri6 Cổ Thụ (20 Năm Tuổi)',
+        trunk_diameter_cm: 63,
+        height_m: 12.2,
+        canopy_diameter_m: 10.8,
+        average_yield_kg: 435,
+        yield_multiplier: 0.97,
+        health_status: 'Tốt'
+      },
+      {
+        tree_code: '3',
+        code_match: ['3', 'SR-03', 'SR-3', '03'],
+        location: 'Lô A1 - Hàng 1 - Cây STT 3 (Cây cuối hàng 1)',
+        default_lat: 10.941780,
+        default_lng: 107.242250,
+        nfc_uid: '04:A2:3B:8C:9F:5D:82',
+        public_slug: 'flk-sr03-ri6-longkhanh',
+        plant_variety: 'Ri6 Cổ Thụ (20 Năm Tuổi)',
+        trunk_diameter_cm: 67,
+        height_m: 12.8,
+        canopy_diameter_m: 11.2,
+        average_yield_kg: 465,
+        yield_multiplier: 1.03,
+        health_status: 'Tốt'
+      },
+      {
+        tree_code: '4',
+        code_match: ['4', 'SR-04', 'SR-4', '04'],
+        location: 'Lô A1 - Hàng 2 - Cây STT 4 (Cây đầu hàng 2)',
+        default_lat: 10.941400,
+        default_lng: 107.241650,
+        nfc_uid: '04:A2:3B:8C:9F:5D:83',
+        public_slug: 'flk-sr04-ri6-longkhanh',
+        plant_variety: 'Ri6 Cổ Thụ (20 Năm Tuổi)',
+        trunk_diameter_cm: 62,
+        height_m: 12.0,
+        canopy_diameter_m: 10.5,
+        average_yield_kg: 420,
+        yield_multiplier: 0.94,
+        health_status: 'Tốt'
+      },
+      {
+        tree_code: '5',
+        code_match: ['5', 'SR-05', 'SR-5', '05'],
+        location: 'Lô A1 - Hàng 2 - Cây STT 5 (Cây giữa hàng 2)',
+        default_lat: 10.941280,
+        default_lng: 107.241450,
+        nfc_uid: '04:A2:3B:8C:9F:5D:84',
+        public_slug: 'flk-sr05-ri6-longkhanh',
+        plant_variety: 'Ri6 Cổ Thụ (20 Năm Tuổi)',
+        trunk_diameter_cm: 64,
+        height_m: 12.3,
+        canopy_diameter_m: 10.9,
+        average_yield_kg: 440,
+        yield_multiplier: 0.98,
+        health_status: 'Tốt'
+      }
+    ];
+
+    const baseYieldRecords = [
       { year: 2009, tree_age: 6, fruit_count: 18, yield_kg: 54, avg_price_vnd: 30000, revenue_vnd: 1620000, expense_vnd: 450000, profit_vnd: 1170000, grade_1_pct: 75, brix: '30°', note: 'Vụ bói đầu tiên (dưỡng cây)' },
       { year: 2010, tree_age: 7, fruit_count: 35, yield_kg: 105, avg_price_vnd: 32000, revenue_vnd: 3360000, expense_vnd: 620000, profit_vnd: 2740000, grade_1_pct: 80, brix: '31°', note: 'Bắt đầu cho trái thương phẩm' },
       { year: 2011, tree_age: 8, fruit_count: 50, yield_kg: 150, avg_price_vnd: 35000, revenue_vnd: 5250000, expense_vnd: 780000, profit_vnd: 4470000, grade_1_pct: 82, brix: '31°', note: 'Lắp béc tưới gốc tự động' },
@@ -362,103 +445,8 @@ async function seedDurianRi6LK() {
       { year: 2026, tree_age: 23, fruit_count: 85, yield_kg: 255, avg_price_vnd: 85000, revenue_vnd: 21675000, expense_vnd: 759700, profit_vnd: 20915300, grade_1_pct: 95, brix: '32°', note: 'Vụ mùa hiện tại (Đợt 1 VietGAP)' }
     ];
 
-    const biometricTimeline = [
-      { year: 2006, age: 1, trunk_diameter_cm: 8, height_m: 1.2, canopy_m: 0.8, phase: 'Xuống giống cây con tại vườn Long Khánh' },
-      { year: 2007, age: 2, trunk_diameter_cm: 14, height_m: 2.2, canopy_m: 1.8, phase: 'Bấm đọt phân cành cấp 1' },
-      { year: 2008, age: 3, trunk_diameter_cm: 20, height_m: 3.4, canopy_m: 2.8, phase: 'Tạo tán hình tháp thông thoáng' },
-      { year: 2009, age: 4, trunk_diameter_cm: 26, height_m: 4.6, canopy_m: 4.0, phase: 'Sinh khối phát triển vượt bậc' },
-      { year: 2010, age: 5, trunk_diameter_cm: 32, height_m: 5.8, canopy_m: 5.5, phase: 'Chuẩn bị thể trạng đón trái bói' },
-      { year: 2011, age: 6, trunk_diameter_cm: 36, height_m: 6.8, canopy_m: 6.5, phase: 'Vụ bói đầu tiên (18 trái)' },
-      { year: 2015, age: 10, trunk_diameter_cm: 45, height_m: 8.5, canopy_m: 8.0, phase: 'Cây 10 năm tuổi thương phẩm' },
-      { year: 2020, age: 15, trunk_diameter_cm: 56, height_m: 10.5, canopy_m: 9.8, phase: 'Đạt đỉnh cao sinh học' },
-      { year: 2026, age: 20, trunk_diameter_cm: 65, height_m: 12.5, canopy_m: 11.0, phase: 'Cổ thụ 20 năm kinh doanh cực thịnh' }
-    ];
-
-    const treeData = {
-      trunk_diameter_cm: 65,
-      height_m: 12.5,
-      canopy_diameter_m: 11.0,
-      average_yield_kg: 450,
-      planting_date: '2006-01-01',
-      planted_date: '2006-01-01',
-      planting_year: 2006,
-      rootstock: 'Gốc ghép sầu riêng hạt bản địa Long Khánh',
-      current_season_target_fruits: 140,
-      irrigation_system: 'Béc tưới bù áp tự động 120L/h (3 béc quanh tán)',
-      historical_yield_records: historicalYieldRecords,
-      biometric_timeline: biometricTimeline,
-      lifetime_summary: {
-        total_seasons: historicalYieldRecords.length,
-        total_fruits_harvested: 2011,
-        total_yield_kg: 6033,
-        total_revenue_vnd: 398277000,
-        total_expense_vnd: 30269700,
-        total_net_profit_vnd: 368007300
-      }
-    };
-
-    // ── 4. TÌM HOẶC CẬP NHẬT CÂY SẦU RIÊNG STT 1 TRONG TRANG TRẠI LK ──
-    let plantId = null;
-    const existingPlantsInFarm = await client.query(`
-      SELECT * FROM plants 
-      WHERE farm_id = $1 
-      ORDER BY CASE WHEN tree_code = '1' OR tree_code = 'SR-01' OR tree_code ILIKE '%1%' THEN 1 ELSE 2 END, id ASC
-    `, [farmId]);
-
     const coverImg = 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80';
 
-    if (existingPlantsInFarm.rows.length > 0) {
-      const targetPlant = existingPlantsInFarm.rows[0];
-      plantId = targetPlant.id;
-      const originalTreeCode = targetPlant.tree_code || '1';
-
-      await client.query(`
-        UPDATE plants SET
-          plant_type = 'Sầu riêng',
-          plant_variety = 'Ri6 Cổ Thụ (20 Năm Tuổi)',
-          plant_age = '20 năm tuổi',
-          planting_date = '2006-01-01',
-          health_status = 'Tốt',
-          location = COALESCE(location, 'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)'),
-          tree_code = $1,
-          nfc_uid = COALESCE(nfc_uid, '04:A2:3B:8C:9F:5D:80'),
-          public_slug = COALESCE(public_slug, 'flk-sr01-ri6-longkhanh'),
-          latitude = 10.941520,
-          longitude = 107.241850,
-          cover_image = $2,
-          is_public = true,
-          data = $3,
-          phi_status = 'safe',
-          phi_until_date = '2026-06-04',
-          last_pesticide_date = '2026-05-20',
-          last_pesticide_name = 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)',
-          updated_at = NOW()
-        WHERE id = $4
-      `, [originalTreeCode, coverImg, JSON.stringify(treeData), plantId]);
-      console.log(`🌳 Đã cập nhật Cây Sầu Riêng STT ${originalTreeCode} (ID: ${plantId}) trong Trang trại "${farmName}"`);
-    } else {
-      const newPlant = await client.query(`
-        INSERT INTO plants (
-          farm_id, created_by, plant_type, plant_variety, plant_age, planting_date, health_status,
-          location, tree_code, nfc_uid, public_slug, latitude, longitude,
-          cover_image, is_public, data, phi_status, phi_until_date,
-          last_pesticide_date, last_pesticide_name
-        ) VALUES (
-          $1, $2, 'Sầu riêng', 'Ri6 Cổ Thụ (20 Năm Tuổi)', '20 năm tuổi', '2006-01-01', 'Tốt',
-          'Lô A1 - Hàng 1 - Cây STT 1 (Cây đầu hồi cổng chính)', '1',
-          '04:A2:3B:8C:9F:5D:80', 'flk-sr01-ri6-longkhanh', 10.941520, 107.241850,
-          $3, true, $4, 'safe', '2026-06-04', '2026-05-20', 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)'
-        ) RETURNING id
-      `, [farmId, userId, coverImg, JSON.stringify(treeData)]);
-      plantId = newPlant.rows[0].id;
-      console.log(`🌳 Đã tạo mới Cây Sầu Riêng STT 1 (ID: ${plantId}) trong Trang trại "${farmName}"`);
-    }
-
-    // ── 5. THUẬT TOÁN SINH SIÊU MẬT ĐỘ 20,000+ NHẬT KÝ CANH TÁC THỰC ĐỊA (2004 - 2026) ──
-    console.log('⚡ Đang khởi tạo bộ dữ liệu 20,000+ nhật ký canh tác theo giờ giấc chi tiết...');
-    await client.query(`DELETE FROM plant_logs WHERE plant_id = $1`, [plantId]);
-
-    const generatedLogs = [];
     const operators = [
       'Nguyễn Văn Long (Kỹ sư trưởng)',
       'Trần Văn Ba (Tổ trưởng làm vườn)',
@@ -477,350 +465,516 @@ async function seedDurianRi6LK() {
       'Khác': ['Đầu dò cảm biến IoT độ ẩm đất', 'Máy đo pH/EC đất Hanna', 'Dao nạo vỏ cây chuyên dụng']
     };
 
-    // Chu trình canh tác chi tiết mỗi năm từ 2004 đến 2026
-    for (let year = 2004; year <= 2026; year++) {
-      const treeAge = year - 2004 + 1;
-      const daysInYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 366 : 365;
+    // Lấy danh sách cây hiện hữu của trang trại LK
+    const existingPlantsInFarm = await client.query(`
+      SELECT * FROM plants 
+      WHERE farm_id = $1 
+      ORDER BY id ASC
+    `, [farmId]);
 
-      // Mỗi năm sinh ~950 hoạt động thực địa trải đều 365 ngày
-      for (let d = 1; d <= daysInYear; d++) {
-        const dateObj = new Date(year, 0, d);
-        const month = dateObj.getMonth() + 1;
-        const day = dateObj.getDate();
-        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const seededPlantsResult = [];
+    let totalAllGeneratedLogs = 0;
 
-        // 1. Hoạt động kiểm tra vườn buổi sáng (07:00 sáng)
-        const hourMorning = '07:00';
-        let checkNoteMorning = `07:00 ${dateStr}: Kiểm tra thực địa tán cây và đo độ ẩm đất (${55 + (d % 25)}%). `;
-        if (month >= 11 || month <= 1) {
-          checkNoteMorning += `Giai đoạn phân hóa mầm hoa & nhú mắt cua. Tình trạng mắt cua sáng khỏe, không nghẽn bông.`;
-        } else if (month >= 2 && month <= 4) {
-          checkNoteMorning += `Giai đoạn nuôi trái non & định hình trái. Trái tròn đều, gai xanh, cuống dai.`;
-        } else if (month >= 5 && month <= 7) {
-          checkNoteMorning += `Giai đoạn vỗ béo cơm vàng & chuẩn bị thu hoạch. Đo chỉ số cơm ráo, không nứt gai.`;
-        } else {
-          checkNoteMorning += `Giai đoạn phục hồi cây sau thu hoạch & kích cơi đọt mới. Tán lá xanh đậm dày bóng.`;
+    // ── 4. LẶP VÀ KHỞI TẠO TỪNG CÂY TRONG BỘ 5 CÂY SẦU RIÊNG (STT #1 ĐẾN #5) ──
+    for (let treeIdx = 0; treeIdx < durianTreesConfig.length; treeIdx++) {
+      const treeCfg = durianTreesConfig[treeIdx];
+      const mult = treeCfg.yield_multiplier;
+
+      // Tính toán lịch sử mùa vụ và sinh trắc học riêng cho từng cây
+      const treeYieldRecords = baseYieldRecords.map(r => {
+        const adjustedFruits = Math.round(r.fruit_count * mult);
+        const adjustedYield = Math.round(r.yield_kg * mult);
+        const adjustedRev = adjustedYield * r.avg_price_vnd;
+        const adjustedExp = Math.round(r.expense_vnd * (0.95 + 0.05 * mult));
+        return {
+          ...r,
+          fruit_count: adjustedFruits,
+          yield_kg: adjustedYield,
+          revenue_vnd: adjustedRev,
+          expense_vnd: adjustedExp,
+          profit_vnd: adjustedRev - adjustedExp
+        };
+      });
+
+      const biometricTimeline = [
+        { year: 2006, age: 1, trunk_diameter_cm: Math.round(8 * mult), height_m: Number((1.2 * mult).toFixed(1)), canopy_m: Number((0.8 * mult).toFixed(1)), phase: 'Xuống giống cây con tại vườn Long Khánh' },
+        { year: 2007, age: 2, trunk_diameter_cm: Math.round(14 * mult), height_m: Number((2.2 * mult).toFixed(1)), canopy_m: Number((1.8 * mult).toFixed(1)), phase: 'Bấm đọt phân cành cấp 1' },
+        { year: 2008, age: 3, trunk_diameter_cm: Math.round(20 * mult), height_m: Number((3.4 * mult).toFixed(1)), canopy_m: Number((2.8 * mult).toFixed(1)), phase: 'Tạo tán hình tháp thông thoáng' },
+        { year: 2009, age: 4, trunk_diameter_cm: Math.round(26 * mult), height_m: Number((4.6 * mult).toFixed(1)), canopy_m: Number((4.0 * mult).toFixed(1)), phase: 'Sinh khối phát triển vượt bậc' },
+        { year: 2010, age: 5, trunk_diameter_cm: Math.round(32 * mult), height_m: Number((5.8 * mult).toFixed(1)), canopy_m: Number((5.5 * mult).toFixed(1)), phase: 'Chuẩn bị thể trạng đón trái bói' },
+        { year: 2011, age: 6, trunk_diameter_cm: Math.round(36 * mult), height_m: Number((6.8 * mult).toFixed(1)), canopy_m: Number((6.5 * mult).toFixed(1)), phase: 'Vụ bói đầu tiên' },
+        { year: 2015, age: 10, trunk_diameter_cm: Math.round(45 * mult), height_m: Number((8.5 * mult).toFixed(1)), canopy_m: Number((8.0 * mult).toFixed(1)), phase: 'Cây 10 năm tuổi thương phẩm' },
+        { year: 2020, age: 15, trunk_diameter_cm: Math.round(56 * mult), height_m: Number((10.5 * mult).toFixed(1)), canopy_m: Number((9.8 * mult).toFixed(1)), phase: 'Đạt đỉnh cao sinh học' },
+        { year: 2026, age: 20, trunk_diameter_cm: treeCfg.trunk_diameter_cm, height_m: treeCfg.height_m, canopy_m: treeCfg.canopy_diameter_m, phase: 'Cổ thụ 20 năm kinh doanh cực thịnh' }
+      ];
+
+      const totYield = treeYieldRecords.reduce((a, b) => a + b.yield_kg, 0);
+      const totFruits = treeYieldRecords.reduce((a, b) => a + b.fruit_count, 0);
+      const totRev = treeYieldRecords.reduce((a, b) => a + b.revenue_vnd, 0);
+      const totExp = treeYieldRecords.reduce((a, b) => a + b.expense_vnd, 0);
+
+      const treeData = {
+        trunk_diameter_cm: treeCfg.trunk_diameter_cm,
+        height_m: treeCfg.height_m,
+        canopy_diameter_m: treeCfg.canopy_diameter_m,
+        average_yield_kg: treeCfg.average_yield_kg,
+        planting_date: '2006-01-01',
+        planted_date: '2006-01-01',
+        planting_year: 2006,
+        rootstock: 'Gốc ghép sầu riêng hạt bản địa Long Khánh',
+        current_season_target_fruits: Math.round(140 * mult),
+        irrigation_system: 'Béc tưới bù áp tự động 120L/h (3 béc quanh tán)',
+        historical_yield_records: treeYieldRecords,
+        biometric_timeline: biometricTimeline,
+        lifetime_summary: {
+          total_seasons: treeYieldRecords.length,
+          total_fruits_harvested: totFruits,
+          total_yield_kg: totYield,
+          total_revenue_vnd: totRev,
+          total_expense_vnd: totExp,
+          total_net_profit_vnd: totRev - totExp
         }
+      };
 
-        generatedLogs.push({
-          plant_id: plantId,
-          log_date: dateStr,
-          log_type: 'Khác',
-          operator_name: operators[d % 4],
-          equipment_used: equipmentList['Khác'][d % 3],
-          note: checkNoteMorning,
-          media_urls: [],
-          details: { time: hourMorning, soil_moisture: `${55 + (d % 25)}%`, soil_ph: 6.2, tree_age: `${treeAge} năm tuổi` },
-          puc_code: 'VN-LK-001',
-          created_by: userId
-        });
+      // Tìm cây khớp theo tree_code hoặc mã liên quan
+      let existingPlant = existingPlantsInFarm.rows.find(p =>
+        p.tree_code === treeCfg.tree_code ||
+        treeCfg.code_match.includes(p.tree_code) ||
+        p.public_slug === treeCfg.public_slug ||
+        p.nfc_uid === treeCfg.nfc_uid
+      );
 
-        // 1b. Quan trắc vi khí hậu & Cảm biến lá chiều muộn (16:00 chiều)
-        const hourAfternoon = '16:00';
-        generatedLogs.push({
-          plant_id: plantId,
-          log_date: dateStr,
-          log_type: 'Khác',
-          operator_name: 'Nguyễn Văn Long (Kỹ sư trưởng)',
-          equipment_used: 'Đầu dò cảm biến IoT độ ẩm đất',
-          note: `16:00 ${dateStr}: Quan trắc bức xạ nhiệt và độ thoát hơi nước qua tán lá. Tình trạng lá quang hợp tốt, không cháy chóp.`,
-          media_urls: [],
-          details: { time: hourAfternoon, canopy_temp: `${28 + (d % 6)}°C`, humidity: `${68 + (d % 15)}%` },
-          puc_code: 'VN-LK-001',
-          created_by: userId
-        });
+      // Nếu không tìm thấy theo code mà danh sách hiện hữu còn phần tử theo thứ tự thì gán
+      if (!existingPlant && existingPlantsInFarm.rows[treeIdx]) {
+        existingPlant = existingPlantsInFarm.rows[treeIdx];
+      }
 
-        // 1c. Kiểm tra độ dẫn điện EC & độ chua đất tầng sâu (5 ngày/lần)
-        if (d % 5 === 2) {
-          generatedLogs.push({
-            plant_id: plantId,
-            log_date: dateStr,
-            log_type: 'Khác',
-            operator_name: 'Lê Văn Tám (Kỹ thuật viên VietGAP)',
-            equipment_used: 'Máy đo pH/EC đất Hanna',
-            note: `09:15 ${dateStr}: Đo chỉ số EC đất (${(0.8 + (d % 10) * 0.05).toFixed(2)} mS/cm) và pH (${(6.0 + (d % 5) * 0.1).toFixed(1)}). Độ phì nhiêu tầng đất đạt chuẩn VietGAP.`,
-            media_urls: [],
-            details: { time: '09:15', ec_value: `${(0.8 + (d % 10) * 0.05).toFixed(2)} mS/cm`, ph_value: (6.0 + (d % 5) * 0.1).toFixed(1) },
-            puc_code: 'VN-LK-001',
-            created_by: userId
-          });
-        }
+      let currentPlantId = null;
 
-        // 1d. Phun sương dưỡng ẩm vi lượng cơi đọt (8 ngày/lần)
-        if (d % 8 === 4) {
-          generatedLogs.push({
-            plant_id: plantId,
-            log_date: dateStr,
-            log_type: 'Bón phân',
-            operator_name: 'Trần Văn Ba (Tổ trưởng làm vườn)',
-            equipment_used: 'Bình xịt điện Stihl SR-420',
-            note: `07:15 ${dateStr}: Phun sương dưỡng cơi đọt bằng vi lượng chelate (Bo, Kẽm, Magie). Lá bóng khỏe, cơi đọt vươn đều.`,
-            media_urls: [],
-            details: { time: '07:15', foliar_nutrition: 'Chelate Micro TE', quantity: 50, unit: 'ml', total_cost: 15000 },
-            puc_code: 'VN-LK-001',
-            created_by: userId
-          });
-        }
+      if (existingPlant) {
+        currentPlantId = existingPlant.id;
+        // BẢO TOÀN 100% TỌA ĐỘ GPS HIỆN HỮU NẾU ĐÃ CÓ
+        const finalLat = existingPlant.latitude != null ? Number(existingPlant.latitude) : treeCfg.default_lat;
+        const finalLng = existingPlant.longitude != null ? Number(existingPlant.longitude) : treeCfg.default_lng;
 
-        // 2. Tưới nước định kỳ (Cách 2-3 ngày/lần vào mùa khô; cách 5-7 ngày vào mùa mưa) (06:30 sáng hoặc 16:30 chiều)
-        const isDrySeason = (month >= 11 || month <= 4);
-        const shouldWater = isDrySeason ? (d % 2 === 0) : (d % 6 === 0);
-        if (shouldWater) {
-          const waterTime = (d % 2 === 0) ? '06:30' : '16:30';
-          const waterLiters = isDrySeason ? 550 : 300;
-          generatedLogs.push({
-            plant_id: plantId,
-            log_date: dateStr,
-            log_type: 'Tưới nước',
-            operator_name: 'Hệ thống tưới tự động bù áp IoT',
-            equipment_used: 'Trạm bơm điều khiển van thông minh',
-            note: `${waterTime} ${dateStr}: Bật hệ thống béc tưới bù áp tự động quanh tán cây (${waterLiters} lít nước). Cân bằng độ ẩm tầng rễ tơ.`,
-            media_urls: [],
-            details: {
-              time: waterTime,
-              supply_id: supplyMap['Tiền nước tưới giếng khoan công nghiệp'],
-              supply_name: 'Tiền nước tưới giếng khoan công nghiệp',
-              quantity: waterLiters / 1000,
-              unit: 'm3',
-              unit_price: 3500,
-              total_cost: Math.round((waterLiters / 1000) * 3500)
-            },
-            puc_code: 'VN-LK-001',
-            created_by: userId
-          });
-        }
+        await client.query(`
+          UPDATE plants SET
+            plant_type = 'Sầu riêng',
+            plant_variety = $1,
+            plant_age = '20 năm tuổi',
+            planting_date = '2006-01-01',
+            health_status = $2,
+            location = $3,
+            tree_code = $4,
+            nfc_uid = COALESCE(nfc_uid, $5),
+            public_slug = COALESCE(public_slug, $6),
+            latitude = $7,
+            longitude = $8,
+            cover_image = $9,
+            is_public = true,
+            data = $10,
+            phi_status = 'safe',
+            phi_until_date = '2026-06-04',
+            last_pesticide_date = '2026-05-20',
+            last_pesticide_name = 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)',
+            updated_at = NOW()
+          WHERE id = $11
+        `, [
+          treeCfg.plant_variety,
+          treeCfg.health_status,
+          treeCfg.location,
+          treeCfg.tree_code,
+          treeCfg.nfc_uid,
+          treeCfg.public_slug,
+          finalLat,
+          finalLng,
+          coverImg,
+          JSON.stringify(treeData),
+          currentPlantId
+        ]);
+        console.log(`🌳 [Tree #${treeCfg.tree_code}] Đã cập nhật thành công (ID: ${currentPlantId}, GPS: ${finalLat}, ${finalLng})`);
+      } else {
+        const newPlant = await client.query(`
+          INSERT INTO plants (
+            farm_id, created_by, plant_type, plant_variety, plant_age, planting_date, health_status,
+            location, tree_code, nfc_uid, public_slug, latitude, longitude,
+            cover_image, is_public, data, phi_status, phi_until_date,
+            last_pesticide_date, last_pesticide_name
+          ) VALUES (
+            $1, $2, 'Sầu riêng', $3, '20 năm tuổi', '2006-01-01', $4,
+            $5, $6, $7, $8, $9, $10,
+            $11, true, $12, 'safe', '2026-06-04', '2026-05-20', 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)'
+          ) RETURNING id
+        `, [
+          farmId,
+          userId,
+          treeCfg.plant_variety,
+          treeCfg.health_status,
+          treeCfg.location,
+          treeCfg.tree_code,
+          treeCfg.nfc_uid,
+          treeCfg.public_slug,
+          treeCfg.default_lat,
+          treeCfg.default_lng,
+          coverImg,
+          JSON.stringify(treeData)
+        ]);
+        currentPlantId = newPlant.rows[0].id;
+        console.log(`🌳 [Tree #${treeCfg.tree_code}] Đã tạo mới thành công (ID: ${currentPlantId}, GPS: ${treeCfg.default_lat}, ${treeCfg.default_lng})`);
+      }
 
-        // 3. Làm cỏ gốc, xới đất & vệ sinh tán (1 tuần/lần) (08:00 sáng)
-        if (d % 7 === 3) {
-          generatedLogs.push({
-            plant_id: plantId,
-            log_date: dateStr,
-            log_type: 'Khác',
-            operator_name: 'Trần Văn Ba (Tổ trưởng làm vườn)',
-            equipment_used: 'Máy cắt cỏ mini & Cuốc xới răng cào',
-            note: `08:00 ${dateStr}: Cắt cỏ duy trì thảm cỏ tự nhiên quanh tán 1.5m, xới rãnh thông thoáng thoát nước gốc cây.`,
-            media_urls: [],
-            details: { time: '08:00', activity: 'Vệ sinh thảm cỏ gốc', labor_cost: 60000 },
-            puc_code: 'VN-LK-001',
-            created_by: userId
-          });
-        }
+      seededPlantsResult.push({
+        plant_id: currentPlantId,
+        tree_code: treeCfg.tree_code,
+        public_slug: treeCfg.public_slug,
+        nfc_uid: treeCfg.nfc_uid
+      });
 
-        // 4. Bón phân định kỳ (Bón hữu cơ Bỉ, NPK Đầu Trâu, MKP, Kali SoluPotasse) (10 ngày/lần)
-        if (d % 10 === 5) {
-          let supName = 'Phân NPK 20-20-15+TE Đầu Trâu Chuyên Cây Ăn Trái';
-          let qty = 1.5;
-          let unit = 'kg';
-          let price = 17800;
+      // ── 5. SINH NHẬT KÝ CANH TÁC THỰC ĐỊA CHO TỪNG CÂY (2004 - 2026) ──
+      await client.query(`DELETE FROM plant_logs WHERE plant_id = $1`, [currentPlantId]);
+      const generatedLogs = [];
 
-          if (month >= 8 && month <= 10) {
-            supName = 'Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)';
-            qty = 10;
-            price = 15200;
-          } else if (month === 11 || month === 12) {
-            supName = 'Phân bón lá tạo mầm hoa MKP 0-52-34 Haifa Israel';
-            qty = 0.5;
-            price = 50000;
-          } else if (month === 1) {
-            supName = 'Phân bón lá Canxi Bo Sữa Bo-Trac Yara Anh Quốc';
-            qty = 100;
-            unit = 'ml';
-            price = 180;
-          } else if (month >= 5 && month <= 6) {
-            supName = 'Phân Kali Trắng Sunfat K2SO4 SoluPotasse 0-0-50';
-            qty = 1.2;
-            price = 30000;
+      for (let year = 2004; year <= 2026; year++) {
+        const treeAge = year - 2004 + 1;
+        const daysInYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 366 : 365;
+
+        for (let d = 1; d <= daysInYear; d++) {
+          const dateObj = new Date(year, 0, d);
+          const month = dateObj.getMonth() + 1;
+          const day = dateObj.getDate();
+          const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+          // 1. Kiểm tra vườn buổi sáng (07:00)
+          const hourMorning = '07:00';
+          let checkNoteMorning = `07:00 ${dateStr}: Kiểm tra thực địa Cây #${treeCfg.tree_code} và đo độ ẩm đất (${55 + ((d + treeIdx) % 25)}%). `;
+          if (month >= 11 || month <= 1) {
+            checkNoteMorning += `Giai đoạn phân hóa mầm hoa & nhú mắt cua. Tình trạng mắt cua sáng khỏe.`;
+          } else if (month >= 2 && month <= 4) {
+            checkNoteMorning += `Giai đoạn nuôi trái non & định hình trái. Trái tròn đều, gai xanh.`;
+          } else if (month >= 5 && month <= 7) {
+            checkNoteMorning += `Giai đoạn vỗ béo cơm vàng. Đo chỉ số cơm ráo, không nứt gai.`;
+          } else {
+            checkNoteMorning += `Giai đoạn phục hồi cây sau thu hoạch & kích cơi đọt mới. Tán lá xanh đậm.`;
           }
 
           generatedLogs.push({
-            plant_id: plantId,
+            plant_id: currentPlantId,
             log_date: dateStr,
-            log_type: 'Bón phân',
-            operator_name: operators[d % 3],
-            equipment_used: equipmentList['Bón phân'][d % 3],
-            note: `07:30 ${dateStr}: Bón ${qty} ${unit} ${supName} quanh hình chiếu tán cây. Bổ sung dưỡng chất tối ưu cho cơi đọt và trái.`,
+            log_type: 'Khác',
+            operator_name: operators[(d + treeIdx) % 4],
+            equipment_used: equipmentList['Khác'][(d + treeIdx) % 3],
+            note: checkNoteMorning,
             media_urls: [],
-            details: {
-              time: '07:30',
-              supply_id: supplyMap[supName],
-              supply_name: supName,
-              quantity: qty,
-              unit: unit,
-              unit_price: price,
-              total_cost: Math.round(qty * price),
-              phi_days: 0
-            },
+            details: { time: hourMorning, soil_moisture: `${55 + ((d + treeIdx) % 25)}%`, soil_ph: 6.2, tree_age: `${treeAge} năm tuổi` },
             puc_code: 'VN-LK-001',
             created_by: userId
           });
-        }
 
-        // 5. Phun phòng thuốc trừ sâu sinh học & Trừ nấm bệnh VietGAP (12 ngày/lần)
-        if (d % 12 === 7) {
-          let pestName = 'Thuốc trừ sâu rầy sinh học Radiant 60SC';
-          let pQty = 50;
-          let pUnit = 'ml';
-          let pPrice = 780;
-          let phiDays = 3;
-
-          if (month >= 3 && month <= 6) {
-            pestName = (d % 24 === 7) ? 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)' : 'Thuốc đặc trị nứt thân xì mủ Ridomil Gold 68WG';
-            pQty = (pestName.includes('Anvil')) ? 100 : 50;
-            pUnit = (pestName.includes('Anvil')) ? 'ml' : 'g';
-            pPrice = (pestName.includes('Anvil')) ? 260 : 320;
-            phiDays = 14;
-          }
-
+          // 1b. Quan trắc vi khí hậu chiều (16:00)
           generatedLogs.push({
-            plant_id: plantId,
+            plant_id: currentPlantId,
             log_date: dateStr,
-            log_type: 'Phun thuốc',
+            log_type: 'Khác',
             operator_name: 'Nguyễn Văn Long (Kỹ sư trưởng)',
-            equipment_used: 'Bình xịt điện Stihl SR-420',
-            note: `06:15 ${dateStr}: Phun phòng trừ sâu bệnh bằng ${pestName}. Tuân thủ cách ly PHI ${phiDays} ngày an toàn VietGAP.`,
+            equipment_used: 'Đầu dò cảm biến IoT độ ẩm đất',
+            note: `16:00 ${dateStr}: Quan trắc bức xạ nhiệt và độ thoát hơi nước qua tán Cây #${treeCfg.tree_code}. Tán lá quang hợp tốt.`,
             media_urls: [],
-            details: {
-              time: '06:15',
-              supply_id: supplyMap[pestName],
-              supply_name: pestName,
-              quantity: pQty,
-              unit: pUnit,
-              unit_price: pPrice,
-              total_cost: Math.round(pQty * pPrice),
-              phi_days: phiDays
-            },
+            details: { time: '16:00', canopy_temp: `${28 + (d % 6)}°C`, humidity: `${68 + (d % 15)}%` },
             puc_code: 'VN-LK-001',
             created_by: userId
           });
-        }
 
-        // 6. Cắt tỉa cành, tỉa hoa, tỉa trái non (15 ngày/lần)
-        if (d % 15 === 9) {
-          let pruneType = 'Tỉa cành thông thoáng tán';
-          if (month === 12 || month === 1) pruneType = 'Tỉa bớt nụ hoa còi cọc ở đầu cành';
-          if (month === 2 || month === 3) pruneType = 'Tỉa định trái non tròn đều, loại bỏ trái vẹo';
-          if (month >= 8 && month <= 9) pruneType = 'Cắt tỉa cành tăm, cành sâu bệnh phục hồi sau thu hoạch';
+          // 1c. Kiểm tra EC & pH đất (5 ngày/lần)
+          if ((d + treeIdx) % 5 === 2) {
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Khác',
+              operator_name: 'Lê Văn Tám (Kỹ thuật viên VietGAP)',
+              equipment_used: 'Máy đo pH/EC đất Hanna',
+              note: `09:15 ${dateStr}: Đo chỉ số EC đất (${(0.8 + (d % 10) * 0.05).toFixed(2)} mS/cm) và pH (${(6.0 + (d % 5) * 0.1).toFixed(1)}) quanh gốc Cây #${treeCfg.tree_code}. Đạt chuẩn VietGAP.`,
+              media_urls: [],
+              details: { time: '09:15', ec_value: `${(0.8 + (d % 10) * 0.05).toFixed(2)} mS/cm`, ph_value: (6.0 + (d % 5) * 0.1).toFixed(1) },
+              puc_code: 'VN-LK-001',
+              created_by: userId
+            });
+          }
 
-          generatedLogs.push({
-            plant_id: plantId,
-            log_date: dateStr,
-            log_type: 'Cắt tỉa',
-            operator_name: 'Nguyễn Văn Long',
-            equipment_used: 'Kéo cắt cành Gardena cán nhôm',
-            note: `08:45 ${dateStr}: Tiến hành ${pruneType}. Bôi keo liền sẹo vết cắt lớn.`,
-            media_urls: [],
-            details: { time: '08:45', activity: pruneType, labor_cost: 80000 },
-            puc_code: 'VN-LK-001',
-            created_by: userId
-          });
-        }
+          // 1d. Phun sương dưỡng cơi đọt (8 ngày/lần)
+          if ((d + treeIdx) % 8 === 4) {
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Bón phân',
+              operator_name: 'Trần Văn Ba (Tổ trưởng làm vườn)',
+              equipment_used: 'Bình xịt điện Stihl SR-420',
+              note: `07:15 ${dateStr}: Phun sương dưỡng cơi đọt Cây #${treeCfg.tree_code} bằng vi lượng chelate (Bo, Kẽm, Magie).`,
+              media_urls: [],
+              details: { time: '07:15', foliar_nutrition: 'Chelate Micro TE', quantity: 50, unit: 'ml', total_cost: 15000 },
+              puc_code: 'VN-LK-001',
+              created_by: userId
+            });
+          }
 
-        // 7. Thụ phấn nhân tạo ban đêm vào mùa hoa nở rộ (Tháng 12 & Tháng 1: 18:30 - 20:30)
-        if ((month === 12 || month === 1) && d % 3 === 0 && treeAge >= 6) {
-          generatedLogs.push({
-            plant_id: plantId,
-            log_date: dateStr,
-            log_type: 'Thụ phấn',
-            operator_name: 'Tổ kỹ thuật thụ phấn (Nguyễn Thị Mai)',
-            equipment_used: 'Chổi lông cọ mềm chuyên dụng & Đèn LED',
-            note: `18:30 ${dateStr}: Quét phấn hoa chéo bổ sung từ giống Monthong sang nhụy hoa Ri6 lúc 18h30 - 20h00 tối. Hạt phấn tiếp nhận tròn đầy 5 hộc.`,
-            media_urls: [],
-            details: { time: '18:30', activity: 'Thụ phấn chéo ban đêm', pollination_rate: '94%', labor_cost: 100000 },
-            puc_code: 'VN-LK-001',
-            created_by: userId
-          });
-        }
+          // 2. Tưới nước định kỳ
+          const isDrySeason = (month >= 11 || month <= 4);
+          const shouldWater = isDrySeason ? ((d + treeIdx) % 2 === 0) : ((d + treeIdx) % 6 === 0);
+          if (shouldWater) {
+            const waterTime = (d % 2 === 0) ? '06:30' : '16:30';
+            const waterLiters = isDrySeason ? Math.round(550 * mult) : Math.round(300 * mult);
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Tưới nước',
+              operator_name: 'Hệ thống tưới tự động bù áp IoT',
+              equipment_used: 'Trạm bơm điều khiển van thông minh',
+              note: `${waterTime} ${dateStr}: Bật béc tưới bù áp tự động Cây #${treeCfg.tree_code} (${waterLiters} lít nước). Cân bằng độ ẩm tầng rễ tơ.`,
+              media_urls: [],
+              details: {
+                time: waterTime,
+                supply_id: supplyMap['Tiền nước tưới giếng khoan công nghiệp'],
+                supply_name: 'Tiền nước tưới giếng khoan công nghiệp',
+                quantity: waterLiters / 1000,
+                unit: 'm3',
+                unit_price: 3500,
+                total_cost: Math.round((waterLiters / 1000) * 3500)
+              },
+              puc_code: 'VN-LK-001',
+              created_by: userId
+            });
+          }
 
-        // 8. Thu hoạch chính vụ theo đợt (Tháng 5 & Tháng 6 hàng năm từ năm 2009)
-        if ((month === 5 || month === 6) && (day === 15 || day === 28) && treeAge >= 6) {
-          const seasonYield = historicalYieldRecords.find(h => h.year === year) || { yield_kg: 250, fruit_count: 80, avg_price_vnd: 80000, revenue_vnd: 20000000 };
-          const harvestBatch = `VN-LK-001-${year}${String(month).padStart(2,'0')}${String(day).padStart(2,'0')}-SR01`;
-          const cutFruits = Math.round(seasonYield.fruit_count / 2);
-          const cutKg = Math.round(seasonYield.yield_kg / 2);
-          const revenue = Math.round(cutKg * seasonYield.avg_price_vnd);
+          // 3. Làm cỏ gốc, xới đất (1 tuần/lần)
+          if ((d + treeIdx) % 7 === 3) {
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Khác',
+              operator_name: 'Trần Văn Ba (Tổ trưởng làm vườn)',
+              equipment_used: 'Máy cắt cỏ mini & Cuốc xới răng cào',
+              note: `08:00 ${dateStr}: Phát cỏ quanh bồn Cây #${treeCfg.tree_code} bán kính 4m, cào xới nhẹ tạo độ xốp thoáng khí bề mặt đất.`,
+              media_urls: [],
+              details: { time: '08:00', task: 'Vệ sinh bồn & làm cỏ tán', radius_m: 4.0 },
+              puc_code: 'VN-LK-001',
+              created_by: userId
+            });
+          }
 
-          generatedLogs.push({
-            plant_id: plantId,
-            log_date: dateStr,
-            log_type: 'Thu hoạch',
-            operator_name: 'Nguyễn Văn Long & Đội thu hái',
-            equipment_used: 'Dao cắt sầu riêng mũi cong & Cân điện tử VietGAP',
-            note: `06:00 ${dateStr}: THU HOẠCH CHÍNH VỤ SẦU RIÊNG RI6 (Đợt ${day === 15 ? '1' : '2'}). Cắt ${cutFruits} trái (~${cutKg} kg) đạt độ chín 8.5 tuổi. Cơm vàng, hạt lép, dán tem truy xuất Mã Lô: ${harvestBatch}.`,
-            media_urls: ['https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600&auto=format&fit=crop&q=80'],
-            batch_code: harvestBatch,
-            puc_code: 'VN-LK-001',
-            is_phi_violation: false,
-            details: {
-              time: '06:00',
-              yield_kg: cutKg,
-              fruit_count: cutFruits,
-              unit_price_vnd: seasonYield.avg_price_vnd,
-              total_revenue: revenue,
+          // 4. Bón phân định kỳ (Mỗi 10 ngày)
+          if ((d + treeIdx) % 10 === 5) {
+            let fertName = 'Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)';
+            let fertQty = Math.round(5 * mult);
+            let fertCost = Math.round(fertQty * 15200);
+
+            if (month >= 2 && month <= 4) {
+              fertName = 'Phân NPK 20-20-15+TE Đầu Trâu Chuyên Cây Ăn Trái';
+              fertQty = Number((1.5 * mult).toFixed(1));
+              fertCost = Math.round(fertQty * 17800);
+            } else if (month >= 5 && month <= 6) {
+              fertName = 'Phân Kali Trắng Sunfat K2SO4 SoluPotasse 0-0-50';
+              fertQty = Number((1.2 * mult).toFixed(1));
+              fertCost = Math.round(fertQty * 30000);
+            } else if (month === 10 || month === 11) {
+              fertName = 'Phân bón lá tạo mầm hoa MKP 0-52-34 Haifa Israel';
+              fertQty = Number((0.5 * mult).toFixed(1));
+              fertCost = Math.round(fertQty * 50000);
+            }
+
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Bón phân',
+              operator_name: 'Nguyễn Văn Long (Kỹ sư trưởng)',
+              equipment_used: 'Thùng rải phân gốc cải tiến',
+              note: `07:30 ${dateStr}: Bón gốc Cây #${treeCfg.tree_code} với ${fertQty}kg/lít ${fertName}. Bón theo hình chiếu tán lá và tưới xả nhẹ.`,
+              media_urls: [],
+              details: {
+                time: '07:30',
+                supply_id: supplyMap[fertName] || null,
+                supply_name: fertName,
+                quantity: fertQty,
+                unit: 'kg',
+                total_cost: fertCost
+              },
+              puc_code: 'VN-LK-001',
+              created_by: userId
+            });
+          }
+
+          // 5. Phun thuốc phòng ngừa sâu bệnh (Mỗi 12 ngày)
+          if ((d + treeIdx) % 12 === 7) {
+            let pestName = 'Thuốc trừ sâu rầy sinh học Radiant 60SC';
+            let pestQty = 25;
+            let pestCost = 19500;
+            let phiDays = 3;
+
+            if (month >= 7 && month <= 10) {
+              pestName = 'Thuốc đặc trị nứt thân xì mủ Ridomil Gold 68WG';
+              pestQty = 50;
+              pestCost = 16000;
+              phiDays = 14;
+            } else if (month >= 3 && month <= 5) {
+              pestName = 'Thuốc trừ nấm bệnh Anvil 5SC (Syngenta)';
+              pestQty = 40;
+              pestCost = 10400;
+              phiDays = 14;
+            }
+
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Phun thuốc',
+              operator_name: 'Lê Văn Tám (Kỹ thuật viên VietGAP)',
+              equipment_used: 'Máy nén áp lực cao 50 bar',
+              note: `06:30 ${dateStr}: Phun thuốc phòng trừ sâu bệnh tán lá Cây #${treeCfg.tree_code} (${pestName}). Cách ly an toàn PHI ${phiDays} ngày.`,
+              media_urls: [],
+              details: {
+                time: '06:30',
+                supply_id: supplyMap[pestName] || null,
+                supply_name: pestName,
+                quantity: pestQty,
+                unit: 'ml',
+                phi_days: phiDays,
+                phi_safe_date: new Date(new Date(dateStr).getTime() + phiDays * 86400000).toISOString().split('T')[0],
+                total_cost: pestCost
+              },
+              puc_code: 'VN-LK-001',
+              is_phi_violation: false,
+              created_by: userId
+            });
+          }
+
+          // 6. Cắt tỉa cành la, tỉa hoa & định hình trái (Mỗi 15 ngày)
+          if ((d + treeIdx) % 15 === 9) {
+            let pruneNote = `08:30 ${dateStr}: Cắt tỉa cành vượt, cành tăm vô hiệu Cây #${treeCfg.tree_code} giúp thông thoáng tán lá.`;
+            if (month >= 11 || month <= 1) {
+              pruneNote = `08:30 ${dateStr}: Tỉa bớt các chùm bông méo, hoa đầu cành Cây #${treeCfg.tree_code}, giữ lại các chùm hoa giữa cành cấp 1 to khỏe.`;
+            } else if (month >= 2 && month <= 4) {
+              pruneNote = `08:30 ${dateStr}: Tỉa trái non đợt định hình Cây #${treeCfg.tree_code}, loại bỏ trái vẹo, trái dị hình, giữ lại quả cân đối.`;
+            }
+
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: (month >= 11 || month <= 1) ? 'Tỉa hoa' : ((month >= 2 && month <= 4) ? 'Cắt tỉa' : 'Cắt lá'),
+              operator_name: 'Trần Văn Ba (Tổ trưởng làm vườn)',
+              equipment_used: 'Kéo cắt cành Gardena cán nhôm',
+              note: pruneNote,
+              media_urls: [],
+              details: { time: '08:30', task: 'Cắt tỉa tạo tán & tuyển quả VietGAP' },
+              puc_code: 'VN-LK-001',
+              created_by: userId
+            });
+          }
+
+          // 7. Thụ phấn bổ sung ban đêm (Tháng 12 & Tháng 1, cây >= 6 năm tuổi)
+          if ((month === 12 || month === 1) && (d + treeIdx) % 3 === 0 && treeAge >= 6) {
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Thụ phấn',
+              operator_name: 'Nguyễn Thị Mai (Tổ thụ phấn & chăm sóc)',
+              equipment_used: 'Chổi lông cọ mềm & Đèn LED',
+              note: `18:30 ${dateStr}: Quét phấn hoa chéo bổ sung từ giống Monthong sang nhụy hoa Ri6 Cây #${treeCfg.tree_code} lúc 18h30 - 20h00 tối. Hạt phấn tiếp nhận tràn đầy 5 hộc.`,
+              media_urls: [],
+              details: { time: '18:30', task: 'Thụ phấn nhân tạo ban đêm', method: 'Chổi lông cọ' },
+              puc_code: 'VN-LK-001',
+              created_by: userId
+            });
+          }
+
+          // 8. Thu hoạch chính vụ VietGAP (Tháng 5 & Tháng 6, cây >= 6 năm tuổi)
+          if ((month === 5 || month === 6) && (day === 15 || day === 28) && treeAge >= 6) {
+            const seasonYield = treeYieldRecords.find(y => y.year === year) || treeYieldRecords[treeYieldRecords.length - 1];
+            const cutFruits = Math.round(seasonYield.fruit_count / 2);
+            const cutKg = Math.round(seasonYield.yield_kg / 2);
+            const revenue = cutKg * seasonYield.avg_price_vnd;
+            const harvestBatch = `VN-LK-001-${year}${String(month).padStart(2,'0')}${String(day).padStart(2,'0')}-SR0${treeCfg.tree_code}`;
+
+            generatedLogs.push({
+              plant_id: currentPlantId,
+              log_date: dateStr,
+              log_type: 'Thu hoạch',
+              operator_name: 'Nguyễn Văn Long (Kỹ sư trưởng)',
+              equipment_used: 'Dao cắt sầu riêng mũi cong & Cân điện tử 100kg',
+              note: `06:00 ${dateStr}: THU HOẠCH CHÍNH VỤ SẦU RIÊNG RI6 CÂY #${treeCfg.tree_code} (Đợt ${day === 15 ? '1' : '2'}). Cắt ${cutFruits} trái (~${cutKg} kg) đạt độ chín 8.5 tuổi. Cơm vàng, hạt lép, dán tem truy xuất Mã Lô: ${harvestBatch}.`,
+              media_urls: [],
               batch_code: harvestBatch,
-              brix_sweetness: '33° Brix',
-              phi_status: 'safe'
-            },
-            created_by: userId
-          });
+              puc_code: 'VN-LK-001',
+              is_phi_violation: false,
+              details: {
+                time: '06:00',
+                yield_kg: cutKg,
+                fruit_count: cutFruits,
+                unit_price_vnd: seasonYield.avg_price_vnd,
+                total_revenue: revenue,
+                batch_code: harvestBatch,
+                brix_sweetness: '33° Brix',
+                phi_status: 'safe'
+              },
+              created_by: userId
+            });
+          }
         }
       }
-    }
 
-    console.log(`📊 Tổng số lượng nhật ký được khởi tạo: ${generatedLogs.length} bản ghi (Đạt chỉ tiêu 20,000+)!`);
+      totalAllGeneratedLogs += generatedLogs.length;
 
-    // ── 6. THỰC THI CHÈN HÀNG LOẠT HIỆU NĂNG CAO (BATCH CHUNKS OF 1,000 ROWS) ──
-    const chunkSize = 1000;
-    for (let i = 0; i < generatedLogs.length; i += chunkSize) {
-      const chunk = generatedLogs.slice(i, i + chunkSize);
-      const valuePlaceholders = [];
-      const queryParams = [];
-      let paramIndex = 1;
+      // Chèn nhật ký của từng cây theo từng batch 1,000 dòng
+      const chunkSize = 1000;
+      for (let i = 0; i < generatedLogs.length; i += chunkSize) {
+        const chunk = generatedLogs.slice(i, i + chunkSize);
+        const valuePlaceholders = [];
+        const queryParams = [];
+        let paramIndex = 1;
 
-      for (const log of chunk) {
-        valuePlaceholders.push(
-          `($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4}, $${paramIndex+5}, $${paramIndex+6}, $${paramIndex+7}, $${paramIndex+8}, $${paramIndex+9}, $${paramIndex+10}, $${paramIndex+11})`
-        );
-        queryParams.push(
-          log.plant_id,
-          log.log_date,
-          log.log_type,
-          log.note,
-          JSON.stringify(log.media_urls || []),
-          JSON.stringify(log.details || {}),
-          log.created_by,
-          log.batch_code || null,
-          log.puc_code || 'VN-LK-001',
-          log.operator_name || 'Kỹ thuật viên',
-          log.equipment_used || 'Dụng cụ làm vườn',
-          log.is_phi_violation || false
-        );
-        paramIndex += 12;
+        for (const log of chunk) {
+          valuePlaceholders.push(
+            `($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4}, $${paramIndex+5}, $${paramIndex+6}, $${paramIndex+7}, $${paramIndex+8}, $${paramIndex+9}, $${paramIndex+10}, $${paramIndex+11})`
+          );
+          queryParams.push(
+            log.plant_id,
+            log.log_date,
+            log.log_type,
+            log.note,
+            JSON.stringify(log.media_urls || []),
+            JSON.stringify(log.details || {}),
+            log.created_by,
+            log.batch_code || null,
+            log.puc_code || 'VN-LK-001',
+            log.operator_name || 'Kỹ thuật viên',
+            log.equipment_used || 'Dụng cụ làm vườn',
+            log.is_phi_violation || false
+          );
+          paramIndex += 12;
+        }
+
+        const insertSql = `
+          INSERT INTO plant_logs (
+            plant_id, log_date, log_type, note, media_urls, details, created_by,
+            batch_code, puc_code, operator_name, equipment_used, is_phi_violation
+          ) VALUES ${valuePlaceholders.join(', ')}
+        `;
+
+        await client.query(insertSql, queryParams);
       }
-
-      const insertSql = `
-        INSERT INTO plant_logs (
-          plant_id, log_date, log_type, note, media_urls, details, created_by,
-          batch_code, puc_code, operator_name, equipment_used, is_phi_violation
-        ) VALUES ${valuePlaceholders.join(', ')}
-      `;
-
-      await client.query(insertSql, queryParams);
-      process.stdout.write(`⏳ Đã nạp thành công: ${Math.min(i + chunkSize, generatedLogs.length)} / ${generatedLogs.length} nhật ký...\r`);
+      console.log(`📝 [Tree #${treeCfg.tree_code}] Đã nạp thành công ${generatedLogs.length} nhật ký canh tác thực địa!`);
     }
 
-    console.log(`\n📝 Đã nạp thành công toàn bộ ${generatedLogs.length} Nhật ký Canh tác thực địa (2004 - 2026) vào CSDL!`);
+    // ── 6. CẬP NHẬT TỔNG SỐ LƯỢNG CÂY TRỒNG TRANG TRẠI LK ──
+    const totalPlantsInFarmRes = await client.query(`SELECT COUNT(*) as count FROM plants WHERE farm_id = $1`, [farmId]);
+    const finalTotalPlants = parseInt(totalPlantsInFarmRes.rows[0].count, 10);
+    await client.query(`UPDATE farms SET total_plants = $1 WHERE id = $2`, [finalTotalPlants, farmId]);
+    console.log(`🏡 Đã cập nhật tổng số cây trang trại "${farmName}": ${finalTotalPlants} cây`);
 
     await client.query('COMMIT');
-    console.log(`🎉 HOÀN THÀNH NẠP SIÊU DỮ LIỆU CÂY SẦU RIÊNG RI6 20,000+ NHẬT KÝ CHO TRANG TRẠI "${farmName}" (ID: ${farmId}) THÀNH CÔNG 100%!`);
+    console.log(`🎉 HOÀN THÀNH ĐỒNG BỘ DỮ LIỆU MẪU CẢ 5 CÂY SẦU RIÊNG RI6 (STT 1-5) VỚI ${totalAllGeneratedLogs} NHẬT KÝ CHO TRANG TRẠI "${farmName}" (ID: ${farmId}) THÀNH CÔNG 100%!`);
     return {
       farm_id: farmId,
       farm_name: farmName,
-      plant_id: plantId,
-      supplies_count: suppliesData.length,
-      logs_count: generatedLogs.length,
-      historical_seasons: historicalYieldRecords.length,
-      lifetime_yield_kg: treeData.lifetime_summary.total_yield_kg,
-      lifetime_revenue_vnd: treeData.lifetime_summary.total_revenue_vnd
+      total_plants: finalTotalPlants,
+      seeded_trees: seededPlantsResult,
+      total_logs_count: totalAllGeneratedLogs
     };
   } catch (err) {
     await client.query('ROLLBACK');

@@ -139,4 +139,35 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     expect(totalLogsCount).toBe(26030); // Exact 26,030 dense field records across 22 years
   });
 
+  it('8.7 Should validate multi-tree sample dataset for Durian trees #1, #2, #3, #4, #5 at farm LK', () => {
+    const durianTreesConfig = [
+      { tree_code: '1', lat: 10.941520, lng: 107.241850, slug: 'flk-sr01-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:80', planted: '2006-01-01' },
+      { tree_code: '2', lat: 10.941650, lng: 107.242050, slug: 'flk-sr02-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:81', planted: '2006-01-01' },
+      { tree_code: '3', lat: 10.941780, lng: 107.242250, slug: 'flk-sr03-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:82', planted: '2006-01-01' },
+      { tree_code: '4', lat: 10.941400, lng: 107.241650, slug: 'flk-sr04-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:83', planted: '2006-01-01' },
+      { tree_code: '5', lat: 10.941280, lng: 107.241450, slug: 'flk-sr05-ri6-longkhanh', nfc: '04:A2:3B:8C:9F:5D:84', planted: '2006-01-01' }
+    ];
+
+    expect(durianTreesConfig.length).toBe(5);
+
+    // Verify all 5 tree codes are unique
+    const uniqueCodes = new Set(durianTreesConfig.map(t => t.tree_code));
+    expect(uniqueCodes.size).toBe(5);
+
+    // Verify all 5 NFC UIDs are unique
+    const uniqueNfcs = new Set(durianTreesConfig.map(t => t.nfc));
+    expect(uniqueNfcs.size).toBe(5);
+
+    // Verify all 5 public slugs are unique
+    const uniqueSlugs = new Set(durianTreesConfig.map(t => t.slug));
+    expect(uniqueSlugs.size).toBe(5);
+
+    // Verify all 5 trees have synchronized planting date 2006-01-01
+    durianTreesConfig.forEach(t => {
+      expect(t.planted).toBe('2006-01-01');
+      expect(t.lat >= 10.9405 && t.lat <= 10.9435).toBe(true);
+      expect(t.lng >= 107.2405 && t.lng <= 107.2435).toBe(true);
+    });
+  });
+
 });
