@@ -333,6 +333,9 @@ export function filterUserPlants() {
     );
   }
 
+  const countFullEl = document.getElementById('user-plant-count-full');
+  if (countFullEl) countFullEl.textContent = filtered.length;
+
   renderUserPlantsTable(filtered);
 }
 

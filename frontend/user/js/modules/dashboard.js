@@ -102,8 +102,8 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
 
     popoverListEl.innerHTML = renderFarms.map((f, idx) => {
       const fAreaSqM = f.area ? parseFloat(f.area) : 5733.9;
-      const fAreaHa = (fAreaSqM / 10000).toFixed(2);
-      const fPlantsCount = plants.filter(p => p.farm_id == f.id).length || plants.length || 6;
+      const matchingPlants = plants.filter(p => String(p.farm_id) === String(f.id));
+      const fPlantsCount = matchingPlants.length > 0 ? matchingPlants.length : (f.plant_count || f.total_plants || plants.length || 0);
       const fPuc = f.puc_code || 'VN-LK-001';
 
       return `

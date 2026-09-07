@@ -70,12 +70,17 @@ router.get('/', auth, async (req, res) => {
 
     if (req.user.role !== 'admin') {
       if (req.user.view_plants_scope === 'assigned') {
-        query += ` AND (p.created_by = $${idx} OR p.assigned_to_user_id = $${idx} OR f.user_id = $${idx})`;
+        query += ` AND (p.created_by = $${idx} OR p.assigned_to_user_id = $${idx} OR f.user_id = $${idx} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx}))`;
         params.push(req.user.id);
         idx++;
       } else {
-
-        query += ` AND (f.user_id = $${idx} OR p.created_by = $${idx} OR (u.farm_id IS NOT NULL AND p.farm_id = u.farm_id))`;
+        query += ` AND (
+          f.user_id = $${idx} 
+          OR p.created_by = $${idx} 
+          OR p.assigned_to_user_id = $${idx} 
+          OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${idx} AND is_deleted IS NOT TRUE)
+          OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx})
+        )`;
         params.push(req.user.id);
         idx++;
       }
@@ -187,7 +192,7 @@ router.get('/media/all', auth, async (req, res) => {
 
     // Security: Non-admin users can only view their own farm media!
     if (req.user.role !== 'admin') {
-      query += ` AND f.user_id = $${paramIndex} `;
+      query += ` AND (f.user_id = $${paramIndex} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${paramIndex}) OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${paramIndex}) OR p.assigned_to_user_id = $${paramIndex} OR p.created_by = $${paramIndex}) `;
       params.push(req.user.id);
       paramIndex++;
       query += ` AND pm.delete_pending = false `;
@@ -240,7 +245,10 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
 
     const row = plant.rows[0];
-    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id) {
+    const isAssigned = (req.user.farm_id && row.farm_id && req.user.farm_id === row.farm_id)
+      || (row.assigned_to_user_id && row.assigned_to_user_id === req.user.id)
+      || (row.created_by && row.created_by === req.user.id);
+    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id && !isAssigned) {
       return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
     }
 
@@ -264,7 +272,7 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
 router.get('/:id(\\d+)/logs', auth, async (req, res) => {
   try {
     const plant = await pool.query(
-      `SELECT p.id, f.user_id as farm_owner_id, p.farm_id
+      `SELECT p.id, p.created_by, p.assigned_to_user_id, f.user_id as farm_owner_id, p.farm_id
        FROM plants p 
        LEFT JOIN farms f ON f.id = p.farm_id
        WHERE p.id=$1`, [req.params.id]
@@ -272,7 +280,9 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
 
     const row = plant.rows[0];
-    const isAssignedFarmer = req.user.farm_id && row.farm_id && req.user.farm_id === row.farm_id;
+    const isAssignedFarmer = (req.user.farm_id && row.farm_id && req.user.farm_id === row.farm_id)
+      || (row.assigned_to_user_id && row.assigned_to_user_id === req.user.id)
+      || (row.created_by && row.created_by === req.user.id);
     if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id && !isAssignedFarmer) {
       return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
     }
@@ -456,9 +466,9 @@ router.put('/:id/nfc', auth, async (req, res) => {
     const plantId = parseInt(req.params.id);
     const { nfc_uid } = req.body; // string UID or null to deactivate
 
-    // 1. Verify the requesting user owns this plant (or is admin)
+    // 1. Verify the requesting user owns this plant (or is admin or assigned farmer)
     const plantRes = await client.query(
-      `SELECT p.id, p.nfc_uid, p.public_slug, p.tree_code, f.user_id as farm_owner_id
+      `SELECT p.id, p.nfc_uid, p.public_slug, p.tree_code, p.created_by, p.assigned_to_user_id, p.farm_id, f.user_id as farm_owner_id
        FROM plants p
        LEFT JOIN farms f ON f.id = p.farm_id
        WHERE p.id = $1`, [plantId]
@@ -466,7 +476,10 @@ router.put('/:id/nfc', auth, async (req, res) => {
     if (plantRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
 
     const plant = plantRes.rows[0];
-    if (req.user.role !== 'admin' && plant.farm_owner_id !== req.user.id) {
+    const isAssigned = (req.user.farm_id && plant.farm_id && req.user.farm_id === plant.farm_id)
+      || (plant.assigned_to_user_id && plant.assigned_to_user_id === req.user.id)
+      || (plant.created_by && plant.created_by === req.user.id);
+    if (req.user.role !== 'admin' && plant.farm_owner_id !== req.user.id && !isAssigned) {
       return res.status(403).json({ error: 'Bạn không có quyền thay đổi định danh thẻ của cây này.' });
     }
 

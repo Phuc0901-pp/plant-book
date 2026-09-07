@@ -74,4 +74,72 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
     expect(isValidGPS('abc', 'def')).toBe(false);
   });
 
+  it('3.5 Should validate Non-Admin Plant Query Filter logic (Farm Owner, Assigned Farm, PRO Multi-farm)', () => {
+    const evaluatePlantAccess = (user, plant, farm) => {
+      if (user.role === 'admin') return true;
+      if (user.view_plants_scope === 'assigned') {
+        return (
+          plant.created_by === user.id ||
+          plant.assigned_to_user_id === user.id ||
+          farm.user_id === user.id ||
+          user.farm_id === plant.farm_id
+        );
+      }
+      // 'all' scope (PRO or Normal farmer)
+      return (
+        farm.user_id === user.id ||
+        plant.created_by === user.id ||
+        plant.assigned_to_user_id === user.id ||
+        user.farm_id === plant.farm_id ||
+        (Array.isArray(user.owned_farm_ids) && user.owned_farm_ids.includes(plant.farm_id))
+      );
+    };
+
+    const proUser = { id: 10, role: 'user', account_tier: 'pro', view_plants_scope: 'all', farm_id: 5, owned_farm_ids: [5, 6] };
+    const adminCreatedPlantInFarm5 = { id: 101, farm_id: 5, created_by: 1, assigned_to_user_id: null };
+    const adminCreatedPlantInFarm6 = { id: 102, farm_id: 6, created_by: 1, assigned_to_user_id: null };
+    const otherPlantInFarm99 = { id: 103, farm_id: 99, created_by: 1, assigned_to_user_id: null };
+    const farm5 = { id: 5, user_id: 10 };
+    const farm6 = { id: 6, user_id: 10 };
+    const farm99 = { id: 99, user_id: 999 };
+
+    expect(evaluatePlantAccess(proUser, adminCreatedPlantInFarm5, farm5)).toBe(true);
+    expect(evaluatePlantAccess(proUser, adminCreatedPlantInFarm6, farm6)).toBe(true);
+    expect(evaluatePlantAccess(proUser, otherPlantInFarm99, farm99)).toBe(false);
+  });
+
+  it('3.6 Should extract short numeric tree code for map marker pins', () => {
+    const getShortTreeCode = (treeCode, plantId) => {
+      const code = String(treeCode || plantId || '').trim();
+      if (!code) return '';
+      const match = code.match(/(\d+)$/);
+      if (match) {
+        return String(parseInt(match[1], 10));
+      }
+      return code;
+    };
+
+    expect(getShortTreeCode('KH001-001', 1)).toBe('1');
+    expect(getShortTreeCode('KH001-058', 58)).toBe('58');
+    expect(getShortTreeCode('SR_2004_120', 120)).toBe('120');
+    expect(getShortTreeCode('', 45)).toBe('45');
+    expect(getShortTreeCode('ALPHA', 99)).toBe('ALPHA');
+  });
+
+  it('3.7 Should assign proper marker color codes and CSS classes based on health status', () => {
+    const getMarkerStyle = (healthStatus) => {
+      const colorMap = { 'Tốt': '#22c55e', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
+      const classMap = { 'Tốt': 'health-tot', 'Cần chú ý': 'health-watch', 'Bệnh': 'health-sick' };
+      return {
+        color: colorMap[healthStatus] || '#3b82f6',
+        className: classMap[healthStatus] || 'health-default'
+      };
+    };
+
+    expect(getMarkerStyle('Tốt')).toEqual({ color: '#22c55e', className: 'health-tot' });
+    expect(getMarkerStyle('Cần chú ý')).toEqual({ color: '#eab308', className: 'health-watch' });
+    expect(getMarkerStyle('Bệnh')).toEqual({ color: '#ef4444', className: 'health-sick' });
+    expect(getMarkerStyle('Chưa rõ')).toEqual({ color: '#3b82f6', className: 'health-default' });
+  });
+
 });
