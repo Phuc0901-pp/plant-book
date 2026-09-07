@@ -78,6 +78,7 @@ export function initUserMap(farms, plants) {
     style: 'mapbox://styles/mapbox/satellite-streets-v12',
     center: [106.3, 12.5],
     zoom: 5,
+    maxZoom: 22,
     preserveDrawingBuffer: true
   });
   userMap = map;
@@ -250,7 +251,7 @@ export function initUserMap(farms, plants) {
 
 
     if (hasBounds) {
-      map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 1000 });
+      map.fitBounds(bounds, { padding: 40, maxZoom: 19.5, duration: 1000 });
     }
 
     // ── Không hiển thị lớp đường đồng mức trên tài khoản User ──

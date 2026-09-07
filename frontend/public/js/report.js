@@ -242,6 +242,7 @@
         style: 'mapbox://styles/mapbox/satellite-streets-v12',
         center: [centerLng, centerLat],
         zoom: 15,
+        maxZoom: 22,
         interactive: true,
         attributionControl: false
       });

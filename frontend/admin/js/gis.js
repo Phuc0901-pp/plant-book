@@ -258,6 +258,7 @@ function initDashboardMap(farms, plants) {
     style: 'mapbox://styles/mapbox/satellite-streets-v12',
     center: [107.1, 11.6],
     zoom: 6.2,
+    maxZoom: 22,
     preserveDrawingBuffer: true
   });
   dashboardMap = map;
@@ -521,7 +522,7 @@ function initGisMap(farms, plants) {
     style: 'mapbox://styles/mapbox/satellite-streets-v12',
     center: [106.3, 12.5],
     zoom: 5,
-    maxZoom: 17.5,
+    maxZoom: 22,
     preserveDrawingBuffer: true
   });
 
@@ -848,7 +849,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
   });
 
   if (hasBounds && !activeFarmId) {
-    gMap.fitBounds(bounds, { padding: 50, maxZoom: 16, duration: 1000 });
+    gMap.fitBounds(bounds, { padding: 50, maxZoom: 19, duration: 1000 });
   }
 
   // Add contour lines (đường đồng mức) ONLY if a specific farm is selected
@@ -1160,7 +1161,7 @@ async function selectFarm(farmId, syncUrl = true) {
         setTimeout(() => {
           if (gMap) {
             gMap.resize();
-            gMap.fitBounds(bounds, { padding: 60, maxZoom: 16.5, duration: 1000 });
+            gMap.fitBounds(bounds, { padding: 60, maxZoom: 19.5, duration: 1000 });
           }
         }, 100);
       }
@@ -1610,7 +1611,7 @@ async function editFarm() {
             bounds.extend(pt);
           }
         });
-        gMap.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 600 });
+        gMap.fitBounds(bounds, { padding: 80, maxZoom: 20, duration: 600 });
       }
 
       toast('🎯 Đang ở chế độ sửa ranh giới: Kéo các điểm tròn trắng để điều chỉnh hình dạng!', 'info');

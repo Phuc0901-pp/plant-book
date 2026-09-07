@@ -463,7 +463,7 @@ export function openFarmDetailView(farmId, updateHash = true) {
         }
 
         if (hasPoints) {
-          targetMap.fitBounds(bounds, { padding: 60, maxZoom: 17, duration: 1200 });
+          targetMap.fitBounds(bounds, { padding: 60, maxZoom: 19.5, duration: 1200 });
         }
       }
     }, 150);

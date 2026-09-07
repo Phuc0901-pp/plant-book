@@ -924,6 +924,7 @@ async function renderPlant(plant) {
         style: 'mapbox://styles/mapbox/satellite-streets-v12',
         center: [centerLng, centerLat],
         zoom: initialZoom,
+        maxZoom: 22,
         attributionControl: false,
         preserveDrawingBuffer: true
       });
@@ -1013,7 +1014,7 @@ async function renderPlant(plant) {
               hasValidBounds = true;
             }
             if (hasValidBounds) {
-              plantMap.fitBounds(bounds, { padding: 45, maxZoom: 18, animate: false });
+              plantMap.fitBounds(bounds, { padding: 45, maxZoom: 20, animate: false });
             }
           } catch(e) {
             console.warn('Lỗi vẽ ranh giới trang trại:', e);
