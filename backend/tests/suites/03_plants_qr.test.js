@@ -142,4 +142,67 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
     expect(getMarkerStyle('Chưa rõ')).toEqual({ color: '#3b82f6', className: 'health-default' });
   });
 
+  it('3.8 Should validate Full NFC UID vs Incomplete/Non-NFC parameters for automatic GPS sync', () => {
+    const isFullNfcUid = (uid) => {
+      if (!uid || typeof uid !== 'string') return false;
+      const clean = decodeURIComponent(uid).trim();
+      if (/^([0-9A-Fa-f]{2}[:-]){3,9}[0-9A-Fa-f]{2}$/.test(clean)) return true;
+      if (/^[0-9A-Fa-f]{8,20}$/.test(clean) && !isNaN(Number('0x' + clean))) return true;
+      return false;
+    };
+
+    // Valid Full NFC UIDs (should trigger GPS sync)
+    expect(isFullNfcUid('04:20:CF:5A:25:20:91')).toBe(true);
+    expect(isFullNfcUid('04%3A20%3ACF%3A5A%3A25%3A20%3A91')).toBe(true);
+    expect(isFullNfcUid('04-20-CF-5A-25-20-91')).toBe(true);
+    expect(isFullNfcUid('0420CF5A252091')).toBe(true);
+    expect(isFullNfcUid('04:12:34:56')).toBe(true); // 4-byte UID
+
+    // Incomplete or non-NFC parameters (must NOT trigger GPS sync)
+    expect(isFullNfcUid('04')).toBe(false);
+    expect(isFullNfcUid('26')).toBe(false);
+    expect(isFullNfcUid('sau-rieng-01')).toBe(false);
+    expect(isFullNfcUid('')).toBe(false);
+    expect(isFullNfcUid(null)).toBe(false);
+    expect(isFullNfcUid(undefined)).toBe(false);
+  });
+
+  it('3.9 Should parse public URL routes correctly and determine GPS sync eligibility', () => {
+    const parseAndCheckGpsSync = (urlPath) => {
+      const isFullNfcUid = (uid) => {
+        if (!uid || typeof uid !== 'string') return false;
+        const clean = decodeURIComponent(uid).trim();
+        if (/^([0-9A-Fa-f]{2}[:-]){3,9}[0-9A-Fa-f]{2}$/.test(clean)) return true;
+        if (/^[0-9A-Fa-f]{8,20}$/.test(clean) && !isNaN(Number('0x' + clean))) return true;
+        return false;
+      };
+
+      const pathParts = urlPath.split('/').filter(p => p.length > 0);
+      let nfcUid = '';
+      if (pathParts.length >= 4) {
+        nfcUid = decodeURIComponent(pathParts[3]);
+      } else if (pathParts.length === 3) {
+        nfcUid = decodeURIComponent(pathParts[2]);
+      }
+      return {
+        nfcUid,
+        shouldSyncGps: isFullNfcUid(nfcUid)
+      };
+    };
+
+    // URL with Full NFC UID: https://plant-book.onrender.com/0/6/26/04%3A20%3ACF%3A5A%3A25%3A20%3A91
+    const nfcUrl = parseAndCheckGpsSync('/0/6/26/04%3A20%3ACF%3A5A%3A25%3A20%3A91');
+    expect(nfcUrl.nfcUid).toBe('04:20:CF:5A:25:20:91');
+    expect(nfcUrl.shouldSyncGps).toBe(true);
+
+    // URL with incomplete prefix '04': https://plant-book.onrender.com/0/6/26/04
+    const nonNfcUrl = parseAndCheckGpsSync('/0/6/26/04');
+    expect(nonNfcUrl.nfcUid).toBe('04');
+    expect(nonNfcUrl.shouldSyncGps).toBe(false);
+
+    // URL with farm and plant ID only: /6/26
+    const standardUrl = parseAndCheckGpsSync('/6/26');
+    expect(standardUrl.shouldSyncGps).toBe(false);
+  });
+
 });

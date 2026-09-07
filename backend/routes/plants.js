@@ -1068,6 +1068,15 @@ router.get('/public/:slug', async (req, res) => {
   }
 });
 
+// Helper: Validate Full NFC UID (at least 4 hex pairs separated by : or - OR continuous hex string of 8-20 chars)
+function isFullNfcUid(uid) {
+  if (!uid || typeof uid !== 'string') return false;
+  const clean = decodeURIComponent(uid).trim();
+  if (/^([0-9A-Fa-f]{2}[:-]){3,9}[0-9A-Fa-f]{2}$/.test(clean)) return true;
+  if (/^[0-9A-Fa-f]{8,20}$/.test(clean) && !isNaN(Number('0x' + clean))) return true;
+  return false;
+}
+
 // Update plant health status publicly
 router.patch('/public/:slug/health', async (req, res) => {
   try {
@@ -1085,6 +1094,89 @@ router.patch('/public/:slug/health', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
+// ─── Update plant GPS location publicly via Full NFC Tag Scan ─────────────
+router.all('/public/:slug/gps', async (req, res) => {
+  if (req.method !== 'POST' && req.method !== 'PATCH') {
+    return res.status(405).json({ error: 'Phương thức không được hỗ trợ.' });
+  }
+
+  try {
+    const { latitude, longitude, nfc_uid } = req.body;
+    const targetParam = req.params.slug ? req.params.slug.trim() : '';
+    const activeNfcUid = nfc_uid || targetParam;
+
+    // Strict validation: Only allow automatic GPS update if opened via valid Full NFC UID
+    if (!isFullNfcUid(activeNfcUid)) {
+      return res.status(400).json({ 
+        error: 'Chỉ cho phép tự động cập nhật vị trí GPS khi quét bằng thẻ NFC hợp lệ (Full NFC UID).' 
+      });
+    }
+
+    let lat = parseFloat(latitude);
+    let lng = parseFloat(longitude);
+    if (isNaN(lat) || isNaN(lng)) {
+      return res.status(400).json({ error: 'Tọa độ GPS không hợp lệ.' });
+    }
+
+    // Auto-swap if latitude and longitude were reversed
+    if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+      const tmp = lat;
+      lat = lng;
+      lng = tmp;
+    }
+
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      return res.status(400).json({ error: 'Tọa độ GPS nằm ngoài phạm vi cho phép.' });
+    }
+
+    // Find target plant by slug, ID, or NFC UID
+    const plantRes = await pool.query(
+      `SELECT id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude 
+       FROM plants 
+       WHERE (id::text = $1 OR public_slug = $1 OR UPPER(nfc_uid) = UPPER($1) OR UPPER(nfc_uid) = UPPER($2))
+       LIMIT 1`,
+      [targetParam, activeNfcUid]
+    );
+
+    if (plantRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy hồ sơ cây trồng.' });
+    }
+
+    const currentPlant = plantRes.rows[0];
+
+    // Update GPS coordinates in database
+    const updateRes = await pool.query(
+      `UPDATE plants 
+       SET latitude = $1, longitude = $2, updated_at = NOW() 
+       WHERE id = $3 
+       RETURNING id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude, updated_at`,
+      [lat, lng, currentPlant.id]
+    );
+
+    const updated = updateRes.rows[0];
+
+    // Broadcast update via WebSocket to Admin & User portals
+    if (global.broadcastWS) {
+      global.broadcastWS('plants_updated', {
+        plant_id: updated.id,
+        farm_id: updated.farm_id,
+        latitude: updated.latitude,
+        longitude: updated.longitude,
+        action: 'nfc_gps_sync'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Đã cập nhật vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây #${updated.tree_code || updated.id}`,
+      plant: updated
+    });
+  } catch (err) {
+    console.error('Error updating plant GPS via NFC:', err);
+    res.status(500).json({ error: 'Lỗi server khi cập nhật GPS: ' + err.message });
   }
 });
 

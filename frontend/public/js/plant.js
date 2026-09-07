@@ -222,6 +222,86 @@ function sharePage() {
   }
 }
 
+// Helper: Validate Full NFC UID (at least 4 hex pairs separated by : or - OR continuous hex string of 8-20 chars)
+function isFullNfcUid(uid) {
+  if (!uid || typeof uid !== 'string') return false;
+  const clean = decodeURIComponent(uid).trim();
+  if (/^([0-9A-Fa-f]{2}[:-]){3,9}[0-9A-Fa-f]{2}$/.test(clean)) return true;
+  if (/^[0-9A-Fa-f]{8,20}$/.test(clean) && !isNaN(Number('0x' + clean))) return true;
+  return false;
+}
+
+// Toast notification for GPS Auto-Sync
+function showNfcGpsToast(msg) {
+  let toast = document.getElementById('nfc-gps-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'nfc-gps-toast';
+    toast.style.cssText = 'position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:99999; background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; padding:12px 20px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.35); font-size:13px; font-weight:700; display:flex; align-items:center; gap:10px; border:1.5px solid #10b981; max-width:90%;';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:#6ee7b7; font-size:18px;"></i> <span>${esc(msg)}</span>`;
+  toast.style.display = 'flex';
+  setTimeout(() => {
+    if (toast) toast.style.display = 'none';
+  }, 6000);
+}
+
+// Auto-sync GPS location when scanned via physical Full NFC UID
+async function autoSyncNfcGpsLocation(plant, nfcUid) {
+  if (!isFullNfcUid(nfcUid)) {
+    // Không phải Full NFC UID (ví dụ chỉ là '04' hoặc slug thông thường) -> Không cập nhật GPS
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    console.warn('Thiết bị không hỗ trợ Geolocation GPS.');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      try {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy;
+
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const targetId = plant.id || slugInfo.plantId || nfcUid;
+        const res = await fetch(`/api/plants/public/${encodeURIComponent(targetId)}/gps`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            latitude: lat,
+            longitude: lng,
+            nfc_uid: nfcUid,
+            accuracy: accuracy
+          })
+        });
+
+        if (res.ok) {
+          plant.latitude = lat;
+          plant.longitude = lng;
+          showNfcGpsToast(`Đã tự động cập nhật vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây trồng từ thẻ NFC!`);
+
+          // Update map marker if map exists
+          if (window._publicPlantMap && window._publicPlantMarker) {
+            window._publicPlantMarker.setLngLat([lng, lat]);
+            window._publicPlantMap.flyTo({ center: [lng, lat], zoom: 18, duration: 1500 });
+          }
+        }
+      } catch (err) {
+        console.warn('Lỗi khi tự động đồng bộ GPS từ thẻ NFC:', err);
+      }
+    },
+    (err) => {
+      console.warn('Không lấy được vị trí GPS thiết bị:', err.message);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
 // Load Plant Profile on startup
 async function loadPlant() {
   try {
@@ -244,6 +324,12 @@ async function loadPlant() {
     document.title = `${plant.plant_type || 'Cây trồng'} — Sổ Nông Tân Bảo Agtech`;
 
     await renderPlant(plant);
+
+    // Auto-update GPS location ONLY if accessed with a full NFC UID (e.g. 04:20:CF:5A:25:20:91)
+    const activeNfcUid = slugInfo.nfcUid || (isFullNfcUid(slugInfo.slug) ? slugInfo.slug : '');
+    if (isFullNfcUid(activeNfcUid)) {
+      autoSyncNfcGpsLocation(plant, activeNfcUid);
+    }
   } catch (err) {
     document.getElementById('loader').style.display = 'none';
     document.getElementById('error-view').style.display = 'block';
@@ -957,7 +1043,9 @@ async function renderPlant(plant) {
       `;
       wrapper.appendChild(el);
 
-      new mapboxgl.Marker({ element: wrapper, anchor: 'bottom' })
+      window._publicPlantMap = plantMap;
+
+      const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'bottom' })
         .setLngLat([centerLng, centerLat])
         .setPopup(new mapboxgl.Popup({ offset: 35, closeButton: false })
           .setHTML(`
@@ -968,6 +1056,8 @@ async function renderPlant(plant) {
             </div>
           `))
         .addTo(plantMap);
+
+      window._publicPlantMarker = marker;
 
       // Draw farm polygon if available
       if (plant.farm_boundary && plant.farm_boundary.coordinates) {

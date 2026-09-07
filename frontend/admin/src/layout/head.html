@@ -163,6 +163,33 @@
   cursor: pointer !important;
 }
 
+#register-modal .modal, #forgot-modal .modal {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
+  width: 92% !important;
+  max-width: 500px !important;
+  overflow: hidden !important;
+}
+
+#register-modal .modal-header, #forgot-modal .modal-header {
+  flex-shrink: 0 !important;
+}
+
+#register-modal .modal-body, #forgot-modal .modal-body {
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+  max-height: calc(90vh - 130px) !important;
+  max-height: calc(90dvh - 130px) !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+
+#register-modal .modal-footer, #forgot-modal .modal-footer {
+  flex-shrink: 0 !important;
+}
+
 /* ════════ Multi-Scale Adaptive GIS Farm Markers ════════ */
 .farm-dashboard-pin {
   cursor: pointer;

@@ -322,6 +322,10 @@ function updateRegStepUI() {
       ? '<i class="fa fa-paper-plane"></i> Gửi yêu cầu đăng ký'
       : 'Tiếp theo <i class="fa fa-arrow-right"></i>';
   }
+
+  // Reset body scroll position
+  const modalBody = document.querySelector('#register-modal .modal-body');
+  if (modalBody) modalBody.scrollTop = 0;
 }
 
 async function nextRegStep() {
