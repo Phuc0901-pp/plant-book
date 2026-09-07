@@ -387,8 +387,8 @@
 
       <form id="admin-login-form" onsubmit="event.preventDefault(); doLogin();">
         <div class="form-group">
-          <label for="login-email"><i class="fa fa-envelope"></i> Email</label>
-          <input type="email" id="login-email" placeholder="email@tanbaocorp.vn" autocomplete="username">
+          <label for="login-email"><i class="fa fa-user"></i> Email hoặc Số điện thoại</label>
+          <input type="text" id="login-email" placeholder="Email hoặc Số điện thoại (VD: 0901234567)" autocomplete="username">
         </div>
         <div class="form-group">
           <div class="form-label-row">
@@ -2303,9 +2303,23 @@
         <input type="text" id="f-user-name" placeholder="VD: Nguyễn Văn A, Trần Thị B...">
       </div>
       
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="field" style="flex:1; min-width:180px;">
+          <label><i class="fa-solid fa-phone" style="color:var(--green)"></i> Số điện thoại</label>
+          <input type="tel" id="f-user-phone" placeholder="VD: 0901234567..." autocomplete="tel">
+        </div>
+        <div class="field" style="flex:1; min-width:180px;">
+          <label><i class="fa-solid fa-envelope" style="color:var(--green)"></i> Email (Tùy chọn)</label>
+          <input type="email" id="f-user-email" placeholder="VD: farmer@tanbaocorp.vn..." autocomplete="username">
+        </div>
+      </div>
+      <small style="font-size:11px; color:#047857; margin-top:-6px; margin-bottom:12px; display:block;">
+        💡 Nhập ít nhất <strong>Số điện thoại</strong> hoặc <strong>Email</strong> để làm tài khoản đăng nhập.
+      </small>
+
       <div class="field">
-        <label>Email *</label>
-        <input type="email" id="f-user-email" placeholder="VD: farmer@tanbaocorp.vn..." autocomplete="username">
+        <label><i class="fa-solid fa-location-dot" style="color:var(--green)"></i> Địa chỉ</label>
+        <input type="text" id="f-user-address" placeholder="VD: Xã Ea Ktur, Huyện Cư Kuin, Đắk Lắk...">
       </div>
       
       <div class="field">

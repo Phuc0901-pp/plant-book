@@ -277,8 +277,10 @@ async function initDB() {
 
     // User profile extension columns
     await client.query(`
+      ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(100);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20);

@@ -23,7 +23,7 @@ function generateIsoPublicId(role, numId) {
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at, u.phone,
+      `SELECT u.id, u.email, u.phone, u.address, u.city, u.country, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at,
               u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies,
               u.account_tier, u.tier_expires_at, u.tier_admin_note,
               COALESCE(u.farm_id, f_legacy.id) as farm_id,
@@ -66,7 +66,7 @@ router.put('/:id/tier', async (req, res) => {
     const result = await pool.query(
       `UPDATE users 
        SET account_tier = $1, tier_expires_at = $2, tier_admin_note = $3 
-       WHERE id = $4 RETURNING id, email, full_name, role, account_tier, tier_expires_at, tier_admin_note`,
+       WHERE id = $4 RETURNING id, email, phone, address, full_name, role, account_tier, tier_expires_at, tier_admin_note`,
       [account_tier, expiresValue, tier_admin_note || null, userId]
     );
 
@@ -109,36 +109,53 @@ router.get('/:id/activities', async (req, res) => {
 // POST /api/users - Create a new user (farmer account with assigned farm & permissions)
 router.post('/', async (req, res) => {
   const { 
-    email, password, full_name, role, farm_id,
+    email, phone, address, password, full_name, role, farm_id,
     view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies,
     assigned_plant_ids
   } = req.body;
 
-  if (!email || !password || !full_name) {
-    return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin: email, mật khẩu và họ tên.' });
+  if (!full_name || !full_name.trim() || !password || !password.trim()) {
+    return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin: họ và tên và mật khẩu.' });
   }
   
-  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedEmail = email && email.trim() ? email.trim().toLowerCase() : null;
+  const trimmedPhone = phone && phone.trim() ? phone.trim() : null;
+  const trimmedAddress = address && address.trim() ? address.trim() : null;
+
+  if (!trimmedEmail && !trimmedPhone) {
+    return res.status(400).json({ error: 'Vui lòng nhập ít nhất Số điện thoại hoặc Email để làm tài khoản đăng nhập.' });
+  }
+
   const trimmedRole = role === 'admin' ? 'admin' : 'user';
   const assignedFarmId = farm_id && parseInt(farm_id) ? parseInt(farm_id) : null;
 
   try {
     // Check if email already exists
-    const existing = await pool.query('SELECT id FROM users WHERE email=$1', [trimmedEmail]);
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'Email đã được sử dụng bởi tài khoản khác.' });
+    if (trimmedEmail) {
+      const existingEmail = await pool.query('SELECT id FROM users WHERE LOWER(email)=$1', [trimmedEmail]);
+      if (existingEmail.rows.length > 0) {
+        return res.status(400).json({ error: 'Email đã được sử dụng bởi tài khoản khác.' });
+      }
+    }
+
+    // Check if phone already exists
+    if (trimmedPhone) {
+      const existingPhone = await pool.query('SELECT id FROM users WHERE phone=$1', [trimmedPhone]);
+      if (existingPhone.rows.length > 0) {
+        return res.status(400).json({ error: 'Số điện thoại đã được sử dụng bởi tài khoản khác.' });
+      }
     }
 
     const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
       `INSERT INTO users (
-        email, password_hash, full_name, role, farm_id, approved,
+        email, phone, address, password_hash, full_name, role, farm_id, approved,
         view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies
        )
-       VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9)
-       RETURNING id, email, full_name, role, farm_id, view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies, created_at`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8, $9, $10, $11)
+       RETURNING id, email, phone, address, full_name, role, farm_id, view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies, created_at`,
       [
-        trimmedEmail, hash, full_name.trim(), trimmedRole, assignedFarmId,
+        trimmedEmail, trimmedPhone, trimmedAddress, hash, full_name.trim(), trimmedRole, assignedFarmId,
         view_plants_scope || 'all',
         view_history_from_date || null,
         allow_shared_history !== false,
@@ -159,7 +176,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(newUser);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Lỗi server khi tạo người dùng.' });
+    res.status(500).json({ error: 'Lỗi server khi tạo người dùng: ' + err.message });
   }
 });
 
@@ -167,16 +184,23 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { 
-    email, password, full_name, role, farm_id,
+    email, phone, address, password, full_name, role, farm_id,
     view_plants_scope, view_history_from_date, allow_shared_history, allow_view_supplies,
     assigned_plant_ids
   } = req.body;
 
-  if (!email || !full_name) {
-    return res.status(400).json({ error: 'Email và họ tên là bắt buộc.' });
+  if (!full_name || !full_name.trim()) {
+    return res.status(400).json({ error: 'Họ và tên là bắt buộc.' });
   }
 
-  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedEmail = email && email.trim() ? email.trim().toLowerCase() : null;
+  const trimmedPhone = phone && phone.trim() ? phone.trim() : null;
+  const trimmedAddress = address && address.trim() ? address.trim() : null;
+
+  if (!trimmedEmail && !trimmedPhone) {
+    return res.status(400).json({ error: 'Vui lòng cung cấp ít nhất Số điện thoại hoặc Email.' });
+  }
+
   const trimmedRole = role === 'admin' ? 'admin' : 'user';
   const assignedFarmId = farm_id && parseInt(farm_id) ? parseInt(farm_id) : null;
   const targetUserId = parseInt(id);
@@ -189,19 +213,31 @@ router.put('/:id', async (req, res) => {
     }
 
     // Check if email is taken by another user
-    const existing = await pool.query('SELECT id FROM users WHERE email=$1 AND id<>$2', [trimmedEmail, targetUserId]);
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'Email đã được sử dụng bởi tài khoản khác.' });
+    if (trimmedEmail) {
+      const existingEmail = await pool.query('SELECT id FROM users WHERE LOWER(email)=$1 AND id<>$2', [trimmedEmail, targetUserId]);
+      if (existingEmail.rows.length > 0) {
+        return res.status(400).json({ error: 'Email đã được sử dụng bởi tài khoản khác.' });
+      }
+    }
+
+    // Check if phone is taken by another user
+    if (trimmedPhone) {
+      const existingPhone = await pool.query('SELECT id FROM users WHERE phone=$1 AND id<>$2', [trimmedPhone, targetUserId]);
+      if (existingPhone.rows.length > 0) {
+        return res.status(400).json({ error: 'Số điện thoại đã được sử dụng bởi tài khoản khác.' });
+      }
     }
 
     let query = `
       UPDATE users 
-      SET email=$1, full_name=$2, role=$3, farm_id=$4,
-          view_plants_scope=$5, view_history_from_date=$6, allow_shared_history=$7, allow_view_supplies=$8,
+      SET email=$1, phone=$2, address=$3, full_name=$4, role=$5, farm_id=$6,
+          view_plants_scope=$7, view_history_from_date=$8, allow_shared_history=$9, allow_view_supplies=$10,
           updated_at=NOW()
     `;
     let params = [
       trimmedEmail,
+      trimmedPhone,
+      trimmedAddress,
       full_name.trim(),
       trimmedRole,
       assignedFarmId,
@@ -213,10 +249,10 @@ router.put('/:id', async (req, res) => {
 
     if (password && password.trim().length > 0) {
       const hash = await bcrypt.hash(password, 12);
-      query += ', password_hash=$9 WHERE id=$10';
+      query += ', password_hash=$11 WHERE id=$12';
       params.push(hash, targetUserId);
     } else {
-      query += ' WHERE id=$9';
+      query += ' WHERE id=$11';
       params.push(targetUserId);
     }
 
@@ -236,21 +272,18 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-
     const updated = await pool.query(
-      `SELECT u.id, u.email, u.full_name, u.role, u.farm_id, u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies, u.account_tier, u.tier_expires_at, u.tier_admin_note, u.created_at, f.name as farm_name
+      `SELECT u.id, u.email, u.phone, u.address, u.full_name, u.role, u.farm_id, u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies, u.account_tier, u.tier_expires_at, u.tier_admin_note, u.created_at, f.name as farm_name
        FROM users u
        LEFT JOIN farms f ON f.id = u.farm_id
        WHERE u.id=$1`,
       [targetUserId]
     );
 
-
-
     res.json(updated.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Lỗi server khi cập nhật người dùng.' });
+    res.status(500).json({ error: 'Lỗi server khi cập nhật người dùng: ' + err.message });
   }
 });
 

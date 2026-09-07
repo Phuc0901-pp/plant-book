@@ -207,8 +207,9 @@ function renderUsersTable(users) {
           </div>
         </td>
         <td style="color:#334155;">
-          <div style="font-weight:600;"><i class="fa-solid fa-phone" style="font-size:10.5px; color:#64748b;"></i> ${escapeHtml(u.phone || '—')}</div>
+          <div style="font-weight:600;"><i class="fa-solid fa-phone" style="font-size:10.5px; color:#059669;"></i> ${escapeHtml(u.phone || '—')}</div>
           <div style="font-size:11.5px; color:#64748b; margin-top:2px;"><i class="fa-solid fa-envelope" style="font-size:10px;"></i> ${escapeHtml(u.email || '—')}</div>
+          ${u.address ? `<div style="font-size:11px; color:#475569; margin-top:2px;"><i class="fa-solid fa-location-dot" style="font-size:10px; color:#ea580c;"></i> ${escapeHtml(u.address)}</div>` : ''}
         </td>
         <td>${farmBadge}</td>
         <td>${tierBadge}</td>
@@ -270,7 +271,9 @@ async function openUserModal(userId = null, syncUrl = true) {
   // Clear fields
   document.getElementById('f-user-id').value = '';
   document.getElementById('f-user-name').value = '';
+  if (document.getElementById('f-user-phone')) document.getElementById('f-user-phone').value = '';
   document.getElementById('f-user-email').value = '';
+  if (document.getElementById('f-user-address')) document.getElementById('f-user-address').value = '';
   document.getElementById('f-user-role').value = 'user';
   passInput.value = '';
 
@@ -293,7 +296,9 @@ async function openUserModal(userId = null, syncUrl = true) {
     title.innerHTML = '<i class="fa-solid fa-user-pen" style="color:var(--green)"></i> Gán Trang trại & Chỉnh sửa Nông hộ';
     document.getElementById('f-user-id').value = u.id;
     document.getElementById('f-user-name').value = u.full_name || '';
+    if (document.getElementById('f-user-phone')) document.getElementById('f-user-phone').value = u.phone || '';
     document.getElementById('f-user-email').value = u.email || '';
+    if (document.getElementById('f-user-address')) document.getElementById('f-user-address').value = u.address || '';
     document.getElementById('f-user-role').value = u.role || 'user';
     if (farmSelect) farmSelect.value = u.farm_id || '';
     
@@ -429,7 +434,9 @@ function closeUserTierModal(syncUrl = true) {
 async function saveUser() {
   const id = document.getElementById('f-user-id').value;
   const full_name = document.getElementById('f-user-name').value.trim();
-  const email = document.getElementById('f-user-email').value.trim();
+  const phone = document.getElementById('f-user-phone')?.value.trim() || '';
+  const email = document.getElementById('f-user-email')?.value.trim() || '';
+  const address = document.getElementById('f-user-address')?.value.trim() || '';
   const password = document.getElementById('f-user-pass').value;
   const role = document.getElementById('f-user-role').value;
   const farm_id = document.getElementById('f-user-farm-id')?.value;
@@ -439,8 +446,13 @@ async function saveUser() {
   const allow_view_supplies = document.getElementById('f-user-view-supplies')?.checked;
   const assigned_plant_ids = Array.from(document.querySelectorAll('.user-assigned-plant-cb:checked')).map(cb => parseInt(cb.value));
 
-  if (!full_name || !email) {
-    toast('Họ tên và email là bắt buộc!', 'error');
+  if (!full_name) {
+    toast('Họ và tên là bắt buộc!', 'error');
+    return;
+  }
+
+  if (!phone && !email) {
+    toast('Vui lòng nhập ít nhất Số điện thoại hoặc Email để làm tài khoản đăng nhập!', 'error');
     return;
   }
 
@@ -456,7 +468,9 @@ async function saveUser() {
 
   const payload = { 
     full_name, 
-    email, 
+    phone: phone || null,
+    email: email || null,
+    address: address || null,
     role, 
     farm_id: farm_id ? parseInt(farm_id) : null,
     view_plants_scope,
