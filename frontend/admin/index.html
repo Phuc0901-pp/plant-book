@@ -836,7 +836,18 @@
                   <div class="field">
                     <label>Ranh giới bản đồ</label>
                     <div class="alert alert-success" style="padding:8px 12px; margin-bottom:8px; font-size:11px; line-height:1.4;">
-                      <i class="fa fa-circle-info"></i> Vẽ ranh giới (đa giác) trên bản đồ. Nhấp đỉnh đầu tiên để khép kín đa giác.
+                      <i class="fa fa-circle-info"></i> <strong>Chế độ chỉnh sửa đỉnh:</strong> Kéo các điểm tròn trắng trên đường viền để dời đỉnh, hoặc bấm các nút dưới đây:
+                    </div>
+                    <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+                      <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:85px; font-size:11px; padding:6px 8px; font-weight:700;" onclick="enableDirectSelectMode()" title="Bật chỉnh các điểm neo/đỉnh ranh giới">
+                        <i class="fa-solid fa-arrows-up-down-left-right" style="color:#0284c7;"></i> Chỉnh đỉnh
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:85px; font-size:11px; padding:6px 8px; font-weight:700;" onclick="enableRedrawPolygonMode()" title="Vẽ lại đa giác ranh giới mới">
+                        <i class="fa-solid fa-draw-polygon" style="color:#059669;"></i> Vẽ lại mới
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:75px; font-size:11px; padding:6px 8px; font-weight:700; color:#dc2626;" onclick="clearDrawnPolygon()" title="Xóa ranh giới đang vẽ">
+                        <i class="fa-solid fa-trash-can"></i> Xóa
+                      </button>
                     </div>
                     <div style="font-size:11.5px; color:#475569; margin-bottom:8px;">
                       Diện tích: <strong id="farm-area-display" style="color:#047857;">0 m²</strong> (<span id="farm-area-ha">0</span> ha)

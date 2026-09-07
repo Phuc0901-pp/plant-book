@@ -892,8 +892,45 @@ async function loadUsersDropdown(selectedUserId = '') {
   }
 }
 
+// ── GIS Farm Boundary Drawing & Vertex Editing Helpers ─────────────────
+function enableDirectSelectMode() {
+  if (!drawControl) return;
+  const all = drawControl.getAll();
+  if (all && all.features && all.features.length > 0) {
+    const featureId = all.features[0].id;
+    if (featureId) {
+      drawControl.changeMode('direct_select', { featureId });
+      toast('🎯 Đã bật chế độ chỉnh đỉnh: Hãy kéo các điểm tròn trắng trên ranh giới để đổi hình dạng!', 'info');
+    }
+  } else {
+    toast('Chưa có ranh giới nào được vẽ. Hãy bấm "Vẽ lại mới" để vẽ!', 'warning');
+  }
+}
+window.enableDirectSelectMode = enableDirectSelectMode;
+
+function enableRedrawPolygonMode() {
+  if (!drawControl) return;
+  drawControl.deleteAll();
+  updateAreaDisplay();
+  drawControl.changeMode('draw_polygon');
+  toast('✏️ Chế độ vẽ mới: Nhấp chuột trên bản đồ để chấm các đỉnh ranh giới.', 'info');
+}
+window.enableRedrawPolygonMode = enableRedrawPolygonMode;
+
+function clearDrawnPolygon() {
+  if (!drawControl) return;
+  drawControl.deleteAll();
+  updateAreaDisplay();
+  toast('🗑️ Đã xóa ranh giới đang vẽ', 'info');
+}
+window.clearDrawnPolygon = clearDrawnPolygon;
+
 async function openFarmForm() {
   activeFarmId = null;
+  gisEdgeMarkers.forEach(m => { try { m.remove(); } catch(_) {} });
+  gisEdgeMarkers = [];
+  if (gMap) removeContourLinesFromMap(gMap);
+
   document.getElementById('gis-back-btn').style.display = 'block';
   document.getElementById('gis-sidebar-title').textContent = 'Tạo Trang trại';
   document.getElementById('gis-header-actions').style.display = 'none';
@@ -920,7 +957,18 @@ async function openFarmForm() {
 function cancelFarmForm() {
   drawControl.changeMode('simple_select');
   drawControl.deleteAll();
-  initGisPage();
+  const currentActive = activeFarmId;
+  if (currentActive) {
+    if (gMap) {
+      const farmLayerId = `gis-farm-layer-${currentActive}`;
+      const farmOutlineId = `gis-farm-outline-${currentActive}`;
+      if (gMap.getLayer(farmLayerId)) gMap.setLayoutProperty(farmLayerId, 'visibility', 'visible');
+      if (gMap.getLayer(farmOutlineId)) gMap.setLayoutProperty(farmOutlineId, 'visibility', 'visible');
+    }
+    selectFarm(currentActive);
+  } else {
+    initGisPage();
+  }
 }
 
 async function saveFarm() {
@@ -946,7 +994,12 @@ async function saveFarm() {
   }
 
   const coordinates = data.features[0].geometry.coordinates[0];
-  const area = window._lastDrawnArea || 0;
+  let area = 0;
+  try {
+    area = turf.area(data.features[0]);
+  } catch(e) {
+    area = window._lastDrawnArea || 0;
+  }
 
   const body = {
     name,
@@ -960,23 +1013,22 @@ async function saveFarm() {
   };
 
   try {
-    const method = activeFarmId ? 'PUT' : 'POST';
-    const url = activeFarmId ? `/farms/${activeFarmId}` : '/farms';
+    const editingFarmId = activeFarmId;
+    const method = editingFarmId ? 'PUT' : 'POST';
+    const url = editingFarmId ? `/farms/${editingFarmId}` : '/farms';
     
     const savedFarm = await api(url, {
       method,
       body: JSON.stringify(body)
     });
 
-    toast(activeFarmId ? 'Đã cập nhật ranh giới trang trại!' : 'Đã tạo trang trại thành công!');
+    toast(editingFarmId ? 'Đã cập nhật ranh giới trang trại thành công!' : 'Đã tạo trang trại thành công!');
     drawControl.changeMode('simple_select');
     drawControl.deleteAll();
     
     window._plantFiltersLoaded = false;
-    await initGisPage();
-    if (savedFarm && savedFarm.id) {
-      selectFarm(savedFarm.id);
-    }
+    const targetId = (savedFarm && savedFarm.id) || editingFarmId;
+    await initGisPage(targetId);
   } catch (err) {
     toast('Lỗi lưu trang trại: ' + err.message, 'error');
   }
@@ -1470,8 +1522,23 @@ async function editFarm() {
     const farm = currentFarms.find(f => f.id === activeFarmId);
     if (!farm) return;
 
+    // 1. Remove edge dimension badges and corner markers that block pointer events on polygon vertices
+    gisEdgeMarkers.forEach(m => {
+      try { m.remove(); } catch(_) {}
+    });
+    gisEdgeMarkers = [];
+
+    // 2. Remove 3D contour lines and temporarily hide static polygon layers to avoid overlap with Draw control
+    if (gMap) {
+      removeContourLinesFromMap(gMap);
+      const farmLayerId = `gis-farm-layer-${farm.id}`;
+      const farmOutlineId = `gis-farm-outline-${farm.id}`;
+      if (gMap.getLayer(farmLayerId)) gMap.setLayoutProperty(farmLayerId, 'visibility', 'none');
+      if (gMap.getLayer(farmOutlineId)) gMap.setLayoutProperty(farmOutlineId, 'visibility', 'none');
+    }
+
     switchGisView('form');
-    document.getElementById('gis-sidebar-title').textContent = 'Sửa Trang trại';
+    document.getElementById('gis-sidebar-title').textContent = 'Sửa Trang trại: ' + farm.name;
     document.getElementById('farm-name').value = farm.name;
     document.getElementById('farm-desc').value = farm.description || '';
     if (document.getElementById('farm-puc-code')) document.getElementById('farm-puc-code').value = farm.puc_code || '';
@@ -1488,7 +1555,11 @@ async function editFarm() {
       coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
     } catch(e) {}
 
-    if (coords && coords.length > 0) {
+    while (Array.isArray(coords) && coords.length > 0 && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+      coords = coords[0];
+    }
+
+    if (coords && Array.isArray(coords) && coords.length >= 3) {
       const polyCoords = [...coords];
       if (polyCoords.length > 0 && 
           (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || 
@@ -1497,13 +1568,56 @@ async function editFarm() {
       }
 
       drawControl.deleteAll();
-      drawControl.add({
+      const added = drawControl.add({
         type: 'Feature',
+        properties: {},
         geometry: {
           type: 'Polygon',
           coordinates: [polyCoords]
         }
       });
+
+      let featureId = null;
+      if (Array.isArray(added) && added.length > 0) {
+        featureId = added[0];
+      } else if (added && added.id) {
+        featureId = added.id;
+      } else if (typeof added === 'string') {
+        featureId = added;
+      } else {
+        const all = drawControl.getAll();
+        if (all && all.features && all.features.length > 0) {
+          featureId = all.features[0].id;
+        }
+      }
+
+      if (featureId) {
+        setTimeout(() => {
+          try {
+            drawControl.changeMode('direct_select', { featureId: featureId });
+          } catch (e) {
+            console.warn('Could not switch to direct_select mode immediately:', e);
+          }
+        }, 150);
+      }
+
+      updateAreaDisplay();
+
+      if (gMap) {
+        const bounds = new mapboxgl.LngLatBounds();
+        polyCoords.forEach(pt => {
+          if (Array.isArray(pt) && pt.length >= 2) {
+            bounds.extend(pt);
+          }
+        });
+        gMap.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 600 });
+      }
+
+      toast('🎯 Đang ở chế độ sửa ranh giới: Kéo các điểm tròn trắng để điều chỉnh hình dạng!', 'info');
+    } else {
+      drawControl.deleteAll();
+      drawControl.changeMode('draw_polygon');
+      toast('Chưa có ranh giới: Hãy chấm các điểm trên bản đồ để vẽ ranh giới!', 'info');
     }
   } catch (err) {
     toast('Lỗi khi sửa trang trại: ' + err.message, 'error');

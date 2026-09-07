@@ -123,4 +123,69 @@ describe('Suite 2: Farms Management, GIS Spatial Algorithms & VietGAP PUC Code',
     expect(sanitized.vietgap_cert_org).toBe('Quacert');
   });
 
+  it('2.6 Should handle polygon vertex mutation (direct_select mode) and recalculate area accurately', () => {
+    // Original 4-vertex bounding polygon
+    const originalPolygon = [
+      [107.0000, 11.0000],
+      [107.0010, 11.0000],
+      [107.0010, 11.0010],
+      [107.0000, 11.0010]
+    ];
+    const initialArea = calculatePolygonArea(originalPolygon);
+
+    // Simulate user dragging top-right vertex (index 2) outwards to expand farm boundary
+    const mutatedPolygon = originalPolygon.map((pt, idx) => {
+      if (idx === 2) {
+        return [107.0020, 11.0020]; // Dragged further north-east
+      }
+      return [...pt];
+    });
+
+    const updatedArea = calculatePolygonArea(mutatedPolygon);
+    expect(updatedArea).toBeGreaterThan(initialArea);
+    expect(mutatedPolygon.length).toBe(4);
+    expect(mutatedPolygon[2][0]).toBe(107.0020);
+    expect(mutatedPolygon[2][1]).toBe(11.0020);
+  });
+
+  it('2.7 Should validate GeoJSON polygon closure and direct_select feature structure', () => {
+    const rawCoords = [
+      [107.1000, 11.5000],
+      [107.1050, 11.5000],
+      [107.1050, 11.5050],
+      [107.1000, 11.5050]
+    ];
+
+    // Helper to produce closed ring
+    const ensureClosedRing = (coords) => {
+      const ring = coords.map(p => [...p]);
+      if (ring.length >= 3) {
+        if (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]) {
+          ring.push([...ring[0]]);
+        }
+      }
+      return ring;
+    };
+
+    const closedRing = ensureClosedRing(rawCoords);
+    expect(closedRing.length).toBe(5);
+    expect(closedRing[0][0]).toBe(closedRing[4][0]);
+    expect(closedRing[0][1]).toBe(closedRing[4][1]);
+
+    const feature = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'Polygon',
+        coordinates: [closedRing]
+      }
+    };
+
+    expect(feature.type).toBe('Feature');
+    expect(feature.geometry.type).toBe('Polygon');
+    expect(Array.isArray(feature.geometry.coordinates[0])).toBe(true);
+    expect(feature.geometry.coordinates[0].length).toBe(5);
+  });
+
 });
+
