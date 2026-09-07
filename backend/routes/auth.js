@@ -104,7 +104,9 @@ router.post('/login', async (req, res) => {
         email: user.email,
         role: user.role,
         name: user.full_name,
+        full_name: user.full_name,
         phone: user.phone,
+        address: user.address,
         account_tier: user.account_tier || 'normal',
         tier_expires_at: user.tier_expires_at
       }
@@ -268,7 +270,7 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, full_name, role, avatar_url, phone, city, country, gender, created_at, account_tier, tier_expires_at, tier_admin_note FROM users WHERE id=$1',
+      'SELECT id, email, full_name, role, avatar_url, phone, address, city, country, gender, created_at, account_tier, tier_expires_at, tier_admin_note FROM users WHERE id=$1',
       [req.user.id]
     );
     const u = result.rows[0];

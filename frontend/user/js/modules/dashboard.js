@@ -29,26 +29,49 @@ const CROP_COLOR_PALETTE = ['#059669', '#0284c7', '#8b5cf6', '#f59e0b', '#10b981
 export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   if (!user) return;
 
-  // 1. Farmer Name & Contacts
+  // 1. Farmer Name, Email, Phone & Address
   const nameEl = document.getElementById('cockpit-farmer-name');
   if (nameEl) nameEl.textContent = user.full_name || user.name || 'Nông hộ';
 
+  const emailEl = document.getElementById('cockpit-farmer-email');
+  if (emailEl) {
+    if (user.email && user.email.trim()) {
+      emailEl.style.display = 'flex';
+      emailEl.innerHTML = `<i class="fa-solid fa-envelope" style="color:#0284c7; font-size:11px;"></i> <span style="word-break:break-all;">${esc(user.email.trim())}</span>`;
+    } else {
+      emailEl.style.display = 'none';
+    }
+  }
+
   const phoneEl = document.getElementById('cockpit-farmer-phone');
   if (phoneEl) {
-    const phoneVal = user.phone || '0908 904 895';
-    phoneEl.innerHTML = `<i class="fa-solid fa-phone" style="color:#0284c7; font-size:11px;"></i> <span>${esc(phoneVal)}</span>`;
+    if (user.phone && user.phone.trim()) {
+      phoneEl.style.display = 'flex';
+      phoneEl.innerHTML = `<i class="fa-solid fa-phone" style="color:#059669; font-size:11px;"></i> <span>${esc(user.phone.trim())}</span>`;
+    } else {
+      phoneEl.style.display = 'none';
+    }
   }
 
   const addrEl = document.getElementById('cockpit-farmer-address');
   if (addrEl) {
-    let addrStr = user.address || '';
-    if (!addrStr && farms.length > 0 && farms[0].address) {
-      addrStr = farms[0].address;
+    let addrStr = user.address ? user.address.trim() : '';
+    if (!addrStr && farms.length > 0) {
+      if (farms[0].address && farms[0].address.trim()) {
+        addrStr = farms[0].address.trim();
+      } else if (farms[0].description && farms[0].description.trim()) {
+        addrStr = farms[0].description.trim();
+      } else if (farms[0].name) {
+        addrStr = farms[0].name;
+      }
     }
-    if (!addrStr) {
-      addrStr = 'TP. Long Khánh, Tỉnh Đồng Nai';
+    if (addrStr) {
+      addrEl.style.display = 'flex';
+      addrEl.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#ea580c; font-size:12px; margin-top:2px;"></i> <span>${esc(addrStr)}</span>`;
+    } else {
+      addrEl.style.display = 'flex';
+      addrEl.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#94a3b8; font-size:12px; margin-top:2px;"></i> <span style="color:#94a3b8; font-style:italic;">Chưa cập nhật địa chỉ</span>`;
     }
-    addrEl.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#ea580c; font-size:12px; margin-top:2px;"></i> <span>${esc(addrStr)}</span>`;
   }
 
   // 2. Tier Badge
@@ -429,12 +452,24 @@ export function initAutoRefreshTimer() {
  */
 export async function loadUserDashboard(isSilent = false) {
   try {
-    const [farms, plants, recentLogs, configs] = await Promise.all([
+    const [farms, plants, recentLogs, configs, profile] = await Promise.all([
       api('/farms'),
       api('/plants'),
       api('/plants/logs/recent?days=3'),
-      api('/config')
+      api('/config'),
+      api('/auth/me').catch(() => null)
     ]);
+
+    let activeUser = currentUser || {};
+    try {
+      if (!activeUser.email && !activeUser.phone) {
+        activeUser = JSON.parse(localStorage.getItem('user') || '{}');
+      }
+    } catch (_) {}
+    if (profile) {
+      activeUser = { ...activeUser, ...profile };
+      localStorage.setItem('user', JSON.stringify(activeUser));
+    }
 
     // Tải lịch sử 30 ngày (không chặn nếu lỗi)
     const allLogs = await api('/plants/logs/recent?days=30').catch(err => {
@@ -454,8 +489,8 @@ export async function loadUserDashboard(isSilent = false) {
 
     // ── Cập nhật UI Trang chủ ────────────────────────────────
     const nameEl = document.getElementById('welcome-name');
-    if (nameEl && currentUser) {
-      nameEl.textContent = currentUser.full_name || currentUser.name || 'nông hộ';
+    if (nameEl && (activeUser.full_name || activeUser.name)) {
+      nameEl.textContent = activeUser.full_name || activeUser.name;
     }
 
     const countEl = document.getElementById('user-plant-count');
@@ -470,7 +505,7 @@ export async function loadUserDashboard(isSilent = false) {
     }
 
     // ── Render Tầng 1: Thẻ Hồ Sơ Nông Hộ & Cơ Cấu Trang Trại ──
-    renderFarmerCockpitCard(currentUser, farms, plants);
+    renderFarmerCockpitCard(activeUser, farms, plants);
 
     // ── Render Tầng 2: Trung Tâm Cảnh Báo Phân Cấp (Đỏ -> Vàng -> Xanh) ──
     renderPriorityAlertsCenter(plants, recentLogs);
