@@ -253,7 +253,6 @@ window.addEventListener('load', async () => {
 let currentRegStep = 1;
 
 function openRegisterModal() {
-
   currentRegStep = 1;
   updateRegStepUI();
   const modal = document.getElementById('register-modal');
@@ -261,16 +260,15 @@ function openRegisterModal() {
   if (errEl) errEl.style.display = 'none';
 
   // Clear inputs
-  document.getElementById('reg-phone').value = '';
-  document.getElementById('reg-pass').value = '';
-  document.getElementById('reg-pass-confirm').value = '';
-  document.getElementById('reg-name').value = '';
-  document.getElementById('reg-dob').value = '';
-  document.getElementById('reg-plant-type').value = '';
-  document.getElementById('reg-plant-variety').value = '';
-  document.getElementById('reg-plant-age').value = '';
-  document.getElementById('reg-farm-area').value = '';
-
+  if (document.getElementById('reg-phone')) document.getElementById('reg-phone').value = '';
+  if (document.getElementById('reg-pass')) document.getElementById('reg-pass').value = '';
+  if (document.getElementById('reg-pass-confirm')) document.getElementById('reg-pass-confirm').value = '';
+  if (document.getElementById('reg-name')) document.getElementById('reg-name').value = '';
+  if (document.getElementById('reg-dob')) document.getElementById('reg-dob').value = '';
+  if (document.getElementById('reg-plant-type')) document.getElementById('reg-plant-type').value = '';
+  if (document.getElementById('reg-plant-variety')) document.getElementById('reg-plant-variety').value = '';
+  if (document.getElementById('reg-plant-age')) document.getElementById('reg-plant-age').value = '';
+  if (document.getElementById('reg-farm-area')) document.getElementById('reg-farm-area').value = '';
 
   if (modal) modal.style.display = 'flex';
 }
@@ -286,9 +284,12 @@ function updateRegStepUI() {
   const errEl = document.getElementById('reg-error');
   if (errEl) errEl.style.display = 'none';
 
-  document.getElementById('reg-step-1').style.display = currentRegStep === 1 ? 'block' : 'none';
-  document.getElementById('reg-step-2').style.display = currentRegStep === 2 ? 'block' : 'none';
-  document.getElementById('reg-step-3').style.display = currentRegStep === 3 ? 'block' : 'none';
+  const s1 = document.getElementById('reg-step-1');
+  const s2 = document.getElementById('reg-step-2');
+  const s3 = document.getElementById('reg-step-3');
+  if (s1) s1.style.display = currentRegStep === 1 ? 'block' : 'none';
+  if (s2) s2.style.display = currentRegStep === 2 ? 'block' : 'none';
+  if (s3) s3.style.display = currentRegStep === 3 ? 'block' : 'none';
 
   const titleEl = document.getElementById('reg-modal-title');
   if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-user-plus" style="color:var(--green)"></i> Đăng ký tài khoản Nông hộ (Bước ${currentRegStep}/3)`;

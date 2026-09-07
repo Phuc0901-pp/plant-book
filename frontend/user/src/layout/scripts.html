@@ -13,6 +13,22 @@
       icon.className = 'fa fa-eye';
     }
   };
+  window.openRegisterModal = window.openRegisterModal || function() {
+    const modal = document.getElementById('register-modal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closeRegisterModal = window.closeRegisterModal || function() {
+    const modal = document.getElementById('register-modal');
+    if (modal) modal.style.display = 'none';
+  };
+  window.openForgotPasswordModal = window.openForgotPasswordModal || function() {
+    const modal = document.getElementById('forgot-modal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closeForgotPasswordModal = window.closeForgotPasswordModal || function() {
+    const modal = document.getElementById('forgot-modal');
+    if (modal) modal.style.display = 'none';
+  };
 </script>
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>

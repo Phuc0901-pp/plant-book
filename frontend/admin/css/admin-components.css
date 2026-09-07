@@ -111,10 +111,10 @@
   .badge-gray{background:#f3f4f6;color:#6b7280}
 
   /* ── Modal ── */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:20000;
     display:flex;align-items:center;justify-content:center;padding:20px}
   .modal{background:#fff;border-radius:16px;width:100%;max-width:700px;max-height:90vh;
-    overflow-y:auto;box-shadow:var(--shadow-lg)}
+    overflow-y:auto;box-shadow:var(--shadow-lg);position:relative;z-index:20001}
   .modal-header{padding:20px 24px;border-bottom:1px solid var(--gray-100);
     display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
   .modal-header h2{font-size:16px;font-weight:700}

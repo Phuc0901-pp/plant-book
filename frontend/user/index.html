@@ -168,6 +168,10 @@
   margin: 0 !important;
 }
 
+#register-modal, #forgot-modal, .modal-overlay {
+  z-index: 25000 !important;
+}
+
 #register-modal .modal-close, #forgot-modal .modal-close, #self-init-farm-modal .modal-close, #edit-farm-modal .modal-close {
   color: #ffffff !important;
   opacity: 0.9 !important;
@@ -3801,6 +3805,22 @@
       passInput.type = 'password';
       icon.className = 'fa fa-eye';
     }
+  };
+  window.openRegisterModal = window.openRegisterModal || function() {
+    const modal = document.getElementById('register-modal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closeRegisterModal = window.closeRegisterModal || function() {
+    const modal = document.getElementById('register-modal');
+    if (modal) modal.style.display = 'none';
+  };
+  window.openForgotPasswordModal = window.openForgotPasswordModal || function() {
+    const modal = document.getElementById('forgot-modal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closeForgotPasswordModal = window.closeForgotPasswordModal || function() {
+    const modal = document.getElementById('forgot-modal');
+    if (modal) modal.style.display = 'none';
   };
 </script>
 <!-- Tesseract.js for Real-Time Client-Side Agricultural Packaging OCR -->
