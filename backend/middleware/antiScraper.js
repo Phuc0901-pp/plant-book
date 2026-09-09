@@ -61,16 +61,26 @@ function antiScraper(req, res, next) {
 
 /**
  * Global rate limiter to protect API against high-frequency crawling and brute force.
- * Limits each IP to 300 requests per 15 minutes. Skips health check endpoints.
+ * Limits each unauthenticated IP to 3000 requests per 15 minutes.
+ * Automatically exempts authenticated users (JWT sessions) and health check / mapbox endpoints.
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // Limit each IP to 300 requests per windowMs
+  max: 3000, // Generous ceiling for rich SPAs, real-time websockets & live GIS telemetry
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   skip: (req) => {
     const p = req.path || req.originalUrl || '';
-    return p.includes('/health') || p === '/' || p === '/healthz';
+    // Skip health checks, root endpoints, and config tokens
+    if (p.includes('/health') || p === '/' || p === '/healthz' || p.includes('/config/mapbox-token')) {
+      return true;
+    }
+    // Exempt authenticated sessions from rate limiting so admins & farmers never get blocked
+    const authHeader = req.headers['authorization'] || '';
+    if (authHeader.startsWith('Bearer ') && authHeader.length > 20) {
+      return true;
+    }
+    return false;
   },
   message: {
     error: 'Tần suất gửi yêu cầu quá nhanh. Vui lòng thử lại sau 15 phút.'
