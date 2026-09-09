@@ -730,25 +730,182 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
   }
 });
 
-router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
+// ─── Unassign ALL tags from plants in a farm ─────────────────────────────────
+router.post('/farms/:farmId/nfc-inventory/unassign-all', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+
+    // Verify access
+    if (req.user.role !== 'admin') {
+      const farmCheck = await client.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
+      if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
+        return res.status(403).json({ error: 'Không có quyền thay đổi kho thẻ của trang trại này.' });
+      }
+    }
+
+    await client.query('BEGIN');
+
+    // 1. Get all plants currently assigned with an NFC tag in this farm
+    const assignedPlants = await client.query(
+      'SELECT id, tree_code, nfc_uid FROM plants WHERE farm_id = $1 AND nfc_uid IS NOT NULL',
+      [farmId]
+    );
+
+    // 2. Set nfc_uid = NULL for all plants in this farm & update standard public_url
+    for (const p of assignedPlants.rows) {
+      const standardUrl = generatePublicPlantUrl(farmId, p.id, null);
+      await client.query(
+        'UPDATE plants SET nfc_uid = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
+        [standardUrl, p.id]
+      );
+    }
+
+    // 3. Reset all inventory items in this farm to unassigned
+    const resetRes = await client.query(
+      `UPDATE nfc_tags_inventory 
+       SET status = 'unassigned', plant_id = NULL, tagged_at = NULL 
+       WHERE farm_id = $1 AND (status = 'assigned' OR plant_id IS NOT NULL)
+       RETURNING *`,
+      [farmId]
+    );
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { farm_id: farmId, action: 'nfc_unassigned_all' });
+
+    res.json({
+      success: true,
+      unassigned_plants_count: assignedPlants.rows.length,
+      unassigned_tags_count: resetRes.rows.length,
+      message: `Đã gỡ thành công thẻ NFC khỏi ${assignedPlants.rows.length} cây trong trang trại. Toàn bộ thẻ trong kho đã chuyển về trạng thái sẵn sàng gán.`
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error unassigning all NFC tags:', err);
+    res.status(500).json({ error: 'Lỗi server khi gỡ toàn bộ thẻ: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ─── Unassign a single tag from a plant ──────────────────────────────────────
+router.post('/farms/:farmId/nfc-inventory/:id/unassign', auth, async (req, res) => {
+  const client = await pool.connect();
   try {
     const id = parseInt(req.params.id);
     const farmId = parseInt(req.params.farmId);
     if (isNaN(id) || isNaN(farmId)) return res.status(400).json({ error: 'Tham số không hợp lệ.' });
 
-    const result = await pool.query(
+    // Verify access
+    if (req.user.role !== 'admin') {
+      const farmCheck = await client.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
+      if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
+        return res.status(403).json({ error: 'Không có quyền thay đổi kho thẻ của trang trại này.' });
+      }
+    }
+
+    await client.query('BEGIN');
+
+    const tagRes = await client.query('SELECT * FROM nfc_tags_inventory WHERE id = $1 AND farm_id = $2', [id, farmId]);
+    if (tagRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Không tìm thấy thẻ trong kho.' });
+    }
+
+    const tag = tagRes.rows[0];
+
+    // Unassign from plant
+    if (tag.plant_id || tag.nfc_uid) {
+      const plantRes = await client.query(
+        'SELECT id, farm_id FROM plants WHERE (id = $1 OR UPPER(nfc_uid) = UPPER($2)) AND farm_id = $3',
+        [tag.plant_id || 0, tag.nfc_uid, farmId]
+      );
+      for (const p of plantRes.rows) {
+        const standardUrl = generatePublicPlantUrl(farmId, p.id, null);
+        await client.query(
+          'UPDATE plants SET nfc_uid = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
+          [standardUrl, p.id]
+        );
+      }
+    }
+
+    // Reset inventory row
+    await client.query(
+      `UPDATE nfc_tags_inventory 
+       SET status = 'unassigned', plant_id = NULL, tagged_at = NULL 
+       WHERE id = $1`,
+      [id]
+    );
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { farm_id: farmId, tag_id: id, action: 'nfc_unassigned' });
+
+    res.json({
+      success: true,
+      message: `Đã gỡ thẻ ${tag.nfc_uid} khỏi cây trồng thành công.`
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error unassigning single NFC tag:', err);
+    res.status(500).json({ error: 'Lỗi server khi gỡ thẻ: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
+router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const id = parseInt(req.params.id);
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(id) || isNaN(farmId)) return res.status(400).json({ error: 'Tham số không hợp lệ.' });
+
+    await client.query('BEGIN');
+
+    const result = await client.query(
       'DELETE FROM nfc_tags_inventory WHERE id = $1 AND farm_id = $2 RETURNING *',
       [id, farmId]
     );
 
     if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Không tìm thấy thẻ trong kho.' });
     }
 
+    const deletedTag = result.rows[0];
+
+    // If assigned to a plant, also set plant's nfc_uid to NULL
+    if (deletedTag.plant_id || deletedTag.nfc_uid) {
+      const pRes = await client.query(
+        'SELECT id FROM plants WHERE (id = $1 OR UPPER(nfc_uid) = UPPER($2)) AND farm_id = $3',
+        [deletedTag.plant_id || 0, deletedTag.nfc_uid, farmId]
+      );
+      for (const p of pRes.rows) {
+        const standardUrl = generatePublicPlantUrl(farmId, p.id, null);
+        await client.query(
+          'UPDATE plants SET nfc_uid = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
+          [standardUrl, p.id]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { farm_id: farmId, action: 'nfc_deleted' });
+
     res.json({ success: true, message: 'Đã xóa thẻ khỏi kho.' });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Error deleting NFC tag from inventory:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa thẻ.' });
+  } finally {
+    client.release();
   }
 });
 

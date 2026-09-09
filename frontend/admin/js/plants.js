@@ -645,8 +645,16 @@ function renderAdminNfcPageTable(tags) {
       ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-link"></i> Đã gán cây</span>`
       : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-check"></i> Còn trống (Sẵn sàng)</span>`;
 
-    const plantInfo = isAssigned && t.tree_code
-      ? `<strong style="color:#0f172a; font-size:13.5px;">#${esc(t.tree_code)}</strong> <span style="font-size:12px; color:#64748b; font-weight:600;">(${esc(t.plant_type || '')})</span>`
+    const plantInfo = isAssigned && (t.tree_code || t.plant_id)
+      ? `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+           <div>
+             <strong style="color:#0f172a; font-size:13.5px;">#${esc(t.tree_code || t.plant_id)}</strong> 
+             <span style="font-size:12px; color:#64748b; font-weight:600;">(${esc(t.plant_type || 'Cây')})</span>
+           </div>
+           <button type="button" onclick="unassignAdminNfcTag(${t.id}, '${esc(t.nfc_uid)}', ${t.plant_id || 'null'})" title="Gỡ thẻ khỏi cây này (chuyển về trạng thái sẵn sàng trong kho)" style="background:#fff7ed; color:#c2410c; border:1px solid #fdba74; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+             <i class="fa-solid fa-link-slash"></i> Gỡ thẻ
+           </button>
+         </div>`
       : `<span style="color:#94a3b8; font-style:italic;">— Sẵn sàng gán —</span>`;
 
     const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
@@ -1060,6 +1068,49 @@ async function deleteAdminNfcTag(tagId, uid) {
   }
 }
 window.deleteAdminNfcTag = deleteAdminNfcTag;
+
+async function unassignAdminNfcTag(tagId, uid, plantId) {
+  if (!_currentInvFarmId) return;
+  if (!confirm(`Bạn có chắc chắn muốn gỡ thẻ NFC "${uid}" khỏi cây trồng?\n\nThẻ sẽ được chuyển về trạng thái "Còn trống (Sẵn sàng)" trong kho, lịch sử canh tác của cây vẫn được giữ nguyên 100%.`)) return;
+
+  try {
+    const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/${tagId}/unassign`, {
+      method: 'POST'
+    });
+    toast(res.message || `Đã gỡ thẻ ${uid} khỏi cây thành công!`, 'success');
+    await loadAdminNfcPageData(_currentInvFarmId);
+    if (typeof loadPlants === 'function') loadPlants();
+  } catch (err) {
+    toast('Lỗi gỡ thẻ: ' + err.message, 'error');
+  }
+}
+window.unassignAdminNfcTag = unassignAdminNfcTag;
+
+async function unassignAllAdminNfcTags() {
+  if (!_currentInvFarmId) {
+    toast('Vui lòng chọn Trang trại trước!', 'error');
+    return;
+  }
+  const farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
+  const farmObj = (farms || []).find(f => f.id == _currentInvFarmId);
+  const farmName = farmObj ? farmObj.name : `Trang trại #${_currentInvFarmId}`;
+
+  if (!confirm(`⚠️ XÁC NHẬN GỠ TOÀN BỘ THẺ NFC CỦA TRANG TRẠI "${farmName.toUpperCase()}"?\n\n- Toàn bộ cây đang gắn thẻ trong trang trại này sẽ được gỡ mã thẻ.\n- Toàn bộ thẻ trong kho sẽ chuyển về trạng thái "Còn trống (Sẵn sàng)".\n- 100% Nhật ký chăm sóc, phân bón, tưới tiêu và lịch sử canh tác của cây vẫn được bảo lưu nguyên vẹn trong hệ thống.`)) {
+    return;
+  }
+
+  try {
+    const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/unassign-all`, {
+      method: 'POST'
+    });
+    toast(`🎉 ${res.message}`, 'success');
+    await loadAdminNfcPageData(_currentInvFarmId);
+    if (typeof loadPlants === 'function') loadPlants();
+  } catch (err) {
+    toast('Lỗi gỡ toàn bộ thẻ: ' + err.message, 'error');
+  }
+}
+window.unassignAllAdminNfcTags = unassignAllAdminNfcTags;
 
 // ── In-Field Walk & GPS Tagging Controller ──────────────────────────
 let _fieldTagFarmId = null;
