@@ -585,9 +585,9 @@ router.put('/:id/nfc', auth, async (req, res) => {
       const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, null);
       const updated = await client.query(
         `UPDATE plants 
-         SET nfc_uid = NULL, public_url = $1, updated_at = NOW()
+         SET nfc_uid = NULL, latitude = NULL, longitude = NULL, public_url = $1, updated_at = NOW()
          WHERE id = $2
-         RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id`,
+         RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
         [publicUrl, plantId]
       );
 
@@ -756,11 +756,11 @@ router.post('/farms/:farmId/nfc-inventory/unassign-all', auth, async (req, res) 
       [farmId]
     );
 
-    // 2. Set nfc_uid = NULL for all plants in this farm & update standard public_url
+    // 2. Set nfc_uid = NULL & GPS coordinates = NULL for all plants in this farm & update standard public_url
     for (const p of assignedPlants.rows) {
       const standardUrl = generatePublicPlantUrl(farmId, p.id, null);
       await client.query(
-        'UPDATE plants SET nfc_uid = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
+        'UPDATE plants SET nfc_uid = NULL, latitude = NULL, longitude = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
         [standardUrl, p.id]
       );
     }
@@ -829,7 +829,7 @@ router.post('/farms/:farmId/nfc-inventory/:id/unassign', auth, async (req, res) 
       for (const p of plantRes.rows) {
         const standardUrl = generatePublicPlantUrl(farmId, p.id, null);
         await client.query(
-          'UPDATE plants SET nfc_uid = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
+          'UPDATE plants SET nfc_uid = NULL, latitude = NULL, longitude = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
           [standardUrl, p.id]
         );
       }
@@ -882,7 +882,7 @@ router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
 
     const deletedTag = result.rows[0];
 
-    // If assigned to a plant, also set plant's nfc_uid to NULL
+    // If assigned to a plant, also set plant's nfc_uid to NULL and clear GPS
     if (deletedTag.plant_id || deletedTag.nfc_uid) {
       const pRes = await client.query(
         'SELECT id FROM plants WHERE (id = $1 OR UPPER(nfc_uid) = UPPER($2)) AND farm_id = $3',
@@ -891,7 +891,7 @@ router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
       for (const p of pRes.rows) {
         const standardUrl = generatePublicPlantUrl(farmId, p.id, null);
         await client.query(
-          'UPDATE plants SET nfc_uid = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
+          'UPDATE plants SET nfc_uid = NULL, latitude = NULL, longitude = NULL, public_url = $1, updated_at = NOW() WHERE id = $2',
           [standardUrl, p.id]
         );
       }

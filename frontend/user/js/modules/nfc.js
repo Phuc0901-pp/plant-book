@@ -154,8 +154,30 @@ export function closeNfcModal() {
 export function copyNfcPublicUrl() {
   const input = document.getElementById('nfc-public-url-input');
   if (input && input.value) {
-    navigator.clipboard.writeText(input.value);
-    toast('Đã sao chép đường dẫn URL cây công khai!');
+    const url = input.value;
+    navigator.clipboard.writeText(url).then(() => {
+      const hasNfcTag = _currentPlant && _currentPlant.nfc_uid;
+      if (hasNfcTag) {
+        toast('✨ Đã copy URL public! Đang mở ứng dụng NFC Tools để ghi vào thẻ...', 'success');
+        
+        // Deep link to NFC Tools app (wakdev NFC Tools)
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        setTimeout(() => {
+          if (isAndroid) {
+            window.location.href = 'intent://#Intent;package=com.wakdev.wdnfc;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end';
+          } else if (isIOS) {
+            window.location.href = 'nfctools://';
+          }
+        }, 300);
+      } else {
+        toast('Đã sao chép đường dẫn URL cây công khai!', 'success');
+      }
+    }).catch(err => {
+      console.warn('Clipboard write error:', err);
+      toast('Đã sao chép đường dẫn URL!');
+    });
   }
 }
 window.copyNfcPublicUrl = copyNfcPublicUrl;
@@ -213,7 +235,7 @@ export async function saveNfcUidManually() {
 
 export async function deactivateNfcTag() {
   if (!_currentPlant) return;
-  if (!confirm(`Hủy kích hoạt thẻ định danh cho cây ${_currentPlant.tree_code || _currentPlant.id}?\n\n⚠️ Lưu ý: Đường dẫn công khai theo thẻ cũ sẽ bị đóng băng truy cập. Lịch sử canh tác của cây vẫn được giữ nguyên vẹn 100%.`)) return;
+  if (!confirm(`Hủy kích hoạt thẻ định danh cho cây ${_currentPlant.tree_code || _currentPlant.id}?\n\n⚠️ Lưu ý: Tọa độ GPS của cây sẽ được xóa đi. Đường dẫn công khai theo thẻ cũ sẽ bị đóng băng truy cập. Lịch sử canh tác của cây vẫn được giữ nguyên vẹn 100%.`)) return;
   await _saveUid(null);
 }
 
@@ -228,6 +250,10 @@ async function _saveUid(uid) {
     toast(res.message || (uid ? 'Đã gán thẻ định danh thành công!' : 'Đã hủy kích hoạt thẻ thành công.'));
     
     _currentPlant.nfc_uid = uid;
+    if (!uid) {
+      _currentPlant.latitude = null;
+      _currentPlant.longitude = null;
+    }
 
     // Update modal UI live
     const uidBadge = uid
@@ -250,12 +276,20 @@ async function _saveUid(uid) {
     if (_currentFarmPlants[_currentPlantIndex]) {
       _currentFarmPlants[_currentPlantIndex].nfc_uid = uid;
       _currentFarmPlants[_currentPlantIndex].public_url = fullPlantUrl;
+      if (!uid) {
+        _currentFarmPlants[_currentPlantIndex].latitude = null;
+        _currentFarmPlants[_currentPlantIndex].longitude = null;
+      }
     }
     const cache = getPlantsCache();
     const idx   = cache.findIndex(p => p.id === _currentPlant.id);
     if (idx !== -1) {
       cache[idx].nfc_uid = uid;
       cache[idx].public_url = fullPlantUrl;
+      if (!uid) {
+        cache[idx].latitude = null;
+        cache[idx].longitude = null;
+      }
       renderUserPlantsTable(cache);
     }
   } catch (err) {

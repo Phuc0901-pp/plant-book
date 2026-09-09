@@ -362,6 +362,8 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
           }
         }
         targetPlant.nfc_uid = null;
+        targetPlant.latitude = null;
+        targetPlant.longitude = null;
         targetPlant.public_url = `https://plant-book.onrender.com/${farmId}/${plantId}`;
       }
       return targetPlant;
@@ -389,6 +391,15 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
 
     // 5. Cultivation logs remain 100% intact
     expect(logs.filter(l => l.plant_id === 101).length).toBe(2);
+
+    // 6. Deactivating tag clears GPS coordinates
+    plants[0].latitude = 11.54321;
+    plants[0].longitude = 107.12345;
+    assignNfcToPlant(6, 101, null);
+    expect(plants[0].nfc_uid).toBe(null);
+    expect(plants[0].latitude).toBe(null);
+    expect(plants[0].longitude).toBe(null);
+    expect(inventory[1].status).toBe('unassigned');
   });
 
   it('3.14 Should verify public access response: active tag allowed, old replaced tag frozen (revoked)', () => {

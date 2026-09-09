@@ -366,11 +366,6 @@ async function loadPlant() {
     document.title = `${plant.plant_type || 'Cây trồng'} — Sổ Nông Tân Bảo Agtech`;
 
     await renderPlant(plant);
-
-    // Auto-update GPS location ONLY if accessed with a valid matching full NFC UID
-    if (isFullNfcUid(activeNfcUid)) {
-      autoSyncNfcGpsLocation(plant, activeNfcUid);
-    }
   } catch (err) {
     document.getElementById('loader').style.display = 'none';
     document.getElementById('error-view').style.display = 'block';
