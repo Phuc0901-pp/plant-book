@@ -590,6 +590,10 @@ async function refreshAdminNfcData() {
 }
 window.refreshAdminNfcData = refreshAdminNfcData;
 
+let _currentAdminNfcPage = 1;
+const ADMIN_NFC_PAGE_SIZE = 10;
+let _filteredAdminNfcTags = [];
+
 async function loadAdminNfcPageData(farmId) {
   try {
     const farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
@@ -601,6 +605,7 @@ async function loadAdminNfcPageData(farmId) {
 
     const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
     _nfcInventoryCache = res.tags || res.items || [];
+    _currentAdminNfcPage = 1;
 
     const total = res.stats?.total ?? _nfcInventoryCache.length;
     const assigned = res.stats?.assigned ?? _nfcInventoryCache.filter(t => t.status === 'assigned').length;
@@ -625,9 +630,13 @@ window.loadAdminNfcPageData = loadAdminNfcPageData;
 
 function renderAdminNfcPageTable(tags) {
   const tbody = document.getElementById('db-nfc-inventory-table-body');
+  const pagInfo = document.getElementById('db-nfc-pagination-info');
+  const pagBtns = document.getElementById('db-nfc-pagination-btns');
   if (!tbody) return;
 
-  if (!tags || tags.length === 0) {
+  _filteredAdminNfcTags = tags || [];
+
+  if (!_filteredAdminNfcTags || _filteredAdminNfcTags.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align:center; padding:46px 20px; color:#94a3b8;">
@@ -636,10 +645,22 @@ function renderAdminNfcPageTable(tags) {
           <small style="color:#94a3b8;">Hãy bật "Quét thẻ liên tục" hoặc dùng đầu đọc USB / nhập mã UID ở trên để nạp thẻ vào kho.</small>
         </td>
       </tr>`;
+    if (pagInfo) pagInfo.textContent = 'Hiển thị 0 thẻ';
+    if (pagBtns) pagBtns.innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = tags.map((t, idx) => {
+  // 10 bản ghi trong 1 trang
+  const totalItems = _filteredAdminNfcTags.length;
+  const totalPages = Math.ceil(totalItems / ADMIN_NFC_PAGE_SIZE) || 1;
+  if (_currentAdminNfcPage > totalPages) _currentAdminNfcPage = totalPages;
+  if (_currentAdminNfcPage < 1) _currentAdminNfcPage = 1;
+
+  const startIdx = (_currentAdminNfcPage - 1) * ADMIN_NFC_PAGE_SIZE;
+  const endIdx = Math.min(startIdx + ADMIN_NFC_PAGE_SIZE, totalItems);
+  const pageItems = _filteredAdminNfcTags.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageItems.map((t, idx) => {
     const isAssigned = t.status === 'assigned';
     const statusPill = isAssigned
       ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-link"></i> Đã gán cây</span>`
@@ -658,10 +679,11 @@ function renderAdminNfcPageTable(tags) {
       : `<span style="color:#94a3b8; font-style:italic;">— Sẵn sàng gán —</span>`;
 
     const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
+    const rowStt = startIdx + idx + 1;
 
     return `
       <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-        <td style="padding:12px 14px; text-align:center; font-weight:800; color:#64748b;">${idx + 1}</td>
+        <td style="padding:12px 14px; text-align:center; font-weight:800; color:#64748b;">${rowStt}</td>
         <td style="padding:12px 14px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <code style="font-size:13px; font-weight:800; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; padding:4px 10px; border-radius:6px; font-family:monospace;">${esc(t.nfc_uid)}</code>
@@ -681,10 +703,49 @@ function renderAdminNfcPageTable(tags) {
       </tr>
     `;
   }).join('');
+
+  // Hiển thị thanh phân trang 10 bản ghi / trang
+  if (pagInfo) {
+    pagInfo.textContent = `Hiển thị ${startIdx + 1} - ${endIdx} trong tổng số ${totalItems} thẻ (Trang ${_currentAdminNfcPage}/${totalPages})`;
+  }
+
+  if (pagBtns) {
+    let btnsHtml = '';
+    btnsHtml += `<button onclick="changeAdminNfcPage(${_currentAdminNfcPage - 1})" ${_currentAdminNfcPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">◄ Trang trước</button>`;
+
+    let startPage = Math.max(1, _currentAdminNfcPage - 2);
+    let endPage = Math.min(totalPages, _currentAdminNfcPage + 2);
+
+    if (startPage > 1) {
+      btnsHtml += `<button onclick="changeAdminNfcPage(1)" style="padding:6px 10px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">1</button>`;
+      if (startPage > 2) btnsHtml += `<span style="color:#94a3b8; padding:0 2px;">...</span>`;
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      const isAct = p === _currentAdminNfcPage;
+      btnsHtml += `<button onclick="changeAdminNfcPage(${p})" style="padding:6px 12px; font-size:12px; font-weight:800; border-radius:8px; border:1px solid ${isAct ? '#059669' : '#cbd5e1'}; background:${isAct ? '#059669' : '#ffffff'}; color:${isAct ? '#ffffff' : '#334155'}; cursor:pointer;">${p}</button>`;
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) btnsHtml += `<span style="color:#94a3b8; padding:0 2px;">...</span>`;
+      btnsHtml += `<button onclick="changeAdminNfcPage(${totalPages})" style="padding:6px 10px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">${totalPages}</button>`;
+    }
+
+    btnsHtml += `<button onclick="changeAdminNfcPage(${_currentAdminNfcPage + 1})" ${_currentAdminNfcPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">Trang sau ►</button>`;
+
+    pagBtns.innerHTML = btnsHtml;
+  }
 }
+
+function changeAdminNfcPage(page) {
+  _currentAdminNfcPage = page;
+  renderAdminNfcPageTable(_filteredAdminNfcTags);
+}
+window.changeAdminNfcPage = changeAdminNfcPage;
 
 function filterAdminNfcTable() {
   const q = (document.getElementById('db-nfc-table-search')?.value || '').trim().toLowerCase();
+  _currentAdminNfcPage = 1;
   if (!q) {
     renderAdminNfcPageTable(_nfcInventoryCache);
     return;
@@ -858,10 +919,15 @@ function closeNfcInventoryModal() {
 }
 window.closeNfcInventoryModal = closeNfcInventoryModal;
 
+let _currentModalNfcPage = 1;
+const MODAL_NFC_PAGE_SIZE = 10;
+let _filteredModalNfcTags = [];
+
 async function loadNfcInventoryData(farmId) {
   try {
     const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
     _nfcInventoryCache = res.tags || res.items || [];
+    _currentModalNfcPage = 1;
 
     const total = res.stats?.total ?? _nfcInventoryCache.length;
     const assigned = res.stats?.assigned ?? _nfcInventoryCache.filter(t => t.status === 'assigned').length;
@@ -883,9 +949,13 @@ async function loadNfcInventoryData(farmId) {
 
 function renderNfcInventoryTable(tags) {
   const tbody = document.getElementById('nfc-inventory-table-body');
+  const pagInfo = document.getElementById('nfc-modal-pagination-info');
+  const pagBtns = document.getElementById('nfc-modal-pagination-btns');
   if (!tbody) return;
 
-  if (!tags || tags.length === 0) {
+  _filteredModalNfcTags = tags || [];
+
+  if (!_filteredModalNfcTags || _filteredModalNfcTags.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
@@ -894,10 +964,22 @@ function renderNfcInventoryTable(tags) {
           <small style="color:#94a3b8;">Hãy bật chế độ quét liên tục hoặc quẹt thẻ USB để nạp cọc thẻ vào kho.</small>
         </td>
       </tr>`;
+    if (pagInfo) pagInfo.textContent = 'Hiển thị 0 thẻ';
+    if (pagBtns) pagBtns.innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = tags.map((t, idx) => {
+  // 10 bản ghi trong 1 trang
+  const totalItems = _filteredModalNfcTags.length;
+  const totalPages = Math.ceil(totalItems / MODAL_NFC_PAGE_SIZE) || 1;
+  if (_currentModalNfcPage > totalPages) _currentModalNfcPage = totalPages;
+  if (_currentModalNfcPage < 1) _currentModalNfcPage = 1;
+
+  const startIdx = (_currentModalNfcPage - 1) * MODAL_NFC_PAGE_SIZE;
+  const endIdx = Math.min(startIdx + MODAL_NFC_PAGE_SIZE, totalItems);
+  const pageItems = _filteredModalNfcTags.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageItems.map((t, idx) => {
     const isAssigned = t.status === 'assigned';
     const statusPill = isAssigned
       ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-link"></i> Đã gán</span>`
@@ -908,10 +990,11 @@ function renderNfcInventoryTable(tags) {
       : `<span style="color:#94a3b8;">— Sẵn sàng gán —</span>`;
 
     const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
+    const rowStt = startIdx + idx + 1;
 
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:10px 12px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
+        <td style="padding:10px 12px; text-align:center; font-weight:700; color:#64748b;">${rowStt}</td>
         <td style="padding:10px 12px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <code style="font-size:13px; font-weight:800; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 8px; border-radius:6px; font-family:monospace;">${esc(t.nfc_uid)}</code>
@@ -931,7 +1014,44 @@ function renderNfcInventoryTable(tags) {
       </tr>
     `;
   }).join('');
+
+  if (pagInfo) {
+    pagInfo.textContent = `Hiển thị ${startIdx + 1} - ${endIdx} trong tổng số ${totalItems} thẻ (Trang ${_currentModalNfcPage}/${totalPages})`;
+  }
+
+  if (pagBtns) {
+    let btnsHtml = '';
+    btnsHtml += `<button onclick="changeModalNfcPage(${_currentModalNfcPage - 1})" ${_currentModalNfcPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 10px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">◄</button>`;
+
+    let startPage = Math.max(1, _currentModalNfcPage - 2);
+    let endPage = Math.min(totalPages, _currentModalNfcPage + 2);
+
+    if (startPage > 1) {
+      btnsHtml += `<button onclick="changeModalNfcPage(1)" style="padding:5px 8px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">1</button>`;
+      if (startPage > 2) btnsHtml += `<span style="color:#94a3b8; padding:0 2px;">...</span>`;
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      const isAct = p === _currentModalNfcPage;
+      btnsHtml += `<button onclick="changeModalNfcPage(${p})" style="padding:5px 10px; font-size:12px; font-weight:800; border-radius:6px; border:1px solid ${isAct ? '#059669' : '#cbd5e1'}; background:${isAct ? '#059669' : '#ffffff'}; color:${isAct ? '#ffffff' : '#334155'}; cursor:pointer;">${p}</button>`;
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) btnsHtml += `<span style="color:#94a3b8; padding:0 2px;">...</span>`;
+      btnsHtml += `<button onclick="changeModalNfcPage(${totalPages})" style="padding:5px 8px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">${totalPages}</button>`;
+    }
+
+    btnsHtml += `<button onclick="changeModalNfcPage(${_currentModalNfcPage + 1})" ${_currentModalNfcPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 10px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">►</button>`;
+
+    pagBtns.innerHTML = btnsHtml;
+  }
 }
+
+function changeModalNfcPage(page) {
+  _currentModalNfcPage = page;
+  renderNfcInventoryTable(_filteredModalNfcTags);
+}
+window.changeModalNfcPage = changeModalNfcPage;
 
 async function handleQuickNfcInput(event) {
   if (event) event.preventDefault();
