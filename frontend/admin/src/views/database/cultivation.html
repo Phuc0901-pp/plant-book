@@ -34,6 +34,12 @@
 
               <!-- Quick Stats & Actions -->
               <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm" onclick="openNfcInventoryModal()" style="background:#f0fdf4; border:1.5px solid #86efac; color:#166534; font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Quản lý kho thẻ NFC và quét liên tục">
+                  <i class="fa-solid fa-boxes-stacked" style="color:#059669;"></i> Kho Thẻ NFC
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
+                  <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Đi Vườn Gán Thẻ & GPS
+                </button>
                 <button class="btn btn-primary btn-sm" onclick="openPlantModalForActiveDbFarm()" style="background:#059669; color:#ffffff; border:none; border-radius:8px; font-weight:700; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
                   <i class="fa fa-plus"></i> + Thêm Cây Mới
                 </button>

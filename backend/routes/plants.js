@@ -36,6 +36,15 @@ function generateSlug(plantType) {
   return `${base}-${uuidv4().slice(0, 8)}`;
 }
 
+function generatePublicPlantUrl(farmId, plantId, nfcUid) {
+  const fId = farmId || 0;
+  const pId = plantId || 0;
+  if (nfcUid && String(nfcUid).trim()) {
+    return `https://plant-book.onrender.com/${fId}/${pId}/${encodeURIComponent(String(nfcUid).trim())}`;
+  }
+  return `https://plant-book.onrender.com/${fId}/${pId}`;
+}
+
 // ─── Admin routes (require auth) ─────────────────────────────────
 
 router.get('/', auth, async (req, res) => {
@@ -418,11 +427,16 @@ router.post('/', auth, admin, async (req, res) => {
        req.user.id, finalTreeCode]
     );
 
+    const insertedPlant = result.rows[0];
+    const publicUrl = generatePublicPlantUrl(insertedPlant.farm_id, insertedPlant.id, insertedPlant.nfc_uid);
+    await pool.query('UPDATE plants SET public_url = $1 WHERE id = $2', [publicUrl, insertedPlant.id]);
+    insertedPlant.public_url = publicUrl;
+
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated');
 
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(insertedPlant);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
@@ -449,11 +463,17 @@ router.put('/:id', auth, admin, async (req, res) => {
        req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
+
+    const updatedPlant = result.rows[0];
+    const publicUrl = generatePublicPlantUrl(updatedPlant.farm_id, updatedPlant.id, updatedPlant.nfc_uid);
+    await pool.query('UPDATE plants SET public_url = $1 WHERE id = $2', [publicUrl, updatedPlant.id]);
+    updatedPlant.public_url = publicUrl;
+
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated');
 
-    res.json(result.rows[0]);
+    res.json(updatedPlant);
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
   }
@@ -494,13 +514,36 @@ router.put('/:id/nfc', auth, async (req, res) => {
       );
     }
 
+    const cleanUid = nfc_uid ? decodeURIComponent(nfc_uid).trim().toUpperCase() : null;
+    const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, cleanUid);
+
     // 3. Assign new nfc_uid (or NULL to deactivate) to this plant
     const updated = await client.query(
-      `UPDATE plants SET nfc_uid = $1, updated_at = NOW()
-       WHERE id = $2
-       RETURNING id, tree_code, public_slug, nfc_uid`,
-      [nfc_uid || null, plantId]
+      `UPDATE plants 
+       SET nfc_uid = $1, public_url = $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id`,
+      [cleanUid, publicUrl, plantId]
     );
+
+    // 4. Update NFC Inventory status if exists
+    if (cleanUid) {
+      await client.query(
+        `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, tagged_at, created_by)
+         VALUES ($1, $2, 'assigned', $3, NOW(), $4)
+         ON CONFLICT (nfc_uid) DO UPDATE 
+         SET farm_id = EXCLUDED.farm_id,
+             status = 'assigned',
+             plant_id = EXCLUDED.plant_id,
+             tagged_at = NOW()`,
+        [plant.farm_id, cleanUid, plantId, req.user.id]
+      );
+    } else {
+      await client.query(
+        `UPDATE nfc_tags_inventory SET status = 'unassigned', plant_id = NULL, tagged_at = NULL WHERE plant_id = $1`,
+        [plantId]
+      );
+    }
 
     await client.query('COMMIT');
 
@@ -510,8 +553,9 @@ router.put('/:id/nfc', auth, async (req, res) => {
     res.json({
       success: true,
       plant: updated.rows[0],
-      message: nfc_uid
-        ? `Đã gắn thẻ định danh ${nfc_uid} cho cây ${plant.tree_code || plantId}`
+      public_url: publicUrl,
+      message: cleanUid
+        ? `Đã gắn thẻ định danh ${cleanUid} cho cây ${plant.tree_code || plantId}`
         : `Đã hủy kích hoạt thẻ của cây ${plant.tree_code || plantId}`
     });
   } catch (err) {
@@ -521,6 +565,246 @@ router.put('/:id/nfc', auth, async (req, res) => {
       return res.status(409).json({ error: 'Mã thẻ này đã được sử dụng bởi một cây trồng khác.' });
     }
     res.status(500).json({ error: 'Lỗi server khi cập nhật định danh thẻ.' });
+  } finally {
+    client.release();
+  }
+});
+
+// ─── NFC Inventory API Endpoints (Batch registration, table listing, delete) ──
+router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+
+    // Verify access
+    if (req.user.role !== 'admin') {
+      const farmCheck = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
+      if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
+        return res.status(403).json({ error: 'Không có quyền truy cập kho thẻ của trang trại này.' });
+      }
+    }
+
+    const items = await pool.query(
+      `SELECT n.*, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.latitude, p.longitude, p.public_url
+       FROM nfc_tags_inventory n
+       LEFT JOIN plants p ON n.plant_id = p.id
+       WHERE n.farm_id = $1
+       ORDER BY n.id DESC`,
+      [farmId]
+    );
+
+    const stats = {
+      total: items.rows.length,
+      assigned: items.rows.filter(r => r.status === 'assigned').length,
+      unassigned: items.rows.filter(r => r.status !== 'assigned').length
+    };
+
+    res.json({ success: true, stats, items: items.rows });
+  } catch (err) {
+    console.error('Error fetching NFC inventory:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải danh sách kho thẻ.' });
+  }
+});
+
+router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+
+    const { uids, uid } = req.body;
+    const rawList = Array.isArray(uids) ? uids : (uid ? [uid] : []);
+
+    if (rawList.length === 0) {
+      return res.status(400).json({ error: 'Vui lòng cung cấp ít nhất 1 mã thẻ NFC.' });
+    }
+
+    await client.query('BEGIN');
+
+    const added = [];
+    const duplicates = [];
+
+    for (const rawUid of rawList) {
+      if (!rawUid || typeof rawUid !== 'string') continue;
+      const cleanUid = decodeURIComponent(rawUid).trim().toUpperCase();
+      if (!cleanUid) continue;
+
+      // Check if already in inventory
+      const existing = await client.query(
+        'SELECT id, farm_id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)',
+        [cleanUid]
+      );
+
+      if (existing.rows.length > 0) {
+        duplicates.push({ uid: cleanUid, reason: 'Mã thẻ đã tồn tại trong kho thẻ.' });
+        continue;
+      }
+
+      // Check if already assigned to a plant
+      const existingPlant = await client.query(
+        'SELECT id, tree_code, farm_id FROM plants WHERE UPPER(nfc_uid) = UPPER($1)',
+        [cleanUid]
+      );
+
+      if (existingPlant.rows.length > 0) {
+        duplicates.push({ uid: cleanUid, reason: `Thẻ đã được gán cho cây #${existingPlant.rows[0].tree_code || existingPlant.rows[0].id}` });
+        continue;
+      }
+
+      // Insert new inventory tag
+      const insertRes = await client.query(
+        `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, created_by)
+         VALUES ($1, $2, 'unassigned', $3)
+         RETURNING *`,
+        [farmId, cleanUid, req.user.id]
+      );
+      added.push(insertRes.rows[0]);
+    }
+
+    await client.query('COMMIT');
+
+    // If single tap registration and it's a duplicate, return 409
+    if (rawList.length === 1 && duplicates.length > 0 && added.length === 0) {
+      return res.status(409).json({ 
+        error: `Thẻ ${duplicates[0].uid} bị trùng: ${duplicates[0].reason}`,
+        duplicate: duplicates[0]
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      added_count: added.length,
+      duplicate_count: duplicates.length,
+      added,
+      duplicates,
+      message: `Đã thêm thành công ${added.length} thẻ NFC vào kho của trang trại.${duplicates.length > 0 ? ` (${duplicates.length} thẻ bị trùng đã bỏ qua)` : ''}`
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error batch adding NFC inventory:', err);
+    res.status(500).json({ error: 'Lỗi server khi nhập kho thẻ NFC: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
+router.delete('/farms/:farmId/nfc-inventory/:id', auth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(id) || isNaN(farmId)) return res.status(400).json({ error: 'Tham số không hợp lệ.' });
+
+    const result = await pool.query(
+      'DELETE FROM nfc_tags_inventory WHERE id = $1 AND farm_id = $2 RETURNING *',
+      [id, farmId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy thẻ trong kho.' });
+    }
+
+    res.json({ success: true, message: 'Đã xóa thẻ khỏi kho.' });
+  } catch (err) {
+    console.error('Error deleting NFC tag from inventory:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa thẻ.' });
+  }
+});
+
+// ─── Field Tagging: Quick Assign NFC Tag + GPS location to a Tree ────────────
+router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const farmId = parseInt(req.params.farmId);
+    const { plant_id, tree_code, nfc_uid, latitude, longitude } = req.body;
+
+    if (!nfc_uid || typeof nfc_uid !== 'string') {
+      return res.status(400).json({ error: 'Mã thẻ NFC (UID) là bắt buộc.' });
+    }
+
+    const cleanUid = decodeURIComponent(nfc_uid).trim().toUpperCase();
+
+    let lat = latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null;
+    let lng = longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null;
+
+    if (lat !== null && lng !== null) {
+      if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+        const tmp = lat; lat = lng; lng = tmp;
+      }
+    }
+
+    await client.query('BEGIN');
+
+    // Find the plant by plant_id or farm_id + tree_code
+    let targetPlant = null;
+    if (plant_id) {
+      const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND farm_id = $2', [plant_id, farmId]);
+      if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
+    }
+    if (!targetPlant && tree_code) {
+      const pRes = await client.query('SELECT * FROM plants WHERE farm_id = $1 AND (tree_code = $2 OR tree_code ILIKE $3)', [farmId, tree_code, `%${tree_code}%`]);
+      if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
+    }
+
+    if (!targetPlant) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Không tìm thấy cây số ${tree_code || plant_id} trong trang trại này.` });
+    }
+
+    // Check if this UID is used by another plant
+    const uidConflict = await client.query(
+      'SELECT id, tree_code FROM plants WHERE UPPER(nfc_uid) = UPPER($1) AND id != $2',
+      [cleanUid, targetPlant.id]
+    );
+    if (uidConflict.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: `Mã thẻ ${cleanUid} đã được gắn cho cây #${uidConflict.rows[0].tree_code || uidConflict.rows[0].id}.` });
+    }
+
+    // Generate public URL: https://plant-book.onrender.com/{farm_id}/{plant_id}/{nfc_uid}
+    const publicUrl = generatePublicPlantUrl(farmId, targetPlant.id, cleanUid);
+
+    // Update plant
+    const updateRes = await client.query(
+      `UPDATE plants 
+       SET nfc_uid = $1, 
+           latitude = COALESCE($2, latitude), 
+           longitude = COALESCE($3, longitude), 
+           public_url = $4,
+           updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [cleanUid, lat, lng, publicUrl, targetPlant.id]
+    );
+
+    const updatedPlant = updateRes.rows[0];
+
+    // Upsert NFC Inventory item
+    await client.query(
+      `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, tagged_at, created_by)
+       VALUES ($1, $2, 'assigned', $3, NOW(), $4)
+       ON CONFLICT (nfc_uid) DO UPDATE 
+       SET farm_id = EXCLUDED.farm_id,
+           status = 'assigned',
+           plant_id = EXCLUDED.plant_id,
+           tagged_at = NOW()`,
+      [farmId, cleanUid, targetPlant.id, req.user.id]
+    );
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { plant_id: updatedPlant.id, farm_id: farmId, action: 'nfc_tagged' });
+
+    res.json({
+      success: true,
+      message: `Đã gán thẻ ${cleanUid} và định vị GPS cho cây #${updatedPlant.tree_code || updatedPlant.id}!`,
+      plant: updatedPlant,
+      public_url: publicUrl
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error tagging plant with NFC & GPS:', err);
+    res.status(500).json({ error: 'Lỗi server khi gán thẻ và GPS: ' + err.message });
   } finally {
     client.release();
   }
@@ -1146,14 +1430,16 @@ router.all('/public/:slug/gps', async (req, res) => {
     }
 
     const currentPlant = plantRes.rows[0];
+    const cleanNfcUid = activeNfcUid || currentPlant.nfc_uid || '';
+    const publicUrl = generatePublicPlantUrl(currentPlant.farm_id, currentPlant.id, cleanNfcUid);
 
-    // Update GPS coordinates in database
+    // Update GPS coordinates and public_url in database
     const updateRes = await pool.query(
       `UPDATE plants 
-       SET latitude = $1, longitude = $2, updated_at = NOW() 
-       WHERE id = $3 
-       RETURNING id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude, updated_at`,
-      [lat, lng, currentPlant.id]
+       SET latitude = $1, longitude = $2, public_url = $3, updated_at = NOW() 
+       WHERE id = $4 
+       RETURNING id, tree_code, plant_type, plant_variety, farm_id, nfc_uid, latitude, longitude, public_url, updated_at`,
+      [lat, lng, publicUrl, currentPlant.id]
     );
 
     const updated = updateRes.rows[0];
@@ -1172,7 +1458,8 @@ router.all('/public/:slug/gps', async (req, res) => {
     res.json({
       success: true,
       message: `Đã cập nhật vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây #${updated.tree_code || updated.id}`,
-      plant: updated
+      plant: updated,
+      public_url: publicUrl
     });
   } catch (err) {
     console.error('Error updating plant GPS via NFC:', err);

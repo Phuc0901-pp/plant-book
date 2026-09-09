@@ -37,9 +37,17 @@
                 </div>
               </div>
             </div>
-            <button class="btn btn-secondary btn-sm" id="btn-edit-active-farm" onclick="openEditFarmModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#ffffff; border:1.5px solid #cbd5e1; padding:8px 14px; border-radius:10px;">
-              <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Chỉnh sửa Trang trại
-            </button>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm" onclick="openNfcInventoryModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f0fdf4; border:1.5px solid #86efac; color:#166534; padding:8px 14px; border-radius:10px; cursor:pointer;" title="Quản lý kho thẻ và quẹt liên tục">
+                <i class="fa-solid fa-boxes-stacked" style="color:#059669;"></i> Kho Thẻ NFC
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:8px 16px; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3);" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
+                <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Đi Vườn Gán Thẻ & GPS
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-edit-active-farm" onclick="openEditFarmModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#ffffff; border:1.5px solid #cbd5e1; padding:8px 14px; border-radius:10px;">
+                <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Chỉnh sửa Trang trại
+              </button>
+            </div>
           </div>
 
           <!-- ── SUB-TAB NAVIGATION BAR (Bản đồ & Cây trồng vs Thiết bị IoT & Thời tiết DEMO) ── -->
@@ -102,11 +110,12 @@
                       <th>Tuổi cây</th>
                       <th>Sức khỏe</th>
                       <th>Vị trí</th>
+                      <th>URL Công khai</th>
                       <th style="width:110px">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody id="user-plants-table">
-                    <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                    <tr><td colspan="7" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
                   </tbody>
                 </table>
               </div>

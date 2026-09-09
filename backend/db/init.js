@@ -310,10 +310,28 @@ async function initDB() {
 
 
 
-    // NFC Tag UID column and planting_date for plants
+    // NFC Tag UID column, planting_date and public_url for plants
     await client.query(`
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(100) UNIQUE;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS planting_date DATE;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS public_url TEXT;
+    `);
+
+    // NFC Tags Inventory table (Batch registration, continuous tap & tagging status)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS nfc_tags_inventory (
+        id SERIAL PRIMARY KEY,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE,
+        nfc_uid VARCHAR(100) UNIQUE NOT NULL,
+        status VARCHAR(50) DEFAULT 'unassigned',
+        plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL,
+        scanned_at TIMESTAMPTZ DEFAULT NOW(),
+        tagged_at TIMESTAMPTZ NULL,
+        created_by INTEGER REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_farm ON nfc_tags_inventory(farm_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_uid ON nfc_tags_inventory(nfc_uid);
+      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_status ON nfc_tags_inventory(status);
     `);
 
     // Devices table

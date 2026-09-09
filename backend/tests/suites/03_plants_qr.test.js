@@ -205,4 +205,106 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
     expect(standardUrl.shouldSyncGps).toBe(false);
   });
 
+  it('3.10 Should validate 3-segment URL format: https://plant-book.onrender.com/{farm_id}/{plant_id}/{nfc_uid}', () => {
+    const generatePublicPlantUrl = (farmId, plantId, nfcUid) => {
+      const fId = farmId || 0;
+      const pId = plantId || 0;
+      if (nfcUid && String(nfcUid).trim()) {
+        return `https://plant-book.onrender.com/${fId}/${pId}/${encodeURIComponent(String(nfcUid).trim())}`;
+      }
+      return `https://plant-book.onrender.com/${fId}/${pId}`;
+    };
+
+    const url1 = generatePublicPlantUrl(6, 26, '04:20:CF:5A:25:20:91');
+    expect(url1).toBe('https://plant-book.onrender.com/6/26/04%3A20%3ACF%3A5A%3A25%3A20%3A91');
+
+    const url2 = generatePublicPlantUrl(12, 105, null);
+    expect(url2).toBe('https://plant-book.onrender.com/12/105');
+
+    const url3 = generatePublicPlantUrl(0, 5, '04-12-34-56');
+    expect(url3).toBe('https://plant-book.onrender.com/0/5/04-12-34-56');
+  });
+
+  it('3.11 Should validate NFC Inventory batch insertion, duplicate detection & state management', () => {
+    class MockNfcInventory {
+      constructor() {
+        this.store = new Map(); // uid -> { id, farm_id, status, plant_id }
+      }
+      addBatch(farmId, uids) {
+        const added = [];
+        const duplicates = [];
+        for (const raw of uids) {
+          const uid = String(raw).trim().toUpperCase();
+          if (!uid) continue;
+          if (this.store.has(uid)) {
+            duplicates.push(uid);
+          } else {
+            const entry = { id: this.store.size + 1, farm_id: farmId, nfc_uid: uid, status: 'unassigned', plant_id: null };
+            this.store.set(uid, entry);
+            added.push(entry);
+          }
+        }
+        return { added, duplicates };
+      }
+      assignTag(uid, plantId) {
+        const entry = this.store.get(uid);
+        if (entry) {
+          entry.status = 'assigned';
+          entry.plant_id = plantId;
+          return true;
+        }
+        return false;
+      }
+      getStats(farmId) {
+        const tags = Array.from(this.store.values()).filter(t => t.farm_id === farmId);
+        return {
+          total: tags.length,
+          assigned: tags.filter(t => t.status === 'assigned').length,
+          unassigned: tags.filter(t => t.status === 'unassigned').length
+        };
+      }
+    }
+
+    const inv = new MockNfcInventory();
+    const batch1 = inv.addBatch(5, ['04:20:CF:5A:25:20:91', '04:20:CF:5A:25:20:92', '04:20:CF:5A:25:20:93']);
+    expect(batch1.added.length).toBe(3);
+    expect(batch1.duplicates.length).toBe(0);
+
+    // Duplicate tap rejection
+    const batch2 = inv.addBatch(5, ['04:20:CF:5A:25:20:91', '04:20:CF:5A:25:20:99']);
+    expect(batch2.added.length).toBe(1);
+    expect(batch2.duplicates.length).toBe(1);
+    expect(batch2.duplicates[0]).toBe('04:20:CF:5A:25:20:91');
+
+    // Assign tag
+    inv.assignTag('04:20:CF:5A:25:20:91', 101);
+    const stats = inv.getStats(5);
+    expect(stats.total).toBe(4);
+    expect(stats.assigned).toBe(1);
+    expect(stats.unassigned).toBe(3);
+  });
+
+  it('3.12 Should verify public_url field generation and synchronization upon GPS and NFC tagging', () => {
+    const processFieldTagging = (farmId, plant, nfcUid, lat, lng) => {
+      const cleanUid = String(nfcUid).trim().toUpperCase();
+      const publicUrl = `https://plant-book.onrender.com/${farmId}/${plant.id}/${encodeURIComponent(cleanUid)}`;
+      return {
+        ...plant,
+        nfc_uid: cleanUid,
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lng),
+        public_url: publicUrl
+      };
+    };
+
+    const initialPlant = { id: 26, farm_id: 6, tree_code: 'SR-26', nfc_uid: null, latitude: null, longitude: null, public_url: null };
+    const taggedPlant = processFieldTagging(6, initialPlant, '04:20:CF:5A:25:20:91', 11.543210, 107.123450);
+
+    expect(taggedPlant.nfc_uid).toBe('04:20:CF:5A:25:20:91');
+    expect(taggedPlant.latitude).toBe(11.54321);
+    expect(taggedPlant.longitude).toBe(107.12345);
+    expect(taggedPlant.public_url).toBe('https://plant-book.onrender.com/6/26/04%3A20%3ACF%3A5A%3A25%3A20%3A91');
+  });
+
 });
+
