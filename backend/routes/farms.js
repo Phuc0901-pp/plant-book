@@ -15,10 +15,17 @@ router.get('/', auth, async (req, res) => {
     }
 
     let query = `
-      SELECT f.*, GREATEST(COUNT(p.id)::int, COALESCE(f.total_plants, 0)) as plant_count, u.full_name as user_name, u.email as user_email, u.account_tier as user_account_tier, u.role as user_role
+      SELECT f.*, GREATEST(COUNT(p.id)::int, COALESCE(f.total_plants, 0)) as plant_count,
+             COALESCE(u.full_name, u_assigned.full_name) as user_name,
+             COALESCE(u.email, u_assigned.email) as user_email,
+             COALESCE(u.phone, u_assigned.phone) as user_phone,
+             COALESCE(u.account_tier, u_assigned.account_tier, 'normal') as user_account_tier,
+             COALESCE(u.role, u_assigned.role, 'user') as user_role,
+             COALESCE(f.user_id, u_assigned.id) as user_id
       FROM farms f 
       LEFT JOIN plants p ON p.farm_id = f.id 
       LEFT JOIN users u ON u.id = f.user_id
+      LEFT JOIN users u_assigned ON u_assigned.farm_id = f.id AND u_assigned.role != 'admin'
     `;
     const params = [];
     if (req.user.role !== 'admin') {
@@ -28,7 +35,7 @@ router.get('/', auth, async (req, res) => {
       query += ` WHERE (f.is_deleted IS NOT TRUE) `;
     }
     query += `
-      GROUP BY f.id, u.id, u.account_tier, u.role
+      GROUP BY f.id, u.id, u.account_tier, u.role, u_assigned.id, u_assigned.full_name, u_assigned.email, u_assigned.phone, u_assigned.account_tier, u_assigned.role
       ORDER BY f.created_at DESC
     `;
     const result = await pool.query(query, params);
@@ -44,10 +51,18 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const farmResult = await pool.query(`
-      SELECT f.*, u.full_name as user_name, u.email as user_email, u.account_tier as user_account_tier, u.role as user_role
+      SELECT f.*, 
+             COALESCE(u.full_name, u_assigned.full_name) as user_name,
+             COALESCE(u.email, u_assigned.email) as user_email,
+             COALESCE(u.phone, u_assigned.phone) as user_phone,
+             COALESCE(u.account_tier, u_assigned.account_tier, 'normal') as user_account_tier,
+             COALESCE(u.role, u_assigned.role, 'user') as user_role,
+             COALESCE(f.user_id, u_assigned.id) as user_id
       FROM farms f
       LEFT JOIN users u ON u.id = f.user_id
+      LEFT JOIN users u_assigned ON u_assigned.farm_id = f.id AND u_assigned.role != 'admin'
       WHERE f.id = $1
+      LIMIT 1
     `, [req.params.id]);
     if (farmResult.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
@@ -234,6 +249,13 @@ router.put('/:id', auth, async (req, res) => {
       farmId
     ]);
 
+    // Sync farmer's farm_id if assignedUserId is set
+    if (assignedUserId) {
+      try {
+        await pool.query('UPDATE users SET farm_id = $1 WHERE id = $2', [farmId, assignedUserId]);
+      } catch (_) {}
+    }
+
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('farms_updated');
@@ -249,8 +271,42 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+// POST /api/farms/:id/clear-gps — Reset/Clear all plants GPS in a farm (requires auth — admin or farm owner)
+router.post('/:id/clear-gps', auth, async (req, res) => {
+  try {
+    const farmId = req.params.id;
+    const farmCheck = await pool.query('SELECT * FROM farms WHERE id = $1', [farmId]);
+    if (farmCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
+    }
+    const farm = farmCheck.rows[0];
+    const isOwner = farm.user_id === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
+    if (req.user.role !== 'admin' && !isOwner) {
+      return res.status(403).json({ error: 'Bạn không có quyền thực hiện thao tác này.' });
+    }
 
+    const resetRes = await pool.query(`
+      UPDATE plants
+      SET latitude = NULL, longitude = NULL, updated_at = NOW()
+      WHERE farm_id = $1 AND (latitude IS NOT NULL OR longitude IS NOT NULL)
+      RETURNING id, tree_code
+    `, [farmId]);
 
+    await delCacheByPattern('farms_');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { farm_id: farmId, action: 'gps_cleared_all' });
+
+    res.json({
+      success: true,
+      message: `Đã xóa thành công tọa độ định vị GPS của ${resetRes.rows.length} cây trong trang trại!`,
+      cleared_count: resetRes.rows.length
+    });
+  } catch (err) {
+    console.error('Error clearing plants GPS in farm:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa tọa độ GPS: ' + err.message });
+  }
+});
 
 // ── FARM IOT SENSORS & WEATHER FORECAST ENDPOINTS (PERSISTENT DB) ──
 function generateDefaultFarmIoTData(farmId) {

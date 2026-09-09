@@ -165,6 +165,16 @@ router.post('/', async (req, res) => {
 
     const newUser = result.rows[0];
 
+    // Synchronize farm's primary user_id if not set or set to admin
+    if (assignedFarmId && newUser.role !== 'admin') {
+      try {
+        await pool.query(
+          `UPDATE farms SET user_id = $1 WHERE id = $2 AND (user_id IS NULL OR user_id IN (SELECT id FROM users WHERE role = 'admin'))`,
+          [newUser.id, assignedFarmId]
+        );
+      } catch (_) {}
+    }
+
     // Assign specific plants to new user if provided
     if (Array.isArray(assigned_plant_ids) && assigned_plant_ids.length > 0) {
       const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
@@ -258,9 +268,15 @@ router.put('/:id', async (req, res) => {
 
     await pool.query(query, params);
     
-    // Sync farm ownership if assigned farm has no primary owner
-    if (assignedFarmId) {
-      await pool.query('UPDATE farms SET user_id = $1 WHERE id = $2 AND user_id IS NULL', [targetUserId, assignedFarmId]);
+    // Sync farm ownership if assigned farm has no primary owner or is assigned to admin
+    if (assignedFarmId && trimmedRole !== 'admin') {
+      try {
+        await pool.query(`
+          UPDATE farms 
+          SET user_id = $1 
+          WHERE id = $2 AND (user_id IS NULL OR user_id IN (SELECT id FROM users WHERE role = 'admin'))
+        `, [targetUserId, assignedFarmId]);
+      } catch (_) {}
     }
 
     // Update specific assigned plants for this user

@@ -877,15 +877,16 @@ function updateAreaDisplay() {
   }
 }
 
-async function loadUsersDropdown(selectedUserId = '') {
+async function loadUsersDropdown(selectedUserId = '', farmId = null) {
   try {
     const users = await api('/users');
     const select = document.getElementById('farm-user-id');
     if (select) {
       select.innerHTML = '<option value="">— Chưa gán cho ai —</option>' + 
         users.map(u => {
+          const isSelected = (selectedUserId && u.id == selectedUserId) || (farmId && u.farm_id == farmId);
           const roleLabel = u.role === 'admin' ? ' (Admin)' : ' (Nông hộ)';
-          return `<option value="${u.id}" ${u.id == selectedUserId ? 'selected' : ''}>${esc(u.full_name)}${roleLabel}</option>`;
+          return `<option value="${u.id}" ${isSelected ? 'selected' : ''}>${esc(u.full_name)}${roleLabel}</option>`;
         }).join('');
     }
   } catch (err) {
@@ -1549,7 +1550,7 @@ async function editFarm() {
     document.getElementById('farm-area-ha').textContent = ((farm.area || 0) / 10000).toFixed(2);
     window._lastDrawnArea = farm.area || 0;
 
-    await loadUsersDropdown(farm.user_id);
+    await loadUsersDropdown(farm.user_id, farm.id);
 
     let coords = [];
     try {
@@ -3499,3 +3500,39 @@ function openUserTierModalFromGis(userId) {
   }
 }
 window.openUserTierModalFromGis = openUserTierModalFromGis;
+
+async function confirmClearFarmPlantsGps(farmId) {
+  const targetId = farmId || activeFarmId;
+  if (!targetId) {
+    toast('Vui lòng chọn một trang trại trước khi xóa tọa độ GPS!', 'warning');
+    return;
+  }
+  
+  const farmTitle = document.getElementById('gis-sidebar-title')?.textContent || `Trang trại #${targetId}`;
+  
+  if (!confirm(`⚠️ XÁC NHẬN XÓA TOÀN BỘ ĐỊNH VỊ GPS:\n\nBạn có chắc chắn muốn xóa hết tọa độ định vị GPS của TẤT CẢ các cây trong vườn "${farmTitle}" không?\n\nSau khi xóa, toàn bộ cây sẽ chuyển về trạng thái Chưa định vị trên bản đồ (dữ liệu nhật ký và mã cây vẫn được giữ nguyên 100%).`)) {
+    return;
+  }
+
+  try {
+    const res = await api(`/farms/${targetId}/clear-gps`, { method: 'POST' });
+    toast(res.message || 'Đã xóa toàn bộ tọa độ định vị GPS của các cây trong trang trại thành công!', 'success');
+    
+    // Clear markers from GIS Map
+    if (plantMarkers && plantMarkers.length > 0) {
+      plantMarkers.forEach(m => {
+        try { m.remove(); } catch (_) {}
+      });
+      plantMarkers = [];
+    }
+
+    // Refresh GIS View
+    if (typeof loadFarms === 'function') await loadFarms();
+    await selectFarm(targetId);
+  } catch (err) {
+    console.error('Error clearing plants GPS:', err);
+    toast('Lỗi khi xóa tọa độ GPS: ' + (err.message || 'Lỗi server'), 'error');
+  }
+}
+window.confirmClearFarmPlantsGps = confirmClearFarmPlantsGps;
+

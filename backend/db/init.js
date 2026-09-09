@@ -505,6 +505,27 @@ async function initDB() {
       `);
     } catch (_) {}
 
+    // Đồng bộ user_id giữa bảng farms và users (nếu có user được gán farm_id nhưng farms.user_id chưa cập nhật)
+    try {
+      await client.query(`
+        UPDATE farms f
+        SET user_id = u.id
+        FROM users u
+        WHERE u.farm_id = f.id AND u.role != 'admin' AND (f.user_id IS NULL OR f.user_id IN (SELECT id FROM users WHERE role = 'admin'));
+      `);
+    } catch (_) {}
+
+    // Xóa định vị GPS của các cây trong vườn "Bùi Văn Dũng" theo yêu cầu
+    try {
+      await client.query(`
+        UPDATE plants
+        SET latitude = NULL, longitude = NULL, updated_at = NOW()
+        WHERE farm_id IN (
+          SELECT id FROM farms WHERE name ILIKE '%Bùi Văn Dũng%' OR name ILIKE '%Bui Van Dung%'
+        ) AND (latitude IS NOT NULL OR longitude IS NOT NULL);
+      `);
+    } catch (_) {}
+
     await client.query('COMMIT');
     console.log('✅ Database schema initialized');
 

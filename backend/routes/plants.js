@@ -52,7 +52,9 @@ router.get('/', auth, async (req, res) => {
     const { search, health_status, plant_type, user_id, farm_id } = req.query;
     let query = `
       SELECT p.*, ps.name as schema_name, u.full_name as creator_name,
-             f.name as farm_name, f.puc_code as farm_puc_code, f.vietgap_cert_number, fu.full_name as farm_owner_name, fu.id as farm_owner_id,
+             f.name as farm_name, f.puc_code as farm_puc_code, f.vietgap_cert_number,
+             COALESCE(fu.full_name, fu_assigned.full_name) as farm_owner_name,
+             COALESCE(fu.id, fu_assigned.id) as farm_owner_id,
              (SELECT COUNT(*) FROM plant_media pm WHERE pm.plant_id = p.id) as media_count,
              (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id) as log_count,
              TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước'), 'YYYY-MM-DD') as last_watered,
@@ -61,7 +63,7 @@ router.get('/', auth, async (req, res) => {
                WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
                THEN (p.phi_until_date - CURRENT_DATE) 
                ELSE 0 
-             END as phi_remaining_days,
+              END as phi_remaining_days,
              CASE 
                WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
                THEN 'quarantine' 
@@ -72,6 +74,7 @@ router.get('/', auth, async (req, res) => {
       LEFT JOIN users u ON u.id = p.created_by
       LEFT JOIN farms f ON f.id = p.farm_id
       LEFT JOIN users fu ON fu.id = f.user_id
+      LEFT JOIN users fu_assigned ON fu_assigned.farm_id = f.id AND fu_assigned.role != 'admin'
       WHERE 1=1
     `;
     const params = [];
