@@ -2294,7 +2294,26 @@
 
       <!-- Tab: Info -->
       <div class="tab-pane active" id="tab-info">
-        <div class="form-row">
+        
+        <!-- Mode Selector (Chỉ hiển thị khi thêm cây mới) -->
+        <div id="plant-create-mode-wrap" style="margin-bottom: 14px; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div style="font-size: 12px; font-weight: 800; color: #334155; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-sliders" style="color:#059669;"></i> Chế độ tạo cây:
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <label id="label-mode-single" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #065f46; cursor: pointer; background: #ecfdf5; padding: 5px 12px; border-radius: 8px; border: 1.5px solid #34d399;">
+              <input type="radio" name="plant-create-mode" value="single" checked onchange="togglePlantCreateMode('single')" style="accent-color:#059669;">
+              Tạo 1 cây đơn lẻ
+            </label>
+            <label id="label-mode-range" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #334155; cursor: pointer; background: #ffffff; padding: 5px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1;">
+              <input type="radio" name="plant-create-mode" value="range" onchange="togglePlantCreateMode('range')" style="accent-color:#059669;">
+              ✨ Tạo dải số hàng loạt (XX ➔ XY)
+            </label>
+          </div>
+        </div>
+
+        <!-- 1. Single Mode Tree Code Field -->
+        <div class="form-row" id="wrap-single-tree-code">
           <div class="field">
             <label>Mã số cây (ID trong trang trại)</label>
             <input type="text" id="f-tree-code" placeholder="VD: 01, A-02, 105...">
@@ -2302,6 +2321,46 @@
           <div class="field">
             <label>Loại cây *</label>
             <select id="f-plant-type" onchange="onPlantTypeChange()">
+              <option value="">— Chọn loại cây —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. Range Mode Fields (XX -> XY) -->
+        <div id="wrap-range-tree-code" style="display: none; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+          <div style="font-size: 12.5px; font-weight: 800; color: #065f46; display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+            <i class="fa-solid fa-layer-group"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 11px; font-weight: 800; color: #047857; display: block; margin-bottom: 4px;">Tiền tố mã cây (Tùy chọn)</label>
+              <input type="text" id="f-range-prefix" placeholder="VD: SR- hoặc Cây-" oninput="updateRangePreview()" style="width: 100%; padding: 8px 10px; border: 1.5px solid #6ee7b7; border-radius: 8px; font-size: 12.5px; font-weight: 700; background: #fff; outline:none; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 800; color: #047857; display: block; margin-bottom: 4px;">Từ số thứ tự (XX) *</label>
+              <input type="number" id="f-range-start" placeholder="VD: 1 hoặc 01" min="1" max="9999" oninput="updateRangePreview()" style="width: 100%; padding: 8px 10px; border: 1.5px solid #6ee7b7; border-radius: 8px; font-size: 12.5px; font-weight: 700; background: #fff; outline:none; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 800; color: #047857; display: block; margin-bottom: 4px;">Đến số thứ tự (XY) *</label>
+              <input type="number" id="f-range-end" placeholder="VD: 50" min="1" max="9999" oninput="updateRangePreview()" style="width: 100%; padding: 8px 10px; border: 1.5px solid #6ee7b7; border-radius: 8px; font-size: 12.5px; font-weight: 700; background: #fff; outline:none; box-sizing: border-box;">
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 8px; border-top: 1px dashed #a7f3d0;">
+            <div style="font-size: 12px; font-weight: 700; color: #065f46;" id="range-preview-text">
+              🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây sẽ tạo.
+            </div>
+            <label style="font-size: 11.5px; font-weight: 700; color: #047857; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+              <input type="checkbox" id="f-range-pad-zeros" checked onchange="updateRangePreview()" style="accent-color: #059669;">
+              Giữ số chữ số 0 đầu (VD: 01, 02...)
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row" id="wrap-range-type-select" style="display: none;">
+          <div class="field" style="width: 100%;">
+            <label>Loại cây *</label>
+            <select id="f-plant-type-range" onchange="document.getElementById('f-plant-type').value=this.value; onPlantTypeChange();">
               <option value="">— Chọn loại cây —</option>
             </select>
           </div>

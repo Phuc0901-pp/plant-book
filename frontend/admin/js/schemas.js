@@ -354,6 +354,13 @@ async function loadSchemasDropdown() {
       pTypeSel.innerHTML = '<option value="">— Chọn loại cây —</option>' +
         schemas.map(s => `<option value="${esc(s.name)}" data-schema-id="${s.id}">${esc(s.name)}</option>`).join('');
     }
+
+    // Populate f-plant-type-range select
+    const pTypeRangeSel = document.getElementById('f-plant-type-range');
+    if (pTypeRangeSel) {
+      pTypeRangeSel.innerHTML = '<option value="">— Chọn loại cây —</option>' +
+        schemas.map(s => `<option value="${esc(s.name)}" data-schema-id="${s.id}">${esc(s.name)}</option>`).join('');
+    }
     
     // Populate csv-plant-type select
     const csvTypeSel = document.getElementById('csv-plant-type');
@@ -374,6 +381,16 @@ function onPlantTypeChange() {
   document.getElementById('f-schema-id').value = schemaId || '';
   renderExtraFields();
 }
+
+function onPlantTypeRangeChange() {
+  const rangeTypeSel = document.getElementById('f-plant-type-range');
+  const mainTypeSel = document.getElementById('f-plant-type');
+  if (rangeTypeSel && mainTypeSel) {
+    mainTypeSel.value = rangeTypeSel.value;
+  }
+  onPlantTypeChange();
+}
+window.onPlantTypeRangeChange = onPlantTypeRangeChange;
 
 function onCsvPlantTypeChange() {
   const csvTypeSel = document.getElementById('csv-plant-type');

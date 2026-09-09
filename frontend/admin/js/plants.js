@@ -206,6 +206,90 @@ function onPlantUserFilterChange() {
   loadPlants();
 }
 
+let _plantCreateMode = 'single';
+
+function togglePlantCreateMode(mode) {
+  _plantCreateMode = mode;
+  const singleWrap = document.getElementById('wrap-single-tree-code');
+  const rangeWrap = document.getElementById('wrap-range-tree-code');
+  const rangeTypeWrap = document.getElementById('wrap-range-type-select');
+  const labelSingle = document.getElementById('label-mode-single');
+  const labelRange = document.getElementById('label-mode-range');
+  const saveText = document.getElementById('plant-save-text');
+
+  if (mode === 'range') {
+    if (singleWrap) singleWrap.style.display = 'none';
+    if (rangeWrap) rangeWrap.style.display = 'block';
+    if (rangeTypeWrap) {
+      rangeTypeWrap.style.display = 'flex';
+      const typeSelect = document.getElementById('f-plant-type');
+      const rangeTypeSelect = document.getElementById('f-plant-type-range');
+      if (typeSelect && rangeTypeSelect) {
+        rangeTypeSelect.innerHTML = typeSelect.innerHTML;
+        rangeTypeSelect.value = typeSelect.value;
+      }
+    }
+    if (labelSingle) { labelSingle.style.background = '#ffffff'; labelSingle.style.borderColor = '#cbd5e1'; labelSingle.style.color = '#334155'; }
+    if (labelRange) { labelRange.style.background = '#ecfdf5'; labelRange.style.borderColor = '#34d399'; labelRange.style.color = '#065f46'; }
+    updateRangePreview();
+  } else {
+    if (singleWrap) singleWrap.style.display = 'flex';
+    if (rangeWrap) rangeWrap.style.display = 'none';
+    if (rangeTypeWrap) rangeTypeWrap.style.display = 'none';
+    if (labelSingle) { labelSingle.style.background = '#ecfdf5'; labelSingle.style.borderColor = '#34d399'; labelSingle.style.color = '#065f46'; }
+    if (labelRange) { labelRange.style.background = '#ffffff'; labelRange.style.borderColor = '#cbd5e1'; labelRange.style.color = '#334155'; }
+    if (saveText) saveText.innerHTML = '<i class="fa fa-floppy-disk"></i> Lưu cây';
+  }
+}
+window.togglePlantCreateMode = togglePlantCreateMode;
+
+function updateRangePreview() {
+  if (_plantCreateMode !== 'range') return;
+  const prefix = (document.getElementById('f-range-prefix')?.value || '').trim();
+  const rawStart = document.getElementById('f-range-start')?.value;
+  const rawEnd = document.getElementById('f-range-end')?.value;
+  const padZeros = document.getElementById('f-range-pad-zeros')?.checked;
+  const previewEl = document.getElementById('range-preview-text');
+  const saveText = document.getElementById('plant-save-text');
+
+  const start = parseInt(rawStart, 10);
+  const end = parseInt(rawEnd, 10);
+
+  if (isNaN(start) || isNaN(end)) {
+    if (previewEl) previewEl.innerHTML = '🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây.';
+    if (saveText) saveText.innerHTML = '<i class="fa-solid fa-layer-group"></i> Tạo cây hàng loạt';
+    return;
+  }
+
+  if (start > end) {
+    if (previewEl) previewEl.innerHTML = '<span style="color:#dc2626; font-weight:800;">⚠️ Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!</span>';
+    if (saveText) saveText.innerHTML = '<i class="fa-solid fa-layer-group"></i> Tạo cây hàng loạt';
+    return;
+  }
+
+  const count = end - start + 1;
+  if (count > 500) {
+    if (previewEl) previewEl.innerHTML = `<span style="color:#dc2626; font-weight:800;">⚠️ Số lượng ${count} cây vượt quá giới hạn 500 cây mỗi lần!</span>`;
+    return;
+  }
+
+  const padLen = padZeros ? Math.max(String(rawStart).length, String(rawEnd).length) : 0;
+  const formatNum = (num) => padLen > 1 ? String(num).padStart(padLen, '0') : String(num);
+
+  const firstCode = `${prefix}${formatNum(start)}`;
+  const lastCode = `${prefix}${formatNum(end)}`;
+  const secondCode = count > 2 ? `${prefix}${formatNum(start + 1)}` : '';
+
+  let previewStr = `✨ Sẽ tạo <strong>${count} cây</strong>: <code>${esc(firstCode)}</code>`;
+  if (secondCode) previewStr += `, <code>${esc(secondCode)}</code>`;
+  if (count > 3) previewStr += `, ...`;
+  if (count > 1) previewStr += `, <code>${esc(lastCode)}</code>`;
+
+  if (previewEl) previewEl.innerHTML = previewStr;
+  if (saveText) saveText.innerHTML = `<i class="fa-solid fa-layer-group"></i> Tạo ${count} cây hàng loạt`;
+}
+window.updateRangePreview = updateRangePreview;
+
 async function openPlantModal(id = null, syncUrl = true) {
   editingPlantId = id;
   resetPlantForm();
@@ -213,6 +297,11 @@ async function openPlantModal(id = null, syncUrl = true) {
     ? '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa cây'
     : '<i class="fa-solid fa-seedling" style="color:var(--green)"></i> Thêm cây mới';
   document.getElementById('public-url-section').style.display = 'none';
+
+  const modeWrap = document.getElementById('plant-create-mode-wrap');
+  if (modeWrap) {
+    modeWrap.style.display = id ? 'none' : 'flex';
+  }
 
   if (syncUrl && typeof window.syncAdminUrl === 'function') {
     window.syncAdminUrl({ modal: 'plant', id: id || null });
@@ -262,7 +351,7 @@ function closePlantModal(syncUrl = true) {
 }
 
 function resetPlantForm() {
-  ['f-tree-code','f-plant-type','f-plant-variety','f-plant-age','f-location','f-farm-id','f-latitude','f-longitude'].forEach(id => {
+  ['f-tree-code','f-plant-type','f-plant-variety','f-plant-age','f-location','f-farm-id','f-latitude','f-longitude','f-range-prefix','f-range-start','f-range-end'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -272,6 +361,12 @@ function resetPlantForm() {
   document.getElementById('extra-fields-container').innerHTML = '<div class="empty-state" style="padding:24px"><i class="fa fa-layer-group"></i><p>Chọn schema ở tab Thông tin cơ bản để hiển thị các trường mở rộng</p></div>';
   document.getElementById('plant-media-container').innerHTML = '<p style="font-size:13px;color:var(--gray-400)">Lưu cây trước để upload ảnh/video.</p>';
   document.getElementById('plant-logs-container').innerHTML = '<p style="font-size:13px;color:var(--gray-400)">Lưu cây trước để ghi nhật ký.</p>';
+  
+  _plantCreateMode = 'single';
+  const radioSingle = document.querySelector('input[name="plant-create-mode"][value="single"]');
+  if (radioSingle) radioSingle.checked = true;
+  togglePlantCreateMode('single');
+
   // Reset to first tab
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===0));
   document.querySelectorAll('.tab-pane').forEach((p,i) => p.classList.toggle('active', i===0));
@@ -293,12 +388,76 @@ function copyURL() {
 }
 
 async function savePlant() {
-  const plant_type = document.getElementById('f-plant-type').value.trim();
-  if (!plant_type) { toast('Vui lòng nhập loại cây!', 'error'); return; }
+  const isRangeMode = !editingPlantId && _plantCreateMode === 'range';
+  const plant_type_input = isRangeMode ? document.getElementById('f-plant-type-range') : document.getElementById('f-plant-type');
+  const plant_type = (plant_type_input?.value || document.getElementById('f-plant-type')?.value || '').trim();
+  if (!plant_type) { toast('Vui lòng chọn loại cây!', 'error'); return; }
 
   const schema_id = document.getElementById('f-schema-id').value;
   const extraData = collectExtraFields();
 
+  if (isRangeMode) {
+    const prefix = (document.getElementById('f-range-prefix')?.value || '').trim();
+    const rawStart = document.getElementById('f-range-start')?.value;
+    const rawEnd = document.getElementById('f-range-end')?.value;
+    const padZeros = document.getElementById('f-range-pad-zeros')?.checked;
+
+    const start = parseInt(rawStart, 10);
+    const end = parseInt(rawEnd, 10);
+
+    if (isNaN(start) || isNaN(end)) {
+      toast('Vui lòng nhập số thứ tự bắt đầu (XX) và kết thúc (XY)!', 'error');
+      return;
+    }
+    if (start > end) {
+      toast('Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!', 'error');
+      return;
+    }
+    if (end - start + 1 > 500) {
+      toast('Mỗi lần chỉ tạo tối đa 500 cây hàng loạt.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('plant-save-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Đang tạo...';
+
+    try {
+      const res = await api('/plants/batch-range', {
+        method: 'POST',
+        body: JSON.stringify({
+          start_num: start,
+          end_num: end,
+          prefix,
+          pad_zeros: padZeros,
+          plant_type,
+          plant_variety: document.getElementById('f-plant-variety').value.trim(),
+          plant_age: document.getElementById('f-plant-age').value.trim(),
+          health_status: document.getElementById('f-health-status').value,
+          location: document.getElementById('f-location').value.trim(),
+          schema_id: schema_id || null,
+          is_public: document.getElementById('f-is-public').value === 'true',
+          farm_id: document.getElementById('f-farm-id').value || null,
+          latitude: document.getElementById('f-latitude').value,
+          longitude: document.getElementById('f-longitude').value,
+          data: extraData
+        })
+      });
+
+      toast(res.message || `🎉 Đã tạo thành công ${res.count} cây!`, 'success');
+      closePlantModal();
+      loadPlants();
+      loadDashboard();
+    } catch (err) {
+      toast('Lỗi tạo hàng loạt: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu cây</span>';
+    }
+    return;
+  }
+
+  // Single tree mode
   const body = {
     tree_code: document.getElementById('f-tree-code').value.trim(),
     plant_type,

@@ -389,6 +389,120 @@ router.post('/batch', auth, admin, async (req, res) => {
   }
 });
 
+// POST /api/plants/batch-range — Import sequential range of trees XX -> XY with identical attributes
+router.post('/batch-range', auth, admin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { 
+      tree_codes, 
+      start_num, 
+      end_num, 
+      prefix, 
+      pad_zeros,
+      plant_type, 
+      plant_variety, 
+      plant_age, 
+      health_status, 
+      location, 
+      data, 
+      is_public, 
+      farm_id, 
+      latitude, 
+      longitude, 
+      schema_id 
+    } = req.body;
+
+    if (!plant_type || !plant_type.trim()) {
+      return res.status(400).json({ error: 'Loại cây là bắt buộc.' });
+    }
+
+    let codesToInsert = [];
+    if (Array.isArray(tree_codes) && tree_codes.length > 0) {
+      codesToInsert = tree_codes.map(c => String(c).trim()).filter(Boolean);
+    } else if (start_num !== undefined && end_num !== undefined) {
+      const s = parseInt(start_num, 10);
+      const e = parseInt(end_num, 10);
+      if (isNaN(s) || isNaN(e) || s > e) {
+        return res.status(400).json({ error: 'Dải số thứ tự không hợp lệ (số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc).' });
+      }
+      if (e - s + 1 > 500) {
+        return res.status(400).json({ error: 'Mỗi lần tạo hàng loạt tối đa 500 cây.' });
+      }
+      const pre = prefix || '';
+      const padLen = pad_zeros ? Math.max(String(start_num).length, String(end_num).length) : 0;
+      for (let i = s; i <= e; i++) {
+        const numStr = padLen > 1 ? String(i).padStart(padLen, '0') : String(i);
+        codesToInsert.push(`${pre}${numStr}`);
+      }
+    }
+
+    if (codesToInsert.length === 0) {
+      return res.status(400).json({ error: 'Danh sách mã cây cần tạo trống.' });
+    }
+
+    if (codesToInsert.length > 500) {
+      return res.status(400).json({ error: 'Mỗi lần tạo hàng loạt tối đa 500 cây.' });
+    }
+
+    await client.query('BEGIN');
+    const insertedIds = [];
+
+    for (const code of codesToInsert) {
+      const slug = `${farm_id || 0}_${code}`;
+      const lat = latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null;
+      const lng = longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null;
+
+      const resDb = await client.query(
+        `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         ON CONFLICT (public_slug) DO UPDATE 
+         SET schema_id = EXCLUDED.schema_id,
+             plant_type = EXCLUDED.plant_type,
+             plant_variety = EXCLUDED.plant_variety,
+             plant_age = EXCLUDED.plant_age,
+             health_status = EXCLUDED.health_status,
+             location = EXCLUDED.location,
+             data = EXCLUDED.data,
+             is_public = EXCLUDED.is_public,
+             farm_id = EXCLUDED.farm_id,
+             latitude = EXCLUDED.latitude,
+             longitude = EXCLUDED.longitude,
+             created_by = EXCLUDED.created_by,
+             tree_code = EXCLUDED.tree_code,
+             updated_at = NOW()
+         RETURNING id`,
+        [slug, schema_id || null, plant_type.trim(), plant_variety ? plant_variety.trim() : '', plant_age ? plant_age.trim() : '', health_status || 'Tốt',
+         location ? location.trim() : '', JSON.stringify(data || {}), is_public !== false, farm_id || null, lat, lng, req.user.id, code]
+      );
+
+      const newId = resDb.rows[0].id;
+      insertedIds.push(newId);
+
+      const pubUrl = generatePublicPlantUrl(farm_id || null, newId, null);
+      await client.query('UPDATE plants SET public_url = $1 WHERE id = $2', [pubUrl, newId]);
+    }
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated');
+
+    res.status(201).json({
+      success: true,
+      count: insertedIds.length,
+      first_code: codesToInsert[0],
+      last_code: codesToInsert[codesToInsert.length - 1],
+      message: `Đã tạo thành công ${insertedIds.length} cây từ ${codesToInsert[0]} đến ${codesToInsert[codesToInsert.length - 1]}!`
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Batch range creation error:', err);
+    res.status(500).json({ error: 'Lỗi server khi tạo dải cây hàng loạt: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
 router.post('/', auth, admin, async (req, res) => {
   try {
     const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code } = req.body;

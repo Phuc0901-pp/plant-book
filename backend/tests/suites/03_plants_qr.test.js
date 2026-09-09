@@ -436,5 +436,49 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
     expect(oldAccess.error).toContain('đã bị đóng băng truy cập');
   });
 
+  it('3.15 Should validate batch sequential tree range generation (XX -> XY) with shared metadata', () => {
+    const generateTreeRange = ({ prefix = '', startNum, endNum, padZeros = true, plantType, farmId }) => {
+      const s = parseInt(startNum, 10);
+      const e = parseInt(endNum, 10);
+      if (isNaN(s) || isNaN(e) || s > e) throw new Error('Dải số thứ tự không hợp lệ.');
+      const count = e - s + 1;
+      if (count > 500) throw new Error('Mỗi lần tạo hàng loạt tối đa 500 cây.');
+
+      const padLen = padZeros ? Math.max(String(startNum).length, String(endNum).length) : 0;
+      const formatNum = (num) => padLen > 1 ? String(num).padStart(padLen, '0') : String(num);
+
+      const trees = [];
+      for (let i = s; i <= e; i++) {
+        const code = `${prefix}${formatNum(i)}`;
+        const slug = `${farmId || 0}_${code}`;
+        trees.push({
+          tree_code: code,
+          public_slug: slug,
+          plant_type: plantType,
+          farm_id: farmId,
+          health_status: 'Tốt'
+        });
+      }
+      return trees;
+    };
+
+    // Case 1: Numeric range with padding 01 -> 50
+    const batch1 = generateTreeRange({ prefix: 'SR-', startNum: '01', endNum: '50', padZeros: true, plantType: 'Sầu riêng', farmId: 16 });
+    expect(batch1.length).toBe(50);
+    expect(batch1[0].tree_code).toBe('SR-01');
+    expect(batch1[49].tree_code).toBe('SR-50');
+    expect(batch1[0].public_slug).toBe('16_SR-01');
+    expect(batch1[49].public_slug).toBe('16_SR-50');
+
+    // Case 2: Plain numbers 1 -> 10 without prefix
+    const batch2 = generateTreeRange({ prefix: '', startNum: 1, endNum: 10, padZeros: false, plantType: 'Bưởi da xanh', farmId: 5 });
+    expect(batch2.length).toBe(10);
+    expect(batch2[0].tree_code).toBe('1');
+    expect(batch2[9].tree_code).toBe('10');
+
+    // Case 3: Invalid range rejection
+    expect(() => generateTreeRange({ startNum: 50, endNum: 10, plantType: 'Xoài' })).toThrow('Dải số thứ tự không hợp lệ.');
+  });
+
 });
 
