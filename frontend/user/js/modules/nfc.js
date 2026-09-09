@@ -166,7 +166,7 @@ export function copyNfcPublicUrl() {
         
         setTimeout(() => {
           if (isAndroid) {
-            window.location.href = 'intent://#Intent;package=com.wakdev.wdnfc;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end';
+            window.location.href = 'intent://#Intent;package=com.wakdev.wdnfc;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.wakdev.wdnfc;end';
           } else if (isIOS) {
             window.location.href = 'nfctools://';
           }
