@@ -641,6 +641,9 @@
       <div class="nav-item" onclick="showPage('database')">
         <i class="fa-solid fa-database"></i> Cơ sở dữ liệu &amp; Vận hành
       </div>
+      <div class="nav-item" onclick="openAdminNfcInventoryView()">
+        <i class="fa-solid fa-boxes-stacked"></i> Kho Thẻ NFC
+      </div>
       <div class="nav-section">Hệ thống &amp; Nhân sự</div>
       <div class="nav-item" onclick="showPage('users')">
         <i class="fa fa-users"></i> Người dùng &amp; Nông hộ
@@ -967,6 +970,9 @@
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
             <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
           </div>
+          <div class="tab" id="db-tab-nfc" onclick="switchDatabaseTab('nfc')">
+            <i class="fa-solid fa-boxes-stacked"></i> Kho Thẻ NFC
+          </div>
           <div class="tab" id="db-tab-devices" onclick="switchDatabaseTab('devices')">
             <i class="fa-solid fa-microchip"></i> Thiết bị IoT &amp; Cảm biến
           </div>
@@ -1103,6 +1109,128 @@
         </div>
 
         <!-- ── TAB 2: THIẾT BỊ IOT & CẢM BIẾN (ENTERPRISE AGTECH IOT SUITE) ── -->
+        <!-- ── TAB 2 (SUB-TAB): KHO THẺ NFC (ADMIN NFC INVENTORY SUITE) ── -->
+<div class="tab-pane" id="db-pane-nfc" style="display:none;">
+  
+  <!-- 1. TOP HERO CARD: FARM SELECTOR & ACTIONS -->
+  <div class="card" style="margin-bottom:20px; border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 6px 20px rgba(0,0,0,0.03);">
+    <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#a7f3d0;">
+          <i class="fa-solid fa-boxes-stacked"></i> QUẢN TRỊ KHO THẺ NFC & QUÉT LIÊN TỤC
+        </div>
+        <h2 style="font-size:20px; font-weight:800; margin:6px 0 0 0; color:#ffffff;" id="db-nfc-active-farm-title">
+          Quản lý Kho thẻ NFC Trang trại
+        </h2>
+      </div>
+
+      <!-- Farm Selector Dropdown -->
+      <div style="min-width:300px; max-width:440px; flex:1;">
+        <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;">🏡 CHỌN TRANG TRẠI QUẢN LÝ KHO THẺ *</label>
+        <select id="db-nfc-filter-farm" onchange="onAdminNfcFarmChange(this.value)" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
+          <option value="">— Đang tải danh sách trang trại... —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Quick Stats & Controls Bar -->
+    <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:13px; font-weight:800; padding:6px 14px; border-radius:8px;">
+          📦 Tổng thẻ kho: <strong id="db-nfc-total-count" style="font-size:15px;">0</strong>
+        </span>
+        <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:13px; font-weight:800; padding:6px 14px; border-radius:8px;">
+          🔗 Đã gán cây: <strong id="db-nfc-assigned-count" style="font-size:15px;">0</strong>
+        </span>
+        <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:13px; font-weight:800; padding:6px 14px; border-radius:8px;">
+          🟢 Còn trống (Sẵn sàng): <strong id="db-nfc-unassigned-count" style="font-size:15px;">0</strong>
+        </span>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <label style="font-size:12px; font-weight:700; color:#475569; display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" id="db-nfc-sound-toggle" checked style="accent-color:#059669; width:16px; height:16px;">
+          🔊 Âm thanh Ding / Bíp
+        </label>
+        <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 16px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
+          <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Đi Vườn Gán Thẻ & GPS
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. BATCH SCANNING & QUICK INPUT STRIP -->
+  <div class="card" style="margin-bottom:20px; border-radius:16px; border:1.5px solid #a7f3d0; background:#ecfdf5; padding:18px 22px; box-shadow:0 4px 16px rgba(16,185,129,0.08);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span id="db-nfc-scan-status-pill" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:12px; font-weight:800; padding:5px 14px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-rss"></i> <span id="db-nfc-scan-status-text">Sẵn sàng nhập kho</span>
+        </span>
+        <small style="color:#065f46; font-size:12.5px; font-weight:600;">
+          (Dùng Web NFC trên điện thoại hoặc cắm đầu đọc USB để quẹt thẻ liên tục)
+        </small>
+      </div>
+      <button id="btn-toggle-continuous-nfc-page" onclick="toggleContinuousNfcScanPage()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 20px; font-size:13.5px; font-weight:800; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-play"></i> Bật Quét Thẻ Liên Tục (Web NFC)
+      </button>
+    </div>
+
+    <!-- Quick Text Input Bar (Keyboard / USB Reader / Manual) -->
+    <div style="display:flex; gap:10px;">
+      <div style="position:relative; flex:1;">
+        <i class="fa-solid fa-barcode" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#059669; font-size:16px;"></i>
+        <input type="text" id="db-nfc-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..." 
+               onkeydown="if(event.key==='Enter') handleAdminPageQuickNfcInput(event)"
+               style="width:100%; padding:11px 14px 11px 42px; border:1.5px solid #6ee7b7; border-radius:10px; font-size:13.5px; font-family:monospace; font-weight:700; color:#0f172a; outline:none; background:#ffffff; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
+      </div>
+      <button onclick="handleAdminPageQuickNfcInputBtn()" style="background:#047857; color:#ffffff; border:none; padding:11px 22px; border-radius:10px; font-weight:800; font-size:13.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(4,120,87,0.25);">
+        <i class="fa-solid fa-plus"></i> Thêm Thẻ Vào Kho
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. EXCEL-STYLE INVENTORY DATA TABLE -->
+  <div class="card" style="border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; background:#ffffff; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+    <div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <h3 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-table-list" style="color:#059669;"></i> Danh Sách Thẻ NFC Trong Kho Trang Trại
+        </h3>
+        <span id="db-nfc-table-count-badge" class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:800; font-size:11.5px; padding:3px 10px; border-radius:6px;">0 thẻ</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" id="db-nfc-table-search" placeholder="🔍 Lọc mã UID, mã cây..." oninput="filterAdminNfcTable()" style="padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff; width:200px;">
+        <button class="btn btn-secondary btn-sm" onclick="refreshAdminNfcData()" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:#ffffff; border:1.5px solid #cbd5e1; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-rotate"></i> Làm mới
+        </button>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:13px;">
+        <thead>
+          <tr style="background:#f1f5f9;">
+            <th style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:60px;">STT</th>
+            <th style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800;">Mã Thẻ NFC (UID / MAC)</th>
+            <th style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:140px;">Trạng Thái</th>
+            <th style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800;">Cây Đã Gán Thực Địa</th>
+            <th style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:160px;">Thời Gian Nhập</th>
+            <th style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:80px;">Xóa</th>
+          </tr>
+        </thead>
+        <tbody id="db-nfc-inventory-table-body">
+          <tr>
+            <td colspan="6" style="text-align:center; padding:50px; color:#94a3b8;">
+              <i class="fa-solid fa-spinner fa-spin" style="font-size:28px;"></i><br><br>Đang tải danh sách kho thẻ NFC...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
         <div class="tab-pane" id="db-pane-devices" style="display:none;">
 
           <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
@@ -2707,19 +2835,22 @@
   <div class="modal-box" style="max-width: 860px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
     
     <!-- Modal Header -->
-    <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 18px 24px; color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 16px 22px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #a7f3d0;">
+        <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #a7f3d0;">
           <i class="fa-solid fa-boxes-stacked"></i>
         </div>
         <div>
-          <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #ffffff;">Kho Thẻ NFC & Quẹt Thẻ Hàng Loạt</h2>
-          <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #a7f3d0;">
-            Trang trại: <strong id="nfc-inv-farm-name" style="color: #ffffff;">Đang chọn...</strong>
-          </p>
+          <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: #ffffff;">Kho Thẻ NFC &amp; Quẹt Thẻ Hàng Loạt</h2>
+          <div style="margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: #a7f3d0; font-weight: 700;">Trang trại:</span>
+            <select id="nfc-inv-farm-select" onchange="onAdminNfcModalFarmSelect(this.value)" style="padding: 4px 10px; border-radius: 8px; border: 1.5px solid #34d399; font-size: 12.5px; font-weight: 700; color: #064e3b; background: #ffffff; cursor: pointer; outline: none; min-width: 200px;">
+              <option value="">— Vui lòng chọn Trang trại —</option>
+            </select>
+          </div>
         </div>
       </div>
-      <button class="modal-close-btn" onclick="closeNfcInventoryModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
+      <button class="modal-close-btn" onclick="closeNfcInventoryModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
     </div>
 
     <!-- Quick Stats Bar -->

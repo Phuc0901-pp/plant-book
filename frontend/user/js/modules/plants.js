@@ -426,6 +426,9 @@ export function openFarmDetailView(farmId, updateHash = true) {
     if (countEl) animateValue(countEl, 0, farm.plant_count || farm.total_plants || 0, 1000);
     if (areaEl) animateValue(areaEl, 0, farm.area ? parseFloat(farm.area) : 0, 1000, 1);
 
+    // Fetch and populate Farmer NFC tag status metrics (Holding, Assigned, Unassigned)
+    fetchFarmerNfcStats(farm.id);
+
     // Filter plant table select dropdown for this farm
     const filterSel = document.getElementById('user-plant-filter-farm');
     if (filterSel) {
@@ -954,10 +957,8 @@ export function playUserDuplicateBeep() {
 }
 window.playUserDuplicateBeep = playUserDuplicateBeep;
 
-// ── NFC Inventory Management Controller ────────────────────────────
+/// ── Farmer NFC Status & Read-only Tag Tracking ──────────────────────────
 let _userInvFarmId = null;
-let _userIsContinuousScanning = false;
-let _userNdefReaderInstance = null;
 let _userNfcInventoryCache = [];
 
 function getActiveUserFarmId() {
@@ -968,10 +969,37 @@ function getActiveUserFarmId() {
   return null;
 }
 
-export async function openNfcInventoryModal(farmId = null) {
+/**
+ * Fetch and update the 3 NFC metric badges on the Farmer Farm Detail header
+ */
+export async function fetchFarmerNfcStats(farmId) {
+  if (!farmId) return;
+  try {
+    const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
+    const total = res.stats?.total || 0;
+    const assigned = res.stats?.assigned || 0;
+    const unassigned = res.stats?.unassigned || 0;
+
+    const totalEl = document.getElementById('farmer-nfc-total');
+    const assignedEl = document.getElementById('farmer-nfc-assigned');
+    const unassignedEl = document.getElementById('farmer-nfc-unassigned');
+
+    if (totalEl) animateValue(totalEl, 0, total, 600);
+    if (assignedEl) animateValue(assignedEl, 0, assigned, 600);
+    if (unassignedEl) animateValue(unassignedEl, 0, unassigned, 600);
+  } catch (err) {
+    console.warn('[NFC] Error fetching farmer NFC stats:', err.message);
+  }
+}
+window.fetchFarmerNfcStats = fetchFarmerNfcStats;
+
+/**
+ * Open Farmer NFC Read-Only Inventory Modal
+ */
+export async function openFarmerNfcListModal(farmId = null) {
   const targetFarmId = farmId || getActiveUserFarmId();
   if (!targetFarmId) {
-    alert('Vui lòng khởi tạo hoặc chọn một Trang trại trước khi mở Kho Thẻ!');
+    alert('Vui lòng chọn một Trang trại để xem danh sách thẻ NFC!');
     return;
   }
   _userInvFarmId = targetFarmId;
@@ -984,17 +1012,11 @@ export async function openNfcInventoryModal(farmId = null) {
   if (modal) modal.style.display = 'flex';
 
   await loadUserNfcInventoryData(targetFarmId);
-
-  setTimeout(() => {
-    document.getElementById('nfc-inv-quick-input')?.focus();
-  }, 200);
 }
-window.openNfcInventoryModal = openNfcInventoryModal;
+window.openFarmerNfcListModal = openFarmerNfcListModal;
+window.openNfcInventoryModal = openFarmerNfcListModal;
 
 export function closeNfcInventoryModal() {
-  if (_userIsContinuousScanning) {
-    stopUserContinuousNfcScan();
-  }
   const modal = document.getElementById('nfc-inventory-modal');
   if (modal) modal.style.display = 'none';
 }
@@ -1013,9 +1035,17 @@ export async function loadUserNfcInventoryData(farmId) {
     if (assignedEl) assignedEl.textContent = res.stats?.assigned || 0;
     if (unassignedEl) unassignedEl.textContent = res.stats?.unassigned || 0;
 
+    // Also sync the header strip if visible
+    const farmerTotalEl = document.getElementById('farmer-nfc-total');
+    const farmerAssignedEl = document.getElementById('farmer-nfc-assigned');
+    const farmerUnassignedEl = document.getElementById('farmer-nfc-unassigned');
+    if (farmerTotalEl) farmerTotalEl.textContent = res.stats?.total || 0;
+    if (farmerAssignedEl) farmerAssignedEl.textContent = res.stats?.assigned || 0;
+    if (farmerUnassignedEl) farmerUnassignedEl.textContent = res.stats?.unassigned || 0;
+
     renderUserNfcInventoryTable(_userNfcInventoryCache);
   } catch (err) {
-    if (window.toast) window.toast('Lỗi tải danh sách kho thẻ: ' + err.message, 'error');
+    if (window.toast) window.toast('Lỗi tải danh sách thẻ: ' + err.message, 'error');
   }
 }
 window.loadUserNfcInventoryData = loadUserNfcInventoryData;
@@ -1027,10 +1057,10 @@ function renderUserNfcInventoryTable(tags) {
   if (!tags || tags.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
-          <i class="fa-solid fa-boxes-stacked" style="font-size:32px; margin-bottom:10px; display:inline-block; color:#cbd5e1;"></i>
-          <p style="margin:0; font-weight:700; font-size:13.5px; color:#64748b;">Kho thẻ NFC của trang trại này chưa có thẻ nào.</p>
-          <small style="color:#94a3b8;">Hãy bật chế độ quét liên tục hoặc quẹt thẻ USB để nạp cọc thẻ vào kho.</small>
+        <td colspan="5" style="text-align:center; padding:38px 20px; color:#94a3b8;">
+          <i class="fa-solid fa-microchip" style="font-size:32px; margin-bottom:10px; display:inline-block; color:#cbd5e1;"></i>
+          <p style="margin:0 0 6px 0; font-weight:800; font-size:14px; color:#475569;">Trang trại này hiện chưa có thẻ NFC nào.</p>
+          <small style="color:#94a3b8;">Ban Quản Trị / Kỹ Thuật Viên sẽ cấp và phân bổ thẻ NFC vào kho trang trại của bạn.</small>
         </td>
       </tr>`;
     return;
@@ -1039,171 +1069,33 @@ function renderUserNfcInventoryTable(tags) {
   tbody.innerHTML = tags.map((t, idx) => {
     const isAssigned = t.status === 'assigned';
     const statusPill = isAssigned
-      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-link"></i> Đã gán</span>`
-      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-check"></i> Chưa gán</span>`;
+      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-link"></i> Đã gán cây</span>`
+      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-check"></i> Sẵn sàng gán</span>`;
 
     const plantInfo = isAssigned && t.tree_code
-      ? `<strong style="color:#0f172a;">#${esc(t.tree_code)}</strong> <span style="font-size:11px; color:#64748b;">(${esc(t.plant_type || '')})</span>`
-      : `<span style="color:#94a3b8;">— Sẵn sàng gán —</span>`;
+      ? `<strong style="color:#0f172a; font-size:13.5px;">#${esc(t.tree_code)}</strong> <span style="font-size:12px; color:#64748b; font-weight:600;">(${esc(t.plant_type || '')})</span>`
+      : `<span style="color:#94a3b8; font-style:italic;">— Sẵn sàng gán —</span>`;
 
     const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
 
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:10px 12px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
-        <td style="padding:10px 12px;">
+        <td style="padding:12px 14px; text-align:center; font-weight:800; color:#64748b;">${idx + 1}</td>
+        <td style="padding:12px 14px;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <code style="font-size:13px; font-weight:800; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 8px; border-radius:6px; font-family:monospace;">${esc(t.nfc_uid)}</code>
-            <button type="button" onclick="navigator.clipboard.writeText('${esc(t.nfc_uid)}'); if(window.toast) window.toast('Đã copy mã UID: ${esc(t.nfc_uid)}');" title="Sao chép UID" style="border:none; background:transparent; color:#64748b; cursor:pointer; font-size:12px; padding:2px 4px;">
+            <code style="font-size:13px; font-weight:800; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; padding:4px 10px; border-radius:6px; font-family:monospace;">${esc(t.nfc_uid)}</code>
+            <button type="button" onclick="navigator.clipboard.writeText('${esc(t.nfc_uid)}'); if(window.toast) window.toast('Đã copy mã UID: ${esc(t.nfc_uid)}');" title="Sao chép UID" style="border:none; background:transparent; color:#64748b; cursor:pointer; font-size:13px; padding:2px 4px;">
               <i class="fa-regular fa-copy"></i>
             </button>
           </div>
         </td>
-        <td style="padding:10px 12px; text-align:center;">${statusPill}</td>
-        <td style="padding:10px 12px;">${plantInfo}</td>
-        <td style="padding:10px 12px; font-size:12px; color:#64748b;">${timeStr}</td>
-        <td style="padding:10px 12px; text-align:center;">
-          <button type="button" onclick="deleteUserNfcTag(${t.id}, '${esc(t.nfc_uid)}')" title="Xóa thẻ khỏi kho" style="border:none; background:#fee2e2; color:#dc2626; border-radius:6px; width:30px; height:30px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s ease;">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
-        </td>
+        <td style="padding:12px 14px; text-align:center;">${statusPill}</td>
+        <td style="padding:12px 14px;">${plantInfo}</td>
+        <td style="padding:12px 14px; font-size:12.5px; color:#64748b; font-weight:600;">${timeStr}</td>
       </tr>
     `;
   }).join('');
 }
-
-export async function handleQuickNfcInput(event) {
-  if (event) event.preventDefault();
-  handleQuickNfcInputBtn();
-}
-window.handleQuickNfcInput = handleQuickNfcInput;
-
-export async function handleQuickNfcInputBtn() {
-  const inputEl = document.getElementById('nfc-inv-quick-input');
-  if (!inputEl) return;
-  const uid = inputEl.value.trim();
-  if (!uid) return;
-
-  if (!_userInvFarmId) {
-    if (window.toast) window.toast('Chưa xác định trang trại!', 'error');
-    return;
-  }
-
-  try {
-    const res = await api(`/plants/farms/${_userInvFarmId}/nfc-inventory/batch`, {
-      method: 'POST',
-      body: JSON.stringify({ uids: [uid] })
-    });
-
-    if (res.added && res.added.length > 0) {
-      playUserSuccessDing();
-      if (window.toast) window.toast(`✅ Đã thêm thẻ ${uid} vào kho!`, 'success');
-      inputEl.value = '';
-      inputEl.focus();
-      await loadUserNfcInventoryData(_userInvFarmId);
-    } else if (res.duplicates && res.duplicates.length > 0) {
-      playUserDuplicateBeep();
-      if (window.toast) window.toast(`⚠️ Thẻ ${uid} đã tồn tại trong kho hoặc đã gán cây!`, 'error');
-      inputEl.select();
-    }
-  } catch (err) {
-    playUserDuplicateBeep();
-    if (window.toast) window.toast(`Lỗi thêm thẻ: ${err.message}`, 'error');
-    inputEl.select();
-  }
-}
-window.handleQuickNfcInputBtn = handleQuickNfcInputBtn;
-
-export async function toggleContinuousNfcScan() {
-  if (_userIsContinuousScanning) {
-    stopUserContinuousNfcScan();
-  } else {
-    await startUserContinuousNfcScan();
-  }
-}
-window.toggleContinuousNfcScan = toggleContinuousNfcScan;
-
-async function startUserContinuousNfcScan() {
-  if (!('NDEFReader' in window)) {
-    alert('Trình duyệt hoặc thiết bị này không hỗ trợ Web NFC API trực tiếp (chỉ hỗ trợ Chrome trên Android qua HTTPS).\n\n💡 Bạn có thể dùng đầu đọc thẻ USB, máy quét cầm tay hoặc nhập trực tiếp mã UID vào ô bên dưới!');
-    document.getElementById('nfc-inv-quick-input')?.focus();
-    return;
-  }
-
-  try {
-    _userNdefReaderInstance = new NDEFReader();
-    await _userNdefReaderInstance.scan();
-    _userIsContinuousScanning = true;
-
-    const btn = document.getElementById('btn-toggle-continuous-nfc');
-    if (btn) {
-      btn.style.background = '#dc2626';
-      btn.innerHTML = '<i class="fa-solid fa-stop"></i> Dừng Quét Liên Tục';
-    }
-
-    const pill = document.getElementById('nfc-scan-status-pill');
-    const text = document.getElementById('nfc-scan-status-text');
-    if (pill) { pill.style.background = '#fef2f2'; pill.style.color = '#991b1b'; pill.style.borderColor = '#fca5a5'; }
-    if (text) text.innerHTML = '<i class="fa-solid fa-rss fa-spin"></i> ĐANG QUÉT LIÊN TỤC — CHẠM THẺ VÀO LƯNG MÁY';
-
-    _userNdefReaderInstance.addEventListener('reading', async ({ serialNumber }) => {
-      if (!serialNumber) return;
-      const cleanUid = serialNumber.trim().toUpperCase();
-
-      try {
-        const res = await api(`/plants/farms/${_userInvFarmId}/nfc-inventory/batch`, {
-          method: 'POST',
-          body: JSON.stringify({ uids: [cleanUid] })
-        });
-
-        if (res.added && res.added.length > 0) {
-          playUserSuccessDing();
-          if (window.toast) window.toast(`✨ Đã quẹt thành công thẻ: ${cleanUid}`, 'success');
-          await loadUserNfcInventoryData(_userInvFarmId);
-        } else {
-          playUserDuplicateBeep();
-          if (window.toast) window.toast(`⚠️ Trùng lặp: Thẻ ${cleanUid} đã có trong kho!`, 'error');
-        }
-      } catch (e) {
-        playUserDuplicateBeep();
-        if (window.toast) window.toast(`⚠️ ${e.message}`, 'error');
-      }
-    });
-
-    if (window.toast) window.toast('🚀 Đã kích hoạt Chế độ Quét liên tục. Hãy chạm lần lượt từng thẻ vào mặt sau điện thoại!');
-  } catch (err) {
-    stopUserContinuousNfcScan();
-    alert('Không thể kích hoạt NFC: ' + err.message);
-  }
-}
-
-function stopUserContinuousNfcScan() {
-  _userIsContinuousScanning = false;
-  _userNdefReaderInstance = null;
-
-  const btn = document.getElementById('btn-toggle-continuous-nfc');
-  if (btn) {
-    btn.style.background = 'linear-gradient(135deg, #10b981, #047857)';
-    btn.innerHTML = '<i class="fa-solid fa-play"></i> Bật Quét Thẻ Liên Tục (Web NFC)';
-  }
-
-  const pill = document.getElementById('nfc-scan-status-pill');
-  const text = document.getElementById('nfc-scan-status-text');
-  if (pill) { pill.style.background = '#dcfce7'; pill.style.color = '#15803d'; pill.style.borderColor = '#86efac'; }
-  if (text) text.textContent = 'Chế độ sẵn sàng';
-}
-
-export async function deleteUserNfcTag(tagId, uid) {
-  if (!confirm(`Xóa thẻ NFC "${uid}" khỏi kho trang trại?`)) return;
-  try {
-    await api(`/plants/farms/${_userInvFarmId}/nfc-inventory/${tagId}`, { method: 'DELETE' });
-    if (window.toast) window.toast('Đã xóa thẻ khỏi kho thành công.', 'success');
-    await loadUserNfcInventoryData(_userInvFarmId);
-  } catch (err) {
-    if (window.toast) window.toast('Lỗi xóa thẻ: ' + err.message, 'error');
-  }
-}
-window.deleteUserNfcTag = deleteUserNfcTag;
 
 // ── In-Field Walk & GPS Tagging Controller ──────────────────────────
 let _userFieldTagFarmId = null;

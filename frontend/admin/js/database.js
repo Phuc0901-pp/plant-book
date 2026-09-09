@@ -60,6 +60,20 @@ async function initDatabasePage() {
         dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
+    // Populate Tab NFC Farm Filter
+    const nfcFarmSelect = document.getElementById('db-nfc-filter-farm');
+    if (nfcFarmSelect) {
+      nfcFarmSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
+        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+    }
+
+    // Populate Modal NFC Farm Filter
+    const nfcModalSelect = document.getElementById('nfc-inv-farm-select');
+    if (nfcModalSelect) {
+      nfcModalSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
+        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+    }
+
     // Populate Tab IoT Farm Filter
     const iotFarmSelect = document.getElementById('db-iot-filter-farm');
     if (iotFarmSelect) {
@@ -96,7 +110,7 @@ function switchDatabaseTab(tab, syncUrl = true) {
   activeDbTab = tab;
 
   // Update tabs active state
-  ['cultivation', 'devices', 'schemas', 'supplies', 'media', 'history'].forEach(t => {
+  ['cultivation', 'nfc', 'devices', 'schemas', 'supplies', 'media', 'history'].forEach(t => {
     const tabEl = document.getElementById(`db-tab-${t}`);
     const paneEl = document.getElementById(`db-pane-${t}`);
     if (tabEl) tabEl.classList.toggle('active', t === tab);
@@ -107,7 +121,9 @@ function switchDatabaseTab(tab, syncUrl = true) {
     window.syncAdminUrl({ page: 'database', tab });
   }
 
-  if (tab === 'devices') {
+  if (tab === 'nfc') {
+    if (typeof initAdminNfcPage === 'function') initAdminNfcPage();
+  } else if (tab === 'devices') {
     if (typeof initDevicesPage === 'function') initDevicesPage();
   } else if (tab === 'schemas') {
     if (typeof loadSchemasTab === 'function') loadSchemasTab();

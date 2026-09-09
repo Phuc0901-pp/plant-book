@@ -112,4 +112,50 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
     });
   });
 
+  it('7.6 Should verify Admin NFC Inventory Database sub-tab, page view and modal elements', () => {
+    const content = fs.readFileSync(adminHtmlPath, 'utf8');
+
+    const adminNfcIds = [
+      'db-tab-nfc',
+      'db-pane-nfc',
+      'db-nfc-filter-farm',
+      'db-nfc-quick-input',
+      'db-nfc-inventory-table-body',
+      'nfc-inv-farm-select',
+      'nfc-inventory-modal'
+    ];
+
+    adminNfcIds.forEach(id => {
+      const hasId = content.includes(`id="${id}"`) || content.includes(`id='${id}'`);
+      if (!hasId) {
+        throw new Error(`Admin NFC DOM ID "${id}" is missing in admin/index.html`);
+      }
+      expect(hasId).toBe(true);
+    });
+  });
+
+  it('7.7 Should verify Farmer NFC 3-Metric Badges and role-based separation without data entry controls', () => {
+    const content = fs.readFileSync(userHtmlPath, 'utf8');
+
+    const farmerNfcIds = [
+      'farmer-nfc-stats-strip',
+      'farmer-nfc-total',
+      'farmer-nfc-assigned',
+      'farmer-nfc-unassigned',
+      'nfc-inventory-modal'
+    ];
+
+    farmerNfcIds.forEach(id => {
+      const hasId = content.includes(`id="${id}"`) || content.includes(`id='${id}'`);
+      if (!hasId) {
+        throw new Error(`Farmer NFC DOM ID "${id}" is missing in user/index.html`);
+      }
+      expect(hasId).toBe(true);
+    });
+
+    // Verify farmer modal does NOT contain data entry controls
+    expect(content.includes('id="nfc-inv-quick-input"')).toBe(false);
+    expect(content.includes('id="btn-toggle-continuous-nfc"')).toBe(false);
+  });
+
 });

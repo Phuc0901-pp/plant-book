@@ -28,6 +28,9 @@
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
             <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
           </div>
+          <div class="tab" id="db-tab-nfc" onclick="switchDatabaseTab('nfc')">
+            <i class="fa-solid fa-boxes-stacked"></i> Kho Thẻ NFC
+          </div>
           <div class="tab" id="db-tab-devices" onclick="switchDatabaseTab('devices')">
             <i class="fa-solid fa-microchip"></i> Thiết bị IoT &amp; Cảm biến
           </div>
@@ -46,6 +49,7 @@
         </div>
 
         <!-- @include 'views/database/cultivation.html' -->
+        <!-- @include 'views/database/nfc-inventory.html' -->
         <!-- @include 'views/database/devices.html' -->
         <!-- @include 'views/database/schemas.html' -->
         <!-- @include 'views/database/supplies.html' -->
