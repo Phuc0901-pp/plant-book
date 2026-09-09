@@ -467,27 +467,6 @@ function playAdminDuplicateBeep() {
   } catch (_) {}
 }
 
-// ── NFC Inventory Management Controller ────────────────────────────
-let _currentInvFarmId = null;
-let _isContinuousScanning = false;
-let _ndefReaderInstance = null;
-let _nfcInventoryCache = [];
-
-function getActiveAdminFarmId() {
-  if (typeof currentDbSelectedFarmId !== 'undefined' && currentDbSelectedFarmId) {
-    return currentDbSelectedFarmId;
-  }
-  if (typeof activeFarmId !== 'undefined' && activeFarmId) {
-    return activeFarmId;
-  }
-  const dbFarmSel = document.getElementById('db-filter-farm');
-  if (dbFarmSel && dbFarmSel.value) return parseInt(dbFarmSel.value);
-  const plantFarmSel = document.getElementById('plant-filter-farm');
-  if (plantFarmSel && plantFarmSel.value && plantFarmSel.value !== 'all') return parseInt(plantFarmSel.value);
-  if (window._allFarmsCache && window._allFarmsCache.length > 0) return window._allFarmsCache[0].id;
-  return null;
-}
-
 // ── Admin NFC Inventory Management (View & Modal) ────────────────
 let _currentInvFarmId = null;
 let _nfcInventoryCache = [];

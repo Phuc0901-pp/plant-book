@@ -541,26 +541,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-function switchUserTab(tab) {
-  const tabManage = document.getElementById('user-tab-manage');
-  const tabStatus = document.getElementById('user-tab-status');
-  const tabResets = document.getElementById('user-tab-resets');
-
-  if (tabManage) tabManage.classList.toggle('active', tab === 'manage');
-  if (tabStatus) tabStatus.classList.toggle('active', tab === 'status');
-  if (tabResets) tabResets.classList.toggle('active', tab === 'resets');
-
-  const paneManage = document.getElementById('pane-user-manage');
-  const paneStatus = document.getElementById('pane-user-status');
-  const paneResets = document.getElementById('pane-user-resets');
-
-  if (paneManage) paneManage.style.display = tab === 'manage' ? 'block' : 'none';
-  if (paneStatus) paneStatus.style.display = tab === 'status' ? 'block' : 'none';
-  if (paneResets) paneResets.style.display = tab === 'resets' ? 'block' : 'none';
-
-  if (tab === 'resets') loadResetRequests();
-}
-
 function formatRelativeTime(dateString) {
   if (!dateString) return 'Chưa từng hoạt động';
   const date = new Date(dateString);
@@ -810,44 +790,6 @@ async function approveFarmerUser(userId) {
 }
 
 // ── Tier Management Modal Handlers ─────────────────────────────────
-function openUserTierModal(userId) {
-  const user = allUsers.find(u => u.id === userId);
-  if (!user) return;
-
-  document.getElementById('tier-edit-user-id').value = user.id;
-  document.getElementById('tier-edit-user-name').textContent = user.full_name || 'Nông hộ';
-  document.getElementById('tier-edit-user-email').textContent = user.phone || user.email || '';
-  document.getElementById('tier-admin-note').value = user.tier_admin_note || '';
-
-  const tier = user.account_tier || 'normal';
-  const rads = document.getElementsByName('opt-account-tier');
-  for (const r of rads) {
-    r.checked = (r.value === tier);
-  }
-  onTierOptionChange(tier);
-
-  const dateInput = document.getElementById('tier-expires-date');
-  const chkUnlimited = document.getElementById('chk-tier-unlimited');
-
-  if (user.tier_expires_at) {
-    const dStr = new Date(user.tier_expires_at).toISOString().slice(0, 10);
-    dateInput.value = dStr;
-    chkUnlimited.checked = false;
-    dateInput.disabled = false;
-  } else {
-    dateInput.value = '';
-    chkUnlimited.checked = true;
-    dateInput.disabled = true;
-  }
-
-  document.getElementById('modal-edit-user-tier').style.display = 'flex';
-}
-
-function closeUserTierModal() {
-  const modal = document.getElementById('modal-edit-user-tier');
-  if (modal) modal.style.display = 'none';
-}
-
 function onTierOptionChange(tier) {
   const durSec = document.getElementById('pro-duration-section');
   if (durSec) {
