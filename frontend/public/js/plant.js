@@ -302,12 +302,45 @@ async function autoSyncNfcGpsLocation(plant, nfcUid) {
   );
 }
 
+// Render Revoked / Frozen NFC Tag notice
+function renderRevokedTagView(nfcUid, errorMsg) {
+  document.getElementById('loader').style.display = 'none';
+  const errorView = document.getElementById('error-view');
+  if (errorView) {
+    errorView.style.display = 'block';
+    errorView.innerHTML = `
+      <div style="text-align:center; padding:36px 20px; background:#fff; border-radius:18px; border:2px solid #ef4444; max-width:480px; margin:40px auto; box-shadow:0 12px 30px rgba(0,0,0,0.08);">
+        <div style="width:68px; height:68px; background:#fee2e2; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:30px; color:#dc2626; margin-bottom:16px; border:2px solid #fca5a5;">
+          <i class="fa-solid fa-ban"></i>
+        </div>
+        <h2 style="font-size:20px; font-weight:800; color:#991b1b; margin-bottom:10px;">Thẻ NFC Đã Bị Thu Hồi</h2>
+        <p style="font-size:13.5px; color:#475569; line-height:1.6; margin-bottom:18px;">
+          Mã thẻ <strong>${esc(nfcUid || 'NFC')}</strong> đã được thu hồi hoặc thay thế bằng thẻ định danh mới.<br>
+          Đường dẫn công khai theo thẻ cũ này đã bị <strong>đóng băng truy cập</strong> theo quy chuẩn bảo mật 1 Cây - 1 Thẻ.
+        </p>
+        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:12px; font-size:12.5px; color:#166534; margin-bottom:20px; text-align:left; display:flex; gap:10px; align-items:center;">
+          <i class="fa-solid fa-shield-halved" style="color:#16a34a; font-size:18px; flex-shrink:0;"></i>
+          <span><strong>Lịch sử canh tác được bảo toàn:</strong> Toàn bộ nhật ký canh tác, phân thuốc, tưới tiêu và chứng nhận VietGAP của cây trồng vẫn được lưu trữ an toàn 100% trong hệ thống.</span>
+        </div>
+        <a href="/" style="display:inline-block; background:#0f172a; color:#fff; text-decoration:none; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:700;">
+          <i class="fa-solid fa-house"></i> Về trang chủ
+        </a>
+      </div>
+    `;
+  }
+}
+
 // Load Plant Profile on startup
 async function loadPlant() {
   try {
     const primarySlug = slugInfo.slug || slug;
     let res = await fetch(`/api/plants/public/${encodeURIComponent(primarySlug)}`);
     let plant = await res.json();
+
+    if (res.status === 410 || plant.is_revoked) {
+      renderRevokedTagView(slugInfo.nfcUid || primarySlug, plant.error);
+      return;
+    }
 
     // Fallback: If primary slug (e.g. nfcUid) returned 404, fallback to plantId (e.g. /0/2/1/04:17:...)
     if (!res.ok && slugInfo.plantId && slugInfo.plantId !== primarySlug) {
@@ -320,13 +353,21 @@ async function loadPlant() {
 
     if (!res.ok) throw new Error(plant.error || 'Không tìm thấy hồ sơ cây trồng.');
 
+    // Enforce 1-Tree-1-Tag URL Match: If URL contains a specific NFC UID, it MUST match the plant's currently active nfc_uid
+    const activeNfcUid = slugInfo.nfcUid || (isFullNfcUid(slugInfo.slug) ? slugInfo.slug : '');
+    if (activeNfcUid) {
+      if (!plant.nfc_uid || plant.nfc_uid.toUpperCase() !== activeNfcUid.toUpperCase()) {
+        renderRevokedTagView(activeNfcUid, 'Thẻ NFC này đã bị thay thế hoặc hủy kích hoạt.');
+        return;
+      }
+    }
+
     currentPlantData = plant;
     document.title = `${plant.plant_type || 'Cây trồng'} — Sổ Nông Tân Bảo Agtech`;
 
     await renderPlant(plant);
 
-    // Auto-update GPS location ONLY if accessed with a full NFC UID (e.g. 04:20:CF:5A:25:20:91)
-    const activeNfcUid = slugInfo.nfcUid || (isFullNfcUid(slugInfo.slug) ? slugInfo.slug : '');
+    // Auto-update GPS location ONLY if accessed with a valid matching full NFC UID
     if (isFullNfcUid(activeNfcUid)) {
       autoSyncNfcGpsLocation(plant, activeNfcUid);
     }

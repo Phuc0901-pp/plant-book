@@ -123,7 +123,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
       </div>
 
       <!-- Right: Detailed Metrics Grid -->
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; flex:1; max-width:540px;">
+      <div class="weather-metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(105px, 1fr)); gap:8px; flex:1; max-width:540px; width:100%;">
         
         <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:8px 12px;">
           <div style="font-size:11px; color:rgba(255,255,255,0.75); font-weight:700; display:flex; align-items:center; gap:5px;">
@@ -159,10 +159,10 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
 
     <!-- Location & Advice footer bar -->
     <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px;">
-      <div style="display:flex; align-items:center; gap:6px; color:#ffffff;">
+      <div style="display:flex; align-items:center; gap:6px; color:#ffffff; flex-wrap:wrap;">
         <i class="fa-solid fa-location-dot" style="color:#fb7185;"></i>
         <span style="font-weight:800;">${locationName}</span>
-        ${isRealGps ? `<span style="background:rgba(16,185,129,0.3); color:#86efac; border:1px solid rgba(16,185,129,0.5); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;"><i class="fa-solid fa-satellite"></i> GPS Chuẩn</span>` : `<span style="background:rgba(245,158,11,0.25); color:#fde68a; border:1px solid rgba(245,158,11,0.4); font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px;">Mặc định</span>`}
+        ${isRealGps ? `<span style="background:rgba(16,185,129,0.3); color:#86efac; border:1px solid rgba(16,185,129,0.5); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;"><i class="fa-solid fa-satellite"></i> GPS Thiết bị</span>` : `<span style="background:rgba(16,185,129,0.25); color:#a7f3d0; border:1px solid rgba(16,185,129,0.4); font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px;"><i class="fa-solid fa-seedling"></i> Trang trại</span>`}
         ${statusBadge ? `<span style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
       </div>
 
@@ -198,19 +198,48 @@ export async function refreshDeviceWeather() {
   const refreshBtn = document.getElementById('btn-refresh-weather');
 
   if (refreshBtn) refreshBtn.classList.add('fa-spin');
-  if (statusEl) statusEl.textContent = 'Đang dò tọa độ GPS thiết bị...';
+  if (statusEl) statusEl.textContent = 'Đang xác định vị trí trang trại...';
 
-  // Step 1: Obtain GPS coordinates (with timeout & fallback)
-  let lat = 10.2415; // Default Mekong Delta (Bến Tre)
-  let lng = 106.3752;
+  // Step 1: Obtain registered farm coordinates or fallback
+  const activeFarm = (typeof window.getActiveFarm === 'function' ? window.getActiveFarm() : null)
+    || (window._allFarmsCache && window._allFarmsCache.length > 0 ? window._allFarmsCache[0] : null);
+
+  let lat = null;
+  let lng = null;
   let isRealGps = false;
+  let farmDisplayName = '';
 
+  if (activeFarm) {
+    if (activeFarm.latitude && activeFarm.longitude) {
+      lat = parseFloat(activeFarm.latitude);
+      lng = parseFloat(activeFarm.longitude);
+    } else if (activeFarm.polygon_coordinates) {
+      try {
+        const poly = typeof activeFarm.polygon_coordinates === 'string' 
+          ? JSON.parse(activeFarm.polygon_coordinates) 
+          : activeFarm.polygon_coordinates;
+        if (Array.isArray(poly) && poly.length > 0) {
+          const ring = Array.isArray(poly[0][0]) ? poly[0] : poly;
+          let sumLat = 0, sumLng = 0;
+          ring.forEach(pt => {
+            sumLng += parseFloat(pt[0]);
+            sumLat += parseFloat(pt[1]);
+          });
+          lat = sumLat / ring.length;
+          lng = sumLng / ring.length;
+        }
+      } catch (_) {}
+    }
+    farmDisplayName = activeFarm.name ? `${activeFarm.name} (${activeFarm.address || 'Khu vực canh tác'})` : '';
+  }
+
+  // Try real-time device Geolocation
   try {
     if ('geolocation' in navigator) {
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 6000,
+          timeout: 4000,
           maximumAge: 60000
         });
       });
@@ -219,7 +248,13 @@ export async function refreshDeviceWeather() {
       isRealGps = true;
     }
   } catch (err) {
-    console.warn('[WeatherWidget] GPS position error or permission denied. Using fallback coordinates.', err.message);
+    console.warn('[WeatherWidget] GPS position error or permission denied. Using registered Farm coordinates.', err.message);
+  }
+
+  // Fallback coordinates if still undefined
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    lat = 10.9415; // Default Long Khánh, Đồng Nai or Mekong Delta
+    lng = 107.2418;
   }
 
   _currentCoords = { lat, lng, isRealGps };
@@ -241,8 +276,11 @@ export async function refreshDeviceWeather() {
     }
     const data = await res.json();
 
-    // Step 3: Fetch Location Name (Reverse Geocode)
-    let locationName = isRealGps ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` : 'Vùng Nông nghiệp Trọng điểm (Bến Tre)';
+    // Step 3: Fetch Location Name (Reverse Geocode / Farm Name)
+    let locationName = isRealGps 
+      ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` 
+      : (farmDisplayName || 'Trang trại Nông hộ');
+
     try {
       const geoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=vi`;
       const geoRes = await fetch(geoUrl);
@@ -250,8 +288,15 @@ export async function refreshDeviceWeather() {
         const geoData = await geoRes.json();
         const district = geoData.locality || geoData.city || '';
         const province = geoData.principalSubdivision || '';
-        if (district || province) {
-          locationName = [district, province].filter(Boolean).join(', ');
+        const geoStr = [district, province].filter(Boolean).join(', ');
+        if (geoStr) {
+          if (isRealGps) {
+            locationName = geoStr;
+          } else if (activeFarm && activeFarm.name) {
+            locationName = `${activeFarm.name} (${geoStr})`;
+          } else {
+            locationName = geoStr;
+          }
         }
       }
     } catch (_) {}

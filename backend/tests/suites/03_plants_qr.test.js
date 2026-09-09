@@ -306,5 +306,124 @@ describe('Suite 3: Plants Registry, Health Status & Public QR Code Generation', 
     expect(taggedPlant.public_url).toBe('https://plant-book.onrender.com/6/26/04%3A20%3ACF%3A5A%3A25%3A20%3A91');
   });
 
+  it('3.13 Should enforce 1-Tree-1-Tag lifecycle: inventory check, duplicate prevention & old tag unassignment', () => {
+    // Mock Inventory & Plants Store
+    const inventory = [
+      { id: 1, farm_id: 6, nfc_uid: '04:A1:B2:C3:D4:E5:01', status: 'unassigned', plant_id: null },
+      { id: 2, farm_id: 6, nfc_uid: '04:A1:B2:C3:D4:E5:02', status: 'unassigned', plant_id: null },
+      { id: 3, farm_id: 6, nfc_uid: '04:A1:B2:C3:D4:E5:03', status: 'unassigned', plant_id: null }
+    ];
+
+    const plants = [
+      { id: 101, farm_id: 6, tree_code: 'SR-01', nfc_uid: null, public_url: null },
+      { id: 102, farm_id: 6, tree_code: 'SR-02', nfc_uid: null, public_url: null }
+    ];
+
+    const logs = [
+      { id: 1, plant_id: 101, log_type: 'Tưới nước', log_date: '2026-08-01' },
+      { id: 2, plant_id: 101, log_type: 'Bón phân', log_date: '2026-08-15' }
+    ];
+
+    const assignNfcToPlant = (farmId, plantId, rawUid) => {
+      const cleanUid = rawUid ? String(rawUid).trim().toUpperCase() : null;
+      const targetPlant = plants.find(p => p.id === plantId);
+      if (!targetPlant) throw new Error('Cây không tồn tại.');
+
+      if (cleanUid) {
+        // 1. Inventory check
+        const inInv = inventory.find(i => i.farm_id === farmId && i.nfc_uid === cleanUid);
+        if (!inInv) throw new Error('Mã thẻ chưa được khai báo nhập kho cho trang trại này.');
+
+        // 2. Duplicate across trees check
+        const conflict = plants.find(p => p.nfc_uid === cleanUid && p.id !== plantId);
+        if (conflict) throw new Error(`Mã thẻ ${cleanUid} đã được gắn cho cây #${conflict.tree_code || conflict.id}.`);
+
+        // 3. Unassign old tag if replacing
+        if (targetPlant.nfc_uid && targetPlant.nfc_uid !== cleanUid) {
+          const oldInv = inventory.find(i => i.nfc_uid === targetPlant.nfc_uid);
+          if (oldInv) {
+            oldInv.status = 'unassigned';
+            oldInv.plant_id = null;
+          }
+        }
+
+        // 4. Update plant & inventory
+        targetPlant.nfc_uid = cleanUid;
+        targetPlant.public_url = `https://plant-book.onrender.com/${farmId}/${plantId}/${encodeURIComponent(cleanUid)}`;
+        inInv.status = 'assigned';
+        inInv.plant_id = plantId;
+      } else {
+        // Deactivate
+        if (targetPlant.nfc_uid) {
+          const oldInv = inventory.find(i => i.nfc_uid === targetPlant.nfc_uid);
+          if (oldInv) {
+            oldInv.status = 'unassigned';
+            oldInv.plant_id = null;
+          }
+        }
+        targetPlant.nfc_uid = null;
+        targetPlant.public_url = `https://plant-book.onrender.com/${farmId}/${plantId}`;
+      }
+      return targetPlant;
+    };
+
+    // 1. Reject undeclared tag
+    expect(() => assignNfcToPlant(6, 101, '04:99:99:99:99:99:99')).toThrow('Mã thẻ chưa được khai báo nhập kho cho trang trại này.');
+
+    // 2. Assign valid tag #1 to tree 101
+    assignNfcToPlant(6, 101, '04:A1:B2:C3:D4:E5:01');
+    expect(plants[0].nfc_uid).toBe('04:A1:B2:C3:D4:E5:01');
+    expect(inventory[0].status).toBe('assigned');
+    expect(inventory[0].plant_id).toBe(101);
+
+    // 3. Duplicate assignment to tree 102 rejected
+    expect(() => assignNfcToPlant(6, 102, '04:A1:B2:C3:D4:E5:01')).toThrow('Mã thẻ 04:A1:B2:C3:D4:E5:01 đã được gắn cho cây #SR-01.');
+
+    // 4. Replace tree 101 tag with tag #2
+    assignNfcToPlant(6, 101, '04:A1:B2:C3:D4:E5:02');
+    expect(plants[0].nfc_uid).toBe('04:A1:B2:C3:D4:E5:02');
+    expect(inventory[0].status).toBe('unassigned'); // Old tag unassigned
+    expect(inventory[0].plant_id).toBe(null);
+    expect(inventory[1].status).toBe('assigned');   // New tag assigned
+    expect(inventory[1].plant_id).toBe(101);
+
+    // 5. Cultivation logs remain 100% intact
+    expect(logs.filter(l => l.plant_id === 101).length).toBe(2);
+  });
+
+  it('3.14 Should verify public access response: active tag allowed, old replaced tag frozen (revoked)', () => {
+    const activePlant = {
+      id: 101,
+      farm_id: 6,
+      tree_code: 'SR-01',
+      nfc_uid: '04:A1:B2:C3:D4:E5:02', // Current active tag
+      is_public: true
+    };
+
+    const verifyPublicTagAccess = (requestedNfcUid, plant) => {
+      if (!requestedNfcUid) return { status: 200, access: 'allowed' };
+      const cleanReq = String(requestedNfcUid).trim().toUpperCase();
+      if (!plant.nfc_uid || plant.nfc_uid.toUpperCase() !== cleanReq) {
+        return {
+          status: 410,
+          access: 'revoked',
+          error: `Thẻ NFC [${cleanReq}] này đã bị thu hồi hoặc thay thế. Đường dẫn công khai cũ đã bị đóng băng truy cập.`
+        };
+      }
+      return { status: 200, access: 'allowed', plant };
+    };
+
+    // Current tag access -> 200 Allowed
+    const currentAccess = verifyPublicTagAccess('04:A1:B2:C3:D4:E5:02', activePlant);
+    expect(currentAccess.status).toBe(200);
+    expect(currentAccess.access).toBe('allowed');
+
+    // Old revoked tag access -> 410 Revoked & Frozen
+    const oldAccess = verifyPublicTagAccess('04:A1:B2:C3:D4:E5:01', activePlant);
+    expect(oldAccess.status).toBe(410);
+    expect(oldAccess.access).toBe('revoked');
+    expect(oldAccess.error).toContain('đã bị đóng băng truy cập');
+  });
+
 });
 

@@ -127,6 +127,34 @@ class TestFramework {
         if (!regex.test(actual)) {
           throw new Error(`Expected "${actual}" to match pattern ${regex}`);
         }
+      },
+      toThrow: (expectedMsg) => {
+        if (typeof actual !== 'function') {
+          throw new Error(`toThrow expects a function, received ${typeof actual}`);
+        }
+        let threw = false;
+        let errorObj = null;
+        try {
+          actual();
+        } catch (err) {
+          threw = true;
+          errorObj = err;
+        }
+        if (!threw) {
+          throw new Error(`Expected function to throw an error, but it returned normally`);
+        }
+        if (expectedMsg && errorObj) {
+          const msg = errorObj.message || String(errorObj);
+          if (expectedMsg instanceof RegExp) {
+            if (!expectedMsg.test(msg)) {
+              throw new Error(`Expected thrown message "${msg}" to match ${expectedMsg}`);
+            }
+          } else if (typeof expectedMsg === 'string') {
+            if (!msg.includes(expectedMsg)) {
+              throw new Error(`Expected thrown message "${msg}" to contain "${expectedMsg}"`);
+            }
+          }
+        }
       }
     };
   }

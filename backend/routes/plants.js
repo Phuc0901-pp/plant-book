@@ -503,68 +503,110 @@ router.put('/:id/nfc', auth, async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền thay đổi định danh thẻ của cây này.' });
     }
 
+    const cleanUid = nfc_uid ? decodeURIComponent(nfc_uid).trim().toUpperCase() : null;
+
     await client.query('BEGIN');
 
-    // 2. If new UID provided, deactivate it from any other plant that currently holds it
-    if (nfc_uid) {
-      await client.query(
-        `UPDATE plants SET nfc_uid = NULL, updated_at = NOW()
-         WHERE nfc_uid = $1 AND id != $2`,
-        [nfc_uid, plantId]
-      );
-    }
-
-    const cleanUid = nfc_uid ? decodeURIComponent(nfc_uid).trim().toUpperCase() : null;
-    const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, cleanUid);
-
-    // 3. Assign new nfc_uid (or NULL to deactivate) to this plant
-    const updated = await client.query(
-      `UPDATE plants 
-       SET nfc_uid = $1, public_url = $2, updated_at = NOW()
-       WHERE id = $3
-       RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id`,
-      [cleanUid, publicUrl, plantId]
-    );
-
-    // 4. Update NFC Inventory status if exists
+    // 2. If assigning a new UID:
     if (cleanUid) {
-      await client.query(
-        `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, tagged_at, created_by)
-         VALUES ($1, $2, 'assigned', $3, NOW(), $4)
-         ON CONFLICT (nfc_uid) DO UPDATE 
-         SET farm_id = EXCLUDED.farm_id,
-             status = 'assigned',
-             plant_id = EXCLUDED.plant_id,
-             tagged_at = NOW()`,
-        [plant.farm_id, cleanUid, plantId, req.user.id]
+      // 2a. Verify tag exists in pre-declared inventory for this farm
+      const invCheck = await client.query(
+        `SELECT id, farm_id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1) AND (farm_id = $2 OR farm_id IS NULL)`,
+        [cleanUid, plant.farm_id]
       );
+      if (invCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `Mã thẻ ${cleanUid} chưa được khai báo nhập kho cho trang trại này. Vui lòng liên hệ Quản trị viên để nhập kho thẻ trước.`
+        });
+      }
+
+      // 2b. Check if this UID is already assigned to ANOTHER plant
+      const plantConflict = await client.query(
+        `SELECT id, tree_code FROM plants WHERE UPPER(nfc_uid) = UPPER($1) AND id != $2`,
+        [cleanUid, plantId]
+      );
+      if (plantConflict.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          error: `Mã thẻ ${cleanUid} đã được gắn cho cây #${plantConflict.rows[0].tree_code || plantConflict.rows[0].id}. Mỗi thẻ chỉ gắn cho 1 cây duy nhất.`
+        });
+      }
+
+      // 2c. If replacing an existing tag on this plant, revoke / unassign old tag in inventory
+      if (plant.nfc_uid && plant.nfc_uid.toUpperCase() !== cleanUid) {
+        await client.query(
+          `UPDATE nfc_tags_inventory SET status = 'unassigned', plant_id = NULL, tagged_at = NULL WHERE farm_id = $1 AND UPPER(nfc_uid) = UPPER($2)`,
+          [plant.farm_id, plant.nfc_uid]
+        );
+      }
+
+      // 2d. Update target plant with new UID & 3-segment public URL
+      const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, cleanUid);
+      const updated = await client.query(
+        `UPDATE plants 
+         SET nfc_uid = $1, public_url = $2, updated_at = NOW()
+         WHERE id = $3
+         RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id`,
+        [cleanUid, publicUrl, plantId]
+      );
+
+      // 2e. Update inventory item to assigned
+      await client.query(
+        `UPDATE nfc_tags_inventory 
+         SET farm_id = $1, status = 'assigned', plant_id = $2, tagged_at = NOW() 
+         WHERE UPPER(nfc_uid) = UPPER($3)`,
+        [plant.farm_id, plantId, cleanUid]
+      );
+
+      await client.query('COMMIT');
+
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) broadcast('plants_updated');
+
+      return res.json({
+        success: true,
+        plant: updated.rows[0],
+        public_url: publicUrl,
+        message: `Đã gắn thẻ định danh ${cleanUid} cho cây ${plant.tree_code || plantId}`
+      });
     } else {
-      await client.query(
-        `UPDATE nfc_tags_inventory SET status = 'unassigned', plant_id = NULL, tagged_at = NULL WHERE plant_id = $1`,
-        [plantId]
+      // Deactivating / Unassigning tag from this plant
+      if (plant.nfc_uid) {
+        await client.query(
+          `UPDATE nfc_tags_inventory SET status = 'unassigned', plant_id = NULL, tagged_at = NULL WHERE farm_id = $1 AND UPPER(nfc_uid) = UPPER($2)`,
+          [plant.farm_id, plant.nfc_uid]
+        );
+      }
+
+      const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, null);
+      const updated = await client.query(
+        `UPDATE plants 
+         SET nfc_uid = NULL, public_url = $1, updated_at = NOW()
+         WHERE id = $2
+         RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id`,
+        [publicUrl, plantId]
       );
+
+      await client.query('COMMIT');
+
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) broadcast('plants_updated');
+
+      return res.json({
+        success: true,
+        plant: updated.rows[0],
+        public_url: publicUrl,
+        message: `Đã hủy kích hoạt thẻ của cây ${plant.tree_code || plantId}`
+      });
     }
-
-    await client.query('COMMIT');
-
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast('plants_updated');
-
-    res.json({
-      success: true,
-      plant: updated.rows[0],
-      public_url: publicUrl,
-      message: cleanUid
-        ? `Đã gắn thẻ định danh ${cleanUid} cho cây ${plant.tree_code || plantId}`
-        : `Đã hủy kích hoạt thẻ của cây ${plant.tree_code || plantId}`
-    });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('NFC assign error:', err);
     if (err.code === '23505') { // unique_violation
       return res.status(409).json({ error: 'Mã thẻ này đã được sử dụng bởi một cây trồng khác.' });
     }
-    res.status(500).json({ error: 'Lỗi server khi cập nhật định danh thẻ.' });
+    res.status(500).json({ error: 'Lỗi server khi cập nhật định danh thẻ: ' + err.message });
   } finally {
     client.release();
   }
@@ -750,20 +792,40 @@ router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
       return res.status(404).json({ error: `Không tìm thấy cây số ${tree_code || plant_id} trong trang trại này.` });
     }
 
-    // Check if this UID is used by another plant
+    // 1. Verify tag exists in pre-declared inventory for this farm
+    const invCheck = await client.query(
+      'SELECT id, farm_id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1) AND (farm_id = $2 OR farm_id IS NULL)',
+      [cleanUid, farmId]
+    );
+    if (invCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: `Mã thẻ ${cleanUid} chưa được khai báo nhập kho cho trang trại này. Vui lòng liên hệ Quản trị viên để nhập kho thẻ trước.`
+      });
+    }
+
+    // 2. Check if this UID is used by another plant
     const uidConflict = await client.query(
       'SELECT id, tree_code FROM plants WHERE UPPER(nfc_uid) = UPPER($1) AND id != $2',
       [cleanUid, targetPlant.id]
     );
     if (uidConflict.rows.length > 0) {
       await client.query('ROLLBACK');
-      return res.status(409).json({ error: `Mã thẻ ${cleanUid} đã được gắn cho cây #${uidConflict.rows[0].tree_code || uidConflict.rows[0].id}.` });
+      return res.status(409).json({ error: `Mã thẻ ${cleanUid} đã được gắn cho cây #${uidConflict.rows[0].tree_code || uidConflict.rows[0].id}. Mỗi cây chỉ được gắn 1 thẻ duy nhất.` });
     }
 
-    // Generate public URL: https://plant-book.onrender.com/{farm_id}/{plant_id}/{nfc_uid}
+    // 3. If replacing an existing tag on this plant, revoke / unassign old tag in inventory
+    if (targetPlant.nfc_uid && targetPlant.nfc_uid.toUpperCase() !== cleanUid) {
+      await client.query(
+        `UPDATE nfc_tags_inventory SET status = 'unassigned', plant_id = NULL, tagged_at = NULL WHERE farm_id = $1 AND UPPER(nfc_uid) = UPPER($2)`,
+        [farmId, targetPlant.nfc_uid]
+      );
+    }
+
+    // 4. Generate public URL: https://plant-book.onrender.com/{farm_id}/{plant_id}/{nfc_uid}
     const publicUrl = generatePublicPlantUrl(farmId, targetPlant.id, cleanUid);
 
-    // Update plant
+    // 5. Update plant
     const updateRes = await client.query(
       `UPDATE plants 
        SET nfc_uid = $1, 
@@ -778,16 +840,12 @@ router.post('/farms/:farmId/tag-nfc-gps', auth, async (req, res) => {
 
     const updatedPlant = updateRes.rows[0];
 
-    // Upsert NFC Inventory item
+    // 6. Update NFC Inventory item
     await client.query(
-      `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, tagged_at, created_by)
-       VALUES ($1, $2, 'assigned', $3, NOW(), $4)
-       ON CONFLICT (nfc_uid) DO UPDATE 
-       SET farm_id = EXCLUDED.farm_id,
-           status = 'assigned',
-           plant_id = EXCLUDED.plant_id,
-           tagged_at = NOW()`,
-      [farmId, cleanUid, targetPlant.id, req.user.id]
+      `UPDATE nfc_tags_inventory 
+       SET farm_id = $1, status = 'assigned', plant_id = $2, tagged_at = NOW() 
+       WHERE UPPER(nfc_uid) = UPPER($3)`,
+      [farmId, targetPlant.id, cleanUid]
     );
 
     await client.query('COMMIT');
@@ -1294,7 +1352,21 @@ router.get('/public/:slug', async (req, res) => {
        LEFT JOIN farms f ON f.id = p.farm_id
        WHERE (p.public_slug=$1 OR p.id::text=$1 OR UPPER(p.nfc_uid)=UPPER($1)) AND p.is_public=true`, [slugParam]
     );
-    if (plant.rows.length === 0) return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
+    if (plant.rows.length === 0) {
+      // Check if this slugParam was an unassigned or revoked NFC tag in inventory
+      const invRevoked = await pool.query(
+        'SELECT nfc_uid, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)',
+        [slugParam]
+      );
+      if (invRevoked.rows.length > 0) {
+        return res.status(410).json({
+          error: `Thẻ NFC [${slugParam}] này đã bị thu hồi hoặc thay thế. Đường dẫn công khai cũ đã bị đóng băng truy cập.`,
+          is_revoked: true,
+          nfc_uid: slugParam
+        });
+      }
+      return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
+    }
 
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plant.rows[0].id]);
     const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 ORDER BY log_date DESC', [plant.rows[0].id]);
