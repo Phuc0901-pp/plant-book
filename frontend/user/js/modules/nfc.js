@@ -16,11 +16,14 @@ let _scanning          = false;
 
 // ── Open / Close & Tree Sequential Navigator ───────────────────
 
-function _buildHierarchicalPlantUrl(userId, farmId, plantId, nfcUid) {
+function _buildHierarchicalPlantUrl(farmId, plantId, nfcUid) {
   const f = farmId || 0;
-  const p = plantId;
+  const p = plantId || 0;
   const n = nfcUid ? `/${encodeURIComponent(nfcUid)}` : '';
-  return `${window.location.origin}/${f}/${p}${n}`;
+  const origin = (window.location.origin && !window.location.origin.includes('file://'))
+    ? window.location.origin
+    : 'https://dev-plantbook.onrender.com';
+  return `${origin}/${f}/${p}${n}`;
 }
 
 function _renderCurrentNfcPlant() {
@@ -57,14 +60,13 @@ function _renderCurrentNfcPlant() {
   _setEl('nfc-modal-current-uid', uidBadge, true);
 
   // Render 3-segment Public Plant URL: https://domain.com/<farm_id>/<plant_id>/<nfc_uid>
-  const fullPlantUrl = _buildHierarchicalPlantUrl(plantObj.user_id, plantObj.farm_id, plantId, currentNfcUid);
+  const fullPlantUrl = _buildHierarchicalPlantUrl(plantObj.farm_id, plantId, currentNfcUid);
   const urlInput = document.getElementById('nfc-public-url-input');
   const urlLink = document.getElementById('nfc-public-url-link');
   if (urlInput) urlInput.value = fullPlantUrl;
   if (urlLink) urlLink.href = fullPlantUrl;
 
-  // Render Metadata Component IDs
-  _setEl('nfc-meta-user-id', plantObj.user_id ? `#${plantObj.user_id}` : '#0');
+  // Render Metadata Component IDs (Standard 3-segment breakdown)
   _setEl('nfc-meta-farm-id', plantObj.farm_id ? `#${plantObj.farm_id}` : '#0');
   _setEl('nfc-meta-plant-id', `#${plantId}`);
   _setEl('nfc-meta-tag-id', currentNfcUid ? currentNfcUid : 'Chưa gắn');
@@ -179,7 +181,7 @@ export async function startNfcScan() {
       _stopNfcScan();
       const uid = serialNumber.toUpperCase();
       _setNfcStatus('detected', uid);
-      const plantUrl = _buildHierarchicalPlantUrl(_currentPlant.user_id, _currentPlant.farm_id, _currentPlant.id, uid);
+      const plantUrl = _buildHierarchicalPlantUrl(_currentPlant.farm_id, _currentPlant.id, uid);
       try {
         await _nfcReader.write({ records: [{ recordType: 'url', data: plantUrl }] });
         toast(`Đã ghi URL cây vào thẻ: ${_currentPlant.tree_code || _currentPlant.id}`);
@@ -233,7 +235,7 @@ async function _saveUid(uid) {
       : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
     _setEl('nfc-modal-current-uid', uidBadge, true);
 
-    const fullPlantUrl = _buildHierarchicalPlantUrl(_currentPlant.user_id, _currentPlant.farm_id, _currentPlant.id, uid);
+    const fullPlantUrl = _buildHierarchicalPlantUrl(_currentPlant.farm_id, _currentPlant.id, uid);
     const urlInput = document.getElementById('nfc-public-url-input');
     const urlLink = document.getElementById('nfc-public-url-link');
     if (urlInput) urlInput.value = fullPlantUrl;

@@ -1800,7 +1800,7 @@ router.get('/:id(\\d+)/export-vietgap', async (req, res) => {
         owner_name: plant.owner_name,
         owner_phone: plant.owner_phone,
         nfc_uid: plant.nfc_uid,
-        public_url: `https://plant-book.onrender.com/${plant.created_by || 0}/${plant.farm_id || 0}/${plant.id}/${plant.nfc_uid || ''}`
+        public_url: generatePublicPlantUrl(plant.farm_id, plant.id, plant.nfc_uid)
       },
       total_logs: logsRes.rows.length,
       logs: logsRes.rows
