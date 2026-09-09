@@ -348,7 +348,7 @@ function renderDevices(devices) {
 
     return `
       <tr style="border-bottom:1px solid #f1f5f9; font-size:13px;">
-        <td style="padding:12px 14px;">
+        <td data-label="Thiết bị" style="padding:12px 14px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <div style="width:34px; height:34px; border-radius:8px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">
               <i class="fa-solid fa-microchip"></i>
@@ -359,16 +359,16 @@ function renderDevices(devices) {
             </div>
           </div>
         </td>
-        <td><span style="font-size:12px; font-weight:700; color:#334155; background:#f8fafc; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">${esc(d.device_type)}</span></td>
-        <td><strong style="color:#059669; font-size:12.5px;"><i class="fa-solid fa-house-chimney" style="font-size:11px;"></i> ${esc(d.farm_name || 'Toàn hệ thống')}</strong></td>
-        <td>
+        <td data-label="Phân loại"><span style="font-size:12px; font-weight:700; color:#334155; background:#f8fafc; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">${esc(d.device_type)}</span></td>
+        <td data-label="Trang trại"><strong style="color:#059669; font-size:12.5px;"><i class="fa-solid fa-house-chimney" style="font-size:11px;"></i> ${esc(d.farm_name || 'Toàn hệ thống')}</strong></td>
+        <td data-label="Mức Pin">
           <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; color:${batteryColor}; font-size:12.5px;">
             <i class="fa-solid ${batteryIcon}"></i> ${d.battery_level !== null ? d.battery_level : 100}%
           </span>
         </td>
-        <td><span class="badge" style="font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; ${statusStyle}">${esc(d.status || 'Hoạt động')}</span></td>
-        <td style="font-size:11.5px; color:#64748b;">${d.last_connection ? new Date(d.last_connection).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) + ' ' + new Date(d.last_connection).toLocaleDateString('vi-VN') : 'Vừa cập nhật'}</td>
-        <td style="text-align:center;">
+        <td data-label="Trạng thái"><span class="badge" style="font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; ${statusStyle}">${esc(d.status || 'Hoạt động')}</span></td>
+        <td data-label="Lần kết nối" style="font-size:11.5px; color:#64748b;">${d.last_connection ? new Date(d.last_connection).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) + ' ' + new Date(d.last_connection).toLocaleDateString('vi-VN') : 'Vừa cập nhật'}</td>
+        <td data-label="Thao tác" style="text-align:center;">
           <div style="display:inline-flex; gap:6px;">
             <button class="btn btn-sm" onclick="openDeviceModal(${d.id})" title="Chỉnh sửa" style="padding:4px 8px; font-size:11px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; color:#0284c7; cursor:pointer;">
               <i class="fa fa-pen"></i>

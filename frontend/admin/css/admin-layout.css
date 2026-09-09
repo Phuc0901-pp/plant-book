@@ -828,6 +828,95 @@ div#login-page[style*="display:none"] {
     font-size: 12px !important;
   }
 
+  /* ── 12. IoT & Weather Station Mobile Responsive ── */
+  .iot-weather-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .iot-weather-hero-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 14px !important;
+  }
+
+  .iot-hourly-chart-box {
+    min-width: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 10px !important;
+  }
+
+  .iot-weather-metrics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .iot-metric-card {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 12px 14px !important;
+  }
+
+  .iot-metric-card > div:nth-child(2) {
+    margin-top: 0 !important;
+    text-align: right !important;
+  }
+
+  .iot-7day-forecast-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 14px !important;
+  }
+
+  .iot-soil-metrics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  #iot-pane-weather,
+  #iot-pane-soil,
+  #iot-pane-ai,
+  #iot-pane-devices {
+    padding: 14px 10px !important;
+  }
+
+  .soil-depth-btn-group {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .soil-depth-btn-group button {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+  }
+
+  .db-iot-filters-wrap {
+    width: 100% !important;
+  }
+
+  .db-iot-actions-wrap {
+    width: 100% !important;
+    justify-content: flex-end !important;
+  }
+
+  .db-iot-actions-wrap button {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+
+  /* When modal is open in Admin portal, hide mascot from blocking clicks */
+  body:has(.modal-overlay[style*="display: flex"]) .admin-unified-mascot-container,
+  body:has(.modal-overlay[style*="display: block"]) .admin-unified-mascot-container {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
   .admin-brand-signature {
     text-align: center;
     font-size: 11.5px;
@@ -838,3 +927,76 @@ div#login-page[style*="display:none"] {
     margin-top: 20px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN IOT & TELEMETRY MODULE DEFAULT (DESKTOP) STYLING
+   ═══════════════════════════════════════════════════════════════ */
+.iot-weather-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 20px;
+}
+
+.iot-weather-hero-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.iot-hourly-chart-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 240px;
+  text-align: center;
+}
+
+.iot-weather-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.iot-metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.iot-7day-forecast-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.iot-soil-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .iot-weather-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  .iot-soil-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+

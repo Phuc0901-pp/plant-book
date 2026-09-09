@@ -1,9 +1,9 @@
 <div class="tab-pane" id="db-pane-devices" style="display:none;">
 
           <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
+          <div class="db-iot-kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+            <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
                 <i class="fa-solid fa-microchip"></i>
               </div>
               <div>
@@ -12,8 +12,8 @@
               </div>
             </div>
 
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
+            <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
                 <i class="fa-solid fa-signal"></i>
               </div>
               <div>
@@ -22,8 +22,8 @@
               </div>
             </div>
 
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:20px;">
+            <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
               </div>
               <div>
@@ -32,8 +32,8 @@
               </div>
             </div>
 
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px;">
+            <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
                 <i class="fa-solid fa-battery-three-quarters"></i>
               </div>
               <div>
@@ -49,16 +49,16 @@
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 
                 <!-- Filters -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;" class="db-iot-filters-wrap">
                   <!-- Farm Selector -->
-                  <div style="min-width:220px; flex:1.2;">
+                  <div style="min-width:220px; flex:1.2;" class="db-filter-item">
                     <select id="db-iot-filter-farm" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#064e3b; background:#f8fafc;">
                       <option value="all">🌐 Tất cả Trang trại (Toàn bộ IoT)</option>
                     </select>
                   </div>
 
                   <!-- Category Selector -->
-                  <div style="min-width:170px; flex:1;">
+                  <div style="min-width:170px; flex:1;" class="db-filter-item">
                     <select id="db-iot-filter-type" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; background:#ffffff;">
                       <option value="all">Tất cả phân loại</option>
                       <option>Trạm thời tiết</option>
@@ -68,7 +68,7 @@
                   </div>
 
                   <!-- Status Selector -->
-                  <div style="min-width:140px; flex:0.8;">
+                  <div style="min-width:140px; flex:0.8;" class="db-filter-item">
                     <select id="db-iot-filter-status" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; background:#ffffff;">
                       <option value="all">Tất cả trạng thái</option>
                       <option>Hoạt động</option>
@@ -78,13 +78,13 @@
                   </div>
 
                   <!-- Search Input -->
-                  <div style="min-width:180px; flex:1;">
+                  <div style="min-width:180px; flex:1;" class="db-filter-item">
                     <input type="text" id="db-iot-search-input" placeholder="🔍 Tìm theo IP, tên, mã..." oninput="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; outline:none; background:#ffffff;">
                   </div>
                 </div>
 
                 <!-- Right Action Buttons -->
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" class="db-iot-actions-wrap">
                   <button class="btn btn-secondary btn-sm" onclick="loadDbDevicesTab()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:12px; cursor:pointer;">
                     <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới
                   </button>
@@ -108,9 +108,9 @@
 
             <!-- Sub-tab 1: Weather Station -->
             <div id="iot-pane-weather" style="padding:20px; display:block;">
-              <div style="display:grid; grid-template-columns: 2.4fr 1fr; gap:20px;">
+              <div class="iot-weather-grid">
                 <div style="display:flex; flex-direction:column; gap:16px;">
-                  <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                  <div class="iot-weather-hero-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div>
                       <div style="font-size:12px; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
                         <i class="fa-solid fa-location-dot" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp · 📍 Live Sensor Station
@@ -123,24 +123,24 @@
                         </div>
                       </div>
                     </div>
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; min-width:240px; text-align:center;">
+                    <div class="iot-hourly-chart-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; min-width:240px; text-align:center;">
                       <div style="font-size:10.5px; color:#64748b; font-weight:700; margin-bottom:4px;">DỰ BÁO NHIỆT ĐỘ THEO GIỜ (HÔM NAY)</div>
-                      <canvas id="weather-hourly-chart" style="max-height:100px;"></canvas>
+                      <canvas id="weather-hourly-chart" style="max-height:100px; width:100%;"></canvas>
                     </div>
                   </div>
 
-                  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
-                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                  <div class="iot-weather-metrics-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
                       <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Tốc độ &amp; Hướng gió</div>
                       <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">28 <small style="font-size:12px; color:#64748b;">km/h</small></div>
                       <div style="font-size:11px; color:#0284c7; font-weight:600; margin-top:2px;">Hướng: ESE (Đông Đông Nam)</div>
                     </div>
-                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
                       <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Lượng mưa hôm nay</div>
                       <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">0.02 <small style="font-size:12px; color:#64748b;">mm</small></div>
                       <div style="font-size:11px; color:#059669; font-weight:600; margin-top:2px;">Xác suất mưa 1h tới: 20%</div>
                     </div>
-                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
                       <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Độ ẩm không khí</div>
                       <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">76%</div>
                       <div style="font-size:11px; color:#0284c7; font-weight:600; margin-top:2px;">Điểm sương: 22°C (Sương mù)</div>
@@ -149,21 +149,21 @@
                 </div>
 
                 <!-- 7-day Forecast -->
-                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+                <div class="iot-7day-forecast-box" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
                   <div style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; padding-bottom:6px; border-bottom:1px solid #f1f5f9;">
                     <span><i class="fa-regular fa-calendar-days" style="color:#059669;"></i> DỰ BÁO 7 NGÀY TỚI</span>
                     <span style="font-size:11px; color:#64748b;">Cập nhật 15:00</span>
                   </div>
                   <div style="display:flex; flex-direction:column; gap:6px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#f8fafc; border-radius:8px; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Hôm nay</strong> <span style="font-size:11px; color:#64748b;">(21 Aug)</span></div>
                       <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#f8fafc; border-radius:8px; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Ngày mai</strong> <span style="font-size:11px; color:#64748b;">(22 Aug)</span></div>
                       <div><span>🌧️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#f8fafc; border-radius:8px; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Chủ nhật</strong> <span style="font-size:11px; color:#64748b;">(23 Aug)</span></div>
                       <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
@@ -179,13 +179,13 @@
                   <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-layer-group" style="color:#059669;"></i> Cảm biến Đất đa tầng (Multi-Depth Soil Telemetry)</h4>
                   <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Theo dõi pH, Nhiệt độ, Độ ẩm, EC, NPK và Độ mặn theo 3 độ sâu bộ rễ sầu riêng</p>
                 </div>
-                <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:8px;">
+                <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:8px;" class="soil-depth-btn-group">
                   <button class="btn btn-sm" id="soil-depth-btn-10" onclick="switchSoilDepth(10)" style="background:#ffffff; color:#0f172a; font-weight:800; border-radius:6px; border:none; box-shadow:0 1px 2px rgba(0,0,0,0.06); padding:4px 10px; font-size:11.5px;">🌱 Tầng 10cm</button>
                   <button class="btn btn-sm" id="soil-depth-btn-20" onclick="switchSoilDepth(20)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌿 Tầng 20cm</button>
                   <button class="btn btn-sm" id="soil-depth-btn-30" onclick="switchSoilDepth(30)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌳 Tầng 30cm</button>
                 </div>
               </div>
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;" id="soil-metrics-grid"></div>
+              <div class="iot-soil-metrics-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;" id="soil-metrics-grid"></div>
             </div>
 
             <!-- Sub-tab 3: AI Advisory -->
@@ -206,22 +206,24 @@
 
             <!-- Sub-tab 4: Device Table Registry -->
             <div id="iot-pane-devices" style="padding:20px; display:none;">
-              <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                  <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-align:left;">
-                    <th style="padding:10px 14px;">Tên thiết bị &amp; Node</th>
-                    <th>Phân loại</th>
-                    <th>Trang trại gán</th>
-                    <th>Mức Pin</th>
-                    <th>Trạng thái</th>
-                    <th>Lần kết nối</th>
-                    <th style="text-align:center; width:100px;">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody id="devices-table">
-                  <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>
-                </tbody>
-              </table>
+              <div class="table-responsive" style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse;">
+                  <thead>
+                    <tr style="background:#f8fafc; font-size:12px; color:#64748b; text-align:left;">
+                      <th style="padding:10px 14px;">Tên thiết bị &amp; Node</th>
+                      <th>Phân loại</th>
+                      <th>Trang trại gán</th>
+                      <th>Mức Pin</th>
+                      <th>Trạng thái</th>
+                      <th>Lần kết nối</th>
+                      <th style="text-align:center; width:100px;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="devices-table">
+                    <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
