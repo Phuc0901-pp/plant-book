@@ -8,11 +8,13 @@ import { toast }      from '../core/utils.js';
 import { getPlantsCache, renderUserPlantsTable } from './plants.js';
 
 // ── State ──────────────────────────────────────────────────────
-let _currentPlant  = null;   // { id, tree_code, public_slug, nfc_uid }
-let _nfcReader     = null;   // NDEFReader instance (Web NFC)
-let _scanning      = false;
+let _currentPlant      = null;   // { id, tree_code, public_slug, nfc_uid, farm_id, user_id, plant_type, plant_variety }
+let _currentFarmPlants = [];     // List of trees in the same farm, sorted by sequential number
+let _currentPlantIndex = 0;      // Current active index in _currentFarmPlants
+let _nfcReader         = null;   // NDEFReader instance (Web NFC)
+let _scanning          = false;
 
-// ── Open / Close ───────────────────────────────────────────────
+// ── Open / Close & Tree Sequential Navigator ───────────────────
 
 function _buildHierarchicalPlantUrl(userId, farmId, plantId, nfcUid) {
   const f = farmId || 0;
@@ -21,12 +23,33 @@ function _buildHierarchicalPlantUrl(userId, farmId, plantId, nfcUid) {
   return `${window.location.origin}/${f}/${p}${n}`;
 }
 
-export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
-  const cache = getPlantsCache();
-  const plantObj = cache.find(p => p.id == plantId) || {};
-  _currentPlant = { id: plantId, tree_code: treeCode, public_slug: publicSlug || plantId, nfc_uid: currentNfcUid, farm_id: plantObj.farm_id, user_id: plantObj.user_id };
+function _renderCurrentNfcPlant() {
+  if (!_currentFarmPlants || _currentFarmPlants.length === 0) return;
+  const plantObj = _currentFarmPlants[_currentPlantIndex];
+  if (!plantObj) return;
 
-  _setEl('nfc-modal-plant-name', treeCode || `Cây #${plantId}`);
+  const plantId = plantObj.id;
+  const treeCode = plantObj.tree_code || `#${plantId}`;
+  const currentNfcUid = plantObj.nfc_uid;
+  const publicSlug = plantObj.public_slug || plantId;
+
+  _currentPlant = { 
+    id: plantId, 
+    tree_code: treeCode, 
+    public_slug: publicSlug, 
+    nfc_uid: currentNfcUid, 
+    farm_id: plantObj.farm_id, 
+    user_id: plantObj.user_id,
+    plant_type: plantObj.plant_type,
+    plant_variety: plantObj.plant_variety
+  };
+
+  _setEl('nfc-modal-plant-name', `${treeCode}${plantObj.plant_type ? ` (${plantObj.plant_type})` : ''}`);
+
+  // Stepper / Navigator bar UI
+  const total = _currentFarmPlants.length;
+  const currentNum = _currentPlantIndex + 1;
+  _setEl('nfc-nav-tree-info', `Cây #${treeCode}${plantObj.plant_type ? ` · ${plantObj.plant_type}` : ''} (${currentNum}/${total})`);
 
   const uidBadge = currentNfcUid
     ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i class="fa-solid fa-tag"></i> ${currentNfcUid}</span>`
@@ -52,10 +75,62 @@ export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
   const deactivateBtn = document.getElementById('nfc-deactivate-btn');
   if (deactivateBtn) deactivateBtn.style.display = currentNfcUid ? 'flex' : 'none';
 
+  if (_scanning) {
+    _setNfcStatus('scanning');
+  }
+}
+
+export function prevNfcPlant() {
+  if (!_currentFarmPlants || _currentFarmPlants.length <= 1) return;
+  _currentPlantIndex = (_currentPlantIndex - 1 + _currentFarmPlants.length) % _currentFarmPlants.length;
+  _renderCurrentNfcPlant();
+}
+window.prevNfcPlant = prevNfcPlant;
+
+export function nextNfcPlant() {
+  if (!_currentFarmPlants || _currentFarmPlants.length <= 1) return;
+  _currentPlantIndex = (_currentPlantIndex + 1) % _currentFarmPlants.length;
+  _renderCurrentNfcPlant();
+}
+window.nextNfcPlant = nextNfcPlant;
+
+export function openNfcModal(plantId, treeCode, publicSlug, currentNfcUid) {
+  const cache = getPlantsCache();
+  const plantObj = cache.find(p => p.id == plantId) || {};
+  const farmId = plantObj.farm_id;
+
+  // Filter all plants belonging to the same farm (or entire cache if unassigned)
+  _currentFarmPlants = (farmId !== undefined && farmId !== null && farmId !== '')
+    ? cache.filter(p => p.farm_id == farmId)
+    : [...cache];
+
+  if (!_currentFarmPlants.length && plantObj.id) {
+    _currentFarmPlants = [plantObj];
+  }
+
+  // Sort logically and naturally by tree_code or id (1, 2, 3, 4, 10...)
+  _currentFarmPlants.sort((a, b) => {
+    const rawA = (a.tree_code || a.id || '').toString();
+    const rawB = (b.tree_code || b.id || '').toString();
+    const numA = parseInt(rawA.replace(/\D/g, ''), 10);
+    const numB = parseInt(rawB.replace(/\D/g, ''), 10);
+    if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+      return numA - numB;
+    }
+    return rawA.localeCompare(rawB, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+  _currentPlantIndex = _currentFarmPlants.findIndex(p => p.id == plantId);
+  if (_currentPlantIndex === -1) _currentPlantIndex = 0;
+
+  _renderCurrentNfcPlant();
   _setNfcStatus('idle');
 
   const modal = document.getElementById('nfc-modal');
-  if (modal) { modal.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  if (modal) { 
+    modal.classList.add('open'); 
+    document.body.style.overflow = 'hidden'; 
+  }
 
   // Check Web NFC support (Web NFC requires HTTPS & Chrome on Android with NFC hardware)
   if ('NDEFReader' in window && 'ontouchstart' in window) {
@@ -71,6 +146,7 @@ export function closeNfcModal() {
   if (modal) modal.classList.remove('open');
   document.body.style.overflow = '';
   _currentPlant = null;
+  _currentFarmPlants = [];
 }
 
 export function copyNfcPublicUrl() {
@@ -169,6 +245,10 @@ async function _saveUid(uid) {
     if (deactivateBtn) deactivateBtn.style.display = uid ? 'flex' : 'none';
 
     // Update cache & table
+    if (_currentFarmPlants[_currentPlantIndex]) {
+      _currentFarmPlants[_currentPlantIndex].nfc_uid = uid;
+      _currentFarmPlants[_currentPlantIndex].public_url = fullPlantUrl;
+    }
     const cache = getPlantsCache();
     const idx   = cache.findIndex(p => p.id === _currentPlant.id);
     if (idx !== -1) {

@@ -1,8 +1,8 @@
   <!-- ── NFC TAG MODAL ── -->
-  <div id="nfc-modal" class="modal-overlay">
-    <div class="modal-box nfc-modal-box" style="max-height: 90vh; max-height: 90dvh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 20px 18px;">
+  <div id="nfc-modal" class="modal-overlay" onclick="if(event.target===this)closeNfcModal()">
+    <div class="modal-box nfc-modal-box" style="max-height: 88vh; max-height: 88dvh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 20px 18px 28px 18px; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; touch-action: pan-y;">
       <!-- Header -->
-      <div class="nfc-modal-header" style="position: sticky; top: -20px; background: #ffffff; padding: 6px 0; margin-bottom: 14px; z-index: 10; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px;">
+      <div class="nfc-modal-header" style="position: sticky; top: -20px; background: #ffffff; padding: 6px 0 10px 0; margin-bottom: 12px; z-index: 10; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px;">
         <div class="nfc-modal-icon-ring" style="width: 42px; height: 42px; font-size: 18px;">
           <i class="fa-solid fa-tag"></i>
         </div>
@@ -11,6 +11,24 @@
           <p class="nfc-modal-subtitle">Cây: <strong id="nfc-modal-plant-name">...</strong></p>
         </div>
         <button class="modal-close-btn" onclick="closeNfcModal()" aria-label="Đóng" style="width: 32px; height: 32px; font-size: 20px; flex-shrink: 0;">×</button>
+      </div>
+
+      <!-- ── STEPPER / TREE NAVIGATOR (Cùng Trang Trại Theo Thứ Tự) ── -->
+      <div class="nfc-tree-stepper-bar" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-nfc-prev-tree" onclick="prevNfcPlant()" title="Chuyển sang cây trước đó" style="padding: 7px 12px; font-size: 12px; font-weight: 700; border-radius: 8px; background:#ffffff; border:1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+          <i class="fa-solid fa-chevron-left"></i> Cây trước
+        </button>
+        
+        <div style="text-align: center; flex: 1; min-width: 0; padding: 0 4px;">
+          <div style="font-size: 10.5px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">Cây trồng cùng vườn</div>
+          <div style="font-size: 13.5px; font-weight: 900; color: #064e3b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="nfc-nav-tree-info">
+            Cây #--
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-sm" id="btn-nfc-next-tree" onclick="nextNfcPlant()" title="Chuyển sang cây tiếp theo" style="padding: 7px 12px; font-size: 12px; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #10b981, #059669); border: none; color: #ffffff; box-shadow: 0 2px 6px rgba(5,150,105,0.25); cursor: pointer;">
+          Cây tiếp <i class="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
 
       <!-- Current UID -->

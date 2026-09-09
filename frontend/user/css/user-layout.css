@@ -3268,6 +3268,68 @@ td[data-label="Thao tác"] {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   MODAL MOBILE-FIRST RESPONSIVE & HIGH Z-INDEX STACKING
+   ═══════════════════════════════════════════════════════════════ */
+.modal-overlay,
+#nfc-modal,
+#care-modal,
+#field-tagging-modal,
+#nfc-inventory-modal {
+  z-index: 99999 !important;
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .modal-overlay,
+  #nfc-modal,
+  #care-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .nfc-modal-box,
+  .modal-box,
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    max-height: 90dvh !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 18px 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+  }
+
+  .nfc-modal-header {
+    position: sticky !important;
+    top: -18px !important;
+    background: #ffffff !important;
+    z-index: 20 !important;
+    padding-top: 4px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .nfc-tree-stepper-bar {
+    position: relative !important;
+    z-index: 5 !important;
+  }
+
+  /* When modal is open, prevent bottom-nav and mascot from blocking user actions */
+  body:has(#nfc-modal.open) .bottom-nav,
+  body:has(#nfc-modal.open) .user-unified-mascot-container,
+  body:has(#nfc-modal.open) #fab-btn,
+  body:has(.modal-overlay[style*="display: flex"]) .bottom-nav,
+  body:has(.modal-overlay[style*="display: flex"]) .user-unified-mascot-container {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+}
+
 
 
 
