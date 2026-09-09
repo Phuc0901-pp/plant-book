@@ -100,7 +100,11 @@ async function initDatabasePage() {
         normalUsers.map(u => `<option value="${u.id}">👤 ${esc(u.full_name)}</option>`).join('');
     }
 
-    switchDatabaseTab('cultivation');
+    window._allFarmsCache = dbFarmsCache;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTab = (activeDbTab && activeDbTab !== 'cultivation') ? activeDbTab : (urlParams.get('tab') || 'cultivation');
+    switchDatabaseTab(targetTab, false);
   } catch (err) {
     console.error('Error initializing database page:', err);
   }

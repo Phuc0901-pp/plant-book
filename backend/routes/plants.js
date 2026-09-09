@@ -641,7 +641,7 @@ router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
       unassigned: items.rows.filter(r => r.status !== 'assigned').length
     };
 
-    res.json({ success: true, stats, items: items.rows });
+    res.json({ success: true, stats, items: items.rows, tags: items.rows });
   } catch (err) {
     console.error('Error fetching NFC inventory:', err);
     res.status(500).json({ error: 'Lỗi server khi tải danh sách kho thẻ.' });

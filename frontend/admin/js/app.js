@@ -119,6 +119,7 @@ const adminPageRouteMap = {
   'db-check': 'database-check',
   gis: 'farms',
   plants: 'plants',
+  nfc: 'nfc-inventory',
   cost: 'costs',
   devices: 'iot-devices',
   users: 'users',
@@ -135,6 +136,8 @@ const adminRoutePageMap = {
   'farms': 'gis',
   'gis': 'gis',
   'plants': 'plants',
+  'nfc': 'nfc',
+  'nfc-inventory': 'nfc',
   'costs': 'cost',
   'cost': 'cost',
   'iot-devices': 'devices',
@@ -221,6 +224,11 @@ function showPage(page, pushUrl = true) {
     page = 'database';
     if (typeof switchDatabaseTab === 'function') {
       setTimeout(() => switchDatabaseTab('cultivation'), 50);
+    }
+  } else if (page === 'nfc') {
+    page = 'database';
+    if (typeof switchDatabaseTab === 'function') {
+      setTimeout(() => switchDatabaseTab('nfc'), 50);
     }
   } else if (page === 'devices') {
     page = 'database';

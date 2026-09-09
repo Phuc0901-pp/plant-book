@@ -1025,23 +1025,27 @@ window.closeNfcInventoryModal = closeNfcInventoryModal;
 export async function loadUserNfcInventoryData(farmId) {
   try {
     const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
-    _userNfcInventoryCache = res.tags || [];
+    _userNfcInventoryCache = res.tags || res.items || [];
+
+    const total = res.stats?.total ?? _userNfcInventoryCache.length;
+    const assigned = res.stats?.assigned ?? _userNfcInventoryCache.filter(t => t.status === 'assigned').length;
+    const unassigned = res.stats?.unassigned ?? _userNfcInventoryCache.filter(t => t.status !== 'assigned').length;
 
     const totalEl = document.getElementById('nfc-inv-total-count');
     const assignedEl = document.getElementById('nfc-inv-assigned-count');
     const unassignedEl = document.getElementById('nfc-inv-unassigned-count');
 
-    if (totalEl) totalEl.textContent = res.stats?.total || 0;
-    if (assignedEl) assignedEl.textContent = res.stats?.assigned || 0;
-    if (unassignedEl) unassignedEl.textContent = res.stats?.unassigned || 0;
+    if (totalEl) totalEl.textContent = total;
+    if (assignedEl) assignedEl.textContent = assigned;
+    if (unassignedEl) unassignedEl.textContent = unassigned;
 
     // Also sync the header strip if visible
     const farmerTotalEl = document.getElementById('farmer-nfc-total');
     const farmerAssignedEl = document.getElementById('farmer-nfc-assigned');
     const farmerUnassignedEl = document.getElementById('farmer-nfc-unassigned');
-    if (farmerTotalEl) farmerTotalEl.textContent = res.stats?.total || 0;
-    if (farmerAssignedEl) farmerAssignedEl.textContent = res.stats?.assigned || 0;
-    if (farmerUnassignedEl) farmerUnassignedEl.textContent = res.stats?.unassigned || 0;
+    if (farmerTotalEl) farmerTotalEl.textContent = total;
+    if (farmerAssignedEl) farmerAssignedEl.textContent = assigned;
+    if (farmerUnassignedEl) farmerUnassignedEl.textContent = unassigned;
 
     renderUserNfcInventoryTable(_userNfcInventoryCache);
   } catch (err) {

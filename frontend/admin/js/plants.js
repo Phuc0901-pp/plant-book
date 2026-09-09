@@ -426,7 +426,7 @@ function getAdminAudioContext() {
 }
 
 function playAdminSuccessDing() {
-  const soundEnabled = document.getElementById('nfc-inv-sound-toggle')?.checked ?? true;
+  const soundEnabled = (document.getElementById('db-nfc-sound-toggle')?.checked || document.getElementById('nfc-inv-sound-toggle')?.checked) ?? true;
   if (!soundEnabled) return;
   try {
     const ctx = getAdminAudioContext();
@@ -446,7 +446,7 @@ function playAdminSuccessDing() {
 }
 
 function playAdminDuplicateBeep() {
-  const soundEnabled = document.getElementById('nfc-inv-sound-toggle')?.checked ?? true;
+  const soundEnabled = (document.getElementById('db-nfc-sound-toggle')?.checked || document.getElementById('nfc-inv-sound-toggle')?.checked) ?? true;
   if (navigator.vibrate) {
     try { navigator.vibrate([100, 50, 100]); } catch (_) {}
   }
@@ -501,15 +501,9 @@ async function openAdminNfcInventoryView(farmId = null) {
     showPage('database');
   }
   if (typeof switchDatabaseTab === 'function') {
-    setTimeout(() => {
-      switchDatabaseTab('nfc');
-      if (targetFarmId) {
-        const sel = document.getElementById('db-nfc-filter-farm');
-        if (sel) sel.value = targetFarmId;
-        onAdminNfcFarmChange(targetFarmId);
-      }
-    }, 50);
+    switchDatabaseTab('nfc');
   }
+  await initAdminNfcPage(targetFarmId);
 }
 window.openAdminNfcInventoryView = openAdminNfcInventoryView;
 
@@ -518,22 +512,56 @@ window.openAdminNfcInventoryView = openAdminNfcInventoryView;
  */
 async function initAdminNfcPage(farmId = null) {
   const sel = document.getElementById('db-nfc-filter-farm');
-  const farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
-  if (sel && farms.length > 0 && sel.options.length <= 1) {
-    sel.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
-      farms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+  let farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
+  if (!farms || farms.length === 0) {
+    try {
+      farms = await api('/farms') || [];
+      window._allFarmsCache = farms;
+      if (typeof dbFarmsCache !== 'undefined') dbFarmsCache = farms;
+    } catch (e) {
+      console.error('Failed to load farms in initAdminNfcPage:', e);
+    }
   }
 
-  const targetFarmId = farmId || (sel && sel.value ? parseInt(sel.value) : getActiveAdminFarmId());
+  if (sel && farms && farms.length > 0) {
+    const prevVal = sel.value;
+    sel.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
+      farms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+    if (prevVal && farms.some(f => f.id == prevVal)) {
+      sel.value = prevVal;
+    }
+  }
+
+  let targetFarmId = farmId;
+  if (!targetFarmId && _currentInvFarmId) {
+    targetFarmId = _currentInvFarmId;
+  }
+  if (!targetFarmId && sel && sel.value) {
+    targetFarmId = parseInt(sel.value);
+  }
+  if (!targetFarmId) {
+    targetFarmId = getActiveAdminFarmId();
+  }
+  if (!targetFarmId && farms && farms.length > 0) {
+    targetFarmId = farms[0].id;
+  }
+
   if (targetFarmId) {
     if (sel) sel.value = targetFarmId;
     _currentInvFarmId = targetFarmId;
     await loadAdminNfcPageData(targetFarmId);
-  } else if (farms.length > 0) {
-    const firstId = farms[0].id;
-    if (sel) sel.value = firstId;
-    _currentInvFarmId = firstId;
-    await loadAdminNfcPageData(firstId);
+  } else {
+    const tbody = document.getElementById('db-nfc-inventory-table-body');
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; padding:46px 20px; color:#94a3b8;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size:36px; margin-bottom:12px; display:inline-block; color:#f59e0b;"></i>
+            <p style="margin:0 0 6px 0; font-weight:800; font-size:14.5px; color:#475569;">Chưa có trang trại nào trong hệ thống.</p>
+            <small style="color:#94a3b8;">Vui lòng tạo ít nhất một Trang trại trước khi sử dụng Kho thẻ NFC.</small>
+          </td>
+        </tr>`;
+    }
   }
 }
 window.initAdminNfcPage = initAdminNfcPage;
@@ -565,24 +593,28 @@ window.refreshAdminNfcData = refreshAdminNfcData;
 async function loadAdminNfcPageData(farmId) {
   try {
     const farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
-    const farmObj = farms.find(f => f.id == farmId);
+    const farmObj = (farms || []).find(f => f.id == farmId);
     const titleEl = document.getElementById('db-nfc-active-farm-title');
     if (titleEl) {
       titleEl.textContent = farmObj ? `Kho Thẻ NFC: ${farmObj.name}` : `Kho Thẻ NFC: Trang trại #${farmId}`;
     }
 
     const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
-    _nfcInventoryCache = res.tags || [];
+    _nfcInventoryCache = res.tags || res.items || [];
+
+    const total = res.stats?.total ?? _nfcInventoryCache.length;
+    const assigned = res.stats?.assigned ?? _nfcInventoryCache.filter(t => t.status === 'assigned').length;
+    const unassigned = res.stats?.unassigned ?? _nfcInventoryCache.filter(t => t.status !== 'assigned').length;
 
     const totalEl = document.getElementById('db-nfc-total-count');
     const assignedEl = document.getElementById('db-nfc-assigned-count');
     const unassignedEl = document.getElementById('db-nfc-unassigned-count');
     const badgeEl = document.getElementById('db-nfc-table-count-badge');
 
-    if (totalEl) totalEl.textContent = res.stats?.total || 0;
-    if (assignedEl) assignedEl.textContent = res.stats?.assigned || 0;
-    if (unassignedEl) unassignedEl.textContent = res.stats?.unassigned || 0;
-    if (badgeEl) badgeEl.textContent = `${res.stats?.total || 0} thẻ`;
+    if (totalEl) totalEl.textContent = total;
+    if (assignedEl) assignedEl.textContent = assigned;
+    if (unassignedEl) unassignedEl.textContent = unassigned;
+    if (badgeEl) badgeEl.textContent = `${total} thẻ`;
 
     renderAdminNfcPageTable(_nfcInventoryCache);
   } catch (err) {
@@ -821,15 +853,19 @@ window.closeNfcInventoryModal = closeNfcInventoryModal;
 async function loadNfcInventoryData(farmId) {
   try {
     const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
-    _nfcInventoryCache = res.tags || [];
+    _nfcInventoryCache = res.tags || res.items || [];
+
+    const total = res.stats?.total ?? _nfcInventoryCache.length;
+    const assigned = res.stats?.assigned ?? _nfcInventoryCache.filter(t => t.status === 'assigned').length;
+    const unassigned = res.stats?.unassigned ?? _nfcInventoryCache.filter(t => t.status !== 'assigned').length;
 
     const totalEl = document.getElementById('nfc-inv-total-count');
     const assignedEl = document.getElementById('nfc-inv-assigned-count');
     const unassignedEl = document.getElementById('nfc-inv-unassigned-count');
 
-    if (totalEl) totalEl.textContent = res.stats?.total || 0;
-    if (assignedEl) assignedEl.textContent = res.stats?.assigned || 0;
-    if (unassignedEl) unassignedEl.textContent = res.stats?.unassigned || 0;
+    if (totalEl) totalEl.textContent = total;
+    if (assignedEl) assignedEl.textContent = assigned;
+    if (unassignedEl) unassignedEl.textContent = unassigned;
 
     renderNfcInventoryTable(_nfcInventoryCache);
   } catch (err) {
