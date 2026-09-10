@@ -179,9 +179,7 @@ export function openLightbox(url, type) {
     try {
       const p = video.play();
       if (p && typeof p.catch === 'function') {
-        p.catch(err => {
-          if (err && err.name !== 'AbortError') console.warn(err);
-        });
+        p.catch(() => {});
       }
     } catch(e){}
   } else {

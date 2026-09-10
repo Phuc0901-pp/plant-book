@@ -63,6 +63,21 @@
         </div>
       </div>
 
+      <!-- GPS Coordinates Box -->
+      <div id="nfc-gps-wrap" style="margin: 0 0 14px; padding: 10px 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="min-width: 140px;">
+          <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 2px; display: flex; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> Tọa độ GPS cây:
+          </div>
+          <div id="nfc-modal-gps-text" style="font-size: 12px; font-family: monospace; font-weight: 700; color: #0f172a;">
+            Chưa có tọa độ
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-xs" id="btn-nfc-get-gps" onclick="getNfcCurrentGps()" title="Lấy tọa độ GPS từ thiết bị điện thoại" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 700; background: #ffffff; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+          <i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy GPS hiện tại
+        </button>
+      </div>
+
       <!-- Scan Area -->
       <div class="nfc-scan-area" style="padding: 16px 14px; margin-bottom: 14px;">
         <div class="nfc-scan-icon-wrap" style="width: 48px; height: 48px; font-size: 22px;">

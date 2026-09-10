@@ -202,14 +202,37 @@ function fallbackToTreeIcon(img) {
 
 // Lightbox controller
 function openLightbox(url, type) {
-  document.getElementById('lightbox-content').innerHTML = type === 'video'
-    ? `<video src="${esc(url)}" controls autoplay></video>`
-    : `<img src="${esc(url)}">`;
+  const content = document.getElementById('lightbox-content');
+  if (!content) return;
+  content.innerHTML = '';
+  if (type === 'video') {
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    content.appendChild(video);
+    try {
+      const p = video.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {});
+      }
+    } catch(e) {}
+  } else {
+    content.innerHTML = `<img src="${esc(url)}">`;
+  }
   document.getElementById('lightbox').classList.add('open');
 }
 function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
-  document.getElementById('lightbox-content').innerHTML = '';
+  const video = document.querySelector('#lightbox-content video');
+  if (video) {
+    try { video.pause(); } catch(e) {}
+  }
+  setTimeout(() => {
+    const content = document.getElementById('lightbox-content');
+    if (content) content.innerHTML = '';
+  }, 100);
 }
 
 // Share plant url

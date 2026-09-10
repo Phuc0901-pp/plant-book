@@ -8,11 +8,12 @@ import { toast }      from '../core/utils.js';
 import { getPlantsCache, renderUserPlantsTable } from './plants.js';
 
 // ── State ──────────────────────────────────────────────────────
-let _currentPlant      = null;   // { id, tree_code, public_slug, nfc_uid, farm_id, user_id, plant_type, plant_variety }
+let _currentPlant      = null;   // { id, tree_code, public_slug, nfc_uid, farm_id, user_id, plant_type, plant_variety, latitude, longitude }
 let _currentFarmPlants = [];     // List of trees in the same farm, sorted by sequential number
 let _currentPlantIndex = 0;      // Current active index in _currentFarmPlants
 let _nfcReader         = null;   // NDEFReader instance (Web NFC)
 let _scanning          = false;
+let _capturedGps       = null;   // { latitude, longitude } captured from mobile GPS
 
 // ── Open / Close & Tree Sequential Navigator ───────────────────
 
@@ -35,6 +36,7 @@ function _renderCurrentNfcPlant() {
   const treeCode = plantObj.tree_code || `#${plantId}`;
   const currentNfcUid = plantObj.nfc_uid;
   const publicSlug = plantObj.public_slug || plantId;
+  _capturedGps = null;
 
   _currentPlant = { 
     id: plantId, 
@@ -44,7 +46,9 @@ function _renderCurrentNfcPlant() {
     farm_id: plantObj.farm_id, 
     user_id: plantObj.user_id,
     plant_type: plantObj.plant_type,
-    plant_variety: plantObj.plant_variety
+    plant_variety: plantObj.plant_variety,
+    latitude: plantObj.latitude,
+    longitude: plantObj.longitude
   };
 
   _setEl('nfc-modal-plant-name', `${treeCode}${plantObj.plant_type ? ` (${plantObj.plant_type})` : ''}`);
@@ -70,6 +74,17 @@ function _renderCurrentNfcPlant() {
   _setEl('nfc-meta-farm-id', plantObj.farm_id ? `#${plantObj.farm_id}` : '#0');
   _setEl('nfc-meta-plant-id', `#${plantId}`);
   _setEl('nfc-meta-tag-id', currentNfcUid ? currentNfcUid : 'Chưa gắn');
+
+  // Render GPS info
+  const hasGps = (plantObj.latitude !== null && plantObj.latitude !== undefined && plantObj.latitude !== '') &&
+                 (plantObj.longitude !== null && plantObj.longitude !== undefined && plantObj.longitude !== '');
+  const gpsText = hasGps ? `${Number(plantObj.latitude).toFixed(6)}, ${Number(plantObj.longitude).toFixed(6)}` : 'Chưa có tọa độ';
+  _setEl('nfc-modal-gps-text', gpsText);
+  const gpsBtn = document.getElementById('btn-nfc-get-gps');
+  if (gpsBtn) {
+    gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy GPS hiện tại';
+    gpsBtn.disabled = false;
+  }
 
   const manualInput = document.getElementById('nfc-manual-uid');
   if (manualInput) manualInput.value = currentNfcUid || '';
@@ -239,12 +254,54 @@ export async function deactivateNfcTag() {
   await _saveUid(null);
 }
 
+export function getNfcCurrentGps() {
+  if (!navigator.geolocation) {
+    toast('Trình duyệt không hỗ trợ định vị GPS.', 'error');
+    return;
+  }
+  const btn = document.getElementById('btn-nfc-get-gps');
+  if (btn) {
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang định vị...';
+    btn.disabled = true;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      _capturedGps = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude
+      };
+      _setEl('nfc-modal-gps-text', `📍 ${_capturedGps.latitude.toFixed(6)}, ${_capturedGps.longitude.toFixed(6)} (Mới lấy)`);
+      toast('Đã lấy tọa độ GPS thành công! Bấm Lưu hoặc Ghi thẻ để đồng bộ vào cây.', 'success');
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-check" style="color:#059669;"></i> Đã lấy GPS';
+        btn.disabled = false;
+      }
+    },
+    (err) => {
+      console.warn('Geolocation error:', err);
+      toast('Không thể lấy tọa độ GPS: ' + (err.message || 'Vui lòng cấp quyền vị trí trên điện thoại.'), 'error');
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color:#059669;"></i> Thử lại GPS';
+        btn.disabled = false;
+      }
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+window.getNfcCurrentGps = getNfcCurrentGps;
+
 async function _saveUid(uid) {
   if (!_currentPlant) return;
   try {
+    const payload = { nfc_uid: uid };
+    if (uid && _capturedGps) {
+      payload.latitude = _capturedGps.latitude;
+      payload.longitude = _capturedGps.longitude;
+    }
+
     const res = await api(`/plants/${_currentPlant.id}/nfc`, {
       method: 'PUT',
-      body: JSON.stringify({ nfc_uid: uid })
+      body: JSON.stringify(payload)
     });
     
     toast(res.message || (uid ? 'Đã gán thẻ định danh thành công!' : 'Đã hủy kích hoạt thẻ thành công.'));
@@ -253,6 +310,19 @@ async function _saveUid(uid) {
     if (!uid) {
       _currentPlant.latitude = null;
       _currentPlant.longitude = null;
+      _setEl('nfc-modal-gps-text', 'Chưa có tọa độ');
+    } else if (res.plant) {
+      if (res.plant.latitude !== undefined) _currentPlant.latitude = res.plant.latitude;
+      if (res.plant.longitude !== undefined) _currentPlant.longitude = res.plant.longitude;
+      const hasGps = (_currentPlant.latitude !== null && _currentPlant.latitude !== undefined) &&
+                     (_currentPlant.longitude !== null && _currentPlant.longitude !== undefined);
+      _setEl('nfc-modal-gps-text', hasGps ? `${Number(_currentPlant.latitude).toFixed(6)}, ${Number(_currentPlant.longitude).toFixed(6)}` : 'Chưa có tọa độ');
+    }
+    _capturedGps = null;
+    const gpsBtn = document.getElementById('btn-nfc-get-gps');
+    if (gpsBtn) {
+      gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy GPS hiện tại';
+      gpsBtn.disabled = false;
     }
 
     // Update modal UI live
@@ -276,20 +346,16 @@ async function _saveUid(uid) {
     if (_currentFarmPlants[_currentPlantIndex]) {
       _currentFarmPlants[_currentPlantIndex].nfc_uid = uid;
       _currentFarmPlants[_currentPlantIndex].public_url = fullPlantUrl;
-      if (!uid) {
-        _currentFarmPlants[_currentPlantIndex].latitude = null;
-        _currentFarmPlants[_currentPlantIndex].longitude = null;
-      }
+      _currentFarmPlants[_currentPlantIndex].latitude = _currentPlant.latitude;
+      _currentFarmPlants[_currentPlantIndex].longitude = _currentPlant.longitude;
     }
     const cache = getPlantsCache();
     const idx   = cache.findIndex(p => p.id === _currentPlant.id);
     if (idx !== -1) {
       cache[idx].nfc_uid = uid;
       cache[idx].public_url = fullPlantUrl;
-      if (!uid) {
-        cache[idx].latitude = null;
-        cache[idx].longitude = null;
-      }
+      cache[idx].latitude = _currentPlant.latitude;
+      cache[idx].longitude = _currentPlant.longitude;
       renderUserPlantsTable(cache);
     }
   } catch (err) {

@@ -151,7 +151,7 @@ export async function logout() {
     try {
       await api('/auth/logout', { method: 'POST' });
     } catch (e) {
-      console.error('API logout error:', e);
+      console.warn('API logout skipped/offline:', e?.message || e);
     }
   }
   clearToken();

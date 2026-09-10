@@ -621,6 +621,7 @@ router.put('/:id/nfc', auth, async (req, res) => {
     }
 
     const cleanUid = nfc_uid ? decodeURIComponent(nfc_uid).trim().toUpperCase() : null;
+    const { latitude, longitude } = req.body;
 
     await client.query('BEGIN');
 
@@ -658,15 +659,29 @@ router.put('/:id/nfc', auth, async (req, res) => {
         );
       }
 
-      // 2d. Update target plant with new UID & 3-segment public URL
+      // 2d. Update target plant with new UID, GPS (if provided) & 3-segment public URL
       const publicUrl = generatePublicPlantUrl(plant.farm_id, plantId, cleanUid);
-      const updated = await client.query(
-        `UPDATE plants 
-         SET nfc_uid = $1, public_url = $2, updated_at = NOW()
-         WHERE id = $3
-         RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id`,
-        [cleanUid, publicUrl, plantId]
-      );
+      const latVal = (latitude !== undefined && latitude !== null && latitude !== '') ? parseFloat(latitude) : null;
+      const lngVal = (longitude !== undefined && longitude !== null && longitude !== '') ? parseFloat(longitude) : null;
+
+      let updated;
+      if (latVal !== null && !isNaN(latVal) && lngVal !== null && !isNaN(lngVal)) {
+        updated = await client.query(
+          `UPDATE plants 
+           SET nfc_uid = $1, public_url = $2, latitude = $3, longitude = $4, updated_at = NOW()
+           WHERE id = $5
+           RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
+          [cleanUid, publicUrl, latVal, lngVal, plantId]
+        );
+      } else {
+        updated = await client.query(
+          `UPDATE plants 
+           SET nfc_uid = $1, public_url = $2, updated_at = NOW()
+           WHERE id = $3
+           RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
+          [cleanUid, publicUrl, plantId]
+        );
+      }
 
       // 2e. Update inventory item to assigned
       await client.query(
@@ -1617,8 +1632,8 @@ router.get('/public/:slug', async (req, res) => {
     const slugParam = req.params.slug.trim();
     const plant = await pool.query(
       `SELECT p.*, 
-              COALESCE(p.latitude, 10.941520) as latitude,
-              COALESCE(p.longitude, 107.241850) as longitude,
+              p.latitude,
+              p.longitude,
               ps.name as schema_name, ps.fields as schema_fields,
               f.name as farm_name, f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id
        FROM plants p 

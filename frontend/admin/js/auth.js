@@ -131,7 +131,7 @@ async function logout() {
     try {
       await api('/auth/logout', { method: 'POST' });
     } catch (e) {
-      console.error('Admin API logout error:', e);
+      console.warn('Admin API logout skipped/offline:', e?.message || e);
     }
   }
   token = '';
