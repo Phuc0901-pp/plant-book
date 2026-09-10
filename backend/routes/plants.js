@@ -596,6 +596,55 @@ router.put('/:id', auth, admin, async (req, res) => {
   }
 });
 
+// ─── Direct Plant GPS Update (accessible by farm owner, assigned user or admin) ───
+router.put('/:id/gps', auth, async (req, res) => {
+  try {
+    const plantId = parseInt(req.params.id);
+    const { latitude, longitude } = req.body;
+
+    const plantRes = await pool.query(
+      `SELECT p.id, p.farm_id, p.tree_code, p.created_by, p.assigned_to_user_id, f.user_id as farm_owner_id
+       FROM plants p
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE p.id = $1`, [plantId]
+    );
+    if (plantRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+
+    const plant = plantRes.rows[0];
+    const isAssigned = (req.user.farm_id && plant.farm_id && req.user.farm_id === plant.farm_id)
+      || (plant.assigned_to_user_id && plant.assigned_to_user_id === req.user.id)
+      || (plant.created_by && plant.created_by === req.user.id);
+    if (req.user.role !== 'admin' && plant.farm_owner_id !== req.user.id && !isAssigned) {
+      return res.status(403).json({ error: 'Bạn không có quyền cập nhật tọa độ cây này.' });
+    }
+
+    const latVal = (latitude !== undefined && latitude !== null && latitude !== '') ? parseFloat(latitude) : null;
+    const lngVal = (longitude !== undefined && longitude !== null && longitude !== '') ? parseFloat(longitude) : null;
+
+    const updated = await pool.query(
+      `UPDATE plants 
+       SET latitude = $1, longitude = $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
+      [latVal, lngVal, plantId]
+    );
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { plant_id: plantId, action: 'gps_updated' });
+
+    res.json({
+      success: true,
+      plant: updated.rows[0],
+      message: latVal !== null && lngVal !== null 
+        ? `Đã lưu tọa độ GPS (${latVal.toFixed(6)}, ${lngVal.toFixed(6)}) cho cây #${plant.tree_code || plantId}`
+        : `Đã xóa tọa độ GPS của cây #${plant.tree_code || plantId}`
+    });
+  } catch (err) {
+    console.error('GPS update error:', err);
+    res.status(500).json({ error: 'Lỗi server khi cập nhật GPS: ' + err.message });
+  }
+});
+
 // ─── NFC Tag Assignment (accessible by farm owner or admin) ──────────────────
 router.put('/:id/nfc', auth, async (req, res) => {
   const client = await pool.connect();

@@ -78,12 +78,16 @@ function _renderCurrentNfcPlant() {
   // Render GPS info
   const hasGps = (plantObj.latitude !== null && plantObj.latitude !== undefined && plantObj.latitude !== '') &&
                  (plantObj.longitude !== null && plantObj.longitude !== undefined && plantObj.longitude !== '');
-  const gpsText = hasGps ? `${Number(plantObj.latitude).toFixed(6)}, ${Number(plantObj.longitude).toFixed(6)}` : 'Chưa có tọa độ';
+  const gpsText = hasGps ? `📍 ${Number(plantObj.latitude).toFixed(6)}, ${Number(plantObj.longitude).toFixed(6)}` : 'Chưa có tọa độ';
   _setEl('nfc-modal-gps-text', gpsText);
   const gpsBtn = document.getElementById('btn-nfc-get-gps');
   if (gpsBtn) {
-    gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy GPS hiện tại';
+    gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy & Lưu GPS';
     gpsBtn.disabled = false;
+  }
+  const clearGpsBtn = document.getElementById('btn-nfc-clear-gps');
+  if (clearGpsBtn) {
+    clearGpsBtn.style.display = hasGps ? 'inline-flex' : 'none';
   }
 
   const manualInput = document.getElementById('nfc-manual-uid');
@@ -259,22 +263,56 @@ export function getNfcCurrentGps() {
     toast('Trình duyệt không hỗ trợ định vị GPS.', 'error');
     return;
   }
+  if (!_currentPlant) return;
+
   const btn = document.getElementById('btn-nfc-get-gps');
   if (btn) {
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang định vị...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS...';
     btn.disabled = true;
   }
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      _capturedGps = {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude
-      };
-      _setEl('nfc-modal-gps-text', `📍 ${_capturedGps.latitude.toFixed(6)}, ${_capturedGps.longitude.toFixed(6)} (Mới lấy)`);
-      toast('Đã lấy tọa độ GPS thành công! Bấm Lưu hoặc Ghi thẻ để đồng bộ vào cây.', 'success');
-      if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-check" style="color:#059669;"></i> Đã lấy GPS';
-        btn.disabled = false;
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      _capturedGps = { latitude: lat, longitude: lng };
+      
+      _setEl('nfc-modal-gps-text', `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)} (Đang lưu...)`);
+      
+      try {
+        const res = await api(`/plants/${_currentPlant.id}/gps`, {
+          method: 'PUT',
+          body: JSON.stringify({ latitude: lat, longitude: lng })
+        });
+        
+        _currentPlant.latitude = lat;
+        _currentPlant.longitude = lng;
+        _setEl('nfc-modal-gps-text', `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        
+        const clearGpsBtn = document.getElementById('btn-nfc-clear-gps');
+        if (clearGpsBtn) clearGpsBtn.style.display = 'inline-flex';
+
+        // Update cache & table
+        if (_currentFarmPlants[_currentPlantIndex]) {
+          _currentFarmPlants[_currentPlantIndex].latitude = lat;
+          _currentFarmPlants[_currentPlantIndex].longitude = lng;
+        }
+        const cache = getPlantsCache();
+        const idx = cache.findIndex(p => p.id === _currentPlant.id);
+        if (idx !== -1) {
+          cache[idx].latitude = lat;
+          cache[idx].longitude = lng;
+          renderUserPlantsTable(cache);
+        }
+
+        toast(res.message || `✨ Đã lưu vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây!`, 'success');
+      } catch (saveErr) {
+        console.error('Save GPS error:', saveErr);
+        toast('Lỗi lưu GPS: ' + (saveErr.message || 'Không thể lưu lên máy chủ.'), 'error');
+      } finally {
+        if (btn) {
+          btn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color:#059669;"></i> Lấy & Lưu GPS';
+          btn.disabled = false;
+        }
       }
     },
     (err) => {
@@ -289,6 +327,44 @@ export function getNfcCurrentGps() {
   );
 }
 window.getNfcCurrentGps = getNfcCurrentGps;
+
+export async function clearNfcGps() {
+  if (!_currentPlant) return;
+  if (!confirm(`Xóa tọa độ GPS của cây ${_currentPlant.tree_code || _currentPlant.id}?`)) return;
+
+  try {
+    const res = await api(`/plants/${_currentPlant.id}/gps`, {
+      method: 'PUT',
+      body: JSON.stringify({ latitude: null, longitude: null })
+    });
+
+    _currentPlant.latitude = null;
+    _currentPlant.longitude = null;
+    _capturedGps = null;
+    _setEl('nfc-modal-gps-text', 'Chưa có tọa độ');
+
+    const clearGpsBtn = document.getElementById('btn-nfc-clear-gps');
+    if (clearGpsBtn) clearGpsBtn.style.display = 'none';
+
+    // Update cache & table
+    if (_currentFarmPlants[_currentPlantIndex]) {
+      _currentFarmPlants[_currentPlantIndex].latitude = null;
+      _currentFarmPlants[_currentPlantIndex].longitude = null;
+    }
+    const cache = getPlantsCache();
+    const idx = cache.findIndex(p => p.id === _currentPlant.id);
+    if (idx !== -1) {
+      cache[idx].latitude = null;
+      cache[idx].longitude = null;
+      renderUserPlantsTable(cache);
+    }
+
+    toast(res.message || 'Đã xóa tọa độ GPS của cây.', 'success');
+  } catch (err) {
+    toast(err.message || 'Lỗi khi xóa GPS.', 'error');
+  }
+}
+window.clearNfcGps = clearNfcGps;
 
 async function _saveUid(uid) {
   if (!_currentPlant) return;

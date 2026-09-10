@@ -2901,9 +2901,14 @@
             Chưa có tọa độ
           </div>
         </div>
-        <button type="button" class="btn btn-secondary btn-xs" id="btn-nfc-get-gps" onclick="getNfcCurrentGps()" title="Lấy tọa độ GPS từ thiết bị điện thoại" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 700; background: #ffffff; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
-          <i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy GPS hiện tại
-        </button>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button type="button" class="btn btn-secondary btn-xs" id="btn-nfc-get-gps" onclick="getNfcCurrentGps()" title="Lấy tọa độ GPS từ thiết bị điện thoại và lưu ngay" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 700; background: #ffffff; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+            <i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy & Lưu GPS
+          </button>
+          <button type="button" class="btn btn-danger btn-xs" id="btn-nfc-clear-gps" onclick="clearNfcGps()" title="Xóa tọa độ GPS của cây này" style="display: none; padding: 6px 8px; font-size: 11px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-trash-can"></i> Xóa
+          </button>
+        </div>
       </div>
 
       <!-- Scan Area -->
