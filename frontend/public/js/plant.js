@@ -912,6 +912,7 @@ async function renderPlant(plant) {
           <div class="plant-map-container" style="position:relative; width:100%; height:280px; border-radius:12px; overflow:hidden;">
             <div id="plant-location-map" style="width:100%;height:100%;"></div>
             ${plant.farm_name ? `<div class="map-farm-badge" style="position:absolute; bottom:12px; left:12px; z-index:5; background:rgba(7,25,16,0.85); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:12px; color:#fff; border:1px solid rgba(255,255,255,0.1);"><i class="fa fa-seedling" style="color:var(--green-bright)"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
+            ${(!plant.latitude || !plant.longitude) ? `<div class="map-no-gps-badge" style="position:absolute; top:12px; left:12px; z-index:5; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:11.5px; color:#fde047; border:1px solid rgba(253,224,71,0.3);"><i class="fa-solid fa-circle-info"></i> Vị trí trang trại · Cây chưa có định vị GPS</div>` : ''}
           </div>
         </div>
         ` : ''}
@@ -1043,23 +1044,35 @@ async function renderPlant(plant) {
     const hasValidPlantCoords = !isNaN(plantLat) && !isNaN(plantLng) &&
       Math.abs(plantLat) <= 90 && Math.abs(plantLng) <= 180;
 
-    let centerLng = hasValidPlantCoords ? plantLng : 107.241850;
-    let centerLat = hasValidPlantCoords ? plantLat : 10.941520;
-    let initialZoom = 17;
-    
-    if (!hasValidPlantCoords && plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
-      const firstRing = plant.farm_boundary.coordinates[0];
-      if (firstRing && firstRing[0]) {
-        let fLng = parseFloat(firstRing[0][0]);
-        let fLat = parseFloat(firstRing[0][1]);
-        if (Math.abs(fLat) > 90 && Math.abs(fLng) <= 90) {
-          const tmp = fLat; fLat = fLng; fLng = tmp;
+    let centerLng = 107.241850;
+    let centerLat = 10.941520;
+    let initialZoom = 16;
+
+    if (hasValidPlantCoords) {
+      centerLng = plantLng;
+      centerLat = plantLat;
+      initialZoom = 17;
+    } else if (plant.farm_boundary && plant.farm_boundary.coordinates && plant.farm_boundary.coordinates[0]) {
+      const ring = plant.farm_boundary.coordinates[0];
+      let sumLng = 0, sumLat = 0, validCount = 0;
+      for (const pt of ring) {
+        if (Array.isArray(pt) && pt.length >= 2) {
+          let fLng = parseFloat(pt[0]);
+          let fLat = parseFloat(pt[1]);
+          if (Math.abs(fLat) > 90 && Math.abs(fLng) <= 90) {
+            const tmp = fLat; fLat = fLng; fLng = tmp;
+          }
+          if (!isNaN(fLng) && !isNaN(fLat) && Math.abs(fLat) <= 90 && Math.abs(fLng) <= 180) {
+            sumLng += fLng;
+            sumLat += fLat;
+            validCount++;
+          }
         }
-        if (!isNaN(fLng) && !isNaN(fLat) && Math.abs(fLat) <= 90) {
-          centerLng = fLng;
-          centerLat = fLat;
-          initialZoom = 16;
-        }
+      }
+      if (validCount > 0) {
+        centerLng = sumLng / validCount;
+        centerLat = sumLat / validCount;
+        initialZoom = 16;
       }
     }
 
@@ -1087,36 +1100,40 @@ async function renderPlant(plant) {
       plantMap.addControl(new mapboxgl.FullscreenControl(), 'top-right');
       plantMap.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-      // Add plant marker pin
-      const treeCodeDisplay = esc(plant.tree_code || '1');
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'plant-map-marker-wrap';
-
-      const el = document.createElement('div');
-      el.className = 'plant-map-marker';
-      el.title = `${plant.plant_type || 'Cây trồng'} - Cây #${treeCodeDisplay}`;
-      el.innerHTML = `
-        <i class="fa-solid fa-seedling"></i>
-        <span class="plant-tree-badge">${treeCodeDisplay}</span>
-      `;
-      wrapper.appendChild(el);
-
       window._publicPlantMap = plantMap;
 
-      const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'bottom' })
-        .setLngLat([centerLng, centerLat])
-        .setPopup(new mapboxgl.Popup({ offset: 35, closeButton: false })
-          .setHTML(`
-            <div style="padding:4px 6px; font-family:sans-serif;">
-              <strong style="color:#059669;font-size:13px;">${esc(plant.plant_type || 'Sầu riêng')} — Cây #${treeCodeDisplay}</strong>
-              ${plant.plant_variety ? `<br><small style="color:#475569;font-weight:600;">${esc(plant.plant_variety)}</small>` : ''}
-              <br><span style="font-size:11px;color:#64748b;">Trang trại: ${esc(plant.farm_name || 'LK')}</span>
-            </div>
-          `))
-        .addTo(plantMap);
+      // Only add plant marker pin if plant has real GPS coordinates
+      if (hasValidPlantCoords) {
+        const treeCodeDisplay = esc(plant.tree_code || '1');
 
-      window._publicPlantMarker = marker;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'plant-map-marker-wrap';
+
+        const el = document.createElement('div');
+        el.className = 'plant-map-marker';
+        el.title = `${plant.plant_type || 'Cây trồng'} - Cây #${treeCodeDisplay}`;
+        el.innerHTML = `
+          <i class="fa-solid fa-seedling"></i>
+          <span class="plant-tree-badge">${treeCodeDisplay}</span>
+        `;
+        wrapper.appendChild(el);
+
+        const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'bottom' })
+          .setLngLat([plantLng, plantLat])
+          .setPopup(new mapboxgl.Popup({ offset: 35, closeButton: false })
+            .setHTML(`
+              <div style="padding:4px 6px; font-family:sans-serif;">
+                <strong style="color:#059669;font-size:13px;">${esc(plant.plant_type || 'Sầu riêng')} — Cây #${treeCodeDisplay}</strong>
+                ${plant.plant_variety ? `<br><small style="color:#475569;font-weight:600;">${esc(plant.plant_variety)}</small>` : ''}
+                <br><span style="font-size:11px;color:#64748b;">Trang trại: ${esc(plant.farm_name || 'LK')}</span>
+              </div>
+            `))
+          .addTo(plantMap);
+
+        window._publicPlantMarker = marker;
+      } else {
+        window._publicPlantMarker = null;
+      }
 
       // Draw farm polygon if available
       if (plant.farm_boundary && plant.farm_boundary.coordinates) {
