@@ -83,16 +83,44 @@
 
   <!-- 3. EXCEL-STYLE INVENTORY DATA TABLE -->
   <div class="card" style="border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; background:#ffffff; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-    <div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="display:flex; align-items:center; gap:10px;">
         <h3 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
           <i class="fa-solid fa-table-list" style="color:#059669;"></i> Danh Sách Thẻ NFC Trong Kho Trang Trại
         </h3>
         <span id="db-nfc-table-count-badge" class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:800; font-size:11.5px; padding:3px 10px; border-radius:6px;">0 thẻ</span>
       </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" id="db-nfc-table-search" placeholder="🔍 Lọc mã UID, mã cây..." oninput="filterAdminNfcTable()" style="padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff; width:200px;">
-        <button class="btn btn-secondary btn-sm" onclick="refreshAdminNfcData()" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:#ffffff; border:1.5px solid #cbd5e1; display:inline-flex; align-items:center; gap:6px;">
+
+      <!-- Filters & Sorting Controls Bar -->
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <!-- Search Input -->
+        <div style="position:relative;">
+          <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:12px;"></i>
+          <input type="text" id="db-nfc-table-search" placeholder="Lọc mã UID, số cây, loại cây..." oninput="filterAdminNfcTable()" style="padding:7px 12px 7px 30px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff; width:210px;">
+        </div>
+
+        <!-- Status Filter Select -->
+        <select id="db-nfc-status-filter" onchange="filterAdminNfcTable()" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
+          <option value="all">⚡ Tất cả trạng thái</option>
+          <option value="unassigned">✨ Còn trống (Sẵn sàng)</option>
+          <option value="assigned">📌 Đã gán cây</option>
+          <option value="has_gps">📍 Đã có GPS</option>
+          <option value="no_gps">⚠️ Chưa có GPS</option>
+        </select>
+
+        <!-- Sort Select -->
+        <select id="db-nfc-sort-select" onchange="onAdminNfcSortDropdownChange(this.value)" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
+          <option value="time_desc">⏱️ Mới nhập nhất</option>
+          <option value="time_asc">⏱️ Cũ nhất trước</option>
+          <option value="tree_asc">🌳 Số cây (#1 ➔ #999)</option>
+          <option value="tree_desc">🌳 Số cây (#999 ➔ #1)</option>
+          <option value="uid_asc">🏷️ Mã thẻ (A ➔ Z)</option>
+          <option value="uid_desc">🏷️ Mã thẻ (Z ➔ A)</option>
+          <option value="assigned_first">📌 Đã gán cây trước</option>
+          <option value="unassigned_first">✨ Chưa gán (Còn trống) trước</option>
+        </select>
+
+        <button class="btn btn-secondary btn-sm" onclick="refreshAdminNfcData()" title="Tải lại danh sách kho thẻ" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:#ffffff; border:1.5px solid #cbd5e1; display:inline-flex; align-items:center; gap:6px;">
           <i class="fa-solid fa-rotate"></i> Làm mới
         </button>
       </div>
@@ -101,12 +129,22 @@
     <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:13px;">
         <thead>
-          <tr style="background:#f1f5f9;">
-            <th style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:60px;">STT</th>
-            <th style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800;">Mã Thẻ NFC (UID / MAC)</th>
-            <th style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:140px;">Trạng Thái</th>
-            <th style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800;">Cây Đã Gán Thực Địa &amp; Vị Trí (Location/GPS)</th>
-            <th style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:160px;">Thời Gian Nhập</th>
+          <tr style="background:#f1f5f9; user-select:none;">
+            <th onclick="toggleAdminNfcSort('id')" style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:60px; cursor:pointer;" title="Sắp xếp theo STT">
+              STT <span id="sort-icon-id" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+            </th>
+            <th onclick="toggleAdminNfcSort('uid')" style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; cursor:pointer;" title="Sắp xếp theo Mã UID">
+              Mã Thẻ NFC (UID / MAC) <span id="sort-icon-uid" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+            </th>
+            <th onclick="toggleAdminNfcSort('status')" style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:150px; cursor:pointer;" title="Sắp xếp theo Trạng thái">
+              Trạng Thái <span id="sort-icon-status" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+            </th>
+            <th onclick="toggleAdminNfcSort('tree')" style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; cursor:pointer;" title="Sắp xếp theo Số thứ tự cây / Vị trí">
+              Cây Đã Gán Thực Địa &amp; Vị Trí (Location/GPS) <span id="sort-icon-tree" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+            </th>
+            <th onclick="toggleAdminNfcSort('time')" style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:160px; cursor:pointer;" title="Sắp xếp theo Thời gian nhập">
+              Thời Gian Nhập <span id="sort-icon-time" style="font-size:11px; color:#059669;"><i class="fa-solid fa-sort-down"></i></span>
+            </th>
             <th style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:80px;">Xóa</th>
           </tr>
         </thead>

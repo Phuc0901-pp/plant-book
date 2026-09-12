@@ -936,19 +936,127 @@ function changeAdminNfcPage(page) {
 }
 window.changeAdminNfcPage = changeAdminNfcPage;
 
+let _adminNfcSortField = 'time';
+let _adminNfcSortOrder = 'desc';
+
+function onAdminNfcSortDropdownChange(val) {
+  if (!val) return;
+  if (val === 'time_desc') { _adminNfcSortField = 'time'; _adminNfcSortOrder = 'desc'; }
+  else if (val === 'time_asc') { _adminNfcSortField = 'time'; _adminNfcSortOrder = 'asc'; }
+  else if (val === 'tree_asc') { _adminNfcSortField = 'tree'; _adminNfcSortOrder = 'asc'; }
+  else if (val === 'tree_desc') { _adminNfcSortField = 'tree'; _adminNfcSortOrder = 'desc'; }
+  else if (val === 'uid_asc') { _adminNfcSortField = 'uid'; _adminNfcSortOrder = 'asc'; }
+  else if (val === 'uid_desc') { _adminNfcSortField = 'uid'; _adminNfcSortOrder = 'desc'; }
+  else if (val === 'assigned_first') { _adminNfcSortField = 'status'; _adminNfcSortOrder = 'desc'; }
+  else if (val === 'unassigned_first') { _adminNfcSortField = 'status'; _adminNfcSortOrder = 'asc'; }
+  
+  updateAdminNfcSortIcons();
+  filterAdminNfcTable();
+}
+window.onAdminNfcSortDropdownChange = onAdminNfcSortDropdownChange;
+
+function toggleAdminNfcSort(field) {
+  if (_adminNfcSortField === field) {
+    _adminNfcSortOrder = _adminNfcSortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    _adminNfcSortField = field;
+    _adminNfcSortOrder = (field === 'time' || field === 'status') ? 'desc' : 'asc';
+  }
+
+  const sortSelect = document.getElementById('db-nfc-sort-select');
+  if (sortSelect) {
+    if (_adminNfcSortField === 'time') sortSelect.value = _adminNfcSortOrder === 'asc' ? 'time_asc' : 'time_desc';
+    else if (_adminNfcSortField === 'tree') sortSelect.value = _adminNfcSortOrder === 'asc' ? 'tree_asc' : 'tree_desc';
+    else if (_adminNfcSortField === 'uid') sortSelect.value = _adminNfcSortOrder === 'asc' ? 'uid_asc' : 'uid_desc';
+    else if (_adminNfcSortField === 'status') sortSelect.value = _adminNfcSortOrder === 'asc' ? 'unassigned_first' : 'assigned_first';
+  }
+
+  updateAdminNfcSortIcons();
+  filterAdminNfcTable();
+}
+window.toggleAdminNfcSort = toggleAdminNfcSort;
+
+function updateAdminNfcSortIcons() {
+  ['id', 'uid', 'status', 'tree', 'time'].forEach(col => {
+    const iconEl = document.getElementById(`sort-icon-${col}`);
+    if (!iconEl) return;
+    if (_adminNfcSortField === col) {
+      iconEl.style.opacity = '1';
+      iconEl.style.color = '#059669';
+      iconEl.innerHTML = _adminNfcSortOrder === 'asc' 
+        ? '<i class="fa-solid fa-sort-up"></i>' 
+        : '<i class="fa-solid fa-sort-down"></i>';
+    } else {
+      iconEl.style.opacity = '0.4';
+      iconEl.style.color = '#94a3b8';
+      iconEl.innerHTML = '<i class="fa-solid fa-sort"></i>';
+    }
+  });
+}
+window.updateAdminNfcSortIcons = updateAdminNfcSortIcons;
+
 function filterAdminNfcTable() {
   const q = (document.getElementById('db-nfc-table-search')?.value || '').trim().toLowerCase();
+  const statusFilter = document.getElementById('db-nfc-status-filter')?.value || 'all';
   _currentAdminNfcPage = 1;
-  if (!q) {
-    renderAdminNfcPageTable(_nfcInventoryCache);
-    return;
+
+  let list = (_nfcInventoryCache || []).slice();
+
+  // 1. Lọc theo trạng thái & GPS
+  if (statusFilter === 'unassigned') {
+    list = list.filter(t => t.status !== 'assigned');
+  } else if (statusFilter === 'assigned') {
+    list = list.filter(t => t.status === 'assigned');
+  } else if (statusFilter === 'has_gps') {
+    list = list.filter(t => t.status === 'assigned' && t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0));
+  } else if (statusFilter === 'no_gps') {
+    list = list.filter(t => t.status === 'assigned' && (t.latitude == null || t.longitude == null || isNaN(Number(t.latitude)) || isNaN(Number(t.longitude)) || (Number(t.latitude) === 0 && Number(t.longitude) === 0)));
   }
-  const filtered = _nfcInventoryCache.filter(t => {
-    return (t.nfc_uid && t.nfc_uid.toLowerCase().includes(q)) ||
-           (t.tree_code && String(t.tree_code).toLowerCase().includes(q)) ||
-           (t.plant_type && t.plant_type.toLowerCase().includes(q));
+
+  // 2. Lọc theo từ khóa tìm kiếm (UID, số cây, loại cây, giống cây, vị trí, GPS)
+  if (q) {
+    list = list.filter(t => {
+      const matchUid = t.nfc_uid && t.nfc_uid.toLowerCase().includes(q);
+      const matchTree = t.tree_code && String(t.tree_code).toLowerCase().includes(q);
+      const matchPlantId = t.plant_id && String(t.plant_id).includes(q);
+      const matchType = t.plant_type && t.plant_type.toLowerCase().includes(q);
+      const matchVariety = t.plant_variety && t.plant_variety.toLowerCase().includes(q);
+      const matchLoc = t.location && t.location.toLowerCase().includes(q);
+      const matchGps = (t.latitude && String(t.latitude).includes(q)) || (t.longitude && String(t.longitude).includes(q));
+      return matchUid || matchTree || matchPlantId || matchType || matchVariety || matchLoc || matchGps;
+    });
+  }
+
+  // 3. Sắp xếp danh sách
+  list.sort((a, b) => {
+    let cmp = 0;
+    if (_adminNfcSortField === 'id') {
+      cmp = (a.id || 0) - (b.id || 0);
+    } else if (_adminNfcSortField === 'uid') {
+      cmp = String(a.nfc_uid || '').localeCompare(String(b.nfc_uid || ''));
+    } else if (_adminNfcSortField === 'status') {
+      const aVal = a.status === 'assigned' ? 1 : 0;
+      const bVal = b.status === 'assigned' ? 1 : 0;
+      cmp = aVal - bVal;
+    } else if (_adminNfcSortField === 'tree') {
+      const aTree = a.tree_code != null ? a.tree_code : (a.plant_id || '');
+      const bTree = b.tree_code != null ? b.tree_code : (b.plant_id || '');
+      const aNum = parseInt(String(aTree).replace(/\D/g, ''));
+      const bNum = parseInt(String(bTree).replace(/\D/g, ''));
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        cmp = aNum - bNum;
+      } else {
+        cmp = String(aTree).localeCompare(String(bTree));
+      }
+    } else if (_adminNfcSortField === 'time') {
+      const aTime = a.scanned_at ? new Date(a.scanned_at).getTime() : (a.id || 0);
+      const bTime = b.scanned_at ? new Date(b.scanned_at).getTime() : (b.id || 0);
+      cmp = aTime - bTime;
+    }
+    return _adminNfcSortOrder === 'asc' ? cmp : -cmp;
   });
-  renderAdminNfcPageTable(filtered);
+
+  renderAdminNfcPageTable(list);
 }
 window.filterAdminNfcTable = filterAdminNfcTable;
 
