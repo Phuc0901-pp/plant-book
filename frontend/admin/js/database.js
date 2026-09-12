@@ -103,7 +103,7 @@ async function initDatabasePage() {
     window._allFarmsCache = dbFarmsCache;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const targetTab = (activeDbTab && activeDbTab !== 'cultivation') ? activeDbTab : (urlParams.get('tab') || 'cultivation');
+    const targetTab = urlParams.get('tab') || (activeDbTab && activeDbTab !== 'cultivation' ? activeDbTab : 'cultivation');
     switchDatabaseTab(targetTab, false);
   } catch (err) {
     console.error('Error initializing database page:', err);
@@ -2384,9 +2384,22 @@ async function adminAddRecord(tableName) {
   }
 }
 
+async function openAdminDbCheckView() {
+  if (typeof showPage === 'function') {
+    showPage('database');
+  }
+  if (typeof switchDatabaseTab === 'function') {
+    switchDatabaseTab('check');
+  }
+  if (typeof loadDbSchemaCheck === 'function') {
+    loadDbSchemaCheck();
+  }
+}
+
 window.loadDbSchemaCheck = loadDbSchemaCheck;
 window.viewTableRecords = viewTableRecords;
 window.adminDeleteRecord = adminDeleteRecord;
 window.adminEditRecord = adminEditRecord;
 window.adminAddRecord = adminAddRecord;
+window.openAdminDbCheckView = openAdminDbCheckView;
 

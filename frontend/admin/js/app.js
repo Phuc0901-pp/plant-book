@@ -336,18 +336,20 @@ function showPage(page, pushUrl = true) {
 }
 
 function handleAdminUrlRouting() {
-  const matchedPage = parseAdminPageFromPath(window.location.pathname);
-  showPage(matchedPage, false);
-
   const searchParams = new URLSearchParams(window.location.search);
+  const queryPage = searchParams.get('page');
+  const pathPage = parseAdminPageFromPath(window.location.pathname);
+  const matchedPage = (queryPage && queryPage !== 'dashboard') ? queryPage : pathPage;
   const tab = searchParams.get('tab');
   const farm = searchParams.get('farm');
   const table = searchParams.get('table');
   const modal = searchParams.get('modal');
   const id = searchParams.get('id');
 
+  showPage(matchedPage, false);
+
   // Update base path if needed
-  syncAdminUrl({ page: matchedPage, replace: true });
+  syncAdminUrl({ page: matchedPage, tab, farm, table, modal, id, replace: true });
 
   // 1. Sub-tab routing
   if (tab) {

@@ -7,7 +7,7 @@ const { delCacheByPattern } = require('../config/redis');
 
 // Allowed public tables to inspect and manage
 const ALLOWED_TABLES = [
-  'users', 'farms', 'plants', 'farm_iot_sensors', 'supplies', 
+  'users', 'farms', 'plants', 'nfc_inventory', 'farm_iot_sensors', 'supplies', 
   'plant_logs', 'costs', 'user_notifications', 'data_audit_logs', 
   'devices', 'crop_schemas', 'user_activities'
 ];
