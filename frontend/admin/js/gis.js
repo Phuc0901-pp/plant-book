@@ -508,6 +508,12 @@ function renderFarmsList(farms) {
         <span><i class="fa-solid fa-seedling" style="color:var(--green)"></i> ${f.plant_count} cây</span>
         <span><i class="fa fa-user" style="color:#ea580c"></i> ${esc(f.user_name || 'Chưa gán')}</span>
       </div>
+      ${(f.vietgap_cert_number || f.puc_code) ? `
+        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px;">
+          ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i class="fa-solid fa-certificate"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : ''}
+          ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i class="fa-solid fa-earth-americas"></i> PUC: ${esc(f.puc_code)}</span>` : ''}
+        </div>
+      ` : ''}
     </div>
   `).join('');
 }

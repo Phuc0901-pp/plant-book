@@ -763,8 +763,13 @@
                     </div>
                   </div>
 
-                  <div id="cockpit-puc-badge" style="font-size: 12px; font-weight: 700; color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content; margin-top: 4px;">
-                    <i class="fa-solid fa-shield-halved"></i> Mã PUC: VN-LK-001 (VietGAP)
+                  <div id="cockpit-cert-container" style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+                    <div id="cockpit-vietgap-badge" style="font-size: 11.5px; font-weight: 700; color: #065f46; background: #dcfce7; border: 1px solid #86efac; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content;">
+                      <i class="fa-solid fa-certificate" style="color: #059669;"></i> VietGAP: <strong id="cockpit-vietgap-number">--</strong>
+                    </div>
+                    <div id="cockpit-puc-badge" style="font-size: 11.5px; font-weight: 700; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content;">
+                      <i class="fa-solid fa-earth-americas" style="color: #0284c7;"></i> Mã PUC: <strong id="cockpit-puc-number">--</strong>
+                    </div>
                   </div>
                 </div>
 
@@ -938,8 +943,14 @@
               </button>
               <div>
                 <h3 style="margin:0; font-size:17px; font-weight:800; color:#047857;" id="active-farm-name">Trang trại Nông hộ</h3>
-                <div style="font-size:12px; color:#64748b; margin-top:2px;">
-                  Tổng số: <strong id="active-farm-plant-count" style="color:#059669;">0</strong> cây | Diện tích: <strong id="active-farm-area" style="color:#059669;">0</strong> m²
+                <div style="font-size:12px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span>Tổng số: <strong id="active-farm-plant-count" style="color:#059669;">0</strong> cây | Diện tích: <strong id="active-farm-area" style="color:#059669;">0</strong> m²</span>
+                  <span id="active-farm-vietgap-badge" style="display:none; font-size:11px; font-weight:700; color:#065f46; background:#dcfce7; border:1px solid #86efac; padding:2px 7px; border-radius:5px; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-certificate" style="color:#059669;"></i> VietGAP: <strong id="active-farm-vietgap-number">--</strong>
+                  </span>
+                  <span id="active-farm-puc-badge" style="display:none; font-size:11px; font-weight:700; color:#0369a1; background:#e0f2fe; border:1px solid #bae6fd; padding:2px 7px; border-radius:5px; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-earth-americas" style="color:#0284c7;"></i> PUC: <strong id="active-farm-puc-number">--</strong>
+                  </span>
                 </div>
               </div>
             </div>
@@ -3715,6 +3726,27 @@
         <button type="button" onclick="getEditDeviceGPSPosition()" style="background:#059669; color:white; border:none; padding:11px 14px; border-radius:10px; font-weight:700; font-size:12px; cursor:pointer; height:42px; white-space:nowrap;" title="Cập nhật vị trí GPS mới">
           <i class="fa-solid fa-arrows-rotate"></i> GPS
         </button>
+      </div>
+
+      <!-- Tiêu chuẩn & Chứng nhận xuất khẩu -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-certificate" style="color:#059669;"></i> Tiêu Chuẩn & Chứng Nhận Xuất Khẩu
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Số CN VietGAP</label>
+            <input type="text" id="edit-farm-vietgap-cert" placeholder="Ví dụ: RD.DLOR-0422" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 10px; width:100%; color:#0f172a; font-size:13px; font-weight:600;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Mã số Vùng trồng (PUC)</label>
+            <input type="text" id="edit-farm-puc" placeholder="Ví dụ: VN-LK-001" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 10px; width:100%; color:#0f172a; font-size:13px; font-weight:600;">
+          </div>
+        </div>
+        <div>
+          <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">Tổ chức cấp chứng nhận</label>
+          <input type="text" id="edit-farm-vietgap-org" placeholder="Ví dụ: Công ty TNHH MTV..." style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 10px; width:100%; color:#0f172a; font-size:13px;">
+        </div>
       </div>
 
       <div class="form-group">

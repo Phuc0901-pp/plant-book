@@ -426,6 +426,30 @@ export function openFarmDetailView(farmId, updateHash = true) {
     if (countEl) animateValue(countEl, 0, farm.plant_count || farm.total_plants || 0, 1000);
     if (areaEl) animateValue(areaEl, 0, farm.area ? parseFloat(farm.area) : 0, 1000, 1);
 
+    // VietGAP & PUC Badges in Detail Subheader
+    const vietgapBadge = document.getElementById('active-farm-vietgap-badge');
+    const vietgapNum = document.getElementById('active-farm-vietgap-number');
+    if (vietgapBadge && vietgapNum) {
+      if (farm.vietgap_cert_number) {
+        vietgapNum.textContent = farm.vietgap_cert_number;
+        vietgapBadge.style.display = 'inline-flex';
+        vietgapBadge.title = farm.vietgap_cert_org ? `Tổ chức cấp: ${farm.vietgap_cert_org}` : `Chứng nhận: ${farm.vietgap_cert_number}`;
+      } else {
+        vietgapBadge.style.display = 'none';
+      }
+    }
+
+    const pucBadge = document.getElementById('active-farm-puc-badge');
+    const pucNum = document.getElementById('active-farm-puc-number');
+    if (pucBadge && pucNum) {
+      if (farm.puc_code) {
+        pucNum.textContent = farm.puc_code;
+        pucBadge.style.display = 'inline-flex';
+      } else {
+        pucBadge.style.display = 'none';
+      }
+    }
+
     // Fetch and populate Farmer NFC tag status metrics (Holding, Assigned, Unassigned)
     fetchFarmerNfcStats(farm.id);
 
@@ -540,9 +564,13 @@ export function renderUserFarmsGrid(farms) {
           <p style="margin:0 0 14px 0; font-size:12.5px; color:#64748b; font-style:italic; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical;">
             ${esc(f.description || 'Chưa có mô tả địa chỉ')}
           </p>
-          <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#334155; display:flex; justify-content:space-between; margin-bottom:14px; font-weight:700;">
+          <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#334155; display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
             <span><i class="fa-solid fa-seedling" style="color:#059669;"></i> ${totalPlants} cây</span>
             <span><i class="fa-solid fa-ruler-combined" style="color:#059669;"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+          </div>
+          <div style="font-size:11.5px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px;">
+            ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:2px 7px; border-radius:6px; font-weight:700;"><i class="fa-solid fa-certificate"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">VietGAP: Chưa cấp</span>`}
+            ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 7px; border-radius:6px; font-weight:700;"><i class="fa-solid fa-earth-americas"></i> PUC: ${esc(f.puc_code)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">PUC: Chưa cấp</span>`}
           </div>
           <div style="display:flex; gap:8px;">
             <button onclick="openFarmDetailView(${f.id})" style="flex:1; background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
@@ -618,6 +646,15 @@ export function openEditFarmModal(farmId = null) {
   document.getElementById('edit-farm-name').value = farm.name || '';
   document.getElementById('edit-farm-area').value = farm.area || '';
   document.getElementById('edit-farm-total-plants').value = farm.plant_count || farm.total_plants || 0;
+  if (document.getElementById('edit-farm-vietgap-cert')) {
+    document.getElementById('edit-farm-vietgap-cert').value = farm.vietgap_cert_number || '';
+  }
+  if (document.getElementById('edit-farm-vietgap-org')) {
+    document.getElementById('edit-farm-vietgap-org').value = farm.vietgap_cert_org || '';
+  }
+  if (document.getElementById('edit-farm-puc')) {
+    document.getElementById('edit-farm-puc').value = farm.puc_code || '';
+  }
   document.getElementById('edit-farm-desc').value = farm.description || '';
 
   let lat = '', lng = '';
@@ -681,6 +718,9 @@ export async function submitEditFarm() {
   const lat = document.getElementById('edit-farm-lat')?.value;
   const lng = document.getElementById('edit-farm-lng')?.value;
   const desc = document.getElementById('edit-farm-desc')?.value;
+  const vietgapCert = document.getElementById('edit-farm-vietgap-cert')?.value?.trim() || null;
+  const vietgapOrg = document.getElementById('edit-farm-vietgap-org')?.value?.trim() || null;
+  const pucCode = document.getElementById('edit-farm-puc')?.value?.trim() || null;
 
   if (!name) {
     alert('Vui lòng nhập Tên Trang trại.');
@@ -699,7 +739,10 @@ export async function submitEditFarm() {
         area,
         total_plants: totalPlants,
         latitude: lat,
-        longitude: lng
+        longitude: lng,
+        vietgap_cert_number: vietgapCert,
+        vietgap_cert_org: vietgapOrg,
+        puc_code: pucCode
       })
     });
 

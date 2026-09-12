@@ -256,6 +256,9 @@ router.put('/:id', auth, async (req, res) => {
       } catch (_) {}
     }
 
+    await delCacheByPattern('farms_');
+    await delCacheByPattern('plants_');
+
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('farms_updated');

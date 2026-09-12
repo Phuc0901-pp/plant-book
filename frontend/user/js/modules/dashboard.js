@@ -103,11 +103,38 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     totalAreaEl.innerHTML = `Diện tích: <span style="font-weight:900; color:#0f172a;">${totalHa} ha</span> (${Number(totalSqM.toFixed(1)).toLocaleString('vi-VN')} m²)`;
   }
 
-  // PUC Badge
+  // ── VietGAP & PUC Badges (Cockpit Column 2) ──
+  const primaryFarm = farms.length > 0 ? farms[0] : null;
+  const vietgapNumberEl = document.getElementById('cockpit-vietgap-number');
+  const vietgapBadgeEl = document.getElementById('cockpit-vietgap-badge');
+  const pucNumberEl = document.getElementById('cockpit-puc-number');
   const pucBadgeEl = document.getElementById('cockpit-puc-badge');
-  if (pucBadgeEl) {
-    const primaryPuc = (farms.length > 0 && farms[0].puc_code) ? farms[0].puc_code : 'VN-LK-001';
-    pucBadgeEl.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Mã PUC: <strong>${esc(primaryPuc)}</strong> (VietGAP)`;
+
+  if (vietgapBadgeEl && vietgapNumberEl) {
+    const certNum = primaryFarm && primaryFarm.vietgap_cert_number ? primaryFarm.vietgap_cert_number : '';
+    const certOrg = primaryFarm && primaryFarm.vietgap_cert_org ? primaryFarm.vietgap_cert_org : '';
+    if (certNum) {
+      vietgapNumberEl.textContent = certNum;
+      vietgapBadgeEl.title = certOrg ? `Tổ chức cấp: ${certOrg}` : `Chứng nhận VietGAP: ${certNum}`;
+      vietgapBadgeEl.style.opacity = '1';
+    } else {
+      vietgapNumberEl.textContent = 'Chưa đăng ký';
+      vietgapBadgeEl.style.opacity = '0.7';
+      vietgapBadgeEl.title = 'Trang trại chưa cập nhật số chứng nhận VietGAP';
+    }
+  }
+
+  if (pucBadgeEl && pucNumberEl) {
+    const pucCode = primaryFarm && primaryFarm.puc_code ? primaryFarm.puc_code : '';
+    if (pucCode) {
+      pucNumberEl.textContent = pucCode;
+      pucBadgeEl.style.opacity = '1';
+      pucBadgeEl.title = `Mã số vùng trồng xuất khẩu (PUC): ${pucCode}`;
+    } else {
+      pucNumberEl.textContent = 'Chưa cấp';
+      pucBadgeEl.style.opacity = '0.7';
+      pucBadgeEl.title = 'Trang trại chưa được cấp mã số vùng trồng xuất khẩu (PUC)';
+    }
   }
 
   // ── 3.1. Farm Popover Rendering & Interactive Listeners ──
@@ -120,7 +147,7 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
 
   if (popoverListEl) {
     const renderFarms = farms.length > 0 ? farms : [
-      { id: 1, name: 'Trang Trại Sầu Riêng Long Khánh #1', area: 5733.9, puc_code: 'VN-LK-001', address: 'Long Khánh, Đồng Nai' }
+      { id: 1, name: 'Trang Trại Sầu Riêng Long Khánh #1', area: 5733.9, puc_code: '', vietgap_cert_number: '', address: 'Long Khánh, Đồng Nai' }
     ];
 
     popoverListEl.innerHTML = renderFarms.map((f, idx) => {
@@ -128,7 +155,8 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
       const fAreaHa = (fAreaSqM / 10000).toFixed(2);
       const matchingPlants = plants.filter(p => String(p.farm_id) === String(f.id));
       const fPlantsCount = matchingPlants.length > 0 ? matchingPlants.length : (f.plant_count || f.total_plants || plants.length || 0);
-      const fPuc = f.puc_code || 'VN-LK-001';
+      const fVietgap = f.vietgap_cert_number ? f.vietgap_cert_number : 'Chưa cấp';
+      const fPuc = f.puc_code ? f.puc_code : 'Chưa cấp';
 
       return `
         <div class="farm-popover-item" onclick="if(window.showPage) window.showPage('farms')" title="Xem bản đồ và danh sách cây thuộc ${esc(f.name || 'Trang trại')}">
@@ -140,9 +168,14 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
             <span><i class="fa-solid fa-ruler-combined" style="color:#0284c7; font-size:10px;"></i> ${fAreaHa} ha (${Number(fAreaSqM.toFixed(1)).toLocaleString('vi-VN')} m²)</span>
             <span style="font-weight:700; color:#059669;">${fPlantsCount} cây trồng</span>
           </div>
-          <div style="font-size:11px; color:#065f46; display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-            <span><i class="fa-solid fa-shield-halved" style="font-size:10px;"></i> Mã PUC: <strong>${esc(fPuc)}</strong></span>
-            <span style="color:#0284c7; font-weight:700; font-size:11px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở GIS</span>
+          <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
+            <div style="font-size:11px; color:#065f46; display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fa-solid fa-certificate" style="font-size:10px; color:#059669;"></i> VietGAP: <strong>${esc(fVietgap)}</strong></span>
+              <span style="color:#0284c7; font-weight:700; font-size:11px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở GIS</span>
+            </div>
+            <div style="font-size:11px; color:#0369a1; display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fa-solid fa-earth-americas" style="font-size:10px; color:#0284c7;"></i> Mã PUC: <strong>${esc(fPuc)}</strong></span>
+            </div>
           </div>
         </div>
       `;
