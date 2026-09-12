@@ -1076,9 +1076,39 @@ function renderUserNfcInventoryTable(tags) {
       ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-link"></i> Đã gán cây</span>`
       : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-check"></i> Sẵn sàng gán</span>`;
 
-    const plantInfo = isAssigned && t.tree_code
-      ? `<strong style="color:#0f172a; font-size:13.5px;">#${esc(t.tree_code)}</strong> <span style="font-size:12px; color:#64748b; font-weight:600;">(${esc(t.plant_type || '')})</span>`
-      : `<span style="color:#94a3b8; font-style:italic;">— Sẵn sàng gán —</span>`;
+    let plantInfo = `<span style="color:#94a3b8; font-style:italic; display:inline-flex; align-items:center; gap:5px;"><i class="fa-regular fa-clock"></i> — Sẵn sàng gán —</span>`;
+    if (isAssigned && (t.tree_code || t.plant_id)) {
+      const treeCodeText = t.tree_code ? `Cây #${t.tree_code}` : `Cây #${t.plant_id}`;
+      const plantTypeDesc = t.plant_variety ? `${t.plant_type || 'Cây'} (${t.plant_variety})` : (t.plant_type || 'Cây trồng');
+      const hasGps = t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0);
+      const gpsLat = hasGps ? Number(t.latitude).toFixed(6) : null;
+      const gpsLng = hasGps ? Number(t.longitude).toFixed(6) : null;
+      const locationText = t.location || (t.plant_data && (t.plant_data.tag_position || t.plant_data.location)) || '';
+
+      plantInfo = `
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <div>
+            <strong style="color:#0f172a; font-size:13px;">🌳 ${esc(treeCodeText)}</strong> 
+            <span style="font-size:11.5px; color:#64748b; font-weight:600;">${esc(plantTypeDesc)}</span>
+          </div>
+          ${hasGps ? `
+            <div style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#047857; font-weight:700;">
+              <i class="fa-solid fa-location-dot" style="color:#059669;"></i> ${gpsLat}, ${gpsLng}
+              <a href="https://www.google.com/maps?q=${gpsLat},${gpsLng}" target="_blank" title="Mở bản đồ Google Maps" style="color:#2563eb; text-decoration:none; margin-left:3px;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Bản đồ
+              </a>
+            </div>
+          ` : `
+            <span style="color:#d97706; font-size:11px;"><i class="fa-solid fa-circle-exclamation"></i> Chưa lấy tọa độ GPS</span>
+          `}
+          ${locationText ? `
+            <div style="color:#64748b; font-size:11px;">
+              <i class="fa-solid fa-tag"></i> ${esc(locationText)}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
 
     const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
 

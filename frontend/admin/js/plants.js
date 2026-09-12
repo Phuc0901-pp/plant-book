@@ -825,17 +825,51 @@ function renderAdminNfcPageTable(tags) {
       ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-link"></i> Đã gán cây</span>`
       : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-check"></i> Còn trống (Sẵn sàng)</span>`;
 
-    const plantInfo = isAssigned && (t.tree_code || t.plant_id)
-      ? `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-           <div>
-             <strong style="color:#0f172a; font-size:13.5px;">#${esc(t.tree_code || t.plant_id)}</strong> 
-             <span style="font-size:12px; color:#64748b; font-weight:600;">(${esc(t.plant_type || 'Cây')})</span>
-           </div>
-           <button type="button" onclick="unassignAdminNfcTag(${t.id}, '${esc(t.nfc_uid)}', ${t.plant_id || 'null'})" title="Gỡ thẻ khỏi cây này (chuyển về trạng thái sẵn sàng trong kho)" style="background:#fff7ed; color:#c2410c; border:1px solid #fdba74; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
-             <i class="fa-solid fa-link-slash"></i> Gỡ thẻ
-           </button>
-         </div>`
-      : `<span style="color:#94a3b8; font-style:italic;">— Sẵn sàng gán —</span>`;
+    let plantInfo = `<span style="color:#94a3b8; font-style:italic; display:inline-flex; align-items:center; gap:5px;"><i class="fa-regular fa-clock"></i> — Sẵn sàng gán —</span>`;
+    if (isAssigned && (t.tree_code || t.plant_id)) {
+      const treeCodeText = t.tree_code ? `Cây #${t.tree_code}` : `Cây #${t.plant_id}`;
+      const plantTypeDesc = t.plant_variety ? `${t.plant_type || 'Cây'} (${t.plant_variety})` : (t.plant_type || 'Cây trồng');
+      const hasGps = t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0);
+      const gpsLat = hasGps ? Number(t.latitude).toFixed(6) : null;
+      const gpsLng = hasGps ? Number(t.longitude).toFixed(6) : null;
+      const locationText = t.location || (t.plant_data && (t.plant_data.tag_position || t.plant_data.location)) || '';
+
+      plantInfo = `
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-weight:800; font-size:12.5px; padding:2px 8px; border-radius:6px;">
+                🌳 ${esc(treeCodeText)}
+              </span>
+              <span style="font-size:12px; color:#475569; font-weight:600;">${esc(plantTypeDesc)}</span>
+            </div>
+            <button type="button" onclick="unassignAdminNfcTag(${t.id}, '${esc(t.nfc_uid)}', ${t.plant_id || 'null'})" title="Gỡ thẻ khỏi cây này (chuyển về trạng thái sẵn sàng trong kho)" style="background:#fff7ed; color:#c2410c; border:1px solid #fdba74; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+              <i class="fa-solid fa-link-slash"></i> Gỡ thẻ
+            </button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:2px;">
+            ${hasGps ? `
+              <div style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:#047857; font-weight:700; background:#f0fdf4; padding:2px 8px; border-radius:4px; border:1px solid #bbf7d0;">
+                <i class="fa-solid fa-location-dot" style="color:#059669;"></i> GPS: ${gpsLat}, ${gpsLng}
+                <a href="https://www.google.com/maps?q=${gpsLat},${gpsLng}" target="_blank" title="Mở bản đồ Google Maps" style="color:#2563eb; text-decoration:none; margin-left:3px; display:inline-flex; align-items:center; gap:2px;">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Bản đồ
+                </a>
+              </div>
+            ` : `
+              <span style="color:#d97706; font-size:11px; display:inline-flex; align-items:center; gap:4px; background:#fffbeb; padding:2px 6px; border-radius:4px; border:1px solid #fef3c7;">
+                <i class="fa-solid fa-circle-exclamation"></i> Chưa lấy tọa độ GPS
+              </span>
+            `}
+            ${locationText ? `
+              <div style="color:#475569; font-size:11px; display:inline-flex; align-items:center; gap:4px; background:#f8fafc; padding:2px 6px; border-radius:4px; border:1px solid #e2e8f0;">
+                <i class="fa-solid fa-tag" style="color:#0284c7;"></i> Vị trí: <strong>${esc(locationText)}</strong>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
 
     const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
     const rowStt = startIdx + idx + 1;
@@ -1144,9 +1178,39 @@ function renderNfcInventoryTable(tags) {
       ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-link"></i> Đã gán</span>`
       : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-check"></i> Chưa gán</span>`;
 
-    const plantInfo = isAssigned && t.tree_code
-      ? `<strong style="color:#0f172a;">#${esc(t.tree_code)}</strong> <span style="font-size:11px; color:#64748b;">(${esc(t.plant_type || '')})</span>`
-      : `<span style="color:#94a3b8;">— Sẵn sàng gán —</span>`;
+    let plantInfo = `<span style="color:#94a3b8; font-style:italic;">— Sẵn sàng gán —</span>`;
+    if (isAssigned && (t.tree_code || t.plant_id)) {
+      const treeCodeText = t.tree_code ? `Cây #${t.tree_code}` : `Cây #${t.plant_id}`;
+      const plantTypeDesc = t.plant_variety ? `${t.plant_type || 'Cây'} (${t.plant_variety})` : (t.plant_type || 'Cây trồng');
+      const hasGps = t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0);
+      const gpsLat = hasGps ? Number(t.latitude).toFixed(6) : null;
+      const gpsLng = hasGps ? Number(t.longitude).toFixed(6) : null;
+      const locationText = t.location || (t.plant_data && (t.plant_data.tag_position || t.plant_data.location)) || '';
+
+      plantInfo = `
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <div>
+            <strong style="color:#0f172a; font-size:12.5px;">🌳 ${esc(treeCodeText)}</strong> 
+            <span style="font-size:11px; color:#64748b; font-weight:600;">${esc(plantTypeDesc)}</span>
+          </div>
+          ${hasGps ? `
+            <div style="display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#047857; font-weight:700;">
+              <i class="fa-solid fa-location-dot" style="color:#059669;"></i> ${gpsLat}, ${gpsLng}
+              <a href="https://www.google.com/maps?q=${gpsLat},${gpsLng}" target="_blank" title="Mở Google Maps" style="color:#2563eb; text-decoration:none; margin-left:2px;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </a>
+            </div>
+          ` : `
+            <span style="color:#d97706; font-size:10.5px;"><i class="fa-solid fa-circle-exclamation"></i> Chưa lấy GPS</span>
+          `}
+          ${locationText ? `
+            <div style="color:#64748b; font-size:10.5px;">
+              <i class="fa-solid fa-tag"></i> ${esc(locationText)}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
 
     const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
     const rowStt = startIdx + idx + 1;

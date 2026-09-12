@@ -808,7 +808,7 @@ router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
     }
 
     const items = await pool.query(
-      `SELECT n.*, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.latitude, p.longitude, p.public_url
+      `SELECT n.*, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.location, p.latitude, p.longitude, p.public_url, p.data as plant_data
        FROM nfc_tags_inventory n
        LEFT JOIN plants p ON n.plant_id = p.id
        WHERE n.farm_id = $1
