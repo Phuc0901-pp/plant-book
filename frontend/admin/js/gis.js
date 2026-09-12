@@ -2523,18 +2523,11 @@ async function openAdminFarmA4ExportModal(map) {
     });
   } catch (_) {}
 
-  // 3. Tính chiều dài các cạnh ranh giới & thông số
+  // ── 3. Tính chiều dài các cạnh ranh giới & thông số ──
   let edgeRowsHtml = '';
   let perimeter = 0;
 
   if (farmCoords && farmCoords.length >= 3) {
-    let uniquePts = [...farmCoords];
-    if (uniquePts.length > 3 &&
-        uniquePts[0][0] === uniquePts[uniquePts.length - 1][0] &&
-        uniquePts[0][1] === uniquePts[uniquePts.length - 1][1]) {
-      uniquePts.pop();
-    }
-
     const n = uniquePts.length;
     for (let i = 0; i < n; i++) {
       const p1 = uniquePts[i];
@@ -2657,11 +2650,20 @@ async function openAdminFarmA4ExportModal(map) {
       <div style="display:flex; align-items:center; gap:10px;">
         <i class="fa-solid fa-drafting-compass" style="font-size:22px; color:#4ade80;"></i>
         <div>
-          <h3 style="font-size:15px; font-weight:800; margin:0; color:#4ade80;">HỒ SƠ BẢN VẼ KỸ THUẬT A4 CHUẨN TỶ LỆ</h3>
-          <p style="font-size:11.5px; color:#94a3b8; margin:0;">Nhấp chuột trực tiếp vào bất kỳ ô chữ/số nào trên bản vẽ để tùy chỉnh linh hoạt trước khi in</p>
+          <h3 style="font-size:15px; font-weight:800; margin:0; color:#4ade80;">HỒ SƠ BẢN VẼ KỸ THUẬT A4 CHUẨN TỶ LỆ (CAD VECTOR HD)</h3>
+          <p style="font-size:11.5px; color:#94a3b8; margin:0;">Bản đồ vector & vệ tinh sắc nét 100% khi zoom | Nhấp trực tiếp vào ô chữ/số để tùy chỉnh</p>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
+        <!-- Nút Bật/Tắt Khung Chi Tiết A-A (Khối hình 4) -->
+        <button id="btn-toggle-cutout-circle" style="
+          background: #0284c7; color: #fff; border: none; padding: 7px 14px;
+          border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
+          display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2,132,199,0.4);
+          transition: all 0.2s ease;
+        " title="Bật hoặc Tắt khung vòng tròn chi tiết mặt cắt A-A">
+          <i class="fa-solid fa-circle-dot"></i> Khung Chi Tiết A-A: BẬT
+        </button>
         <button id="btn-add-a4-point" style="
           background: #ea580c; color: #fff; border: none; padding: 7px 14px;
           border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
@@ -2737,20 +2739,23 @@ async function openAdminFarmA4ExportModal(map) {
       <div style="display:flex; gap:8px; flex:1; overflow:hidden; margin-bottom:5px;">
         <!-- Main Map Area (Left) -->
         <div style="flex:1; display:flex; flex-direction:column; gap:5px; overflow:hidden;">
-          <div id="a4-map-frame" style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#e2e8f0;">
-            <!-- Viewport Bản Đồ Chính (Hỗ trợ Kéo Dịch & Zoom In / Zoom Out) -->
-            <div id="a4-main-map-viewport" style="width:100%; height:100%; position:relative; overflow:hidden; cursor:grab;" title="Nhấp giữ rê chuột để di chuyển bản đồ chính, Lăn chuột hoặc dùng nút + / - để Thu Phóng (Zoom In / Zoom Out)">
-              <img id="a4-main-map-img" src="${mapImageDataUrl}" style="position:absolute; left:50%; top:50%; width:100%; height:100%; object-fit:cover; transform:translate(-50%, -50%) scale(1.0); transition:transform 0.05s ease-out; pointer-events:none;">
-            </div>
-            
+          <div id="a4-map-frame" style="flex:1; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; background:#1e293b;">
+            <!-- Live Mapbox GL Canvas Viewport (100% Crisp Vector & Satellite Rendering) -->
+            <div id="a4-live-map-viewport" style="width:100%; height:100%; position:absolute; top:0; left:0; border-radius:4px; overflow:hidden;"></div>
+
             <!-- Layer chứa các Điểm Chấm Ghi Chú Tương Tác -->
             <div id="a4-custom-points-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:20;"></div>
 
             <!-- Nút Điều Khiển Zoom Bản Đồ Chính Top-Right (+ / - / ↺) -->
             <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:4px; z-index:25;">
-              <button id="btn-a4-main-zoom-in" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:26px; height:26px; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Phóng to Bản đồ chính (Zoom In)">+</button>
-              <button id="btn-a4-main-zoom-out" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:26px; height:26px; font-size:14px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Thu nhỏ Bản đồ chính (Zoom Out)">-</button>
-              <button id="btn-a4-main-zoom-reset" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:26px; height:26px; font-size:11px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Đặt lại vị trí ban đầu"><i class="fa-solid fa-rotate-left"></i></button>
+              <button id="btn-a4-main-zoom-in" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:28px; height:28px; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Phóng to Bản đồ chính (Zoom In)">+</button>
+              <button id="btn-a4-main-zoom-out" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:28px; height:28px; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Thu nhỏ Bản đồ chính (Zoom Out)">-</button>
+              <button id="btn-a4-main-zoom-reset" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:28px; height:28px; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Đặt lại vị trí ban đầu"><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
+
+            <!-- Compass Indicator Top-Left -->
+            <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.92); color:#0f172a; padding:3px 8px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:9.5px; box-shadow:0 2px 6px rgba(0,0,0,0.2); display:flex; align-items:center; gap:4px; z-index:22;">
+              <i class="fa-solid fa-compass" style="color:#0f172a; font-size:11px;"></i> HƯỚNG BẮC (N)
             </div>
 
             <!-- Elevation Vertical Color Bar Widget (Bottom-Right inside map) -->
@@ -2766,17 +2771,18 @@ async function openAdminFarmA4ExportModal(map) {
               </div>
             </div>
 
-            <!-- Inset Zoom Magnifier Circle "A-A" (Cho phép Kéo di chuyển hình ảnh BÊN TRONG & Kéo Nắp đỏ để dời Vị trí khung) -->
-            <div id="a4-cutout-circle" style="position:absolute; bottom:10px; left:10px; width:120px; height:120px; border-radius:50%; border:3px solid #ef4444; box-shadow:0 6px 20px rgba(0,0,0,0.5); background:#e2e8f0; user-select:none; z-index:15;" title="Kéo chuột bên trong vòng để dịch chuyển ảnh mặt cắt; Kéo nút đỏ trên đỉnh để dời vị trí khung">
-              <!-- Nút Nắp Kéo Khung (Handle màu đỏ trên đỉnh) -->
-              <div id="a4-cutout-frame-handle" style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:#ef4444; color:#ffffff; font-size:8.5px; font-weight:800; padding:1px 7px; border-radius:10px; cursor:grab; z-index:25; box-shadow:0 2px 6px rgba(0,0,0,0.4); white-space:nowrap;" title="Nhấp giữ để kéo di chuyển Vị Trí Khung Vòng Tròn trên tờ giấy A4">
+            <!-- Inset Zoom Magnifier Circle "A-A" (Khối hình 4 - BẬT / TẮT ĐƯỢC) -->
+            <div id="a4-cutout-circle" style="position:absolute; bottom:12px; left:12px; width:125px; height:125px; border-radius:50%; border:3px solid #ef4444; box-shadow:0 6px 20px rgba(0,0,0,0.5); background:#0f172a; user-select:none; z-index:24; display:block;" title="Kéo nắp đỏ để dời vị trí khung trên bản vẽ; Nhấp ✕ trên nắp hoặc nút công cụ để ẩn/tắt">
+              <!-- Nút Nắp Kéo Khung (Handle màu đỏ trên đỉnh kèm nút ✕ đóng nhanh) -->
+              <div id="a4-cutout-frame-handle" style="position:absolute; top:-13px; left:50%; transform:translateX(-50%); background:#ef4444; color:#ffffff; font-size:8.5px; font-weight:800; padding:2px 8px; border-radius:12px; cursor:grab; z-index:30; box-shadow:0 2px 6px rgba(0,0,0,0.4); white-space:nowrap; display:flex; align-items:center; gap:4px;" title="Nhấp giữ để kéo di chuyển Vị Trí Khung">
                 <i class="fa-solid fa-up-down-left-right"></i> Vị trí khung
+                <span id="btn-close-cutout-x" style="margin-left:4px; cursor:pointer; font-weight:900; background:rgba(0,0,0,0.3); width:13px; height:13px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9.5px;" title="Tắt khung chi tiết này">✕</span>
               </div>
 
-              <!-- Thấu kính chứa ảnh mặt cắt (Cho phép Kéo xoay dịch chuyển ảnh bên trong) -->
-              <div id="a4-cutout-viewport" style="width:100%; height:100%; border-radius:50%; overflow:hidden; position:relative; cursor:move;" title="Nhấp giữ rê chuột để dịch chuyển hình ảnh mặt cắt bên trong vòng tròn">
-                <img id="a4-cutout-img" src="${cutoutImageDataUrl}" style="position:absolute; left:50%; top:50%; width:180%; height:180%; object-fit:cover; transform:translate(-50%, -50%) scale(1.0); pointer-events:none;">
-                <input type="text" id="a4-cutout-title-input" class="a4-edit-field" value="A-A" style="position:absolute; top:6px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.92); color:#000; font-size:10px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444; width:44px; text-align:center; cursor:pointer; z-index:20;" title="Nhấp để đổi tên mặt cắt (VD: A-A, B-B, C-C)">
+              <!-- Thấu kính chứa bản đồ cận cảnh phóng đại HD -->
+              <div id="a4-cutout-viewport" style="width:100%; height:100%; border-radius:50%; overflow:hidden; position:relative; background:#022c22;">
+                <div id="a4-cutout-map-container" style="width:100%; height:100%; position:absolute; top:0; left:0;"></div>
+                <input type="text" id="a4-cutout-title-input" class="a4-edit-field" value="A-A" style="position:absolute; top:8px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.95); color:#000; font-size:10px; font-weight:900; padding:1px 6px; border-radius:10px; border:1.5px solid #ef4444; width:44px; text-align:center; cursor:pointer; z-index:25;" title="Nhấp để đổi tên mặt cắt (VD: A-A, B-B, C-C)">
               </div>
             </div>
           </div>
@@ -2884,7 +2890,7 @@ async function openAdminFarmA4ExportModal(map) {
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                 <i class="fa-solid fa-user-check" style="color:#15803d;"></i> NGƯỜI THỰC HIỆN
               </div>
-              <input type="text" id="a4-input-performer-name" class="a4-edit-field" value="Phạm Hoàng Phúc" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
+              <input type="text" id="a4-input-performer-name" class="a4-edit-field" value="${esc(performerName || 'Phạm Hoàng Phúc')}" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
             </td>
             <td style="width:35%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:middle;">
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
@@ -2906,144 +2912,255 @@ async function openAdminFarmA4ExportModal(map) {
 
   document.body.appendChild(modalContainer);
 
-  // ─── THIẾT LẬP CÁC TÍNH NĂNG TƯƠNG TÁC BẢN VẼ: DI CHUYỂN MẶT CẮT & CHẤM ĐIỂM + GÕ TEXT ───
+  let a4Map = null;
+  let a4CutoutMap = null;
+
+  // ─── THIẾT LẬP CÁC TÍNH NĂNG TƯƠNG TÁC BẢN VẼ LIVE MAPBOX VECTOR & CUTOUT TOGGLE ───
   const initA4InteractiveTools = () => {
     const mapFrameEl = document.getElementById('a4-map-frame');
     const cutoutEl = document.getElementById('a4-cutout-circle');
+    const btnToggleCutout = document.getElementById('btn-toggle-cutout-circle');
+    const btnCloseCutoutX = document.getElementById('btn-close-cutout-x');
     const btnAddPoint = document.getElementById('btn-add-a4-point');
     const pointsLayerEl = document.getElementById('a4-custom-points-layer');
     const legendTable = document.getElementById('a4-legend-custom-table-body');
+    const cutoutFrameHandle = document.getElementById('a4-cutout-frame-handle');
 
     if (!mapFrameEl) return;
 
-    // ── GIAO DIỆN BẢN ĐỒ CHÍNH (MAIN A4 MAP): TỰ DO THU PHÓNG (ZOOM IN/OUT) & KÉO RÊ DI CHUYỂN ──
-    const mainMapViewport = document.getElementById('a4-main-map-viewport');
-    const mainMapImg = document.getElementById('a4-main-map-img');
+    // ── 1. Khởi tạo Live Mapbox GL Map Canvas bên trong A4 Paper (Vector Native HD) ──
+    try {
+      a4Map = new mapboxgl.Map({
+        container: 'a4-live-map-viewport',
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        preserveDrawingBuffer: true,
+        renderWorldCopies: false,
+        attributionControl: false
+      });
+
+      a4Map.on('load', () => {
+        // 1.1 Fit bounds ranh giới vườn
+        if (uniquePts && uniquePts.length >= 3) {
+          const bounds = new mapboxgl.LngLatBounds();
+          uniquePts.forEach(pt => bounds.extend(pt));
+          a4Map.fitBounds(bounds, { padding: 45, animate: false });
+        }
+
+        // 1.2 Vẽ ranh giới trang trại (Fill + Line Vector nét căng)
+        if (farmCoords && farmCoords.length >= 3) {
+          const polyCoords = [...farmCoords];
+          if (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1]) {
+            polyCoords.push(polyCoords[0]);
+          }
+          a4Map.addSource('a4-farm-polygon-src', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              geometry: { type: 'Polygon', coordinates: [polyCoords] }
+            }
+          });
+          a4Map.addLayer({
+            id: 'a4-farm-polygon-fill',
+            type: 'fill',
+            source: 'a4-farm-polygon-src',
+            paint: {
+              'fill-color': '#10b981',
+              'fill-opacity': 0.22
+            }
+          });
+          a4Map.addLayer({
+            id: 'a4-farm-polygon-line',
+            type: 'line',
+            source: 'a4-farm-polygon-src',
+            paint: {
+              'line-color': '#10b981',
+              'line-width': 2.5
+            }
+          });
+        }
+
+        // 1.3 Vẽ đường đồng mức 1m độ nét cao
+        if (typeof addContourLinesToMap === 'function') {
+          addContourLinesToMap(a4Map, { defaultVisible: true, showControl: false, farmCoords });
+        }
+
+        // 1.4 Vẽ các Mốc Đỉnh A, B, C, D... bằng Marker SVG/HTML
+        uniquePts.forEach((pt, idx) => {
+          const vLabel = getVertexLabel(idx);
+          const el = document.createElement('div');
+          el.className = 'a4-vertex-badge';
+          el.style.cssText = `
+            background: #ef4444;
+            color: #ffffff;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+            border: 2px solid #ffffff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+            user-select: none;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+          `;
+          el.textContent = vLabel;
+          new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat(pt).addTo(a4Map);
+        });
+
+        // 1.5 Vẽ nhãn chiều dài cạnh AB, BC, CD...
+        for (let i = 0; i < uniquePts.length; i++) {
+          const p1 = uniquePts[i];
+          const p2 = uniquePts[(i + 1) % uniquePts.length];
+          const len = getDist(p1, p2);
+          const midLng = (p1[0] + p2[0]) / 2;
+          const midLat = (p1[1] + p2[1]) / 2;
+          const v1 = getVertexLabel(i);
+          const v2 = getVertexLabel((i + 1) % uniquePts.length);
+
+          const edgeEl = document.createElement('div');
+          edgeEl.className = 'a4-edge-badge';
+          edgeEl.style.cssText = `
+            background: rgba(15, 23, 42, 0.92);
+            color: #38bdf8;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 10px;
+            border: 1px solid #0284c7;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            pointer-events: none;
+            user-select: none;
+            transform: translate(-50%, -50%);
+          `;
+          edgeEl.innerHTML = `📏 <strong>${v1}${v2}</strong>: ${len.toLocaleString('vi-VN')} m`;
+          new mapboxgl.Marker({ element: edgeEl, anchor: 'center' }).setLngLat([midLng, midLat]).addTo(a4Map);
+        }
+      });
+    } catch (e) {
+      console.warn('Lỗi khởi tạo live A4 Mapbox map:', e);
+    }
+
+    // ── 2. Khởi tạo Cutout Mini Map bên trong Vòng Tròn A-A (Vector HD) ──
+    const cutoutMapContainer = document.getElementById('a4-cutout-map-container');
+    if (cutoutMapContainer && uniquePts.length > 0) {
+      try {
+        a4CutoutMap = new mapboxgl.Map({
+          container: 'a4-cutout-map-container',
+          style: 'mapbox://styles/mapbox/satellite-streets-v12',
+          center: uniquePts[0],
+          zoom: Math.max((map.getZoom() || 15) + 2.5, 17.5),
+          preserveDrawingBuffer: true,
+          renderWorldCopies: false,
+          interactive: true,
+          attributionControl: false
+        });
+
+        a4CutoutMap.on('load', () => {
+          if (farmCoords && farmCoords.length >= 3) {
+            const polyCoords = [...farmCoords];
+            if (polyCoords[0][0] !== polyCoords[polyCoords.length - 1][0] || polyCoords[0][1] !== polyCoords[polyCoords.length - 1][1]) {
+              polyCoords.push(polyCoords[0]);
+            }
+            a4CutoutMap.addSource('a4-cutout-farm-polygon-src', {
+              type: 'geojson',
+              data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [polyCoords] } }
+            });
+            a4CutoutMap.addLayer({
+              id: 'a4-cutout-farm-polygon-fill',
+              type: 'fill',
+              source: 'a4-cutout-farm-polygon-src',
+              paint: { 'fill-color': '#10b981', 'fill-opacity': 0.25 }
+            });
+            a4CutoutMap.addLayer({
+              id: 'a4-cutout-farm-polygon-line',
+              type: 'line',
+              source: 'a4-cutout-farm-polygon-src',
+              paint: { 'line-color': '#10b981', 'line-width': 2.5 }
+            });
+          }
+          if (typeof addContourLinesToMap === 'function') {
+            addContourLinesToMap(a4CutoutMap, { defaultVisible: true, showControl: false, farmCoords });
+          }
+          const vA = document.createElement('div');
+          vA.style.cssText = `
+            background: #ef4444; color: #fff; width: 20px; height: 20px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900;
+            border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.5); transform: translate(-50%, -50%);
+          `;
+          vA.textContent = 'A';
+          new mapboxgl.Marker({ element: vA, anchor: 'center' }).setLngLat(uniquePts[0]).addTo(a4CutoutMap);
+        });
+      } catch (_) {}
+    }
+
+    // ── 3. Điều khiển Zoom In/Out/Reset trên Bản Đồ Live Native ──
     const btnMainZoomIn = document.getElementById('btn-a4-main-zoom-in');
     const btnMainZoomOut = document.getElementById('btn-a4-main-zoom-out');
     const btnMainZoomReset = document.getElementById('btn-a4-main-zoom-reset');
 
-    let mainPanX = 0;
-    let mainPanY = 0;
-    let mainScale = 1.0;
-
-    const renderMainMapTransform = () => {
-      if (mainMapImg) {
-        mainMapImg.style.transform = `translate(calc(-50% + ${mainPanX}px), calc(-50% + ${mainPanY}px)) scale(${mainScale.toFixed(2)})`;
-      }
-    };
-
     if (btnMainZoomIn) {
       btnMainZoomIn.onclick = (e) => {
         e.stopPropagation();
-        mainScale = Math.min(mainScale + 0.2, 5.0);
-        renderMainMapTransform();
+        if (a4Map) a4Map.zoomIn({ duration: 300 });
       };
     }
-
     if (btnMainZoomOut) {
       btnMainZoomOut.onclick = (e) => {
         e.stopPropagation();
-        mainScale = Math.max(mainScale - 0.2, 0.5);
-        renderMainMapTransform();
+        if (a4Map) a4Map.zoomOut({ duration: 300 });
       };
     }
-
     if (btnMainZoomReset) {
       btnMainZoomReset.onclick = (e) => {
         e.stopPropagation();
-        mainScale = 1.0;
-        mainPanX = 0;
-        mainPanY = 0;
-        renderMainMapTransform();
+        if (a4Map && uniquePts && uniquePts.length >= 3) {
+          const bounds = new mapboxgl.LngLatBounds();
+          uniquePts.forEach(pt => bounds.extend(pt));
+          a4Map.fitBounds(bounds, { padding: 45, duration: 500 });
+        }
       };
     }
 
-    if (mainMapViewport) {
-      let isPanningMain = false;
-      let startMouseX = 0, startMouseY = 0;
-      let initialPanX = 0, initialPanY = 0;
+    // ── 4. TÍNH NĂNG BẬT / TẮT KHUNG CHI TIẾT A-A (Khối hình 4) ──
+    let isCutoutVisible = true;
 
-      const onMainStart = (evt) => {
-        if (evt.target.closest('#a4-cutout-circle') || evt.target.tagName === 'INPUT' || evt.target.tagName === 'BUTTON') return;
-
-        isPanningMain = true;
-        mainMapViewport.style.cursor = 'grabbing';
-
-        startMouseX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        startMouseY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-
-        initialPanX = mainPanX;
-        initialPanY = mainPanY;
-
-        if (evt.type === 'touchstart') evt.preventDefault();
-      };
-
-      const onMainMove = (evt) => {
-        if (!isPanningMain) return;
-
-        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-
-        const deltaX = clientX - startMouseX;
-        const deltaY = clientY - startMouseY;
-
-        mainPanX = initialPanX + deltaX;
-        mainPanY = initialPanY + deltaY;
-
-        renderMainMapTransform();
-      };
-
-      const onMainEnd = () => {
-        if (isPanningMain) {
-          isPanningMain = false;
-          mainMapViewport.style.cursor = 'grab';
-        }
-      };
-
-      mainMapViewport.addEventListener('mousedown', onMainStart);
-      document.addEventListener('mousemove', onMainMove);
-      document.addEventListener('mouseup', onMainEnd);
-
-      mainMapViewport.addEventListener('touchstart', onMainStart, { passive: false });
-      document.addEventListener('touchmove', onMainMove, { passive: false });
-      document.addEventListener('touchend', onMainEnd);
-
-      // Phóng to / Thu nhỏ bản đồ chính bằng Con trỏ chuột (Mouse Wheel)
-      mainMapViewport.addEventListener('wheel', (evt) => {
-        if (evt.target.closest('#a4-cutout-circle')) return;
-        evt.preventDefault();
-        evt.stopPropagation();
-        if (evt.deltaY < 0) {
-          mainScale = Math.min(mainScale + 0.15, 5.0);
+    const setCutoutVisible = (visible) => {
+      isCutoutVisible = visible;
+      if (cutoutEl) cutoutEl.style.display = isCutoutVisible ? 'block' : 'none';
+      if (btnToggleCutout) {
+        if (isCutoutVisible) {
+          btnToggleCutout.innerHTML = '<i class="fa-solid fa-circle-dot"></i> Khung Chi Tiết A-A: BẬT';
+          btnToggleCutout.style.background = '#0284c7';
+          btnToggleCutout.style.boxShadow = '0 2px 8px rgba(2,132,199,0.4)';
+          btnToggleCutout.title = 'Nhấp để TẮT / ẨN khung chi tiết A-A';
+          if (a4CutoutMap) {
+            setTimeout(() => { try { a4CutoutMap.resize(); } catch (_) {} }, 100);
+          }
         } else {
-          mainScale = Math.max(mainScale - 0.15, 0.5);
+          btnToggleCutout.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Khung Chi Tiết A-A: TẮT';
+          btnToggleCutout.style.background = '#475569';
+          btnToggleCutout.style.boxShadow = 'none';
+          btnToggleCutout.title = 'Nhấp để BẬT / HIỆN khung chi tiết A-A';
         }
-        renderMainMapTransform();
-      }, { passive: false });
-    }
-
-    // Kính phóng đại quang học hiển thị chính xác vị trí bên dưới vòng tròn mặt cắt A-A
-    const updateCutoutMagnifier = (left, top) => {
-      if (!cutoutEl) return;
-      const cutoutImg = cutoutEl.querySelector('img');
-      if (!cutoutImg) return;
-      
-      const containerW = mapFrameEl.clientWidth || 1;
-      const containerH = mapFrameEl.clientHeight || 1;
-      const cutoutW = cutoutEl.clientWidth || 110;
-      const cutoutH = cutoutEl.clientHeight || 110;
-
-      const centerX = left + cutoutW / 2;
-      const centerY = top + cutoutH / 2;
-
-      const pctX = (centerX / containerW) * 100;
-      const pctY = (centerY / containerH) * 100;
-
-      cutoutImg.style.objectPosition = `${pctX}% ${pctY}%`;
+      }
     };
 
-    // 1. Hàm bổ trợ kéo thả di chuyển vị trí phần tử (Universal Draggable Handler)
+    if (btnToggleCutout) {
+      btnToggleCutout.onclick = () => setCutoutVisible(!isCutoutVisible);
+    }
+
+    if (btnCloseCutoutX) {
+      btnCloseCutoutX.onclick = (e) => {
+        e.stopPropagation();
+        setCutoutVisible(false);
+      };
+    }
+
+    // ── 5. Hàm bổ trợ kéo thả di chuyển vị trí phần tử (Universal Draggable) ──
     const makeDraggable = (el, handleEl) => {
       let isDragging = false;
       let startX = 0, startY = 0;
@@ -3053,13 +3170,13 @@ async function openAdminFarmA4ExportModal(map) {
 
       const onStart = (evt) => {
         const target = evt.target;
-        if (target.tagName === 'INPUT' || target.classList.contains('pt-del-btn')) {
+        if (target.tagName === 'INPUT' || target.classList.contains('pt-del-btn') || target.id === 'btn-close-cutout-x') {
           return;
         }
 
         isDragging = true;
         triggerEl.style.cursor = 'grabbing';
-        if (el) el.style.zIndex = '30';
+        if (el) el.style.zIndex = '35';
 
         const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
         const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
@@ -3109,7 +3226,7 @@ async function openAdminFarmA4ExportModal(map) {
         if (isDragging) {
           isDragging = false;
           triggerEl.style.cursor = 'grab';
-          if (el) el.style.zIndex = el.id === 'a4-cutout-circle' ? '15' : '25';
+          if (el) el.style.zIndex = el.id === 'a4-cutout-circle' ? '24' : '25';
         }
       };
 
@@ -3122,89 +3239,11 @@ async function openAdminFarmA4ExportModal(map) {
       document.addEventListener('touchend', onEnd);
     };
 
-    // ── XỬ LÝ DỊCH CHUYỂN ẢNH MẶT CẮT BÊN TRONG VÒNG TRÒN & DI CHUYỂN KHUNG ──
-    const cutoutViewport = document.getElementById('a4-cutout-viewport');
-    const cutoutFrameHandle = document.getElementById('a4-cutout-frame-handle');
-    const cutoutImg = document.getElementById('a4-cutout-img');
-
-    let innerPanX = 0;
-    let innerPanY = 0;
-    let innerScale = 1.4;
-
-    const renderInnerTransform = () => {
-      if (cutoutImg) {
-        cutoutImg.style.transform = `translate(calc(-50% + ${innerPanX}px), calc(-50% + ${innerPanY}px)) scale(${innerScale.toFixed(2)})`;
-      }
-    };
-
-    if (cutoutViewport) {
-      let isPanningInner = false;
-      let startMouseX = 0, startMouseY = 0;
-      let initialPanX = 0, initialPanY = 0;
-
-      const onViewportStart = (evt) => {
-        if (evt.target.tagName === 'INPUT') return;
-        isPanningInner = true;
-        cutoutViewport.style.cursor = 'grabbing';
-
-        startMouseX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        startMouseY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-
-        initialPanX = innerPanX;
-        initialPanY = innerPanY;
-
-        if (evt.type === 'touchstart') evt.preventDefault();
-      };
-
-      const onViewportMove = (evt) => {
-        if (!isPanningInner) return;
-
-        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-
-        const deltaX = clientX - startMouseX;
-        const deltaY = clientY - startMouseY;
-
-        innerPanX = initialPanX + deltaX;
-        innerPanY = initialPanY + deltaY;
-
-        renderInnerTransform();
-      };
-
-      const onViewportEnd = () => {
-        if (isPanningInner) {
-          isPanningInner = false;
-          cutoutViewport.style.cursor = 'move';
-        }
-      };
-
-      cutoutViewport.addEventListener('mousedown', onViewportStart);
-      document.addEventListener('mousemove', onViewportMove);
-      document.addEventListener('mouseup', onViewportEnd);
-
-      cutoutViewport.addEventListener('touchstart', onViewportStart, { passive: false });
-      document.addEventListener('touchmove', onViewportMove, { passive: false });
-      document.addEventListener('touchend', onViewportEnd);
-
-      // Phóng to / Thu nhỏ hình ảnh siêu nét bên trong bằng con trỏ chuột (Mouse Wheel Zoom hỗ trợ tới 10.0x)
-      cutoutViewport.addEventListener('wheel', (evt) => {
-        evt.preventDefault();
-        evt.stopPropagation();
-        if (evt.deltaY < 0) {
-          innerScale = Math.min(innerScale + 0.3, 10.0);
-        } else {
-          innerScale = Math.max(innerScale - 0.3, 0.8);
-        }
-        renderInnerTransform();
-      }, { passive: false });
-    }
-
-    // Kéo Nút Handle Đỏ để di chuyển vị trí Khung Vòng Tròn Mặt Cắt trên bản vẽ A4
     if (cutoutEl && cutoutFrameHandle) {
       makeDraggable(cutoutEl, cutoutFrameHandle);
     }
 
-    // 2. Tính năng Chấm Điểm & Gõ Text (Sử dụng nhiều lần)
+    // ── 6. Tính năng Chấm Điểm & Gõ Text Tương Tác ──
     let pointCount = 0;
 
     const addNewPoint = (initialText) => {
@@ -3293,10 +3332,16 @@ async function openAdminFarmA4ExportModal(map) {
 
   initA4InteractiveTools();
 
-  document.getElementById('btn-close-a4-modal').onclick = () => modalContainer.remove();
+  const closeA4Modal = () => {
+    try { if (a4Map) a4Map.remove(); } catch (_) {}
+    try { if (a4CutoutMap) a4CutoutMap.remove(); } catch (_) {}
+    modalContainer.remove();
+  };
+
+  document.getElementById('btn-close-a4-modal').onclick = closeA4Modal;
 
   modalContainer.onclick = (e) => {
-    if (e.target === modalContainer) modalContainer.remove();
+    if (e.target === modalContainer) closeA4Modal();
   };
 
   const preparePrintMode = () => {
@@ -3306,11 +3351,31 @@ async function openAdminFarmA4ExportModal(map) {
     paper.querySelectorAll('.a4-edit-field').forEach(input => {
       input.setAttribute('value', input.value);
     });
+
+    // Render static crisp snapshot over live viewport for print window
+    try {
+      if (a4Map) {
+        const mapCanvas = a4Map.getCanvas();
+        const mapDataUrl = mapCanvas.toDataURL('image/png', 1.0);
+        let printImg = document.getElementById('a4-print-static-map-img');
+        if (!printImg) {
+          printImg = document.createElement('img');
+          printImg.id = 'a4-print-static-map-img';
+          printImg.style.cssText = 'width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:10; border-radius:4px;';
+          const viewport = document.getElementById('a4-live-map-viewport');
+          if (viewport) viewport.appendChild(printImg);
+        }
+        printImg.src = mapDataUrl;
+        printImg.style.display = 'block';
+      }
+    } catch (_) {}
   };
 
   const cleanupPrintMode = () => {
     const paper = document.getElementById('a4-drawing-paper');
     if (paper) paper.classList.remove('a4-print-mode');
+    const printImg = document.getElementById('a4-print-static-map-img');
+    if (printImg) printImg.style.display = 'none';
   };
 
   document.getElementById('btn-do-print-a4').onclick = () => {
