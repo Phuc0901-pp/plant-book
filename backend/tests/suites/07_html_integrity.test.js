@@ -100,7 +100,10 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
       'sp-target-pests',
       'btn-voice-dictate',
       'care-modal',
-      'modal-supply'
+      'modal-supply',
+      'btn-nfc-get-gps',
+      'btn-nfc-clear-gps',
+      'nfc-modal-gps-text'
     ];
 
     requiredUserIds.forEach(id => {
