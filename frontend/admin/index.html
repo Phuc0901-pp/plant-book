@@ -752,35 +752,38 @@
         </div>
 
         <!-- TẦNG 2: THANH TRẠNG THÁI GIÁM SÁT RỦI RO & THIẾT BỊ TỐI GIẢN (MINIMAL STATUS STRIP) -->
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:13px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">Trạng Thái Vận Hành &amp; Thiết Bị:</span>
-            <span style="font-size:12px; font-weight:700; color:#64748b;" id="stat-total-incidents">0 sự cố cần theo dõi</span>
+        <div class="dashboard-status-strip">
+          <div class="status-strip-header">
+            <div class="status-strip-title">
+              <i class="fa-solid fa-shield-heart" style="color:#059669;"></i>
+              <span>Trạng Thái Vận Hành &amp; Thiết Bị:</span>
+            </div>
+            <span class="status-strip-incidents" id="stat-total-incidents">0 sự cố cần theo dõi</span>
           </div>
 
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div class="status-strip-grid">
             <!-- Cây Bệnh -->
-            <button onclick="showPage('plants')" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#f87171'" onmouseout="this.style.borderColor='#fecaca'">
-              <span>🐛 Cây bệnh:</span>
-              <strong id="stat-sick-plants">0</strong>
+            <button type="button" onclick="showPage('plants')" class="status-strip-btn status-btn-sick">
+              <span class="status-btn-label">🐛 Cây bệnh:</span>
+              <strong class="status-btn-val" id="stat-sick-plants">0</strong>
             </button>
 
             <!-- Thiết Bị Offline -->
-            <button onclick="showPage('devices')" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#fbbf24'" onmouseout="this.style.borderColor='#fde68a'">
-              <span>🔌 Thiết bị offline:</span>
-              <strong id="stat-broken-devices">0</strong>
+            <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-offline">
+              <span class="status-btn-label">🔌 Thiết bị offline:</span>
+              <strong class="status-btn-val" id="stat-broken-devices">0</strong>
             </button>
 
             <!-- Thiết Bị Cần Bảo Trì -->
-            <button onclick="showPage('devices')" style="background:#f0f9ff; border:1px solid #bae6fd; color:#075985; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#bae6fd'">
-              <span>🔧 Cần bảo dưỡng:</span>
-              <strong id="stat-maintenance-devices">0</strong>
+            <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-maintenance">
+              <span class="status-btn-label">🔧 Cần bảo dưỡng:</span>
+              <strong class="status-btn-val" id="stat-maintenance-devices">0</strong>
             </button>
 
             <!-- Cảm Biến Hiệu Chuẩn -->
-            <button onclick="showPage('devices')" style="background:#faf5ff; border:1px solid #e9d5ff; color:#6b21a8; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='#c084fc'" onmouseout="this.style.borderColor='#e9d5ff'">
-              <span>⚙️ Cần hiệu chuẩn:</span>
-              <strong id="stat-calibration-devices">0</strong>
+            <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-calibration">
+              <span class="status-btn-label">⚙️ Cần hiệu chuẩn:</span>
+              <strong class="status-btn-val" id="stat-calibration-devices">0</strong>
             </button>
           </div>
         </div>

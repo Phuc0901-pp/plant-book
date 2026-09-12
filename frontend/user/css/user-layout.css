@@ -540,6 +540,35 @@ nav { padding: 12px; flex: 1; }
   #fab-care-btn {
     bottom: 74px !important;
   }
+
+  /* Elevation Legend on Mobile */
+  .elevation-legend-widget-container {
+    bottom: 74px !important;
+    left: 10px !important;
+    right: auto !important;
+    z-index: 6 !important;
+    pointer-events: auto !important;
+  }
+  .elevation-legend-widget-container > div {
+    padding: 5px 8px !important;
+    border-radius: 10px !important;
+    min-width: 65px !important;
+    background: rgba(10, 25, 18, 0.90) !important;
+    backdrop-filter: blur(8px) !important;
+  }
+  .elevation-legend-widget-container [style*="height: 140px"],
+  .elevation-legend-widget-container [style*="height:140px"] {
+    height: 64px !important;
+  }
+  .elevation-legend-widget-container [style*="font-size:9.5px"],
+  .elevation-legend-widget-container [style*="font-size: 9.5px"] {
+    font-size: 8.5px !important;
+    margin-bottom: 4px !important;
+  }
+  .elevation-legend-widget-container [style*="font-size:11px"],
+  .elevation-legend-widget-container [style*="font-size: 11px"] {
+    font-size: 9.5px !important;
+  }
 }
 
 .mobile-bottom-nav {

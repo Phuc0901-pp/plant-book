@@ -653,6 +653,73 @@ div#login-page[style*="display:none"] {
     font-size: 20px !important;
   }
 
+  /* ── 4b. Trạng Thái Vận Hành & Thiết Bị (Mobile 2x2 Balanced Grid) ── */
+  .dashboard-status-strip {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 12px 14px !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .status-strip-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px dashed #e2e8f0 !important;
+    gap: 8px !important;
+  }
+
+  .status-strip-title {
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .status-strip-incidents {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    background: #f1f5f9 !important;
+    border-radius: 6px !important;
+  }
+
+  .status-strip-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .status-strip-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 8px 10px !important;
+    font-size: 11.5px !important;
+    box-sizing: border-box !important;
+  }
+
+  .status-btn-label {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 11.5px !important;
+  }
+
+  .status-btn-val {
+    font-size: 12.5px !important;
+    margin-left: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
   /* ── 5. Media & Folder Grids on Mobile ── */
   #media-folders-grid,
   #media-gallery-grid,
@@ -714,14 +781,116 @@ div#login-page[style*="display:none"] {
   .gis-sidebar {
     width: 100% !important;
     min-width: 100% !important;
-    max-height: 380px !important;
+    max-height: 400px !important;
+  }
+
+  .gis-map-container {
+    height: 440px !important;
+    min-height: 440px !important;
+    width: 100% !important;
+    border-radius: 14px !important;
+    position: relative !important;
   }
 
   #gis-map {
-    height: 360px !important;
-    min-height: 360px !important;
+    height: 100% !important;
+    min-height: 440px !important;
     width: 100% !important;
+    border-radius: 14px !important;
+  }
+
+  /* Mapbox Controls Stack & Touch Targets on Mobile */
+  .mapboxgl-ctrl-top-right {
+    top: 8px !important;
+    right: 8px !important;
+    z-index: 10 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 6px !important;
+  }
+
+  .mapboxgl-ctrl-group {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    margin: 0 !important;
+  }
+
+  .mapboxgl-ctrl-group button {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 14px !important;
+  }
+
+  /* Elevation Legend: Relocate to Bottom-Left on Mobile to Prevent Obscuring Right Controls */
+  .elevation-legend-widget-container {
+    bottom: 10px !important;
+    left: 10px !important;
+    right: auto !important;
+    z-index: 6 !important;
+    pointer-events: auto !important;
+  }
+
+  .elevation-legend-widget-container > div {
+    padding: 5px 8px !important;
+    border-radius: 10px !important;
+    min-width: 65px !important;
+    background: rgba(10, 25, 18, 0.90) !important;
+    backdrop-filter: blur(8px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .elevation-legend-widget-container [style*="height: 140px"],
+  .elevation-legend-widget-container [style*="height:140px"] {
+    height: 64px !important;
+  }
+
+  .elevation-legend-widget-container [style*="font-size:9.5px"],
+  .elevation-legend-widget-container [style*="font-size: 9.5px"] {
+    font-size: 8.5px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .elevation-legend-widget-container [style*="font-size:11px"],
+  .elevation-legend-widget-container [style*="font-size: 11px"] {
+    font-size: 9.5px !important;
+  }
+
+  /* GIS Import Active Banner on Mobile */
+  #gis-import-active-banner {
+    top: 8px !important;
+    left: 8px !important;
+    right: auto !important;
+    transform: none !important;
+    max-width: calc(100% - 60px) !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
     border-radius: 12px !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+    z-index: 9 !important;
+  }
+
+  #gis-import-active-banner span {
+    font-size: 10.5px !important;
+    line-height: 1.3 !important;
+  }
+
+  #gis-import-active-banner button {
+    padding: 3px 8px !important;
+    font-size: 10.5px !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Admin Mascot Chibi Scaling on Mobile */
+  #admin-chibi-mascot-widget {
+    transform: scale(0.8) !important;
+    transform-origin: bottom right !important;
+    z-index: 45 !important;
   }
 
   /* ── 8. Quick Input & Search Flex Stacking ── */
