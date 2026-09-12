@@ -966,9 +966,9 @@
 
       <!-- ── DATABASE (CƠ SỞ DỮ LIỆU) ── -->
 
-      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (6 SUB-VIEWS) ── -->
+      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (8 SUB-VIEWS) ── -->
       <div class="page-section" id="page-database">
-        <!-- 6 Sub-tabs in Database section -->
+        <!-- 8 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
             <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
@@ -990,6 +990,9 @@
           </div>
           <div class="tab" id="db-tab-history" onclick="switchDatabaseTab('history')">
             <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động
+          </div>
+          <div class="tab" id="db-tab-check" onclick="switchDatabaseTab('check')">
+            <i class="fa-solid fa-server"></i> Thanh tra CSDL (Schema &amp; Tables)
           </div>
         </div>
 
@@ -1997,6 +2000,34 @@
           </div>
 
         </div>
+        <div class="tab-pane" id="db-pane-check" style="display:none;">
+  <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; background:#f8fafc; padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0;">
+    <div>
+      <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 4px 0; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-server" style="color:#059669;"></i> Thanh tra CSDL PostgreSQL Schema & Bảng Dữ Liệu
+      </h3>
+      <p style="margin:0; font-size:12.5px; color:#64748b;">
+        Thanh tra cấu trúc các bảng, kiểu dữ liệu, số lượng dòng và thực thi Thêm/Sửa/Xóa dữ liệu trực tiếp trong CSDL.
+      </p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary btn-sm" onclick="loadDbSchemaCheck()" style="background:linear-gradient(135deg, #064e3b, #047857); border:none; padding:8px 16px; font-weight:700; border-radius:8px; box-shadow:0 3px 8px rgba(4,120,87,0.25);">
+        <i class="fa-solid fa-rotate"></i> Tải lại Telemetry CSDL
+      </button>
+    </div>
+  </div>
+
+  <!-- Table Cards Telemetry Grid -->
+  <div id="db-schema-tables-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
+    <!-- Populated dynamically by database.js -->
+  </div>
+
+  <!-- Selected Table Records Live Viewer & CRUD Container -->
+  <div id="db-table-records-container" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.03); display:none;">
+    <!-- Populated dynamically by database.js -->
+  </div>
+</div>
+
       </div>
 
       <!-- ── 3. USERS & GOVERNANCE ── -->
@@ -2240,36 +2271,6 @@
 
 
 
-
-      <!-- ── 4. DB CHECK & SCHEMA TELEMETRY ── -->
-            <!-- ── DB Schema Check & Live CRUD ── -->
-      <div class="page-section" id="page-db-check">
-        <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-          <div>
-            <h1 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 6px 0; display:flex; align-items:center; gap:10px;">
-              <i class="fa-solid fa-server" style="color:#059669;"></i> Kiểm tra CSDL PostgreSQL Schema & Quản trị Dữ liệu
-            </h1>
-            <p style="margin:0; font-size:13px; color:#64748b;">
-              Thanh tra cấu trúc các bảng, kiểu dữ liệu, số lượng dòng và thực thi Thêm/Sửa/Xóa dữ liệu trực tiếp trong CSDL.
-            </p>
-          </div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-primary" onclick="loadDbSchemaCheck()" style="background:linear-gradient(135deg, #064e3b, #047857); border:none; padding:10px 18px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(4,120,87,0.25);">
-              <i class="fa-solid fa-rotate"></i> Tải lại Telemetry CSDL
-            </button>
-          </div>
-        </div>
-
-        <!-- Table Cards Telemetry Grid -->
-        <div id="db-schema-tables-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
-          <!-- Populated dynamically by database.js -->
-        </div>
-
-        <!-- Selected Table Records Live Viewer & CRUD Container -->
-        <div id="db-table-records-container" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.03); display:none;">
-          <!-- Populated dynamically by database.js -->
-        </div>
-      </div>
 
     </div><!-- /content -->
   </main>
@@ -3460,34 +3461,6 @@
   </div>
 </div>
 
-<!-- ════════════════ PAGE: DB SCHEMA CHECK & LIVE CRUD ════════════════ -->
-<div id="page-db-check" class="page-content" style="display:none">
-  <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-    <div>
-      <h1 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 6px 0; display:flex; align-items:center; gap:10px;">
-        <i class="fa-solid fa-server" style="color:#059669;"></i> Kiểm tra CSDL PostgreSQL Schema & Quản trị Dữ liệu
-      </h1>
-      <p style="margin:0; font-size:13px; color:#64748b;">
-        Thanh tra cấu trúc các bảng, kiểu dữ liệu, số lượng dòng và thực thi Thêm/Sửa/Xóa dữ liệu trực tiếp trong CSDL.
-      </p>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn btn-primary" onclick="loadDbSchemaCheck()" style="background:linear-gradient(135deg, #064e3b, #047857); border:none; padding:10px 18px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(4,120,87,0.25);">
-        <i class="fa-solid fa-rotate"></i> Tải lại Telemetry CSDL
-      </button>
-    </div>
-  </div>
-
-  <!-- Table Cards Telemetry Grid -->
-  <div id="db-schema-tables-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
-    <!-- Populated dynamically by database.js -->
-  </div>
-
-  <!-- Selected Table Records Live Viewer & CRUD Container -->
-  <div id="db-table-records-container" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.03); display:none;">
-    <!-- Populated dynamically by database.js -->
-  </div>
-</div>
 
 
 <!-- Toast -->

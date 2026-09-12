@@ -21,9 +21,9 @@
       <!-- ── 1. DASHBOARD & GIS COCKPIT ── -->
       <!-- @include 'views/dashboard.html' -->
 
-      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (6 SUB-VIEWS) ── -->
+      <!-- ── 2. DATABASE & AGRONOMIC MASTER DATA (8 SUB-VIEWS) ── -->
       <div class="page-section" id="page-database">
-        <!-- 6 Sub-tabs in Database section -->
+        <!-- 8 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
             <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
@@ -46,6 +46,9 @@
           <div class="tab" id="db-tab-history" onclick="switchDatabaseTab('history')">
             <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động
           </div>
+          <div class="tab" id="db-tab-check" onclick="switchDatabaseTab('check')">
+            <i class="fa-solid fa-server"></i> Thanh tra CSDL (Schema &amp; Tables)
+          </div>
         </div>
 
         <!-- @include 'views/database/cultivation.html' -->
@@ -55,13 +58,11 @@
         <!-- @include 'views/database/supplies.html' -->
         <!-- @include 'views/database/media.html' -->
         <!-- @include 'views/database/history.html' -->
+        <!-- @include 'views/database/check.html' -->
       </div>
 
       <!-- ── 3. USERS & GOVERNANCE ── -->
       <!-- @include 'views/users.html' -->
-
-      <!-- ── 4. DB CHECK & SCHEMA TELEMETRY ── -->
-      <!-- @include 'views/db-check.html' -->
 
     </div><!-- /content -->
   </main>

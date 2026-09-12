@@ -240,6 +240,11 @@ function showPage(page, pushUrl = true) {
     if (typeof switchDatabaseTab === 'function') {
       setTimeout(() => switchDatabaseTab('schemas'), 50);
     }
+  } else if (page === 'db-check' || page === 'check') {
+    page = 'database';
+    if (typeof switchDatabaseTab === 'function') {
+      setTimeout(() => switchDatabaseTab('check'), 50);
+    }
   }
 
   const targetSection = document.getElementById(`page-${page}`);
@@ -358,7 +363,7 @@ function handleAdminUrlRouting() {
   if (matchedPage === 'gis' && farm && typeof window.selectFarm === 'function') {
     setTimeout(() => { window.selectFarm(parseInt(farm), false); }, 300);
   }
-  if (matchedPage === 'db-check' && table && typeof window.viewTableRecords === 'function') {
+  if ((matchedPage === 'db-check' || (matchedPage === 'database' && tab === 'check')) && table && typeof window.viewTableRecords === 'function') {
     setTimeout(() => { window.viewTableRecords(table, false); }, 300);
   }
 
