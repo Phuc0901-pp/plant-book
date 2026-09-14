@@ -1,44 +1,44 @@
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
-   sw.js — PWA Service Worker with Robust Offline & Cache Engine
+   sw.js — PWA Service Worker (Network-First Strategy with Offline Fallback)
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'pb-farmer-cache-v1.2.0';
+const CACHE_NAME = 'pb-farmer-cache-v2.0.0-live';
 
 const STATIC_ASSETS = [
   '/user/',
   '/user/index.html',
   '/user/manifest.json',
-  '/user/css/user-layout.css?v=1.2.0',
-  '/user/js/auth.js?v=1.2.0',
-  '/user/js/app.js?v=1.2.0',
-  '/user/js/core/api.js?v=1.2.0',
-  '/user/js/core/config.js?v=1.2.0',
-  '/user/js/core/router.js?v=1.2.0',
-  '/user/js/core/utils.js?v=1.2.0',
-  '/user/js/core/websocket.js?v=1.2.0',
-  '/user/js/core/offline-db.js?v=1.2.0',
-  '/user/js/core/offline-sync.js?v=1.2.0',
-  '/user/js/modules/dashboard.js?v=1.2.0',
-  '/user/js/modules/plants.js?v=1.2.0',
-  '/user/js/modules/notifications.js?v=1.2.0',
-  '/user/js/modules/logs.js?v=1.2.0',
-  '/user/js/modules/reminders.js?v=1.2.0',
-  '/user/js/modules/care-modal.js?v=1.2.0',
-  '/user/js/modules/media.js?v=1.2.0',
-  '/user/js/modules/map.js?v=1.2.0',
-  '/user/js/modules/fab.js?v=1.2.0',
-  '/user/js/modules/settings.js?v=1.2.0',
-  '/user/js/modules/weather-clock.js?v=1.2.0',
-  '/user/js/modules/mascot-chibi.js?v=1.2.0',
-  '/user/js/modules/countup.js?v=1.2.0',
-  '/user/js/modules/nfc.js?v=1.2.0',
+  '/user/css/user-layout.css',
+  '/user/js/auth.js',
+  '/user/js/app.js',
+  '/user/js/core/api.js',
+  '/user/js/core/config.js',
+  '/user/js/core/router.js',
+  '/user/js/core/utils.js',
+  '/user/js/core/websocket.js',
+  '/user/js/core/offline-db.js',
+  '/user/js/core/offline-sync.js',
+  '/user/js/modules/dashboard.js',
+  '/user/js/modules/plants.js',
+  '/user/js/modules/notifications.js',
+  '/user/js/modules/logs.js',
+  '/user/js/modules/reminders.js',
+  '/user/js/modules/care-modal.js',
+  '/user/js/modules/media.js',
+  '/user/js/modules/map.js',
+  '/user/js/modules/fab.js',
+  '/user/js/modules/settings.js',
+  '/user/js/modules/weather-clock.js',
+  '/user/js/modules/mascot-chibi.js',
+  '/user/js/modules/countup.js',
+  '/user/js/modules/nfc.js',
   '/assets/favicon.png',
   '/assets/logo.png',
   '/assets/login-hero.jpg'
 ];
 
-// 1. Install Event — Pre-cache critical assets safely with Promise.allSettled
+// 1. Install Event — Pre-cache critical assets safely
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -46,7 +46,7 @@ self.addEventListener('install', (event) => {
       await Promise.allSettled(
         STATIC_ASSETS.map((url) =>
           cache.add(url).catch((err) => {
-            console.warn(`[SW] Pre-cache non-fatal warning for ${url}:`, err.message);
+            console.warn(`[SW] Pre-cache warning for ${url}:`, err.message);
           })
         )
       );
@@ -54,14 +54,14 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 2. Activate Event — Clean up stale caches and claim clients immediately
+// 2. Activate Event — Clean up all older caches immediately and claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log('🧹 [SW] Clearing old cache:', key);
+            console.log('🧹 [SW] Purging stale cache:', key);
             return caches.delete(key);
           }
         })
@@ -70,7 +70,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event — Guaranteed valid Response object in all circumstances
+// 3. Fetch Event — Network-First Strategy (Always fetch fresh data from server, fall back to cache when offline)
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
@@ -86,7 +86,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/socket.io/') ||
     url.pathname.startsWith('/sockjs-node/') ||
-    url.protocol !== 'http:' && url.protocol !== 'https:'
+    (url.protocol !== 'http:' && url.protocol !== 'https:')
   ) {
     return;
   }
@@ -94,22 +94,11 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
-        // Strategy 1: Check cache with exact match
-        const exactCached = await caches.match(req);
-        if (exactCached) {
-          return exactCached;
-        }
-
-        // Strategy 2: Check cache ignoring search query params (?v=1.2.0)
-        const fuzzyCached = await caches.match(req, { ignoreSearch: true });
-        if (fuzzyCached) {
-          return fuzzyCached;
-        }
-
-        // Strategy 3: Fetch from network
+        // ─── STRATEGY: NETWORK-FIRST ───
+        // Always try fetching the latest code/data from the server first
         const networkResponse = await fetch(req);
 
-        // Dynamically cache valid GET responses for local assets
+        // Dynamically update cache with fresh response for offline resilience
         if (
           networkResponse &&
           networkResponse.status === 200 &&
@@ -122,14 +111,20 @@ self.addEventListener('fetch', (event) => {
 
         return networkResponse;
       } catch (err) {
-        console.warn(`[SW] Network fetch failed for ${req.url}:`, err);
+        // ─── FALLBACK: NETWORK FAILED (DEVICE IS OFFLINE) ───
+        console.warn(`[SW] Network fetch failed (offline mode) for ${req.url}:`, err.message);
 
-        // Fallback A: Document Navigation -> Return cached index.html or offline fallback page
-        if (req.mode === 'navigate') {
+        // 1. Try exact cached asset
+        const exactCached = await caches.match(req);
+        if (exactCached) {
+          return exactCached;
+        }
+
+        // 2. Document Navigation Fallback -> Cached user index.html or custom offline card
+        if (req.mode === 'navigate' || req.destination === 'document') {
           const fallbackDoc =
             (await caches.match('/user/index.html')) ||
-            (await caches.match('/user/')) ||
-            (await caches.match('/user/index.html', { ignoreSearch: true }));
+            (await caches.match('/user/'));
 
           if (fallbackDoc) {
             return fallbackDoc;
@@ -167,7 +162,7 @@ self.addEventListener('fetch', (event) => {
           );
         }
 
-        // Fallback B: Images -> Return cached logo or transparent 1x1 GIF
+        // 3. Image Fallback -> Cached logo or 1x1 transparent GIF
         if (req.destination === 'image' || req.url.match(/\.(png|jpg|jpeg|svg|webp|ico|gif)$/i)) {
           const cachedImg =
             (await caches.match('/assets/favicon.png')) ||
@@ -176,7 +171,6 @@ self.addEventListener('fetch', (event) => {
             return cachedImg;
           }
 
-          // 1x1 Transparent GIF buffer
           const transparentGif = new Uint8Array([
             0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00,
             0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x21, 0xf9, 0x04, 0x01, 0x00,
@@ -190,7 +184,7 @@ self.addEventListener('fetch', (event) => {
           });
         }
 
-        // Fallback C: All other assets (CSS, JS, Fonts) -> Return safe empty 504 Response
+        // 4. Other assets -> Return safe 504 Gateway Timeout
         return new Response('', {
           status: 504,
           statusText: 'Gateway Timeout (Offline)'

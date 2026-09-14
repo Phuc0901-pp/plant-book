@@ -42,11 +42,16 @@ app.get('/favicon.ico', (req, res) => {
 // Serve user portal images across all path prefixes (/user/img, /img, /usr-*/img)
 app.use(['/user/img', '/img', '/usr-*/img', '/usr-*/*/img'], express.static(path.join(__dirname, '../frontend/user/img')));
 
-// Serve frontend static files with no-cache headers for mobile devices
+// Serve frontend static files with robust no-cache headers across all browsers
 app.use(express.static(path.join(__dirname, '../frontend'), {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    if (filePath.endsWith('sw.js')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Service-Worker-Allowed', '/');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html') || filePath.endsWith('.json')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
     }
@@ -55,8 +60,8 @@ app.use(express.static(path.join(__dirname, '../frontend'), {
 
 app.use(express.static(path.join(__dirname, '../frontend/public'), {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html') || filePath.endsWith('.json')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
     }

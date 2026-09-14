@@ -391,12 +391,18 @@ if (localStorage.getItem('pb_field_mode') === 'true') {
   window.toggleFieldMode(true);
 }
 
-// Register PWA service worker for offline support and mobile install option
+// Register PWA service worker with Network-First strategy and immediate auto-update check
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/user/sw.js')
-      .then(reg => console.log('✅ ServiceWorker registered successfully:', reg.scope))
-      .catch(err => console.warn('❌ ServiceWorker registration failed:', err));
+      .then((reg) => {
+        console.log('✅ ServiceWorker registered successfully:', reg.scope);
+        // Force immediate check for worker script updates from server
+        if (typeof reg.update === 'function') {
+          reg.update().catch(() => {});
+        }
+      })
+      .catch((err) => console.warn('❌ ServiceWorker registration failed:', err));
   });
 }
 
