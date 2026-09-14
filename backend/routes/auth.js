@@ -549,4 +549,46 @@ router.get('/reset-requests', require('../middleware/auth'), async (req, res) =>
   }
 });
 
+// DELETE /api/auth/reset-requests/:id — Admin permanently deletes a specific reset request
+router.delete('/reset-requests/:id', require('../middleware/auth'), async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Chỉ Admin mới có quyền truy cập.' });
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Mã yêu cầu không hợp lệ.' });
+
+    const result = await pool.query('DELETE FROM password_reset_requests WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy yêu cầu cấp lại mật khẩu.' });
+    }
+    res.json({ success: true, message: 'Đã xóa vĩnh viễn yêu cầu cấp lại mật khẩu.', deleted: result.rows[0] });
+  } catch (err) {
+    console.error('Error deleting reset request:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa yêu cầu: ' + err.message });
+  }
+});
+
+// DELETE /api/auth/reset-requests — Admin bulk deletes reset requests (scope=handled or scope=all)
+router.delete('/reset-requests', require('../middleware/auth'), async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Chỉ Admin mới có quyền truy cập.' });
+    const { scope } = req.query;
+
+    let result;
+    if (scope === 'handled') {
+      result = await pool.query("DELETE FROM password_reset_requests WHERE status IN ('approved', 'rejected') RETURNING id");
+    } else {
+      result = await pool.query("DELETE FROM password_reset_requests RETURNING id");
+    }
+
+    res.json({
+      success: true,
+      deleted_count: result.rows.length,
+      message: `Đã xóa vĩnh viễn ${result.rows.length} yêu cầu cấp lại mật khẩu.`
+    });
+  } catch (err) {
+    console.error('Error clearing reset requests:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa danh sách yêu cầu: ' + err.message });
+  }
+});
+
 module.exports = router;

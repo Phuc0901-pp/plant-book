@@ -693,12 +693,17 @@ async function loadResetRequests() {
           <td>${r.identity} ${r.note ? `<br><small style="color:var(--gray-500)">Ghi chú: "${escapeHtml(r.note)}"</small>` : ''}</td>
           <td>${dateStr}</td>
           <td>${statusBadge}</td>
-          <td>
-            ${isPending ? `
-              <button class="btn btn-sm btn-primary" onclick="approveResetRequestFromAdmin('${r.token}')" style="background:var(--green); font-size:12px; padding:4px 10px;">
-                <i class="fa fa-check"></i> Duyệt & Cấp MK
+          <td style="text-align:center;">
+            <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:nowrap;">
+              ${isPending ? `
+                <button class="btn btn-sm btn-primary" onclick="approveResetRequestFromAdmin('${r.token}')" style="background:var(--green); font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;" title="Phê duyệt cấp mật khẩu mới">
+                  <i class="fa fa-check"></i> Duyệt &amp; Cấp MK
+                </button>
+              ` : ''}
+              <button class="btn btn-sm" onclick="deleteResetRequest(${r.id})" style="background:#fee2e2; color:#dc2626; border:1px solid #fecdd3; font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; transition:all 0.15s ease;" title="Xóa vĩnh viễn yêu cầu này khỏi hệ thống">
+                <i class="fa-solid fa-trash-can"></i> Xóa
               </button>
-            ` : '—'}
+            </div>
           </td>
         </tr>
       `;
@@ -713,7 +718,7 @@ async function approveResetRequestFromAdmin(token) {
   try {
     const res = await fetch(`/api/auth/approve-reset-password?token=${token}`);
     if (res.ok) {
-      toast('Đã phê duyệt và gửi mật khẩu mới về email khách hàng!');
+      toast('Đã phê duyệt và gửi mật khẩu mới về email khách hàng!', 'success');
       loadResetRequests();
     } else {
       toast('Thao tác không thành công', 'error');
@@ -722,6 +727,42 @@ async function approveResetRequestFromAdmin(token) {
     toast('Lỗi: ' + e.message, 'error');
   }
 }
+
+async function deleteResetRequest(id) {
+  if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn yêu cầu cấp lại mật khẩu này khỏi hệ thống?')) return;
+  try {
+    const res = await api(`/auth/reset-requests/${id}`, { method: 'DELETE' });
+    toast(res.message || 'Đã xóa vĩnh viễn yêu cầu cấp lại mật khẩu!', 'success');
+    loadResetRequests();
+  } catch (err) {
+    toast('Lỗi xóa yêu cầu: ' + err.message, 'error');
+  }
+}
+window.deleteResetRequest = deleteResetRequest;
+
+async function clearHandledResetRequests() {
+  if (!confirm('Bạn có chắc chắn muốn xóa tất cả các yêu cầu cấp mật khẩu ĐÃ XỬ LÝ (Đã duyệt / Đã từ chối)?')) return;
+  try {
+    const res = await api('/auth/reset-requests?scope=handled', { method: 'DELETE' });
+    toast(res.message || 'Đã xóa các yêu cầu đã xử lý!', 'success');
+    loadResetRequests();
+  } catch (err) {
+    toast('Lỗi xóa: ' + err.message, 'error');
+  }
+}
+window.clearHandledResetRequests = clearHandledResetRequests;
+
+async function clearAllResetRequests() {
+  if (!confirm('⚠️ CẢNH BÁO NGUY HIỂM:\n\nBạn có chắc chắn muốn XÓA VĨNH VIỄN TOÀN BỘ danh sách yêu cầu cấp lại mật khẩu trong hệ thống?')) return;
+  try {
+    const res = await api('/auth/reset-requests?scope=all', { method: 'DELETE' });
+    toast(res.message || 'Đã xóa toàn bộ yêu cầu cấp lại mật khẩu!', 'success');
+    loadResetRequests();
+  } catch (err) {
+    toast('Lỗi xóa toàn bộ: ' + err.message, 'error');
+  }
+}
+window.clearAllResetRequests = clearAllResetRequests;
 
 async function loadPendingFarmerUsers() {
   const tbody = document.getElementById('pending-users-table');

@@ -2286,13 +2286,21 @@
         <!-- Pane: Password Reset Requests -->
         <div class="tab-pane" id="pane-user-resets" style="display:none;">
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
-            <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
                 <i class="fa-solid fa-key" style="color:#dc2626"></i> Danh sách Yêu cầu Cấp lại Mật khẩu
               </h3>
-              <button class="btn btn-secondary btn-sm" onclick="loadResetRequests()" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer;">
-                <i class="fa-solid fa-rotate"></i> Làm mới
-              </button>
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="clearHandledResetRequests()" style="background:#f8fafc; color:#475569; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Xóa toàn bộ các yêu cầu đã duyệt hoặc đã từ chối">
+                  <i class="fa-solid fa-broom" style="color:#64748b;"></i> Xóa đã xử lý
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllResetRequests()" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Xóa vĩnh viễn toàn bộ yêu cầu cấp mật khẩu">
+                  <i class="fa-solid fa-trash-can" style="color:#e11d48;"></i> Xóa tất cả vĩnh viễn
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="loadResetRequests()" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+                  <i class="fa-solid fa-rotate"></i> Làm mới
+                </button>
+              </div>
             </div>
             <table>
               <thead>
@@ -2301,7 +2309,7 @@
                   <th>Thông tin đã gửi</th>
                   <th>Thời gian gửi</th>
                   <th>Trạng thái</th>
-                  <th style="width:140px; text-align:center;">Thao tác</th>
+                  <th style="width:170px; text-align:center;">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="reset-requests-table">

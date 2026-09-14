@@ -209,5 +209,57 @@ describe('Suite 1: Authentication, Password Hashing & RBAC Authorization', () =>
     expect(nonExistent).toBe(null);
   });
 
+  it('1.10 Should manage Password Reset Requests lifecycle: query, single deletion, and bulk purge', () => {
+    let resetRequests = [
+      { id: 1, user_id: 10, identity: '0937013131', status: 'pending', created_at: '2026-08-25T11:31:37Z' },
+      { id: 2, user_id: 11, identity: 'babyshark@tanbaocorp.vn', status: 'approved', created_at: '2026-07-20T11:33:06Z' },
+      { id: 3, user_id: 12, identity: 'user@tanbaocorp.vn', status: 'rejected', created_at: '2026-07-20T11:25:14Z' }
+    ];
+
+    // Single delete simulation
+    const deleteSingleRequest = (id) => {
+      const idx = resetRequests.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        const deleted = resetRequests.splice(idx, 1);
+        return { success: true, deleted: deleted[0] };
+      }
+      return { success: false };
+    };
+
+    // Bulk delete simulation (handled vs all)
+    const clearRequests = (scope) => {
+      if (scope === 'handled') {
+        const remaining = resetRequests.filter(r => r.status === 'pending');
+        const deletedCount = resetRequests.length - remaining.length;
+        resetRequests = remaining;
+        return { success: true, deleted_count: deletedCount };
+      } else {
+        const count = resetRequests.length;
+        resetRequests = [];
+        return { success: true, deleted_count: count };
+      }
+    };
+
+    // Test deleting single approved request #2
+    const res1 = deleteSingleRequest(2);
+    expect(res1.success).toBe(true);
+    expect(res1.deleted.id).toBe(2);
+    expect(resetRequests.length).toBe(2);
+
+    // Test clearing handled requests (should delete #3 rejected, keep #1 pending)
+    const res2 = clearRequests('handled');
+    expect(res2.success).toBe(true);
+    expect(res2.deleted_count).toBe(1);
+    expect(resetRequests.length).toBe(1);
+    expect(resetRequests[0].id).toBe(1);
+    expect(resetRequests[0].status).toBe('pending');
+
+    // Test clearing all requests
+    const res3 = clearRequests('all');
+    expect(res3.success).toBe(true);
+    expect(res3.deleted_count).toBe(1);
+    expect(resetRequests.length).toBe(0);
+  });
+
 });
 
