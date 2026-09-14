@@ -28,7 +28,7 @@ import { updateOfflineSyncBadge, triggerOfflineSync } from './core/offline-sync.
 // ── Modules ───────────────────────────────────────────────────
 import './modules/notifications.js';
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache, togglePlantMenu, closePlantMenu, openFarmerNfcListModal, fetchFarmerNfcStats } from './modules/plants.js';
+import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache, togglePlantMenu, closePlantMenu, openFarmerNfcListModal, fetchFarmerNfcStats, exportFarmerNfcCsv } from './modules/plants.js';
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput } from './modules/care-modal.js?v=2.8.0';
@@ -64,6 +64,7 @@ window.openFarmDetailView = openFarmDetailView;
 window.closeFarmDetailView = closeFarmDetailView;
 window.openFarmerNfcListModal = openFarmerNfcListModal;
 window.fetchFarmerNfcStats = fetchFarmerNfcStats;
+window.exportFarmerNfcCsv = exportFarmerNfcCsv;
 
 window.getActiveFarm = getActiveFarm;
 window.getFarmsCache = getFarmsCache;

@@ -41,6 +41,12 @@
           <input type="checkbox" id="db-nfc-sound-toggle" checked style="accent-color:#059669; width:16px; height:16px;">
           🔊 Âm thanh Ding / Bíp
         </label>
+        <button id="btn-export-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="exportAdminNfcInventoryCsv()" style="background:#ffffff; color:#047857; border:1.5px solid #10b981; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Xuất toàn bộ danh sách thẻ NFC ra file CSV / Excel với chuẩn UTF-8 tiếng Việt">
+          <i class="fa-solid fa-file-csv" style="font-size:15px; color:#059669;"></i> 📥 Xuất File CSV / Excel
+        </button>
+        <button id="btn-import-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="openAdminNfcImportModal()" style="background:#f0fdf4; color:#065f46; border:1.5px solid #059669; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Import danh sách thẻ NFC đối xứng từ file CSV / Excel vào kho">
+          <i class="fa-solid fa-file-import" style="font-size:15px; color:#059669;"></i> 📤 Import CSV / Excel
+        </button>
         <button class="btn btn-secondary btn-sm" onclick="unassignAllAdminNfcTags()" style="background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Gỡ toàn bộ thẻ NFC đã gán cho tất cả cây trong trang trại này (chuyển về trạng thái sẵn sàng trong kho)">
           <i class="fa-solid fa-link-slash"></i> Gỡ hết thẻ đã gán
         </button>

@@ -250,4 +250,221 @@ describe('Suite 11: NFC & GPS Full Lifecycle, Deep Link & Public Map Coordinate 
     expect(checkGpsPermission(otherUser, plantInFarm10, farm10)).toBe(false);
   });
 
+  it('11.7 Should export NFC inventory to UTF-8 BOM CSV with complete column schema and quote escaping', () => {
+    const buildNfcCsvExport = (tags) => {
+      const headers = [
+        'STT',
+        'Mã Thẻ NFC (UID)',
+        'Trạng Thái',
+        'Mã Cây Gắn',
+        'Loại Cây / Giống',
+        'Vị Trí',
+        'Vĩ Độ (Lat)',
+        'Kinh Độ (Lng)',
+        'Link Public URL',
+        'Thời Gian Nhập Kho'
+      ];
+
+      const escapeCsv = (val) => {
+        if (val === null || val === undefined) return '""';
+        const s = String(val).replace(/"/g, '""');
+        return `"${s}"`;
+      };
+
+      const csvRows = [headers.map(escapeCsv).join(',')];
+
+      tags.forEach((t, idx) => {
+        const isAssigned = t.status === 'assigned';
+        const statusText = isAssigned ? 'Đã gán cây' : 'Còn trống (Sẵn sàng)';
+        const treeCodeText = t.tree_code != null ? String(t.tree_code) : (t.plant_id ? String(t.plant_id) : '');
+        const plantTypeDesc = t.plant_variety ? `${t.plant_type || ''} (${t.plant_variety})` : (t.plant_type || '');
+        const locationText = t.location || '';
+        const latStr = t.latitude != null ? Number(t.latitude).toFixed(6) : '';
+        const lngStr = t.longitude != null ? Number(t.longitude).toFixed(6) : '';
+        const publicUrl = t.public_url || '';
+        const timeStr = t.scanned_at || '';
+
+        const row = [
+          idx + 1,
+          t.nfc_uid || '',
+          statusText,
+          treeCodeText,
+          plantTypeDesc,
+          locationText,
+          latStr,
+          lngStr,
+          publicUrl,
+          timeStr
+        ];
+
+        csvRows.push(row.map(escapeCsv).join(','));
+      });
+
+      return '\uFEFF' + csvRows.join('\r\n');
+    };
+
+    const mockTags = [
+      { id: 1, nfc_uid: '04:20:CF:5A:25:20:91', status: 'assigned', tree_code: '12', plant_type: 'Sầu riêng', plant_variety: 'Ri6', location: 'Khu A, Hàng 1', latitude: 10.762622, longitude: 106.660172, public_url: 'https://plant-book.onrender.com/1/12/04%3A20%3ACF%3A5A%3A25%3A20%3A91', scanned_at: '14/09/2026 16:30:00' },
+      { id: 2, nfc_uid: '04:21:D1:5A:25:20:92', status: 'unassigned', tree_code: null, plant_type: null, plant_variety: null, location: null, latitude: null, longitude: null, public_url: null, scanned_at: '14/09/2026 16:31:00' }
+    ];
+
+    const csvOutput = buildNfcCsvExport(mockTags);
+
+    expect(csvOutput.startsWith('\uFEFF')).toBe(true); // UTF-8 BOM present
+    expect(csvOutput).toContain('Mã Thẻ NFC (UID)');
+    expect(csvOutput).toContain('04:20:CF:5A:25:20:91');
+    expect(csvOutput).toContain('Đã gán cây');
+    expect(csvOutput).toContain('"Khu A, Hàng 1"'); // Comma in location correctly escaped
+    expect(csvOutput).toContain('10.762622');
+    expect(csvOutput).toContain('106.660172');
+    expect(csvOutput).toContain('04:21:D1:5A:25:20:92');
+    expect(csvOutput).toContain('Còn trống (Sẵn sàng)');
+  });
+
+  it('11.8 Should parse exported CSV symmetrically, handle various delimiters, normalize hex UIDs, detect duplicates, and extract tree codes & GPS coordinates', () => {
+    const parseNfcCsv = (text) => {
+      if (!text || typeof text !== 'string') return { totalRows: 0, items: [], validTags: [], duplicates: [], treeCount: 0 };
+      let cleanText = text.replace(/^\uFEFF/, '').trim();
+      if (!cleanText) return { totalRows: 0, items: [], validTags: [], duplicates: [], treeCount: 0 };
+
+      const lines = cleanText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) return { totalRows: 0, items: [], validTags: [], duplicates: [], treeCount: 0 };
+
+      let delimiter = ',';
+      if ((lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length) delimiter = ';';
+      else if ((lines[0].match(/\t/g) || []).length > (lines[0].match(/,/g) || []).length) delimiter = '\t';
+
+      const parseRow = (line) => {
+        const cells = [];
+        let cur = '';
+        let inQuote = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (c === '"') {
+            if (inQuote && line[i + 1] === '"') {
+              cur += '"';
+              i++;
+            } else {
+              inQuote = !inQuote;
+            }
+          } else if (c === delimiter && !inQuote) {
+            cells.push(cur.trim());
+            cur = '';
+          } else {
+            cur += c;
+          }
+        }
+        cells.push(cur.trim());
+        return cells;
+      };
+
+      const headerCells = parseRow(lines[0]).map(c => c.toLowerCase().trim());
+      let uidIdx = -1;
+      let treeIdx = -1;
+      let latIdx = -1;
+      let lngIdx = -1;
+      let locIdx = -1;
+      let hasHeader = false;
+
+      headerCells.forEach((h, idx) => {
+        if (h.includes('mã thẻ') || h.includes('uid') || h.includes('nfc') || h === 'tag' || h === 'mã uid') {
+          if (uidIdx === -1) uidIdx = idx;
+          hasHeader = true;
+        } else if ((h.includes('mã cây') || h.includes('số cây') || h.includes('tree_code') || h.includes('plant_id') || h === 'cây' || h === 'tree' || h === 'mã cây gắn') && !h.includes('loại cây') && !h.includes('giống')) {
+          if (treeIdx === -1) treeIdx = idx;
+          hasHeader = true;
+        } else if (h.includes('vĩ độ') || h.includes('latitude') || h === 'lat') {
+          if (latIdx === -1) latIdx = idx;
+          hasHeader = true;
+        } else if (h.includes('kinh độ') || h.includes('longitude') || h === 'lng' || h === 'lon') {
+          if (lngIdx === -1) lngIdx = idx;
+          hasHeader = true;
+        } else if (h.includes('vị trí') || h.includes('location') || h.includes('khu')) {
+          if (locIdx === -1) locIdx = idx;
+          hasHeader = true;
+        }
+      });
+
+      let startRow = hasHeader ? 1 : 0;
+      if (uidIdx === -1) uidIdx = (headerCells.length > 1 && /^\d+$/.test(headerCells[0])) ? 1 : 0;
+
+      const items = [];
+      const seenUids = new Set();
+      const duplicates = [];
+      let treeCount = 0;
+
+      for (let r = startRow; r < lines.length; r++) {
+        const row = parseRow(lines[r]);
+        if (!row || row.length === 0 || row.every(c => !c)) continue;
+
+        let rawUid = (row[uidIdx] || row[0] || '').replace(/["']/g, '').trim().toUpperCase();
+        if (/^[0-9A-F]{14}$/i.test(rawUid)) {
+          rawUid = rawUid.match(/.{2}/g).join(':').toUpperCase();
+        } else if (rawUid.includes('-')) {
+          rawUid = rawUid.replace(/-/g, ':').toUpperCase();
+        }
+
+        const isLikelyUid = /^[0-9A-F]{2}(:[0-9A-F]{2}){3,9}$/i.test(rawUid) || (rawUid.length >= 8 && /^[0-9A-F:]+$/i.test(rawUid));
+        if (!rawUid || !isLikelyUid) continue;
+
+        if (seenUids.has(rawUid)) {
+          duplicates.push(rawUid);
+          continue;
+        }
+        seenUids.add(rawUid);
+
+        const rawTree = treeIdx !== -1 && row[treeIdx] ? row[treeIdx].replace(/["']/g, '').trim() : '';
+        const rawLat = latIdx !== -1 && row[latIdx] ? row[latIdx].replace(/["']/g, '').trim() : null;
+        const rawLng = lngIdx !== -1 && row[lngIdx] ? row[lngIdx].replace(/["']/g, '').trim() : null;
+        const rawLoc = locIdx !== -1 && row[locIdx] ? row[locIdx].replace(/["']/g, '').trim() : '';
+
+        if (rawTree) treeCount++;
+
+        items.push({
+          uid: rawUid,
+          tree_code: rawTree,
+          latitude: rawLat,
+          longitude: rawLng,
+          location: rawLoc
+        });
+      }
+
+      return { totalRows: lines.length - (hasHeader ? 1 : 0), items, validTags: items, duplicates, treeCount };
+    };
+
+    // Case 1: Standard exported CSV symmetrical roundtrip
+    const sampleCsv = `\uFEFF"STT","Mã Thẻ NFC (UID)","Trạng Thái","Mã Cây Gắn","Loại Cây / Giống","Vị Trí","Vĩ Độ (Lat)","Kinh Độ (Lng)","Link Public URL","Thời Gian Nhập Kho"
+"1","04:20:CF:5A:25:20:91","Đã gán cây","12","Sầu riêng (Ri6)","Khu A, Hàng 1","10.762622","106.660172","https://...","14/09/2026 16:30:00"
+"2","04:21:D1:5A:25:20:92","Còn trống (Sẵn sàng)","","","","","","","14/09/2026 16:31:00"
+"3","04:20:CF:5A:25:20:91","Đã gán cây","12","Trùng lặp","","","","",""`;
+
+    const parsed1 = parseNfcCsv(sampleCsv);
+    expect(parsed1.totalRows).toBe(3);
+    expect(parsed1.items.length).toBe(2); // 1 duplicate filtered
+    expect(parsed1.duplicates.length).toBe(1);
+    expect(parsed1.duplicates[0]).toBe('04:20:CF:5A:25:20:91');
+    expect(parsed1.treeCount).toBe(1);
+    expect(parsed1.items[0].uid).toBe('04:20:CF:5A:25:20:91');
+    expect(parsed1.items[0].tree_code).toBe('12');
+    expect(parsed1.items[0].location).toBe('Khu A, Hàng 1');
+    expect(parsed1.items[0].latitude).toBe('10.762622');
+    expect(parsed1.items[0].longitude).toBe('106.660172');
+
+    // Case 2: Raw continuous hex without separators
+    const rawHexCsv = `UID\n0420CF5A252091\n0421D15A252092`;
+    const parsed2 = parseNfcCsv(rawHexCsv);
+    expect(parsed2.items.length).toBe(2);
+    expect(parsed2.items[0].uid).toBe('04:20:CF:5A:25:20:91');
+    expect(parsed2.items[1].uid).toBe('04:21:D1:5A:25:20:92');
+
+    // Case 3: Semicolon-delimited CSV with hyphens
+    const semicolonCsv = `STT;Mã Thẻ;Số Cây;Vĩ Độ;Kinh Độ\n1;04-20-CF-5A-25-20-91;SR-01;12.679636;108.053804`;
+    const parsed3 = parseNfcCsv(semicolonCsv);
+    expect(parsed3.items.length).toBe(1);
+    expect(parsed3.items[0].uid).toBe('04:20:CF:5A:25:20:91');
+    expect(parsed3.items[0].tree_code).toBe('SR-01');
+    expect(parsed3.items[0].latitude).toBe('12.679636');
+    expect(parsed3.items[0].longitude).toBe('108.053804');
+  });
+
 });

@@ -911,6 +911,166 @@ router.post('/farms/:farmId/nfc-inventory/batch', auth, async (req, res) => {
   }
 });
 
+// ─── Symmetrical Import NFC Inventory (CSV / Excel items with auto-assign & GPS) ──
+router.post('/farms/:farmId/nfc-inventory/import', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+
+    // Verify access
+    if (req.user.role !== 'admin') {
+      const farmCheck = await client.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
+      if (farmCheck.rows.length === 0 || (farmCheck.rows[0].user_id !== req.user.id && req.user.farm_id !== farmId)) {
+        return res.status(403).json({ error: 'Không có quyền import kho thẻ của trang trại này.' });
+      }
+    }
+
+    const { items, auto_assign = true, update_gps = true, skip_duplicates = true } = req.body;
+    const rawList = Array.isArray(items) ? items : [];
+
+    if (rawList.length === 0) {
+      return res.status(400).json({ error: 'Dữ liệu import rỗng hoặc không đúng định dạng.' });
+    }
+
+    await client.query('BEGIN');
+
+    let addedCount = 0;
+    let assignedCount = 0;
+    let gpsUpdatedCount = 0;
+    const duplicates = [];
+
+    for (const item of rawList) {
+      if (!item) continue;
+      const rawUid = typeof item === 'string' ? item : item.uid;
+      if (!rawUid || typeof rawUid !== 'string') continue;
+      const cleanUid = decodeURIComponent(rawUid).trim().toUpperCase();
+      if (!cleanUid) continue;
+
+      // Check if tag already exists in inventory
+      const existingTag = await client.query(
+        'SELECT id, farm_id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)',
+        [cleanUid]
+      );
+
+      let tagId = null;
+      let isNew = false;
+
+      if (existingTag.rows.length > 0) {
+        const existing = existingTag.rows[0];
+        if (existing.farm_id !== farmId) {
+          duplicates.push({ uid: cleanUid, reason: `Thẻ đã thuộc trang trại khác (#${existing.farm_id})` });
+          continue;
+        }
+        tagId = existing.id;
+        duplicates.push({ uid: cleanUid, reason: 'Thẻ đã có sẵn trong kho trang trại này.' });
+      } else {
+        // Insert new inventory tag
+        const insertRes = await client.query(
+          `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, created_by)
+           VALUES ($1, $2, 'unassigned', $3)
+           RETURNING id`,
+          [farmId, cleanUid, req.user.id]
+        );
+        tagId = insertRes.rows[0].id;
+        addedCount++;
+        isNew = true;
+      }
+
+      // Auto-assign to plant if tree_code or plant_id is provided
+      if (auto_assign && (item.tree_code || item.plant_id)) {
+        let plant = null;
+
+        if (item.plant_id && !isNaN(parseInt(item.plant_id))) {
+          const pRes = await client.query(
+            'SELECT id, tree_code, nfc_uid, latitude, longitude FROM plants WHERE id = $1 AND farm_id = $2',
+            [parseInt(item.plant_id), farmId]
+          );
+          if (pRes.rows.length > 0) plant = pRes.rows[0];
+        }
+
+        if (!plant && item.tree_code) {
+          const rawCode = String(item.tree_code).trim();
+          const cleanCode = rawCode.replace(/^cây\s*#/i, '').replace(/^#/i, '').trim();
+          const pRes = await client.query(
+            `SELECT id, tree_code, nfc_uid, latitude, longitude FROM plants 
+             WHERE farm_id = $1 AND (UPPER(tree_code) = UPPER($2) OR UPPER(tree_code) = UPPER($3) OR id::text = $3)
+             LIMIT 1`,
+            [farmId, rawCode, cleanCode]
+          );
+          if (pRes.rows.length > 0) plant = pRes.rows[0];
+        }
+
+        if (plant) {
+          const targetPlantId = plant.id;
+          const publicUrl = generatePublicPlantUrl(farmId, targetPlantId, cleanUid);
+
+          // Parse GPS coordinates if available
+          let validLat = null;
+          let validLng = null;
+          if (update_gps && item.latitude != null && item.longitude != null) {
+            const parsedLat = parseFloat(item.latitude);
+            const parsedLng = parseFloat(item.longitude);
+            if (!isNaN(parsedLat) && !isNaN(parsedLng) && Math.abs(parsedLat) <= 90 && Math.abs(parsedLng) <= 180 && (parsedLat !== 0 || parsedLng !== 0)) {
+              validLat = parsedLat;
+              validLng = parsedLng;
+            }
+          }
+
+          if (validLat !== null && validLng !== null) {
+            await client.query(
+              `UPDATE plants 
+               SET nfc_uid = $1, latitude = $2, longitude = $3, public_url = $4, updated_at = NOW() 
+               WHERE id = $5`,
+              [cleanUid, validLat, validLng, publicUrl, targetPlantId]
+            );
+            gpsUpdatedCount++;
+          } else {
+            await client.query(
+              `UPDATE plants 
+               SET nfc_uid = $1, public_url = $2, updated_at = NOW() 
+               WHERE id = $3`,
+              [cleanUid, publicUrl, targetPlantId]
+            );
+          }
+
+          // Update inventory status to assigned
+          await client.query(
+            `UPDATE nfc_tags_inventory 
+             SET status = 'assigned', plant_id = $1, tagged_at = NOW() 
+             WHERE id = $2`,
+            [targetPlantId, tagId]
+          );
+
+          assignedCount++;
+        }
+      }
+    }
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { farm_id: farmId, action: 'nfc_imported' });
+
+    res.json({
+      success: true,
+      total_processed: rawList.length,
+      added_count: addedCount,
+      assigned_count: assignedCount,
+      gps_updated_count: gpsUpdatedCount,
+      duplicate_count: duplicates.length,
+      duplicates,
+      message: `Đã nhập thành công ${addedCount} thẻ mới vào kho.${assignedCount > 0 ? ` Đã tự động gán cho ${assignedCount} cây trồng.` : ''}${gpsUpdatedCount > 0 ? ` Cập nhật ${gpsUpdatedCount} tọa độ GPS.` : ''}${duplicates.length > 0 ? ` (${duplicates.length} thẻ trùng đã bỏ qua)` : ''}`
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error importing NFC inventory:', err);
+    res.status(500).json({ error: 'Lỗi server khi import kho thẻ: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // ─── Unassign ALL tags from plants in a farm ─────────────────────────────────
 router.post('/farms/:farmId/nfc-inventory/unassign-all', auth, async (req, res) => {
   const client = await pool.connect();

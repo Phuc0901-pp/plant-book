@@ -1174,6 +1174,97 @@ function renderUserNfcInventoryTable(tags) {
   }).join('');
 }
 
+/**
+ * Export Farmer NFC Tags list to CSV with UTF-8 BOM
+ */
+export async function exportFarmerNfcCsv() {
+  try {
+    const farmId = _userInvFarmId || getActiveUserFarmId();
+    if (!farmId) {
+      if (window.toast) window.toast('Chưa xác định trang trại!', 'error');
+      return;
+    }
+
+    let tags = _userNfcInventoryCache;
+    if (!tags || tags.length === 0) {
+      const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
+      tags = res.tags || res.items || [];
+    }
+
+    if (!tags || tags.length === 0) {
+      if (window.toast) window.toast('Trang trại hiện chưa có thẻ NFC nào để xuất!', 'error');
+      return;
+    }
+
+    const farmObj = (_farmsCache || []).find(f => f.id == farmId);
+    const farmName = farmObj ? farmObj.name : `TrangTrai_${farmId}`;
+    const cleanFarmName = farmName.replace(/[^a-zA-Z0-9\u00C0-\u1EF9]/g, '_').replace(/_+/g, '_');
+
+    const headers = [
+      'STT',
+      'Mã Thẻ NFC (UID)',
+      'Trạng Thái',
+      'Cây Gán Thực Địa',
+      'Loại Cây / Giống',
+      'Vị Trí',
+      'Vĩ Độ (Lat)',
+      'Kinh Độ (Lng)',
+      'Thời Gian Cấp'
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const s = String(val).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const csvRows = [headers.map(escapeCsv).join(',')];
+    tags.forEach((t, idx) => {
+      const isAssigned = t.status === 'assigned';
+      const statusText = isAssigned ? 'Đã gán cây' : 'Chưa gán';
+      const treeText = (isAssigned && (t.tree_code || t.plant_id)) ? (t.tree_code ? `Cây #${t.tree_code}` : `Cây #${t.plant_id}`) : '—';
+      const plantTypeDesc = t.plant_variety ? `${t.plant_type || 'Cây'} (${t.plant_variety})` : (t.plant_type || '');
+      const locationText = t.location || (t.plant_data && (t.plant_data.tag_position || t.plant_data.location)) || '';
+      const hasGps = t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0);
+      const latStr = hasGps ? Number(t.latitude).toFixed(6) : '';
+      const lngStr = hasGps ? Number(t.longitude).toFixed(6) : '';
+      const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '';
+
+      csvRows.push([
+        idx + 1,
+        t.nfc_uid || '',
+        statusText,
+        treeText,
+        plantTypeDesc,
+        locationText,
+        latStr,
+        lngStr,
+        timeStr
+      ].map(escapeCsv).join(','));
+    });
+
+    const csvContent = '\uFEFF' + csvRows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Danh_Sach_The_NFC_${cleanFarmName}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    if (window.toast) window.toast(`📥 Đã xuất danh sách ${tags.length} thẻ NFC thành công!`, 'success');
+  } catch (err) {
+    console.error('Error exporting farmer NFC CSV:', err);
+    if (window.toast) window.toast('Lỗi xuất file: ' + err.message, 'error');
+  }
+}
+window.exportFarmerNfcCsv = exportFarmerNfcCsv;
+
 // ── In-Field Walk & GPS Tagging Controller ──────────────────────────
 let _userFieldTagFarmId = null;
 let _userFieldTagPlants = [];

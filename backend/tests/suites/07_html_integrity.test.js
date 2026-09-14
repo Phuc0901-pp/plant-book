@@ -125,7 +125,12 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
       'db-nfc-quick-input',
       'db-nfc-inventory-table-body',
       'nfc-inv-farm-select',
-      'nfc-inventory-modal'
+      'nfc-inventory-modal',
+      'btn-export-admin-nfc-csv',
+      'btn-import-admin-nfc-csv',
+      'nfc-import-modal',
+      'nfc-import-file-input',
+      'btn-submit-nfc-import'
     ];
 
     adminNfcIds.forEach(id => {
