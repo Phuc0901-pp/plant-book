@@ -1219,34 +1219,91 @@ window.closeFieldTaggingModal = closeFieldTaggingModal;
 function renderUserCurrentFieldTree() {
   if (!_userFieldTagPlants || _userFieldTagPlants.length === 0) {
     const treeDisplay = document.getElementById('field-tag-current-tree-display');
-    if (treeDisplay) treeDisplay.innerHTML = '<span style="color:#ef4444;">Trang trại chưa có cây nào. Hãy tạo cây trước!</span>';
+    if (treeDisplay) treeDisplay.innerHTML = '<span style="color:#ef4444; font-size:14px; font-weight:700;">Trang trại chưa có cây nào. Hãy tạo cây trước!</span>';
     return;
   }
 
   const p = _userFieldTagPlants[_userFieldTagIndex];
   if (!p) return;
 
+  const total = _userFieldTagPlants.length;
+  const currentNum = _userFieldTagIndex + 1;
+  const assignedCount = _userFieldTagPlants.filter(item => item.nfc_uid).length;
+
+  const progressBadgeEl = document.getElementById('field-tag-progress-badge');
+  if (progressBadgeEl) {
+    progressBadgeEl.innerHTML = `Cây ${currentNum}/${total} &nbsp;·&nbsp; Đã gán: <strong>${assignedCount}/${total}</strong>`;
+  }
+
   const treeCodeEl = document.getElementById('field-tag-tree-code');
   const plantTypeEl = document.getElementById('field-tag-plant-type');
   const currentUidEl = document.getElementById('field-tag-current-uid');
+  const statusPillEl = document.getElementById('field-tag-status-pill');
   const urlPreviewEl = document.getElementById('field-tag-public-url-preview');
   const nextCodeEl = document.getElementById('field-tag-next-code');
+  const prevBtn = document.getElementById('btn-field-prev-tree');
+  const nextBtn = document.getElementById('btn-field-next-tree');
+
+  if (prevBtn) {
+    prevBtn.disabled = _userFieldTagIndex === 0;
+    prevBtn.style.opacity = _userFieldTagIndex === 0 ? '0.4' : '1';
+    prevBtn.style.cursor = _userFieldTagIndex === 0 ? 'not-allowed' : 'pointer';
+  }
+  if (nextBtn) {
+    nextBtn.disabled = _userFieldTagIndex >= total - 1;
+    nextBtn.style.opacity = _userFieldTagIndex >= total - 1 ? '0.4' : '1';
+    nextBtn.style.cursor = _userFieldTagIndex >= total - 1 ? 'not-allowed' : 'pointer';
+  }
 
   if (treeCodeEl) treeCodeEl.textContent = p.tree_code || p.id;
-  if (plantTypeEl) plantTypeEl.textContent = `${p.plant_type || 'Cây'} ${p.plant_variety ? '— ' + p.plant_variety : ''}`;
+  if (plantTypeEl) {
+    const typeStr = p.plant_type || 'Cây ăn trái';
+    const varietyStr = p.plant_variety ? ` — Giống: ${p.plant_variety.replace(/\(durian\)|\(mango\)|\(avocado\)/gi, '').trim()}` : '';
+    plantTypeEl.textContent = `${typeStr}${varietyStr}`;
+  }
   
   if (currentUidEl) {
-    currentUidEl.textContent = p.nfc_uid ? `Thẻ đã gán: ${p.nfc_uid}` : 'Chưa gán thẻ NFC';
-    currentUidEl.style.color = p.nfc_uid ? '#047857' : '#94a3b8';
+    if (p.nfc_uid) {
+      currentUidEl.innerHTML = `<span style="color:#059669; font-weight:800; font-family:ui-monospace, monospace;">${p.nfc_uid}</span>`;
+    } else {
+      currentUidEl.innerHTML = `<span style="color:#94a3b8; font-style:italic; font-weight:600;">Chưa liên kết thẻ NFC</span>`;
+    }
+  }
+
+  if (statusPillEl) {
+    if (p.nfc_uid) {
+      statusPillEl.textContent = '✅ ĐÃ GÁN THẺ';
+      statusPillEl.style.background = '#ecfdf5';
+      statusPillEl.style.color = '#047857';
+      statusPillEl.style.border = '1px solid #a7f3d0';
+    } else {
+      statusPillEl.textContent = '⚪ CHƯA GÁN';
+      statusPillEl.style.background = '#f1f5f9';
+      statusPillEl.style.color = '#64748b';
+      statusPillEl.style.border = '1px solid #e2e8f0';
+    }
   }
 
   const pubUrl = p.public_url || `https://plant-book.onrender.com/${p.farm_id || _userFieldTagFarmId}/${p.id}${p.nfc_uid ? '/' + encodeURIComponent(p.nfc_uid) : ''}`;
   if (urlPreviewEl) {
-    urlPreviewEl.innerHTML = `<a href="${pubUrl}" target="_blank" style="color:#7c3aed; text-decoration:none; font-weight:700;"><i class="fa-solid fa-link"></i> ${pubUrl}</a>`;
+    if (p.nfc_uid) {
+      urlPreviewEl.innerHTML = `
+        <div style="display:flex; align-items:center; gap:6px;">
+          <a href="${pubUrl}" target="_blank" style="color:#4f46e5; text-decoration:none; font-weight:700; font-size:11.5px; display:inline-flex; align-items:center; gap:4px; background:#eef2ff; padding:3px 8px; border-radius:6px; border:1px solid #c7d2fe;" title="Mở trang nhật ký công khai">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem Web Public
+          </a>
+          <button type="button" onclick="navigator.clipboard.writeText('${pubUrl}'); if(window.toast) toast('Đã sao chép link công khai!'); else alert('Đã sao chép link!');" style="background:#f8fafc; border:1px solid #cbd5e1; color:#475569; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" title="Sao chép link">
+            <i class="fa-solid fa-copy"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      urlPreviewEl.innerHTML = `<span style="color:#94a3b8; font-size:11px;">Sẵn sàng gán URL NDEF</span>`;
+    }
   }
 
   const nextPlant = _userFieldTagPlants[_userFieldTagIndex + 1];
-  if (nextCodeEl) nextCodeEl.textContent = nextPlant ? (nextPlant.tree_code || nextPlant.id) : 'Hết danh sách';
+  if (nextCodeEl) nextCodeEl.textContent = nextPlant ? (nextPlant.tree_code || nextPlant.id) : 'Hết vườn';
 }
 
 export function prevFieldTree() {
@@ -1264,6 +1321,25 @@ export function nextFieldTree() {
   }
 }
 window.nextFieldTree = nextFieldTree;
+
+export function jumpToFieldTreeByCode() {
+  const jumpInput = document.getElementById('field-tag-jump-code');
+  if (!jumpInput || !_userFieldTagPlants || _userFieldTagPlants.length === 0) return;
+  const targetCode = parseInt(jumpInput.value.trim());
+  if (isNaN(targetCode)) return;
+
+  const idx = _userFieldTagPlants.findIndex(p => (parseInt(p.tree_code || p.id) === targetCode || p.id === targetCode));
+  if (idx !== -1) {
+    _userFieldTagIndex = idx;
+    renderUserCurrentFieldTree();
+    refreshFieldGps();
+    jumpInput.value = '';
+  } else {
+    if (window.toast) toast(`Không tìm thấy cây số #${targetCode} trong trang trại này!`, 'warning');
+    else alert(`Không tìm thấy cây số #${targetCode} trong trang trại này!`);
+  }
+}
+window.jumpToFieldTreeByCode = jumpToFieldTreeByCode;
 
 export function refreshFieldGps() {
   const latEl = document.getElementById('field-tag-lat');
