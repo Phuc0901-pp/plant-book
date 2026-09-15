@@ -3352,11 +3352,147 @@ async function openAdminFarmA4ExportModal(map) {
       input.setAttribute('value', input.value);
     });
 
-    // Render static crisp snapshot over live viewport for print window
+    // Render static crisp snapshot with vertex markers, edge badges, contours & custom points
     try {
       if (a4Map) {
         const mapCanvas = a4Map.getCanvas();
-        const mapDataUrl = mapCanvas.toDataURL('image/png', 1.0);
+        const compositeCanvas = document.createElement('canvas');
+        compositeCanvas.width = mapCanvas.width;
+        compositeCanvas.height = mapCanvas.height;
+        const ctx = compositeCanvas.getContext('2d');
+
+        // 1. Draw base WebGL map canvas
+        ctx.drawImage(mapCanvas, 0, 0);
+
+        // 2. Compute pixel scaling factors
+        const scaleX = mapCanvas.width / (mapCanvas.clientWidth || 1);
+        const scaleY = mapCanvas.height / (mapCanvas.clientHeight || 1);
+
+        // 3. Draw edge measurement pill badges (DA, CD, AB...)
+        if (uniquePts && uniquePts.length >= 2) {
+          for (let i = 0; i < uniquePts.length; i++) {
+            const p1 = uniquePts[i];
+            const p2 = uniquePts[(i + 1) % uniquePts.length];
+            const len = getDist(p1, p2);
+            const midLng = (p1[0] + p2[0]) / 2;
+            const midLat = (p1[1] + p2[1]) / 2;
+            const v1 = getVertexLabel(i);
+            const v2 = getVertexLabel((i + 1) % uniquePts.length);
+            const labelText = `${v1}${v2}: ${len.toLocaleString('vi-VN')} m`;
+
+            const pix = a4Map.project([midLng, midLat]);
+            const cx = pix.x * scaleX;
+            const cy = pix.y * scaleY;
+
+            ctx.font = `bold ${Math.round(10 * scaleX)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            const textMetrics = ctx.measureText(labelText);
+            const textWidth = textMetrics.width;
+            const padX = 7 * scaleX;
+            const iconOffset = 10 * scaleX;
+            const badgeW = textWidth + padX * 2 + iconOffset;
+            const badgeH = 18 * scaleY;
+            const rx = cx - badgeW / 2;
+            const ry = cy - badgeH / 2;
+            const radius = 9 * scaleY;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(rx, ry, badgeW, badgeH, radius);
+            } else {
+              ctx.rect(rx, ry, badgeW, badgeH);
+            }
+            ctx.fill();
+
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 1.2 * scaleX;
+            ctx.stroke();
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`📐 ${labelText}`, cx, cy);
+          }
+        }
+
+        // 4. Draw Vertex Mốc Ranh Giới Đỉnh (A, B, C, D...)
+        if (uniquePts && uniquePts.length > 0) {
+          uniquePts.forEach((pt, idx) => {
+            const vLabel = getVertexLabel(idx);
+            const pix = a4Map.project(pt);
+            const cx = pix.x * scaleX;
+            const cy = pix.y * scaleY;
+            const radius = 11 * scaleX;
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 6 * scaleX;
+            ctx.shadowOffsetY = 2 * scaleY;
+
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2 * scaleX;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `900 ${Math.round(11 * scaleX)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(vLabel, cx, cy);
+          });
+        }
+
+        // 5. Draw Custom Interactive Points (Vị trí 1, 2, 3...)
+        const customNodes = document.querySelectorAll('.a4-custom-point-node');
+        if (customNodes && customNodes.length > 0) {
+          const frameRect = document.getElementById('a4-map-frame').getBoundingClientRect();
+          customNodes.forEach(node => {
+            const nodeRect = node.getBoundingClientRect();
+            const relX = (nodeRect.left - frameRect.left + nodeRect.width / 2);
+            const relY = (nodeRect.top - frameRect.top + nodeRect.height / 2);
+            const cx = relX * scaleX;
+            const cy = relY * scaleY;
+
+            const inputEl = node.querySelector('.pt-label-input');
+            const numSpan = node.querySelector('span');
+            const ptNum = numSpan ? numSpan.textContent.trim() : '';
+            const ptText = inputEl ? inputEl.value.trim() : '';
+            const fullText = `${ptNum ? ptNum + '. ' : ''}${ptText}`;
+
+            ctx.font = `bold ${Math.round(9.5 * scaleX)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            const textWidth = ctx.measureText(fullText).width;
+            const padX = 8 * scaleX;
+            const badgeW = textWidth + padX * 2;
+            const badgeH = 18 * scaleY;
+            const rx = cx - badgeW / 2;
+            const ry = cy - badgeH / 2;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(rx, ry, badgeW, badgeH, 9 * scaleY);
+            } else {
+              ctx.rect(rx, ry, badgeW, badgeH);
+            }
+            ctx.fill();
+
+            ctx.strokeStyle = '#ea580c';
+            ctx.lineWidth = 1.5 * scaleX;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(fullText, cx, cy);
+          });
+        }
+
+        const mapDataUrl = compositeCanvas.toDataURL('image/png', 1.0);
         let printImg = document.getElementById('a4-print-static-map-img');
         if (!printImg) {
           printImg = document.createElement('img');
@@ -3368,7 +3504,53 @@ async function openAdminFarmA4ExportModal(map) {
         printImg.src = mapDataUrl;
         printImg.style.display = 'block';
       }
-    } catch (_) {}
+
+      // Also snapshot cutout map if active
+      if (a4CutoutMap) {
+        const cutoutCanvas = a4CutoutMap.getCanvas();
+        const cutoutComposite = document.createElement('canvas');
+        cutoutComposite.width = cutoutCanvas.width;
+        cutoutComposite.height = cutoutCanvas.height;
+        const cCtx = cutoutComposite.getContext('2d');
+        cCtx.drawImage(cutoutCanvas, 0, 0);
+
+        if (uniquePts && uniquePts.length > 0) {
+          const cScaleX = cutoutCanvas.width / (cutoutCanvas.clientWidth || 1);
+          const cScaleY = cutoutCanvas.height / (cutoutCanvas.clientHeight || 1);
+          const cPix = a4CutoutMap.project(uniquePts[0]);
+          const ccx = cPix.x * cScaleX;
+          const ccy = cPix.y * cScaleY;
+          const cRadius = 10 * cScaleX;
+
+          cCtx.fillStyle = '#ef4444';
+          cCtx.beginPath();
+          cCtx.arc(ccx, ccy, cRadius, 0, Math.PI * 2);
+          cCtx.fill();
+          cCtx.strokeStyle = '#ffffff';
+          cCtx.lineWidth = 2 * cScaleX;
+          cCtx.stroke();
+          cCtx.fillStyle = '#ffffff';
+          cCtx.font = `900 ${Math.round(10 * cScaleX)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          cCtx.textAlign = 'center';
+          cCtx.textBaseline = 'middle';
+          cCtx.fillText('A', ccx, ccy);
+        }
+
+        const cutoutDataUrl = cutoutComposite.toDataURL('image/png', 1.0);
+        let cutoutImg = document.getElementById('a4-print-cutout-static-img');
+        if (!cutoutImg) {
+          cutoutImg = document.createElement('img');
+          cutoutImg.id = 'a4-print-cutout-static-img';
+          cutoutImg.style.cssText = 'width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:10; border-radius:50%;';
+          const cutoutContainer = document.getElementById('a4-cutout-map-container');
+          if (cutoutContainer) cutoutContainer.appendChild(cutoutImg);
+        }
+        cutoutImg.src = cutoutDataUrl;
+        cutoutImg.style.display = 'block';
+      }
+    } catch (err) {
+      console.warn('Lỗi vẽ composite canvas cho bản in:', err);
+    }
   };
 
   const cleanupPrintMode = () => {
@@ -3376,6 +3558,8 @@ async function openAdminFarmA4ExportModal(map) {
     if (paper) paper.classList.remove('a4-print-mode');
     const printImg = document.getElementById('a4-print-static-map-img');
     if (printImg) printImg.style.display = 'none';
+    const cutoutImg = document.getElementById('a4-print-cutout-static-img');
+    if (cutoutImg) cutoutImg.style.display = 'none';
   };
 
   document.getElementById('btn-do-print-a4').onclick = () => {
@@ -3392,9 +3576,13 @@ async function openAdminFarmA4ExportModal(map) {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
           @page { size: A4 landscape; margin: 0; }
-          body { margin: 0; padding: 0; background: #fff; }
-          #a4-drawing-paper { width: 297mm !important; height: 210mm !important; box-shadow: none !important; border-radius: 0 !important; }
+          body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          #a4-drawing-paper { width: 297mm !important; height: 210mm !important; box-shadow: none !important; border-radius: 0 !important; box-sizing: border-box; }
           .a4-edit-field { border: none !important; background: transparent !important; padding: 0 !important; box-shadow: none !important; }
+          #a4-print-static-map-img, #a4-print-cutout-static-img { display: block !important; }
+          .a4-custom-point-node .pt-del-btn { display: none !important; }
+          #a4-cutout-frame-handle, #btn-close-cutout-x { display: none !important; }
+          #btn-a4-main-zoom-in, #btn-a4-main-zoom-out, #btn-a4-main-zoom-reset { display: none !important; }
         </style>
       </head>
       <body>

@@ -921,9 +921,120 @@ export function openFarmA4ExportModal(map) {
     } catch (_) {}
   }
 
+  const getDist = (p1, p2) => {
+    const R = 6371000;
+    const rad = Math.PI / 180;
+    const dLat = (p2[1] - p1[1]) * rad;
+    const dLng = (p2[0] - p1[0]) * rad;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(p1[1] * rad) * Math.cos(p2[1] * rad) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+  };
+
+  const getVertexLabel = (idx) => {
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (idx < letters.length) return letters[idx];
+    return letters[Math.floor(idx / letters.length) - 1] + letters[idx % letters.length];
+  };
+
+  const uniquePts = [];
+  if (farmCoords && farmCoords.length >= 3) {
+    farmCoords.forEach(c => {
+      if (!uniquePts.some(p => Math.abs(p[0] - c[0]) < 1e-7 && Math.abs(p[1] - c[1]) < 1e-7)) {
+        uniquePts.push(c);
+      }
+    });
+  }
+
   let mapImageDataUrl = '';
   try {
-    mapImageDataUrl = map.getCanvas().toDataURL('image/png');
+    const mapCanvas = map.getCanvas();
+    const compositeCanvas = document.createElement('canvas');
+    compositeCanvas.width = mapCanvas.width;
+    compositeCanvas.height = mapCanvas.height;
+    const ctx = compositeCanvas.getContext('2d');
+    ctx.drawImage(mapCanvas, 0, 0);
+
+    const scaleX = mapCanvas.width / (mapCanvas.clientWidth || 1);
+    const scaleY = mapCanvas.height / (mapCanvas.clientHeight || 1);
+
+    // Draw edge labels
+    if (uniquePts.length >= 2) {
+      for (let i = 0; i < uniquePts.length; i++) {
+        const p1 = uniquePts[i];
+        const p2 = uniquePts[(i + 1) % uniquePts.length];
+        const len = getDist(p1, p2);
+        const midLng = (p1[0] + p2[0]) / 2;
+        const midLat = (p1[1] + p2[1]) / 2;
+        const v1 = getVertexLabel(i);
+        const v2 = getVertexLabel((i + 1) % uniquePts.length);
+        const labelText = `${v1}${v2}: ${len.toLocaleString('vi-VN')} m`;
+
+        const pix = map.project([midLng, midLat]);
+        const cx = pix.x * scaleX;
+        const cy = pix.y * scaleY;
+
+        ctx.font = `bold ${Math.round(10 * scaleX)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        const textMetrics = ctx.measureText(labelText);
+        const textWidth = textMetrics.width;
+        const padX = 7 * scaleX;
+        const iconOffset = 10 * scaleX;
+        const badgeW = textWidth + padX * 2 + iconOffset;
+        const badgeH = 18 * scaleY;
+        const rx = cx - badgeW / 2;
+        const ry = cy - badgeH / 2;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, badgeW, badgeH, 9 * scaleY);
+        else ctx.rect(rx, ry, badgeW, badgeH);
+        ctx.fill();
+
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 1.2 * scaleX;
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`📐 ${labelText}`, cx, cy);
+      }
+    }
+
+    // Draw vertex badges
+    if (uniquePts.length > 0) {
+      uniquePts.forEach((pt, idx) => {
+        const vLabel = getVertexLabel(idx);
+        const pix = map.project(pt);
+        const cx = pix.x * scaleX;
+        const cy = pix.y * scaleY;
+        const radius = 11 * scaleX;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 6 * scaleX;
+        ctx.shadowOffsetY = 2 * scaleY;
+
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2 * scaleX;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${Math.round(11 * scaleX)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(vLabel, cx, cy);
+      });
+    }
+
+    mapImageDataUrl = compositeCanvas.toDataURL('image/png');
   } catch (err) {
     console.warn('Cảnh báo chụp ảnh bản đồ:', err);
   }
@@ -937,27 +1048,21 @@ export function openFarmA4ExportModal(map) {
     });
   } catch (_) {}
 
-  const getDist = (p1, p2) => {
-    const R = 6371000;
-    const rad = Math.PI / 180;
-    const dLat = (p2[1] - p1[1]) * rad;
-    const dLng = (p2[0] - p1[0]) * rad;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(p1[1] * rad) * Math.cos(p2[1] * rad) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
-  };
-
   let edgeRowsHtml = '';
   let perimeter = 0;
 
   if (farmCoords && farmCoords.length >= 3) {
-    for (let i = 0; i < farmCoords.length - 1; i++) {
-      const len = getDist(farmCoords[i], farmCoords[i + 1]);
+    const n = uniquePts.length;
+    for (let i = 0; i < n; i++) {
+      const p1 = uniquePts[i];
+      const p2 = uniquePts[(i + 1) % n];
+      const len = getDist(p1, p2);
       perimeter += len;
+      const vStart = getVertexLabel(i);
+      const vEnd = getVertexLabel((i + 1) % n);
       edgeRowsHtml += `
         <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:4px; font-weight:600;">Cạnh ${i + 1} - ${i + 2}</td>
+          <td style="padding:4px; font-weight:600;">Đoạn ${vStart}${vEnd}</td>
           <td style="padding:4px; text-align:right; font-weight:700; color:#15803d;">${len.toLocaleString('vi-VN')} m</td>
         </tr>
       `;
