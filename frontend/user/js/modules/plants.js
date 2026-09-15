@@ -246,19 +246,111 @@ export function renderUserPlantsSummaryTable(plants) {
   tbody.innerHTML = sorted.slice(0, 3).map(p => _plantRow(p)).join('');
 }
 
+export const USER_PLANTS_PAGE_SIZE = 10;
+let _userPlantsCurrentPage = 1;
+let _currentFilteredUserPlants = [];
+
 /**
- * Render danh sách đầy đủ cây trồng ở tab Trang trại.
+ * Render danh sách đầy đủ cây trồng ở tab Trang trại (Phân trang 10 bản ghi/trang).
  * @param {Array} plants
+ * @param {number} [page=1]
  */
-export function renderUserPlantsTable(plants) {
+export function renderUserPlantsTable(plants, page = 1) {
+  _currentFilteredUserPlants = Array.isArray(plants) ? plants : [];
+  _userPlantsCurrentPage = page || 1;
+  renderUserPlantsTablePage();
+}
+
+export function goToUserPlantsPage(page) {
+  const totalPages = Math.ceil(_currentFilteredUserPlants.length / USER_PLANTS_PAGE_SIZE) || 1;
+  let targetPage = parseInt(page, 10) || 1;
+  if (targetPage < 1) targetPage = 1;
+  if (targetPage > totalPages) targetPage = totalPages;
+  _userPlantsCurrentPage = targetPage;
+  renderUserPlantsTablePage();
+}
+window.goToUserPlantsPage = goToUserPlantsPage;
+
+export function renderUserPlantsTablePage() {
   const tbody = document.getElementById('user-plants-table');
+  const pagInfo = document.getElementById('user-plants-pagination-info');
+  const pagBtns = document.getElementById('user-plants-pagination-btns');
+  const paginationContainer = document.getElementById('user-plants-pagination');
+
   if (!tbody) return;
-  if (!plants.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không tìm thấy cây trồng phù hợp</p></td></tr>';
+
+  const total = _currentFilteredUserPlants.length;
+  if (!total) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không tìm thấy cây trồng phù hợp</p></td></tr>';
+    if (pagInfo) pagInfo.textContent = 'Không có cây trồng nào';
+    if (pagBtns) pagBtns.innerHTML = '';
+    if (paginationContainer) paginationContainer.style.display = 'none';
     return;
   }
-  const sorted = sortPlantsByHealthThenId(plants);
-  tbody.innerHTML = sorted.map(p => _plantRow(p)).join('');
+
+  if (paginationContainer) paginationContainer.style.display = 'flex';
+
+  const sorted = sortPlantsByHealthThenId(_currentFilteredUserPlants);
+  const totalPages = Math.ceil(total / USER_PLANTS_PAGE_SIZE) || 1;
+  if (_userPlantsCurrentPage > totalPages) _userPlantsCurrentPage = totalPages;
+  if (_userPlantsCurrentPage < 1) _userPlantsCurrentPage = 1;
+
+  const startIndex = (_userPlantsCurrentPage - 1) * USER_PLANTS_PAGE_SIZE;
+  const endIndex = Math.min(startIndex + USER_PLANTS_PAGE_SIZE, total);
+  const pageItems = sorted.slice(startIndex, endIndex);
+
+  tbody.innerHTML = pageItems.map(p => _plantRow(p)).join('');
+
+  if (pagInfo) {
+    pagInfo.innerHTML = `Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> trên tổng số <strong>${total}</strong> cây (${totalPages} trang)`;
+  }
+
+  if (pagBtns) {
+    if (totalPages <= 1) {
+      pagBtns.innerHTML = '';
+      return;
+    }
+
+    let btnsHtml = `
+      <button type="button" class="btn btn-secondary btn-sm" onclick="goToUserPlantsPage(${_userPlantsCurrentPage - 1})" ${_userPlantsCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 11px; font-size:12px; font-weight:700; border-radius:6px;">
+        <i class="fa-solid fa-chevron-left"></i> Trước
+      </button>
+    `;
+
+    // Max 5 visible page numbers around current page
+    let startPage = Math.max(1, _userPlantsCurrentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) {
+      startPage = Math.max(1, endPage - 4);
+    }
+
+    if (startPage > 1) {
+      btnsHtml += `<button type="button" class="btn btn-secondary btn-sm" onclick="goToUserPlantsPage(1)" style="padding:5px 9px; font-size:12px; font-weight:700; border-radius:6px;">1</button>`;
+      if (startPage > 2) btnsHtml += `<span style="padding:2px 4px; color:#94a3b8; font-weight:700;">...</span>`;
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      const isActive = p === _userPlantsCurrentPage;
+      btnsHtml += `
+        <button type="button" class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-secondary'}" onclick="goToUserPlantsPage(${p})" style="padding:5px 10px; font-size:12px; font-weight:${isActive ? '800' : '700'}; border-radius:6px; ${isActive ? 'background:#059669; border-color:#059669; color:#fff; box-shadow:0 2px 6px rgba(5,150,105,0.25);' : ''}">
+          ${p}
+        </button>
+      `;
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) btnsHtml += `<span style="padding:2px 4px; color:#94a3b8; font-weight:700;">...</span>`;
+      btnsHtml += `<button type="button" class="btn btn-secondary btn-sm" onclick="goToUserPlantsPage(${totalPages})" style="padding:5px 9px; font-size:12px; font-weight:700; border-radius:6px;">${totalPages}</button>`;
+    }
+
+    btnsHtml += `
+      <button type="button" class="btn btn-secondary btn-sm" onclick="goToUserPlantsPage(${_userPlantsCurrentPage + 1})" ${_userPlantsCurrentPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 11px; font-size:12px; font-weight:700; border-radius:6px;">
+        Sau <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    `;
+
+    pagBtns.innerHTML = btnsHtml;
+  }
 }
 
 /**
@@ -352,7 +444,7 @@ export function filterUserPlants() {
   const countFullEl = document.getElementById('user-plant-count-full');
   if (countFullEl) countFullEl.textContent = filtered.length;
 
-  renderUserPlantsTable(filtered);
+  renderUserPlantsTable(filtered, 1);
 }
 
 // ── Action Menu Toggle ─────────────────────────────────────────
