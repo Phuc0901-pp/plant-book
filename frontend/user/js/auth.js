@@ -169,10 +169,8 @@ export async function logout() {
   const errEl = document.getElementById('login-error');
   if (errEl) errEl.style.display = 'none';
 
-  // Clear URL hash to prevent routing/reload loops
-  if (window.location.hash) {
-    history.replaceState('', document.title, window.location.pathname + window.location.search);
-  }
+  // Reset URL to clean root path '/' to prevent leaking user ID or staying on internal subpath
+  window.history.replaceState({}, document.title, '/');
 
   const app       = document.getElementById('app');
   const loginPage = document.getElementById('login-page');
@@ -230,7 +228,13 @@ function showApp() {
 // ── Kiểm tra token lưu sẵn khi tải trang ──────────────────────
 window.addEventListener('load', async () => {
   resetLoginBtnState();
-  if (!token) return; // không có token → hiện màn login
+  if (!token) {
+    // Nếu chưa đăng nhập mà URL đang chứa slug /usr-* hoặc query params cũ, dọn sạch về root '/'
+    if (window.location.pathname.startsWith('/usr-') || window.location.pathname.startsWith('/user') || window.location.search || window.location.hash) {
+      window.history.replaceState({}, document.title, '/');
+    }
+    return;
+  }
 
   try {
     const me = await api('/auth/me');

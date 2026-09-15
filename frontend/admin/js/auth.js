@@ -136,6 +136,8 @@ async function logout() {
   }
   token = '';
   localStorage.removeItem('pb_token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('admin_user');
 
   resetAdminLoginBtnState();
 
@@ -148,9 +150,8 @@ async function logout() {
   const errEl = document.getElementById('login-error');
   if (errEl) errEl.style.display = 'none';
 
-  if (window.location.hash) {
-    history.replaceState('', document.title, window.location.pathname + window.location.search);
-  }
+  // Scrub URL to /admin
+  window.history.replaceState({}, document.title, '/admin');
 
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
@@ -191,18 +192,22 @@ async function showApp() {
 // Check existing token on load – guard: chỉ admin mới được ở /admin
 window.addEventListener('load', async () => {
   resetAdminLoginBtnState();
-  if (token) {
-    try {
-      const me = await api('/auth/me');
-      if (me.role !== 'admin') {
-        /* Token hợp lệ nhưng không phải admin → redirect /user */
-        window.location.replace('/user');
-        return;
-      }
-      currentUser = me;
-      showApp();
-    } catch { logout(); }
+  if (!token) {
+    if (window.location.pathname.includes('/adm-') || (window.location.pathname !== '/admin' && window.location.pathname !== '/admin/')) {
+      window.history.replaceState({}, document.title, '/admin');
+    }
+    return;
   }
+  try {
+    const me = await api('/auth/me');
+    if (me.role !== 'admin') {
+      /* Token hợp lệ nhưng không phải admin → redirect /user */
+      window.location.replace('/user');
+      return;
+    }
+    currentUser = me;
+    showApp();
+  } catch { logout(); }
 });
 
 // ── 3-Step Farmer Registration Wizard ──────────────────────────

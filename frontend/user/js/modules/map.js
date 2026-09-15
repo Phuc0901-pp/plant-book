@@ -136,15 +136,40 @@ export function initUserMap(farms, plants) {
         poly.push(poly[0]);
       }
 
-      map.addSource(srcId, {
-        type: 'geojson',
-        data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [poly] } }
-      });
+      if (map.getSource(srcId)) {
+        map.getSource(srcId).setData({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [poly] } });
+      } else {
+        map.addSource(srcId, {
+          type: 'geojson',
+          data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [poly] } }
+        });
+      }
 
-      map.addLayer({ id: layerId, type: 'fill', source: srcId, layout: {},
-        paint: { 'fill-color': '#10b981', 'fill-opacity': 0.25 } });
-      map.addLayer({ id: outlineId, type: 'line', source: srcId, layout: {},
-        paint: { 'line-color': '#10b981', 'line-width': 2 } });
+      if (!map.getLayer(layerId)) {
+        map.addLayer({ id: layerId, type: 'fill', source: srcId, layout: {},
+          paint: { 'fill-color': '#10b981', 'fill-opacity': 0.25 } });
+
+        // Popup khi click vào trang trại
+        map.on('click', layerId, (e) => {
+          new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <div class="map-tooltip" style="font-family:inherit;font-size:12px;">
+                <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(farm.name)}</h4>
+                <p style="margin-bottom:2px;">Tổng số cây: <strong>${farm.plant_count || farm.total_plants || 0} cây</strong></p>
+                <p style="margin-bottom:2px;">Diện tích: <strong>${farm.area ? farm.area : 0} ha</strong></p>
+                <p style="color:var(--text-muted);font-style:italic;">${esc(farm.description || 'Không có mô tả')}</p>
+              </div>`)
+            .addTo(map);
+        });
+        map.on('mouseenter', layerId, () => map.getCanvas().style.cursor = 'pointer');
+        map.on('mouseleave', layerId, () => map.getCanvas().style.cursor = '');
+      }
+
+      if (!map.getLayer(outlineId)) {
+        map.addLayer({ id: outlineId, type: 'line', source: srcId, layout: {},
+          paint: { 'line-color': '#10b981', 'line-width': 2 } });
+      }
 
       // Render Farm GPS Marker
       let ptLng = coords[0][0];
@@ -177,22 +202,6 @@ export function initUserMap(farms, plants) {
         bounds.extend([ptLng, ptLat]);
         hasBounds = true;
       }
-
-      // Popup khi click vào trang trại
-      map.on('click', layerId, (e) => {
-        new mapboxgl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(`
-            <div class="map-tooltip" style="font-family:inherit;font-size:12px;">
-              <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(farm.name)}</h4>
-              <p style="margin-bottom:2px;">Tổng số cây: <strong>${farm.plant_count || farm.total_plants || 0} cây</strong></p>
-              <p style="margin-bottom:2px;">Diện tích: <strong>${farm.area ? farm.area : 0} ha</strong></p>
-              <p style="color:var(--text-muted);font-style:italic;">${esc(farm.description || 'Không có mô tả')}</p>
-            </div>`)
-          .addTo(map);
-      });
-      map.on('mouseenter', layerId, () => map.getCanvas().style.cursor = 'pointer');
-      map.on('mouseleave', layerId, () => map.getCanvas().style.cursor = '');
     });
 
 

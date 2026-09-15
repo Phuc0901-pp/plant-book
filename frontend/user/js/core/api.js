@@ -23,6 +23,7 @@ export function setToken(t) {
 export function clearToken() {
   token = '';
   localStorage.removeItem('pb_token');
+  localStorage.removeItem('user');
 }
 
 /**
@@ -31,6 +32,9 @@ export function clearToken() {
  */
 export function setCurrentUser(u) {
   currentUser = u;
+  if (!u) {
+    localStorage.removeItem('user');
+  }
 }
 
 /**
