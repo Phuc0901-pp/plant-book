@@ -391,10 +391,16 @@ async function openPlantModal(id = null, syncUrl = true) {
       }
 
       // Preload media & logs for instant tab counters
-      document.getElementById('plant-media-container').innerHTML = renderMediaSection(plant.id);
-      loadPlantMedia(plant.id);
-      document.getElementById('plant-logs-container').innerHTML = renderLogsSection(plant.id);
-      loadPlantLogs(plant.id);
+      const mediaCont = document.getElementById('plant-media-container');
+      if (mediaCont) {
+        mediaCont.innerHTML = renderMediaSection(plant.id);
+        loadPlantMedia(plant.id);
+      }
+      const logsCont = document.getElementById('plant-logs-container');
+      if (logsCont) {
+        logsCont.innerHTML = renderLogsSection(plant.id);
+        loadPlantLogs(plant.id);
+      }
 
       // Store extra data for rendering
       window._currentPlantData = plant.data || {};
@@ -428,24 +434,33 @@ function resetPlantForm() {
   document.getElementById('f-health-status').value = 'Tốt';
   document.getElementById('f-schema-id').value = '';
   document.getElementById('f-is-public').value = 'true';
-  document.getElementById('extra-fields-container').innerHTML = `
-    <div class="empty-state" style="padding:32px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
-      <i class="fa-solid fa-shapes" style="font-size:32px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
-      <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Không có trường thuộc tính đặc thù nào.</p>
-      <small style="color:#94a3b8;">Cấu hình schema tại Cài đặt > Quản lý Schema để thêm thuộc tính chuyên sâu cho giống cây này.</small>
-    </div>`;
-  document.getElementById('plant-media-container').innerHTML = `
-    <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
-      <i class="fa-solid fa-images" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
-      <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi tải ảnh/video.</p>
-      <small style="color:#94a3b8;">Hệ thống tự động liên kết tệp phương tiện với cây trồng sau khi khởi tạo ID.</small>
-    </div>`;
-  document.getElementById('plant-logs-container').innerHTML = `
-    <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
-      <i class="fa-solid fa-book-bookmark" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
-      <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi ghi nhật ký canh tác.</p>
-      <small style="color:#94a3b8;">Nhật ký chăm sóc sẽ ghi nhận lịch sử bón phân, tưới tiêu, phun thuốc và truy xuất nguồn gốc.</small>
-    </div>`;
+  const extraCont = document.getElementById('extra-fields-container');
+  if (extraCont) {
+    extraCont.innerHTML = `
+      <div class="empty-state" style="padding:40px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
+        <i class="fa-solid fa-shapes" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+        <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Không có trường thuộc tính đặc thù nào.</p>
+        <small style="color:#94a3b8;">Cấu hình schema tại Cài đặt > Quản lý Schema để thêm thuộc tính chuyên sâu (Độ pH, Độ ngọt Brix, Mã PUC...) cho giống cây này.</small>
+      </div>`;
+  }
+  const mediaCont = document.getElementById('plant-media-container');
+  if (mediaCont) {
+    mediaCont.innerHTML = `
+      <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
+        <i class="fa-solid fa-images" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+        <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi tải ảnh/video.</p>
+        <small style="color:#94a3b8;">Hệ thống tự động liên kết tệp phương tiện với cây trồng sau khi khởi tạo ID.</small>
+      </div>`;
+  }
+  const logsCont = document.getElementById('plant-logs-container');
+  if (logsCont) {
+    logsCont.innerHTML = `
+      <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
+        <i class="fa-solid fa-book-bookmark" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+        <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi ghi nhật ký canh tác.</p>
+        <small style="color:#94a3b8;">Nhật ký chăm sóc sẽ ghi nhận lịch sử bón phân, tưới tiêu, phun thuốc và truy xuất nguồn gốc.</small>
+      </div>`;
+  }
   
   const mediaCountBadge = document.getElementById('plant-media-count-badge');
   if (mediaCountBadge) { mediaCountBadge.textContent = '0'; mediaCountBadge.style.display = 'none'; }
@@ -586,10 +601,16 @@ async function savePlant() {
     }
 
     // Refresh media/logs sections
-    document.getElementById('plant-media-container').innerHTML = renderMediaSection(plant.id);
-    loadPlantMedia(plant.id);
-    document.getElementById('plant-logs-container').innerHTML = renderLogsSection(plant.id);
-    loadPlantLogs(plant.id);
+    const mediaCont = document.getElementById('plant-media-container');
+    if (mediaCont) {
+      mediaCont.innerHTML = renderMediaSection(plant.id);
+      loadPlantMedia(plant.id);
+    }
+    const logsCont = document.getElementById('plant-logs-container');
+    if (logsCont) {
+      logsCont.innerHTML = renderLogsSection(plant.id);
+      loadPlantLogs(plant.id);
+    }
 
     toast(editingPlantId ? 'Đã cập nhật cây!' : 'Đã tạo cây mới!');
     document.getElementById('plant-modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:#34d399"></i> Chỉnh sửa hồ sơ cây';
