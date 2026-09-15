@@ -19,6 +19,7 @@ require('./suites/08_durian_ri6_sample_data.test');
 require('./suites/09_phase1_phase2_verification.test');
 require('./suites/10_meteo_weather_service.test');
 require('./suites/11_nfc_gps_lifecycle.test');
+require('./suites/12_soft_delete_and_audit.test');
 
 async function main() {
   try {

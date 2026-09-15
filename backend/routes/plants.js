@@ -56,9 +56,9 @@ router.get('/', auth, async (req, res) => {
              COALESCE(fu.full_name, fu_assigned.full_name) as farm_owner_name,
              COALESCE(fu.id, fu_assigned.id) as farm_owner_id,
              (SELECT COUNT(*) FROM plant_media pm WHERE pm.plant_id = p.id) as media_count,
-             (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id) as log_count,
-             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước'), 'YYYY-MM-DD') as last_watered,
-             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân'), 'YYYY-MM-DD') as last_fertilized,
+             (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id AND (pl.is_deleted IS NOT TRUE)) as log_count,
+             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_watered,
+             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_fertilized,
              CASE 
                WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
                THEN (p.phi_until_date - CURRENT_DATE) 
@@ -162,7 +162,7 @@ router.get('/logs/recent', auth, async (req, res) => {
       LEFT JOIN plants p ON pl.plant_id = p.id
       LEFT JOIN farms f ON f.id = p.farm_id
       LEFT JOIN users u ON pl.created_by = u.id
-      WHERE 1=1
+      WHERE (pl.is_deleted IS NOT TRUE)
     `;
     const params = [];
     let idx = 1;
@@ -269,7 +269,7 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
       `SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email 
        FROM plant_logs pl 
        LEFT JOIN users u ON u.id = pl.created_by 
-       WHERE pl.plant_id=$1 
+       WHERE pl.plant_id=$1 AND (pl.is_deleted IS NOT TRUE)
        ORDER BY pl.log_date DESC, pl.created_at DESC`, [req.params.id]
     );
 
@@ -300,7 +300,7 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     }
 
 
-    let logsQuery = 'SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email FROM plant_logs pl LEFT JOIN users u ON u.id = pl.created_by WHERE pl.plant_id = $1';
+    let logsQuery = 'SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email FROM plant_logs pl LEFT JOIN users u ON u.id = pl.created_by WHERE pl.plant_id = $1 AND (pl.is_deleted IS NOT TRUE)';
     const logsParams = [req.params.id];
     let idx = 2;
 
@@ -1804,33 +1804,286 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
   }
 });
 
-router.delete('/:plantId/logs/:logId', auth, admin, async (req, res) => {
-  try {
-    const currentLog = await pool.query('SELECT * FROM plant_logs WHERE id=$1 AND plant_id=$2', [req.params.logId, req.params.plantId]);
-    await pool.query('DELETE FROM plant_logs WHERE id=$1 AND plant_id=$2', [req.params.logId, req.params.plantId]);
-    
-    if (currentLog.rows.length > 0) {
-      logAuditAction(
-        req.user.id,
-        req.user.full_name || req.user.email,
-        'DELETE',
-        'Nhật ký canh tác',
-        req.params.logId,
-        `Xóa nhật ký "${currentLog.rows[0].log_type}" của cây #${req.params.plantId}`,
-        currentLog.rows[0],
-        {}
-      );
+// ─── Helper function for building dynamic filter queries for batch logs ───
+function buildLogFilterQuery(req, bodyOrQuery) {
+  let baseQuery = `
+    FROM plant_logs pl
+    LEFT JOIN plants p ON pl.plant_id = p.id
+    LEFT JOIN farms f ON f.id = p.farm_id
+    LEFT JOIN users u ON pl.created_by = u.id
+    WHERE (pl.is_deleted IS NOT TRUE)
+  `;
+  const params = [];
+  let idx = 1;
+
+  // Authorization check for non-admin
+  if (req.user && req.user.role !== 'admin') {
+    baseQuery += ` AND (pl.created_by = $${idx} OR f.user_id = $${idx} OR f.id = (SELECT farm_id FROM users WHERE id = $${idx}) OR p.assigned_to_user_id = $${idx}) `;
+    params.push(req.user.id);
+    idx++;
+  }
+
+  // 1. Array of specific IDs (log_ids)
+  if (Array.isArray(bodyOrQuery.log_ids) && bodyOrQuery.log_ids.length > 0) {
+    const ids = bodyOrQuery.log_ids.map(Number).filter(n => !isNaN(n) && n > 0);
+    if (ids.length > 0) {
+      baseQuery += ` AND pl.id = ANY($${idx}::int[]) `;
+      params.push(ids);
+      idx++;
     }
+  }
+
+  // 2. Farm filter
+  if (bodyOrQuery.farm_id && bodyOrQuery.farm_id !== 'all') {
+    baseQuery += ` AND (p.farm_id = $${idx} OR (pl.plant_id IS NULL AND f.id = $${idx})) `;
+    params.push(Number(bodyOrQuery.farm_id));
+    idx++;
+  }
+
+  // 3. Plant filter
+  if (bodyOrQuery.plant_id && bodyOrQuery.plant_id !== 'all') {
+    if (!isNaN(Number(bodyOrQuery.plant_id))) {
+      baseQuery += ` AND (pl.plant_id = $${idx} OR p.tree_code = $${idx}::text) `;
+      params.push(Number(bodyOrQuery.plant_id));
+      idx++;
+    } else {
+      baseQuery += ` AND p.tree_code = $${idx} `;
+      params.push(String(bodyOrQuery.plant_id).trim());
+      idx++;
+    }
+  }
+
+  // 4. Log Type filter
+  if (bodyOrQuery.log_type && bodyOrQuery.log_type !== 'all') {
+    baseQuery += ` AND pl.log_type = $${idx} `;
+    params.push(String(bodyOrQuery.log_type).trim());
+    idx++;
+  }
+
+  // 5. Date filter
+  if (bodyOrQuery.date_mode === 'single' && bodyOrQuery.date) {
+    baseQuery += ` AND pl.log_date = $${idx}::date `;
+    params.push(bodyOrQuery.date);
+    idx++;
+  } else if (bodyOrQuery.date_mode === 'range') {
+    if (bodyOrQuery.from_date) {
+      baseQuery += ` AND pl.log_date >= $${idx}::date `;
+      params.push(bodyOrQuery.from_date);
+      idx++;
+    }
+    if (bodyOrQuery.to_date) {
+      baseQuery += ` AND pl.log_date <= $${idx}::date `;
+      params.push(bodyOrQuery.to_date);
+      idx++;
+    }
+  } else if (bodyOrQuery.date) {
+    baseQuery += ` AND pl.log_date = $${idx}::date `;
+    params.push(bodyOrQuery.date);
+    idx++;
+  }
+
+  // 6. Keyword search
+  if (bodyOrQuery.keyword && String(bodyOrQuery.keyword).trim()) {
+    baseQuery += ` AND (
+      p.tree_code ILIKE $${idx} 
+      OR pl.note ILIKE $${idx} 
+      OR pl.log_type ILIKE $${idx}
+      OR f.name ILIKE $${idx}
+      OR CAST(pl.details AS TEXT) ILIKE $${idx}
+    ) `;
+    params.push(`%${String(bodyOrQuery.keyword).trim()}%`);
+    idx++;
+  }
+
+  return { baseQuery, params };
+}
+
+// POST /api/plants/logs/batch-delete/preview — Đếm trước số lượng bản ghi thỏa mãn điều kiện lọc
+router.post('/logs/batch-delete/preview', auth, async (req, res) => {
+  try {
+    const { baseQuery, params } = buildLogFilterQuery(req, req.body || {});
+    const countRes = await pool.query(`SELECT COUNT(pl.id)::int as count ${baseQuery}`, params);
+    const sampleRes = await pool.query(
+      `SELECT pl.id, pl.log_date, pl.log_type, pl.note, COALESCE(p.tree_code, 'Toàn vườn') as tree_code, COALESCE(f.name, 'Trang trại') as farm_name ${baseQuery} ORDER BY pl.log_date DESC, pl.id DESC LIMIT 5`,
+      params
+    );
+    res.json({
+      count: countRes.rows[0]?.count || 0,
+      samples: sampleRes.rows
+    });
+  } catch (err) {
+    console.error('Batch delete preview error:', err);
+    res.status(500).json({ error: 'Lỗi server khi tính toán số lượng bản ghi: ' + err.message });
+  }
+});
+
+// POST /api/plants/logs/batch-delete — Thực thi xóa mềm hoặc xóa cứng hàng loạt theo bộ lọc
+router.post('/logs/batch-delete', auth, async (req, res) => {
+  try {
+    const { baseQuery, params } = buildLogFilterQuery(req, req.body || {});
+    const isPermanent = req.body.permanent === true && req.user.role === 'admin';
+
+    // Lấy danh sách ID bản ghi khớp điều kiện
+    const findRes = await pool.query(`SELECT pl.id, pl.plant_id, pl.log_type, pl.log_date, pl.note, pl.details ${baseQuery}`, params);
+    const matchedLogs = findRes.rows;
+
+    if (matchedLogs.length === 0) {
+      return res.json({ success: true, count: 0, message: 'Không có nhật ký nào khớp với điều kiện lọc.' });
+    }
+
+    const logIds = matchedLogs.map(l => l.id);
+
+    if (isPermanent) {
+      await pool.query('DELETE FROM plant_logs WHERE id = ANY($1::int[])', [logIds]);
+    } else {
+      await pool.query('UPDATE plant_logs SET is_deleted = true, deleted_at = NOW() WHERE id = ANY($1::int[])', [logIds]);
+    }
+
+    // Ghi audit log
+    const filterDesc = [];
+    if (req.body.date) filterDesc.push(`Ngày: ${req.body.date}`);
+    if (req.body.from_date || req.body.to_date) filterDesc.push(`Từ ${req.body.from_date || '...'} đến ${req.body.to_date || '...'}`);
+    if (req.body.log_type && req.body.log_type !== 'all') filterDesc.push(`Loại: ${req.body.log_type}`);
+    if (req.body.plant_id && req.body.plant_id !== 'all') filterDesc.push(`Cây: #${req.body.plant_id}`);
+    const filterStr = filterDesc.length > 0 ? ` (${filterDesc.join(', ')})` : '';
+
+    logAuditAction(
+      req.user.id,
+      req.user.full_name || req.user.email,
+      isPermanent ? 'DELETE' : 'DELETE_SOFT',
+      'Nhật ký canh tác',
+      logIds.length === 1 ? logIds[0] : 0,
+      `Xóa ${isPermanent ? 'vĩnh viễn' : 'mềm'} ${logIds.length} nhật ký canh tác${filterStr}`,
+      { deleted_count: logIds.length, sample_ids: logIds.slice(0, 50), deleted_ids: logIds },
+      {},
+      `Xóa ${isPermanent ? 'vĩnh viễn' : 'mềm'} qua bộ lọc chọn lọc`
+    );
 
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
-      broadcast('plants_updated', { message: `Care log deleted on plant #${req.params.plantId}` });
-      broadcast('supplies_updated', { message: `Care log deleted on plant #${req.params.plantId}` });
+      broadcast('plants_updated', { message: `Batch ${logIds.length} care logs deleted` });
+      broadcast('supplies_updated', { message: `Batch ${logIds.length} care logs deleted` });
+    }
+
+    res.json({
+      success: true,
+      count: logIds.length,
+      message: `Đã ${isPermanent ? 'xóa vĩnh viễn' : 'xóa mềm'} thành công ${logIds.length} bản ghi nhật ký canh tác.`
+    });
+  } catch (err) {
+    console.error('Batch delete logs error:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa nhật ký: ' + err.message });
+  }
+});
+
+// POST /api/plants/logs/:logId/restore — Khôi phục 1 nhật ký đã bị xóa mềm
+router.post('/logs/:logId/restore', auth, async (req, res) => {
+  try {
+    const logId = parseInt(req.params.logId);
+    const logRes = await pool.query(
+      `SELECT pl.*, p.farm_id, f.user_id as farm_owner_id
+       FROM plant_logs pl
+       LEFT JOIN plants p ON p.id = pl.plant_id
+       LEFT JOIN farms f ON f.id = p.farm_id
+       WHERE pl.id = $1`,
+      [logId]
+    );
+    if (logRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy nhật ký.' });
+    const row = logRes.rows[0];
+
+    const isAuthorized = req.user.role === 'admin' 
+      || row.farm_owner_id === req.user.id 
+      || row.created_by === req.user.id 
+      || (req.user.farm_id && req.user.farm_id === row.farm_id);
+    if (!isAuthorized) return res.status(403).json({ error: 'Bạn không có quyền khôi phục nhật ký này.' });
+
+    await pool.query('UPDATE plant_logs SET is_deleted = false, deleted_at = NULL WHERE id = $1', [logId]);
+
+    logAuditAction(
+      req.user.id,
+      req.user.full_name || req.user.email,
+      'UPDATE',
+      'Nhật ký canh tác',
+      logId,
+      `Khôi phục nhật ký "${row.log_type}" của cây #${row.plant_id || row.tree_code || ''}`,
+      { is_deleted: true },
+      { is_deleted: false }
+    );
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('plants_updated', { message: `Care log #${logId} restored` });
+    }
+
+    res.json({ success: true, message: 'Đã khôi phục nhật ký thành công.' });
+  } catch (err) {
+    console.error('Restore log error:', err);
+    res.status(500).json({ error: 'Lỗi server khi khôi phục nhật ký: ' + err.message });
+  }
+});
+
+// DELETE /api/plants/:plantId/logs/:logId & DELETE /api/plants/logs/:logId — Xóa 1 nhật ký (Hỗ trợ Xóa Mềm mặc định)
+router.delete(['/:plantId/logs/:logId', '/logs/:logId'], auth, async (req, res) => {
+  try {
+    const logId = parseInt(req.params.logId);
+    const plantId = req.params.plantId ? parseInt(req.params.plantId) : null;
+
+    let queryStr = `
+      SELECT pl.*, p.farm_id, f.user_id as farm_owner_id, p.tree_code
+      FROM plant_logs pl
+      LEFT JOIN plants p ON p.id = pl.plant_id
+      LEFT JOIN farms f ON f.id = p.farm_id
+      WHERE pl.id = $1
+    `;
+    const qParams = [logId];
+    if (plantId) {
+      queryStr += ` AND pl.plant_id = $2`;
+      qParams.push(plantId);
+    }
+
+    const currentLog = await pool.query(queryStr, qParams);
+    if (currentLog.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy bản ghi nhật ký cần xóa.' });
+    }
+    const logRow = currentLog.rows[0];
+
+    const isAuthorized = req.user.role === 'admin' 
+      || logRow.farm_owner_id === req.user.id 
+      || logRow.created_by === req.user.id 
+      || (req.user.farm_id && req.user.farm_id === logRow.farm_id);
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Bạn không có quyền xóa nhật ký này.' });
+    }
+
+    const isPermanent = req.query.permanent === 'true' && req.user.role === 'admin';
+
+    if (isPermanent) {
+      await pool.query('DELETE FROM plant_logs WHERE id = $1', [logId]);
+    } else {
+      await pool.query('UPDATE plant_logs SET is_deleted = true, deleted_at = NOW() WHERE id = $1', [logId]);
+    }
+
+    logAuditAction(
+      req.user.id,
+      req.user.full_name || req.user.email,
+      isPermanent ? 'DELETE' : 'DELETE_SOFT',
+      'Nhật ký canh tác',
+      logId,
+      `Xóa ${isPermanent ? 'vĩnh viễn' : 'mềm'} nhật ký "${logRow.log_type}" của cây #${logRow.tree_code || logRow.plant_id || ''}`,
+      logRow,
+      {}
+    );
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('plants_updated', { message: `Care log deleted on plant #${logRow.plant_id}` });
+      broadcast('supplies_updated', { message: `Care log deleted on plant #${logRow.plant_id}` });
     }
     
-    res.json({ message: 'Đã xóa.' });
+    res.json({ success: true, message: `Đã ${isPermanent ? 'xóa vĩnh viễn' : 'xóa mềm'} nhật ký.` });
   } catch (err) {
-    res.status(500).json({ error: 'Lỗi server.' });
+    console.error('Delete care log error:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa nhật ký: ' + err.message });
   }
 });
 
@@ -1867,7 +2120,7 @@ router.get('/public/:slug', async (req, res) => {
     }
 
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plant.rows[0].id]);
-    const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 ORDER BY log_date DESC', [plant.rows[0].id]);
+    const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 AND (is_deleted IS NOT TRUE) ORDER BY log_date DESC', [plant.rows[0].id]);
 
     // Build GeoJSON geometry for the farm boundary polygon
     const row = plant.rows[0];

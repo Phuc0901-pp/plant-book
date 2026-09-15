@@ -1787,12 +1787,13 @@ function renderHistoryChipsBar(list) {
   const container = document.getElementById('db-history-chips-bar');
   if (!container) return;
 
-  const counts = { all: list.length, UPDATE: 0, DELETE: 0 };
+  const counts = { all: list.length, UPDATE: 0, DELETE_SOFT: 0, DELETE: 0 };
   const targetCounts = {};
 
   list.forEach(h => {
     if (h.action_type === 'UPDATE') counts.UPDATE++;
-    if (h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT') counts.DELETE++;
+    else if (h.action_type === 'DELETE_SOFT') counts.DELETE_SOFT++;
+    else if (h.action_type === 'DELETE') counts.DELETE++;
 
     const t = h.target_type || 'Khác';
     targetCounts[t] = (targetCounts[t] || 0) + 1;
@@ -1800,8 +1801,9 @@ function renderHistoryChipsBar(list) {
 
   let chips = [
     { id: 'all', label: 'Tất cả biến động', icon: 'fa-layer-group', count: counts.all },
-    { id: 'UPDATE', label: 'Lượt chỉnh sửa (UPDATE)', icon: 'fa-pen-to-square', count: counts.UPDATE, isUpdate: true },
-    { id: 'DELETE', label: 'Lượt xóa (DELETE)', icon: 'fa-trash-can', count: counts.DELETE, isDelete: true }
+    { id: 'UPDATE', label: 'Chỉnh sửa (UPDATE)', icon: 'fa-pen-to-square', count: counts.UPDATE, isUpdate: true },
+    { id: 'DELETE_SOFT', label: 'Xóa mềm (DELETE_SOFT)', icon: 'fa-clock-rotate-left', count: counts.DELETE_SOFT, isSoftDelete: true },
+    { id: 'DELETE', label: 'Xóa vĩnh viễn (DELETE)', icon: 'fa-trash-can', count: counts.DELETE, isDelete: true }
   ];
 
   const targetIconMap = {
@@ -1828,16 +1830,20 @@ function renderHistoryChipsBar(list) {
     if (isActive) {
       if (c.isDelete) {
         chipStyle = 'background:#dc2626; color:#ffffff; border:1.5px solid #dc2626;';
-      } else if (c.isUpdate) {
+      } else if (c.isSoftDelete) {
         chipStyle = 'background:#d97706; color:#ffffff; border:1.5px solid #d97706;';
+      } else if (c.isUpdate) {
+        chipStyle = 'background:#2563eb; color:#ffffff; border:1.5px solid #2563eb;';
       } else {
         chipStyle = 'background:#059669; color:#ffffff; border:1.5px solid #059669;';
       }
     } else {
       if (c.isDelete) {
         chipStyle = 'background:#fffafb; color:#dc2626; border:1.5px solid #fecaca;';
-      } else if (c.isUpdate) {
+      } else if (c.isSoftDelete) {
         chipStyle = 'background:#fffdfa; color:#b45309; border:1.5px solid #fde68a;';
+      } else if (c.isUpdate) {
+        chipStyle = 'background:#eff6ff; color:#1d4ed8; border:1.5px solid #bfdbfe;';
       } else {
         chipStyle = 'background:#ffffff; color:#475569; border:1.5px solid #cbd5e1;';
       }
@@ -1877,17 +1883,19 @@ function renderHistoryTable(list) {
   };
 
   tbody.innerHTML = list.map(h => {
-    const isDelete = h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT';
-    const actionBadge = isDelete
-      ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-trash-can"></i> ${h.action_type === 'DELETE_SOFT' ? 'XÓA ĐỆM' : 'XÓA DỮ LIỆU'}</span>`
-      : `<span class="badge" style="background:#fef3c7; color:#b45309; border:1.5px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-pen-to-square"></i> CẬP NHẬT</span>`;
+    const isSoftDelete = h.action_type === 'DELETE_SOFT';
+    const isHardDelete = h.action_type === 'DELETE';
+    const actionBadge = isSoftDelete
+      ? `<span class="badge" style="background:#fef3c7; color:#b45309; border:1.5px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-clock-rotate-left"></i> XÓA MỀM</span>`
+      : (isHardDelete
+        ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-trash-can"></i> XÓA VĨNH VIỄN</span>`
+        : `<span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1.5px solid #bfdbfe; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-pen-to-square"></i> CẬP NHẬT</span>`);
 
     const tCfg = targetIconMap[h.target_type] || { icon: 'fa-database', bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
     const targetBadge = `<span class="badge" style="background:${tCfg.bg}; color:${tCfg.color}; border:1px solid ${tCfg.border}; font-weight:800; padding:4px 10px; border-radius:8px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid ${tCfg.icon}"></i> ${esc(h.target_type)}</span>`;
 
     const relTime = formatRelativeTime(h.created_at);
     const absDateStr = h.created_at ? new Date(h.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-    const isSoftDeletedFarm = h.target_type === 'Trang trại' && h.action_type === 'DELETE_SOFT' && h.record_id;
 
     return `
       <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
@@ -1901,6 +1909,7 @@ function renderHistoryTable(list) {
           <a href="javascript:void(0)" onclick="openViewHistoryModal(${h.id})" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#059669'" onmouseout="this.style.color='#0f172a'">
             ${esc(h.title)}
           </a>
+          ${h.note ? `<div style="font-size:11px; color:#64748b; font-weight:500; margin-top:2px;">ℹ️ ${esc(h.note)}</div>` : ''}
         </td>
         <td style="padding:12px 14px; font-size:12.5px; color:#475569; font-weight:600;">
           👤 <strong>${esc(h.user_name || h.current_user_name || 'Admin')}</strong>
@@ -1908,22 +1917,56 @@ function renderHistoryTable(list) {
         <td style="padding:12px 14px; text-align:center;">
           <div style="display:inline-flex; gap:6px; align-items:center; flex-wrap:nowrap;">
             <button class="btn btn-primary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:5px 10px; font-size:11.5px; font-weight:700; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:6px;" title="Xem đối chiếu thay đổi dữ liệu">
-              <i class="fa-solid fa-code-compare"></i> Đối chiếu
+              <i class="fa-solid fa-eye"></i> Chi tiết
             </button>
-            ${isSoftDeletedFarm ? `
-              <button class="btn btn-danger btn-sm" onclick="adminHardDeleteFarm(${h.record_id}, '${esc(h.title.replace(/'/g, "\\'"))}', ${h.id})" style="padding:5px 9px; font-size:11px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn trang trại khỏi CSDL">
+            ${isSoftDelete ? `
+              <button class="btn btn-sm" onclick="adminRestoreAuditItem(${h.id}, '${esc(h.target_type)}')" style="padding:5px 9px; font-size:11px; font-weight:800; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; border-radius:6px; cursor:pointer;" title="Khôi phục lại dữ liệu đã bị xóa mềm">
+                <i class="fa-solid fa-rotate-left"></i> Khôi phục
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="adminPurgeAuditItem(${h.id}, '${esc(h.target_type)}')" style="padding:5px 9px; font-size:11px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn khỏi CSDL">
                 <i class="fa-solid fa-trash-can"></i> Xóa CSDL
               </button>
-            ` : ''}
-            <button class="btn btn-secondary btn-sm" onclick="deleteAuditLogItem(${h.id})" style="padding:5px 9px; font-size:11px; font-weight:700; color:#dc2626; border-color:#fca5a5; background:#fff1f2; border-radius:6px;" title="Xóa bản ghi nhật ký kiểm toán này">
-              <i class="fa-solid fa-trash"></i>
-            </button>
+            ` : `
+              <button class="btn btn-secondary btn-sm" onclick="deleteAuditLogItem(${h.id})" style="padding:5px 9px; font-size:11px; font-weight:700; color:#dc2626; border-color:#fca5a5; background:#fff1f2; border-radius:6px;" title="Xóa bản ghi nhật ký kiểm toán này">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            `}
           </div>
         </td>
       </tr>
     `;
   }).join('');
 }
+
+async function adminRestoreAuditItem(auditId, targetType) {
+  if (!auditId) return;
+  const confirmed = confirm(`Bạn có chắc chắn muốn KHÔI PHỤC dữ liệu "${targetType}" này trở lại trạng thái hoạt động bình thường?`);
+  if (!confirmed) return;
+
+  try {
+    const res = await api(`/history/${auditId}/restore`, { method: 'POST' });
+    toast(res.message || 'Đã khôi phục dữ liệu thành công!');
+    loadHistoryTab();
+  } catch (err) {
+    alert('Lỗi khi khôi phục: ' + err.message);
+  }
+}
+window.adminRestoreAuditItem = adminRestoreAuditItem;
+
+async function adminPurgeAuditItem(auditId, targetType) {
+  if (!auditId) return;
+  const confirmed = confirm(`CẢNH BÁO NGUY HIỂM:\nThao tác này sẽ XÓA VĨNH VIỄN dữ liệu "${targetType}" khỏi cơ sở dữ liệu và không thể khôi phục lại được nữa!\nBạn có chắc chắn muốn tiếp tục?`);
+  if (!confirmed) return;
+
+  try {
+    const res = await api(`/history/${auditId}/purge`, { method: 'DELETE' });
+    toast(res.message || 'Đã xóa vĩnh viễn dữ liệu khỏi CSDL.');
+    loadHistoryTab();
+  } catch (err) {
+    alert('Lỗi khi xóa vĩnh viễn: ' + err.message);
+  }
+}
+window.adminPurgeAuditItem = adminPurgeAuditItem;
 
 function filterHistoryTab() {
   const q = (document.getElementById('db-history-search')?.value || '').toLowerCase().trim();
@@ -1933,8 +1976,10 @@ function filterHistoryTab() {
   if (currentDbActiveHistoryChip !== 'all') {
     if (currentDbActiveHistoryChip === 'UPDATE') {
       filtered = filtered.filter(h => h.action_type === 'UPDATE');
+    } else if (currentDbActiveHistoryChip === 'DELETE_SOFT') {
+      filtered = filtered.filter(h => h.action_type === 'DELETE_SOFT');
     } else if (currentDbActiveHistoryChip === 'DELETE') {
-      filtered = filtered.filter(h => h.action_type === 'DELETE' || h.action_type === 'DELETE_SOFT');
+      filtered = filtered.filter(h => h.action_type === 'DELETE');
     } else if (currentDbActiveHistoryChip.startsWith('target_')) {
       const targetName = currentDbActiveHistoryChip.replace('target_', '');
       filtered = filtered.filter(h => h.target_type === targetName);
@@ -2168,6 +2213,19 @@ function openViewHistoryModal(id) {
 
     <!-- Main Diff Body -->
     ${diffContentHtml}
+
+    ${isDelete ? `
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+        ${item.action_type === 'DELETE_SOFT' ? `
+          <button type="button" class="btn" onclick="adminRestoreAuditItem(${item.id}, '${esc(item.target_type)}'); closeViewHistoryModal();" style="background:#059669; color:#ffffff; font-weight:800; font-size:12.5px; padding:8px 16px; border-radius:8px; border:none; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <i class="fa-solid fa-rotate-left"></i> Khôi phục lại dữ liệu
+          </button>
+        ` : ''}
+        <button type="button" class="btn btn-danger" onclick="adminPurgeAuditItem(${item.id}, '${esc(item.target_type)}'); closeViewHistoryModal();" style="font-weight:800; font-size:12.5px; padding:8px 16px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+          <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn khỏi CSDL
+        </button>
+      </div>
+    ` : ''}
   `;
 
   document.getElementById('history-view-modal').style.display = 'flex';

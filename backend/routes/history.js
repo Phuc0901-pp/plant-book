@@ -95,5 +95,106 @@ router.delete('/', auth, async (req, res) => {
   }
 });
 
+// POST /api/history/:id/restore — Khôi phục bản ghi bị xóa mềm
+router.post('/:id/restore', auth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const auditRes = await pool.query('SELECT * FROM data_audit_logs WHERE id = $1', [id]);
+    if (auditRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy bản ghi kiểm toán.' });
+    }
+    const auditItem = auditRes.rows[0];
+
+    if (auditItem.target_type === 'Nhật ký canh tác' || auditItem.target_type === 'Nhật ký canh tác hàng loạt') {
+      let targetIds = [];
+      if (auditItem.record_id && auditItem.record_id > 0) {
+        targetIds.push(auditItem.record_id);
+      }
+      let oldData = {};
+      try {
+        oldData = typeof auditItem.old_data === 'string' ? JSON.parse(auditItem.old_data) : (auditItem.old_data || {});
+      } catch (e) {}
+
+      if (Array.isArray(oldData.deleted_ids)) {
+        targetIds = targetIds.concat(oldData.deleted_ids);
+      } else if (Array.isArray(oldData.sample_ids)) {
+        targetIds = targetIds.concat(oldData.sample_ids);
+      }
+      targetIds = [...new Set(targetIds.filter(n => !isNaN(n) && n > 0))];
+
+      if (targetIds.length > 0) {
+        await pool.query('UPDATE plant_logs SET is_deleted = false, deleted_at = NULL WHERE id = ANY($1::int[])', [targetIds]);
+      }
+
+      await pool.query('UPDATE data_audit_logs SET note = $1 WHERE id = $2', [
+        `Đã khôi phục thành công ${targetIds.length} bản ghi bởi ${req.user.full_name || req.user.email} lúc ${new Date().toISOString()}`,
+        id
+      ]);
+
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) {
+        broadcast('plants_updated', { message: `Restored ${targetIds.length} care logs` });
+      }
+
+      return res.json({ success: true, count: targetIds.length, message: `Đã khôi phục thành công ${targetIds.length} nhật ký canh tác.` });
+    }
+
+    if (auditItem.target_type === 'Trang trại' && auditItem.record_id) {
+      await pool.query('UPDATE farms SET is_deleted = false, deleted_at = NULL WHERE id = $1', [auditItem.record_id]);
+      return res.json({ success: true, message: 'Đã khôi phục trang trại thành công.' });
+    }
+
+    res.json({ success: true, message: 'Đã xử lý khôi phục bản ghi.' });
+  } catch (err) {
+    console.error('Error restoring from audit log:', err);
+    res.status(500).json({ error: 'Lỗi server khi khôi phục dữ liệu: ' + err.message });
+  }
+});
+
+// DELETE /api/history/:id/purge — Xóa vĩnh viễn dữ liệu bị xóa mềm khỏi CSDL (Admin only)
+router.delete('/:id/purge', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Chỉ Admin mới có quyền xóa vĩnh viễn dữ liệu khỏi CSDL.' });
+    }
+    const id = parseInt(req.params.id);
+    const auditRes = await pool.query('SELECT * FROM data_audit_logs WHERE id = $1', [id]);
+    if (auditRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy bản ghi kiểm toán.' });
+    }
+    const auditItem = auditRes.rows[0];
+
+    if (auditItem.target_type === 'Nhật ký canh tác' || auditItem.target_type === 'Nhật ký canh tác hàng loạt') {
+      let targetIds = [];
+      if (auditItem.record_id && auditItem.record_id > 0) targetIds.push(auditItem.record_id);
+      let oldData = {};
+      try {
+        oldData = typeof auditItem.old_data === 'string' ? JSON.parse(auditItem.old_data) : (auditItem.old_data || {});
+      } catch (e) {}
+      if (Array.isArray(oldData.deleted_ids)) targetIds = targetIds.concat(oldData.deleted_ids);
+      else if (Array.isArray(oldData.sample_ids)) targetIds = targetIds.concat(oldData.sample_ids);
+      targetIds = [...new Set(targetIds.filter(n => !isNaN(n) && n > 0))];
+
+      if (targetIds.length > 0) {
+        await pool.query('DELETE FROM plant_logs WHERE id = ANY($1::int[])', [targetIds]);
+      }
+      await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
+      return res.json({ success: true, message: `Đã xóa vĩnh viễn ${targetIds.length} bản ghi khỏi CSDL.` });
+    }
+
+    if (auditItem.target_type === 'Trang trại' && auditItem.record_id) {
+      await pool.query('DELETE FROM farms WHERE id = $1', [auditItem.record_id]);
+      await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
+      return res.json({ success: true, message: 'Đã xóa vĩnh viễn trang trại khỏi CSDL.' });
+    }
+
+    await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Đã dọn dẹp bản ghi kiểm toán.' });
+  } catch (err) {
+    console.error('Error purging data from audit log:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa vĩnh viễn: ' + err.message });
+  }
+});
+
 module.exports = router;
 module.exports.logAuditAction = logAuditAction;

@@ -92,6 +92,8 @@ async function initDB() {
     await client.query(`
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS edit_history JSONB DEFAULT '[]';
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
+      ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
     `);
 
 
@@ -460,6 +462,7 @@ async function initDB() {
       -- Composite indexes for time series and GPS spatial mapping
       CREATE INDEX IF NOT EXISTS idx_plant_logs_plant_date ON plant_logs(plant_id, log_date DESC);
       CREATE INDEX IF NOT EXISTS idx_plant_logs_type ON plant_logs(log_type);
+      CREATE INDEX IF NOT EXISTS idx_plant_logs_is_deleted ON plant_logs(is_deleted) WHERE is_deleted IS TRUE;
       CREATE INDEX IF NOT EXISTS idx_plants_coords ON plants(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
     `);
 

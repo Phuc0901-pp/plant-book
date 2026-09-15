@@ -3,7 +3,8 @@
    modules/logs.js — Care log rendering, grouping, search & filters
    ═══════════════════════════════════════════════════════════════ */
 
-import { esc, formatDate } from '../core/utils.js';
+import { esc, formatDate, toast } from '../core/utils.js';
+import { api } from '../core/api.js';
 import { buildMediaThumbnailsHtml } from './media.js';
 
 // ── State ─────────────────────────────────────────────────────
@@ -14,6 +15,10 @@ let _diseaseOnlyFilterActive = false;
 let _currentLogPage = 1;
 const _logPageSize = 20;
 let _currentFilteredLogs = [];
+
+// ── State Chọn nhiều & Xóa chọn lọc ───────────────────────────
+let _batchSelectMode = false;
+const _selectedLogIds = new Set();
 
 
 /**
@@ -578,11 +583,17 @@ function _renderLogPage() {
         <!-- Date Header Bar -->
         <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px;">
+            ${_batchSelectMode ? `<input type="checkbox" class="log-day-select-all" onchange="toggleSelectAllDay('${esc(dateStr)}', this.checked)" style="width:17px; height:17px; cursor:pointer; accent-color:#10b981; margin-right:4px;" title="Chọn tất cả mục trong ngày này">` : ''}
             <i class="fa-regular fa-calendar-days" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
           </div>
-          <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:700; padding:3px 12px; border-radius:20px;">
-            ${dayItems.length} nhật ký hoạt động
-          </span>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:700; padding:3px 12px; border-radius:20px;">
+              ${dayItems.length} nhật ký hoạt động
+            </span>
+            <button type="button" class="btn btn-xs" onclick="deleteDayLogs('${esc(dateStr)}')" style="background:rgba(220,38,38,0.25); color:#fca5a5; border:1px solid rgba(220,38,38,0.4); border-radius:8px; padding:4px 10px; font-size:11.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Xóa mềm toàn bộ hoạt động trong ngày ${esc(dateStr)}">
+              <i class="fa-solid fa-trash-can"></i> Xóa ngày này
+            </button>
+          </div>
         </div>
 
         <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
@@ -616,19 +627,23 @@ function _renderLogPage() {
         : '';
 
       const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
+      const isSelected = l.id && _selectedLogIds.has(l.id);
 
       if (l.isDiseaseLog || l.log_type === 'Bệnh cây') {
         html += `
           <div style="background:linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border:1px solid #fca5a5; border-left:5px solid #ef4444; border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div>
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:800; font-size:11px;">🐛 Bệnh cây</span>
-                <strong style="color:#dc2626; font-size:14px;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(targetDisplay)}</strong>
-              </div>
-              <div style="font-size:12.5px; color:#7f1d1d; margin-top:4px; font-weight:600;">${detailsStr}</div>
-              ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
-              <div style="font-size:11.5px; color:#991b1b; margin-top:4px;">
-                👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:240px;">
+              ${_batchSelectMode && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
+              <div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:800; font-size:11px;">🐛 Bệnh cây</span>
+                  <strong style="color:#dc2626; font-size:14px;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(targetDisplay)}</strong>
+                </div>
+                <div style="font-size:12.5px; color:#7f1d1d; margin-top:4px; font-weight:600;">${detailsStr}</div>
+                ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
+                <div style="font-size:11.5px; color:#991b1b; margin-top:4px;">
+                  👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+                </div>
               </div>
             </div>
 
@@ -636,7 +651,7 @@ function _renderLogPage() {
               <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})" style="border-color:#fca5a5; color:#dc2626;">
                 <i class="fa fa-pen"></i> Sửa
               </button>
-              <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id})">
+              <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id}, ${l.plant_id || 'null'})" title="Xóa mềm nhật ký này">
                 <i class="fa fa-trash"></i>
               </button>
             </div>
@@ -645,14 +660,17 @@ function _renderLogPage() {
       } else {
         html += `
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div>
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <span class="badge badge-green" style="font-size:11px; font-weight:700;">${esc(l.log_type)}</span>
-                <strong style="color:#0f172a; font-size:14px;">${esc(targetDisplay)}</strong>
-              </div>
-              ${detailsStr ? `<div style="font-size:12.5px; color:#475569; margin-top:4px;">${detailsStr}</div>` : ''}
-              <div style="font-size:11.5px; color:#64748b; margin-top:4px;">
-                👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:240px;">
+              ${_batchSelectMode && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
+              <div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span class="badge badge-green" style="font-size:11px; font-weight:700;">${esc(l.log_type)}</span>
+                  <strong style="color:#0f172a; font-size:14px;">${esc(targetDisplay)}</strong>
+                </div>
+                ${detailsStr ? `<div style="font-size:12.5px; color:#475569; margin-top:4px;">${detailsStr}</div>` : ''}
+                <div style="font-size:11.5px; color:#64748b; margin-top:4px;">
+                  👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+                </div>
               </div>
             </div>
 
@@ -660,7 +678,7 @@ function _renderLogPage() {
               <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})">
                 <i class="fa fa-pen"></i> Sửa
               </button>
-              <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id})">
+              <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id}, ${l.plant_id || 'null'})" title="Xóa mềm nhật ký này">
                 <i class="fa fa-trash"></i>
               </button>
             </div>
@@ -698,9 +716,8 @@ function _renderLogPage() {
   }
 }
 
-
 /**
- * Render toàn bộ nhật ký với phân trang 10 dòng/trang ở tab Lịch sử.
+ * Render toàn bộ nhật ký với phân trang ở tab Lịch sử.
  * @param {Array} logs
  */
 export function renderUserLogsTableFull(logs) {
@@ -711,7 +728,6 @@ export function renderUserLogsTableFull(logs) {
 
 /**
  * Tạo HTML một hàng nhật ký.
- * Nổi bật màu đỏ rực đối với Bệnh cây.
  * @private
  */
 function _logRow(l) {
@@ -734,7 +750,6 @@ function _logRow(l) {
     ? buildMediaThumbnailsHtml(l.media_urls, 40)
     : '';
 
-  // ── Xử lý giao diện màu đỏ rực cho CÂY BỆNH ──
   if (l.isDiseaseLog || l.log_type === 'Bệnh cây') {
     return `
       <tr style="background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border-left: 4px solid #ef4444;">
@@ -777,7 +792,6 @@ function _logRow(l) {
     'Tỉa hoa':   'badge-amber'
   };
   const badgeClass = badgeMap[l.log_type] || 'badge-gray';
-
   const plantText = l.targetDisplay ? esc(l.targetDisplay) : `Cây #${l.tree_code || l.plant_id}`;
 
   return `
@@ -801,7 +815,6 @@ function _logRow(l) {
 
 /**
  * Lọc và sắp xếp nhật ký canh tác ở tab Lịch sử.
- * Hỗ trợ lọc Trang trại, loại hoạt động, nút xem cây bệnh và kiểu sắp xếp.
  */
 export function filterUserLogs() {
   const query       = (document.getElementById('user-log-search')?.value || '').trim().toLowerCase();
@@ -868,3 +881,346 @@ export function filterUserLogs() {
 
   renderUserLogsTableFull(resultList);
 }
+
+// ── CRUD, Soft-Delete & Batch Selection Controllers ───────────
+
+/** Tải lại toàn bộ dữ liệu nhật ký canh tác từ server */
+export async function reloadUserLogs() {
+  try {
+    const freshLogs = await api('/plants/logs/recent?days=30');
+    setLogsCache(freshLogs || []);
+    filterUserLogs();
+  } catch (err) {
+    console.warn('Could not reload logs cache:', err);
+  }
+}
+window.reloadUserLogs = reloadUserLogs;
+
+/** Xóa mềm 1 bản ghi nhật ký */
+export async function deleteCareLog(logId, plantId) {
+  if (!logId) return;
+  const confirmed = confirm('Bạn có chắc chắn muốn xóa mềm nhật ký canh tác này?\n(Dữ liệu sẽ được ẩn và có thể được xem/khôi phục lại tại mục Lịch sử biến động)');
+  if (!confirmed) return;
+
+  try {
+    const res = await api(`/plants/logs/${logId}`, { method: 'DELETE' });
+    toast(res.message || 'Đã xóa mềm nhật ký canh tác thành công.', 'success');
+    _selectedLogIds.delete(logId);
+    updateBatchSelectionUI();
+    await reloadUserLogs();
+  } catch (err) {
+    alert('Lỗi khi xóa nhật ký: ' + err.message);
+  }
+}
+window.deleteCareLog = deleteCareLog;
+
+/** Xóa mềm toàn bộ nhật ký trong một ngày */
+export async function deleteDayLogs(dateFormatted) {
+  if (!dateFormatted) return;
+  const confirmed = confirm(`Bạn có chắc chắn muốn xóa mềm toàn bộ nhật ký canh tác trong ngày ${dateFormatted}?\n(Dữ liệu có thể được xem và khôi phục lại tại mục Lịch sử biến động)`);
+  if (!confirmed) return;
+
+  let dateIso = '';
+  const parts = dateFormatted.split('/');
+  if (parts.length === 3) {
+    dateIso = `${parts[2]}-${parts[1]}-${parts[0]}`;
+  } else {
+    dateIso = dateFormatted;
+  }
+
+  try {
+    const res = await api('/plants/logs/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateIso })
+    });
+    toast(res.message || `Đã xóa mềm toàn bộ nhật ký ngày ${dateFormatted}.`, 'success');
+    await reloadUserLogs();
+  } catch (err) {
+    alert('Lỗi khi xóa nhật ký theo ngày: ' + err.message);
+  }
+}
+window.deleteDayLogs = deleteDayLogs;
+
+/** Bật/tắt chế độ Chọn nhiều (Batch Selection Mode) */
+export function toggleBatchSelectMode(forceState) {
+  if (typeof forceState === 'boolean') {
+    _batchSelectMode = forceState;
+  } else {
+    _batchSelectMode = !_batchSelectMode;
+  }
+
+  const btn = document.getElementById('btn-toggle-batch-log-mode');
+  const bar = document.getElementById('user-logs-batch-action-bar');
+
+  if (btn) {
+    if (_batchSelectMode) {
+      btn.style.background = '#0284c7';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = '#0284c7';
+      btn.innerHTML = `<i class="fa-solid fa-square-check"></i> Đang chọn (${_selectedLogIds.size})`;
+    } else {
+      btn.style.background = '#f8fafc';
+      btn.style.color = '#334155';
+      btn.style.borderColor = '#cbd5e1';
+      btn.innerHTML = `<i class="fa-solid fa-square-check" style="color:#0284c7;"></i> Chọn nhiều`;
+    }
+  }
+
+  if (bar) {
+    bar.style.display = _batchSelectMode ? 'flex' : 'none';
+  }
+
+  updateBatchSelectionUI();
+  _renderLogPage();
+}
+window.toggleBatchSelectMode = toggleBatchSelectMode;
+
+/** Chọn / bỏ chọn 1 dòng nhật ký */
+export function toggleLogSelection(logId, isChecked) {
+  if (isChecked) {
+    _selectedLogIds.add(logId);
+  } else {
+    _selectedLogIds.delete(logId);
+  }
+  updateBatchSelectionUI();
+}
+window.toggleLogSelection = toggleLogSelection;
+
+/** Chọn / bỏ chọn tất cả mục trong 1 ngày */
+export function toggleSelectAllDay(dateStr, isChecked) {
+  const dayCheckboxes = document.querySelectorAll(`.log-cb-day-${CSS.escape(dateStr)}`);
+  dayCheckboxes.forEach(cb => {
+    cb.checked = isChecked;
+    const id = parseInt(cb.value);
+    if (id) {
+      if (isChecked) _selectedLogIds.add(id);
+      else _selectedLogIds.delete(id);
+    }
+  });
+  updateBatchSelectionUI();
+}
+window.toggleSelectAllDay = toggleSelectAllDay;
+
+/** Bỏ chọn tất cả */
+export function clearAllLogSelection() {
+  _selectedLogIds.clear();
+  document.querySelectorAll('.log-item-checkbox').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.log-day-select-all').forEach(cb => cb.checked = false);
+  updateBatchSelectionUI();
+}
+window.clearAllLogSelection = clearAllLogSelection;
+
+function updateBatchSelectionUI() {
+  const count = _selectedLogIds.size;
+  const countEl = document.getElementById('user-logs-selected-count');
+  const btnDelCount = document.getElementById('user-logs-btn-del-count');
+  const delBtn = document.getElementById('btn-delete-batch-selected');
+  const toggleBtn = document.getElementById('btn-toggle-batch-log-mode');
+
+  if (countEl) countEl.textContent = count;
+  if (btnDelCount) btnDelCount.textContent = count;
+  if (toggleBtn && _batchSelectMode) {
+    toggleBtn.innerHTML = `<i class="fa-solid fa-square-check"></i> Đang chọn (${count})`;
+  }
+  if (delBtn) {
+    delBtn.disabled = (count === 0);
+    delBtn.style.opacity = count === 0 ? '0.5' : '1';
+    delBtn.style.cursor = count === 0 ? 'not-allowed' : 'pointer';
+  }
+}
+
+/** Xóa mềm tất cả các mục đã tick chọn */
+export async function deleteSelectedBatchLogs() {
+  const count = _selectedLogIds.size;
+  if (count === 0) {
+    toast('Vui lòng chọn ít nhất 1 nhật ký để xóa.', 'info');
+    return;
+  }
+
+  const confirmed = confirm(`Bạn có chắc chắn muốn xóa mềm ${count} nhật ký đã chọn?\n(Dữ liệu có thể được xem và khôi phục lại tại mục Lịch sử biến động)`);
+  if (!confirmed) return;
+
+  try {
+    const res = await api('/plants/logs/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ log_ids: Array.from(_selectedLogIds) })
+    });
+    toast(res.message || `Đã xóa mềm ${count} nhật ký thành công.`, 'success');
+    _selectedLogIds.clear();
+    toggleBatchSelectMode(false);
+    await reloadUserLogs();
+  } catch (err) {
+    alert('Lỗi khi xóa hàng loạt: ' + err.message);
+  }
+}
+window.deleteSelectedBatchLogs = deleteSelectedBatchLogs;
+
+// ── Modal Xóa Chọn Lọc (Selective Delete Modal) Controllers ──
+
+export function openSelectiveDeleteModal() {
+  const modal = document.getElementById('selective-log-delete-modal');
+  if (!modal) return;
+
+  // Populate farm dropdown
+  const farmSel = document.getElementById('modal-del-farm');
+  const allFarms = window._allFarmsCache || [];
+  if (farmSel) {
+    farmSel.innerHTML = `<option value="all">Tất cả trang trại</option>`
+      + allFarms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  }
+
+  onModalDelFarmChange();
+
+  const singleDateInput = document.getElementById('modal-del-date-single');
+  if (singleDateInput && !singleDateInput.value) {
+    singleDateInput.value = new Date().toISOString().slice(0, 10);
+  }
+
+  modal.style.display = 'flex';
+  previewSelectiveDelete();
+}
+window.openSelectiveDeleteModal = openSelectiveDeleteModal;
+
+export function closeSelectiveDeleteModal() {
+  const modal = document.getElementById('selective-log-delete-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeSelectiveDeleteModal = closeSelectiveDeleteModal;
+
+export function onModalDelFarmChange() {
+  const farmId = document.getElementById('modal-del-farm')?.value || 'all';
+  const plantSel = document.getElementById('modal-del-plant');
+  const allPlants = window._allPlantsCache || [];
+
+  if (plantSel) {
+    let plants = allPlants;
+    if (farmId !== 'all') {
+      plants = allPlants.filter(p => String(p.farm_id) === farmId);
+    }
+    plantSel.innerHTML = `<option value="all">Tất cả cây trồng</option>`
+      + plants.map(p => `<option value="${p.id}">Cây #${esc(p.tree_code || p.id)} (${esc(p.plant_type || '')})</option>`).join('');
+  }
+
+  previewSelectiveDelete();
+}
+window.onModalDelFarmChange = onModalDelFarmChange;
+
+export function onModalDelDateModeChange() {
+  const mode = document.querySelector('input[name="modal_del_date_mode"]:checked')?.value || 'single';
+  const singleBox = document.getElementById('modal-del-box-single');
+  const rangeBox = document.getElementById('modal-del-box-range');
+
+  if (singleBox) singleBox.style.display = (mode === 'single') ? 'block' : 'none';
+  if (rangeBox) rangeBox.style.display = (mode === 'range') ? 'grid' : 'none';
+
+  previewSelectiveDelete();
+}
+window.onModalDelDateModeChange = onModalDelDateModeChange;
+
+let _previewDebounceTimer = null;
+export function previewSelectiveDelete() {
+  clearTimeout(_previewDebounceTimer);
+  _previewDebounceTimer = setTimeout(async () => {
+    const farmId = document.getElementById('modal-del-farm')?.value || 'all';
+    const plantId = document.getElementById('modal-del-plant')?.value || 'all';
+    const logType = document.getElementById('modal-del-type')?.value || 'all';
+    const dateMode = document.querySelector('input[name="modal_del_date_mode"]:checked')?.value || 'single';
+    const singleDate = document.getElementById('modal-del-date-single')?.value || '';
+    const fromDate = document.getElementById('modal-del-date-from')?.value || '';
+    const toDate = document.getElementById('modal-del-date-to')?.value || '';
+    const keyword = document.getElementById('modal-del-keyword')?.value?.trim() || '';
+
+    const payload = {
+      farm_id: farmId,
+      plant_id: plantId,
+      log_type: logType,
+      date_mode: dateMode,
+      date: singleDate,
+      from_date: fromDate,
+      to_date: toDate,
+      keyword: keyword
+    };
+
+    const statusEl = document.getElementById('modal-del-preview-status');
+    const countEl = document.getElementById('modal-del-count-preview');
+    const btnCountText = document.getElementById('btn-del-count-text');
+    const confirmBtn = document.getElementById('btn-modal-confirm-selective-delete');
+
+    if (statusEl) statusEl.textContent = 'Đang tính toán...';
+
+    try {
+      const res = await api('/plants/logs/batch-delete/preview', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      const count = res.count || 0;
+      if (countEl) countEl.textContent = count;
+      if (btnCountText) btnCountText.textContent = count;
+      if (statusEl) {
+        statusEl.textContent = count > 0 ? `Sẵn sàng xóa ${count} bản ghi` : 'Không có bản ghi phù hợp';
+        statusEl.style.color = count > 0 ? '#15803d' : '#991b1b';
+      }
+      if (confirmBtn) {
+        confirmBtn.disabled = (count === 0);
+        confirmBtn.style.opacity = count === 0 ? '0.5' : '1';
+        confirmBtn.style.cursor = count === 0 ? 'not-allowed' : 'pointer';
+      }
+    } catch (err) {
+      if (statusEl) statusEl.textContent = 'Lỗi tính toán: ' + err.message;
+    }
+  }, 200);
+}
+window.previewSelectiveDelete = previewSelectiveDelete;
+
+export async function executeSelectiveDelete() {
+  const farmId = document.getElementById('modal-del-farm')?.value || 'all';
+  const plantId = document.getElementById('modal-del-plant')?.value || 'all';
+  const logType = document.getElementById('modal-del-type')?.value || 'all';
+  const dateMode = document.querySelector('input[name="modal_del_date_mode"]:checked')?.value || 'single';
+  const singleDate = document.getElementById('modal-del-date-single')?.value || '';
+  const fromDate = document.getElementById('modal-del-date-from')?.value || '';
+  const toDate = document.getElementById('modal-del-date-to')?.value || '';
+  const keyword = document.getElementById('modal-del-keyword')?.value?.trim() || '';
+
+  const payload = {
+    farm_id: farmId,
+    plant_id: plantId,
+    log_type: logType,
+    date_mode: dateMode,
+    date: singleDate,
+    from_date: fromDate,
+    to_date: toDate,
+    keyword: keyword
+  };
+
+  const countText = document.getElementById('modal-del-count-preview')?.textContent || '0';
+  const confirmed = confirm(`XÁC NHẬN: Bạn có chắc chắn muốn xóa mềm ${countText} bản ghi nhật ký canh tác thỏa mãn các điều kiện đã chọn?\n(Dữ liệu có thể được xem và khôi phục lại tại mục Lịch sử biến động)`);
+  if (!confirmed) return;
+
+  const confirmBtn = document.getElementById('btn-modal-confirm-selective-delete');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa mềm...`;
+  }
+
+  try {
+    const res = await api('/plants/logs/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    toast(res.message || 'Đã xóa mềm nhật ký canh tác thành công.', 'success');
+    closeSelectiveDeleteModal();
+    await reloadUserLogs();
+  } catch (err) {
+    alert('Lỗi khi thực hiện xóa chọn lọc: ' + err.message);
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Xác nhận xóa mềm (<span id="btn-del-count-text">${countText}</span> mục)`;
+    }
+  }
+}
+window.executeSelectiveDelete = executeSelectiveDelete;
+
