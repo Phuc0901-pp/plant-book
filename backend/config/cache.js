@@ -1,4 +1,4 @@
-﻿/**
+/**
  * backend/config/cache.js - High-Performance In-Memory RAM Cache Engine (Zero-Cost / $0)
  * Tự động lưu trữ đệm trong RAM, giải phóng 80% truy vấn CSDL, phản hồi <0.1ms.
  */
@@ -95,6 +95,14 @@ class MemoryCacheEngine {
    * Xóa toàn bộ cache
    */
   flushAll() {
+    this.cache.clear();
+  }
+
+  flush() {
+    this.cache.clear();
+  }
+
+  clear() {
     this.cache.clear();
   }
 }

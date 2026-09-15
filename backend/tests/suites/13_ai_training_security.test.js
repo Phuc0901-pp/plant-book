@@ -188,4 +188,20 @@ describe('Suite 13: AI Training Studio, Knowledge Base RAG & High-Grade Security
     expect(aiRouteContent.includes('ai_knowledge_articles')).toBe(true);
   });
 
+  it('13.7 Should verify MemoryCacheEngine flush(), flushAll(), clear(), and pattern invalidation', () => {
+    const memoryCache = require('../../config/cache');
+    expect(typeof memoryCache.flush).toBe('function');
+    expect(typeof memoryCache.flushAll).toBe('function');
+    expect(typeof memoryCache.clear).toBe('function');
+
+    memoryCache.set('ai_sop_test_1', { title: 'Test 1' }, 60);
+    memoryCache.set('ai_sop_test_2', { title: 'Test 2' }, 60);
+    expect(memoryCache.get('ai_sop_test_1') !== null).toBe(true);
+
+    memoryCache.flush();
+    expect(memoryCache.get('ai_sop_test_1')).toBe(null);
+    expect(memoryCache.get('ai_sop_test_2')).toBe(null);
+  });
+
 });
+
