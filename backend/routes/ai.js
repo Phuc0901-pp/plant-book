@@ -267,6 +267,15 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
         }
       }
 
+      // NẾU KHỚP CẶP Q&A ĐÃ HUẤN LUYỆN: Trả lời tức thì 100% chuẩn xác theo ý Admin ($0 Token, 0ms latency)
+      if (matchedQAPair && matchedQAPair.expected_answer) {
+        return res.json({
+          reply: matchedQAPair.expected_answer,
+          source: 'trained_qa',
+          modelUsed: 'trained-qa-instant'
+        });
+      }
+
       // 2.2 Quét các bài viết tri thức chuyên môn liên quan
       const articleRows = await pool.readQuery(`
         SELECT title, category, topic_keywords, content, priority 
