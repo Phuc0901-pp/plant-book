@@ -20,7 +20,7 @@
   }
 
   function getAuthToken() {
-    return localStorage.getItem('token') || '';
+    return localStorage.getItem('pb_token') || localStorage.getItem('token') || window.token || '';
   }
 
   // ─────────────────────────────────────────────────────────────
