@@ -13,7 +13,7 @@ const WebSocket = require('ws');
 const compression = require('compression');
 
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 
 // Automatically assemble modular HTML components on server startup

@@ -6,8 +6,42 @@ const admin = require('../middleware/admin');
 const memoryCache = require('../config/cache');
 
 // ─────────────────────────────────────────────────────────────
-// 🛡️ BẢO MẬT: BỘ LỌC XSS & CHỐNG BOT HONEYPOT
+// 🛡️ BẢO MẬT: BỘ LỌC XSS, CHỐNG BOT HONEYPOT & TRÍCH XUẤT REAL CLIENT IP
 // ─────────────────────────────────────────────────────────────
+
+/**
+ * Trích xuất Real Client Public IP qua Render/Cloudflare/Nginx Load Balancers
+ */
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ips = forwarded.split(',').map(ip => ip.trim()).filter(Boolean);
+    if (ips.length > 0) return ips[0].replace(/^::ffff:/, '');
+  }
+  if (req.headers['cf-connecting-ip']) return req.headers['cf-connecting-ip'].replace(/^::ffff:/, '');
+  if (req.headers['x-real-ip']) return req.headers['x-real-ip'].replace(/^::ffff:/, '');
+  return (req.ip || req.socket?.remoteAddress || '127.0.0.1').replace(/^::ffff:/, '');
+}
+
+/**
+ * Mã hóa / Che giấu email và định danh để bảo mật thông tin quản trị
+ */
+function maskEmail(email) {
+  if (!email || typeof email !== 'string') return '—';
+  const parts = email.split('@');
+  if (parts.length !== 2) return email;
+  const name = parts[0];
+  const domain = parts[1];
+  const maskedName = name.length <= 3 ? name[0] + '***' : name.slice(0, 2) + '***' + name.slice(-1);
+  return `${maskedName}@${domain}`;
+}
+
+function generateIsoPublicId(role, numId) {
+  const prefix = role === 'admin' ? 'adm' : 'usr';
+  const id = parseInt(numId) || 0;
+  const val = Math.abs(((id * 1664525 + 1013904223) ^ 0x5B9A4C21) % 90000000) + 10000000;
+  return `${prefix}-${val}`;
+}
 
 /**
  * Làm sạch chuỗi chống XSS Injection cơ bản
@@ -27,15 +61,17 @@ function sanitizeInput(str) {
  */
 function botProtectionMiddleware(req, res, next) {
   const { hp_security_trap, website_hidden_check } = req.body || {};
+  const clientIp = getClientIp(req);
+
   // Nếu trường ẩn honeypot có dữ liệu -> 100% là Bot tự động điền form
   if (hp_security_trap || website_hidden_check) {
-    console.warn(`🚨 [SECURITY ALERT] Phát hiện Bot cố gắng xâm nhập AI Training API từ IP ${req.ip}`);
+    console.warn(`🚨 [SECURITY ALERT] Phát hiện Bot cố gắng xâm nhập AI Training API từ IP ${clientIp}`);
     
     // Ghi nhận sự kiện bảo mật vào audit log
     pool.query(`
       INSERT INTO ai_training_logs (action, target_type, details, ip_address)
       VALUES ($1, $2, $3, $4)
-    `, ['BLOCKED_BOT', 'SECURITY_TRAP', JSON.stringify({ ip: req.ip, userAgent: req.get('user-agent'), body: req.body }), req.ip])
+    `, ['BLOCKED_BOT', 'SECURITY_TRAP', JSON.stringify({ ip: clientIp, userAgent: req.get('user-agent'), body: req.body }), clientIp])
     .catch(() => {});
 
     return res.status(403).json({ error: 'Truy cập bị từ chối bởi Hệ thống Phòng Vệ Tự Động.' });
@@ -126,10 +162,11 @@ router.post('/knowledge', botProtectionMiddleware, async (req, res) => {
     memoryCache.flush();
 
     // Ghi nhật ký bảo mật
+    const clientIp = getClientIp(req);
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, ['CREATE', 'KNOWLEDGE_ARTICLE', article.id, JSON.stringify({ title: cleanTitle, category: cleanCategory }), req.user.id, req.ip]);
+    `, ['CREATE', 'KNOWLEDGE_ARTICLE', article.id, JSON.stringify({ title: cleanTitle, category: cleanCategory }), req.user.id, clientIp]);
 
     res.status(201).json({ success: true, article, message: 'Đã lưu tri thức mới thành công!' });
   } catch (err) {
@@ -171,10 +208,11 @@ router.put('/knowledge/:id', botProtectionMiddleware, async (req, res) => {
     memoryCache.flush();
 
     // Ghi nhật ký bảo mật
+    const clientIp = getClientIp(req);
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, ['UPDATE', 'KNOWLEDGE_ARTICLE', id, JSON.stringify({ old: oldData.title, new: cleanTitle }), req.user.id, req.ip]);
+    `, ['UPDATE', 'KNOWLEDGE_ARTICLE', id, JSON.stringify({ old: oldData.title, new: cleanTitle, category: cleanCategory }), req.user.id, clientIp]);
 
     res.json({ success: true, article: updateRes.rows[0], message: 'Đã cập nhật tri thức thành công!' });
   } catch (err) {
@@ -190,7 +228,7 @@ router.put('/knowledge/:id', botProtectionMiddleware, async (req, res) => {
 router.delete('/knowledge/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await pool.query('SELECT title FROM ai_knowledge_articles WHERE id = $1', [id]);
+    const existing = await pool.query('SELECT title, category FROM ai_knowledge_articles WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy bài viết tri thức.' });
     }
@@ -198,10 +236,11 @@ router.delete('/knowledge/:id', async (req, res) => {
     await pool.query('DELETE FROM ai_knowledge_articles WHERE id = $1', [id]);
     memoryCache.flush();
 
+    const clientIp = getClientIp(req);
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, ['DELETE', 'KNOWLEDGE_ARTICLE', id, JSON.stringify({ title: existing.rows[0].title }), req.user.id, req.ip]);
+    `, ['DELETE', 'KNOWLEDGE_ARTICLE', id, JSON.stringify({ title: existing.rows[0].title, category: existing.rows[0].category }), req.user.id, clientIp]);
 
     res.json({ success: true, message: 'Đã xóa bài viết tri thức thành công.' });
   } catch (err) {
@@ -278,10 +317,11 @@ router.post('/qa', botProtectionMiddleware, async (req, res) => {
 
     memoryCache.flush();
 
+    const clientIp = getClientIp(req);
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, ['CREATE', 'TRAINING_QA', insertRes.rows[0].id, JSON.stringify({ category: cleanCategory, sample: cleanQuestions.slice(0, 100) }), req.user.id, req.ip]);
+    `, ['CREATE', 'TRAINING_QA', insertRes.rows[0].id, JSON.stringify({ category: cleanCategory, sample: cleanQuestions.slice(0, 100) }), req.user.id, clientIp]);
 
     res.status(201).json({ success: true, qa: insertRes.rows[0], message: 'Đã lưu cặp Q&A huấn luyện thành công!' });
   } catch (err) {
@@ -320,10 +360,11 @@ router.put('/qa/:id', botProtectionMiddleware, async (req, res) => {
 
     memoryCache.flush();
 
+    const clientIp = getClientIp(req);
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, ['UPDATE', 'TRAINING_QA', id, JSON.stringify({ category: cleanCategory }), req.user.id, req.ip]);
+    `, ['UPDATE', 'TRAINING_QA', id, JSON.stringify({ category: cleanCategory, sample: cleanQuestions.slice(0, 100) }), req.user.id, clientIp]);
 
     res.json({ success: true, qa: updateRes.rows[0], message: 'Đã cập nhật cặp Q&A thành công!' });
   } catch (err) {
@@ -339,13 +380,16 @@ router.put('/qa/:id', botProtectionMiddleware, async (req, res) => {
 router.delete('/qa/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const existing = await pool.query('SELECT category, sample_questions FROM ai_training_qa WHERE id = $1', [id]);
     await pool.query('DELETE FROM ai_training_qa WHERE id = $1', [id]);
     memoryCache.flush();
 
+    const clientIp = getClientIp(req);
+    const sampleSnippet = existing.rows[0]?.sample_questions ? existing.rows[0].sample_questions.slice(0, 80) : '';
     await pool.query(`
       INSERT INTO ai_training_logs (action, target_type, target_id, details, admin_id, ip_address)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, ['DELETE', 'TRAINING_QA', id, '{}', req.user.id, req.ip]);
+    `, ['DELETE', 'TRAINING_QA', id, JSON.stringify({ category: existing.rows[0]?.category || 'Q&A', sample: sampleSnippet }), req.user.id, clientIp]);
 
     res.json({ success: true, message: 'Đã xóa cặp Q&A thành công.' });
   } catch (err) {
@@ -498,7 +542,7 @@ router.get('/stats', async (req, res) => {
 
 /**
  * GET /api/ai/training/logs
- * Lấy danh sách nhật ký bảo mật & lịch sử nạp tri thức
+ * Lấy danh sách nhật ký bảo mật & lịch sử nạp tri thức (Hỗ trợ phân trang & ẩn danh hóa ID)
  */
 router.get('/logs', async (req, res) => {
   try {
@@ -507,9 +551,31 @@ router.get('/logs', async (req, res) => {
       FROM ai_training_logs l 
       LEFT JOIN users u ON l.admin_id = u.id 
       ORDER BY l.created_at DESC 
-      LIMIT 50
+      LIMIT 200
     `);
-    res.json({ success: true, logs: logsRes.rows });
+
+    const sanitizedLogs = (logsRes.rows || []).map(l => {
+      const publicId = l.admin_id ? generateIsoPublicId('admin', l.admin_id) : 'sys-00000000';
+      const maskedEmail = maskEmail(l.admin_email);
+      let adminDisplay = '🛡️ Hệ Thống Tự Động';
+      
+      if (l.action === 'BLOCKED_BOT') {
+        adminDisplay = '🛡️ Phòng Vệ Honeypot';
+      } else if (l.admin_name) {
+        adminDisplay = `${l.admin_name} (${publicId})`;
+      } else if (l.admin_email) {
+        adminDisplay = `${maskedEmail} (${publicId})`;
+      }
+
+      return {
+        ...l,
+        admin_public_id: publicId,
+        admin_display: adminDisplay,
+        admin_email_masked: maskedEmail
+      };
+    });
+
+    res.json({ success: true, logs: sanitizedLogs });
   } catch (err) {
     console.error('Lỗi lấy nhật ký huấn luyện:', err);
     res.status(500).json({ error: 'Lỗi máy chủ khi lấy nhật ký' });
