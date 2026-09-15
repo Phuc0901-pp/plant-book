@@ -123,6 +123,7 @@ const adminPageRouteMap = {
   cost: 'costs',
   devices: 'iot-devices',
   users: 'users',
+  'ai-training': 'ai-training',
   schemas: 'crop-schemas',
   media: 'media'
 };
@@ -133,6 +134,8 @@ const adminRoutePageMap = {
   'database': 'database',
   'database-check': 'db-check',
   'db-check': 'db-check',
+  'ai-training': 'ai-training',
+  'training': 'ai-training',
   'farms': 'gis',
   'gis': 'gis',
   'plants': 'plants',
@@ -281,6 +284,7 @@ function showPage(page, pushUrl = true) {
     schemas: 'Cấu hình loại cây', 
     media: 'Thư viện Media', 
     users: 'Quản lý Nông hộ & Người dùng',
+    'ai-training': 'Trung Tâm Huấn Luyện AI Bé Mầm (Training Studio)',
     devices: 'Quản lý thiết bị IoT',
     cost: 'Quản trị Chi phí Đầu tư'
   };
@@ -299,6 +303,7 @@ function showPage(page, pushUrl = true) {
   try {
     if (page === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
     if (page === 'database' && typeof initDatabasePage === 'function') initDatabasePage();
+    if (page === 'ai-training' && typeof initAiTrainingStudio === 'function') initAiTrainingStudio();
     if (page === 'db-check' && typeof loadDbSchemaCheck === 'function') loadDbSchemaCheck();
     if (page === 'plants') {
       if (typeof initPlantFilters === 'function') {

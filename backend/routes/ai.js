@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
@@ -243,7 +243,69 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
       }
     }
 
-    // 2. TẬP HUẤN TOÀN BỘ KIẾN THỨC NÔNG NGHIỆP & CẨM NANG HỆ THỐNG
+    // 2. DYNAMIC RAG IN-CONTEXT INJECTION (Tra cứu Kho Tri Thức & Cặp Q&A đã huấn luyện)
+    let trainedKnowledgeText = '';
+    let matchedQAPair = null;
+    const lowerMessage = message.toLowerCase().trim();
+
+    try {
+      // 2.1 Quét cặp Q&A đã huấn luyện
+      const qaRows = await pool.readQuery(`
+        SELECT sample_questions, expected_answer 
+        FROM ai_training_qa 
+        WHERE is_active = true 
+        ORDER BY updated_at DESC 
+        LIMIT 30
+      `);
+
+      for (const qa of (qaRows.rows || [])) {
+        const variants = qa.sample_questions.split('\n').map(v => v.trim().toLowerCase()).filter(Boolean);
+        const isMatch = variants.some(v => lowerMessage.includes(v) || v.includes(lowerMessage));
+        if (isMatch) {
+          matchedQAPair = qa;
+          break;
+        }
+      }
+
+      // 2.2 Quét các bài viết tri thức chuyên môn liên quan
+      const articleRows = await pool.readQuery(`
+        SELECT title, category, topic_keywords, content, priority 
+        FROM ai_knowledge_articles 
+        WHERE is_active = true 
+        ORDER BY priority DESC, updated_at DESC
+      `);
+
+      const relevantArticles = [];
+      for (const art of (articleRows.rows || [])) {
+        const kwList = (art.topic_keywords || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+        const tLower = art.title.toLowerCase();
+        const cLower = art.content.toLowerCase();
+
+        let matchScore = 0;
+        if (lowerMessage.includes(tLower) || tLower.includes(lowerMessage)) matchScore += 5;
+        kwList.forEach(k => {
+          if (lowerMessage.includes(k)) matchScore += 3;
+        });
+        if (cLower.includes(lowerMessage)) matchScore += 1;
+
+        if (matchScore > 0) {
+          relevantArticles.push({ ...art, matchScore });
+        }
+      }
+
+      relevantArticles.sort((a, b) => b.matchScore - a.matchScore);
+      const topArticles = relevantArticles.slice(0, 3);
+
+      if (topArticles.length > 0) {
+        trainedKnowledgeText = `\n[TÀI LIỆU TRI THỨC ĐỘC QUYỀN TÂN BẢO ĐÃ HUẤN LUYỆN CHO BÉ MẦM]:\n` +
+          topArticles.map((a, i) => `--- Tài liệu ${i + 1}: ${a.title} (${a.category}) ---\n${a.content}`).join('\n\n');
+      }
+
+    } catch (ragErr) {
+      console.warn('Lỗi tra cứu RAG tri thức:', ragErr.message);
+    }
+
+    // 3. TẬP HUẤN TOÀN BỘ KIẾN THỨC NÔNG NGHIỆP & CẨM NANG HỆ THỐNG
     const systemPrompt = `Bạn là "Bé Mầm AgTech" - Trợ lý số AI chuyên gia nông nghiệp thông minh của hệ thống Sổ Nông Tân Bảo AgTech.
 Xưng hô: Xưng là "Bé Mầm" hoặc "em", gọi người dùng là "${isAdmin ? 'Admin' : 'Bác ' + (currentUser.name || 'nông hộ')}".
 
@@ -257,7 +319,9 @@ Khi người dùng hỏi "App này sài sao?", "Chưa biết dùng", "Hướng d
 🌿 [BỘ KIẾN THỨC KỸ THUẬT NÔNG NGHIỆP & VIETGAP]:
 - Sầu riêng: Giai đoạn nuôi đọt (NPK 30-10-10), làm bông (xiết nước 15-20 ngày + NPK 10-50-10), nuôi trái (NPK 12-12-17 hoặc NPK 15-5-25 để cơm vàng ngọt dẻo).
 - Bệnh hại: Vàng lá thối rễ / Xì mủ nứt thân (quét Metalaxyl/Fosetyl-Al, tưới nấm Trichoderma). Rầy xanh (phun Imidacloprid/Emamectin khi đọt le mũi giáo).
-- Nguyên tắc VietGAP: Cách ly thuốc BVTV (PHI) tối thiểu 7 - 14 ngày trước thu hoạch.
+- Nguyên tắc Canh tác An Toàn: Khi sử dụng Thuốc BVTV (hóa học) bắt buộc phải cách 10 - 15 ngày sau mới được dùng Chế phẩm vi sinh (Trichoderma, Bacillus, men EM) để tránh diệt chết vi sinh vật có lợi.
+${trainedKnowledgeText}
+${matchedQAPair ? `\n[CÂU HỎI TRÙNG KHỚP VỚI CẶP ĐÃ HUẤN LUYỆN - ƯU TIÊN TRẢ LỜI THEO ĐÚNG NỘI DUNG SAU]:\n${matchedQAPair.expected_answer}\n` : ''}
 
 ⚠️ NGUYÊN TẮC QUAN TRỌNG:
 1. TRẢ LỜI ĐẦY ĐỦ, MẠCH LẠC, TUYỆT ĐỐI KHÔNG ĐƯỢC CẮT CỤT CÂU GIỮA CHỪNG.
@@ -361,7 +425,9 @@ ${systemContext}`;
     const lower = message.toLowerCase();
     let fallbackReply = '';
 
-    if (lower.includes('sài sao') || lower.includes('dùng sao') || lower.includes('hướng dẫn') || lower.includes('tạo trang trại') || lower.includes('chưa biết sài') || lower.includes('chưa biết dùng') || lower.includes('bắt đầu')) {
+    if (matchedQAPair && matchedQAPair.expected_answer) {
+      fallbackReply = matchedQAPair.expected_answer;
+    } else if (lower.includes('sài sao') || lower.includes('dùng sao') || lower.includes('hướng dẫn') || lower.includes('tạo trang trại') || lower.includes('chưa biết sài') || lower.includes('chưa biết dùng') || lower.includes('bắt đầu')) {
       fallbackReply = `🌱 **Chào mừng Bác đến với Sổ Nông Tân Bảo AgTech! Bé Mầm xin hướng dẫn quy trình 4 bước sử dụng cực kỳ đơn giản sau đây:**\n\n` +
         `📍 **Bước 1: Khởi tạo Trang Trại Đầu Tiên:**\n` +
         `- Vào menu **"Trang trại"** ở thanh điều hướng bên trái.\n` +
@@ -394,7 +460,7 @@ ${systemContext}`;
       fallbackReply = `🌿 **Kỹ thuật xử lý bệnh hại cây trồng chuẩn VietGAP:**\n` +
         `• **Bệnh Vàng lá thối rễ:** Giảm lượng nước tưới, xới nhẹ đất quanh tán cây, tưới thuốc hoạt chất *Metalaxyl* hoặc *Dimethomorph*, kết hợp bổ sung nấm đối kháng *Trichoderma* để phục hồi rễ tơ.\n` +
         `• **Bệnh Đốm lá / Rỉ sắt / Thán thư:** Cắt tỉa cành thông thoáng, phun thuốc hoạt chất *Mancozeb*, *Hexaconazole* hoặc *Azoxystrobin*.\n` +
-        `• **Thời gian cách ly (PHI):** Ngưng phun thuốc BVTV tối thiểu 7 - 14 ngày trước khi thu hoạch để đảm bảo an toàn nông sản! 🩺`;
+        `• **Lưu ý khoảng cách:** Khi đã phun thuốc hóa học trị bệnh, **BẮT BUỘC cách 10 - 15 ngày sau** mới được tưới men vi sinh / nấm đối kháng để tránh thuốc hóa học diệt chết men vi sinh có lợi! 🩺`;
     } else if (lower.includes('tưới') || lower.includes('nước') || lower.includes('ẩm')) {
       fallbackReply = `💧 **Hướng dẫn liều lượng tưới nước:**\n` +
         `• Giữ độ ẩm đất vùng rễ cây ở mức **65% - 75%**.\n` +

@@ -446,6 +446,55 @@ async function initDB() {
       ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS is_phi_violation BOOLEAN DEFAULT false;
     `);
 
+    // AI Training Studio & Agronomic Knowledge Base Tables
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS ai_knowledge_articles (
+        id SERIAL PRIMARY KEY,
+        category VARCHAR(100) NOT NULL DEFAULT 'Kỹ thuật Canh tác',
+        title VARCHAR(255) NOT NULL,
+        topic_keywords TEXT,
+        content TEXT NOT NULL,
+        priority INTEGER NOT NULL DEFAULT 5,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS ai_training_qa (
+        id SERIAL PRIMARY KEY,
+        category VARCHAR(100) NOT NULL DEFAULT 'Hỏi Đáp Thường Gặp',
+        sample_questions TEXT NOT NULL,
+        expected_answer TEXT NOT NULL,
+        keywords VARCHAR(255),
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS ai_training_logs (
+        id SERIAL PRIMARY KEY,
+        action VARCHAR(50) NOT NULL,
+        target_type VARCHAR(50) NOT NULL,
+        target_id INTEGER,
+        details JSONB DEFAULT '{}',
+        admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        ip_address VARCHAR(100),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS ai_unanswered_queries (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        user_query TEXT NOT NULL,
+        bot_response TEXT,
+        user_feedback VARCHAR(20) DEFAULT 'unanswered',
+        status VARCHAR(50) DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
     // Database Performance Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_plants_farm_id ON plants(farm_id);
@@ -464,6 +513,8 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_plant_logs_type ON plant_logs(log_type);
       CREATE INDEX IF NOT EXISTS idx_plant_logs_is_deleted ON plant_logs(is_deleted) WHERE is_deleted IS TRUE;
       CREATE INDEX IF NOT EXISTS idx_plants_coords ON plants(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_ai_knowledge_active ON ai_knowledge_articles(is_active, priority DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_training_qa_active ON ai_training_qa(is_active);
     `);
 
     // Seed default configurations
