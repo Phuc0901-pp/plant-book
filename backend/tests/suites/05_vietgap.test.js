@@ -1,27 +1,6 @@
 const { describe, it, expect } = require('../test-framework');
 
-describe('Suite 5: VietGAP 100% Compliance, PHI Quarantine & Traceability Batch Codes', () => {
-
-  // Algorithmic helper for PHI quarantine calculation
-  function calculatePhiQuarantine(sprayDateStr, phiDays) {
-    const sprayDate = new Date(sprayDateStr);
-    const phiUntil = new Date(sprayDate);
-    phiUntil.setDate(phiUntil.getDate() + parseInt(phiDays));
-    return phiUntil.toISOString().slice(0, 10);
-  }
-
-  function getPhiStatus(phiUntilDateStr, checkDate = new Date()) {
-    if (!phiUntilDateStr) return { status: 'safe', remainingDays: 0 };
-    const phiUntil = new Date(phiUntilDateStr);
-    phiUntil.setHours(23, 59, 59, 999);
-
-    if (checkDate <= phiUntil) {
-      const diffMs = phiUntil.getTime() - checkDate.getTime();
-      const remainingDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-      return { status: 'quarantine', remainingDays };
-    }
-    return { status: 'safe', remainingDays: 0 };
-  }
+describe('Suite 5: VietGAP 100% Compliance, Traceability Batch Codes & Active Ingredients', () => {
 
   function generateVietgapBatchCode(pucCode, harvestDateStr, treeCode) {
     const puc = (pucCode || 'VN-TB').trim().toUpperCase();
@@ -30,59 +9,7 @@ describe('Suite 5: VietGAP 100% Compliance, PHI Quarantine & Traceability Batch 
     return `${puc}-${dateFormatted}-${cleanTree}`;
   }
 
-  it('5.1 Should calculate PHI expiration date accurately when applying pesticide', () => {
-    const sprayDate = '2026-09-01';
-    const phiDays = 14; // 14 days quarantine for Anvil 5SC
-
-    const phiUntil = calculatePhiQuarantine(sprayDate, phiDays);
-    expect(phiUntil).toBe('2026-09-15');
-  });
-
-  it('5.2 Should set status to quarantine during active PHI period and safe after expiry', () => {
-    const phiUntilDate = '2026-09-15';
-
-    // Check on 2026-09-05 (Within quarantine)
-    const check1 = getPhiStatus(phiUntilDate, new Date('2026-09-05T12:00:00Z'));
-    expect(check1.status).toBe('quarantine');
-    expect(check1.remainingDays).toBeGreaterThan(0);
-
-    // Check on 2026-09-16 (After quarantine expired)
-    const check2 = getPhiStatus(phiUntilDate, new Date('2026-09-16T12:00:00Z'));
-    expect(check2.status).toBe('safe');
-    expect(check2.remainingDays).toBe(0);
-  });
-
-  it('5.3 Should flag is_phi_violation = true when harvest occurs during active PHI quarantine', () => {
-    const plant = {
-      id: 88,
-      tree_code: 'SR-01',
-      phi_until_date: '2026-09-15',
-      phi_status: 'quarantine'
-    };
-
-    const attemptHarvest = (harvestDateStr) => {
-      const harvestDate = new Date(harvestDateStr);
-      let isViolation = false;
-      if (plant.phi_until_date) {
-        const phiUntil = new Date(plant.phi_until_date);
-        phiUntil.setHours(23, 59, 59, 999);
-        if (harvestDate <= phiUntil) {
-          isViolation = true;
-        }
-      }
-      return isViolation;
-    };
-
-    // Harvesting early on Sept 10 -> VIOLATION
-    const violationEarly = attemptHarvest('2026-09-10');
-    expect(violationEarly).toBe(true);
-
-    // Harvesting safely on Sept 20 -> COMPLIANT
-    const safeHarvest = attemptHarvest('2026-09-20');
-    expect(safeHarvest).toBe(false);
-  });
-
-  it('5.4 Should generate standardized VietGAP Harvest Batch Code (Mã Lô Nông Sản)', () => {
+  it('5.1 Should generate standardized VietGAP Harvest Batch Code (Mã Lô Nông Sản)', () => {
     const pucCode = 'VN-DL-00124';
     const harvestDate = '2026-09-20';
     const treeCode = 'SR-05';
@@ -91,7 +18,22 @@ describe('Suite 5: VietGAP 100% Compliance, PHI Quarantine & Traceability Batch 
     expect(batchCode).toBe('VN-DL-00124-20260920-SR05');
   });
 
-  it('5.5 Should capture Operator Name and Equipment Used for VietGAP Field Diary audit trail', () => {
+  it('5.2 Should validate VietGAP active ingredient and target pest specification on supplies', () => {
+    const pesticide = {
+      name: 'Thuốc trừ nấm Anvil 5SC',
+      category: 'Phun thuốc',
+      active_ingredient: 'Hexaconazole 50g/L',
+      target_pests: 'Nấm hồng, rỉ sắt, thán thư',
+      price_per_unit: 260000
+    };
+
+    expect(pesticide.category).toBe('Phun thuốc');
+    expect(pesticide.active_ingredient).toBe('Hexaconazole 50g/L');
+    expect(pesticide.target_pests.includes('Nấm hồng')).toBe(true);
+    expect(pesticide.price_per_unit).toBe(260000);
+  });
+
+  it('5.3 Should capture Operator Name and Equipment Used for VietGAP Field Diary audit trail', () => {
     const logEntry = {
       log_type: 'Phun thuốc',
       log_date: '2026-09-03',
@@ -109,6 +51,34 @@ describe('Suite 5: VietGAP 100% Compliance, PHI Quarantine & Traceability Batch 
     expect(logEntry.operator_name.length).toBeGreaterThan(0);
     expect(typeof logEntry.equipment_used).toBe('string');
     expect(logEntry.equipment_used.length).toBeGreaterThan(0);
+  });
+
+  it('5.4 Should validate tree and PUC batch traceability linkage for export standards', () => {
+    const farm = { puc_code: 'VN-TG-0089', cert: 'VietGAP-2026-TG' };
+    const tree = { id: 101, tree_code: 'SR-RI6-01' };
+    const harvestLog = {
+      harvest_date: '2026-06-15',
+      yield_amount: 120,
+      yield_unit: 'kg',
+      batch_code: generateVietgapBatchCode(farm.puc_code, '2026-06-15', tree.tree_code)
+    };
+
+    expect(harvestLog.batch_code).toBe('VN-TG-0089-20260615-SRRI601');
+    expect(harvestLog.yield_amount).toBe(120);
+    expect(harvestLog.yield_unit).toBe('kg');
+  });
+
+  it('5.5 Should enforce VietGAP organic and biological classification standards', () => {
+    const supplies = [
+      { name: 'Phân hữu cơ vi sinh', category: 'Bón phân', fertilizer_type: 'organic' },
+      { name: 'Thuốc sinh học Radiant 60SC', category: 'Phun thuốc', active_ingredient: 'Spinetoram 60g/L' }
+    ];
+
+    const organicFert = supplies.find(s => s.category === 'Bón phân');
+    expect(organicFert.fertilizer_type).toBe('organic');
+
+    const bioPest = supplies.find(s => s.category === 'Phun thuốc');
+    expect(bioPest.active_ingredient).toBe('Spinetoram 60g/L');
   });
 
 });

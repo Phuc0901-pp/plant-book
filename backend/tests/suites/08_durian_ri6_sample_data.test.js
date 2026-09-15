@@ -71,30 +71,30 @@ describe('Suite 8: Durian Ri6 20-Year (2004 - 2026) Sample Agronomic Dataset & V
     expect(totalProfit > 360000000).toBe(true); // > 360 Million VND profit
   });
 
-  it('8.4 Should validate 10 standard Durian Ri6 supplies, unit prices & PHI properties', () => {
+  it('8.4 Should validate 10 standard Durian Ri6 supplies, unit prices & active ingredients', () => {
     const supplies = [
       { name: 'Phân hữu cơ vi sinh nở Bỉ', cat: 'Bón phân', price: 380000, unit: 'bao' },
       { name: 'Phân NPK 20-20-15+TE Đầu Trâu', cat: 'Bón phân', price: 890000, unit: 'bao' },
       { name: 'Phân bón lá tạo mầm MKP 0-52-34', cat: 'Bón phân', price: 1250000, unit: 'bao' },
       { name: 'Phân Kali Sunfat K2SO4 SoluPotasse', cat: 'Bón phân', price: 750000, unit: 'bao' },
       { name: 'Phân Canxi Bo Sữa Bo-Trac Yara', cat: 'Bón phân', price: 180000, unit: 'chai' },
-      { name: 'Thuốc trừ nấm Anvil 5SC', cat: 'Phun thuốc', price: 260000, phi: 14, active: 'Hexaconazole 50g/L' },
-      { name: 'Thuốc trị xì mủ Ridomil Gold 68WG', cat: 'Phun thuốc', price: 320000, phi: 14, active: 'Metalaxyl M + Mancozeb' },
-      { name: 'Thuốc trừ sâu sinh học Radiant 60SC', cat: 'Phun thuốc', price: 195000, phi: 3, active: 'Spinetoram 60g/L' },
+      { name: 'Thuốc trừ nấm Anvil 5SC', cat: 'Phun thuốc', price: 260000, active: 'Hexaconazole 50g/L' },
+      { name: 'Thuốc trị xì mủ Ridomil Gold 68WG', cat: 'Phun thuốc', price: 320000, active: 'Metalaxyl M + Mancozeb' },
+      { name: 'Thuốc trừ sâu sinh học Radiant 60SC', cat: 'Phun thuốc', price: 195000, active: 'Spinetoram 60g/L' },
       { name: 'Tiền nước tưới giếng khoan', cat: 'Tiền nước', price: 3500, unit: 'm3' },
       { name: 'Nhân công chăm sóc kỹ thuật VietGAP', cat: 'Nhân công', price: 350000, unit: 'công' }
     ];
 
     expect(supplies.length).toBe(10);
     const anvil = supplies.find(s => s.name.includes('Anvil'));
-    expect(anvil.phi).toBe(14);
+    expect(anvil.active).toBe('Hexaconazole 50g/L');
     const radiant = supplies.find(s => s.name.includes('Radiant'));
-    expect(radiant.phi).toBe(3);
+    expect(radiant.active).toBe('Spinetoram 60g/L');
     const labor = supplies.find(s => s.cat === 'Nhân công');
     expect(labor.price).toBe(350000);
   });
 
-  it('8.5 Should verify VietGAP harvest batch code generation and PHI quarantine safety', () => {
+  it('8.5 Should verify VietGAP harvest batch code generation and traceability', () => {
     const farmPuc = 'VN-LK-001';
     const treeCode = 'SR-01';
     const harvestDateStr = '20260615';

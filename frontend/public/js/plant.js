@@ -435,9 +435,8 @@ function getCareLogSummary(log) {
   if (log.log_type === 'Phun thuốc') {
     const pestName = getPesticideName(details) || 'Thuốc bảo vệ thực vật';
     const qtyStr = qty ? `${qty} ${unit}` : 'Định lượng';
-    const phiStr = details.phi_days ? ` [Cách ly PHI: ${details.phi_days} ngày]` : '';
     const waterStr = details.water_volume ? ` pha với <strong>${esc(details.water_volume)}L</strong> nước` : '';
-    return `Đã phun thuốc <strong>${esc(pestName)}</strong>. Liều lượng: <strong>${esc(qtyStr)}</strong>${waterStr}${phiStr}.`;
+    return `Đã phun thuốc <strong>${esc(pestName)}</strong>. Liều lượng: <strong>${esc(qtyStr)}</strong>${waterStr}.`;
   }
   if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
     const actStr = details.activity || details.reason || 'Cắt tỉa cành/lá định kỳ';

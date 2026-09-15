@@ -149,18 +149,18 @@ window.openFeatureDetailModal = function(type) {
       </div>
     `;
   } else if (type === 'vietgap') {
-    titleEl.innerHTML = '<i class="fa-solid fa-shield-halved" style="color:#6ee7b7"></i> Tiêu Chuẩn VietGAP & Quản Lý PHI';
+    titleEl.innerHTML = '<i class="fa-solid fa-shield-halved" style="color:#6ee7b7"></i> Tiêu Chuẩn VietGAP & Truy Xuất Nguồn Gốc';
     imgEl.src = '/user/img/gis_contour_map.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
     contentEl.innerHTML = `
-      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Bộ Tiêu Chuẩn VietGAP 100% & Quản Lý Cách Ly PHI</h4>
+      <h4 style="margin:0 0 10px 0; font-size:16px; color:#0f172a; font-weight:800;">Bộ Tiêu Chuẩn VietGAP 100% & Truy Xuất Nguồn Gốc</h4>
       <p style="margin-bottom:12px; color:#475569;">
         Giải pháp phần mềm tự động hóa toàn bộ quy trình kiểm soát an toàn vệ sinh thực phẩm theo tiêu chuẩn VietGAP:
       </p>
       <ul style="margin:0 0 16px 0; padding-left:20px; color:#334155; line-height:1.7;">
-        <li><strong>Tự động quản lý PHI:</strong> Khi phun thuốc BVTV, hệ thống tự động tính ngày hết hạn cách ly và khóa thu hoạch đối với từng gốc cây.</li>
-        <li><strong>Cảnh báo vi phạm đỏ:</strong> Cảnh báo ngăn chặn thu hoạch sớm trong thời gian cách ly và tự động ghi nhận cờ vi phạm chất lượng.</li>
+        <li><strong>Kiểm soát Hoạt chất & Vật tư:</strong> Quản lý danh mục hoạt chất, nguồn gốc vật tư và liều lượng sử dụng chuẩn kỹ thuật.</li>
+        <li><strong>Mã Số Vùng Trồng (PUC):</strong> Quản lý liên kết mã số vùng trồng chính thức phục vụ tiêu chuẩn xuất khẩu.</li>
         <li><strong>Mã Lô Nông Sản Tự Động:</strong> Tự động sinh mã lô theo cú pháp [Mã PUC]-[YYYYMMDD]-[Mã Cây] phục vụ dán tem QR truy xuất.</li>
         <li><strong>Ghi nhận Người & Dụng cụ:</strong> Đầy đủ thông tin người thực hiện và thiết bị phục vụ kiểm tra chứng nhận.</li>
       </ul>

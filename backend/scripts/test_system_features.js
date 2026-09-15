@@ -1,4 +1,4 @@
-﻿const memoryCache = require('../config/cache');
+const memoryCache = require('../config/cache');
 const db = require('../config/db');
 
 async function runTestSuite() {
@@ -90,7 +90,7 @@ async function runTestSuite() {
       return `Tổng chi phí: ${userSuppliesCost.toLocaleString('vi-VN')} VNĐ`;
     }
     if (lower.includes('bệnh') || lower.includes('vàng lá')) {
-      return 'Kỹ thuật xử lý bệnh hại chuẩn VietGAP: Metalaxyl, Trichoderma, cách ly PHI 7-14 ngày';
+      return 'Kỹ thuật xử lý bệnh hại chuẩn VietGAP: Metalaxyl, Trichoderma, hoạt chất sinh học an toàn';
     }
     return 'Bé Mầm đã nhận được thông tin!';
   }
@@ -105,7 +105,7 @@ async function runTestSuite() {
   assert(costReply.includes('15.500.000 VNĐ'), 'Fallback Tính toán chi phí vật tư chuẩn xác');
 
   const diseaseReply = getFallbackReply('Cây sầu riêng bị bệnh vàng lá thối rễ');
-  assert(diseaseReply.includes('VietGAP') && diseaseReply.includes('PHI 7-14 ngày'), 'Fallback Phác đồ VietGAP & kiểm soát PHI chuẩn xác');
+  assert(diseaseReply.includes('VietGAP') && diseaseReply.includes('Trichoderma'), 'Fallback Phác đồ VietGAP & kiểm soát hoạt chất chuẩn xác');
   console.log('');
 
   // ── TEST SUITE 5: KIỂM THỬ ĐĂNG NHẬP & PHÂN QUYỀN MÃ ISO HASH ──

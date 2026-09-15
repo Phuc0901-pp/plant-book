@@ -334,7 +334,6 @@ export function renderSuppliesCockpitKpi(supplies) {
   let totalConsumed = 0;
   let lowStockCount = 0;
   let outOfStockCount = 0;
-  let phiCount = 0;
 
   supplies.forEach(sp => {
     const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
@@ -354,10 +353,6 @@ export function renderSuppliesCockpitKpi(supplies) {
         lowStockCount++;
       }
     }
-
-    if (sp.phi_days && parseInt(sp.phi_days) > 0) {
-      phiCount++;
-    }
   });
 
   if (totalValuationEl) totalValuationEl.textContent = formatVND(totalValuation);
@@ -376,7 +371,7 @@ export function renderSuppliesCockpitKpi(supplies) {
   }
 
   if (phiActiveEl) {
-    phiActiveEl.innerHTML = phiCount > 0 ? `${phiCount} Thuốc BVTV` : `100% Đạt Chuẩn`;
+    phiActiveEl.innerHTML = `100% Đạt Chuẩn`;
   }
 }
 
@@ -529,9 +524,9 @@ export function renderSuppliesTable(supplies) {
       ? `<span style="font-size:12px; color:#64748b; font-style:italic;">Theo thực tế</span>`
       : `<strong style="font-size:13.5px; color:#0284c7;">${formatVND(valuation)}</strong>`;
 
-    // 6. VietGAP / PHI
-    const vietgapHtml = (sp.phi_days && parseInt(sp.phi_days) > 0)
-      ? `<span class="badge" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3; font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Thời gian cách ly trước thu hoạch"><i class="fa-solid fa-shield-halved"></i> PHI: ${sp.phi_days} ngày</span>`
+    // 6. VietGAP / Tiêu chuẩn
+    const vietgapHtml = (sp.active_ingredient)
+      ? `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Hoạt chất: ${sp.active_ingredient}"><i class="fa-solid fa-circle-check"></i> ${sp.active_ingredient}</span>`
       : `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle-check"></i> Đạt chuẩn</span>`;
 
     // 7. Actions

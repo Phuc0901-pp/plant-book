@@ -333,47 +333,7 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
     }
   });
 
-  // 2. Quét Cách Ly Thuốc BVTV PHI (MỨC ĐỎ / CAM)
-  const now = new Date();
-  plants.forEach(p => {
-    if (p.phi_until_date) {
-      const phiDate = new Date(p.phi_until_date);
-      if (phiDate > now) {
-        const daysLeft = Math.ceil((phiDate - now) / (1000 * 60 * 60 * 24));
-        if (daysLeft > 2) {
-          alerts.push({
-            severity: 'CRITICAL',
-            level: 2,
-            borderLeft: '#ea580c',
-            bgGradient: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
-            badgeBg: '#ea580c',
-            badgeText: '🔒 KHÓA THU HOẠCH · CÁCH LY PHI',
-            title: `Cây #${p.tree_code || p.id} đang cách ly thuốc BVTV (Còn ${daysLeft} ngày)`,
-            desc: `Đang trong thời gian cách ly hoạt chất an toàn VietGAP đến ngày ${phiDate.toLocaleDateString('vi-VN')}. Tuyệt đối không thu hoạch trái.`,
-            actionText: 'Xem quy trình',
-            plantId: p.id,
-            treeCode: p.tree_code || p.id,
-            plantType: p.plant_type || 'Cây trồng'
-          });
-        } else {
-          alerts.push({
-            severity: 'WARNING',
-            level: 3,
-            borderLeft: '#f59e0b',
-            bgGradient: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)',
-            badgeBg: '#d97706',
-            badgeText: '⏳ CẦN CHÚ Ý · SẮP HẾT CÁCH LY',
-            title: `Cây #${p.tree_code || p.id} sắp hoàn tất cách ly PHI (${daysLeft} ngày nữa)`,
-            desc: `Thuốc BVTV gần phân giải an toàn hoàn toàn. Chuẩn bị kiểm tra chất lượng trước khi thu hoạch mùa vụ.`,
-            actionText: 'Kiểm tra',
-            plantId: p.id,
-            treeCode: p.tree_code || p.id,
-            plantType: p.plant_type || 'Cây trồng'
-          });
-        }
-      }
-    }
-  });
+
 
   // 3. Quét Cây Cần Chú Ý (MỨC VÀNG)
   plants.forEach(p => {

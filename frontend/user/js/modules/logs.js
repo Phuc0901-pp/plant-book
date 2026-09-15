@@ -475,7 +475,6 @@ export function renderUserLogsTable(logs) {
         if (l.details.method) parts.push(`Cách thức: ${esc(l.details.method)}`);
         if (l.details.disease_name) parts.push(`Bệnh: <strong style="color:#dc2626;">${esc(l.details.disease_name)}</strong>`);
         if (l.details.severity) parts.push(`Mức độ: ${esc(l.details.severity)}`);
-        if (l.details.phi_days) parts.push(`Cách ly PHI: ${l.details.phi_days} ngày`);
         
         if (parts.length > 0) {
           detailsStr = parts.join(' · ') + (l.note ? ` — <span style="color:#64748b;">${esc(l.note)}</span>` : '');
@@ -616,7 +615,6 @@ function _renderLogPage() {
         if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
         if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
         if (l.details.severity)        parts.push(`Mức độ: ${l.details.severity}`);
-        if (l.details.phi_days)        parts.push(`Cách ly PHI: ${l.details.phi_days} ngày`);
         if (parts.length > 0) {
           detailsStr = `[${parts.join(', ')}]` + (l.note ? ` - ${esc(l.note)}` : '');
         }

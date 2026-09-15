@@ -357,20 +357,18 @@ export function onCareSupplySelected(selectEl, hiddenInputId) {
 }
 window.onCareSupplySelected = onCareSupplySelected;
 
-export function updatePesticidePhiNotice(selectEl) {
+export function updatePesticideNotice(selectEl) {
   if (!selectEl) return;
   const opt = selectEl.options[selectEl.selectedIndex];
   if (!opt) return;
 
-  const phiDays = opt.getAttribute('data-phi') || '0';
   const activeIng = opt.getAttribute('data-ing') || '';
-  const daysEl = document.getElementById('c-phi-days-val');
-  const ingEl = document.getElementById('c-phi-ing-val');
+  const ingEl = document.getElementById('c-pesticide-ing-val');
 
-  if (daysEl) daysEl.textContent = `${phiDays} Ngày`;
   if (ingEl) ingEl.textContent = activeIng || 'Chưa khai báo';
 }
-window.updatePesticidePhiNotice = updatePesticidePhiNotice;
+window.updatePesticideNotice = updatePesticideNotice;
+window.updatePesticidePhiNotice = updatePesticideNotice;
 
 /**
  * Tự động reload danh sách vật tư vào modal chăm sóc (không làm gián đoạn giao diện/dữ liệu đang nhập).
@@ -426,8 +424,8 @@ export async function refreshCareSuppliesDropdowns(forceFetch = true) {
       supplySelect.innerHTML = declaredPesticides.map(s => {
         const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
         return `
-          <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-phi="${s.phi_days || 0}" data-ing="${esc(s.active_ingredient || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
-            🛡️ ${_formatSupplyOptionText(s)} ${s.phi_days ? `[Cách ly PHI: ${s.phi_days} ngày]` : ''}
+          <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-ing="${esc(s.active_ingredient || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+            🛡️ ${_formatSupplyOptionText(s)}
           </option>
         `;
       }).join('');
@@ -435,7 +433,7 @@ export async function refreshCareSuppliesDropdowns(forceFetch = true) {
         supplySelect.value = currentVal;
       }
       onCareSupplySelected(supplySelect, 'c-detail-pesticide');
-      updatePesticidePhiNotice(supplySelect);
+      updatePesticideNotice(supplySelect);
     }
   }
 }
@@ -613,33 +611,30 @@ function _buildDetailFields(logType, configs, supplies = []) {
       if (declaredPesticides.length > 0) {
         const firstPest = declaredPesticides[0];
         const firstImg = firstPest.image_url || '';
-        const phiDays = firstPest.phi_days || 7;
         const activeIng = firstPest.active_ingredient || '';
 
         return `
           <div class="field">
             <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
-            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide'); updatePesticidePhiNotice(this);">
+            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide'); updatePesticideNotice(this);">
               ${declaredPesticides.map(s => {
                 const isOut = (s.category !== 'Tiền nước' && s.category !== 'Nhân công') && (parseFloat(s.stock_quantity) || 0) <= 0;
                 return `
-                  <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-phi="${s.phi_days || 0}" data-ing="${esc(s.active_ingredient || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
-                    🛡️ ${_formatSupplyOptionText(s)} ${s.phi_days ? `[Cách ly PHI: ${s.phi_days} ngày]` : ''}
+                  <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-ing="${esc(s.active_ingredient || '')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+                    🛡️ ${_formatSupplyOptionText(s)}
                   </option>
                 `;
               }).join('')}
             </select>
             <input type="hidden" id="c-detail-pesticide" value="${esc(firstPest.name)}">
 
-            <!-- VietGAP PHI Dynamic Notice -->
-            <div id="c-pesticide-phi-notice" style="margin-top:8px; padding:10px 12px; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; font-size:12px; color:#065f46;">
+            <!-- VietGAP Active Ingredient Info -->
+            <div id="c-pesticide-active-notice" style="margin-top:8px; padding:10px 12px; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; font-size:12px; color:#065f46;">
               <div style="font-weight:800; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu Chuẩn VietGAP - Thời Gian Cách Ly (PHI):
+                <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu Chuẩn VietGAP - Hoạt Chất & Nguồn Gốc:
               </div>
               <div style="margin-top:4px; font-size:11.5px; line-height:1.4;">
-                Thời gian cách ly bắt buộc: <strong id="c-phi-days-val" style="color:#047857; font-size:13px;">${phiDays} Ngày</strong>.
-                ${activeIng ? `<br>Hoạt chất chính: <strong id="c-phi-ing-val">${esc(activeIng)}</strong>.` : ''}
-                <br><span style="color:#059669; font-weight:700;">➔ Cây sẽ tự động kích hoạt chế độ cách ly an toàn sau khi lưu nhật ký.</span>
+                Hoạt chất đăng ký: <strong id="c-pesticide-ing-val">${esc(activeIng) || 'Chưa khai báo'}</strong>.
               </div>
             </div>
 
@@ -664,7 +659,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <select id="c-detail-pesticide">${pesticides.map(p => `<option>${esc(p)}</option>`).join('')}</select>
             <small style="color:var(--text-muted); margin-top:4px; display:block;">
               <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:600;">
-                <i class="fa-solid fa-plus"></i> Khai báo loại thuốc này vào Kho Vật tư để cài đặt số ngày cách ly PHI
+                <i class="fa-solid fa-plus"></i> Khai báo loại thuốc này vào Kho Vật tư để quản lý chi phí & hoạt chất VietGAP
               </a>
             </small>
           </div>
@@ -689,37 +684,13 @@ function _buildDetailFields(logType, configs, supplies = []) {
         <div class="field"><label>Số lượng hoa/quả đã tỉa</label><input type="number" id="c-detail-amount" value="3" min="1"></div>`;
     }
     case 'Thu hoạch': {
-      // Check PHI status of target plant(s)
       const currentPlantId = document.getElementById('c-plant-id')?.value;
       const targetPlant = _plants().find(p => p.id == currentPlantId);
-      const isQuarantine = targetPlant && (targetPlant.current_phi_status === 'quarantine' || (targetPlant.phi_until_date && new Date(targetPlant.phi_until_date) >= new Date()));
-      const remainingDays = targetPlant ? (targetPlant.phi_remaining_days || 0) : 0;
       const pucCode = (targetPlant && targetPlant.farm_puc_code) ? targetPlant.farm_puc_code : 'VN-TB';
       const treeCodeClean = (targetPlant && targetPlant.tree_code ? targetPlant.tree_code : 'LOT').toString().replace(/[^a-zA-Z0-9]/g, '');
       const batchCodePreview = `${pucCode}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${treeCodeClean}`;
 
       return `
-        ${isQuarantine ? `
-          <div class="alert" style="background:#fef2f2; border:1.5px solid #f87171; border-radius:10px; padding:12px; margin-bottom:12px; color:#991b1b;">
-            <div style="font-weight:900; font-size:13px; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-triangle-exclamation" style="font-size:16px; color:#dc2626;"></i> CẢNH BÁO VI PHẠM VIETGAP: THU HOẠCH TRONG THỜI GIAN CÁCH LY THUỐC BVTV!
-            </div>
-            <div style="font-size:12px; margin-top:6px; line-height:1.4;">
-              Cây đang trong thời gian cách ly (Còn <strong>${remainingDays} ngày</strong> · Đến hết ngày: <strong>${targetPlant.phi_until_date ? new Date(targetPlant.phi_until_date).toLocaleDateString('vi-VN') : '—'}</strong>).
-              <br><strong style="color:#b91c1c;">Lưu ý:</strong> Thu hoạch sớm sẽ làm sản phẩm tồn dư hoạt chất BVTV và bị đánh dấu vi phạm tiêu chuẩn VietGAP trên hệ thống.
-            </div>
-          </div>
-        ` : `
-          <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; padding:10px 12px; margin-bottom:12px; color:#065f46; font-size:12px;">
-            <div style="font-weight:800; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu chuẩn VietGAP: An Toàn Thu Hoạch
-            </div>
-            <div style="font-size:11.5px; margin-top:4px;">
-              Cây đã vượt qua thời gian cách ly PHI an toàn. Nông sản đủ điều kiện xuất bán & dán tem truy xuất nguồn gốc.
-            </div>
-          </div>
-        `}
-
         <!-- VietGAP Batch Code Preview -->
         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px;">
           <i class="fa-solid fa-barcode" style="color:#0284c7;"></i> Mã Lô Nông Sản VietGAP (Batch Code) Tự Sinh:
