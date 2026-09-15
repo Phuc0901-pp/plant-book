@@ -21,6 +21,7 @@ require('./suites/10_meteo_weather_service.test');
 require('./suites/11_nfc_gps_lifecycle.test');
 require('./suites/12_soft_delete_and_audit.test');
 require('./suites/13_ai_training_security.test');
+require('./suites/14_data_streaming_and_ingestion.test');
 
 async function main() {
   try {
