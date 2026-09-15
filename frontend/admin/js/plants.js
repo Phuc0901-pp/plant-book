@@ -290,12 +290,49 @@ function updateRangePreview() {
 }
 window.updateRangePreview = updateRangePreview;
 
+function getCurrentDeviceGpsForPlant() {
+  if (!navigator.geolocation) {
+    toast('Trình duyệt không hỗ trợ Geolocation GPS!', 'error');
+    return;
+  }
+  toast('Đang lấy tọa độ GPS thực địa...');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const latInput = document.getElementById('f-latitude');
+      const lngInput = document.getElementById('f-longitude');
+      if (latInput) latInput.value = lat;
+      if (lngInput) lngInput.value = lng;
+      toast(`📍 Đã lấy GPS: ${lat}, ${lng} (±${Math.round(pos.coords.accuracy || 0)}m)`, 'success');
+    },
+    (err) => {
+      toast('Không thể lấy tọa độ GPS: ' + err.message, 'error');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+window.getCurrentDeviceGpsForPlant = getCurrentDeviceGpsForPlant;
+
 async function openPlantModal(id = null, syncUrl = true) {
   editingPlantId = id;
   resetPlantForm();
-  document.getElementById('plant-modal-title').innerHTML = id
-    ? '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa cây'
-    : '<i class="fa-solid fa-seedling" style="color:var(--green)"></i> Thêm cây mới';
+
+  const titleEl = document.getElementById('plant-modal-title');
+  const codeBadge = document.getElementById('plant-modal-code-badge');
+  const healthPill = document.getElementById('plant-modal-health-pill');
+  const subVariety = document.getElementById('plant-modal-sub-variety');
+  const headerIcon = document.getElementById('plant-modal-header-icon');
+
+  if (titleEl) {
+    titleEl.innerHTML = id
+      ? '<i class="fa-solid fa-pen-to-square" style="color:#34d399"></i> Chỉnh sửa hồ sơ cây'
+      : '<i class="fa-solid fa-seedling" style="color:#34d399"></i> Thêm cây trồng mới';
+  }
+  if (headerIcon) {
+    headerIcon.className = id ? 'fa-solid fa-tree' : 'fa-solid fa-seedling';
+  }
+
   document.getElementById('public-url-section').style.display = 'none';
 
   const modeWrap = document.getElementById('plant-create-mode-wrap');
@@ -325,10 +362,39 @@ async function openPlantModal(id = null, syncUrl = true) {
       document.getElementById('f-latitude').value = plant.latitude !== null && plant.latitude !== undefined ? plant.latitude : '';
       document.getElementById('f-longitude').value = plant.longitude !== null && plant.longitude !== undefined ? plant.longitude : '';
 
+      // Update header badges
+      if (codeBadge) {
+        codeBadge.textContent = `#${plant.tree_code || plant.id}`;
+        codeBadge.style.display = 'inline-block';
+      }
+      if (healthPill) {
+        const hs = plant.health_status || 'Tốt';
+        let bg = '#ecfdf5', col = '#047857', dot = '🟢';
+        if (hs === 'Cần chú ý') { bg = '#fffbeb'; col = '#b45309'; dot = '🟡'; }
+        else if (hs === 'Bệnh') { bg = '#fef2f2'; col = '#b91c1c'; dot = '🔴'; }
+        else if (hs === 'Bình thường') { bg = '#f1f5f9'; col = '#475569'; dot = '⚪'; }
+        healthPill.style.background = bg;
+        healthPill.style.color = col;
+        healthPill.innerHTML = `${dot} ${hs}`;
+        healthPill.style.display = 'inline-block';
+      }
+      if (subVariety) {
+        const typeStr = plant.plant_type || 'Cây trồng';
+        const varStr = plant.plant_variety ? ` · Giống: ${plant.plant_variety}` : '';
+        const locStr = plant.location ? ` · Vị trí: ${plant.location}` : '';
+        subVariety.textContent = `${typeStr}${varStr}${locStr}`;
+      }
+
       // Show public URL
       if (plant.is_public && plant.public_slug) {
         showPublicURL(plant.public_slug);
       }
+
+      // Preload media & logs for instant tab counters
+      document.getElementById('plant-media-container').innerHTML = renderMediaSection(plant.id);
+      loadPlantMedia(plant.id);
+      document.getElementById('plant-logs-container').innerHTML = renderLogsSection(plant.id);
+      loadPlantLogs(plant.id);
 
       // Store extra data for rendering
       window._currentPlantData = plant.data || {};
@@ -336,6 +402,10 @@ async function openPlantModal(id = null, syncUrl = true) {
     } catch (err) {
       toast('Lỗi tải thông tin cây: ' + err.message, 'error');
     }
+  } else {
+    if (codeBadge) codeBadge.style.display = 'none';
+    if (healthPill) healthPill.style.display = 'none';
+    if (subVariety) subVariety.textContent = 'Điền thông tin và tọa độ thực địa để khởi tạo cây trồng mới';
   }
 
   document.getElementById('plant-modal').style.display = 'flex';
@@ -358,18 +428,43 @@ function resetPlantForm() {
   document.getElementById('f-health-status').value = 'Tốt';
   document.getElementById('f-schema-id').value = '';
   document.getElementById('f-is-public').value = 'true';
-  document.getElementById('extra-fields-container').innerHTML = '<div class="empty-state" style="padding:24px"><i class="fa fa-layer-group"></i><p>Chọn schema ở tab Thông tin cơ bản để hiển thị các trường mở rộng</p></div>';
-  document.getElementById('plant-media-container').innerHTML = '<p style="font-size:13px;color:var(--gray-400)">Lưu cây trước để upload ảnh/video.</p>';
-  document.getElementById('plant-logs-container').innerHTML = '<p style="font-size:13px;color:var(--gray-400)">Lưu cây trước để ghi nhật ký.</p>';
+  document.getElementById('extra-fields-container').innerHTML = `
+    <div class="empty-state" style="padding:32px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
+      <i class="fa-solid fa-shapes" style="font-size:32px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+      <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Không có trường thuộc tính đặc thù nào.</p>
+      <small style="color:#94a3b8;">Cấu hình schema tại Cài đặt > Quản lý Schema để thêm thuộc tính chuyên sâu cho giống cây này.</small>
+    </div>`;
+  document.getElementById('plant-media-container').innerHTML = `
+    <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
+      <i class="fa-solid fa-images" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+      <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi tải ảnh/video.</p>
+      <small style="color:#94a3b8;">Hệ thống tự động liên kết tệp phương tiện với cây trồng sau khi khởi tạo ID.</small>
+    </div>`;
+  document.getElementById('plant-logs-container').innerHTML = `
+    <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
+      <i class="fa-solid fa-book-bookmark" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+      <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi ghi nhật ký canh tác.</p>
+      <small style="color:#94a3b8;">Nhật ký chăm sóc sẽ ghi nhận lịch sử bón phân, tưới tiêu, phun thuốc và truy xuất nguồn gốc.</small>
+    </div>`;
   
+  const mediaCountBadge = document.getElementById('plant-media-count-badge');
+  if (mediaCountBadge) { mediaCountBadge.textContent = '0'; mediaCountBadge.style.display = 'none'; }
+  const logsCountBadge = document.getElementById('plant-logs-count-badge');
+  if (logsCountBadge) { logsCountBadge.textContent = '0'; logsCountBadge.style.display = 'none'; }
+
   _plantCreateMode = 'single';
   const radioSingle = document.querySelector('input[name="plant-create-mode"][value="single"]');
   if (radioSingle) radioSingle.checked = true;
   togglePlantCreateMode('single');
 
   // Reset to first tab
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===0));
-  document.querySelectorAll('.tab-pane').forEach((p,i) => p.classList.toggle('active', i===0));
+  const tabs = document.querySelectorAll('.plant-modal-tabs .tab');
+  if (tabs.length > 0) {
+    tabs.forEach((t, i) => t.classList.toggle('active', i === 0));
+  } else {
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  }
+  document.querySelectorAll('#plant-modal .tab-pane').forEach((p, i) => p.classList.toggle('active', i === 0));
   window._currentPlantData = {};
 }
 
@@ -497,9 +592,23 @@ async function savePlant() {
     loadPlantLogs(plant.id);
 
     toast(editingPlantId ? 'Đã cập nhật cây!' : 'Đã tạo cây mới!');
-    loadPlants();
-    loadDashboard();
-    document.getElementById('plant-modal-title').textContent = '✏️ Chỉnh sửa cây';
+    document.getElementById('plant-modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:#34d399"></i> Chỉnh sửa hồ sơ cây';
+    const codeBadge = document.getElementById('plant-modal-code-badge');
+    if (codeBadge) { codeBadge.textContent = `#${plant.tree_code || plant.id}`; codeBadge.style.display = 'inline-block'; }
+    const healthPill = document.getElementById('plant-modal-health-pill');
+    if (healthPill) {
+      const hs = plant.health_status || 'Tốt';
+      let bg = '#ecfdf5', col = '#047857', dot = '🟢';
+      if (hs === 'Cần chú ý') { bg = '#fffbeb'; col = '#b45309'; dot = '🟡'; }
+      else if (hs === 'Bệnh') { bg = '#fef2f2'; col = '#b91c1c'; dot = '🔴'; }
+      else if (hs === 'Bình thường') { bg = '#f1f5f9'; col = '#475569'; dot = '⚪'; }
+      healthPill.style.background = bg; healthPill.style.color = col;
+      healthPill.innerHTML = `${dot} ${hs}`; healthPill.style.display = 'inline-block';
+    }
+    const subVariety = document.getElementById('plant-modal-sub-variety');
+    if (subVariety) {
+      subVariety.textContent = `${plant.plant_type || 'Cây trồng'}${plant.plant_variety ? ' · Giống: ' + plant.plant_variety : ''}${plant.location ? ' · Vị trí: ' + plant.location : ''}`;
+    }
     if (typeof window.onPlantSavedHook === 'function') {
       window.onPlantSavedHook(plant);
     }

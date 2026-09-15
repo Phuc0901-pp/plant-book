@@ -38,6 +38,45 @@
   .tab:hover{color:var(--text-main)}
   .tab.active{color:var(--green);border-color:var(--green);font-weight:600}
 
+  /* ERP Segmented Tab Navigation for Plant Modal */
+  .plant-modal-tabs {
+    display: flex !important;
+    gap: 6px !important;
+    background: #e2e8f0 !important;
+    padding: 5px !important;
+    border-radius: 12px !important;
+    margin-bottom: 18px !important;
+    border-bottom: none !important;
+  }
+  .plant-modal-tabs .tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 12px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: none !important;
+    margin: 0 !important;
+    border-bottom: none !important;
+  }
+  .plant-modal-tabs .tab:hover {
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+  }
+  .plant-modal-tabs .tab.active {
+    background: #ffffff !important;
+    color: #047857 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    font-weight: 800 !important;
+  }
+
   /* Premium Care config grid */
   .care-grid {
     display: grid;

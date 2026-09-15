@@ -1,190 +1,280 @@
-
+<!-- ── ERP AGTECH PLANT EDIT & PROFILE MODAL ── -->
 <div class="modal-overlay" id="plant-modal" style="display:none" onclick="if(event.target===this)closePlantModal()">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="plant-modal-title"><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Thêm cây mới</h2>
-      <button class="modal-close" onclick="closePlantModal()">×</button>
+  <div class="modal plant-erp-modal" style="background:#ffffff; border-radius:18px; width:100%; max-width:880px; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 60px -15px rgba(0,0,0,0.35); border:1px solid #cbd5e1; position:relative; z-index:20001;">
+    
+    <!-- 1. ERP Gradient Header with Live Badges -->
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.12); position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:46px; height:46px; border-radius:12px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:22px; color:#a7f3d0; border:1px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
+          <i class="fa-solid fa-tree" id="plant-modal-header-icon"></i>
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <h2 id="plant-modal-title" style="margin:0; font-size:18px; font-weight:800; color:#ffffff; letter-spacing:-0.2px; display:inline-flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-seedling" style="color:#34d399"></i> Thêm cây mới
+            </h2>
+            <span id="plant-modal-code-badge" class="badge" style="background:rgba(255,255,255,0.22); color:#ffffff; font-weight:800; font-size:12px; padding:3px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.25); display:none;">#0</span>
+            <span id="plant-modal-health-pill" class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px; display:none;">🟢 Tốt</span>
+          </div>
+          <div id="plant-modal-subtitle" style="font-size:12px; color:#d1fae5; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span><i class="fa-solid fa-layer-group" style="opacity:0.8;"></i> <span id="plant-modal-sub-variety">Hồ sơ thông số kỹ thuật &amp; chuỗi nhật ký VietGAP</span></span>
+          </div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closePlantModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); width:36px; height:36px; border-radius:10px; color:#ffffff; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">×</button>
     </div>
-    <div class="modal-body">
 
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab(this,'tab-info')">Thông tin cơ bản</div>
-        <div class="tab" onclick="switchTab(this,'tab-extra')">Dữ liệu mở rộng</div>
-        <div class="tab" onclick="switchTab(this,'tab-media')">Ảnh / Video</div>
-        <div class="tab" onclick="switchTab(this,'tab-logs')">Nhật ký</div>
+    <!-- 2. Scrollable Body -->
+    <div class="modal-body" style="padding:20px 24px; overflow-y:auto; background:#f8fafc; flex:1;">
+
+      <!-- Segmented Navigation Tab Bar -->
+      <div class="tabs plant-modal-tabs" style="display:flex; gap:6px; background:#e2e8f0; padding:5px; border-radius:12px; margin-bottom:18px; border-bottom:none;">
+        <div class="tab active" onclick="switchTab(this,'tab-info')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
+          <i class="fa-solid fa-circle-info"></i> <span>Thông tin cơ bản</span>
+        </div>
+        <div class="tab" onclick="switchTab(this,'tab-extra')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
+          <i class="fa-solid fa-layer-group"></i> <span>Dữ liệu mở rộng</span>
+        </div>
+        <div class="tab" onclick="switchTab(this,'tab-media')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
+          <i class="fa-solid fa-images"></i> <span>Ảnh / Video</span>
+          <span id="plant-media-count-badge" class="badge" style="font-size:10.5px; padding:2px 7px; border-radius:10px; background:#dcfce7; color:#15803d; font-weight:800; display:none;">0</span>
+        </div>
+        <div class="tab" onclick="switchTab(this,'tab-logs')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
+          <i class="fa-solid fa-book-bookmark"></i> <span>Nhật ký canh tác</span>
+          <span id="plant-logs-count-badge" class="badge" style="font-size:10.5px; padding:2px 7px; border-radius:10px; background:#dcfce7; color:#15803d; font-weight:800; display:none;">0</span>
+        </div>
       </div>
 
-      <!-- Tab: Info -->
+      <!-- ── TAB 1: THÔNG TIN CƠ BẢN ── -->
       <div class="tab-pane active" id="tab-info">
         
-        <!-- Mode Selector (Chỉ hiển thị khi thêm cây mới) -->
-        <div id="plant-create-mode-wrap" style="margin-bottom: 14px; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-          <div style="font-size: 12px; font-weight: 800; color: #334155; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-sliders" style="color:#059669;"></i> Chế độ tạo cây:
+        <!-- Mode Selector (Chỉ hiển thị khi tạo cây mới) -->
+        <div id="plant-create-mode-wrap" style="margin-bottom:16px; padding:12px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+          <div style="font-size:12.5px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-sliders" style="color:#059669;"></i> Chế độ khởi tạo cây:
           </div>
-          <div style="display: flex; gap: 8px;">
-            <label id="label-mode-single" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #065f46; cursor: pointer; background: #ecfdf5; padding: 5px 12px; border-radius: 8px; border: 1.5px solid #34d399;">
+          <div style="display:flex; gap:8px;">
+            <label id="label-mode-single" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#065f46; cursor:pointer; background:#ecfdf5; padding:6px 14px; border-radius:8px; border:1.5px solid #34d399; transition:all 0.15s;">
               <input type="radio" name="plant-create-mode" value="single" checked onchange="togglePlantCreateMode('single')" style="accent-color:#059669;">
               Tạo 1 cây đơn lẻ
             </label>
-            <label id="label-mode-range" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #334155; cursor: pointer; background: #ffffff; padding: 5px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1;">
+            <label id="label-mode-range" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#334155; cursor:pointer; background:#ffffff; padding:6px 14px; border-radius:8px; border:1.5px solid #cbd5e1; transition:all 0.15s;">
               <input type="radio" name="plant-create-mode" value="range" onchange="togglePlantCreateMode('range')" style="accent-color:#059669;">
               ✨ Tạo dải số hàng loạt (XX ➔ XY)
             </label>
           </div>
         </div>
 
-        <!-- 1. Single Mode Tree Code Field -->
-        <div class="form-row" id="wrap-single-tree-code">
-          <div class="field">
-            <label>Mã số cây (ID trong trang trại)</label>
-            <input type="text" id="f-tree-code" placeholder="VD: 01, A-02, 105...">
+        <!-- Group 1: 🏷️ Định danh & Phân loại giống cây -->
+        <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+            <i class="fa-solid fa-tag" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
           </div>
-          <div class="field">
-            <label>Loại cây *</label>
-            <select id="f-plant-type" onchange="onPlantTypeChange()">
-              <option value="">— Chọn loại cây —</option>
-            </select>
-          </div>
-        </div>
 
-        <!-- 2. Range Mode Fields (XX -> XY) -->
-        <div id="wrap-range-tree-code" style="display: none; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 14px; margin-bottom: 14px;">
-          <div style="font-size: 12.5px; font-weight: 800; color: #065f46; display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
-            <i class="fa-solid fa-layer-group"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 10px;">
-            <div>
-              <label style="font-size: 11px; font-weight: 800; color: #047857; display: block; margin-bottom: 4px;">Tiền tố mã cây (Tùy chọn)</label>
-              <input type="text" id="f-range-prefix" placeholder="VD: SR- hoặc Cây-" oninput="updateRangePreview()" style="width: 100%; padding: 8px 10px; border: 1.5px solid #6ee7b7; border-radius: 8px; font-size: 12.5px; font-weight: 700; background: #fff; outline:none; box-sizing: border-box;">
+          <!-- 1. Single Mode Tree Code Field -->
+          <div class="form-row" id="wrap-single-tree-code" style="margin-bottom:12px;">
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Mã số cây (ID trong vườn) *</label>
+              <input type="text" id="f-tree-code" placeholder="VD: 38, S-01, 105..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box;">
             </div>
-            <div>
-              <label style="font-size: 11px; font-weight: 800; color: #047857; display: block; margin-bottom: 4px;">Từ số thứ tự (XX) *</label>
-              <input type="number" id="f-range-start" placeholder="VD: 1 hoặc 01" min="1" max="9999" oninput="updateRangePreview()" style="width: 100%; padding: 8px 10px; border: 1.5px solid #6ee7b7; border-radius: 8px; font-size: 12.5px; font-weight: 700; background: #fff; outline:none; box-sizing: border-box;">
-            </div>
-            <div>
-              <label style="font-size: 11px; font-weight: 800; color: #047857; display: block; margin-bottom: 4px;">Đến số thứ tự (XY) *</label>
-              <input type="number" id="f-range-end" placeholder="VD: 50" min="1" max="9999" oninput="updateRangePreview()" style="width: 100%; padding: 8px 10px; border: 1.5px solid #6ee7b7; border-radius: 8px; font-size: 12.5px; font-weight: 700; background: #fff; outline:none; box-sizing: border-box;">
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Loại cây trồng *</label>
+              <select id="f-plant-type" onchange="onPlantTypeChange()" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff;">
+                <option value="">— Chọn loại cây —</option>
+              </select>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 8px; border-top: 1px dashed #a7f3d0;">
-            <div style="font-size: 12px; font-weight: 700; color: #065f46;" id="range-preview-text">
-              🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây sẽ tạo.
+          <!-- 2. Range Mode Fields (XX -> XY) -->
+          <div id="wrap-range-tree-code" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
+            <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+              <i class="fa-solid fa-layer-group"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
             </div>
-            <label style="font-size: 11.5px; font-weight: 700; color: #047857; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
-              <input type="checkbox" id="f-range-pad-zeros" checked onchange="updateRangePreview()" style="accent-color: #059669;">
-              Giữ số chữ số 0 đầu (VD: 01, 02...)
-            </label>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
+              <div>
+                <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:4px;">Tiền tố mã cây (Tùy chọn)</label>
+                <input type="text" id="f-range-prefix" placeholder="VD: SR- hoặc Cây-" oninput="updateRangePreview()" style="width:100%; padding:8px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:4px;">Từ số thứ tự (XX) *</label>
+                <input type="number" id="f-range-start" placeholder="VD: 1 hoặc 01" min="1" max="9999" oninput="updateRangePreview()" style="width:100%; padding:8px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:4px;">Đến số thứ tự (XY) *</label>
+                <input type="number" id="f-range-end" placeholder="VD: 50" min="1" max="9999" oninput="updateRangePreview()" style="width:100%; padding:8px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:8px; border-top:1px dashed #a7f3d0;">
+              <div style="font-size:12px; font-weight:700; color:#065f46;" id="range-preview-text">
+                🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây sẽ tạo.
+              </div>
+              <label style="font-size:11.5px; font-weight:700; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+                <input type="checkbox" id="f-range-pad-zeros" checked onchange="updateRangePreview()" style="accent-color:#059669;">
+                Giữ số chữ số 0 đầu (VD: 01, 02...)
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row" id="wrap-range-type-select" style="display:none; margin-bottom:12px;">
+            <div class="field" style="width:100%; margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Loại cây *</label>
+              <select id="f-plant-type-range" onchange="document.getElementById('f-plant-type').value=this.value; onPlantTypeChange();" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff;">
+                <option value="">— Chọn loại cây —</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Giống cây</label>
+              <input type="text" id="f-plant-variety" placeholder="VD: Dona, Ri6, Musang King..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box;">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Tuổi cây / Thời gian sinh trưởng</label>
+              <input type="text" id="f-plant-age" placeholder="VD: 7 năm, 24 tháng..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box;">
+            </div>
           </div>
         </div>
 
-        <div class="form-row" id="wrap-range-type-select" style="display: none;">
-          <div class="field" style="width: 100%;">
-            <label>Loại cây *</label>
-            <select id="f-plant-type-range" onchange="document.getElementById('f-plant-type').value=this.value; onPlantTypeChange();">
-              <option value="">— Chọn loại cây —</option>
-            </select>
+        <!-- Group 2: 🌿 Trạng thái sinh trưởng & Quản lý vị trí -->
+        <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+            <i class="fa-solid fa-heart-pulse" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
           </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Giống cây</label>
-            <input type="text" id="f-plant-variety" placeholder="VD: IR50404, Thiên Lý...">
+          <div class="form-row" style="margin-bottom:12px;">
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Tình trạng sức khỏe</label>
+              <select id="f-health-status" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; width:100%; box-sizing:border-box; background:#ffffff;">
+                <option value="Tốt">🟢 Tốt (Sinh trưởng mạnh)</option>
+                <option value="Bình thường">⚪ Bình thường</option>
+                <option value="Cần chú ý">🟡 Cần chú ý (Thiếu nước/dinh dưỡng)</option>
+                <option value="Bệnh">🔴 Bệnh (Cần can thiệp thuốc BVTV)</option>
+              </select>
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Vị trí / Lô trồng cụ thể</label>
+              <input type="text" id="f-location" placeholder="VD: Lô anh Sơn, Vườn khu A..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box;">
+            </div>
           </div>
-          <div class="field">
-            <label>Tuổi cây</label>
-            <input type="text" id="f-plant-age" placeholder="VD: 2 năm, 6 tháng...">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Tình trạng sức khỏe</label>
-            <select id="f-health-status">
-              <option>Tốt</option>
-              <option>Bình thường</option>
-              <option>Cần chú ý</option>
-              <option>Bệnh</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Vị trí / Lô trồng</label>
-            <input type="text" id="f-location" placeholder="VD: Lô A1 - Vườn Tây, Tọa độ 10.xxx...">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Thuộc trang trại (GIS)</label>
-            <select id="f-farm-id">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Thuộc trang trại (GIS Polygon)</label>
+            <select id="f-farm-id" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff;">
               <option value="">— Không thuộc trang trại nào —</option>
             </select>
           </div>
-          <div class="field">
-            <label>Tọa độ GPS (Vĩ độ, Kinh độ)</label>
-            <div style="display: flex; gap: 6px;">
-              <input type="number" step="any" id="f-latitude" placeholder="Vĩ độ (Latitude) VD: 10.762...">
-              <input type="number" step="any" id="f-longitude" placeholder="Kinh độ (Longitude) VD: 106.682...">
+        </div>
+
+        <!-- Group 3: 📍 Định vị tọa độ GPS & Bản đồ số -->
+        <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+            <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-map-pin" style="color:#059669;"></i> Tọa độ GPS &amp; Định vị vệ tinh
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="getCurrentDeviceGpsForPlant()" style="font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:6px; background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+              <i class="fa-solid fa-location-crosshairs"></i> Lấy GPS hiện tại
+            </button>
+          </div>
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Vĩ độ (Latitude)</label>
+              <input type="number" step="any" id="f-latitude" placeholder="VD: 10.762622" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box;">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Kinh độ (Longitude)</label>
+              <input type="number" step="any" id="f-longitude" placeholder="VD: 106.682341" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box;">
             </div>
           </div>
         </div>
-        <input type="hidden" id="f-schema-id">
-        <div class="field">
-          <label>Công khai URL</label>
-          <select id="f-is-public">
-            <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
-            <option value="false">🔒 Riêng tư</option>
-          </select>
-        </div>
-        <!-- Public URL display -->
-        <div class="public-url-box" id="public-url-section" style="display:none">
-          <label><i class="fa-solid fa-link"></i> Đường dẫn công khai của cây</label>
-          <div class="url-copy-row">
-            <input type="text" id="public-url-input" readonly>
-            <button class="btn btn-secondary btn-sm" onclick="copyURL()"><i class="fa fa-copy"></i> Copy</button>
-            <a id="public-url-link" href="#" target="_blank" class="btn btn-primary btn-sm">
-              <i class="fa fa-arrow-up-right-from-square"></i> Mở
-            </a>
+
+        <!-- Group 4: 🌐 Cổng tra cứu công khai (Public QR / URL) -->
+        <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+            <i class="fa-solid fa-globe" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
+          </div>
+          <input type="hidden" id="f-schema-id">
+          <div class="field" style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Chế độ truy cập công khai</label>
+            <select id="f-is-public" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff;">
+              <option value="true">✅ Công khai (Bất kỳ ai quét thẻ NFC / QR hoặc có link đều xem được)</option>
+              <option value="false">🔒 Riêng tư (Chỉ dành cho quản trị viên và chủ nông hộ)</option>
+            </select>
+          </div>
+          <!-- Public URL display -->
+          <div class="public-url-box" id="public-url-section" style="display:none; background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px;">
+            <div style="font-size:12px; font-weight:800; color:#166534; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-link"></i> Đường dẫn tra cứu công khai của cây:
+            </div>
+            <div class="url-copy-row" style="display:flex; gap:8px; align-items:center;">
+              <input type="text" id="public-url-input" readonly style="flex:1; background:#ffffff; border:1.5px solid #86efac; border-radius:8px; padding:8px 12px; font-size:12.5px; font-weight:600; color:#0f172a; outline:none;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="copyURL()" style="background:#ffffff; border:1.5px solid #cbd5e1; font-weight:700; border-radius:8px; padding:8px 12px; font-size:12px; white-space:nowrap; cursor:pointer;">
+                <i class="fa fa-copy" style="color:#059669;"></i> Copy
+              </button>
+              <a id="public-url-link" href="#" target="_blank" class="btn btn-primary btn-sm" style="background:#059669; border:none; font-weight:700; border-radius:8px; padding:8px 14px; font-size:12px; white-space:nowrap; text-decoration:none; color:#ffffff;">
+                <i class="fa fa-arrow-up-right-from-square"></i> Mở
+              </a>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Tab: Extra data -->
+      <!-- ── TAB 2: DỮ LIỆU MỞ RỘNG (DYNAMIC SCHEMA) ── -->
       <div class="tab-pane" id="tab-extra">
-        <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">
-          Các trường dữ liệu được định nghĩa bởi schema. Nhấn vào tab <strong>Thông tin cơ bản</strong> để chọn schema trước.
-        </p>
-        <div id="extra-fields-container">
-          <div class="empty-state" style="padding:24px">
-            <i class="fa fa-layer-group"></i>
-            <p>Chọn schema ở tab Thông tin cơ bản để hiển thị các trường mở rộng</p>
+        <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+            <div style="font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-layer-group" style="color:#059669;"></i> Thuộc tính đặc tả theo Schema
+            </div>
+            <span style="font-size:11.5px; color:#64748b;">Định dạng mở rộng linh hoạt</span>
+          </div>
+          <div id="extra-fields-container">
+            <div class="empty-state" style="padding:32px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
+              <i class="fa-solid fa-shapes" style="font-size:32px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+              <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Không có trường thuộc tính đặc thù nào.</p>
+              <small style="color:#94a3b8;">Cấu hình schema tại Cài đặt &gt; Quản lý Schema để thêm thuộc tính chuyên sâu cho giống cây này.</small>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Tab: Media -->
+      <!-- ── TAB 3: THƯ VIỆN ẢNH & VIDEO ── -->
       <div class="tab-pane" id="tab-media">
         <div id="plant-media-container">
-          <p style="font-size:13px;color:var(--gray-400);margin-bottom:16px">
-            Lưu cây trước để có thể upload ảnh/video.
-          </p>
+          <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
+            <i class="fa-solid fa-images" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+            <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi tải ảnh/video.</p>
+            <small style="color:#94a3b8;">Hệ thống tự động liên kết tệp phương tiện với cây trồng sau khi khởi tạo ID.</small>
+          </div>
         </div>
       </div>
 
-      <!-- Tab: Logs -->
+      <!-- ── TAB 4: NHẬT KÝ CANH TÁC & VIETGAP ── -->
       <div class="tab-pane" id="tab-logs">
         <div id="plant-logs-container">
-          <p style="font-size:13px;color:var(--gray-400);margin-bottom:16px">
-            Lưu cây trước để ghi nhật ký chăm sóc.
-          </p>
+          <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
+            <i class="fa-solid fa-book-bookmark" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+            <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi ghi nhật ký canh tác.</p>
+            <small style="color:#94a3b8;">Nhật ký chăm sóc sẽ ghi nhận lịch sử bón phân, tưới tiêu, phun thuốc và truy xuất nguồn gốc.</small>
+          </div>
         </div>
       </div>
 
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closePlantModal()">Hủy</button>
-      <button class="btn btn-primary" id="plant-save-btn" onclick="savePlant()">
-        <span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu cây</span>
-      </button>
+
+    <!-- 3. ERP Sticky Bottom Action Footer -->
+    <div class="modal-footer" style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; bottom:0; background:#ffffff; z-index:10; border-radius:0 0 18px 18px;">
+      <div style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn ERP</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-secondary" onclick="closePlantModal()" style="font-weight:700; font-size:13px; padding:9px 18px; border-radius:10px; background:#f1f5f9; border:1px solid #cbd5e1; color:#475569;">
+          <i class="fa-solid fa-xmark"></i> Hủy
+        </button>
+        <button class="btn btn-primary" id="plant-save-btn" onclick="savePlant()" style="font-weight:800; font-size:13px; padding:9px 22px; border-radius:10px; background:linear-gradient(135deg, #10b981, #047857); border:none; box-shadow:0 4px 14px rgba(16,185,129,0.3); color:#ffffff; cursor:pointer;">
+          <span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu hồ sơ cây</span>
+        </button>
+      </div>
     </div>
+
   </div>
 </div>

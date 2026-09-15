@@ -2,17 +2,32 @@
 
 function renderMediaSection(plantId) {
   return `
-    <div class="upload-zone" id="upload-zone-${plantId}" onclick="document.getElementById('file-input-${plantId}').click()"
-      ondragover="event.preventDefault();this.classList.add('drag')"
-      ondragleave="this.classList.remove('drag')"
-      ondrop="handleDrop(event,${plantId})">
-      <i class="fa fa-cloud-arrow-up"></i>
-      <p>Nhấn hoặc kéo thả ảnh/video vào đây</p>
-      <small>Hỗ trợ: JPG, PNG, GIF, WebP, MP4, MOV (tối đa 100MB/file)</small>
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div class="media-dropzone" id="upload-zone-${plantId}" onclick="document.getElementById('file-input-${plantId}').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event,${plantId})"
+        style="border:2px dashed #34d399; border-radius:12px; padding:24px 16px; text-align:center; cursor:pointer; background:#f0fdf4; transition:all 0.2s;"
+        onmouseover="this.style.background='#ecfdf5'; this.style.borderColor='#059669';"
+        onmouseout="this.style.background='#f0fdf4'; this.style.borderColor='#34d399';">
+        <div style="width:48px; height:48px; border-radius:50%; background:#dcfce7; color:#059669; display:inline-flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:8px;">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <div style="font-size:13.5px; font-weight:800; color:#065f46; margin-bottom:3px;">Nhấn hoặc kéo thả Ảnh / Video thực địa vào đây</div>
+        <div style="font-size:11.5px; color:#047857;">Hỗ trợ: JPG, PNG, GIF, WebP, MP4, MOV (Tối đa 100MB/file)</div>
+      </div>
+      <input type="file" id="file-input-${plantId}" multiple accept="image/*,video/*" style="display:none"
+        onchange="uploadMedia(${plantId}, this.files)">
     </div>
-    <input type="file" id="file-input-${plantId}" multiple accept="image/*,video/*" style="display:none"
-      onchange="uploadMedia(${plantId}, this.files)">
-    <div class="media-grid" id="media-grid-${plantId}" style="margin-top:16px"></div>
+    <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+        <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-images" style="color:#059669;"></i> Thư viện ảnh / video cây trồng
+        </div>
+        <span id="plant-media-header-count" style="font-size:11.5px; font-weight:700; color:#047857; background:#ecfdf5; padding:2px 8px; border-radius:6px; border:1px solid #a7f3d0;">0 tệp</span>
+      </div>
+      <div class="media-grid" id="media-grid-${plantId}" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:12px; margin-top:0;"></div>
+    </div>
   `;
 }
 
@@ -24,17 +39,48 @@ async function loadPlantMedia(plantId) {
   try {
     const plant = await api(`/plants/${plantId}`);
     const grid = document.getElementById(`media-grid-${plantId}`);
+    const countBadge = document.getElementById('plant-media-count-badge');
+    const headerCount = document.getElementById('plant-media-header-count');
+    const count = plant.media?.length || 0;
+
+    if (countBadge) {
+      countBadge.textContent = count;
+      countBadge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+    if (headerCount) {
+      headerCount.textContent = `${count} tệp`;
+    }
+
     if (!grid) return;
     if (!plant.media?.length) {
-      grid.innerHTML = '<p style="font-size:13px;color:var(--gray-400)">Chưa có ảnh/video nào.</p>';
+      grid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
+          <i class="fa-solid fa-photo-film" style="font-size:32px; color:#94a3b8; margin-bottom:8px; display:inline-block;"></i>
+          <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Chưa có tệp ảnh hoặc video nào cho cây này.</p>
+          <small style="color:#94a3b8;">Kéo thả ảnh thực địa hoặc nhấn vào khung tải lên phía trên.</small>
+        </div>`;
       return;
     }
     grid.innerHTML = plant.media.map(m => `
-      <div class="media-thumb">
-        ${m.media_type === 'video'
-          ? `<video src="${esc(m.url)}" controls></video>`
-          : `<img src="${esc(m.url)}" alt="${esc(m.caption||'')}">` }
-        <button class="del-btn" onclick="deleteMedia(${plantId},${m.id})">×</button>
+      <div class="media-card-item" style="position:relative; border-radius:10px; overflow:hidden; border:1.5px solid #e2e8f0; background:#0f172a; box-shadow:0 2px 6px rgba(0,0,0,0.04); display:flex; flex-direction:column;">
+        <div style="position:relative; width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#0f172a;">
+          ${m.media_type === 'video'
+            ? `<video src="${esc(m.url)}" controls style="width:100%; height:100%; object-fit:cover;"></video>`
+            : `<img src="${esc(m.url)}" alt="${esc(m.caption||'')}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="window.open('${esc(m.url)}', '_blank')">`
+          }
+          <span style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.7); color:#ffffff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);">
+            ${m.media_type === 'video' ? '🎬 Video' : '📷 Ảnh'}
+          </span>
+          <button onclick="deleteMedia(${plantId},${m.id})" title="Xóa tệp" style="position:absolute; top:6px; right:6px; width:26px; height:26px; border-radius:50%; background:rgba(239,68,68,0.9); color:#ffffff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+        <div style="padding:6px 8px; background:#ffffff; display:flex; justify-content:space-between; align-items:center; gap:4px; border-top:1px solid #f1f5f9;">
+          <span style="font-size:11px; font-weight:700; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(m.caption || 'Phương tiện')}">${esc(m.caption || (m.uploaded_at ? fmtDate(m.uploaded_at) : 'Ảnh thực địa'))}</span>
+          <a href="${esc(m.url)}" target="_blank" download style="color:#059669; font-size:11.5px; text-decoration:none;" title="Tải về">
+            <i class="fa-solid fa-arrow-down"></i>
+          </a>
+        </div>
       </div>`).join('');
   } catch (err) { /* ignore */ }
 }
@@ -72,38 +118,71 @@ async function deleteMedia(plantId, mediaId) {
 
 // ── Logs ─────────────────────────────────────────────────
 
+function getAgronomicLogTypeBadge(type) {
+  switch (type) {
+    case 'Tưới nước':
+      return { label: '💧 Tưới nước', style: 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;' };
+    case 'Bón phân':
+      return { label: '🌱 Bón phân', style: 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;' };
+    case 'Phun thuốc':
+      return { label: '🧪 Phun thuốc BVTV', style: 'background:#fffbeb; color:#b45309; border:1px solid #fde68a;' };
+    case 'Cắt lá':
+    case 'Cắt cành/lá':
+      return { label: '✂️ Cắt cành / Tỉa lá', style: 'background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe;' };
+    case 'Tỉa hoa':
+    case 'Tỉa hoa/quả':
+      return { label: '🌸 Tỉa hoa / Nuôi quả', style: 'background:#fdf2f8; color:#be185d; border:1px solid #fbcfe8;' };
+    case 'Bệnh cây':
+      return { label: '⚠️ Bệnh cây & Sâu bọ', style: 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;' };
+    case 'Thu hoạch':
+      return { label: '🧺 Thu hoạch', style: 'background:#ecfeff; color:#0e7490; border:1px solid #a5f3fc;' };
+    default:
+      return { label: `📝 ${type || 'Ghi chú'}`, style: 'background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;' };
+  }
+}
+
 function renderLogsSection(plantId) {
   return `
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header"><h3>Ghi nhật ký chăm sóc</h3></div>
-      <div style="padding:16px">
-        <div class="form-row">
-          <div class="field">
-            <label>Ngày</label>
-            <input type="date" id="log-date-${plantId}" value="${new Date().toISOString().slice(0,10)}">
-          </div>
-          <div class="field">
-            <label>Loại nhật ký</label>
-            <select id="log-type-${plantId}">
-              <option value="Tưới nước">Tưới cây</option>
-              <option value="Bón phân">Bón phân</option>
-              <option value="Phun thuốc">Phun thuốc</option>
-              <option value="Cắt lá">Cắt cành/lá</option>
-              <option value="Tỉa hoa">Tỉa hoa/quả</option>
-              <option value="Bệnh cây">Bệnh cây</option>
-            </select>
-          </div>
-        </div>
-        <div class="field">
-          <label>Ghi chú</label>
-          <textarea id="log-note-${plantId}" placeholder="Ghi chi tiết công việc, quan sát, tình trạng cây..."></textarea>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="addLog(${plantId})">
-          <i class="fa fa-plus"></i> Thêm nhật ký
-        </button>
+    <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+        <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Ghi nhật ký chăm sóc / canh tác thực địa
       </div>
+      <div class="form-row" style="margin-bottom:12px;">
+        <div class="field" style="margin-bottom:0;">
+          <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Ngày thực hiện *</label>
+          <input type="date" id="log-date-${plantId}" value="${new Date().toISOString().slice(0,10)}" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box;">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Loại công việc / Hoạt động *</label>
+          <select id="log-type-${plantId}" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; width:100%; box-sizing:border-box; background:#ffffff;">
+            <option value="Tưới nước">💧 Tưới nước</option>
+            <option value="Bón phân">🌱 Bón phân</option>
+            <option value="Phun thuốc">🧪 Phun thuốc BVTV</option>
+            <option value="Cắt lá">✂️ Cắt cành / Tỉa lá</option>
+            <option value="Tỉa hoa">🌸 Tỉa hoa / Nuôi quả</option>
+            <option value="Bệnh cây">⚠️ Bệnh cây &amp; Xử lý sâu bệnh</option>
+            <option value="Thu hoạch">🧺 Thu hoạch trái</option>
+            <option value="Ghi chú khác">📝 Ghi chú chung</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Chi tiết quan sát &amp; Nội dung thực hiện</label>
+        <textarea id="log-note-${plantId}" rows="2" placeholder="VD: Bón 200g phân NPK 20-20-15, tưới đẫm nước quanh tán lá, cây phát triển tốt..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:500; width:100%; box-sizing:border-box; font-family:inherit; outline:none;"></textarea>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="addLog(${plantId})" style="background:linear-gradient(135deg, #10b981, #047857); border:none; font-weight:800; font-size:12.5px; padding:8px 16px; border-radius:8px; box-shadow:0 2px 6px rgba(16,185,129,0.3); cursor:pointer;">
+        <i class="fa fa-plus"></i> Thêm nhật ký vào hồ sơ cây
+      </button>
     </div>
-    <div id="logs-list-${plantId}"></div>
+    <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+        <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-clock-rotate-left" style="color:#059669;"></i> Dòng thời gian nhật ký chăm sóc
+        </div>
+        <span id="plant-logs-header-count" style="font-size:11.5px; font-weight:700; color:#047857; background:#ecfdf5; padding:2px 8px; border-radius:6px; border:1px solid #a7f3d0;">0 nhật ký</span>
+      </div>
+      <div id="logs-list-${plantId}" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
   `;
 }
 
@@ -115,22 +194,53 @@ async function loadPlantLogs(plantId) {
   try {
     const plant = await api(`/plants/${plantId}`);
     const el = document.getElementById(`logs-list-${plantId}`);
+    const countBadge = document.getElementById('plant-logs-count-badge');
+    const headerCount = document.getElementById('plant-logs-header-count');
+    const count = plant.logs?.length || 0;
+
+    if (countBadge) {
+      countBadge.textContent = count;
+      countBadge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+    if (headerCount) {
+      headerCount.textContent = `${count} nhật ký`;
+    }
+
     if (!el) return;
     if (!plant.logs?.length) {
-      el.innerHTML = '<p style="font-size:13px;color:var(--gray-400)">Chưa có nhật ký nào.</p>';
+      el.innerHTML = `
+        <div style="text-align:center; padding:32px 20px; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
+          <i class="fa-solid fa-book-open" style="font-size:32px; color:#94a3b8; margin-bottom:8px; display:inline-block;"></i>
+          <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Chưa có nhật ký chăm sóc nào được ghi nhận.</p>
+          <small style="color:#94a3b8;">Nhập thông tin chăm sóc vào biểu mẫu phía trên để bắt đầu ghi nhật ký.</small>
+        </div>`;
       return;
     }
-    el.innerHTML = plant.logs.map(l => `
-      <div class="log-item">
-        <div class="log-date-badge">${fmtDate(l.log_date)}</div>
-        <div style="flex:1">
-          <div class="log-type-tag">${esc(l.log_type||'Ghi chú')}</div>
-          <div class="log-note">${esc(l.note||'')}</div>
+    el.innerHTML = plant.logs.map(l => {
+      const badgeInfo = getAgronomicLogTypeBadge(l.log_type);
+      return `
+        <div class="log-item-card" style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; transition:all 0.15s; box-shadow:0 1px 4px rgba(0,0,0,0.02);" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'">
+          <div style="display:flex; align-items:flex-start; gap:12px; flex:1;">
+            <div style="padding:6px 10px; border-radius:8px; background:#f8fafc; border:1px solid #cbd5e1; text-align:center; flex-shrink:0;">
+              <div style="font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase;">NGÀY</div>
+              <div style="font-size:12px; font-weight:800; color:#0f172a;">${fmtDate(l.log_date)}</div>
+            </div>
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap;">
+                <span class="badge" style="${badgeInfo.style}; font-weight:700; font-size:11px; padding:2px 8px; border-radius:6px;">${esc(badgeInfo.label)}</span>
+                ${l.creator_name ? `<span style="font-size:11px; color:#64748b; font-weight:600;"><i class="fa-solid fa-user-pen" style="color:#059669;"></i> ${esc(l.creator_name)}</span>` : ''}
+              </div>
+              <div style="font-size:13px; color:#334155; line-height:1.45; font-weight:500;">
+                ${esc(l.note || 'Không có ghi chú chi tiết.')}
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteLog(${plantId},${l.id})" style="padding:5px 9px; font-size:11px; border-radius:6px; background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; cursor:pointer;" title="Xóa nhật ký này">
+            <i class="fa fa-trash"></i>
+          </button>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteLog(${plantId},${l.id})">
-          <i class="fa fa-trash"></i>
-        </button>
-      </div>`).join('');
+      `;
+    }).join('');
   } catch (err) { /* ignore */ }
 }
 
