@@ -738,5 +738,54 @@ class ApiService {
       return [];
     }
   }
+
+  // ── AI Bé Mầm Services ───────────────────────────────────────────
+
+  Future<String?> sendAiChatMessage(String message, {List<Map<String, String>>? history}) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/ai/chat'),
+        headers: headers,
+        body: jsonEncode({
+          'message': message,
+          'history': history ?? [],
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return (data['reply'] ?? data['answer']) as String?;
+      } else if (response.statusCode == 429) {
+        final data = jsonDecode(response.body);
+        return data['error'] ?? '⏳ Thao tác quá nhanh! Giới hạn 10 yêu cầu/giây để bảo vệ hệ thống.';
+      }
+      return null;
+    } catch (e) {
+      print('Error sending AI chat: $e');
+      return null;
+    }
+  }
+
+  // ── History & Soft-Delete Restore Services ────────────────────────
+
+  Future<bool> restoreSoftDeletedLog(int plantId, int logId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/history/restore'),
+        headers: headers,
+        body: jsonEncode({
+          'type': 'plant_log',
+          'id': logId,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error restoring log: $e');
+      return false;
+    }
+  }
 }
+
 

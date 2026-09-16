@@ -6,6 +6,7 @@ import 'user/user_farm_detail_page.dart';
 import 'user/user_supplies_page.dart';
 import 'user/user_logs_page.dart';
 import 'settings_page.dart';
+import 'ai_chat_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -71,6 +72,16 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.psychology_alt_rounded, color: Color(0xFF6EE7B7)),
+            tooltip: 'Hỏi Bé Mầm AI',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AiChatPage()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.notifications_active_rounded, color: Colors.amber),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -81,6 +92,19 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       body: body,
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF064E3B),
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Text('🌱', style: TextStyle(fontSize: 20)),
+        label: const Text('Hỏi Bé Mầm AI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AiChatPage()),
+          );
+        },
+      ),
       bottomNavigationBar: UserBottomNav(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,

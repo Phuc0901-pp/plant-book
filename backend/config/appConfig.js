@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ===============================================================
  * Plant Book - Central Application Configuration Module
  * Single Source of Truth (SSOT) loaded from config/app.config.json
@@ -81,6 +81,16 @@ function getDefaults() {
   return APP_CONFIG.defaults;
 }
 
+function getRateLimitConfig() {
+  const cfg = APP_CONFIG.rateLimit || {};
+  return {
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || cfg.windowMs || 1000, 10),
+    maxRequestsPerWindow: parseInt(process.env.RATE_LIMIT_MAX_REQS || cfg.maxRequestsPerWindow || 10, 10),
+    message: cfg.message || 'Thao tác quá nhanh! Giới hạn tối đa 10 yêu cầu/giây để bảo vệ hệ thống.',
+    statusCode: cfg.statusCode || 429
+  };
+}
+
 module.exports = {
   APP_CONFIG,
   getAppConfig,
@@ -88,5 +98,6 @@ module.exports = {
   getAppName,
   getBrandInfo,
   getCacheConfig,
-  getDefaults
+  getDefaults,
+  getRateLimitConfig
 };

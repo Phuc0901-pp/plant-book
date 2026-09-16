@@ -74,10 +74,12 @@ app.get(['/health', '/healthz', '/api/health'], (req, res) => {
 });
 
 const { antiScraper, apiLimiter } = require('./middleware/antiScraper');
+const { userRateLimiter } = require('./middleware/userRateLimiter');
 
-// ─── API Routes (Protected by anti-scraper & rate limiter) ──────────
+// ─── API Routes (Protected by anti-scraper, global IP limiter & per-user 10 req/s limiter) ──
 app.use('/api', antiScraper);
 app.use('/api', apiLimiter);
+app.use('/api', userRateLimiter);
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
