@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../utils/theme.dart';
 import '../../core/constants/app_constants.dart';
@@ -46,7 +46,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   Future<void> _loadDashboardData() async {
     setState(() => _isLoading = true);
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<dynamic>([
         _apiService.fetchFarms(),
         _apiService.fetchPlants(),
         _apiService.fetchUserInfo(),
@@ -100,7 +100,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     // Calculate KPI metrics
     final totalPlants = _plants.length;
     final sickPlants = _plants.where((p) => p.healthStatus.toLowerCase().contains('bệnh') || p.healthStatus.toLowerCase().contains('chú ý')).length;
-    final healthyPlants = totalPlants - sickPlants;
 
     double totalArea = 0;
     for (final f in _farms) {

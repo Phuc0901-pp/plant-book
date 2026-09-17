@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../utils/theme.dart';
@@ -37,12 +37,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
     {'key': 'Thu hoạch', 'label': '🌾 Thu hoạch'},
   ];
 
-  final NumberFormat _currencyFormat = NumberFormat.currency(
-    locale: 'vi_VN',
-    symbol: 'đ',
-    decimalDigits: 0,
-  );
-
   @override
   void initState() {
     super.initState();
@@ -58,7 +52,7 @@ class _UserLogsPageState extends State<UserLogsPage> {
   Future<void> _loadLogs() async {
     setState(() => _isLoading = true);
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<dynamic>([
         _apiService.fetchRecentLogs(),
         _apiService.fetchPlants(),
       ]);
@@ -87,7 +81,7 @@ class _UserLogsPageState extends State<UserLogsPage> {
 
         // Search query
         if (query.isNotEmpty) {
-          final noteMatch = log.note.toLowerCase().contains(query);
+          final noteMatch = (log.note ?? '').toLowerCase().contains(query);
           final typeMatch = log.logType.toLowerCase().contains(query);
           final operatorMatch = (log.operatorName ?? '').toLowerCase().contains(query);
           return noteMatch || typeMatch || operatorMatch;
@@ -332,7 +326,8 @@ class _UserLogsPageState extends State<UserLogsPage> {
       typeIcon = Icons.agriculture_rounded;
     }
 
-    final formattedDate = DateFormat('dd/MM/yyyy').format(log.logDate);
+    final parsedDate = DateTime.tryParse(log.logDate);
+    final formattedDate = parsedDate != null ? DateFormat('dd/MM/yyyy').format(parsedDate) : log.logDate;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -392,9 +387,9 @@ class _UserLogsPageState extends State<UserLogsPage> {
           const SizedBox(height: 10),
 
           // Content Note
-          if (log.note.isNotEmpty)
+          if (log.note != null && log.note!.isNotEmpty)
             Text(
-              log.note,
+              log.note!,
               style: const TextStyle(fontSize: 14, color: AppTheme.textMain, height: 1.35, fontWeight: FontWeight.w500),
             ),
 

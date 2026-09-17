@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/farm.dart';
@@ -34,7 +34,7 @@ class ApiService {
     };
   }
 
-  // ── Authentication ───────────────────────────────────────────
+  // â”€â”€ Authentication â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -58,10 +58,10 @@ class ApiService {
         await prefs.setString('pb_token', _token!);
         return {'success': true};
       }
-      return {'success': false, 'message': data['error'] ?? 'Đăng nhập thất bại.'};
+      return {'success': false, 'message': data['error'] ?? 'ÄÄƒng nháº­p tháº¥t báº¡i.'};
     } catch (e) {
       print('Login error: $e');
-      return {'success': false, 'message': 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng.'};
+      return {'success': false, 'message': 'KhÃ´ng thá»ƒ káº¿t ná»‘i tá»›i mÃ¡y chá»§. Vui lÃ²ng kiá»ƒm tra máº¡ng.'};
     }
   }
 
@@ -74,7 +74,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return {
         'exists': data['exists'] == true,
-        'message': data['message'] ?? 'Số điện thoại khả dụng.'
+        'message': data['message'] ?? 'Sá»‘ Ä‘iá»‡n thoáº¡i kháº£ dá»¥ng.'
       };
     } catch (e) {
       return {'exists': false, 'message': ''};
@@ -92,11 +92,11 @@ class ApiService {
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return {'success': true, 'message': data['message'] ?? 'Đăng ký thành công!'};
+        return {'success': true, 'message': data['message'] ?? 'ÄÄƒng kÃ½ thÃ nh cÃ´ng!'};
       }
-      return {'success': false, 'message': data['error'] ?? 'Đăng ký thất bại.'};
+      return {'success': false, 'message': data['error'] ?? 'ÄÄƒng kÃ½ tháº¥t báº¡i.'};
     } catch (e) {
-      return {'success': false, 'message': 'Không thể kết nối tới máy chủ: $e'};
+      return {'success': false, 'message': 'KhÃ´ng thá»ƒ káº¿t ná»‘i tá»›i mÃ¡y chá»§: $e'};
     }
   }
 
@@ -162,7 +162,7 @@ class ApiService {
     }
   }
 
-  // ── Data Fetching ─────────────────────────────────────────────
+  // â”€â”€ Data Fetching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   
   Future<List<Farm>> fetchFarms() async {
     try {
@@ -223,7 +223,7 @@ class ApiService {
     }
   }
 
-  // ── Log Fetching & Modifying ───────────────────────────────────
+  // â”€â”€ Log Fetching & Modifying â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<List<PlantLog>> fetchPlantLogs(int plantId) async {
     try {
@@ -247,6 +247,21 @@ class ApiService {
     }
   }
 
+  Future<List<PlantLog>> fetchRecentLogs({int days = 30}) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/plants/logs/recent?days=$days'), headers: headers).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching recent logs: $e');
+      return [];
+    }
+  }
   Future<bool> createPlantLog(int plantId, String logType, String note, Map<String, dynamic> details, {bool isSyncing = false}) async {
     try {
       final headers = await _getHeaders();
@@ -297,7 +312,7 @@ class ApiService {
     }
   }
 
-  // ── User Management ─────────────────────────────────────────────
+  // â”€â”€ User Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<Map<String, dynamic>?> fetchUserInfo() async {
     try {
@@ -326,15 +341,15 @@ class ApiService {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return {'success': true, 'message': data['message'] ?? 'Thành công'};
+        return {'success': true, 'message': data['message'] ?? 'ThÃ nh cÃ´ng'};
       }
-      return {'success': false, 'message': data['error'] ?? 'Đổi mật khẩu thất bại'};
+      return {'success': false, 'message': data['error'] ?? 'Äá»•i máº­t kháº©u tháº¥t báº¡i'};
     } catch (e) {
-      return {'success': false, 'message': 'Không thể kết nối đến máy chủ.'};
+      return {'success': false, 'message': 'KhÃ´ng thá»ƒ káº¿t ná»‘i Ä‘áº¿n mÃ¡y chá»§.'};
     }
   }
 
-  // ── Public Plant (No Auth required) ───────────────────────────
+  // â”€â”€ Public Plant (No Auth required) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<Map<String, dynamic>?> fetchPublicPlant(String slug) async {
     try {
@@ -412,7 +427,7 @@ class ApiService {
     }
   }
 
-  // ── Admin-Only Services ─────────────────────────────────────────
+  // â”€â”€ Admin-Only Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<List<Map<String, dynamic>>> fetchUsers() async {
     try {
@@ -515,7 +530,7 @@ class ApiService {
     return _cachedMapboxToken!;
   }
 
-  // ─── Supplies API Services ───────────────────────────────────────
+  // â”€â”€â”€ Supplies API Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<List<Supply>> fetchSupplies({String? category, String? search}) async {
     try {
@@ -693,7 +708,7 @@ class ApiService {
     }
   }
 
-  // ── Cost Management API Endpoints ────────────────────────────
+  // â”€â”€ Cost Management API Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<List<Map<String, dynamic>>> fetchCostConsumables({int? farmId, int? userId}) async {
     try {
@@ -739,7 +754,7 @@ class ApiService {
     }
   }
 
-  // ── AI Bé Mầm Services ───────────────────────────────────────────
+  // â”€â”€ AI BÃ© Máº§m Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<String?> sendAiChatMessage(String message, {List<Map<String, String>>? history}) async {
     try {
@@ -758,7 +773,7 @@ class ApiService {
         return (data['reply'] ?? data['answer']) as String?;
       } else if (response.statusCode == 429) {
         final data = jsonDecode(response.body);
-        return data['error'] ?? '⏳ Thao tác quá nhanh! Giới hạn 10 yêu cầu/giây để bảo vệ hệ thống.';
+        return data['error'] ?? 'â³ Thao tÃ¡c quÃ¡ nhanh! Giá»›i háº¡n 10 yÃªu cáº§u/giÃ¢y Ä‘á»ƒ báº£o vá»‡ há»‡ thá»‘ng.';
       }
       return null;
     } catch (e) {
@@ -767,7 +782,7 @@ class ApiService {
     }
   }
 
-  // ── History & Soft-Delete Restore Services ────────────────────────
+  // â”€â”€ History & Soft-Delete Restore Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Future<bool> restoreSoftDeletedLog(int plantId, int logId) async {
     try {
@@ -787,5 +802,6 @@ class ApiService {
     }
   }
 }
+
 
 

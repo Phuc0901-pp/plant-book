@@ -1,4 +1,4 @@
-class Plant {
+﻿class Plant {
   final int id;
   final String? treeCode;
   final String plantType;
@@ -14,6 +14,7 @@ class Plant {
   final String? publicSlug;
   final String? lastWatered;
   final String? lastFertilized;
+  final int? phiRemainingDays;
 
   Plant({
     required this.id,
@@ -31,6 +32,7 @@ class Plant {
     this.publicSlug,
     this.lastWatered,
     this.lastFertilized,
+    this.phiRemainingDays,
   });
 
   factory Plant.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class Plant {
       publicSlug: json['public_slug'] as String?,
       lastWatered: json['last_watered'] as String?,
       lastFertilized: json['last_fertilized'] as String?,
+      phiRemainingDays: json['phi_remaining_days'] != null ? int.tryParse(json['phi_remaining_days'].toString()) : null,
     );
   }
 
@@ -70,6 +73,7 @@ class Plant {
       'public_slug': publicSlug,
       'last_watered': lastWatered,
       'last_fertilized': lastFertilized,
+      'phi_remaining_days': phiRemainingDays,
     };
   }
 

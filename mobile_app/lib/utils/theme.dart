@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class AppTheme {
   static const String appVersion = 'v1.2.0';
@@ -81,15 +81,15 @@ class AppTheme {
         hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: grayBorder, width: 1.2),
+          borderSide: const BorderSide(color: grayBorder, width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: grayBorder, width: 1.2),
+          borderSide: const BorderSide(color: grayBorder, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: green, width: 2.0),
+          borderSide: const BorderSide(color: green, width: 2.0),
         ),
       ),
     );

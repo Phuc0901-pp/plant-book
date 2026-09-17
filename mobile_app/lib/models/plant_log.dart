@@ -1,4 +1,4 @@
-class EditHistory {
+﻿class EditHistory {
   final String editedAt;
   final int editedBy;
   final String editedByName;
@@ -32,6 +32,10 @@ class PlantLog {
   final int? createdBy;
   final List<EditHistory> editHistory;
   final String? updatedAt;
+  final String? creatorName;
+  final String? farmName;
+  final String? plantType;
+  final String? treeCode;
 
   PlantLog({
     required this.id,
@@ -44,7 +48,26 @@ class PlantLog {
     this.createdBy,
     required this.editHistory,
     this.updatedAt,
+    this.creatorName,
+    this.farmName,
+    this.plantType,
+    this.treeCode,
   });
+
+  bool get isPhiViolation =>
+      details['phi_violation'] == true ||
+      details['is_phi_violation'] == true ||
+      details['phi_warning'] == true;
+
+  String? get batchCode =>
+      details['batch_code']?.toString() ??
+      details['batch']?.toString() ??
+      details['lot_id']?.toString();
+
+  String? get operatorName =>
+      details['operator_name']?.toString() ??
+      details['operator']?.toString() ??
+      creatorName;
 
   factory PlantLog.fromJson(Map<String, dynamic> json) {
     var historyList = json['edit_history'] as List<dynamic>? ?? [];
@@ -61,16 +84,20 @@ class PlantLog {
     }).where((url) => url.isNotEmpty).toList();
 
     return PlantLog(
-      id: json['id'] as int,
-      plantId: json['plant_id'] as int,
+      id: json['id'] as int? ?? 0,
+      plantId: json['plant_id'] as int? ?? 0,
       logDate: json['log_date']?.toString().substring(0, 10) ?? '',
       logType: json['log_type'] as String? ?? 'Khác',
       note: json['note'] as String?,
       mediaUrls: parsedMedia,
-      details: json['details'] as Map<String, dynamic>? ?? {},
+      details: json['details'] is Map<String, dynamic> ? json['details'] as Map<String, dynamic> : {},
       createdBy: json['created_by'] as int?,
       editHistory: parsedHistory,
       updatedAt: json['updated_at'] as String?,
+      creatorName: json['creator_name'] as String?,
+      farmName: json['farm_name'] as String?,
+      plantType: json['plant_type'] as String?,
+      treeCode: json['tree_code'] as String?,
     );
   }
 }
