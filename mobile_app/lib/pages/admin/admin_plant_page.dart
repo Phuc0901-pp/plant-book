@@ -6,7 +6,8 @@ import '../../components/loading_indicator.dart';
 import '../../components/admin_drawer.dart';
 
 class AdminPlantPage extends StatefulWidget {
-  const AdminPlantPage({super.key});
+  final String? initialPlantType;
+  const AdminPlantPage({super.key, this.initialPlantType});
 
   @override
   State<AdminPlantPage> createState() => _AdminPlantPageState();
@@ -17,10 +18,12 @@ class _AdminPlantPageState extends State<AdminPlantPage> {
   bool _isLoading = true;
   List<Plant> _plants = [];
   String _searchQuery = '';
+  String? _selectedPlantType;
 
   @override
   void initState() {
     super.initState();
+    _selectedPlantType = widget.initialPlantType;
     _loadPlants();
   }
 
@@ -37,10 +40,20 @@ class _AdminPlantPageState extends State<AdminPlantPage> {
     }
   }
 
+  List<String> get _availablePlantTypes {
+    final types = _plants.map((p) => p.plantType.trim()).where((t) => t.isNotEmpty).toSet().toList();
+    types.sort();
+    return types;
+  }
+
   List<Plant> get _filteredPlants {
-    if (_searchQuery.trim().isEmpty) return _plants;
+    var list = _plants;
+    if (_selectedPlantType != null && _selectedPlantType!.isNotEmpty) {
+      list = list.where((p) => p.plantType.trim().toLowerCase() == _selectedPlantType!.trim().toLowerCase()).toList();
+    }
+    if (_searchQuery.trim().isEmpty) return list;
     final q = _searchQuery.toLowerCase();
-    return _plants.where((p) => p.plantType.toLowerCase().contains(q) || (p.treeCode?.toLowerCase().contains(q) ?? false)).toList();
+    return list.where((p) => p.plantType.toLowerCase().contains(q) || (p.treeCode?.toLowerCase().contains(q) ?? false)).toList();
   }
 
   void _showPlantDetailModal(Plant p) {
@@ -135,7 +148,7 @@ class _AdminPlantPageState extends State<AdminPlantPage> {
           // Search box
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
               decoration: InputDecoration(
@@ -146,6 +159,54 @@ class _AdminPlantPageState extends State<AdminPlantPage> {
               ),
             ),
           ),
+          if (_availablePlantTypes.isNotEmpty)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    FilterChip(
+                      label: const Text('Tất cả'),
+                      selected: _selectedPlantType == null || _selectedPlantType!.isEmpty,
+                      onSelected: (selected) {
+                        setState(() => _selectedPlantType = null);
+                      },
+                      selectedColor: AppTheme.greenLight,
+                      labelStyle: TextStyle(
+                        color: _selectedPlantType == null || _selectedPlantType!.isEmpty ? AppTheme.greenDark : Colors.black87,
+                        fontWeight: _selectedPlantType == null || _selectedPlantType!.isEmpty ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ..._availablePlantTypes.map((type) {
+                      final isSelected = _selectedPlantType?.toLowerCase() == type.toLowerCase();
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(type),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedPlantType = selected ? type : null;
+                            });
+                          },
+                          selectedColor: AppTheme.greenLight,
+                          labelStyle: TextStyle(
+                            color: isSelected ? AppTheme.greenDark : Colors.black87,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
           Expanded(
             child: _isLoading
                 ? const LoadingIndicator(message: 'Đang tải danh sách cây trồng...')
