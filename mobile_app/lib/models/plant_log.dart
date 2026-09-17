@@ -1,4 +1,4 @@
-﻿class EditHistory {
+class EditHistory {
   final String editedAt;
   final int editedBy;
   final String editedByName;
@@ -68,6 +68,50 @@ class PlantLog {
       details['operator_name']?.toString() ??
       details['operator']?.toString() ??
       creatorName;
+
+  String? get pucCode =>
+      details['puc_code']?.toString() ??
+      details['puc']?.toString();
+
+  String? get equipmentUsed =>
+      details['equipment_used']?.toString() ??
+      details['equipment']?.toString();
+
+  String? get fertilizerName =>
+      details['fertilizer_name']?.toString() ??
+      details['fertilizer']?.toString() ??
+      details['supply_name']?.toString();
+
+  String? get pesticideName =>
+      details['pesticide_name']?.toString() ??
+      details['pesticide']?.toString() ??
+      details['supply_name']?.toString();
+
+  String? get diseaseName =>
+      details['disease_name']?.toString() ??
+      details['disease']?.toString();
+
+  String? get pruningReason =>
+      details['reason']?.toString() ??
+      details['prune_reason']?.toString();
+
+  double? get amount =>
+      details['amount'] != null ? double.tryParse(details['amount'].toString()) : null;
+
+  String? get unit =>
+      details['unit']?.toString();
+
+  String? get method =>
+      details['method']?.toString();
+
+  double? get cost =>
+      details['cost'] != null ? double.tryParse(details['cost'].toString()) : null;
+
+  double? get yieldKg =>
+      details['yield_kg'] != null ? double.tryParse(details['yield_kg'].toString()) : (details['yield'] != null ? double.tryParse(details['yield'].toString()) : null);
+
+  String? get harvestGrade =>
+      details['grade']?.toString() ?? details['quality']?.toString();
 
   factory PlantLog.fromJson(Map<String, dynamic> json) {
     var historyList = json['edit_history'] as List<dynamic>? ?? [];

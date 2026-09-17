@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/farm.dart';
@@ -530,7 +530,25 @@ class ApiService {
     return _cachedMapboxToken!;
   }
 
-  // â”€â”€â”€ Supplies API Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  Future<List<Map<String, dynamic>>> fetchNotifications() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/notifications'), headers: headers).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data['notifications'] is List) {
+          return List<Map<String, dynamic>>.from(data['notifications'] as List);
+        } else if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // ─── Supplies API Services ───────────────────────────────────────────
 
   Future<List<Supply>> fetchSupplies({String? category, String? search}) async {
     try {

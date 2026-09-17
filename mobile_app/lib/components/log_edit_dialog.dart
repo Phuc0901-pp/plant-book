@@ -24,7 +24,6 @@ class LogEditDialog extends StatefulWidget {
   State<LogEditDialog> createState() => _LogEditDialogState();
 }
 
-
 class _LogEditDialogState extends State<LogEditDialog> {
   final _formKey = GlobalKey<FormState>();
   final _noteController = TextEditingController();
@@ -80,21 +79,35 @@ class _LogEditDialogState extends State<LogEditDialog> {
     }
   }
 
-
   List<Supply> _allSupplies = [];
   List<Supply> _filteredSupplies = [];
   Supply? _selectedSupply;
   String _selectedUnit = 'kg'; // Default unit
   String _wateringMethod = 'Tưới nhỏ giọt';
+  String _pruneReason = 'Tỉa cành tạo tán';
+  String _harvestGrade = 'Loại 1 (Xuất khẩu)';
 
   final List<String> _activityTypes = [
     'Tưới nước',
     'Bón phân',
     'Phun thuốc',
-    'Tỉa cành/lá',
-    'Tỉa quả/hoa',
+    'Cắt tỉa',
     'Bệnh cây',
+    'Thu hoạch',
     'Khác'
+  ];
+
+  final List<String> _pruneReasonsList = [
+    'Tỉa cành tạo tán',
+    'Tỉa bớt lá thông thoáng',
+    'Cắt tỉa cành sâu bệnh / khô',
+    'Tỉa bớt hoa / quả non',
+  ];
+
+  final List<String> _harvestGradesList = [
+    'Loại 1 (Xuất khẩu)',
+    'Loại 2 (Thương phẩm)',
+    'Loại 3 (Nội địa)',
   ];
 
   final NumberFormat _currencyFormat = NumberFormat.currency(
@@ -109,7 +122,11 @@ class _LogEditDialogState extends State<LogEditDialog> {
     final isEdit = widget.log != null;
     
     if (isEdit) {
-      _selectedType = _activityTypes.contains(widget.log!.logType) ? widget.log!.logType : 'Khác';
+      String rawType = widget.log!.logType;
+      if (rawType == 'Tỉa cành/lá' || rawType == 'Tỉa quả/hoa' || rawType == 'Cắt lá' || rawType == 'Tỉa hoa') {
+        rawType = 'Cắt tỉa';
+      }
+      _selectedType = _activityTypes.contains(rawType) ? rawType : 'Khác';
       _selectedDate = DateTime.tryParse(widget.log!.logDate) ?? DateTime.now();
       _noteController.text = widget.log!.note ?? '';
 
@@ -122,17 +139,24 @@ class _LogEditDialogState extends State<LogEditDialog> {
         _amountController.text = (details['amount'] ?? '').toString();
         _selectedUnit = (details['unit'] ?? (_selectedType == 'Bón phân' ? 'kg' : 'lít')).toString();
         _manualNameController.text = (details['fertilizer_name'] ?? details['pesticide_name'] ?? details['value'] ?? '').toString();
+      } else if (_selectedType == 'Thu hoạch') {
+        _amountController.text = (details['yield_kg'] ?? details['amount'] ?? '50').toString();
+        _harvestGrade = (details['grade'] ?? 'Loại 1 (Xuất khẩu)').toString();
+      } else if (_selectedType == 'Cắt tỉa') {
+        _pruneReason = (details['reason'] ?? 'Tỉa cành tạo tán').toString();
+        _manualNameController.text = _pruneReason;
       } else {
-        _manualNameController.text = (details['value'] ?? details['reason'] ?? details['disease'] ?? '').toString();
+        _manualNameController.text = (details['value'] ?? details['disease_name'] ?? details['disease'] ?? '').toString();
       }
     } else {
-      _selectedType = (widget.initialType != null && _activityTypes.contains(widget.initialType))
-          ? widget.initialType!
-          : 'Tưới nước';
+      String initial = widget.initialType ?? 'Tưới nước';
+      if (initial == 'Tỉa cành/lá' || initial == 'Tỉa quả/hoa' || initial == 'Cắt lá' || initial == 'Tỉa hoa') {
+        initial = 'Cắt tỉa';
+      }
+      _selectedType = _activityTypes.contains(initial) ? initial : 'Tưới nước';
       _selectedDate = DateTime.now();
-      _amountController.text = _selectedType == 'Tưới nước' ? '10' : '1';
+      _amountController.text = _selectedType == 'Tưới nước' ? '10' : (_selectedType == 'Thu hoạch' ? '50' : '1');
     }
-
 
     _loadSupplies();
   }
@@ -237,9 +261,17 @@ class _LogEditDialogState extends State<LogEditDialog> {
       details['amount'] = amount;
       details['unit'] = _selectedUnit;
       details['value'] = '$pesticideName: $amount $_selectedUnit';
-    } else if (_selectedType == 'Tỉa cành/lá' || _selectedType == 'Tỉa quả/hoa') {
-      details['reason'] = _manualNameController.text.trim();
-      details['value'] = _manualNameController.text.trim();
+    } else if (_selectedType == 'Cắt tỉa') {
+      final reason = _pruneReason.isNotEmpty ? _pruneReason : _manualNameController.text.trim();
+      details['reason'] = reason;
+      details['value'] = 'Cắt tỉa: $reason';
+    } else if (_selectedType == 'Thu hoạch') {
+      final yieldKg = double.tryParse(_amountController.text) ?? 0.0;
+      details['yield_kg'] = yieldKg;
+      details['amount'] = yieldKg;
+      details['unit'] = 'kg';
+      details['grade'] = _harvestGrade;
+      details['value'] = 'Thu hoạch: $yieldKg kg ($_harvestGrade)';
     } else if (_selectedType == 'Bệnh cây') {
       details['disease_name'] = _manualNameController.text.trim();
       details['value'] = _manualNameController.text.trim();
@@ -301,251 +333,526 @@ class _LogEditDialogState extends State<LogEditDialog> {
       _isSaving = false;
     });
 
-    if (success) {
-      Navigator.pop(context, true);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không thể lưu nhật ký. Vui lòng thử lại.'),
-          backgroundColor: AppTheme.red,
-        ),
-      );
-    }
+    Navigator.pop(context, success);
   }
 
   double _calculateWaterCost() {
     if (_selectedSupply == null) return 0.0;
-    final amount = double.tryParse(_amountController.text) ?? 0.0;
-    final m3 = amount / 1000.0;
+    final amountLiters = double.tryParse(_amountController.text) ?? 0.0;
+    final m3 = amountLiters / 1000.0;
     return m3 * _selectedSupply!.unitPrice;
   }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.log != null;
-    final titleText = isEdit ? 'Chỉnh sửa Nhật ký' : 'Ghi Nhật ký Chăm sóc';
+    final titleText = isEdit ? 'Chỉnh Sửa Nhật Ký' : 'Ghi Nhật Ký Canh Tác';
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      clipBehavior: Clip.antiAlias,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // AgTech Gradient Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF091E15), Color(0xFF15803D)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 680),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: const BoxDecoration(
+                color: AppTheme.greenDark,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isEdit ? Icons.edit_note_rounded : Icons.spa_rounded,
+                      color: const Color(0xFF86EFAC),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titleText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.plantIds.length == 1
+                              ? 'Cây #${widget.plantIds.first}${widget.farmName != null ? ' - ${widget.farmName}' : ''}'
+                              : '${widget.plantIds.length} cây đã chọn${widget.farmName != null ? ' - ${widget.farmName}' : ''}',
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isEdit ? Icons.edit_note_rounded : Icons.spa_rounded,
-                    color: const Color(0xFF86EFAC),
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
+
+            // Scrollable Form
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(18),
+                child: Form(
+                  key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        titleText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      // Activity Type Dropdown
+                      const Text('Loại hoạt động *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        value: _selectedType,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          fillColor: const Color(0xFFF8FAFC),
+                          filled: true,
                         ),
+                        items: _activityTypes.map((type) {
+                          return DropdownMenuItem<String>(
+                            value: type,
+                            child: Text(type, style: const TextStyle(fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: isEdit
+                            ? null
+                            : (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _selectedType = val;
+                                    _filterSupplies();
+                                    if (val == 'Thu hoạch') {
+                                      _amountController.text = '50';
+                                    } else if (val == 'Tưới nước') {
+                                      _amountController.text = '10';
+                                    }
+                                  });
+                                }
+                              },
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.plantIds.length == 1
-                            ? 'Cây #${widget.plantIds.first}${widget.farmName != null ? ' - ${widget.farmName}' : ''}'
-                            : '${widget.plantIds.length} cây đã chọn${widget.farmName != null ? ' - ${widget.farmName}' : ''}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
+                      const SizedBox(height: 14),
 
-          // Scrollable Form
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(18),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Activity Type Dropdown
-                    const Text('Loại hoạt động *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      value: _selectedType,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        fillColor: const Color(0xFFF8FAFC),
-                        filled: true,
+                      // Date Picker Button
+                      const Text('Ngày thực hiện *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                      const SizedBox(height: 6),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.calendar_today_rounded, size: 16, color: AppTheme.green),
+                        label: Text(
+                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                          style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
+                          side: const BorderSide(color: AppTheme.grayBorder, width: 1.2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          alignment: Alignment.centerLeft,
+                        ),
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime(2025),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _selectedDate = picked;
+                            });
+                          }
+                        },
                       ),
-                      items: _activityTypes.map((type) {
-                        return DropdownMenuItem<String>(
-                          value: type,
-                          child: Text(type, style: const TextStyle(fontSize: 14)),
-                        );
-                      }).toList(),
-                      onChanged: isEdit
-                          ? null // Disable type change on edit to preserve schema integrity
-                          : (val) {
+                      const SizedBox(height: 14),
+
+                      // Dynamic Fields based on Log Type
+                      if (_selectedType == 'Tưới nước' || _selectedType == 'Bón phân' || _selectedType == 'Phun thuốc') ...[
+                        // Supplies Dropdown
+                        if (_isLoadingSupplies) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 10),
+                            child: Row(
+                              children: [
+                                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.green)),
+                                SizedBox(width: 8),
+                                Text('Đang nạp kho vật tư của bạn...', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                              ],
+                            ),
+                          ),
+                        ] else if (_filteredSupplies.isNotEmpty) ...[
+                          Text(
+                            _selectedType == 'Tưới nước' ? 'Chọn nguồn nước (Từ kho vật tư) *' : 'Chọn vật tư (Từ kho vật tư) *',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                          ),
+                          const SizedBox(height: 6),
+                          DropdownButtonFormField<Supply>(
+                            value: _selectedSupply,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              fillColor: const Color(0xFFF0FDF4),
+                              filled: true,
+                            ),
+                            items: _filteredSupplies.map((s) {
+                              final isOut = s.isOutOfStock;
+                              return DropdownMenuItem<Supply>(
+                                value: s,
+                                enabled: !isOut,
+                                child: Text(
+                                  isOut
+                                      ? '${s.name} (${s.packageQty} ${s.packageUnit}) - ⚠️ [HẾT HÀNG]'
+                                      : '${s.name} (${s.packageQty} ${s.packageUnit}) (Tồn: ${s.stockQuantity} ${s.unit})',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: isOut ? Colors.red : AppTheme.textMain,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedSupply = val;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                        ] else ...[
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.1),
+                              border: Border.all(color: Colors.amber.shade300),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.info_outline_rounded, size: 18, color: Colors.amber),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Chưa có vật tư phù hợp trong kho. Bạn có thể nhập tên bên dưới để ghi nhận.',
+                                    style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            _selectedType == 'Bón phân' ? 'Tên phân bón (Nhập tay) *' : 'Tên thuốc bảo vệ thực vật (Nhập tay) *',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                          ),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _manualNameController,
+                            decoration: InputDecoration(
+                              hintText: _selectedType == 'Bón phân' ? 'Ví dụ: Phân NPK Đầu Trâu' : 'Ví dụ: Thuốc diệt nấm Anvil',
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            validator: (val) => val == null || val.trim().isEmpty ? 'Trường này không được bỏ trống' : null,
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+
+                        // Quantity Input & Unit Selector
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedType == 'Tưới nước' ? 'Lượng nước tưới *' : 'Liều lượng dùng *',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextFormField(
+                                    controller: _amountController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: InputDecoration(
+                                      hintText: 'VD: 10',
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onChanged: (_) {
+                                      if (_selectedType == 'Tưới nước') setState(() {});
+                                    },
+                                    validator: (val) => val == null || double.tryParse(val) == null ? 'Lỗi số' : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Đơn vị tính *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                                  const SizedBox(height: 6),
+                                  if (_selectedType == 'Tưới nước') ...[
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        border: Border.all(color: AppTheme.grayBorder),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text('lít', style: TextStyle(fontSize: 14, color: AppTheme.textMain)),
+                                    ),
+                                  ] else ...[
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedUnit,
+                                      decoration: InputDecoration(
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      items: _selectedType == 'Bón phân'
+                                          ? const [
+                                              DropdownMenuItem(value: 'kg', child: Text('kg')),
+                                              DropdownMenuItem(value: 'g', child: Text('g')),
+                                              DropdownMenuItem(value: 'bao', child: Text('bao')),
+                                            ]
+                                          : const [
+                                              DropdownMenuItem(value: 'lít', child: Text('lít')),
+                                              DropdownMenuItem(value: 'ml', child: Text('ml')),
+                                              DropdownMenuItem(value: 'chai', child: Text('chai')),
+                                              DropdownMenuItem(value: 'gói', child: Text('gói')),
+                                            ],
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          setState(() {
+                                            _selectedUnit = val;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Extra details for Watering Method
+                        if (_selectedType == 'Tưới nước') ...[
+                          const Text('Phương thức tưới *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                          const SizedBox(height: 6),
+                          DropdownButtonFormField<String>(
+                            value: _wateringMethod,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'Tưới nhỏ giọt', child: Text('Tưới nhỏ giọt')),
+                              DropdownMenuItem(value: 'Tưới phun mưa', child: Text('Tưới phun mưa')),
+                              DropdownMenuItem(value: 'Tưới phun sương', child: Text('Tưới phun sương')),
+                              DropdownMenuItem(value: 'Tưới thủ công', child: Text('Tưới thủ công')),
+                            ],
+                            onChanged: (val) {
                               if (val != null) {
                                 setState(() {
-                                  _selectedType = val;
-                                  _filterSupplies();
+                                  _wateringMethod = val;
                                 });
                               }
                             },
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Date Picker Button
-                    const Text('Ngày thực hiện *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-                    const SizedBox(height: 6),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.calendar_today_rounded, size: 16, color: AppTheme.green),
-                      label: Text(
-                        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                        style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
-                        side: const BorderSide(color: AppTheme.grayBorder, width: 1.2),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        alignment: Alignment.centerLeft,
-                      ),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2025),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _selectedDate = picked;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Dynamic Fields based on Log Type
-                    if (_selectedType == 'Tưới nước' || _selectedType == 'Bón phân' || _selectedType == 'Phun thuốc') ...[
-                      // Supplies Dropdown if loading/exists
-                      if (_isLoadingSupplies) ...[
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: Row(
-                            children: [
-                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.green)),
-                              SizedBox(width: 8),
-                              Text('Đang nạp kho vật tư của bạn...', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                            ],
                           ),
-                        ),
-                      ] else if (_filteredSupplies.isNotEmpty) ...[
-                        Text(
-                          _selectedType == 'Tưới nước' ? 'Chọn nguồn nước (Từ kho vật tư) *' : 'Chọn vật tư (Từ kho vật tư) *',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                        ),
+                          const SizedBox(height: 14),
+
+                          if (_selectedSupply != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                border: Border.all(color: const Color(0xFFBFDBFE)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.water_drop_rounded, color: Colors.blue, size: 24),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'HẠCH TOÁN CHI PHÍ NƯỚC TỰ ĐỘNG',
+                                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue, letterSpacing: 0.3),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          widget.plantIds.length == 1
+                                              ? '${_amountController.text} Lít = ${(double.tryParse(_amountController.text) ?? 0.0) / 1000.0} m³'
+                                              : '${_amountController.text} Lít/cây x ${widget.plantIds.length} cây = ${((double.tryParse(_amountController.text) ?? 0.0) * widget.plantIds.length).toStringAsFixed(1)} Lít (${((double.tryParse(_amountController.text) ?? 0.0) * widget.plantIds.length / 1000.0).toStringAsFixed(3)} m³)',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+                                        ),
+                                        Text(
+                                          widget.plantIds.length == 1
+                                              ? 'Thành tiền: ${_currencyFormat.format(_calculateWaterCost())}'
+                                              : 'Tổng: ${_currencyFormat.format(_calculateWaterCost() * widget.plantIds.length)} (${_currencyFormat.format(_calculateWaterCost())}/cây)',
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                        ],
+                      ] else if (_selectedType == 'Cắt tỉa') ...[
+                        const Text('Lý do cắt tỉa *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
                         const SizedBox(height: 6),
-                        DropdownButtonFormField<Supply>(
-                          value: _selectedSupply,
-                          isExpanded: true,
+                        DropdownButtonFormField<String>(
+                          value: _pruneReason,
                           decoration: InputDecoration(
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            fillColor: const Color(0xFFF0FDF4),
-                            filled: true,
                           ),
-                          items: _filteredSupplies.map((s) {
-                            final isOut = s.isOutOfStock;
-                            return DropdownMenuItem<Supply>(
-                              value: s,
-                              enabled: !isOut,
-                              child: Text(
-                                isOut
-                                    ? '${s.name} (${s.packageQty} ${s.packageUnit}) - ⚠️ [HẾT HÀNG]'
-                                    : '${s.name} (${s.packageQty} ${s.packageUnit}) (Tồn: ${s.stockQuantity} ${s.unit})',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: isOut ? Colors.red : AppTheme.textMain,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
+                          items: _pruneReasonsList.map((r) {
+                            return DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 13)));
                           }).toList(),
                           onChanged: (val) {
-                            setState(() {
-                              _selectedSupply = val;
-                            });
+                            if (val != null) {
+                              setState(() {
+                                _pruneReason = val;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                      ] else if (_selectedType == 'Thu hoạch') ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Sản lượng thu hoạch *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                                  const SizedBox(height: 6),
+                                  TextFormField(
+                                    controller: _amountController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    decoration: InputDecoration(
+                                      hintText: 'VD: 50',
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    validator: (val) => val == null || double.tryParse(val) == null ? 'Lỗi số' : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Đơn vị', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF1F5F9),
+                                      border: Border.all(color: AppTheme.grayBorder),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text('kg', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        const Text('Phẩm cấp trái *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<String>(
+                          value: _harvestGrade,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          items: _harvestGradesList.map((g) {
+                            return DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(fontSize: 13)));
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _harvestGrade = val;
+                              });
+                            }
                           },
                         ),
                         const SizedBox(height: 14),
                       ] else ...[
-                        // Fallback warning + text input for manual name entry
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.1),
-                            border: Border.all(color: Colors.amber.shade300),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.info_outline_rounded, size: 18, color: Colors.amber),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Chưa có vật tư phù hợp trong kho. Vui lòng khai báo trong tab Vật tư để tự động liên kết chi phí.',
-                                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.3),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                         Text(
-                          _selectedType == 'Bón phân' ? 'Tên phân bón (Nhập tay) *' : 'Tên thuốc bảo vệ thực vật (Nhập tay) *',
+                          _selectedType == 'Bệnh cây' ? 'Tên bệnh / Triệu chứng phát hiện *' : 'Chi tiết hoạt động *',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _manualNameController,
                           decoration: InputDecoration(
-                            hintText: _selectedType == 'Bón phân' ? 'Ví dụ: Phân NPK Đầu Trâu' : 'Ví dụ: Thuốc diệt nấm Anvil',
+                            hintText: _selectedType == 'Bệnh cây' ? 'Ví dụ: Nấm hồng, rầy xanh, xì mủ' : 'Ghi chép chi tiết...',
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -555,267 +862,102 @@ class _LogEditDialogState extends State<LogEditDialog> {
                         const SizedBox(height: 14),
                       ],
 
-                      // Quantity Input & Unit Selector
+                      // Note input field
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _selectedType == 'Tưới nước' ? 'Lượng nước tưới *' : 'Liều lượng dùng *',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                                ),
-                                const SizedBox(height: 6),
-                                TextFormField(
-                                  controller: _amountController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  decoration: InputDecoration(
-                                    hintText: 'VD: 10',
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          const Text('Ghi chú thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                          InkWell(
+                            onTap: _toggleVoiceDictation,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _isListeningVoice ? Colors.red.withOpacity(0.15) : const Color(0xFFFEF2F2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: _isListeningVoice ? Colors.red : const Color(0xFFFECACA)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _isListeningVoice ? Icons.mic_rounded : Icons.mic_none_rounded,
+                                    size: 14,
+                                    color: _isListeningVoice ? Colors.red : AppTheme.amber,
                                   ),
-                                  onChanged: (_) {
-                                    if (_selectedType == 'Tưới nước') setState(() {});
-                                  },
-                                  validator: (val) => val == null || double.tryParse(val) == null ? 'Lỗi số' : null,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            flex: 2,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Đơn vị tính *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-                                const SizedBox(height: 6),
-                                if (_selectedType == 'Tưới nước') ...[
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F5F9),
-                                      border: Border.all(color: AppTheme.grayBorder),
-                                      borderRadius: BorderRadius.circular(10),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _isListeningVoice ? 'Đang lắng nghe...' : 'Nói tiếng Việt',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: _isListeningVoice ? Colors.red : AppTheme.amber,
                                     ),
-                                    child: const Text('lít', style: TextStyle(fontSize: 14, color: AppTheme.textMain)),
-                                  ),
-                                ] else ...[
-                                  DropdownButtonFormField<String>(
-                                    value: _selectedUnit,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    items: _selectedType == 'Bón phân'
-                                        ? const [
-                                            DropdownMenuItem(value: 'kg', child: Text('kg')),
-                                            DropdownMenuItem(value: 'g', child: Text('g')),
-                                          ]
-                                        : const [
-                                            DropdownMenuItem(value: 'lít', child: Text('lít')),
-                                            DropdownMenuItem(value: 'ml', child: Text('ml')),
-                                          ],
-                                    onChanged: (val) {
-                                      if (val != null) {
-                                        setState(() {
-                                          _selectedUnit = val;
-                                        });
-                                      }
-                                    },
                                   ),
                                 ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Extra details for Watering Method
-                      if (_selectedType == 'Tưới nước') ...[
-                        const Text('Phương thức tưới *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-                        const SizedBox(height: 6),
-                        DropdownButtonFormField<String>(
-                          value: _wateringMethod,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'Tưới nhỏ giọt', child: Text('Tưới nhỏ giọt')),
-                            DropdownMenuItem(value: 'Tưới phun mưa', child: Text('Tưới phun mưa')),
-                            DropdownMenuItem(value: 'Tưới phun sương', child: Text('Tưới phun sương')),
-                            DropdownMenuItem(value: 'Tưới thủ công', child: Text('Tưới thủ công')),
-                          ],
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _wateringMethod = val;
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Real-time Water cost conversion display (AgTech premium styling)
-                        if (_selectedSupply != null) ...[
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
                               ),
-                              border: Border.all(color: const Color(0xFFBFDBFE)),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.water_drop_rounded, color: Colors.blue, size: 24),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'HẠCH TOÁN CHI PHÍ NƯỚC TỰ ĐỘNG',
-                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue, letterSpacing: 0.3),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        widget.plantIds.length == 1
-                                            ? '${_amountController.text} Lít = ${(double.tryParse(_amountController.text) ?? 0.0) / 1000.0} m³'
-                                            : '${_amountController.text} Lít/cây x ${widget.plantIds.length} cây = ${((double.tryParse(_amountController.text) ?? 0.0) * widget.plantIds.length).toStringAsFixed(1)} Lít (${((double.tryParse(_amountController.text) ?? 0.0) * widget.plantIds.length / 1000.0).toStringAsFixed(3)} m³)',
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMain),
-                                      ),
-                                      Text(
-                                        widget.plantIds.length == 1
-                                            ? 'Thành tiền: ${_currencyFormat.format(_calculateWaterCost())}'
-                                            : 'Tổng: ${_currencyFormat.format(_calculateWaterCost() * widget.plantIds.length)} (${_currencyFormat.format(_calculateWaterCost())}/cây)',
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-                          const SizedBox(height: 14),
                         ],
-                      ],
-                    ] else ...[
-                      // Default text input fields for other log types
-                      Text(
-                        _selectedType == 'Tỉa cành/lá' || _selectedType == 'Tỉa quả/hoa'
-                            ? 'Lý do cắt tỉa *'
-                            : _selectedType == 'Bệnh cây'
-                                ? 'Tên bệnh / Triệu chứng phát hiện *'
-                                : 'Chi tiết hoạt động *',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
                       ),
                       const SizedBox(height: 6),
                       TextFormField(
-                        controller: _manualNameController,
+                        controller: _noteController,
+                        maxLines: 2,
                         decoration: InputDecoration(
-                          hintText: _selectedType == 'Bệnh cây' ? 'Ví dụ: Nấm hồng, rầy xanh' : 'Ví dụ: Cắt cành còi cọc',
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                          hintText: 'Thêm thông tin thực địa ngoài vườn...',
+                          contentPadding: const EdgeInsets.all(12),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'Trường này không được bỏ trống' : null,
                       ),
-                      const SizedBox(height: 14),
                     ],
-
-                    // Note input field
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Ghi chú thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-                        InkWell(
-                          onTap: _toggleVoiceDictation,
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _isListeningVoice ? Colors.red.withValues(alpha: 0.15) : const Color(0xFFFEF2F2),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _isListeningVoice ? Colors.red : const Color(0xFFFCA5A5)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _isListeningVoice ? Icons.mic_rounded : Icons.mic_none_rounded,
-                                  size: 14,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _isListeningVoice ? 'Đang nghe...' : 'Đọc giọng nói',
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-
-                    TextFormField(
-                      controller: _noteController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Ví dụ: Chăm sóc định kỳ đợt 1...',
-                        isDense: true,
-                        contentPadding: const EdgeInsets.all(12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Footer Action Buttons
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            color: const Color(0xFFF8FAFC),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Hủy bỏ', style: TextStyle(color: AppTheme.textMuted)),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            // Footer Actions
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppTheme.grayBorder)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isSaving ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Hủy'),
+                    ),
                   ),
-                  onPressed: _isSaving ? null : _handleSave,
-                  icon: _isSaving
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.lock_rounded, size: 16, color: Colors.white),
-                  label: const Text('Lưu lại', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _handleSave,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        backgroundColor: AppTheme.greenDark,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Lưu Nhật Ký', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../utils/theme.dart';
@@ -74,9 +74,17 @@ class _UserLogsPageState extends State<UserLogsPage> {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _filteredLogs = _allLogs.where((log) {
-        // Category filter
-        if (_selectedCategory != 'all' && !log.logType.toLowerCase().contains(_selectedCategory.toLowerCase())) {
-          return false;
+        // Category filter (Smart AgTech multi-keyword matching)
+        if (_selectedCategory != 'all') {
+          final target = _selectedCategory.toLowerCase();
+          final type = log.logType.toLowerCase();
+          if (target == 'cắt tỉa') {
+            if (!type.contains('tỉa') && !type.contains('cắt')) return false;
+          } else if (target == 'bệnh cây') {
+            if (!type.contains('bệnh') && !type.contains('sâu')) return false;
+          } else if (!type.contains(target)) {
+            return false;
+          }
         }
 
         // Search query

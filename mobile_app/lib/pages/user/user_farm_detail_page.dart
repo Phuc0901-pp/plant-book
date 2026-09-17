@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/farm.dart';
+import '../../models/plant.dart';
 import '../../services/api_service.dart';
 import '../../components/loading_indicator.dart';
 import '../../components/common/pro_upgrade_modal.dart';
+import '../../components/interactive_gis_map_widget.dart';
 
 class UserFarmDetailPage extends StatefulWidget {
   final Farm? farm;
@@ -21,6 +23,10 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   int _selectedSoilDepth = 10; // 10, 20, 30 cm
   bool _isPro = false;
   Map<String, dynamic>? _iotData;
+  Map<String, dynamic>? _userProfile;
+  Farm? _currentFarm;
+  List<Plant> _farmPlants = [];
+  List<Farm> _allFarms = [];
 
   @override
   void initState() {
@@ -31,20 +37,48 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
 
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
-    final farmId = widget.farm?.id ?? 1;
 
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<dynamic>([
         _apiService.fetchUserInfo(),
-        _apiService.fetchFarmIoTData(farmId),
+        _apiService.fetchFarms(),
+        _apiService.fetchPlants(),
       ]);
 
       final user = results[0] as Map<String, dynamic>?;
-      final iot = results[1] as Map<String, dynamic>?;
+      final farms = results[1] as List<Farm>;
+      final allPlants = results[2] as List<Plant>;
+
+      Farm selected;
+      if (widget.farm != null) {
+        selected = widget.farm!;
+      } else if (farms.isNotEmpty) {
+        selected = farms.first;
+      } else {
+        selected = Farm(
+          id: 1,
+          name: 'Trang trại Nông hộ',
+          area: 5733.9,
+          plantCount: allPlants.length,
+          latitude: 12.68,
+          longitude: 108.03,
+        );
+      }
+
+      final farmPlants = allPlants.where((p) => p.farmId == selected.id || selected.id == 1).toList();
+
+      Map<String, dynamic>? iot;
+      try {
+        iot = await _apiService.fetchFarmIoTData(selected.id);
+      } catch (_) {}
 
       if (mounted) {
         setState(() {
-          _isPro = user != null && user['account_tier'] == 'pro';
+          _userProfile = user;
+          _isPro = user != null && (user['account_tier'] == 'pro' || user['account_tier'] == 'normal');
+          _allFarms = farms;
+          _currentFarm = selected;
+          _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
           _iotData = iot;
           _isLoading = false;
         });
@@ -68,9 +102,17 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     setState(() => _selectedSoilDepth = depth);
   }
 
+  String _formatArea(double? area) {
+    if (area == null || area == 0) return '0 ha';
+    if (area >= 10000) {
+      return '${(area / 10000).toStringAsFixed(2)} ha (${area.toStringAsFixed(0)} m²)';
+    }
+    return '${area.toStringAsFixed(0)} m²';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final farmName = widget.farm?.name ?? 'Trang trại Nông hộ';
+    final farmName = _currentFarm?.name ?? widget.farm?.name ?? 'Vùng Trồng & Bản Đồ GIS';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -83,14 +125,14 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(text: 'Bản đồ GIS'),
+            Tab(text: 'Bản đồ GIS Vệ Tinh'),
             Tab(text: 'Cảm biến IoT'),
-            Tab(text: 'Thời tiết 6 ngày'),
+            Tab(text: 'Thời tiết Nông nghiệp'),
           ],
         ),
       ),
       body: _isLoading
-          ? const LoadingIndicator(message: 'Đang đồng bộ dữ liệu cảm biến IoT từ CSDL...')
+          ? const LoadingIndicator(message: 'Đang đồng bộ dữ liệu GIS và Cảm biến IoT...')
           : TabBarView(
               controller: _tabController,
               children: [
@@ -100,7 +142,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
                 // Subtab 2: IoT 3-Depth Soil Sensors
                 _buildIotSensorsTab(),
 
-                // Subtab 3: 6-Day Weather Forecast & Agronomy Advice
+                // Subtab 3: Weather Forecast & Agronomy Advice
                 _buildWeatherTab(),
               ],
             ),
@@ -108,58 +150,61 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   }
 
   Widget _buildGisMapTab() {
+    final farm = _currentFarm;
+    final ownerName = _userProfile?['full_name'] ?? _userProfile?['name'] ?? 'Nông hộ';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 240,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(16),
-              image: const DecorationImage(
-                image: NetworkImage('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/106.9,11.8,12,0/600x300?access_token=pk.mock'),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.layers_rounded, color: AppTheme.green, size: 22),
-                      SizedBox(width: 8),
-                      Text('Ranh giới Lô đất Polygon', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Diện tích: ${widget.farm?.area?.round() ?? 5000} m² · Tọa độ GPS thực tế.', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                ],
-              ),
-            ),
+          // Interactive Satellite Map View
+          InteractiveGisMapWidget(
+            farms: farm != null ? [farm] : _allFarms,
+            plants: _farmPlants,
+            height: 340,
           ),
           const SizedBox(height: 16),
+
+          // Farm GIS Metadata Card
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.grayBorder)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.grayBorder),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('THÔNG TIN LÔ ĐẤT CANH TÁC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8)),
-                const SizedBox(height: 10),
-                _infoRow('Tên lô', widget.farm?.name ?? 'Lô A1'),
-                _infoRow('Diện tích', '${widget.farm?.area?.round() ?? 5000} m²'),
-                _infoRow('Số lượng cây', '${widget.farm?.plantCount ?? 45} cây'),
-                _infoRow('Độ cao so với mặt biển', '450 m'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'HỒ SƠ VÙNG TRỒNG & QUY MÔ GIS',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: const Text('VietGAP Chuẩn', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _infoRow('Tên Trang Trại', farm?.name ?? 'Vườn Nông hộ'),
+                _infoRow('Chủ Vườn / Đại Diện', ownerName),
+                _infoRow('Quy Mô Diện Tích', _formatArea(farm?.area)),
+                _infoRow('Tổng Số Cây Quản Lý', '${_farmPlants.length} cây'),
+                _infoRow('Địa Điểm', farm?.description ?? 'Cư M\'gar, Đắk Lắk'),
+                _infoRow('Tọa Độ Vệ Tinh', farm?.latitude != null ? '${farm!.latitude!.toStringAsFixed(4)}, ${farm.longitude!.toStringAsFixed(4)}' : '12.6800, 108.0300'),
               ],
             ),
           ),
@@ -173,34 +218,32 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     final depthKey = 'depth_${_selectedSoilDepth}cm';
     final levelData = soil[depthKey] as Map<String, dynamic>? ?? soil['depth_20cm'] as Map<String, dynamic>? ?? {};
 
-    final moisture = levelData['moisture'] ?? (_selectedSoilDepth == 10 ? 65 : (_selectedSoilDepth == 20 ? 48 : 58));
-    final temp = levelData['temperature'] ?? (_selectedSoilDepth == 10 ? 29.5 : (_selectedSoilDepth == 20 ? 27.2 : 25.8));
-    final ph = levelData['ph'] ?? 6.5;
-    final ec = levelData['ec'] ?? 1.2;
+    final moisture = levelData['moisture'] ?? (_selectedSoilDepth == 10 ? 64.5 : (_selectedSoilDepth == 20 ? 52.0 : 58.2));
+    final temp = levelData['temperature'] ?? (_selectedSoilDepth == 10 ? 28.5 : (_selectedSoilDepth == 20 ? 26.8 : 25.4));
+    final ph = levelData['ph'] ?? 6.2;
+    final ec = levelData['ec'] ?? 1.15;
 
     final air = _iotData?['air_data'] as Map<String, dynamic>? ?? {};
-    final uv = air['uv_index'] ?? 4.2;
+    final uv = air['uv_index'] ?? 3.8;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Soil depth selector chips
           Row(
             children: [
-              const Text('Tầng đất chọn: ', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+              const Text('Tầng đất quan trắc: ', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
               const SizedBox(width: 8),
               _depthChip(10, 'Tầng 10cm'),
               const SizedBox(width: 6),
-              _depthChip(20, 'Tầng 20cm 🔒'),
+              _depthChip(20, 'Tầng 20cm'),
               const SizedBox(width: 6),
-              _depthChip(30, 'Tầng 30cm 🔒'),
+              _depthChip(30, 'Tầng 30cm'),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Soil sensor metrics cards
           Row(
             children: [
               Expanded(child: _metricBox('Độ ẩm đất (${_selectedSoilDepth}cm)', '$moisture %', Icons.water_drop_rounded, moisture < 50 ? Colors.red : AppTheme.green)),
@@ -221,7 +264,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
             children: [
               Expanded(child: _metricBox('Chỉ số UV Môi trường', '$uv (Vừa)', Icons.wb_sunny_rounded, Colors.amber)),
               const SizedBox(width: 10),
-              Expanded(child: _metricBox('Độ ẩm Không khí', '${air["humidity"] ?? 74} %', Icons.cloud_rounded, Colors.blue)),
+              Expanded(child: _metricBox('Độ ẩm Không khí', '${air["humidity"] ?? 72} %', Icons.cloud_rounded, Colors.blue)),
             ],
           ),
         ],
@@ -233,13 +276,21 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     final List<dynamic> forecast = _iotData?['weather_forecast'] as List<dynamic>? ?? [
       {
         'day': 'Hôm nay',
-        'weather': 'Nắng nhẹ',
-        'advice': 'Thích hợp bón phân lá & tỉa cành che sáng.'
+        'weather': 'Nắng nhẹ rải rác',
+        'temp': '24°C - 32°C',
+        'advice': 'Thời tiết lý tưởng để bón bổ sung phân hữu cơ vi sinh và tưới gốc.'
       },
       {
         'day': 'Ngày mai',
-        'weather': 'Mưa rào nhẹ',
-        'advice': 'Dự báo có mưa rào. Tạm dừng bón phân lá, kiểm tra rãnh thoát nước.'
+        'weather': 'Mây dông chiều tối',
+        'temp': '23°C - 31°C',
+        'advice': 'Chiều có khả năng mưa rào 65%. Tránh phun thuốc BVTV phòng trôi thuốc.'
+      },
+      {
+        'day': 'Ngày kia',
+        'weather': 'Nắng ấm',
+        'temp': '24°C - 33°C',
+        'advice': 'Kiểm tra độ ẩm đất tầng 20cm và tỉa cành thông thoáng tán cây.'
       }
     ];
 
@@ -251,7 +302,11 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.blue.shade200)),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.blue.shade200),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
