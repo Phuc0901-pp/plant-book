@@ -1352,4 +1352,166 @@
     font-size: 11px;
   }
 
+  /* ── Auth Gate Screen ── */
+  .auth-gate-container {
+    max-width: 500px;
+    margin: 20px auto 40px auto;
+    padding: 0 16px;
+  }
+  .auth-gate-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
+    padding: 24px 22px;
+  }
+  .auth-gate-plant-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .auth-gate-plant-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    flex-shrink: 0;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .auth-gate-plant-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .auth-gate-plant-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .auth-gate-tag {
+    display: inline-block;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #a7f3d0;
+    margin-bottom: 4px;
+  }
+  .auth-gate-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 5px 0;
+    line-height: 1.3;
+  }
+  .auth-gate-meta {
+    font-size: 12px;
+    color: #475569;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .auth-gate-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .auth-gate-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 18px 0;
+  }
+  .auth-gate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .auth-gate-desc {
+    font-size: 12.5px;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .btn-gate-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #ffffff;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+    transition: all 0.2s;
+  }
+  .btn-gate-submit:hover {
+    background: linear-gradient(135deg, #047857, #065f46);
+    transform: translateY(-1px);
+  }
+  .auth-gate-or-row {
+    display: flex;
+    align-items: center;
+    margin: 18px 0;
+    gap: 12px;
+  }
+  .auth-gate-or-line {
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+  }
+  .auth-gate-or-text {
+    font-size: 11px;
+    font-weight: 800;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+  }
+  .btn-gate-readonly {
+    width: 100%;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    color: #1e293b;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  }
+  .btn-gate-readonly:hover {
+    background: #f1f5f9;
+    border-color: #059669;
+    color: #059669;
+  }
+  .auth-gate-readonly-hint {
+    font-size: 11px;
+    color: #64748b;
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+
 

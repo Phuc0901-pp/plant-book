@@ -49,6 +49,129 @@ const slugInfo = getPublicSlugInfoFromUrl();
 const slug = slugInfo.slug;
 let currentPlantData = null;
 
+// English crop asset mappings
+const CROP_NAME_TO_ENGLISH = {
+  'sau_rieng': 'durian', 'sau rieng': 'durian', 'saurieng': 'durian', 'durian': 'durian',
+  'ca_phe': 'coffee', 'ca phe': 'coffee', 'caphe': 'coffee', 'coffee': 'coffee',
+  'ca_cao': 'cacao', 'ca cao': 'cacao', 'cacao': 'cacao', 'cocoa': 'cacao',
+  'cao_su': 'rubber', 'cao su': 'rubber', 'caosu': 'rubber', 'rubber': 'rubber',
+  'tao': 'apple', 'cay_tao': 'apple', 'apple': 'apple',
+  'xoai': 'mango', 'cay_xoai': 'mango', 'mango': 'mango',
+  'bo': 'avocado', 'cay_bo': 'avocado', 'avocado': 'avocado',
+  'buoi': 'pomelo', 'cay_buoi': 'pomelo', 'pomelo': 'pomelo',
+  'cam': 'orange', 'cay_cam': 'orange', 'orange': 'orange',
+  'mit': 'jackfruit', 'cay_mit': 'jackfruit', 'jackfruit': 'jackfruit',
+  'thanh_long': 'dragon_fruit', 'thanh long': 'dragon_fruit', 'dragon_fruit': 'dragon_fruit',
+  'chuoi': 'banana', 'cay_chuoi': 'banana', 'banana': 'banana',
+  'chanh': 'lemon', 'lemon': 'lemon', 'lime': 'lemon',
+  'oi': 'guava', 'cay_oi': 'guava', 'guava': 'guava',
+  'chanh_day': 'passion_fruit', 'chanh day': 'passion_fruit', 'passion_fruit': 'passion_fruit',
+  'tra': 'tea', 'che': 'tea', 'cay_che': 'tea', 'tea': 'tea',
+  'tieu': 'pepper', 'ho_tieu': 'pepper', 'ho tieu': 'pepper', 'pepper': 'pepper',
+  'dieu': 'cashew', 'cay_dieu': 'cashew', 'cashew': 'cashew',
+  'dau_tay': 'strawberry', 'strawberry': 'strawberry',
+  'mac_ca': 'macadamia', 'macadamia': 'macadamia',
+  'dua': 'pineapple', 'thom': 'pineapple', 'khom': 'pineapple', 'pineapple': 'pineapple',
+  'vai': 'lychee', 'lychee': 'lychee',
+  'nhan': 'longan', 'longan': 'longan',
+  'dua_xiem': 'coconut', 'coconut': 'coconut'
+};
+
+const LOCAL_CROP_ICONS = new Set(['durian', 'coffee', 'cacao', 'rubber']);
+
+function resolveCropEnglishName(term) {
+  if (!term) return 'durian';
+  const raw = String(term).toLowerCase().trim();
+  const match = raw.match(/\(([^)]+)\)/);
+  if (match && match[1]) {
+    const inside = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    if (inside) return inside;
+  }
+  const clean = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (CROP_NAME_TO_ENGLISH[clean]) return CROP_NAME_TO_ENGLISH[clean];
+  const under = clean.replace(/\s+/g, '_');
+  if (CROP_NAME_TO_ENGLISH[under]) return CROP_NAME_TO_ENGLISH[under];
+
+  for (const [k, v] of Object.entries(CROP_NAME_TO_ENGLISH)) {
+    if (clean.includes(k) || k.includes(clean)) return v;
+  }
+  return under || 'durian';
+}
+
+const CROP_DEFAULT_PHOTOS = {
+  durian: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+  apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
+  coffee: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
+  cacao: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=80',
+  rubber: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=1200&auto=format&fit=crop&q=80',
+  mango: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=1200&auto=format&fit=crop&q=80',
+  avocado: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&auto=format&fit=crop&q=80',
+  pomelo: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=1200&auto=format&fit=crop&q=80',
+  orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=1200&auto=format&fit=crop&q=80',
+  dragon_fruit: 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=1200&auto=format&fit=crop&q=80',
+  jackfruit: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+  banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=1200&auto=format&fit=crop&q=80',
+  lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=1200&auto=format&fit=crop&q=80',
+  guava: 'https://images.unsplash.com/photo-1536511135899-738a081598f4?w=1200&auto=format&fit=crop&q=80',
+  passion_fruit: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200&auto=format&fit=crop&q=80',
+  tea: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
+  pepper: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
+  cashew: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
+  strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1200&auto=format&fit=crop&q=80',
+  macadamia: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
+  pineapple: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80'
+};
+
+function getCropImageSrc(p) {
+  if (p && p.cover_image && !p.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
+    return esc(p.cover_image);
+  }
+  const englishName = resolveCropEnglishName(p ? (p.plant_type || '') : '');
+  if (LOCAL_CROP_ICONS.has(englishName)) {
+    return `/assets/crop/${englishName}.png`;
+  }
+  if (CROP_DEFAULT_PHOTOS[englishName]) {
+    return CROP_DEFAULT_PHOTOS[englishName];
+  }
+  return `/assets/crop/${englishName}.png`;
+}
+
+window.tryNextCropExt = function(img, cropType) {
+  if (!img) return;
+  const retryCount = parseInt(img.getAttribute('data-retry-count') || '0');
+  if (retryCount >= 3) {
+    img.onerror = null;
+    img.src = '/assets/logo.png';
+    img.className = 'cover-image-fallback';
+    return;
+  }
+  img.setAttribute('data-retry-count', retryCount + 1);
+
+  const eng = resolveCropEnglishName(cropType || img.alt || '');
+  const currentSrc = img.src || '';
+
+  if (currentSrc.startsWith('http')) {
+    img.src = `/assets/crop/${eng}.png`;
+  } else if (currentSrc.endsWith('.png')) {
+    img.src = `/assets/crop/${eng}.jpg`;
+  } else if (currentSrc.endsWith('.jpg')) {
+    img.src = `/assets/crop/${eng}.jpeg`;
+  } else if (currentSrc.endsWith('.jpeg')) {
+    img.src = `/assets/crop/${eng}.webp`;
+  } else {
+    img.onerror = null;
+    img.src = '/assets/logo.png';
+    img.className = 'cover-image-fallback';
+  }
+};
+
 // ── Authentication & Authorization for Public Plant Page ──────────
 function getStoredAuth() {
   const token = localStorage.getItem('pb_token') || localStorage.getItem('token') || '';
@@ -71,31 +194,56 @@ function userHasPlantAccess(user, plant) {
   return false;
 }
 
-function openPublicAuthModal(pendingModalId = null) {
-  if (pendingModalId) {
-    window._pendingActionModal = pendingModalId;
+function populateGateInfo(plant) {
+  if (!plant) return;
+  const imgEl = document.getElementById('gate-plant-img');
+  const typeEl = document.getElementById('gate-plant-type');
+  const nameEl = document.getElementById('gate-plant-name');
+  const codeEl = document.getElementById('gate-plant-code');
+  const farmEl = document.getElementById('gate-plant-farm');
+
+  if (imgEl) {
+    imgEl.src = getCropImageSrc(plant);
+    imgEl.alt = plant.plant_type || 'Cây trồng';
   }
-  const farmNameEl = document.getElementById('auth-modal-farm-name');
-  if (farmNameEl && currentPlantData) {
-    farmNameEl.textContent = currentPlantData.farm_name || 'Hệ thống';
+  if (typeEl) {
+    typeEl.textContent = plant.plant_variety ? `Giống: ${plant.plant_variety}` : (plant.plant_type || 'Cây trồng');
   }
-  const errEl = document.getElementById('public-auth-error');
-  if (errEl) errEl.style.display = 'none';
-  openModal('modal-farm-auth');
+  if (nameEl) {
+    nameEl.textContent = plant.plant_type || 'Hồ sơ cây trồng';
+  }
+  if (codeEl) {
+    codeEl.textContent = plant.tree_code || `#${plant.id}`;
+  }
+  if (farmEl) {
+    farmEl.textContent = plant.farm_name || 'Hệ thống Nông trại';
+  }
 }
 
-function continueAsOpenView() {
-  closeModal('modal-farm-auth');
-  window._pendingActionModal = null;
-  showPublicToast('Bạn đang xem thông tin mở & nhật ký canh tác của cây trồng.');
+function showAuthGateView() {
+  if (currentPlantData) {
+    populateGateInfo(currentPlantData);
+  }
+  document.getElementById('plant-view').style.display = 'none';
+  document.getElementById('auth-gate-view').style.display = 'block';
+  const errBox = document.getElementById('gate-login-error');
+  if (errBox) errBox.style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function doPublicPlantLogin() {
-  const emailInput = document.getElementById('public-login-email');
-  const passInput = document.getElementById('public-login-pass');
-  const btn = document.getElementById('btn-public-login');
-  const errBox = document.getElementById('public-auth-error');
-  const errText = document.getElementById('public-auth-error-text');
+async function enterReadOnlyMode() {
+  document.getElementById('auth-gate-view').style.display = 'none';
+  document.getElementById('loader').style.display = 'none';
+  await renderPlant(currentPlantData, false);
+  showPublicToast('Đang ở chế độ xem chi tiết canh tác (Chỉ đọc).');
+}
+
+async function doGateLogin() {
+  const emailInput = document.getElementById('gate-login-email');
+  const passInput = document.getElementById('gate-login-pass');
+  const btn = document.getElementById('btn-gate-login');
+  const errBox = document.getElementById('gate-login-error');
+  const errText = document.getElementById('gate-login-error-text');
 
   if (!emailInput || !passInput) return;
   const email = emailInput.value.trim();
@@ -126,18 +274,12 @@ async function doPublicPlantLogin() {
     const hasAccess = userHasPlantAccess(data.user, currentPlantData);
 
     if (hasAccess) {
-      closeModal('modal-farm-auth');
-      showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Bạn đã có quyền điều chỉnh.`);
-      await renderPlant(currentPlantData);
-      if (window._pendingActionModal) {
-        const p = window._pendingActionModal;
-        window._pendingActionModal = null;
-        openModal(p);
-      }
+      document.getElementById('auth-gate-view').style.display = 'none';
+      showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Bạn đã mở quyền cập nhật canh tác.`);
+      await renderPlant(currentPlantData, true);
     } else {
-      errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" thuộc trang trại khác, không có quyền điều chỉnh cây thuộc "${currentPlantData?.farm_name || 'trang trại này'}".`;
+      errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" thuộc trang trại khác. Chỉ tài khoản nông hộ thuộc trang trại "${currentPlantData?.farm_name || 'này'}" hoặc Admin mới có quyền cập nhật cây này.`;
       errBox.style.display = 'flex';
-      await renderPlant(currentPlantData);
     }
   } catch (err) {
     errText.textContent = err.message;
@@ -148,23 +290,12 @@ async function doPublicPlantLogin() {
   }
 }
 
-function logoutPublicPlant() {
+function logoutGate() {
   localStorage.removeItem('pb_token');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  showPublicToast('Đã đăng xuất. Bạn đang ở chế độ xem thông tin mở.');
-  if (currentPlantData) {
-    renderPlant(currentPlantData);
-  }
-}
-
-function handleCareActionClick(modalId) {
-  const { token, user } = getStoredAuth();
-  if (userHasPlantAccess(user, currentPlantData)) {
-    openModal(modalId);
-  } else {
-    openPublicAuthModal(modalId);
-  }
+  showPublicToast('Đã đăng xuất.');
+  showAuthGateView();
 }
 
 function showPublicToast(msg) {
@@ -542,7 +673,18 @@ async function loadPlant() {
     currentPlantData = plant;
     document.title = `${plant.plant_type || 'Cây trồng'} — Sổ Nông Tân Bảo Agtech`;
 
-    await renderPlant(plant);
+    populateGateInfo(plant);
+
+    const { token, user } = getStoredAuth();
+    const hasAccess = userHasPlantAccess(user, plant);
+
+    if (hasAccess) {
+      await renderPlant(plant, true);
+    } else {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('auth-gate-view').style.display = 'block';
+      document.getElementById('plant-view').style.display = 'none';
+    }
   } catch (err) {
     document.getElementById('loader').style.display = 'none';
     document.getElementById('error-view').style.display = 'block';
@@ -846,138 +988,17 @@ window.changePublicLogPage = function(page) {
 };
 
 // Render dynamic plant data
-async function renderPlant(plant) {
+async function renderPlant(plant, isEditable) {
   const extra = plant.data || {};
   const schemaFields = plant.schema_fields || [];
   const media = plant.media || [];
   const logs = plant.logs || [];
   const hasMap = (plant.latitude && plant.longitude) || (plant.farm_boundary && plant.farm_boundary.coordinates);
-  
-  // English crop asset mappings
-  const CROP_NAME_TO_ENGLISH = {
-    'sau_rieng': 'durian', 'sau rieng': 'durian', 'saurieng': 'durian', 'durian': 'durian',
-    'ca_phe': 'coffee', 'ca phe': 'coffee', 'caphe': 'coffee', 'coffee': 'coffee',
-    'ca_cao': 'cacao', 'ca cao': 'cacao', 'cacao': 'cacao', 'cocoa': 'cacao',
-    'cao_su': 'rubber', 'cao su': 'rubber', 'caosu': 'rubber', 'rubber': 'rubber',
-    'tao': 'apple', 'cay_tao': 'apple', 'apple': 'apple',
-    'xoai': 'mango', 'cay_xoai': 'mango', 'mango': 'mango',
-    'bo': 'avocado', 'cay_bo': 'avocado', 'avocado': 'avocado',
-    'buoi': 'pomelo', 'cay_buoi': 'pomelo', 'pomelo': 'pomelo',
-    'cam': 'orange', 'cay_cam': 'orange', 'orange': 'orange',
-    'mit': 'jackfruit', 'cay_mit': 'jackfruit', 'jackfruit': 'jackfruit',
-    'thanh_long': 'dragon_fruit', 'thanh long': 'dragon_fruit', 'dragon_fruit': 'dragon_fruit',
-    'chuoi': 'banana', 'cay_chuoi': 'banana', 'banana': 'banana',
-    'chanh': 'lemon', 'lemon': 'lemon', 'lime': 'lemon',
-    'oi': 'guava', 'cay_oi': 'guava', 'guava': 'guava',
-    'chanh_day': 'passion_fruit', 'chanh day': 'passion_fruit', 'passion_fruit': 'passion_fruit',
-    'tra': 'tea', 'che': 'tea', 'cay_che': 'tea', 'tea': 'tea',
-    'tieu': 'pepper', 'ho_tieu': 'pepper', 'ho tieu': 'pepper', 'pepper': 'pepper',
-    'dieu': 'cashew', 'cay_dieu': 'cashew', 'cashew': 'cashew',
-    'dau_tay': 'strawberry', 'strawberry': 'strawberry',
-    'mac_ca': 'macadamia', 'macadamia': 'macadamia',
-    'dua': 'pineapple', 'thom': 'pineapple', 'khom': 'pineapple', 'pineapple': 'pineapple',
-    'vai': 'lychee', 'lychee': 'lychee',
-    'nhan': 'longan', 'longan': 'longan',
-    'dua_xiem': 'coconut', 'coconut': 'coconut'
-  };
 
-  const LOCAL_CROP_ICONS = new Set(['durian', 'coffee', 'cacao', 'rubber']);
-
-  // Helper to resolve English crop identifier
-  function resolveCropEnglishName(term) {
-    if (!term) return 'durian';
-    const raw = String(term).toLowerCase().trim();
-    const match = raw.match(/\(([^)]+)\)/);
-    if (match && match[1]) {
-      const inside = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-      if (inside) return inside;
-    }
-    const clean = raw
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[đĐ]/g, "d")
-      .replace(/[^a-z0-9\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    if (CROP_NAME_TO_ENGLISH[clean]) return CROP_NAME_TO_ENGLISH[clean];
-    const under = clean.replace(/\s+/g, '_');
-    if (CROP_NAME_TO_ENGLISH[under]) return CROP_NAME_TO_ENGLISH[under];
-
-    for (const [k, v] of Object.entries(CROP_NAME_TO_ENGLISH)) {
-      if (clean.includes(k) || k.includes(clean)) return v;
-    }
-    return under || 'durian';
+  const { token, user } = getStoredAuth();
+  if (isEditable === undefined) {
+    isEditable = userHasPlantAccess(user, plant);
   }
-
-  // Default high-definition crop photos mapped by species
-  const CROP_DEFAULT_PHOTOS = {
-    durian: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
-    apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80',
-    coffee: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1200&auto=format&fit=crop&q=80',
-    cacao: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=80',
-    rubber: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=1200&auto=format&fit=crop&q=80',
-    mango: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=1200&auto=format&fit=crop&q=80',
-    avocado: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&auto=format&fit=crop&q=80',
-    pomelo: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=1200&auto=format&fit=crop&q=80',
-    orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=1200&auto=format&fit=crop&q=80',
-    dragon_fruit: 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=1200&auto=format&fit=crop&q=80',
-    jackfruit: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
-    banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=1200&auto=format&fit=crop&q=80',
-    lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=1200&auto=format&fit=crop&q=80',
-    guava: 'https://images.unsplash.com/photo-1536511135899-738a081598f4?w=1200&auto=format&fit=crop&q=80',
-    passion_fruit: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200&auto=format&fit=crop&q=80',
-    tea: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
-    pepper: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
-    cashew: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
-    strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1200&auto=format&fit=crop&q=80',
-    macadamia: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
-    pineapple: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80'
-  };
-
-  // Helper to resolve crop cover image from plant type (schema)
-  function getCropImageSrc(p) {
-    if (p.cover_image && !p.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
-      return esc(p.cover_image);
-    }
-    const englishName = resolveCropEnglishName(p.plant_type || '');
-    if (LOCAL_CROP_ICONS.has(englishName)) {
-      return `/assets/crop/${englishName}.png`;
-    }
-    if (CROP_DEFAULT_PHOTOS[englishName]) {
-      return CROP_DEFAULT_PHOTOS[englishName];
-    }
-    return `/assets/crop/${englishName}.png`;
-  }
-
-  window.tryNextCropExt = function(img, cropType) {
-    if (!img) return;
-    const retryCount = parseInt(img.getAttribute('data-retry-count') || '0');
-    if (retryCount >= 3) {
-      img.onerror = null;
-      img.src = '/assets/logo.png';
-      img.className = 'cover-image-fallback';
-      return;
-    }
-    img.setAttribute('data-retry-count', retryCount + 1);
-
-    const eng = resolveCropEnglishName(cropType || img.alt || '');
-    const currentSrc = img.src || '';
-
-    if (currentSrc.startsWith('http')) {
-      img.src = `/assets/crop/${eng}.png`;
-    } else if (currentSrc.endsWith('.png')) {
-      img.src = `/assets/crop/${eng}.jpg`;
-    } else if (currentSrc.endsWith('.jpg')) {
-      img.src = `/assets/crop/${eng}.jpeg`;
-    } else if (currentSrc.endsWith('.jpeg')) {
-      img.src = `/assets/crop/${eng}.webp`;
-    } else {
-      img.onerror = null;
-      img.src = '/assets/logo.png';
-      img.className = 'cover-image-fallback';
-    }
-  };
 
   // Render health status badge
   let healthClass = 'badge-gray';
@@ -985,6 +1006,7 @@ async function renderPlant(plant) {
   else if (plant.health_status === 'Bình thường') healthClass = 'badge-binhthuong';
   else if (plant.health_status === 'Cần chú ý') healthClass = 'badge-chuyi';
   else if (plant.health_status === 'Bệnh') healthClass = 'badge-benh';
+
   // Group logs by date for timeline pagination
   window._publicLogsGrouped = {};
   window._publicLogDates = [];
@@ -1007,31 +1029,15 @@ async function renderPlant(plant) {
     ? fmtDate(plantDateVal) 
     : (extra.planting_year ? `Năm ${extra.planting_year}` : (plant.plant_type && plant.plant_type.toLowerCase().includes('sầu') ? '01/01/2006' : 'Chưa ghi nhận'));
 
-  // Determine authentication & permission status for this plant
-  const { token, user } = getStoredAuth();
-  const hasAccess = userHasPlantAccess(user, plant);
-
   let authBarHtml = '';
-  if (hasAccess) {
+  if (isEditable && user && user.id) {
     authBarHtml = `
       <div class="auth-status-wrap">
         <div class="auth-status-pill auth-granted">
           <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
           <span><strong>${esc(user.full_name || user.email)}</strong> &nbsp;•&nbsp; ${user.role === 'admin' ? 'Quản trị viên' : (esc(plant.farm_name) || 'Nông hộ phụ trách')} (Có quyền chỉnh sửa)</span>
-          <button class="auth-pill-btn" onclick="logoutPublicPlant()" title="Đăng xuất">
+          <button class="auth-pill-btn" onclick="logoutGate()" title="Đăng xuất">
             <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
-          </button>
-        </div>
-      </div>
-    `;
-  } else if (user && user.id) {
-    authBarHtml = `
-      <div class="auth-status-wrap">
-        <div class="auth-status-pill auth-readonly">
-          <i class="fa-solid fa-eye" style="color: #f59e0b;"></i>
-          <span><strong>${esc(user.full_name || user.email)}</strong> (Trang trại khác) &nbsp;•&nbsp; <em>Chế độ xem thông tin mở (Chỉ đọc)</em></span>
-          <button class="auth-pill-btn" onclick="openPublicAuthModal()" title="Đổi tài khoản">
-            <i class="fa-solid fa-repeat"></i> Đổi tài khoản
           </button>
         </div>
       </div>
@@ -1039,10 +1045,10 @@ async function renderPlant(plant) {
   } else {
     authBarHtml = `
       <div class="auth-status-wrap">
-        <div class="auth-status-pill auth-guest">
-          <i class="fa-solid fa-globe" style="color: #0284c7;"></i>
-          <span>Chế độ xem thông tin mở (Công khai · Chỉ đọc)</span>
-          <button class="auth-pill-btn" onclick="openPublicAuthModal()">
+        <div class="auth-status-pill auth-readonly">
+          <i class="fa-solid fa-eye" style="color: #059669;"></i>
+          <span>Chế độ xem chi tiết canh tác (Chỉ xem dữ liệu — Không chỉnh sửa)</span>
+          <button class="auth-pill-btn primary" onclick="showAuthGateView()">
             <i class="fa-solid fa-lock"></i> Đăng nhập quản lý
           </button>
         </div>
@@ -1072,7 +1078,9 @@ async function renderPlant(plant) {
           
           <div class="badges-row">
             <span class="badge badge-info"><i class="fa-solid fa-tag"></i> ${esc(plant.plant_type)}</span>
-            <span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="${hasAccess ? 'Bấm để chuyển trạng thái sức khỏe' : 'Cần quyền nông hộ để thay đổi'}"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>
+            ${isEditable
+              ? `<span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`
+              : `<span class="badge ${healthClass}" style="cursor:default;" title="Chế độ chỉ xem — Không thể can thiệp"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`}
             ${plant.nfc_uid ? `<span class="badge badge-info"><i class="fa-solid fa-rss"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
           </div>
           
@@ -1133,8 +1141,9 @@ async function renderPlant(plant) {
         </div>
       </div>
 
-      <!-- Right Column (Quick Care Buttons, Media Gallery) -->
+      <!-- Right Column (Quick Care Buttons or Read-Only Notice, Media Gallery) -->
       <div class="right-col">
+        ${isEditable ? `
         <!-- Care Actions (Quick Log Buttons) -->
         <div class="glass-panel glass-card">
           <h2 class="sec-title"><i class="fa-solid fa-heart-pulse" style="color: var(--green-bright)"></i> Ghi nhật ký nhanh</h2>
@@ -1142,36 +1151,49 @@ async function renderPlant(plant) {
             Chọn quy trình chăm sóc bên dưới để điền thông tin nhanh.
           </p>
           <div class="care-actions-grid">
-            <button class="care-btn care-btn-water" onclick="handleCareActionClick('modal-water')">
+            <button class="care-btn care-btn-water" onclick="openModal('modal-water')">
               <i class="fa-solid fa-droplet" style="color: var(--color-water)"></i>
               <span>Tưới nước</span>
             </button>
-            <button class="care-btn care-btn-fertilize" onclick="handleCareActionClick('modal-fertilize')">
+            <button class="care-btn care-btn-fertilize" onclick="openModal('modal-fertilize')">
               <i class="fa-solid fa-leaf" style="color: var(--color-fertilize)"></i>
               <span>Bón phân</span>
             </button>
-            <button class="care-btn care-btn-pesticide" onclick="handleCareActionClick('modal-pesticide')">
+            <button class="care-btn care-btn-pesticide" onclick="openModal('modal-pesticide')">
               <i class="fa-solid fa-flask" style="color: var(--color-pesticide)"></i>
               <span>Phun thuốc</span>
             </button>
-            <button class="care-btn care-btn-leaf" onclick="handleCareActionClick('modal-leaf')">
+            <button class="care-btn care-btn-leaf" onclick="openModal('modal-leaf')">
               <i class="fa-solid fa-scissors" style="color: var(--color-leaf)"></i>
               <span>Cắt cành/lá</span>
             </button>
-            <button class="care-btn care-btn-flower" onclick="handleCareActionClick('modal-flower')">
+            <button class="care-btn care-btn-flower" onclick="openModal('modal-flower')">
               <i class="fa-solid fa-spa" style="color: var(--color-flower)"></i>
               <span>Tỉa hoa/quả</span>
             </button>
-            <button class="care-btn care-btn-disease" onclick="handleCareActionClick('modal-disease')">
+            <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
               <i class="fa-solid fa-virus" style="color: var(--color-disease)"></i>
               <span>Bệnh cây</span>
             </button>
-            <button class="care-btn care-btn-harvest" onclick="handleCareActionClick('modal-harvest')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a;">
+            <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a;">
               <i class="fa-solid fa-wheat-awn" style="color: #d97706"></i>
               <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
             </button>
           </div>
         </div>
+        ` : `
+        <!-- Read-Only Notice Card -->
+        <div class="glass-panel glass-card">
+          <h2 class="sec-title"><i class="fa-solid fa-shield-halved" style="color: var(--green-bright)"></i> Nhật ký canh tác cây trồng</h2>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 12.5px; color: #475569; line-height: 1.5; margin-bottom: 14px;">
+            <i class="fa-solid fa-circle-info" style="color: #059669; margin-right: 4px;"></i>
+            Bạn đang xem dữ liệu cây ở <strong>Chế độ Chi tiết (Chỉ đọc)</strong>. Toàn bộ lịch sử chăm sóc, phân bón, thuốc BVTV, tưới tiêu và thu hoạch được thể hiện đầy đủ ở cột bên trái.
+          </div>
+          <button onclick="showAuthGateView()" style="width: 100%; background: #ffffff; border: 1.5px dashed #059669; color: #059669; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='#ffffff';">
+            <i class="fa-solid fa-lock"></i> Đăng nhập nông hộ để cập nhật canh tác
+          </button>
+        </div>
+        `}
 
         ${media.length ? `
         <!-- Media Gallery Card -->
