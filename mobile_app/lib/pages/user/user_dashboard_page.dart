@@ -103,7 +103,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
 
     double totalArea = 0;
     for (final f in _farms) {
-      totalArea += f.area;
+      totalArea += (f.area ?? 0.0);
     }
 
     final totalExpense = _supplyAnalytics?['total_cost'] ?? 0;
@@ -560,3 +560,4 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     );
   }
 }
+
