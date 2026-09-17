@@ -49,6 +49,160 @@ const slugInfo = getPublicSlugInfoFromUrl();
 const slug = slugInfo.slug;
 let currentPlantData = null;
 
+// ── Authentication & Authorization for Public Plant Page ──────────
+function getStoredAuth() {
+  const token = localStorage.getItem('pb_token') || localStorage.getItem('token') || '';
+  let user = null;
+  try {
+    const rawUser = localStorage.getItem('user');
+    if (rawUser) user = JSON.parse(rawUser);
+  } catch(e) {}
+  return { token, user };
+}
+
+function userHasPlantAccess(user, plant) {
+  if (!user || !user.id || !plant) return false;
+  if (user.role === 'admin') return true;
+  if (user.farm_id && plant.farm_id && Number(user.farm_id) === Number(plant.farm_id)) return true;
+  if (plant.assigned_to_user_id && Number(user.id) === Number(plant.assigned_to_user_id)) return true;
+  if (plant.farm_owner_user_id && Number(user.id) === Number(plant.farm_owner_user_id)) return true;
+  if (plant.farm_owner_id && Number(user.id) === Number(plant.farm_owner_id)) return true;
+  if (plant.created_by && Number(user.id) === Number(plant.created_by)) return true;
+  return false;
+}
+
+function openPublicAuthModal(pendingModalId = null) {
+  if (pendingModalId) {
+    window._pendingActionModal = pendingModalId;
+  }
+  const farmNameEl = document.getElementById('auth-modal-farm-name');
+  if (farmNameEl && currentPlantData) {
+    farmNameEl.textContent = currentPlantData.farm_name || 'Hệ thống';
+  }
+  const errEl = document.getElementById('public-auth-error');
+  if (errEl) errEl.style.display = 'none';
+  openModal('modal-farm-auth');
+}
+
+function continueAsOpenView() {
+  closeModal('modal-farm-auth');
+  window._pendingActionModal = null;
+  showPublicToast('Bạn đang xem thông tin mở & nhật ký canh tác của cây trồng.');
+}
+
+async function doPublicPlantLogin() {
+  const emailInput = document.getElementById('public-login-email');
+  const passInput = document.getElementById('public-login-pass');
+  const btn = document.getElementById('btn-public-login');
+  const errBox = document.getElementById('public-auth-error');
+  const errText = document.getElementById('public-auth-error-text');
+
+  if (!emailInput || !passInput) return;
+  const email = emailInput.value.trim();
+  const password = passInput.value;
+
+  if (!email || !password) return;
+
+  const oldBtnText = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
+  btn.disabled = true;
+  errBox.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Đăng nhập không thành công.');
+    }
+
+    localStorage.setItem('pb_token', data.token);
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    const hasAccess = userHasPlantAccess(data.user, currentPlantData);
+
+    if (hasAccess) {
+      closeModal('modal-farm-auth');
+      showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Bạn đã có quyền điều chỉnh.`);
+      await renderPlant(currentPlantData);
+      if (window._pendingActionModal) {
+        const p = window._pendingActionModal;
+        window._pendingActionModal = null;
+        openModal(p);
+      }
+    } else {
+      errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" thuộc trang trại khác, không có quyền điều chỉnh cây thuộc "${currentPlantData?.farm_name || 'trang trại này'}".`;
+      errBox.style.display = 'flex';
+      await renderPlant(currentPlantData);
+    }
+  } catch (err) {
+    errText.textContent = err.message;
+    errBox.style.display = 'flex';
+  } finally {
+    btn.innerHTML = oldBtnText;
+    btn.disabled = false;
+  }
+}
+
+function logoutPublicPlant() {
+  localStorage.removeItem('pb_token');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  showPublicToast('Đã đăng xuất. Bạn đang ở chế độ xem thông tin mở.');
+  if (currentPlantData) {
+    renderPlant(currentPlantData);
+  }
+}
+
+function handleCareActionClick(modalId) {
+  const { token, user } = getStoredAuth();
+  if (userHasPlantAccess(user, currentPlantData)) {
+    openModal(modalId);
+  } else {
+    openPublicAuthModal(modalId);
+  }
+}
+
+function showPublicToast(msg) {
+  let toast = document.getElementById('public-auth-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'public-auth-toast';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '24px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'rgba(15, 23, 42, 0.92)';
+    toast.style.color = '#fff';
+    toast.style.padding = '10px 18px';
+    toast.style.borderRadius = '30px';
+    toast.style.fontSize = '13px';
+    toast.style.fontWeight = '600';
+    toast.style.zIndex = '9999';
+    toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '8px';
+    toast.style.backdropFilter = 'blur(6px)';
+    toast.style.border = '1px solid rgba(255,255,255,0.15)';
+    toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<i class="fa-solid fa-circle-info" style="color:#10b981"></i> <span>${msg}</span>`;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  
+  clearTimeout(window._publicToastTimer);
+  window._publicToastTimer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 3500);
+}
+
 // Global Configurations Cache (Default Fallbacks)
 let configData = {
   water_methods: ["Tưới tay thủ công", "Tưới nhỏ giọt", "Tưới phun mưa", "Tưới phun sương"],
@@ -853,10 +1007,54 @@ async function renderPlant(plant) {
     ? fmtDate(plantDateVal) 
     : (extra.planting_year ? `Năm ${extra.planting_year}` : (plant.plant_type && plant.plant_type.toLowerCase().includes('sầu') ? '01/01/2006' : 'Chưa ghi nhận'));
 
+  // Determine authentication & permission status for this plant
+  const { token, user } = getStoredAuth();
+  const hasAccess = userHasPlantAccess(user, plant);
+
+  let authBarHtml = '';
+  if (hasAccess) {
+    authBarHtml = `
+      <div class="auth-status-wrap">
+        <div class="auth-status-pill auth-granted">
+          <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+          <span><strong>${esc(user.full_name || user.email)}</strong> &nbsp;•&nbsp; ${user.role === 'admin' ? 'Quản trị viên' : (esc(plant.farm_name) || 'Nông hộ phụ trách')} (Có quyền chỉnh sửa)</span>
+          <button class="auth-pill-btn" onclick="logoutPublicPlant()" title="Đăng xuất">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (user && user.id) {
+    authBarHtml = `
+      <div class="auth-status-wrap">
+        <div class="auth-status-pill auth-readonly">
+          <i class="fa-solid fa-eye" style="color: #f59e0b;"></i>
+          <span><strong>${esc(user.full_name || user.email)}</strong> (Trang trại khác) &nbsp;•&nbsp; <em>Chế độ xem thông tin mở (Chỉ đọc)</em></span>
+          <button class="auth-pill-btn" onclick="openPublicAuthModal()" title="Đổi tài khoản">
+            <i class="fa-solid fa-repeat"></i> Đổi tài khoản
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    authBarHtml = `
+      <div class="auth-status-wrap">
+        <div class="auth-status-pill auth-guest">
+          <i class="fa-solid fa-globe" style="color: #0284c7;"></i>
+          <span>Chế độ xem thông tin mở (Công khai · Chỉ đọc)</span>
+          <button class="auth-pill-btn" onclick="openPublicAuthModal()">
+            <i class="fa-solid fa-lock"></i> Đăng nhập quản lý
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   // Construct UI using exact plant.css rules
   let html = `
     <!-- Hero Header Card -->
     <div class="hero-container">
+      ${authBarHtml}
       <div class="glass-panel hero-card">
         <div class="cover-image-container">
           <img src="${getCropImageSrc(plant)}" alt="${esc(plant.plant_type)}" class="${plant.cover_image ? 'cover-image-photo' : 'cover-image-fallback'}" onerror="tryNextCropExt(this, '${esc(plant.plant_type || '')}')">
@@ -874,7 +1072,7 @@ async function renderPlant(plant) {
           
           <div class="badges-row">
             <span class="badge badge-info"><i class="fa-solid fa-tag"></i> ${esc(plant.plant_type)}</span>
-            <span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>
+            <span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="${hasAccess ? 'Bấm để chuyển trạng thái sức khỏe' : 'Cần quyền nông hộ để thay đổi'}"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>
             ${plant.nfc_uid ? `<span class="badge badge-info"><i class="fa-solid fa-rss"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
           </div>
           
@@ -944,31 +1142,31 @@ async function renderPlant(plant) {
             Chọn quy trình chăm sóc bên dưới để điền thông tin nhanh.
           </p>
           <div class="care-actions-grid">
-            <button class="care-btn care-btn-water" onclick="openModal('modal-water')">
+            <button class="care-btn care-btn-water" onclick="handleCareActionClick('modal-water')">
               <i class="fa-solid fa-droplet" style="color: var(--color-water)"></i>
               <span>Tưới nước</span>
             </button>
-            <button class="care-btn care-btn-fertilize" onclick="openModal('modal-fertilize')">
+            <button class="care-btn care-btn-fertilize" onclick="handleCareActionClick('modal-fertilize')">
               <i class="fa-solid fa-leaf" style="color: var(--color-fertilize)"></i>
               <span>Bón phân</span>
             </button>
-            <button class="care-btn care-btn-pesticide" onclick="openModal('modal-pesticide')">
+            <button class="care-btn care-btn-pesticide" onclick="handleCareActionClick('modal-pesticide')">
               <i class="fa-solid fa-flask" style="color: var(--color-pesticide)"></i>
               <span>Phun thuốc</span>
             </button>
-            <button class="care-btn care-btn-leaf" onclick="openModal('modal-leaf')">
+            <button class="care-btn care-btn-leaf" onclick="handleCareActionClick('modal-leaf')">
               <i class="fa-solid fa-scissors" style="color: var(--color-leaf)"></i>
               <span>Cắt cành/lá</span>
             </button>
-            <button class="care-btn care-btn-flower" onclick="openModal('modal-flower')">
+            <button class="care-btn care-btn-flower" onclick="handleCareActionClick('modal-flower')">
               <i class="fa-solid fa-spa" style="color: var(--color-flower)"></i>
               <span>Tỉa hoa/quả</span>
             </button>
-            <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
+            <button class="care-btn care-btn-disease" onclick="handleCareActionClick('modal-disease')">
               <i class="fa-solid fa-virus" style="color: var(--color-disease)"></i>
               <span>Bệnh cây</span>
             </button>
-            <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a;">
+            <button class="care-btn care-btn-harvest" onclick="handleCareActionClick('modal-harvest')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a;">
               <i class="fa-solid fa-wheat-awn" style="color: #d97706"></i>
               <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
             </button>
@@ -1261,6 +1459,17 @@ async function submitCareLog(event, type, modalId, formId) {
     details.reason = selectVal === '__custom__' ? document.getElementById('flower-reason-custom').value.trim() : selectVal;
     note = document.getElementById('flower-note').value.trim();
   }
+  else if (type === 'Thu hoạch') {
+    const harvestAmountInput = document.getElementById('harvest-amount');
+    details.amount = harvestAmountInput ? parseFloat(harvestAmountInput.value) : 0;
+    details.yield_kg = details.amount;
+    const harvestUnitInput = document.getElementById('harvest-unit');
+    details.unit = harvestUnitInput ? harvestUnitInput.value : 'kg';
+    const harvestQualityInput = document.getElementById('harvest-quality');
+    details.quality = harvestQualityInput ? harvestQualityInput.value.trim() : '';
+    const harvestNoteInput = document.getElementById('harvest-note');
+    note = harvestNoteInput ? harvestNoteInput.value.trim() : '';
+  }
 
   const dtInput = form.querySelector('input[type="datetime-local"]');
   let performedAt = new Date().toISOString();
@@ -1281,21 +1490,29 @@ async function submitCareLog(event, type, modalId, formId) {
     media_urls: []
   };
 
+  const { token } = getStoredAuth();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   try {
     const res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}/logs`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: headers,
       body: JSON.stringify(payload)
     });
     
     if (!res.ok) {
-      const errData = await res.json();
+      const errData = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        alert(errData.error || 'Bạn không có quyền ghi nhật ký cho cây này. Vui lòng đăng nhập tài khoản trang trại.');
+        openPublicAuthModal(modalId);
+        return;
+      }
       throw new Error(errData.error || 'Lỗi server');
     }
     
     closeModal(modalId);
+    showPublicToast(`Đã lưu nhật ký "${type}" thành công!`);
     
     // Reload plant logs and information
     await loadPlant();
@@ -1505,14 +1722,24 @@ async function submitDiseaseLog(event) {
     diseaseImageFiles.forEach(f => formData.append('files', f));
     diseaseVideoFiles.forEach(f => formData.append('files', f));
 
+    const { token } = getStoredAuth();
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}/logs`, {
       method: 'POST',
+      headers: headers,
       // Do NOT set Content-Type — browser sets multipart/form-data with boundary automatically
       body: formData
     });
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        alert(errData.error || 'Bạn không có quyền ghi nhận bệnh cây cho cây này. Vui lòng đăng nhập tài khoản trang trại.');
+        openPublicAuthModal('modal-disease');
+        return;
+      }
       throw new Error(errData.error || 'Lỗi server');
     }
 
@@ -1526,6 +1753,7 @@ async function submitDiseaseLog(event) {
     await clearDraftFiles();
 
     closeModal('modal-disease');
+    showPublicToast('Đã ghi nhận nhật ký bệnh cây thành công!');
     await loadPlant();
   } catch (err) {
     alert('Không thể lưu nhật ký bệnh cây: ' + err.message);
@@ -1572,6 +1800,12 @@ function toggleTimelineItem(event, el) {
 // Toggle health status between Tốt / Bệnh
 async function toggleHealthStatus() {
   if (!currentPlantData) return;
+  const { token, user } = getStoredAuth();
+  if (!userHasPlantAccess(user, currentPlantData)) {
+    openPublicAuthModal();
+    return;
+  }
+
   const current = currentPlantData.health_status;
   // If it's anything else than Bệnh, toggle to Bệnh. Otherwise, toggle to Tốt.
   const nextStatus = current === 'Bệnh' ? 'Tốt' : 'Bệnh';
@@ -1581,18 +1815,25 @@ async function toggleHealthStatus() {
   
   try {
     const targetId = currentPlantData.public_slug || currentPlantData.id || slug;
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch(`/api/plants/public/${encodeURIComponent(targetId)}/health`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: headers,
       body: JSON.stringify({ health_status: nextStatus })
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        alert(errData.error || 'Bạn không có quyền thay đổi trạng thái sức khỏe cây trồng này.');
+        openPublicAuthModal();
+        return;
+      }
       throw new Error(errData.error || 'Lỗi hệ thống');
     }
     
+    showPublicToast(`Đã chuyển trạng thái sức khỏe thành: ${nextStatus}`);
     // Reload plant profile to reflect status changes
     await loadPlant();
   } catch (err) {

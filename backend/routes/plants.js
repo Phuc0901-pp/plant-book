@@ -4,8 +4,65 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { logAuditAction } = require('./history');
+const jwt = require('jsonwebtoken');
 
 const checkTier = require('../middleware/checkTier');
+
+// Helper to strictly verify that the user is logged in AND belongs to the same farm or is Admin/Owner
+async function verifyPlantAccess(req, plantId) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { 
+      ok: false, 
+      status: 401, 
+      error: 'Vui lòng đăng nhập tài khoản thuộc trang trại này để thực hiện thao tác.' 
+    };
+  }
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userRes = await pool.query('SELECT id, email, role, full_name, farm_id FROM users WHERE id = $1', [decoded.id]);
+    if (userRes.rows.length === 0) {
+      return { ok: false, status: 401, error: 'Tài khoản không tồn tại hoặc đã bị khóa.' };
+    }
+    const user = userRes.rows[0];
+
+    const plantRes = await pool.query(`
+      SELECT p.id, p.farm_id, p.created_by, p.assigned_to_user_id, f.user_id as farm_owner_id, f.name as farm_name
+      FROM plants p
+      LEFT JOIN farms f ON f.id = p.farm_id
+      WHERE p.id = $1
+    `, [plantId]);
+
+    if (plantRes.rows.length === 0) {
+      return { ok: false, status: 404, error: 'Không tìm thấy cây trồng.' };
+    }
+    const plant = plantRes.rows[0];
+
+    // 1. Admin has universal access
+    if (user.role === 'admin') {
+      return { ok: true, user, plant };
+    }
+
+    // 2. Check if user is in the SAME farm or assigned/owner/creator
+    const isSameFarm = user.farm_id && plant.farm_id && (Number(user.farm_id) === Number(plant.farm_id));
+    const isAssigned = plant.assigned_to_user_id && (Number(user.id) === Number(plant.assigned_to_user_id));
+    const isCreator = plant.created_by && (Number(user.id) === Number(plant.created_by));
+    const isOwner = plant.farm_owner_id && (Number(user.id) === Number(plant.farm_owner_id));
+
+    if (isSameFarm || isAssigned || isCreator || isOwner) {
+      return { ok: true, user, plant };
+    }
+
+    return {
+      ok: false,
+      status: 403,
+      error: `Tài khoản "${user.full_name || user.email}" không thuộc trang trại "${plant.farm_name || 'này'}". Bạn chỉ có quyền xem thông tin mở (chỉ đọc), không có quyền điều chỉnh hoặc ghi nhật ký.`
+    };
+  } catch (err) {
+    return { ok: false, status: 401, error: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.' };
+  }
+}
 
 const multer = require('multer');
 const storageService = require('../services/storageService');
@@ -2184,7 +2241,7 @@ function isFullNfcUid(uid) {
   return false;
 }
 
-// Update plant health status publicly
+// Update plant health status (Requires login from the same farm or Admin)
 router.patch('/public/:slug/health', async (req, res) => {
   try {
     const { health_status } = req.body;
@@ -2192,15 +2249,31 @@ router.patch('/public/:slug/health', async (req, res) => {
       return res.status(400).json({ error: 'Trạng thái sức khỏe không hợp lệ.' });
     }
     const slugParam = req.params.slug.trim();
-    const result = await pool.query(
-      `UPDATE plants SET health_status = $1, updated_at = NOW() WHERE (public_slug = $2 OR id::text = $2 OR UPPER(nfc_uid) = UPPER($2)) RETURNING *`,
-      [health_status, slugParam]
+
+    // 1. Find plant
+    const plantFind = await pool.query(
+      `SELECT id FROM plants WHERE (public_slug = $1 OR id::text = $1 OR UPPER(nfc_uid) = UPPER($1)) LIMIT 1`,
+      [slugParam]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
+    if (plantFind.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy hồ sơ cây trồng.' });
+    }
+    const plantId = plantFind.rows[0].id;
+
+    // 2. Strict farm permission check
+    const access = await verifyPlantAccess(req, plantId);
+    if (!access.ok) {
+      return res.status(access.status).json({ error: access.error });
+    }
+
+    const result = await pool.query(
+      `UPDATE plants SET health_status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [health_status, plantId]
+    );
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Lỗi server.' });
+    console.error('Update health error:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });
 
@@ -2291,8 +2364,26 @@ router.all('/public/:slug/gps', async (req, res) => {
 });
 
 
+// Submit care log (Requires login from the same farm or Admin)
 router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) => {
   try {
+    const slugParam = req.params.slug.trim();
+    // Find plant ID by slug, ID, or NFC UID
+    const plantResult = await pool.query(
+      'SELECT id, farm_id FROM plants WHERE (public_slug=$1 OR id::text=$1 OR UPPER(nfc_uid)=UPPER($1)) AND is_public=true',
+      [slugParam]
+    );
+    if (plantResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
+    }
+    const plantId = plantResult.rows[0].id;
+
+    // Strict farm authentication check
+    const access = await verifyPlantAccess(req, plantId);
+    if (!access.ok) {
+      return res.status(access.status).json({ error: access.error });
+    }
+
     // Support both JSON body (no files) and multipart/form-data (with files)
     const log_type = req.body.log_type;
     const note = req.body.note || '';
@@ -2305,17 +2396,6 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
         details = typeof req.body.details === 'string' ? JSON.parse(req.body.details) : req.body.details;
       } catch (e) { details = {}; }
     }
-
-    const slugParam = req.params.slug.trim();
-    // Find plant ID by slug, ID, or NFC UID
-    const plantResult = await pool.query(
-      'SELECT id FROM plants WHERE (public_slug=$1 OR id::text=$1 OR UPPER(nfc_uid)=UPPER($1)) AND is_public=true',
-      [slugParam]
-    );
-    if (plantResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
-    }
-    const plantId = plantResult.rows[0].id;
 
     // Upload files to Supabase if any
     const uploadedMediaUrls = [];
@@ -2350,9 +2430,9 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
 
     const result = await pool.query(
       `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,NULL) RETURNING *`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [plantId, log_date, log_type, note,
-       JSON.stringify(allMediaUrls), JSON.stringify(details)]
+       JSON.stringify(allMediaUrls), JSON.stringify(details), access.user.id]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

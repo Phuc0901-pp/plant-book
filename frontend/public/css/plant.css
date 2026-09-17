@@ -1279,3 +1279,77 @@
     100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
   }
 
+  /* ── Auth Status Pills & Navigation ── */
+  .auth-status-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+    width: 100%;
+  }
+  .auth-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 24px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    flex-wrap: wrap;
+    justify-content: center;
+    line-height: 1.4;
+  }
+  .auth-status-pill.auth-granted {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1.5px solid #a7f3d0;
+  }
+  .auth-status-pill.auth-readonly {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1.5px solid #fde68a;
+  }
+  .auth-status-pill.auth-guest {
+    background: #f8fafc;
+    color: #334155;
+    border: 1.5px solid #cbd5e1;
+  }
+  .auth-pill-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    outline: none;
+  }
+  .auth-pill-btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+  .auth-pill-btn.primary {
+    background: #059669;
+    color: #ffffff;
+    border-color: #047857;
+  }
+  .auth-pill-btn.primary:hover {
+    background: #047857;
+  }
+
+  .care-btn.disabled-mode {
+    opacity: 0.85;
+    position: relative;
+  }
+  .care-btn.disabled-mode::after {
+    content: '🔒';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 11px;
+  }
+
+
