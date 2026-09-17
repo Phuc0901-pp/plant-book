@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
@@ -477,129 +477,125 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
   }
 });
 
-// DELETE farm (User = Soft Delete / áº¨n Ä‘á»‡m; Admin = Permanent Delete / XÃ³a vÄ©nh viá»…n)
+// DELETE farm (Admin or Farm Owner: PERMANENT HARD DELETE + FULL CASCADE DELETION OF ALL PLANTS, LOGS, MEDIA, SUPPLIES, SENSORS)
 router.delete('/:id', auth, async (req, res) => {
+  const client = await pool.connect();
   try {
     const farmId = parseInt(req.params.id);
-    const farmCheck = await pool.query('SELECT * FROM farms WHERE id = $1', [farmId]);
+    if (isNaN(farmId)) {
+      return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    }
+
+    const farmCheck = await client.query('SELECT * FROM farms WHERE id = $1', [farmId]);
     if (farmCheck.rows.length === 0) {
       if (req.user.role === 'admin') {
-        // Farm already gone from farms table, clean up any lingering audit entries or cache
-        try { await pool.query('DELETE FROM data_audit_logs WHERE target_type = $1 AND record_id = $2', ['Trang tráº¡i', farmId]); } catch(_) {}
+        try { await client.query('DELETE FROM data_audit_logs WHERE target_type = $1 AND record_id = $2', ['Trang trại', farmId]); } catch(_) {}
         await delCacheByPattern('farms_');
-        return res.json({ success: true, message: 'Trang tráº¡i Ä‘Ã£ Ä‘Æ°á»£c xÃ³a sáº¡ch hoÃ n toÃ n khá»i há»‡ thá»‘ng.' });
+        return res.json({ success: true, message: 'Trang trại đã được xóa sạch hoàn toàn khỏi hệ thống.' });
       }
-      return res.status(404).json({ error: 'KhÃ´ng tÃ¬m tháº¥y trang tráº¡i.' });
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
 
     const farm = farmCheck.rows[0];
     const userName = req.user.full_name || req.user.email || `User #${req.user.id}`;
 
-    if (req.user.role === 'admin') {
-      // Admin: PERMANENT HARD DELETE + FULL CASCADE DELETE ALL MEDIA, LOGS, PLANTS, SUPPLIES, IOT & COSTS
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-
-        // 1. Delete associated plant media
-        try {
-          await client.query(`
-            DELETE FROM plant_media 
-            WHERE plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
-          `, [farmId]);
-        } catch (_) {}
-
-        // 2. Delete associated plant logs
-        try {
-          await client.query(`
-            DELETE FROM plant_logs 
-            WHERE plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
-          `, [farmId]);
-        } catch (_) {}
-
-        // 3. Delete associated supply usages for this farm or its supplies
-        try {
-          await client.query(`
-            DELETE FROM supply_usages 
-            WHERE farm_id = $1 
-               OR supply_id IN (SELECT id FROM supplies WHERE farm_id = $1)
-          `, [farmId]);
-        } catch (_) {}
-
-        // 4. Delete associated supplies for this farm
-        try {
-          await client.query('DELETE FROM supplies WHERE farm_id = $1', [farmId]);
-        } catch (_) {}
-
-        // 5. Delete associated IoT sensors, devices, costs, assets, alerts
-        try { await client.query('DELETE FROM farm_iot_sensors WHERE farm_id = $1', [farmId]); } catch (_) {}
-        try { await client.query('DELETE FROM devices WHERE farm_id = $1', [farmId]); } catch (_) {}
-        try { await client.query('DELETE FROM costs WHERE farm_id = $1', [farmId]); } catch (_) {}
-        try { await client.query('DELETE FROM fixed_assets WHERE farm_id = $1', [farmId]); } catch (_) {}
-        try { await client.query('DELETE FROM user_alert_rules WHERE farm_id = $1', [farmId]); } catch (_) {}
-
-        // 6. Delete associated plants in this farm
-        await client.query('DELETE FROM plants WHERE farm_id = $1', [farmId]);
-
-        // 7. Unbind users assigned to this farm
-        await client.query('UPDATE users SET farm_id = NULL WHERE farm_id = $1', [farmId]);
-
-        // 8. Delete the farm itself
-        await client.query('DELETE FROM farms WHERE id = $1', [farmId]);
-
-        // 9. Record in data_audit_logs for Admin DB Audit History
-        try {
-          await client.query(`
-            INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
-            VALUES ($1, $2, 'DELETE', 'Trang tráº¡i', $3, $4, $5, 'XÃ³a vÄ©nh viá»…n trang tráº¡i + CÃ¢y trá»“ng + Váº­t tÆ° Ä‘Ã­nh kÃ¨m khá»i CSDL bá»Ÿi Admin')
-          `, [req.user.id, userName, farmId, `XÃ³a vÄ©nh viá»…n trang tráº¡i ${farm.name}`, JSON.stringify(farm)]);
-        } catch (_) {}
-
-        await client.query('COMMIT');
-      } catch (cascadeErr) {
-        await client.query('ROLLBACK');
-        console.error('Cascade error deleting farm:', cascadeErr);
-        throw cascadeErr;
-      } finally {
-        client.release();
-      }
-
-      await delCacheByPattern('farms_');
-      await delCacheByPattern('plants_');
-      await delCacheByPattern('supplies_');
-      await delCacheByPattern('farm_iot_');
-
-      const broadcast = req.app.get('broadcast');
-      if (broadcast) broadcast('farms_updated');
-
-      return res.json({ success: true, message: 'Admin Ä‘Ã£ xÃ³a vÄ©nh viá»…n trang tráº¡i cÃ¹ng toÃ n bá»™ cÃ¢y trá»“ng & váº­t tÆ° Ä‘Ã­nh kÃ¨m khá»i CSDL PostgreSQL thÃ nh cÃ´ng!' });
-    } else {
-      // User: SOFT DELETE / HIDE ("XÃ³a Ä‘á»‡m")
-      const isOwner = farm.user_id === req.user.id || farm.created_by === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
-      if (!isOwner) {
-        return res.status(403).json({ error: 'Báº¡n khÃ´ng cÃ³ quyá»n xÃ³a trang tráº¡i nÃ y.' });
-      }
-
-      await pool.query('UPDATE farms SET is_deleted = true, deleted_at = NOW() WHERE id = $1', [farmId]);
-
-      // Record soft-delete in data_audit_logs
-      try {
-        await pool.query(`
-          INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
-          VALUES ($1, $2, 'DELETE_SOFT', 'Trang tráº¡i', $3, $4, $5, 'NÃ´ng há»™ xÃ³a Ä‘á»‡m (áº©n) trang tráº¡i')
-        `, [req.user.id, userName, farmId, `XÃ³a Ä‘á»‡m trang tráº¡i ${farm.name}`, JSON.stringify(farm)]);
-      } catch (_) {}
-
-      await delCacheByPattern('farms_');
-
-      const broadcast = req.app.get('broadcast');
-      if (broadcast) broadcast('farms_updated');
-
-      return res.json({ success: true, message: 'ÄÃ£ xÃ³a Ä‘á»‡m (áº©n) trang tráº¡i khá»i danh sÃ¡ch thÃ nh cÃ´ng!' });
+    // Check ownership: Admin or Farm Owner
+    const isOwner = req.user.role === 'admin' || farm.user_id === req.user.id || farm.created_by === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Bạn không có quyền xóa trang trại này.' });
     }
+
+    await client.query('BEGIN');
+
+    // 1. Delete notifications for this farm
+    await client.query('DELETE FROM user_notifications WHERE farm_id = $1', [farmId]);
+
+    // 2. Delete alert rules for this farm
+    await client.query('DELETE FROM user_alert_rules WHERE farm_id = $1', [farmId]);
+
+    // 3. Delete farm IoT sensors
+    await client.query('DELETE FROM farm_iot_sensors WHERE farm_id = $1', [farmId]);
+
+    // 4. Delete IoT devices
+    await client.query('DELETE FROM devices WHERE farm_id = $1', [farmId]);
+
+    // 5. Delete fixed assets
+    await client.query('DELETE FROM fixed_assets WHERE farm_id = $1', [farmId]);
+
+    // 6. Delete NFC tags inventory associated with this farm or plants in this farm
+    await client.query(`
+      DELETE FROM nfc_tags_inventory 
+      WHERE farm_id = $1 
+         OR plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
+    `, [farmId]);
+
+    // 7. Delete supply usages associated with this farm, its plants, or its supplies
+    await client.query(`
+      DELETE FROM supply_usages 
+      WHERE farm_id = $1 
+         OR plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
+         OR supply_id IN (SELECT id FROM supplies WHERE farm_id = $1)
+    `, [farmId]);
+
+    // 8. Delete supplies for this farm
+    await client.query('DELETE FROM supplies WHERE farm_id = $1', [farmId]);
+
+    // 9. Delete associated plant logs (cultivation diaries)
+    await client.query(`
+      DELETE FROM plant_logs 
+      WHERE plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
+    `, [farmId]);
+
+    // 10. Delete associated plant media
+    await client.query(`
+      DELETE FROM plant_media 
+      WHERE plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
+    `, [farmId]);
+
+    // 11. Unlink assigned users from plants
+    await client.query('UPDATE plants SET assigned_to_user_id = NULL WHERE farm_id = $1', [farmId]);
+
+    // 12. Delete all plants belonging to this farm
+    await client.query('DELETE FROM plants WHERE farm_id = $1', [farmId]);
+
+    // 13. Unbind users assigned to this farm
+    await client.query('UPDATE users SET farm_id = NULL WHERE farm_id = $1', [farmId]);
+
+    // 14. Delete the farm itself
+    await client.query('DELETE FROM farms WHERE id = $1', [farmId]);
+
+    // 15. Record in data_audit_logs for Admin DB Audit History
+    try {
+      await client.query(`
+        INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
+        VALUES ($1, $2, 'DELETE', 'Trang trại', $3, $4, $5, 'Xóa vĩnh viễn trang trại + Toàn bộ cây trồng, nhật ký canh tác & vật tư liên quan')
+      `, [req.user.id, userName, farmId, `Xóa trang trại ${farm.name}`, JSON.stringify(farm)]);
+    } catch (_) {}
+
+    await client.query('COMMIT');
+
+    await delCacheByPattern('farms_');
+    await delCacheByPattern('plants_');
+    await delCacheByPattern('supplies_');
+    await delCacheByPattern('farm_iot_');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('farms_updated');
+      broadcast('plants_updated');
+      broadcast('supplies_updated');
+    }
+
+    return res.json({ 
+      success: true, 
+      message: 'Đã xóa vĩnh viễn trang trại cùng toàn bộ cây trồng, nhật ký canh tác và vật tư liên quan thành công!' 
+    });
   } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
     console.error('Error deleting farm:', err);
-    res.status(500).json({ error: 'Lá»—i server khi xÃ³a trang tráº¡i: ' + err.message });
+    res.status(500).json({ error: 'Lỗi server khi xóa trang trại: ' + err.message });
+  } finally {
+    client.release();
   }
 });
 

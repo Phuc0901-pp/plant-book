@@ -1,4 +1,4 @@
-﻿// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
+// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
 function getFarmExactGpsCenter(farm, plants) {
   if (!farm) return null;
 
@@ -502,7 +502,7 @@ function renderFarmsList(farms) {
     return;
   }
   container.innerHTML = uniqueFarms.map(f => `
-    <div class="farm-item" onclick="selectFarm(${f.id})">
+    <div class="farm-item" id="farm-item-${f.id}" data-farm-id="${f.id}" onclick="selectFarm(${f.id})">
       <div class="farm-item-name">${esc(f.name)}</div>
       <div class="farm-item-meta" style="flex-wrap: wrap; gap: 8px;">
         <span><i class="fa-solid fa-ruler-combined" style="color:var(--green-dark)"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
@@ -1635,15 +1635,52 @@ async function editFarm() {
 
 async function deleteFarm() {
   if (!activeFarmId) return;
-  if (!confirm('Bạn có chắc chắn muốn xóa trang trại này? Các cây liên kết sẽ được giữ lại nhưng không thuộc trang trại nào nữa.')) return;
-  
+  const targetId = activeFarmId;
+  const farmObj = (currentFarms || []).find(f => f.id === targetId);
+  const farmName = farmObj ? farmObj.name : 'trang trại này';
+
+  if (!confirm(`⚠️ XÁC NHẬN XÓA TRANG TRẠI:\n\nBạn có chắc chắn muốn xóa vĩnh viễn trang trại "${farmName}"?\nThao tác này sẽ xóa triệt để trang trại cùng TOÀN BỘ cây trồng, nhật ký canh tác và vật tư liên quan khỏi hệ thống.`)) {
+    return;
+  }
+
+  // 1. Smoothly animate sidebar item
+  const farmItem = document.getElementById(`farm-item-${targetId}`) || document.querySelector(`.farm-item[data-farm-id="${targetId}"]`);
+  if (farmItem) {
+    farmItem.classList.add('row-deleting');
+  }
+
+  // Preserve state for rollback
+  const prevFarms = [...(currentFarms || [])];
+  const prevPlants = [...(currentPlants || [])];
+
+  // 2. Switch view back to list smoothly
+  activeFarmId = null;
+  window._pendingSelectFarmId = null;
+  const backBtn = document.getElementById('gis-back-btn');
+  if (backBtn) backBtn.style.display = 'none';
+  const sbTitle = document.getElementById('gis-sidebar-title');
+  if (sbTitle) sbTitle.innerHTML = '<i class="fa-solid fa-map" style="color:var(--green)"></i> Trang trại';
+  const hdActions = document.getElementById('gis-header-actions');
+  if (hdActions) hdActions.style.display = 'block';
+  switchGisView('list');
+
+  // 3. Optimistically remove from state and redraw
+  currentFarms = currentFarms.filter(f => f.id !== targetId);
+  currentPlants = currentPlants.filter(p => p.farm_id !== targetId);
+  drawFarmsAndPlantsLayers(currentFarms, currentPlants);
+  renderFarmsList(currentFarms);
+
   try {
-    await api(`/farms/${activeFarmId}`, { method: 'DELETE' });
-    toast('Đã xóa trang trại thành công.');
+    const res = await api(`/farms/${targetId}`, { method: 'DELETE' });
+    toast(res.message || 'Đã xóa vĩnh viễn trang trại cùng toàn bộ cây trồng & vật tư liên quan thành công!');
     window._plantFiltersLoaded = false;
-    initGisPage();
   } catch (err) {
     toast('Lỗi xóa trang trại: ' + err.message, 'error');
+    // Rollback state if delete failed
+    currentFarms = prevFarms;
+    currentPlants = prevPlants;
+    drawFarmsAndPlantsLayers(currentFarms, currentPlants);
+    renderFarmsList(currentFarms);
   }
 }
 
