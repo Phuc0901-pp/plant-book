@@ -92,7 +92,7 @@ async function loadPlants() {
               </thead>
               <tbody>
                 ${group.plants.map(p => `
-                  <tr style="border-bottom:1px solid #f1f5f9; font-size:13px;">
+                  <tr data-plant-id="${p.id}" style="border-bottom:1px solid #f1f5f9; font-size:13px;">
                     <td style="padding:12px 16px;">
                       <div style="display:flex; align-items:center; gap:10px;">
                         <div style="width:36px; height:36px; background:#ecfdf5; color:#10b981; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">
@@ -643,12 +643,21 @@ async function savePlant() {
 
 async function deletePlant(id, name) {
   if (!confirm(`Xóa cây "${name}"? Hành động này không thể hoàn tác.`)) return;
+
+  const row = document.querySelector(`tr[data-plant-id="${id}"]`) || document.querySelector(`[data-id="${id}"]`);
+  if (row) {
+    row.classList.add('row-deleting');
+  }
+
   try {
     await api(`/plants/${id}`, { method: 'DELETE' });
     toast('Đã xóa cây.');
-    loadPlants();
-    loadDashboard();
+    setTimeout(() => {
+      loadPlants();
+      if (typeof loadDashboard === 'function') loadDashboard();
+    }, 280);
   } catch (err) {
+    if (row) row.classList.remove('row-deleting');
     toast('Lỗi xóa: ' + err.message, 'error');
   }
 }

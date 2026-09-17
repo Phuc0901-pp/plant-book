@@ -62,7 +62,7 @@ async function loadPlantMedia(plantId) {
       return;
     }
     grid.innerHTML = plant.media.map(m => `
-      <div class="media-card-item" style="position:relative; border-radius:10px; overflow:hidden; border:1.5px solid #e2e8f0; background:#0f172a; box-shadow:0 2px 6px rgba(0,0,0,0.04); display:flex; flex-direction:column;">
+      <div class="media-card-item" data-media-id="${m.id}" style="position:relative; border-radius:10px; overflow:hidden; border:1.5px solid #e2e8f0; background:#0f172a; box-shadow:0 2px 6px rgba(0,0,0,0.04); display:flex; flex-direction:column;">
         <div style="position:relative; width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#0f172a;">
           ${m.media_type === 'video'
             ? `<video src="${esc(m.url)}" controls style="width:100%; height:100%; object-fit:cover;"></video>`
@@ -93,9 +93,8 @@ async function uploadMedia(plantId, files) {
     await apiForm(`/plants/${plantId}/media`, fd);
     toast('Upload thành công!');
     loadPlantMedia(plantId);
-    loadPlants();
   } catch (err) {
-    toast('Upload thất bại: ' + err.message, 'error');
+    toast('Lỗi upload: ' + err.message, 'error');
   }
 }
 
@@ -107,11 +106,18 @@ function handleDrop(e, plantId) {
 
 async function deleteMedia(plantId, mediaId) {
   if (!confirm('Xóa ảnh/video này?')) return;
+  const card = document.querySelector(`[data-media-id="${mediaId}"]`);
+  if (card) {
+    card.classList.add('row-deleting');
+  }
   try {
     await api(`/plants/${plantId}/media/${mediaId}`, { method: 'DELETE' });
     toast('Đã xóa media.');
-    loadPlantMedia(plantId);
+    setTimeout(() => {
+      loadPlantMedia(plantId);
+    }, 280);
   } catch (err) {
+    if (card) card.classList.remove('row-deleting');
     toast('Lỗi xóa: ' + err.message, 'error');
   }
 }
@@ -219,7 +225,7 @@ async function loadPlantLogs(plantId) {
     el.innerHTML = plant.logs.map(l => {
       const badgeInfo = getAgronomicLogTypeBadge(l.log_type);
       return `
-        <div class="log-item-card" style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; transition:all 0.15s; box-shadow:0 1px 4px rgba(0,0,0,0.02);" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'">
+        <div class="log-item-card" data-log-id="${l.id}" style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; transition:all 0.15s; box-shadow:0 1px 4px rgba(0,0,0,0.02);" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'">
           <div style="display:flex; align-items:flex-start; gap:12px; flex:1;">
             <div style="padding:6px 10px; border-radius:8px; background:#f8fafc; border:1px solid #cbd5e1; text-align:center; flex-shrink:0;">
               <div style="font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase;">NGÀY</div>
@@ -263,11 +269,18 @@ async function addLog(plantId) {
 
 async function deleteLog(plantId, logId) {
   if (!confirm('Xóa nhật ký này?')) return;
+  const card = document.querySelector(`[data-log-id="${logId}"]`);
+  if (card) {
+    card.classList.add('row-deleting');
+  }
   try {
     await api(`/plants/${plantId}/logs/${logId}`, { method: 'DELETE' });
     toast('Đã xóa nhật ký.');
-    loadPlantLogs(plantId);
+    setTimeout(() => {
+      loadPlantLogs(plantId);
+    }, 280);
   } catch (err) {
+    if (card) card.classList.remove('row-deleting');
     toast('Lỗi: ' + err.message, 'error');
   }
 }

@@ -262,13 +262,20 @@ window.openPlantModalForActiveDbFarm = openPlantModalForActiveDbFarm;
 
 async function deletePlantFromDb(id, name) {
   if (!confirm(`Xóa cây "${name}"? Hành động này không thể hoàn tác.`)) return;
+  const card = document.getElementById(`db-tree-card-${id}`);
+  if (card) {
+    card.classList.add('row-deleting');
+  }
   try {
     await api(`/plants/${id}`, { method: 'DELETE' });
     toast('Đã xóa cây thành công.');
-    dbPlantsCache = await api('/plants') || [];
-    onDbFarmChange();
-    if (typeof loadDashboard === 'function') loadDashboard();
+    setTimeout(async () => {
+      dbPlantsCache = await api('/plants') || [];
+      onDbFarmChange();
+      if (typeof loadDashboard === 'function') loadDashboard();
+    }, 280);
   } catch (err) {
+    if (card) card.classList.remove('row-deleting');
     toast('Lỗi xóa: ' + err.message, 'error');
   }
 }

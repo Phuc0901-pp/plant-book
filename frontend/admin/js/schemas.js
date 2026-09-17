@@ -307,7 +307,7 @@ function renderSchemasTable(schemas) {
     }) : '—';
 
     return `
-      <tr style="border-bottom:1px solid #f1f5f9; font-size:13px;">
+      <tr data-schema-id="${s.id}" style="border-bottom:1px solid #f1f5f9; font-size:13px;">
         <td style="padding:12px 16px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <div style="width:36px; height:36px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:16px; border:1px solid #a7f3d0; flex-shrink:0;">
@@ -594,12 +594,19 @@ async function saveSchema() {
 
 async function deleteSchema(id, name) {
   if (!confirm(`Xóa schema "${name}"?`)) return;
+  const row = document.querySelector(`tr[data-schema-id="${id}"]`);
+  if (row) {
+    row.classList.add('row-deleting');
+  }
   try {
     await api(`/schemas/${id}`, { method: 'DELETE' });
     toast('Đã xóa schema.');
-    loadSchemas();
-    loadSchemasDropdown();
+    setTimeout(() => {
+      loadSchemas();
+      loadSchemasDropdown();
+    }, 280);
   } catch (err) {
+    if (row) row.classList.remove('row-deleting');
     toast('Lỗi: ' + err.message, 'error');
   }
 }

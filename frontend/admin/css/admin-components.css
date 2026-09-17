@@ -268,3 +268,35 @@
   color: var(--gray-600);
   line-height: 1.4;
 }
+
+/* ── Smooth Optimistic Deletion Animation ── */
+@keyframes optimisticSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 140px;
+    background-color: transparent;
+  }
+  30% {
+    background-color: #fef2f2;
+    transform: translateX(10px) scale(0.99);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(40px) scale(0.94);
+    max-height: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border-color: transparent !important;
+    visibility: hidden;
+  }
+}
+
+.row-deleting {
+  animation: optimisticSlideOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+

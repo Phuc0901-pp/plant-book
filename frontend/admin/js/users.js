@@ -6,14 +6,16 @@ let currentFilterGroup = 'all'; // 'all', 'admin', 'pro', 'normal'
 let currentPage = 1;
 const USERS_PAGE_SIZE = 10;
 
-async function loadUsers() {
+async function loadUsers(silent = false) {
   const tbody = document.getElementById('users-table');
   const tbodyStatus = document.getElementById('users-status-table');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách tài khoản...</td></tr>';
-  if (tbodyStatus) {
-    tbodyStatus.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>';
+  if (!silent) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách tài khoản...</td></tr>';
+    if (tbodyStatus) {
+      tbodyStatus.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>';
+    }
   }
 
   try {
@@ -26,8 +28,10 @@ async function loadUsers() {
     // Populate Farm Filter Dropdown
     const farmSelect = document.getElementById('user-filter-farm');
     if (farmSelect) {
+      const curVal = farmSelect.value;
       farmSelect.innerHTML = '<option value="all">🌐 Tất cả Trang trại</option>' +
         (farms || []).map(f => `<option value="${f.id}">🏡 ${escapeHtml(f.name)}</option>`).join('');
+      if (curVal) farmSelect.value = curVal;
     }
 
     updateUserCounters();
@@ -36,8 +40,10 @@ async function loadUsers() {
     loadPendingFarmerUsers();
     loadResetRequests();
   } catch (err) {
-    toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${escapeHtml(err.message)}</td></tr>`;
+    if (!silent) {
+      toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${escapeHtml(err.message)}</td></tr>`;
+    }
   }
 }
 
@@ -514,19 +520,41 @@ async function saveUser() {
 
 async function deleteUser(id) {
   const u = allUsers.find(x => x.id === id);
-  if (!u) return;
+  const name = u ? u.full_name : 'người dùng này';
 
-  if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của "${u.full_name}" không?\nThao tác này không thể khôi phục!`)) {
+  if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của "${name}" không?\nThao tác này không thể khôi phục!`)) {
     return;
   }
+
+  // 1. Trigger smooth slide-out CSS animation on table row
+  const row = document.querySelector(`tr[data-user-id="${id}"]`) || document.querySelector(`tr[data-pending-user-id="${id}"]`);
+  if (row) {
+    row.classList.add('row-deleting');
+  }
+
+  // Preserve previous state for clean rollback if API fails
+  const prevUsers = [...allUsers];
+
+  // 2. Optimistically remove from state and update counters after animation finishes
+  setTimeout(() => {
+    allUsers = allUsers.filter(x => x.id !== id);
+    updateUserCounters();
+    filterUsers();
+  }, 280);
 
   try {
     await api(`/users/${id}`, { method: 'DELETE' });
     toast('Đã xóa người dùng thành công.');
     window._plantFiltersLoaded = false;
-    loadUsers();
+    // Silent background sync
+    loadUsers(true);
   } catch (err) {
     toast('Lỗi xóa người dùng: ' + err.message, 'error');
+    // Rollback optimistic removal
+    if (row) row.classList.remove('row-deleting');
+    allUsers = prevUsers;
+    updateUserCounters();
+    filterUsers();
   }
 }
 
@@ -794,7 +822,7 @@ async function loadPendingFarmerUsers() {
 
 
       return `
-        <tr>
+        <tr data-pending-user-id="${u.id}">
           <td><strong>${escapeHtml(u.full_name)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${escapeHtml(u.phone)}</span></td>
           <td><span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">Chờ Admin duyệt</span></td>
           <td>${escapeHtml(cropInfo)}</td>
