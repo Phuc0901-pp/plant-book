@@ -878,7 +878,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               border: Border.all(color: AppTheme.greenDark.withOpacity(0.2)),
             ),
             child: const Text(
-              'v1.2.0 · Enterprise Edition',
+              'v1.2.1 · Enterprise Edition',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.greenDark),
             ),
           ),
