@@ -1,4 +1,4 @@
-// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
+﻿// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
 function getFarmExactGpsCenter(farm, plants) {
   if (!farm) return null;
 
@@ -495,12 +495,13 @@ function switchGisView(view) {
 }
 
 function renderFarmsList(farms) {
+  const uniqueFarms = Array.from(new Map((farms || []).map(f => [f.id, f])).values());
   const container = document.getElementById('farms-list-container');
-  if (!farms.length) {
+  if (!uniqueFarms.length) {
     container.innerHTML = '<div class="empty-state"><i class="fa fa-map-location-dot"></i><p>Chưa có trang trại nào. Hãy thêm mới!</p></div>';
     return;
   }
-  container.innerHTML = farms.map(f => `
+  container.innerHTML = uniqueFarms.map(f => `
     <div class="farm-item" onclick="selectFarm(${f.id})">
       <div class="farm-item-name">${esc(f.name)}</div>
       <div class="farm-item-meta" style="flex-wrap: wrap; gap: 8px;">

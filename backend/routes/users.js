@@ -1,9 +1,10 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const { delCacheByPattern } = require('../config/redis');
 
 // Apply auth and admin check to all routes in this file
 router.use(auth);
@@ -75,11 +76,13 @@ router.put('/:id/tier', async (req, res) => {
     }
 
     // Record admin activity log
-    await pool.query(
-      `INSERT INTO user_activities (user_id, activity_type, description)
-       VALUES ($1, 'Cập nhật gói cước', $2)`,
-      [req.user.id, `Cập nhật gói cước cho Nông hộ #${userId} thành [${account_tier.toUpperCase()}] ${expiresValue ? '(Hạn: ' + expiresValue.slice(0, 10) + ')' : '(Vĩnh viễn)'}`]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO user_activities (user_id, activity_type, description)
+         VALUES ($1, 'Cập nhật gói cước', $2)`,
+        [req.user.id, `Cập nhật gói cước cho Nông hộ #${userId} thành [${account_tier.toUpperCase()}] ${expiresValue ? '(Hạn: ' + expiresValue.slice(0, 10) + ')' : '(Vĩnh viễn)'}`]
+      );
+    } catch (_) {}
 
     res.json(result.rows[0]);
   } catch (err) {
@@ -87,7 +90,6 @@ router.put('/:id/tier', async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi cập nhật gói cước.' });
   }
 });
-
 
 // GET /api/users/:id/activities - Get activity history of a specific user
 router.get('/:id/activities', async (req, res) => {
@@ -182,6 +184,11 @@ router.post('/', async (req, res) => {
         await pool.query('UPDATE plants SET assigned_to_user_id = $1 WHERE id = ANY($2::int[])', [newUser.id, validIds]);
       }
     }
+
+    try {
+      await delCacheByPattern('users_');
+      await delCacheByPattern('farms_');
+    } catch (_) {}
 
     res.status(201).json(newUser);
   } catch (err) {
@@ -288,6 +295,11 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    try {
+      await delCacheByPattern('users_');
+      await delCacheByPattern('farms_');
+    } catch (_) {}
+
     const updated = await pool.query(
       `SELECT u.id, u.email, u.phone, u.address, u.full_name, u.role, u.farm_id, u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies, u.account_tier, u.tier_expires_at, u.tier_admin_note, u.created_at, f.name as farm_name
        FROM users u
@@ -303,8 +315,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-
-// DELETE /api/users/:id - Delete a user with full cascade (Farms -> Plants -> Logs -> Supplies)
+// DELETE /api/users/:id - Delete a user with full cascade & foreign-key safety
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   const userId = parseInt(id);
@@ -321,90 +332,66 @@ router.delete('/:id', async (req, res) => {
       client.release();
       return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
     }
+    const targetUser = userRes.rows[0];
 
     await client.query('BEGIN');
 
-    // 1. Tìm toàn bộ trang trại đi kèm thuộc sở hữu của User này
-    const farmsRes = await client.query(`
-      SELECT id FROM farms 
-      WHERE user_id = $1 
-         OR created_by = $1 
-         OR id = (SELECT farm_id FROM users WHERE id = $1)
-    `, [userId]);
+    // 1. Unlink & Set NULL on all nullable foreign key references
+    await client.query('UPDATE plant_schemas SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('UPDATE plants SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('UPDATE plants SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1', [userId]);
+    await client.query('UPDATE plant_logs SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('UPDATE farms SET created_by = NULL WHERE created_by = $1', [userId]);
+    await client.query('UPDATE farms SET user_id = NULL WHERE user_id = $1', [userId]);
+    await client.query('UPDATE users SET farm_id = NULL WHERE id = $1', [userId]);
 
-    const associatedFarmIds = (farmsRes.rows || []).map(f => f.id).filter(Boolean);
+    // Optional tables (if present in database schema)
+    try { await client.query('UPDATE nfc_tags_inventory SET created_by = NULL WHERE created_by = $1', [userId]); } catch (_) {}
+    try { await client.query('UPDATE data_audit_logs SET user_id = NULL WHERE user_id = $1', [userId]); } catch (_) {}
+    try { await client.query('UPDATE ai_knowledge_articles SET created_by = NULL WHERE created_by = $1', [userId]); } catch (_) {}
+    try { await client.query('UPDATE ai_training_qa SET created_by = NULL WHERE created_by = $1', [userId]); } catch (_) {}
+    try { await client.query('UPDATE ai_training_logs SET admin_id = NULL WHERE admin_id = $1', [userId]); } catch (_) {}
+    try { await client.query('UPDATE ai_unanswered_queries SET user_id = NULL WHERE user_id = $1', [userId]); } catch (_) {}
 
-    if (associatedFarmIds.length > 0) {
-      // 2. Xóa toàn bộ Thư viện Media của các cây trong trang trại đi kèm
-      try {
-        await client.query(`
-          DELETE FROM plant_media 
-          WHERE plant_id IN (SELECT id FROM plants WHERE farm_id = ANY($1::int[]))
-        `, [associatedFarmIds]);
-      } catch (_) {}
+    // 2. Delete user-owned notifications, alert rules, activities, password reset requests, usages & private supplies
+    try { await client.query('DELETE FROM user_notifications WHERE user_id = $1', [userId]); } catch (_) {}
+    try { await client.query('DELETE FROM user_alert_rules WHERE user_id = $1', [userId]); } catch (_) {}
+    try { await client.query('DELETE FROM user_activities WHERE user_id = $1', [userId]); } catch (_) {}
+    try { await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]); } catch (_) {}
+    try { await client.query('DELETE FROM supply_usages WHERE user_id = $1', [userId]); } catch (_) {}
+    try { await client.query('DELETE FROM fixed_assets WHERE user_id = $1', [userId]); } catch (_) {}
+    try { await client.query('DELETE FROM supplies WHERE user_id = $1', [userId]); } catch (_) {}
 
-      // 3. Xóa toàn bộ Lịch sử canh tác / Nhật ký (plant_logs) của các cây
-      try {
-        await client.query(`
-          DELETE FROM plant_logs 
-          WHERE plant_id IN (SELECT id FROM plants WHERE farm_id = ANY($1::int[]))
-        `, [associatedFarmIds]);
-      } catch (_) {}
-
-      // 4. Xóa toàn bộ Tiêu hao vật tư (supply_usages) & Kho vật tư (supplies)
-      try {
-        await client.query(`
-          DELETE FROM supply_usages 
-          WHERE farm_id = ANY($1::int[]) 
-             OR supply_id IN (SELECT id FROM supplies WHERE farm_id = ANY($1::int[]))
-        `, [associatedFarmIds]);
-      } catch (_) {}
-
-      try {
-        await client.query(`DELETE FROM supplies WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]);
-      } catch (_) {}
-
-      // 5. Xóa cảm biến IoT, thiết bị, chi phí, tài sản của các trang trại
-      try { await client.query(`DELETE FROM farm_iot_sensors WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]); } catch (_) {}
-      try { await client.query(`DELETE FROM devices WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]); } catch (_) {}
-      try { await client.query(`DELETE FROM costs WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]); } catch (_) {}
-      try { await client.query(`DELETE FROM fixed_assets WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]); } catch (_) {}
-      try { await client.query(`DELETE FROM user_alert_rules WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]); } catch (_) {}
-
-      // 6. Xóa danh sách Cây trồng trong các trang trại bị xóa
-      await client.query(`DELETE FROM plants WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]);
-
-      // 7. Gỡ liên kết trang trại khỏi các người dùng khác (nếu có)
-      await client.query(`UPDATE users SET farm_id = NULL WHERE farm_id = ANY($1::int[])`, [associatedFarmIds]);
-
-      // 8. Xóa chính các Trang trại đi kèm
-      await client.query(`DELETE FROM farms WHERE id = ANY($1::int[])`, [associatedFarmIds]);
-    }
-
-    // 9. Xóa sạch các dữ liệu độc lập của User (Media riêng, Logs riêng, Cây được gán, Vật tư riêng)
+    // 3. Record in data_audit_logs before deletion
     try {
       await client.query(`
-        DELETE FROM plant_media 
-        WHERE plant_id IN (SELECT id FROM plants WHERE created_by = $1 OR assigned_to_user_id = $1)
-      `, [userId]);
+        INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, old_data, note)
+        VALUES ($1, $2, 'DELETE', 'Người dùng', $3, $4, $5, 'Xóa tài khoản người dùng bởi Admin')
+      `, [req.user.id, req.user.full_name || 'Quản trị viên', userId, `Xóa tài khoản ${targetUser.full_name} (${targetUser.email || targetUser.phone})`, JSON.stringify(targetUser)]);
     } catch (_) {}
 
-    try { await client.query('DELETE FROM plant_logs WHERE created_by = $1', [userId]); } catch (_) {}
-    try { await client.query('DELETE FROM supply_usages WHERE user_id = $1', [userId]); } catch (_) {}
-    try { await client.query('DELETE FROM supplies WHERE user_id = $1', [userId]); } catch (_) {}
-    try { await client.query('DELETE FROM plants WHERE created_by = $1 OR assigned_to_user_id = $1', [userId]); } catch (_) {}
-    try { await client.query('UPDATE plant_schemas SET created_by = NULL WHERE created_by = $1', [userId]); } catch (_) {}
-    try { await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]); } catch (_) {}
-    try { await client.query('DELETE FROM user_activities WHERE user_id = $1', [userId]); } catch (_) {}
-    try { await client.query('DELETE FROM user_notifications WHERE user_id = $1', [userId]); } catch (_) {}
-
-    // 10. Cuối cùng: Xóa User khỏi CSDL
+    // 4. Delete the User record
     await client.query('DELETE FROM users WHERE id=$1', [userId]);
 
     await client.query('COMMIT');
+
+    // Invalidate Redis caches
+    try {
+      await delCacheByPattern('users_');
+      await delCacheByPattern('farms_');
+      await delCacheByPattern('plants_');
+    } catch (_) {}
+
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('user_deleted', { id: userId });
+      broadcast('farms_updated');
+    }
+
     res.json({ 
       success: true, 
-      message: `Đã xóa người dùng cùng toàn bộ ${associatedFarmIds.length} trang trại đi kèm, danh sách cây và lịch sử canh tác liên quan thành công!` 
+      message: `Đã xóa tài khoản "${targetUser.full_name}" thành công!` 
     });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -415,10 +402,8 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-
 // GET /api/users/pending - List pending farmer registrations
 router.get('/pending', async (req, res) => {
-
   try {
     const result = await pool.query(
       `SELECT id, email, full_name, phone, gender, dob, plant_type, plant_variety, plant_age, farm_area, approved, created_at
@@ -444,11 +429,13 @@ router.put('/:id/approve', async (req, res) => {
     }
 
     await pool.query('UPDATE users SET approved = true, updated_at = NOW() WHERE id = $1', [id]);
-    await pool.query(
-      `INSERT INTO user_activities (user_id, activity_type, description)
-       VALUES ($1, 'Phê duyệt tài khoản', 'Quản trị viên đã phê duyệt mở khóa tài khoản thành công.')`,
-      [id]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO user_activities (user_id, activity_type, description)
+         VALUES ($1, 'Phê duyệt tài khoản', 'Quản trị viên đã phê duyệt mở khóa tài khoản thành công.')`,
+        [id]
+      );
+    } catch (_) {}
 
     // Broadcast approval WebSocket event
     const broadcast = req.app.get('broadcast');
@@ -464,4 +451,3 @@ router.put('/:id/approve', async (req, res) => {
 });
 
 module.exports = router;
-
