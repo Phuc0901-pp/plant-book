@@ -13,6 +13,7 @@ class Supply {
   final double stockQuantity;
   final String? note;
   final String? imageUrl;
+  final String? activeIngredient;
   final double totalSpent;
   final double totalUsedQty;
 
@@ -33,6 +34,7 @@ class Supply {
     required this.stockQuantity,
     this.note,
     this.imageUrl,
+    this.activeIngredient,
     this.totalSpent = 0,
     this.totalUsedQty = 0,
   });
@@ -53,6 +55,7 @@ class Supply {
       stockQuantity: _parseDouble(json['stock_quantity']),
       note: json['note'],
       imageUrl: json['image_url'],
+      activeIngredient: json['active_ingredient'],
       totalSpent: _parseDouble(json['total_spent']),
       totalUsedQty: _parseDouble(json['total_used_qty']),
     );
