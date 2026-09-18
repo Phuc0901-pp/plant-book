@@ -59,4 +59,77 @@ router.put('/', auth, admin, async (req, res) => {
   }
 });
 
+// ─── Zalo Official Account Configuration Endpoints ─────────────────────────
+router.get('/zalo', auth, admin, async (req, res) => {
+  try {
+    const zaloService = require('../services/zaloService');
+    const config = await zaloService.getZaloConfig();
+    // Mask secret key
+    const maskedSecret = config.secretKey ? config.secretKey.substring(0, 4) + '••••••••' + config.secretKey.slice(-4) : '';
+    res.json({
+      success: true,
+      appId: config.appId,
+      oaId: config.oaId,
+      secretKeyMasked: maskedSecret,
+      hasSecretKey: !!config.secretKey,
+      templateId: config.templateId,
+      enabled: config.enabled
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi tải cấu hình Zalo: ' + err.message });
+  }
+});
+
+router.post('/zalo', auth, admin, async (req, res) => {
+  try {
+    const { appId, oaId, secretKey, templateId, enabled } = req.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      if (appId !== undefined) {
+        await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_app_id', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(appId)]);
+      }
+      if (oaId !== undefined) {
+        await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_oa_id', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(oaId)]);
+      }
+      if (secretKey !== undefined && secretKey.trim() !== '' && !secretKey.includes('••••')) {
+        await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_secret_key', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(secretKey)]);
+      }
+      if (templateId !== undefined) {
+        await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('zalo_template_id', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(templateId)]);
+      }
+      if (enabled !== undefined) {
+        await client.query(`INSERT INTO system_configs (key, value, updated_at) VALUES ('enable_zalo_alerts', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [JSON.stringify(enabled)]);
+      }
+      await client.query('COMMIT');
+      res.json({ success: true, message: 'Đã lưu cấu hình Zalo Official Account thành công!' });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi lưu cấu hình Zalo: ' + err.message });
+  }
+});
+
+router.post('/zalo/test', auth, admin, async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const targetPhone = phone || req.user.phone || '0901234567';
+    const zaloService = require('../services/zaloService');
+    const result = await zaloService.sendZaloSecurityAlert({
+      phone: targetPhone,
+      farmName: 'Trang Trại Tân Bảo Thử Nghiệm',
+      treeCode: 'SR-TEST-01',
+      distance: 12.4,
+      reason: 'Thử nghiệm hệ thống cảnh báo Zalo Official Account tự động'
+    });
+    res.json({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi gửi tin nhắn Zalo thử nghiệm: ' + err.message });
+  }
+});
+
 module.exports = router;

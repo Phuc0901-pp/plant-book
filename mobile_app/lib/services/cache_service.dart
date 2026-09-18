@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CacheService {
   static final CacheService _instance = CacheService._internal();
@@ -13,15 +16,32 @@ class CacheService {
   late Box _pendingLogsBox;
   late Box _metaBox;
 
+  Future<Uint8List> _getOrCreateEncryptionKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keyString = prefs.getString('hive_sec_key_v1');
+    if (keyString != null && keyString.isNotEmpty) {
+      try {
+        return base64Decode(keyString);
+      } catch (_) {}
+    }
+    // Generate secure 256-bit AES encryption key
+    final key = Hive.generateSecureKey();
+    await prefs.setString('hive_sec_key_v1', base64Encode(key));
+    return Uint8List.fromList(key);
+  }
+
   Future<void> init() async {
     await Hive.initFlutter();
-    _farmsBox = await Hive.openBox('farms_cache');
-    _plantsBox = await Hive.openBox('plants_cache');
-    _logsBox = await Hive.openBox('logs_cache');
-    _recentLogsBox = await Hive.openBox('recent_logs_cache');
-    _suppliesBox = await Hive.openBox('supplies_cache');
-    _pendingLogsBox = await Hive.openBox('pending_logs');
-    _metaBox = await Hive.openBox('offline_meta');
+    final encKey = await _getOrCreateEncryptionKey();
+    final cipher = HiveAesCipher(encKey);
+
+    _farmsBox = await Hive.openBox('farms_cache', encryptionCipher: cipher);
+    _plantsBox = await Hive.openBox('plants_cache', encryptionCipher: cipher);
+    _logsBox = await Hive.openBox('logs_cache', encryptionCipher: cipher);
+    _recentLogsBox = await Hive.openBox('recent_logs_cache', encryptionCipher: cipher);
+    _suppliesBox = await Hive.openBox('supplies_cache', encryptionCipher: cipher);
+    _pendingLogsBox = await Hive.openBox('pending_logs', encryptionCipher: cipher);
+    _metaBox = await Hive.openBox('offline_meta', encryptionCipher: cipher);
   }
 
   // --- Farms Cache ---

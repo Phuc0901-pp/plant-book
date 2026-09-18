@@ -6,6 +6,7 @@ const admin = require('../middleware/admin');
 const { logAuditAction } = require('./history');
 const jwt = require('jsonwebtoken');
 const nfcSecurity = require('../services/nfcSecurityService');
+const zaloService = require('../services/zaloService');
 
 const checkTier = require('../middleware/checkTier');
 
@@ -1012,6 +1013,28 @@ router.post('/plants/nfc/verify-scan', async (req, res) => {
         SET last_counter = $1, last_scanned_lat = $2, last_scanned_lng = $3, last_scanned_at = NOW()
         WHERE UPPER(nfc_uid) = UPPER($4)
       `, [nextCounter, scannedLat, scannedLng, cleanUid]);
+    } else if (!verification.isValid) {
+      // 6. Asynchronously trigger Zalo Security Alert to Farm Owner
+      try {
+        const ownerRes = await client.query(`
+          SELECT u.phone, u.full_name, u.email 
+          FROM farms f
+          JOIN users u ON u.id = f.user_id
+          WHERE f.id = $1
+        `, [plant.farm_id]);
+        
+        const ownerPhone = ownerRes.rows[0]?.phone;
+        zaloService.sendZaloSecurityAlert({
+          phone: ownerPhone,
+          farmName: plant.farm_name,
+          treeCode: plant.tree_code || plant.id,
+          distance: verification.distanceMeters,
+          reason: verification.message,
+          severity: verification.severity
+        }).catch(e => console.warn('Zalo alert non-blocking error:', e.message));
+      } catch (zaloErr) {
+        console.warn('Failed to query farm owner for Zalo alert:', zaloErr.message);
+      }
     }
 
     return res.json({
@@ -2368,10 +2391,13 @@ router.get('/public/:slug', async (req, res) => {
               p.latitude,
               p.longitude,
               ps.name as schema_name, ps.fields as schema_fields,
-              f.name as farm_name, f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id
+              f.name as farm_name, f.address as farm_address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
+              f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id,
+              u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
        FROM plants p 
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
+       LEFT JOIN users u ON u.id = f.user_id
        WHERE (p.public_slug=$1 OR p.id::text=$1 OR UPPER(p.nfc_uid)=UPPER($1)) AND p.is_public=true`, [slugParam]
     );
     if (plant.rows.length === 0) {
@@ -2392,6 +2418,36 @@ router.get('/public/:slug', async (req, res) => {
 
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plant.rows[0].id]);
     const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 AND (is_deleted IS NOT TRUE) ORDER BY log_date DESC', [plant.rows[0].id]);
+
+    // Data Scrubbing: Remove confidential financial and proprietary formula data
+    const scrubbedLogs = logs.rows.map(log => {
+      let safeDetails = {};
+      if (log.details) {
+        let rawDetails = typeof log.details === 'string' ? JSON.parse(log.details) : { ...log.details };
+        delete rawDetails.unit_price;
+        delete rawDetails.total_cost;
+        delete rawDetails.cost;
+        delete rawDetails.package_price;
+        delete rawDetails.package_unit;
+        delete rawDetails.formula_secret;
+        delete rawDetails.supplier_price;
+        delete rawDetails.vendor_name;
+        delete rawDetails.vendor_phone;
+        delete rawDetails.accounting_code;
+        delete rawDetails.stock_deducted;
+        safeDetails = rawDetails;
+      }
+      return {
+        id: log.id,
+        plant_id: log.plant_id,
+        log_date: log.log_date,
+        log_type: log.log_type,
+        note: log.note,
+        details: safeDetails,
+        media_url: log.media_url,
+        created_at: log.created_at
+      };
+    });
 
     // Build GeoJSON geometry for the farm boundary polygon
     const row = plant.rows[0];
@@ -2439,7 +2495,7 @@ router.get('/public/:slug', async (req, res) => {
       } catch(e) { /* ignore parse errors */ }
     }
 
-    res.json({ ...row, media: media.rows, logs: logs.rows, farm_boundary });
+    res.json({ ...row, media: media.rows, logs: scrubbedLogs, farm_boundary });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
