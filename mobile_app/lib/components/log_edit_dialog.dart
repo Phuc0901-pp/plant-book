@@ -11,6 +11,7 @@ class LogEditDialog extends StatefulWidget {
   final PlantLog? log; // null means ADD, not null means EDIT
   final String? farmName;
   final String? initialType; // Direct pre-selected care category e.g. 'Bón phân'
+  final VoidCallback? onLogSaved;
 
   const LogEditDialog({
     super.key,
@@ -18,6 +19,7 @@ class LogEditDialog extends StatefulWidget {
     this.log,
     this.farmName,
     this.initialType,
+    this.onLogSaved,
   });
 
   @override
@@ -333,6 +335,7 @@ class _LogEditDialogState extends State<LogEditDialog> {
       _isSaving = false;
     });
 
+    widget.onLogSaved?.call();
     Navigator.pop(context, success);
   }
 

@@ -34,6 +34,7 @@ class PlantLog {
   final String? updatedAt;
   final String? creatorName;
   final String? farmName;
+  final int? farmId;
   final String? plantType;
   final String? treeCode;
 
@@ -50,6 +51,7 @@ class PlantLog {
     this.updatedAt,
     this.creatorName,
     this.farmName,
+    this.farmId,
     this.plantType,
     this.treeCode,
   });
@@ -140,6 +142,7 @@ class PlantLog {
       updatedAt: json['updated_at'] as String?,
       creatorName: json['creator_name'] as String?,
       farmName: json['farm_name'] as String?,
+      farmId: json['farm_id'] != null ? int.tryParse(json['farm_id'].toString()) : null,
       plantType: json['plant_type'] as String?,
       treeCode: json['tree_code'] as String?,
     );
