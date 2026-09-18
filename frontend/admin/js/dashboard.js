@@ -9,8 +9,10 @@ function updateDashboardClock() {
   const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
   const dayName = days[now.getDay()];
   const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-  el.innerHTML = `<i class="fa-regular fa-clock"></i> ${dayName}, ${dateStr} · <strong>${timeStr}</strong> (Live Telemetry)`;
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  el.innerHTML = `<span>${hours}:${minutes}</span><span style="color:#34d399; margin-left:1px; font-weight:800;">:${seconds}</span> <span style="font-size:11px; color:#a7f3d0; font-weight:700; margin-left:6px;">· ${dayName}, ${dateStr}</span>`;
 }
 
 async function loadDashboard() {
