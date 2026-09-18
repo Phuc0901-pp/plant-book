@@ -48,13 +48,14 @@ export function isProUser() {
 window.isProUser = isProUser;
 
 /**
- * Gọi REST API với Bearer token tự động.
+ * Gọi REST API với Bearer token tự động và cơ chế tự động thử lại nếu gặp 429.
  * Ném lỗi nếu response không OK.
  * @param {string} path  — đường dẫn API, ví dụ '/plants'
  * @param {RequestInit} opts — tuỳ chọn fetch
+ * @param {number} retries — số lần thử lại
  * @returns {Promise<any>}
  */
-export async function api(path, opts = {}) {
+export async function api(path, opts = {}, retries = 2) {
   const headers = {
     Authorization: `Bearer ${token}`,
     ...(opts.headers || {})
@@ -69,6 +70,13 @@ export async function api(path, opts = {}) {
     ...opts,
     headers
   });
+
+  // Handle Rate Limiter 429 with automatic jitter backoff
+  if (res.status === 429 && retries > 0) {
+    const delay = (3 - retries) * 350 + Math.random() * 200;
+    await new Promise(r => setTimeout(r, delay));
+    return api(path, opts, retries - 1);
+  }
 
   const contentType = res.headers.get('content-type') || '';
   if (!contentType.includes('application/json')) {

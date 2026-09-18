@@ -98,80 +98,80 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
     rainProb = 15,
     tempMax = 33,
     tempMin = 26,
-    wmo = { label: 'Trời quang đãng', icon: 'fa-solid fa-sun', color: '#f59e0b', bg: '#fef3c7' },
+    wmo = { label: 'Trời quang đãng', icon: 'fa-solid fa-sun', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
     agriTip = 'Thời tiết thuận lợi cho việc chăm sóc cây trồng và theo dõi độ ẩm đất.'
   } = data;
 
   widgetBox.innerHTML = `
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
       
-      <!-- Left: Main Weather Condition & Temperature (Microsoft Fluent Acrylic Card) -->
+      <!-- Left: Main Weather Condition & Temperature (Obsidian Glass Box) -->
       <div style="display:flex; align-items:center; gap:16px;">
-        <div style="width:62px; height:62px; border-radius:16px; background:${wmo.bg || '#fef3c7'}; display:flex; align-items:center; justify-content:center; font-size:30px; color:${wmo.color || '#f59e0b'}; box-shadow:0 4px 14px rgba(0,0,0,0.05); border:1.5px solid rgba(226,232,240,0.8);">
+        <div style="width:62px; height:62px; border-radius:16px; background:${wmo.bg || 'rgba(245,158,11,0.2)'}; display:flex; align-items:center; justify-content:center; font-size:30px; color:${wmo.color || '#f59e0b'}; box-shadow:0 0 20px -3px ${wmo.color ? wmo.color + '44' : 'rgba(245,158,11,0.3)'}; border:1.5px solid rgba(255,255,255,0.2);">
           <i class="${wmo.icon}"></i>
         </div>
         <div>
           <div style="display:flex; align-items:baseline; gap:8px;">
-            <span id="weather-val-temp" style="font-size:34px; font-weight:900; line-height:1; letter-spacing:-1px; color:#0f172a; font-family:'Segoe UI', Inter, sans-serif;">${temp}°C</span>
-            <span style="font-size:13px; color:#64748b; font-weight:700;">(Cảm giác: <span id="weather-val-feel" style="color:#0f172a;">${feelLike}</span>°C)</span>
+            <span id="weather-val-temp" style="font-size:34px; font-weight:900; line-height:1; letter-spacing:-1px; color:#ffffff; font-family:'Segoe UI', Inter, sans-serif;">${temp}°C</span>
+            <span style="font-size:13px; color:#94a3b8; font-weight:700;">(Cảm giác: <span id="weather-val-feel" style="color:#ffffff;">${feelLike}</span>°C)</span>
           </div>
-          <div style="font-size:13.5px; font-weight:800; color:#334155; margin-top:4px; display:flex; align-items:center; gap:6px;">
+          <div style="font-size:13.5px; font-weight:800; color:#e2e8f0; margin-top:4px; display:flex; align-items:center; gap:6px;">
             <span>${wmo.label}</span>
-            <span style="font-size:12px; color:#059669; font-weight:700;">• ${tempMin}° / ${tempMax}°C</span>
+            <span style="font-size:12px; color:#34d399; font-weight:700;">• ${tempMin}° / ${tempMax}°C</span>
           </div>
         </div>
       </div>
 
-      <!-- Right: Detailed Metrics Grid (Fluent Metric Chips) -->
+      <!-- Right: Detailed Metrics Grid (Executive Obsidian Glowing Chips) -->
       <div class="weather-metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; flex:1; max-width:540px; width:100%;">
         
         <!-- Humidity Chip -->
-        <div style="background:#f0f9ff; border:1.5px solid #e0f2fe; border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 1px 3px rgba(0,0,0,0.02);" onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div style="font-size:11px; color:#0369a1; font-weight:800; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-droplet" style="color:#0284c7;"></i> Độ ẩm KK
+        <div style="background:rgba(2,132,199,0.14); border:1.2px solid rgba(56,189,248,0.3); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#38bdf8';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(56,189,248,0.3)';">
+          <div style="font-size:11px; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-droplet" style="color:#38bdf8;"></i> Độ ẩm KK
           </div>
-          <div id="weather-val-humidity" style="font-size:15px; font-weight:900; color:#0f172a; margin-top:2px;">${humidity}%</div>
+          <div id="weather-val-humidity" style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">${humidity}%</div>
         </div>
 
         <!-- Wind Chip -->
-        <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 1px 3px rgba(0,0,0,0.02);" onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div style="font-size:11px; color:#475569; font-weight:800; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-wind" style="color:#0284c7;"></i> Gió & Hướng
+        <div style="background:rgba(148,163,184,0.12); border:1.2px solid rgba(148,163,184,0.25); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(148,163,184,0.25)';">
+          <div style="font-size:11px; color:#94a3b8; font-weight:800; display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-wind" style="color:#38bdf8;"></i> Gió & Hướng
           </div>
-          <div style="font-size:13px; font-weight:900; color:#0f172a; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:11px; font-weight:700; color:#64748b;">${windDir}</span></div>
+          <div style="font-size:13px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:11px; font-weight:700; color:#cbd5e1;">${windDir}</span></div>
         </div>
 
         <!-- Rain Prob Chip -->
-        <div style="background:#eff6ff; border:1.5px solid #dbeafe; border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 1px 3px rgba(0,0,0,0.02);" onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div style="font-size:11px; color:#1d4ed8; font-weight:800; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-cloud-rain" style="color:#2563eb;"></i> Khả năng mưa
+        <div style="background:rgba(37,99,235,0.18); border:1.2px solid rgba(96,165,250,0.35); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#60a5fa';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(96,165,250,0.35)';">
+          <div style="font-size:11px; color:#60a5fa; font-weight:800; display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-cloud-rain" style="color:#60a5fa;"></i> Khả năng mưa
           </div>
-          <div id="weather-val-rain" style="font-size:15px; font-weight:900; color:#0f172a; margin-top:2px;">${rainProb}%</div>
+          <div id="weather-val-rain" style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">${rainProb}%</div>
         </div>
 
         <!-- UV Chip -->
-        <div style="background:#fffbeb; border:1.5px solid #fef3c7; border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 1px 3px rgba(0,0,0,0.02);" onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div style="font-size:11px; color:#b45309; font-weight:800; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-sun" style="color:#d97706;"></i> Chỉ số UV
+        <div style="background:rgba(217,119,6,0.18); border:1.2px solid rgba(251,191,36,0.35); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#fbbf24';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(251,191,36,0.35)';">
+          <div style="font-size:11px; color:#fbbf24; font-weight:800; display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-sun" style="color:#fbbf24;"></i> Chỉ số UV
           </div>
-          <div style="font-size:15px; font-weight:900; color:#0f172a; margin-top:2px;"><span id="weather-val-uv">${uv}</span> <span style="font-size:10.5px; font-weight:800; color:${parseFloat(uv) > 6 ? '#dc2626' : '#059669'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
+          <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-uv">${uv}</span> <span style="font-size:10.5px; font-weight:800; color:${parseFloat(uv) > 6 ? '#f87171' : '#34d399'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
         </div>
 
       </div>
 
     </div>
 
-    <!-- Location & Advice footer bar (Fluent Status Strip) -->
-    <div style="margin-top:14px; padding-top:12px; border-top:1.2px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px;">
-      <div style="display:flex; align-items:center; gap:6px; color:#0f172a; flex-wrap:wrap;">
-        <i class="fa-solid fa-location-dot" style="color:#e11d48;"></i>
-        <span style="font-weight:800; color:#1e293b;">${locationName}</span>
-        ${isRealGps ? `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-satellite" style="color:#059669;"></i> GPS Thiết bị</span>` : `<span style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-seedling" style="color:#059669;"></i> Trang trại</span>`}
-        ${statusBadge ? `<span style="background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
+    <!-- Location & Advice footer bar (Obsidian High-Contrast Strip) -->
+    <div style="margin-top:14px; padding-top:12px; border-top:1.2px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px;">
+      <div style="display:flex; align-items:center; gap:6px; color:#ffffff; flex-wrap:wrap;">
+        <i class="fa-solid fa-location-dot" style="color:#fb7185;"></i>
+        <span style="font-weight:800; color:#ffffff;">${locationName}</span>
+        ${isRealGps ? `<span style="background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(52,211,153,0.4); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-satellite" style="color:#34d399;"></i> GPS Thiết bị</span>` : `<span style="background:rgba(255,255,255,0.1); color:#cbd5e1; border:1px solid rgba(255,255,255,0.18); font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-seedling" style="color:#34d399;"></i> Trang trại</span>`}
+        ${statusBadge ? `<span style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
       </div>
 
-      <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:4px 10px; border-radius:8px; color:#065f46; font-weight:700; display:flex; align-items:center; gap:6px; font-size:12px;">
-        <i class="fa-solid fa-seedling" style="color:#059669;"></i>
+      <div style="background:rgba(6,78,59,0.45); border:1px solid rgba(52,211,153,0.35); padding:5px 12px; border-radius:8px; color:#a7f3d0; font-weight:700; display:flex; align-items:center; gap:6px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+        <i class="fa-solid fa-seedling" style="color:#34d399;"></i>
         <span>${agriTip}</span>
       </div>
     </div>
