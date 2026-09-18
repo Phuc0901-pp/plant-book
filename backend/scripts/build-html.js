@@ -16,14 +16,14 @@ function loadAppConfig() {
     console.warn('[build-html] Could not read app.config.json, using defaults', err.message);
   }
   return {
-    app: { name: 'Sổ Nông Tân Bảo Agtech', version: '1.2.0', versionTag: 'v1.2.0' },
+    app: { name: 'Sổ Nông Tân Bảo Agtech', version: '1.2.4', versionTag: 'v1.2.4' },
     brand: {
       copyright: 'Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech',
       company: 'TBSG Agtech',
-      userPortalTitle: 'Sổ Nông Tân Bảo Agtech v1.2.0 — Cổng nông hộ',
-      adminPortalTitle: 'Sổ Nông Tân Bảo Agtech v1.2.0 — Quản trị'
+      userPortalTitle: 'Sổ Nông Tân Bảo Agtech v1.2.4 — Cổng nông hộ',
+      adminPortalTitle: 'Sổ Nông Tân Bảo Agtech v1.2.4 — Quản trị'
     },
-    cache: { swCacheName: 'pb-farmer-cache-v1.2.0' }
+    cache: { swCacheName: 'pb-farmer-cache-v1.2.4' }
   };
 }
 
@@ -32,7 +32,7 @@ function loadAppConfig() {
  */
 function applyPlaceholders(content, config) {
   const cfg = config || loadAppConfig();
-  const versionTag = cfg.app?.versionTag || ('v' + (cfg.app?.version || '1.2.0'));
+  const versionTag = cfg.app?.versionTag || ('v' + (cfg.app?.version || '1.2.4'));
   const appName = cfg.app?.name || 'Sổ Nông Tân Bảo Agtech';
   const copyright = cfg.brand?.copyright || 'Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech';
   const owner = cfg.brand?.owner || 'TBSG Agtech © 2026';

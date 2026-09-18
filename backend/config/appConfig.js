@@ -23,10 +23,10 @@ function loadRawConfig() {
     app: {
       name: 'Sổ Nông Tân Bảo Agtech',
       shortName: 'Sổ Nông Số',
-      version: '1.2.0',
-      versionTag: 'v1.2.0',
-      buildNumber: 4,
-      releaseDate: '2026-09-04',
+      version: '1.2.4',
+      versionTag: 'v1.2.4',
+      buildNumber: 8,
+      releaseDate: '2026-09-18',
       environment: process.env.NODE_ENV || 'production'
     },
     brand: {
@@ -42,8 +42,8 @@ function loadRawConfig() {
       productionWsUrl: 'wss://plant-book.onrender.com'
     },
     cache: {
-      swCacheName: 'pb-farmer-cache-v1.2.0',
-      assetVersion: '1.2.0'
+      swCacheName: 'pb-farmer-cache-v1.2.4',
+      assetVersion: '1.2.4'
     },
     defaults: {
       farmLatitude: 10.941520,

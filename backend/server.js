@@ -70,7 +70,7 @@ app.use(express.static(path.join(__dirname, '../frontend/public'), {
 
 // ─── Health Check Endpoints (Exempt from Rate Limiting & Anti-Scraper) ──
 app.get(['/health', '/healthz', '/api/health'], (req, res) => {
-  res.status(200).json({ status: 'ok', time: new Date().toISOString(), app: 'Plant Book API v1.2.0' });
+  res.status(200).json({ status: 'ok', time: new Date().toISOString(), app: 'Plant Book API v1.2.4' });
 });
 
 const { antiScraper, apiLimiter } = require('./middleware/antiScraper');
