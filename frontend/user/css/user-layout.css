@@ -126,7 +126,12 @@ body.field-mode .sidebar {
   color: #f8fafc !important;
 }
 body.field-mode .welcome-banner {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.92) 100%) !important;
+  border-color: #334155 !important;
+}
+body.field-mode .fluent-acrylic-banner #weather-widget-content {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: #334155 !important;
 }
 body.field-mode .btn-primary {
   background: #10b981 !important;

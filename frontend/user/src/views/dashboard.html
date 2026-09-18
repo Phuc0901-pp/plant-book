@@ -1,44 +1,48 @@
       <div class="page-section active" id="page-home">
-        <!-- Welcome banner with Live Digital Clock & GPS Real-Time Weather -->
-        <div class="welcome-banner" style="background: linear-gradient(135deg, #064e3b 0%, #047857 45%, #0f766e 100%); border-radius: 20px; padding: 24px 28px; margin-bottom: 24px; color: #fff; position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(6, 78, 59, 0.3), 0 8px 10px -6px rgba(6, 78, 59, 0.3); border: 1px solid rgba(255,255,255,0.15);">
-          <!-- Decorative circles -->
-          <div style="position:absolute; right:-40px; top:-40px; width:240px; height:240px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, rgba(255,255,255,0) 70%); border-radius:50%; pointer-events:none;"></div>
+        <!-- Welcome banner with Microsoft Fluent Live Digital Clock & GPS Real-Time Weather -->
+        <div class="welcome-banner fluent-acrylic-banner" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 50%, rgba(241, 245, 249, 0.96) 100%); border-radius: 20px; padding: 22px 26px; margin-bottom: 24px; color: #0f172a; position: relative; overflow: hidden; box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03); border: 1.5px solid rgba(203, 213, 225, 0.8); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);">
+          <!-- Decorative Fluent Mica Aura -->
+          <div style="position:absolute; right:-50px; top:-50px; width:260px; height:260px; background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, rgba(255,255,255,0) 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-60px; bottom:-60px; width:220px; height:220px; background: radial-gradient(circle, rgba(2,132,199,0.08) 0%, rgba(255,255,255,0) 70%); border-radius:50%; pointer-events:none;"></div>
           
-          <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:18px;">
+          <div style="position:relative; z-index:1; display:flex; flex-direction:column; gap:16px;">
             
             <!-- Top Row: Greetings & Live Digital Clock -->
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; border-bottom:1.2px solid #e2e8f0; padding-bottom:14px;">
               <div>
-                <div style="font-size:12px; color:rgba(255,255,255,0.75); margin-bottom:4px; font-weight:700; display:flex; align-items:center; gap:6px;">
-                  <i class="fa fa-leaf" style="color:#a7f3d0;"></i> Plant Book · Cổng Quản Trị Nông Hộ Thông Minh
+                <div style="font-size:12px; color:#059669; margin-bottom:4px; font-weight:800; display:flex; align-items:center; gap:6px; letter-spacing:0.3px;">
+                  <span style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); border-radius:6px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;">
+                    <i class="fa fa-leaf" style="color:#059669;"></i> Plant Book
+                  </span>
+                  <span>· Cổng Quản Trị Nông Hộ Thông Minh</span>
                 </div>
-                <h2 style="font-size:22px; font-weight:900; margin:0; display:flex; align-items:center; gap:8px;">
-                  Xin chào, <span id="welcome-name">nông hộ</span> 👋
+                <h2 style="font-size:22px; font-weight:900; margin:0; display:flex; align-items:center; gap:8px; color:#0f172a; letter-spacing:-0.4px;">
+                  Xin chào, <span id="welcome-name" style="color:#047857;">nông hộ</span> 👋
                 </h2>
               </div>
 
               <!-- Live Digital Clock & GPS Refresh Button -->
-              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                 
                 <!-- Live Clock Card -->
-                <div style="background:rgba(255,255,255,0.14); backdrop-filter:blur(10px); border:1.5px solid rgba(255,255,255,0.22); border-radius:14px; padding:8px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
-                  <div style="color:#fde047; font-size:18px;">
+                <div style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:14px; padding:8px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                  <div style="color:#059669; font-size:18px;">
                     <i class="fa-regular fa-clock"></i>
                   </div>
                   <div>
                     <div style="display:flex; align-items:baseline;">
-                      <span id="live-clock-time" style="font-size:22px; font-weight:900; font-family:'Segoe UI', monospace; letter-spacing:0.5px; color:#ffffff;">--:--</span>
-                      <span id="live-clock-seconds" style="font-size:13px; font-weight:800; color:#a7f3d0; margin-left:1px;">:--</span>
+                      <span id="live-clock-time" style="font-size:22px; font-weight:900; font-family:'Segoe UI', monospace; letter-spacing:0.5px; color:#0f172a;">--:--</span>
+                      <span id="live-clock-seconds" style="font-size:13px; font-weight:800; color:#059669; margin-left:1px;">:--</span>
                     </div>
-                    <div id="live-clock-date" style="font-size:11px; font-weight:700; color:rgba(255,255,255,0.85); white-space:nowrap;">
+                    <div id="live-clock-date" style="font-size:11px; font-weight:700; color:#64748b; white-space:nowrap;">
                       Đang tải...
                     </div>
                   </div>
                 </div>
 
                 <!-- GPS Weather Refresh Button -->
-                <button type="button" onclick="refreshDeviceWeather()" title="Quét lại tọa độ GPS thiết bị & cập nhật thời tiết" style="background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.3); color:#ffffff; padding:10px 14px; border-radius:12px; font-size:12.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s; backdrop-filter:blur(8px);">
-                  <i id="btn-refresh-weather" class="fa-solid fa-arrows-rotate"></i>
+                <button type="button" onclick="refreshDeviceWeather()" title="Quét lại tọa độ GPS thiết bị & cập nhật thời tiết" style="background:#ffffff; border:1.5px solid #cbd5e1; color:#0f172a; padding:10px 14px; border-radius:12px; font-size:12.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 2px 6px rgba(0,0,0,0.03);" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#059669'; this.style.color='#059669'; this.style.transform='translateY(-1px)';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1'; this.style.color='#0f172a'; this.style.transform='translateY(0)';">
+                  <i id="btn-refresh-weather" class="fa-solid fa-arrows-rotate" style="color:#059669;"></i>
                   <span>Làm mới GPS</span>
                 </button>
 
@@ -46,9 +50,9 @@
             </div>
 
             <!-- Bottom Row: Real-Time GPS Weather Widget Content -->
-            <div id="weather-widget-content" style="background:rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.15); border-radius:16px; padding:16px; backdrop-filter:blur(8px);">
-              <div style="display:flex; align-items:center; gap:10px; color:rgba(255,255,255,0.9); font-size:13px; font-weight:700;">
-                <i class="fa-solid fa-spinner fa-spin"></i> <span id="weather-status-text">Đang kết nối trạm vệ tinh GPS & Dự báo Khí tượng Open-Meteo...</span>
+            <div id="weather-widget-content" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px 18px; box-shadow:0 2px 10px rgba(0,0,0,0.02);">
+              <div style="display:flex; align-items:center; gap:10px; color:#64748b; font-size:13px; font-weight:700;">
+                <i class="fa-solid fa-spinner fa-spin" style="color:#059669;"></i> <span id="weather-status-text">Đang kết nối trạm vệ tinh GPS & Dự báo Khí tượng Open-Meteo...</span>
               </div>
             </div>
 
