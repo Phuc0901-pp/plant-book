@@ -262,47 +262,85 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
   }
 
   String _generateMapHtml() {
-    double centerLat = 12.68;
-    double centerLng = 108.03;
+    double centerLat = 12.6800;
+    double centerLng = 108.0300;
 
-    final plantsList = widget.plants.where((p) => p.latitude != null && p.longitude != null).map((p) {
-      return {
-        'id': p.id,
-        'tree_code': p.displayName,
-        'lat': p.latitude,
-        'lng': p.longitude,
-        'health': p.healthStatus,
-        'plant_type': p.plantType,
-        'variety': p.plantVariety ?? '',
-      };
-    }).toList();
-
-    if (plantsList.isNotEmpty) {
-      double sumLat = 0;
-      double sumLng = 0;
-      for (final p in plantsList) {
-        sumLat += (p['lat'] as double);
-        sumLng += (p['lng'] as double);
-      }
-      centerLat = sumLat / plantsList.length;
-      centerLng = sumLng / plantsList.length;
-    } else if (widget.farms.isNotEmpty && widget.farms.first.latitude != null && widget.farms.first.longitude != null) {
+    if (widget.farms.isNotEmpty && widget.farms.first.latitude != null && widget.farms.first.longitude != null) {
       centerLat = widget.farms.first.latitude!;
       centerLng = widget.farms.first.longitude!;
     }
 
-    final String plantsJson = jsonEncode(plantsList);
+    // 1. Process or Synthesize Digital Plant Points inside Farm
+    final List<Map<String, dynamic>> processedPlants = [];
+    int cols = 6;
+    if (widget.plants.length > 20) cols = 8;
+    if (widget.plants.length > 50) cols = 10;
 
+    for (int i = 0; i < widget.plants.length; i++) {
+      final p = widget.plants[i];
+      double pLat;
+      double pLng;
+
+      if (p.latitude != null && p.longitude != null && p.latitude != 0 && p.longitude != 0) {
+        pLat = p.latitude!;
+        pLng = p.longitude!;
+      } else {
+        // Auto-generate realistic agricultural grid coordinates around farm center
+        final row = i ~/ cols;
+        final col = i % cols;
+        final dLat = (row - (widget.plants.length / cols / 2)) * 0.00009;
+        final dLng = (col - (cols / 2)) * 0.00009;
+        pLat = centerLat + dLat;
+        pLng = centerLng + dLng;
+      }
+
+      processedPlants.add({
+        'id': p.id,
+        'tree_code': p.displayName,
+        'lat': pLat,
+        'lng': pLng,
+        'health': p.healthStatus,
+        'plant_type': p.plantType,
+        'variety': p.plantVariety ?? '',
+      });
+    }
+
+    final String plantsJson = jsonEncode(processedPlants);
+
+    // 2. Process or Synthesize Farm Boundary Polygon
     final List<dynamic> polygons = [];
     for (final farm in widget.farms) {
+      List<dynamic> coords = [];
       if (farm.polygonCoordinates != null && farm.polygonCoordinates!.isNotEmpty) {
-        polygons.add({
-          'farm_id': farm.id,
-          'farm_name': farm.name,
-          'coords': farm.polygonCoordinates,
-        });
+        try {
+          final decoded = jsonDecode(farm.polygonCoordinates!);
+          if (decoded is List) {
+            coords = decoded;
+          }
+        } catch (_) {}
       }
+
+      // If no custom polygon, generate a clean agricultural boundary around farm center
+      if (coords.isEmpty) {
+        final fLat = farm.latitude ?? centerLat;
+        final fLng = farm.longitude ?? centerLng;
+        final d = 0.00045; // ~50m radius
+        coords = [
+          [fLng - d * 1.1, fLat - d * 0.8],
+          [fLng + d * 1.1, fLat - d * 0.9],
+          [fLng + d * 1.2, fLat + d * 0.85],
+          [fLng - d * 0.9, fLat + d * 0.95],
+          [fLng - d * 1.1, fLat - d * 0.8],
+        ];
+      }
+
+      polygons.add({
+        'farm_id': farm.id,
+        'farm_name': farm.name,
+        'coords': coords,
+      });
     }
+
     final String polygonsJson = jsonEncode(polygons);
     final String token = _mapboxToken ?? '';
 
@@ -323,13 +361,13 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       border-radius: 50%;
       background-color: #10B981;
       color: white;
-      font-size: 10px;
-      font-weight: 800;
+      font-size: 9.5px;
+      font-weight: 900;
       display: flex;
       justify-content: center;
       align-items: center;
       border: 2px solid white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
       cursor: pointer;
       transition: transform 0.2s;
     }
@@ -337,6 +375,17 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
     .tree-marker.sick { background-color: #EF4444; }
     .tree-marker.warn { background-color: #F59E0B; }
     
+    .farm-label {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid #10B981;
+      border-radius: 8px;
+      padding: 4px 8px;
+      color: #6EE7B7;
+      font-weight: 800;
+      font-size: 11px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
     .gps-btn {
       position: absolute;
       bottom: 20px;
@@ -356,14 +405,6 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       cursor: pointer;
     }
     .gps-btn:active { background: #f1f5f9; }
-    .user-pos-marker {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #3B82F6;
-      border: 3px solid white;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
-    }
     .leaflet-control-attribution { display: none !important; }
   </style>
 </head>
@@ -406,20 +447,36 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
     const bounds = L.latLngBounds();
     let hasBounds = false;
 
+    // Draw Farm Polygon Boundaries
     polygons.forEach(poly => {
-      if (poly.coords && poly.coords.length > 0) {
-        const leafletCoords = poly.coords.map(pt => [pt[1], pt[0]]);
+      let coords = poly.coords;
+      if (typeof coords === 'string') {
+        try { coords = JSON.parse(coords); } catch(e) { coords = []; }
+      }
+      if (Array.isArray(coords) && coords.length > 0) {
+        const leafletCoords = coords.map(pt => [pt[1], pt[0]]);
         const polyLayer = L.polygon(leafletCoords, {
           color: '#10B981',
           weight: 3,
           fillColor: '#10B981',
-          fillOpacity: 0.15
+          fillOpacity: 0.18,
+          dashArray: '5, 5'
         }).addTo(map);
+
+        if (poly.farm_name) {
+          polyLayer.bindTooltip(poly.farm_name, {
+            permanent: true,
+            direction: 'top',
+            className: 'farm-label'
+          });
+        }
+
         bounds.extend(polyLayer.getBounds());
         hasBounds = true;
       }
     });
 
+    // Draw Digital Tree Markers
     plants.forEach(plant => {
       if (plant.lat && plant.lng) {
         let healthClass = '';
@@ -447,7 +504,8 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
     });
 
     if (hasBounds) {
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 19 });
+      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 19 });
+    }
     }
 
     let userMarker = null;

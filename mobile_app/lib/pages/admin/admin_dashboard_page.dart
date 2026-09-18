@@ -136,11 +136,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9),
       drawer: const AdminDrawer(activeRoute: 'dashboard'),
       appBar: AppBar(
-        backgroundColor: AppTheme.greenDark,
+        backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
+        titleSpacing: 0,
         title: Row(
           children: [
             Container(
@@ -148,69 +149,85 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                  ),
+                ],
               ),
               child: Image.asset(
                 'assets/images/logo.png',
-                height: 24,
+                height: 22,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppTheme.green, size: 22),
+                errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppTheme.green, size: 20),
               ),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'TANBAO AgTech — Admin',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            const Expanded(
+              child: Text(
+                'TANBAO AgTech Admin',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: -0.2),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
             tooltip: 'Làm mới dữ liệu',
             onPressed: _loadMetrics,
           ),
           IconButton(
-            icon: const Icon(Icons.logout_rounded),
+            icon: const Icon(Icons.logout_rounded, size: 20),
             tooltip: 'Đăng xuất',
             onPressed: _handleLogout,
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: _isLoading
-          ? const LoadingIndicator(message: 'Đang tải chỉ số hệ thống...')
+          ? const LoadingIndicator(message: 'Đang kết nối Cockpit điều hành...')
           : RefreshIndicator(
               onRefresh: _loadMetrics,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // 1. Role Transition Banner & Farm Context Switcher
                     _buildRoleTransitionBanner(),
+                    const SizedBox(height: 16),
+
+                    // 2. Operational Value Chain Flowchart (Chuỗi quy trình 5 bước)
+                    _buildSectionHeader('QUY TRÌNH VẬN HÀNH CHUỖI GIÁ TRỊ', 'Sơ đồ luồng 5 bước khép kín từ Nông trại đến Xuất khẩu'),
+                    const SizedBox(height: 10),
+                    _buildValueChainFlowchart(),
                     const SizedBox(height: 20),
 
-                    // 2. Core 3 KPIs Section
-                    _buildSectionHeader('TỔNG QUAN HỆ THỐNG', 'Chỉ số cốt lõi toàn hệ sinh thái'),
+                    // 3. Core KPIs Dashboard (Microsoft Fluent Metrics)
+                    _buildSectionHeader('TỔNG QUAN HỆ THỐNG AGTECH', 'Chỉ số cốt lõi và trạng thái vận hành thời gian thực'),
                     const SizedBox(height: 10),
                     _buildCoreKpiRow(),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     _buildSecondaryKpiRow(),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 20),
 
-                    // 3. Crop Breakdown & Distribution Section
-                    _buildSectionHeader('CƠ CẤU & PHÂN BỔ LOẠI CÂY TRỒNG', 'Chạm vào loại cây để lọc danh sách chi tiết'),
+                    // 4. Crop Breakdown Section
+                    _buildSectionHeader('CƠ CẤU & PHÂN BỔ LOẠI CÂY TRỒNG', 'Chạm vào loại cây để lọc danh mục quản lý chuyên sâu'),
                     const SizedBox(height: 10),
                     _buildCropBreakdownSection(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    // 4. Categorized Management Modules
-                    _buildSectionHeader('DANH MỤC QUẢN TRỊ NGHIỆP VỤ', '3 nhóm chức năng điều hành tập trung'),
+                    // 5. 2-Column Microsoft Fluent Admin Grid
+                    _buildSectionHeader('DANH MỤC ĐIỀU HÀNH TẬP TRUNG', 'Trung tâm chỉ huy & quản trị 9 phân hệ chức năng'),
                     const SizedBox(height: 12),
-                    _buildCategorizedModules(),
+                    _buildFluentAdminGrid(),
                     const SizedBox(height: 24),
 
-                    // 5. Footer Branding
+                    // 6. Footer Branding
                     _buildFooter(),
                     const SizedBox(height: 16),
                   ],
@@ -224,21 +241,40 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.textMuted,
-            letterSpacing: 0.9,
-          ),
+        Row(
+          children: [
+            Container(
+              width: 3.5,
+              height: 13,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F766E),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF334155),
+                  letterSpacing: 0.7,
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Color(0xFF64748B),
+        const SizedBox(height: 3),
+        Padding(
+          padding: const EdgeInsets.only(left: 10.5),
+          child: Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF64748B),
+              height: 1.25,
+            ),
           ),
         ),
       ],
@@ -249,15 +285,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF064E3B), Color(0xFF047857)],
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF334155), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF064E3B).withOpacity(0.2),
-            blurRadius: 10,
+            color: const Color(0xFF0F172A).withOpacity(0.12),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -271,10 +308,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: const Color(0xFF10B981).withOpacity(0.15),
                   shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
                 ),
-                child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 22),
+                child: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF34D399), size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -282,44 +320,44 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
-                      'Xin chào, Quản trị viên!',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      'Bảng Điều Khiển Quản Trị Viên',
+                      style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w800),
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Chuyển đổi linh hoạt giữa giao diện Admin và Nông hộ',
-                      style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                      'Chuyển đổi phối cảnh vận hành giữa Admin và Nông hộ',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.15)),
+              color: const Color(0xFF0B132B),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF334155)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.landscape_rounded, color: Color(0xFF6EE7B7), size: 18),
+                const Icon(Icons.landscape_rounded, color: Color(0xFF34D399), size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _farms.isEmpty
                       ? const Text(
                           'Xem với vai trò Nông hộ',
-                          style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                         )
                       : DropdownButtonHideUnderline(
                           child: DropdownButton<Farm>(
                             value: _selectedFarmForPreview,
-                            dropdownColor: const Color(0xFF064E3B),
+                            dropdownColor: const Color(0xFF1E293B),
                             isExpanded: true,
                             icon: const Icon(Icons.arrow_drop_down_rounded, color: Colors.white70),
-                            style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                             items: _farms.map((farm) {
                               return DropdownMenuItem<Farm>(
                                 value: farm,
@@ -340,25 +378,194 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _navigateToFarmerView,
               icon: const Icon(Icons.swap_horiz_rounded, size: 18),
               label: const Text(
-                'Vào cổng Nông hộ (Farmer View)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                'Vào phối cảnh Nông hộ (Farmer View)',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
               ),
               style: ElevatedButton.styleFrom(
-                foregroundColor: const Color(0xFF064E3B),
-                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF0F172A),
+                backgroundColor: const Color(0xFF34D399),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 11),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(9),
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Interactive 5-Stage Value Chain Operational Process Flowchart ---
+  Widget _buildValueChainFlowchart() {
+    final steps = [
+      {
+        'num': '01',
+        'title': 'Nông hộ & GIS',
+        'desc': 'Ranh giới & Cây số',
+        'icon': Icons.map_rounded,
+        'color': const Color(0xFF0284C7),
+        'page': const AdminGisPage(),
+      },
+      {
+        'num': '02',
+        'title': 'Canh tác & IoT',
+        'desc': '3 Tầng đất & Thời tiết',
+        'icon': Icons.sensors_rounded,
+        'color': const Color(0xFF059669),
+        'page': const AdminDevicePage(),
+      },
+      {
+        'num': '03',
+        'title': 'Chuẩn VietGAP',
+        'desc': 'Nhật ký & Thuộc tính',
+        'icon': Icons.verified_rounded,
+        'color': const Color(0xFF7C3AED),
+        'page': const AdminSchemaPage(),
+      },
+      {
+        'num': '04',
+        'title': 'Thu hoạch & Chi phí',
+        'desc': 'Vật tư & Ngân sách',
+        'icon': Icons.inventory_2_rounded,
+        'color': const Color(0xFFD97706),
+        'page': const AdminCostPage(),
+      },
+      {
+        'num': '05',
+        'title': 'Xuất khẩu QR/NFC',
+        'desc': 'Truy xuất & Báo cáo',
+        'icon': Icons.qr_code_2_rounded,
+        'color': const Color(0xFFE11D48),
+        'page': const AdminMediaPage(),
+      },
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.alt_route_rounded, size: 16, color: Color(0xFF0F766E)),
+                  SizedBox(width: 6),
+                  Text(
+                    'Chuỗi Giá Trị Số Hóa Nông Nghiệp 5.0',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Khép kín 100%',
+                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 94,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: steps.length,
+              separatorBuilder: (_, __) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Center(
+                  child: Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey.shade400),
+                ),
+              ),
+              itemBuilder: (context, idx) {
+                final item = steps[idx];
+                final color = item['color'] as Color;
+                final page = item['page'] as Widget;
+
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 124,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withOpacity(0.25), width: 1.2),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: color,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                item['num'] as String,
+                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                            Icon(item['icon'] as IconData, size: 16, color: color),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title'] as String,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              item['desc'] as String,
+                              style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -369,59 +576,50 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget _buildCoreKpiRow() {
     return Row(
       children: [
-        // KPI 1: Chủng loại cây & tổng cây
+        // KPI 1: Chủng loại cây
         Expanded(
-          child: _buildCoreCard(
+          child: _buildFluentMetricCard(
             title: 'Chủng loại cây',
             primaryValue: '$_totalCropTypes',
             unit: 'loại',
             secondaryText: 'Tổng $_totalPlants cây',
             icon: Icons.forest_rounded,
             color: const Color(0xFF059669),
-            bgColor: const Color(0xFFECFDF5),
+            bgColor: Colors.white,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminPlantPage()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPlantPage()));
             },
           ),
         ),
-        const SizedBox(width: 10),
-        // KPI 2: Số lượng trang trại
+        const SizedBox(width: 8),
+        // KPI 2: Trang trại
         Expanded(
-          child: _buildCoreCard(
-            title: 'Trang trại',
+          child: _buildFluentMetricCard(
+            title: 'Trang trại GIS',
             primaryValue: '$_totalFarms',
-            unit: 'nông trại',
+            unit: 'vườn',
             secondaryText: 'Toàn quốc',
             icon: Icons.landscape_rounded,
-            color: const Color(0xFF2563EB),
-            bgColor: const Color(0xFFEFF6FF),
+            color: const Color(0xFF0284C7),
+            bgColor: Colors.white,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminGisPage()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminGisPage()));
             },
           ),
         ),
-        const SizedBox(width: 10),
-        // KPI 3: Số lượng người dùng
+        const SizedBox(width: 8),
+        // KPI 3: Nông hộ
         Expanded(
-          child: _buildCoreCard(
-            title: 'Người dùng',
+          child: _buildFluentMetricCard(
+            title: 'Nông hộ',
             primaryValue: '$_totalUsers',
-            unit: 'nông hộ',
+            unit: 'hộ',
             secondaryText: 'Hoạt động',
             icon: Icons.people_alt_rounded,
             color: const Color(0xFF7C3AED),
-            bgColor: const Color(0xFFF5F3FF),
+            bgColor: Colors.white,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminUserPage()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminUserPage()));
             },
           ),
         ),
@@ -429,7 +627,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildCoreCard({
+  Widget _buildFluentMetricCard({
     required String title,
     required String primaryValue,
     required String unit,
@@ -443,14 +641,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.25)),
+          border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.06),
+              color: Colors.black.withOpacity(0.025),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -465,18 +663,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 Flexible(
                   child: Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: const TextStyle(
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w700,
-                      color: color.withOpacity(0.85),
+                      color: Color(0xFF475569),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(icon, size: 16, color: color),
+                Icon(icon, size: 15, color: color),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
@@ -484,7 +682,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 Text(
                   primaryValue,
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 19,
                     fontWeight: FontWeight.w900,
                     color: color,
                   ),
@@ -492,10 +690,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 const SizedBox(width: 3),
                 Text(
                   unit,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: color.withOpacity(0.8),
+                    color: Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -504,8 +702,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             Text(
               secondaryText,
               style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF64748B),
+                fontSize: 9.5,
+                color: Color(0xFF94A3B8),
                 fontWeight: FontWeight.w500,
               ),
               overflow: TextOverflow.ellipsis,
@@ -518,11 +716,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   Widget _buildSecondaryKpiRow() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -530,21 +728,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           _buildMiniMetric(
             icon: Icons.check_circle_rounded,
             color: const Color(0xFF10B981),
-            label: 'Sức khỏe tốt',
+            label: 'Cây tốt',
             value: '$_healthyPlants cây',
           ),
-          Container(height: 20, width: 1, color: const Color(0xFFE2E8F0)),
+          Container(height: 18, width: 1, color: const Color(0xFFE2E8F0)),
           _buildMiniMetric(
             icon: Icons.warning_amber_rounded,
             color: const Color(0xFFF59E0B),
             label: 'Cần chú ý',
             value: '$_watchPlants cây',
           ),
-          Container(height: 20, width: 1, color: const Color(0xFFE2E8F0)),
+          Container(height: 18, width: 1, color: const Color(0xFFE2E8F0)),
           _buildMiniMetric(
             icon: Icons.sensors_rounded,
-            color: const Color(0xFFEA580C),
-            label: 'Thiết bị IoT',
+            color: const Color(0xFF0F766E),
+            label: 'IoT Station',
             value: '$_totalDevices trạm',
           ),
         ],
@@ -560,18 +758,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 6),
+        Icon(icon, size: 15, color: color),
+        const SizedBox(width: 5),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+              style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
             ),
             Text(
               value,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: color),
             ),
           ],
         ),
@@ -582,16 +780,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget _buildCropBreakdownSection() {
     if (_cropCounts.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
         ),
         child: const Center(
           child: Text(
             'Chưa có dữ liệu cây trồng để phân loại',
-            style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            style: TextStyle(color: AppTheme.textMuted, fontSize: 11.5),
           ),
         ),
       );
@@ -599,270 +797,281 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     final sortedEntries = _cropCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
-    return Column(
-      children: [
-        // Horizontal list of crop chips/cards
-        SizedBox(
-          height: 105,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: sortedEntries.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final entry = sortedEntries[index];
-              final cropName = entry.key;
-              final count = entry.value;
-              final percentage = _totalPlants > 0 ? (count / _totalPlants * 100).toStringAsFixed(1) : '0';
-              final healthyCount = _cropHealthyCounts[cropName] ?? 0;
-              final emoji = _getCropEmoji(cropName);
+    return SizedBox(
+      height: 98,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: sortedEntries.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final entry = sortedEntries[index];
+          final cropName = entry.key;
+          final count = entry.value;
+          final percentage = _totalPlants > 0 ? (count / _totalPlants * 100).toStringAsFixed(1) : '0';
+          final healthyCount = _cropHealthyCounts[cropName] ?? 0;
+          final emoji = _getCropEmoji(cropName);
 
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AdminPlantPage(initialPlantType: cropName),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  width: 150,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(emoji, style: const TextStyle(fontSize: 20)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.greenLight,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '$percentage%',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.greenDark,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            cropName,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$count cây · $healthyCount tốt',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AdminPlantPage(initialPlantType: cropName),
                 ),
               );
             },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategorizedModules() {
-    return Column(
-      children: [
-        // Group 1: Quản lý Nông nghiệp & Cây trồng
-        _buildModuleGroupHeader('🌿 QUẢN LÝ NÔNG NGHIỆP & CÂY TRỒNG'),
-        _buildModuleTile(
-          icon: Icons.people_alt_rounded,
-          color: const Color(0xFF7C3AED),
-          title: 'Quản lý tài khoản Nông hộ & Phân quyền',
-          subtitle: 'Xem danh sách, kiểm duyệt hồ sơ & cấu hình quyền trang trại.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminUserPage()));
-          },
-        ),
-        _buildModuleTile(
-          icon: Icons.eco_rounded,
-          color: const Color(0xFF059669),
-          title: 'Danh sách Cây trồng & Nhật ký số',
-          subtitle: 'Tra cứu cây trồng, thông số 4 Tabs & nhật ký canh tác số hóa.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPlantPage()));
-          },
-        ),
-        _buildModuleTile(
-          icon: Icons.map_rounded,
-          color: const Color(0xFF2563EB),
-          title: 'Bản đồ GIS Trang trại Toàn quốc',
-          subtitle: 'Vệ tinh ranh giới polygon & định vị tọa độ GPS từng lô đất.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminGisPage()));
-          },
-        ),
-        const SizedBox(height: 12),
-
-        // Group 2: Tài chính & Quy chuẩn Nông nghiệp
-        _buildModuleGroupHeader('📊 TÀI CHÍNH & QUY CHUẨN NÔNG NGHIỆP'),
-        _buildModuleTile(
-          icon: Icons.attach_money_rounded,
-          color: const Color(0xFF047857),
-          title: 'Quản trị Chi phí Đầu tư & Vật tư',
-          subtitle: 'Giám sát chi phí vật tư tiêu hao, khấu hao và ngân sách vụ mùa.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminCostPage()));
-          },
-        ),
-        _buildModuleTile(
-          icon: Icons.tune_rounded,
-          color: const Color(0xFF0D9488),
-          title: 'Cấu hình Schemas & Thuộc tính VietGAP',
-          subtitle: 'Thiết lập biểu mẫu thuộc tính động JSON cho từng giống cây trồng.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminSchemaPage()));
-          },
-        ),
-        const SizedBox(height: 12),
-
-        // Group 3: Hạ tầng & Kỹ thuật
-        _buildModuleGroupHeader('⚙️ HẠ TẦNG & HỆ THỐNG KỸ THUẬT'),
-        _buildModuleTile(
-          icon: Icons.sensors_rounded,
-          color: const Color(0xFFEA580C),
-          title: 'Cảm biến IoT 3 tầng đất & Quan trắc',
-          subtitle: 'Đăng ký thiết bị cảm biến, gateway & theo dõi kết nối trực tuyến.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDevicePage()));
-          },
-        ),
-        _buildModuleTile(
-          icon: Icons.storage_rounded,
-          color: const Color(0xFF4F46E5),
-          title: 'CSDL PostgreSQL & Redis Telemetry',
-          subtitle: 'Giám sát 8 bảng dữ liệu, đo độ trễ & làm sạch cache 1-chạm.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDatabasePage()));
-          },
-        ),
-        _buildModuleTile(
-          icon: Icons.photo_library_rounded,
-          color: const Color(0xFFD97706),
-          title: 'Thư viện Media & Quét bao bì AI',
-          subtitle: 'Kho hình ảnh nông hộ và kết quả nhận diện nhãn vật tư Gemini AI.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminMediaPage()));
-          },
-        ),
-        _buildModuleTile(
-          icon: Icons.security_rounded,
-          color: const Color(0xFFDC2626),
-          title: 'Nhật ký An ninh & Audit Logs',
-          subtitle: 'Theo dõi toàn bộ lịch sử truy vết tác vụ và sự kiện hệ thống.',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminAuditLogsPage()));
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModuleGroupHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 4, bottom: 8),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF475569),
-            letterSpacing: 0.5,
-          ),
-        ),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 140,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.025),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(emoji, style: const TextStyle(fontSize: 18)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: Text(
+                          '$percentage%',
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF047857),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cropName,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        '$count cây · $healthyCount tốt',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildModuleTile({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
+  // --- 2-Column Microsoft Fluent Admin Grid ---
+  Widget _buildFluentAdminGrid() {
+    final modules = [
+      {
+        'icon': Icons.people_alt_rounded,
+        'color': const Color(0xFF7C3AED),
+        'title': 'Quản lý Nông hộ',
+        'badge': '$_totalUsers hồ sơ',
+        'desc': 'Phân quyền & kiểm duyệt tài khoản',
+        'page': const AdminUserPage(),
+      },
+      {
+        'icon': Icons.eco_rounded,
+        'color': const Color(0xFF059669),
+        'title': 'Cây trồng & Nhật ký',
+        'badge': '$_totalPlants cây',
+        'desc': '4 Tabs thông số & canh tác số',
+        'page': const AdminPlantPage(),
+      },
+      {
+        'icon': Icons.map_rounded,
+        'color': const Color(0xFF0284C7),
+        'title': 'Bản đồ GIS Vườn',
+        'badge': '$_totalFarms trang trại',
+        'desc': 'Polygon ranh giới & lưới cây GPS',
+        'page': const AdminGisPage(),
+      },
+      {
+        'icon': Icons.attach_money_rounded,
+        'color': const Color(0xFF047857),
+        'title': 'Chi phí & Vật tư',
+        'badge': '10 bản ghi/trang',
+        'desc': 'Tiêu hao, khấu hao & ngân sách',
+        'page': const AdminCostPage(),
+      },
+      {
+        'icon': Icons.tune_rounded,
+        'color': const Color(0xFF0D9488),
+        'title': 'Schemas VietGAP',
+        'badge': 'Dynamic JSON',
+        'desc': 'Cấu hình trường động theo giống',
+        'page': const AdminSchemaPage(),
+      },
+      {
+        'icon': Icons.sensors_rounded,
+        'color': const Color(0xFFEA580C),
+        'title': 'Cảm biến IoT 3 Tầng',
+        'badge': '$_totalDevices trạm',
+        'desc': 'Không khí, 7-in-1 đất & nước',
+        'page': const AdminDevicePage(),
+      },
+      {
+        'icon': Icons.storage_rounded,
+        'color': const Color(0xFF4F46E5),
+        'title': 'CSDL & Telemetry',
+        'badge': '8 Tables & Redis',
+        'desc': 'Đo độ trễ & làm sạch cache',
+        'page': const AdminDatabasePage(),
+      },
+      {
+        'icon': Icons.photo_library_rounded,
+        'color': const Color(0xFFD97706),
+        'title': 'Media & Quét AI',
+        'badge': 'Gemini 1.5',
+        'desc': 'Thư viện ảnh & nhận diện nhãn',
+        'page': const AdminMediaPage(),
+      },
+      {
+        'icon': Icons.security_rounded,
+        'color': const Color(0xFFDC2626),
+        'title': 'Audit Logs An ninh',
+        'badge': 'Realtime Logs',
+        'desc': 'Truy vết tác vụ & sự kiện 6 lớp',
+        'page': const AdminAuditLogsPage(),
+      },
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 1.35,
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        leading: Container(
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 3),
-          child: Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF64748B),
-              height: 1.25,
+      itemCount: modules.length,
+      itemBuilder: (context, index) {
+        final m = modules[index];
+        final color = m['color'] as Color;
+        final page = m['page'] as Widget;
+
+        return InkWell(
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+          },
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.025),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(m['icon'] as IconData, color: color, size: 18),
+                    ),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          m['badge'] as String,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      m['title'] as String,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      m['desc'] as String,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: Color(0xFF64748B),
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
-        onTap: onTap,
-      ),
+        );
+      },
     );
   }
 
@@ -871,24 +1080,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: AppTheme.greenDark.withOpacity(0.08),
+              color: const Color(0xFF0F766E).withOpacity(0.08),
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: AppTheme.greenDark.withOpacity(0.2)),
+              border: Border.all(color: const Color(0xFF0F766E).withOpacity(0.2)),
             ),
             child: const Text(
-              'v1.2.1 · Enterprise Edition',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.greenDark),
+              'v1.2.4 • Enterprise Edition',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
             ),
           ),
           const SizedBox(height: 6),
           const Text(
             'Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech',
-            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 }
+

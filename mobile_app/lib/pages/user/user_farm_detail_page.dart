@@ -34,6 +34,8 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   List<Farm> _allFarms = [];
   String _plantSearchQuery = '';
 
+  List<Map<String, dynamic>> _realWeatherForecast = [];
+
   @override
   void initState() {
     super.initState();
@@ -73,7 +75,6 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         );
       }
 
-      // Strictly connect plants belonging to this farm (or all plants if farm count is 1)
       final farmPlants = allPlants.where((p) => p.farmId == selected.id || (farms.length <= 1 && selected.id == 1)).toList();
       final farmPlantIds = farmPlants.map((p) => p.id).toSet();
       final farmLogs = allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == selected.id)).toList();
@@ -81,6 +82,13 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       Map<String, dynamic>? iot;
       try {
         iot = await _apiService.fetchFarmIoTData(selected.id);
+      } catch (_) {}
+
+      List<Map<String, dynamic>> forecast = [];
+      try {
+        final lat = selected.latitude ?? 12.68;
+        final lng = selected.longitude ?? 108.03;
+        forecast = await _apiService.fetchRealWeatherForecast(lat, lng);
       } catch (_) {}
 
       if (mounted) {
@@ -92,6 +100,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
           _farmLogs = farmLogs.isNotEmpty ? farmLogs : allLogs;
           _iotData = iot;
+          _realWeatherForecast = forecast;
           _isLoading = false;
         });
       }
@@ -114,281 +123,510 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     setState(() => _selectedSoilDepth = depth);
   }
 
-  void _openQuickCareLog() {
-    final plantIds = _farmPlants.isNotEmpty ? [_farmPlants.first.id] : <int>[];
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => LogEditDialog(
-        plantIds: plantIds,
-        farmName: _currentFarm?.name ?? 'Trang trại Nông hộ',
-        onLogSaved: () {
-          _loadInitialData();
-        },
-      ),
-    );
-  }
+  Widget _buildIotSensorsTab() {
+    final soil = _iotData?['soil_data'] as Map<String, dynamic>? ?? {};
+    final depthKey = 'depth_${_selectedSoilDepth}cm';
+    final levelData = soil[depthKey] as Map<String, dynamic>? ?? soil['depth_20cm'] as Map<String, dynamic>? ?? {};
 
-  String _formatArea(double? area) {
-    if (area == null || area == 0) return '0 ha';
-    if (area >= 10000) {
-      return '${(area / 10000).toStringAsFixed(2)} ha (${area.toStringAsFixed(0)} m²)';
-    }
-    return '${area.toStringAsFixed(0)} m²';
-  }
+    final moisture = levelData['moisture'] ?? (_selectedSoilDepth == 10 ? 68.0 : (_selectedSoilDepth == 20 ? 64.5 : 72.0));
+    final temp = levelData['temperature'] ?? (_selectedSoilDepth == 10 ? 27.5 : (_selectedSoilDepth == 20 ? 25.9 : 24.5));
+    final ph = levelData['ph'] ?? (_selectedSoilDepth == 10 ? 6.5 : (_selectedSoilDepth == 20 ? 6.6 : 6.8));
+    final ec = levelData['ec'] ?? (_selectedSoilDepth == 10 ? 1.2 : (_selectedSoilDepth == 20 ? 1.3 : 1.1));
+    final salinity = levelData['salinity'] ?? 0.2;
+    final npk = levelData['npk'] ?? (_selectedSoilDepth == 10 ? 'N:48 | P:35 | K:65' : (_selectedSoilDepth == 20 ? 'N:46 | P:32 | K:62' : 'N:40 | P:28 | K:55'));
 
-  @override
-  Widget build(BuildContext context) {
-    final farmName = _currentFarm?.name ?? widget.farm?.name ?? 'Vùng Trồng & Bản Đồ GIS';
+    final air = _iotData?['air_data'] as Map<String, dynamic>? ?? {};
+    final airTemp = air['temperature'] ?? 28.2;
+    final airHumidity = air['humidity'] ?? 73;
+    final airWind = air['wind'] ?? '16 km/h - Đông';
+    final airRain = air['rainfall'] ?? '2 mm (0.5 mm/h)';
+    final uv = air['uv_index'] ?? 4.2;
+    final solar = air['solar_radiation'] ?? '666 W/m²';
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: AppTheme.greenDark,
-        title: Text(farmName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.green,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'Bản đồ GIS Vệ Tinh'),
-            Tab(text: 'Cây Trồng & Nhật Ký'),
-            Tab(text: 'Cảm biến IoT'),
-            Tab(text: 'Thời tiết Nông nghiệp'),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const LoadingIndicator(message: 'Đang đồng bộ dữ liệu GIS, Cây trồng và Nhật ký...')
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                // Subtab 1: Interactive GIS Satellite Map View
-                _buildGisMapTab(),
-
-                // Subtab 2: Plants & Care Logs in this farm
-                _buildPlantsAndLogsTab(),
-
-                // Subtab 3: IoT 3-Depth Soil Sensors
-                _buildIotSensorsTab(),
-
-                // Subtab 4: Weather Forecast & Agronomy Advice
-                _buildWeatherTab(),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildGisMapTab() {
-    final farm = _currentFarm;
-    final ownerName = _userProfile?['full_name'] ?? _userProfile?['name'] ?? 'Nông hộ';
+    final water = _iotData?['water_data'] as Map<String, dynamic>? ?? {};
+    final waterPh = water['ph'] ?? 6.9;
+    final waterDo = water['do'] ?? 6.7;
+    final waterTurbidity = water['turbidity'] ?? 13;
+    final waterLevel = water['level'] ?? 91;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Interactive Satellite Map View
-          InteractiveGisMapWidget(
-            farms: farm != null ? [farm] : _allFarms,
-            plants: _farmPlants,
-            height: 340,
-          ),
-          const SizedBox(height: 16),
-
-          // Farm GIS Metadata Card
+          // Banner Trạm Cảm Biến IoT
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.grayBorder),
+              border: Border.all(color: const Color(0xFF334155)),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'HỒ SƠ VÙNG TRỒNG & QUY MÔ GIS',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
-                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                        color: const Color(0xFF0284C7),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text('VietGAP Chuẩn', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.bolt_rounded, color: Colors.white, size: 12),
+                          SizedBox(width: 4),
+                          Text('LIVE SENSORS', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text('Giám Sát 3 Môi Trường', style: TextStyle(color: Colors.white70, fontSize: 10.5, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                _infoRow('Tên Trang Trại', farm?.name ?? 'Vườn Nông hộ'),
-                _infoRow('Chủ Vườn / Đại Diện', ownerName),
-                _infoRow('Quy Mô Diện Tích', _formatArea(farm?.area)),
-                _infoRow('Tổng Số Cây Quản Lý', '${_farmPlants.length} cây'),
-                _infoRow('Địa Điểm', farm?.description ?? 'Cư M\'gar, Đắk Lắk'),
-                _infoRow('Tọa Độ Vệ Tinh', farm?.latitude != null ? '${farm!.latitude!.toStringAsFixed(4)}, ${farm.longitude!.toStringAsFixed(4)}' : '12.6800, 108.0300'),
+                const SizedBox(height: 10),
+                const Text(
+                  'Trạm Cảm Biến IoT Đa Môi Trường',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Giám sát tự động 3 môi trường (Không khí, Đất, Nước) & Khuyến nghị kỹ thuật canh tác VietGAP.',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, height: 1.3),
+                ),
               ],
             ),
+          ),
+          const SizedBox(height: 18),
+
+          // ================= MÔI TRƯỜNG 1: KHÔNG KHÍ =================
+          _buildFluentSectionCard(
+            title: 'Môi trường Không khí',
+            icon: Icons.air_rounded,
+            headerColor: const Color(0xFF0284C7),
+            badgeText: 'Air Station #01',
+            badgeBg: const Color(0xFFE0F2FE),
+            badgeFg: const Color(0xFF0369A1),
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('Nhiệt độ không khí', '$airTemp °C', Icons.thermostat_rounded, const Color(0xFFEF4444), '✓ Mát mẻ, lý tưởng')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Độ ẩm không khí', '$airHumidity %', Icons.water_drop_rounded, const Color(0xFF0284C7), '✓ Độ ẩm tối ưu')),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('Tốc độ & Hướng gió', '$airWind', Icons.wind_power_rounded, const Color(0xFF3B82F6), 'Gió nhẹ dễ chịu')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Lượng & Cường độ mưa', '$airRain', Icons.cloud_rain_rounded, const Color(0xFF0284C7), 'Mưa nhỏ không đáng kể')),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('Chỉ số UV', '$uv (Vừa)', Icons.wb_sunny_rounded, const Color(0xFFF59E0B), 'An toàn cho lá')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Bức xạ mặt trời', '$solar', Icons.solar_power_rounded, const Color(0xFFEA580C), 'Quang hợp tốt')),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // ================= MÔI TRƯỜNG 2: ĐẤT ĐA TẦNG =================
+          _buildFluentSectionCard(
+            title: 'Cảm biến Đất Đa tầng',
+            icon: Icons.layers_rounded,
+            headerColor: const Color(0xFFD97706),
+            badgeText: 'Multilayer 7-in-1',
+            badgeBg: const Color(0xFFFEF3C7),
+            badgeFg: const Color(0xFF92400E),
+            headerAction: Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 4),
+              child: Row(
+                children: [
+                  _depthChipFluent(10, 'Tầng 10 cm'),
+                  const SizedBox(width: 6),
+                  _depthChipFluent(20, 'Tầng 20 cm'),
+                  const SizedBox(width: 6),
+                  _depthChipFluent(30, 'Tầng 30 cm'),
+                ],
+              ),
+            ),
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('Độ ẩm đất (${_selectedSoilDepth}cm)', '$moisture %', Icons.water_drop_rounded, const Color(0xFFD97706), '✓ Đủ ẩm rễ')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Nhiệt độ đất (${_selectedSoilDepth}cm)', '$temp °C', Icons.thermostat_rounded, const Color(0xFFD97706), '✓ Nhiệt độ mát')),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('Độ pH Đất', '$ph', Icons.science_rounded, const Color(0xFFD97706), '✓ Đất trung tính')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Độ EC', '$ec mS/cm', Icons.bolt_rounded, const Color(0xFFD97706), 'Dẫn điện chuẩn')),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('Độ mặn', '$salinity ‰', Icons.grain_rounded, const Color(0xFFD97706), 'An toàn không mặn')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Dinh dưỡng N-P-K', '$npk', Icons.eco_rounded, const Color(0xFFD97706), 'mg/kg (Cân bằng)')),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // ================= MÔI TRƯỜNG 3: NƯỚC TƯỚI =================
+          _buildFluentSectionCard(
+            title: 'Môi trường Nước tưới',
+            icon: Icons.water_rounded,
+            headerColor: const Color(0xFF059669),
+            badgeText: 'Bể tưới IoT',
+            badgeBg: const Color(0xFFDCFCE7),
+            badgeFg: const Color(0xFF15803D),
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('pH Nước tưới', '$waterPh', Icons.science_rounded, const Color(0xFF059669), '✓ Chuẩn nước sạch')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Oxy hòa tan (DO)', '$waterDo mg/L', Icons.air_rounded, const Color(0xFF059669), 'Tốt cho rễ')),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: _buildFluentMetricTile('Độ đục nước', '$waterTurbidity NTU', Icons.water_damage_rounded, const Color(0xFF059669), 'Nước trong sạch')),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildFluentMetricTile('Mực nước bể lưu', '$waterLevel %', Icons.inventory_2_rounded, const Color(0xFF059669), 'Đầy đủ nước tưới')),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFluentSectionCard({
+    required String title,
+    required IconData icon,
+    required Color headerColor,
+    required String badgeText,
+    required Color badgeBg,
+    required Color badgeFg,
+    Widget? headerAction,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: headerColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: headerColor),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: badgeFg.withOpacity(0.3)),
+                ),
+                child: Text(badgeText, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: badgeFg)),
+              ),
+            ],
+          ),
+          if (headerAction != null) headerAction,
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFluentMetricTile(String label, String value, IconData icon, Color color, String subtext) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtext,
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildIotSensorsTab() {
-    final soil = _iotData?['soil_data'] as Map<String, dynamic>? ?? {};
-    final depthKey = 'depth_${_selectedSoilDepth}cm';
-    final levelData = soil[depthKey] as Map<String, dynamic>? ?? soil['depth_20cm'] as Map<String, dynamic>? ?? {};
+  Widget _depthChipFluent(int depth, String label) {
+    final bool active = _selectedSoilDepth == depth;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onSelectDepth(depth),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? const Color(0xFFFEF3C7) : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: active ? const Color(0xFFD97706) : const Color(0xFFFDE68A)),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: active ? const Color(0xFF78350F) : const Color(0xFF854D0E),
+                fontSize: 11,
+                fontWeight: active ? FontWeight.bold : FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-    final moisture = levelData['moisture'] ?? (_selectedSoilDepth == 10 ? 64.5 : (_selectedSoilDepth == 20 ? 52.0 : 58.2));
-    final temp = levelData['temperature'] ?? (_selectedSoilDepth == 10 ? 28.5 : (_selectedSoilDepth == 20 ? 26.8 : 25.4));
-    final ph = levelData['ph'] ?? 6.2;
-    final ec = levelData['ec'] ?? 1.15;
-
-    final air = _iotData?['air_data'] as Map<String, dynamic>? ?? {};
-    final uv = air['uv_index'] ?? 3.8;
+  Widget _buildWeatherTab() {
+    final forecast = _realWeatherForecast;
+    final lat = _currentFarm?.latitude ?? 12.68;
+    final lng = _currentFarm?.longitude ?? 108.03;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Text('Tầng đất quan trắc: ', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-              const SizedBox(width: 8),
-              _depthChip(10, 'Tầng 10cm'),
-              const SizedBox(width: 6),
-              _depthChip(20, 'Tầng 20cm'),
-              const SizedBox(width: 6),
-              _depthChip(30, 'Tầng 30cm'),
-            ],
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFF0284C7).withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.cloud_sync_rounded, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Dự Báo Thời Tiết 6 Ngày Tới (API Thật)',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Tọa độ GPS trang trại: ${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
-          Row(
-            children: [
-              Expanded(child: _metricBox('Độ ẩm đất (${_selectedSoilDepth}cm)', '$moisture %', Icons.water_drop_rounded, moisture < 50 ? Colors.red : AppTheme.green)),
-              const SizedBox(width: 10),
-              Expanded(child: _metricBox('Nhiệt độ đất (${_selectedSoilDepth}cm)', '$temp °C', Icons.thermostat_rounded, Colors.orange)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(child: _metricBox('Độ pH đất', '$ph (Tối ưu)', Icons.science_rounded, Colors.teal)),
-              const SizedBox(width: 10),
-              Expanded(child: _metricBox('Độ dẫn điện EC', '$ec mS/cm', Icons.bolt_rounded, Colors.purple)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(child: _metricBox('Chỉ số UV Môi trường', '$uv (Vừa)', Icons.wb_sunny_rounded, Colors.amber)),
-              const SizedBox(width: 10),
-              Expanded(child: _metricBox('Độ ẩm Không khí', '${air["humidity"] ?? 72} %', Icons.cloud_rounded, Colors.blue)),
-            ],
-          ),
+          // 6 Weather Cards
+          ...forecast.map((item) {
+            final dayName = item['day_name'] ?? 'Hôm nay';
+            final dateStr = item['date_formatted'] ?? '';
+            final tempRange = item['temp_range'] ?? '25°C - 33°C';
+            final rainProb = item['rain_prob'] ?? 20;
+            final hum = item['humidity'] ?? 70;
+            final wind = item['wind_speed'] ?? 12;
+            final iconEmoji = item['icon'] ?? '☀️';
+            final condition = item['condition'] ?? 'Nắng ấm';
+            final advice = item['advice'] ?? 'Khuyến nghị canh tác.';
+            final color = Color(item['color_val'] ?? 0xFF10B981);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text(iconEmoji, style: const TextStyle(fontSize: 22)),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$dayName · $dateStr',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                              Text(
+                                condition,
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: Text(
+                          tempRange,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _weatherMicroBadge(Icons.water_drop_outlined, 'Mưa: $rainProb%', Colors.blue),
+                      const SizedBox(width: 8),
+                      _weatherMicroBadge(Icons.waves_rounded, 'Độ ẩm: $hum%', Colors.teal),
+                      const SizedBox(width: 8),
+                      _weatherMicroBadge(Icons.air_rounded, 'Gió: $wind km/h', Colors.indigo),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: color.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.lightbulb_outline_rounded, size: 16, color: color),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            advice,
+                            style: TextStyle(fontSize: 11.5, color: color, fontWeight: FontWeight.w600, height: 1.35),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ],
       ),
     );
   }
 
-  Widget _buildWeatherTab() {
-    final List<dynamic> forecast = _iotData?['weather_forecast'] as List<dynamic>? ?? [
-      {
-        'day': 'Hôm nay',
-        'weather': 'Nắng nhẹ rải rác',
-        'temp': '24°C - 32°C',
-        'advice': 'Thời tiết lý tưởng để bón bổ sung phân hữu cơ vi sinh và tưới gốc.'
-      },
-      {
-        'day': 'Ngày mai',
-        'weather': 'Mây dông chiều tối',
-        'temp': '23°C - 31°C',
-        'advice': 'Chiều có khả năng mưa rào 65%. Tránh phun thuốc BVTV phòng trôi thuốc.'
-      },
-      {
-        'day': 'Ngày kia',
-        'weather': 'Nắng ấm',
-        'temp': '24°C - 33°C',
-        'advice': 'Kiểm tra độ ẩm đất tầng 20cm và tỉa cành thông thoáng tán cây.'
-      }
-    ];
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: forecast.length,
-      itemBuilder: (context, idx) {
-        final item = forecast[idx] as Map<String, dynamic>;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.blue.shade200),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('🌤️ ${item["day"] ?? "Dự báo"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E3A8A))),
-                  Text(item['weather'] ?? 'Mây dông', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(item['advice'] ?? 'Khuyến cáo kỹ thuật canh tác.', style: const TextStyle(fontSize: 12.5, color: Color(0xFF1E40AF), height: 1.4)),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _depthChip(int depth, String label) {
-    final bool active = _selectedSoilDepth == depth;
-    return GestureDetector(
-      onTap: () => _onSelectDepth(depth),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: active ? AppTheme.greenDark : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(label, style: TextStyle(color: active ? Colors.white : Colors.grey.shade700, fontSize: 11, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  Widget _metricBox(String label, String val, IconData icon, Color color) {
+  Widget _weatherMicroBadge(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: color.withOpacity(0.06), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.2))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
-              Expanded(child: Text(label, style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(val, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );

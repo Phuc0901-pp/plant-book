@@ -111,26 +111,32 @@ class _LoginPageState extends State<LoginPage> {
                     Column(
                       children: [
                         Container(
-                          width: 68,
-                          height: 68,
+                          width: 72,
+                          height: 72,
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF10B981), Color(0xFF047857)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(22),
                             boxShadow: [
                               BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                              BoxShadow(
                                 color: const Color(0xFF10B981).withOpacity(0.35),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
+                                blurRadius: 15,
+                                offset: const Offset(0, 4),
                               ),
                             ],
-                            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                            border: Border.all(color: Colors.white.withOpacity(0.9), width: 2),
                           ),
-                          child: const Center(
-                            child: Icon(Icons.spa_rounded, color: Colors.white, size: 38),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppTheme.greenDark, size: 38),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
