@@ -12,7 +12,11 @@ import '../../components/log_edit_dialog.dart';
 import '../../models/farm.dart';
 import '../../models/plant.dart';
 import '../../services/api_service.dart';
+import '../../services/cache_service.dart';
 import '../ai_chat_page.dart';
+import '../plant_detail_page.dart';
+import 'user_farm_detail_page.dart';
+import 'offline_manager_page.dart';
 
 class UserDashboardPage extends StatefulWidget {
   final Function(int) onNavigateTab;
@@ -308,7 +312,12 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                   final farm = _farms[idx];
                   return FarmCard(
                     farm: farm,
-                    onTap: () => widget.onNavigateTab(1),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => UserFarmDetailPage(farm: farm)),
+                      );
+                    },
                   );
                 },
               ),
@@ -323,10 +332,13 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                   'DANH SÁCH CÂY GẦN ĐÂY',
                   style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
                 ),
-                Text('${_plants.length} cây', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+                TextButton(
+                  onPressed: () => widget.onNavigateTab(1),
+                  child: Text('${_plants.length} cây →', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
 
             ListView.builder(
               shrinkWrap: true,
@@ -336,10 +348,22 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                 final plant = _plants[idx];
                 return PlantCard(
                   plant: plant,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => PlantDetailPage(plant: plant)),
+                    );
+                  },
                   onLogTap: () {
-                    if (!isPro) {
-                      ProUpgradeModal.show(context, 'quản lý từng cây riêng lẻ & Thẻ QR/NFC');
-                    }
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => LogEditDialog(
+                        plantIds: [plant.id],
+                        farmName: plant.plantType,
+                        onLogSaved: _loadDashboardData,
+                      ),
+                    );
                   },
                 );
               },
@@ -360,32 +384,57 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   }
 
   Widget _buildSyncStatusBanner() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
+    final pendingLogs = CacheService().getPendingLogs();
+    final hasPending = pendingLogs.isNotEmpty;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const OfflineManagerPage()),
+          ).then((_) => _loadDashboardData());
+        },
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFBBF7D0), width: 1.2),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: Color(0xFF10B981),
-              shape: BoxShape.circle,
-            ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: hasPending ? const Color(0xFFFFFBEB) : const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: hasPending ? const Color(0xFFFDE68A) : const Color(0xFFBBF7D0), width: 1.2),
           ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Máy chủ kết nối trực tuyến · Sẵn sàng ghi ngoại tuyến ngoài vườn',
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF166534)),
-            ),
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: hasPending ? const Color(0xFFD97706) : const Color(0xFF10B981),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  hasPending
+                      ? 'Có ${pendingLogs.length} tác vụ ngoại tuyến chờ đẩy · Bấm để đồng bộ ngay'
+                      : 'Đang trực tuyến · Sẵn sàng ghi ngoại tuyến (Bấm mở Offline Hub)',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: hasPending ? const Color(0xFFB45309) : const Color(0xFF166534),
+                  ),
+                ),
+              ),
+              Icon(
+                hasPending ? Icons.sync_problem_rounded : Icons.cloud_done_rounded,
+                color: hasPending ? const Color(0xFFD97706) : const Color(0xFF10B981),
+                size: 18,
+              ),
+            ],
           ),
-          const Icon(Icons.cloud_done_rounded, color: Color(0xFF10B981), size: 18),
-        ],
+        ),
       ),
     );
   }

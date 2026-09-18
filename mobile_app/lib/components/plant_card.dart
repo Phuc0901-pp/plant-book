@@ -4,12 +4,14 @@ import '../utils/theme.dart';
 
 class PlantCard extends StatelessWidget {
   final Plant plant;
+  final VoidCallback? onTap;
   final VoidCallback? onLogTap;
   final VoidCallback? onNfcTap;
 
   const PlantCard({
     super.key,
     required this.plant,
+    this.onTap,
     this.onLogTap,
     this.onNfcTap,
   });
@@ -46,8 +48,11 @@ class PlantCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: AppTheme.grayBorder, width: 1),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -172,6 +177,7 @@ class PlantCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

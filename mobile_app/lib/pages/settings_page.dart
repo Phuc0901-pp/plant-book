@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
 import 'login_page.dart';
+import 'user/offline_manager_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -182,6 +183,37 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // 2.5 Offline Mode Hub Card
+                _sectionTitle('Dữ liệu & Ngoại tuyến (Offline Mode)'),
+                Card(
+                  elevation: 0,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppTheme.grayBorder),
+                  ),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.offline_pin_rounded, color: Color(0xFF059669), size: 22),
+                    ),
+                    title: const Text('Trung Tâm Ngoại Tuyến & Đồng Bộ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
+                    subtitle: const Text('Tải dữ liệu đi rẫy & quản lý hàng đợi đồng bộ máy chủ', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                    trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const OfflineManagerPage()),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
                 
                 // 3. Change Password Block
                 _sectionTitle('Bảo mật tài khoản'),
@@ -273,7 +305,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           border: Border.all(color: AppTheme.green.withOpacity(0.3)),
                         ),
                         child: const Text(
-                          'v1.2.0',
+                          'v1.2.3',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.green),
                         ),
                       ),

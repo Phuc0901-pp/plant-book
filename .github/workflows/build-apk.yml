@@ -42,13 +42,13 @@ jobs:
       - name: Copy and Rename APKs
         run: |
           mkdir -p build_output
-          cp mobile_app/build/app/outputs/flutter-apk/app-release.apk build_output/PlantBook-Mobile-ERP-v1.2.2-universal.apk
-          cp mobile_app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build_output/PlantBook-Mobile-ERP-v1.2.2-arm64.apk 2>/dev/null || true
-          cp mobile_app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build_output/PlantBook-Mobile-ERP-v1.2.2-armv7.apk 2>/dev/null || true
+          cp mobile_app/build/app/outputs/flutter-apk/app-release.apk build_output/PlantBook-Mobile-ERP-v1.2.3-universal.apk
+          cp mobile_app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build_output/PlantBook-Mobile-ERP-v1.2.3-arm64.apk 2>/dev/null || true
+          cp mobile_app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build_output/PlantBook-Mobile-ERP-v1.2.3-armv7.apk 2>/dev/null || true
 
       - name: Upload Universal APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PlantBook-Mobile-ERP-v1.2.2-APK
+          name: PlantBook-Mobile-ERP-v1.2.3-APK
           path: build_output/
           retention-days: 30

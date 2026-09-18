@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/farm.dart';
 import '../../models/plant.dart';
+import '../../models/plant_log.dart';
 import '../../services/api_service.dart';
 import '../../components/loading_indicator.dart';
 import '../../components/common/pro_upgrade_modal.dart';
 import '../../components/interactive_gis_map_widget.dart';
+import '../../components/plant_card.dart';
+import '../../components/log_edit_dialog.dart';
+import '../plant_detail_page.dart';
 
 class UserFarmDetailPage extends StatefulWidget {
   final Farm? farm;
@@ -26,12 +30,14 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   Map<String, dynamic>? _userProfile;
   Farm? _currentFarm;
   List<Plant> _farmPlants = [];
+  List<PlantLog> _farmLogs = [];
   List<Farm> _allFarms = [];
+  String _plantSearchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadInitialData();
   }
 
@@ -43,11 +49,13 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         _apiService.fetchUserInfo(),
         _apiService.fetchFarms(),
         _apiService.fetchPlants(),
+        _apiService.fetchRecentLogs(days: 90),
       ]);
 
       final user = results[0] as Map<String, dynamic>?;
       final farms = results[1] as List<Farm>;
       final allPlants = results[2] as List<Plant>;
+      final allLogs = results[3] as List<PlantLog>;
 
       Farm selected;
       if (widget.farm != null) {
@@ -65,7 +73,10 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         );
       }
 
-      final farmPlants = allPlants.where((p) => p.farmId == selected.id || selected.id == 1).toList();
+      // Strictly connect plants belonging to this farm (or all plants if farm count is 1)
+      final farmPlants = allPlants.where((p) => p.farmId == selected.id || (farms.length <= 1 && selected.id == 1)).toList();
+      final farmPlantIds = farmPlants.map((p) => p.id).toSet();
+      final farmLogs = allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == selected.id)).toList();
 
       Map<String, dynamic>? iot;
       try {
@@ -79,6 +90,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           _allFarms = farms;
           _currentFarm = selected;
           _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
+          _farmLogs = farmLogs.isNotEmpty ? farmLogs : allLogs;
           _iotData = iot;
           _isLoading = false;
         });
@@ -100,6 +112,21 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       return;
     }
     setState(() => _selectedSoilDepth = depth);
+  }
+
+  void _openQuickCareLog() {
+    final plantIds = _farmPlants.isNotEmpty ? [_farmPlants.first.id] : <int>[];
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => LogEditDialog(
+        plantIds: plantIds,
+        farmName: _currentFarm?.name ?? 'Trang trại Nông hộ',
+        onLogSaved: () {
+          _loadInitialData();
+        },
+      ),
+    );
   }
 
   String _formatArea(double? area) {
@@ -124,25 +151,30 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           indicatorColor: AppTheme.green,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
+          isScrollable: true,
           tabs: const [
             Tab(text: 'Bản đồ GIS Vệ Tinh'),
+            Tab(text: 'Cây Trồng & Nhật Ký'),
             Tab(text: 'Cảm biến IoT'),
             Tab(text: 'Thời tiết Nông nghiệp'),
           ],
         ),
       ),
       body: _isLoading
-          ? const LoadingIndicator(message: 'Đang đồng bộ dữ liệu GIS và Cảm biến IoT...')
+          ? const LoadingIndicator(message: 'Đang đồng bộ dữ liệu GIS, Cây trồng và Nhật ký...')
           : TabBarView(
               controller: _tabController,
               children: [
                 // Subtab 1: Interactive GIS Satellite Map View
                 _buildGisMapTab(),
 
-                // Subtab 2: IoT 3-Depth Soil Sensors
+                // Subtab 2: Plants & Care Logs in this farm
+                _buildPlantsAndLogsTab(),
+
+                // Subtab 3: IoT 3-Depth Soil Sensors
                 _buildIotSensorsTab(),
 
-                // Subtab 3: Weather Forecast & Agronomy Advice
+                // Subtab 4: Weather Forecast & Agronomy Advice
                 _buildWeatherTab(),
               ],
             ),
@@ -357,6 +389,271 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 6),
           Text(val, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlantsAndLogsTab() {
+    final filteredPlants = _farmPlants.where((p) {
+      if (_plantSearchQuery.isEmpty) return true;
+      final q = _plantSearchQuery.toLowerCase();
+      return p.displayName.toLowerCase().contains(q) ||
+          p.plantType.toLowerCase().contains(q) ||
+          (p.plantVariety ?? '').toLowerCase().contains(q) ||
+          (p.location ?? '').toLowerCase().contains(q);
+    }).toList();
+
+    final healthyCount = _farmPlants.where((p) => p.healthStatus.toLowerCase().contains('tốt')).length;
+    final attentionCount = _farmPlants.where((p) => p.healthStatus.toLowerCase().contains('chú ý') || p.healthStatus.toLowerCase().contains('bệnh')).length;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Quick Stats Header
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.grayBorder),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Cây Quản Lý', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                      const SizedBox(height: 2),
+                      Text('${_farmPlants.length} cây', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
+                    ],
+                  ),
+                ),
+                Container(width: 1, height: 30, color: AppTheme.grayBorder),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Khỏe Mạnh', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                      const SizedBox(height: 2),
+                      Text('$healthyCount cây', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+                    ],
+                  ),
+                ),
+                Container(width: 1, height: 30, color: AppTheme.grayBorder),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Cần Chăm Sóc', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                      const SizedBox(height: 2),
+                      Text('$attentionCount cây', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: attentionCount > 0 ? AppTheme.amber : AppTheme.green)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // 2. Quick Log Action Button
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: _openQuickCareLog,
+              icon: const Icon(Icons.edit_note_rounded, size: 20),
+              label: const Text('GHI NHẬT KÝ CHO VƯỜN NÀY (1-CHẠM)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.greenDark,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // 3. Search input
+          TextField(
+            onChanged: (val) => setState(() => _plantSearchQuery = val.trim()),
+            decoration: InputDecoration(
+              hintText: 'Tìm theo mã cây, giống, vị trí...',
+              prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textMuted, size: 20),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.grayBorder)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.grayBorder)),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 4. Section 1: Plants List
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'DANH SÁCH CÂY TRỒNG THUỘC VƯỜN',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+              ),
+              Text('${filteredPlants.length} cây', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          if (filteredPlants.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.grayBorder)),
+              child: const Text('Không tìm thấy cây nào phù hợp.', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: filteredPlants.length,
+              itemBuilder: (ctx, idx) {
+                final plant = filteredPlants[idx];
+                return PlantCard(
+                  plant: plant,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => PlantDetailPage(plant: plant)),
+                    );
+                  },
+                  onLogTap: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => LogEditDialog(
+                        plantIds: [plant.id],
+                        farmName: _currentFarm?.name ?? plant.plantType,
+                        onLogSaved: _loadInitialData,
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+
+          const SizedBox(height: 24),
+
+          // 5. Section 2: Cultivation History Logs for this Farm
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'LỊCH SỬ CANH TÁC & CHĂM SÓC GẦN ĐÂY',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+              ),
+              Text('${_farmLogs.length} bản ghi', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          if (_farmLogs.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.grayBorder)),
+              child: const Text('Chưa có nhật ký canh tác nào cho trang trại này.', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _farmLogs.length > 8 ? 8 : _farmLogs.length,
+              itemBuilder: (ctx, idx) {
+                final log = _farmLogs[idx];
+                Color badgeBg = const Color(0xFFF1F5F9);
+                Color badgeText = const Color(0xFF475569);
+                IconData logIcon = Icons.edit_note_rounded;
+
+                final lType = log.logType.toLowerCase();
+                if (lType.contains('tưới')) {
+                  badgeBg = const Color(0xFFEFF6FF);
+                  badgeText = const Color(0xFF2563EB);
+                  logIcon = Icons.water_drop_rounded;
+                } else if (lType.contains('phân')) {
+                  badgeBg = const Color(0xFFECFDF5);
+                  badgeText = const Color(0xFF059669);
+                  logIcon = Icons.eco_rounded;
+                } else if (lType.contains('thuốc') || lType.contains('phun')) {
+                  badgeBg = const Color(0xFFFEF2F2);
+                  badgeText = const Color(0xFFDC2626);
+                  logIcon = Icons.medication_rounded;
+                } else if (lType.contains('tỉa') || lType.contains('cắt')) {
+                  badgeBg = const Color(0xFFFFFBEB);
+                  badgeText = const Color(0xFFD97706);
+                  logIcon = Icons.content_cut_rounded;
+                } else if (lType.contains('thu hoạch')) {
+                  badgeBg = const Color(0xFFFAF5FF);
+                  badgeText = const Color(0xFF7C3AED);
+                  logIcon = Icons.agriculture_rounded;
+                }
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.grayBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(10)),
+                        child: Icon(logIcon, color: badgeText, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  log.logType,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                                ),
+                                Text(
+                                  log.logDate ?? '',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                ),
+                              ],
+                            ),
+                            if (log.note != null && log.note!.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                log.note!,
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            const SizedBox(height: 2),
+                            Text(
+                              'Cây #${log.treeCode ?? log.plantId} · Người thực hiện: ${log.operatorName ?? log.creatorName ?? "Nông hộ"}',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );

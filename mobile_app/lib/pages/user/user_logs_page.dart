@@ -5,8 +5,10 @@ import '../../utils/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/plant_log.dart';
 import '../../models/plant.dart';
+import '../../models/farm.dart';
 import '../../components/loading_indicator.dart';
 import '../../components/log_edit_dialog.dart';
+import '../plant_detail_page.dart';
 
 class UserLogsPage extends StatefulWidget {
   const UserLogsPage({super.key});
@@ -23,9 +25,11 @@ class _UserLogsPageState extends State<UserLogsPage> {
   bool _isLoading = true;
   bool _isListeningVoice = false;
   String _selectedCategory = 'all';
+  String _selectedFarmId = 'all';
   List<PlantLog> _allLogs = [];
   List<PlantLog> _filteredLogs = [];
   List<Plant> _cachedPlants = [];
+  List<Farm> _farms = [];
 
   final List<Map<String, String>> _categories = [
     {'key': 'all', 'label': 'Tất cả'},
@@ -53,14 +57,16 @@ class _UserLogsPageState extends State<UserLogsPage> {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait<dynamic>([
-        _apiService.fetchRecentLogs(),
+        _apiService.fetchRecentLogs(days: 90),
         _apiService.fetchPlants(),
+        _apiService.fetchFarms(),
       ]);
 
       if (mounted) {
         setState(() {
           _allLogs = results[0] as List<PlantLog>;
           _cachedPlants = results[1] as List<Plant>;
+          _farms = results[2] as List<Farm>;
           _applyFilters();
           _isLoading = false;
         });
@@ -74,6 +80,16 @@ class _UserLogsPageState extends State<UserLogsPage> {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _filteredLogs = _allLogs.where((log) {
+        // Farm filter
+        if (_selectedFarmId != 'all') {
+          final targetFarmId = int.tryParse(_selectedFarmId);
+          if (targetFarmId != null) {
+            final plantOfLog = _cachedPlants.where((p) => p.id == log.plantId).toList();
+            final logFarmId = log.farmId ?? (plantOfLog.isNotEmpty ? plantOfLog.first.farmId : null);
+            if (logFarmId != null && logFarmId != targetFarmId) return false;
+          }
+        }
+
         // Category filter (Smart AgTech multi-keyword matching)
         if (_selectedCategory != 'all') {
           final target = _selectedCategory.toLowerCase();
@@ -92,7 +108,8 @@ class _UserLogsPageState extends State<UserLogsPage> {
           final noteMatch = (log.note ?? '').toLowerCase().contains(query);
           final typeMatch = log.logType.toLowerCase().contains(query);
           final operatorMatch = (log.operatorName ?? '').toLowerCase().contains(query);
-          return noteMatch || typeMatch || operatorMatch;
+          final treeMatch = (log.treeCode ?? '').toLowerCase().contains(query);
+          return noteMatch || typeMatch || operatorMatch || treeMatch;
         }
 
         return true;
@@ -212,7 +229,57 @@ class _UserLogsPageState extends State<UserLogsPage> {
             ),
           ),
 
-          // 2. Category Filter Chips
+          // 2. Farm Selector Filter (if multiple farms exist)
+          if (_farms.isNotEmpty) ...[
+            Container(
+              height: 40,
+              color: Colors.white,
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                scrollDirection: Axis.horizontal,
+                children: [
+                  ChoiceChip(
+                    label: const Text('🌿 Tất cả trang trại', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    selected: _selectedFarmId == 'all',
+                    selectedColor: const Color(0xFF0F172A),
+                    labelStyle: TextStyle(color: _selectedFarmId == 'all' ? Colors.white : AppTheme.textMain),
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onSelected: (sel) {
+                      setState(() {
+                        _selectedFarmId = 'all';
+                        _applyFilters();
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ..._farms.map((f) {
+                    final isSel = _selectedFarmId == f.id.toString();
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text('🏡 ${f.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        selected: isSel,
+                        selectedColor: AppTheme.greenDark,
+                        labelStyle: TextStyle(color: isSel ? Colors.white : AppTheme.textMain),
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        onSelected: (sel) {
+                          setState(() {
+                            _selectedFarmId = sel ? f.id.toString() : 'all';
+                            _applyFilters();
+                          });
+                        },
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppTheme.grayBorder),
+          ],
+
+          // 3. Category Filter Chips
           Container(
             height: 48,
             color: Colors.white,
@@ -339,7 +406,6 @@ class _UserLogsPageState extends State<UserLogsPage> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -355,103 +421,120 @@ class _UserLogsPageState extends State<UserLogsPage> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Type badge, Date & PHI violation indicator
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: typeColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(typeIcon, color: typeColor, size: 16),
-                    const SizedBox(width: 6),
-                    Text(
-                      log.logType,
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: typeColor),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.textMuted),
-                  const SizedBox(width: 5),
-                  Text(
-                    formattedDate,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textMuted),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Content Note
-          if (log.note != null && log.note!.isNotEmpty)
-            Text(
-              log.note!,
-              style: const TextStyle(fontSize: 14, color: AppTheme.textMain, height: 1.35, fontWeight: FontWeight.w500),
-            ),
-
-          // PHI Warning Badge if violation
-          if (log.isPhiViolation) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.redLight,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.red.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.warning_rounded, color: AppTheme.red, size: 16),
-                  SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Cảnh báo: Thu hoạch trong thời gian chưa hết cách ly thuốc BVTV!',
-                      style: TextStyle(fontSize: 11.5, color: AppTheme.red, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // Batch Code & Operator Info
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (log.batchCode != null && log.batchCode!.isNotEmpty)
-                Text(
-                  'Lô: ',
-                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
-                )
-              else
-                Text(
-                  log.operatorName != null && log.operatorName!.isNotEmpty ? 'Thực hiện: ' : 'Ghi bởi Nông hộ',
-                  style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
-                ),
-              if (log.mediaUrls.isNotEmpty)
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            final matching = _cachedPlants.where((p) => p.id == log.plantId).toList();
+            if (matching.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matching.first)),
+              );
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Type badge, Date & PHI violation indicator
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.photo_library_rounded, size: 15, color: AppTheme.textMuted),
-                    const SizedBox(width: 4),
-                    Text(' ảnh', style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: typeColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(typeIcon, color: typeColor, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            log.logType,
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: typeColor),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.textMuted),
+                        const SizedBox(width: 5),
+                        Text(
+                          formattedDate,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textMuted),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-            ],
+                const SizedBox(height: 10),
+
+                // Content Note
+                if (log.note != null && log.note!.isNotEmpty)
+                  Text(
+                    log.note!,
+                    style: const TextStyle(fontSize: 14, color: AppTheme.textMain, height: 1.35, fontWeight: FontWeight.w500),
+                  ),
+
+                // PHI Warning Badge if violation
+                if (log.isPhiViolation) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.redLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.red.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.warning_rounded, color: AppTheme.red, size: 16),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Cảnh báo: Thu hoạch trong thời gian chưa hết cách ly thuốc BVTV!',
+                            style: TextStyle(fontSize: 11.5, color: AppTheme.red, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Tree Code & Operator Info
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Cây #${log.treeCode ?? log.plantId} · ${log.operatorName != null && log.operatorName!.isNotEmpty ? "Người làm: ${log.operatorName}" : "Ghi bởi Nông hộ"}',
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (log.mediaUrls.isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(Icons.photo_library_rounded, size: 15, color: AppTheme.textMuted),
+                          const SizedBox(width: 4),
+                          Text('${log.mediaUrls.length} ảnh', style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted)),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

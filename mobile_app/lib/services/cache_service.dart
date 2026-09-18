@@ -8,14 +8,20 @@ class CacheService {
   late Box _farmsBox;
   late Box _plantsBox;
   late Box _logsBox;
+  late Box _recentLogsBox;
+  late Box _suppliesBox;
   late Box _pendingLogsBox;
+  late Box _metaBox;
 
   Future<void> init() async {
     await Hive.initFlutter();
     _farmsBox = await Hive.openBox('farms_cache');
     _plantsBox = await Hive.openBox('plants_cache');
     _logsBox = await Hive.openBox('logs_cache');
+    _recentLogsBox = await Hive.openBox('recent_logs_cache');
+    _suppliesBox = await Hive.openBox('supplies_cache');
     _pendingLogsBox = await Hive.openBox('pending_logs');
+    _metaBox = await Hive.openBox('offline_meta');
   }
 
   // --- Farms Cache ---
@@ -36,7 +42,7 @@ class CacheService {
     await _plantsBox.put('list', jsonPlants);
   }
 
-  // --- Logs Cache ---
+  // --- Logs Cache (per plant) ---
   List<dynamic> getCachedPlantLogs(int plantId) {
     return _logsBox.get(plantId.toString(), defaultValue: []) as List<dynamic>;
   }
@@ -45,22 +51,89 @@ class CacheService {
     await _logsBox.put(plantId.toString(), jsonLogs);
   }
 
+  // --- Recent All Logs Cache ---
+  List<dynamic> getCachedRecentLogs() {
+    return _recentLogsBox.get('list', defaultValue: []) as List<dynamic>;
+  }
+
+  Future<void> cacheRecentLogs(List<dynamic> jsonLogs) async {
+    await _recentLogsBox.put('list', jsonLogs);
+  }
+
+  // --- Supplies Cache ---
+  List<dynamic> getCachedSupplies() {
+    return _suppliesBox.get('list', defaultValue: []) as List<dynamic>;
+  }
+
+  Future<void> cacheSupplies(List<dynamic> jsonSupplies) async {
+    await _suppliesBox.put('list', jsonSupplies);
+  }
+
+  // --- Offline Metadata ---
+  DateTime? getLastSyncTime() {
+    final str = _metaBox.get('last_sync_time') as String?;
+    if (str != null) {
+      return DateTime.tryParse(str);
+    }
+    return null;
+  }
+
+  Future<void> setLastSyncTime(DateTime time) async {
+    await _metaBox.put('last_sync_time', time.toIso8601String());
+  }
+
+  Map<String, int> getCacheStats() {
+    return {
+      'farms': getCachedFarms().length,
+      'plants': getCachedPlants().length,
+      'logs': getCachedRecentLogs().length,
+      'supplies': getCachedSupplies().length,
+      'pending': getPendingLogs().length,
+    };
+  }
+
   // --- Offline Queue (Pending Logs) ---
   List<Map<String, dynamic>> getPendingLogs() {
     final list = _pendingLogsBox.get('queue', defaultValue: []) as List<dynamic>;
     return list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
   }
 
-  Future<void> addPendingLog(int plantId, String logType, String note, Map<String, dynamic> details) async {
+  Future<void> addPendingLog(int plantId, String logType, String note, Map<String, dynamic> details, {String? treeCode, String? farmName}) async {
     final queue = getPendingLogs();
     queue.add({
+      'id': 'offline_${DateTime.now().millisecondsSinceEpoch}',
       'plantId': plantId,
+      'treeCode': treeCode ?? 'Cây #$plantId',
+      'farmName': farmName ?? 'Trang trại Nông hộ',
       'logType': logType,
       'note': note,
       'details': details,
       'timestamp': DateTime.now().toIso8601String(),
     });
     await _pendingLogsBox.put('queue', queue);
+
+    // Also optimistically inject into cached recent logs
+    final recent = getCachedRecentLogs();
+    recent.insert(0, {
+      'id': -DateTime.now().millisecondsSinceEpoch,
+      'plant_id': plantId,
+      'tree_code': treeCode ?? 'Cây #$plantId',
+      'farm_name': farmName ?? 'Trang trại Nông hộ',
+      'log_type': logType,
+      'note': note,
+      'log_date': DateTime.now().toIso8601String().split('T')[0],
+      'is_offline_pending': true,
+      ...details,
+    });
+    await cacheRecentLogs(recent);
+  }
+
+  Future<void> removePendingLog(int index) async {
+    final queue = getPendingLogs();
+    if (index >= 0 && index < queue.length) {
+      queue.removeAt(index);
+      await _pendingLogsBox.put('queue', queue);
+    }
   }
 
   Future<void> clearPendingLogs() async {
