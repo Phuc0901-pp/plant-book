@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { logAuditAction } = require('./history');
 const jwt = require('jsonwebtoken');
+const nfcSecurity = require('../services/nfcSecurityService');
 
 const checkTier = require('../middleware/checkTier');
 
@@ -789,12 +790,13 @@ router.put('/:id/nfc', auth, async (req, res) => {
         );
       }
 
-      // 2e. Update inventory item to assigned
+      // 2e. Update inventory item to assigned with HMAC signature
+      const hmacSig = nfcSecurity.generateHmacSignature(cleanUid, plantId);
       await client.query(
         `UPDATE nfc_tags_inventory 
-         SET farm_id = $1, status = 'assigned', plant_id = $2, tagged_at = NOW() 
-         WHERE UPPER(nfc_uid) = UPPER($3)`,
-        [plant.farm_id, plantId, cleanUid]
+         SET farm_id = $1, status = 'assigned', plant_id = $2, hmac_signature = $3, last_counter = 0, last_scanned_lat = $4, last_scanned_lng = $5, last_scanned_at = NOW(), tagged_at = NOW() 
+         WHERE UPPER(nfc_uid) = UPPER($6)`,
+        [plant.farm_id, plantId, hmacSig, latVal, lngVal, cleanUid]
       );
 
       await client.query('COMMIT');
@@ -806,6 +808,7 @@ router.put('/:id/nfc', auth, async (req, res) => {
         success: true,
         plant: updated.rows[0],
         public_url: publicUrl,
+        hmac_signature: hmacSig,
         message: `Đã gắn thẻ định danh ${cleanUid} cho cây ${plant.tree_code || plantId}`
       });
     } else {
@@ -847,6 +850,217 @@ router.put('/:id/nfc', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi cập nhật định danh thẻ: ' + err.message });
   } finally {
     client.release();
+  }
+});
+
+// ─── NTAG213 Security Provisioning & Configuration Endpoint ─────────────────
+router.post('/plants/:id/nfc/provision-ntag213', auth, async (req, res) => {
+  try {
+    const plantId = parseInt(req.params.id);
+    if (isNaN(plantId)) return res.status(400).json({ error: 'ID cây không hợp lệ.' });
+
+    const plantRes = await pool.query('SELECT id, farm_id, tree_code, nfc_uid, latitude, longitude FROM plants WHERE id = $1', [plantId]);
+    if (plantRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+    }
+    const plant = plantRes.rows[0];
+
+    const targetUid = req.body.nfc_uid ? req.body.nfc_uid.trim() : plant.nfc_uid;
+    if (!targetUid) {
+      return res.status(400).json({ error: 'Vui lòng cung cấp mã thẻ NFC (nfc_uid) để tạo cấu hình NTAG213.' });
+    }
+
+    const mirrorConfig = nfcSecurity.buildNtag213MirrorConfig({
+      farmId: plant.farm_id,
+      plantId: plant.id,
+      uid: targetUid
+    });
+
+    res.json({
+      success: true,
+      plant: {
+        id: plant.id,
+        tree_code: plant.tree_code,
+        farm_id: plant.farm_id,
+        latitude: plant.latitude,
+        longitude: plant.longitude
+      },
+      provisioning: mirrorConfig
+    });
+  } catch (err) {
+    console.error('Provision NTAG213 error:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
+  }
+});
+
+// ─── NFC 4-Tier Security & Geofence Scan Verification Endpoint ───────────────
+router.post('/plants/nfc/verify-scan', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { nfc_uid, plant_id, counter, token, latitude, longitude, user_id } = req.body;
+    const cleanUid = nfcSecurity.normalizeNfcUid(nfc_uid);
+
+    if (!cleanUid && !plant_id) {
+      return res.status(400).json({
+        isValid: false,
+        error: 'Vui lòng cung cấp mã thẻ NFC hoặc ID cây trồng để xác thực.'
+      });
+    }
+
+    // 1. Find the plant
+    let plantQuery;
+    let plantParams;
+    if (cleanUid) {
+      plantQuery = `
+        SELECT p.*, f.name as farm_name, COALESCE(p.geofence_radius_meters, f.geofence_radius_meters, 8.0) as allowed_radius
+        FROM plants p
+        LEFT JOIN farms f ON f.id = p.farm_id
+        WHERE UPPER(p.nfc_uid) = UPPER($1)
+      `;
+      plantParams = [cleanUid];
+    } else {
+      plantQuery = `
+        SELECT p.*, f.name as farm_name, COALESCE(p.geofence_radius_meters, f.geofence_radius_meters, 8.0) as allowed_radius
+        FROM plants p
+        LEFT JOIN farms f ON f.id = p.farm_id
+        WHERE p.id = $1
+      `;
+      plantParams = [parseInt(plant_id)];
+    }
+
+    const plantRes = await client.query(plantQuery, plantParams);
+    if (plantRes.rows.length === 0) {
+      // Check if tag is in inventory but unassigned
+      const invTag = cleanUid ? await client.query('SELECT * FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)', [cleanUid]) : { rows: [] };
+      if (invTag.rows.length > 0) {
+        return res.status(404).json({
+          isValid: false,
+          status: 'UNASSIGNED_TAG',
+          severity: 'WARNING',
+          message: `Thẻ NFC [${cleanUid}] đã nhập kho nhưng chưa được gán cho cây nào.`,
+          tag: invTag.rows[0]
+        });
+      }
+      return res.status(404).json({
+        isValid: false,
+        status: 'TAG_NOT_FOUND',
+        severity: 'CRITICAL',
+        message: 'Không tìm thấy thông tin cây trồng hoặc thẻ NFC chưa được khai báo.'
+      });
+    }
+
+    const plant = plantRes.rows[0];
+
+    // 2. Fetch inventory tag info for counter & signature
+    const tagRes = await client.query(
+      'SELECT * FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)',
+      [cleanUid || plant.nfc_uid]
+    );
+    const tagInfo = tagRes.rows[0] || {};
+
+    // 3. Run 4-Tier Security Verification
+    const verification = nfcSecurity.verifyNtag213Scan({
+      uid: cleanUid || plant.nfc_uid,
+      plantId: plant.id,
+      counter: counter,
+      lastCounter: tagInfo.last_counter || 0,
+      token: token,
+      currentLat: latitude,
+      currentLng: longitude,
+      plantLat: plant.latitude,
+      plantLng: plant.longitude,
+      geofenceRadius: plant.allowed_radius || 8.0
+    });
+
+    // 4. Record Audit Log in DB
+    const scannedLat = latitude !== undefined && latitude !== null ? parseFloat(latitude) : null;
+    const scannedLng = longitude !== undefined && longitude !== null ? parseFloat(longitude) : null;
+    const plantLat = plant.latitude !== null ? parseFloat(plant.latitude) : null;
+    const plantLng = plant.longitude !== null ? parseFloat(plant.longitude) : null;
+
+    await client.query(`
+      INSERT INTO nfc_security_audit_logs (
+        farm_id, plant_id, nfc_uid, scanned_counter, last_counter,
+        scanned_lat, scanned_lng, plant_lat, plant_lng, distance_meters,
+        status, severity, notes, scanned_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    `, [
+      plant.farm_id,
+      plant.id,
+      cleanUid || plant.nfc_uid || '',
+      counter ? parseInt(counter, 10) : null,
+      tagInfo.last_counter || 0,
+      scannedLat,
+      scannedLng,
+      plantLat,
+      plantLng,
+      verification.distanceMeters,
+      verification.status,
+      verification.severity,
+      verification.message,
+      user_id ? parseInt(user_id, 10) : null
+    ]);
+
+    // 5. Update last counter & scan position if verified successfully
+    if (verification.isValid && cleanUid) {
+      const nextCounter = counter !== undefined && counter !== null 
+        ? parseInt(counter, 10) 
+        : (tagInfo.last_counter || 0) + 1;
+
+      await client.query(`
+        UPDATE nfc_tags_inventory
+        SET last_counter = $1, last_scanned_lat = $2, last_scanned_lng = $3, last_scanned_at = NOW()
+        WHERE UPPER(nfc_uid) = UPPER($4)
+      `, [nextCounter, scannedLat, scannedLng, cleanUid]);
+    }
+
+    return res.json({
+      ...verification,
+      plant: {
+        id: plant.id,
+        farm_id: plant.farm_id,
+        farm_name: plant.farm_name,
+        tree_code: plant.tree_code,
+        public_slug: plant.public_slug,
+        latitude: plant.latitude,
+        longitude: plant.longitude,
+        geofence_radius_meters: plant.allowed_radius || 8.0
+      }
+    });
+
+  } catch (err) {
+    console.error('NFC verify scan error:', err);
+    res.status(500).json({ isValid: false, error: 'Lỗi server khi xác thực thẻ: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ─── Get Farm NFC Security Logs ─────────────────────────────────────────────
+router.get('/farms/:farmId/nfc-security-logs', auth, async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const logs = await pool.query(`
+      SELECT l.*, p.tree_code, u.full_name as scanned_by_name, u.email as scanned_by_email
+      FROM nfc_security_audit_logs l
+      LEFT JOIN plants p ON p.id = l.plant_id
+      LEFT JOIN users u ON u.id = l.scanned_by
+      WHERE l.farm_id = $1
+      ORDER BY l.created_at DESC
+      LIMIT $2
+    `, [farmId, limit]);
+
+    res.json({
+      success: true,
+      count: logs.rows.length,
+      logs: logs.rows
+    });
+  } catch (err) {
+    console.error('Fetch security logs error:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải nhật ký an ninh: ' + err.message });
   }
 });
 

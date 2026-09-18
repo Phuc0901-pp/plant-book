@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import '../models/plant.dart';
 import '../services/api_service.dart';
+import '../services/geo_fence_service.dart';
 import '../utils/theme.dart';
 import '../pages/plant_detail_page.dart';
 import '../pages/public_plant_profile_page.dart';
@@ -600,10 +601,19 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   String pathNfcUid = '';
   String pathPlantId = '';
   String pathSlug = '';
+  String? scannedCounter;
+  String? scannedToken;
 
   if (cleanCode.startsWith('http://') || cleanCode.startsWith('https://') || cleanCode.contains('/')) {
     final uri = Uri.tryParse(cleanCode);
     final segments = uri?.pathSegments ?? cleanCode.split('/').where((s) => s.isNotEmpty).toList();
+    
+    // Extract NTAG213 dynamic query parameters if present
+    if (uri != null) {
+      scannedCounter = uri.queryParameters['ctr'];
+      scannedToken = uri.queryParameters['sig'] ?? uri.queryParameters['token'];
+    }
+
     if (segments.isNotEmpty) {
       pathSlug = Uri.decodeComponent(segments.last);
       if (segments.length >= 4) {
@@ -675,9 +685,39 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
     }
   }
 
-  // If found in allPlants -> Open PlantDetailPage directly for care management!
+  // If found in allPlants -> Verify security and Open PlantDetailPage
   if (matched != null) {
+    // Asynchronously report scan to server for 4-Tier Security audit
+    if (searchUid.isNotEmpty || scannedCounter != null || scannedToken != null) {
+      apiService.verifyNfcScan(
+        nfcUid: searchUid.isNotEmpty ? searchUid : (matched.nfcUid ?? ''),
+        plantId: matched.id,
+        counter: int.tryParse(scannedCounter ?? ''),
+        token: scannedToken,
+      );
+    }
+
     if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Đã xác thực thẻ định danh cho cây #${matched.treeCode ?? matched.id}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppTheme.green,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => PlantDetailPage(plant: matched!)),

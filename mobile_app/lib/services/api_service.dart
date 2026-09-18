@@ -800,23 +800,37 @@ class ApiService {
     }
   }
 
-  // â”€â”€ History & Soft-Delete Restore Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-  Future<bool> restoreSoftDeletedLog(int plantId, int logId) async {
+  // ── NFC & Geofence Security Verification ──────────────────────────────
+  Future<Map<String, dynamic>?> verifyNfcScan({
+    required String nfcUid,
+    int? plantId,
+    int? counter,
+    String? token,
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/history/restore'),
+        Uri.parse('$baseUrl/plants/nfc/verify-scan'),
         headers: headers,
         body: jsonEncode({
-          'type': 'plant_log',
-          'id': logId,
+          'nfc_uid': nfcUid,
+          'plant_id': plantId,
+          'counter': counter,
+          'token': token,
+          'latitude': latitude,
+          'longitude': longitude,
         }),
-      );
-      return response.statusCode == 200;
+      ).timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200 || response.statusCode == 400 || response.statusCode == 404) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return null;
     } catch (e) {
-      print('Error restoring log: $e');
-      return false;
+      print('Error verifying NFC scan: $e');
+      return null;
     }
   }
 }
