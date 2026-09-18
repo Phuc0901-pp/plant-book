@@ -3,7 +3,7 @@
    sw.js — PWA Service Worker (Network-First Strategy with Offline Fallback)
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'pb-farmer-cache-v2.0.0-live';
+const CACHE_NAME = 'pb-farmer-cache-v1.2.4-royal';
 
 const STATIC_ASSETS = [
   '/user/',

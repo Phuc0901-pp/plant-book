@@ -42,7 +42,7 @@ import {
   onCustomUnitInput 
 } from './modules/settings.js';
 import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag, prevNfcPlant, nextNfcPlant, getNfcCurrentGps, clearNfcGps } from './modules/nfc.js';
-import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-clock.js';
+import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-clock.js?v=v1.2.4';
 import { animateValue, triggerPageCountUpAnimations } from './modules/countup.js';
 import { initChibiMascot, onMascotClick, setMascotState } from './modules/mascot-chibi.js';
 import './supplies.js?v=2.8.0';

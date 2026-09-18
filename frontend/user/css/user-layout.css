@@ -129,15 +129,28 @@ body.field-mode .welcome-banner {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.92) 100%) !important;
   border-color: #334155 !important;
 }
-.executive-obsidian-banner {
-  background: linear-gradient(135deg, #070d1e 0%, #0b132b 38%, #0f172a 75%, #162238 100%) !important;
-  border: 1.5px solid rgba(16, 185, 129, 0.35) !important;
-  box-shadow: 0 16px 40px -8px rgba(7, 13, 30, 0.45), 0 0 30px -8px rgba(16, 185, 129, 0.18) !important;
+.executive-obsidian-banner,
+.royal-agritech-banner {
+  background: linear-gradient(135deg, #022c22 0%, #064e3b 35%, #065f46 70%, #0f766e 100%) !important;
+  border: 1.5px solid rgba(234, 179, 8, 0.45) !important;
+  box-shadow: 0 16px 40px -8px rgba(2, 44, 34, 0.6), 0 0 35px -5px rgba(16, 185, 129, 0.25), inset 0 1px 1px rgba(254, 240, 138, 0.2) !important;
   color: #ffffff !important;
+  position: relative;
+  overflow: hidden;
 }
-.executive-obsidian-banner #weather-widget-content {
-  background: rgba(11, 19, 43, 0.72) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+.executive-obsidian-banner #weather-widget-content,
+.royal-agritech-banner #weather-widget-content {
+  background: rgba(2, 44, 34, 0.75) !important;
+  border: 1.5px solid rgba(234, 179, 8, 0.28) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.royal-agritech-banner .weather-metric-chip {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.royal-agritech-banner .weather-metric-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 body.field-mode .btn-primary {
   background: #10b981 !important;

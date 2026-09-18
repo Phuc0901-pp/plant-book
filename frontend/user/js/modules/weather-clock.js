@@ -7,26 +7,147 @@ let _clockInterval = null;
 let _currentCoords = null;
 const CACHE_KEY = 'tanbao_cached_weather';
 
-// WMO Weather Interpretation Codes (WW)
+// WMO Weather Interpretation Codes (WW) with Rich Multi-Layer Meteorological SVGs
+export function getCorporateWeatherSvg(code) {
+  const c = parseInt(code, 10);
+  // 0: Sunny / Clear Sky
+  if (c === 0) {
+    return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 10px rgba(245,158,11,0.45));">
+      <defs>
+        <radialGradient id="sunGlowGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#FEF08A"/>
+          <stop offset="60%" stop-color="#F59E0B"/>
+          <stop offset="100%" stop-color="#D97706"/>
+        </radialGradient>
+      </defs>
+      <g stroke="#FBBF24" stroke-width="2.6" stroke-linecap="round" opacity="0.95">
+        <line x1="24" y1="4" x2="24" y2="8" />
+        <line x1="24" y1="40" x2="24" y2="44" />
+        <line x1="4" y1="24" x2="8" y2="24" />
+        <line x1="40" y1="24" x2="44" y2="24" />
+        <line x1="9.8" y1="9.8" x2="12.8" y2="12.8" />
+        <line x1="35.2" y1="35.2" x2="38.2" y2="38.2" />
+        <line x1="9.8" y1="38.2" x2="12.8" y2="35.2" />
+        <line x1="35.2" y1="12.8" x2="38.2" y2="9.8" />
+      </g>
+      <circle cx="24" cy="24" r="11.5" fill="url(#sunGlowGrad)" stroke="#FEF08A" stroke-width="1.5"/>
+    </svg>`;
+  }
+  // 1, 2, 80: Clear / Partly Cloudy / Sun & Rain
+  if (c === 1 || c === 2 || c === 80) {
+    return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 12px rgba(56,189,248,0.35));">
+      <defs>
+        <radialGradient id="sunPartGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#FEF08A"/>
+          <stop offset="70%" stop-color="#F59E0B"/>
+          <stop offset="100%" stop-color="#D97706"/>
+        </radialGradient>
+        <linearGradient id="cloudGradPart" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFFFFF"/>
+          <stop offset="100%" stop-color="#94A3B8"/>
+        </linearGradient>
+      </defs>
+      <circle cx="31" cy="17" r="8.5" fill="url(#sunPartGrad)" stroke="#FEF08A" stroke-width="1.2"/>
+      <path d="M15 39h20a7 7 0 0 0 2.2-13.6 8.5 8.5 0 0 0-15.6-3.8 6 6 0 0 0-7.6 6.4A6.5 6.5 0 0 0 15 39z" fill="url(#cloudGradPart)" stroke="rgba(255,255,255,0.85)" stroke-width="1"/>
+      ${c === 80 ? '<line x1="20" y1="41" x2="18" y2="45" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/><line x1="28" y1="41" x2="26" y2="45" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>' : ''}
+    </svg>`;
+  }
+  // 3: Overcast / Cloudy
+  if (c === 3) {
+    return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 10px rgba(148,163,184,0.3));">
+      <defs>
+        <linearGradient id="cloudBackGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#94A3B8"/>
+          <stop offset="100%" stop-color="#475569"/>
+        </linearGradient>
+        <linearGradient id="cloudFrontGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#F8FAFC"/>
+          <stop offset="100%" stop-color="#CBD5E1"/>
+        </linearGradient>
+      </defs>
+      <path d="M12 28h17a6 6 0 0 0 1.5-11.8 7.5 7.5 0 0 0-13.8-2.6 5.5 5.5 0 0 0-6.7 5.4A5.5 5.5 0 0 0 12 28z" fill="url(#cloudBackGrad)" opacity="0.8"/>
+      <path d="M16 38h20a7 7 0 0 0 2.3-13.6 8.5 8.5 0 0 0-15.6-3.8 6 6 0 0 0-7.7 6.4A6.5 6.5 0 0 0 16 38z" fill="url(#cloudFrontGrad)" stroke="rgba(255,255,255,0.9)" stroke-width="1"/>
+    </svg>`;
+  }
+  // 45, 48: Fog / Smog
+  if (c === 45 || c === 48) {
+    return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 8px rgba(203,213,225,0.3));">
+      <defs>
+        <linearGradient id="mistLineGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(148,163,184,0.2)"/>
+          <stop offset="25%" stop-color="#F1F5F9"/>
+          <stop offset="75%" stop-color="#94A3B8"/>
+          <stop offset="100%" stop-color="rgba(148,163,184,0.2)"/>
+        </linearGradient>
+      </defs>
+      <line x1="8" y1="16" x2="40" y2="16" stroke="url(#mistLineGrad)" stroke-width="3.2" stroke-linecap="round"/>
+      <line x1="12" y1="23" x2="36" y2="23" stroke="url(#mistLineGrad)" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="6" y1="30" x2="42" y2="30" stroke="url(#mistLineGrad)" stroke-width="3.2" stroke-linecap="round"/>
+      <line x1="14" y1="37" x2="34" y2="37" stroke="url(#mistLineGrad)" stroke-width="3" stroke-linecap="round"/>
+    </svg>`;
+  }
+  // 51, 53, 55, 61, 63, 65, 81, 82: Rain / Showers
+  if ((c >= 51 && c <= 65) || c === 81 || c === 82) {
+    const isHeavy = c === 65 || c === 82 || c === 55 || c === 63;
+    return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 12px rgba(59,130,246,0.4));">
+      <defs>
+        <linearGradient id="rainCloudGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E2E8F0"/>
+          <stop offset="100%" stop-color="${isHeavy ? '#334155' : '#64748B'}"/>
+        </linearGradient>
+        <linearGradient id="dropGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#60A5FA"/>
+          <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+      </defs>
+      <path d="M15 29h19a6.5 6.5 0 0 0 2.1-12.6 8 8 0 0 0-14.7-3.6 5.5 5.5 0 0 0-7.4 5.9A6 6 0 0 0 15 29z" fill="url(#rainCloudGrad)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+      <line x1="15" y1="34" x2="12" y2="43" stroke="url(#dropGrad)" stroke-width="2.8" stroke-linecap="round"/>
+      <line x1="24" y1="34" x2="21" y2="43" stroke="url(#dropGrad)" stroke-width="2.8" stroke-linecap="round"/>
+      <line x1="33" y1="34" x2="30" y2="43" stroke="url(#dropGrad)" stroke-width="2.8" stroke-linecap="round"/>
+      ${isHeavy ? '<line x1="19" y1="36" x2="16" y2="45" stroke="url(#dropGrad)" stroke-width="2.5" stroke-linecap="round"/><line x1="28" y1="36" x2="25" y2="45" stroke="url(#dropGrad)" stroke-width="2.5" stroke-linecap="round"/>' : ''}
+    </svg>`;
+  }
+  // 95, 96, 99: Thunderstorm / Lightning
+  if (c >= 95 && c <= 99) {
+    return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none" style="filter: drop-shadow(0 4px 14px rgba(234,179,8,0.5));">
+      <defs>
+        <linearGradient id="thunderCloud" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#475569"/>
+          <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="boltGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFFBEB"/>
+          <stop offset="40%" stop-color="#FDE047"/>
+          <stop offset="100%" stop-color="#F59E0B"/>
+        </linearGradient>
+      </defs>
+      <path d="M15 27h19a6.5 6.5 0 0 0 2.1-12.6 8 8 0 0 0-14.7-3.6 5.5 5.5 0 0 0-7.4 5.9A6 6 0 0 0 15 27z" fill="url(#thunderCloud)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+      <path d="M26 21l-5 10h6l-3.5 13 11-14h-6.5l5.5-9h-7z" fill="url(#boltGrad)" stroke="#FEF08A" stroke-width="0.8" style="filter: drop-shadow(0 0 6px #FDE047);"/>
+    </svg>`;
+  }
+  // Default Sunny
+  return `<svg width="44" height="44" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="12" fill="#F59E0B"/></svg>`;
+}
+
 const WMO_WEATHER_MAP = {
-  0: { label: 'Trời nắng trong xanh', icon: 'fa-solid fa-sun', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
-  1: { label: 'Trời quang, ít mây', icon: 'fa-solid fa-cloud-sun', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
-  2: { label: 'Mây rải rác', icon: 'fa-solid fa-cloud-sun', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
-  3: { label: 'Trời nhiều mây âm u', icon: 'fa-solid fa-cloud', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)' },
-  45: { label: 'Sương mù sáng sớm', icon: 'fa-solid fa-smog', color: '#cbd5e1', bg: 'rgba(203,213,225,0.15)' },
-  48: { label: 'Sương mù đọng sương', icon: 'fa-solid fa-smog', color: '#cbd5e1', bg: 'rgba(203,213,225,0.15)' },
-  51: { label: 'Mưa phùn nhẹ', icon: 'fa-solid fa-cloud-rain', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
-  53: { label: 'Mưa phùn vừa', icon: 'fa-solid fa-cloud-rain', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
-  55: { label: 'Mưa phùn hạt nặng', icon: 'fa-solid fa-cloud-rain', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
-  61: { label: 'Mưa rào nhẹ', icon: 'fa-solid fa-cloud-showers-heavy', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
-  63: { label: 'Mưa rào vừa', icon: 'fa-solid fa-cloud-showers-heavy', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
-  65: { label: 'Mưa to nặng hạt', icon: 'fa-solid fa-cloud-showers-heavy', color: '#1d4ed8', bg: 'rgba(29,78,216,0.2)' },
-  80: { label: 'Mưa rào thoáng qua', icon: 'fa-solid fa-cloud-sun-rain', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
-  81: { label: 'Mưa rào từng cơn', icon: 'fa-solid fa-cloud-showers-heavy', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
-  82: { label: 'Mưa rất to xối xả', icon: 'fa-solid fa-cloud-showers-water', color: '#1e40af', bg: 'rgba(30,64,175,0.25)' },
-  95: { label: 'Mưa dông, sấm sét', icon: 'fa-solid fa-bolt-lightning', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
-  96: { label: 'Dông lốc kèm mưa đá nhẹ', icon: 'fa-solid fa-cloud-bolt', color: '#ea580c', bg: 'rgba(234,88,12,0.2)' },
-  99: { label: 'Dông mạnh kèm mưa đá lớn', icon: 'fa-solid fa-cloud-bolt', color: '#dc2626', bg: 'rgba(220,38,38,0.25)' }
+  0: { label: 'Trời nắng trong xanh', code: 0, color: '#fbbf24', bg: 'rgba(251,191,36,0.18)' },
+  1: { label: 'Trời quang, ít mây', code: 1, color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
+  2: { label: 'Mây rải rác', code: 2, color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
+  3: { label: 'Trời nhiều mây âm u', code: 3, color: '#94a3b8', bg: 'rgba(148,163,184,0.18)' },
+  45: { label: 'Sương mù sáng sớm', code: 45, color: '#cbd5e1', bg: 'rgba(203,213,225,0.18)' },
+  48: { label: 'Sương mù đọng sương', code: 48, color: '#cbd5e1', bg: 'rgba(203,213,225,0.18)' },
+  51: { label: 'Mưa phùn nhẹ', code: 51, color: '#60a5fa', bg: 'rgba(96,165,250,0.18)' },
+  53: { label: 'Mưa phùn vừa', code: 53, color: '#60a5fa', bg: 'rgba(96,165,250,0.18)' },
+  55: { label: 'Mưa phùn hạt nặng', code: 55, color: '#3b82f6', bg: 'rgba(59,130,246,0.2)' },
+  61: { label: 'Mưa rào nhẹ', code: 61, color: '#60a5fa', bg: 'rgba(96,165,250,0.18)' },
+  63: { label: 'Mưa rào vừa', code: 63, color: '#3b82f6', bg: 'rgba(59,130,246,0.2)' },
+  65: { label: 'Mưa to nặng hạt', code: 65, color: '#1d4ed8', bg: 'rgba(29,78,216,0.25)' },
+  80: { label: 'Mưa rào thoáng qua', code: 80, color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' },
+  81: { label: 'Mưa rào từng cơn', code: 81, color: '#3b82f6', bg: 'rgba(59,130,246,0.2)' },
+  82: { label: 'Mưa rất to xối xả', code: 82, color: '#1e40af', bg: 'rgba(30,64,175,0.3)' },
+  95: { label: 'Mưa dông, sấm sét', code: 95, color: '#f59e0b', bg: 'rgba(245,158,11,0.25)' },
+  96: { label: 'Dông lốc kèm mưa đá nhẹ', code: 96, color: '#ea580c', bg: 'rgba(234,88,12,0.25)' },
+  99: { label: 'Dông mạnh kèm mưa đá lớn', code: 99, color: '#dc2626', bg: 'rgba(220,38,38,0.3)' }
 };
 
 function _getWindDirection(deg) {
@@ -98,79 +219,82 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
     rainProb = 15,
     tempMax = 33,
     tempMin = 26,
-    wmo = { label: 'Trời quang đãng', icon: 'fa-solid fa-sun', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
+    weatherCode = 0,
+    wmo = { label: 'Trời quang đãng', code: 0, color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
     agriTip = 'Thời tiết thuận lợi cho việc chăm sóc cây trồng và theo dõi độ ẩm đất.'
   } = data;
+
+  const weatherSvg = getCorporateWeatherSvg(wmo.code !== undefined ? wmo.code : weatherCode);
 
   widgetBox.innerHTML = `
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
       
-      <!-- Left: Main Weather Condition & Temperature (Obsidian Glass Box) -->
+      <!-- Left: Main Weather Condition & Temperature (Royal Emerald Glass Box) -->
       <div style="display:flex; align-items:center; gap:16px;">
-        <div style="width:62px; height:62px; border-radius:16px; background:${wmo.bg || 'rgba(245,158,11,0.2)'}; display:flex; align-items:center; justify-content:center; font-size:30px; color:${wmo.color || '#f59e0b'}; box-shadow:0 0 20px -3px ${wmo.color ? wmo.color + '44' : 'rgba(245,158,11,0.3)'}; border:1.5px solid rgba(255,255,255,0.2);">
-          <i class="${wmo.icon}"></i>
+        <div style="width:64px; height:64px; border-radius:16px; background:rgba(2,44,34,0.85); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px -4px rgba(0,0,0,0.4), inset 0 1px 1px rgba(234,179,8,0.3); border:1.5px solid rgba(234,179,8,0.45);">
+          ${weatherSvg}
         </div>
         <div>
           <div style="display:flex; align-items:baseline; gap:8px;">
-            <span id="weather-val-temp" style="font-size:34px; font-weight:900; line-height:1; letter-spacing:-1px; color:#ffffff; font-family:'Segoe UI', Inter, sans-serif;">${temp}°C</span>
-            <span style="font-size:13px; color:#94a3b8; font-weight:700;">(Cảm giác: <span id="weather-val-feel" style="color:#ffffff;">${feelLike}</span>°C)</span>
+            <span id="weather-val-temp" style="font-size:35px; font-weight:900; line-height:1; letter-spacing:-1px; color:#ffffff; font-family:'Segoe UI', Inter, sans-serif; text-shadow:0 2px 8px rgba(0,0,0,0.3);">${temp}°C</span>
+            <span style="font-size:13px; color:#a7f3d0; font-weight:700;">(Cảm giác: <span id="weather-val-feel" style="color:#ffffff; font-weight:800;">${feelLike}</span>°C)</span>
           </div>
-          <div style="font-size:13.5px; font-weight:800; color:#e2e8f0; margin-top:4px; display:flex; align-items:center; gap:6px;">
-            <span>${wmo.label}</span>
-            <span style="font-size:12px; color:#34d399; font-weight:700;">• ${tempMin}° / ${tempMax}°C</span>
+          <div style="font-size:13.5px; font-weight:800; color:#f8fafc; margin-top:4px; display:flex; align-items:center; gap:6px;">
+            <span style="color:#fde047;">${wmo.label}</span>
+            <span style="font-size:12px; color:#6ee7b7; font-weight:700;">• ${tempMin}° / ${tempMax}°C</span>
           </div>
         </div>
       </div>
 
-      <!-- Right: Detailed Metrics Grid (Executive Obsidian Glowing Chips) -->
-      <div class="weather-metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; flex:1; max-width:540px; width:100%;">
+      <!-- Right: Detailed Metrics Grid (Royal Agricultural Glowing Chips) -->
+      <div class="weather-metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(112px, 1fr)); gap:10px; flex:1; max-width:540px; width:100%;">
         
         <!-- Humidity Chip -->
-        <div style="background:rgba(2,132,199,0.14); border:1.2px solid rgba(56,189,248,0.3); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#38bdf8';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(56,189,248,0.3)';">
-          <div style="font-size:11px; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-droplet" style="color:#38bdf8;"></i> Độ ẩm KK
+        <div class="weather-metric-chip" style="background:rgba(4,47,46,0.65); border:1.2px solid rgba(52,211,153,0.35); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+          <div style="font-size:11px; color:#6ee7b7; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-droplet" style="color:#34d399;"></i> Độ ẩm KK
           </div>
-          <div id="weather-val-humidity" style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">${humidity}%</div>
+          <div id="weather-val-humidity" style="font-size:16px; font-weight:900; color:#ffffff; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${humidity}%</div>
         </div>
 
         <!-- Wind Chip -->
-        <div style="background:rgba(148,163,184,0.12); border:1.2px solid rgba(148,163,184,0.25); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(148,163,184,0.25)';">
-          <div style="font-size:11px; color:#94a3b8; font-weight:800; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-wind" style="color:#38bdf8;"></i> Gió & Hướng
+        <div class="weather-metric-chip" style="background:rgba(6,78,59,0.55); border:1.2px solid rgba(45,212,191,0.35); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+          <div style="font-size:11px; color:#5eead4; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-wind" style="color:#2dd4bf;"></i> Gió & Hướng
           </div>
-          <div style="font-size:13px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:11px; font-weight:700; color:#cbd5e1;">${windDir}</span></div>
+          <div style="font-size:13.5px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:11px; font-weight:700; color:#a7f3d0;">${windDir}</span></div>
         </div>
 
         <!-- Rain Prob Chip -->
-        <div style="background:rgba(37,99,235,0.18); border:1.2px solid rgba(96,165,250,0.35); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#60a5fa';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(96,165,250,0.35)';">
-          <div style="font-size:11px; color:#60a5fa; font-weight:800; display:flex; align-items:center; gap:5px;">
+        <div class="weather-metric-chip" style="background:rgba(15,23,42,0.65); border:1.2px solid rgba(96,165,250,0.35); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+          <div style="font-size:11px; color:#93c5fd; font-weight:800; display:flex; align-items:center; gap:6px;">
             <i class="fa-solid fa-cloud-rain" style="color:#60a5fa;"></i> Khả năng mưa
           </div>
-          <div id="weather-val-rain" style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;">${rainProb}%</div>
+          <div id="weather-val-rain" style="font-size:16px; font-weight:900; color:#ffffff; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${rainProb}%</div>
         </div>
 
         <!-- UV Chip -->
-        <div style="background:rgba(217,119,6,0.18); border:1.2px solid rgba(251,191,36,0.35); border-radius:12px; padding:8px 12px; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#fbbf24';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(251,191,36,0.35)';">
-          <div style="font-size:11px; color:#fbbf24; font-weight:800; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-sun" style="color:#fbbf24;"></i> Chỉ số UV
+        <div class="weather-metric-chip" style="background:rgba(69,26,3,0.45); border:1.2px solid rgba(234,179,8,0.4); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+          <div style="font-size:11px; color:#fde047; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-sun" style="color:#fde047;"></i> Chỉ số UV
           </div>
-          <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-uv">${uv}</span> <span style="font-size:10.5px; font-weight:800; color:${parseFloat(uv) > 6 ? '#f87171' : '#34d399'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
+          <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-uv">${uv}</span> <span style="font-size:10.5px; font-weight:800; color:${parseFloat(uv) > 6 ? '#f87171' : '#fde047'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
         </div>
 
       </div>
 
     </div>
 
-    <!-- Location & Advice footer bar (Obsidian High-Contrast Strip) -->
-    <div style="margin-top:14px; padding-top:12px; border-top:1.2px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px;">
+    <!-- Location & Advice footer bar (Royal Agricultural Strip) -->
+    <div style="margin-top:14px; padding-top:12px; border-top:1.2px solid rgba(234,179,8,0.22); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px;">
       <div style="display:flex; align-items:center; gap:6px; color:#ffffff; flex-wrap:wrap;">
         <i class="fa-solid fa-location-dot" style="color:#fb7185;"></i>
         <span style="font-weight:800; color:#ffffff;">${locationName}</span>
-        ${isRealGps ? `<span style="background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(52,211,153,0.4); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-satellite" style="color:#34d399;"></i> GPS Thiết bị</span>` : `<span style="background:rgba(255,255,255,0.1); color:#cbd5e1; border:1px solid rgba(255,255,255,0.18); font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-seedling" style="color:#34d399;"></i> Trang trại</span>`}
+        ${isRealGps ? `<span style="background:rgba(16,185,129,0.25); color:#6ee7b7; border:1px solid rgba(52,211,153,0.45); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-satellite" style="color:#34d399;"></i> GPS Thiết bị</span>` : `<span style="background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-seedling" style="color:#fde047;"></i> Trang trại</span>`}
         ${statusBadge ? `<span style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
       </div>
 
-      <div style="background:rgba(6,78,59,0.45); border:1px solid rgba(52,211,153,0.35); padding:5px 12px; border-radius:8px; color:#a7f3d0; font-weight:700; display:flex; align-items:center; gap:6px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+      <div style="background:rgba(6,78,59,0.65); border:1px solid rgba(52,211,153,0.45); padding:5px 12px; border-radius:8px; color:#a7f3d0; font-weight:700; display:flex; align-items:center; gap:6px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
         <i class="fa-solid fa-seedling" style="color:#34d399;"></i>
         <span>${agriTip}</span>
       </div>
