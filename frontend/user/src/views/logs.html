@@ -1,17 +1,39 @@
       <div class="page-section" id="page-logs">
-        <div class="card">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử Hoạt động Canh tác</h3>
+        <!-- Executive Royal AgTech Header Banner -->
+        <div class="royal-page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+          <!-- Aura Glows -->
+          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(234,179,8,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(52,211,153,0.22) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+
+          <div style="position:relative; z-index:1;">
+            <div style="font-size:11px; color:#fde047; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-crown" style="color:#fde047;"></i> Sổ Ghi Chép Canh Tác Điện Tử Chuẩn VietGAP
+            </div>
+            <h2 style="font-size:22px; font-weight:900; color:#ffffff; margin:0 0 4px 0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-clock-rotate-left" style="color:#34d399;"></i> Lịch Sử Hoạt Động Canh Tác
+            </h2>
+            <p style="margin:0; font-size:13px; color:#a7f3d0;">
+              Theo dõi toàn bộ nhật ký chăm sóc, bón phân, phun thuốc, thu hoạch và điều trị sâu bệnh của nông trại.
+            </p>
           </div>
+
+          <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="royal-pill-btn" id="btn-open-selective-log-delete" onclick="openSelectiveDeleteModal()" style="border-color:rgba(248,113,113,0.5); background:rgba(220,38,38,0.25);" title="Mở bộ lọc xóa mềm chọn lọc theo ngày, hoạt động, cây...">
+              <i class="fa-solid fa-trash-can" style="color:#fca5a5;"></i> Xóa chọn lọc
+            </button>
+          </div>
+        </div>
+
+        <div class="card" style="border-radius:18px; border:1px solid #e2e8f0; box-shadow:0 4px 20px rgba(0,0,0,0.04); overflow:hidden;">
           <!-- Thanh tìm kiếm, lọc và sắp xếp lịch sử -->
-          <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 14px; padding: 12px 16px 0; flex-wrap: wrap; align-items: center;">
-            <input type="text" id="user-log-search" placeholder="🔍 Tìm mã cây, ghi chú, phân bón/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none;">
+          <div class="search-bar" style="display:flex; gap:10px; padding: 14px 18px; border-bottom:1px solid #e2e8f0; flex-wrap: wrap; align-items: center; background:#f8fafc;">
+            <input type="text" id="user-log-search" placeholder="🔍 Tìm mã cây, ghi chú, phân bón/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:9px 14px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; outline:none; background:#ffffff;">
             
-            <select id="user-log-filter-farm" onchange="filterUserLogs()" style="flex:1; min-width: 140px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none;">
+            <select id="user-log-filter-farm" onchange="filterUserLogs()" style="flex:1; min-width: 140px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; background:#fff; outline:none;">
               <option value="all">🏡 Tất cả trang trại</option>
             </select>
 
-            <select id="user-log-filter-type" onchange="filterUserLogs()" style="flex:1; min-width: 130px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none;">
+            <select id="user-log-filter-type" onchange="filterUserLogs()" style="flex:1; min-width: 130px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; background:#fff; outline:none;">
               <option value="all">🧪 Tất cả hoạt động</option>
               <option value="Tưới nước">💧 Tưới cây</option>
               <option value="Bón phân">🧪 Bón phân</option>
@@ -22,7 +44,7 @@
               <option value="Bệnh cây">🐛 Bệnh cây</option>
             </select>
 
-            <select id="user-log-sort-by" onchange="filterUserLogs()" style="flex:1; min-width: 150px; padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none; font-weight:600; color:#1e293b;">
+            <select id="user-log-sort-by" onchange="filterUserLogs()" style="flex:1; min-width: 150px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; background:#fff; outline:none; font-weight:600; color:#1e293b;">
               <option value="date_desc">📅 Mới nhất</option>
               <option value="date_asc">📅 Cũ nhất</option>
               <option value="disease_first">🚨 Ưu tiên Cây bệnh</option>
@@ -30,16 +52,12 @@
               <option value="activity_asc">🏷️ Theo loại Hoạt động</option>
             </select>
 
-            <button type="button" id="user-log-disease-toggle" onclick="toggleDiseaseOnlyFilter()" style="padding:8px 12px; border-radius:8px; border:1.5px solid #fca5a5; background:#fff1f2; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <button type="button" id="user-log-disease-toggle" onclick="toggleDiseaseOnlyFilter()" style="padding:9px 14px; border-radius:10px; border:1.5px solid #fca5a5; background:#fff1f2; color:#dc2626; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
               <i class="fa-solid fa-shield-virus"></i> Chỉ Cây bệnh
             </button>
 
-            <button type="button" id="btn-toggle-batch-log-mode" onclick="toggleBatchSelectMode()" style="padding:8px 12px; border-radius:8px; border:1.5px solid #cbd5e1; background:#f8fafc; color:#334155; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" title="Bật chế độ tick chọn nhiều dòng để xóa hàng loạt">
+            <button type="button" id="btn-toggle-batch-log-mode" onclick="toggleBatchSelectMode()" style="padding:9px 14px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" title="Bật chế độ tick chọn nhiều dòng để xóa hàng loạt">
               <i class="fa-solid fa-square-check" style="color:#0284c7;"></i> Chọn nhiều
-            </button>
-
-            <button type="button" id="btn-open-selective-log-delete" onclick="openSelectiveDeleteModal()" style="padding:8px 14px; border-radius:8px; border:1.5px solid #fca5a5; background:#fff1f2; color:#b91c1c; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px; margin-left:auto;" title="Mở bộ lọc xóa mềm chọn lọc theo ngày, hoạt động, cây...">
-              <i class="fa-solid fa-trash-can"></i> Xóa chọn lọc
             </button>
           </div>
 

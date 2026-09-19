@@ -1,6 +1,34 @@
       <!-- ── Users management (Enterprise ERP Governance) ── -->
       <div class="page-section" id="page-users">
 
+        <!-- TẦNG 0: EXECUTIVE ROYAL AGTECH BANNER -->
+        <div class="royal-page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+          <!-- Aura Glows -->
+          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(234,179,8,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(52,211,153,0.22) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+
+          <div style="position:relative; z-index:1;">
+            <div style="font-size:11px; color:#fde047; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-crown" style="color:#fde047;"></i> Phân Hệ Quản Trị Người Dùng & Phân Quyền Nông Nghiệp
+            </div>
+            <h2 style="font-size:22px; font-weight:900; color:#ffffff; margin:0 0 4px 0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-user-shield" style="color:#34d399;"></i> Quản Trị Tài Khoản &amp; Phân Quyền Nông Hộ
+            </h2>
+            <p style="margin:0; font-size:13px; color:#a7f3d0;">
+              Kiểm soát danh tính, phân quyền vai trò (Admin / Nông Hộ), phê duyệt tài khoản mới và điều phối nông trại.
+            </p>
+          </div>
+
+          <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button onclick="openAddUserModal()" class="royal-pill-btn royal-pill-btn-primary">
+              <i class="fa-solid fa-user-plus" style="color:#fde047;"></i> + Tạo Người Dùng Mới
+            </button>
+            <button onclick="loadUsers()" class="royal-pill-btn">
+              <i class="fa-solid fa-rotate" style="color:#34d399;"></i> Làm Mới
+            </button>
+          </div>
+        </div>
+
         <!-- TẦNG 1: EXECUTIVE KPI SUMMARY STRIP -->
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:20px;">
           <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">

@@ -4,29 +4,32 @@
            ════════════════════════════════════════════════════════════════════════ -->
       <div class="page-section" id="page-wiki">
 
-        <!-- TẦNG 1: ERP EXECUTIVE COCKPIT BANNER -->
-        <div class="card" style="margin-bottom:22px; border-radius:18px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 10px 25px rgba(0,0,0,0.04); background:#ffffff;">
-          <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 50%, #0284c7 100%); padding:24px 28px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
-            <div style="max-width:680px;">
-              <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#d1fae5; border:1px solid rgba(255,255,255,0.25); margin-bottom:8px;">
-                <i class="fa-solid fa-graduation-cap"></i> TRUNG TÂM TRI THỨC & VẬN HÀNH ERP NÔNG NGHIỆP
-              </div>
-              <h2 style="font-size:22px; font-weight:900; margin:0 0 6px 0; color:#ffffff; letter-spacing:-0.02em;">
-                Tính Năng Nâng Cao &amp; Sổ Tay Hướng Dẫn Vận Hành
-              </h2>
-              <p style="margin:0; font-size:13.5px; color:#e0f2fe; line-height:1.6; opacity:0.95;">
-                Khám phá hệ thống giải pháp công nghệ cao (GIS 3D, NFC, IoT, VietGAP 100%, AI Voice) và cẩm nang 10 quy trình thao tác chuẩn (SOP) phục vụ sản xuất nông nghiệp thông minh.
-              </p>
-            </div>
+        <!-- TẦNG 1: ERP EXECUTIVE COCKPIT BANNER (EXECUTIVE ROYAL AGTECH) -->
+        <div class="royal-page-header" style="margin-bottom:22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
+          <!-- Aura Glows -->
+          <div style="position:absolute; right:-30px; top:-30px; width:240px; height:240px; background: radial-gradient(circle, rgba(234,179,8,0.2) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-40px; bottom:-40px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.25) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
-            <!-- Quick Search Bar -->
-            <div style="min-width:280px; max-width:360px; flex:1;">
-              <div style="position:relative;">
-                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748b; font-size:14px;"></i>
-                <input type="text" id="guide-search-input" placeholder="Tìm kiếm tính năng, quy trình SOP..." oninput="searchGuideContent(this.value)" style="width:100%; padding:11px 14px 11px 38px; border:2px solid rgba(255,255,255,0.8); border-radius:12px; font-size:13px; font-weight:600; outline:none; background:#ffffff; color:#0f172a; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
-              </div>
+          <div style="max-width:680px; position:relative; z-index:1;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(2,44,34,0.7); backdrop-filter:blur(6px); padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#fde047; border:1px solid rgba(234,179,8,0.45); margin-bottom:8px;">
+              <i class="fa-solid fa-crown" style="color:#fde047;"></i> TRUNG TÂM TRI THỨC & VẬN HÀNH ERP NÔNG NGHIỆP
+            </div>
+            <h2 style="font-size:22px; font-weight:900; margin:0 0 6px 0; color:#ffffff; letter-spacing:-0.02em;">
+              Tính Năng Nâng Cao &amp; Sổ Tay Hướng Dẫn Vận Hành
+            </h2>
+            <p style="margin:0; font-size:13.5px; color:#a7f3d0; line-height:1.6;">
+              Khám phá hệ thống giải pháp công nghệ cao (GIS 3D, NFC, IoT, VietGAP 100%, AI Voice) và cẩm nang 10 quy trình thao tác chuẩn (SOP) phục vụ sản xuất nông nghiệp thông minh.
+            </p>
+          </div>
+
+          <!-- Quick Search Bar -->
+          <div style="min-width:280px; max-width:360px; flex:1; position:relative; z-index:1;">
+            <div style="position:relative;">
+              <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#059669; font-size:14px;"></i>
+              <input type="text" id="guide-search-input" placeholder="Tìm kiếm tính năng, quy trình SOP..." oninput="searchGuideContent(this.value)" style="width:100%; padding:11px 14px 11px 38px; border:1.5px solid rgba(234,179,8,0.4); border-radius:12px; font-size:13px; font-weight:700; outline:none; background:#ffffff; color:#0f172a; box-shadow:0 4px 14px rgba(0,0,0,0.25);">
             </div>
           </div>
+        </div>
 
           <!-- ERP KPI Summary Metric Bar -->
           <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 24px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px;">
