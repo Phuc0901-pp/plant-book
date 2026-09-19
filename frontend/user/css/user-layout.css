@@ -469,9 +469,102 @@ nav { padding: 12px; flex: 1; }
 
 #weather-widget-content {
   min-height: 52px;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.weather-widget-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.weather-header-strip {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  width: 100%;
+}
+
+.weather-body-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.weather-hero-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.weather-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.weather-metric-chip {
+  border-radius: 10px;
+  padding: 7px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.weather-advice-strip {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-left: 3.5px solid #059669;
+  border-radius: 10px;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #064e3b;
+  line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  width: 100%;
   box-sizing: border-box;
+}
+
+@media (max-width: 860px) {
+  .weather-body-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .weather-metrics-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .weather-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .weather-hero-block {
+    justify-content: flex-start !important;
+  }
+  .weather-hero-block #weather-val-temp {
+    font-size: 28px !important;
+  }
+  .weather-advice-strip {
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+  }
 }
 
 #welcome-name {
