@@ -2,24 +2,24 @@
         
         <!-- ── 1. MASTER HUB: CHỌN TRANG TRẠI (TRANG CHÍNH) ── -->
         <div id="farm-master-view">
-          <div class="royal-page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+          <div class="royal-page-header">
             <!-- Aura glows -->
-            <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(234,179,8,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-            <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(52,211,153,0.22) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+            <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+            <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
             <div style="position:relative; z-index:1;">
-              <div style="font-size:11px; color:#fde047; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-crown" style="color:#fde047;"></i> Hệ Thống Bản Đồ Vệ Tinh & Không Gian
+              <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-satellite-dish" style="color:#34d399;"></i> Bản Đồ Vệ Tinh & Không Gian GIS
               </div>
-              <h2 style="margin:0; font-size:22px; color:#ffffff; font-weight:900; display:flex; align-items:center; gap:10px; letter-spacing:-0.3px;">
+              <h2 style="margin:0; font-size:21px; color:#ffffff; font-weight:800; display:flex; align-items:center; gap:10px; letter-spacing:-0.3px;">
                 <i class="fa-solid fa-house-chimney" style="color:#34d399"></i> Danh Sách Trang Trại Nông Hộ
               </h2>
-              <p style="margin:6px 0 0 0; font-size:13px; color:#a7f3d0; max-width:600px; line-height:1.4;">
+              <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; max-width:640px; line-height:1.4;">
                 Chọn trang trại dưới đây để mở buồng điều khiển không gian GIS, bản đồ vệ tinh độ nét cao và quản lý cây trồng.
               </p>
             </div>
-            <div style="position:relative; z-index:1;">
-              <button onclick="openSelfInitFarmModal()" class="royal-pill-btn royal-pill-btn-primary" style="font-size:13.5px; padding:11px 22px;">
+            <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center;">
+              <button onclick="openSelfInitFarmModal()" class="royal-pill-btn royal-pill-btn-primary">
                 <i class="fa-solid fa-location-crosshairs" style="color:#fde047;"></i> Khởi tạo Trang trại mới (GPS)
               </button>
             </div>
@@ -34,19 +34,19 @@
         <!-- ── 2. DETAIL VIEW: BẢN ĐỒ & CHI TIẾT TRANG TRẠI ĐÃ CHỌN (TRANG ẨN) ── -->
         <div id="farm-detail-view" style="display:none;">
           <!-- Sub-header bar with Back Button (Executive Royal AgTech) -->
-          <div class="royal-page-header" style="padding:16px 22px !important; margin-bottom:16px !important; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+          <div class="royal-page-header">
             <div style="display:flex; align-items:center; gap:14px; position:relative; z-index:1;">
-              <button onclick="closeFarmDetailView()" class="royal-pill-btn" style="padding:8px 16px; font-size:12.5px;">
-                <i class="fa-solid fa-arrow-left" style="color:#fde047;"></i> Quay lại Danh sách
+              <button onclick="closeFarmDetailView()" class="royal-pill-btn">
+                <i class="fa-solid fa-arrow-left" style="color:#fde047;"></i> Quay lại
               </button>
               <div>
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="background:rgba(234,179,8,0.25); border:1px solid #fde047; color:#fef08a; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; text-transform:uppercase;">
+                  <span style="background:rgba(52,211,153,0.2); border:1px solid #34d399; color:#6ee7b7; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; text-transform:uppercase;">
                     <i class="fa-solid fa-satellite"></i> Không gian GIS
                   </span>
-                  <h3 style="margin:0; font-size:18px; font-weight:900; color:#ffffff;" id="active-farm-name">Trang trại Nông hộ</h3>
+                  <h3 style="margin:0; font-size:18px; font-weight:800; color:#ffffff;" id="active-farm-name">Trang trại Nông hộ</h3>
                 </div>
-                <div style="font-size:12.5px; color:#a7f3d0; margin-top:4px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div style="font-size:12.5px; color:#a7f3d0; margin-top:4px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-height:22px;">
                   <span>Tổng số: <strong id="active-farm-plant-count" style="color:#ffffff; font-weight:800;">0</strong> cây | Diện tích: <strong id="active-farm-area" style="color:#ffffff; font-weight:800;">0</strong> m²</span>
                   <span id="active-farm-vietgap-badge" style="display:none; font-size:11px; font-weight:800; color:#fef08a; background:rgba(234,179,8,0.2); border:1px solid #fde047; padding:2px 8px; border-radius:6px; align-items:center; gap:4px;">
                     <i class="fa-solid fa-certificate" style="color:#fde047;"></i> VietGAP: <strong id="active-farm-vietgap-number">--</strong>

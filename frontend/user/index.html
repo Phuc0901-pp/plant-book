@@ -925,24 +925,24 @@
         
         <!-- ── 1. MASTER HUB: CHỌN TRANG TRẠI (TRANG CHÍNH) ── -->
         <div id="farm-master-view">
-          <div class="royal-page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+          <div class="royal-page-header">
             <!-- Aura glows -->
-            <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(234,179,8,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-            <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(52,211,153,0.22) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+            <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+            <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
             <div style="position:relative; z-index:1;">
-              <div style="font-size:11px; color:#fde047; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-crown" style="color:#fde047;"></i> Hệ Thống Bản Đồ Vệ Tinh & Không Gian
+              <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-satellite-dish" style="color:#34d399;"></i> Bản Đồ Vệ Tinh & Không Gian GIS
               </div>
-              <h2 style="margin:0; font-size:22px; color:#ffffff; font-weight:900; display:flex; align-items:center; gap:10px; letter-spacing:-0.3px;">
+              <h2 style="margin:0; font-size:21px; color:#ffffff; font-weight:800; display:flex; align-items:center; gap:10px; letter-spacing:-0.3px;">
                 <i class="fa-solid fa-house-chimney" style="color:#34d399"></i> Danh Sách Trang Trại Nông Hộ
               </h2>
-              <p style="margin:6px 0 0 0; font-size:13px; color:#a7f3d0; max-width:600px; line-height:1.4;">
+              <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; max-width:640px; line-height:1.4;">
                 Chọn trang trại dưới đây để mở buồng điều khiển không gian GIS, bản đồ vệ tinh độ nét cao và quản lý cây trồng.
               </p>
             </div>
-            <div style="position:relative; z-index:1;">
-              <button onclick="openSelfInitFarmModal()" class="royal-pill-btn royal-pill-btn-primary" style="font-size:13.5px; padding:11px 22px;">
+            <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center;">
+              <button onclick="openSelfInitFarmModal()" class="royal-pill-btn royal-pill-btn-primary">
                 <i class="fa-solid fa-location-crosshairs" style="color:#fde047;"></i> Khởi tạo Trang trại mới (GPS)
               </button>
             </div>
@@ -957,19 +957,19 @@
         <!-- ── 2. DETAIL VIEW: BẢN ĐỒ & CHI TIẾT TRANG TRẠI ĐÃ CHỌN (TRANG ẨN) ── -->
         <div id="farm-detail-view" style="display:none;">
           <!-- Sub-header bar with Back Button (Executive Royal AgTech) -->
-          <div class="royal-page-header" style="padding:16px 22px !important; margin-bottom:16px !important; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+          <div class="royal-page-header">
             <div style="display:flex; align-items:center; gap:14px; position:relative; z-index:1;">
-              <button onclick="closeFarmDetailView()" class="royal-pill-btn" style="padding:8px 16px; font-size:12.5px;">
-                <i class="fa-solid fa-arrow-left" style="color:#fde047;"></i> Quay lại Danh sách
+              <button onclick="closeFarmDetailView()" class="royal-pill-btn">
+                <i class="fa-solid fa-arrow-left" style="color:#fde047;"></i> Quay lại
               </button>
               <div>
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="background:rgba(234,179,8,0.25); border:1px solid #fde047; color:#fef08a; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; text-transform:uppercase;">
+                  <span style="background:rgba(52,211,153,0.2); border:1px solid #34d399; color:#6ee7b7; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; text-transform:uppercase;">
                     <i class="fa-solid fa-satellite"></i> Không gian GIS
                   </span>
-                  <h3 style="margin:0; font-size:18px; font-weight:900; color:#ffffff;" id="active-farm-name">Trang trại Nông hộ</h3>
+                  <h3 style="margin:0; font-size:18px; font-weight:800; color:#ffffff;" id="active-farm-name">Trang trại Nông hộ</h3>
                 </div>
-                <div style="font-size:12.5px; color:#a7f3d0; margin-top:4px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div style="font-size:12.5px; color:#a7f3d0; margin-top:4px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-height:22px;">
                   <span>Tổng số: <strong id="active-farm-plant-count" style="color:#ffffff; font-weight:800;">0</strong> cây | Diện tích: <strong id="active-farm-area" style="color:#ffffff; font-weight:800;">0</strong> m²</span>
                   <span id="active-farm-vietgap-badge" style="display:none; font-size:11px; font-weight:800; color:#fef08a; background:rgba(234,179,8,0.2); border:1px solid #fde047; padding:2px 8px; border-radius:6px; align-items:center; gap:4px;">
                     <i class="fa-solid fa-certificate" style="color:#fde047;"></i> VietGAP: <strong id="active-farm-vietgap-number">--</strong>
@@ -1293,19 +1293,19 @@
         <!-- ════════════════════════════════════════════════════════════════
              WELCOME & EXECUTIVE BANNER (EXECUTIVE ROYAL AGTECH)
              ════════════════════════════════════════════════════════════════ -->
-        <div class="royal-page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
+        <div class="royal-page-header">
           <!-- Aura Glows -->
-          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(234,179,8,0.2) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(52,211,153,0.25) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
           <div style="position:relative; z-index:1; max-width:680px;">
-            <div style="font-size:11px; color:#fde047; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-crown" style="color:#fde047;"></i> Hệ Thống Quản Trị Tồn Kho & Chuỗi Cung Ứng
+            <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-boxes-stacked" style="color:#34d399;"></i> Quản Trị Tồn Kho & Chuỗi Cung Ứng
             </div>
-            <h2 style="font-size:22px; font-weight:900; color:#ffffff; margin:0 0 6px 0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
-              <i class="fa-solid fa-boxes-stacked" style="color:#34d399;"></i> Quản Trị Tồn Kho &amp; Chi Phí Vật Tư AgTech ERP
+            <h2 style="font-size:21px; font-weight:800; color:#ffffff; margin:0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-boxes-packing" style="color:#34d399;"></i> Quản Trị Tồn Kho &amp; Chi Phí Vật Tư AgTech ERP
             </h2>
-            <p style="margin:0; font-size:13px; color:#a7f3d0; line-height:1.4;">
+            <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
               Hệ thống định lượng tồn kho thời gian thực, định giá tài sản lưu kho, thẻ kho minh bạch và kiểm soát chi phí VietGAP.
             </p>
           </div>
@@ -1792,25 +1792,25 @@
       <!-- ── 4. LOGS (NHẬT KÝ CANH TÁC) ── -->
             <div class="page-section" id="page-logs">
         <!-- Executive Royal AgTech Header Banner -->
-        <div class="royal-page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+        <div class="royal-page-header">
           <!-- Aura Glows -->
-          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(234,179,8,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(52,211,153,0.22) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
           <div style="position:relative; z-index:1;">
-            <div style="font-size:11px; color:#fde047; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-crown" style="color:#fde047;"></i> Sổ Ghi Chép Canh Tác Điện Tử Chuẩn VietGAP
+            <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-book-open" style="color:#34d399;"></i> Sổ Ghi Chép Canh Tác Điện Tử Chuẩn VietGAP
             </div>
-            <h2 style="font-size:22px; font-weight:900; color:#ffffff; margin:0 0 4px 0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
+            <h2 style="font-size:21px; font-weight:800; color:#ffffff; margin:0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
               <i class="fa-solid fa-clock-rotate-left" style="color:#34d399;"></i> Lịch Sử Hoạt Động Canh Tác
             </h2>
-            <p style="margin:0; font-size:13px; color:#a7f3d0;">
+            <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
               Theo dõi toàn bộ nhật ký chăm sóc, bón phân, phun thuốc, thu hoạch và điều trị sâu bệnh của nông trại.
             </p>
           </div>
 
           <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <button type="button" class="royal-pill-btn" id="btn-open-selective-log-delete" onclick="openSelectiveDeleteModal()" style="border-color:rgba(248,113,113,0.5); background:rgba(220,38,38,0.25);" title="Mở bộ lọc xóa mềm chọn lọc theo ngày, hoạt động, cây...">
+            <button type="button" class="royal-pill-btn" id="btn-open-selective-log-delete" onclick="openSelectiveDeleteModal()" style="border-color:rgba(248,113,113,0.5); background:rgba(220,38,38,0.2);" title="Mở bộ lọc xóa mềm chọn lọc theo ngày, hoạt động, cây...">
               <i class="fa-solid fa-trash-can" style="color:#fca5a5;"></i> Xóa chọn lọc
             </button>
           </div>
@@ -2017,28 +2017,28 @@
       <div class="page-section" id="page-wiki">
 
         <!-- TẦNG 1: ERP EXECUTIVE COCKPIT BANNER (EXECUTIVE ROYAL AGTECH) -->
-        <div class="royal-page-header" style="margin-bottom:22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
+        <div class="royal-page-header">
           <!-- Aura Glows -->
-          <div style="position:absolute; right:-30px; top:-30px; width:240px; height:240px; background: radial-gradient(circle, rgba(234,179,8,0.2) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-          <div style="position:absolute; left:-40px; bottom:-40px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.25) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
           <div style="max-width:680px; position:relative; z-index:1;">
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(2,44,34,0.7); backdrop-filter:blur(6px); padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#fde047; border:1px solid rgba(234,179,8,0.45); margin-bottom:8px;">
-              <i class="fa-solid fa-crown" style="color:#fde047;"></i> TRUNG TÂM TRI THỨC & VẬN HÀNH ERP NÔNG NGHIỆP
+            <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-graduation-cap" style="color:#34d399;"></i> Trung Tâm Tri Thức & Vận Hành ERP Nông Nghiệp
             </div>
-            <h2 style="font-size:22px; font-weight:900; margin:0 0 6px 0; color:#ffffff; letter-spacing:-0.02em;">
-              Tính Năng Nâng Cao &amp; Sổ Tay Hướng Dẫn Vận Hành
+            <h2 style="font-size:21px; font-weight:800; margin:0; color:#ffffff; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-book-bookmark" style="color:#34d399;"></i> Tính Năng Nâng Cao &amp; Sổ Tay Hướng Dẫn Vận Hành
             </h2>
-            <p style="margin:0; font-size:13.5px; color:#a7f3d0; line-height:1.6;">
-              Khám phá hệ thống giải pháp công nghệ cao (GIS 3D, NFC, IoT, VietGAP 100%, AI Voice) và cẩm nang 10 quy trình thao tác chuẩn (SOP) phục vụ sản xuất nông nghiệp thông minh.
+            <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
+              Khám phá hệ thống giải pháp công nghệ cao (GIS 3D, NFC, IoT, VietGAP 100%, AI Voice) và cẩm nang 10 quy trình thao tác chuẩn (SOP).
             </p>
           </div>
 
           <!-- Quick Search Bar -->
-          <div style="min-width:280px; max-width:360px; flex:1; position:relative; z-index:1;">
+          <div style="min-width:260px; max-width:340px; flex:1; position:relative; z-index:1;">
             <div style="position:relative;">
-              <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#059669; font-size:14px;"></i>
-              <input type="text" id="guide-search-input" placeholder="Tìm kiếm tính năng, quy trình SOP..." oninput="searchGuideContent(this.value)" style="width:100%; padding:11px 14px 11px 38px; border:1.5px solid rgba(234,179,8,0.4); border-radius:12px; font-size:13px; font-weight:700; outline:none; background:#ffffff; color:#0f172a; box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+              <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#34d399; font-size:13px;"></i>
+              <input type="text" id="guide-search-input" placeholder="Tìm kiếm tính năng, quy trình SOP..." oninput="searchGuideContent(this.value)" style="width:100%; height:38px; box-sizing:border-box; padding:0 14px 0 38px; border:1.5px solid rgba(52,211,153,0.3); border-radius:10px; font-size:13px; font-weight:600; outline:none; background:rgba(255,255,255,0.95); color:#0f172a; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
             </div>
           </div>
         </div>
@@ -2943,24 +2943,24 @@
       <!-- ── 6. SETTINGS & PROFILE ── -->
             <div class="page-section" id="page-settings">
         <!-- Executive Royal AgTech Header -->
-        <div class="royal-page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+        <div class="royal-page-header">
           <!-- Aura Glows -->
-          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(234,179,8,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(52,211,153,0.22) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
           <div style="display:flex; align-items:center; gap:16px; position:relative; z-index:1;">
-            <div style="width:48px; height:48px; border-radius:14px; background:rgba(234,179,8,0.2); border:1.5px solid #fde047; display:flex; align-items:center; justify-content:center; color:#fef08a; font-size:22px; box-shadow:0 4px 14px rgba(0,0,0,0.2);">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(52,211,153,0.15); border:1.5px solid #34d399; display:flex; align-items:center; justify-content:center; color:#6ee7b7; font-size:20px; box-shadow:0 2px 10px rgba(0,0,0,0.2);">
               <i class="fa-solid fa-sliders"></i>
             </div>
             <div>
-              <div style="font-size:11px; color:#fde047; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:3px; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-crown" style="color:#fde047;"></i> Trung Tâm Thiết Lập & Bảo Mật Nông Hộ
+              <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:3px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-sliders" style="color:#34d399;"></i> Trung Tâm Thiết Lập & Bảo Mật Nông Hộ
               </div>
-              <h2 style="font-size:22px; font-weight:900; color:#ffffff; margin:0; letter-spacing:-0.3px;">
+              <h2 style="font-size:21px; font-weight:800; color:#ffffff; margin:0; letter-spacing:-0.3px;">
                 Cài Đặt Tài Khoản &amp; Cấu Hình Cảnh Báo
               </h2>
-              <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0;">
-                Quản lý hồ sơ nông hộ, mật khẩu bảo mật và thiết lập ngưỡng cảm biến tự động
+              <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
+                Quản lý hồ sơ nông hộ, mật khẩu bảo mật và thiết lập ngưỡng cảm biến tự động.
               </p>
             </div>
           </div>

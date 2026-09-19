@@ -346,28 +346,37 @@ nav { padding: 12px; flex: 1; }
 }
 .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
-/* ── Royal Agricultural Header System (Executive AgTech Cockpit) ── */
+/* ── Master ERP Header System (Executive AgTech Cockpit) ── */
 .royal-page-header {
   box-sizing: border-box !important;
-  min-height: 104px;
-  background: linear-gradient(135deg, #022c22 0%, #064e3b 35%, #065f46 70%, #0f766e 100%) !important;
-  border: 1.5px solid rgba(234, 179, 8, 0.45) !important;
-  box-shadow: 0 16px 40px -8px rgba(2, 44, 34, 0.6), 0 0 35px -5px rgba(16, 185, 129, 0.25), inset 0 1px 1px rgba(254, 240, 138, 0.2) !important;
-  border-radius: 20px !important;
-  padding: 20px 24px !important;
-  margin-bottom: 22px !important;
+  min-height: 108px !important;
+  background: linear-gradient(135deg, #061c14 0%, #0a291e 50%, #0f392a 100%) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.28) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  padding: 18px 24px !important;
+  margin-bottom: 20px !important;
   color: #ffffff !important;
   position: relative !important;
   overflow: hidden !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   contain: layout style;
-  transition: min-height 0.2s ease, padding 0.2s ease;
 }
 
 .welcome-banner.royal-agritech-banner {
   box-sizing: border-box !important;
-  min-height: 170px;
+  background: linear-gradient(135deg, #061c14 0%, #0a291e 50%, #0f392a 100%) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.28) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  padding: 20px 24px !important;
+  margin-bottom: 20px !important;
   contain: layout style;
 }
 
@@ -393,28 +402,32 @@ nav { padding: 12px; flex: 1; }
 }
 
 .royal-pill-btn {
-  background: rgba(6, 78, 59, 0.65);
-  border: 1.5px solid rgba(234, 179, 8, 0.4);
+  height: 38px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   color: #ffffff !important;
-  border-radius: 12px;
-  padding: 10px 18px;
-  font-weight: 800;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 700;
   font-size: 13px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   cursor: pointer;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   text-decoration: none;
+  white-space: nowrap;
 }
 .royal-pill-btn:hover {
-  background: rgba(16, 185, 129, 0.35);
-  border-color: #fde047;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #34d399;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   color: #ffffff !important;
 }
 
@@ -427,7 +440,9 @@ nav { padding: 12px; flex: 1; }
 .royal-pill-btn-primary:hover {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
   border-color: #fde047 !important;
-  transform: translateY(-2px) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
+}
   box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
 }
 
