@@ -229,73 +229,73 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
   widgetBox.innerHTML = `
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
       
-      <!-- Left: Main Weather Condition & Temperature (Royal Emerald Glass Box) -->
+      <!-- Left: Main Weather Condition & Temperature (Clean ERP Box) -->
       <div style="display:flex; align-items:center; gap:16px;">
-        <div style="width:64px; height:64px; border-radius:16px; background:rgba(2,44,34,0.85); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px -4px rgba(0,0,0,0.4), inset 0 1px 1px rgba(234,179,8,0.3); border:1.5px solid rgba(234,179,8,0.45);">
+        <div style="width:64px; height:64px; border-radius:16px; background:#ecfdf5; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(16,185,129,0.12); border:1.5px solid #a7f3d0;">
           ${weatherSvg}
         </div>
         <div>
           <div style="display:flex; align-items:baseline; gap:8px;">
-            <span id="weather-val-temp" style="font-size:35px; font-weight:900; line-height:1; letter-spacing:-1px; color:#ffffff; font-family:'Segoe UI', Inter, sans-serif; text-shadow:0 2px 8px rgba(0,0,0,0.3);">${temp}°C</span>
-            <span style="font-size:13px; color:#a7f3d0; font-weight:700;">(Cảm giác: <span id="weather-val-feel" style="color:#ffffff; font-weight:800;">${feelLike}</span>°C)</span>
+            <span id="weather-val-temp" style="font-size:35px; font-weight:900; line-height:1; letter-spacing:-1px; color:#064e3b; font-family:'Segoe UI', Inter, sans-serif;">${temp}°C</span>
+            <span style="font-size:13px; color:#059669; font-weight:700;">(Cảm giác: <span id="weather-val-feel" style="color:#047857; font-weight:800;">${feelLike}</span>°C)</span>
           </div>
-          <div style="font-size:13.5px; font-weight:800; color:#f8fafc; margin-top:4px; display:flex; align-items:center; gap:6px;">
-            <span style="color:#fde047;">${wmo.label}</span>
-            <span style="font-size:12px; color:#6ee7b7; font-weight:700;">• ${tempMin}° / ${tempMax}°C</span>
+          <div style="font-size:13.5px; font-weight:800; color:#065f46; margin-top:4px; display:flex; align-items:center; gap:6px;">
+            <span style="color:#b45309; background:#fef3c7; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:800; border:1px solid #fde68a;">${wmo.label}</span>
+            <span style="font-size:12px; color:#64748b; font-weight:700;">• ${tempMin}° / ${tempMax}°C</span>
           </div>
         </div>
       </div>
 
-      <!-- Right: Detailed Metrics Grid (Royal Agricultural Glowing Chips) -->
+      <!-- Right: Detailed Metrics Grid (Clean ERP Chips) -->
       <div class="weather-metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(112px, 1fr)); gap:10px; flex:1; max-width:540px; width:100%;">
         
         <!-- Humidity Chip -->
-        <div class="weather-metric-chip" style="background:rgba(4,47,46,0.65); border:1.2px solid rgba(52,211,153,0.35); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-          <div style="font-size:11px; color:#6ee7b7; font-weight:800; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-droplet" style="color:#34d399;"></i> Độ ẩm KK
+        <div class="weather-metric-chip" style="background:#ecfdf5; border:1.2px solid #a7f3d0; border-radius:12px; padding:8px 12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <div style="font-size:11px; color:#059669; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-droplet" style="color:#059669;"></i> Độ ẩm KK
           </div>
-          <div id="weather-val-humidity" style="font-size:16px; font-weight:900; color:#ffffff; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${humidity}%</div>
+          <div id="weather-val-humidity" style="font-size:16px; font-weight:900; color:#064e3b; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${humidity}%</div>
         </div>
 
         <!-- Wind Chip -->
-        <div class="weather-metric-chip" style="background:rgba(6,78,59,0.55); border:1.2px solid rgba(45,212,191,0.35); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-          <div style="font-size:11px; color:#5eead4; font-weight:800; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-wind" style="color:#2dd4bf;"></i> Gió & Hướng
+        <div class="weather-metric-chip" style="background:#f0fdfa; border:1.2px solid #99f6e4; border-radius:12px; padding:8px 12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <div style="font-size:11px; color:#0f766e; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-wind" style="color:#0d9488;"></i> Gió & Hướng
           </div>
-          <div style="font-size:13.5px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:11px; font-weight:700; color:#a7f3d0;">${windDir}</span></div>
+          <div style="font-size:13.5px; font-weight:900; color:#115e59; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:11px; font-weight:700; color:#0f766e;">${windDir}</span></div>
         </div>
 
         <!-- Rain Prob Chip -->
-        <div class="weather-metric-chip" style="background:rgba(15,23,42,0.65); border:1.2px solid rgba(96,165,250,0.35); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-          <div style="font-size:11px; color:#93c5fd; font-weight:800; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-cloud-rain" style="color:#60a5fa;"></i> Khả năng mưa
+        <div class="weather-metric-chip" style="background:#eff6ff; border:1.2px solid #bfdbfe; border-radius:12px; padding:8px 12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <div style="font-size:11px; color:#2563eb; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-cloud-rain" style="color:#3b82f6;"></i> Khả năng mưa
           </div>
-          <div id="weather-val-rain" style="font-size:16px; font-weight:900; color:#ffffff; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${rainProb}%</div>
+          <div id="weather-val-rain" style="font-size:16px; font-weight:900; color:#1e40af; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${rainProb}%</div>
         </div>
 
         <!-- UV Chip -->
-        <div class="weather-metric-chip" style="background:rgba(69,26,3,0.45); border:1.2px solid rgba(234,179,8,0.4); border-radius:12px; padding:8px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-          <div style="font-size:11px; color:#fde047; font-weight:800; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-sun" style="color:#fde047;"></i> Chỉ số UV
+        <div class="weather-metric-chip" style="background:#fffbeb; border:1.2px solid #fde68a; border-radius:12px; padding:8px 12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <div style="font-size:11px; color:#d97706; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-sun" style="color:#d97706;"></i> Chỉ số UV
           </div>
-          <div style="font-size:15px; font-weight:900; color:#ffffff; margin-top:2px;"><span id="weather-val-uv">${uv}</span> <span style="font-size:10.5px; font-weight:800; color:${parseFloat(uv) > 6 ? '#f87171' : '#fde047'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
+          <div style="font-size:15px; font-weight:900; color:#92400e; margin-top:2px;"><span id="weather-val-uv">${uv}</span> <span style="font-size:10.5px; font-weight:800; color:${parseFloat(uv) > 6 ? '#dc2626' : '#16a34a'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
         </div>
 
       </div>
 
     </div>
 
-    <!-- Location & Advice footer bar (Royal Agricultural Strip) -->
-    <div style="margin-top:14px; padding-top:12px; border-top:1.2px solid rgba(234,179,8,0.22); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px;">
-      <div style="display:flex; align-items:center; gap:6px; color:#ffffff; flex-wrap:wrap;">
-        <i class="fa-solid fa-location-dot" style="color:#fb7185;"></i>
-        <span style="font-weight:800; color:#ffffff;">${locationName}</span>
-        ${isRealGps ? `<span style="background:rgba(16,185,129,0.25); color:#6ee7b7; border:1px solid rgba(52,211,153,0.45); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-satellite" style="color:#34d399;"></i> GPS Thiết bị</span>` : `<span style="background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-seedling" style="color:#fde047;"></i> Trang trại</span>`}
-        ${statusBadge ? `<span style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
+    <!-- Location & Advice footer bar (Clean ERP Strip) -->
+    <div style="margin-top:14px; padding-top:12px; border-top:1.2px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px;">
+      <div style="display:flex; align-items:center; gap:6px; color:#334155; flex-wrap:wrap;">
+        <i class="fa-solid fa-location-dot" style="color:#e11d48;"></i>
+        <span style="font-weight:800; color:#064e3b;">${locationName}</span>
+        ${isRealGps ? `<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-satellite" style="color:#059669;"></i> GPS Thiết bị</span>` : `<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-seedling" style="color:#d97706;"></i> Trang trại</span>`}
+        ${statusBadge ? `<span style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
       </div>
 
-      <div style="background:rgba(6,78,59,0.65); border:1px solid rgba(52,211,153,0.45); padding:5px 12px; border-radius:8px; color:#a7f3d0; font-weight:700; display:flex; align-items:center; gap:6px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
-        <i class="fa-solid fa-seedling" style="color:#34d399;"></i>
+      <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:6px 14px; border-radius:8px; color:#047857; font-weight:700; display:flex; align-items:center; gap:6px; font-size:12px;">
+        <i class="fa-solid fa-seedling" style="color:#059669;"></i>
         <span>${agriTip}</span>
       </div>
     </div>

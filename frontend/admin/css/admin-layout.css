@@ -72,12 +72,12 @@
     top: 0 !important;
     z-index: 100 !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-    color: #0f172a !important;
+    color: #064e3b !important;
   }
   .topbar h1 {
     font-size: 15px !important;
     font-weight: 800 !important;
-    color: #0f172a !important;
+    color: #064e3b !important;
     letter-spacing: -0.2px !important;
     display: flex !important;
     align-items: center !important;
@@ -97,7 +97,7 @@
     border-radius: 14px !important;
     padding: 16px 22px !important;
     margin-bottom: 20px !important;
-    color: #0f172a !important;
+    color: #064e3b !important;
     position: relative !important;
     overflow: hidden !important;
     display: flex !important;
@@ -110,7 +110,7 @@
 
   .royal-page-header h2,
   .admin-executive-banner h2 {
-    color: #0f172a !important;
+    color: #064e3b !important;
     font-size: 19px !important;
     font-weight: 800 !important;
     margin: 0 !important;
