@@ -89,17 +89,27 @@
 
   /* ── Royal Agricultural Header System (Executive AgTech Cockpit) ── */
   .royal-page-header {
+    box-sizing: border-box !important;
+    min-height: 104px;
     background: linear-gradient(135deg, #022c22 0%, #064e3b 35%, #065f46 70%, #0f766e 100%) !important;
     border: 1.5px solid rgba(234, 179, 8, 0.45) !important;
     box-shadow: 0 16px 40px -8px rgba(2, 44, 34, 0.6), 0 0 35px -5px rgba(16, 185, 129, 0.25), inset 0 1px 1px rgba(254, 240, 138, 0.2) !important;
     border-radius: 20px !important;
-    padding: 22px 26px !important;
-    margin-bottom: 24px !important;
+    padding: 20px 24px !important;
+    margin-bottom: 22px !important;
     color: #ffffff !important;
     position: relative !important;
     overflow: hidden !important;
     backdrop-filter: blur(24px) !important;
     -webkit-backdrop-filter: blur(24px) !important;
+    contain: layout style;
+    transition: min-height 0.2s ease, padding 0.2s ease;
+  }
+
+  .admin-executive-banner {
+    box-sizing: border-box !important;
+    min-height: 150px;
+    contain: layout style;
   }
 
   .royal-pill-btn {
