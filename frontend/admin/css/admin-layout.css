@@ -61,73 +61,76 @@
   .btn-logout:hover{color:#fff}
   .main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
   .topbar {
-    background: rgba(2, 44, 34, 0.94);
-    border-bottom: 1.5px solid rgba(234, 179, 8, 0.35);
-    padding: 0 28px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-    color: #ffffff;
+    background: #ffffff !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+    padding: 0 24px !important;
+    height: 56px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    color: #0f172a !important;
   }
   .topbar h1 {
-    font-size: 19px;
-    font-weight: 900;
-    color: #ffffff;
-    letter-spacing: -0.3px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
   .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
-  /* ── Master ERP Header System (Executive AgTech Cockpit) ── */
-  .royal-page-header {
+  /* ── Master Clean ERP Header System (Executive AgTech Cockpit) ── */
+  .royal-page-header,
+  .admin-executive-banner {
     box-sizing: border-box !important;
-    min-height: 108px !important;
-    background: linear-gradient(135deg, #061c14 0%, #0a291e 50%, #0f392a 100%) !important;
-    border: 1.5px solid rgba(52, 211, 153, 0.28) !important;
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-    border-radius: 16px !important;
-    padding: 18px 24px !important;
+    min-height: 84px !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-left: 4px solid #059669 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+    border-radius: 14px !important;
+    padding: 16px 22px !important;
     margin-bottom: 20px !important;
-    color: #ffffff !important;
+    color: #0f172a !important;
     position: relative !important;
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     flex-wrap: wrap !important;
-    gap: 16px !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    gap: 14px !important;
     contain: layout style;
   }
 
-  .admin-executive-banner {
-    box-sizing: border-box !important;
-    min-height: 108px !important;
-    background: linear-gradient(135deg, #061c14 0%, #0a291e 50%, #0f392a 100%) !important;
-    border: 1.5px solid rgba(52, 211, 153, 0.28) !important;
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-    border-radius: 16px !important;
-    padding: 18px 24px !important;
-    margin-bottom: 20px !important;
-    contain: layout style;
+  .royal-page-header h2,
+  .admin-executive-banner h2 {
+    color: #0f172a !important;
+    font-size: 19px !important;
+    font-weight: 800 !important;
+    margin: 0 !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  .royal-page-header p,
+  .admin-executive-banner p {
+    color: #64748b !important;
+    font-size: 13px !important;
+    margin: 3px 0 0 0 !important;
+    line-height: 1.4 !important;
   }
 
   .royal-pill-btn {
     height: 38px;
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1.5px solid rgba(255, 255, 255, 0.18);
-    color: #ffffff !important;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #334155 !important;
     border-radius: 10px;
     padding: 0 16px;
     font-weight: 700;
@@ -137,34 +140,28 @@
     justify-content: center;
     gap: 8px;
     cursor: pointer;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     text-decoration: none;
     white-space: nowrap;
   }
   .royal-pill-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: #34d399;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #ffffff !important;
+    background: #f8fafc;
+    border-color: #059669;
+    color: #059669 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
 
   .royal-pill-btn-primary {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-    border: 1.5px solid #34d399 !important;
+    border: 1.5px solid #059669 !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
   }
   .royal-pill-btn-primary:hover {
-    background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
-    border-color: #fde047 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
-  }
-    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35) !important;
+    color: #ffffff !important;
   }
 
   .royal-pill-btn-gold {

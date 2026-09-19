@@ -72,7 +72,7 @@
     }
   });
 </script>
-<title>Sổ Nông Tân Bảo Agtech v1.2.4 — Quản trị</title>
+<title>Sổ Nông Tân Bảo Agtech v1.2.5 — Quản trị</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="shortcut icon" type="image/png" href="/assets/favicon.png">
 
@@ -93,10 +93,10 @@
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="/admin/css/admin-layout.css?v=v1.2.4">
-  <link rel="stylesheet" href="/admin/css/admin-components.css?v=v1.2.4">
-  <link rel="stylesheet" href="/admin/css/admin-dashboard.css?v=v1.2.4">
-  <link rel="stylesheet" href="/admin/css/admin-gis.css?v=v1.2.4">
+  <link rel="stylesheet" href="/admin/css/admin-layout.css?v=v1.2.5">
+  <link rel="stylesheet" href="/admin/css/admin-components.css?v=v1.2.5">
+  <link rel="stylesheet" href="/admin/css/admin-dashboard.css?v=v1.2.5">
+  <link rel="stylesheet" href="/admin/css/admin-gis.css?v=v1.2.5">
 <style>
 /* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
 #register-modal .modal, #forgot-modal .modal {
@@ -658,7 +658,7 @@
         <i class="fa fa-right-from-bracket"></i> Đăng xuất
       </button>
       <div style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">
-        <span style="background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:100px; border:1px solid rgba(34,197,94,0.25);">v1.2.4</span> Tân Bảo AgTech Admin
+        <span style="background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:100px; border:1px solid rgba(34,197,94,0.25);">v1.2.5</span> Tân Bảo AgTech Admin
       </div>
 
     </div>
@@ -669,10 +669,10 @@
   <main class="main">
         <div class="topbar">
       <div style="display:flex;align-items:center;">
-        <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none; background:rgba(255,255,255,0.12); border:1.5px solid rgba(234,179,8,0.4); color:#ffffff; border-radius:8px;">
+        <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none; background:#ffffff; border:1.5px solid #cbd5e1; color:#0f172a; border-radius:8px;">
           <i class="fa fa-bars"></i>
         </button>
-        <h1 id="page-title" style="margin:0;"><i class="fa-solid fa-crown" style="color:#fde047; font-size:16px;"></i> Dashboard</h1>
+        <h1 id="page-title" style="margin:0;"><i class="fa-solid fa-layer-group" style="color:#059669; font-size:16px;"></i> Dashboard</h1>
       </div>
       <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:10px;"></div>
     </div>
@@ -683,32 +683,28 @@
             <!-- ── Dashboard (STRIPE / LINEAR ULTRA-CLEAN ENTERPRISE COCKPIT) ── -->
       <div class="page-section active" id="page-dashboard">
         
-        <!-- ── HEADER: EXECUTIVE ROYAL & FLUENT ENTERPRISE COMMAND CENTER ── -->
+        <!-- ── HEADER: EXECUTIVE ENTERPRISE ERP COMMAND CENTER ── -->
         <div class="admin-executive-banner">
-          <!-- Decorative Luminous Aura Glows (Royal Gold & Emerald Dew) -->
-          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-
-          <div style="position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; width:100%;">
             
             <!-- Left Column: Command Center Identity & Subtext -->
             <div style="max-width:680px;">
               <!-- System Health Badge & Live Telemetry Ping -->
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
-                <span style="background:rgba(52,211,153,0.15); color:#6ee7b7; font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; border:1px solid rgba(52,211,153,0.35); display:inline-flex; align-items:center; gap:5px;">
-                  <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 6px #34d399;"></span>
+                <span style="background:#ecfdf5; color:#059669; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:6px;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 6px #10b981;"></span>
                   Hệ thống hoạt động bình thường
                 </span>
-                <span style="background:rgba(234,179,8,0.15); color:#fde047; font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; border:1px solid rgba(234,179,8,0.4); display:inline-flex; align-items:center; gap:4px;">
-                  <i class="fa-solid fa-satellite-dish" style="color:#fde047;"></i> GIS Hub Enterprise v1.2.4
+                <span style="background:#fef3c7; color:#b45309; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:5px;">
+                  <i class="fa-solid fa-satellite-dish" style="color:#d97706;"></i> GIS Hub Enterprise v1.2.5
                 </span>
               </div>
 
               <!-- Main Heading -->
-              <h2 style="font-size:21px; font-weight:800; margin:0; letter-spacing:-0.3px; color:#ffffff; display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-layer-group" style="color:#34d399;"></i> Trung Tâm Điều Hành Chuỗi Trang Trại
+              <h2 class="royal-page-header-title" style="margin:0; font-size:19px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-layer-group" style="color:#059669;"></i> Trung Tâm Điều Hành Chuỗi Trang Trại
               </h2>
-              <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
+              <p class="royal-page-header-desc" style="margin:4px 0 0 0; font-size:13px; color:#64748b; line-height:1.4;">
                 Giám sát không gian GIS đa giác, định danh tài sản nông hộ, truy xuất nguồn gốc NFC và phân tích rủi ro vận hành thời gian thực.
               </p>
             </div>
@@ -717,23 +713,23 @@
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
               
               <!-- Live Telemetry Digital Clock Card -->
-              <div style="background:rgba(2,44,34,0.85); border:1.5px solid rgba(234,179,8,0.35); border-radius:14px; padding:8px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 16px rgba(0,0,0,0.3); backdrop-filter:blur(10px);">
-                <div style="color:#fde047; font-size:18px;">
+              <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:8px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                <div style="color:#059669; font-size:18px;">
                   <i class="fa-regular fa-clock"></i>
                 </div>
                 <div>
-                  <div id="dashboard-live-clock" style="font-size:13px; font-weight:800; color:#ffffff; font-family:'Segoe UI', Inter, sans-serif; white-space:nowrap;">
+                  <div id="dashboard-live-clock" style="font-size:13px; font-weight:800; color:#0f172a; font-family:'Segoe UI', Inter, sans-serif; white-space:nowrap;">
                     Thời gian thực
                   </div>
-                  <div style="font-size:10.5px; font-weight:700; color:#6ee7b7;">
+                  <div style="font-size:10.5px; font-weight:700; color:#059669;">
                     Trạm Vệ Tinh Trực Tuyến 24/7
                   </div>
                 </div>
               </div>
 
               <!-- Refresh Data Button -->
-              <button onclick="loadDashboard()" class="btn" style="background:rgba(6,78,59,0.7); color:#ffffff; border:1.5px solid rgba(234,179,8,0.4); border-radius:12px; padding:10px 18px; font-weight:800; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,0.25); transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter:blur(8px);" onmouseover="this.style.background='rgba(16,185,129,0.35)'; this.style.borderColor='#fde047'; this.style.transform='translateY(-1px)';" onmouseout="this.style.background='rgba(6,78,59,0.7)'; this.style.borderColor='rgba(234,179,8,0.4)'; this.style.transform='translateY(0)';">
-                <i class="fa-solid fa-arrows-rotate" style="color:#34d399;"></i> Làm mới dữ liệu
+              <button onclick="loadDashboard()" class="royal-pill-btn royal-pill-btn-primary">
+                <i class="fa-solid fa-arrows-rotate"></i> Làm mới dữ liệu
               </button>
 
             </div>
@@ -1011,25 +1007,21 @@
       <div class="page-section" id="page-database">
         <!-- Executive Royal AgTech Header -->
         <div class="royal-page-header">
-          <!-- Aura Glows -->
-          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-
           <div style="position:relative; z-index:1;">
-            <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-database" style="color:#34d399;"></i> CSDL Nông Nghiệp & Danh Mục Master Data ERP
+            <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
+              <i class="fa-solid fa-database" style="color:#059669;"></i> CSDL Nông Nghiệp & Danh Mục Master Data ERP
             </div>
-            <h2 style="font-size:21px; font-weight:800; color:#ffffff; margin:0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
-              <i class="fa-solid fa-server" style="color:#34d399;"></i> Cơ Sở Dữ Liệu Nông Nghiệp &amp; Vận Hành
+            <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:4px 0 0 0; letter-spacing:-0.2px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-server" style="color:#059669;"></i> Cơ Sở Dữ Liệu Nông Nghiệp &amp; Vận Hành
             </h2>
-            <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
+            <p style="margin:3px 0 0 0; font-size:13px; color:#64748b; line-height:1.4;">
               Trung tâm quản trị dữ liệu cây trồng, kho thẻ NFC, cảm biến IoT, quy trình loại cây, vật tư và lưu trữ media.
             </p>
           </div>
 
           <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button onclick="if(typeof window.refreshCurrentDatabaseTab==='function')window.refreshCurrentDatabaseTab(); else location.reload();" class="royal-pill-btn">
-              <i class="fa-solid fa-rotate" style="color:#34d399;"></i> Tải Lại Dữ Liệu
+              <i class="fa-solid fa-rotate" style="color:#059669;"></i> Tải Lại Dữ Liệu
             </button>
           </div>
         </div>
@@ -2145,30 +2137,26 @@
             <!-- ── Users management (Enterprise ERP Governance) ── -->
       <div class="page-section" id="page-users">
 
-        <!-- TẦNG 0: EXECUTIVE ROYAL AGTECH BANNER -->
+        <!-- TẦNG 0: EXECUTIVE ENTERPRISE ERP BANNER -->
         <div class="royal-page-header">
-          <!-- Aura Glows -->
-          <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-          <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-
-          <div style="position:relative; z-index:1;">
-            <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-user-shield" style="color:#34d399;"></i> Phân Hệ Quản Trị Người Dùng & Phân Quyền ERP
+          <div>
+            <div class="royal-page-header-badge" style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-user-shield"></i> Phân Hệ Quản Trị Người Dùng & Phân Quyền ERP
             </div>
-            <h2 style="font-size:21px; font-weight:800; color:#ffffff; margin:0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
-              <i class="fa-solid fa-users-gear" style="color:#34d399;"></i> Quản Trị Tài Khoản &amp; Phân Quyền Nông Hộ
+            <h2 class="royal-page-header-title">
+              <i class="fa-solid fa-users-gear" style="color:#059669;"></i> Quản Trị Tài Khoản &amp; Phân Quyền Nông Hộ
             </h2>
-            <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
+            <p class="royal-page-header-desc">
               Kiểm soát danh tính, phân quyền vai trò (Admin / Nông Hộ), phê duyệt tài khoản mới và điều phối nông trại.
             </p>
           </div>
 
-          <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button onclick="openAddUserModal()" class="royal-pill-btn royal-pill-btn-primary">
-              <i class="fa-solid fa-user-plus" style="color:#fde047;"></i> + Tạo Người Dùng Mới
+              <i class="fa-solid fa-user-plus"></i> + Tạo Người Dùng Mới
             </button>
             <button onclick="loadUsers()" class="royal-pill-btn">
-              <i class="fa-solid fa-rotate" style="color:#34d399;"></i> Làm Mới
+              <i class="fa-solid fa-rotate"></i> Làm Mới
             </button>
           </div>
         </div>
@@ -2423,34 +2411,30 @@
       <!-- ════════════════ 4. AI TRAINING STUDIO & KNOWLEDGE BASE ════════════════ -->
 <div class="page-section" id="page-ai-training" style="display:none;">
 
-  <!-- Header Section (Executive Royal AgTech) -->
+  <!-- Header Section (Executive Enterprise ERP) -->
   <div class="royal-page-header">
-    <!-- Aura Glows -->
-    <div style="position:absolute; right:-30px; top:-30px; width:220px; height:220px; background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-    <div style="position:absolute; left:-40px; bottom:-40px; width:200px; height:200px; background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
-
-    <div style="position:relative; z-index:1; max-width:640px;">
-      <div style="font-size:11px; color:#34d399; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
-        <i class="fa-solid fa-brain" style="color:#34d399;"></i> Trợ Lý Nông Nghiệp Thông Minh & Cố Vấn Trực Tuyến
+    <div style="max-width:680px;">
+      <div class="royal-page-header-badge" style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-brain"></i> Trợ Lý Nông Nghiệp Thông Minh & Cố Vấn Trực Tuyến
       </div>
-      <h2 style="font-size:21px; font-weight:800; color:#ffffff; margin:0; letter-spacing:-0.3px; display:flex; align-items:center; gap:10px;">
-        <i class="fa-solid fa-microchip" style="color:#34d399;"></i> Trung Tâm Huấn Luyện AI Bé Mầm (AI Studio)
+      <h2 class="royal-page-header-title">
+        <i class="fa-solid fa-microchip" style="color:#059669;"></i> Trung Tâm Huấn Luyện AI Bé Mầm (AI Studio)
       </h2>
-      <p style="margin:4px 0 0 0; font-size:13px; color:#a7f3d0; line-height:1.4;">
+      <p class="royal-page-header-desc">
         Nạp tài liệu kỹ thuật, quy trình SOPs chuẩn, huấn luyện phác đồ điều trị sâu bệnh và bảo mật dữ liệu cấp cao.
       </p>
     </div>
 
     <!-- Top Action Buttons -->
-    <div style="position:relative; z-index:1; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="royal-pill-btn royal-pill-btn-primary" onclick="openAiKnowledgeModal()">
-        <i class="fa-solid fa-plus" style="color:#fde047;"></i> + Thêm Tri Thức SOP
+        <i class="fa-solid fa-plus"></i> + Thêm Tri Thức SOP
       </button>
       <button class="royal-pill-btn" onclick="openAiQaModal()">
-        <i class="fa-solid fa-comments" style="color:#38bdf8;"></i> + Thêm Q&A
+        <i class="fa-solid fa-comments"></i> + Thêm Q&A
       </button>
       <button class="royal-pill-btn" onclick="loadAiTrainingStats(); loadAiKnowledgeList(); loadAiQaList(); loadAiSecurityLogs();">
-        <i class="fa-solid fa-rotate" style="color:#34d399;"></i> Làm Mới
+        <i class="fa-solid fa-rotate"></i> Làm Mới
       </button>
     </div>
   </div>
@@ -4395,20 +4379,20 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
-  <script src="/admin/js/countup.js?v=v1.2.4"></script>
-  <script src="/admin/js/mascot-chibi.js?v=v1.2.4"></script>
-  <script src="/admin/js/app.js?v=v1.2.4"></script>
-  <script src="/admin/js/auth.js?v=v1.2.4"></script>
-  <script src="/admin/js/dashboard.js?v=v1.2.4"></script>
-  <script src="/admin/js/media.js?v=v1.2.4"></script>
-  <script src="/admin/js/database.js?v=v1.2.4"></script>
-  <script src="/admin/js/schemas.js?v=v1.2.4"></script>
-  <script src="/admin/js/plants.js?v=v1.2.4"></script>
-  <script src="/admin/js/gis.js?v=v1.2.4"></script>
-  <script src="/admin/js/users.js?v=v1.2.4"></script>
-  <script src="/admin/js/devices.js?v=v1.2.4"></script>
-  <script src="/admin/js/ai-training.js?v=v1.2.4"></script>
-  <script src="/admin/js/websocket.js?v=v1.2.4"></script>
+  <script src="/admin/js/countup.js?v=v1.2.5"></script>
+  <script src="/admin/js/mascot-chibi.js?v=v1.2.5"></script>
+  <script src="/admin/js/app.js?v=v1.2.5"></script>
+  <script src="/admin/js/auth.js?v=v1.2.5"></script>
+  <script src="/admin/js/dashboard.js?v=v1.2.5"></script>
+  <script src="/admin/js/media.js?v=v1.2.5"></script>
+  <script src="/admin/js/database.js?v=v1.2.5"></script>
+  <script src="/admin/js/schemas.js?v=v1.2.5"></script>
+  <script src="/admin/js/plants.js?v=v1.2.5"></script>
+  <script src="/admin/js/gis.js?v=v1.2.5"></script>
+  <script src="/admin/js/users.js?v=v1.2.5"></script>
+  <script src="/admin/js/devices.js?v=v1.2.5"></script>
+  <script src="/admin/js/ai-training.js?v=v1.2.5"></script>
+  <script src="/admin/js/websocket.js?v=v1.2.5"></script>
 </body>
 
 
