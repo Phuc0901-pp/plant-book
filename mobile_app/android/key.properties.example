@@ -1,0 +1,8 @@
+# Tan Bao Saigon - Android Release Keystore Configuration
+# Lưu ý: File này chứa thông tin bảo mật, KHÔNG commit lên kho Git công khai!
+# Đặt file keystore (.jks) trong thư mục mobile_app/android/app/upload-keystore.jks
+
+keyAlias=tanbao_key
+keyPassword=YourSecurePasswordHere123@
+storePassword=YourSecurePasswordHere123@
+storeFile=upload-keystore.jks
