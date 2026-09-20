@@ -940,9 +940,11 @@ div#login-page[style*="display:none"] {
     .db-iot-filters-wrap > div {
       min-width: 100% !important;
     }
-    #db-pane-version > div:nth-child(2) {
+    #db-pane-version > div:nth-child(2),
+    .db-version-main-grid {
       grid-template-columns: 1fr !important;
       gap: 14px !important;
+      width: 100% !important;
     }
     .table-responsive,
     [style*="overflow-x:auto"],
