@@ -903,6 +903,9 @@ async function loadAdminNfcPageData(farmId) {
 
     const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
     _nfcInventoryCache = res.tags || res.items || [];
+    if (typeof _nfcScanEngine !== 'undefined') {
+      _nfcScanEngine.syncKnownUids(_nfcInventoryCache);
+    }
     _currentAdminNfcPage = 1;
 
     const total = res.stats?.total ?? _nfcInventoryCache.length;
@@ -1199,6 +1202,118 @@ function filterAdminNfcTable() {
 }
 window.filterAdminNfcTable = filterAdminNfcTable;
 
+// ═══════════════════════════════════════════════════════════════
+// SMART NFC INVENTORY SCAN ENGINE (RATE LIMIT 3 REQ/S & 3S DEBOUNCE)
+// ═══════════════════════════════════════════════════════════════
+const NFC_SCAN_RATE_LIMIT_MS = 333; // Tối đa 3 req/s
+const NFC_SAME_TAG_WAIT_MS = 3000;  // 3s yên lặng chờ với cùng 1 thẻ
+
+const _nfcScanEngine = {
+  lastUid: null,
+  lastScanTime: 0,
+  lastReqTime: 0,
+  isProcessing: false,
+  knownUids: new Set(),
+
+  resetState() {
+    this.lastUid = null;
+    this.lastScanTime = 0;
+    this.lastReqTime = 0;
+    this.isProcessing = false;
+  },
+
+  syncKnownUids(tags) {
+    this.knownUids.clear();
+    if (Array.isArray(tags)) {
+      tags.forEach(t => {
+        if (t && t.nfc_uid) this.knownUids.add(t.nfc_uid.trim().toUpperCase());
+      });
+    }
+  },
+
+  async processScan(rawUid, source = 'page') {
+    if (!rawUid || typeof rawUid !== 'string') return;
+    const cleanUid = rawUid.trim().toUpperCase();
+    if (!cleanUid) return;
+
+    if (!_currentInvFarmId) {
+      toast('Vui lòng chọn trang trại quản lý kho thẻ trước!', 'error');
+      return;
+    }
+
+    const now = Date.now();
+
+    // ── QUY TẮC 1: NẾU VẪN LÀ THẺ ĐÓ ──
+    if (this.lastUid === cleanUid) {
+      const elapsed = now - this.lastScanTime;
+
+      // Trong vòng 3s: Vẫn là ID thẻ đó -> Yên lặng đợi (không cảnh báo, không thông báo rác)
+      if (elapsed < NFC_SAME_TAG_WAIT_MS) {
+        return;
+      }
+
+      // Sau 3s: Vẫn là thẻ đó -> Cảnh báo thẻ đã tồn tại trong kho
+      this.lastScanTime = now; // Cập nhật mốc thời gian để tránh spam chuỗi beep
+      playAdminDuplicateBeep();
+      toast(`⚠️ Thẻ ${cleanUid} đã tồn tại trong kho trang trại!`, 'error');
+      return;
+    }
+
+    // ── QUY TẮC 2: THẺ MỚI KHÁC BIỆT HOẶC LẦN QUÉT ĐẦU TIÊN ──
+    // Kiểm tra Rate Limit: Tối đa 3 requests/giây (khoảng cách 333ms)
+    if (now - this.lastReqTime < NFC_SCAN_RATE_LIMIT_MS) {
+      return;
+    }
+
+    if (this.isProcessing) return;
+    this.isProcessing = true;
+    this.lastReqTime = now;
+
+    // Kiểm tra nhanh bộ nhớ cục bộ nếu thẻ đã có sẵn trong kho
+    if (this.knownUids.has(cleanUid)) {
+      this.lastUid = cleanUid;
+      this.lastScanTime = now;
+      this.isProcessing = false;
+      playAdminDuplicateBeep();
+      toast(`⚠️ Trùng lặp: Thẻ ${cleanUid} đã có trong kho!`, 'error');
+      return;
+    }
+
+    // Gửi API lưu kho thẻ mới
+    try {
+      const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/batch`, {
+        method: 'POST',
+        body: JSON.stringify({ uids: [cleanUid] })
+      });
+
+      this.lastUid = cleanUid;
+      this.lastScanTime = Date.now();
+      this.knownUids.add(cleanUid);
+
+      if (res.added && res.added.length > 0) {
+        playAdminSuccessDing();
+        toast(`✨ Đã quẹt thành công và lưu kho thẻ: ${cleanUid}`, 'success');
+        if (source === 'page') {
+          await loadAdminNfcPageData(_currentInvFarmId);
+        } else {
+          await loadNfcInventoryData(_currentInvFarmId);
+        }
+      } else {
+        playAdminDuplicateBeep();
+        toast(`⚠️ Trùng lặp: Thẻ ${cleanUid} đã có trong kho!`, 'error');
+      }
+    } catch (err) {
+      this.lastUid = cleanUid;
+      this.lastScanTime = Date.now();
+      this.knownUids.add(cleanUid);
+      playAdminDuplicateBeep();
+      toast(`⚠️ ${err.message || `Thẻ ${cleanUid} đã có trong kho!`}`, 'error');
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+};
+
 async function handleAdminPageQuickNfcInput(event) {
   if (event) event.preventDefault();
   handleAdminPageQuickNfcInputBtn();
@@ -1211,33 +1326,9 @@ async function handleAdminPageQuickNfcInputBtn() {
   const uid = inputEl.value.trim();
   if (!uid) return;
 
-  if (!_currentInvFarmId) {
-    toast('Vui lòng chọn trang trại trước!', 'error');
-    return;
-  }
-
-  try {
-    const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/batch`, {
-      method: 'POST',
-      body: JSON.stringify({ uids: [uid] })
-    });
-
-    if (res.added && res.added.length > 0) {
-      playAdminSuccessDing();
-      toast(`✅ Đã thêm thẻ ${uid} vào kho!`, 'success');
-      inputEl.value = '';
-      inputEl.focus();
-      await loadAdminNfcPageData(_currentInvFarmId);
-    } else if (res.duplicates && res.duplicates.length > 0) {
-      playAdminDuplicateBeep();
-      toast(`⚠️ Thẻ ${uid} đã tồn tại trong kho hoặc đã gán cây!`, 'error');
-      inputEl.select();
-    }
-  } catch (err) {
-    playAdminDuplicateBeep();
-    toast(`Lỗi thêm thẻ: ${err.message}`, 'error');
-    inputEl.select();
-  }
+  await _nfcScanEngine.processScan(uid, 'page');
+  inputEl.value = '';
+  inputEl.focus();
 }
 window.handleAdminPageQuickNfcInputBtn = handleAdminPageQuickNfcInputBtn;
 
@@ -1261,6 +1352,7 @@ async function startContinuousNfcScanPage() {
     _ndefReaderInstancePage = new NDEFReader();
     await _ndefReaderInstancePage.scan();
     _isContinuousScanningPage = true;
+    _nfcScanEngine.resetState();
 
     const btn = document.getElementById('btn-toggle-continuous-nfc-page');
     if (btn) {
@@ -1275,26 +1367,7 @@ async function startContinuousNfcScanPage() {
 
     _ndefReaderInstancePage.addEventListener('reading', async ({ serialNumber }) => {
       if (!serialNumber) return;
-      const cleanUid = serialNumber.trim().toUpperCase();
-
-      try {
-        const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/batch`, {
-          method: 'POST',
-          body: JSON.stringify({ uids: [cleanUid] })
-        });
-
-        if (res.added && res.added.length > 0) {
-          playAdminSuccessDing();
-          toast(`✨ Đã quẹt thành công thẻ: ${cleanUid}`, 'success');
-          await loadAdminNfcPageData(_currentInvFarmId);
-        } else {
-          playAdminDuplicateBeep();
-          toast(`⚠️ Trùng lặp: Thẻ ${cleanUid} đã có trong kho!`, 'error');
-        }
-      } catch (e) {
-        playAdminDuplicateBeep();
-        toast(`⚠️ ${e.message}`, 'error');
-      }
+      await _nfcScanEngine.processScan(serialNumber, 'page');
     });
 
     toast('🚀 Đã kích hoạt Chế độ Quét liên tục. Hãy chạm lần lượt từng thẻ vào mặt sau điện thoại!');
@@ -1307,6 +1380,7 @@ async function startContinuousNfcScanPage() {
 function stopContinuousNfcScanPage() {
   _isContinuousScanningPage = false;
   _ndefReaderInstancePage = null;
+  _nfcScanEngine.resetState();
 
   const btn = document.getElementById('btn-toggle-continuous-nfc-page');
   if (btn) {
@@ -1367,6 +1441,9 @@ async function loadNfcInventoryData(farmId) {
   try {
     const res = await api(`/plants/farms/${farmId}/nfc-inventory`);
     _nfcInventoryCache = res.tags || res.items || [];
+    if (typeof _nfcScanEngine !== 'undefined') {
+      _nfcScanEngine.syncKnownUids(_nfcInventoryCache);
+    }
     _currentModalNfcPage = 1;
 
     const total = res.stats?.total ?? _nfcInventoryCache.length;
@@ -1535,33 +1612,9 @@ async function handleQuickNfcInputBtn() {
   const uid = inputEl.value.trim();
   if (!uid) return;
 
-  if (!_currentInvFarmId) {
-    toast('Chưa xác định trang trại!', 'error');
-    return;
-  }
-
-  try {
-    const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/batch`, {
-      method: 'POST',
-      body: JSON.stringify({ uids: [uid] })
-    });
-
-    if (res.added && res.added.length > 0) {
-      playAdminSuccessDing();
-      toast(`✅ Đã thêm thẻ ${uid} vào kho!`, 'success');
-      inputEl.value = '';
-      inputEl.focus();
-      await loadNfcInventoryData(_currentInvFarmId);
-    } else if (res.duplicates && res.duplicates.length > 0) {
-      playAdminDuplicateBeep();
-      toast(`⚠️ Thẻ ${uid} đã tồn tại trong kho hoặc đã gán cây!`, 'error');
-      inputEl.select();
-    }
-  } catch (err) {
-    playAdminDuplicateBeep();
-    toast(`Lỗi thêm thẻ: ${err.message}`, 'error');
-    inputEl.select();
-  }
+  await _nfcScanEngine.processScan(uid, 'modal');
+  inputEl.value = '';
+  inputEl.focus();
 }
 window.handleQuickNfcInputBtn = handleQuickNfcInputBtn;
 
@@ -1585,6 +1638,7 @@ async function startContinuousNfcScan() {
     _ndefReaderInstance = new NDEFReader();
     await _ndefReaderInstance.scan();
     _isContinuousScanning = true;
+    _nfcScanEngine.resetState();
 
     const btn = document.getElementById('btn-toggle-continuous-nfc');
     if (btn) {
@@ -1599,26 +1653,7 @@ async function startContinuousNfcScan() {
 
     _ndefReaderInstance.addEventListener('reading', async ({ serialNumber }) => {
       if (!serialNumber) return;
-      const cleanUid = serialNumber.trim().toUpperCase();
-
-      try {
-        const res = await api(`/plants/farms/${_currentInvFarmId}/nfc-inventory/batch`, {
-          method: 'POST',
-          body: JSON.stringify({ uids: [cleanUid] })
-        });
-
-        if (res.added && res.added.length > 0) {
-          playAdminSuccessDing();
-          toast(`✨ Đã quẹt thành công thẻ: ${cleanUid}`, 'success');
-          await loadNfcInventoryData(_currentInvFarmId);
-        } else {
-          playAdminDuplicateBeep();
-          toast(`⚠️ Trùng lặp: Thẻ ${cleanUid} đã có trong kho!`, 'error');
-        }
-      } catch (e) {
-        playAdminDuplicateBeep();
-        toast(`⚠️ ${e.message}`, 'error');
-      }
+      await _nfcScanEngine.processScan(serialNumber, 'modal');
     });
 
     toast('🚀 Đã kích hoạt Chế độ Quét liên tục. Hãy chạm lần lượt từng thẻ vào mặt sau điện thoại!');
@@ -1631,6 +1666,7 @@ async function startContinuousNfcScan() {
 function stopContinuousNfcScan() {
   _isContinuousScanning = false;
   _ndefReaderInstance = null;
+  _nfcScanEngine.resetState();
 
   const btn = document.getElementById('btn-toggle-continuous-nfc');
   if (btn) {
