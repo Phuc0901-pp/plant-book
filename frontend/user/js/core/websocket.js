@@ -108,7 +108,17 @@ export function closeWebSocket() {
 }
 
 function handleUserRealtimeEvent(msg) {
-  const { event } = msg;
+  const { event, data } = msg;
+
+  if (event === 'version_updated') {
+    const vTag = data?.version_tag || data?.versionTag || `v${data?.version_number}`;
+    document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {
+      el.textContent = vTag;
+    });
+    if (typeof window.showToast === 'function') {
+      window.showToast(`🚀 Sổ Nông đã cập nhật phiên bản mới: ${vTag}!`, 'info');
+    }
+  }
 
   if (event === 'plants_updated' || event === 'farms_updated' || event === 'supplies_updated' || event === 'new_care_log') {
     console.log('🔄 Live refresh from server event:', event);

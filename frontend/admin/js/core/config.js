@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   Plant Book – User Portal
+   Plant Book – Admin Portal
    core/config.js — Centralized App Configuration (SSOT)
    ═══════════════════════════════════════════════════════════════ */
 
@@ -7,10 +7,10 @@ export const APP_CONFIG = {
   "app": {
     "name": "Sổ Nông Tân Bảo Agtech",
     "shortName": "Sổ Nông Số",
-    "version": "1.2.4",
-    "versionTag": "v1.2.4",
-    "buildNumber": 8,
-    "releaseDate": "2026-09-18",
+    "version": "1.2.8",
+    "versionTag": "v1.2.8",
+    "buildNumber": 12,
+    "releaseDate": "2026-09-20",
     "environment": "production"
   },
   "brand": {
@@ -20,8 +20,8 @@ export const APP_CONFIG = {
     "owner": "TBSG Agtech © 2026",
     "copyright": "Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech",
     "loginFooter": "Bảo mật SSL/TLS · Phát triển & Sở hữu bởi TBSG Agtech © 2026",
-    "userPortalTitle": "Sổ Nông Tân Bảo Agtech v1.2.4 — Cổng nông hộ",
-    "adminPortalTitle": "Sổ Nông Tân Bảo Agtech v1.2.4 — Quản trị",
+    "userPortalTitle": "Sổ Nông Tân Bảo Agtech v1.2.8 — Cổng nông hộ",
+    "adminPortalTitle": "Sổ Nông Tân Bảo Agtech v1.2.8 — Quản trị",
     "plantProfileTitle": "Hồ sơ cây trồng — Sổ Nông Tân Bảo Agtech"
   },
   "api": {
@@ -32,8 +32,8 @@ export const APP_CONFIG = {
     "versionEndpoint": "/api/version"
   },
   "cache": {
-    "swCacheName": "pb-farmer-cache-v1.2.4",
-    "assetVersion": "1.2.4"
+    "swCacheName": "pb-farmer-cache-v1.2.8",
+    "assetVersion": "1.2.8"
   },
   "defaults": {
     "farmLatitude": 10.94152,
@@ -59,4 +59,35 @@ export function getBrandInfo() {
 
 export function getAppConfig() {
   return APP_CONFIG;
+}
+
+/**
+ * Dynamically synchronizes application version from database via /api/version
+ */
+export async function syncAppVersionFromDB() {
+  try {
+    const res = await fetch('/api/version');
+    if (!res.ok) return APP_CONFIG.app;
+    const data = await res.json();
+    if (data.versionTag) {
+      APP_CONFIG.app.version = data.version;
+      APP_CONFIG.app.versionTag = data.versionTag;
+      APP_CONFIG.app.buildNumber = data.buildNumber;
+      updateAppVersionInDOM(data.versionTag);
+    }
+    return APP_CONFIG.app;
+  } catch (err) {
+    console.warn('[config] Could not sync version from DB:', err.message);
+    return APP_CONFIG.app;
+  }
+}
+
+/**
+ * Updates version tags across the DOM dynamically
+ */
+export function updateAppVersionInDOM(versionTag) {
+  if (!versionTag) return;
+  document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {
+    el.textContent = versionTag;
+  });
 }

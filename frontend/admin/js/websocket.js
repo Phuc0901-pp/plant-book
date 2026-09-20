@@ -168,6 +168,17 @@ function handleRealtimeEvent(msg) {
     }
   }
 
+  if (event === 'version_updated') {
+    const vTag = data.version_tag || data.versionTag || `v${data.version_number}`;
+    document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {
+      el.textContent = vTag;
+    });
+    toast(`🚀 Hệ thống vừa cập nhật phiên bản mới: ${vTag}!`, 'info');
+    if (typeof loadVersionManagerData === 'function') {
+      loadVersionManagerData();
+    }
+  }
+
 }
 
 // Visual flash notification on updated row

@@ -106,6 +106,25 @@ async function initDB() {
       )
     `);
 
+    // App Versions table (SSOT for dynamic system & mobile versioning)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS app_versions (
+        id SERIAL PRIMARY KEY,
+        version_tag VARCHAR(50) NOT NULL UNIQUE,
+        version_number VARCHAR(50) NOT NULL,
+        build_number INTEGER DEFAULT 1,
+        platform VARCHAR(50) DEFAULT 'all',
+        min_supported_version VARCHAR(50) DEFAULT '1.0.0',
+        apk_url TEXT DEFAULT '/PlantBook-Mobile-ERP-v1.2.4-universal.apk',
+        release_notes TEXT,
+        force_update BOOLEAN DEFAULT FALSE,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_app_versions_active ON app_versions(is_active, id DESC);
+    `);
+
     // Password reset requests table
     await client.query(`
       CREATE TABLE IF NOT EXISTS password_reset_requests (
@@ -581,6 +600,35 @@ async function initDB() {
         ON CONFLICT (key) DO NOTHING
       `, [config.key, config.value]);
     }
+
+    // Seed default app version (SSOT for dynamic version management)
+    await client.query(`
+      INSERT INTO app_versions (
+        version_tag, version_number, build_number, platform,
+        min_supported_version, apk_url, release_notes, force_update, is_active
+      )
+      VALUES (
+        'v1.2.8',
+        '1.2.8',
+        12,
+        'all',
+        '1.0.0',
+        '/PlantBook-Mobile-ERP-v1.2.4-universal.apk',
+        'Quản lý phiên bản tập trung từ CSDL, Thuật toán quét NFC thông minh 3 req/s & chống spam 3s, Chuẩn hóa giao diện ERP.',
+        FALSE,
+        TRUE
+      )
+      ON CONFLICT (version_tag) DO UPDATE SET
+        is_active = TRUE,
+        updated_at = NOW();
+    `);
+
+    // Sync to system_configs
+    await client.query(`
+      INSERT INTO system_configs (key, value, updated_at)
+      VALUES ('app_version', '{"version": "1.2.8", "versionTag": "v1.2.8", "buildNumber": 12, "releaseDate": "2026-09-20"}'::jsonb, NOW())
+      ON CONFLICT (key) DO NOTHING;
+    `);
 
 
     // Seed admin user

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/constants/app_constants.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
 import '../components/loading_indicator.dart';
@@ -304,9 +305,9 @@ class _SettingsPageState extends State<SettingsPage> {
                           borderRadius: BorderRadius.circular(100),
                           border: Border.all(color: AppTheme.green.withOpacity(0.3)),
                         ),
-                        child: const Text(
-                          'v1.2.4',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.green),
+                        child: Text(
+                          AppConstants.appVersion,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.green),
                         ),
                       ),
                       const SizedBox(height: 6),

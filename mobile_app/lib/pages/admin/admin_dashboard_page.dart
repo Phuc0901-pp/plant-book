@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_constants.dart';
 import '../../services/api_service.dart';
 import '../../models/plant.dart';
 import '../../models/farm.dart';
@@ -1086,9 +1087,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               borderRadius: BorderRadius.circular(100),
               border: Border.all(color: const Color(0xFF0F766E).withOpacity(0.2)),
             ),
-            child: const Text(
-              'v1.2.4 • Enterprise Edition',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+            child: Text(
+              '${AppConstants.appVersion} • Enterprise Edition',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
             ),
           ),
           const SizedBox(height: 6),

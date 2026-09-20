@@ -2980,3 +2980,17 @@ function openPublicFarmA4ExportModal(map) {
   };
 }
 
+// Sync dynamic version badge on public page
+(async function() {
+  try {
+    const res = await fetch('/api/version');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.versionTag || data.version_tag)) {
+        const vTag = data.versionTag || data.version_tag;
+        document.querySelectorAll('.app-version-badge').forEach(el => el.textContent = vTag);
+      }
+    }
+  } catch (_) {}
+})();
+

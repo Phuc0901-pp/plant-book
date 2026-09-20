@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/constants/app_constants.dart';
 import '../utils/theme.dart';
 import '../pages/admin/admin_dashboard_page.dart';
 import '../pages/admin/admin_user_page.dart';
@@ -134,9 +135,9 @@ class AdminDrawer extends StatelessWidget {
                   },
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'v1.2.4 • Enterprise Edition\nSổ Nông Tân Bảo © 2026',
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w600, height: 1.3),
+                Text(
+                  '${AppConstants.appVersion} • Enterprise Edition\nSổ Nông Tân Bảo © 2026',
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w600, height: 1.3),
                   textAlign: TextAlign.center,
                 ),
               ],

@@ -114,7 +114,7 @@ function switchDatabaseTab(tab, syncUrl = true) {
   activeDbTab = tab;
 
   // Update tabs active state
-  ['cultivation', 'nfc', 'devices', 'schemas', 'supplies', 'media', 'history', 'check'].forEach(t => {
+  ['cultivation', 'nfc', 'devices', 'schemas', 'supplies', 'media', 'history', 'check', 'version'].forEach(t => {
     const tabEl = document.getElementById(`db-tab-${t}`);
     const paneEl = document.getElementById(`db-pane-${t}`);
     if (tabEl) tabEl.classList.toggle('active', t === tab);
@@ -139,6 +139,8 @@ function switchDatabaseTab(tab, syncUrl = true) {
     loadHistoryTab();
   } else if (tab === 'check') {
     if (typeof loadDbSchemaCheck === 'function') loadDbSchemaCheck();
+  } else if (tab === 'version') {
+    if (typeof loadVersionManagerData === 'function') loadVersionManagerData();
   }
 }
 
@@ -2445,10 +2447,169 @@ async function openAdminDbCheckView() {
   }
 }
 
+// ── Tab 9: Quản lý & Cập nhật Phiên bản Ứng dụng (App Versioning SSOT) ──
+async function loadVersionManagerData() {
+  try {
+    // 1. Fetch current active version
+    const activeData = await api('/version');
+    if (activeData) {
+      const tag = activeData.versionTag || activeData.version_tag || `v${activeData.version}`;
+      const build = activeData.buildNumber || activeData.build_number || 1;
+      const platform = activeData.platform || 'all';
+      const minVer = activeData.minSupportedVersion || activeData.min_supported_version || '1.0.0';
+      const apk = activeData.apkUrl || activeData.apk_url || '/PlantBook-Mobile-ERP-v1.2.4-universal.apk';
+      const notes = activeData.releaseNotes || activeData.release_notes || '';
+      const updateDate = activeData.updatedAt ? new Date(activeData.updatedAt).toLocaleString('vi-VN') : 'Mới';
+
+      const tagBadge = document.getElementById('ver-active-tag-badge');
+      if (tagBadge) tagBadge.textContent = tag;
+      const buildEl = document.getElementById('ver-active-build');
+      if (buildEl) buildEl.textContent = build;
+      const platEl = document.getElementById('ver-active-platform');
+      if (platEl) platEl.textContent = platform === 'all' ? 'Web App & Mobile (Android/iOS)' : platform;
+      const minEl = document.getElementById('ver-active-min');
+      if (minEl) minEl.textContent = minVer;
+      const dateEl = document.getElementById('ver-active-date');
+      if (dateEl) dateEl.textContent = updateDate;
+
+      // Fill form defaults
+      const inputTag = document.getElementById('ver-input-tag');
+      if (inputTag && !inputTag.value) inputTag.value = tag;
+      const inputBuild = document.getElementById('ver-input-build');
+      if (inputBuild && !inputBuild.value) inputBuild.value = (parseInt(build) + 1);
+      const inputMin = document.getElementById('ver-input-min');
+      if (inputMin && !inputMin.value) inputMin.value = minVer;
+      const inputApk = document.getElementById('ver-input-apk');
+      if (inputApk && !inputApk.value) inputApk.value = apk;
+      const inputNotes = document.getElementById('ver-input-notes');
+      if (inputNotes && !inputNotes.value) inputNotes.value = notes;
+    }
+
+    // 2. Fetch version release history
+    const historyRes = await api('/version/history');
+    const tbody = document.getElementById('ver-history-table-body');
+    const countEl = document.getElementById('ver-history-count');
+    const rows = historyRes?.data || [];
+
+    if (countEl) countEl.textContent = rows.length;
+
+    if (!tbody) return;
+
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#64748b;">Chưa có lịch sử phiên bản nào trong CSDL.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+      const isActive = !!r.is_active;
+      const createdDate = r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : '--';
+      const isForce = !!r.force_update;
+      return `
+        <tr style="border-bottom:1px solid #f1f5f9; ${isActive ? 'background:#f0fdf4;' : ''}">
+          <td style="padding:12px 14px; font-weight:800; color:#0f172a;">
+            <span style="background:${isActive ? '#10b981' : '#64748b'}; color:#fff; padding:3px 10px; border-radius:100px; font-size:12px;">
+              ${esc(r.version_tag)}
+            </span>
+          </td>
+          <td style="padding:12px 14px; font-weight:700; color:#334155;">#${esc(r.build_number)}</td>
+          <td style="padding:12px 14px; font-size:12px; color:#475569;"><span class="badge" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;">${esc(r.platform || 'all')}</span></td>
+          <td style="padding:12px 14px; font-size:12.5px; color:#334155; max-width:280px; line-height:1.4;">${esc(r.release_notes || 'Không có ghi chú')}</td>
+          <td style="padding:12px 14px; text-align:center;">
+            ${isForce ? '<span style="color:#dc2626; font-weight:800; font-size:11px; background:#fee2e2; padding:2px 8px; border-radius:4px; border:1px solid #fca5a5;">BẮT BUỘC</span>' : '<span style="color:#64748b; font-size:11px;">Tùy chọn</span>'}
+          </td>
+          <td style="padding:12px 14px; font-size:11.5px; color:#64748b; white-space:nowrap;">${esc(createdDate)}</td>
+          <td style="padding:12px 14px; text-align:center;">
+            ${isActive ? '<span style="color:#16a34a; font-weight:800; font-size:12px; background:#dcfce7; padding:3px 10px; border-radius:100px; border:1px solid #86efac;">🟢 Đang kích hoạt</span>' : '<span style="color:#94a3b8; font-size:12px;">⚪ Đã lưu</span>'}
+          </td>
+          <td style="padding:12px 14px; text-align:center; white-space:nowrap;">
+            ${!isActive ? `<button onclick="activateVersionInDB(${r.id})" class="btn btn-secondary btn-sm" style="font-size:11.5px; padding:4px 10px; border-radius:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; cursor:pointer;">Kích hoạt</button>` : '<span style="font-size:11px; color:#16a34a; font-weight:700;">Hiện hành</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Error loading version manager:', err);
+    toast('Lỗi khi tải thông tin phiên bản: ' + err.message, 'error');
+  }
+}
+
+async function handlePushVersionToDB(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-push-version-submit');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu vào CSDL...`;
+  }
+
+  try {
+    const versionTag = document.getElementById('ver-input-tag').value.trim();
+    const buildNumber = document.getElementById('ver-input-build').value.trim();
+    const platform = document.getElementById('ver-input-platform').value;
+    const minSupportedVersion = document.getElementById('ver-input-min').value.trim();
+    const apkUrl = document.getElementById('ver-input-apk').value.trim();
+    const releaseNotes = document.getElementById('ver-input-notes').value.trim();
+    const forceUpdate = document.getElementById('ver-input-force').checked;
+
+    const res = await api('/version', {
+      method: 'POST',
+      body: JSON.stringify({
+        versionTag,
+        buildNumber,
+        platform,
+        minSupportedVersion,
+        apkUrl,
+        releaseNotes,
+        forceUpdate,
+        activateNow: true
+      })
+    });
+
+    if (res && res.success) {
+      toast(`🚀 Đã đẩy phiên bản [${res.data?.version_tag || versionTag}] trực tiếp vào CSDL thành công!`, 'success');
+      loadVersionManagerData();
+      document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {
+        el.textContent = res.data?.version_tag || versionTag;
+      });
+    } else {
+      toast(res?.error || 'Không thể lưu phiên bản vào CSDL', 'error');
+    }
+  } catch (err) {
+    toast('Lỗi khi đẩy phiên bản vào CSDL: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+async function activateVersionInDB(id) {
+  if (!confirm('Bạn có chắc muốn chuyển phiên bản đang hoạt động sang bản này không?')) return;
+  try {
+    const res = await api(`/version/${id}/activate`, { method: 'PUT' });
+    if (res && res.success) {
+      toast(res.message || 'Đã kích hoạt phiên bản thành công!', 'success');
+      loadVersionManagerData();
+      if (res.data?.version_tag) {
+        document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {
+          el.textContent = res.data.version_tag;
+        });
+      }
+    }
+  } catch (err) {
+    toast('Lỗi khi kích hoạt: ' + err.message, 'error');
+  }
+}
+
 window.loadDbSchemaCheck = loadDbSchemaCheck;
 window.viewTableRecords = viewTableRecords;
 window.adminDeleteRecord = adminDeleteRecord;
 window.adminEditRecord = adminEditRecord;
 window.adminAddRecord = adminAddRecord;
 window.openAdminDbCheckView = openAdminDbCheckView;
+window.loadVersionManagerData = loadVersionManagerData;
+window.handlePushVersionToDB = handlePushVersionToDB;
+window.activateVersionInDB = activateVersionInDB;
 
