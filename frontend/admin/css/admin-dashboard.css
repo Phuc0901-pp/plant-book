@@ -6,12 +6,48 @@
 }
 
 .admin-executive-banner {
-  background: linear-gradient(135deg, #022c22 0%, #064e3b 35%, #0f172a 75%, #0a1120 100%) !important;
-  border: 1.5px solid rgba(234, 179, 8, 0.45) !important;
-  box-shadow: 0 16px 40px -8px rgba(2, 44, 34, 0.6), 0 0 35px -5px rgba(16, 185, 129, 0.25), inset 0 1px 1px rgba(254, 240, 138, 0.2) !important;
-  color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-left: 4px solid #059669 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.02) !important;
+  border-radius: 14px !important;
+  padding: 16px 22px !important;
+  margin-bottom: 20px !important;
+  color: #0f172a !important;
   position: relative;
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .admin-executive-banner {
+    padding: 12px 14px !important;
+    margin-bottom: 14px !important;
+    border-radius: 12px !important;
+  }
+  .admin-executive-banner .royal-page-header-title {
+    font-size: 16px !important;
+  }
+  .admin-executive-banner .royal-page-header-desc {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+  .dashboard-header-controls {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    margin-top: 6px !important;
+  }
+  .dashboard-header-controls > div:first-child {
+    flex: 1 1 auto !important;
+    padding: 6px 10px !important;
+  }
+  .dashboard-header-controls > button {
+    flex: 0 0 auto !important;
+    padding: 6px 12px !important;
+    white-space: nowrap !important;
+  }
 }
 
   /* ── Dashboard Cards & Chips ── */
