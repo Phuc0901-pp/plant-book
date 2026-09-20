@@ -50,12 +50,12 @@ window.getUserHash = getUserHash;
 /** Page titles mapping */
 export const PAGE_TITLES = {
   home:     'Trang chủ',
-  myplants: 'Trang trại',
-  farms:    'Trang trại',
-  supplies: 'Quản lý & Giám sát Vật tư',
-  logs:     'Lịch sử Hoạt động Canh tác',
-  wiki:     'Bách khoa & Hướng dẫn',
-  settings: 'Cài đặt tài khoản',
+  myplants: 'Trang trại GIS',
+  farms:    'Trang trại GIS',
+  supplies: 'Vật tư & Tồn kho',
+  logs:     'Lịch sử Canh tác',
+  wiki:     'HDSD & Bách khoa',
+  settings: 'Cài đặt',
 };
 
 /** Alias map for standard RESTful URL names */

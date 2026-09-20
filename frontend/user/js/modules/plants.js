@@ -400,19 +400,14 @@ function _plantRow(p) {
       <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
       <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="URL Công khai"><div>${publicUrlCell}</div></td>
-      <td data-label="Thao tác">
-        <div class="plant-action-menu">
-          <button type="button" class="btn-icon-dots" onclick="togglePlantMenu(this, event)" title="Thao tác" aria-label="Menu thao tác cây">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
+      <td data-label="Thao tác" class="plant-actions-cell">
+        <div class="erp-plant-action-btns">
+          <button type="button" class="btn-erp-plant-action btn-erp-plant-care" onclick="openCareModal(${p.id}, '${treeCodeSafe}', '${plantTypeSafe}')" title="Ghi chép hoạt động chăm sóc & canh tác">
+            <i class="fa-solid fa-file-signature"></i> <span>Ghi nhật ký</span>
           </button>
-          <div class="plant-action-dropdown">
-            <button type="button" onclick="openCareModal(${p.id}, '${treeCodeSafe}', '${plantTypeSafe}'); closePlantMenu(this)">
-              <i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký
-            </button>
-            <button type="button" onclick="openNfcModal(${p.id}, '${treeCodeSafe}', '${slugSafe}', ${uidVal}); closePlantMenu(this)">
-              <i class="fa-solid fa-tag" style="color:#3b82f6"></i> Định danh thẻ NFC
-            </button>
-          </div>
+          <button type="button" class="btn-erp-plant-action btn-erp-plant-nfc" onclick="openNfcModal(${p.id}, '${treeCodeSafe}', '${slugSafe}', ${uidVal})" title="Gán hoặc định danh thẻ NFC cho cây">
+            <i class="fa-solid fa-tag"></i> <span>Gán thẻ NFC</span>
+          </button>
         </div>
       </td>
     </tr>`;

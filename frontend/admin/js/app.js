@@ -277,16 +277,16 @@ function showPage(page, pushUrl = true) {
   }
 
   const titles = { 
-    dashboard: 'Dashboard & Không Gian GIS Trang Trại', 
-    database: 'Cơ sở dữ liệu & Nhật ký Canh tác',
-    'db-check': 'Kiểm tra CSDL Schema & Quản trị Dữ liệu',
+    dashboard: 'Dashboard GIS', 
+    database: 'Cơ sở dữ liệu & Vận hành',
+    'db-check': 'Kiểm tra CSDL Schema',
     plants: 'Danh sách cây trồng', 
     schemas: 'Cấu hình loại cây', 
     media: 'Thư viện Media', 
-    users: 'Quản lý Nông hộ & Người dùng',
-    'ai-training': 'Trung Tâm Huấn Luyện AI Bé Mầm (Training Studio)',
+    users: 'Người dùng & Nông hộ',
+    'ai-training': 'Huấn luyện AI Bé Mầm',
     devices: 'Quản lý thiết bị IoT',
-    cost: 'Quản trị Chi phí Đầu tư'
+    cost: 'Quản trị Chi phí'
   };
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = titles[page] || page;
