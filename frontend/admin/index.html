@@ -1080,9 +1080,9 @@
             </div>
 
             <!-- Farm Overview Hero Bar (Personnel & Quick Stats) -->
-            <div id="db-farm-hero-bar" style="display:none; background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div id="db-farm-hero-bar" class="db-farm-hero-bar" style="display:none; background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
               <!-- Personnel Pills (Name & Phone only - No Role) -->
-              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
+              <div class="db-farm-personnel-wrap" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
                 <span style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
                   <i class="fa-solid fa-users" style="color:#059669;"></i> Người tham gia:
                 </span>
@@ -1092,17 +1092,17 @@
               </div>
 
               <!-- Quick Stats & Actions -->
-              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                <button class="btn btn-secondary btn-sm" onclick="openNfcInventoryModal()" style="background:#f0fdf4; border:1.5px solid #86efac; color:#166534; font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Quản lý kho thẻ NFC và quét liên tục">
+              <div class="db-farm-actions-grid" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm" onclick="openNfcInventoryModal()" style="background:#f0fdf4; border:1.5px solid #86efac; color:#166534; font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" title="Quản lý kho thẻ NFC và quét liên tục">
                   <i class="fa-solid fa-boxes-stacked" style="color:#059669;"></i> Kho Thẻ NFC
                 </button>
-                <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
+                <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
                   <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Đi Vườn Gán Thẻ & GPS
                 </button>
-                <button class="btn btn-primary btn-sm" onclick="openPlantModalForActiveDbFarm()" style="background:#059669; color:#ffffff; border:none; border-radius:8px; font-weight:700; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
+                <button class="btn btn-primary btn-sm" onclick="openPlantModalForActiveDbFarm()" style="background:#059669; color:#ffffff; border:none; border-radius:8px; font-weight:700; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
                   <i class="fa fa-plus"></i> + Thêm Cây Mới
                 </button>
-                <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:800; padding:6px 12px; border-radius:8px;">
+                <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:800; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
                   🌱 <strong id="db-hero-plants-count">0</strong> cây trồng
                 </span>
               </div>
@@ -1202,33 +1202,33 @@
 
     <!-- Quick Stats & Controls Bar -->
     <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-        <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:13px; font-weight:800; padding:6px 14px; border-radius:8px;">
-          📦 Tổng thẻ kho: <strong id="db-nfc-total-count" style="font-size:15px;">0</strong>
+      <div class="db-nfc-stats-grid" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+          📦 Tổng thẻ kho: <strong id="db-nfc-total-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
-        <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:13px; font-weight:800; padding:6px 14px; border-radius:8px;">
-          🔗 Đã gán cây: <strong id="db-nfc-assigned-count" style="font-size:15px;">0</strong>
+        <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+          🔗 Đã gán cây: <strong id="db-nfc-assigned-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
-        <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:13px; font-weight:800; padding:6px 14px; border-radius:8px;">
-          🟢 Còn trống (Sẵn sàng): <strong id="db-nfc-unassigned-count" style="font-size:15px;">0</strong>
+        <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+          🟢 Còn trống: <strong id="db-nfc-unassigned-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
       </div>
 
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <label style="font-size:12px; font-weight:700; color:#475569; display:flex; align-items:center; gap:6px; cursor:pointer;">
+      <div class="db-nfc-actions-grid" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <label class="db-nfc-sound-label" style="font-size:12px; font-weight:700; color:#475569; display:flex; align-items:center; gap:6px; cursor:pointer; padding:4px 6px;">
           <input type="checkbox" id="db-nfc-sound-toggle" checked style="accent-color:#059669; width:16px; height:16px;">
           🔊 Âm thanh Ding / Bíp
         </label>
-        <button id="btn-export-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="exportAdminNfcInventoryCsv()" style="background:#ffffff; color:#047857; border:1.5px solid #10b981; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Xuất toàn bộ danh sách thẻ NFC ra file CSV / Excel với chuẩn UTF-8 tiếng Việt">
-          <i class="fa-solid fa-file-csv" style="font-size:15px; color:#059669;"></i> 📥 Xuất File CSV / Excel
+        <button id="btn-export-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="exportAdminNfcInventoryCsv()" style="background:#ffffff; color:#047857; border:1.5px solid #10b981; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Xuất toàn bộ danh sách thẻ NFC ra file CSV / Excel">
+          <i class="fa-solid fa-file-csv" style="font-size:14px; color:#059669;"></i> 📥 Xuất File CSV / Excel
         </button>
-        <button id="btn-import-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="openAdminNfcImportModal()" style="background:#f0fdf4; color:#065f46; border:1.5px solid #059669; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Import danh sách thẻ NFC đối xứng từ file CSV / Excel vào kho">
-          <i class="fa-solid fa-file-import" style="font-size:15px; color:#059669;"></i> 📤 Import CSV / Excel
+        <button id="btn-import-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="openAdminNfcImportModal()" style="background:#f0fdf4; color:#065f46; border:1.5px solid #059669; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Import danh sách thẻ NFC">
+          <i class="fa-solid fa-file-import" style="font-size:14px; color:#059669;"></i> 📤 Import CSV / Excel
         </button>
-        <button class="btn btn-secondary btn-sm" onclick="unassignAllAdminNfcTags()" style="background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Gỡ toàn bộ thẻ NFC đã gán cho tất cả cây trong trang trại này (chuyển về trạng thái sẵn sàng trong kho)">
+        <button class="btn btn-secondary btn-sm" onclick="unassignAllAdminNfcTags()" style="background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" title="Gỡ toàn bộ thẻ NFC đã gán cho tất cả cây trong trang trại này">
           <i class="fa-solid fa-link-slash"></i> Gỡ hết thẻ đã gán
         </button>
-        <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12.5px; padding:8px 16px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
+        <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12px; padding:7px 14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
           <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Đi Vườn Gán Thẻ & GPS
         </button>
       </div>
@@ -1236,30 +1236,30 @@
   </div>
 
   <!-- 2. BATCH SCANNING & QUICK INPUT STRIP -->
-  <div class="card" style="margin-bottom:20px; border-radius:16px; border:1.5px solid #a7f3d0; background:#ecfdf5; padding:18px 22px; box-shadow:0 4px 16px rgba(16,185,129,0.08);">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+  <div class="card db-nfc-scan-card" style="margin-bottom:20px; border-radius:16px; border:1.5px solid #a7f3d0; background:#ecfdf5; padding:18px 22px; box-shadow:0 4px 16px rgba(16,185,129,0.08);">
+    <div class="db-nfc-scan-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <span id="db-nfc-scan-status-pill" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:12px; font-weight:800; padding:5px 14px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
           <i class="fa-solid fa-rss"></i> <span id="db-nfc-scan-status-text">Sẵn sàng nhập kho</span>
         </span>
-        <small style="color:#065f46; font-size:12.5px; font-weight:600;">
+        <small style="color:#065f46; font-size:12px; font-weight:600;">
           (Dùng Web NFC trên điện thoại hoặc cắm đầu đọc USB để quẹt thẻ liên tục)
         </small>
       </div>
-      <button id="btn-toggle-continuous-nfc-page" onclick="toggleContinuousNfcScanPage()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 20px; font-size:13.5px; font-weight:800; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:8px;">
+      <button id="btn-toggle-continuous-nfc-page" onclick="toggleContinuousNfcScanPage()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 20px; font-size:13px; font-weight:800; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3); display:inline-flex; align-items:center; justify-content:center; gap:8px;">
         <i class="fa-solid fa-play"></i> Bật Quét Thẻ Liên Tục (Web NFC)
       </button>
     </div>
 
     <!-- Quick Text Input Bar (Keyboard / USB Reader / Manual) -->
-    <div style="display:flex; gap:10px;">
+    <div class="db-nfc-input-row" style="display:flex; gap:10px;">
       <div style="position:relative; flex:1;">
         <i class="fa-solid fa-barcode" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#059669; font-size:16px;"></i>
         <input type="text" id="db-nfc-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..." 
                onkeydown="if(event.key==='Enter') handleAdminPageQuickNfcInput(event)"
-               style="width:100%; padding:11px 14px 11px 42px; border:1.5px solid #6ee7b7; border-radius:10px; font-size:13.5px; font-family:monospace; font-weight:700; color:#0f172a; outline:none; background:#ffffff; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
+               style="width:100%; padding:11px 14px 11px 42px; border:1.5px solid #6ee7b7; border-radius:10px; font-size:13px; font-family:monospace; font-weight:700; color:#0f172a; outline:none; background:#ffffff; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
       </div>
-      <button onclick="handleAdminPageQuickNfcInputBtn()" style="background:#047857; color:#ffffff; border:none; padding:11px 22px; border-radius:10px; font-weight:800; font-size:13.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(4,120,87,0.25);">
+      <button onclick="handleAdminPageQuickNfcInputBtn()" class="db-nfc-add-btn" style="background:#047857; color:#ffffff; border:none; padding:11px 20px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 2px 8px rgba(4,120,87,0.25);">
         <i class="fa-solid fa-plus"></i> Thêm Thẻ Vào Kho
       </button>
     </div>
@@ -1589,9 +1589,9 @@
         <div class="tab-pane" id="db-pane-schemas" style="display:none;">
 
           <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
+          <div class="schema-kpi-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:20px;">
+            <div class="card schema-kpi-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
                 <i class="fa-solid fa-layer-group"></i>
               </div>
               <div>
@@ -1600,8 +1600,8 @@
               </div>
             </div>
 
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:20px;">
+            <div class="card schema-kpi-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
                 <i class="fa-solid fa-list-check"></i>
               </div>
               <div>
@@ -1610,8 +1610,8 @@
               </div>
             </div>
 
-            <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
-              <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px;">
+            <div class="card schema-kpi-card schema-kpi-card-span" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
                 <i class="fa-solid fa-clipboard-list"></i>
               </div>
               <div>
@@ -1623,8 +1623,8 @@
 
           <!-- TẦNG 2: CONTROL BAR & SUB-TABS -->
           <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
-            <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-              <div style="display:flex; gap:10px;">
+            <div class="schema-tabs-container tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; overflow-x:auto; gap:12px;">
+              <div style="display:flex; gap:10px; flex-shrink:0;">
                 <div class="tab active" id="config-tab-schema" onclick="switchConfigTab('schema')" style="padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer;">
                   🌳 Danh Mục Loại Cây &amp; Schema
                 </div>
@@ -1634,8 +1634,8 @@
               </div>
 
               <!-- Top Action Button -->
-              <div style="padding:8px 0;" id="schema-top-actions">
-                <button class="btn btn-primary btn-sm" onclick="openSchemaModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
+              <div style="padding:8px 0; flex-shrink:0;" id="schema-top-actions">
+                <button class="btn btn-primary btn-sm" onclick="openSchemaModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer; white-space:nowrap;">
                   <i class="fa fa-plus"></i> + Tạo Loại Cây Mới
                 </button>
               </div>
@@ -1811,7 +1811,7 @@
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 
                 <!-- Left: 2-Level Filter & Search -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
+                <div class="db-supply-filter-grid" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
                   <div style="min-width:180px; flex:1;">
                     <select id="db-supply-filter-user" onchange="onSupplyFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
                       <option value="">— Tất cả Khách hàng —</option>
@@ -1830,12 +1830,12 @@
                 </div>
 
                 <!-- Right: Action Buttons -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kho
+                <div class="db-supply-action-btns" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
+                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo
                   </button>
 
-                  <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+                  <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
                     <i class="fa fa-plus"></i> + Nhập Vật Tư Mới
                   </button>
                 </div>
@@ -1844,12 +1844,12 @@
               <!-- Row 2: Smart Filter Chips Bar & View Switcher -->
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
                 <!-- Filter Chips -->
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-supply-chips-bar">
+                <div class="db-supply-chips-scrollable" id="db-supply-chips-bar" style="display:flex; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; max-width:100%; flex:1;">
                   <!-- Generated dynamically: Tất cả, Phân bón, Thuốc BVTV, Tồn thấp, Vô hạn... -->
                 </div>
 
                 <!-- View Mode Switcher -->
-                <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                <div class="db-supply-view-switcher" style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
                   <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
                     <i class="fa-solid fa-table-list"></i> Bảng ERP
                   </button>

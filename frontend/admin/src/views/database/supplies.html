@@ -57,7 +57,7 @@
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 
                 <!-- Left: 2-Level Filter & Search -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
+                <div class="db-supply-filter-grid" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1; min-width:280px;">
                   <div style="min-width:180px; flex:1;">
                     <select id="db-supply-filter-user" onchange="onSupplyFilterChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
                       <option value="">— Tất cả Khách hàng —</option>
@@ -76,12 +76,12 @@
                 </div>
 
                 <!-- Right: Action Buttons -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kho
+                <div class="db-supply-action-btns" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
+                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo
                   </button>
 
-                  <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+                  <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
                     <i class="fa fa-plus"></i> + Nhập Vật Tư Mới
                   </button>
                 </div>
@@ -90,12 +90,12 @@
               <!-- Row 2: Smart Filter Chips Bar & View Switcher -->
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
                 <!-- Filter Chips -->
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="db-supply-chips-bar">
+                <div class="db-supply-chips-scrollable" id="db-supply-chips-bar" style="display:flex; align-items:center; gap:8px; overflow-x:auto; white-space:nowrap; max-width:100%; flex:1;">
                   <!-- Generated dynamically: Tất cả, Phân bón, Thuốc BVTV, Tồn thấp, Vô hạn... -->
                 </div>
 
                 <!-- View Mode Switcher -->
-                <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                <div class="db-supply-view-switcher" style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
                   <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
                     <i class="fa-solid fa-table-list"></i> Bảng ERP
                   </button>
