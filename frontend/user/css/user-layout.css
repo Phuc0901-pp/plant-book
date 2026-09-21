@@ -104,31 +104,6 @@ body {
   background: #fff;
 }
 
-/* ── Outdoor / Field UX Mode ── */
-body.field-mode {
-  font-size: 17px;
-  background: #0f172a;
-  color: #f8fafc;
-}
-body.field-mode button, 
-body.field-mode input, 
-body.field-mode select, 
-body.field-mode textarea {
-  min-height: 52px !important;
-  font-size: 16px !important;
-  border-width: 2px !important;
-}
-body.field-mode .card,
-body.field-mode .topbar,
-body.field-mode .sidebar {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-  color: #f8fafc !important;
-}
-body.field-mode .welcome-banner {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.92) 100%) !important;
-  border-color: #334155 !important;
-}
 /* ── Master Clean ERP Header System (Executive AgTech Cockpit) ── */
 .royal-page-header,
 .executive-obsidian-banner,
@@ -225,17 +200,6 @@ body.field-mode .welcome-banner {
   border-color: #047857 !important;
   color: #ffffff !important;
 }
-body.field-mode .btn-primary {
-  background: #10b981 !important;
-  font-weight: 800 !important;
-}
-body.field-mode .gis-plant-item,
-body.field-mode .nav-item {
-  min-height: 50px;
-  font-size: 16px;
-}
-
-
 
 /* ══════════════════════════════════════════
    APP SHELL
@@ -4215,10 +4179,6 @@ td[data-label="Thao tác"] {
   }
   .topbar-btn-text {
     display: none !important;
-  }
-  #btn-field-mode {
-    padding: 6px 10px !important;
-    border-radius: 8px !important;
   }
   #offline-sync-badge {
     padding: 5px 8px !important;

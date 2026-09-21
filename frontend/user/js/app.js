@@ -380,23 +380,11 @@ try {
   console.warn('[App] Chibi Mascot init warning:', err);
 }
 
-// ── Field UX Mode (Outdoor Sunlight Mode) ───────────────────
-window.toggleFieldMode = function(forceState) {
-  const isField = typeof forceState === 'boolean' ? forceState : !document.body.classList.contains('field-mode');
-  document.body.classList.toggle('field-mode', isField);
-  localStorage.setItem('pb_field_mode', isField ? 'true' : 'false');
-  const btn = document.getElementById('btn-field-mode');
-  if (btn) {
-    btn.innerHTML = isField 
-      ? '<i class="fa-solid fa-cloud-sun" style="color:#10b981;"></i> Chế độ chuẩn'
-      : '<i class="fa-solid fa-sun" style="color:#f59e0b;"></i> Chế độ ngoài vườn';
-  }
-};
-
-// Initialize Field Mode preference on load
-if (localStorage.getItem('pb_field_mode') === 'true') {
-  window.toggleFieldMode(true);
-}
+// Purge legacy field-mode state
+try {
+  localStorage.removeItem('pb_field_mode');
+  document.body.classList.remove('field-mode');
+} catch (_) {}
 
 // Register PWA service worker with Network-First strategy and immediate auto-update check
 if ('serviceWorker' in navigator) {
