@@ -1,0 +1,57 @@
+<!-- ════════════ SCHEMA MODAL ════════════ -->
+<div class="modal-overlay" id="schema-modal" style="display:none" onclick="if(event.target===this)closeSchemaModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="schema-modal-title"><i class="fa-solid fa-sliders" style="color:var(--green)"></i> Tạo Schema loại cây</h2>
+      <button class="modal-close" onclick="closeSchemaModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Tên Schema *</label>
+        <input type="text" id="s-name" placeholder="VD: Sổ tay Lúa Nước, Cây Ăn Quả...">
+      </div>
+      <div class="field">
+        <label>Mô tả</label>
+        <textarea id="s-desc" placeholder="Mô tả về loại cây và các thông tin theo dõi..."></textarea>
+      </div>
+      <div class="field">
+        <label>Ảnh đại diện loại cây (Crop Image)</label>
+        <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
+          <input type="file" id="s-image" accept="image/*" style="display:none;" onchange="previewSchemaImage(this)">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('s-image').click()" style="padding:8px 12px; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fa fa-image"></i> Chọn ảnh đại diện
+          </button>
+          <div id="schema-image-preview-container" style="display:none; align-items:center; gap:8px;">
+            <img id="schema-image-preview" src="" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--gray-300);">
+            <button class="btn btn-danger btn-sm" type="button" onclick="removeSelectedSchemaImage()" style="padding:4px 8px; font-size:11px;">Xóa</button>
+          </div>
+          <span id="schema-image-filename" style="font-size:12px; color:var(--gray-400);">Chưa chọn ảnh</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Các trường thông tin</label>
+        <div class="schema-fields-list" id="schema-fields-list"></div>
+        <div class="add-field-row" style="margin-top:10px">
+          <input type="text" id="new-field-name" placeholder="Tên trường (VD: Ngày trồng, Diện tích...)">
+          <select id="new-field-type">
+            <option value="text">Văn bản</option>
+            <option value="number">Số</option>
+            <option value="date">Ngày tháng</option>
+            <option value="select">Lựa chọn</option>
+            <option value="textarea">Đoạn văn</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="addSchemaField()"><i class="fa fa-plus"></i></button>
+        </div>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:8px">
+          <i class="fa-solid fa-lightbulb" style="color:var(--amber)"></i> Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeSchemaModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveSchema()">
+        <i class="fa fa-floppy-disk"></i> Lưu Schema
+      </button>
+    </div>
+  </div>
+</div>

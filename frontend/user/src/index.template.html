@@ -18,38 +18,15 @@
     <!-- @include 'layout/topbar.html' -->
 
     <div class="content">
-      <!-- ── 1. DASHBOARD / HOME ── -->
+      <!-- ── 1. DASHBOARD / HOME (Instant Default View) ── -->
       <!-- @include 'views/dashboard.html' -->
-
-      <!-- ── 2. PLANTS (SỔ CÂY TRỒNG & GIS) ── -->
-      <!-- @include 'views/plants.html' -->
-
-      <!-- ── 3. SUPPLIES (KHO & CHI PHÍ VẬT TƯ) ── -->
-      <!-- @include 'views/supplies.html' -->
-
-      <!-- ── 4. LOGS (NHẬT KÝ CANH TÁC) ── -->
-      <!-- @include 'views/logs.html' -->
-
-      <!-- ── 5. WIKI (HƯỚNG DẪN KỸ THUẬT & SOP) ── -->
-      <!-- @include 'views/guide.html' -->
-
-      <!-- ── 6. SETTINGS & PROFILE ── -->
-      <!-- @include 'views/profile.html' -->
     </div>
   </main>
 
   <!-- @include 'layout/bottom-nav.html' -->
 </div><!-- end app -->
 
-<!-- ════════════════ MODALS & OVERLAYS ════════════════ -->
-<!-- @include 'modals/nfc-modal.html' -->
-<!-- @include 'modals/nfc-inventory-modal.html' -->
-<!-- @include 'modals/field-tagging-modal.html' -->
-<!-- @include 'modals/care-modal.html' -->
-<!-- @include 'modals/supply-modals.html' -->
-<!-- @include 'modals/farm-modals.html' -->
-<!-- @include 'modals/pro-modal.html' -->
-<!-- @include 'modals/notification-rule-modal.html' -->
-<!-- @include 'modals/reorder-gps-modal.html' -->
+<!-- Dynamic Modal Container -->
+<div id="dynamic-modal-root"></div>
 
 <!-- @include 'layout/scripts.html' -->

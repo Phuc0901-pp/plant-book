@@ -1,0 +1,105 @@
+﻿<!-- ════════════════ MODAL: THÊM / SỬA BÀI VIẾT TRI THỨC SOP ════════════════ -->
+<div class="modal-overlay" id="ai-knowledge-modal" style="display:none;" onclick="if(event.target===this)closeAiKnowledgeModal()">
+  <div class="modal" style="max-width:700px;">
+    
+    <!-- Modal Header -->
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff;">
+      <h2 id="ai-k-modal-title" style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-book-bookmark" style="color:#a7f3d0;"></i> Thêm Tài Liệu Tri Thức SOP Mới
+      </h2>
+      <button class="modal-close" onclick="closeAiKnowledgeModal()" style="color:#ffffff; opacity:0.85;">×</button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body" style="padding:22px;">
+      <form id="ai-knowledge-form" onsubmit="saveAiKnowledgeArticle(event); return false;" style="display:flex; flex-direction:column; gap:14px; margin:0;">
+        <input type="hidden" id="ai-k-id" value="">
+
+        <!--  HONEYPOT FIELD (Bẫy Bot: Ẩn với người dùng) -->
+        <div style="display:none !important;" aria-hidden="true">
+          <input type="text" name="hp_security_trap" id="ai-k-hp-trap" tabindex="-1" autocomplete="off" value="">
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px;">
+          <!-- Tiêu đề -->
+          <div class="field">
+            <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+              Tiêu Đề Tri Thức <span style="color:#dc2626;">*</span>
+            </label>
+            <input type="text" id="ai-k-title" required placeholder="Ví dụ: Quy tắc cách ly 10-15 ngày giữa TBVTV & Vi sinh" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'">
+          </div>
+
+          <!-- Phân loại -->
+          <div class="field">
+            <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+              Phân Loại <span style="color:#dc2626;">*</span>
+            </label>
+            <select id="ai-k-category" required style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; background:#ffffff; outline:none;">
+              <option value="An toàn Sinh học">An toàn Sinh học (10-15 ngày)</option>
+              <option value="Sâu bệnh hại">Sâu bệnh hại</option>
+              <option value="Kỹ thuật Canh tác">Kỹ thuật Canh tác</option>
+              <option value="Phân bón & Dinh dưỡng">Phân bón &amp; Dinh dưỡng</option>
+              <option value="Cẩm nang Ứng dụng">Cẩm nang Ứng dụng</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px;">
+          <!-- Từ khóa nhận diện -->
+          <div class="field">
+            <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+              Từ Khóa Gợi Ý
+            </label>
+            <input type="text" id="ai-k-keywords" placeholder="trichoderma, thuốc hóa học, cách ly..." style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;">
+          </div>
+
+          <!-- Độ ưu tiên -->
+          <div class="field">
+            <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+              Độ Ưu Tiên
+            </label>
+            <select id="ai-k-priority" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; background:#ffffff; outline:none;">
+              <option value="10">10 (Rất Cao)</option>
+              <option value="9">9 (Cao)</option>
+              <option value="8">8 (Cao vừa)</option>
+              <option value="7">7</option>
+              <option value="6">6</option>
+              <option value="5" selected>5 (Tiêu chuẩn)</option>
+              <option value="3">3 (Thấp)</option>
+              <option value="1">1 (Rất thấp)</option>
+            </select>
+          </div>
+
+          <!-- Trạng thái -->
+          <div class="field">
+            <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+              Trạng Thái
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin-top:8px; font-size:13px; cursor:pointer; font-weight:600; color:#0f172a;">
+              <input type="checkbox" id="ai-k-active" checked style="width:16px; height:16px; accent-color:#059669;"> Kích hoạt
+            </label>
+          </div>
+        </div>
+
+        <!-- Nội dung kỹ thuật chi tiết -->
+        <div class="field">
+          <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+            Nội Dung Kỹ Thuật Chi Tiết (SOP Content) <span style="color:#dc2626;">*</span>
+          </label>
+          <textarea id="ai-k-content" rows="6" required placeholder="Nhập phác đồ điều trị, nguyên tắc khoa học, liều lượng và quy trình thực hiện cụ thể..." style="width:100%; padding:12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="modal-footer" style="padding:14px 0 0 0; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
+          <button type="button" class="btn btn-secondary" onclick="closeAiKnowledgeModal()" style="font-size:13px; font-weight:700; padding:8px 16px; border-radius:8px;">
+            Hủy Bỏ
+          </button>
+          <button type="submit" id="btn-save-ai-knowledge" class="btn btn-primary" style="font-size:13px; font-weight:800; padding:8px 20px; border-radius:8px; background:#059669; color:#ffffff; border:none; box-shadow:0 3px 10px rgba(5,150,105,0.25);">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu Bài Viết Tri Thức
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>

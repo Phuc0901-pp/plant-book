@@ -122,9 +122,39 @@ function buildUserHtml(config) {
   console.log(`[build-html] Built user/index.html (${assembled.length} bytes, ${assembled.split('\n').length} lines) in ${elapsed}ms`);
 }
 
+/**
+ * Synchronizes modular view and modal templates to public directories
+ */
+function syncModularAssets(config) {
+  function copyFolderRecursive(src, dest) {
+    if (!fs.existsSync(src)) return;
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+    
+    const entries = fs.readdirSync(src, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const destPath = path.join(dest, entry.name);
+      if (entry.isDirectory()) {
+        copyFolderRecursive(srcPath, destPath);
+      } else if (entry.isFile()) {
+        let content = fs.readFileSync(srcPath, 'utf8');
+        content = applyPlaceholders(content, config);
+        fs.writeFileSync(destPath, content, 'utf8');
+      }
+    }
+  }
+
+  copyFolderRecursive(path.join(FRONTEND_DIR, 'user/src/views'), path.join(FRONTEND_DIR, 'user/views'));
+  copyFolderRecursive(path.join(FRONTEND_DIR, 'user/src/modals'), path.join(FRONTEND_DIR, 'user/modals'));
+  copyFolderRecursive(path.join(FRONTEND_DIR, 'admin/src/views'), path.join(FRONTEND_DIR, 'admin/views'));
+  copyFolderRecursive(path.join(FRONTEND_DIR, 'admin/src/modals'), path.join(FRONTEND_DIR, 'admin/modals'));
+  console.log('[build-html] Synchronized all modular views & modals.');
+}
+
 function buildAll() {
   console.log('[build-html] Compiling modular HTML components with SSOT config...');
   const config = loadAppConfig();
+  syncModularAssets(config);
   buildAdminHtml(config);
   buildUserHtml(config);
   console.log('[build-html] All HTML portals assembled successfully.');

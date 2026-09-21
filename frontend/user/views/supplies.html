@@ -1,0 +1,495 @@
+﻿      <div class="page-section" id="page-supplies">
+
+        <!-- ════════════════════════════════════════════════════════════════
+             WELCOME & EXECUTIVE BANNER (EXECUTIVE ROYAL AGTECH)
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="royal-page-header">
+          <div style="position:relative; z-index:1; max-width:680px;">
+            <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
+              <i class="fa-solid fa-boxes-stacked" style="color:#059669;"></i> Quản Trị Tồn Kho & Chuỗi Cung Ứng
+            </div>
+            <h2 style="font-size:20px; font-weight:800; color:#064e3b; margin:4px 0 0 0; letter-spacing:-0.2px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-boxes-packing" style="color:#059669;"></i> Quản Trị Tồn Kho &amp; Chi Phí Vật Tư AgTech ERP
+            </h2>
+            <p style="margin:3px 0 0 0; font-size:13px; color:#64748b; line-height:1.4;">
+              Hệ thống định lượng tồn kho thời gian thực, định giá tài sản lưu kho, thẻ kho minh bạch và kiểm soát chi phí VietGAP.
+            </p>
+          </div>
+
+          <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button onclick="openStockInModal()" class="royal-pill-btn royal-pill-btn-primary">
+              <i class="fa-solid fa-file-import"></i> + Nhập Kho Vật Tư
+            </button>
+            <button onclick="openAddSupplyModal()" class="royal-pill-btn">
+              <i class="fa-solid fa-plus" style="color:#059669;"></i> Thêm Mặt Hàng
+            </button>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             TẦNG 1: EXECUTIVE INVENTORY COCKPIT (4 THẺ CHỈ SỐ KPI VỐN & KHO)
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="inventory-cockpit-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          
+          <!-- KPI 1: Tổng Giá Trị Kho Lưu Trữ -->
+          <div class="stat-card stat-card--erp-valuation" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 18px 20px; border-radius: 16px; border: 1.5px solid #334155; box-shadow: 0 4px 15px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                  <i class="fa-solid fa-vault" style="color: #38bdf8;"></i> Giá Trị Tài Sản Kho
+                </div>
+                <div id="erp-kpi-total-valuation" style="font-size: 22px; font-weight: 900; color: #38bdf8; letter-spacing: -0.3px;">
+                  0 VNĐ
+                </div>
+                <div id="erp-kpi-sku-count" style="font-size: 12px; color: #cbd5e1; margin-top: 4px; font-weight: 600;">
+                  Tổng số: <strong>0</strong> mặt hàng lưu kho
+                </div>
+              </div>
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i class="fa-solid fa-coins"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 2: Tổng Chi Phí Tiêu Hao Trong Kỳ -->
+          <div class="stat-card" style="background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                  <i class="fa-solid fa-chart-pie" style="color: #059669;"></i> Đã Tiêu Hao Lũy Kế
+                </div>
+                <div id="erp-kpi-total-consumed" style="font-size: 22px; font-weight: 900; color: #059669; letter-spacing: -0.3px;">
+                  0 VNĐ
+                </div>
+                <div id="erp-kpi-usage-count" style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
+                  Đã xuất <strong>0</strong> đợt canh tác
+                </div>
+              </div>
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 3: Cảnh Báo Tồn Kho Định Mức An Toàn -->
+          <div class="stat-card" style="background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                  <i class="fa-solid fa-triangle-exclamation" style="color: #ea580c;"></i> Tồn Kho Định Mức
+                </div>
+                <div id="erp-kpi-low-stock-count" style="font-size: 22px; font-weight: 900; color: #ea580c; letter-spacing: -0.3px;">
+                  0 mặt hàng
+                </div>
+                <div id="erp-kpi-low-stock-desc" style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
+                  Cần nhập thêm trước mùa bón
+                </div>
+              </div>
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i class="fa-solid fa-boxes-packing"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 4: Tuân Thủ Tiêu Chuẩn VietGAP -->
+          <div class="stat-card" style="background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                  <i class="fa-solid fa-shield-halved" style="color: #0284c7;"></i> Kiểm Soát VietGAP
+                </div>
+                <div id="erp-kpi-phi-active-count" style="font-size: 22px; font-weight: 900; color: #0284c7; letter-spacing: -0.3px;">
+                  100% Đạt Chuẩn
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
+                  Minh bạch nhật ký truy xuất
+                </div>
+              </div>
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i class="fa-solid fa-certificate"></i>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             TẦNG 2: NAVIGATION TABS CHUẨN ERP (3 PHÂN HỆ)
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="tabs supplies-tabs">
+          <div class="tab active" id="supplies-tab-manage" onclick="switchSuppliesTab('manage')">
+            <i class="fa-solid fa-warehouse"></i> <span>1. Tồn kho Thực tế (Stock Matrix)</span>
+          </div>
+          <div class="tab" id="supplies-tab-ledger" onclick="switchSuppliesTab('ledger')">
+            <i class="fa-solid fa-book-bookmark"></i> <span>2. Sổ Thẻ Kho &amp; Lịch sử</span>
+          </div>
+          <div class="tab" id="supplies-tab-monitor" onclick="switchSuppliesTab('monitor')">
+            <i class="fa-solid fa-chart-line"></i> <span>3. Chi phí Mùa vụ</span>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             TAB 1: QUẢN LÝ TỒN KHO THỰC TẾ & SMART DATA GRID
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="tab-pane active" id="pane-supplies-manage">
+          <div class="card" style="border-radius: 16px; border: 1.5px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+            
+            <!-- Toolbar & Action Bar Header -->
+            <div class="card-header supplies-card-header">
+              <div class="supplies-header-text">
+                <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-boxes-stacked" style="color:#059669;"></i> Ma Trận Quản Trị Tồn Kho Thực Tế
+                </h3>
+                <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0;">Giám sát số lượng tồn, vốn hàng tồn và quy cách đóng gói chuẩn ERP.</p>
+              </div>
+
+              <div class="supplies-header-actions">
+                <button class="btn btn-secondary" onclick="openRecordUsageModal()" style="font-weight: 700; border-radius: 10px;">
+                  <i class="fa-solid fa-pen-to-square" style="color: #0284c7;"></i> Ghi nhận tiêu hao
+                </button>
+                <button class="btn btn-primary" onclick="openSupplyModal()" style="font-weight: 800; border-radius: 10px;">
+                  <i class="fa-solid fa-plus"></i> Khai báo vật tư mới
+                </button>
+              </div>
+            </div>
+
+            <!-- Smart Filter & Search Bar Row -->
+            <div class="supplies-filter-row">
+              
+              <!-- Category Filter Chips -->
+              <div class="supplies-cat-filter-bar">
+                <button class="cat-filter-btn active" data-cat="all" onclick="filterSupplyCategory('all')">Tất cả</button>
+                <button class="cat-filter-btn" data-cat="Bón phân" onclick="filterSupplyCategory('Bón phân')"><i data-lucide="flask-conical" class="lucide-sm"></i> Bón phân</button>
+                <button class="cat-filter-btn" data-cat="Tiền nước" onclick="filterSupplyCategory('Tiền nước')"><i data-lucide="droplets" class="lucide-sm"></i> Tiền nước</button>
+                <button class="cat-filter-btn" data-cat="Phun thuốc" onclick="filterSupplyCategory('Phun thuốc')"><i data-lucide="shield-check" class="lucide-sm"></i> Phun thuốc</button>
+                <button class="cat-filter-btn" data-cat="Nhân công" onclick="filterSupplyCategory('Nhân công')"><i data-lucide="users" class="lucide-sm"></i> Nhân công</button>
+              </div>
+
+              <!-- Instant Search & Stock Status Dropdown -->
+              <div class="supplies-search-controls">
+                <select id="supplies-stock-status-filter" onchange="filterSupplyStockStatus(this.value)" style="padding: 7px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1; font-size: 12.5px; font-weight: 700; color: #334155; background: #fff; outline: none;">
+                  <option value="all">Tất cả mức tồn kho</option>
+                  <option value="in_stock">Còn hàng dồi dào</option>
+                  <option value="low_stock">Sắp hết hàng (&lt; 20%)</option>
+                  <option value="out_of_stock">Đã hết hàng trong kho</option>
+                  <option value="infinite">Vật tư vĩnh cửu (Nước/Công)</option>
+                </select>
+
+                <div class="supplies-search-box" style="position: relative; min-width: 200px;">
+                  <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
+                  <input type="text" id="supplies-search-input" oninput="onSupplySearchInput(this.value)" placeholder="Tìm kiếm SKU, tên vật tư..." style="width: 100%; padding: 7px 10px 7px 28px; border-radius: 8px; border: 1.5px solid #cbd5e1; font-size: 12.5px; background: #ffffff; outline: none;">
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Smart Enterprise Data Grid Table -->
+            <div class="table-responsive">
+              <table class="table erp-supplies-table" id="supplies-list-table">
+                <thead>
+                  <tr style="background: #f1f5f9;">
+                    <th style="width: 95px;"><i class="fa-solid fa-barcode"></i> Mã SKU</th>
+                    <th style="min-width: 200px;"><i class="fa-solid fa-box"></i> Tên Vật Tư &amp; Quy Cách</th>
+                    <th style="min-width: 170px;"><i class="fa-solid fa-cubes-stacked"></i> Tồn Kho &amp; Mức Dự Trữ</th>
+                    <th style="width: 150px;"><i class="fa-solid fa-tag"></i> Đơn Giá Mua</th>
+                    <th style="width: 140px;"><i class="fa-solid fa-vault"></i> Vốn Lưu Kho</th>
+                    <th style="width: 140px;"><i class="fa-solid fa-shield-halved"></i> Chuẩn VietGAP</th>
+                    <th style="width: 130px; text-align: right;"><i class="fa-solid fa-sliders"></i> Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="supplies-table-body">
+                  <tr>
+                    <td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải ma trận dữ liệu vật tư...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Table Footer Legend & Summary -->
+            <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #64748b;">
+              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <span><strong>Mức tồn:</strong></span>
+                <span style="display: inline-flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #10b981; display: inline-block;"></span> &ge; 50% (Dồi dào)</span>
+                <span style="display: inline-flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #f59e0b; display: inline-block;"></span> 20% - 49% (Trung bình)</span>
+                <span style="display: inline-flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #ef4444; display: inline-block;"></span> &lt; 20% (Báo động)</span>
+                <span style="display: inline-flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #0284c7; display: inline-block;"></span> Vô tận (Nước / Nhân công)</span>
+              </div>
+              <div>
+                <span id="supplies-table-count-label" style="font-weight: 700; color: #0f172a;">Hiển thị 0 mặt hàng</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             TAB 2: SỔ THẺ KHO & LỊCH SỬ BIẾN ĐỘNG TOÀN VƯỜN (STOCK LEDGER)
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="tab-pane" id="pane-supplies-ledger" style="display:none;">
+          <div class="card" style="border-radius: 16px; border: 1.5px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding: 18px 20px;">
+              <div>
+                <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-book-bookmark" style="color:#0284c7;"></i> Sổ Thẻ Kho &amp; Lịch Sử Biến Động Nhập - Xuất
+                </h3>
+                <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0;">Minh bạch dòng vật tư từ lúc nhập vào kho cho đến khi xuất bón từng cây trồng.</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="loadSupplyUsagesLog()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+            </div>
+
+            <!-- Date-Grouped Supplies Usage Container -->
+            <div id="supplies-usages-grouped-container" style="padding:16px;">
+              <div class="empty-state" style="padding:40px; text-align:center;"><i class="fa fa-spinner fa-spin"></i> Đang tải sổ thẻ kho...</div>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div id="supplies-usages-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid #e2e8f0; background:#f8fafc; flex-wrap:wrap; gap:10px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             TAB 3: PHÂN TÍCH & GIÁM SÁT CHI PHÍ MÙA VỤ (COST ANALYTICS)
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="tab-pane" id="pane-supplies-monitor" style="display:none;">
+          
+          <!-- Time Filter Controls -->
+          <div class="card" style="margin-bottom: 20px; border-radius: 16px; border: 1.5px solid #e2e8f0;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding: 16px 20px;">
+              <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">
+                <i class="fa-solid fa-filter" style="color:var(--green)"></i> Bộ Lọc Giám Sát Chi Phí Theo Mùa Vụ
+              </h3>
+              <button class="btn btn-primary btn-sm" onclick="openRecordUsageModal()" style="font-weight: 700;">
+                <i class="fa-solid fa-pen-to-square"></i> Ghi nhận tiêu hao
+              </button>
+            </div>
+            
+            <div class="supplies-time-filter-row" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding: 0 20px 18px 20px;">
+              <!-- Period Switcher Buttons -->
+              <div class="btn-group-period" style="display:flex; border:1.5px solid #cbd5e1; border-radius:10px; overflow:hidden; background:#fff; box-shadow: 0 1px 3px rgba(0,0,0,0.03); flex-shrink:0;">
+                <button class="period-btn active" data-period="day" onclick="switchSupplyPeriod('day')"><i data-lucide="calendar" class="lucide-sm"></i> Theo Ngày</button>
+                <button class="period-btn" data-period="month" onclick="switchSupplyPeriod('month')"><i data-lucide="calendar-range" class="lucide-sm"></i> Theo Tháng</button>
+                <button class="period-btn" data-period="quarter" onclick="switchSupplyPeriod('quarter')"><i data-lucide="calendar-days" class="lucide-sm"></i> Theo Quý</button>
+                <button class="period-btn" data-period="year" onclick="switchSupplyPeriod('year')"><i data-lucide="bar-chart-3" class="lucide-sm"></i> Theo Năm</button>
+              </div>
+
+              <!-- 1. Day Range Wrapper -->
+              <div id="supplies-filter-day-wrap" class="supplies-date-filter-group" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1; min-width:260px;">
+                <div class="supplies-filter-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Từ:</label>
+                    <input type="date" id="supplies-filter-from-date" onchange="loadSuppliesAnalytics()" style="padding:5px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; width:100%;">
+                  </div>
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;"></span>
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Đến:</label>
+                    <input type="date" id="supplies-filter-to-date" onchange="loadSuppliesAnalytics()" style="padding:5px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; width:100%;">
+                  </div>
+                </div>
+                <div class="supplies-preset-pills" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                  <button type="button" class="preset-pill-btn" onclick="setSupplyDatePreset('7d')">7 ngày</button>
+                  <button type="button" class="preset-pill-btn" onclick="setSupplyDatePreset('30d')">30 ngày</button>
+                  <button type="button" class="preset-pill-btn" onclick="setSupplyDatePreset('this_month')">Tháng này</button>
+                </div>
+              </div>
+
+              <!-- 2. Month Range Wrapper -->
+              <div id="supplies-filter-month-wrap" class="supplies-date-filter-group" style="display:none; align-items:center; gap:8px; flex-wrap:wrap; flex:1; min-width:260px;">
+                <div class="supplies-filter-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Từ:</label>
+                    <select id="supplies-from-month" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; flex:1;">
+                      <option value="1">T1</option>
+                      <option value="2">T2</option>
+                      <option value="3">T3</option>
+                      <option value="4">T4</option>
+                      <option value="5">T5</option>
+                      <option value="6">T6</option>
+                      <option value="7">T7</option>
+                      <option value="8">T8</option>
+                      <option value="9">T9</option>
+                      <option value="10">T10</option>
+                      <option value="11">T11</option>
+                      <option value="12">T12</option>
+                    </select>
+                    <select id="supplies-from-year-month" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none;">
+                      <option value="2026">2026</option>
+                      <option value="2025">2025</option>
+                      <option value="2024">2024</option>
+                      <option value="2023">2023</option>
+                    </select>
+                  </div>
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;"></span>
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Đến:</label>
+                    <select id="supplies-to-month" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; flex:1;">
+                      <option value="1">T1</option>
+                      <option value="2">T2</option>
+                      <option value="3">T3</option>
+                      <option value="4">T4</option>
+                      <option value="5">T5</option>
+                      <option value="6">T6</option>
+                      <option value="7">T7</option>
+                      <option value="8">T8</option>
+                      <option value="9" selected>T9</option>
+                      <option value="10">T10</option>
+                      <option value="11">T11</option>
+                      <option value="12">T12</option>
+                    </select>
+                    <select id="supplies-to-year-month" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none;">
+                      <option value="2026" selected>2026</option>
+                      <option value="2025">2025</option>
+                      <option value="2024">2024</option>
+                      <option value="2023">2023</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Quarter Range Wrapper -->
+              <div id="supplies-filter-quarter-wrap" class="supplies-date-filter-group" style="display:none; align-items:center; gap:8px; flex-wrap:wrap; flex:1; min-width:260px;">
+                <div class="supplies-filter-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Từ:</label>
+                    <select id="supplies-from-quarter" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; flex:1;">
+                      <option value="1" selected>Quý 1</option>
+                      <option value="2">Quý 2</option>
+                      <option value="3">Quý 3</option>
+                      <option value="4">Quý 4</option>
+                    </select>
+                    <select id="supplies-from-year-quarter" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none;">
+                      <option value="2026">2026</option>
+                      <option value="2025">2025</option>
+                      <option value="2024">2024</option>
+                      <option value="2023">2023</option>
+                    </select>
+                  </div>
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;"></span>
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Đến:</label>
+                    <select id="supplies-to-quarter" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; flex:1;">
+                      <option value="1">Quý 1</option>
+                      <option value="2">Quý 2</option>
+                      <option value="3" selected>Quý 3</option>
+                      <option value="4">Quý 4</option>
+                    </select>
+                    <select id="supplies-to-year-quarter" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none;">
+                      <option value="2026" selected>2026</option>
+                      <option value="2025">2025</option>
+                      <option value="2024">2024</option>
+                      <option value="2023">2023</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Year Range Wrapper -->
+              <div id="supplies-filter-year-wrap" class="supplies-date-filter-group" style="display:none; align-items:center; gap:8px; flex-wrap:wrap; flex:1; min-width:260px;">
+                <div class="supplies-filter-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Từ năm:</label>
+                    <select id="supplies-from-year" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; flex:1;">
+                      <option value="2023">2023</option>
+                      <option value="2024">2024</option>
+                      <option value="2025">2025</option>
+                      <option value="2026">2026</option>
+                    </select>
+                  </div>
+                  <span style="color:#94a3b8; font-weight:700; font-size:12px;"></span>
+                  <div style="display:flex; align-items:center; gap:4px; flex:1; min-width:125px;">
+                    <label style="font-size:12px; font-weight:700; color:#475569; white-space:nowrap;">Đến năm:</label>
+                    <select id="supplies-to-year" onchange="loadSuppliesAnalytics()" style="padding:5px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; background:#fff; outline:none; flex:1;">
+                      <option value="2023">2023</option>
+                      <option value="2024">2024</option>
+                      <option value="2025">2025</option>
+                      <option value="2026" selected>2026</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Farm Selector -->
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:12.5px; font-weight:700; color:#475569;">Trang trại:</label>
+                <select id="supplies-filter-farm" onchange="loadSuppliesAnalytics()" style="padding:7px 12px; border-radius:8px; border:1.5px solid #cbd5e1; outline:none; background:#fff; font-size:12.5px; font-weight:600; color:#334155;">
+                  <option value="all">Tất cả trang trại</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Expenditure Cards -->
+          <div class="user-dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
+            <div class="stat-card stat-card--total" style="background:linear-gradient(135deg, #091e15 0%, #1b4d3e 100%); color:#fff; padding:18px; border-radius:16px;">
+              <div class="stat-icon" style="background:rgba(255,255,255,0.15); color:#86efac; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-coins"></i></div>
+              <div class="stat-label" style="font-size:12px; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8;">TỔNG CHI PHÍ TIÊU HAO</div>
+              <div class="stat-value" id="cost-stat-total" style="font-size:22px; font-weight:700; color:#fff; margin-top:4px;">0 VNĐ</div>
+            </div>
+
+            <div class="stat-card" style="background:#fff; border:1px solid var(--gray-200); padding:18px; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div class="stat-icon" style="background:#f3e8ff; color:#9333ea; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-flask"></i></div>
+              <div class="stat-label" style="font-size:12px; color:var(--text-muted);"><i data-lucide="flask-conical" class="lucide-xs"></i> CHI PHÍ BÓN PHÂN</div>
+              <div class="stat-value" id="cost-stat-fertilizer" style="font-size:20px; font-weight:700; color:#1e293b; margin-top:4px;">0 VNĐ</div>
+            </div>
+
+            <div class="stat-card" style="background:#fff; border:1px solid var(--gray-200); padding:18px; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div class="stat-icon" style="background:#e0f2fe; color:#0284c7; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-droplet"></i></div>
+              <div class="stat-label" style="font-size:12px; color:var(--text-muted);"><i data-lucide="droplets" class="lucide-xs"></i> CHI PHÍ TIỀN NƯỚC</div>
+              <div class="stat-value" id="cost-stat-water" style="font-size:20px; font-weight:700; color:#1e293b; margin-top:4px;">0 VNĐ</div>
+            </div>
+
+            <div class="stat-card" style="background:#fff; border:1px solid var(--gray-200); padding:18px; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+              <div class="stat-icon" style="background:#fef2f2; color:#ef4444; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;"><i class="fa-solid fa-shield-virus"></i></div>
+              <div class="stat-label" style="font-size:12px; color:var(--text-muted);"><i data-lucide="shield-alert" class="lucide-xs"></i> PHUN THUỐC &amp; NHÂN CÔNG</div>
+              <div class="stat-value" id="cost-stat-pesticide-labor" style="font-size:20px; font-weight:700; color:#1e293b; margin-top:4px;">0 VNĐ</div>
+            </div>
+          </div>
+
+          <!-- Cost Expenditure Heatmap Chart Card -->
+          <div class="card" style="margin-bottom:20px; background:#ffffff; border:1px solid var(--gray-200); border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; padding: 16px 20px;">
+              <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">
+                <i class="fa-solid fa-fire-flame-curved" style="color:#ef4444;"></i> Biểu Đồ Nhiệt Chi Phí Tiêu Hao (Expenditure Heatmap)
+              </h3>
+              <div style="font-size:11.5px; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+                <span>Ít: <span style="display:inline-block; width:12px; height:12px; background:#dcfce7; border-radius:3px;"></span></span>
+                <span>Vừa: <span style="display:inline-block; width:12px; height:12px; background:#fef08a; border-radius:3px;"></span></span>
+                <span>Nhiều: <span style="display:inline-block; width:12px; height:12px; background:#ef4444; border-radius:3px;"></span></span>
+              </div>
+            </div>
+            <div id="supplies-cost-heatmap-container" style="padding:16px;">
+              <div style="text-align:center; color:var(--text-muted); padding:20px;"><i class="fa fa-spinner fa-spin"></i> Đang nạp biểu đồ nhiệt...</div>
+            </div>
+          </div>
+
+          <!-- Breakdown Table by Period -->
+          <div class="card" style="margin-bottom:20px; border-radius: 16px; border: 1.5px solid #e2e8f0;">
+            <div class="card-header" style="padding: 16px 20px;">
+              <h3 id="breakdown-table-title" style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">
+                <i class="fa-solid fa-chart-bar" style="color:var(--green)"></i> Bảng Tổng Hợp Chi Tiết Tiêu Hao Theo Thời Gian
+              </h3>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr style="background: #f8fafc;">
+                    <th>Khoảng thời gian</th>
+                    <th>Hạng mục vật tư</th>
+                    <th>Tổng số lượng dùng</th>
+                    <th>Tổng thành tiền (VNĐ)</th>
+                    <th>Tỷ lệ chi phí</th>
+                  </tr>
+                </thead>
+                <tbody id="supplies-breakdown-table-body">
+                  <tr>
+                    <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tính toán dữ liệu...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+

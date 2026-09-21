@@ -220,7 +220,7 @@ function syncAdminUrl(params = {}) {
 }
 window.syncAdminUrl = syncAdminUrl;
 
-function showPage(page, pushUrl = true) {
+async function showPage(page, pushUrl = true) {
   if (page === 'gis' || page === 'farms') {
     page = 'dashboard';
   } else if (page === 'plants') {
@@ -248,6 +248,10 @@ function showPage(page, pushUrl = true) {
     if (typeof switchDatabaseTab === 'function') {
       setTimeout(() => switchDatabaseTab('check'), 50);
     }
+  }
+
+  if (typeof ensureAdminViewLoaded === 'function') {
+    await ensureAdminViewLoaded(page);
   }
 
   const targetSection = document.getElementById(`page-${page}`);

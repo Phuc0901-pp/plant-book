@@ -1,0 +1,138 @@
+﻿<!-- ════════════ REORDER PLANTS BY GPS MODAL ════════════ -->
+<div id="reorder-gps-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeReorderGpsModal()">
+  <div class="modal" style="max-width: 680px; width: 95%; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: #ffffff; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 1px solid #e2e8f0;">
+    
+    <!-- Modal Header -->
+    <div class="modal-header" style="background: linear-gradient(135deg, #064e3b, #047857); padding: 16px 20px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+      <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #6ee7b7; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;">
+          <i class="fa-solid fa-arrow-down-1-9"></i>
+        </div>
+        <div style="min-width: 0;">
+          <h2 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Sắp xếp Mã số Cây theo Tọa độ GPS
+          </h2>
+          <p style="font-size: 12px; color: #a7f3d0; margin: 2px 0 0 0;">
+            Đánh lại số thứ tự từ 1  N thẳng hàng, khoa học theo vị trí thực địa trên bản đồ
+          </p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeReorderGpsModal()" aria-label="Đóng" style="color: #ffffff; font-size: 24px; opacity: 0.9; cursor: pointer; background: transparent; border: none; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">×</button>
+    </div>
+
+    <!-- Modal Body (Scrollable) -->
+    <div class="modal-body" style="padding: 20px; background: #ffffff; overflow-y: auto; overflow-x: hidden; flex: 1; display: flex; flex-direction: column; gap: 14px; -webkit-overflow-scrolling: touch;">
+      
+      <!-- Farm Selector -->
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 14px;">
+        <label style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px; display: block;">
+          <i class="fa-solid fa-house-chimney" style="color:#059669;"></i> Chọn Trang trại áp dụng:
+        </label>
+        <select id="reorder-gps-farm-select" style="width: 100%; padding: 8px 12px; font-size: 13px; font-weight: 600; border-radius: 8px; border: 1.5px solid #cbd5e1; background: #ffffff; outline: none; cursor: pointer;" onchange="previewReorderGps()">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <!-- Sorting Strategy Mode -->
+      <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 14px;">
+        <label style="font-size: 11.5px; font-weight: 700; color: #334155; text-transform: uppercase; margin-bottom: 8px; display: block;">
+          <i class="fa-solid fa-compass" style="color:#0284c7;"></i> Quy luật Sắp xếp Không gian:
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+            <input type="radio" name="reorder_mode" value="north_to_south" checked style="margin-top: 3px; accent-color: #059669;" onchange="previewReorderGps()">
+            <div style="font-size: 12.5px; line-height: 1.4;">
+              <strong style="color: #065f46; display: block;"><i class="fa-solid fa-arrow-down-long"></i> Bắc xuống Nam (Trên xuống Dưới, Trái qua Phải) — Khuyến nghị</strong>
+              <span style="color: #047857; font-size: 11.5px;">Sắp xếp từ đầu vườn xuống cuối vườn, các cây ngang hàng được đánh số từ trái qua phải. Rất đẹp khi nhìn trên Bản đồ Vệ tinh.</span>
+            </div>
+          </label>
+
+          <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+            <input type="radio" name="reorder_mode" value="by_columns" style="margin-top: 3px; accent-color: #059669;" onchange="previewReorderGps()">
+            <div style="font-size: 12.5px; line-height: 1.4;">
+              <strong style="color: #1e293b; display: block;"><i class="fa-solid fa-arrows-split-up-and-left"></i> Theo từng Luống / Hàng Dọc (Hàng 1  Hàng 2)</strong>
+              <span style="color: #64748b; font-size: 11.5px;">Đánh số hết hàng cây bên trái (ví dụ 1  37), sau đó sang hàng cây kế tiếp (38  75).</span>
+            </div>
+          </label>
+
+          <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+            <input type="radio" name="reorder_mode" value="snake" style="margin-top: 3px; accent-color: #059669;" onchange="previewReorderGps()">
+            <div style="font-size: 12.5px; line-height: 1.4;">
+              <strong style="color: #1e293b; display: block;"><i class="fa-solid fa-route"></i> Đường Zíc-zắc (Tuần tra Thực địa)</strong>
+              <span style="color: #64748b; font-size: 11.5px;">Hàng 1 đi xuôi, hàng 2 đi ngược trở lại, tiện lợi khi công nhân đi tuần tra chăm sóc từng luống.</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Format & Numbering Options -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;">
+          <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">
+            Tiền tố (Prefix):
+          </label>
+          <input type="text" id="reorder-gps-prefix" placeholder="Để trống (chỉ lấy số)" style="width: 100%; padding: 6px 10px; font-size: 12.5px; border-radius: 6px; border: 1.5px solid #cbd5e1; background: #ffffff; outline: none; box-sizing: border-box;" oninput="previewReorderGps()">
+        </div>
+
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;">
+          <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">
+            Bắt đầu từ số:
+          </label>
+          <input type="number" id="reorder-gps-start-num" value="1" min="1" style="width: 100%; padding: 6px 10px; font-size: 12.5px; border-radius: 6px; border: 1.5px solid #cbd5e1; background: #ffffff; outline: none; box-sizing: border-box;" oninput="previewReorderGps()">
+        </div>
+
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;">
+          <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">
+            Định dạng số:
+          </label>
+          <select id="reorder-gps-pad-digits" style="width: 100%; padding: 6px 10px; font-size: 12.5px; border-radius: 6px; border: 1.5px solid #cbd5e1; background: #ffffff; outline: none; box-sizing: border-box; cursor: pointer;" onchange="previewReorderGps()">
+            <option value="0">1, 2, 3... 75</option>
+            <option value="2">01, 02, 03... 75</option>
+            <option value="3">001, 002... 075</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Preview Summary & Table -->
+      <div style="border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+        <div style="background: #f1f5f9; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: #334155;">
+          <span><i class="fa-solid fa-table-list" style="color:#0284c7;"></i> Xem trước kết quả đánh số: <strong id="reorder-gps-preview-count" style="color:#059669;">0 cây</strong></span>
+          <button type="button" class="btn btn-secondary btn-xs" onclick="previewReorderGps()" style="padding: 3px 8px; font-size: 11px; border-radius: 6px; background:#fff;">
+            <i class="fa-solid fa-arrows-rotate"></i> Làm mới
+          </button>
+        </div>
+        <div id="reorder-gps-preview-table-wrap" style="max-height: 180px; overflow-y: auto; font-size: 12px; -webkit-overflow-scrolling: touch;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead style="position: sticky; top: 0; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+              <tr>
+                <th style="padding: 6px 10px; text-align: center; width: 40px;">STT</th>
+                <th style="padding: 6px 10px; text-align: left;">Mã cũ  MÃ MỚI</th>
+                <th style="padding: 6px 10px; text-align: left;">Tọa độ GPS</th>
+                <th style="padding: 6px 10px; text-align: left;">Vị trí</th>
+              </tr>
+            </thead>
+            <tbody id="reorder-gps-preview-tbody">
+              <tr>
+                <td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">
+                  <i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu tọa độ...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border-top: 1px solid #e2e8f0; flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
+      <button type="button" class="btn btn-secondary" onclick="closeReorderGpsModal()" style="padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 13px;">
+        <i class="fa-solid fa-xmark"></i> Hủy
+      </button>
+      <button type="button" class="btn btn-primary" id="btn-execute-reorder-gps" onclick="executeReorderGps()" style="padding: 9px 20px; border-radius: 8px; font-weight: 800; font-size: 13px; background: linear-gradient(135deg, #10b981, #047857); border: none; color: #ffffff; box-shadow: 0 3px 10px rgba(16,185,129,0.3); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Áp dụng &amp; Đánh số lại ngay
+      </button>
+    </div>
+
+  </div>
+</div>
