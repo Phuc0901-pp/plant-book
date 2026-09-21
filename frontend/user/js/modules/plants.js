@@ -1077,6 +1077,86 @@ export async function refreshIoTDemoData() {
 }
 window.refreshIoTDemoData = refreshIoTDemoData;
 
+// ── Real Open-Meteo 6-Day Agricultural Weather Forecast ─────────────
+const WMO_FORECAST_CONFIG = {
+  0: { icon: 'fa-sun', color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Trời nắng trong xanh', advice: '☀️ Nắng ấm: Rất thích hợp bón phân rễ & tưới nước buổi sáng sớm.' },
+  1: { icon: 'fa-cloud-sun', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Quang mây, ít mây', advice: '⛅ Mát mẻ: Thời điểm lý tưởng để tỉa cành, tạo tán và làm cỏ vườn.' },
+  2: { icon: 'fa-cloud-sun', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', label: 'Mây rải rác', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng hấp thu nhanh.' },
+  3: { icon: 'fa-cloud', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', label: 'Nhiều mây âm u', advice: '☁️ Trời nhiều mây: Thuận lợi thu hoạch trái và kiểm tra sâu bệnh hại.' },
+  45: { icon: 'fa-smog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù sáng sớm', advice: '🌫️ Sương mù ẩm: Chú ý phòng ngừa nấm bệnh sương mai trên đọt non.' },
+  48: { icon: 'fa-smog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù đọng sương', advice: '🌫️ Đọng sương ẩm: Tránh tưới quá ẩm làm tăng nguy cơ thối rễ.' },
+  51: { icon: 'fa-cloud-rain', color: '#38bdf8', bg: '#f0fdfa', border: '#99f6e4', label: 'Mưa phùn nhẹ', advice: '🌦️ Mưa phùn nhẹ: Có thể giảm lượng tưới nước, theo dõi độ ẩm đất.' },
+  53: { icon: 'fa-cloud-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa phùn vừa', advice: '🌧️ Mưa phùn: Hoãn phun thuốc BVTV để tránh lãng phí và trôi thuốc.' },
+  55: { icon: 'fa-cloud-rain', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa phùn nặng', advice: '🌧️ Mưa kéo dài: Cần đảm bảo hệ thống rãnh thoát nước vườn thông thoáng.' },
+  61: { icon: 'fa-cloud-sun-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào nhẹ', advice: '🌦️ Mưa rào rải rác: Tận dụng nguồn đạm tự nhiên, tạm hoãn bón phân đạm.' },
+  63: { icon: 'fa-cloud-showers-heavy', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào vừa', advice: '🌧️ Mưa rào vừa: Kiểm tra thoát nước gốc cây, tránh đọng nước cổ rễ.' },
+  65: { icon: 'fa-cloud-showers-heavy', color: '#1d4ed8', bg: '#eff6ff', border: '#60a5fa', label: 'Mưa to nặng hạt', advice: '⛈️ Mưa to nặng hạt: Khơi thông dòng chảy thoát lũ, không đi lại làm nén đất.' },
+  80: { icon: 'fa-cloud-sun-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào thoáng qua', advice: '🌦️ Mưa rào ngắn: Thời tiết thuận lợi sau mưa để tiến hành thăm vườn.' },
+  81: { icon: 'fa-cloud-showers-heavy', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào từng cơn', advice: '🌧️ Mưa từng đợt: Cắt tỉa cành khô, cành sâu bệnh bị gãy đổ.' },
+  82: { icon: 'fa-cloud-showers-heavy', color: '#1e40af', bg: '#f1f5f9', border: '#94a3b8', label: 'Mưa rất to xối xả', advice: '⛈️ Mưa xối xả: Kê cao vật tư phân bón, kiểm tra an toàn điện trạm bơm.' },
+  95: { icon: 'fa-bolt', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa', label: 'Mưa dông sét', advice: '⚡ Dông sét: Gia cố cọc chống cây trồng lớn, ngắt nguồn điện tưới ngoài trời.' },
+  96: { icon: 'fa-bolt', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', label: 'Dông lốc, mưa đá nhẹ', advice: '⚠️ Cảnh báo dông lốc: Kiểm tra neo giàn và lưới che chắn nhà màng.' },
+  99: { icon: 'fa-bolt', color: '#991b1b', bg: '#fef2f2', border: '#f87171', label: 'Dông lốc nguy hiểm', advice: '⛔ Dông bão mạnh: Tạm dừng toàn bộ hoạt động ngoài đồng ruộng để an toàn.' }
+};
+
+export async function fetchLiveOpenMeteoForecast(lat, lng) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,relative_humidity_2m_mean,wind_speed_10m_max&timezone=auto`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const daily = data.daily || {};
+    if (!daily.time || !Array.isArray(daily.time)) return null;
+
+    const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const forecastList = [];
+    const count = Math.min(daily.time.length, 6);
+
+    for (let i = 0; i < count; i++) {
+      const dateStr = daily.time[i];
+      const d = new Date(dateStr);
+      const code = daily.weather_code ? daily.weather_code[i] : 0;
+      const tMax = daily.temperature_2m_max ? Math.round(daily.temperature_2m_max[i]) : 32;
+      const tMin = daily.temperature_2m_min ? Math.round(daily.temperature_2m_min[i]) : 25;
+      const rain = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : 10;
+      const humidity = daily.relative_humidity_2m_mean ? Math.round(daily.relative_humidity_2m_mean[i]) : 70;
+      const wind = daily.wind_speed_10m_max ? Math.round(daily.wind_speed_10m_max[i]) : 12;
+
+      const cfg = WMO_FORECAST_CONFIG[code] || WMO_FORECAST_CONFIG[0];
+      let advice = cfg.advice;
+      if (rain >= 70) {
+        advice = '⚠️ Khả năng mưa rất cao: Tuyệt đối không bón phân hay phun xịt thuốc BVTV vì sẽ bị rửa trôi.';
+      } else if (tMax >= 35) {
+        advice = '☀️ Nắng nóng gay gắt: Khuyến nghị tăng lưu lượng tưới và che mát đất bằng rơm rạ.';
+      }
+
+      forecastList.push({
+        date: dateStr,
+        day_label: i === 0 ? 'Hôm nay' : dayNames[d.getDay()],
+        date_str: `${d.getDate()}/${d.getMonth() + 1}`,
+        icon: cfg.icon,
+        color: cfg.color,
+        bg: cfg.bg,
+        border: cfg.border,
+        temp: `${tMin}°C - ${tMax}°C`,
+        rain: `${rain}%`,
+        humidity: `${humidity}%`,
+        wind: `${wind} km/h`,
+        advice: advice,
+        is_live_meteo: true
+      });
+    }
+    return forecastList;
+  } catch (err) {
+    console.warn('[IoTWeather] Could not fetch live Open-Meteo forecast, using fallback.', err);
+    return null;
+  }
+}
+window.fetchLiveOpenMeteoForecast = fetchLiveOpenMeteoForecast;
+
 export async function renderIoTDemoData(farmId, forceRefresh = false) {
   if (!farmId) return;
   try {
@@ -1086,6 +1166,42 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
     if (res && res.success) {
       _currentFarmIoTData = res;
       _applyIoTDemoDataToUI(res);
+
+      // Asynchronously fetch 100% real-time Open-Meteo 6-day weather forecast based on farm GPS coordinates
+      const farmObj = (_farmsCache && _farmsCache.length) ? _farmsCache.find(f => f.id == farmId) : null;
+      let lat = null;
+      let lng = null;
+      if (farmObj) {
+        if (farmObj.latitude && farmObj.longitude) {
+          lat = parseFloat(farmObj.latitude);
+          lng = parseFloat(farmObj.longitude);
+        } else if (farmObj.polygon_coordinates) {
+          try {
+            const poly = typeof farmObj.polygon_coordinates === 'string' ? JSON.parse(farmObj.polygon_coordinates) : farmObj.polygon_coordinates;
+            if (Array.isArray(poly) && poly.length > 0) {
+              const ring = Array.isArray(poly[0][0]) ? poly[0] : poly;
+              let sumLat = 0, sumLng = 0;
+              ring.forEach(pt => { sumLng += parseFloat(pt[0]); sumLat += parseFloat(pt[1]); });
+              lat = sumLat / ring.length;
+              lng = sumLng / ring.length;
+            }
+          } catch (_) {}
+        }
+      }
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+        lat = 10.9415; // Default Long Khánh / Mekong Delta
+        lng = 107.2418;
+      }
+
+      fetchLiveOpenMeteoForecast(lat, lng).then(liveForecast => {
+        if (liveForecast && liveForecast.length > 0) {
+          _renderForecastGrid(liveForecast);
+          const badge = document.getElementById('iot-weather-source-badge');
+          if (badge) {
+            badge.innerHTML = `<i class="fa-solid fa-satellite" style="color:#059669;"></i> Dữ liệu thật Open-Meteo GPS (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+          }
+        }
+      });
     }
   } catch (err) {
     console.warn('Lỗi tải dữ liệu IoT từ Database:', err);
@@ -1093,32 +1209,9 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
 }
 window.renderIoTDemoData = renderIoTDemoData;
 
-function _applyIoTDemoDataToUI(res) {
-  const air = res.air_data || {};
-  const water = res.water_data || {};
-  const forecast = res.weather_forecast || [];
-
-  // Update Air Environment
-  if (document.getElementById('iot-air-temp')) document.getElementById('iot-air-temp').textContent = `${air.temperature || 28.5} °C`;
-  if (document.getElementById('iot-air-humidity')) document.getElementById('iot-air-humidity').textContent = `${air.humidity || 74} %`;
-  if (document.getElementById('iot-air-pressure')) document.getElementById('iot-air-pressure').textContent = `${air.pressure || 1012} hPa`;
-  if (document.getElementById('iot-air-wind')) document.getElementById('iot-air-wind').textContent = `${air.wind_speed || 12} km/h - ${air.wind_direction || 'Đông Nam'}`;
-  if (document.getElementById('iot-air-rain')) document.getElementById('iot-air-rain').textContent = `${air.rainfall || 1.5} mm (${air.rain_intensity || 0.5} mm/h)`;
-  if (document.getElementById('iot-air-uv')) document.getElementById('iot-air-uv').innerHTML = `${air.uv_index || 4.2} <span style="font-size:11px; color:#64748b;">(Vừa)</span>`;
-  if (document.getElementById('iot-air-solar')) document.getElementById('iot-air-solar').textContent = `${air.solar_radiation || 650} W/m²`;
-
-  // Update Soil Multi-Depth
-  selectSoilDepth(_selectedSoilDepth || '20cm');
-
-  // Update Water Environment
-  if (document.getElementById('iot-water-ph')) document.getElementById('iot-water-ph').textContent = water.ph || 6.8;
-  if (document.getElementById('iot-water-do')) document.getElementById('iot-water-do').innerHTML = `${water.do || 6.5} <span style="font-size:11px;">mg/L</span>`;
-  if (document.getElementById('iot-water-turbidity')) document.getElementById('iot-water-turbidity').innerHTML = `${water.turbidity || 12} <span style="font-size:11px;">NTU</span>`;
-  if (document.getElementById('iot-water-level')) document.getElementById('iot-water-level').textContent = `${water.level || 85} %`;
-
-  // Render 6-Day Weather Forecast
+function _renderForecastGrid(forecast) {
   const grid = document.getElementById('iot-weather-forecast-grid');
-  if (!grid) return;
+  if (!grid || !forecast || !forecast.length) return;
 
   grid.innerHTML = forecast.map((w) => {
     return `
@@ -1144,6 +1237,33 @@ function _applyIoTDemoDataToUI(res) {
       </div>
     `;
   }).join('');
+}
+
+function _applyIoTDemoDataToUI(res) {
+  const air = res.air_data || {};
+  const water = res.water_data || {};
+  const forecast = res.weather_forecast || [];
+
+  // Update Air Environment
+  if (document.getElementById('iot-air-temp')) document.getElementById('iot-air-temp').textContent = `${air.temperature || 28.5} °C`;
+  if (document.getElementById('iot-air-humidity')) document.getElementById('iot-air-humidity').textContent = `${air.humidity || 74} %`;
+  if (document.getElementById('iot-air-pressure')) document.getElementById('iot-air-pressure').textContent = `${air.pressure || 1012} hPa`;
+  if (document.getElementById('iot-air-wind')) document.getElementById('iot-air-wind').textContent = `${air.wind_speed || 12} km/h - ${air.wind_direction || 'Đông Nam'}`;
+  if (document.getElementById('iot-air-rain')) document.getElementById('iot-air-rain').textContent = `${air.rainfall || 1.5} mm (${air.rain_intensity || 0.5} mm/h)`;
+  if (document.getElementById('iot-air-uv')) document.getElementById('iot-air-uv').innerHTML = `${air.uv_index || 4.2} <span style="font-size:11px; color:#64748b;">(Vừa)</span>`;
+  if (document.getElementById('iot-air-solar')) document.getElementById('iot-air-solar').textContent = `${air.solar_radiation || 650} W/m²`;
+
+  // Update Soil Multi-Depth
+  selectSoilDepth(_selectedSoilDepth || '20cm');
+
+  // Update Water Environment
+  if (document.getElementById('iot-water-ph')) document.getElementById('iot-water-ph').textContent = water.ph || 6.8;
+  if (document.getElementById('iot-water-do')) document.getElementById('iot-water-do').innerHTML = `${water.do || 6.5} <span style="font-size:11px;">mg/L</span>`;
+  if (document.getElementById('iot-water-turbidity')) document.getElementById('iot-water-turbidity').innerHTML = `${water.turbidity || 12} <span style="font-size:11px;">NTU</span>`;
+  if (document.getElementById('iot-water-level')) document.getElementById('iot-water-level').textContent = `${water.level || 85} %`;
+
+  // Initial render of 6-Day Weather Forecast from DB cache
+  _renderForecastGrid(forecast);
 }
 
 // ── Web Audio Feedback API for NFC Scan (Ding & Beep-beep) ─────────
