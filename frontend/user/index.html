@@ -1152,18 +1152,18 @@
             <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; border-radius:16px; padding:20px 24px; margin-bottom:20px; box-shadow:0 8px 24px rgba(15,23,42,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
               <div>
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                  <span style="background:#0284c7; color:white; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-bolt"></i> Live Sensors</span>
-                  <span style="background:rgba(255,255,255,0.15); color:#e2e8f0; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;"><i class="fa-solid fa-flask"></i> Tính năng Demo IoT</span>
+                  <span style="background:#0284c7; color:white; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="activity" class="lucide-xs"></i> Live Sensors</span>
+                  <span style="background:rgba(255,255,255,0.15); color:#e2e8f0; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="cpu" class="lucide-xs"></i> Tính năng Demo IoT</span>
                 </div>
                 <h3 style="margin:0; font-size:18px; font-weight:800; color:#f8fafc; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-tower-broadcast" style="color:#38bdf8;"></i> Trạm Cảm biến IoT & Dự báo Thời tiết 6 Ngày
+                  <i data-lucide="radio" class="lucide-sm" style="color:#38bdf8;"></i> Trạm Cảm biến IoT & Dự báo Thời tiết 6 Ngày
                 </h3>
                 <p style="margin:4px 0 0 0; font-size:12.5px; color:#94a3b8;">
                   Giám sát tự động 3 môi trường (Không khí, Đất, Nước) & Khuyến nghị kỹ thuật canh tác nông nghiệp.
                 </p>
               </div>
               <button onclick="refreshIoTDemoData()" style="background:#0284c7; color:white; border:none; padding:10px 18px; font-size:13px; font-weight:800; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 12px rgba(2,132,199,0.3);">
-                <i class="fa-solid fa-rotate"></i> Làm mới dữ liệu IoT
+                <i data-lucide="refresh-cw" class="lucide-xs"></i> Làm mới dữ liệu IoT
               </button>
             </div>
 
@@ -1174,44 +1174,44 @@
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #f1f5f9;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#0369a1; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-wind" style="color:#0284c7; font-size:18px;"></i> Môi trường Không khí
+                    <i data-lucide="wind" class="lucide-sm" style="color:#0284c7;"></i> Môi trường Không khí
                   </h4>
                   <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:10.5px; font-weight:800;">Air Station #01</span>
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-temperature-half" style="color:#ef4444;"></i> Nhiệt độ không khí</div>
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="thermometer" class="lucide-xs" style="color:#ef4444;"></i> Nhiệt độ không khí</div>
                     <div style="font-size:20px; font-weight:900; color:#0f172a;" id="iot-air-temp">28.5 °C</div>
                     <small style="color:#16a34a; font-weight:700; font-size:10px;"> Mát mẻ, lý tưởng</small>
                   </div>
 
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-droplet" style="color:#0284c7;"></i> Độ ẩm không khí</div>
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="droplets" class="lucide-xs" style="color:#0284c7;"></i> Độ ẩm không khí</div>
                     <div style="font-size:20px; font-weight:900; color:#0f172a;" id="iot-air-humidity">74 %</div>
                     <small style="color:#0284c7; font-weight:700; font-size:10px;"> Độ ẩm tối ưu</small>
                   </div>
 
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-wind" style="color:#3b82f6;"></i> Tốc độ & Hướng gió</div>
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="wind" class="lucide-xs" style="color:#3b82f6;"></i> Tốc độ & Hướng gió</div>
                     <div style="font-size:15px; font-weight:900; color:#0f172a;" id="iot-air-wind">12 km/h - Đông Nam</div>
                     <small style="color:#3b82f6; font-weight:700; font-size:10px;">Gió nhẹ dễ chịu</small>
                   </div>
 
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-cloud-rain" style="color:#0284c7;"></i> Lượng & Cường độ mưa</div>
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="cloud-rain" class="lucide-xs" style="color:#0284c7;"></i> Lượng & Cường độ mưa</div>
                     <div style="font-size:15px; font-weight:900; color:#0f172a;" id="iot-air-rain">1.5 mm (0.5 mm/h)</div>
                     <small style="color:#64748b; font-weight:700; font-size:10px;">Mưa nhỏ không đáng kể</small>
                   </div>
 
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-sun" style="color:#f59e0b;"></i> Chỉ số UV</div>
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="sun" class="lucide-xs" style="color:#f59e0b;"></i> Chỉ số UV</div>
                     <div style="font-size:18px; font-weight:900; color:#0f172a;" id="iot-air-uv">4.2 <span style="font-size:11px; color:#64748b;">(Vừa)</span></div>
                     <small style="color:#f59e0b; font-weight:700; font-size:10px;">An toàn cho lá</small>
                   </div>
 
                   <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-solar-panel" style="color:#ea580c;"></i> Cường độ nắng / Bức xạ</div>
+                    <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="sun-medium" class="lucide-xs" style="color:#ea580c;"></i> Cường độ nắng / Bức xạ</div>
                     <div style="font-size:16px; font-weight:900; color:#0f172a;" id="iot-air-solar">650 W/m²</div>
                     <small style="color:#ea580c; font-weight:700; font-size:10px;">Quang hợp tốt</small>
                   </div>
@@ -1222,7 +1222,7 @@
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:8px;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-mound" style="color:#d97706; font-size:18px;"></i> Cảm biến Đất Đa tầng
+                    <i data-lucide="layers" class="lucide-sm" style="color:#d97706;"></i> Cảm biến Đất Đa tầng
                   </h4>
                   <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;">Multilayer 7-in-1</span>
                 </div>
@@ -1242,37 +1242,37 @@
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                   <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-water" style="color:#d97706;"></i> Độ ẩm đất</div>
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="droplet" class="lucide-xs" style="color:#d97706;"></i> Độ ẩm đất</div>
                     <div style="font-size:20px; font-weight:900; color:#713f12;" id="iot-soil-moisture">68 %</div>
                     <small style="color:#16a34a; font-weight:700; font-size:10px;"> Đủ ẩm rễ</small>
                   </div>
 
                   <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-temperature-half" style="color:#d97706;"></i> Nhiệt độ đất</div>
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="thermometer-sun" class="lucide-xs" style="color:#d97706;"></i> Nhiệt độ đất</div>
                     <div style="font-size:20px; font-weight:900; color:#713f12;" id="iot-soil-temp">25.5 °C</div>
                     <small style="color:#16a34a; font-weight:700; font-size:10px;"> Nhiệt độ mát</small>
                   </div>
 
                   <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-flask-vial" style="color:#d97706;"></i> Độ pH Đất</div>
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="flask-conical" class="lucide-xs" style="color:#d97706;"></i> Độ pH Đất</div>
                     <div style="font-size:20px; font-weight:900; color:#713f12;" id="iot-soil-ph">6.5</div>
                     <small style="color:#16a34a; font-weight:700; font-size:10px;"> Đất trung tính</small>
                   </div>
 
                   <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-bolt-lightning" style="color:#d97706;"></i> Độ EC</div>
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" class="lucide-xs" style="color:#d97706;"></i> Độ EC</div>
                     <div style="font-size:18px; font-weight:900; color:#713f12;" id="iot-soil-ec">1.2 <span style="font-size:11px;">mS/cm</span></div>
                     <small style="color:#16a34a; font-weight:700; font-size:10px;">Dẫn điện chuẩn</small>
                   </div>
 
                   <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-bottle-droplet" style="color:#d97706;"></i> Độ mặn</div>
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="waves" class="lucide-xs" style="color:#d97706;"></i> Độ mặn</div>
                     <div style="font-size:18px; font-weight:900; color:#713f12;" id="iot-soil-salinity">0.2 ‰</div>
                     <small style="color:#16a34a; font-weight:700; font-size:10px;">An toàn không mặn</small>
                   </div>
 
                   <div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:10px;">
-                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px;"><i class="fa-solid fa-seedling" style="color:#d97706;"></i> Dinh dưỡng N-P-K</div>
+                    <div style="font-size:11px; color:#854d0e; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:4px;"><i data-lucide="sprout" class="lucide-xs" style="color:#d97706;"></i> Dinh dưỡng N-P-K</div>
                     <div style="font-size:13px; font-weight:800; color:#713f12; margin-top:2px;" id="iot-soil-npk">N:45 | P:32 | K:58</div>
                     <small style="color:#854d0e; font-weight:700; font-size:10px;">mg/kg (Cân bằng)</small>
                   </div>
@@ -1283,32 +1283,32 @@
               <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
                   <h4 style="margin:0; font-size:15px; font-weight:800; color:#047857; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-faucet-drip" style="color:#059669; font-size:18px;"></i> Môi trường Nước tưới
+                    <i data-lucide="waves" class="lucide-sm" style="color:#059669;"></i> Môi trường Nước tưới
                   </h4>
                   <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:10.5px; font-weight:800;">Bể tưới IoT</span>
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                   <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-vial" style="color:#059669;"></i> pH Nước tưới</div>
+                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:4px;"><i data-lucide="flask-round" class="lucide-xs" style="color:#059669;"></i> pH Nước tưới</div>
                     <div style="font-size:22px; font-weight:900; color:#14532d;" id="iot-water-ph">6.8</div>
                     <small style="color:#16a34a; font-weight:700; font-size:10.5px;"> Chuẩn nước sạch</small>
                   </div>
 
                   <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-wind" style="color:#059669;"></i> Oxy hòa tan (DO)</div>
+                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:4px;"><i data-lucide="wind" class="lucide-xs" style="color:#059669;"></i> Oxy hòa tan (DO)</div>
                     <div style="font-size:22px; font-weight:900; color:#14532d;" id="iot-water-do">6.5 <span style="font-size:11px;">mg/L</span></div>
                     <small style="color:#16a34a; font-weight:700; font-size:10.5px;">Tốt cho rễ</small>
                   </div>
 
                   <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-water-ladder" style="color:#059669;"></i> Độ đục nước</div>
+                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:4px;"><i data-lucide="droplets" class="lucide-xs" style="color:#059669;"></i> Độ đục nước</div>
                     <div style="font-size:20px; font-weight:900; color:#14532d;" id="iot-water-turbidity">12 <span style="font-size:11px;">NTU</span></div>
                     <small style="color:#16a34a; font-weight:700; font-size:10.5px;">Nước trong sạch</small>
                   </div>
 
                   <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px;">
-                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px;"><i class="fa-solid fa-box-archive" style="color:#059669;"></i> Mực nước bể lưu</div>
+                    <div style="font-size:11.5px; color:#166534; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:4px;"><i data-lucide="cylinder" class="lucide-xs" style="color:#059669;"></i> Mực nước bể lưu</div>
                     <div style="font-size:20px; font-weight:900; color:#14532d;" id="iot-water-level">85 %</div>
                     <small style="color:#16a34a; font-weight:700; font-size:10.5px;">Đầy đủ nước tưới</small>
                   </div>
@@ -1321,10 +1321,10 @@
             <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;">
                 <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-cloud-sun-rain" style="color:#0284c7; font-size:20px;"></i> Dự báo Thời tiết 6 ngày tới & Khuyến nghị Canh tác
+                  <i data-lucide="cloud-sun-rain" class="lucide-sm" style="color:#0284c7;"></i> Dự báo Thời tiết 6 ngày tới & Khuyến nghị Canh tác
                 </h3>
                 <span id="iot-weather-source-badge" style="font-size:12px; color:#047857; font-weight:700; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;">
-                  <i class="fa-solid fa-satellite" style="color:#059669;"></i> Khí tượng Vệ tinh Open-Meteo (Live GPS)
+                  <i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Khí tượng Vệ tinh Open-Meteo (Live GPS)
                 </span>
               </div>
 

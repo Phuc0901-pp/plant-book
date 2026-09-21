@@ -1010,6 +1010,11 @@ export function switchFarmSubtab(tab) {
     if (paneIot) paneIot.style.display = 'block';
 
     renderIoTDemoData(_activeFarmId);
+    setTimeout(() => {
+      if (window.lucide) {
+        try { lucide.createIcons(); } catch (_) {}
+      }
+    }, 50);
   }
 }
 window.switchFarmSubtab = switchFarmSubtab;
@@ -1079,24 +1084,24 @@ window.refreshIoTDemoData = refreshIoTDemoData;
 
 // ── Real Open-Meteo 6-Day Agricultural Weather Forecast ─────────────
 const WMO_FORECAST_CONFIG = {
-  0: { icon: 'fa-sun', color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Trời nắng trong xanh', advice: '☀️ Nắng ấm: Rất thích hợp bón phân rễ & tưới nước buổi sáng sớm.' },
-  1: { icon: 'fa-cloud-sun', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Quang mây, ít mây', advice: '⛅ Mát mẻ: Thời điểm lý tưởng để tỉa cành, tạo tán và làm cỏ vườn.' },
-  2: { icon: 'fa-cloud-sun', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', label: 'Mây rải rác', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng hấp thu nhanh.' },
-  3: { icon: 'fa-cloud', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', label: 'Nhiều mây âm u', advice: '☁️ Trời nhiều mây: Thuận lợi thu hoạch trái và kiểm tra sâu bệnh hại.' },
-  45: { icon: 'fa-smog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù sáng sớm', advice: '🌫️ Sương mù ẩm: Chú ý phòng ngừa nấm bệnh sương mai trên đọt non.' },
-  48: { icon: 'fa-smog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù đọng sương', advice: '🌫️ Đọng sương ẩm: Tránh tưới quá ẩm làm tăng nguy cơ thối rễ.' },
-  51: { icon: 'fa-cloud-rain', color: '#38bdf8', bg: '#f0fdfa', border: '#99f6e4', label: 'Mưa phùn nhẹ', advice: '🌦️ Mưa phùn nhẹ: Có thể giảm lượng tưới nước, theo dõi độ ẩm đất.' },
-  53: { icon: 'fa-cloud-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa phùn vừa', advice: '🌧️ Mưa phùn: Hoãn phun thuốc BVTV để tránh lãng phí và trôi thuốc.' },
-  55: { icon: 'fa-cloud-rain', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa phùn nặng', advice: '🌧️ Mưa kéo dài: Cần đảm bảo hệ thống rãnh thoát nước vườn thông thoáng.' },
-  61: { icon: 'fa-cloud-sun-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào nhẹ', advice: '🌦️ Mưa rào rải rác: Tận dụng nguồn đạm tự nhiên, tạm hoãn bón phân đạm.' },
-  63: { icon: 'fa-cloud-showers-heavy', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào vừa', advice: '🌧️ Mưa rào vừa: Kiểm tra thoát nước gốc cây, tránh đọng nước cổ rễ.' },
-  65: { icon: 'fa-cloud-showers-heavy', color: '#1d4ed8', bg: '#eff6ff', border: '#60a5fa', label: 'Mưa to nặng hạt', advice: '⛈️ Mưa to nặng hạt: Khơi thông dòng chảy thoát lũ, không đi lại làm nén đất.' },
-  80: { icon: 'fa-cloud-sun-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào thoáng qua', advice: '🌦️ Mưa rào ngắn: Thời tiết thuận lợi sau mưa để tiến hành thăm vườn.' },
-  81: { icon: 'fa-cloud-showers-heavy', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào từng cơn', advice: '🌧️ Mưa từng đợt: Cắt tỉa cành khô, cành sâu bệnh bị gãy đổ.' },
-  82: { icon: 'fa-cloud-showers-heavy', color: '#1e40af', bg: '#f1f5f9', border: '#94a3b8', label: 'Mưa rất to xối xả', advice: '⛈️ Mưa xối xả: Kê cao vật tư phân bón, kiểm tra an toàn điện trạm bơm.' },
-  95: { icon: 'fa-bolt', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa', label: 'Mưa dông sét', advice: '⚡ Dông sét: Gia cố cọc chống cây trồng lớn, ngắt nguồn điện tưới ngoài trời.' },
-  96: { icon: 'fa-bolt', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', label: 'Dông lốc, mưa đá nhẹ', advice: '⚠️ Cảnh báo dông lốc: Kiểm tra neo giàn và lưới che chắn nhà màng.' },
-  99: { icon: 'fa-bolt', color: '#991b1b', bg: '#fef2f2', border: '#f87171', label: 'Dông lốc nguy hiểm', advice: '⛔ Dông bão mạnh: Tạm dừng toàn bộ hoạt động ngoài đồng ruộng để an toàn.' }
+  0: { icon: 'sun', color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Trời nắng trong xanh', advice: '☀️ Nắng ấm: Rất thích hợp bón phân rễ & tưới nước buổi sáng sớm.' },
+  1: { icon: 'sun-medium', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Quang mây, ít mây', advice: '⛅ Mát mẻ: Thời điểm lý tưởng để tỉa cành, tạo tán và làm cỏ vườn.' },
+  2: { icon: 'cloud-sun', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', label: 'Mây rải rác', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng hấp thu nhanh.' },
+  3: { icon: 'cloud', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', label: 'Nhiều mây âm u', advice: '☁️ Trời nhiều mây: Thuận lợi thu hoạch trái và kiểm tra sâu bệnh hại.' },
+  45: { icon: 'cloud-fog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù sáng sớm', advice: '🌫️ Sương mù ẩm: Chú ý phòng ngừa nấm bệnh sương mai trên đọt non.' },
+  48: { icon: 'cloud-fog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù đọng sương', advice: '🌫️ Đọng sương ẩm: Tránh tưới quá ẩm làm tăng nguy cơ thối rễ.' },
+  51: { icon: 'cloud-drizzle', color: '#38bdf8', bg: '#f0fdfa', border: '#99f6e4', label: 'Mưa phùn nhẹ', advice: '🌦️ Mưa phùn nhẹ: Có thể giảm lượng tưới nước, theo dõi độ ẩm đất.' },
+  53: { icon: 'cloud-drizzle', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa phùn vừa', advice: '🌧️ Mưa phùn: Hoãn phun thuốc BVTV để tránh lãng phí và trôi thuốc.' },
+  55: { icon: 'cloud-rain', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa phùn nặng', advice: '🌧️ Mưa kéo dài: Cần đảm bảo hệ thống rãnh thoát nước vườn thông thoáng.' },
+  61: { icon: 'cloud-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào nhẹ', advice: '🌦️ Mưa rào rải rác: Tận dụng nguồn đạm tự nhiên, tạm hoãn bón phân đạm.' },
+  63: { icon: 'cloud-rain-wind', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào vừa', advice: '🌧️ Mưa rào vừa: Kiểm tra thoát nước gốc cây, tránh đọng nước cổ rễ.' },
+  65: { icon: 'cloud-rain-wind', color: '#1d4ed8', bg: '#eff6ff', border: '#60a5fa', label: 'Mưa to nặng hạt', advice: '⛈️ Mưa to nặng hạt: Khơi thông dòng chảy thoát lũ, không đi lại làm nén đất.' },
+  80: { icon: 'cloud-sun-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào thoáng qua', advice: '🌦️ Mưa rào ngắn: Thời tiết thuận lợi sau mưa để tiến hành thăm vườn.' },
+  81: { icon: 'cloud-rain-wind', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào từng cơn', advice: '🌧️ Mưa từng đợt: Cắt tỉa cành khô, cành sâu bệnh bị gãy đổ.' },
+  82: { icon: 'cloud-rain-wind', color: '#1e40af', bg: '#f1f5f9', border: '#94a3b8', label: 'Mưa rất to xối xả', advice: '⛈️ Mưa xối xả: Kê cao vật tư phân bón, kiểm tra an toàn điện trạm bơm.' },
+  95: { icon: 'cloud-lightning', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa', label: 'Mưa dông sét', advice: '⚡ Dông sét: Gia cố cọc chống cây trồng lớn, ngắt nguồn điện tưới ngoài trời.' },
+  96: { icon: 'cloud-lightning', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', label: 'Dông lốc, mưa đá nhẹ', advice: '⚠️ Cảnh báo dông lốc: Kiểm tra neo giàn và lưới che chắn nhà màng.' },
+  99: { icon: 'cloud-lightning', color: '#991b1b', bg: '#fef2f2', border: '#f87171', label: 'Dông lốc nguy hiểm', advice: '⛔ Dông bão mạnh: Tạm dừng toàn bộ hoạt động ngoài đồng ruộng để an toàn.' }
 };
 
 export async function fetchLiveOpenMeteoForecast(lat, lng) {
@@ -1198,7 +1203,10 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
           _renderForecastGrid(liveForecast);
           const badge = document.getElementById('iot-weather-source-badge');
           if (badge) {
-            badge.innerHTML = `<i class="fa-solid fa-satellite" style="color:#059669;"></i> Dữ liệu thật Open-Meteo GPS (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+            badge.innerHTML = `<i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Dữ liệu thật Open-Meteo GPS (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+          }
+          if (window.lucide) {
+            try { lucide.createIcons(); } catch (_) {}
           }
         }
       });
@@ -1214,6 +1222,16 @@ function _renderForecastGrid(forecast) {
   if (!grid || !forecast || !forecast.length) return;
 
   grid.innerHTML = forecast.map((w) => {
+    let iconName = w.icon || 'sun';
+    if (iconName.startsWith('fa-')) {
+      if (iconName.includes('sun-rain')) iconName = 'cloud-sun-rain';
+      else if (iconName.includes('cloud-sun')) iconName = 'cloud-sun';
+      else if (iconName.includes('sun')) iconName = 'sun';
+      else if (iconName.includes('showers') || iconName.includes('rain')) iconName = 'cloud-rain';
+      else if (iconName.includes('bolt') || iconName.includes('lightning')) iconName = 'cloud-lightning';
+      else if (iconName.includes('cloud')) iconName = 'cloud';
+      else iconName = 'sun';
+    }
     return `
       <div style="background:${w.bg || '#fff7ed'}; border:1.5px solid ${w.border || '#ffedd5'}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
         <div>
@@ -1222,13 +1240,13 @@ function _renderForecastGrid(forecast) {
             <span style="font-size:11px; color:#64748b; font-weight:700;">${w.date_str || ''}</span>
           </div>
           <div style="text-align:center; padding:10px 0;">
-            <i class="fa-solid ${w.icon || 'fa-sun'}" style="font-size:32px; color:${w.color || '#f59e0b'}; margin-bottom:6px; display:block;"></i>
+            <i data-lucide="${iconName}" style="width:36px; height:36px; stroke-width:2.2; color:${w.color || '#f59e0b'}; margin-bottom:6px; display:inline-block;"></i>
             <div style="font-size:16px; font-weight:900; color:#0f172a;">${w.temp || '25°C - 33°C'}</div>
           </div>
-          <div style="font-size:11.5px; color:#475569; display:flex; flex-direction:column; gap:4px; margin-bottom:10px; background:rgba(255,255,255,0.7); padding:8px; border-radius:8px;">
-            <div><i class="fa-solid fa-cloud-rain" style="color:#0284c7;"></i> Mưa: <strong>${w.rain || '10%'}</strong></div>
-            <div><i class="fa-solid fa-droplet" style="color:#0284c7;"></i> Độ ẩm: <strong>${w.humidity || '70%'}</strong></div>
-            <div><i class="fa-solid fa-wind" style="color:#64748b;"></i> Gió: <strong>${w.wind || '12 km/h'}</strong></div>
+          <div style="font-size:11.5px; color:#475569; display:flex; flex-direction:column; gap:6px; margin-bottom:10px; background:rgba(255,255,255,0.7); padding:8px 10px; border-radius:8px;">
+            <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="cloud-rain" class="lucide-xs" style="color:#0284c7;"></i> Mưa: <strong>${w.rain || '10%'}</strong></div>
+            <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="droplets" class="lucide-xs" style="color:#0284c7;"></i> Độ ẩm: <strong>${w.humidity || '70%'}</strong></div>
+            <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="wind" class="lucide-xs" style="color:#64748b;"></i> Gió: <strong>${w.wind || '12 km/h'}</strong></div>
           </div>
         </div>
         <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px;">
@@ -1237,6 +1255,10 @@ function _renderForecastGrid(forecast) {
       </div>
     `;
   }).join('');
+
+  if (window.lucide) {
+    try { lucide.createIcons(); } catch (_) {}
+  }
 }
 
 function _applyIoTDemoDataToUI(res) {
@@ -1264,6 +1286,10 @@ function _applyIoTDemoDataToUI(res) {
 
   // Initial render of 6-Day Weather Forecast from DB cache
   _renderForecastGrid(forecast);
+
+  if (window.lucide) {
+    try { lucide.createIcons(); } catch (_) {}
+  }
 }
 
 // ── Web Audio Feedback API for NFC Scan (Ding & Beep-beep) ─────────

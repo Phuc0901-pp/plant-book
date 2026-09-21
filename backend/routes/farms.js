@@ -376,12 +376,12 @@ function generateDefaultFarmIoTData(farmId) {
   const today = new Date();
   const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
   const weatherTemplates = [
-    { icon: 'fa-sun', color: '#f59e0b', temp: '25°C - 33°C', rain: '10%', humidity: `${airHumidity}%`, wind: `${windSpeed} km/h`, advice: '☀️ Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.' },
-    { icon: 'fa-cloud-sun-rain', color: '#0284c7', temp: '24°C - 31°C', rain: '65%', humidity: '82%', wind: '15 km/h', advice: '🌦️ Mưa rào rải rác: Hạn chế phun thuốc sâu vì dễ bị rửa trôi.' },
-    { icon: 'fa-cloud-sun', color: '#059669', temp: '23°C - 30°C', rain: '20%', humidity: '75%', wind: '10 km/h', advice: '⛅ Nhiều mây mát: Thời điểm tốt nhất để làm cỏ & tạo tán cây.' },
-    { icon: 'fa-cloud-sun', color: '#eab308', temp: '25°C - 32°C', rain: '15%', humidity: '68%', wind: '14 km/h', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng.' },
-    { icon: 'fa-cloud-showers-heavy', color: '#7c3aed', temp: '23°C - 29°C', rain: '85%', humidity: '88%', wind: '22 km/h', advice: '⛈️ Mưa dông chiều: Khơi thông rãnh tháo nước tránh ngập úng.' },
-    { icon: 'fa-sun', color: '#ea580c', temp: '26°C - 34°C', rain: '5%', humidity: '62%', wind: '11 km/h', advice: '☀️ Nắng rực rỡ: Duy trì hệ thống tưới nhỏ giọt tự động.' }
+    { icon: 'sun', color: '#f59e0b', temp: '25°C - 33°C', rain: '10%', humidity: `${airHumidity}%`, wind: `${windSpeed} km/h`, advice: '☀️ Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.' },
+    { icon: 'cloud-sun-rain', color: '#0284c7', temp: '24°C - 31°C', rain: '65%', humidity: '82%', wind: '15 km/h', advice: '🌦️ Mưa rào rải rác: Hạn chế phun thuốc sâu vì dễ bị rửa trôi.' },
+    { icon: 'cloud-sun', color: '#059669', temp: '23°C - 30°C', rain: '20%', humidity: '75%', wind: '10 km/h', advice: '⛅ Nhiều mây mát: Thời điểm tốt nhất để làm cỏ & tạo tán cây.' },
+    { icon: 'sun-medium', color: '#eab308', temp: '25°C - 32°C', rain: '15%', humidity: '68%', wind: '14 km/h', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng.' },
+    { icon: 'cloud-lightning', color: '#7c3aed', temp: '23°C - 29°C', rain: '85%', humidity: '88%', wind: '22 km/h', advice: '⛈️ Mưa dông chiều: Khơi thông rãnh tháo nước tránh ngập úng.' },
+    { icon: 'sun', color: '#ea580c', temp: '26°C - 34°C', rain: '5%', humidity: '62%', wind: '11 km/h', advice: '☀️ Nắng rực rỡ: Duy trì hệ thống tưới nhỏ giọt tự động.' }
   ];
 
   const weather_forecast = weatherTemplates.map((w, i) => {
