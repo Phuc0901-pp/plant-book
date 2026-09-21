@@ -4,11 +4,11 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { api }        from '../core/api.js';
-import { toast }      from '../core/utils.js';
+import { toast, esc } from '../core/utils.js';
 import { getPlantsCache, renderUserPlantsTable } from './plants.js';
 
 // ── State ──────────────────────────────────────────────────────
-let _currentPlant      = null;   // { id, tree_code, public_slug, nfc_uid, farm_id, user_id, plant_type, plant_variety, latitude, longitude }
+let _currentPlant      = null;   // { id, tree_code, public_slug, nfc_uid, farm_id, user_id, plant_type, plant_variety, latitude, longitude, location }
 let _currentFarmPlants = [];     // List of trees in the same farm, sorted by sequential number
 let _currentPlantIndex = 0;      // Current active index in _currentFarmPlants
 let _nfcReader         = null;   // NDEFReader instance (Web NFC)
@@ -48,7 +48,8 @@ function _renderCurrentNfcPlant() {
     plant_type: plantObj.plant_type,
     plant_variety: plantObj.plant_variety,
     latitude: plantObj.latitude,
-    longitude: plantObj.longitude
+    longitude: plantObj.longitude,
+    location: plantObj.location
   };
 
   _setEl('nfc-modal-plant-name', `${treeCode}${plantObj.plant_type ? ` (${plantObj.plant_type})` : ''}`);
