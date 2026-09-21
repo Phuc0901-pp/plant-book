@@ -2236,9 +2236,6 @@ router.post('/:id/restore', auth, admin, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi khôi phục cây: ' + err.message });
   }
 });
-    res.status(500).json({ error: 'Lỗi server.' });
-  }
-});
 
 router.post('/:id/media', auth, upload.array('files', 20), async (req, res) => {
   try {
