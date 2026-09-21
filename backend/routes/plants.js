@@ -722,6 +722,254 @@ router.put('/:id/gps', auth, async (req, res) => {
   }
 });
 
+// ─── Reorder Tree Codes Automatically by GPS Coordinates ────────────────────
+router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) {
+      return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    }
+
+    // Verify ownership / access
+    const farmRes = await client.query('SELECT id, name, user_id FROM farms WHERE id = $1', [farmId]);
+    if (farmRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
+    }
+    const farm = farmRes.rows[0];
+    const isOwner = farm.user_id === req.user.id;
+    const isAssigned = req.user.farm_id && Number(req.user.farm_id) === farmId;
+    if (req.user.role !== 'admin' && !isOwner && !isAssigned) {
+      return res.status(403).json({ error: 'Bạn không có quyền sắp xếp lại mã cây của trang trại này.' });
+    }
+
+    const {
+      order_mode = 'north_to_south', // 'north_to_south' | 'by_columns' | 'snake' | 'by_rows'
+      prefix = '',
+      start_number = 1,
+      pad_digits = 0, // 0 = no pad (1..75), 2 = (01..75), 3 = (001..075)
+      dry_run = false
+    } = req.body;
+
+    const plantsRes = await client.query(
+      `SELECT id, farm_id, tree_code, nfc_uid, public_slug, latitude, longitude, location, plant_type, created_by 
+       FROM plants 
+       WHERE farm_id = $1
+       ORDER BY id ASC`,
+      [farmId]
+    );
+
+    const allPlants = plantsRes.rows;
+    if (allPlants.length === 0) {
+      return res.status(400).json({ error: 'Trang trại này chưa có cây trồng nào.' });
+    }
+
+    // Split plants with GPS vs without GPS
+    const gpsPlants = allPlants.filter(p => p.latitude != null && p.longitude != null && !isNaN(parseFloat(p.latitude)) && !isNaN(parseFloat(p.longitude)));
+    const noGpsPlants = allPlants.filter(p => p.latitude == null || p.longitude == null || isNaN(parseFloat(p.latitude)) || isNaN(parseFloat(p.longitude)));
+
+    if (gpsPlants.length === 0) {
+      return res.status(400).json({ error: 'Chưa có cây nào được định vị GPS để có thể sắp xếp theo không gian địa lý.' });
+    }
+
+    // Calculate center & principal orientation angle (PCA)
+    const N = gpsPlants.length;
+    let meanLat = 0, meanLng = 0;
+    gpsPlants.forEach(p => {
+      meanLat += parseFloat(p.latitude);
+      meanLng += parseFloat(p.longitude);
+    });
+    meanLat /= N;
+    meanLng /= N;
+
+    let cxx = 0, cyy = 0, cxy = 0;
+    gpsPlants.forEach(p => {
+      const dy = parseFloat(p.latitude) - meanLat;
+      const dx = (parseFloat(p.longitude) - meanLng) * Math.cos(meanLat * Math.PI / 180);
+      cxx += dx * dx;
+      cyy += dy * dy;
+      cxy += dx * dy;
+    });
+
+    // Principal angle theta
+    let theta = 0.5 * Math.atan2(2 * cxy, cyy - cxx);
+
+    // Project coordinates onto Length axis (u) and Width axis (v)
+    gpsPlants.forEach(p => {
+      const dy = parseFloat(p.latitude) - meanLat;
+      const dx = (parseFloat(p.longitude) - meanLng) * Math.cos(meanLat * Math.PI / 180);
+      
+      const u = dy * Math.cos(theta) + dx * Math.sin(theta);
+      const v = -dy * Math.sin(theta) + dx * Math.cos(theta);
+
+      p._rawLat = parseFloat(p.latitude);
+      p._rawLng = parseFloat(p.longitude);
+      p._u = u;
+      p._v = v;
+    });
+
+    // Determine orientation so u is aligned with North to South (highest = North/Top)
+    let latCorr = 0;
+    gpsPlants.forEach(p => {
+      latCorr += p._u * (p._rawLat - meanLat);
+    });
+    if (latCorr < 0) {
+      gpsPlants.forEach(p => { p._u = -p._u; });
+    }
+
+    // Determine orientation so v is aligned with West to East (lowest = West/Left)
+    let lngCorr = 0;
+    gpsPlants.forEach(p => {
+      lngCorr += p._v * (p._rawLng - meanLng);
+    });
+    if (lngCorr < 0) {
+      gpsPlants.forEach(p => { p._v = -p._v; });
+    }
+
+    // Sort according to order_mode:
+    if (order_mode === 'by_columns') {
+      const vVals = gpsPlants.map(p => p._v).sort((a,b) => a - b);
+      const minV = vVals[0];
+      const maxV = vVals[vVals.length - 1];
+      const vRange = maxV - minV;
+
+      gpsPlants.sort((a, b) => {
+        const colA = a._v;
+        const colB = b._v;
+        if (Math.abs(colA - colB) > (vRange > 0 ? vRange * 0.25 : 0.00005)) {
+          return colA - colB; // Left column first, then Right column
+        }
+        return b._u - a._u; // North to South within same column
+      });
+    } else if (order_mode === 'snake') {
+      const uVals = gpsPlants.map(p => p._u).sort((a,b) => b - a);
+      const uRange = uVals[0] - uVals[uVals.length - 1];
+      const rowStep = uRange > 0 ? (uRange / (N > 10 ? Math.min(Math.floor(N / 2), 40) : N)) : 0.0001;
+
+      const rows = [];
+      const sortedByU = [...gpsPlants].sort((a, b) => b._u - a._u);
+      sortedByU.forEach(p => {
+        let placed = false;
+        for (const r of rows) {
+          if (Math.abs(r.meanU - p._u) <= rowStep * 0.8) {
+            r.plants.push(p);
+            r.meanU = r.plants.reduce((sum, item) => sum + item._u, 0) / r.plants.length;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          rows.push({ meanU: p._u, plants: [p] });
+        }
+      });
+
+      rows.sort((a, b) => b.meanU - a.meanU);
+
+      const snakeSorted = [];
+      rows.forEach((r, idx) => {
+        if (idx % 2 === 0) {
+          r.plants.sort((a, b) => a._v - b._v); // Left to Right
+        } else {
+          r.plants.sort((a, b) => b._v - a._v); // Right to Left
+        }
+        snakeSorted.push(...r.plants);
+      });
+      gpsPlants.length = 0;
+      gpsPlants.push(...snakeSorted);
+    } else {
+      // Default: 'north_to_south' (Top to Bottom, Left to Right within row pairs)
+      const uVals = gpsPlants.map(p => p._u).sort((a,b) => b - a);
+      const uRange = (uVals[0] || 0) - (uVals[uVals.length - 1] || 0);
+      const rowBand = uRange > 0 ? (uRange / (N > 4 ? Math.max(Math.floor(N / 2.2), 1) : N)) * 0.7 : 0.00003;
+
+      gpsPlants.sort((a, b) => {
+        if (Math.abs(a._u - b._u) < rowBand) {
+          return a._v - b._v; // Left before Right
+        }
+        return b._u - a._u; // North (Top) before South (Bottom)
+      });
+    }
+
+    // Numbering generator
+    const formatNumber = (num) => {
+      const s = String(num);
+      if (pad_digits > 0) {
+        return s.padStart(pad_digits, '0');
+      }
+      return s;
+    };
+
+    const reorderedList = [];
+    let currentNum = parseInt(start_number) || 1;
+
+    for (const plant of gpsPlants) {
+      const newCode = `${prefix}${formatNumber(currentNum)}`;
+      reorderedList.push({
+        id: plant.id,
+        old_tree_code: plant.tree_code || String(plant.id),
+        new_tree_code: newCode,
+        nfc_uid: plant.nfc_uid,
+        latitude: plant.latitude,
+        longitude: plant.longitude,
+        location: plant.location
+      });
+      currentNum++;
+    }
+
+    // If dry_run, return preview without modifying DB
+    if (dry_run) {
+      return res.json({
+        success: true,
+        dry_run: true,
+        farm_id: farmId,
+        farm_name: farm.name,
+        total_plants: allPlants.length,
+        reordered_count: reorderedList.length,
+        no_gps_count: noGpsPlants.length,
+        reordered_list: reorderedList
+      });
+    }
+
+    // Execute batch update in transaction
+    await client.query('BEGIN');
+
+    for (const item of reorderedList) {
+      const publicUrl = generatePublicPlantUrl(farmId, item.id, item.nfc_uid);
+      await client.query(
+        `UPDATE plants 
+         SET tree_code = $1, public_url = $2, updated_at = NOW() 
+         WHERE id = $3`,
+        [item.new_tree_code, publicUrl, item.id]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    // Broadcast WebSocket event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('plants_updated', { farm_id: farmId, action: 'reorder_gps', count: reorderedList.length });
+    }
+
+    res.json({
+      success: true,
+      farm_id: farmId,
+      farm_name: farm.name,
+      total_plants: allPlants.length,
+      reordered_count: reorderedList.length,
+      no_gps_count: noGpsPlants.length,
+      message: `✨ Đã sắp xếp lại mã số cho ${reorderedList.length} cây theo tọa độ GPS (${prefix}${formatNumber(start_number)} ➔ ${prefix}${formatNumber(start_number + reorderedList.length - 1)}) thành công!`,
+      reordered_list: reorderedList
+    });
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Reorder trees by GPS error:', err);
+    res.status(500).json({ error: 'Lỗi server khi sắp xếp lại mã cây: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // ─── NFC Tag Assignment (accessible by farm owner or admin) ──────────────────
 router.put('/:id/nfc', auth, async (req, res) => {
   const client = await pool.connect();

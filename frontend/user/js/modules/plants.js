@@ -1658,4 +1658,158 @@ async function executeUserFieldTagAssign(plant, uid, ndefInstance) {
   }
 }
 
+// ─── Spatial Tree Reordering by GPS Modal Logic ──────────────────────────────
+let _reorderGpsPreviewData = null;
+
+export function openReorderGpsModal(farmId) {
+  const modal = document.getElementById('reorder-gps-modal');
+  if (!modal) return;
+
+  const farmSelect = document.getElementById('reorder-gps-farm-select');
+  if (farmSelect) {
+    const farms = _farmsCache && _farmsCache.length ? _farmsCache : [];
+    if (!farms.length) {
+      if (window.toast) window.toast('Bạn chưa có trang trại nào.', 'warning');
+      return;
+    }
+    const currentActiveFarm = getActiveFarm();
+    const targetFarmId = farmId || (currentActiveFarm ? currentActiveFarm.id : farms[0].id);
+
+    farmSelect.innerHTML = farms.map(f => 
+      `<option value="${f.id}" ${Number(f.id) === Number(targetFarmId) ? 'selected' : ''}>🏡 ${esc(f.name)} (${f.plant_count || 0} cây)</option>`
+    ).join('');
+  }
+
+  modal.classList.add('open');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  previewReorderGps();
+}
+window.openReorderGpsModal = openReorderGpsModal;
+
+export function closeReorderGpsModal() {
+  const modal = document.getElementById('reorder-gps-modal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  document.body.style.overflow = '';
+}
+window.closeReorderGpsModal = closeReorderGpsModal;
+
+export async function previewReorderGps() {
+  const farmSelect = document.getElementById('reorder-gps-farm-select');
+  const farmId = farmSelect ? farmSelect.value : null;
+  if (!farmId) return;
+
+  const orderMode = document.querySelector('input[name="reorder_mode"]:checked')?.value || 'north_to_south';
+  const prefix = document.getElementById('reorder-gps-prefix')?.value || '';
+  const startNum = parseInt(document.getElementById('reorder-gps-start-num')?.value, 10) || 1;
+  const padDigits = parseInt(document.getElementById('reorder-gps-pad-digits')?.value, 10) || 0;
+
+  const tbody = document.getElementById('reorder-gps-preview-tbody');
+  const countEl = document.getElementById('reorder-gps-preview-count');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:18px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tính toán không gian và hướng tọa độ...</td></tr>`;
+  }
+
+  try {
+    const res = await api(`/plants/farms/${farmId}/reorder-by-gps`, {
+      method: 'POST',
+      body: JSON.stringify({
+        order_mode: orderMode,
+        prefix,
+        start_number: startNum,
+        pad_digits: padDigits,
+        dry_run: true
+      })
+    });
+
+    _reorderGpsPreviewData = res;
+    if (countEl) countEl.textContent = `${res.reordered_count} / ${res.total_plants} cây`;
+
+    if (tbody) {
+      if (!res.reordered_list || !res.reordered_list.length) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:18px; color:#ef4444;">Không tìm thấy cây có tọa độ GPS để sắp xếp.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = res.reordered_list.map((item, idx) => `
+        <tr style="border-bottom:1px solid #f1f5f9; ${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
+          <td style="padding:7px 10px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
+          <td style="padding:7px 10px;">
+            <span style="color:#94a3b8; text-decoration:line-through; font-size:11px;">#${esc(item.old_tree_code)}</span>
+            <i class="fa-solid fa-arrow-right" style="font-size:10px; color:#10b981; margin:0 4px;"></i>
+            <strong style="color:#047857; font-size:13px;">#${esc(item.new_tree_code)}</strong>
+          </td>
+          <td style="padding:7px 10px; font-family:monospace; font-size:11px; color:#0284c7;">
+            ${Number(item.latitude).toFixed(6)}, ${Number(item.longitude).toFixed(6)}
+          </td>
+          <td style="padding:7px 10px; font-size:11.5px; color:#475569;">
+            ${esc(item.location || '—')}
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:18px; color:#dc2626;">Lỗi tải xem trước: ${esc(err.message)}</td></tr>`;
+    }
+  }
+}
+window.previewReorderGps = previewReorderGps;
+
+export async function executeReorderGps() {
+  const farmSelect = document.getElementById('reorder-gps-farm-select');
+  const farmId = farmSelect ? farmSelect.value : null;
+  if (!farmId) return;
+
+  const orderMode = document.querySelector('input[name="reorder_mode"]:checked')?.value || 'north_to_south';
+  const prefix = document.getElementById('reorder-gps-prefix')?.value || '';
+  const startNum = parseInt(document.getElementById('reorder-gps-start-num')?.value, 10) || 1;
+  const padDigits = parseInt(document.getElementById('reorder-gps-pad-digits')?.value, 10) || 0;
+
+  const count = _reorderGpsPreviewData ? _reorderGpsPreviewData.reordered_count : 'tất cả';
+  if (!confirm(`Bạn có chắc chắn muốn đánh lại toàn bộ mã số cho ${count} cây theo tọa độ GPS?\n\n⚠️ Lưu ý: Mã cây (tree_code) và đường dẫn công khai sẽ được cập nhật thẳng hàng theo thứ tự vị trí mới.`)) {
+    return;
+  }
+
+  const btn = document.getElementById('btn-execute-reorder-gps');
+  if (btn) {
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang sắp xếp & cập nhật CSDL...';
+    btn.disabled = true;
+  }
+
+  try {
+    const res = await api(`/plants/farms/${farmId}/reorder-by-gps`, {
+      method: 'POST',
+      body: JSON.stringify({
+        order_mode: orderMode,
+        prefix,
+        start_number: startNum,
+        pad_digits: padDigits,
+        dry_run: false
+      })
+    });
+
+    if (window.toast) window.toast(res.message || '✨ Đã sắp xếp lại mã số cây thành công!', 'success');
+    closeReorderGpsModal();
+
+    // Reload plants & map data
+    if (window.loadUserDashboard) {
+      await window.loadUserDashboard();
+    }
+  } catch (err) {
+    if (window.toast) window.toast('Lỗi sắp xếp mã cây: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Áp dụng &amp; Đánh số lại ngay';
+      btn.disabled = false;
+    }
+  }
+}
+window.executeReorderGps = executeReorderGps;
+
+
 
