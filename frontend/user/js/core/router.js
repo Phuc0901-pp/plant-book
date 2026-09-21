@@ -4,8 +4,6 @@
    URL Format: #/u/:userHash/:page (e.g., #/u/usr-5a96/farms/farm-5a9f)
    ═══════════════════════════════════════════════════════════════ */
 
-import { ensureViewLoaded, preloadViews } from './view-loader.js';
-
 const SALT = 0x5a9e;
 
 /** Encode numeric ID to obfuscated hash token (International Security Standard) */
@@ -118,11 +116,8 @@ window.syncUserUrl = syncUserUrl;
  * @param {string} page 
  * @param {boolean} updateHash 
  */
-export async function showPage(page, updateHash = true) {
+export function showPage(page, updateHash = true) {
   const targetPage = PAGE_ALIASES[page] || page;
-  
-  // Ensure view HTML is dynamically fetched & inserted
-  await ensureViewLoaded(targetPage);
   
   // Tắt tất cả sections
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
@@ -220,7 +215,6 @@ export function handleRouteFromHash() {
 
   const targetPage = PAGE_ALIASES[restPage] || 'home';
   showPage(targetPage, false);
-  preloadViews();
 
   // If a specific farm hash is provided in URL
   if (targetPage === 'myplants' && farmHash) {

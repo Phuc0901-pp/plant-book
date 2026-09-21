@@ -250,10 +250,6 @@ async function showPage(page, pushUrl = true) {
     }
   }
 
-  if (typeof ensureAdminViewLoaded === 'function') {
-    await ensureAdminViewLoaded(page);
-  }
-
   const targetSection = document.getElementById(`page-${page}`);
   if (!targetSection) {
     console.warn(`Page section #page-${page} not found.`);
