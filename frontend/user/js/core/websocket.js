@@ -59,7 +59,7 @@ export async function connectWebSocket() {
 
     socket.onopen = () => {
       retryCount = 0;
-      console.log('✅ [User] WebSocket connected');
+      console.log('[SUCCESS] [User] WebSocket connected');
     };
 
     socket.onmessage = (event) => {
@@ -116,12 +116,12 @@ function handleUserRealtimeEvent(msg) {
       el.textContent = vTag;
     });
     if (typeof window.showToast === 'function') {
-      window.showToast(`🚀 Sổ Nông đã cập nhật phiên bản mới: ${vTag}!`, 'info');
+      window.showToast(`[UPDATED] Sổ Nông đã cập nhật phiên bản mới: ${vTag}!`, 'info');
     }
   }
 
   if (event === 'plants_updated' || event === 'farms_updated' || event === 'supplies_updated' || event === 'new_care_log') {
-    console.log('🔄 Live refresh from server event:', event);
+    console.log('[RELOAD] Live refresh from server event:', event);
     if (typeof loadUserDashboard === 'function') loadUserDashboard();
     if (typeof window.loadSupplies === 'function') window.loadSupplies();
     if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
