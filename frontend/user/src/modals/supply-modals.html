@@ -1,4 +1,4 @@
-<div class="modal-overlay" id="modal-supply" style="display:none" onclick="if(event.target===this)closeSupplyModal()">
+﻿<div class="modal-overlay" id="modal-supply" style="display:none" onclick="if(event.target===this)closeSupplyModal()">
   <div class="modal supply-modal-custom">
     <div class="modal-header supply-modal-header">
       <div style="display:flex; align-items:center; gap:12px;">
@@ -26,7 +26,7 @@
         <div>
           <input type="file" id="sp-ai-scan-file" accept="image/*" capture="environment" style="display:none;" onchange="handleAiScanImageUpload(event)">
           <button type="button" class="btn" id="sp-ai-scan-btn" onclick="document.getElementById('sp-ai-scan-file').click()" style="background:linear-gradient(135deg, #10b981, #059669); color:#ffffff; font-weight:800; border:none; padding:8px 16px; border-radius:10px; font-size:12.5px; display:flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
-            <i class="fa-solid fa-camera"></i> <span id="sp-ai-scan-text">📷 Chụp / Chọn ảnh bao bì</span>
+            <i class="fa-solid fa-camera"></i> <span id="sp-ai-scan-text"> Chụp / Chọn ảnh bao bì</span>
           </button>
         </div>
       </div>
@@ -37,10 +37,10 @@
         <div class="field" style="margin-bottom:0;">
           <label class="form-label"><i class="fa-solid fa-layer-group"></i> Hạng mục gốc <span class="req-star">*</span></label>
           <select id="sp-category" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
-            <option value="Bón phân">🧪 Bón phân</option>
-            <option value="Tiền nước">💧 Tiền nước (m³)</option>
-            <option value="Phun thuốc">🛡️ Phun thuốc</option>
-            <option value="Nhân công">👷 Nhân công</option>
+            <option value="Bón phân"> Bón phân</option>
+            <option value="Tiền nước"> Tiền nước (m³)</option>
+            <option value="Phun thuốc"> Phun thuốc</option>
+            <option value="Nhân công"> Nhân công</option>
           </select>
         </div>
 
@@ -62,12 +62,12 @@
       <div class="field" id="field-fertilizer-type" style="margin-top:12px; margin-bottom:16px;">
         <label class="form-label"><i class="fa-solid fa-tags"></i> Loại phân bón <span class="req-star">*</span></label>
         <select id="sp-fertilizer-type" class="form-control-custom">
-          <option value="Phân vô cơ (NPK / Hóa học)">🧪 Phân vô cơ / Hóa học (NPK, Ure, DAP, Kali...)</option>
-          <option value="Phân hữu cơ">🌱 Phân hữu cơ (Trùn quế, Vi sinh, Đạm cá...)</option>
-          <option value="Phân bón lá">🍃 Phân bón lá / Kích thích ra hoa, đậu trái</option>
-          <option value="Phân vi lượng / Trung lượng">🔬 Phân vi lượng / Trung lượng (Bo, Canxi, Magie...)</option>
-          <option value="Phân chuồng / Hoai mục">🐂 Phân chuồng hoai mục / Vi sinh</option>
-          <option value="Khác">🏷️ Khác / Phân loại riêng</option>
+          <option value="Phân vô cơ (NPK / Hóa học)"> Phân vô cơ / Hóa học (NPK, Ure, DAP, Kali...)</option>
+          <option value="Phân hữu cơ"> Phân hữu cơ (Trùn quế, Vi sinh, Đạm cá...)</option>
+          <option value="Phân bón lá"> Phân bón lá / Kích thích ra hoa, đậu trái</option>
+          <option value="Phân vi lượng / Trung lượng"> Phân vi lượng / Trung lượng (Bo, Canxi, Magie...)</option>
+          <option value="Phân chuồng / Hoai mục"> Phân chuồng hoai mục / Vi sinh</option>
+          <option value="Khác"> Khác / Phân loại riêng</option>
         </select>
       </div>
 

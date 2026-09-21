@@ -119,25 +119,25 @@
           <div class="status-strip-grid">
             <!-- Cây Bệnh -->
             <button type="button" onclick="showPage('plants')" class="status-strip-btn status-btn-sick">
-              <span class="status-btn-label">🐛 Cây bệnh:</span>
+              <span class="status-btn-label"><i data-lucide="bug" class="lucide-xs"></i> Cây bệnh:</span>
               <strong class="status-btn-val" id="stat-sick-plants">0</strong>
             </button>
 
             <!-- Thiết Bị Offline -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-offline">
-              <span class="status-btn-label">🔌 Thiết bị offline:</span>
+              <span class="status-btn-label"><i data-lucide="unplug" class="lucide-xs"></i> Thiết bị offline:</span>
               <strong class="status-btn-val" id="stat-broken-devices">0</strong>
             </button>
 
             <!-- Thiết Bị Cần Bảo Trì -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-maintenance">
-              <span class="status-btn-label">🔧 Cần bảo dưỡng:</span>
+              <span class="status-btn-label"><i data-lucide="wrench" class="lucide-xs"></i> Cần bảo dưỡng:</span>
               <strong class="status-btn-val" id="stat-maintenance-devices">0</strong>
             </button>
 
             <!-- Cảm Biến Hiệu Chuẩn -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-calibration">
-              <span class="status-btn-label">⚙️ Cần hiệu chuẩn:</span>
+              <span class="status-btn-label"><i data-lucide="sliders" class="lucide-xs"></i> Cần hiệu chuẩn:</span>
               <strong class="status-btn-val" id="stat-calibration-devices">0</strong>
             </button>
           </div>
@@ -152,7 +152,7 @@
               <button class="gis-back-btn" id="gis-back-btn" style="display:none;" onclick="backToFarmsList()">
                 <i class="fa fa-arrow-left"></i>
               </button>
-              <h3 id="gis-sidebar-title">🗺️ Quản lý Trang trại</h3>
+              <h3 id="gis-sidebar-title"><i data-lucide="map" class="lucide-sm"></i> Quản lý Trang trại</h3>
               <div id="gis-header-actions">
                 <button class="btn btn-primary btn-sm" onclick="openFarmForm()">
                   <i class="fa fa-plus"></i> Thêm mới

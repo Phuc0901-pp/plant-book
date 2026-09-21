@@ -1,4 +1,4 @@
-<!-- ════════════════ MODAL: THÊM / SỬA BÀI VIẾT TRI THỨC SOP ════════════════ -->
+﻿<!-- ════════════════ MODAL: THÊM / SỬA BÀI VIẾT TRI THỨC SOP ════════════════ -->
 <div class="modal-overlay" id="ai-knowledge-modal" style="display:none;" onclick="if(event.target===this)closeAiKnowledgeModal()">
   <div class="modal" style="max-width:700px;">
     
@@ -15,7 +15,7 @@
       <form id="ai-knowledge-form" onsubmit="saveAiKnowledgeArticle(event); return false;" style="display:flex; flex-direction:column; gap:14px; margin:0;">
         <input type="hidden" id="ai-k-id" value="">
 
-        <!-- 🛡️ HONEYPOT FIELD (Bẫy Bot: Ẩn với người dùng) -->
+        <!--  HONEYPOT FIELD (Bẫy Bot: Ẩn với người dùng) -->
         <div style="display:none !important;" aria-hidden="true">
           <input type="text" name="hp_security_trap" id="ai-k-hp-trap" tabindex="-1" autocomplete="off" value="">
         </div>

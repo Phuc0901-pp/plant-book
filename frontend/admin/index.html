@@ -565,7 +565,7 @@
       <!-- BƯỚC 2: THÔNG TIN CÁ NHÂN & CÂY TRỒNG (KHÔNG BẮT BUỘC) -->
       <div id="reg-step-2" style="display:none;">
         <p style="font-size:12px; color:#065f46; margin-bottom:14px; background:#ecfdf5; padding:10px 14px; border-radius:10px; border:1px solid #a7f3d0; font-weight:600; line-height:1.4;">
-          💡 Các thông tin dưới đây là tùy chọn, giúp Admin hỗ trợ và cấu hình trang trại chuẩn xác hơn.
+           Các thông tin dưới đây là tùy chọn, giúp Admin hỗ trợ và cấu hình trang trại chuẩn xác hơn.
         </p>
         <div class="form-group" style="margin-bottom:14px;">
           <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-user" style="color:#059669"></i> Tên người dùng / Tên Nông hộ</label>
@@ -821,25 +821,25 @@
           <div class="status-strip-grid">
             <!-- Cây Bệnh -->
             <button type="button" onclick="showPage('plants')" class="status-strip-btn status-btn-sick">
-              <span class="status-btn-label">🐛 Cây bệnh:</span>
+              <span class="status-btn-label"><i data-lucide="bug" class="lucide-xs"></i> Cây bệnh:</span>
               <strong class="status-btn-val" id="stat-sick-plants">0</strong>
             </button>
 
             <!-- Thiết Bị Offline -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-offline">
-              <span class="status-btn-label">🔌 Thiết bị offline:</span>
+              <span class="status-btn-label"><i data-lucide="unplug" class="lucide-xs"></i> Thiết bị offline:</span>
               <strong class="status-btn-val" id="stat-broken-devices">0</strong>
             </button>
 
             <!-- Thiết Bị Cần Bảo Trì -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-maintenance">
-              <span class="status-btn-label">🔧 Cần bảo dưỡng:</span>
+              <span class="status-btn-label"><i data-lucide="wrench" class="lucide-xs"></i> Cần bảo dưỡng:</span>
               <strong class="status-btn-val" id="stat-maintenance-devices">0</strong>
             </button>
 
             <!-- Cảm Biến Hiệu Chuẩn -->
             <button type="button" onclick="showPage('devices')" class="status-strip-btn status-btn-calibration">
-              <span class="status-btn-label">⚙️ Cần hiệu chuẩn:</span>
+              <span class="status-btn-label"><i data-lucide="sliders" class="lucide-xs"></i> Cần hiệu chuẩn:</span>
               <strong class="status-btn-val" id="stat-calibration-devices">0</strong>
             </button>
           </div>
@@ -854,7 +854,7 @@
               <button class="gis-back-btn" id="gis-back-btn" style="display:none;" onclick="backToFarmsList()">
                 <i class="fa fa-arrow-left"></i>
               </button>
-              <h3 id="gis-sidebar-title">🗺️ Quản lý Trang trại</h3>
+              <h3 id="gis-sidebar-title"><i data-lucide="map" class="lucide-sm"></i> Quản lý Trang trại</h3>
               <div id="gis-header-actions">
                 <button class="btn btn-primary btn-sm" onclick="openFarmForm()">
                   <i class="fa fa-plus"></i> Thêm mới
@@ -1092,7 +1092,7 @@
 
               <!-- Farm Selector Dropdown -->
               <div style="min-width:300px; max-width:440px; flex:1;">
-                <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;">🏡 CHỌN TRANG TRẠI CANH TÁC *</label>
+                <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;"> CHỌN TRANG TRẠI CANH TÁC *</label>
                 <select id="db-filter-farm" onchange="onDbFarmChange()" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
                   <option value="">— Vui lòng chọn Trang trại trước —</option>
                 </select>
@@ -1123,7 +1123,7 @@
                   <i class="fa fa-plus"></i> + Thêm Cây Mới
                 </button>
                 <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:800; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-                  🌱 <strong id="db-hero-plants-count">0</strong> cây trồng
+                   <strong id="db-hero-plants-count">0</strong> cây trồng
                 </span>
               </div>
             </div>
@@ -1144,12 +1144,12 @@
                 
                 <!-- Search Input & Health Filter -->
                 <div style="display:flex; gap:6px;">
-                  <input type="text" id="db-plant-search-input" placeholder="🔍 Tìm mã (#101), giống..." oninput="filterMasterPlantList()" style="flex:1; min-width:120px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff;">
+                  <input type="text" id="db-plant-search-input" placeholder=" Tìm mã (#101), giống..." oninput="filterMasterPlantList()" style="flex:1; min-width:120px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff;">
                   <select id="db-plant-filter-health" onchange="filterMasterPlantList()" style="width:105px; padding:8px 6px; border:1px solid #cbd5e1; border-radius:8px; font-size:11.5px; font-weight:600; background:#ffffff; outline:none; cursor:pointer;">
                     <option value="">Tất cả SK</option>
-                    <option value="Tốt">🟢 Tốt</option>
-                    <option value="Cần chú ý">🟡 Chú ý</option>
-                    <option value="Bệnh">🔴 Bệnh</option>
+                    <option value="Tốt"> Tốt</option>
+                    <option value="Cần chú ý"> Chú ý</option>
+                    <option value="Bệnh"> Bệnh</option>
                   </select>
                 </div>
               </div>
@@ -1213,7 +1213,7 @@
 
       <!-- Farm Selector Dropdown -->
       <div style="min-width:300px; max-width:440px; flex:1;">
-        <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;">🏡 CHỌN TRANG TRẠI QUẢN LÝ KHO THẺ *</label>
+        <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;"> CHỌN TRANG TRẠI QUẢN LÝ KHO THẺ *</label>
         <select id="db-nfc-filter-farm" onchange="onAdminNfcFarmChange(this.value)" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
           <option value="">— Đang tải danh sách trang trại... —</option>
         </select>
@@ -1224,26 +1224,26 @@
     <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
       <div class="db-nfc-stats-grid" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-          📦 Tổng thẻ kho: <strong id="db-nfc-total-count" style="font-size:14px; margin-left:4px;">0</strong>
+           Tổng thẻ kho: <strong id="db-nfc-total-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
         <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-          🔗 Đã gán cây: <strong id="db-nfc-assigned-count" style="font-size:14px; margin-left:4px;">0</strong>
+           Đã gán cây: <strong id="db-nfc-assigned-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
         <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-          🟢 Còn trống: <strong id="db-nfc-unassigned-count" style="font-size:14px; margin-left:4px;">0</strong>
+           Còn trống: <strong id="db-nfc-unassigned-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
       </div>
 
       <div class="db-nfc-actions-grid" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <label class="db-nfc-sound-label" style="font-size:12px; font-weight:700; color:#475569; display:flex; align-items:center; gap:6px; cursor:pointer; padding:4px 6px;">
           <input type="checkbox" id="db-nfc-sound-toggle" checked style="accent-color:#059669; width:16px; height:16px;">
-          🔊 Âm thanh Ding / Bíp
+           Âm thanh Ding / Bíp
         </label>
         <button id="btn-export-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="exportAdminNfcInventoryCsv()" style="background:#ffffff; color:#047857; border:1.5px solid #10b981; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Xuất toàn bộ danh sách thẻ NFC ra file CSV / Excel">
-          <i class="fa-solid fa-file-csv" style="font-size:14px; color:#059669;"></i> 📥 Xuất File CSV / Excel
+          <i class="fa-solid fa-file-csv" style="font-size:14px; color:#059669;"></i>  Xuất File CSV / Excel
         </button>
         <button id="btn-import-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="openAdminNfcImportModal()" style="background:#f0fdf4; color:#065f46; border:1.5px solid #059669; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Import danh sách thẻ NFC">
-          <i class="fa-solid fa-file-import" style="font-size:14px; color:#059669;"></i> 📤 Import CSV / Excel
+          <i class="fa-solid fa-file-import" style="font-size:14px; color:#059669;"></i>  Import CSV / Excel
         </button>
         <button class="btn btn-secondary btn-sm" onclick="unassignAllAdminNfcTags()" style="background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" title="Gỡ toàn bộ thẻ NFC đã gán cho tất cả cây trong trang trại này">
           <i class="fa-solid fa-link-slash"></i> Gỡ hết thẻ đã gán
@@ -1305,23 +1305,23 @@
 
         <!-- Status Filter Select -->
         <select id="db-nfc-status-filter" onchange="filterAdminNfcTable()" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
-          <option value="all">⚡ Tất cả trạng thái</option>
-          <option value="unassigned">✨ Còn trống (Sẵn sàng)</option>
-          <option value="assigned">📌 Đã gán cây</option>
-          <option value="has_gps">📍 Đã có GPS</option>
-          <option value="no_gps">⚠️ Chưa có GPS</option>
+          <option value="all"> Tất cả trạng thái</option>
+          <option value="unassigned"> Còn trống (Sẵn sàng)</option>
+          <option value="assigned"> Đã gán cây</option>
+          <option value="has_gps"> Đã có GPS</option>
+          <option value="no_gps"> Chưa có GPS</option>
         </select>
 
         <!-- Sort Select -->
         <select id="db-nfc-sort-select" onchange="onAdminNfcSortDropdownChange(this.value)" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
-          <option value="time_desc">⏱️ Mới nhập nhất</option>
-          <option value="time_asc">⏱️ Cũ nhất trước</option>
-          <option value="tree_asc">🌳 Số cây (#1 ➔ #999)</option>
-          <option value="tree_desc">🌳 Số cây (#999 ➔ #1)</option>
-          <option value="uid_asc">🏷️ Mã thẻ (A ➔ Z)</option>
-          <option value="uid_desc">🏷️ Mã thẻ (Z ➔ A)</option>
-          <option value="assigned_first">📌 Đã gán cây trước</option>
-          <option value="unassigned_first">✨ Chưa gán (Còn trống) trước</option>
+          <option value="time_desc">⏱ Mới nhập nhất</option>
+          <option value="time_asc">⏱ Cũ nhất trước</option>
+          <option value="tree_asc"> Số cây (#1  #999)</option>
+          <option value="tree_desc"> Số cây (#999  #1)</option>
+          <option value="uid_asc"> Mã thẻ (A  Z)</option>
+          <option value="uid_desc"> Mã thẻ (Z  A)</option>
+          <option value="assigned_first"> Đã gán cây trước</option>
+          <option value="unassigned_first"> Chưa gán (Còn trống) trước</option>
         </select>
 
         <button class="btn btn-secondary btn-sm" onclick="refreshAdminNfcData()" title="Tải lại danh sách kho thẻ" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:#ffffff; border:1.5px solid #cbd5e1; display:inline-flex; align-items:center; gap:6px;">
@@ -1430,7 +1430,7 @@
                   <!-- Farm Selector -->
                   <div style="min-width:220px; flex:1.2;" class="db-filter-item">
                     <select id="db-iot-filter-farm" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#064e3b; background:#f8fafc;">
-                      <option value="all">🌐 Tất cả Trang trại (Toàn bộ IoT)</option>
+                      <option value="all"> Tất cả Trang trại (Toàn bộ IoT)</option>
                     </select>
                   </div>
 
@@ -1456,7 +1456,7 @@
 
                   <!-- Search Input -->
                   <div style="min-width:180px; flex:1;" class="db-filter-item">
-                    <input type="text" id="db-iot-search-input" placeholder="🔍 Tìm theo IP, tên, mã..." oninput="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; outline:none; background:#ffffff;">
+                    <input type="text" id="db-iot-search-input" placeholder=" Tìm theo IP, tên, mã..." oninput="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; outline:none; background:#ffffff;">
                   </div>
                 </div>
 
@@ -1477,10 +1477,10 @@
           <!-- TẦNG 3: TELEMETRY TRỰC QUAN & DANH SÁCH THIẾT BỊ PHÂN TẦNG -->
           <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
             <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; gap:10px; overflow-x:auto;">
-              <div class="tab active" id="iot-tab-weather" onclick="switchIotTab('weather')" style="padding:12px 16px; font-weight:700; font-size:13px;">🌤️ Trạm Thời Tiết &amp; Dự Báo Khí Tượng</div>
-              <div class="tab" id="iot-tab-soil" onclick="switchIotTab('soil')" style="padding:12px 16px; font-weight:700; font-size:13px;">🌱 Cảm Biến Đất Đa Tầng (10-20-30cm)</div>
-              <div class="tab" id="iot-tab-ai" onclick="switchIotTab('ai')" style="padding:12px 16px; font-weight:700; font-size:13px;">🤖 Khuyến Nghị Thuật Toán Canh Tác AI</div>
-              <div class="tab" id="iot-tab-devices" onclick="switchIotTab('devices')" style="padding:12px 16px; font-weight:700; font-size:13px;">⚙️ Sổ Đăng Ký Thiết Bị Phân Tầng</div>
+              <div class="tab active" id="iot-tab-weather" onclick="switchIotTab('weather')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Trạm Thời Tiết &amp; Dự Báo Khí Tượng</div>
+              <div class="tab" id="iot-tab-soil" onclick="switchIotTab('soil')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Cảm Biến Đất Đa Tầng (10-20-30cm)</div>
+              <div class="tab" id="iot-tab-ai" onclick="switchIotTab('ai')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Khuyến Nghị Thuật Toán Canh Tác AI</div>
+              <div class="tab" id="iot-tab-devices" onclick="switchIotTab('devices')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Sổ Đăng Ký Thiết Bị Phân Tầng</div>
             </div>
 
             <!-- Sub-tab 1: Weather Station -->
@@ -1490,12 +1490,12 @@
                   <div class="iot-weather-hero-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div>
                       <div style="font-size:12px; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-location-dot" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp · 📍 Live Sensor Station
+                        <i class="fa-solid fa-location-dot" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp ·  Live Sensor Station
                       </div>
                       <div style="display:flex; align-items:center; gap:14px; margin-top:6px;">
                         <span style="font-size:42px; font-weight:900; color:#0f172a; line-height:1;">27°C</span>
                         <div>
-                          <div style="font-size:15px; font-weight:800; color:#0f172a;">🌤️ Mây rải rác</div>
+                          <div style="font-size:15px; font-weight:800; color:#0f172a;"> Mây rải rác</div>
                           <div style="font-size:12px; color:#64748b; margin-top:2px;">Khả năng có mưa rào nhẹ về chiều tối</div>
                         </div>
                       </div>
@@ -1534,15 +1534,15 @@
                   <div style="display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Hôm nay</strong> <span style="font-size:11px; color:#64748b;">(21 Aug)</span></div>
-                      <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
+                      <div><span> 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Ngày mai</strong> <span style="font-size:11px; color:#64748b;">(22 Aug)</span></div>
-                      <div><span>🌧️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
+                      <div><span> 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Chủ nhật</strong> <span style="font-size:11px; color:#64748b;">(23 Aug)</span></div>
-                      <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
+                      <div><span> 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
                   </div>
                 </div>
@@ -1557,9 +1557,9 @@
                   <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Theo dõi pH, Nhiệt độ, Độ ẩm, EC, NPK và Độ mặn theo 3 độ sâu bộ rễ sầu riêng</p>
                 </div>
                 <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:8px;" class="soil-depth-btn-group">
-                  <button class="btn btn-sm" id="soil-depth-btn-10" onclick="switchSoilDepth(10)" style="background:#ffffff; color:#0f172a; font-weight:800; border-radius:6px; border:none; box-shadow:0 1px 2px rgba(0,0,0,0.06); padding:4px 10px; font-size:11.5px;">🌱 Tầng 10cm</button>
-                  <button class="btn btn-sm" id="soil-depth-btn-20" onclick="switchSoilDepth(20)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌿 Tầng 20cm</button>
-                  <button class="btn btn-sm" id="soil-depth-btn-30" onclick="switchSoilDepth(30)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌳 Tầng 30cm</button>
+                  <button class="btn btn-sm" id="soil-depth-btn-10" onclick="switchSoilDepth(10)" style="background:#ffffff; color:#0f172a; font-weight:800; border-radius:6px; border:none; box-shadow:0 1px 2px rgba(0,0,0,0.06); padding:4px 10px; font-size:11.5px;"> Tầng 10cm</button>
+                  <button class="btn btn-sm" id="soil-depth-btn-20" onclick="switchSoilDepth(20)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;"> Tầng 20cm</button>
+                  <button class="btn btn-sm" id="soil-depth-btn-30" onclick="switchSoilDepth(30)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;"> Tầng 30cm</button>
                 </div>
               </div>
               <div class="iot-soil-metrics-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;" id="soil-metrics-grid"></div>
@@ -1575,7 +1575,7 @@
                   • <strong>Độ ẩm đất tầng 20cm hiện tại</strong>: <span style="color:#d97706; font-weight:800;">50%</span> (Đang giảm nhanh dưới mức 60%).<br>
                   • <strong>Dự báo thời tiết</strong>: Có mưa rào nhẹ vào sáng mai (Xác suất 20%).<br>
                   <div style="margin-top:8px; padding:8px 12px; background:#ecfdf5; border-left:3px solid #059669; border-radius:4px; font-weight:700;">
-                    👉 Khuyến nghị: Bật hệ thống tưới bổ sung 15 phút chiều nay để nâng độ ẩm đất lên 60% giúp rễ cây không bị sốc nhiệt khi đón mưa sáng mai.
+                     Khuyến nghị: Bật hệ thống tưới bổ sung 15 phút chiều nay để nâng độ ẩm đất lên 60% giúp rễ cây không bị sốc nhiệt khi đón mưa sáng mai.
                   </div>
                 </div>
               </div>
@@ -1646,10 +1646,10 @@
             <div class="schema-tabs-container tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; overflow-x:auto; gap:12px;">
               <div style="display:flex; gap:10px; flex-shrink:0;">
                 <div class="tab active" id="config-tab-schema" onclick="switchConfigTab('schema')" style="padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer;">
-                  🌳 Danh Mục Loại Cây &amp; Schema
+                   Danh Mục Loại Cây &amp; Schema
                 </div>
                 <div class="tab" id="config-tab-care" onclick="switchConfigTab('care')" style="padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer;">
-                  🛠️ Quy Trình Chăm Sóc &amp; SOP Canh Tác
+                   Quy Trình Chăm Sóc &amp; SOP Canh Tác
                 </div>
               </div>
 
@@ -1668,7 +1668,7 @@
                   Quản lý danh mục loại cây, tên khoa học, icon đại diện và các trường thuộc tính tùy biến cho từng giống cây.
                 </div>
                 <div style="max-width:280px; width:100%;">
-                  <input type="text" id="schema-search-input" placeholder="🔍 Tìm loại cây..." oninput="filterSchemasList()" style="width:100%; padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px;">
+                  <input type="text" id="schema-search-input" placeholder=" Tìm loại cây..." oninput="filterSchemasList()" style="width:100%; padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px;">
                 </div>
               </div>
 
@@ -1845,7 +1845,7 @@
                   </div>
 
                   <div style="min-width:220px; flex:1.2;">
-                    <input type="text" id="supply-search" placeholder="🔍 Tìm theo tên, hoạt chất, quy cách..." oninput="filterSupplies()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                    <input type="text" id="supply-search" placeholder=" Tìm theo tên, hoạt chất, quy cách..." oninput="filterSupplies()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
                   </div>
                 </div>
 
@@ -1939,10 +1939,10 @@
 
                   <select id="db-supply-chart-cat" onchange="renderSupplyCostChart()" style="padding:7px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; background:#f8fafc;">
                     <option value="all">— Tất cả nhóm chi phí —</option>
-                    <option value="Bón phân">🌱 Phân bón</option>
-                    <option value="Phun thuốc">🧪 Thuốc BVTV</option>
-                    <option value="Tiền nước">💧 Tiền nước</option>
-                    <option value="Nhân công">👷 Nhân công & Dịch vụ</option>
+                    <option value="Bón phân"> Phân bón</option>
+                    <option value="Phun thuốc"> Thuốc BVTV</option>
+                    <option value="Tiền nước"> Tiền nước</option>
+                    <option value="Nhân công"> Nhân công & Dịch vụ</option>
                   </select>
                 </div>
               </div>
@@ -2060,25 +2060,25 @@
                   <div style="min-width:180px; flex:1;">
                     <select id="db-history-filter-action" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
                       <option value="">— Tất cả thao tác —</option>
-                      <option value="UPDATE">✏️ Chỉnh sửa (UPDATE)</option>
-                      <option value="DELETE_SOFT">🗑️ Xóa mềm (DELETE_SOFT)</option>
-                      <option value="DELETE">⚠️ Xóa vĩnh viễn (DELETE)</option>
+                      <option value="UPDATE"> Chỉnh sửa (UPDATE)</option>
+                      <option value="DELETE_SOFT"> Xóa mềm (DELETE_SOFT)</option>
+                      <option value="DELETE"> Xóa vĩnh viễn (DELETE)</option>
                     </select>
                   </div>
 
                   <div style="min-width:180px; flex:1;">
                     <select id="db-history-filter-target" onchange="loadHistoryTab()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; background:#f8fafc;">
                       <option value="">— Tất cả hạng mục —</option>
-                      <option value="Vật tư">📦 Kho vật tư</option>
-                      <option value="Nhật ký canh tác">🌱 Nhật ký canh tác</option>
-                      <option value="Thư viện media">📸 Thư viện Media</option>
-                      <option value="Cây trồng">🌳 Cây trồng & GIS</option>
-                      <option value="Trang trại">🏡 Trang trại</option>
+                      <option value="Vật tư"> Kho vật tư</option>
+                      <option value="Nhật ký canh tác"> Nhật ký canh tác</option>
+                      <option value="Thư viện media"> Thư viện Media</option>
+                      <option value="Cây trồng"> Cây trồng & GIS</option>
+                      <option value="Trang trại"> Trang trại</option>
                     </select>
                   </div>
 
                   <div style="min-width:220px; flex:1.2;">
-                    <input type="text" id="db-history-search" placeholder="🔍 Tìm theo tiêu đề, người thực hiện..." oninput="filterHistoryTab()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                    <input type="text" id="db-history-search" placeholder=" Tìm theo tiêu đề, người thực hiện..." oninput="filterHistoryTab()" style="width:100%; padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
                   </div>
                 </div>
 
@@ -2187,7 +2187,7 @@
       </div>
       <div>
         <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:100px;">
-          🟢 Database Live Sync
+          <i class="fa-solid fa-circle-check" style="color:#059669;"></i> Database Live Sync
         </span>
       </div>
     </div>
@@ -2409,7 +2409,7 @@
             <i class="fa-solid fa-signal"></i> Trạng thái hoạt động thực địa
           </div>
           <div class="tab" id="user-tab-resets" onclick="switchUserTab('resets')">
-            <i class="fa-solid fa-key"></i> 🔑 Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
+            <i class="fa-solid fa-key"></i>  Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
           </div>
         </div>
 
@@ -2653,7 +2653,7 @@
       </div>
       <div>
         <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">Nhật Ký Bảo Mật</div>
-        <div style="font-size:20px; font-weight:900; color:#0f172a;" id="ai-kpi-logs-count">0 <span style="font-size:12px; font-weight:600; color:#16a34a;">(Anti-Bot 🛡️)</span></div>
+        <div style="font-size:20px; font-weight:900; color:#0f172a;" id="ai-kpi-logs-count">0 <span style="font-size:12px; font-weight:600; color:#16a34a;">(Anti-Bot )</span></div>
       </div>
     </div>
 
@@ -2790,12 +2790,12 @@
 
         <!-- Quick Prompt Samples -->
         <div style="margin-bottom:16px;">
-          <div style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:6px;">⚡ Câu hỏi mẫu thử nhanh:</div>
+          <div style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:6px;"> Câu hỏi mẫu thử nhanh:</div>
           <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            <button type="button" onclick="setAiTestPrompt('vừa xịt thuốc nấm tưới vi sinh được không?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;">⚠️ Khoảng cách TBVTV &amp; Vi sinh</button>
-            <button type="button" onclick="setAiTestPrompt('cây bị xì mủ thân sầu riêng trị sao?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;">🩺 Xì mủ nứt thân</button>
-            <button type="button" onclick="setAiTestPrompt('app này sài sao vậy em?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;">📘 Hướng dẫn sử dụng</button>
-            <button type="button" onclick="setAiTestPrompt('quy trình làm bông sầu riêng nghịch vụ?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;">🌸 Làm bông nghịch vụ</button>
+            <button type="button" onclick="setAiTestPrompt('vừa xịt thuốc nấm tưới vi sinh được không?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;"> Khoảng cách TBVTV &amp; Vi sinh</button>
+            <button type="button" onclick="setAiTestPrompt('cây bị xì mủ thân sầu riêng trị sao?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;"> Xì mủ nứt thân</button>
+            <button type="button" onclick="setAiTestPrompt('app này sài sao vậy em?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;"> Hướng dẫn sử dụng</button>
+            <button type="button" onclick="setAiTestPrompt('quy trình làm bông sầu riêng nghịch vụ?')" style="font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer;"> Làm bông nghịch vụ</button>
           </div>
         </div>
 
@@ -2811,7 +2811,7 @@
             <span style="color:#0284c7;"><i class="fa-solid fa-microchip"></i></span> Kết Quả Phân Tích &amp; Tri Thức Áp Dụng
           </span>
           <span id="ai-test-latency-badge" style="font-size:11.5px; font-weight:700; color:#059669; background:#ecfdf5; padding:3px 8px; border-radius:6px; display:none;">
-            ⚡ 0 ms
+             0 ms
           </span>
         </h4>
 
@@ -2836,7 +2836,7 @@
           <span style="color:#dc2626;"><i class="fa-solid fa-shield-halved"></i></span> Lịch Sử Thay Đổi Dữ Liệu &amp; Giám Sát An Ninh AI
         </h4>
         <span style="font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; padding:4px 10px; border-radius:6px;">
-          🛡️ Hệ thống phòng thủ Honeypot đang hoạt động
+           Hệ thống phòng thủ Honeypot đang hoạt động
         </span>
       </div>
 
@@ -2892,7 +2892,7 @@
               <i class="fa-solid fa-seedling" style="color:#34d399"></i> Thêm cây mới
             </h2>
             <span id="plant-modal-code-badge" class="badge" style="background:rgba(255,255,255,0.22); color:#ffffff; font-weight:800; font-size:12px; padding:3px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.25); display:none;">#0</span>
-            <span id="plant-modal-health-pill" class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px; display:none;">🟢 Tốt</span>
+            <span id="plant-modal-health-pill" class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px; display:none;"> Tốt</span>
           </div>
           <div id="plant-modal-subtitle" style="font-size:12px; color:#d1fae5; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <span><i class="fa-solid fa-layer-group" style="opacity:0.8;"></i> <span id="plant-modal-sub-variety">Hồ sơ thông số kỹ thuật &amp; thông tin nông hộ VietGAP</span></span>
@@ -2934,12 +2934,12 @@
             </label>
             <label id="label-mode-range" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#334155; cursor:pointer; background:#ffffff; padding:6px 14px; border-radius:8px; border:1.5px solid #cbd5e1; transition:all 0.15s;">
               <input type="radio" name="plant-create-mode" value="range" onchange="togglePlantCreateMode('range')" style="accent-color:#059669;">
-              ✨ Tạo dải số hàng loạt (XX ➔ XY)
+               Tạo dải số hàng loạt (XX  XY)
             </label>
           </div>
         </div>
 
-        <!-- Group 1: 🏷️ Định danh & Phân loại giống cây -->
+        <!-- Group 1:  Định danh & Phân loại giống cây -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i class="fa-solid fa-tag" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
@@ -2981,7 +2981,7 @@
 
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:8px; border-top:1px dashed #a7f3d0;">
               <div style="font-size:12px; font-weight:700; color:#065f46;" id="range-preview-text">
-                🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây sẽ tạo.
+                 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây sẽ tạo.
               </div>
               <label style="font-size:11.5px; font-weight:700; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
                 <input type="checkbox" id="f-range-pad-zeros" checked onchange="updateRangePreview()" style="accent-color:#059669;">
@@ -3011,7 +3011,7 @@
           </div>
         </div>
 
-        <!-- Group 2: 🌿 Trạng thái sinh trưởng & Quản lý vị trí -->
+        <!-- Group 2:  Trạng thái sinh trưởng & Quản lý vị trí -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i class="fa-solid fa-heart-pulse" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
@@ -3020,10 +3020,10 @@
             <div class="field" style="margin-bottom:0;">
               <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Tình trạng sức khỏe</label>
               <select id="f-health-status" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; width:100%; box-sizing:border-box; background:#ffffff;">
-                <option value="Tốt">🟢 Tốt (Sinh trưởng mạnh)</option>
-                <option value="Bình thường">⚪ Bình thường</option>
-                <option value="Cần chú ý">🟡 Cần chú ý (Thiếu nước/dinh dưỡng)</option>
-                <option value="Bệnh">🔴 Bệnh (Cần can thiệp thuốc BVTV)</option>
+                <option value="Tốt"> Tốt (Sinh trưởng mạnh)</option>
+                <option value="Bình thường"> Bình thường</option>
+                <option value="Cần chú ý"> Cần chú ý (Thiếu nước/dinh dưỡng)</option>
+                <option value="Bệnh"> Bệnh (Cần can thiệp thuốc BVTV)</option>
               </select>
             </div>
             <div class="field" style="margin-bottom:0;">
@@ -3039,7 +3039,7 @@
           </div>
         </div>
 
-        <!-- Group 3: 📍 Định vị tọa độ GPS & Bản đồ số -->
+        <!-- Group 3:  Định vị tọa độ GPS & Bản đồ số -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
@@ -3061,7 +3061,7 @@
           </div>
         </div>
 
-        <!-- Group 4: 🌐 Cổng tra cứu công khai (Public QR / URL) -->
+        <!-- Group 4:  Cổng tra cứu công khai (Public QR / URL) -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <i class="fa-solid fa-globe" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
@@ -3070,8 +3070,8 @@
           <div class="field" style="margin-bottom:12px;">
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Chế độ truy cập công khai</label>
             <select id="f-is-public" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff;">
-              <option value="true">✅ Công khai (Bất kỳ ai quét thẻ NFC / QR hoặc có link đều xem được)</option>
-              <option value="false">🔒 Riêng tư (Chỉ dành cho quản trị viên và chủ nông hộ)</option>
+              <option value="true"> Công khai (Bất kỳ ai quét thẻ NFC / QR hoặc có link đều xem được)</option>
+              <option value="false"> Riêng tư (Chỉ dành cho quản trị viên và chủ nông hộ)</option>
             </select>
           </div>
           <!-- Public URL display -->
@@ -3227,7 +3227,7 @@
         </div>
       </div>
       <small style="font-size:11px; color:#047857; margin-top:-6px; margin-bottom:12px; display:block;">
-        💡 Nhập ít nhất <strong>Số điện thoại</strong> hoặc <strong>Email</strong> để làm tài khoản đăng nhập.
+         Nhập ít nhất <strong>Số điện thoại</strong> hoặc <strong>Email</strong> để làm tài khoản đăng nhập.
       </small>
 
       <div class="field">
@@ -3257,7 +3257,7 @@
           <option value="">— Chưa gán trang trại nào —</option>
         </select>
         <small style="font-size:11px; color:var(--gray-500); margin-top:4px; display:block;">
-          💡 Nhiều nông dân có thể gán vào cùng 1 trang trại để đồng bộ quản lý thực địa.
+           Nhiều nông dân có thể gán vào cùng 1 trang trại để đồng bộ quản lý thực địa.
         </small>
       </div>
 
@@ -3270,14 +3270,14 @@
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11.5px; font-weight:600; color:#334155;">Phạm vi Cây trồng được xem</label>
           <select id="f-user-plants-scope" onchange="toggleAssignedPlantsPicker()" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px;">
-            <option value="all">🌳 Xem toàn bộ cây trồng trong trang trại</option>
-            <option value="assigned">👤 Chỉ xem cây trồng do cá nhân phụ trách</option>
+            <option value="all"> Xem toàn bộ cây trồng trong trang trại</option>
+            <option value="assigned"> Chỉ xem cây trồng do cá nhân phụ trách</option>
           </select>
           
           <!-- Danh sách cây trồng gán thủ công cho Nông hộ này -->
           <div id="assigned-plants-picker-container" style="display:none; margin-top:8px; background:#fff; border:1.5px solid #bbf7d0; border-radius:8px; padding:10px;">
             <label style="font-size:11px; font-weight:700; color:#047857; margin-bottom:6px; display:block;">
-              🌱 Tích chọn danh sách cây giao riêng cho Nông hộ này:
+               Tích chọn danh sách cây giao riêng cho Nông hộ này:
             </label>
             <div id="assigned-plants-checkboxes" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; font-size:11.5px;">
               <!-- Filled dynamically by JS -->
@@ -3289,17 +3289,17 @@
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11.5px; font-weight:600; color:#334155;">Chỉ được xem Lịch sử & Nhật ký từ ngày</label>
           <input type="date" id="f-user-history-date" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px;">
-          <small style="font-size:10.5px; color:#64748b; margin-top:3px; display:block;">💡 Để trống nếu muốn cho xem toàn bộ lịch sử từ trước tới nay.</small>
+          <small style="font-size:10.5px; color:#64748b; margin-top:3px; display:block;"> Để trống nếu muốn cho xem toàn bộ lịch sử từ trước tới nay.</small>
         </div>
 
         <label style="display:flex; align-items:center; gap:8px; font-size:11.5px; color:#334155; margin-bottom:6px; cursor:pointer;">
           <input type="checkbox" id="f-user-shared-history" checked style="width:16px; height:16px; accent-color:var(--green);">
-          <span>📖 Được xem Nhật ký canh tác của các Nông hộ khác trong vườn</span>
+          <span> Được xem Nhật ký canh tác của các Nông hộ khác trong vườn</span>
         </label>
 
         <label style="display:flex; align-items:center; gap:8px; font-size:11.5px; color:#334155; cursor:pointer;">
           <input type="checkbox" id="f-user-view-supplies" checked style="width:16px; height:16px; accent-color:var(--green);">
-          <span>📦 Được xem Vật tư hiện hữu & Tồn kho chung của trang trại</span>
+          <span> Được xem Vật tư hiện hữu & Tồn kho chung của trang trại</span>
         </label>
       </div>
       </form>
@@ -3341,14 +3341,14 @@
           <label style="flex:1; background:#ffffff; border:2px solid #cbd5e1; border-radius:12px; padding:12px; cursor:pointer; display:flex; align-items:center; gap:8px;" id="lbl-tier-normal">
             <input type="radio" name="opt-account-tier" value="normal" onchange="onTierOptionChange('normal')">
             <div>
-              <div style="font-size:13px; font-weight:800; color:#334155;">⚪ NORMAL</div>
+              <div style="font-size:13px; font-weight:800; color:#334155;"> NORMAL</div>
               <div style="font-size:11px; color:#64748b;">Miễn phí / Cơ bản</div>
             </div>
           </label>
           <label style="flex:1; background:#f0fdf4; border:2px solid #059669; border-radius:12px; padding:12px; cursor:pointer; display:flex; align-items:center; gap:8px;" id="lbl-tier-pro">
             <input type="radio" name="opt-account-tier" value="pro" checked onchange="onTierOptionChange('pro')">
             <div>
-              <div style="font-size:13px; font-weight:800; color:#047857;">🟢 PRO</div>
+              <div style="font-size:13px; font-weight:800; color:#047857;"> PRO</div>
               <div style="font-size:11px; color:#166534;">Full GIS & Cây lẻ</div>
             </div>
           </label>
@@ -3394,12 +3394,12 @@
             <i class="fa-solid fa-square-check" style="color:#059669;"></i> Danh sách Tính năng Nâng cao được mở cấp phép:
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11.5px; color:#064e3b; font-weight:700;">
-            <div>✅ Bản đồ GIS số hóa từng cây lẻ</div>
-            <div>✅ Định danh Thẻ chip NFC & QR</div>
-            <div>✅ Bản đồ ranh giới thửa đất 3D</div>
-            <div>✅ Báo cáo VietGAP / GlobalGAP</div>
-            <div>✅ Tích hợp Cảm biến IoT Nông nghiệp</div>
-            <div>✅ Ghi nhật ký & Trang cây riêng lẻ</div>
+            <div> Bản đồ GIS số hóa từng cây lẻ</div>
+            <div> Định danh Thẻ chip NFC & QR</div>
+            <div> Bản đồ ranh giới thửa đất 3D</div>
+            <div> Báo cáo VietGAP / GlobalGAP</div>
+            <div> Tích hợp Cảm biến IoT Nông nghiệp</div>
+            <div> Ghi nhật ký & Trang cây riêng lẻ</div>
           </div>
         </div>
       </div>
@@ -3457,10 +3457,10 @@
       <div class="field" style="margin-bottom:14px;">
         <label style="font-weight:700; font-size:12px; color:#334155; margin-bottom:4px; display:block;">1. Loại vật tư / Hạng mục *</label>
         <select id="f-supply-category" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600;">
-          <option value="Bón phân">🧮 Bón phân (Phân bón hữu cơ/NPK/Dinh dưỡng)</option>
-          <option value="Phun thuốc">🧪 Phun thuốc (Thuốc bảo vệ thực vật/Nấm bệnh)</option>
-          <option value="Tiền nước">💧 Tiền nước (Nước tưới giếng/Hệ thống)</option>
-          <option value="Nhân công">👷 Nhân công (Tỉa cành/Tỉa hoa/Làm cỏ)</option>
+          <option value="Bón phân">Bón phân (Phân bón hữu cơ/NPK/Dinh dưỡng)</option>
+          <option value="Phun thuốc">Phun thuốc (Thuốc bảo vệ thực vật/Nấm bệnh)</option>
+          <option value="Tiền nước">Tiền nước (Nước tưới giếng/Hệ thống)</option>
+          <option value="Nhân công">Nhân công (Tỉa cành/Tỉa hoa/Làm cỏ)</option>
         </select>
       </div>
 
@@ -3604,19 +3604,19 @@
     <div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; gap: 16px; flex-wrap: wrap;">
         <span style="font-size: 13px; color: #334155; font-weight: 700;">
-          📦 Tổng thẻ kho: <strong id="nfc-inv-total-count" style="color: #047857; font-size: 15px;">0</strong>
+           Tổng thẻ kho: <strong id="nfc-inv-total-count" style="color: #047857; font-size: 15px;">0</strong>
         </span>
         <span style="font-size: 13px; color: #334155; font-weight: 700;">
-          🔗 Đã gán cây: <strong id="nfc-inv-assigned-count" style="color: #0284c7; font-size: 15px;">0</strong>
+           Đã gán cây: <strong id="nfc-inv-assigned-count" style="color: #0284c7; font-size: 15px;">0</strong>
         </span>
         <span style="font-size: 13px; color: #334155; font-weight: 700;">
-          🟢 Còn trống: <strong id="nfc-inv-unassigned-count" style="color: #16a34a; font-size: 15px;">0</strong>
+           Còn trống: <strong id="nfc-inv-unassigned-count" style="color: #16a34a; font-size: 15px;">0</strong>
         </span>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
         <label style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; cursor: pointer;">
           <input type="checkbox" id="nfc-inv-sound-toggle" checked style="accent-color: #059669; width: 16px; height: 16px;">
-          🔊 Âm thanh Ding / Bíp bíp
+           Âm thanh Ding / Bíp bíp
         </label>
       </div>
     </div>
@@ -3884,7 +3884,7 @@
           </p>
         </div>
       </div>
-      <button class="modal-close-btn" onclick="closeFieldTaggingModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); width: 34px; height: 34px; border-radius: 10px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">✕</button>
+      <button class="modal-close-btn" onclick="closeFieldTaggingModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); width: 34px; height: 34px; border-radius: 10px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'"></button>
     </div>
 
     <!-- Modal Body -->
@@ -4176,8 +4176,8 @@
         <div class="field">
           <label>Trạng thái công khai</label>
           <select id="csv-is-public" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;">
-              <option value="true">✅ Công khai (bất kỳ ai có link đều xem được)</option>
-              <option value="false">🔒 Riêng tư</option>
+              <option value="true"> Công khai (bất kỳ ai có link đều xem được)</option>
+              <option value="false"> Riêng tư</option>
           </select>
         </div>
       </div>
@@ -4256,9 +4256,9 @@
       <div class="field">
         <label>Trạng thái *</label>
         <select id="f-device-status" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
-          <option value="Hoạt động">🟢 Hoạt động</option>
-          <option value="Mất kết nối">🔴 Mất kết nối</option>
-          <option value="Bảo trì">🟡 Bảo trì</option>
+          <option value="Hoạt động"> Hoạt động</option>
+          <option value="Mất kết nối"> Mất kết nối</option>
+          <option value="Bảo trì"> Bảo trì</option>
         </select>
       </div>
     </div>
@@ -4370,7 +4370,7 @@
       <form id="ai-knowledge-form" onsubmit="saveAiKnowledgeArticle(event); return false;" style="display:flex; flex-direction:column; gap:14px; margin:0;">
         <input type="hidden" id="ai-k-id" value="">
 
-        <!-- 🛡️ HONEYPOT FIELD (Bẫy Bot: Ẩn với người dùng) -->
+        <!--  HONEYPOT FIELD (Bẫy Bot: Ẩn với người dùng) -->
         <div style="display:none !important;" aria-hidden="true">
           <input type="text" name="hp_security_trap" id="ai-k-hp-trap" tabindex="-1" autocomplete="off" value="">
         </div>
@@ -4476,7 +4476,7 @@
       <form id="ai-qa-form" onsubmit="saveAiQaPair(event); return false;" style="display:flex; flex-direction:column; gap:16px; margin:0;">
         <input type="hidden" id="ai-qa-id" value="">
 
-        <!-- 🛡️ HONEYPOT FIELD (Bẫy Bot) -->
+        <!--  HONEYPOT FIELD (Bẫy Bot) -->
         <div style="display:none !important;" aria-hidden="true">
           <input type="text" name="hp_security_trap" id="ai-qa-hp-trap" tabindex="-1" autocomplete="off" value="">
         </div>
@@ -4512,7 +4512,7 @@
             Các Mẫu Câu Hỏi Tương Tự (Mỗi câu hỏi cách nhau 1 dòng) <span style="color:#dc2626;">*</span>
           </label>
           <span style="display:block; font-size:11.5px; color:#64748b; margin-bottom:6px;">
-            💡 Ví dụ: Khi người dùng gõ bất kỳ câu nào trong danh sách này, Bé Mầm sẽ nhận diện và áp dụng câu trả lời chuẩn ngay lập tức.
+             Ví dụ: Khi người dùng gõ bất kỳ câu nào trong danh sách này, Bé Mầm sẽ nhận diện và áp dụng câu trả lời chuẩn ngay lập tức.
           </span>
           <textarea id="ai-qa-questions" rows="4" required placeholder="vừa xịt thuốc nấm tưới vi sinh được không&#10;xịt thuốc sâu xong bón trichoderma liền được không&#10;khoảng cách giữa thuốc trừ bệnh và men vi sinh" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='#0284c7'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
         </div>

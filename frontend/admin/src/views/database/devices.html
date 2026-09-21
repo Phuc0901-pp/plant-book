@@ -1,4 +1,4 @@
-<div class="tab-pane" id="db-pane-devices" style="display:none;">
+﻿<div class="tab-pane" id="db-pane-devices" style="display:none;">
 
           <!-- TẦNG 1: EXECUTIVE KPI SUMMARY -->
           <div class="db-iot-kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
@@ -53,7 +53,7 @@
                   <!-- Farm Selector -->
                   <div style="min-width:220px; flex:1.2;" class="db-filter-item">
                     <select id="db-iot-filter-farm" onchange="filterDbDevices()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#064e3b; background:#f8fafc;">
-                      <option value="all">🌐 Tất cả Trang trại (Toàn bộ IoT)</option>
+                      <option value="all"> Tất cả Trang trại (Toàn bộ IoT)</option>
                     </select>
                   </div>
 
@@ -79,7 +79,7 @@
 
                   <!-- Search Input -->
                   <div style="min-width:180px; flex:1;" class="db-filter-item">
-                    <input type="text" id="db-iot-search-input" placeholder="🔍 Tìm theo IP, tên, mã..." oninput="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; outline:none; background:#ffffff;">
+                    <input type="text" id="db-iot-search-input" placeholder=" Tìm theo IP, tên, mã..." oninput="filterDbDevices()" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; outline:none; background:#ffffff;">
                   </div>
                 </div>
 
@@ -100,10 +100,10 @@
           <!-- TẦNG 3: TELEMETRY TRỰC QUAN & DANH SÁCH THIẾT BỊ PHÂN TẦNG -->
           <div class="card" style="margin-bottom:20px; overflow:hidden; border-radius:12px; border:1px solid #e2e8f0;">
             <div class="tabs" style="padding:0 20px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; gap:10px; overflow-x:auto;">
-              <div class="tab active" id="iot-tab-weather" onclick="switchIotTab('weather')" style="padding:12px 16px; font-weight:700; font-size:13px;">🌤️ Trạm Thời Tiết &amp; Dự Báo Khí Tượng</div>
-              <div class="tab" id="iot-tab-soil" onclick="switchIotTab('soil')" style="padding:12px 16px; font-weight:700; font-size:13px;">🌱 Cảm Biến Đất Đa Tầng (10-20-30cm)</div>
-              <div class="tab" id="iot-tab-ai" onclick="switchIotTab('ai')" style="padding:12px 16px; font-weight:700; font-size:13px;">🤖 Khuyến Nghị Thuật Toán Canh Tác AI</div>
-              <div class="tab" id="iot-tab-devices" onclick="switchIotTab('devices')" style="padding:12px 16px; font-weight:700; font-size:13px;">⚙️ Sổ Đăng Ký Thiết Bị Phân Tầng</div>
+              <div class="tab active" id="iot-tab-weather" onclick="switchIotTab('weather')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Trạm Thời Tiết &amp; Dự Báo Khí Tượng</div>
+              <div class="tab" id="iot-tab-soil" onclick="switchIotTab('soil')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Cảm Biến Đất Đa Tầng (10-20-30cm)</div>
+              <div class="tab" id="iot-tab-ai" onclick="switchIotTab('ai')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Khuyến Nghị Thuật Toán Canh Tác AI</div>
+              <div class="tab" id="iot-tab-devices" onclick="switchIotTab('devices')" style="padding:12px 16px; font-weight:700; font-size:13px;"> Sổ Đăng Ký Thiết Bị Phân Tầng</div>
             </div>
 
             <!-- Sub-tab 1: Weather Station -->
@@ -113,12 +113,12 @@
                   <div class="iot-weather-hero-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div>
                       <div style="font-size:12px; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-location-dot" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp · 📍 Live Sensor Station
+                        <i class="fa-solid fa-location-dot" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp ·  Live Sensor Station
                       </div>
                       <div style="display:flex; align-items:center; gap:14px; margin-top:6px;">
                         <span style="font-size:42px; font-weight:900; color:#0f172a; line-height:1;">27°C</span>
                         <div>
-                          <div style="font-size:15px; font-weight:800; color:#0f172a;">🌤️ Mây rải rác</div>
+                          <div style="font-size:15px; font-weight:800; color:#0f172a;"> Mây rải rác</div>
                           <div style="font-size:12px; color:#64748b; margin-top:2px;">Khả năng có mưa rào nhẹ về chiều tối</div>
                         </div>
                       </div>
@@ -157,15 +157,15 @@
                   <div style="display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Hôm nay</strong> <span style="font-size:11px; color:#64748b;">(21 Aug)</span></div>
-                      <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
+                      <div><span> 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Ngày mai</strong> <span style="font-size:11px; color:#64748b;">(22 Aug)</span></div>
-                      <div><span>🌧️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
+                      <div><span> 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#f8fafc; border-radius:8px; font-size:12px;">
                       <div><strong>Chủ nhật</strong> <span style="font-size:11px; color:#64748b;">(23 Aug)</span></div>
-                      <div><span>🌤️ 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
+                      <div><span> 20%</span> <strong style="color:#0f172a; margin-left:6px;">27° / 26°</strong></div>
                     </div>
                   </div>
                 </div>
@@ -180,9 +180,9 @@
                   <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Theo dõi pH, Nhiệt độ, Độ ẩm, EC, NPK và Độ mặn theo 3 độ sâu bộ rễ sầu riêng</p>
                 </div>
                 <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:8px;" class="soil-depth-btn-group">
-                  <button class="btn btn-sm" id="soil-depth-btn-10" onclick="switchSoilDepth(10)" style="background:#ffffff; color:#0f172a; font-weight:800; border-radius:6px; border:none; box-shadow:0 1px 2px rgba(0,0,0,0.06); padding:4px 10px; font-size:11.5px;">🌱 Tầng 10cm</button>
-                  <button class="btn btn-sm" id="soil-depth-btn-20" onclick="switchSoilDepth(20)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌿 Tầng 20cm</button>
-                  <button class="btn btn-sm" id="soil-depth-btn-30" onclick="switchSoilDepth(30)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;">🌳 Tầng 30cm</button>
+                  <button class="btn btn-sm" id="soil-depth-btn-10" onclick="switchSoilDepth(10)" style="background:#ffffff; color:#0f172a; font-weight:800; border-radius:6px; border:none; box-shadow:0 1px 2px rgba(0,0,0,0.06); padding:4px 10px; font-size:11.5px;"> Tầng 10cm</button>
+                  <button class="btn btn-sm" id="soil-depth-btn-20" onclick="switchSoilDepth(20)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;"> Tầng 20cm</button>
+                  <button class="btn btn-sm" id="soil-depth-btn-30" onclick="switchSoilDepth(30)" style="background:transparent; color:#64748b; font-weight:700; border-radius:6px; border:none; padding:4px 10px; font-size:11.5px;"> Tầng 30cm</button>
                 </div>
               </div>
               <div class="iot-soil-metrics-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;" id="soil-metrics-grid"></div>
@@ -198,7 +198,7 @@
                   • <strong>Độ ẩm đất tầng 20cm hiện tại</strong>: <span style="color:#d97706; font-weight:800;">50%</span> (Đang giảm nhanh dưới mức 60%).<br>
                   • <strong>Dự báo thời tiết</strong>: Có mưa rào nhẹ vào sáng mai (Xác suất 20%).<br>
                   <div style="margin-top:8px; padding:8px 12px; background:#ecfdf5; border-left:3px solid #059669; border-radius:4px; font-weight:700;">
-                    👉 Khuyến nghị: Bật hệ thống tưới bổ sung 15 phút chiều nay để nâng độ ẩm đất lên 60% giúp rễ cây không bị sốc nhiệt khi đón mưa sáng mai.
+                     Khuyến nghị: Bật hệ thống tưới bổ sung 15 phút chiều nay để nâng độ ẩm đất lên 60% giúp rễ cây không bị sốc nhiệt khi đón mưa sáng mai.
                   </div>
                 </div>
               </div>

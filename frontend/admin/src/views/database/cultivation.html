@@ -1,4 +1,4 @@
-<div class="tab-pane active" id="db-pane-cultivation">
+﻿<div class="tab-pane active" id="db-pane-cultivation">
           <!-- TOP BAR: FARM SELECTOR & HERO BANNER -->
           <div class="card" style="margin-bottom:20px; border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 6px 20px rgba(0,0,0,0.03);">
             <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -13,7 +13,7 @@
 
               <!-- Farm Selector Dropdown -->
               <div style="min-width:300px; max-width:440px; flex:1;">
-                <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;">🏡 CHỌN TRANG TRẠI CANH TÁC *</label>
+                <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;"> CHỌN TRANG TRẠI CANH TÁC *</label>
                 <select id="db-filter-farm" onchange="onDbFarmChange()" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
                   <option value="">— Vui lòng chọn Trang trại trước —</option>
                 </select>
@@ -44,7 +44,7 @@
                   <i class="fa fa-plus"></i> + Thêm Cây Mới
                 </button>
                 <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:800; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-                  🌱 <strong id="db-hero-plants-count">0</strong> cây trồng
+                   <strong id="db-hero-plants-count">0</strong> cây trồng
                 </span>
               </div>
             </div>
@@ -65,12 +65,12 @@
                 
                 <!-- Search Input & Health Filter -->
                 <div style="display:flex; gap:6px;">
-                  <input type="text" id="db-plant-search-input" placeholder="🔍 Tìm mã (#101), giống..." oninput="filterMasterPlantList()" style="flex:1; min-width:120px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff;">
+                  <input type="text" id="db-plant-search-input" placeholder=" Tìm mã (#101), giống..." oninput="filterMasterPlantList()" style="flex:1; min-width:120px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff;">
                   <select id="db-plant-filter-health" onchange="filterMasterPlantList()" style="width:105px; padding:8px 6px; border:1px solid #cbd5e1; border-radius:8px; font-size:11.5px; font-weight:600; background:#ffffff; outline:none; cursor:pointer;">
                     <option value="">Tất cả SK</option>
-                    <option value="Tốt">🟢 Tốt</option>
-                    <option value="Cần chú ý">🟡 Chú ý</option>
-                    <option value="Bệnh">🔴 Bệnh</option>
+                    <option value="Tốt"> Tốt</option>
+                    <option value="Cần chú ý"> Chú ý</option>
+                    <option value="Bệnh"> Bệnh</option>
                   </select>
                 </div>
               </div>

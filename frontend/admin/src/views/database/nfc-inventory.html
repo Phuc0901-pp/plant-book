@@ -1,4 +1,4 @@
-<!-- ── TAB 2 (SUB-TAB): KHO THẺ NFC (ADMIN NFC INVENTORY SUITE) ── -->
+﻿<!-- ── TAB 2 (SUB-TAB): KHO THẺ NFC (ADMIN NFC INVENTORY SUITE) ── -->
 <div class="tab-pane" id="db-pane-nfc" style="display:none;">
   
   <!-- 1. TOP HERO CARD: FARM SELECTOR & ACTIONS -->
@@ -15,7 +15,7 @@
 
       <!-- Farm Selector Dropdown -->
       <div style="min-width:300px; max-width:440px; flex:1;">
-        <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;">🏡 CHỌN TRANG TRẠI QUẢN LÝ KHO THẺ *</label>
+        <label style="font-size:11px; font-weight:800; color:#d1fae5; display:block; margin-bottom:6px;"> CHỌN TRANG TRẠI QUẢN LÝ KHO THẺ *</label>
         <select id="db-nfc-filter-farm" onchange="onAdminNfcFarmChange(this.value)" style="width:100%; padding:10px 14px; border:2px solid #34d399; border-radius:10px; font-size:13.5px; font-weight:700; color:#064e3b; background:#ffffff; box-shadow:0 4px 12px rgba(0,0,0,0.12); cursor:pointer;">
           <option value="">— Đang tải danh sách trang trại... —</option>
         </select>
@@ -26,26 +26,26 @@
     <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
       <div class="db-nfc-stats-grid" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-          📦 Tổng thẻ kho: <strong id="db-nfc-total-count" style="font-size:14px; margin-left:4px;">0</strong>
+           Tổng thẻ kho: <strong id="db-nfc-total-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
         <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-          🔗 Đã gán cây: <strong id="db-nfc-assigned-count" style="font-size:14px; margin-left:4px;">0</strong>
+           Đã gán cây: <strong id="db-nfc-assigned-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
         <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:12.5px; font-weight:800; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
-          🟢 Còn trống: <strong id="db-nfc-unassigned-count" style="font-size:14px; margin-left:4px;">0</strong>
+           Còn trống: <strong id="db-nfc-unassigned-count" style="font-size:14px; margin-left:4px;">0</strong>
         </span>
       </div>
 
       <div class="db-nfc-actions-grid" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <label class="db-nfc-sound-label" style="font-size:12px; font-weight:700; color:#475569; display:flex; align-items:center; gap:6px; cursor:pointer; padding:4px 6px;">
           <input type="checkbox" id="db-nfc-sound-toggle" checked style="accent-color:#059669; width:16px; height:16px;">
-          🔊 Âm thanh Ding / Bíp
+           Âm thanh Ding / Bíp
         </label>
         <button id="btn-export-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="exportAdminNfcInventoryCsv()" style="background:#ffffff; color:#047857; border:1.5px solid #10b981; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Xuất toàn bộ danh sách thẻ NFC ra file CSV / Excel">
-          <i class="fa-solid fa-file-csv" style="font-size:14px; color:#059669;"></i> 📥 Xuất File CSV / Excel
+          <i class="fa-solid fa-file-csv" style="font-size:14px; color:#059669;"></i>  Xuất File CSV / Excel
         </button>
         <button id="btn-import-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="openAdminNfcImportModal()" style="background:#f0fdf4; color:#065f46; border:1.5px solid #059669; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Import danh sách thẻ NFC">
-          <i class="fa-solid fa-file-import" style="font-size:14px; color:#059669;"></i> 📤 Import CSV / Excel
+          <i class="fa-solid fa-file-import" style="font-size:14px; color:#059669;"></i>  Import CSV / Excel
         </button>
         <button class="btn btn-secondary btn-sm" onclick="unassignAllAdminNfcTags()" style="background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" title="Gỡ toàn bộ thẻ NFC đã gán cho tất cả cây trong trang trại này">
           <i class="fa-solid fa-link-slash"></i> Gỡ hết thẻ đã gán
@@ -107,23 +107,23 @@
 
         <!-- Status Filter Select -->
         <select id="db-nfc-status-filter" onchange="filterAdminNfcTable()" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
-          <option value="all">⚡ Tất cả trạng thái</option>
-          <option value="unassigned">✨ Còn trống (Sẵn sàng)</option>
-          <option value="assigned">📌 Đã gán cây</option>
-          <option value="has_gps">📍 Đã có GPS</option>
-          <option value="no_gps">⚠️ Chưa có GPS</option>
+          <option value="all"> Tất cả trạng thái</option>
+          <option value="unassigned"> Còn trống (Sẵn sàng)</option>
+          <option value="assigned"> Đã gán cây</option>
+          <option value="has_gps"> Đã có GPS</option>
+          <option value="no_gps"> Chưa có GPS</option>
         </select>
 
         <!-- Sort Select -->
         <select id="db-nfc-sort-select" onchange="onAdminNfcSortDropdownChange(this.value)" style="padding:7px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:700; color:#334155; outline:none; background:#ffffff; cursor:pointer;">
-          <option value="time_desc">⏱️ Mới nhập nhất</option>
-          <option value="time_asc">⏱️ Cũ nhất trước</option>
-          <option value="tree_asc">🌳 Số cây (#1 ➔ #999)</option>
-          <option value="tree_desc">🌳 Số cây (#999 ➔ #1)</option>
-          <option value="uid_asc">🏷️ Mã thẻ (A ➔ Z)</option>
-          <option value="uid_desc">🏷️ Mã thẻ (Z ➔ A)</option>
-          <option value="assigned_first">📌 Đã gán cây trước</option>
-          <option value="unassigned_first">✨ Chưa gán (Còn trống) trước</option>
+          <option value="time_desc">⏱ Mới nhập nhất</option>
+          <option value="time_asc">⏱ Cũ nhất trước</option>
+          <option value="tree_asc"> Số cây (#1  #999)</option>
+          <option value="tree_desc"> Số cây (#999  #1)</option>
+          <option value="uid_asc"> Mã thẻ (A  Z)</option>
+          <option value="uid_desc"> Mã thẻ (Z  A)</option>
+          <option value="assigned_first"> Đã gán cây trước</option>
+          <option value="unassigned_first"> Chưa gán (Còn trống) trước</option>
         </select>
 
         <button class="btn btn-secondary btn-sm" onclick="refreshAdminNfcData()" title="Tải lại danh sách kho thẻ" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:#ffffff; border:1.5px solid #cbd5e1; display:inline-flex; align-items:center; gap:6px;">
