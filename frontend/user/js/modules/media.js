@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/media.js — File upload preview, watermark & lightbox
    ═══════════════════════════════════════════════════════════════ */
@@ -54,7 +54,7 @@ export function onCareMediaSelected(source) {
       } else {
         div.innerHTML = `
           <div style="width:100%;height:100%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;">
-            <i class="fa-solid fa-video" style="color:var(--text-muted)"></i>
+            <i data-lucide="video" class="lucide-sm" style="color:var(--text-muted)"></i>
           </div>`;
       }
       preview.appendChild(div);
@@ -205,7 +205,7 @@ export function buildMediaThumbnailsHtml(mediaUrls, size = 40) {
     if (isVideo) {
       return `<div style="width:${size}px;height:${size}px;border-radius:4px;overflow:hidden;position:relative;cursor:pointer;background:#000;flex-shrink:0;" onclick="openLightbox('${esc(url)}','video')">
         <video src="${esc(url)}" preload="metadata" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
-        <i class="fa fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:11px;"></i>
+        <i data-lucide="play-circle" class="lucide-sm" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:11px;"></i>
       </div>`;
     }
     return `<div style="width:${size}px;height:${size}px;border-radius:4px;overflow:hidden;cursor:pointer;flex-shrink:0;" onclick="openLightbox('${esc(url)}','image')">

@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/plants.js — Plant list rendering & search filter
    ═══════════════════════════════════════════════════════════════ */
@@ -74,7 +74,7 @@ export function renderUserFarmsList(farms) {
 
   if (!farms || !farms.length) {
     if (container) {
-      container.innerHTML = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-location-crosshairs" style="color:var(--green)"></i><p>Bạn chưa khởi tạo trang trại nào. Mở tab <strong>Trang trại</strong> để tự định vị GPS và khởi tạo ngay!</p></div>';
+      container.innerHTML = '<div class="empty-state" style="padding:16px"><i data-lucide="crosshair" class="lucide-sm" style="color:var(--green)"></i><p>Bạn chưa khởi tạo trang trại nào. Mở tab <strong>Trang trại</strong> để tự định vị GPS và khởi tạo ngay!</p></div>';
     }
     if (noFarmNotice) {
       noFarmNotice.style.display = 'block';
@@ -91,8 +91,8 @@ export function renderUserFarmsList(farms) {
       <div style="padding:12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">
         <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(f.name)}</h4>
         <div style="font-size:11px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;">
-          <span><i class="fa-solid fa-ruler-combined"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
-          <span><i class="fa-solid fa-seedling"></i> ${f.plant_count || 0} cây</span>
+          <span><i data-lucide="ruler" class="lucide-sm"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+          <span><i data-lucide="sprout" class="lucide-sm"></i> ${f.plant_count || 0} cây</span>
         </div>
       </div>
     `).join('');
@@ -239,7 +239,7 @@ export function renderUserPlantsSummaryTable(plants) {
   const tbody = document.getElementById('user-plants-summary-table');
   if (!tbody) return;
   if (!plants.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không có cây trồng nào được giao</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i data-lucide="sprout" class="lucide-sm"></i><p>Không có cây trồng nào được giao</p></td></tr>';
     return;
   }
   const sorted = sortPlantsByHealthThenId(plants);
@@ -281,7 +281,7 @@ export function renderUserPlantsTablePage() {
 
   const total = _currentFilteredUserPlants.length;
   if (!total) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa-solid fa-seedling"></i><p>Không tìm thấy cây trồng phù hợp</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i data-lucide="sprout" class="lucide-sm"></i><p>Không tìm thấy cây trồng phù hợp</p></td></tr>';
     if (pagInfo) pagInfo.textContent = 'Không có cây trồng nào';
     if (pagBtns) pagBtns.innerHTML = '';
     if (paginationContainer) paginationContainer.style.display = 'none';
@@ -313,7 +313,7 @@ export function renderUserPlantsTablePage() {
 
     let btnsHtml = `
       <button type="button" class="btn btn-secondary btn-sm" onclick="goToUserPlantsPage(${_userPlantsCurrentPage - 1})" ${_userPlantsCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 11px; font-size:12px; font-weight:700; border-radius:6px;">
-        <i class="fa-solid fa-chevron-left"></i> Trước
+        <i data-lucide="chevron-left" class="lucide-sm"></i> Trước
       </button>
     `;
 
@@ -345,7 +345,7 @@ export function renderUserPlantsTablePage() {
 
     btnsHtml += `
       <button type="button" class="btn btn-secondary btn-sm" onclick="goToUserPlantsPage(${_userPlantsCurrentPage + 1})" ${_userPlantsCurrentPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 11px; font-size:12px; font-weight:700; border-radius:6px;">
-        Sau <i class="fa-solid fa-chevron-right"></i>
+        Sau <i data-lucide="chevron-right" class="lucide-sm"></i>
       </button>
     `;
 
@@ -359,8 +359,8 @@ export function renderUserPlantsTablePage() {
  */
 function _plantRow(p) {
   const nfcBadge = p.nfc_uid
-    ? `<span title="Thẻ: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#22c55e;"><i class="fa-solid fa-tag"></i></span>`
-    : `<span title="Chưa gắn thẻ NFC" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#d1d5db;"><i class="fa-solid fa-link-slash"></i></span>`;
+    ? `<span title="Thẻ: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#22c55e;"><i data-lucide="tag" class="lucide-sm"></i></span>`
+    : `<span title="Chưa gắn thẻ NFC" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#d1d5db;"><i data-lucide="unlink" class="lucide-sm"></i></span>`;
 
   const treeCodeSafe = esc(p.tree_code || String(p.id));
   const plantTypeSafe = esc(p.plant_type || '');
@@ -378,7 +378,7 @@ function _plantRow(p) {
         ${esc(shortUrlText)}
       </a>
       <button type="button" onclick="navigator.clipboard.writeText('${esc(pubUrl)}'); if(window.toast) window.toast('📋 Đã copy Public URL!', 'success');" title="Copy URL" style="border:none;background:#f1f5f9;color:#475569;border-radius:4px;padding:4px 7px;font-size:11px;cursor:pointer;">
-        <i class="fa-regular fa-copy"></i>
+        <i data-lucide="copy" class="lucide-sm"></i>
       </button>
     </div>` : `<span style="font-size:11px;color:#94a3b8;">Chưa gán</span>`;
 
@@ -403,10 +403,10 @@ function _plantRow(p) {
       <td data-label="Thao tác" class="plant-actions-cell">
         <div class="erp-plant-action-btns">
           <button type="button" class="btn-erp-plant-action btn-erp-plant-care" onclick="openCareModal(${p.id}, '${treeCodeSafe}', '${plantTypeSafe}')" title="Ghi chép hoạt động chăm sóc & canh tác">
-            <i class="fa-solid fa-file-signature"></i> <span>Ghi nhật ký</span>
+            <i data-lucide="file-check" class="lucide-sm"></i> <span>Ghi nhật ký</span>
           </button>
           <button type="button" class="btn-erp-plant-action btn-erp-plant-nfc" onclick="openNfcModal(${p.id}, '${treeCodeSafe}', '${slugSafe}', ${uidVal})" title="Gán hoặc định danh thẻ NFC cho cây">
-            <i class="fa-solid fa-tag"></i> <span>Gán thẻ NFC</span>
+            <i data-lucide="tag" class="lucide-sm"></i> <span>Gán thẻ NFC</span>
           </button>
         </div>
       </td>
@@ -466,7 +466,7 @@ export async function locateNearbyPlantsFromGPS() {
   const btn = document.getElementById('btn-gps-nearby-radar');
   const originalHtml = btn ? btn.innerHTML : '';
   if (btn) {
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color:#16a34a;"></i> <span>Đang dò GPS...</span>';
+    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#16a34a;"></i> <span>Đang dò GPS...</span>';
     btn.disabled = true;
   }
 
@@ -743,7 +743,7 @@ export function renderUserFarmsGrid(farms) {
       gridContainer.innerHTML = `
         <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:28px 20px; text-align:center; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
           <div style="width:54px; height:54px; border-radius:50%; background:#dcfce7; color:#059669; font-size:24px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(5,150,105,0.15);">
-            <i class="fa-solid fa-plus"></i>
+            <i data-lucide="plus" class="lucide-sm"></i>
           </div>
           <div style="font-size:16px; font-weight:800; color:#047857; margin-bottom:4px;">Khởi tạo Trang trại mới (GPS)</div>
           <div style="font-size:13px; color:#166534;">Bấm vào đây để lấy tọa độ thực tế từ GPS thiết bị</div>
@@ -760,7 +760,7 @@ export function renderUserFarmsGrid(farms) {
         <div onclick="openFarmDetailView(${f.id})" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:18px; position:relative; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
             <h4 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-house-chimney" style="color:#059669; font-size:16px;"></i> ${esc(f.name)}
+              <i data-lucide="home" class="lucide-sm" style="color:#059669; font-size:16px;"></i> ${esc(f.name)}
             </h4>
             <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;">Trang trại của tôi</span>
           </div>
@@ -768,22 +768,22 @@ export function renderUserFarmsGrid(farms) {
             ${esc(f.description || 'Chưa có mô tả địa chỉ')}
           </p>
           <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#334155; display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
-            <span><i class="fa-solid fa-seedling" style="color:#059669;"></i> ${totalPlants} cây</span>
-            <span><i class="fa-solid fa-ruler-combined" style="color:#059669;"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+            <span><i data-lucide="sprout" class="lucide-sm" style="color:#059669;"></i> ${totalPlants} cây</span>
+            <span><i data-lucide="ruler" class="lucide-sm" style="color:#059669;"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
           </div>
           <div style="font-size:11.5px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px;">
-            ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:2px 7px; border-radius:6px; font-weight:700;"><i class="fa-solid fa-certificate"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">VietGAP: Chưa cấp</span>`}
-            ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 7px; border-radius:6px; font-weight:700;"><i class="fa-solid fa-earth-americas"></i> PUC: ${esc(f.puc_code)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">PUC: Chưa cấp</span>`}
+            ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:2px 7px; border-radius:6px; font-weight:700;"><i data-lucide="award" class="lucide-sm"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">VietGAP: Chưa cấp</span>`}
+            ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 7px; border-radius:6px; font-weight:700;"><i data-lucide="globe" class="lucide-sm"></i> PUC: ${esc(f.puc_code)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">PUC: Chưa cấp</span>`}
           </div>
           <div style="display:flex; gap:8px;">
             <button onclick="openFarmDetailView(${f.id})" style="flex:1; background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
-              <i class="fa-solid fa-map-location-dot"></i> Xem Bản đồ & Chi tiết
+              <i data-lucide="map" class="lucide-sm"></i> Xem Bản đồ & Chi tiết
             </button>
             <button onclick="event.stopPropagation(); openEditFarmModal(${f.id})" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; color:#334155; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Chỉnh sửa trang trại">
-              <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Sửa
+              <i data-lucide="edit" class="lucide-sm" style="color:#059669;"></i> Sửa
             </button>
             <button onclick="event.stopPropagation(); deleteUserFarm(${f.id}, '${esc(f.name)}')" style="background:#ffffff; border:1.5px solid #fca5a5; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Xóa đệm (ẩn) trang trại">
-              <i class="fa-solid fa-trash-can" style="color:#dc2626;"></i> Xóa
+              <i data-lucide="trash-2" class="lucide-sm" style="color:#dc2626;"></i> Xóa
             </button>
           </div>
         </div>
@@ -797,7 +797,7 @@ export function renderUserFarmsGrid(farms) {
       html += `
         <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:all 0.2s ease; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:150px; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
           <div style="width:42px; height:42px; border-radius:50%; background:#dcfce7; color:#059669; font-size:20px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px;">
-            <i class="fa-solid fa-plus"></i>
+            <i data-lucide="plus" class="lucide-sm"></i>
           </div>
           <div style="font-size:14px; font-weight:800; color:#047857;">+ Khởi tạo Trang trại mới (GPS)</div>
           <div style="font-size:12px; color:#166534; margin-top:2px;">Bấm để định vị GPS thêm trang trại</div>
@@ -1203,7 +1203,7 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
           _renderForecastGrid(liveForecast);
           const badge = document.getElementById('iot-weather-source-badge');
           if (badge) {
-            badge.innerHTML = `<i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Dữ liệu thật Open-Meteo GPS (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+            badge.innerHTML = `<i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Realtime (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
           }
           if (window.lucide) {
             try { lucide.createIcons(); } catch (_) {}
@@ -1454,7 +1454,7 @@ function renderUserNfcInventoryTable(tags) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" style="text-align:center; padding:38px 20px; color:#94a3b8;">
-          <i class="fa-solid fa-microchip" style="font-size:32px; margin-bottom:10px; display:inline-block; color:#cbd5e1;"></i>
+          <i data-lucide="cpu" class="lucide-sm" style="font-size:32px; margin-bottom:10px; display:inline-block; color:#cbd5e1;"></i>
           <p style="margin:0 0 6px 0; font-weight:800; font-size:14px; color:#475569;">Trang trại này hiện chưa có thẻ NFC nào.</p>
           <small style="color:#94a3b8;">Ban Quản Trị / Kỹ Thuật Viên sẽ cấp và phân bổ thẻ NFC vào kho trang trại của bạn.</small>
         </td>
@@ -1465,10 +1465,10 @@ function renderUserNfcInventoryTable(tags) {
   tbody.innerHTML = tags.map((t, idx) => {
     const isAssigned = t.status === 'assigned';
     const statusPill = isAssigned
-      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-link"></i> Đã gán cây</span>`
-      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-check"></i> Sẵn sàng gán</span>`;
+      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="link" class="lucide-sm"></i> Đã gán cây</span>`
+      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check" class="lucide-sm"></i> Sẵn sàng gán</span>`;
 
-    let plantInfo = `<span style="color:#94a3b8; font-style:italic; display:inline-flex; align-items:center; gap:5px;"><i class="fa-regular fa-clock"></i> — Sẵn sàng gán —</span>`;
+    let plantInfo = `<span style="color:#94a3b8; font-style:italic; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="clock" class="lucide-sm"></i> — Sẵn sàng gán —</span>`;
     if (isAssigned && (t.tree_code || t.plant_id)) {
       const treeCodeText = t.tree_code ? `Cây #${t.tree_code}` : `Cây #${t.plant_id}`;
       const plantTypeDesc = t.plant_variety ? `${t.plant_type || 'Cây'} (${t.plant_variety})` : (t.plant_type || 'Cây trồng');
@@ -1485,17 +1485,17 @@ function renderUserNfcInventoryTable(tags) {
           </div>
           ${hasGps ? `
             <div style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#047857; font-weight:700;">
-              <i class="fa-solid fa-location-dot" style="color:#059669;"></i> ${gpsLat}, ${gpsLng}
+              <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> ${gpsLat}, ${gpsLng}
               <a href="https://www.google.com/maps?q=${gpsLat},${gpsLng}" target="_blank" title="Mở bản đồ Google Maps" style="color:#2563eb; text-decoration:none; margin-left:3px;">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Bản đồ
+                <i data-lucide="external-link" class="lucide-sm"></i> Bản đồ
               </a>
             </div>
           ` : `
-            <span style="color:#d97706; font-size:11px;"><i class="fa-solid fa-circle-exclamation"></i> Chưa lấy tọa độ GPS</span>
+            <span style="color:#d97706; font-size:11px;"><i data-lucide="alert-circle" class="lucide-sm"></i> Chưa lấy tọa độ GPS</span>
           `}
           ${locationText ? `
             <div style="color:#64748b; font-size:11px;">
-              <i class="fa-solid fa-tag"></i> ${esc(locationText)}
+              <i data-lucide="tag" class="lucide-sm"></i> ${esc(locationText)}
             </div>
           ` : ''}
         </div>
@@ -1511,7 +1511,7 @@ function renderUserNfcInventoryTable(tags) {
           <div style="display:flex; align-items:center; gap:8px;">
             <code style="font-size:13px; font-weight:800; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; padding:4px 10px; border-radius:6px; font-family:monospace;">${esc(t.nfc_uid)}</code>
             <button type="button" onclick="navigator.clipboard.writeText('${esc(t.nfc_uid)}'); if(window.toast) window.toast('Đã copy mã UID: ${esc(t.nfc_uid)}');" title="Sao chép UID" style="border:none; background:transparent; color:#64748b; cursor:pointer; font-size:13px; padding:2px 4px;">
-              <i class="fa-regular fa-copy"></i>
+              <i data-lucide="copy" class="lucide-sm"></i>
             </button>
           </div>
         </td>
@@ -1730,10 +1730,10 @@ function renderUserCurrentFieldTree() {
       urlPreviewEl.innerHTML = `
         <div style="display:flex; align-items:center; gap:6px;">
           <a href="${pubUrl}" target="_blank" style="color:#4f46e5; text-decoration:none; font-weight:700; font-size:11.5px; display:inline-flex; align-items:center; gap:4px; background:#eef2ff; padding:3px 8px; border-radius:6px; border:1px solid #c7d2fe;" title="Mở trang nhật ký công khai">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem Web Public
+            <i data-lucide="external-link" class="lucide-sm"></i> Xem Web Public
           </a>
           <button type="button" onclick="navigator.clipboard.writeText('${pubUrl}'); if(window.toast) toast('Đã sao chép link công khai!'); else alert('Đã sao chép link!');" style="background:#f8fafc; border:1px solid #cbd5e1; color:#475569; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" title="Sao chép link">
-            <i class="fa-solid fa-copy"></i>
+            <i data-lucide="copy" class="lucide-sm"></i>
           </button>
         </div>
       `;
@@ -1830,7 +1830,7 @@ export async function startFieldNfcTouch() {
   if (!currentPlant) return;
 
   if (!('NDEFReader' in window)) {
-    alert('Trình duyệt này không hỗ trợ Web NFC trực tiếp.\n\n💡 Vui lòng nhập mã UID thủ công vào ô bên dưới!');
+    alert('Trình duyệt này không hỗ trợ Web NFC trực tiếp.\n\n Vui lòng nhập mã UID thủ công vào ô bên dưới!');
     document.getElementById('field-tag-manual-uid')?.focus();
     return;
   }
@@ -1938,7 +1938,7 @@ export function openReorderGpsModal(farmId) {
     const targetFarmId = farmId || (currentActiveFarm ? currentActiveFarm.id : farms[0].id);
 
     farmSelect.innerHTML = farms.map(f => 
-      `<option value="${f.id}" ${Number(f.id) === Number(targetFarmId) ? 'selected' : ''}>🏡 ${esc(f.name)} (${f.plant_count || 0} cây)</option>`
+      `<option value="${f.id}" ${Number(f.id) === Number(targetFarmId) ? 'selected' : ''}> ${esc(f.name)} (${f.plant_count || 0} cây)</option>`
     ).join('');
   }
 
@@ -1973,7 +1973,7 @@ export async function previewReorderGps() {
   const tbody = document.getElementById('reorder-gps-preview-tbody');
   const countEl = document.getElementById('reorder-gps-preview-count');
   if (tbody) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:18px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tính toán không gian và hướng tọa độ...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:18px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tính toán không gian và hướng tọa độ...</td></tr>`;
   }
 
   try {
@@ -2002,7 +2002,7 @@ export async function previewReorderGps() {
           <td style="padding:7px 10px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
           <td style="padding:7px 10px;">
             <span style="color:#94a3b8; text-decoration:line-through; font-size:11px;">#${esc(item.old_tree_code)}</span>
-            <i class="fa-solid fa-arrow-right" style="font-size:10px; color:#10b981; margin:0 4px;"></i>
+            <i data-lucide="arrow-right" class="lucide-sm" style="font-size:10px; color:#10b981; margin:0 4px;"></i>
             <strong style="color:#047857; font-size:13px;">#${esc(item.new_tree_code)}</strong>
           </td>
           <td style="padding:7px 10px; font-family:monospace; font-size:11px; color:#0284c7;">
@@ -2033,13 +2033,13 @@ export async function executeReorderGps() {
   const padDigits = parseInt(document.getElementById('reorder-gps-pad-digits')?.value, 10) || 0;
 
   const count = _reorderGpsPreviewData ? _reorderGpsPreviewData.reordered_count : 'tất cả';
-  if (!confirm(`Bạn có chắc chắn muốn đánh lại toàn bộ mã số cho ${count} cây theo tọa độ GPS?\n\n⚠️ Lưu ý: Mã cây (tree_code) và đường dẫn công khai sẽ được cập nhật thẳng hàng theo thứ tự vị trí mới.`)) {
+  if (!confirm(`Bạn có chắc chắn muốn đánh lại toàn bộ mã số cho ${count} cây theo tọa độ GPS?\n\n Lưu ý: Mã cây (tree_code) và đường dẫn công khai sẽ được cập nhật thẳng hàng theo thứ tự vị trí mới.`)) {
     return;
   }
 
   const btn = document.getElementById('btn-execute-reorder-gps');
   if (btn) {
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang sắp xếp & cập nhật CSDL...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang sắp xếp & cập nhật CSDL...';
     btn.disabled = true;
   }
 
@@ -2055,7 +2055,7 @@ export async function executeReorderGps() {
       })
     });
 
-    if (window.toast) window.toast(res.message || '✨ Đã sắp xếp lại mã số cây thành công!', 'success');
+    if (window.toast) window.toast(res.message || 'Đã sắp xếp lại mã số cây thành công!', 'success');
     closeReorderGpsModal();
 
     // Reload plants & map data
@@ -2066,7 +2066,7 @@ export async function executeReorderGps() {
     if (window.toast) window.toast('Lỗi sắp xếp mã cây: ' + err.message, 'error');
   } finally {
     if (btn) {
-      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Áp dụng &amp; Đánh số lại ngay';
+      btn.innerHTML = '<i data-lucide="sparkles" class="lucide-sm"></i> Áp dụng &amp; Đánh số lại ngay';
       btn.disabled = false;
     }
   }

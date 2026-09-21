@@ -1,4 +1,4 @@
-  <aside class="sidebar">
+﻿  <aside class="sidebar">
     <div class="sidebar-header">
       <div class="brand">
         <div class="sidebar-logo-wrap">
@@ -15,24 +15,24 @@
     <nav>
       <div class="nav-section">Tổng quan &amp; Vận hành</div>
       <div class="nav-item active" onclick="showPage('dashboard')">
-        <i class="fa fa-chart-pie"></i> Tổng quan
+        <i data-lucide="pie-chart" class="lucide-sm"></i> Tổng quan
       </div>
       <div class="nav-section">Quản trị Nông nghiệp &amp; CSDL</div>
       <div class="nav-item" onclick="showPage('database')">
-        <i class="fa-solid fa-database"></i> Cơ sở dữ liệu
+        <i data-lucide="database" class="lucide-sm"></i> Cơ sở dữ liệu
       </div>
       <div class="nav-item" onclick="showPage('ai-training')">
-        <i class="fa-solid fa-brain" style="color:#10b981;"></i> Huấn luyện trí tuệ nhân tạo
+        <i data-lucide="cpu" class="lucide-sm" style="color:#10b981;"></i> Huấn luyện trí tuệ nhân tạo
       </div>
       <div class="nav-section">Hệ thống &amp; Nhân sự</div>
       <div class="nav-item" onclick="showPage('users')">
-        <i class="fa fa-users"></i> Người dùng
+        <i data-lucide="users" class="lucide-sm"></i> Người dùng
       </div>
     </nav>
 
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="logout()">
-        <i class="fa fa-right-from-bracket"></i> Đăng xuất
+        <i data-lucide="log-out" class="lucide-sm"></i> Đăng xuất
       </button>
       <div style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">
         <span style="background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:100px; border:1px solid rgba(34,197,94,0.25);">{{APP_VERSION}}</span> Tân Bảo AgTech Admin

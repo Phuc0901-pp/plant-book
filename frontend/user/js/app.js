@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    app.js — Entry point (Slim)
    Imports tất cả module và expose ra window cho HTML inline handlers
@@ -95,7 +95,7 @@ window.openFeatureDetailModal = function(type) {
   if (!modal) return;
 
   if (type === 'gis') {
-    titleEl.innerHTML = '<i class="fa-solid fa-earth-asia" style="color:#6ee7b7"></i> Bản đồ GIS Vệ tinh & 3D Contour';
+    titleEl.innerHTML = '<i data-lucide="globe" class="lucide-sm" style="color:#6ee7b7"></i> Bản đồ GIS Vệ tinh & 3D Contour';
     imgEl.src = '/user/img/gis_contour_map.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
@@ -114,7 +114,7 @@ window.openFeatureDetailModal = function(type) {
       </div>
     `;
   } else if (type === 'nfc') {
-    titleEl.innerHTML = '<i class="fa-solid fa-rss" style="color:#93c5fd"></i> Thẻ Định danh NFC & Mã QR Cây';
+    titleEl.innerHTML = '<i data-lucide="radio" class="lucide-sm" style="color:#93c5fd"></i> Thẻ Định danh NFC & Mã QR Cây';
     imgEl.src = '/user/img/nfc_tag.png';
     imgEl.style.objectFit = 'contain';
     imgEl.style.background = '#f8fafc';
@@ -135,7 +135,7 @@ window.openFeatureDetailModal = function(type) {
       </div>
     `;
   } else if (type === 'iot') {
-    titleEl.innerHTML = '<i class="fa-solid fa-microchip" style="color:#fde047"></i> Tích hợp Thiết bị IoT & Cảm biến Tự động';
+    titleEl.innerHTML = '<i data-lucide="cpu" class="lucide-sm" style="color:#fde047"></i> Tích hợp Thiết bị IoT & Cảm biến Tự động';
     imgEl.src = '/user/img/iot_sensors.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #78350f, #d97706)';
@@ -154,7 +154,7 @@ window.openFeatureDetailModal = function(type) {
       </div>
     `;
   } else if (type === 'vietgap') {
-    titleEl.innerHTML = '<i class="fa-solid fa-shield-halved" style="color:#6ee7b7"></i> Tiêu Chuẩn VietGAP & Truy Xuất Nguồn Gốc';
+    titleEl.innerHTML = '<i data-lucide="shield-check" class="lucide-sm" style="color:#6ee7b7"></i> Tiêu Chuẩn VietGAP & Truy Xuất Nguồn Gốc';
     imgEl.src = '/user/img/gis_contour_map.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
@@ -174,7 +174,7 @@ window.openFeatureDetailModal = function(type) {
       </div>
     `;
   } else if (type === 'voice') {
-    titleEl.innerHTML = '<i class="fa-solid fa-microphone-lines" style="color:#93c5fd"></i> AI Voice-to-Text Nông Nghiệp';
+    titleEl.innerHTML = '<i data-lucide="mic" class="lucide-sm" style="color:#93c5fd"></i> AI Voice-to-Text Nông Nghiệp';
     imgEl.src = '/user/img/gis_contour_map.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #1e3a8a, #3b82f6)';
@@ -193,7 +193,7 @@ window.openFeatureDetailModal = function(type) {
       </div>
     `;
   } else if (type === 'cost') {
-    titleEl.innerHTML = '<i class="fa-solid fa-calculator" style="color:#fed7aa"></i> Kế Toán Chi Phí Agri-ERP';
+    titleEl.innerHTML = '<i data-lucide="calculator" class="lucide-sm" style="color:#fed7aa"></i> Kế Toán Chi Phí Agri-ERP';
     imgEl.src = '/user/img/gis_contour_map.jpg';
     imgEl.style.objectFit = 'cover';
     headerEl.style.background = 'linear-gradient(135deg, #7c2d12, #ea580c)';

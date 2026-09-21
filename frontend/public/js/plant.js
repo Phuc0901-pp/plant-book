@@ -252,7 +252,7 @@ async function doGateLogin() {
   if (!email || !password) return;
 
   const oldBtnText = btn.innerHTML;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
+  btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang xác thực...';
   btn.disabled = true;
   errBox.style.display = 'none';
 
@@ -323,7 +323,7 @@ function showPublicToast(msg) {
     toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
     document.body.appendChild(toast);
   }
-  toast.innerHTML = `<i class="fa-solid fa-circle-info" style="color:#10b981"></i> <span>${msg}</span>`;
+  toast.innerHTML = `<i data-lucide="info" class="lucide-sm" style="color:#10b981"></i> <span>${msg}</span>`;
   toast.style.opacity = '1';
   toast.style.transform = 'translateX(-50%) translateY(0)';
   
@@ -480,7 +480,7 @@ function fallbackToTreeIcon(img) {
   if (container && !container.querySelector('.no-cover-icon')) {
     const iconDiv = document.createElement('div');
     iconDiv.className = 'no-cover-icon';
-    iconDiv.innerHTML = '<i class="fa-solid fa-tree"></i>';
+    iconDiv.innerHTML = '<i data-lucide="trees" class="lucide-sm"></i>';
     container.insertBefore(iconDiv, img);
   }
 }
@@ -548,7 +548,7 @@ function showNfcGpsToast(msg) {
     toast.style.cssText = 'position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:99999; background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; padding:12px 20px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.35); font-size:13px; font-weight:700; display:flex; align-items:center; gap:10px; border:1.5px solid #10b981; max-width:90%;';
     document.body.appendChild(toast);
   }
-  toast.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:#6ee7b7; font-size:18px;"></i> <span>${esc(msg)}</span>`;
+  toast.innerHTML = `<i data-lucide="crosshair" class="lucide-sm" style="color:#6ee7b7; font-size:18px;"></i> <span>${esc(msg)}</span>`;
   toast.style.display = 'flex';
   setTimeout(() => {
     if (toast) toast.style.display = 'none';
@@ -619,7 +619,7 @@ function renderRevokedTagView(nfcUid, errorMsg) {
     errorView.innerHTML = `
       <div style="text-align:center; padding:36px 20px; background:#fff; border-radius:18px; border:2px solid #ef4444; max-width:480px; margin:40px auto; box-shadow:0 12px 30px rgba(0,0,0,0.08);">
         <div style="width:68px; height:68px; background:#fee2e2; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:30px; color:#dc2626; margin-bottom:16px; border:2px solid #fca5a5;">
-          <i class="fa-solid fa-ban"></i>
+          <i data-lucide="ban" class="lucide-sm"></i>
         </div>
         <h2 style="font-size:20px; font-weight:800; color:#991b1b; margin-bottom:10px;">Thẻ NFC Đã Bị Thu Hồi</h2>
         <p style="font-size:13.5px; color:#475569; line-height:1.6; margin-bottom:18px;">
@@ -627,11 +627,11 @@ function renderRevokedTagView(nfcUid, errorMsg) {
           Đường dẫn công khai theo thẻ cũ này đã bị <strong>đóng băng truy cập</strong> theo quy chuẩn bảo mật 1 Cây - 1 Thẻ.
         </p>
         <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:12px; font-size:12.5px; color:#166534; margin-bottom:20px; text-align:left; display:flex; gap:10px; align-items:center;">
-          <i class="fa-solid fa-shield-halved" style="color:#16a34a; font-size:18px; flex-shrink:0;"></i>
+          <i data-lucide="shield-check" class="lucide-sm" style="color:#16a34a; font-size:18px; flex-shrink:0;"></i>
           <span><strong>Lịch sử canh tác được bảo toàn:</strong> Toàn bộ nhật ký canh tác, phân thuốc, tưới tiêu và chứng nhận VietGAP của cây trồng vẫn được lưu trữ an toàn 100% trong hệ thống.</span>
         </div>
         <a href="/" style="display:inline-block; background:#0f172a; color:#fff; text-decoration:none; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:700;">
-          <i class="fa-solid fa-house"></i> Về trang chủ
+          <i data-lucide="home" class="lucide-sm"></i> Về trang chủ
         </a>
       </div>
     `;
@@ -809,40 +809,40 @@ function getShortSummary(log) {
 function _renderTimelineItemHtml(log) {
   let markerClass = '';
   let tagClass = 'tag-general';
-  let icon = 'fa-solid fa-pen';
+  let icon = 'edit-3';
   
   if (log.log_type === 'Tưới nước') {
     markerClass = 'marker-water';
     tagClass = 'tag-water';
-    icon = 'fa-solid fa-droplet';
+    icon = 'droplets';
   } else if (log.log_type === 'Bón phân') {
     markerClass = 'marker-fertilize';
     tagClass = 'tag-fertilize';
-    icon = 'fa-solid fa-leaf';
+    icon = 'leaf';
   } else if (log.log_type === 'Phun thuốc') {
     markerClass = 'marker-pesticide';
     tagClass = 'tag-pesticide';
-    icon = 'fa-solid fa-flask';
+    icon = 'flask-conical';
   } else if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
     markerClass = 'marker-leaf';
     tagClass = 'tag-leaf';
-    icon = 'fa-solid fa-scissors';
+    icon = 'scissors';
   } else if (log.log_type === 'Tỉa hoa') {
     markerClass = 'marker-flower';
     tagClass = 'tag-flower';
-    icon = 'fa-solid fa-spa';
+    icon = 'flower';
   } else if (log.log_type === 'Thụ phấn') {
     markerClass = 'marker-flower';
     tagClass = 'tag-flower';
-    icon = 'fa-solid fa-wand-magic-sparkles';
+    icon = 'sparkles';
   } else if (log.log_type === 'Thu hoạch') {
     markerClass = 'marker-fertilize';
     tagClass = 'tag-fertilize';
-    icon = 'fa-solid fa-wheat-awn';
+    icon = 'wheat';
   } else if (log.log_type === 'Bệnh cây') {
     markerClass = 'marker-disease';
     tagClass = 'tag-disease';
-    icon = 'fa-solid fa-virus';
+    icon = 'bug';
   }
   
   const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
@@ -855,13 +855,13 @@ function _renderTimelineItemHtml(log) {
         const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(m.url || m);
         const url = m.url || m;
         return isVideo
-          ? `<div class="log-media-item" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" muted preload="metadata"></video><div class="video-play-icon"><i class="fa-solid fa-circle-play"></i></div></div>`
+          ? `<div class="log-media-item" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" muted preload="metadata"></video><div class="video-play-icon"><i data-lucide="play-circle" class="lucide-sm"></i></div></div>`
           : `<div class="log-media-item" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" alt="ảnh nhật ký" loading="lazy"></div>`;
       }).join('')}
     </div>` : '';
 
   const noteHtml = log.note
-    ? `<div class="log-body" style="margin-top: 6px; color: var(--text-secondary); font-size:12px;"><i class="fa-solid fa-comment-dots"></i> ${esc(log.note)}</div>`
+    ? `<div class="log-body" style="margin-top: 6px; color: var(--text-secondary); font-size:12px;"><i data-lucide="message-circle" class="lucide-sm"></i> ${esc(log.note)}</div>`
     : '';
 
   return `
@@ -869,10 +869,10 @@ function _renderTimelineItemHtml(log) {
       <div class="timeline-marker ${markerClass}"></div>
       <div class="timeline-content" onclick="toggleTimelineItem(event, this)">
         <div class="log-header">
-          <span class="log-tag ${tagClass}"><i class="${icon}"></i> ${esc(log.log_type || 'Ghi chú')}</span>
+          <span class="log-tag ${tagClass}"><i data-lucide="${icon}" class="lucide-xs"></i> ${esc(log.log_type || 'Ghi chú')}</span>
           <div class="log-header-right">
-            <span class="log-time-indicator"><i class="fa-regular fa-clock"></i> ${fullDateTime}</span>
-            <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+            <span class="log-time-indicator"><i data-lucide="clock" class="lucide-sm"></i> ${fullDateTime}</span>
+            <i data-lucide="chevron-down" class="toggle-arrow lucide-sm"></i>
           </div>
         </div>
         <div class="log-short-preview" style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">
@@ -899,7 +899,7 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
   if (dates.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
-        <i class="fa-regular fa-clipboard" style="font-size: 32px; margin-bottom: 12px;"></i>
+        <i data-lucide="clipboard" class="lucide-sm" style="font-size: 32px; margin-bottom: 12px;"></i>
         <p style="font-size: 13px;">Cây chưa có ghi chép nhật ký nào.</p>
       </div>
     `;
@@ -945,7 +945,7 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
         paginationBox.innerHTML = `
           <div style="width:100%; text-align:center; margin-top:16px;">
             <button type="button" class="btn btn-secondary btn-sm" onclick="togglePublicLogExpand(true)" style="padding:10px 20px; font-weight:700; border-radius:10px; background:rgba(255,255,255,0.08); border:1.5px solid var(--green-bright); color:var(--green-bright); box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer;">
-              <i class="fa-solid fa-list-check"></i> Xem tất cả nhật ký (Tổng ${totalDatesCount} ngày canh tác)
+              <i data-lucide="clipboard-check" class="lucide-sm"></i> Xem tất cả nhật ký (Tổng ${totalDatesCount} ngày canh tác)
             </button>
           </div>
         `;
@@ -960,22 +960,23 @@ function renderPublicLogTimeline(page = 1, expanded = false) {
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);">
           <div style="display:flex; align-items:center; gap:10px;">
             <button type="button" class="btn btn-secondary btn-xs" ${curPage <= 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="changePublicLogPage(${curPage - 1})"`} style="padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;">
-              <i class="fa-solid fa-chevron-left"></i> Trang trước
+              <i data-lucide="chevron-left" class="lucide-sm"></i> Trang trước
             </button>
             <span style="font-size:12px; font-weight:700; color:var(--text-secondary); background:rgba(255,255,255,0.05); padding:6px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
               Trang ${curPage} / ${totalPages} (${totalDatesCount} ngày)
             </span>
             <button type="button" class="btn btn-secondary btn-xs" ${curPage >= totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="changePublicLogPage(${curPage + 1})"`} style="padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;">
-              Trang tiếp <i class="fa-solid fa-chevron-right"></i>
+              Trang tiếp <i data-lucide="chevron-right" class="lucide-sm"></i>
             </button>
           </div>
           <button type="button" class="btn btn-link btn-xs" onclick="togglePublicLogExpand(false)" style="font-size:12px; color:var(--text-secondary); font-weight:600; text-decoration:none; cursor:pointer; background:none; border:none; margin-top:4px;">
-            <i class="fa-solid fa-compress"></i> Thu gọn về 3 ngày gần nhất
+            <i data-lucide="minimize-2" class="lucide-sm"></i> Thu gọn về 3 ngày gần nhất
           </button>
         </div>
       `;
     }
   }
+  if (window.lucide) lucide.createIcons();
 }
 
 window.togglePublicLogExpand = function(expanded) {
@@ -1034,10 +1035,10 @@ async function renderPlant(plant, isEditable) {
     authBarHtml = `
       <div class="auth-status-wrap">
         <div class="auth-status-pill auth-granted">
-          <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+          <i data-lucide="check-circle-2" class="lucide-sm" style="color: #10b981;"></i>
           <span><strong>${esc(user.full_name || user.email)}</strong> &nbsp;•&nbsp; ${user.role === 'admin' ? 'Quản trị viên' : (esc(plant.farm_name) || 'Nông hộ phụ trách')} (Có quyền chỉnh sửa)</span>
           <button class="auth-pill-btn" onclick="logoutGate()" title="Đăng xuất">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+            <i data-lucide="log-out" class="lucide-sm"></i> Đăng xuất
           </button>
         </div>
       </div>
@@ -1046,10 +1047,10 @@ async function renderPlant(plant, isEditable) {
     authBarHtml = `
       <div class="auth-status-wrap">
         <div class="auth-status-pill auth-readonly">
-          <i class="fa-solid fa-eye" style="color: #059669;"></i>
+          <i data-lucide="eye" class="lucide-sm" style="color: #059669;"></i>
           <span>Chế độ xem chi tiết canh tác (Chỉ xem dữ liệu — Không chỉnh sửa)</span>
           <button class="auth-pill-btn primary" onclick="showAuthGateView()">
-            <i class="fa-solid fa-lock"></i> Đăng nhập quản lý
+            <i data-lucide="lock" class="lucide-sm"></i> Đăng nhập quản lý
           </button>
         </div>
       </div>
@@ -1077,28 +1078,28 @@ async function renderPlant(plant, isEditable) {
           </div>
           
           <div class="badges-row">
-            <span class="badge badge-info"><i class="fa-solid fa-tag"></i> ${esc(plant.plant_type)}</span>
+            <span class="badge badge-info"><i data-lucide="tag" class="lucide-sm"></i> ${esc(plant.plant_type)}</span>
             ${isEditable
-              ? `<span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`
-              : `<span class="badge ${healthClass}" style="cursor:default;" title="Chế độ chỉ xem — Không thể can thiệp"><i class="fa-solid fa-heart-pulse"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`}
-            ${plant.nfc_uid ? `<span class="badge badge-info"><i class="fa-solid fa-rss"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
+              ? `<span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i data-lucide="activity" class="lucide-sm"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`
+              : `<span class="badge ${healthClass}" style="cursor:default;" title="Chế độ chỉ xem — Không thể can thiệp"><i data-lucide="activity" class="lucide-sm"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`}
+            ${plant.nfc_uid ? `<span class="badge badge-info"><i data-lucide="radio" class="lucide-sm"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
           </div>
           
           <div class="info-grid">
             <div class="info-tile">
-              <span class="label"><i class="fa-solid fa-seedling" style="color: var(--green-bright); margin-right: 6px;"></i>Giống cây</span>
+              <span class="label"><i data-lucide="sprout" class="lucide-sm" style="color: var(--green-bright); margin-right: 6px;"></i>Giống cây</span>
               <span class="value">${esc(plant.plant_variety || 'Tiêu chuẩn')}</span>
             </div>
             <div class="info-tile">
-              <span class="label"><i class="fa-solid fa-calendar-days" style="color: var(--green-bright); margin-right: 6px;"></i>Ngày trồng</span>
+              <span class="label"><i data-lucide="calendar-days" class="lucide-sm" style="color: var(--green-bright); margin-right: 6px;"></i>Ngày trồng</span>
               <span class="value">${plantDateFormatted}</span>
             </div>
             <div class="info-tile">
-              <span class="label"><i class="fa-solid fa-location-dot" style="color: var(--green-bright); margin-right: 6px;"></i>Trang trại</span>
+              <span class="label"><i data-lucide="map-pin" class="lucide-sm" style="color: var(--green-bright); margin-right: 6px;"></i>Trang trại</span>
               <span class="value">${esc(plant.farm_name || 'Vườn nhà')}</span>
             </div>
             <div class="info-tile">
-              <span class="label"><i class="fa-solid fa-chart-line" style="color: var(--green-bright); margin-right: 6px;"></i>Hoạt động</span>
+              <span class="label"><i data-lucide="trending-up" class="lucide-sm" style="color: var(--green-bright); margin-right: 6px;"></i>Hoạt động</span>
               <span class="value">${logs.length} nhật ký &nbsp;•&nbsp; ${media.length} hình ảnh</span>
             </div>
           </div>
@@ -1113,11 +1114,11 @@ async function renderPlant(plant, isEditable) {
         ${hasMap ? `
         <!-- Location Map Card -->
         <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-map-location-dot" style="color: var(--green-bright)"></i> Vị trí trên bản đồ</h2>
+          <h2 class="sec-title"><i data-lucide="map" class="lucide-sm" style="color: var(--green-bright)"></i> Vị trí trên bản đồ</h2>
           <div class="plant-map-container" style="position:relative; width:100%; height:280px; border-radius:12px; overflow:hidden;">
             <div id="plant-location-map" style="width:100%;height:100%;"></div>
-            ${plant.farm_name ? `<div class="map-farm-badge" style="position:absolute; bottom:12px; left:12px; z-index:5; background:rgba(7,25,16,0.85); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:12px; color:#fff; border:1px solid rgba(255,255,255,0.1);"><i class="fa fa-seedling" style="color:var(--green-bright)"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
-            ${(!plant.latitude || !plant.longitude) ? `<div class="map-no-gps-badge" style="position:absolute; top:12px; left:12px; z-index:5; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:11.5px; color:#fde047; border:1px solid rgba(253,224,71,0.3);"><i class="fa-solid fa-circle-info"></i> Vị trí trang trại · Cây chưa có định vị GPS</div>` : ''}
+            ${plant.farm_name ? `<div class="map-farm-badge" style="position:absolute; bottom:12px; left:12px; z-index:5; background:rgba(7,25,16,0.85); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:12px; color:#fff; border:1px solid rgba(255,255,255,0.1);"><i data-lucide="sprout" class="lucide-sm" style="color:var(--green-bright)"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
+            ${(!plant.latitude || !plant.longitude) ? `<div class="map-no-gps-badge" style="position:absolute; top:12px; left:12px; z-index:5; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:11.5px; color:#fde047; border:1px solid rgba(253,224,71,0.3);"><i data-lucide="info" class="lucide-sm"></i> Vị trí trang trại · Cây chưa có định vị GPS</div>` : ''}
           </div>
         </div>
         ` : ''}
@@ -1125,7 +1126,7 @@ async function renderPlant(plant, isEditable) {
         <!-- Timeline Diary Card -->
         <div class="glass-panel glass-card">
           <h2 class="sec-title" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-            <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--green-bright)"></i> Nhật ký chăm sóc cây</span>
+            <span><i data-lucide="history" class="lucide-sm" style="color: var(--green-bright)"></i> Nhật ký chăm sóc cây</span>
             <span style="font-size:11px; font-weight:600; color:var(--text-secondary); background:rgba(255,255,255,0.05); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
               Tổng ${window._publicLogDates.length} ngày canh tác
             </span>
@@ -1146,37 +1147,37 @@ async function renderPlant(plant, isEditable) {
         ${isEditable ? `
         <!-- Care Actions (Quick Log Buttons) -->
         <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-heart-pulse" style="color: var(--green-bright)"></i> Ghi nhật ký nhanh</h2>
+          <h2 class="sec-title"><i data-lucide="activity" class="lucide-sm" style="color: var(--green-bright)"></i> Ghi nhật ký nhanh</h2>
           <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4;">
             Chọn quy trình chăm sóc bên dưới để điền thông tin nhanh.
           </p>
           <div class="care-actions-grid">
             <button class="care-btn care-btn-water" onclick="openModal('modal-water')">
-              <i class="fa-solid fa-droplet" style="color: var(--color-water)"></i>
+              <i data-lucide="droplet" class="lucide-sm" style="color: var(--color-water)"></i>
               <span>Tưới nước</span>
             </button>
             <button class="care-btn care-btn-fertilize" onclick="openModal('modal-fertilize')">
-              <i class="fa-solid fa-leaf" style="color: var(--color-fertilize)"></i>
+              <i data-lucide="leaf" class="lucide-sm" style="color: var(--color-fertilize)"></i>
               <span>Bón phân</span>
             </button>
             <button class="care-btn care-btn-pesticide" onclick="openModal('modal-pesticide')">
-              <i class="fa-solid fa-flask" style="color: var(--color-pesticide)"></i>
+              <i data-lucide="flask-conical" class="lucide-sm" style="color: var(--color-pesticide)"></i>
               <span>Phun thuốc</span>
             </button>
             <button class="care-btn care-btn-leaf" onclick="openModal('modal-leaf')">
-              <i class="fa-solid fa-scissors" style="color: var(--color-leaf)"></i>
+              <i data-lucide="scissors" class="lucide-sm" style="color: var(--color-leaf)"></i>
               <span>Cắt cành/lá</span>
             </button>
             <button class="care-btn care-btn-flower" onclick="openModal('modal-flower')">
-              <i class="fa-solid fa-spa" style="color: var(--color-flower)"></i>
+              <i data-lucide="flower" class="lucide-sm" style="color: var(--color-flower)"></i>
               <span>Tỉa hoa/quả</span>
             </button>
             <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
-              <i class="fa-solid fa-virus" style="color: var(--color-disease)"></i>
+              <i data-lucide="shield-alert" class="lucide-sm" style="color: var(--color-disease)"></i>
               <span>Bệnh cây</span>
             </button>
             <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a;">
-              <i class="fa-solid fa-wheat-awn" style="color: #d97706"></i>
+              <i data-lucide="wheat" class="lucide-sm" style="color: #d97706"></i>
               <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
             </button>
           </div>
@@ -1184,13 +1185,13 @@ async function renderPlant(plant, isEditable) {
         ` : `
         <!-- Read-Only Notice Card -->
         <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-shield-halved" style="color: var(--green-bright)"></i> Nhật ký canh tác cây trồng</h2>
+          <h2 class="sec-title"><i data-lucide="shield-check" class="lucide-sm" style="color: var(--green-bright)"></i> Nhật ký canh tác cây trồng</h2>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 12.5px; color: #475569; line-height: 1.5; margin-bottom: 14px;">
-            <i class="fa-solid fa-circle-info" style="color: #059669; margin-right: 4px;"></i>
+            <i data-lucide="info" class="lucide-sm" style="color: #059669; margin-right: 4px;"></i>
             Bạn đang xem dữ liệu cây ở <strong>Chế độ Chi tiết (Chỉ đọc)</strong>. Toàn bộ lịch sử chăm sóc, phân bón, thuốc BVTV, tưới tiêu và thu hoạch được thể hiện đầy đủ ở cột bên trái.
           </div>
           <button onclick="showAuthGateView()" style="width: 100%; background: #ffffff; border: 1.5px dashed #059669; color: #059669; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='#ffffff';">
-            <i class="fa-solid fa-lock"></i> Đăng nhập nông hộ để cập nhật canh tác
+            <i data-lucide="lock" class="lucide-sm"></i> Đăng nhập nông hộ để cập nhật canh tác
           </button>
         </div>
         `}
@@ -1198,7 +1199,7 @@ async function renderPlant(plant, isEditable) {
         ${media.length ? `
         <!-- Media Gallery Card -->
         <div class="glass-panel glass-card">
-          <h2 class="sec-title"><i class="fa-solid fa-images" style="color: var(--green-bright)"></i> Thư viện hình ảnh</h2>
+          <h2 class="sec-title"><i data-lucide="images" class="lucide-sm" style="color: var(--green-bright)"></i> Thư viện hình ảnh</h2>
           <div class="gallery-grid">
             ${media.map(m => `
               <div class="gallery-thumb" onclick="openLightbox('${esc(m.url)}','${esc(m.media_type)}')">
@@ -1332,7 +1333,7 @@ async function renderPlant(plant, isEditable) {
         el.className = 'plant-map-marker';
         el.title = `${plant.plant_type || 'Cây trồng'} - Cây #${treeCodeDisplay}`;
         el.innerHTML = `
-          <i class="fa-solid fa-seedling"></i>
+          <i data-lucide="sprout" class="lucide-sm"></i>
           <span class="plant-tree-badge">${treeCodeDisplay}</span>
         `;
         wrapper.appendChild(el);
@@ -1437,7 +1438,7 @@ async function submitCareLog(event, type, modalId, formId) {
   const form = document.getElementById(formId);
   const submitBtn = form.querySelector('.btn-submit');
   const oldText = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+  submitBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...';
   submitBtn.disabled = true;
 
   // Gather details depending on log type
@@ -1710,7 +1711,7 @@ async function submitDiseaseLog(event) {
 
   const submitBtn = document.getElementById('btn-disease-submit');
   const oldHtml = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải lên...';
+  submitBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải lên...';
   submitBtn.disabled = true;
 
   const diseaseName = document.getElementById('disease-name').value.trim();
@@ -2701,7 +2702,7 @@ function openPublicFarmA4ExportModal(map) {
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     ">
       <div style="display:flex; align-items:center; gap:10px;">
-        <i class="fa-solid fa-drafting-compass" style="font-size:22px; color:#4ade80;"></i>
+        <i data-lucide="compass" class="lucide-sm" style="font-size:22px; color:#4ade80;"></i>
         <div>
           <h3 style="font-size:16px; font-weight:800; margin:0; color:#4ade80;">XUẤT BẢN VẼ KỸ THUẬT TRANG TRẠI A4 NẰM NGANG</h3>
           <p style="font-size:12px; color:#94a3b8; margin:0;">Nhập trực tiếp thông tin hồ sơ | Tỷ lệ 1:1 | Sai số ±3% | Chú giải dải màu đồng mức</p>
@@ -2713,14 +2714,14 @@ function openPublicFarmA4ExportModal(map) {
           border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(59,130,246,0.4);
         ">
-          <i class="fa-solid fa-print"></i> In bản vẽ (Print)
+          <i data-lucide="printer" class="lucide-sm"></i> In bản vẽ (Print)
         </button>
         <button id="btn-download-pdf-a4" style="
           background: #16a34a; color: #fff; border: none; padding: 8px 18px;
           border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(22,163,74,0.4);
         ">
-          <i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)
+          <i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)
         </button>
         <button id="btn-close-a4-modal" style="
           background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 8px 14px;
@@ -2760,17 +2761,17 @@ function openPublicFarmA4ExportModal(map) {
         <div style="flex:1.75; border:1.5px solid #000; position:relative; overflow:hidden; border-radius:4px; display:flex; align-items:center; justify-content:center; background:#e2e8f0;">
           <img src="${mapImageDataUrl}" style="width:100%; height:100%; object-fit:cover;">
           <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.92); padding:4px 10px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.2); display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-compass" style="color:#0f172a;"></i> HƯỚNG BẮC (N)
+            <i data-lucide="compass" class="lucide-sm" style="color:#0f172a;"></i> HƯỚNG BẮC (N)
           </div>
           <div style="position:absolute; bottom:10px; left:10px; background:rgba(15,23,42,0.85); color:#fff; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:700; display:flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-mountain-sun" style="color:#4ade80;"></i> Đường đồng mức interval = ${contourInterval}m
+            <i data-lucide="mountain-snow" class="lucide-sm" style="color:#4ade80;"></i> Đường đồng mức interval = ${contourInterval}m
           </div>
         </div>
 
         <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
           <div style="border:1.5px solid #000; border-radius:4px; padding:8px; background:#f0fdf4;">
             <div style="font-weight:800; font-size:11px; color:#15803d; border-bottom:1px solid #bbf7d0; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-chart-pie"></i> THỐNG KÊ KÍCH THƯỚC TRANG TRẠI
+              <i data-lucide="pie-chart" class="lucide-sm"></i> THỐNG KÊ KÍCH THƯỚC TRANG TRẠI
             </div>
             <table style="width:100%; font-size:10.5px; border-collapse:collapse;">
               <tr>
@@ -2791,7 +2792,7 @@ function openPublicFarmA4ExportModal(map) {
                 <td style="padding:3px 0; text-align:right; font-weight:800; color:#d97706;">${minEle}m — ${maxEle}m (Δ ${maxEle - minEle}m)</td>
               </tr>
               <tr>
-                <td style="padding:3px 0; color:#dc2626; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
+                <td style="padding:3px 0; color:#dc2626; font-weight:700;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Kích thước sai số:</td>
                 <td style="padding:3px 0; text-align:right; font-weight:800; color:#dc2626;">± 3%</td>
               </tr>
             </table>
@@ -2801,7 +2802,7 @@ function openPublicFarmA4ExportModal(map) {
           <div style="border:1.5px solid #000; border-radius:4px; padding:6px 8px; background:#fff;">
             <div style="font-weight:800; font-size:10px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:3px; margin-bottom:5px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between;">
               <span style="display:flex; align-items:center; gap:5px;">
-                <i class="fa-solid fa-palette" style="color:#2563eb;"></i> CHÚ GIẢI DẢI MÀU CAO ĐỘ (${contourInterval}M/BẬC)
+                <i data-lucide="palette" class="lucide-sm" style="color:#2563eb;"></i> CHÚ GIẢI DẢI MÀU CAO ĐỘ (${contourInterval}M/BẬC)
               </span>
               <span style="font-size:9px; color:#15803d; font-weight:700;">⛰️ Nét vẽ CAD</span>
             </div>
@@ -2832,7 +2833,7 @@ function openPublicFarmA4ExportModal(map) {
 
           <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:8px; background:#fff; overflow-y:auto;">
             <div style="font-weight:800; font-size:11px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-ruler-horizontal"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
+              <i data-lucide="ruler" class="lucide-sm"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
             </div>
             <table style="width:100%; font-size:10px; border-collapse:collapse;">
               <thead>
@@ -2855,31 +2856,31 @@ function openPublicFarmA4ExportModal(map) {
           <tr>
             <td style="width:33%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
               <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-house-chimney" style="color:#15803d;"></i> TÊN TRANG TRẠI
+                <i data-lucide="home" class="lucide-sm" style="color:#15803d;"></i> TÊN TRANG TRẠI
               </div>
               <input type="text" id="a4-input-farm-name" class="a4-edit-field" value="${farmName}" style="font-size:12px; font-weight:800; color:#15803d; width:100%; margin-top:2px;">
             </td>
             <td style="width:27%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
               <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-user" style="color:#0f172a;"></i> KHÁCH HÀNG / NÔNG HỘ
+                <i data-lucide="user" class="lucide-sm" style="color:#0f172a;"></i> KHÁCH HÀNG / NÔNG HỘ
               </div>
               <input type="text" id="a4-input-owner-name" class="a4-edit-field" value="${ownerName}" style="font-size:11px; font-weight:700; color:#0f172a; width:100%; margin-top:2px;">
             </td>
             <td style="width:22%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
               <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-user-gear" style="color:#0f172a;"></i> NGƯỜI THỰC HIỆN
+                <i data-lucide="user-cog" class="lucide-sm" style="color:#0f172a;"></i> NGƯỜI THỰC HIỆN
               </div>
               <input type="text" id="a4-input-performer-name" class="a4-edit-field" value="${performerName}" style="font-size:11px; font-weight:700; color:#0f172a; width:100%; margin-top:2px;">
             </td>
             <td style="width:10%; border-right:1.5px solid #000; padding:6px 8px; vertical-align:top;">
               <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-calendar-days" style="color:#64748b;"></i> NGÀY XUẤT
+                <i data-lucide="calendar-days" class="lucide-sm" style="color:#64748b;"></i> NGÀY XUẤT
               </div>
               <div style="font-size:11px; font-weight:700; margin-top:4px;">${exportDate}</div>
             </td>
             <td style="width:8%; padding:6px 8px; vertical-align:top;">
               <div style="font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-ruler-combined" style="color:#2563eb;"></i> TỶ LỆ
+                <i data-lucide="ruler" class="lucide-sm" style="color:#2563eb;"></i> TỶ LỆ
               </div>
               <input type="text" id="a4-input-scale-text" class="a4-edit-field" value="1 : 1" style="font-size:11.5px; font-weight:800; color:#2563eb; width:100%; margin-top:2px;">
             </td>
@@ -2943,7 +2944,7 @@ function openPublicFarmA4ExportModal(map) {
 
   document.getElementById('btn-download-pdf-a4').onclick = async () => {
     const btn = document.getElementById('btn-download-pdf-a4');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo PDF...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tạo PDF...';
     btn.disabled = true;
 
     preparePrintMode();
@@ -2962,18 +2963,18 @@ function openPublicFarmA4ExportModal(map) {
 
       html2pdfLib().set(opt).from(element).save().then(() => {
         cleanupPrintMode();
-        btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)';
+        btn.innerHTML = '<i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)';
         btn.disabled = false;
       }).catch(err => {
         console.error('Lỗi xuất PDF:', err);
         cleanupPrintMode();
-        btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)';
+        btn.innerHTML = '<i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)';
         btn.disabled = false;
         document.getElementById('btn-do-print-a4').click();
       });
     } else {
       cleanupPrintMode();
-      btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)';
+      btn.innerHTML = '<i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)';
       btn.disabled = false;
       document.getElementById('btn-do-print-a4').click();
     }

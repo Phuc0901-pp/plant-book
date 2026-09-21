@@ -60,8 +60,8 @@ function _renderCurrentNfcPlant() {
   _setEl('nfc-nav-tree-info', `Cây #${treeCode}${plantObj.plant_type ? ` · ${plantObj.plant_type}` : ''} (${currentNum}/${total})`);
 
   const uidBadge = currentNfcUid
-    ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i class="fa-solid fa-tag"></i> ${currentNfcUid}</span>`
-    : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
+    ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i data-lucide="tag" class="lucide-sm"></i> ${currentNfcUid}</span>`
+    : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i data-lucide="unlink" class="lucide-sm"></i> Chưa gắn thẻ</span>`;
   _setEl('nfc-modal-current-uid', uidBadge, true);
 
   // Render 3-segment Public Plant URL: https://domain.com/<farm_id>/<plant_id>/<nfc_uid>
@@ -132,7 +132,7 @@ function _updateGpsDisplay(plant) {
 
   const gpsBtn = document.getElementById('btn-nfc-get-gps');
   if (gpsBtn) {
-    gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy & Lưu GPS';
+    gpsBtn.innerHTML = '<i data-lucide="crosshair" class="lucide-sm" style="color: #059669;"></i> Lấy & Lưu GPS';
     gpsBtn.disabled = false;
   }
 }
@@ -303,7 +303,7 @@ export function getNfcCurrentGps() {
 
   const btn = document.getElementById('btn-nfc-get-gps');
   if (btn) {
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lấy GPS...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lấy GPS...';
     btn.disabled = true;
   }
   navigator.geolocation.getCurrentPosition(
@@ -343,7 +343,7 @@ export function getNfcCurrentGps() {
         toast('Lỗi lưu GPS: ' + (saveErr.message || 'Không thể lưu lên máy chủ.'), 'error');
       } finally {
         if (btn) {
-          btn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color:#059669;"></i> Lấy & Lưu GPS';
+          btn.innerHTML = '<i data-lucide="crosshair" class="lucide-sm" style="color:#059669;"></i> Lấy & Lưu GPS';
           btn.disabled = false;
         }
       }
@@ -352,7 +352,7 @@ export function getNfcCurrentGps() {
       console.warn('Geolocation error:', err);
       toast('Không thể lấy tọa độ GPS: ' + (err.message || 'Vui lòng cấp quyền vị trí trên điện thoại.'), 'error');
       if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color:#059669;"></i> Thử lại GPS';
+        btn.innerHTML = '<i data-lucide="crosshair" class="lucide-sm" style="color:#059669;"></i> Thử lại GPS';
         btn.disabled = false;
       }
     },
@@ -409,7 +409,7 @@ export async function saveNfcLocationManually() {
 
   const saveBtn = document.getElementById('btn-nfc-save-loc');
   if (saveBtn) {
-    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+    saveBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...';
     saveBtn.disabled = true;
   }
 
@@ -472,7 +472,7 @@ export async function saveNfcLocationManually() {
     toast('Lỗi lưu vị trí: ' + (err.message || 'Không thể lưu lên máy chủ.'), 'error');
   } finally {
     if (saveBtn) {
-      saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Vị Trí';
+      saveBtn.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu Vị Trí';
       saveBtn.disabled = false;
     }
   }
@@ -510,14 +510,14 @@ async function _saveUid(uid) {
     _capturedGps = null;
     const gpsBtn = document.getElementById('btn-nfc-get-gps');
     if (gpsBtn) {
-      gpsBtn.innerHTML = '<i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Lấy GPS hiện tại';
+      gpsBtn.innerHTML = '<i data-lucide="crosshair" class="lucide-sm" style="color: #059669;"></i> Lấy GPS hiện tại';
       gpsBtn.disabled = false;
     }
 
     // Update modal UI live
     const uidBadge = uid
-      ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i class="fa-solid fa-tag"></i> ${uid}</span>`
-      : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i class="fa-solid fa-link-slash"></i> Chưa gắn thẻ</span>`;
+      ? `<span class="badge badge-green" style="font-size:12px; padding:4px 8px; font-weight:700;"><i data-lucide="tag" class="lucide-sm"></i> ${uid}</span>`
+      : `<span class="badge badge-gray" style="font-size:12px; padding:4px 8px;"><i data-lucide="unlink" class="lucide-sm"></i> Chưa gắn thẻ</span>`;
     _setEl('nfc-modal-current-uid', uidBadge, true);
 
     const fullPlantUrl = _buildHierarchicalPlantUrl(_currentPlant.farm_id, _currentPlant.id, uid);
@@ -565,21 +565,28 @@ function _setNfcStatus(status, uid = '') {
   if (!iconEl || !labelEl) return;
 
   const states = {
-    idle:             { icon: 'fa-wifi',          color: '#6b7280', spin: false, label: 'Nhấn "Bắt đầu quét" để chạm thẻ', btnText: '<i class="fa-solid fa-rss"></i> Bắt đầu quét NFC' },
-    scanning:         { icon: 'fa-circle-notch',  color: '#3b82f6', spin: true,  label: 'Đang chờ... Chạm điện thoại vào thẻ NFC', btnText: '<i class="fa-solid fa-stop"></i> Dừng quét' },
-    detected:         { icon: 'fa-circle-check',  color: '#22c55e', spin: false, label: `Đã phát hiện thẻ: ${uid}`, btnText: '<i class="fa-solid fa-rss"></i> Quét lại' },
-    error:            { icon: 'fa-circle-xmark',  color: '#ef4444', spin: false, label: 'Không đọc được thẻ. Vui lòng nhập mã thủ công bên dưới.', btnText: '<i class="fa-solid fa-rss"></i> Thử lại' },
-    unsupported:      { icon: 'fa-desktop', color: '#f59e0b', spin: false, label: 'Trình duyệt chưa hỗ trợ Web NFC trên máy tính (Web NFC hoạt động trên Chrome Android HTTPS). Vui lòng nhập mã UID thủ công bên dưới hoặc dùng Mobile App.', btnText: null },
-    permission_denied:{ icon: 'fa-lock',          color: '#ef4444', spin: false, label: 'Quyền NFC bị từ chối. Kiểm tra cài đặt trình duyệt.', btnText: '<i class="fa-solid fa-rss"></i> Thử lại' }
+    idle:             { icon: 'wifi',          color: '#6b7280', spin: false, label: 'Nhấn "Bắt đầu quét" để chạm thẻ', btnText: '<i data-lucide="radio" class="lucide-sm"></i> Bắt đầu quét NFC' },
+    scanning:         { icon: 'loader-2',      color: '#3b82f6', spin: true,  label: 'Đang chờ... Chạm điện thoại vào thẻ NFC', btnText: '<i data-lucide="square" class="lucide-sm"></i> Dừng quét' },
+    detected:         { icon: 'check-circle-2',color: '#22c55e', spin: false, label: `Đã phát hiện thẻ: ${uid}`, btnText: '<i data-lucide="radio" class="lucide-sm"></i> Quét lại' },
+    error:            { icon: 'x-circle',      color: '#ef4444', spin: false, label: 'Không đọc được thẻ. Vui lòng nhập mã thủ công bên dưới.', btnText: '<i data-lucide="radio" class="lucide-sm"></i> Thử lại' },
+    unsupported:      { icon: 'monitor',       color: '#f59e0b', spin: false, label: 'Trình duyệt chưa hỗ trợ Web NFC trên máy tính (Web NFC hoạt động trên Chrome Android HTTPS). Vui lòng nhập mã UID thủ công bên dưới hoặc dùng Mobile App.', btnText: null },
+    permission_denied:{ icon: 'lock',          color: '#ef4444', spin: false, label: 'Quyền NFC bị từ chối. Kiểm tra cài đặt trình duyệt.', btnText: '<i data-lucide="radio" class="lucide-sm"></i> Thử lại' }
   };
 
   const s = states[status] || states.idle;
-  iconEl.className   = `fa-solid ${s.icon}${s.spin ? ' fa-spin' : ''}`;
+  iconEl.setAttribute('data-lucide', s.icon);
+  if (s.spin) iconEl.classList.add('lucide-spin');
+  else iconEl.classList.remove('lucide-spin');
   iconEl.style.color = s.color;
   labelEl.textContent = s.label;
+  if (window.lucide) lucide.createIcons({ targets: [iconEl.parentElement || iconEl] });
 
   if (startBtn) {
     if (s.btnText === null) { startBtn.style.display = 'none'; }
-    else { startBtn.style.display = 'flex'; startBtn.innerHTML = s.btnText; }
+    else {
+      startBtn.style.display = 'flex';
+      startBtn.innerHTML = s.btnText;
+      if (window.lucide) lucide.createIcons({ targets: [startBtn] });
+    }
   }
 }

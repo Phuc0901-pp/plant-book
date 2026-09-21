@@ -1,4 +1,4 @@
-// ── Dashboard (SAP Fiori Horizon Enterprise Operations Cockpit) ───────
+﻿// ── Dashboard (SAP Fiori Horizon Enterprise Operations Cockpit) ───────
 
 let dashboardClockInterval = null;
 
@@ -169,7 +169,7 @@ function renderDashboardRegionBreakdown(farms, plants) {
     html += `
       <div class="fiori-breakdown-row">
         <div class="fiori-breakdown-header">
-          <span><i class="fa-solid fa-location-dot" style="color:${color}; font-size:11px; margin-right:4px;"></i> ${esc(r.name)}</span>
+          <span><i data-lucide="map-pin" class="lucide-sm" style="color:${color}; font-size:11px; margin-right:4px;"></i> ${esc(r.name)}</span>
           <span class="fiori-breakdown-val">${r.farmCount} vườn (${pct}%)</span>
         </div>
         <div class="fiori-progress-track">
@@ -221,7 +221,7 @@ function renderDashboardVarietyBreakdown(plants, schemas) {
     html += `
       <div class="fiori-breakdown-row">
         <div class="fiori-breakdown-header">
-          <span><i class="fa-solid fa-seedling" style="color:${color}; font-size:11px; margin-right:4px;"></i> ${esc(v.name)}</span>
+          <span><i data-lucide="sprout" class="lucide-sm" style="color:${color}; font-size:11px; margin-right:4px;"></i> ${esc(v.name)}</span>
           <span class="fiori-breakdown-val">${v.count} cây (${pct}%)</span>
         </div>
         <div class="fiori-progress-track">
@@ -350,7 +350,7 @@ function renderDashboardLogsTable(logs) {
   });
 
   if (!filteredLogs.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa fa-list-check"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i data-lucide="clipboard-check" class="lucide-sm"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></div></td></tr>';
     return;
   }
 
@@ -361,7 +361,7 @@ function renderDashboardLogsTable(logs) {
     html += `
       <tr style="border-bottom: 1px solid var(--gray-200);">
         <td style="vertical-align: top; width: 140px; padding: 12px 10px;">
-          <div style="font-size: 14px; font-weight: 700; color: #1e293b;"><i class="fa-regular fa-calendar-days" style="color:var(--green)"></i> ${day.dateStr}</div>
+          <div style="font-size: 14px; font-weight: 700; color: #1e293b;"><i data-lucide="calendar-days" class="lucide-sm" style="color:var(--green)"></i> ${day.dateStr}</div>
           <div style="font-size: 11px; font-weight: 700; color: var(--green); margin-top: 2px;">${day.dateTag}</div>
           <small style="color: var(--gray-400); font-size: 11px; display: block; margin-top: 4px;">${day.totalActivities} hoạt động</small>
         </td>
@@ -398,11 +398,11 @@ function renderDashboardLogsTable(logs) {
                   <div style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border: 1px solid #fca5a5; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 12px; gap: 10px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                       <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:700; box-shadow:0 2px 6px rgba(220,38,38,0.3); font-size:11px;">🐛 Bệnh cây</span>
-                      <strong style="color:#dc2626; font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(l.targetDisplay)}</strong>
+                      <strong style="color:#dc2626; font-size:13px;"><i data-lucide="alert-triangle" class="lucide-sm"></i> ${esc(l.targetDisplay)}</strong>
                       ${detailsStr ? `<span style="font-size:12px; color:#7f1d1d; font-weight:600;">[${detailsStr}]</span>` : ''}
                     </div>
                     <div style="display:flex; align-items:center; gap:8px;">
-                      <span class="badge" style="background:#fee2e2; color:#991b1b; font-weight:700; font-size:11px; padding:3px 8px;"><i class="fa-solid fa-user"></i> ${farmerName}</span>
+                      <span class="badge" style="background:#fee2e2; color:#991b1b; font-weight:700; font-size:11px; padding:3px 8px;"><i data-lucide="user" class="lucide-sm"></i> ${farmerName}</span>
                     </div>
                   </div>
                 `;
@@ -415,7 +415,7 @@ function renderDashboardLogsTable(logs) {
                       ${detailsStr ? `<span style="font-size:12px; color:#475569; background:#f8fafc; padding:2px 8px; border-radius:6px; border:1px solid #e2e8f0;">[${detailsStr}]</span>` : ''}
                     </div>
                     <div style="display:flex; align-items:center; gap:8px;">
-                      <span class="badge" style="background:#e0e7ff; color:#3730a3; font-weight:600; font-size:11px; padding:3px 8px;"><i class="fa-solid fa-user"></i> ${farmerName}</span>
+                      <span class="badge" style="background:#e0e7ff; color:#3730a3; font-weight:600; font-size:11px; padding:3px 8px;"><i data-lucide="user" class="lucide-sm"></i> ${farmerName}</span>
                     </div>
                   </div>
                 `;

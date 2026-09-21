@@ -118,6 +118,13 @@
     width: 0.75em;
     height: 0.75em;
   }
+  .lucide-spin {
+    animation: lucide-spin 1s linear infinite;
+  }
+  @keyframes lucide-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 /* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
 #register-modal .modal, #forgot-modal .modal {
   background: #ffffff !important;
@@ -368,7 +375,7 @@
 
     <!-- NFC badge -->
     <div class="hero-nfc-badge">
-      <i class="fa-solid fa-wifi"></i>
+      <i data-lucide="wifi" class="lucide-sm"></i>
       <span>NFC Ready</span>
     </div>
 
@@ -388,21 +395,21 @@
       <!-- Floating stats -->
       <div class="login-stats">
         <div class="stat-float">
-          <div class="stat-float-icon"><i class="fa fa-seedling"></i></div>
+          <div class="stat-float-icon"><i data-lucide="sprout" class="lucide-sm"></i></div>
           <div>
             <div class="stat-float-val">1,200+</div>
             <div class="stat-float-label">Cây trồng</div>
           </div>
         </div>
         <div class="stat-float">
-          <div class="stat-float-icon"><i class="fa fa-earth-asia"></i></div>
+          <div class="stat-float-icon"><i data-lucide="globe" class="lucide-sm"></i></div>
           <div>
             <div class="stat-float-val">24</div>
             <div class="stat-float-label">Trang trại</div>
           </div>
         </div>
         <div class="stat-float">
-          <div class="stat-float-icon"><i class="fa fa-heart-pulse"></i></div>
+          <div class="stat-float-icon"><i data-lucide="activity" class="lucide-sm"></i></div>
           <div>
             <div class="stat-float-val">98%</div>
             <div class="stat-float-label">Sức khỏe tốt</div>
@@ -431,32 +438,32 @@
       <div class="login-divider"></div>
 
       <div class="login-error" id="login-error">
-        <i class="fa fa-circle-exclamation"></i>
+        <i data-lucide="alert-circle" class="lucide-sm"></i>
         <span id="login-error-text"></span>
       </div>
 
       <form id="admin-login-form" onsubmit="event.preventDefault(); doLogin();">
         <div class="form-group">
-          <label for="login-email"><i class="fa fa-user"></i> Email hoặc Số điện thoại</label>
+          <label for="login-email"><i data-lucide="user" class="lucide-sm"></i> Email hoặc Số điện thoại</label>
           <input type="text" id="login-email" placeholder="Email hoặc Số điện thoại (VD: 0901234567)" autocomplete="username">
         </div>
         <div class="form-group">
           <div class="form-label-row">
-            <label for="login-pass" style="margin-bottom:0;"><i class="fa fa-lock"></i> Mật khẩu</label>
+            <label for="login-pass" style="margin-bottom:0;"><i data-lucide="lock" class="lucide-sm"></i> Mật khẩu</label>
             <a href="javascript:void(0)" class="forgot-link" onclick="openForgotPasswordModal()">
-              <i class="fa-solid fa-key" style="font-size:10px;"></i> Quên mật khẩu?
+              <i data-lucide="key" class="lucide-sm" style="font-size:10px;"></i> Quên mật khẩu?
             </a>
           </div>
           <div class="password-input-wrap">
             <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
             <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu" tabindex="-1">
-              <i id="toggle-pass-icon" class="fa fa-eye"></i>
+              <i id="toggle-pass-icon" data-lucide="eye" class="lucide-sm"></i>
             </button>
           </div>
         </div>
 
         <button type="submit" class="btn-login" id="login-btn">
-          <span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>
+          <span id="login-btn-text"><i data-lucide="log-in" class="lucide-sm"></i> Đăng nhập</span>
           <span class="btn-login-shimmer" aria-hidden="true"></span>
         </button>
       </form>
@@ -465,12 +472,12 @@
       <div style="text-align:center; margin-top:16px;">
         <span style="font-size:13px; color:var(--text-muted);">Chưa có tài khoản Nông hộ?</span>
         <a href="javascript:void(0)" onclick="openRegisterModal()" style="font-size:13px; font-weight:700; color:var(--green); margin-left:6px; text-decoration:none;">
-          <i class="fa-solid fa-user-plus"></i> Đăng ký ngay
+          <i data-lucide="user-plus" class="lucide-sm"></i> Đăng ký ngay
         </a>
       </div>
 
       <div class="login-footer-note">
-        <i class="fa-solid fa-shield-halved" style="color:#22c55e;"></i>
+        <i data-lucide="shield-check" class="lucide-sm" style="color:#22c55e;"></i>
         Kết nối bảo mật SSL/TLS &nbsp;·&nbsp; Tanbao AgTech © 2026
       </div>
     </div>
@@ -482,7 +489,7 @@
 <div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgotPasswordModal()">
   <div class="modal" style="max-width:440px; width:92%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 20px; color:#fff; flex-shrink:0;">
-      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i class="fa-solid fa-key" style="color:#6ee7b7"></i> Yêu cầu cấp lại mật khẩu</h2>
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i data-lucide="key" class="lucide-sm" style="color:#6ee7b7"></i> Yêu cầu cấp lại mật khẩu</h2>
       <button class="modal-close" onclick="closeForgotPasswordModal()" style="color:#fff; opacity:0.9; font-size:22px;">×</button>
     </div>
     <div class="modal-body" style="padding:20px; background:#ffffff; overflow-y:auto; flex:1 1 auto; max-height:calc(90vh - 130px); max-height:calc(90dvh - 130px); -webkit-overflow-scrolling:touch;">
@@ -490,22 +497,22 @@
         Vui lòng nhập Email hoặc Số điện thoại đăng ký. Yêu cầu sẽ được gửi tới Quản trị viên phê duyệt và gửi mật khẩu mới về email của bạn.
       </p>
       <div class="login-error" id="forgot-error" style="display:none; margin-bottom:14px;">
-        <i class="fa fa-circle-exclamation"></i>
+        <i data-lucide="alert-circle" class="lucide-sm"></i>
         <span id="forgot-error-text"></span>
       </div>
       <div class="form-group" style="margin-bottom:14px;">
-        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-user" style="color:#059669"></i> Email hoặc Số điện thoại *</label>
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="user" class="lucide-sm" style="color:#059669"></i> Email hoặc Số điện thoại *</label>
         <input type="text" id="forgot-identity" placeholder="email@tanbaocorp.vn hoặc 0901234567" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600;">
       </div>
       <div class="form-group">
-        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-note-sticky" style="color:#059669"></i> Ghi chú thêm (Không bắt buộc)</label>
+        <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="sticky-note" class="lucide-sm" style="color:#059669"></i> Ghi chú thêm (Không bắt buộc)</label>
         <textarea id="forgot-note" rows="2" placeholder="Nhập ghi chú chi tiết nếu cần..." style="width:100%; border:2px solid #64748b; border-radius:10px; padding:10px 14px; font-family:inherit; font-size:13px; outline:none; background:#ffffff; color:#0f172a; font-weight:500;"></textarea>
       </div>
     </div>
     <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc; border-top:1px solid #e2e8f0; flex-shrink:0;">
       <button class="btn btn-secondary" onclick="closeForgotPasswordModal()" style="padding:10px 18px; font-weight:600; border-radius:10px;">Hủy</button>
       <button class="btn btn-primary" id="forgot-submit-btn" onclick="submitForgotPasswordRequest()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:10px 22px; font-size:14px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
-        <span id="forgot-submit-text"><i class="fa fa-paper-plane"></i> Gửi yêu cầu</span>
+        <span id="forgot-submit-text"><i data-lucide="send" class="lucide-sm"></i> Gửi yêu cầu</span>
       </button>
     </div>
   </div>
@@ -516,7 +523,7 @@
   <div class="modal" style="max-width:500px; width:92%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); border-bottom:none; padding:16px 20px; color:#ffffff; flex-shrink:0;">
       <h2 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;" id="reg-modal-title">
-        <i class="fa-solid fa-user-plus" style="color:#6ee7b7"></i> Đăng ký tài khoản Nông hộ (Bước 1/3)
+        <i data-lucide="user-plus" class="lucide-sm" style="color:#6ee7b7"></i> Đăng ký tài khoản Nông hộ (Bước 1/3)
       </h2>
       <button class="modal-close" onclick="closeRegisterModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
     </div>
@@ -541,7 +548,7 @@
       </div>
 
       <div class="login-error" id="reg-error" style="display:none; margin-bottom:14px;">
-        <i class="fa fa-circle-exclamation"></i>
+        <i data-lucide="alert-circle" class="lucide-sm"></i>
         <span id="reg-error-text"></span>
       </div>
 
@@ -549,15 +556,15 @@
       <!-- BƯỚC 1: TÀI KHOẢN & MẬT KHẨU (BẮT BUỘC) -->
       <div id="reg-step-1">
         <div class="form-group" style="margin-bottom:16px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-phone" style="color:#059669"></i> Số điện thoại đăng ký *</label>
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="phone" class="lucide-sm" style="color:#059669"></i> Số điện thoại đăng ký *</label>
           <input type="tel" id="reg-phone" placeholder="Ví dụ: 0901234567" autocomplete="username" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
         <div class="form-group" style="margin-bottom:16px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-lock" style="color:#059669"></i> Mật khẩu đăng nhập *</label>
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="lock" class="lucide-sm" style="color:#059669"></i> Mật khẩu đăng nhập *</label>
           <input type="password" id="reg-pass" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
         <div class="form-group" style="margin-bottom:6px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-key" style="color:#059669"></i> Xác nhận mật khẩu *</label>
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="key" class="lucide-sm" style="color:#059669"></i> Xác nhận mật khẩu *</label>
           <input type="password" id="reg-pass-confirm" placeholder="Nhập lại mật khẩu" autocomplete="new-password" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
       </div>
@@ -568,12 +575,12 @@
            Các thông tin dưới đây là tùy chọn, giúp Admin hỗ trợ và cấu hình trang trại chuẩn xác hơn.
         </p>
         <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-user" style="color:#059669"></i> Tên người dùng / Tên Nông hộ</label>
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="user" class="lucide-sm" style="color:#059669"></i> Tên người dùng / Tên Nông hộ</label>
           <input type="text" id="reg-name" placeholder="Ví dụ: Nguyễn Văn An" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
         <div style="display:flex; gap:12px; margin-bottom:14px;">
           <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-venus-mars" style="color:#059669"></i> Giới tính</label>
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="users" class="lucide-sm" style="color:#059669"></i> Giới tính</label>
             <select id="reg-gender" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:11px 12px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
               <option value="Nam">Nam</option>
               <option value="Nữ">Nữ</option>
@@ -581,26 +588,26 @@
             </select>
           </div>
           <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-cake-candles" style="color:#059669"></i> Ngày sinh</label>
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="cake" class="lucide-sm" style="color:#059669"></i> Ngày sinh</label>
             <input type="date" id="reg-dob" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:10px 12px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
           </div>
         </div>
         <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-seedling" style="color:#059669"></i> Loại cây đang trồng</label>
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="sprout" class="lucide-sm" style="color:#059669"></i> Loại cây đang trồng</label>
           <input type="text" id="reg-plant-type" placeholder="Ví dụ: Sầu riêng, Cà phê, Cao su..." style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
         <div style="display:flex; gap:12px; margin-bottom:14px;">
           <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-dna" style="color:#059669"></i> Giống cây</label>
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="dna" class="lucide-sm" style="color:#059669"></i> Giống cây</label>
             <input type="text" id="reg-plant-variety" placeholder="Ri6, Monthong..." style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
           </div>
           <div style="flex:1;">
-            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa fa-hourglass-half" style="color:#059669"></i> Tuổi cây (Năm)</label>
+            <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="hourglass" class="lucide-sm" style="color:#059669"></i> Tuổi cây (Năm)</label>
             <input type="number" id="reg-plant-age" placeholder="VD: 5" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
           </div>
         </div>
         <div class="form-group" style="margin-top:14px;">
-          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i class="fa-solid fa-ruler-combined" style="color:#059669"></i> Diện tích vườn (ha)</label>
+          <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;"><i data-lucide="ruler" class="lucide-sm" style="color:#059669"></i> Diện tích vườn (ha)</label>
           <input type="number" id="reg-farm-area" step="0.1" placeholder="Ví dụ: 2.5 ha" style="background:#ffffff; border:2px solid #64748b; border-radius:10px; padding:12px 14px; width:100%; color:#0f172a; font-size:14px; font-weight:600; outline:none;">
         </div>
       </div>
@@ -609,7 +616,7 @@
       <!-- BƯỚC 3: XÁC NHẬN & GỬI YÊU CẦU -->
       <div id="reg-step-3" style="display:none;">
         <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:16px;">
-          <h4 style="font-size:13px; margin:0 0 12px 0; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-clipboard-check" style="color:#059669"></i> Kiểm tra lại thông tin đăng ký</h4>
+          <h4 style="font-size:13px; margin:0 0 12px 0; color:#0f172a; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;"><i data-lucide="clipboard-check" class="lucide-sm" style="color:#059669"></i> Kiểm tra lại thông tin đăng ký</h4>
           <div style="font-size:13px; color:#1e293b; display:flex; flex-direction:column; gap:8px;">
             <div><strong>Số điện thoại:</strong> <span id="review-phone" style="color:#047857; font-weight:700;">—</span></div>
             <div><strong>Tên người dùng:</strong> <span id="review-name" style="font-weight:600;">—</span></div>
@@ -619,16 +626,16 @@
         </div>
 
         <div style="background:#eff6ff; border:1.5px solid #93c5fd; color:#1e40af; padding:12px 14px; border-radius:10px; font-size:12px; line-height:1.5; font-weight:500;">
-          <i class="fa-solid fa-info-circle"></i> <strong>Lưu ý:</strong> Ngay sau khi gửi yêu cầu, tài khoản của bạn sẽ được gửi tới Ban Quản trị. Admin sẽ kiểm tra và kích hoạt tài khoản cho bạn sớm nhất!
+          <i data-lucide="info" class="lucide-sm"></i> <strong>Lưu ý:</strong> Ngay sau khi gửi yêu cầu, tài khoản của bạn sẽ được gửi tới Ban Quản trị. Admin sẽ kiểm tra và kích hoạt tài khoản cho bạn sớm nhất!
         </div>
       </div>
 
     </div>
 
     <div class="modal-footer" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border-top:1px solid #e2e8f0; flex-shrink:0;">
-      <button class="btn btn-secondary" id="reg-prev-btn" onclick="prevRegStep()" style="display:none; padding:10px 18px; font-weight:600; border-radius:10px;"><i class="fa fa-arrow-left"></i> Quay lại</button>
+      <button class="btn btn-secondary" id="reg-prev-btn" onclick="prevRegStep()" style="display:none; padding:10px 18px; font-weight:600; border-radius:10px;"><i data-lucide="arrow-left" class="lucide-sm"></i> Quay lại</button>
       <div style="flex:1;"></div>
-      <button class="btn btn-primary" id="reg-next-btn" onclick="nextRegStep()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:12px 24px; font-size:14px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">Tiếp theo <i class="fa fa-arrow-right"></i></button>
+      <button class="btn btn-primary" id="reg-next-btn" onclick="nextRegStep()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:12px 24px; font-size:14px; font-weight:700; border-radius:10px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">Tiếp theo <i data-lucide="arrow-right" class="lucide-sm"></i></button>
     </div>
   </div>
 </div>
@@ -658,24 +665,24 @@
     <nav>
       <div class="nav-section">Tổng quan &amp; Vận hành</div>
       <div class="nav-item active" onclick="showPage('dashboard')">
-        <i class="fa fa-chart-pie"></i> Tổng quan
+        <i data-lucide="pie-chart" class="lucide-sm"></i> Tổng quan
       </div>
       <div class="nav-section">Quản trị Nông nghiệp &amp; CSDL</div>
       <div class="nav-item" onclick="showPage('database')">
-        <i class="fa-solid fa-database"></i> Cơ sở dữ liệu
+        <i data-lucide="database" class="lucide-sm"></i> Cơ sở dữ liệu
       </div>
       <div class="nav-item" onclick="showPage('ai-training')">
-        <i class="fa-solid fa-brain" style="color:#10b981;"></i> Huấn luyện trí tuệ nhân tạo
+        <i data-lucide="cpu" class="lucide-sm" style="color:#10b981;"></i> Huấn luyện trí tuệ nhân tạo
       </div>
       <div class="nav-section">Hệ thống &amp; Nhân sự</div>
       <div class="nav-item" onclick="showPage('users')">
-        <i class="fa fa-users"></i> Người dùng
+        <i data-lucide="users" class="lucide-sm"></i> Người dùng
       </div>
     </nav>
 
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="logout()">
-        <i class="fa fa-right-from-bracket"></i> Đăng xuất
+        <i data-lucide="log-out" class="lucide-sm"></i> Đăng xuất
       </button>
       <div style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">
         <span style="background:rgba(34,197,94,0.12); color:#16a34a; padding:2px 8px; border-radius:100px; border:1px solid rgba(34,197,94,0.25);">v1.2.8</span> Tân Bảo AgTech Admin
@@ -690,9 +697,9 @@
         <div class="topbar">
       <div style="display:flex;align-items:center;">
         <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none; background:#ffffff; border:1.5px solid #cbd5e1; color:#0f172a; border-radius:8px;">
-          <i class="fa fa-bars"></i>
+          <i data-lucide="menu" class="lucide-sm"></i>
         </button>
-        <h1 id="page-title" style="margin:0;"><i class="fa-solid fa-layer-group" style="color:#059669; font-size:16px;"></i> Dashboard</h1>
+        <h1 id="page-title" style="margin:0;"><i data-lucide="layers" class="lucide-sm" style="color:#059669; font-size:16px;"></i> Dashboard</h1>
       </div>
       <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:10px;"></div>
     </div>
@@ -716,13 +723,13 @@
                   Hệ thống hoạt động bình thường
                 </span>
                 <span style="background:#f8fafc; color:#064e3b; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid #cbd5e1; display:inline-flex; align-items:center; gap:5px;">
-                  <i class="fa-solid fa-satellite-dish" style="color:#059669;"></i> GIS Hub Enterprise <span class="app-version-badge">v1.2.8</span>
+                  <i data-lucide="satellite" class="lucide-sm" style="color:#059669;"></i> GIS Hub Enterprise <span class="app-version-badge">v1.2.8</span>
                 </span>
               </div>
 
               <!-- Main Heading -->
               <h2 class="royal-page-header-title" style="margin:0; font-size:18.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; letter-spacing:-0.2px;">
-                <i class="fa-solid fa-layer-group" style="color:#059669;"></i> Trung Tâm Điều Hành Chuỗi Trang Trại
+                <i data-lucide="layers" class="lucide-sm" style="color:#059669;"></i> Trung Tâm Điều Hành Chuỗi Trang Trại
               </h2>
               <p class="royal-page-header-desc" style="margin:4px 0 0 0; font-size:12.5px; color:#64748b; line-height:1.5;">
                 Giám sát không gian GIS đa giác, định danh tài sản nông hộ, truy xuất nguồn gốc NFC và phân tích rủi ro vận hành thời gian thực.
@@ -735,7 +742,7 @@
               <!-- Live Telemetry Digital Clock Card -->
               <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px; padding:6px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
                 <div style="color:#059669; font-size:16px;">
-                  <i class="fa-regular fa-clock"></i>
+                  <i data-lucide="clock" class="lucide-sm"></i>
                 </div>
                 <div>
                   <div id="dashboard-live-clock" style="font-size:12.5px; font-weight:800; color:#0f172a; font-family:'Segoe UI', Inter, sans-serif; white-space:nowrap;">
@@ -749,7 +756,7 @@
 
               <!-- Refresh Data Button -->
               <button onclick="loadDashboard()" class="btn btn-primary" style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; border:none; padding:8px 16px; border-radius:10px; font-weight:700; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(4,120,87,0.25); cursor:pointer; height:38px;">
-                <i class="fa-solid fa-arrows-rotate"></i> Làm mới dữ liệu
+                <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm mới dữ liệu
               </button>
 
             </div>
@@ -767,7 +774,7 @@
             </div>
             <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farmers">—</div>
             <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-circle-check" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
+              <i data-lucide="check-circle-2" class="lucide-sm" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
             </div>
           </div>
 
@@ -779,7 +786,7 @@
             </div>
             <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farms">—</div>
             <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-draw-polygon" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
+              <i data-lucide="shapes" class="lucide-sm" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
             </div>
           </div>
 
@@ -812,7 +819,7 @@
         <div class="dashboard-status-strip">
           <div class="status-strip-header">
             <div class="status-strip-title">
-              <i class="fa-solid fa-shield-heart" style="color:#059669;"></i>
+              <i data-lucide="shield" class="lucide-sm" style="color:#059669;"></i>
               <span>Trạng Thái Vận Hành &amp; Thiết Bị:</span>
             </div>
             <span class="status-strip-incidents" id="stat-total-incidents">0 sự cố cần theo dõi</span>
@@ -852,12 +859,12 @@
             <!-- Dark Gradient Header -->
             <div class="gis-sidebar-header">
               <button class="gis-back-btn" id="gis-back-btn" style="display:none;" onclick="backToFarmsList()">
-                <i class="fa fa-arrow-left"></i>
+                <i data-lucide="arrow-left" class="lucide-sm"></i>
               </button>
               <h3 id="gis-sidebar-title"><i data-lucide="map" class="lucide-sm"></i> Quản lý Trang trại</h3>
               <div id="gis-header-actions">
                 <button class="btn btn-primary btn-sm" onclick="openFarmForm()">
-                  <i class="fa fa-plus"></i> Thêm mới
+                  <i data-lucide="plus" class="lucide-sm"></i> Thêm mới
                 </button>
               </div>
             </div>
@@ -869,14 +876,14 @@
               <div id="gis-view-list">
                 <div class="gis-section-card" style="animation-delay:0.05s;">
                   <div class="gis-section-label">
-                    <i class="fa-solid fa-filter"></i> Lọc theo Nông hộ
+                    <i data-lucide="filter" class="lucide-sm"></i> Lọc theo Nông hộ
                   </div>
                   <select id="filter-farm-user" onchange="filterFarmsByCustomer()" style="width:100%; padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#f8fafc; color:#0f172a; transition:border-color 0.2s;">
                     <option value="all">Tất cả khách hàng (nông hộ)</option>
                   </select>
                 </div>
                 <div id="farms-list-container">
-                  <div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách trang trại...</div>
+                  <div class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách trang trại...</div>
                 </div>
               </div>
 
@@ -891,7 +898,7 @@
                   <!-- VietGAP Production Unit Code (PUC) & Certification -->
                   <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px; margin-bottom:12px;">
                     <div style="font-size:11.5px; font-weight:800; color:#047857; margin-bottom:6px;">
-                      <i class="fa-solid fa-shield-halved"></i> Thông Tin Chứng Nhận VietGAP:
+                      <i data-lucide="shield-check" class="lucide-sm"></i> Thông Tin Chứng Nhận VietGAP:
                     </div>
                     <div class="field" style="margin-bottom:8px;">
                       <label style="font-size:11px; color:#065f46; font-weight:700;">Mã số Vùng trồng (PUC Code)</label>
@@ -923,17 +930,17 @@
                   <div class="field">
                     <label>Ranh giới bản đồ</label>
                     <div class="alert alert-success" style="padding:8px 12px; margin-bottom:8px; font-size:11px; line-height:1.4;">
-                      <i class="fa fa-circle-info"></i> <strong>Chế độ chỉnh sửa đỉnh:</strong> Kéo các điểm tròn trắng trên đường viền để dời đỉnh, hoặc bấm các nút dưới đây:
+                      <i data-lucide="info" class="lucide-sm"></i> <strong>Chế độ chỉnh sửa đỉnh:</strong> Kéo các điểm tròn trắng trên đường viền để dời đỉnh, hoặc bấm các nút dưới đây:
                     </div>
                     <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
                       <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:85px; font-size:11px; padding:6px 8px; font-weight:700;" onclick="enableDirectSelectMode()" title="Bật chỉnh các điểm neo/đỉnh ranh giới">
-                        <i class="fa-solid fa-arrows-up-down-left-right" style="color:#0284c7;"></i> Chỉnh đỉnh
+                        <i data-lucide="move" class="lucide-sm" style="color:#0284c7;"></i> Chỉnh đỉnh
                       </button>
                       <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:85px; font-size:11px; padding:6px 8px; font-weight:700;" onclick="enableRedrawPolygonMode()" title="Vẽ lại đa giác ranh giới mới">
-                        <i class="fa-solid fa-draw-polygon" style="color:#059669;"></i> Vẽ lại mới
+                        <i data-lucide="shapes" class="lucide-sm" style="color:#059669;"></i> Vẽ lại mới
                       </button>
                       <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:75px; font-size:11px; padding:6px 8px; font-weight:700; color:#dc2626;" onclick="clearDrawnPolygon()" title="Xóa ranh giới đang vẽ">
-                        <i class="fa-solid fa-trash-can"></i> Xóa
+                        <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
                       </button>
                     </div>
                     <div style="font-size:11.5px; color:#475569; margin-bottom:8px;">
@@ -953,47 +960,47 @@
                 <!-- Farm info -->
                 <div class="gis-section-card" style="animation-delay:0.05s;">
                   <p id="farm-details-desc" class="gis-farm-info" style="font-style:italic; min-height:16px;"></p>
-                  <p id="farm-details-area" class="gis-farm-area-badge"><i class="fa-solid fa-chart-area"></i> 0 m²</p>
+                  <p id="farm-details-area" class="gis-farm-area-badge"><i data-lucide="trending-up" class="lucide-sm"></i> 0 m²</p>
                 </div>
 
                 <!-- Thêm cây -->
                 <div class="gis-section-card" style="animation-delay:0.10s;">
                   <div class="gis-section-label" style="color:#047857;">
-                    <i class="fa-solid fa-seedling" style="color:#10b981;"></i> Thêm cây vào trang trại
+                    <i data-lucide="sprout" class="lucide-sm" style="color:#10b981;"></i> Thêm cây vào trang trại
                   </div>
                   <button id="btn-gis-import-mode" class="gis-action-btn gis-btn-green" onclick="toggleGisImportMode()">
-                    <i class="fa-solid fa-map-pin"></i> Import GIS — Chọn vị trí cây
+                    <i data-lucide="map-pin" class="lucide-sm"></i> Import GIS — Chọn vị trí cây
                   </button>
                   <div class="gis-btn-row">
                     <button class="gis-action-btn gis-btn-ghost" onclick="openAddPlantsManual()">
-                      <i class="fa fa-keyboard"></i> Thủ công
+                      <i data-lucide="keyboard" class="lucide-sm"></i> Thủ công
                     </button>
                     <button class="gis-action-btn gis-btn-ghost" onclick="openCsvImportModal()">
-                      <i class="fa fa-file-csv"></i> Import CSV
+                      <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Import CSV
                     </button>
                   </div>
                   <button id="btn-toggle-plant-markers" class="gis-action-btn gis-btn-ghost" style="margin-top:4px;" onclick="togglePlantMarkers()">
-                    <i class="fa-solid fa-eye"></i> Hiện / Ẩn Vị Trí Cây
+                    <i data-lucide="eye" class="lucide-sm"></i> Hiện / Ẩn Vị Trí Cây
                   </button>
                   <button id="btn-clear-farm-gps" class="gis-action-btn gis-btn-ghost" style="margin-top:4px; color:#dc2626; border-color:#fecaca;" onclick="confirmClearFarmPlantsGps()">
-                    <i class="fa-solid fa-location-crosshairs"></i> Xóa Hết Định Vị GPS Cây Trong Vườn
+                    <i data-lucide="crosshair" class="lucide-sm"></i> Xóa Hết Định Vị GPS Cây Trong Vườn
                   </button>
                 </div>
 
                 <!-- Hồ sơ bản vẽ CAD -->
                 <div class="gis-section-card" style="animation-delay:0.15s;">
                   <div class="gis-section-label" style="color:#1d4ed8;">
-                    <i class="fa-solid fa-compass-drafting" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD)
+                    <i data-lucide="compass" class="lucide-sm" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD)
                   </div>
                   <button class="gis-action-btn gis-btn-blue" onclick="openDesignDrawingModal()">
-                    <i class="fa-solid fa-file-import"></i> Import Bản Vẽ Thiết Kế (CAD / Overlay)
+                    <i data-lucide="upload" class="lucide-sm"></i> Import Bản Vẽ Thiết Kế (CAD / Overlay)
                   </button>
                 </div>
 
                 <!-- Danh sách cây -->
                 <div class="gis-section-card" style="animation-delay:0.20s;">
                   <div class="gis-section-label">
-                    <i class="fa-solid fa-tree" style="color:#10b981;"></i>
+                    <i data-lucide="trees" class="lucide-sm" style="color:#10b981;"></i>
                     Cây trồng — <span id="farm-details-plant-count" style="color:#047857;">0</span> cây
                   </div>
                   <div id="farm-details-plants-list" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent;">
@@ -1006,14 +1013,14 @@
 
             <!-- Footer: Sửa / Xóa -->
             <div class="gis-footer-actions" id="gis-detail-footer" style="display:none;">
-              <button class="btn btn-secondary btn-sm" onclick="editFarm()"><i class="fa fa-pen"></i> Sửa</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteFarm()"><i class="fa fa-trash"></i> Xóa</button>
+              <button class="btn btn-secondary btn-sm" onclick="editFarm()"><i data-lucide="edit-3" class="lucide-sm"></i> Sửa</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteFarm()"><i data-lucide="trash-2" class="lucide-sm"></i> Xóa</button>
             </div>
           </div>
           <!-- GIS Map Container -->
           <div class="gis-map-container" style="position: relative;">
             <div id="gis-import-active-banner" style="display:none; position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:12; background:linear-gradient(135deg, #059669, #10b981); color:#fff; padding:10px 18px; border-radius:30px; font-size:12.5px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.4); pointer-events:auto; display:flex; align-items:center; gap:10px;">
-              <span><i class="fa-solid fa-location-crosshairs fa-bounce"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!</span>
+              <span><i data-lucide="crosshair" class="lucide-sm"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!</span>
               <button class="btn btn-sm" style="background:rgba(0,0,0,0.3); border:none; color:#fff; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer;" onclick="toggleGisImportMode(false)">Tắt Chế Độ</button>
             </div>
             <div id="gis-map" class="gis-map"></div>
@@ -1029,10 +1036,10 @@
         <div class="royal-page-header">
           <div style="position:relative; z-index:1;">
             <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
-              <i class="fa-solid fa-database" style="color:#059669;"></i> CSDL Nông Nghiệp & Danh Mục Master Data ERP
+              <i data-lucide="database" class="lucide-sm" style="color:#059669;"></i> CSDL Nông Nghiệp & Danh Mục Master Data ERP
             </div>
             <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:4px 0 0 0; letter-spacing:-0.2px; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-server" style="color:#059669;"></i> Cơ Sở Dữ Liệu Nông Nghiệp &amp; Vận Hành
+              <i data-lucide="server" class="lucide-sm" style="color:#059669;"></i> Cơ Sở Dữ Liệu Nông Nghiệp &amp; Vận Hành
             </h2>
             <p style="margin:3px 0 0 0; font-size:13px; color:#64748b; line-height:1.4;">
               Trung tâm quản trị dữ liệu cây trồng, kho thẻ NFC, cảm biến IoT, quy trình loại cây, vật tư và lưu trữ media.
@@ -1041,7 +1048,7 @@
 
           <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button onclick="if(typeof window.refreshCurrentDatabaseTab==='function')window.refreshCurrentDatabaseTab(); else location.reload();" class="royal-pill-btn">
-              <i class="fa-solid fa-rotate" style="color:#059669;"></i> Tải Lại Dữ Liệu
+              <i data-lucide="refresh-cw" class="lucide-sm" style="color:#059669;"></i> Tải Lại Dữ Liệu
             </button>
           </div>
         </div>
@@ -1049,31 +1056,31 @@
         <!-- 8 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
-            <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
+            <i data-lucide="sprout" class="lucide-sm"></i> Dữ liệu canh tác
           </div>
           <div class="tab" id="db-tab-nfc" onclick="switchDatabaseTab('nfc')">
-            <i class="fa-solid fa-boxes-stacked"></i> Kho Thẻ NFC
+            <i data-lucide="package" class="lucide-sm"></i> Kho Thẻ NFC
           </div>
           <div class="tab" id="db-tab-devices" onclick="switchDatabaseTab('devices')">
-            <i class="fa-solid fa-microchip"></i> Thiết bị IoT &amp; Cảm biến
+            <i data-lucide="cpu" class="lucide-sm"></i> Thiết bị IoT &amp; Cảm biến
           </div>
           <div class="tab" id="db-tab-schemas" onclick="switchDatabaseTab('schemas')">
-            <i class="fa-solid fa-sliders"></i> Cấu hình &amp; Quy trình Loại cây
+            <i data-lucide="sliders" class="lucide-sm"></i> Cấu hình &amp; Quy trình Loại cây
           </div>
           <div class="tab" id="db-tab-supplies" onclick="switchDatabaseTab('supplies')">
-            <i class="fa-solid fa-boxes-packing"></i> Vật tư &amp; Kho
+            <i data-lucide="package" class="lucide-sm"></i> Vật tư &amp; Kho
           </div>
           <div class="tab" id="db-tab-media" onclick="switchDatabaseTab('media')">
-            <i class="fa-solid fa-images"></i> Thư viện media
+            <i data-lucide="images" class="lucide-sm"></i> Thư viện media
           </div>
           <div class="tab" id="db-tab-history" onclick="switchDatabaseTab('history')">
-            <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động
+            <i data-lucide="history" class="lucide-sm"></i> Lịch sử biến động
           </div>
           <div class="tab" id="db-tab-check" onclick="switchDatabaseTab('check')">
-            <i class="fa-solid fa-server"></i> Thanh tra CSDL (Schema &amp; Tables)
+            <i data-lucide="server" class="lucide-sm"></i> Thanh tra CSDL (Schema &amp; Tables)
           </div>
           <div class="tab" id="db-tab-version" onclick="switchDatabaseTab('version')">
-            <i class="fa-solid fa-code-branch"></i> Phiên bản Ứng dụng
+            <i data-lucide="git-branch" class="lucide-sm"></i> Phiên bản Ứng dụng
           </div>
         </div>
 
@@ -1083,7 +1090,7 @@
             <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
               <div>
                 <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#a7f3d0;">
-                  <i class="fa-solid fa-house-chimney-window"></i> CƠ SỞ DỮ LIỆU CANH TÁC & NHẬT KÝ NÔNG NGHIỆP
+                  <i data-lucide="home" class="lucide-sm"></i> CƠ SỞ DỮ LIỆU CANH TÁC & NHẬT KÝ NÔNG NGHIỆP
                 </div>
                 <h2 style="font-size:20px; font-weight:800; margin:6px 0 0 0; color:#ffffff;" id="db-active-farm-title">
                   Vui lòng chọn Trang trại
@@ -1104,7 +1111,7 @@
               <!-- Personnel Pills (Name & Phone only - No Role) -->
               <div class="db-farm-personnel-wrap" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
                 <span style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                  <i class="fa-solid fa-users" style="color:#059669;"></i> Người tham gia:
+                  <i data-lucide="users" class="lucide-sm" style="color:#059669;"></i> Người tham gia:
                 </span>
                 <div id="db-farm-personnel-list" style="display:flex; flex-wrap:wrap; gap:8px;">
                   <!-- Populated dynamically with name & phone pills -->
@@ -1114,13 +1121,13 @@
               <!-- Quick Stats & Actions -->
               <div class="db-farm-actions-grid" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <button class="btn btn-secondary btn-sm" onclick="openNfcInventoryModal()" style="background:#f0fdf4; border:1.5px solid #86efac; color:#166534; font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" title="Quản lý kho thẻ NFC và quét liên tục">
-                  <i class="fa-solid fa-boxes-stacked" style="color:#059669;"></i> Kho Thẻ NFC
+                  <i data-lucide="package" class="lucide-sm" style="color:#059669;"></i> Kho Thẻ NFC
                 </button>
                 <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
-                  <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Đi Vườn Gán Thẻ & GPS
+                  <i data-lucide="map-pin" class="lucide-sm"></i> Đi Vườn Gán Thẻ & GPS
                 </button>
                 <button class="btn btn-primary btn-sm" onclick="openPlantModalForActiveDbFarm()" style="background:#059669; color:#ffffff; border:none; border-radius:8px; font-weight:700; font-size:12.5px; padding:7px 14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
-                  <i class="fa fa-plus"></i> + Thêm Cây Mới
+                  <i data-lucide="plus" class="lucide-sm"></i> + Thêm Cây Mới
                 </button>
                 <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:12px; font-weight:800; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
                    <strong id="db-hero-plants-count">0</strong> cây trồng
@@ -1137,7 +1144,7 @@
               <div style="padding:14px 16px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; flex-direction:column; gap:8px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <h4 style="margin:0; font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                    <i class="fa-solid fa-tree" style="color:#059669;"></i> Danh mục cây trồng
+                    <i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i> Danh mục cây trồng
                   </h4>
                   <span id="db-master-plant-count-badge" class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:800; font-size:11px; padding:2px 8px; border-radius:6px;">0 cây</span>
                 </div>
@@ -1173,7 +1180,7 @@
                   <!-- Chips: Tất cả, Tưới nước, Bón phân, Phun thuốc, Cắt tỉa, Bệnh cây, Thu hoạch -->
                 </div>
                 <button class="btn btn-secondary btn-sm" onclick="exportCultivationPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px;">
-                  <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Hồ sơ
+                  <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Hồ sơ
                 </button>
               </div>
 
@@ -1187,7 +1194,7 @@
 
           <!-- Empty Initial State (Shown when no farm is selected) -->
           <div id="db-farm-empty-placeholder" class="empty-state" style="padding:60px 20px; background:#ffffff; border-radius:16px; border:1.5px solid #e2e8f0; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.02);">
-            <i class="fa-solid fa-house-chimney-window" style="font-size:54px; color:#94a3b8; margin-bottom:16px; display:inline-block;"></i>
+            <i data-lucide="home" class="lucide-sm" style="font-size:54px; color:#94a3b8; margin-bottom:16px; display:inline-block;"></i>
             <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 8px 0;">Vui lòng chọn Trang trại để mở Bảng điều khiển Split-View</h3>
             <p style="font-size:13.5px; color:#64748b; max-width:480px; margin:0 auto; line-height:1.5;">
               Sau khi chọn trang trại, hệ thống sẽ tự động hiển thị danh sách cây trồng (Cột trái) và hồ sơ nhật ký canh tác chi tiết cùng chi phí đầu tư (Cột phải).
@@ -1204,7 +1211,7 @@
     <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
       <div>
         <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#a7f3d0;">
-          <i class="fa-solid fa-boxes-stacked"></i> QUẢN TRỊ KHO THẺ NFC & QUÉT LIÊN TỤC
+          <i data-lucide="package" class="lucide-sm"></i> QUẢN TRỊ KHO THẺ NFC & QUÉT LIÊN TỤC
         </div>
         <h2 style="font-size:20px; font-weight:800; margin:6px 0 0 0; color:#ffffff;" id="db-nfc-active-farm-title">
           Quản lý Kho thẻ NFC Trang trại
@@ -1240,16 +1247,16 @@
            Âm thanh Ding / Bíp
         </label>
         <button id="btn-export-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="exportAdminNfcInventoryCsv()" style="background:#ffffff; color:#047857; border:1.5px solid #10b981; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Xuất toàn bộ danh sách thẻ NFC ra file CSV / Excel">
-          <i class="fa-solid fa-file-csv" style="font-size:14px; color:#059669;"></i>  Xuất File CSV / Excel
+          <i data-lucide="file-spreadsheet" class="lucide-sm" style="font-size:14px; color:#059669;"></i>  Xuất File CSV / Excel
         </button>
         <button id="btn-import-admin-nfc-csv" class="btn btn-secondary btn-sm" onclick="openAdminNfcImportModal()" style="background:#f0fdf4; color:#065f46; border:1.5px solid #059669; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);" title="Import danh sách thẻ NFC">
-          <i class="fa-solid fa-file-import" style="font-size:14px; color:#059669;"></i>  Import CSV / Excel
+          <i data-lucide="upload" class="lucide-sm" style="font-size:14px; color:#059669;"></i>  Import CSV / Excel
         </button>
         <button class="btn btn-secondary btn-sm" onclick="unassignAllAdminNfcTags()" style="background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" title="Gỡ toàn bộ thẻ NFC đã gán cho tất cả cây trong trang trại này">
-          <i class="fa-solid fa-link-slash"></i> Gỡ hết thẻ đã gán
+          <i data-lucide="unlink" class="lucide-sm"></i> Gỡ hết thẻ đã gán
         </button>
         <button class="btn btn-primary btn-sm" onclick="openFieldTaggingModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:8px; font-weight:800; font-size:12px; padding:7px 14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;" title="Chế độ đi vườn gán thẻ thực địa & lưu GPS">
-          <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Đi Vườn Gán Thẻ & GPS
+          <i data-lucide="map-pin" class="lucide-sm"></i> Đi Vườn Gán Thẻ & GPS
         </button>
       </div>
     </div>
@@ -1260,27 +1267,27 @@
     <div class="db-nfc-scan-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <span id="db-nfc-scan-status-pill" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:12px; font-weight:800; padding:5px 14px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-rss"></i> <span id="db-nfc-scan-status-text">Sẵn sàng nhập kho</span>
+          <i data-lucide="radio" class="lucide-sm"></i> <span id="db-nfc-scan-status-text">Sẵn sàng nhập kho</span>
         </span>
         <small style="color:#065f46; font-size:12px; font-weight:600;">
           (Dùng Web NFC trên điện thoại hoặc cắm đầu đọc USB để quẹt thẻ liên tục)
         </small>
       </div>
       <button id="btn-toggle-continuous-nfc-page" onclick="toggleContinuousNfcScanPage()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 20px; font-size:13px; font-weight:800; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3); display:inline-flex; align-items:center; justify-content:center; gap:8px;">
-        <i class="fa-solid fa-play"></i> Bật Quét Thẻ Liên Tục (Web NFC)
+        <i data-lucide="play" class="lucide-sm"></i> Bật Quét Thẻ Liên Tục (Web NFC)
       </button>
     </div>
 
     <!-- Quick Text Input Bar (Keyboard / USB Reader / Manual) -->
     <div class="db-nfc-input-row" style="display:flex; gap:10px;">
       <div style="position:relative; flex:1;">
-        <i class="fa-solid fa-barcode" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#059669; font-size:16px;"></i>
+        <i data-lucide="scan" class="lucide-sm" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#059669; font-size:16px;"></i>
         <input type="text" id="db-nfc-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..." 
                onkeydown="if(event.key==='Enter') handleAdminPageQuickNfcInput(event)"
                style="width:100%; padding:11px 14px 11px 42px; border:1.5px solid #6ee7b7; border-radius:10px; font-size:13px; font-family:monospace; font-weight:700; color:#0f172a; outline:none; background:#ffffff; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
       </div>
       <button onclick="handleAdminPageQuickNfcInputBtn()" class="db-nfc-add-btn" style="background:#047857; color:#ffffff; border:none; padding:11px 20px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 2px 8px rgba(4,120,87,0.25);">
-        <i class="fa-solid fa-plus"></i> Thêm Thẻ Vào Kho
+        <i data-lucide="plus" class="lucide-sm"></i> Thêm Thẻ Vào Kho
       </button>
     </div>
   </div>
@@ -1290,7 +1297,7 @@
     <div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="display:flex; align-items:center; gap:10px;">
         <h3 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-table-list" style="color:#059669;"></i> Danh Sách Thẻ NFC Trong Kho Trang Trại
+          <i data-lucide="table" class="lucide-sm" style="color:#059669;"></i> Danh Sách Thẻ NFC Trong Kho Trang Trại
         </h3>
         <span id="db-nfc-table-count-badge" class="badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:800; font-size:11.5px; padding:3px 10px; border-radius:6px;">0 thẻ</span>
       </div>
@@ -1299,7 +1306,7 @@
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <!-- Search Input -->
         <div style="position:relative;">
-          <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:12px;"></i>
+          <i data-lucide="search" class="lucide-sm" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:12px;"></i>
           <input type="text" id="db-nfc-table-search" placeholder="Lọc mã UID, số cây, loại cây..." oninput="filterAdminNfcTable()" style="padding:7px 12px 7px 30px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; outline:none; background:#ffffff; width:210px;">
         </div>
 
@@ -1325,7 +1332,7 @@
         </select>
 
         <button class="btn btn-secondary btn-sm" onclick="refreshAdminNfcData()" title="Tải lại danh sách kho thẻ" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:#ffffff; border:1.5px solid #cbd5e1; display:inline-flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-rotate"></i> Làm mới
+          <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm mới
         </button>
       </div>
     </div>
@@ -1335,19 +1342,19 @@
         <thead>
           <tr style="background:#f1f5f9; user-select:none;">
             <th onclick="toggleAdminNfcSort('id')" style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:60px; cursor:pointer;" title="Sắp xếp theo STT">
-              STT <span id="sort-icon-id" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+              STT <span id="sort-icon-id" style="font-size:11px; opacity:0.4;"><i data-lucide="arrow-up-down" class="lucide-sm"></i></span>
             </th>
             <th onclick="toggleAdminNfcSort('uid')" style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; cursor:pointer;" title="Sắp xếp theo Mã UID">
-              Mã Thẻ NFC (UID / MAC) <span id="sort-icon-uid" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+              Mã Thẻ NFC (UID / MAC) <span id="sort-icon-uid" style="font-size:11px; opacity:0.4;"><i data-lucide="arrow-up-down" class="lucide-sm"></i></span>
             </th>
             <th onclick="toggleAdminNfcSort('status')" style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:150px; cursor:pointer;" title="Sắp xếp theo Trạng thái">
-              Trạng Thái <span id="sort-icon-status" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+              Trạng Thái <span id="sort-icon-status" style="font-size:11px; opacity:0.4;"><i data-lucide="arrow-up-down" class="lucide-sm"></i></span>
             </th>
             <th onclick="toggleAdminNfcSort('tree')" style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; cursor:pointer;" title="Sắp xếp theo Số thứ tự cây / Vị trí">
-              Cây Đã Gán Thực Địa &amp; Vị Trí (Location/GPS) <span id="sort-icon-tree" style="font-size:11px; opacity:0.4;"><i class="fa-solid fa-sort"></i></span>
+              Cây Đã Gán Thực Địa &amp; Vị Trí (Location/GPS) <span id="sort-icon-tree" style="font-size:11px; opacity:0.4;"><i data-lucide="arrow-up-down" class="lucide-sm"></i></span>
             </th>
             <th onclick="toggleAdminNfcSort('time')" style="padding:12px 14px; text-align:left; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:160px; cursor:pointer;" title="Sắp xếp theo Thời gian nhập">
-              Thời Gian Nhập <span id="sort-icon-time" style="font-size:11px; color:#059669;"><i class="fa-solid fa-sort-down"></i></span>
+              Thời Gian Nhập <span id="sort-icon-time" style="font-size:11px; color:#059669;"><i data-lucide="arrow-down" class="lucide-sm"></i></span>
             </th>
             <th style="padding:12px 14px; text-align:center; border-bottom:2px solid #cbd5e1; color:#334155; font-weight:800; width:80px;">Xóa</th>
           </tr>
@@ -1355,7 +1362,7 @@
         <tbody id="db-nfc-inventory-table-body">
           <tr>
             <td colspan="6" style="text-align:center; padding:50px; color:#94a3b8;">
-              <i class="fa-solid fa-spinner fa-spin" style="font-size:28px;"></i><br><br>Đang tải danh sách kho thẻ NFC...
+              <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size:28px;"></i><br><br>Đang tải danh sách kho thẻ NFC...
             </td>
           </tr>
         </tbody>
@@ -1381,7 +1388,7 @@
           <div class="db-iot-kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
             <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                <i class="fa-solid fa-microchip"></i>
+                <i data-lucide="cpu" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Thiết Bị IoT</div>
@@ -1391,7 +1398,7 @@
 
             <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                <i class="fa-solid fa-signal"></i>
+                <i data-lucide="signal" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:#059669; text-transform:uppercase; letter-spacing:0.04em;">Đang Online (Live)</div>
@@ -1401,7 +1408,7 @@
 
             <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+                <i data-lucide="alert-triangle" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.04em;">Mất Kết Nối</div>
@@ -1411,7 +1418,7 @@
 
             <div class="card stat-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                <i class="fa-solid fa-battery-three-quarters"></i>
+                <i data-lucide="battery-medium" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Pin Đạt Chuẩn (&gt;80%)</div>
@@ -1463,11 +1470,11 @@
                 <!-- Right Action Buttons -->
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" class="db-iot-actions-wrap">
                   <button class="btn btn-secondary btn-sm" onclick="loadDbDevicesTab()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:12px; cursor:pointer;">
-                    <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới
+                    <i data-lucide="refresh-cw" class="lucide-sm" style="color:#059669;"></i> Làm mới
                   </button>
 
                   <button class="btn btn-primary btn-sm" onclick="openDeviceModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:800; background:#059669; border:none; border-radius:8px; padding:8px 14px; font-size:12px; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer;">
-                    <i class="fa fa-plus"></i> + Đăng Ký Thiết Bị Mới
+                    <i data-lucide="plus" class="lucide-sm"></i> + Đăng Ký Thiết Bị Mới
                   </button>
                 </div>
               </div>
@@ -1490,7 +1497,7 @@
                   <div class="iot-weather-hero-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div>
                       <div style="font-size:12px; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-location-dot" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp ·  Live Sensor Station
+                        <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp ·  Live Sensor Station
                       </div>
                       <div style="display:flex; align-items:center; gap:14px; margin-top:6px;">
                         <span style="font-size:42px; font-weight:900; color:#0f172a; line-height:1;">27°C</span>
@@ -1528,7 +1535,7 @@
                 <!-- 7-day Forecast -->
                 <div class="iot-7day-forecast-box" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
                   <div style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; padding-bottom:6px; border-bottom:1px solid #f1f5f9;">
-                    <span><i class="fa-regular fa-calendar-days" style="color:#059669;"></i> DỰ BÁO 7 NGÀY TỚI</span>
+                    <span><i data-lucide="calendar-days" class="lucide-sm" style="color:#059669;"></i> DỰ BÁO 7 NGÀY TỚI</span>
                     <span style="font-size:11px; color:#64748b;">Cập nhật 15:00</span>
                   </div>
                   <div style="display:flex; flex-direction:column; gap:6px;">
@@ -1553,7 +1560,7 @@
             <div id="iot-pane-soil" style="padding:20px; display:none;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:12px;">
                 <div>
-                  <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-layer-group" style="color:#059669;"></i> Cảm biến Đất đa tầng (Multi-Depth Soil Telemetry)</h4>
+                  <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin:0;"><i data-lucide="layers" class="lucide-sm" style="color:#059669;"></i> Cảm biến Đất đa tầng (Multi-Depth Soil Telemetry)</h4>
                   <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Theo dõi pH, Nhiệt độ, Độ ẩm, EC, NPK và Độ mặn theo 3 độ sâu bộ rễ sầu riêng</p>
                 </div>
                 <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:8px;" class="soil-depth-btn-group">
@@ -1569,7 +1576,7 @@
             <div id="iot-pane-ai" style="padding:20px; display:none;">
               <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px; margin-bottom:18px;">
                 <div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:#15803d; margin-bottom:6px;">
-                  <i class="fa-solid fa-robot"></i> KHUYẾN NGHỊ THUẬT TOÁN CANH TÁC AI
+                  <i data-lucide="bot" class="lucide-sm"></i> KHUYẾN NGHỊ THUẬT TOÁN CANH TÁC AI
                 </div>
                 <div style="background:#ffffff; border-radius:8px; padding:12px; border:1px solid #dcfce7; font-size:13px; color:#14532d; line-height:1.6;">
                   • <strong>Độ ẩm đất tầng 20cm hiện tại</strong>: <span style="color:#d97706; font-weight:800;">50%</span> (Đang giảm nhanh dưới mức 60%).<br>
@@ -1597,7 +1604,7 @@
                     </tr>
                   </thead>
                   <tbody id="devices-table">
-                    <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td></tr>
+                    <tr><td colspan="7" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -1612,7 +1619,7 @@
           <div class="schema-kpi-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:20px;">
             <div class="card schema-kpi-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                <i class="fa-solid fa-layer-group"></i>
+                <i data-lucide="layers" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Loại Cây (Schema)</div>
@@ -1622,7 +1629,7 @@
 
             <div class="card schema-kpi-card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                <i class="fa-solid fa-list-check"></i>
+                <i data-lucide="clipboard-check" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:#2563eb; text-transform:uppercase; letter-spacing:0.04em;">Thuộc Tính Tùy Biến</div>
@@ -1632,7 +1639,7 @@
 
             <div class="card schema-kpi-card schema-kpi-card-span" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
               <div style="width:44px; height:44px; border-radius:10px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-                <i class="fa-solid fa-clipboard-list"></i>
+                <i data-lucide="clipboard-list" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.04em;">Quy Trình SOP Canh Tác</div>
@@ -1656,7 +1663,7 @@
               <!-- Top Action Button -->
               <div style="padding:8px 0; flex-shrink:0;" id="schema-top-actions">
                 <button class="btn btn-primary btn-sm" onclick="openSchemaModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; box-shadow:0 1px 2px rgba(5,150,105,0.2); cursor:pointer; white-space:nowrap;">
-                  <i class="fa fa-plus"></i> + Tạo Loại Cây Mới
+                  <i data-lucide="plus" class="lucide-sm"></i> + Tạo Loại Cây Mới
                 </button>
               </div>
             </div>
@@ -1683,7 +1690,7 @@
                   </tr>
                 </thead>
                 <tbody id="schemas-table">
-                  <tr><td colspan="5"><div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách loại cây...</div></td></tr>
+                  <tr><td colspan="5"><div class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách loại cây...</div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -1692,16 +1699,16 @@
             <div class="tab-pane" id="pane-config-care" style="padding:20px; display:none;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                 <div>
-                  <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i class="fa-solid fa-screwdriver-wrench" style="color:#059669"></i> Quy Trình Kỹ Thuật Canh Tác Chuẩn (SOP)</h4>
+                  <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;"><i data-lucide="wrench" class="lucide-sm" style="color:#059669"></i> Quy Trình Kỹ Thuật Canh Tác Chuẩn (SOP)</h4>
                   <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Cấu hình các phương pháp, lý do canh tác mẫu hiển thị trong nhật ký nông hộ</p>
                 </div>
                 <button class="btn btn-primary btn-sm" id="save-care-cfg-btn" onclick="saveCareConfigs()" style="background:#059669; border:none; border-radius:8px; padding:8px 16px; font-weight:800; font-size:12.5px; cursor:pointer;">
-                  <i class="fa fa-floppy-disk"></i> Lưu Cấu Hình SOP
+                  <i data-lucide="save" class="lucide-sm"></i> Lưu Cấu Hình SOP
                 </button>
               </div>
 
               <div class="alert alert-success" style="margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.5; background: #ecfdf5; color: #064e3b; border: 1.5px solid #a7f3d0; display: flex; gap: 8px; align-items: flex-start;">
-                <i class="fa fa-circle-info" style="margin-top: 2px;"></i>
+                <i data-lucide="info" class="lucide-sm" style="margin-top: 2px;"></i>
                 <span>Các cấu hình danh mục dưới đây sẽ hiển thị trực tiếp làm tùy chọn nhanh khi Nông hộ thực hiện ghi nhận nhật ký canh tác hàng ngày. Hãy nhập <strong>mỗi dòng một phương pháp / lý do</strong>.</span>
               </div>
 
@@ -1709,7 +1716,7 @@
                 <!-- Card 1: Tưới nước -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-droplet" style="color:#3b82f6; font-size:18px;"></i>
+                    <i data-lucide="droplet" class="lucide-sm" style="color:#3b82f6; font-size:18px;"></i>
                     <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Tưới nước</h4>
                   </div>
                   <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Phương pháp tưới nước áp dụng tại trang trại (tưới nhỏ giọt, tưới tay...).</p>
@@ -1721,7 +1728,7 @@
                 <!-- Card 2: Bón phân -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-flask" style="color:#8b5cf6; font-size:18px;"></i>
+                    <i data-lucide="flask-conical" class="lucide-sm" style="color:#8b5cf6; font-size:18px;"></i>
                     <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Bón phân</h4>
                   </div>
                   <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Danh mục các loại phân bón hóa học hoặc phân hữu cơ sử dụng cho cây.</p>
@@ -1733,7 +1740,7 @@
                 <!-- Card 3: Phun thuốc -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-shield-virus" style="color:#ef4444; font-size:18px;"></i>
+                    <i data-lucide="shield-alert" class="lucide-sm" style="color:#ef4444; font-size:18px;"></i>
                     <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Phun thuốc</h4>
                   </div>
                   <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Các loại thuốc bảo vệ thực vật, chế phẩm diệt nấm hoặc trừ sâu bệnh.</p>
@@ -1745,7 +1752,7 @@
                 <!-- Card 4: Cắt cành / Cắt lá -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-scissors" style="color:#f59e0b; font-size:18px;"></i>
+                    <i data-lucide="scissors" class="lucide-sm" style="color:#f59e0b; font-size:18px;"></i>
                     <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Cắt cành & Cắt lá</h4>
                   </div>
                   <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Lý do thực hiện tỉa cành tạo tán hoặc loại bỏ các lá bệnh, lá già úa.</p>
@@ -1757,7 +1764,7 @@
                 <!-- Card 5: Tỉa hoa -->
                 <div class="care-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
                   <div class="care-card-header" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <i class="fa-solid fa-seedling" style="color:#10b981; font-size:18px;"></i>
+                    <i data-lucide="sprout" class="lucide-sm" style="color:#10b981; font-size:18px;"></i>
                     <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a;">Tỉa hoa</h4>
                   </div>
                   <p class="care-card-desc" style="font-size:12px; color:#64748b; margin-bottom:10px;">Lý do thực hiện tỉa bớt hoa/nụ còi để tập trung dinh dưỡng nuôi trái.</p>
@@ -1779,7 +1786,7 @@
             <!-- KPI 1: Tổng Mặt Hàng -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-boxes-stacked"></i>
+                <i data-lucide="package" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Mặt Hàng (SKU)</div>
@@ -1790,7 +1797,7 @@
             <!-- KPI 2: Tổng Giá Trị Tồn Kho -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-coins"></i>
+                <i data-lucide="coins" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Giá Trị Tồn Kho</div>
@@ -1801,7 +1808,7 @@
             <!-- KPI 3: Cảnh Báo Sắp Hết Hàng (Low Stock) -->
             <div class="card" onclick="filterSuppliesByChip('low_stock')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc ngay các mặt hàng sắp hết">
               <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+                <i data-lucide="alert-triangle" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Cảnh Báo Tồn Thấp (≤ 5)</div>
@@ -1812,7 +1819,7 @@
             <!-- KPI 4: Phân Loại Danh Mục -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-layer-group"></i>
+                <i data-lucide="layers" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Phân Loại Danh Mục</div>
@@ -1852,11 +1859,11 @@
                 <!-- Right: Action Buttons -->
                 <div class="db-supply-action-btns" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                   <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo
+                    <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Báo Cáo
                   </button>
 
                   <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
-                    <i class="fa fa-plus"></i> + Nhập Vật Tư Mới
+                    <i data-lucide="plus" class="lucide-sm"></i> + Nhập Vật Tư Mới
                   </button>
                 </div>
               </div>
@@ -1871,19 +1878,19 @@
                 <!-- View Mode Switcher -->
                 <div class="db-supply-view-switcher" style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
                   <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
-                    <i class="fa-solid fa-table-list"></i> Bảng ERP
+                    <i data-lucide="table" class="lucide-sm"></i> Bảng ERP
                   </button>
                   <button type="button" id="btn-supply-group-grid" onclick="setSupplyGroupMode('grid')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-grip"></i> Lưới Thẻ
+                    <i data-lucide="grip-vertical" class="lucide-sm"></i> Lưới Thẻ
                   </button>
                   <button type="button" id="btn-supply-group-chart" onclick="setSupplyGroupMode('chart')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-chart-line"></i> Biểu đồ Chi phí
+                    <i data-lucide="trending-up" class="lucide-sm"></i> Biểu đồ Chi phí
                   </button>
                   <button type="button" id="btn-supply-group-cat" onclick="setSupplyGroupMode('category')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-layer-group"></i> Nhóm Loại
+                    <i data-lucide="layers" class="lucide-sm"></i> Nhóm Loại
                   </button>
                   <button type="button" id="btn-supply-group-farm" onclick="setSupplyGroupMode('farm')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-house-chimney-window"></i> Nhóm Trang Trại
+                    <i data-lucide="home" class="lucide-sm"></i> Nhóm Trang Trại
                   </button>
                 </div>
               </div>
@@ -1910,7 +1917,7 @@
                   </tr>
                 </thead>
                 <tbody id="supplies-table-body">
-                  <tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu kho vật tư...</td></tr>
+                  <tr><td colspan="8" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu kho vật tư...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1925,7 +1932,7 @@
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
                 <div>
                   <h4 style="margin:0 0 4px 0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-chart-area" style="color:#059669;"></i> Xu Hướng Chi Phí Tiêu Hao Vật Tư Canh Tác Theo 12 Tháng
+                    <i data-lucide="trending-up" class="lucide-sm" style="color:#059669;"></i> Xu Hướng Chi Phí Tiêu Hao Vật Tư Canh Tác Theo 12 Tháng
                   </h4>
                   <div style="font-size:12.5px; color:#64748b;">Dữ liệu hạch toán thực tế từ nhật ký canh tác và xuất kho vật tư</div>
                 </div>
@@ -1967,13 +1974,13 @@
           <div class="card">
             <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
               <h3 style="display: flex; align-items: center; gap: 8px; margin: 0;">
-                <i class="fa-solid fa-photo-film" style="color:var(--blue)"></i> Thư viện Media & Quản lý Thư mục Trang trại
+                <i data-lucide="film" class="lucide-sm" style="color:var(--blue)"></i> Thư viện Media & Quản lý Thư mục Trang trại
               </h3>
             </div>
             
             <!-- Interactive Breadcrumb Navigation -->
             <div style="padding: 12px 16px; background: #ecfdf5; border-bottom: 1px solid #a7f3d0; font-size: 13px; font-weight: 700; color: #064e3b; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" id="media-breadcrumb-nav">
-              <span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder('root')"><i class="fa-solid fa-folder"></i> Thư viện gốc</span>
+              <span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder('root')"><i data-lucide="folder" class="lucide-sm"></i> Thư viện gốc</span>
             </div>
 
             <!-- Main View Container -->
@@ -1989,7 +1996,7 @@
               </div>
 
               <div id="media-gallery-empty" style="display: none; text-align: center; padding: 40px; color: var(--gray-400);">
-                <i class="fa-regular fa-folder-open" style="font-size: 48px; margin-bottom: 12px; display: block; color:#94a3b8;"></i>
+                <i data-lucide="folder-open" class="lucide-sm" style="font-size: 48px; margin-bottom: 12px; display: block; color:#94a3b8;"></i>
                 Chưa có thư mục hoặc phương tiện nào trong cấp này.
               </div>
             </div>
@@ -2004,7 +2011,7 @@
             <!-- KPI 1: Tổng Sự Kiện Biến Động -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#f0fdf4; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-clock-rotate-left"></i>
+                <i data-lucide="history" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Sự Kiện Biến Động</div>
@@ -2015,7 +2022,7 @@
             <!-- KPI 2: Lượt Cập Nhật (UPDATE) -->
             <div class="card" onclick="filterHistoryByChip('UPDATE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fef3c7; background:#fffdfa; box-shadow:0 2px 10px rgba(217,119,6,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện chỉnh sửa">
               <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-pen-to-square"></i>
+                <i data-lucide="edit" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#b45309; text-transform:uppercase; letter-spacing:0.5px;">Lượt Chỉnh Sửa (UPDATE)</div>
@@ -2026,7 +2033,7 @@
             <!-- KPI 3: Lượt Xóa Dữ Liệu (DELETE) -->
             <div class="card" onclick="filterHistoryByChip('DELETE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện xóa dữ liệu">
               <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-trash-can"></i>
+                <i data-lucide="trash-2" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Lượt Xóa Dữ Liệu (DELETE)</div>
@@ -2037,7 +2044,7 @@
             <!-- KPI 4: Nhân Sự Thao Tác Gần Nhất -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-user-shield"></i>
+                <i data-lucide="shield-check" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Thao Tác Gần Nhất</div>
@@ -2085,11 +2092,11 @@
                 <!-- Right: Action Buttons -->
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                   <button class="btn btn-secondary btn-sm" onclick="exportAuditPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
+                    <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
                   </button>
 
                   <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllAuditLogs()" style="color:#dc2626; border-color:#fca5a5; background:#fff1f2; font-size:12.5px; font-weight:800; border-radius:10px; padding:8px 14px;">
-                    <i class="fa-solid fa-trash-can"></i> Dọn dẹp sạch nhật ký
+                    <i data-lucide="trash-2" class="lucide-sm"></i> Dọn dẹp sạch nhật ký
                   </button>
                 </div>
               </div>
@@ -2119,7 +2126,7 @@
                   </tr>
                 </thead>
                 <tbody id="db-history-table-body">
-                  <tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>
+                  <tr><td colspan="6" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2130,7 +2137,7 @@
   <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; background:#f8fafc; padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0;">
     <div>
       <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 4px 0; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-server" style="color:#059669;"></i> Thanh tra CSDL PostgreSQL Schema & Bảng Dữ Liệu
+        <i data-lucide="server" class="lucide-sm" style="color:#059669;"></i> Thanh tra CSDL PostgreSQL Schema & Bảng Dữ Liệu
       </h3>
       <p style="margin:0; font-size:12.5px; color:#64748b;">
         Thanh tra cấu trúc các bảng, kiểu dữ liệu, số lượng dòng và thực thi Thêm/Sửa/Xóa dữ liệu trực tiếp trong CSDL.
@@ -2138,7 +2145,7 @@
     </div>
     <div style="display:flex; gap:10px;">
       <button class="btn btn-primary btn-sm" onclick="loadDbSchemaCheck()" style="background:linear-gradient(135deg, #064e3b, #047857); border:none; padding:8px 16px; font-weight:700; border-radius:8px; box-shadow:0 3px 8px rgba(4,120,87,0.25);">
-        <i class="fa-solid fa-rotate"></i> Tải lại Telemetry CSDL
+        <i data-lucide="refresh-cw" class="lucide-sm"></i> Tải lại Telemetry CSDL
       </button>
     </div>
   </div>
@@ -2160,7 +2167,7 @@
     <div style="padding:18px 22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
       <div>
         <div style="display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#059669; margin-bottom:4px;">
-          <i class="fa-solid fa-code-branch"></i> QUẢN TRỊ PHIÊN BẢN HỆ THỐNG &amp; ỨNG DỤNG TẬP TRUNG (SSOT)
+          <i data-lucide="git-branch" class="lucide-sm"></i> QUẢN TRỊ PHIÊN BẢN HỆ THỐNG &amp; ỨNG DỤNG TẬP TRUNG (SSOT)
         </div>
         <h2 style="font-size:19px; font-weight:800; margin:0; color:#0f172a; display:flex; align-items:center; gap:10px; letter-spacing:-0.2px;">
           Phiên Bản Hiện Tại: <span id="ver-active-tag-badge" style="background:#ecfdf5; color:#059669; padding:3px 12px; border-radius:100px; font-size:15px; border:1.5px solid #a7f3d0; font-weight:800;">v1.2.8</span>
@@ -2172,7 +2179,7 @@
 
       <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <button class="btn btn-secondary btn-sm" onclick="loadVersionManagerData()" style="background:#f8fafc; color:#0f172a; border:1.5px solid #cbd5e1; font-weight:700; padding:8px 16px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
-          <i class="fa-solid fa-rotate" style="color:#059669;"></i> Tải lại Dữ liệu
+          <i data-lucide="refresh-cw" class="lucide-sm" style="color:#059669;"></i> Tải lại Dữ liệu
         </button>
       </div>
     </div>
@@ -2180,14 +2187,14 @@
     <!-- Quick Telemetry Stats Bar -->
     <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:12px 22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; font-size:12.5px; font-weight:700; color:#334155;">
-        <span><i class="fa-solid fa-layer-group" style="color:#059669; margin-right:4px;"></i> Mã Build: <strong id="ver-active-build" style="color:#0f172a;">12</strong></span>
-        <span><i class="fa-solid fa-mobile-screen" style="color:#2563eb; margin-right:4px;"></i> Nền tảng: <strong id="ver-active-platform" style="color:#0f172a;">Web App &amp; Android</strong></span>
-        <span><i class="fa-solid fa-shield-halved" style="color:#d97706; margin-right:4px;"></i> Min: <strong id="ver-active-min" style="color:#0f172a;">1.0.0</strong></span>
-        <span><i class="fa-solid fa-cloud-arrow-up" style="color:#7c3aed; margin-right:4px;"></i> Cập nhật: <strong id="ver-active-date" style="color:#0f172a;">--</strong></span>
+        <span><i data-lucide="layers" class="lucide-sm" style="color:#059669; margin-right:4px;"></i> Mã Build: <strong id="ver-active-build" style="color:#0f172a;">12</strong></span>
+        <span><i data-lucide="smartphone" class="lucide-sm" style="color:#2563eb; margin-right:4px;"></i> Nền tảng: <strong id="ver-active-platform" style="color:#0f172a;">Web App &amp; Android</strong></span>
+        <span><i data-lucide="shield-check" class="lucide-sm" style="color:#d97706; margin-right:4px;"></i> Min: <strong id="ver-active-min" style="color:#0f172a;">1.0.0</strong></span>
+        <span><i data-lucide="upload-cloud" class="lucide-sm" style="color:#7c3aed; margin-right:4px;"></i> Cập nhật: <strong id="ver-active-date" style="color:#0f172a;">--</strong></span>
       </div>
       <div>
         <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:100px;">
-          <i class="fa-solid fa-circle-check" style="color:#059669;"></i> Database Live Sync
+          <i data-lucide="check-circle-2" class="lucide-sm" style="color:#059669;"></i> Database Live Sync
         </span>
       </div>
     </div>
@@ -2199,7 +2206,7 @@
     <!-- LEFT COLUMN: PUSH NEW VERSION FORM -->
     <div class="card" style="border-radius:14px; border:1px solid #cbd5e1; background:#ffffff; box-shadow:0 4px 16px rgba(0,0,0,0.03); overflow:hidden;">
       <div style="background:#f8fafc; padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-cloud-arrow-up" style="color:#059669; font-size:16px;"></i>
+        <i data-lucide="upload-cloud" class="lucide-sm" style="color:#059669; font-size:16px;"></i>
         <h3 style="font-size:14.5px; font-weight:800; color:#0f172a; margin:0;">
           Đẩy Phiên Bản Mới Vào CSDL
         </h3>
@@ -2269,7 +2276,7 @@
 
         <!-- Submit Button -->
         <button type="submit" id="btn-push-version-submit" class="btn btn-primary" style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; border:none; padding:12px; border-radius:10px; font-size:13.5px; font-weight:800; display:flex; justify-content:center; align-items:center; gap:8px; cursor:pointer; box-shadow:0 4px 12px rgba(4,120,87,0.3); margin-top:4px;">
-          <i class="fa-solid fa-rocket"></i> ĐẨY PHIÊN BẢN VÀO CSDL NGAY
+          <i data-lucide="rocket" class="lucide-sm"></i> ĐẨY PHIÊN BẢN VÀO CSDL NGAY
         </button>
       </form>
     </div>
@@ -2278,7 +2285,7 @@
     <div class="card" style="border-radius:14px; border:1px solid #cbd5e1; background:#ffffff; box-shadow:0 4px 16px rgba(0,0,0,0.03); overflow:hidden;">
       <div style="background:#f8fafc; padding:14px 20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div style="display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-list-check" style="color:#059669; font-size:16px;"></i>
+          <i data-lucide="clipboard-check" class="lucide-sm" style="color:#059669; font-size:16px;"></i>
           <h3 style="font-size:14.5px; font-weight:800; color:#0f172a; margin:0;">
             Lịch Sử Các Bản Phát Hành Trong CSDL (<span id="ver-history-count">0</span> bản)
           </h3>
@@ -2302,7 +2309,7 @@
           <tbody id="ver-history-table-body">
             <tr>
               <td colspan="8" style="text-align:center; padding:30px; color:#64748b;">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size:20px; color:#059669;"></i><br><br>
+                <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size:20px; color:#059669;"></i><br><br>
                 Đang tải danh sách phiên bản từ CSDL...
               </td>
             </tr>
@@ -2324,10 +2331,10 @@
         <div class="royal-page-header">
           <div>
             <div class="royal-page-header-badge" style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-user-shield"></i> Phân Hệ Quản Trị Người Dùng & Phân Quyền ERP
+              <i data-lucide="shield-check" class="lucide-sm"></i> Phân Hệ Quản Trị Người Dùng & Phân Quyền ERP
             </div>
             <h2 class="royal-page-header-title">
-              <i class="fa-solid fa-users-gear" style="color:#059669;"></i> Quản Trị Tài Khoản &amp; Phân Quyền Nông Hộ
+              <i data-lucide="users-cog" class="lucide-sm" style="color:#059669;"></i> Quản Trị Tài Khoản &amp; Phân Quyền Nông Hộ
             </h2>
             <p class="royal-page-header-desc">
               Kiểm soát danh tính, phân quyền vai trò (Admin / Nông Hộ), phê duyệt tài khoản mới và điều phối nông trại.
@@ -2336,10 +2343,10 @@
 
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button onclick="openAddUserModal()" class="royal-pill-btn royal-pill-btn-primary">
-              <i class="fa-solid fa-user-plus"></i> + Tạo Người Dùng Mới
+              <i data-lucide="user-plus" class="lucide-sm"></i> + Tạo Người Dùng Mới
             </button>
             <button onclick="loadUsers()" class="royal-pill-btn">
-              <i class="fa-solid fa-rotate"></i> Làm Mới
+              <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm Mới
             </button>
           </div>
         </div>
@@ -2348,7 +2355,7 @@
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:20px;">
           <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
             <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-users"></i>
+              <i data-lucide="users" class="lucide-sm"></i>
             </div>
             <div>
               <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Tài Khoản</div>
@@ -2358,7 +2365,7 @@
 
           <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
             <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#b91c1c; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-shield-halved"></i>
+              <i data-lucide="shield-check" class="lucide-sm"></i>
             </div>
             <div>
               <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.04em;">Quản Trị Viên</div>
@@ -2368,7 +2375,7 @@
 
           <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
             <div style="width:44px; height:44px; border-radius:10px; background:#ecfdf5; color:#047857; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-crown"></i>
+              <i data-lucide="crown" class="lucide-sm"></i>
             </div>
             <div>
               <div style="font-size:11px; font-weight:700; color:#047857; text-transform:uppercase; letter-spacing:0.04em;">Nông Hộ PRO</div>
@@ -2378,7 +2385,7 @@
 
           <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
             <div style="width:44px; height:44px; border-radius:10px; background:#fffbeb; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-user-clock"></i>
+              <i data-lucide="clock" class="lucide-sm"></i>
             </div>
             <div>
               <div style="font-size:11px; font-weight:700; color:#b45309; text-transform:uppercase; letter-spacing:0.04em;">Đăng Ký Chờ Duyệt</div>
@@ -2388,7 +2395,7 @@
 
           <div class="card" style="padding:16px 20px; border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
             <div style="width:44px; height:44px; border-radius:10px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:20px;">
-              <i class="fa-solid fa-key"></i>
+              <i data-lucide="key" class="lucide-sm"></i>
             </div>
             <div>
               <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.04em;">Yêu Cầu Mật Khẩu</div>
@@ -2400,16 +2407,16 @@
         <!-- TẦNG 2: NAVIGATION TABS -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="user-tab-manage" onclick="switchUserTab('manage')">
-            <i class="fa-solid fa-users"></i> Quản lý Tài khoản &amp; Nông hộ
+            <i data-lucide="users" class="lucide-sm"></i> Quản lý Tài khoản &amp; Nông hộ
           </div>
           <div class="tab" id="user-tab-pending" onclick="switchUserTab('pending')">
-            <i class="fa-solid fa-user-clock"></i> ⏳ Đăng ký chờ duyệt <span class="badge" id="pending-users-count-badge" style="display:none; background:#f59e0b; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
+            <i data-lucide="clock" class="lucide-sm"></i> ⏳ Đăng ký chờ duyệt <span class="badge" id="pending-users-count-badge" style="display:none; background:#f59e0b; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
           </div>
           <div class="tab" id="user-tab-status" onclick="switchUserTab('status')">
-            <i class="fa-solid fa-signal"></i> Trạng thái hoạt động thực địa
+            <i data-lucide="signal" class="lucide-sm"></i> Trạng thái hoạt động thực địa
           </div>
           <div class="tab" id="user-tab-resets" onclick="switchUserTab('resets')">
-            <i class="fa-solid fa-key"></i>  Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
+            <i data-lucide="key" class="lucide-sm"></i>  Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
           </div>
         </div>
 
@@ -2418,7 +2425,7 @@
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
               <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-user-clock" style="color:#d97706"></i> Danh sách Nông hộ mới Đăng ký chờ Phê duyệt
+                <i data-lucide="clock" class="lucide-sm" style="color:#d97706"></i> Danh sách Nông hộ mới Đăng ký chờ Phê duyệt
               </h3>
             </div>
             <table>
@@ -2434,7 +2441,7 @@
               </thead>
               <tbody id="pending-users-table">
                 <tr>
-                  <td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách chờ duyệt...</td>
+                  <td colspan="6" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách chờ duyệt...</td>
                 </tr>
               </tbody>
             </table>
@@ -2446,14 +2453,14 @@
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
               <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-users" style="color:#059669"></i> Danh sách Tài khoản &amp; Phân quyền Nông hộ
+                <i data-lucide="users" class="lucide-sm" style="color:#059669"></i> Danh sách Tài khoản &amp; Phân quyền Nông hộ
               </h3>
               <div style="display:flex; gap:8px;">
                 <button class="btn btn-secondary btn-sm" onclick="loadUsers()" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer;">
-                  <i class="fa-solid fa-arrows-rotate" style="color:#059669;"></i> Làm mới
+                  <i data-lucide="refresh-cw" class="lucide-sm" style="color:#059669;"></i> Làm mới
                 </button>
                 <button class="btn btn-primary btn-sm" onclick="openUserModal()" style="background:#059669; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:800; cursor:pointer; box-shadow:0 1px 2px rgba(5,150,105,0.2);">
-                  <i class="fa fa-plus"></i> + Thêm Người Dùng Mới
+                  <i data-lucide="plus" class="lucide-sm"></i> + Thêm Người Dùng Mới
                 </button>
               </div>
             </div>
@@ -2467,10 +2474,10 @@
                   Tất cả (<span id="cnt-user-all">0</span>)
                 </button>
                 <button type="button" class="user-filter-btn" data-filter="admin" onclick="setUserFilterGroup('admin')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #b91c1c; cursor: pointer;">
-                  <i class="fa-solid fa-shield-halved"></i> Quản trị viên (<span id="cnt-user-admin">0</span>)
+                  <i data-lucide="shield-check" class="lucide-sm"></i> Quản trị viên (<span id="cnt-user-admin">0</span>)
                 </button>
                 <button type="button" class="user-filter-btn" data-filter="pro" onclick="setUserFilterGroup('pro')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #047857; cursor: pointer;">
-                  <i class="fa-solid fa-crown" style="color: #059669;"></i> Nông hộ PRO (<span id="cnt-user-pro">0</span>)
+                  <i data-lucide="crown" class="lucide-sm" style="color: #059669;"></i> Nông hộ PRO (<span id="cnt-user-pro">0</span>)
                 </button>
                 <button type="button" class="user-filter-btn" data-filter="normal" onclick="setUserFilterGroup('normal')" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid #cbd5e1; background: #ffffff; color: #64748b; cursor: pointer;">
                   Standard (<span id="cnt-user-normal">0</span>)
@@ -2500,7 +2507,7 @@
                 </tr>
               </thead>
               <tbody id="users-table">
-                <tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                <tr><td colspan="7" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải...</td></tr>
               </tbody>
             </table>
 
@@ -2521,7 +2528,7 @@
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
               <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-signal" style="color:#059669"></i> Theo dõi Trạng thái Hoạt động Thực địa
+                <i data-lucide="signal" class="lucide-sm" style="color:#059669"></i> Theo dõi Trạng thái Hoạt động Thực địa
               </h3>
             </div>
             <div class="search-bar" style="padding:12px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
@@ -2539,7 +2546,7 @@
               </thead>
               <tbody id="users-status-table">
                 <tr>
-                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
+                  <td colspan="5" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách...</td>
                 </tr>
               </tbody>
             </table>
@@ -2551,17 +2558,17 @@
           <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
             <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-key" style="color:#dc2626"></i> Danh sách Yêu cầu Cấp lại Mật khẩu
+                <i data-lucide="key" class="lucide-sm" style="color:#dc2626"></i> Danh sách Yêu cầu Cấp lại Mật khẩu
               </h3>
               <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="clearHandledResetRequests()" style="background:#f8fafc; color:#475569; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Xóa toàn bộ các yêu cầu đã duyệt hoặc đã từ chối">
-                  <i class="fa-solid fa-broom" style="color:#64748b;"></i> Xóa đã xử lý
+                  <i data-lucide="sparkles" class="lucide-sm" style="color:#64748b;"></i> Xóa đã xử lý
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllResetRequests()" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Xóa vĩnh viễn toàn bộ yêu cầu cấp mật khẩu">
-                  <i class="fa-solid fa-trash-can" style="color:#e11d48;"></i> Xóa tất cả vĩnh viễn
+                  <i data-lucide="trash-2" class="lucide-sm" style="color:#e11d48;"></i> Xóa tất cả vĩnh viễn
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="loadResetRequests()" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-                  <i class="fa-solid fa-rotate"></i> Làm mới
+                  <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm mới
                 </button>
               </div>
             </div>
@@ -2577,7 +2584,7 @@
               </thead>
               <tbody id="reset-requests-table">
                 <tr>
-                  <td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách...</td>
+                  <td colspan="5" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách...</td>
                 </tr>
               </tbody>
             </table>
@@ -2598,10 +2605,10 @@
   <div class="royal-page-header">
     <div style="max-width:680px;">
       <div class="royal-page-header-badge" style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px;">
-        <i class="fa-solid fa-brain"></i> Trợ Lý Nông Nghiệp Thông Minh & Cố Vấn Trực Tuyến
+        <i data-lucide="cpu" class="lucide-sm"></i> Trợ Lý Nông Nghiệp Thông Minh & Cố Vấn Trực Tuyến
       </div>
       <h2 class="royal-page-header-title">
-        <i class="fa-solid fa-microchip" style="color:#059669;"></i> Trung Tâm Huấn Luyện AI Bé Mầm (AI Studio)
+        <i data-lucide="cpu" class="lucide-sm" style="color:#059669;"></i> Trung Tâm Huấn Luyện AI Bé Mầm (AI Studio)
       </h2>
       <p class="royal-page-header-desc">
         Nạp tài liệu kỹ thuật, quy trình SOPs chuẩn, huấn luyện phác đồ điều trị sâu bệnh và bảo mật dữ liệu cấp cao.
@@ -2611,13 +2618,13 @@
     <!-- Top Action Buttons -->
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button class="royal-pill-btn royal-pill-btn-primary" onclick="openAiKnowledgeModal()">
-        <i class="fa-solid fa-plus"></i> + Thêm Tri Thức SOP
+        <i data-lucide="plus" class="lucide-sm"></i> + Thêm Tri Thức SOP
       </button>
       <button class="royal-pill-btn" onclick="openAiQaModal()">
-        <i class="fa-solid fa-comments"></i> + Thêm Q&A
+        <i data-lucide="messages-square" class="lucide-sm"></i> + Thêm Q&A
       </button>
       <button class="royal-pill-btn" onclick="loadAiTrainingStats(); loadAiKnowledgeList(); loadAiQaList(); loadAiSecurityLogs();">
-        <i class="fa-solid fa-rotate"></i> Làm Mới
+        <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm Mới
       </button>
     </div>
   </div>
@@ -2627,7 +2634,7 @@
     <!-- Metric 1: Tri Thức -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
-        <i class="fa-solid fa-book-bookmark"></i>
+        <i data-lucide="bookmark" class="lucide-sm"></i>
       </div>
       <div>
         <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">Kho Tri Thức SOP</div>
@@ -2638,7 +2645,7 @@
     <!-- Metric 2: Q&A Fine-Tuning -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
-        <i class="fa-solid fa-comments-dollar"></i>
+        <i data-lucide="message-circle" class="lucide-sm"></i>
       </div>
       <div>
         <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">Cặp Q&A Huấn Luyện</div>
@@ -2649,7 +2656,7 @@
     <!-- Metric 3: Nhật Ký Bảo Mật -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#fef2f2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
-        <i class="fa-solid fa-shield-halved"></i>
+        <i data-lucide="shield-check" class="lucide-sm"></i>
       </div>
       <div>
         <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">Nhật Ký Bảo Mật</div>
@@ -2660,7 +2667,7 @@
     <!-- Metric 4: Trạng thái AI Engine -->
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; align-items:center; gap:14px;">
       <div style="width:48px; height:48px; border-radius:12px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
-        <i class="fa-solid fa-network-wired"></i>
+        <i data-lucide="network" class="lucide-sm"></i>
       </div>
       <div>
         <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">Cơ Chế Suy Luận</div>
@@ -2672,16 +2679,16 @@
   <!-- Sub-Tabs Navigation -->
   <div class="tabs" style="margin-bottom:20px;">
     <div class="tab active" id="ai-subtab-btn-knowledge" onclick="switchAiTrainingSubtab('knowledge')">
-      <i class="fa-solid fa-book"></i> 1. Kho Tri Thức Quy Trình SOP
+      <i data-lucide="book" class="lucide-sm"></i> 1. Kho Tri Thức Quy Trình SOP
     </div>
     <div class="tab" id="ai-subtab-btn-qa" onclick="switchAiTrainingSubtab('qa')">
-      <i class="fa-solid fa-comments"></i> 2. Cặp Câu Hỏi &amp; Trả Lời Mẫu (Q&amp;A)
+      <i data-lucide="messages-square" class="lucide-sm"></i> 2. Cặp Câu Hỏi &amp; Trả Lời Mẫu (Q&amp;A)
     </div>
     <div class="tab" id="ai-subtab-btn-simulator" onclick="switchAiTrainingSubtab('simulator')">
-      <i class="fa-solid fa-flask-vial"></i> 3. Phòng Thử Nghiệm AI (Sandbox)
+      <i data-lucide="flask-round" class="lucide-sm"></i> 3. Phòng Thử Nghiệm AI (Sandbox)
     </div>
     <div class="tab" id="ai-subtab-btn-security" onclick="switchAiTrainingSubtab('security')">
-      <i class="fa-solid fa-user-shield"></i> 4. Nhật Ký Bảo Mật &amp; Audit Trail
+      <i data-lucide="shield-check" class="lucide-sm"></i> 4. Nhật Ký Bảo Mật &amp; Audit Trail
     </div>
   </div>
 
@@ -2694,7 +2701,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
           <div style="position:relative; flex:1;">
-            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:12px; color:#94a3b8; font-size:13px;"></i>
+            <i data-lucide="search" class="lucide-sm" style="position:absolute; left:14px; top:12px; color:#94a3b8; font-size:13px;"></i>
             <input type="text" id="ai-knowledge-search-input" placeholder="Tìm theo tiêu đề, từ khóa, hoạt chất..." style="width:100%; padding:9px 14px 9px 36px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;" oninput="onAiKnowledgeSearchChange()">
           </div>
           <select id="ai-knowledge-cat-filter" style="padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; background:#ffffff;" onchange="loadAiKnowledgeList()">
@@ -2724,7 +2731,7 @@
           <tbody id="ai-knowledge-table-body">
             <tr>
               <td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">
-                <i class="fa-solid fa-spinner fa-spin"></i> Đang tải kho tri thức...
+                <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải kho tri thức...
               </td>
             </tr>
           </tbody>
@@ -2746,7 +2753,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:280px;">
           <div style="position:relative; flex:1;">
-            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:12px; color:#94a3b8; font-size:13px;"></i>
+            <i data-lucide="search" class="lucide-sm" style="position:absolute; left:14px; top:12px; color:#94a3b8; font-size:13px;"></i>
             <input type="text" id="ai-qa-search-input" placeholder="Tìm kiếm câu hỏi mẫu hoặc câu trả lời..." style="width:100%; padding:9px 14px 9px 36px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;" oninput="onAiQaSearchChange()">
           </div>
           <select id="ai-qa-cat-filter" style="padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; background:#ffffff;" onchange="loadAiQaList()">
@@ -2762,7 +2769,7 @@
       <!-- Q&A List Cards Container -->
       <div id="ai-qa-list-container" style="display:flex; flex-direction:column; gap:14px;">
         <div style="text-align:center; padding:30px; color:#94a3b8;">
-          <i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách Q&amp;A...
+          <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách Q&amp;A...
         </div>
       </div>
 
@@ -2780,7 +2787,7 @@
       <!-- Left: Test Input & Controls -->
       <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0 0 12px 0; display:flex; align-items:center; gap:8px;">
-          <span style="color:#059669;"><i class="fa-solid fa-terminal"></i></span> Giả Lập Câu Hỏi Của Nông Dân
+          <span style="color:#059669;"><i data-lucide="terminal" class="lucide-sm"></i></span> Giả Lập Câu Hỏi Của Nông Dân
         </h4>
         <p style="font-size:13px; color:#64748b; margin:0 0 14px 0;">
           Nhập câu hỏi để kiểm tra xem Bé Mầm sẽ khớp với cặp Q&amp;A nào, trích xuất tài liệu tri thức nào và tốc độ phản hồi ra sao.
@@ -2800,7 +2807,7 @@
         </div>
 
         <button type="button" id="btn-run-ai-test" onclick="runAiTestSimulation()" style="width:100%; background:linear-gradient(135deg, #059669 0%, #047857 100%); color:#ffffff; font-weight:800; font-size:14px; padding:12px; border:none; border-radius:10px; cursor:pointer; box-shadow:0 3px 10px rgba(5,150,105,0.25);">
-          <i class="fa-solid fa-play"></i> Chạy Kiểm Thử Ngay (Run Test)
+          <i data-lucide="play" class="lucide-sm"></i> Chạy Kiểm Thử Ngay (Run Test)
         </button>
       </div>
 
@@ -2808,7 +2815,7 @@
       <div class="card" style="padding:22px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; display:flex; flex-direction:column;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0 0 12px 0; display:flex; align-items:center; justify-content:space-between;">
           <span style="display:flex; align-items:center; gap:8px;">
-            <span style="color:#0284c7;"><i class="fa-solid fa-microchip"></i></span> Kết Quả Phân Tích &amp; Tri Thức Áp Dụng
+            <span style="color:#0284c7;"><i data-lucide="cpu" class="lucide-sm"></i></span> Kết Quả Phân Tích &amp; Tri Thức Áp Dụng
           </span>
           <span id="ai-test-latency-badge" style="font-size:11.5px; font-weight:700; color:#059669; background:#ecfdf5; padding:3px 8px; border-radius:6px; display:none;">
              0 ms
@@ -2817,7 +2824,7 @@
 
         <div id="ai-test-result-box" style="flex:1; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px; font-size:13px; color:#475569; overflow-y:auto; min-height:220px; line-height:1.6;">
           <div style="text-align:center; padding:40px 10px; color:#94a3b8;">
-            <i class="fa-solid fa-flask" style="font-size:32px; margin-bottom:10px; color:#cbd5e1;"></i>
+            <i data-lucide="flask-conical" class="lucide-sm" style="font-size:32px; margin-bottom:10px; color:#cbd5e1;"></i>
             <div>Nhập câu hỏi bên trái và bấm <strong>"Chạy Kiểm Thử Ngay"</strong> để xem kết quả phân tích RAG.</div>
           </div>
         </div>
@@ -2833,7 +2840,7 @@
       
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-          <span style="color:#dc2626;"><i class="fa-solid fa-shield-halved"></i></span> Lịch Sử Thay Đổi Dữ Liệu &amp; Giám Sát An Ninh AI
+          <span style="color:#dc2626;"><i data-lucide="shield-check" class="lucide-sm"></i></span> Lịch Sử Thay Đổi Dữ Liệu &amp; Giám Sát An Ninh AI
         </h4>
         <span style="font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; padding:4px 10px; border-radius:6px;">
            Hệ thống phòng thủ Honeypot đang hoạt động
@@ -2855,7 +2862,7 @@
           <tbody id="ai-security-logs-tbody">
             <tr>
               <td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">
-                <i class="fa-solid fa-spinner fa-spin"></i> Đang tải nhật ký bảo mật...
+                <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải nhật ký bảo mật...
               </td>
             </tr>
           </tbody>
@@ -2884,18 +2891,18 @@
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.12); position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
       <div style="display:flex; align-items:center; gap:14px;">
         <div style="width:46px; height:46px; border-radius:12px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:22px; color:#a7f3d0; border:1px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
-          <i class="fa-solid fa-tree" id="plant-modal-header-icon"></i>
+          <i data-lucide="trees" class="lucide-sm" id="plant-modal-header-icon"></i>
         </div>
         <div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <h2 id="plant-modal-title" style="margin:0; font-size:18px; font-weight:800; color:#ffffff; letter-spacing:-0.2px; display:inline-flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-seedling" style="color:#34d399"></i> Thêm cây mới
+              <i data-lucide="sprout" class="lucide-sm" style="color:#34d399"></i> Thêm cây mới
             </h2>
             <span id="plant-modal-code-badge" class="badge" style="background:rgba(255,255,255,0.22); color:#ffffff; font-weight:800; font-size:12px; padding:3px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.25); display:none;">#0</span>
             <span id="plant-modal-health-pill" class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px; display:none;"> Tốt</span>
           </div>
           <div id="plant-modal-subtitle" style="font-size:12px; color:#d1fae5; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <span><i class="fa-solid fa-layer-group" style="opacity:0.8;"></i> <span id="plant-modal-sub-variety">Hồ sơ thông số kỹ thuật &amp; thông tin nông hộ VietGAP</span></span>
+            <span><i data-lucide="layers" class="lucide-sm" style="opacity:0.8;"></i> <span id="plant-modal-sub-variety">Hồ sơ thông số kỹ thuật &amp; thông tin nông hộ VietGAP</span></span>
           </div>
         </div>
       </div>
@@ -2908,13 +2915,13 @@
       <!-- Segmented Navigation Tab Bar -->
       <div class="tabs plant-modal-tabs" style="display:flex; gap:6px; background:#e2e8f0; padding:5px; border-radius:12px; margin-bottom:18px; border-bottom:none; flex-shrink:0;">
         <div class="tab active" onclick="switchTab(this,'tab-info')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
-          <i class="fa-solid fa-circle-info"></i> <span>Thông tin cơ bản</span>
+          <i data-lucide="info" class="lucide-sm"></i> <span>Thông tin cơ bản</span>
         </div>
         <div class="tab" onclick="switchTab(this,'tab-extra')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
-          <i class="fa-solid fa-layer-group"></i> <span>Dữ liệu mở rộng</span>
+          <i data-lucide="layers" class="lucide-sm"></i> <span>Dữ liệu mở rộng</span>
         </div>
         <div class="tab" onclick="switchTab(this,'tab-media')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
-          <i class="fa-solid fa-images"></i> <span>Ảnh / Video</span>
+          <i data-lucide="images" class="lucide-sm"></i> <span>Ảnh / Video</span>
           <span id="plant-media-count-badge" class="badge" style="font-size:10.5px; padding:2px 7px; border-radius:10px; background:#dcfce7; color:#15803d; font-weight:800; display:none;">0</span>
         </div>
       </div>
@@ -2925,7 +2932,7 @@
         <!-- Mode Selector (Chỉ hiển thị khi tạo cây mới) -->
         <div id="plant-create-mode-wrap" style="margin-bottom:16px; padding:12px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
           <div style="font-size:12.5px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-sliders" style="color:#059669;"></i> Chế độ khởi tạo cây:
+            <i data-lucide="sliders" class="lucide-sm" style="color:#059669;"></i> Chế độ khởi tạo cây:
           </div>
           <div style="display:flex; gap:8px;">
             <label id="label-mode-single" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#065f46; cursor:pointer; background:#ecfdf5; padding:6px 14px; border-radius:8px; border:1.5px solid #34d399; transition:all 0.15s;">
@@ -2942,7 +2949,7 @@
         <!-- Group 1:  Định danh & Phân loại giống cây -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-            <i class="fa-solid fa-tag" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
+            <i data-lucide="tag" class="lucide-sm" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
           </div>
 
           <!-- 1. Single Mode Tree Code Field -->
@@ -2962,7 +2969,7 @@
           <!-- 2. Range Mode Fields (XX -> XY) -->
           <div id="wrap-range-tree-code" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
             <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-              <i class="fa-solid fa-layer-group"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
+              <i data-lucide="layers" class="lucide-sm"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
             </div>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
               <div>
@@ -3014,7 +3021,7 @@
         <!-- Group 2:  Trạng thái sinh trưởng & Quản lý vị trí -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-            <i class="fa-solid fa-heart-pulse" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
+            <i data-lucide="activity" class="lucide-sm" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
           </div>
           <div class="form-row" style="margin-bottom:12px;">
             <div class="field" style="margin-bottom:0;">
@@ -3043,10 +3050,10 @@
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-map-pin" style="color:#059669;"></i> Tọa độ GPS &amp; Định vị vệ tinh
+              <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> Tọa độ GPS &amp; Định vị vệ tinh
             </div>
             <button type="button" class="btn btn-secondary btn-sm" onclick="getCurrentDeviceGpsForPlant()" style="font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:6px; background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
-              <i class="fa-solid fa-location-crosshairs"></i> Lấy GPS hiện tại
+              <i data-lucide="crosshair" class="lucide-sm"></i> Lấy GPS hiện tại
             </button>
           </div>
           <div class="form-row" style="margin-bottom:0;">
@@ -3064,7 +3071,7 @@
         <!-- Group 4:  Cổng tra cứu công khai (Public QR / URL) -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-            <i class="fa-solid fa-globe" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
+            <i data-lucide="globe" class="lucide-sm" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
           </div>
           <input type="hidden" id="f-schema-id">
           <div class="field" style="margin-bottom:12px;">
@@ -3077,15 +3084,15 @@
           <!-- Public URL display -->
           <div class="public-url-box" id="public-url-section" style="display:none; background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px;">
             <div style="font-size:12px; font-weight:800; color:#166534; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-link"></i> Đường dẫn tra cứu công khai của cây:
+              <i data-lucide="link" class="lucide-sm"></i> Đường dẫn tra cứu công khai của cây:
             </div>
             <div class="url-copy-row" style="display:flex; gap:8px; align-items:center;">
               <input type="text" id="public-url-input" readonly style="flex:1; background:#ffffff; border:1.5px solid #86efac; border-radius:8px; padding:8px 12px; font-size:12.5px; font-weight:600; color:#0f172a; outline:none;">
               <button type="button" class="btn btn-secondary btn-sm" onclick="copyURL()" style="background:#ffffff; border:1.5px solid #cbd5e1; font-weight:700; border-radius:8px; padding:8px 12px; font-size:12px; white-space:nowrap; cursor:pointer;">
-                <i class="fa fa-copy" style="color:#059669;"></i> Copy
+                <i data-lucide="copy" class="lucide-sm" style="color:#059669;"></i> Copy
               </button>
               <a id="public-url-link" href="#" target="_blank" class="btn btn-primary btn-sm" style="background:#059669; border:none; font-weight:700; border-radius:8px; padding:8px 14px; font-size:12px; white-space:nowrap; text-decoration:none; color:#ffffff;">
-                <i class="fa fa-arrow-up-right-from-square"></i> Mở
+                <i data-lucide="external-link" class="lucide-sm"></i> Mở
               </a>
             </div>
           </div>
@@ -3097,13 +3104,13 @@
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02); min-height:280px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-layer-group" style="color:#059669;"></i> Thuộc tính đặc tả theo Schema tùy biến
+              <i data-lucide="layers" class="lucide-sm" style="color:#059669;"></i> Thuộc tính đặc tả theo Schema tùy biến
             </div>
             <span style="font-size:11.5px; color:#64748b;">Định dạng mở rộng linh hoạt</span>
           </div>
           <div id="extra-fields-container">
             <div class="empty-state" style="padding:40px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
-              <i class="fa-solid fa-shapes" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+              <i data-lucide="shapes" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
               <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Không có trường thuộc tính đặc thù nào.</p>
               <small style="color:#94a3b8;">Cấu hình schema tại Cài đặt &gt; Quản lý Schema để thêm thuộc tính chuyên sâu (Độ pH, Độ ngọt Brix, Mã PUC...) cho giống cây này.</small>
             </div>
@@ -3115,7 +3122,7 @@
       <div class="tab-pane" id="tab-media">
         <div id="plant-media-container" style="min-height:280px;">
           <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
-            <i class="fa-solid fa-images" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+            <i data-lucide="images" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
             <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi tải ảnh/video.</p>
             <small style="color:#94a3b8;">Hệ thống tự động liên kết tệp phương tiện với cây trồng sau khi khởi tạo ID.</small>
           </div>
@@ -3127,14 +3134,14 @@
     <!-- 3. ERP Sticky Bottom Action Footer -->
     <div class="modal-footer" style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; bottom:0; background:#ffffff; z-index:10; border-radius:0 0 18px 18px; flex-shrink:0;">
       <div style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:6px;">
-        <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn ERP</span>
+        <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn ERP</span>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <button class="btn btn-secondary" onclick="closePlantModal()" style="font-weight:700; font-size:13px; padding:9px 18px; border-radius:10px; background:#f1f5f9; border:1px solid #cbd5e1; color:#475569;">
-          <i class="fa-solid fa-xmark"></i> Hủy
+          <i data-lucide="x" class="lucide-sm"></i> Hủy
         </button>
         <button class="btn btn-primary" id="plant-save-btn" onclick="savePlant()" style="font-weight:800; font-size:13px; padding:9px 22px; border-radius:10px; background:linear-gradient(135deg, #10b981, #047857); border:none; box-shadow:0 4px 14px rgba(16,185,129,0.3); color:#ffffff; cursor:pointer;">
-          <span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu hồ sơ cây</span>
+          <span id="plant-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu hồ sơ cây</span>
         </button>
       </div>
     </div>
@@ -3146,7 +3153,7 @@
 <div class="modal-overlay" id="schema-modal" style="display:none" onclick="if(event.target===this)closeSchemaModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="schema-modal-title"><i class="fa-solid fa-sliders" style="color:var(--green)"></i> Tạo Schema loại cây</h2>
+      <h2 id="schema-modal-title"><i data-lucide="sliders" class="lucide-sm" style="color:var(--green)"></i> Tạo Schema loại cây</h2>
       <button class="modal-close" onclick="closeSchemaModal()">×</button>
     </div>
     <div class="modal-body">
@@ -3163,7 +3170,7 @@
         <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
           <input type="file" id="s-image" accept="image/*" style="display:none;" onchange="previewSchemaImage(this)">
           <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('s-image').click()" style="padding:8px 12px; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
-            <i class="fa fa-image"></i> Chọn ảnh đại diện
+            <i data-lucide="image" class="lucide-sm"></i> Chọn ảnh đại diện
           </button>
           <div id="schema-image-preview-container" style="display:none; align-items:center; gap:8px;">
             <img id="schema-image-preview" src="" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--gray-300);">
@@ -3184,17 +3191,17 @@
             <option value="select">Lựa chọn</option>
             <option value="textarea">Đoạn văn</option>
           </select>
-          <button class="btn btn-primary btn-sm" onclick="addSchemaField()"><i class="fa fa-plus"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="addSchemaField()"><i data-lucide="plus" class="lucide-sm"></i></button>
         </div>
         <p style="font-size:11px;color:var(--gray-400);margin-top:8px">
-          <i class="fa-solid fa-lightbulb" style="color:var(--amber)"></i> Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
+          <i data-lucide="lightbulb" class="lucide-sm" style="color:var(--amber)"></i> Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
         </p>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeSchemaModal()">Hủy</button>
       <button class="btn btn-primary" onclick="saveSchema()">
-        <i class="fa fa-floppy-disk"></i> Lưu Schema
+        <i data-lucide="save" class="lucide-sm"></i> Lưu Schema
       </button>
     </div>
   </div>
@@ -3204,7 +3211,7 @@
 <div class="modal-overlay" id="user-modal" style="display:none" onclick="if(event.target===this)closeUserModal()">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header">
-      <h2 id="user-modal-title"><i class="fa-solid fa-user-plus" style="color:var(--green)"></i> Thêm người dùng mới</h2>
+      <h2 id="user-modal-title"><i data-lucide="user-plus" class="lucide-sm" style="color:var(--green)"></i> Thêm người dùng mới</h2>
       <button class="modal-close" onclick="closeUserModal()">×</button>
     </div>
     <div class="modal-body">
@@ -3218,11 +3225,11 @@
       
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <div class="field" style="flex:1; min-width:180px;">
-          <label><i class="fa-solid fa-phone" style="color:var(--green)"></i> Số điện thoại</label>
+          <label><i data-lucide="phone" class="lucide-sm" style="color:var(--green)"></i> Số điện thoại</label>
           <input type="tel" id="f-user-phone" placeholder="VD: 0901234567..." autocomplete="tel">
         </div>
         <div class="field" style="flex:1; min-width:180px;">
-          <label><i class="fa-solid fa-envelope" style="color:var(--green)"></i> Email (Tùy chọn)</label>
+          <label><i data-lucide="mail" class="lucide-sm" style="color:var(--green)"></i> Email (Tùy chọn)</label>
           <input type="email" id="f-user-email" placeholder="VD: farmer@tanbaocorp.vn..." autocomplete="username">
         </div>
       </div>
@@ -3231,7 +3238,7 @@
       </small>
 
       <div class="field">
-        <label><i class="fa-solid fa-location-dot" style="color:var(--green)"></i> Địa chỉ</label>
+        <label><i data-lucide="map-pin" class="lucide-sm" style="color:var(--green)"></i> Địa chỉ</label>
         <input type="text" id="f-user-address" placeholder="VD: Xã Ea Ktur, Huyện Cư Kuin, Đắk Lắk...">
       </div>
       
@@ -3252,7 +3259,7 @@
       </div>
 
       <div class="field">
-        <label><i class="fa-solid fa-earth-asia" style="color:var(--green)"></i> Gắn vào Trang trại đã khởi tạo</label>
+        <label><i data-lucide="globe" class="lucide-sm" style="color:var(--green)"></i> Gắn vào Trang trại đã khởi tạo</label>
         <select id="f-user-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
           <option value="">— Chưa gán trang trại nào —</option>
         </select>
@@ -3264,7 +3271,7 @@
       <!-- Cấu hình Phân quyền xem dữ liệu riêng cá nhân -->
       <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:14px; margin-top:14px;">
         <div style="font-size:12px; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-user-gear" style="color:var(--green)"></i> Cấu hình Quyền xem dữ liệu cho Nông hộ này:
+          <i data-lucide="user-cog" class="lucide-sm" style="color:var(--green)"></i> Cấu hình Quyền xem dữ liệu cho Nông hộ này:
         </div>
 
         <div class="field" style="margin-bottom:10px;">
@@ -3309,7 +3316,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>
       <button class="btn btn-primary" id="user-save-btn" onclick="saveUser()">
-        <span id="user-save-text"><i class="fa fa-floppy-disk"></i> Lưu người dùng</span>
+        <span id="user-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu người dùng</span>
       </button>
     </div>
   </div>
@@ -3320,7 +3327,7 @@
   <div class="modal" style="max-width: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35);">
     <div class="modal-header" style="background: linear-gradient(135deg, #064e3b, #047857); padding: 16px 20px; color: #ffffff;">
       <h2 style="font-size: 16px; margin: 0; color: #ffffff; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-        <i class="fa-solid fa-crown" style="color: #fde047"></i> Quản lý Gói cước Nông hộ PRO
+        <i data-lucide="crown" class="lucide-sm" style="color: #fde047"></i> Quản lý Gói cước Nông hộ PRO
       </h2>
       <button class="modal-close" onclick="closeUserTierModal()" style="color: #ffffff; opacity: 0.9; font-size: 22px;">×</button>
     </div>
@@ -3358,7 +3365,7 @@
       <!-- 2. Chọn thời hạn PRO -->
       <div id="pro-duration-section" style="margin-bottom:18px;">
         <label style="font-weight:800; font-size:13px; color:#0f172a; margin-bottom:8px; display:block;">
-          <i class="fa-regular fa-calendar-days" style="color:#059669"></i> 2. Thời hạn Gói PRO (Admin Nhập liệu Tự do) *
+          <i data-lucide="calendar-days" class="lucide-sm" style="color:#059669"></i> 2. Thời hạn Gói PRO (Admin Nhập liệu Tự do) *
         </label>
 
         <!-- Quick Duration Preset Buttons -->
@@ -3391,7 +3398,7 @@
         <!-- List of Granted PRO Features -->
         <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px;">
           <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-square-check" style="color:#059669;"></i> Danh sách Tính năng Nâng cao được mở cấp phép:
+            <i data-lucide="check-square" class="lucide-sm" style="color:#059669;"></i> Danh sách Tính năng Nâng cao được mở cấp phép:
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11.5px; color:#064e3b; font-weight:700;">
             <div> Bản đồ GIS số hóa từng cây lẻ</div>
@@ -3408,7 +3415,7 @@
       <!-- 3. Admin Notes -->
       <div class="field">
         <label style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:6px; display:block;">
-          <i class="fa-solid fa-clipboard-list" style="color:#059669"></i> 3. Ghi chú Thu tiền / Hợp đồng (Admin riêng)
+          <i data-lucide="clipboard-list" class="lucide-sm" style="color:#059669"></i> 3. Ghi chú Thu tiền / Hợp đồng (Admin riêng)
         </label>
         <input type="text" id="tier-admin-note" placeholder="Ví dụ: Đã thu 2.500.000đ tiền mặt - Hợp đồng số 102/2026..." style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:10px 12px; width:100%; font-size:13px; color:#0f172a;">
       </div>
@@ -3417,7 +3424,7 @@
     <div class="modal-footer" style="padding:16px 20px; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc; border-top:1px solid #e2e8f0;">
       <button class="btn btn-secondary" onclick="closeUserTierModal()" style="padding:10px 18px; font-weight:600; border-radius:10px;">Hủy</button>
       <button class="btn btn-primary" id="btn-submit-user-tier" onclick="submitUserTierUpdate()" style="background:linear-gradient(135deg, #10b981, #047857); border:none; padding:11px 22px; font-size:14px; font-weight:800; border-radius:10px; box-shadow:0 4px 14px rgba(16,185,129,0.3);">
-        <i class="fa-solid fa-floppy-disk"></i> Lưu Kích Hoạt PRO
+        <i data-lucide="save" class="lucide-sm"></i> Lưu Kích Hoạt PRO
       </button>
     </div>
   </div>
@@ -3429,7 +3436,7 @@
 <div class="modal-overlay" id="supply-view-modal" style="display:none" onclick="if(event.target===this)closeViewSupplyModal()">
   <div class="modal" style="max-width: 500px; border-radius:16px; overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px;">
-      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i class="fa-solid fa-eye" style="color:#6ee7b7"></i> Chi tiết Sản phẩm Vật tư & Tồn kho</h2>
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i data-lucide="eye" class="lucide-sm" style="color:#6ee7b7"></i> Chi tiết Sản phẩm Vật tư & Tồn kho</h2>
       <button class="modal-close" onclick="closeViewSupplyModal()" style="color:#fff; opacity:0.9;">×</button>
     </div>
     <div class="modal-body" id="supply-view-modal-body" style="padding:20px; background:#ffffff;">
@@ -3438,7 +3445,7 @@
     <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
       <button class="btn btn-secondary" onclick="closeViewSupplyModal()">Đóng</button>
       <button class="btn btn-primary" id="btn-edit-from-view" onclick="">
-        <i class="fa fa-pen"></i> Chỉnh sửa vật tư này
+        <i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa vật tư này
       </button>
     </div>
   </div>
@@ -3448,7 +3455,7 @@
 <div class="modal-overlay" id="supply-form-modal" style="display:none" onclick="if(event.target===this)closeSupplyFormModal()">
   <div class="modal" style="max-width: 520px; border-radius:16px; overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px;">
-      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;" id="supply-modal-title"><i class="fa-solid fa-box-archive"></i> Khai báo Vật tư & Phân bón</h2>
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;" id="supply-modal-title"><i data-lucide="archive" class="lucide-sm"></i> Khai báo Vật tư & Phân bón</h2>
       <button class="modal-close" onclick="closeSupplyFormModal()" style="color:#fff; opacity:0.9;">×</button>
     </div>
     <div class="modal-body" style="padding:20px; background:#ffffff;">
@@ -3496,7 +3503,7 @@
       <!-- ════ VietGAP Compliance Fields (Active Ingredients & Target Pests) ════ -->
       <div id="f-supply-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
         <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
+          <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
         </div>
 
         <div style="display:flex; gap:12px;">
@@ -3529,7 +3536,7 @@
     <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
       <button class="btn btn-secondary" onclick="closeSupplyFormModal()">Hủy</button>
       <button class="btn btn-primary" id="btn-save-supply" onclick="saveSupplySubmit()">
-        <i class="fa fa-floppy-disk"></i> Lưu thông tin vật tư
+        <i data-lucide="save" class="lucide-sm"></i> Lưu thông tin vật tư
       </button>
     </div>
   </div>
@@ -3540,7 +3547,7 @@
   <div class="modal" style="max-width: 460px; width: 92%; border-radius:14px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.2);">
     <div class="modal-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
       <h2 style="font-size:15px; margin:0; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-qrcode" style="color:#059669"></i> Thẻ Định Danh & Mã QR Cây Trồng
+        <i data-lucide="qr-code" class="lucide-sm" style="color:#059669"></i> Thẻ Định Danh & Mã QR Cây Trồng
       </h2>
       <button class="modal-close" onclick="closeQrModal()" style="color:#64748b; font-size:22px; cursor:pointer; background:none; border:none;">×</button>
     </div>
@@ -3559,17 +3566,17 @@
       <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
         <input type="text" id="qr-modal-url-input" readonly style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:#f8fafc; color:#334155;">
         <button onclick="copyQrUrl()" class="btn btn-secondary btn-sm" style="font-weight:700; padding:8px 12px; font-size:12px; cursor:pointer;">
-          <i class="fa-solid fa-copy"></i> Sao chép
+          <i data-lucide="copy" class="lucide-sm"></i> Sao chép
         </button>
       </div>
     </div>
     <div class="modal-footer" style="padding:12px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <a href="#" id="qr-modal-public-link" target="_blank" class="btn btn-sm" style="font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:7px 12px; text-decoration:none;">
-        <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trang web
+        <i data-lucide="external-link" class="lucide-sm"></i> Mở trang web
       </a>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-primary btn-sm" onclick="printQrModalCode()" style="background:#059669; color:#fff; font-weight:700; border-radius:8px; padding:7px 14px; border:none; cursor:pointer;">
-          <i class="fa-solid fa-print"></i> In Mã QR
+          <i data-lucide="printer" class="lucide-sm"></i> In Mã QR
         </button>
         <button class="btn btn-secondary btn-sm" onclick="closeQrModal()" style="font-weight:600; border-radius:8px; padding:7px 12px; cursor:pointer;">Đóng</button>
       </div>
@@ -3585,7 +3592,7 @@
     <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 16px 22px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #a7f3d0;">
-          <i class="fa-solid fa-boxes-stacked"></i>
+          <i data-lucide="package" class="lucide-sm"></i>
         </div>
         <div>
           <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: #ffffff;">Kho Thẻ NFC &amp; Quẹt Thẻ Hàng Loạt</h2>
@@ -3626,25 +3633,25 @@
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="nfc-scan-status-pill" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-rss"></i> <span id="nfc-scan-status-text">Chế độ sẵn sàng</span>
+            <i data-lucide="radio" class="lucide-sm"></i> <span id="nfc-scan-status-text">Chế độ sẵn sàng</span>
           </span>
           <small style="color: #065f46; font-size: 12px; font-weight: 600;">(Quẹt cọc thẻ liên tục vào đầu đọc / điện thoại)</small>
         </div>
         <button id="btn-toggle-continuous-nfc" onclick="toggleContinuousNfcScan()" style="background: linear-gradient(135deg, #10b981, #047857); color: #ffffff; border: none; padding: 9px 18px; font-size: 13px; font-weight: 800; border-radius: 10px; cursor: pointer; box-shadow: 0 3px 10px rgba(16,185,129,0.3); display: inline-flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-play"></i> Bật Quét Thẻ Liên Tục (Web NFC)
+          <i data-lucide="play" class="lucide-sm"></i> Bật Quét Thẻ Liên Tục (Web NFC)
         </button>
       </div>
 
       <!-- Quick Text Input Bar (Keyboard Emulation / USB Reader / Manual) -->
       <div style="display: flex; gap: 8px;">
         <div style="position: relative; flex: 1;">
-          <i class="fa-solid fa-barcode" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #059669; font-size: 15px;"></i>
+          <i data-lucide="scan" class="lucide-sm" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #059669; font-size: 15px;"></i>
           <input type="text" id="nfc-inv-quick-input" placeholder="Quẹt đầu đọc USB hoặc nhập mã UID (vd: 04:20:CF:5A:25:20:91) rồi bấm Enter..." 
                  onkeydown="if(event.key==='Enter') handleQuickNfcInput(event)"
                  style="width: 100%; padding: 10px 12px 10px 38px; border: 1.5px solid #6ee7b7; border-radius: 10px; font-size: 13px; font-family: monospace; font-weight: 700; color: #0f172a; outline: none; background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">
         </div>
         <button onclick="handleQuickNfcInputBtn()" style="background: #047857; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-plus"></i> Thêm Thẻ
+          <i data-lucide="plus" class="lucide-sm"></i> Thêm Thẻ
         </button>
       </div>
     </div>
@@ -3665,7 +3672,7 @@
         <tbody id="nfc-inventory-table-body" style="background: #ffffff;">
           <tr>
             <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8; background: #ffffff;">
-              <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px;"></i><br>Đang tải danh sách kho thẻ...
+              <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size: 24px;"></i><br>Đang tải danh sách kho thẻ...
             </td>
           </tr>
         </tbody>
@@ -3685,17 +3692,17 @@
     <!-- Modal Footer -->
     <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div style="font-size: 12px; color: #64748b;">
-        <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> Thẻ đã nhập kho sẽ sẵn sàng để mang ra vườn gán thực địa cho cây trồng.
+        <i data-lucide="info" class="lucide-sm" style="color: #0284c7;"></i> Thẻ đã nhập kho sẽ sẵn sàng để mang ra vườn gán thực địa cho cây trồng.
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <button type="button" class="btn btn-secondary" onclick="exportAdminNfcInventoryCsv(_currentInvFarmId)" style="padding: 8px 14px; border-radius: 10px; font-weight: 700; font-size: 13px; color:#047857; border: 1.5px solid #10b981; background: #ffffff;">
-          <i class="fa-solid fa-file-csv" style="color: #059669;"></i> Xuất CSV / Excel
+          <i data-lucide="file-spreadsheet" class="lucide-sm" style="color: #059669;"></i> Xuất CSV / Excel
         </button>
         <button type="button" class="btn btn-secondary" onclick="openAdminNfcImportModal(_currentInvFarmId)" style="padding: 8px 14px; border-radius: 10px; font-weight: 700; font-size: 13px; color:#065f46; border: 1.5px solid #059669; background: #f0fdf4;">
-          <i class="fa-solid fa-file-import" style="color: #059669;"></i> Import CSV
+          <i data-lucide="upload" class="lucide-sm" style="color: #059669;"></i> Import CSV
         </button>
         <button class="btn btn-secondary" onclick="closeNfcInventoryModal()" style="padding: 8px 18px; border-radius: 10px; font-weight: 700; font-size: 13px;">
-          <i class="fa-solid fa-xmark"></i> Đóng
+          <i data-lucide="x" class="lucide-sm"></i> Đóng
         </button>
       </div>
     </div>
@@ -3711,7 +3718,7 @@
     <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 18px 24px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #a7f3d0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
-          <i class="fa-solid fa-file-import"></i>
+          <i data-lucide="upload" class="lucide-sm"></i>
         </div>
         <div>
           <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #ffffff;">Import Thẻ NFC Vào Kho (CSV / Excel)</h2>
@@ -3733,14 +3740,14 @@
       <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div style="flex: 1; min-width: 260px;">
           <div style="font-weight: 800; font-size: 13px; color: #065f46; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-            <i class="fa-solid fa-circle-info" style="color: #059669;"></i> Định dạng tương thích 100% hai chiều
+            <i data-lucide="info" class="lucide-sm" style="color: #059669;"></i> Định dạng tương thích 100% hai chiều
           </div>
           <p style="margin: 0; font-size: 12px; color: #047857; line-height: 1.4;">
             Chấp nhận file <code>.csv</code> xuất ra từ hệ thống, hoặc file danh sách cột <strong>Mã Thẻ NFC (UID)</strong>. Tự động nhận diện định dạng phân cách dấu hai chấm <code>04:XX:XX...</code> hoặc mã hex liên tục.
           </p>
         </div>
         <button type="button" class="btn btn-secondary btn-sm" onclick="downloadNfcSampleCsv()" style="background: #ffffff; color: #047857; border: 1.5px solid #059669; font-weight: 800; font-size: 12px; padding: 8px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <i class="fa-solid fa-file-csv" style="font-size: 15px; color: #059669;"></i> Tải File Mẫu CSV
+          <i data-lucide="file-spreadsheet" class="lucide-sm" style="font-size: 15px; color: #059669;"></i> Tải File Mẫu CSV
         </button>
       </div>
 
@@ -3752,7 +3759,7 @@
            style="border: 2px dashed #cbd5e1; border-radius: 14px; background: #f8fafc; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
         <input type="file" id="nfc-import-file-input" accept=".csv,.txt" style="display: none;" onchange="handleNfcImportFileSelect(event)">
         <div style="width: 52px; height: 52px; border-radius: 50%; background: #e0f2fe; color: #0284c7; font-size: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <i data-lucide="upload-cloud" class="lucide-sm"></i>
         </div>
         <div style="font-size: 14.5px; font-weight: 800; color: #1e293b; margin-bottom: 4px;">
           Kéo thả file CSV vào đây hoặc <span style="color: #059669; text-decoration: underline;">chọn từ thiết bị</span>
@@ -3761,7 +3768,7 @@
           Hỗ trợ định dạng: <code>.csv</code> hoặc <code>.txt</code> (Dung lượng tối đa: 10MB)
         </div>
         <div id="nfc-import-file-badge" style="display: none; margin-top: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-weight: 800; font-size: 13px; padding: 6px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-file-circle-check" style="color: #059669;"></i> <span id="nfc-import-file-name">filename.csv</span>
+          <i data-lucide="file-check" class="lucide-sm" style="color: #059669;"></i> <span id="nfc-import-file-name">filename.csv</span>
         </div>
       </div>
 
@@ -3791,7 +3798,7 @@
         <!-- Preview Table Box -->
         <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
           <div style="background: #f1f5f9; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 12.5px; font-weight: 800; color: #334155; display: flex; justify-content: space-between; align-items: center;">
-            <span><i class="fa-solid fa-table" style="color: #059669;"></i> Xem trước dữ liệu (tối đa 10 dòng đầu)</span>
+            <span><i data-lucide="table" class="lucide-sm" style="color: #059669;"></i> Xem trước dữ liệu (tối đa 10 dòng đầu)</span>
             <span id="nfc-preview-table-note" style="font-size: 11.5px; font-weight: 600; color: #64748b;"></span>
           </div>
           <div style="max-height: 200px; overflow-y: auto;">
@@ -3818,7 +3825,7 @@
       <!-- Advanced Import Options -->
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px;">
         <div style="font-size: 12.5px; font-weight: 800; color: #334155; display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-sliders" style="color: #059669;"></i> Tùy Chọn Xử Lý Import
+          <i data-lucide="sliders" class="lucide-sm" style="color: #059669;"></i> Tùy Chọn Xử Lý Import
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
           <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;">
@@ -3838,7 +3845,7 @@
 
       <!-- Processing Progress Box (Hidden until submit) -->
       <div id="nfc-import-progress-box" style="display: none; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 14px 18px; text-align: center;">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #059669; margin-bottom: 8px;"></i>
+        <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size: 24px; color: #059669; margin-bottom: 8px;"></i>
         <div id="nfc-import-progress-text" style="font-size: 13.5px; font-weight: 800; color: #065f46;">
           Đang nạp thẻ vào kho trang trại, vui lòng chờ trong giây lát...
         </div>
@@ -3849,14 +3856,14 @@
     <!-- Modal Footer -->
     <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div style="font-size: 12px; color: #64748b;">
-        <i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Quá trình import hoàn toàn an toàn và có cơ chế kiểm tra trùng lặp tự động.
+        <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i> Quá trình import hoàn toàn an toàn và có cơ chế kiểm tra trùng lặp tự động.
       </div>
       <div style="display: flex; gap: 10px;">
         <button type="button" class="btn btn-secondary" onclick="closeAdminNfcImportModal()" style="padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 13px;">
-          <i class="fa-solid fa-xmark"></i> Hủy Bỏ
+          <i data-lucide="x" class="lucide-sm"></i> Hủy Bỏ
         </button>
         <button type="button" id="btn-submit-nfc-import" onclick="submitAdminNfcImport()" disabled style="padding: 9px 22px; border-radius: 10px; font-weight: 800; font-size: 13px; background: #cbd5e1; color: #64748b; border: none; cursor: not-allowed; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s ease;">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Import Vào Kho
+          <i data-lucide="upload-cloud" class="lucide-sm"></i> Bắt Đầu Import Vào Kho
         </button>
       </div>
     </div>
@@ -3872,7 +3879,7 @@
     <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); padding: 16px 22px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative;">
       <div style="display: flex; align-items: center; gap: 14px;">
         <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #34d399; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(0,0,0,0.15); flex-shrink: 0;">
-          <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i>
+          <i data-lucide="map-pin" class="lucide-sm"></i>
         </div>
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -3880,7 +3887,7 @@
             <span style="background: rgba(52,211,153,0.2); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.35); font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; text-transform: uppercase;">IoT Field</span>
           </div>
           <p style="margin: 3px 0 0 0; font-size: 12px; color: #a7f3d0; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-wheat-awn" style="font-size: 11px;"></i> Trang trại: <strong id="field-tag-farm-name" style="color: #ffffff; font-weight: 700;">Đang chọn...</strong>
+            <i data-lucide="wheat" class="lucide-sm" style="font-size: 11px;"></i> Trang trại: <strong id="field-tag-farm-name" style="color: #ffffff; font-weight: 700;">Đang chọn...</strong>
           </p>
         </div>
       </div>
@@ -3894,7 +3901,7 @@
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; display: flex; align-items: center; gap: 5px;">
-            <i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Cây Mục Tiêu Đang Chọn
+            <i data-lucide="crosshair" class="lucide-sm" style="color: #059669;"></i> Cây Mục Tiêu Đang Chọn
           </span>
           <span id="field-tag-progress-badge" style="font-size: 11.5px; font-weight: 800; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 10px; border-radius: 20px;">
             Cây 1 / 1
@@ -3903,7 +3910,7 @@
 
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
           <button class="btn btn-secondary btn-sm" id="btn-field-prev-tree" onclick="prevFieldTree()" style="width: 42px; height: 42px; padding: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid #cbd5e1; flex-shrink: 0; cursor: pointer; transition: all 0.15s;" title="Cây trước">
-            <i class="fa-solid fa-chevron-left"></i>
+            <i data-lucide="chevron-left" class="lucide-sm"></i>
           </button>
           
           <div style="text-align: center; flex: 1; min-width: 0;" id="field-tag-current-tree-display">
@@ -3918,7 +3925,7 @@
           </div>
 
           <button class="btn btn-secondary btn-sm" id="btn-field-next-tree" onclick="nextFieldTree()" style="width: 42px; height: 42px; padding: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid #cbd5e1; flex-shrink: 0; cursor: pointer; transition: all 0.15s;" title="Cây tiếp theo">
-            <i class="fa-solid fa-chevron-right"></i>
+            <i data-lucide="chevron-right" class="lucide-sm"></i>
           </button>
         </div>
       </div>
@@ -3933,7 +3940,7 @@
             </span>
           </div>
           <button onclick="refreshFieldGps()" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #047857; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
-            <i class="fa-solid fa-arrows-rotate"></i> Lấy lại GPS
+            <i data-lucide="refresh-cw" class="lucide-sm"></i> Lấy lại GPS
           </button>
         </div>
 
@@ -3957,7 +3964,7 @@
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 13px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">
-            <i class="fa-solid fa-tag" style="color: #6366f1;"></i> Trạng Thái Thẻ NFC Hiện Tại
+            <i data-lucide="tag" class="lucide-sm" style="color: #6366f1;"></i> Trạng Thái Thẻ NFC Hiện Tại
           </span>
           <span id="field-tag-status-pill" style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">
             Chưa liên kết
@@ -3978,7 +3985,7 @@
         <button id="btn-field-touch-nfc" onclick="startFieldNfcTouch()" style="width: 100%; background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%); color: #ffffff; border: none; border-radius: 18px; padding: 18px 16px; font-size: 15.5px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(5,150,105,0.32); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; border: 1.5px solid rgba(255,255,255,0.3);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 12px 28px rgba(5,150,105,0.4)'" onmouseout="this.style.transform='none'; this.style.boxShadow='0 8px 24px rgba(5,150,105,0.32)'">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-              <i class="fa-solid fa-nfc-symbol"></i>
+              <i data-lucide="radio" class="lucide-sm"></i>
             </div>
             <span style="letter-spacing: 0.02em;">CHẠM THẺ VÀO ĐIỆN THOẠI ĐỂ GÁN CÂY</span>
           </div>
@@ -3996,7 +4003,7 @@
         <div style="display: flex; gap: 8px;">
           <input type="text" id="field-tag-manual-uid" placeholder="Ví dụ: 04:20:CF:5A:25:20:91" style="flex: 1; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-family: ui-monospace, monospace; font-size: 12.5px; font-weight: 700; background: #f8fafc; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#059669'; this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'">
           <button class="btn btn-primary" onclick="submitFieldTagManual()" style="white-space: nowrap; padding: 8px 16px; font-weight: 700; font-size: 12px; border-radius: 10px; background: #059669; color: #fff; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-floppy-disk"></i> Gán Cây
+            <i data-lucide="save" class="lucide-sm"></i> Gán Cây
           </button>
         </div>
       </div>
@@ -4021,7 +4028,7 @@
         </button>
       </div>
       <button class="btn btn-secondary" onclick="closeFieldTaggingModal()" style="padding: 8px 18px; border-radius: 10px; font-weight: 700; font-size: 12.5px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; cursor: pointer;">
-        <i class="fa-solid fa-check"></i> Hoàn thành &amp; Đóng
+        <i data-lucide="check" class="lucide-sm"></i> Hoàn thành &amp; Đóng
       </button>
     </div>
 
@@ -4032,7 +4039,7 @@
 <div class="modal-overlay" id="cost-entry-modal" style="display:none" onclick="if(event.target===this)closeCostEntryModal()">
   <div class="modal" style="max-width:560px;">
     <div class="modal-header">
-      <h2 id="cost-entry-modal-title"><i class="fa-solid fa-coins" style="color:var(--green)"></i> Thêm khoản chi</h2>
+      <h2 id="cost-entry-modal-title"><i data-lucide="coins" class="lucide-sm" style="color:var(--green)"></i> Thêm khoản chi</h2>
       <button class="modal-close" onclick="closeCostEntryModal()">×</button>
     </div>
     <div class="modal-body">
@@ -4116,7 +4123,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCostEntryModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveCostEntry()"><i class="fa fa-check"></i> Lưu</button>
+      <button class="btn btn-primary" onclick="saveCostEntry()"><i data-lucide="check" class="lucide-sm"></i> Lưu</button>
     </div>
   </div>
 </div>
@@ -4127,7 +4134,7 @@
 <div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
-      <h2><i class="fa-solid fa-file-import" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
+      <h2><i data-lucide="upload" class="lucide-sm" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
       <button class="modal-close" onclick="closeCsvImportModal()">×</button>
     </div>
     <div class="modal-body">
@@ -4183,7 +4190,7 @@
       </div>
       
       <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
-        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i class="fa-solid fa-table"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
+        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i data-lucide="table" class="lucide-sm"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
         <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
           <table style="width:100%; border-collapse:collapse; text-align:left;">
             <thead>
@@ -4203,7 +4210,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCsvImportModal()">Hủy</button>
       <button class="btn btn-primary" id="csv-import-submit-btn" onclick="submitCsvImport()" disabled>
-        <i class="fa fa-upload"></i> Thực hiện Import
+        <i data-lucide="upload" class="lucide-sm"></i> Thực hiện Import
       </button>
     </div>
   </div>
@@ -4215,7 +4222,7 @@
 
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header">
-      <h2 id="device-modal-title"><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
+      <h2 id="device-modal-title"><i data-lucide="cpu" class="lucide-sm" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
       <button class="modal-close" onclick="closeDeviceModal()">×</button>
     </div>
     <div class="modal-body">
@@ -4265,7 +4272,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDeviceModal()">Hủy</button>
       <button class="btn btn-primary" id="device-save-btn" onclick="saveDevice()">
-        <span id="device-save-text"><i class="fa fa-floppy-disk"></i> Lưu thiết bị</span>
+        <span id="device-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu thiết bị</span>
       </button>
     </div>
   </div>
@@ -4276,7 +4283,7 @@
 <div class="modal-overlay" id="user-activity-modal" style="display:none" onclick="if(event.target===this)closeUserActivityModal()">
   <div class="modal" style="max-width: 600px;">
     <div class="modal-header">
-      <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
+      <h2><i data-lucide="history" class="lucide-sm" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
       <button class="modal-close" onclick="closeUserActivityModal()">×</button>
     </div>
     <div class="modal-body" style="max-height: 450px; overflow-y: auto;">
@@ -4295,12 +4302,12 @@
 <div class="modal-overlay" id="design-drawing-modal" style="display:none" onclick="if(event.target===this)closeDesignDrawingModal()">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
-      <h2><i class="fa-solid fa-compass-drafting" style="color:var(--green)"></i> Import Bản Vẽ Thiết Kế Trang Trại (CAD / Overlay)</h2>
+      <h2><i data-lucide="compass" class="lucide-sm" style="color:var(--green)"></i> Import Bản Vẽ Thiết Kế Trang Trại (CAD / Overlay)</h2>
       <button class="modal-close" onclick="closeDesignDrawingModal()">×</button>
     </div>
     <div class="modal-body">
       <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#1e40af;">
-        <i class="fa-solid fa-circle-info"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
+        <i data-lucide="info" class="lucide-sm"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
       </div>
       
       <div class="field">
@@ -4322,13 +4329,13 @@
       </div>
 
       <div id="drawing-preview-box" style="display:none; padding:10px; background:var(--gray-50); border:1px dashed var(--gray-300); border-radius:8px; font-size:12px; margin-top:10px;">
-        <i class="fa-solid fa-file-contract" style="color:#2563eb"></i> Tệp đã chọn: <strong id="drawing-filename">-</strong>
+        <i data-lucide="file-text" class="lucide-sm" style="color:#2563eb"></i> Tệp đã chọn: <strong id="drawing-filename">-</strong>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDesignDrawingModal()">Hủy</button>
       <button class="btn btn-primary" onclick="submitDesignDrawingImport()">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Áp Dụng Bản Vẽ Lên Bản Đồ
+        <i data-lucide="upload-cloud" class="lucide-sm"></i> Áp Dụng Bản Vẽ Lên Bản Đồ
       </button>
     </div>
   </div>
@@ -4339,7 +4346,7 @@
   <div class="modal" style="max-width: 780px; width: 92%; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.25);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
       <h2 style="font-size:16px; margin:0; color:#fff; font-weight:800; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-code-compare" style="color:#6ee7b7"></i> Đối Chiếu Biến Động Dữ Liệu (Visual Diff Inspector)
+        <i data-lucide="git-compare" class="lucide-sm" style="color:#6ee7b7"></i> Đối Chiếu Biến Động Dữ Liệu (Visual Diff Inspector)
       </h2>
       <button class="modal-close" onclick="closeViewHistoryModal()" style="color:#fff; opacity:0.9; font-size:22px;">×</button>
     </div>
@@ -4360,7 +4367,7 @@
     <!-- Modal Header -->
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff;">
       <h2 id="ai-k-modal-title" style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-book-bookmark" style="color:#a7f3d0;"></i> Thêm Tài Liệu Tri Thức SOP Mới
+        <i data-lucide="bookmark" class="lucide-sm" style="color:#a7f3d0;"></i> Thêm Tài Liệu Tri Thức SOP Mới
       </h2>
       <button class="modal-close" onclick="closeAiKnowledgeModal()" style="color:#ffffff; opacity:0.85;">×</button>
     </div>
@@ -4450,7 +4457,7 @@
             Hủy Bỏ
           </button>
           <button type="submit" id="btn-save-ai-knowledge" class="btn btn-primary" style="font-size:13px; font-weight:800; padding:8px 20px; border-radius:8px; background:#059669; color:#ffffff; border:none; box-shadow:0 3px 10px rgba(5,150,105,0.25);">
-            <i class="fa-solid fa-floppy-disk"></i> Lưu Bài Viết Tri Thức
+            <i data-lucide="save" class="lucide-sm"></i> Lưu Bài Viết Tri Thức
           </button>
         </div>
       </form>
@@ -4466,7 +4473,7 @@
     <!-- Modal Header -->
     <div class="modal-header" style="background:linear-gradient(135deg, #0369a1 0%, #0284c7 100%); color:#ffffff;">
       <h2 id="ai-qa-modal-title" style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-comments" style="color:#bae6fd;"></i> Thêm Cặp Q&amp;A Huấn Luyện Mới
+        <i data-lucide="messages-square" class="lucide-sm" style="color:#bae6fd;"></i> Thêm Cặp Q&amp;A Huấn Luyện Mới
       </h2>
       <button class="modal-close" onclick="closeAiQaModal()" style="color:#ffffff; opacity:0.85;">×</button>
     </div>
@@ -4539,7 +4546,7 @@
             Hủy Bỏ
           </button>
           <button type="submit" id="btn-save-ai-qa" class="btn btn-primary" style="font-size:13px; font-weight:800; padding:8px 20px; border-radius:8px; background:#0284c7; color:#ffffff; border:none; box-shadow:0 3px 10px rgba(2,132,199,0.25);">
-            <i class="fa-solid fa-floppy-disk"></i> Lưu Cặp Q&amp;A
+            <i data-lucide="save" class="lucide-sm"></i> Lưu Cặp Q&amp;A
           </button>
         </div>
       </form>

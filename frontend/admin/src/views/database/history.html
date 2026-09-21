@@ -5,7 +5,7 @@
             <!-- KPI 1: Tổng Sự Kiện Biến Động -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#f0fdf4; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-clock-rotate-left"></i>
+                <i data-lucide="history" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Sự Kiện Biến Động</div>
@@ -16,7 +16,7 @@
             <!-- KPI 2: Lượt Cập Nhật (UPDATE) -->
             <div class="card" onclick="filterHistoryByChip('UPDATE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fef3c7; background:#fffdfa; box-shadow:0 2px 10px rgba(217,119,6,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện chỉnh sửa">
               <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-pen-to-square"></i>
+                <i data-lucide="edit" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#b45309; text-transform:uppercase; letter-spacing:0.5px;">Lượt Chỉnh Sửa (UPDATE)</div>
@@ -27,7 +27,7 @@
             <!-- KPI 3: Lượt Xóa Dữ Liệu (DELETE) -->
             <div class="card" onclick="filterHistoryByChip('DELETE')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc các sự kiện xóa dữ liệu">
               <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-trash-can"></i>
+                <i data-lucide="trash-2" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Lượt Xóa Dữ Liệu (DELETE)</div>
@@ -38,7 +38,7 @@
             <!-- KPI 4: Nhân Sự Thao Tác Gần Nhất -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-user-shield"></i>
+                <i data-lucide="shield-check" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Thao Tác Gần Nhất</div>
@@ -86,11 +86,11 @@
                 <!-- Right: Action Buttons -->
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                   <button class="btn btn-secondary btn-sm" onclick="exportAuditPDF()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
+                    <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Báo Cáo Kiểm Toán
                   </button>
 
                   <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllAuditLogs()" style="color:#dc2626; border-color:#fca5a5; background:#fff1f2; font-size:12.5px; font-weight:800; border-radius:10px; padding:8px 14px;">
-                    <i class="fa-solid fa-trash-can"></i> Dọn dẹp sạch nhật ký
+                    <i data-lucide="trash-2" class="lucide-sm"></i> Dọn dẹp sạch nhật ký
                   </button>
                 </div>
               </div>
@@ -120,7 +120,7 @@
                   </tr>
                 </thead>
                 <tbody id="db-history-table-body">
-                  <tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>
+                  <tr><td colspan="6" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>
                 </tbody>
               </table>
             </div>

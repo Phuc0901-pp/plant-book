@@ -6,7 +6,7 @@
     <div class="modal-header" style="background: linear-gradient(135deg, #064e3b, #047857); padding: 16px 20px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
       <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
         <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #6ee7b7; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;">
-          <i class="fa-solid fa-arrow-down-1-9"></i>
+          <i data-lucide="arrow-down" class="lucide-sm"></i>
         </div>
         <div style="min-width: 0;">
           <h2 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -26,7 +26,7 @@
       <!-- Farm Selector -->
       <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 14px;">
         <label style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px; display: block;">
-          <i class="fa-solid fa-house-chimney" style="color:#059669;"></i> Chọn Trang trại áp dụng:
+          <i data-lucide="home" class="lucide-sm" style="color:#059669;"></i> Chọn Trang trại áp dụng:
         </label>
         <select id="reorder-gps-farm-select" style="width: 100%; padding: 8px 12px; font-size: 13px; font-weight: 600; border-radius: 8px; border: 1.5px solid #cbd5e1; background: #ffffff; outline: none; cursor: pointer;" onchange="previewReorderGps()">
           <!-- Populated dynamically -->
@@ -36,13 +36,13 @@
       <!-- Sorting Strategy Mode -->
       <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 14px;">
         <label style="font-size: 11.5px; font-weight: 700; color: #334155; text-transform: uppercase; margin-bottom: 8px; display: block;">
-          <i class="fa-solid fa-compass" style="color:#0284c7;"></i> Quy luật Sắp xếp Không gian:
+          <i data-lucide="compass" class="lucide-sm" style="color:#0284c7;"></i> Quy luật Sắp xếp Không gian:
         </label>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
             <input type="radio" name="reorder_mode" value="north_to_south" checked style="margin-top: 3px; accent-color: #059669;" onchange="previewReorderGps()">
             <div style="font-size: 12.5px; line-height: 1.4;">
-              <strong style="color: #065f46; display: block;"><i class="fa-solid fa-arrow-down-long"></i> Bắc xuống Nam (Trên xuống Dưới, Trái qua Phải) — Khuyến nghị</strong>
+              <strong style="color: #065f46; display: block;"><i data-lucide="arrow-down" class="lucide-sm"></i> Bắc xuống Nam (Trên xuống Dưới, Trái qua Phải) — Khuyến nghị</strong>
               <span style="color: #047857; font-size: 11.5px;">Sắp xếp từ đầu vườn xuống cuối vườn, các cây ngang hàng được đánh số từ trái qua phải. Rất đẹp khi nhìn trên Bản đồ Vệ tinh.</span>
             </div>
           </label>
@@ -50,7 +50,7 @@
           <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
             <input type="radio" name="reorder_mode" value="by_columns" style="margin-top: 3px; accent-color: #059669;" onchange="previewReorderGps()">
             <div style="font-size: 12.5px; line-height: 1.4;">
-              <strong style="color: #1e293b; display: block;"><i class="fa-solid fa-arrows-split-up-and-left"></i> Theo từng Luống / Hàng Dọc (Hàng 1  Hàng 2)</strong>
+              <strong style="color: #1e293b; display: block;"><i data-lucide="split" class="lucide-sm"></i> Theo từng Luống / Hàng Dọc (Hàng 1  Hàng 2)</strong>
               <span style="color: #64748b; font-size: 11.5px;">Đánh số hết hàng cây bên trái (ví dụ 1  37), sau đó sang hàng cây kế tiếp (38  75).</span>
             </div>
           </label>
@@ -58,7 +58,7 @@
           <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
             <input type="radio" name="reorder_mode" value="snake" style="margin-top: 3px; accent-color: #059669;" onchange="previewReorderGps()">
             <div style="font-size: 12.5px; line-height: 1.4;">
-              <strong style="color: #1e293b; display: block;"><i class="fa-solid fa-route"></i> Đường Zíc-zắc (Tuần tra Thực địa)</strong>
+              <strong style="color: #1e293b; display: block;"><i data-lucide="navigation-2" class="lucide-sm"></i> Đường Zíc-zắc (Tuần tra Thực địa)</strong>
               <span style="color: #64748b; font-size: 11.5px;">Hàng 1 đi xuôi, hàng 2 đi ngược trở lại, tiện lợi khi công nhân đi tuần tra chăm sóc từng luống.</span>
             </div>
           </label>
@@ -96,9 +96,9 @@
       <!-- Preview Summary & Table -->
       <div style="border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
         <div style="background: #f1f5f9; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: #334155;">
-          <span><i class="fa-solid fa-table-list" style="color:#0284c7;"></i> Xem trước kết quả đánh số: <strong id="reorder-gps-preview-count" style="color:#059669;">0 cây</strong></span>
+          <span><i data-lucide="table" class="lucide-sm" style="color:#0284c7;"></i> Xem trước kết quả đánh số: <strong id="reorder-gps-preview-count" style="color:#059669;">0 cây</strong></span>
           <button type="button" class="btn btn-secondary btn-xs" onclick="previewReorderGps()" style="padding: 3px 8px; font-size: 11px; border-radius: 6px; background:#fff;">
-            <i class="fa-solid fa-arrows-rotate"></i> Làm mới
+            <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm mới
           </button>
         </div>
         <div id="reorder-gps-preview-table-wrap" style="max-height: 180px; overflow-y: auto; font-size: 12px; -webkit-overflow-scrolling: touch;">
@@ -114,7 +114,7 @@
             <tbody id="reorder-gps-preview-tbody">
               <tr>
                 <td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">
-                  <i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu tọa độ...
+                  <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu tọa độ...
                 </td>
               </tr>
             </tbody>
@@ -127,10 +127,10 @@
     <!-- Modal Footer -->
     <div class="modal-footer" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border-top: 1px solid #e2e8f0; flex-shrink: 0; gap: 8px; flex-wrap: wrap;">
       <button type="button" class="btn btn-secondary" onclick="closeReorderGpsModal()" style="padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 13px;">
-        <i class="fa-solid fa-xmark"></i> Hủy
+        <i data-lucide="x" class="lucide-sm"></i> Hủy
       </button>
       <button type="button" class="btn btn-primary" id="btn-execute-reorder-gps" onclick="executeReorderGps()" style="padding: 9px 20px; border-radius: 8px; font-weight: 800; font-size: 13px; background: linear-gradient(135deg, #10b981, #047857); border: none; color: #ffffff; box-shadow: 0 3px 10px rgba(16,185,129,0.3); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-        <i class="fa-solid fa-wand-magic-sparkles"></i> Áp dụng &amp; Đánh số lại ngay
+        <i data-lucide="sparkles" class="lucide-sm"></i> Áp dụng &amp; Đánh số lại ngay
       </button>
     </div>
 

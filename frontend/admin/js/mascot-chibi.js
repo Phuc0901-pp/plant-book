@@ -1,4 +1,4 @@
-/**
+﻿/**
  * admin/js/mascot-chibi.js - Pure Minimal 3D Anime Chibi Plant Mascot with Gemini AI Chatbot
  * 🔒 Ẩn hoàn toàn khi ở màn hình đăng nhập, chỉ hiển thị sau khi Admin đăng nhập thành công.
  * 🚀 NÂNG CẤP: Kéo thả di chuyển tự do (Draggable) trên mọi thiết bị (Desktop, Laptop, Tablet, Mobile)
@@ -431,7 +431,7 @@ function renderAdminMascot() {
             </div>
           </div>
           <button onclick="toggleAdminAiChat(event)" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-xmark"></i>
+            <i data-lucide="x" class="lucide-sm"></i>
           </button>
         </div>
 
@@ -468,7 +468,7 @@ function renderAdminMascot() {
             <div style="display: flex; gap: 8px; align-items: center;">
               <div style="width: 28px; height: 28px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px;">🌱</div>
               <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 8px 14px; border-radius: 14px; font-size: 12.5px; color: #64748b;">
-                <i class="fa-solid fa-spinner fa-spin" style="color:#10b981; margin-right:6px;"></i> Bé Mầm đang suy nghĩ câu trả lời...
+                <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#10b981; margin-right:6px;"></i> Bé Mầm đang suy nghĩ câu trả lời...
               </div>
             </div>
           ` : ''}
@@ -486,7 +486,7 @@ function renderAdminMascot() {
         <form onsubmit="handleAdminAiSubmit(event)" style="padding: 10px 14px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center;">
           <input type="text" id="admin-ai-chat-input" placeholder="Nhập câu hỏi bất kỳ cho Bé Mầm AI..." autocomplete="off" style="flex: 1; border: 1.5px solid #cbd5e1; border-radius: 20px; padding: 9px 16px; font-size: 13px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#cbd5e1'">
           <button type="submit" style="background: #10b981; color: white; border: none; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
-            <i class="fa-solid fa-paper-plane"></i>
+            <i data-lucide="send" class="lucide-sm"></i>
           </button>
         </form>
       </div>

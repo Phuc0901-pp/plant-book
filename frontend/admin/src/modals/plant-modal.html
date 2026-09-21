@@ -6,18 +6,18 @@
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.12); position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
       <div style="display:flex; align-items:center; gap:14px;">
         <div style="width:46px; height:46px; border-radius:12px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:22px; color:#a7f3d0; border:1px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
-          <i class="fa-solid fa-tree" id="plant-modal-header-icon"></i>
+          <i data-lucide="trees" class="lucide-sm" id="plant-modal-header-icon"></i>
         </div>
         <div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <h2 id="plant-modal-title" style="margin:0; font-size:18px; font-weight:800; color:#ffffff; letter-spacing:-0.2px; display:inline-flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-seedling" style="color:#34d399"></i> Thêm cây mới
+              <i data-lucide="sprout" class="lucide-sm" style="color:#34d399"></i> Thêm cây mới
             </h2>
             <span id="plant-modal-code-badge" class="badge" style="background:rgba(255,255,255,0.22); color:#ffffff; font-weight:800; font-size:12px; padding:3px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.25); display:none;">#0</span>
             <span id="plant-modal-health-pill" class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px; display:none;"> Tốt</span>
           </div>
           <div id="plant-modal-subtitle" style="font-size:12px; color:#d1fae5; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <span><i class="fa-solid fa-layer-group" style="opacity:0.8;"></i> <span id="plant-modal-sub-variety">Hồ sơ thông số kỹ thuật &amp; thông tin nông hộ VietGAP</span></span>
+            <span><i data-lucide="layers" class="lucide-sm" style="opacity:0.8;"></i> <span id="plant-modal-sub-variety">Hồ sơ thông số kỹ thuật &amp; thông tin nông hộ VietGAP</span></span>
           </div>
         </div>
       </div>
@@ -30,13 +30,13 @@
       <!-- Segmented Navigation Tab Bar -->
       <div class="tabs plant-modal-tabs" style="display:flex; gap:6px; background:#e2e8f0; padding:5px; border-radius:12px; margin-bottom:18px; border-bottom:none; flex-shrink:0;">
         <div class="tab active" onclick="switchTab(this,'tab-info')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
-          <i class="fa-solid fa-circle-info"></i> <span>Thông tin cơ bản</span>
+          <i data-lucide="info" class="lucide-sm"></i> <span>Thông tin cơ bản</span>
         </div>
         <div class="tab" onclick="switchTab(this,'tab-extra')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
-          <i class="fa-solid fa-layer-group"></i> <span>Dữ liệu mở rộng</span>
+          <i data-lucide="layers" class="lucide-sm"></i> <span>Dữ liệu mở rộng</span>
         </div>
         <div class="tab" onclick="switchTab(this,'tab-media')" style="flex:1; text-align:center; padding:9px 12px; font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; border:none; margin:0;">
-          <i class="fa-solid fa-images"></i> <span>Ảnh / Video</span>
+          <i data-lucide="images" class="lucide-sm"></i> <span>Ảnh / Video</span>
           <span id="plant-media-count-badge" class="badge" style="font-size:10.5px; padding:2px 7px; border-radius:10px; background:#dcfce7; color:#15803d; font-weight:800; display:none;">0</span>
         </div>
       </div>
@@ -47,7 +47,7 @@
         <!-- Mode Selector (Chỉ hiển thị khi tạo cây mới) -->
         <div id="plant-create-mode-wrap" style="margin-bottom:16px; padding:12px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
           <div style="font-size:12.5px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-sliders" style="color:#059669;"></i> Chế độ khởi tạo cây:
+            <i data-lucide="sliders" class="lucide-sm" style="color:#059669;"></i> Chế độ khởi tạo cây:
           </div>
           <div style="display:flex; gap:8px;">
             <label id="label-mode-single" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#065f46; cursor:pointer; background:#ecfdf5; padding:6px 14px; border-radius:8px; border:1.5px solid #34d399; transition:all 0.15s;">
@@ -64,7 +64,7 @@
         <!-- Group 1:  Định danh & Phân loại giống cây -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-            <i class="fa-solid fa-tag" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
+            <i data-lucide="tag" class="lucide-sm" style="color:#059669;"></i> Định danh &amp; Phân loại giống cây
           </div>
 
           <!-- 1. Single Mode Tree Code Field -->
@@ -84,7 +84,7 @@
           <!-- 2. Range Mode Fields (XX -> XY) -->
           <div id="wrap-range-tree-code" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
             <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-              <i class="fa-solid fa-layer-group"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
+              <i data-lucide="layers" class="lucide-sm"></i> Tạo hàng loạt cây cùng thông tin từ số XX đến số XY
             </div>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
               <div>
@@ -136,7 +136,7 @@
         <!-- Group 2:  Trạng thái sinh trưởng & Quản lý vị trí -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-            <i class="fa-solid fa-heart-pulse" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
+            <i data-lucide="activity" class="lucide-sm" style="color:#059669;"></i> Trạng thái sinh trưởng &amp; Quản lý thực địa
           </div>
           <div class="form-row" style="margin-bottom:12px;">
             <div class="field" style="margin-bottom:0;">
@@ -165,10 +165,10 @@
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
             <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-map-pin" style="color:#059669;"></i> Tọa độ GPS &amp; Định vị vệ tinh
+              <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> Tọa độ GPS &amp; Định vị vệ tinh
             </div>
             <button type="button" class="btn btn-secondary btn-sm" onclick="getCurrentDeviceGpsForPlant()" style="font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:6px; background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
-              <i class="fa-solid fa-location-crosshairs"></i> Lấy GPS hiện tại
+              <i data-lucide="crosshair" class="lucide-sm"></i> Lấy GPS hiện tại
             </button>
           </div>
           <div class="form-row" style="margin-bottom:0;">
@@ -186,7 +186,7 @@
         <!-- Group 4:  Cổng tra cứu công khai (Public QR / URL) -->
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-            <i class="fa-solid fa-globe" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
+            <i data-lucide="globe" class="lucide-sm" style="color:#059669;"></i> Cổng tra cứu công khai &amp; Mã định danh số
           </div>
           <input type="hidden" id="f-schema-id">
           <div class="field" style="margin-bottom:12px;">
@@ -199,15 +199,15 @@
           <!-- Public URL display -->
           <div class="public-url-box" id="public-url-section" style="display:none; background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px;">
             <div style="font-size:12px; font-weight:800; color:#166534; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-link"></i> Đường dẫn tra cứu công khai của cây:
+              <i data-lucide="link" class="lucide-sm"></i> Đường dẫn tra cứu công khai của cây:
             </div>
             <div class="url-copy-row" style="display:flex; gap:8px; align-items:center;">
               <input type="text" id="public-url-input" readonly style="flex:1; background:#ffffff; border:1.5px solid #86efac; border-radius:8px; padding:8px 12px; font-size:12.5px; font-weight:600; color:#0f172a; outline:none;">
               <button type="button" class="btn btn-secondary btn-sm" onclick="copyURL()" style="background:#ffffff; border:1.5px solid #cbd5e1; font-weight:700; border-radius:8px; padding:8px 12px; font-size:12px; white-space:nowrap; cursor:pointer;">
-                <i class="fa fa-copy" style="color:#059669;"></i> Copy
+                <i data-lucide="copy" class="lucide-sm" style="color:#059669;"></i> Copy
               </button>
               <a id="public-url-link" href="#" target="_blank" class="btn btn-primary btn-sm" style="background:#059669; border:none; font-weight:700; border-radius:8px; padding:8px 14px; font-size:12px; white-space:nowrap; text-decoration:none; color:#ffffff;">
-                <i class="fa fa-arrow-up-right-from-square"></i> Mở
+                <i data-lucide="external-link" class="lucide-sm"></i> Mở
               </a>
             </div>
           </div>
@@ -219,13 +219,13 @@
         <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02); min-height:280px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-layer-group" style="color:#059669;"></i> Thuộc tính đặc tả theo Schema tùy biến
+              <i data-lucide="layers" class="lucide-sm" style="color:#059669;"></i> Thuộc tính đặc tả theo Schema tùy biến
             </div>
             <span style="font-size:11.5px; color:#64748b;">Định dạng mở rộng linh hoạt</span>
           </div>
           <div id="extra-fields-container">
             <div class="empty-state" style="padding:40px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
-              <i class="fa-solid fa-shapes" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+              <i data-lucide="shapes" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
               <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Không có trường thuộc tính đặc thù nào.</p>
               <small style="color:#94a3b8;">Cấu hình schema tại Cài đặt &gt; Quản lý Schema để thêm thuộc tính chuyên sâu (Độ pH, Độ ngọt Brix, Mã PUC...) cho giống cây này.</small>
             </div>
@@ -237,7 +237,7 @@
       <div class="tab-pane" id="tab-media">
         <div id="plant-media-container" style="min-height:280px;">
           <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
-            <i class="fa-solid fa-images" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+            <i data-lucide="images" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
             <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi tải ảnh/video.</p>
             <small style="color:#94a3b8;">Hệ thống tự động liên kết tệp phương tiện với cây trồng sau khi khởi tạo ID.</small>
           </div>
@@ -249,14 +249,14 @@
     <!-- 3. ERP Sticky Bottom Action Footer -->
     <div class="modal-footer" style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; bottom:0; background:#ffffff; z-index:10; border-radius:0 0 18px 18px; flex-shrink:0;">
       <div style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:6px;">
-        <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn ERP</span>
+        <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn ERP</span>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <button class="btn btn-secondary" onclick="closePlantModal()" style="font-weight:700; font-size:13px; padding:9px 18px; border-radius:10px; background:#f1f5f9; border:1px solid #cbd5e1; color:#475569;">
-          <i class="fa-solid fa-xmark"></i> Hủy
+          <i data-lucide="x" class="lucide-sm"></i> Hủy
         </button>
         <button class="btn btn-primary" id="plant-save-btn" onclick="savePlant()" style="font-weight:800; font-size:13px; padding:9px 22px; border-radius:10px; background:linear-gradient(135deg, #10b981, #047857); border:none; box-shadow:0 4px 14px rgba(16,185,129,0.3); color:#ffffff; cursor:pointer;">
-          <span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu hồ sơ cây</span>
+          <span id="plant-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu hồ sơ cây</span>
         </button>
       </div>
     </div>

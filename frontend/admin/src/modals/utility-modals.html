@@ -2,7 +2,7 @@
 <div class="modal-overlay" id="cost-entry-modal" style="display:none" onclick="if(event.target===this)closeCostEntryModal()">
   <div class="modal" style="max-width:560px;">
     <div class="modal-header">
-      <h2 id="cost-entry-modal-title"><i class="fa-solid fa-coins" style="color:var(--green)"></i> Thêm khoản chi</h2>
+      <h2 id="cost-entry-modal-title"><i data-lucide="coins" class="lucide-sm" style="color:var(--green)"></i> Thêm khoản chi</h2>
       <button class="modal-close" onclick="closeCostEntryModal()">×</button>
     </div>
     <div class="modal-body">
@@ -86,7 +86,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCostEntryModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveCostEntry()"><i class="fa fa-check"></i> Lưu</button>
+      <button class="btn btn-primary" onclick="saveCostEntry()"><i data-lucide="check" class="lucide-sm"></i> Lưu</button>
     </div>
   </div>
 </div>
@@ -97,7 +97,7 @@
 <div class="modal-overlay" id="csv-import-modal" style="display:none" onclick="if(event.target===this)closeCsvImportModal()">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
-      <h2><i class="fa-solid fa-file-import" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
+      <h2><i data-lucide="upload" class="lucide-sm" style="color:var(--green)"></i> Import cây bằng file CSV</h2>
       <button class="modal-close" onclick="closeCsvImportModal()">×</button>
     </div>
     <div class="modal-body">
@@ -153,7 +153,7 @@
       </div>
       
       <div id="csv-preview-section" style="display:none; margin-top: 16px; border-top: 1px dashed var(--gray-200); padding-top: 12px;">
-        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i class="fa-solid fa-table"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
+        <h4 style="font-size:12px; font-weight:600; margin-bottom: 8px; color: var(--green);"><i data-lucide="table" class="lucide-sm"></i> Xem trước tọa độ (<span id="csv-preview-count">0</span> điểm)</h4>
         <div style="max-height: 120px; overflow-y:auto; font-size:11px; background:#f9fafb; padding:8px; border-radius:6px; border:1px solid var(--gray-200);">
           <table style="width:100%; border-collapse:collapse; text-align:left;">
             <thead>
@@ -173,7 +173,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCsvImportModal()">Hủy</button>
       <button class="btn btn-primary" id="csv-import-submit-btn" onclick="submitCsvImport()" disabled>
-        <i class="fa fa-upload"></i> Thực hiện Import
+        <i data-lucide="upload" class="lucide-sm"></i> Thực hiện Import
       </button>
     </div>
   </div>
@@ -185,7 +185,7 @@
 
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header">
-      <h2 id="device-modal-title"><i class="fa-solid fa-microchip" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
+      <h2 id="device-modal-title"><i data-lucide="cpu" class="lucide-sm" style="color:var(--green)"></i> Thêm thiết bị mới</h2>
       <button class="modal-close" onclick="closeDeviceModal()">×</button>
     </div>
     <div class="modal-body">
@@ -235,7 +235,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDeviceModal()">Hủy</button>
       <button class="btn btn-primary" id="device-save-btn" onclick="saveDevice()">
-        <span id="device-save-text"><i class="fa fa-floppy-disk"></i> Lưu thiết bị</span>
+        <span id="device-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu thiết bị</span>
       </button>
     </div>
   </div>
@@ -246,7 +246,7 @@
 <div class="modal-overlay" id="user-activity-modal" style="display:none" onclick="if(event.target===this)closeUserActivityModal()">
   <div class="modal" style="max-width: 600px;">
     <div class="modal-header">
-      <h2><i class="fa-solid fa-clock-rotate-left" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
+      <h2><i data-lucide="history" class="lucide-sm" style="color:var(--green)"></i> Lịch sử hoạt động: <span id="activity-modal-username">—</span></h2>
       <button class="modal-close" onclick="closeUserActivityModal()">×</button>
     </div>
     <div class="modal-body" style="max-height: 450px; overflow-y: auto;">
@@ -265,12 +265,12 @@
 <div class="modal-overlay" id="design-drawing-modal" style="display:none" onclick="if(event.target===this)closeDesignDrawingModal()">
   <div class="modal" style="max-width: 520px;">
     <div class="modal-header">
-      <h2><i class="fa-solid fa-compass-drafting" style="color:var(--green)"></i> Import Bản Vẽ Thiết Kế Trang Trại (CAD / Overlay)</h2>
+      <h2><i data-lucide="compass" class="lucide-sm" style="color:var(--green)"></i> Import Bản Vẽ Thiết Kế Trang Trại (CAD / Overlay)</h2>
       <button class="modal-close" onclick="closeDesignDrawingModal()">×</button>
     </div>
     <div class="modal-body">
       <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#1e40af;">
-        <i class="fa-solid fa-circle-info"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
+        <i data-lucide="info" class="lucide-sm"></i> Tải lên bản vẽ thiết kế trang trại (định dạng <strong>GeoJSON, KML, CAD DXF hoặc Hình ảnh quy hoạch PNG/JPG</strong>) để phủ trực tiếp lên bản đồ vệ tinh GIS.
       </div>
       
       <div class="field">
@@ -292,13 +292,13 @@
       </div>
 
       <div id="drawing-preview-box" style="display:none; padding:10px; background:var(--gray-50); border:1px dashed var(--gray-300); border-radius:8px; font-size:12px; margin-top:10px;">
-        <i class="fa-solid fa-file-contract" style="color:#2563eb"></i> Tệp đã chọn: <strong id="drawing-filename">-</strong>
+        <i data-lucide="file-text" class="lucide-sm" style="color:#2563eb"></i> Tệp đã chọn: <strong id="drawing-filename">-</strong>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDesignDrawingModal()">Hủy</button>
       <button class="btn btn-primary" onclick="submitDesignDrawingImport()">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Áp Dụng Bản Vẽ Lên Bản Đồ
+        <i data-lucide="upload-cloud" class="lucide-sm"></i> Áp Dụng Bản Vẽ Lên Bản Đồ
       </button>
     </div>
   </div>
@@ -309,7 +309,7 @@
   <div class="modal" style="max-width: 780px; width: 92%; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.25);">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
       <h2 style="font-size:16px; margin:0; color:#fff; font-weight:800; display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-code-compare" style="color:#6ee7b7"></i> Đối Chiếu Biến Động Dữ Liệu (Visual Diff Inspector)
+        <i data-lucide="git-compare" class="lucide-sm" style="color:#6ee7b7"></i> Đối Chiếu Biến Động Dữ Liệu (Visual Diff Inspector)
       </h2>
       <button class="modal-close" onclick="closeViewHistoryModal()" style="color:#fff; opacity:0.9; font-size:22px;">×</button>
     </div>

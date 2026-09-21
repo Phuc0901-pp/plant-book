@@ -11,14 +11,14 @@ let activeDbTab = 'cultivation';
 
 // Distinct Category Badge Styles & Colors
 const supplyCategoryConfigs = {
-  'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'fa-seedling', iconColor: '#92400e', label: '🧮 Bón phân' },
-  'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'fa-spray-can-sparkles', iconColor: '#8b5cf6', label: '🧪 Phun thuốc' },
-  'Tiền nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'fa-droplet', iconColor: '#3b82f6', label: '💧 Tiền nước' },
-  'Nhân công': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-user-gear', iconColor: '#10b981', label: '👷 Nhân công' }
+  'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'sprout', iconColor: '#92400e', label: '🧮 Bón phân' },
+  'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'spray-can', iconColor: '#8b5cf6', label: '🧪 Phun thuốc' },
+  'Tiền nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'droplets', iconColor: '#3b82f6', label: '💧 Tiền nước' },
+  'Nhân công': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'user-cog', iconColor: '#10b981', label: '👷 Nhân công' }
 };
 
 function getSupplyCatConfig(catName) {
-  return supplyCategoryConfigs[catName] || { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1', icon: 'fa-box-open', iconColor: '#64748b', label: catName || 'Vật tư khác' };
+  return supplyCategoryConfigs[catName] || { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1', icon: 'package', iconColor: '#64748b', label: catName || 'Vật tư khác' };
 }
 
 function isVideoUrl(url) {
@@ -36,7 +36,7 @@ function renderMediaThumbnail(m) {
       <div style="position:relative; display:inline-block;">
         <video src="${esc(url)}" controls preload="metadata" style="max-width:280px; max-height:160px; border-radius:10px; border:1.5px solid #cbd5e1; background:#000; display:block;"></video>
         <span style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.7); color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; backdrop-filter:blur(2px);">
-          <i class="fa-solid fa-play"></i> Video
+          <i data-lucide="play" class="lucide-sm"></i> Video
         </span>
       </div>
     `;
@@ -226,7 +226,7 @@ async function onDbFarmChange() {
     } else {
       personnelList.innerHTML = farmPersonnel.map(p => `
         <div style="display:inline-flex; align-items:center; gap:6px; background:#ffffff; border:1.5px solid #a7f3d0; border-radius:20px; padding:4px 12px; font-size:12px; font-weight:700; color:#064e3b; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
-          <i class="fa-solid fa-user-check" style="color:#059669; font-size:11px;"></i> ${esc(p.name)} <span style="color:#64748b; font-weight:500;">(${esc(p.phone)})</span>
+          <i data-lucide="user-check" class="lucide-sm" style="color:#059669; font-size:11px;"></i> ${esc(p.name)} <span style="color:#64748b; font-weight:500;">(${esc(p.phone)})</span>
         </div>
       `).join('');
     }
@@ -315,7 +315,7 @@ function renderMasterPlantsList(plants) {
          style="padding:10px 12px; border-radius:10px; cursor:pointer; transition:all 0.15s ease; border:${isAllSelected ? '2px solid #059669' : '1px solid #e2e8f0'}; background:${isAllSelected ? '#ecfdf5' : '#f8fafc'}; margin-bottom:4px;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <strong style="font-size:12.5px; color:${isAllSelected ? '#064e3b' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-layer-group" style="color:${isAllSelected ? '#059669' : '#64748b'};"></i> Toàn bộ trang trại
+          <i data-lucide="layers" class="lucide-sm" style="color:${isAllSelected ? '#059669' : '#64748b'};"></i> Toàn bộ trang trại
         </strong>
         <span style="font-size:11px; font-weight:700; color:#059669; background:#ffffff; padding:2px 8px; border-radius:10px; border:1px solid #a7f3d0;">
           Tất cả (${plants.length})
@@ -336,7 +336,7 @@ function renderMasterPlantsList(plants) {
            style="padding:10px 12px; border-radius:10px; cursor:pointer; transition:all 0.15s ease; border:${isSelected ? '2px solid #059669' : '1px solid #e2e8f0'}; background:${isSelected ? '#f0fdf4' : '#ffffff'}; box-shadow:${isSelected ? '0 2px 8px rgba(5,150,105,0.12)' : '0 1px 2px rgba(0,0,0,0.02)'};">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
           <strong style="font-size:13px; color:${isSelected ? '#064e3b' : '#0f172a'}; display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-tree" style="color:${isSelected ? '#059669' : '#64748b'};"></i> #${esc(p.tree_code || p.id)}
+            <i data-lucide="trees" class="lucide-sm" style="color:${isSelected ? '#059669' : '#64748b'};"></i> #${esc(p.tree_code || p.id)}
           </strong>
           <span style="font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; ${healthBadgeStyle}">
             ${esc(healthStatus)}
@@ -349,13 +349,13 @@ function renderMasterPlantsList(plants) {
           <span>${esc(p.location || 'Chưa gán vị trí')}</span>
           <div style="display:flex; gap:4px;" onclick="event.stopPropagation();">
             <button onclick="openQrModal(${p.id})" class="btn btn-sm" title="Mã QR" style="padding:3px 7px; font-size:10.5px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:5px; color:#0f172a; cursor:pointer;">
-              <i class="fa-solid fa-qrcode"></i>
+              <i data-lucide="qr-code" class="lucide-sm"></i>
             </button>
             <button onclick="openPlantModal(${p.id}, ${currentDbSelectedFarmId})" class="btn btn-sm" title="Chỉnh sửa" style="padding:3px 7px; font-size:10.5px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:5px; color:#0284c7; cursor:pointer;">
-              <i class="fa fa-pen"></i>
+              <i data-lucide="edit-3" class="lucide-sm"></i>
             </button>
             <button onclick="deletePlantFromDb(${p.id}, '${esc(p.plant_type)}')" class="btn btn-sm" title="Xóa" style="padding:3px 7px; font-size:10.5px; background:#fef2f2; border:1px solid #fca5a5; border-radius:5px; color:#dc2626; cursor:pointer;">
-              <i class="fa fa-trash"></i>
+              <i data-lucide="trash-2" class="lucide-sm"></i>
             </button>
           </div>
         </div>
@@ -413,7 +413,7 @@ async function selectTreeForDetail(plantId) {
   if (summaryBox) summaryBox.style.display = 'none';
   if (filterBar) filterBar.style.display = 'none';
   if (container) {
-    container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fa fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px;"></i> Đang tải dữ liệu canh tác & chi phí đầu tư...</div>';
+    container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size:24px; margin-bottom:8px;"></i> Đang tải dữ liệu canh tác & chi phí đầu tư...</div>';
   }
 
   try {
@@ -452,7 +452,7 @@ async function selectTreeForDetail(plantId) {
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
               <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
-                <i class="fa-solid fa-map-location-dot"></i> TỔNG HỢP CANH TÁC TOÀN TRANG TRẠI · ${esc(farm ? farm.name : '')}
+                <i data-lucide="map" class="lucide-sm"></i> TỔNG HỢP CANH TÁC TOÀN TRANG TRẠI · ${esc(farm ? farm.name : '')}
               </div>
               <div style="font-size:20px; font-weight:800; margin-top:2px;">
                 ${currentDbFarmPlantsCache.length} Cây Trồng Đang Hoạt Động
@@ -464,7 +464,7 @@ async function selectTreeForDetail(plantId) {
 
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
               <button onclick="openPlantModalForActiveDbFarm()" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:8px 14px; cursor:pointer;">
-                <i class="fa fa-plus"></i> Thêm cây mới
+                <i data-lucide="plus" class="lucide-sm"></i> Thêm cây mới
               </button>
               <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:10px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
                 <div style="font-size:10.5px; text-transform:uppercase; opacity:0.85; font-weight:700;">TỔNG CHI PHÍ</div>
@@ -503,7 +503,7 @@ async function selectTreeForDetail(plantId) {
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
               <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
-                <i class="fa-solid fa-tree"></i> HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
+                <i data-lucide="trees" class="lucide-sm"></i> HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
               </div>
               <div style="font-size:20px; font-weight:800; margin-top:2px;">
                 ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''}
@@ -515,13 +515,13 @@ async function selectTreeForDetail(plantId) {
 
             <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
               <button onclick="openQrModal(${plant.id})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="In mã QR">
-                <i class="fa-solid fa-qrcode"></i> In QR
+                <i data-lucide="qr-code" class="lucide-sm"></i> In QR
               </button>
               <button onclick="openPlantModal(${plant.id}, ${currentDbSelectedFarmId})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="Chỉnh sửa cây">
-                <i class="fa fa-pen"></i> Sửa cây
+                <i data-lucide="edit-3" class="lucide-sm"></i> Sửa cây
               </button>
               <button onclick="deletePlantFromDb(${plant.id}, '${esc(plant.plant_type)}')" class="btn" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="Xóa cây">
-                <i class="fa fa-trash"></i> Xóa
+                <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
               </button>
               <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
                 <div style="font-size:10px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG ĐẦU TƯ</div>
@@ -535,12 +535,12 @@ async function selectTreeForDetail(plantId) {
           <!-- VietGAP Compliance Status Bar -->
           <div style="margin-top:12px; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
             <div style="background:rgba(16,185,129,0.3); border:1px solid rgba(167,243,208,0.6); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:800; color:#ffffff; display:inline-flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-shield-halved" style="color:#86efac; font-size:14px;"></i> 
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#86efac; font-size:14px;"></i> 
               TIÊU CHUẨN VIETGAP 100% · NHẬT KÝ TRUY XUẤT MINH BẠCH
             </div>
 
             <div style="font-size:12px; opacity:0.9;">
-              <i class="fa-solid fa-barcode"></i> Mã Lô VietGAP khi thu hoạch: <strong style="font-family:monospace; color:#fde047;">${pucCode}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${(plant.tree_code || plant.id).toString().replace(/[^a-zA-Z0-9]/g,'')}</strong>
+              <i data-lucide="scan" class="lucide-sm"></i> Mã Lô VietGAP khi thu hoạch: <strong style="font-family:monospace; color:#fde047;">${pucCode}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${(plant.tree_code || plant.id).toString().replace(/[^a-zA-Z0-9]/g,'')}</strong>
             </div>
           </div>
         `;
@@ -558,7 +558,7 @@ async function selectTreeForDetail(plantId) {
 
   } catch (err) {
     if (container) {
-      container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--red);"><i class="fa fa-circle-xmark"></i> Lỗi: ${esc(err.message)}</div>`;
+      container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--red);"><i data-lucide="x-circle" class="lucide-sm"></i> Lỗi: ${esc(err.message)}</div>`;
     }
   }
 }
@@ -669,29 +669,30 @@ function renderActivityFilterChips(logs) {
   const availableTypes = chipTypes.filter(t => t === 'all' || counts[t] > 0);
 
   const typeIcons = {
-    all: 'fa-list-ul',
-    'Tưới nước': 'fa-droplet',
-    'Bón phân': 'fa-seedling',
-    'Phun thuốc': 'fa-spray-can-sparkles',
-    'Cắt lá': 'fa-scissors',
-    'Tỉa hoa': 'fa-scissors',
-    'Bệnh cây': 'fa-bug',
-    'Thu hoạch': 'fa-basket-shopping'
+    all: 'list',
+    'Tưới nước': 'droplets',
+    'Bón phân': 'sprout',
+    'Phun thuốc': 'spray-can',
+    'Cắt lá': 'scissors',
+    'Tỉa hoa': 'scissors',
+    'Bệnh cây': 'bug',
+    'Thu hoạch': 'shopping-bag'
   };
 
   container.innerHTML = availableTypes.map(t => {
     const isActive = (currentDbActiveActivityFilter === t);
     const label = t === 'all' ? 'Tất cả hoạt động' : t;
     const count = counts[t] || 0;
-    const icon = typeIcons[t] || 'fa-tag';
+    const icon = typeIcons[t] || 'tag';
 
     return `
       <button type="button" onclick="filterTimelineByActivity('${esc(t)}')"
               style="padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s ease; border:${isActive ? '1.5px solid #059669' : '1.5px solid #cbd5e1'}; background:${isActive ? '#059669' : '#ffffff'}; color:${isActive ? '#ffffff' : '#475569'}; display:inline-flex; align-items:center; gap:6px;">
-        <i class="fa-solid ${icon}"></i> ${esc(label)} <span style="opacity:0.85; font-size:11px;">(${count})</span>
+        <i data-lucide="${icon}" class="lucide-sm"></i> ${esc(label)} <span style="opacity:0.85; font-size:11px;">(${count})</span>
       </button>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 function filterTimelineByActivity(type) {
@@ -715,7 +716,7 @@ function renderDetailTimeline() {
   if (logs.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
-        <i class="fa-solid fa-clipboard-list" style="font-size:36px; color:#94a3b8; margin-bottom:12px;"></i>
+        <i data-lucide="clipboard-list" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:12px;"></i>
         <p style="font-size:13.5px; font-weight:700; color:#475569;">
           ${currentDbActiveActivityFilter === 'all' ? 'Cây này chưa có nhật ký canh tác nào.' : `Không có hoạt động "${currentDbActiveActivityFilter}" nào được ghi nhận.`}
         </p>
@@ -724,13 +725,13 @@ function renderDetailTimeline() {
   }
 
   const typeConfigs = {
-    'Tưới nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'fa-droplet', iconColor: '#3b82f6' },
-    'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'fa-seedling', iconColor: '#92400e' },
-    'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'fa-spray-can-sparkles', iconColor: '#8b5cf6' },
-    'Cắt lá': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-scissors', iconColor: '#10b981' },
-    'Tỉa hoa': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: 'fa-scissors', iconColor: '#ea580c' },
-    'Bệnh cây': { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5', icon: 'fa-bug', iconColor: '#ef4444' },
-    'Thu hoạch': { bg: '#fefce8', color: '#a16207', border: '#fef08a', icon: 'fa-basket-shopping', iconColor: '#f59e0b' }
+    'Tưới nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'droplets', iconColor: '#3b82f6' },
+    'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'sprout', iconColor: '#92400e' },
+    'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'spray-can', iconColor: '#8b5cf6' },
+    'Cắt lá': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'scissors', iconColor: '#10b981' },
+    'Tỉa hoa': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: 'scissors', iconColor: '#ea580c' },
+    'Bệnh cây': { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5', icon: 'bug', iconColor: '#ef4444' },
+    'Thu hoạch': { bg: '#fefce8', color: '#a16207', border: '#fef08a', icon: 'shopping-bag', iconColor: '#f59e0b' }
   };
 
   const groupedByDate = {};
@@ -745,7 +746,7 @@ function renderDetailTimeline() {
     <!-- Initiation Node -->
     <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:14px; padding:14px 16px; color:#064e3b; margin-bottom:20px; box-shadow:0 4px 12px rgba(16,185,129,0.06); display:flex; align-items:center; gap:12px;">
       <div style="width:38px; height:38px; border-radius:10px; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 10px rgba(5,150,105,0.25);">
-        <i class="fa-solid fa-flag"></i>
+        <i data-lucide="flag" class="lucide-sm"></i>
       </div>
       <div>
         <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#047857;">🌱 THÔNG TIN KHỞI TẠO VĨNH VIỄN CÂY TRỒNG</div>
@@ -763,7 +764,7 @@ function renderDetailTimeline() {
         <!-- Date Header -->
         <div style="background:linear-gradient(135deg, #f8fafc, #f1f5f9); padding:10px 16px; border-bottom:1.5px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
           <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-            <i class="fa-regular fa-calendar-check" style="color:#059669;"></i> Ngày ${esc(dateStr)}
+            <i data-lucide="calendar-check" class="lucide-sm" style="color:#059669;"></i> Ngày ${esc(dateStr)}
           </div>
           <span class="badge" style="background:#059669; color:#ffffff; font-weight:800; font-size:11px; padding:2px 10px; border-radius:20px;">
             ${dayLogs.length} hoạt động
@@ -774,7 +775,7 @@ function renderDetailTimeline() {
     `;
 
     dayLogs.forEach(l => {
-      const cfg = typeConfigs[l.log_type] || { bg: '#f8fafc', color: '#334155', border: '#e2e8f0', icon: 'fa-clipboard-check', iconColor: '#059669' };
+      const cfg = typeConfigs[l.log_type] || { bg: '#f8fafc', color: '#334155', border: '#e2e8f0', icon: 'clipboard-check', iconColor: '#059669' };
 
       let details = {};
       try {
@@ -805,7 +806,7 @@ function renderDetailTimeline() {
             <div style="display:flex; align-items:center; gap:10px;">
               ${supplyImg 
                 ? `<img src="${esc(supplyImg)}" alt="${esc(supplyName)}" style="width:42px; height:42px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">` 
-                : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i class="fa-solid ${cfg.icon}"></i></div>`
+                : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
               }
               <div>
                 <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(supplyName || l.log_type)}</div>
@@ -814,7 +815,7 @@ function renderDetailTimeline() {
                 ${reason ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mục đích: <strong>${esc(reason)}</strong></div>` : ''}
               </div>
             </div>
-            ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0;"><i class="fa-solid fa-coins"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
+            ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0;"><i data-lucide="coins" class="lucide-sm"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
           </div>
         `;
       }
@@ -833,13 +834,13 @@ function renderDetailTimeline() {
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
-                <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(l.log_type)}
+                <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(l.log_type)}
               </span>
-              ${timeStr ? `<span style="font-size:11.5px; font-weight:700; color:#64748b;"><i class="fa-regular fa-clock"></i> ${timeStr}</span>` : ''}
+              ${timeStr ? `<span style="font-size:11.5px; font-weight:700; color:#64748b;"><i data-lucide="clock" class="lucide-sm"></i> ${timeStr}</span>` : ''}
             </div>
             ${(l.creator_name || l.creator_phone) ? `
               <div style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; color:#064e3b; padding:3px 10px; border-radius:8px; font-size:11.5px; font-weight:700;">
-                <i class="fa-solid fa-user-check" style="color:#059669;"></i> 👤 Thực hiện bởi: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.creator_phone ? `· 📞 <strong>${esc(l.creator_phone)}</strong>` : ''}
+                <i data-lucide="user-check" class="lucide-sm" style="color:#059669;"></i> 👤 Thực hiện bởi: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.creator_phone ? `· 📞 <strong>${esc(l.creator_phone)}</strong>` : ''}
               </div>` : ''}
           </div>
 
@@ -858,6 +859,7 @@ function renderDetailTimeline() {
   });
 
   container.innerHTML = timelineHtml;
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderEmptyDetailView(msg) {
@@ -870,7 +872,7 @@ function renderEmptyDetailView(msg) {
   if (container) {
     container.innerHTML = `
       <div class="empty-state" style="padding:50px 20px; background:#ffffff; border-radius:16px; border:1.5px solid #e2e8f0; text-align:center;">
-        <i class="fa-solid fa-tree" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
+        <i data-lucide="trees" class="lucide-sm" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
         <p style="font-size:13.5px; font-weight:700; color:#475569;">${esc(msg)}</p>
       </div>`;
   }
@@ -918,7 +920,7 @@ async function loadSuppliesTab() {
   if (userId) queryParams.set('user_id', userId);
   if (farmId) queryParams.set('farm_id', farmId);
 
-  tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải kho vật tư...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải kho vật tư...</td></tr>';
 
   try {
     const supplies = await api(`/supplies?${queryParams.toString()}`) || [];
@@ -927,7 +929,7 @@ async function loadSuppliesTab() {
     renderSupplyChipsBar(supplies);
     filterSupplies();
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state text-danger"><i data-lucide="alert-triangle" class="lucide-sm"></i> Lỗi: ${err.message}</td></tr>`;
   }
 }
 
@@ -980,8 +982,8 @@ function renderSupplyChipsBar(supplies) {
   const availableCategories = Object.keys(counts).filter(k => !['all', 'low_stock', 'endless'].includes(k) && counts[k] > 0);
 
   let chips = [
-    { id: 'all', label: 'Tất cả mặt hàng', icon: 'fa-boxes-stacked', count: counts.all },
-    { id: 'low_stock', label: 'Cảnh báo tồn thấp (≤ 5)', icon: 'fa-triangle-exclamation', count: counts.low_stock, isAlert: true }
+    { id: 'all', label: 'Tất cả mặt hàng', icon: 'boxes', count: counts.all },
+    { id: 'low_stock', label: 'Cảnh báo tồn thấp (≤ 5)', icon: 'alert-triangle', count: counts.low_stock, isAlert: true }
   ];
 
   availableCategories.forEach(cat => {
@@ -990,7 +992,7 @@ function renderSupplyChipsBar(supplies) {
   });
 
   if (counts.endless > 0) {
-    chips.push({ id: 'endless', label: 'Dịch vụ & Vô hạn', icon: 'fa-infinity', count: counts.endless });
+    chips.push({ id: 'endless', label: 'Dịch vụ & Vô hạn', icon: 'infinity', count: counts.endless });
   }
 
   container.innerHTML = chips.map(c => {
@@ -1009,10 +1011,11 @@ function renderSupplyChipsBar(supplies) {
     return `
       <button type="button" onclick="filterSuppliesByChip('${esc(c.id)}')"
               style="padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s ease; ${chipStyle} display:inline-flex; align-items:center; gap:6px;">
-        <i class="fa-solid ${c.icon}"></i> ${esc(c.label)} <span style="opacity:0.85; font-size:11px;">(${c.count})</span>
+        <i data-lucide="${c.icon}" class="lucide-sm"></i> ${esc(c.label)} <span style="opacity:0.85; font-size:11px;">(${c.count})</span>
       </button>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 function filterSuppliesByChip(chipType) {
@@ -1024,7 +1027,7 @@ window.filterSuppliesByChip = filterSuppliesByChip;
 
 function renderStockGauge(stockQty, unit, isEndless) {
   if (isEndless) {
-    return `<span class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; padding:4px 10px; border-radius:20px; border:1px solid #a7f3d0; font-size:11.5px;"><i class="fa-solid fa-infinity"></i> Vô hạn ∞</span>`;
+    return `<span class="badge" style="background:#ecfdf5; color:#047857; font-weight:800; padding:4px 10px; border-radius:20px; border:1px solid #a7f3d0; font-size:11.5px;"><i data-lucide="infinity" class="lucide-sm"></i> Vô hạn ∞</span>`;
   }
   const qty = parseFloat(stockQty || 0);
   const isLow = qty <= 5;
@@ -1038,7 +1041,7 @@ function renderStockGauge(stockQty, unit, isEndless) {
         <span style="font-weight:800; font-size:13px; color:${barColor};">
           ${qty} ${esc(unit || '')}
         </span>
-        ${isLow ? `<span style="font-size:10px; font-weight:800; background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:6px; border:1px solid #fecaca;"><i class="fa-solid fa-triangle-exclamation"></i> Cần nhập</span>` : ''}
+        ${isLow ? `<span style="font-size:10px; font-weight:800; background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:6px; border:1px solid #fecaca;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Cần nhập</span>` : ''}
       </div>
       <div style="width:100%; height:6px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
         <div style="width:${barPct}%; height:100%; background:${barColor}; border-radius:4px;"></div>
@@ -1078,11 +1081,11 @@ function renderSupplyCostChart() {
   const months = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 
   const categoryConfigs = {
-    'Bón phân': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', icon: 'fa-seedling' },
-    'Phun thuốc': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)', icon: 'fa-spray-can-sparkles' },
-    'Tiền nước': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)', icon: 'fa-droplet' },
-    'Nhân công': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', icon: 'fa-user-gear' },
-    'Vật tư khác': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.12)', icon: 'fa-box-open' }
+    'Bón phân': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', icon: 'sprout' },
+    'Phun thuốc': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)', icon: 'spray-can' },
+    'Tiền nước': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)', icon: 'droplets' },
+    'Nhân công': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', icon: 'user-cog' },
+    'Vật tư khác': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.12)', icon: 'package' }
   };
 
   const monthlyTotals = {
@@ -1161,7 +1164,7 @@ function renderSupplyCostChart() {
       return `
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; align-items:center; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="width:44px; height:44px; background:${cfg.bg}; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i class="fa-solid ${cfg.icon}" style="color:${cfg.color}; font-size:18px;"></i>
+            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.color}; font-size:18px;"></i>
           </div>
           <div>
             <div style="font-size:11.5px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">${esc(cat)}</div>
@@ -1236,7 +1239,7 @@ function renderSuppliesTable(supplies) {
   if (supplies.length === 0) {
     if (tableContainer) tableContainer.style.display = 'block';
     if (gridContainer) gridContainer.style.display = 'none';
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-box-open" style="font-size:36px; margin-bottom:10px; display:block;"></i>Kho vật tư hiện chưa có sản phẩm nào theo bộ lọc đã chọn.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px; text-align:center; color:#94a3b8;"><i data-lucide="package-open" class="lucide-sm" style="font-size:36px; margin-bottom:10px; display:block;"></i>Kho vật tư hiện chưa có sản phẩm nào theo bộ lọc đã chọn.</td></tr>';
     return;
   }
 
@@ -1254,7 +1257,7 @@ function renderSuppliesTable(supplies) {
     return `
       <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
         <td style="padding:12px 14px;">
-          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:46px; height:46px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` : `<div style="width:46px; height:46px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i class="fa-solid ${cfg.icon}"></i></div>`}
+          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:46px; height:46px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` : `<div style="width:46px; height:46px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i data-lucide="circle" class="${cfg.icon} lucide-sm"></i></div>`}
         </td>
         <td style="padding:12px 14px; font-weight:700; color:#0f172a;">
           <a href="javascript:void(0)" onclick="openViewSupplyModal(${s.id})" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#059669'" onmouseout="this.style.color='#0f172a'">
@@ -1264,7 +1267,7 @@ function renderSuppliesTable(supplies) {
         </td>
         <td style="padding:12px 14px;">
           <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;">
-            <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(cat)}
+            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(cat)}
           </span>
         </td>
         <td style="padding:12px 14px;">
@@ -1276,10 +1279,10 @@ function renderSuppliesTable(supplies) {
         <td style="padding:12px 14px; text-align:center;">
           <div style="display:inline-flex; gap:6px;">
             <button class="btn btn-primary btn-sm" onclick="openViewSupplyModal(${s.id})" style="padding:5px 10px; font-size:11.5px; font-weight:700;" title="Xem chi tiết">
-              <i class="fa-solid fa-eye"></i> Xem
+              <i data-lucide="eye" class="lucide-sm"></i> Xem
             </button>
             <button class="btn btn-secondary btn-sm" onclick="editSupply(${s.id})" style="padding:5px 10px; font-size:11.5px; font-weight:700;" title="Chỉnh sửa">
-              <i class="fa fa-pen"></i> Sửa
+              <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
             </button>
           </div>
         </td>
@@ -1303,7 +1306,7 @@ function renderSuppliesTable(supplies) {
             <div style="padding:16px;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;">
                 <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:3px 10px; border-radius:20px; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
-                  <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(cat)}
+                  <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(cat)}
                 </span>
                 <span style="font-size:14px; font-weight:800; color:#059669;">${priceDisplay}</span>
               </div>
@@ -1311,7 +1314,7 @@ function renderSuppliesTable(supplies) {
               <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
                 ${s.image_url 
                   ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:54px; height:54px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` 
-                  : `<div style="width:54px; height:54px; border-radius:10px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i class="fa-solid ${cfg.icon}"></i></div>`
+                  : `<div style="width:54px; height:54px; border-radius:10px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i data-lucide="circle" class="${cfg.icon} lucide-sm"></i></div>`
                 }
                 <div style="flex:1;">
                   <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:800; color:#0f172a; line-height:1.3; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">
@@ -1329,10 +1332,10 @@ function renderSuppliesTable(supplies) {
 
             <div style="padding:10px 16px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
               <button class="btn btn-secondary btn-sm" onclick="openViewSupplyModal(${s.id})" style="font-size:11.5px; font-weight:700; padding:4px 10px;">
-                <i class="fa-solid fa-eye"></i> Chi tiết
+                <i data-lucide="eye" class="lucide-sm"></i> Chi tiết
               </button>
               <button class="btn btn-primary btn-sm" onclick="editSupply(${s.id})" style="font-size:11.5px; font-weight:700; padding:4px 10px;">
-                <i class="fa fa-pen"></i> Sửa
+                <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
               </button>
             </div>
           </div>
@@ -1372,7 +1375,7 @@ function renderSuppliesTable(supplies) {
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="width:24px; height:24px; border-radius:6px; background:${cfg.bg}; color:${cfg.iconColor}; display:inline-flex; align-items:center; justify-content:center; font-size:13px; border:1px solid ${cfg.border};">
-                  <i class="fa-solid ${cfg.icon}"></i>
+                  <i data-lucide="circle" class="${cfg.icon} lucide-sm"></i>
                 </span>
                 <strong style="font-size:13px; color:${cfg.color}; font-weight:800;">NHÓM VẬT TƯ: ${esc(catName).toUpperCase()}</strong>
               </div>
@@ -1407,7 +1410,7 @@ function renderSuppliesTable(supplies) {
         <tr style="background:#f0fdf4; border-top:2px solid #a7f3d0; border-bottom:1.5px solid #a7f3d0;">
           <td colspan="8" style="padding:10px 16px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <strong style="font-size:13px; color:#047857; font-weight:800;"><i class="fa-solid fa-house-chimney-window"></i> NÔNG HỘ / TRANG TRẠI: ${esc(ownerName).toUpperCase()}</strong>
+              <strong style="font-size:13px; color:#047857; font-weight:800;"><i data-lucide="home" class="lucide-sm"></i> NÔNG HỘ / TRANG TRẠI: ${esc(ownerName).toUpperCase()}</strong>
               <span class="badge" style="background:#dcfce7; color:#15803d; font-weight:800; font-size:11px; padding:3px 10px; border-radius:12px;">
                 ${items.length} vật tư khai báo
               </span>
@@ -1482,11 +1485,11 @@ function openViewSupplyModal(supplyId) {
       <div style="display:flex; gap:16px; align-items:flex-start; margin-bottom:20px;">
         ${supply.image_url 
           ? `<img src="${esc(supply.image_url)}" alt="${esc(supply.name)}" style="width:110px; height:110px; object-fit:cover; border-radius:12px; border:2px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.1);">` 
-          : `<div style="width:110px; height:110px; border-radius:12px; background:${cfg.bg}; color:${cfg.iconColor}; border:2px solid ${cfg.border}; display:flex; align-items:center; justify-content:center; font-size:42px;"><i class="fa-solid ${cfg.icon}"></i></div>`
+          : `<div style="width:110px; height:110px; border-radius:12px; background:${cfg.bg}; color:${cfg.iconColor}; border:2px solid ${cfg.border}; display:flex; align-items:center; justify-content:center; font-size:42px;"><i data-lucide="circle" class="${cfg.icon} lucide-sm"></i></div>`
         }
         <div style="flex:1;">
           <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 12px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:6px; margin-bottom:6px;">
-            <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(supply.category)}
+            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(supply.category)}
           </span>
           <h3 style="font-size:18px; font-weight:800; color:#0f172a; margin:0 0 6px 0; line-height:1.3;">${esc(supply.name)}</h3>
           <div style="font-size:13px; color:#475569;">Sở hữu / Nông hộ: <strong>${esc(supply.creator_name || supply.supplier || 'Admin')}</strong></div>
@@ -1513,7 +1516,7 @@ function openViewSupplyModal(supplyId) {
       <!-- VietGAP Specifications Box -->
       <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:16px;">
         <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu Chuẩn Nông Nghiệp VietGAP:
+          <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu Chuẩn Nông Nghiệp VietGAP:
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12.5px;">
           <div>
@@ -1529,7 +1532,7 @@ function openViewSupplyModal(supplyId) {
 
       ${supply.note ? `
         <div style="margin-bottom:14px;">
-          <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:4px;"><i class="fa-solid fa-note-sticky"></i> Ghi chú sản phẩm & Nhà sản xuất:</div>
+          <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:4px;"><i data-lucide="sticky-note" class="lucide-sm"></i> Ghi chú sản phẩm & Nhà sản xuất:</div>
           <div style="font-size:13px; color:#1e293b; background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:10px; line-height:1.5;">${esc(supply.note)}</div>
         </div>
       ` : ''}
@@ -1558,7 +1561,7 @@ function openSupplyModal(supplyId = null) {
   if (document.getElementById('f-supply-active-ing')) document.getElementById('f-supply-active-ing').value = '';
   if (document.getElementById('f-supply-target-pests')) document.getElementById('f-supply-target-pests').value = '';
 
-  document.getElementById('supply-modal-title').innerHTML = supplyId ? '<i class="fa-solid fa-pen"></i> Chỉnh sửa sản phẩm vật tư' : '<i class="fa-solid fa-box-archive"></i> Khai báo Vật tư & Phân bón mới';
+  document.getElementById('supply-modal-title').innerHTML = supplyId ? '<i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa sản phẩm vật tư' : '<i data-lucide="archive" class="lucide-sm"></i> Khai báo Vật tư & Phân bón mới';
 
   if (supplyId) {
     const supply = allSuppliesCache.find(s => s.id == supplyId);
@@ -1654,7 +1657,7 @@ async function saveSupplySubmit() {
 
   const btn = document.getElementById('btn-save-supply');
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang lưu...';
+  btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...';
 
   try {
     if (id) {
@@ -1670,7 +1673,7 @@ async function saveSupplySubmit() {
     toast('Lỗi lưu vật tư: ' + err.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa fa-floppy-disk"></i> Lưu thông tin vật tư';
+    btn.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu thông tin vật tư';
   }
 }
 
@@ -1741,7 +1744,7 @@ async function loadHistoryTab() {
   if (targetType) params.set('target_type', targetType);
   if (search) params.set('search', search);
 
-  tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải nhật ký kiểm toán CSDL...</td></tr>';
 
   try {
     const historyList = await api(`/history?${params.toString()}`) || [];
@@ -1750,7 +1753,7 @@ async function loadHistoryTab() {
     renderHistoryChipsBar(historyList);
     filterHistoryTab();
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-danger"><i data-lucide="alert-triangle" class="lucide-sm"></i> Lỗi: ${err.message}</td></tr>`;
   }
 }
 
@@ -1793,18 +1796,18 @@ function renderHistoryChipsBar(list) {
   });
 
   let chips = [
-    { id: 'all', label: 'Tất cả biến động', icon: 'fa-layer-group', count: counts.all },
-    { id: 'UPDATE', label: 'Chỉnh sửa (UPDATE)', icon: 'fa-pen-to-square', count: counts.UPDATE, isUpdate: true },
-    { id: 'DELETE_SOFT', label: 'Xóa mềm (DELETE_SOFT)', icon: 'fa-clock-rotate-left', count: counts.DELETE_SOFT, isSoftDelete: true },
-    { id: 'DELETE', label: 'Xóa vĩnh viễn (DELETE)', icon: 'fa-trash-can', count: counts.DELETE, isDelete: true }
+    { id: 'all', label: 'Tất cả biến động', icon: 'layers', count: counts.all },
+    { id: 'UPDATE', label: 'Chỉnh sửa (UPDATE)', icon: 'edit-3', count: counts.UPDATE, isUpdate: true },
+    { id: 'DELETE_SOFT', label: 'Xóa mềm (DELETE_SOFT)', icon: 'history', count: counts.DELETE_SOFT, isSoftDelete: true },
+    { id: 'DELETE', label: 'Xóa vĩnh viễn (DELETE)', icon: 'trash-2', count: counts.DELETE, isDelete: true }
   ];
 
   const targetIconMap = {
-    'Vật tư': 'fa-boxes-packing',
-    'Nhật ký canh tác': 'fa-book-open-reader',
-    'Thư viện media': 'fa-photo-film',
-    'Cây trồng': 'fa-tree',
-    'Trang trại': 'fa-house-chimney-window'
+    'Vật tư': 'boxes',
+    'Nhật ký canh tác': 'book-open',
+    'Thư viện media': 'film',
+    'Cây trồng': 'trees',
+    'Trang trại': 'home'
   };
 
   Object.keys(targetCounts).forEach(t => {
@@ -1812,7 +1815,7 @@ function renderHistoryChipsBar(list) {
       id: `target_${t}`,
       targetName: t,
       label: t,
-      icon: targetIconMap[t] || 'fa-database',
+      icon: targetIconMap[t] || 'database',
       count: targetCounts[t]
     });
   });
@@ -1845,10 +1848,11 @@ function renderHistoryChipsBar(list) {
     return `
       <button type="button" onclick="filterHistoryByChip('${esc(c.id)}')"
               style="padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s ease; ${chipStyle} display:inline-flex; align-items:center; gap:6px;">
-        <i class="fa-solid ${c.icon}"></i> ${esc(c.label)} <span style="opacity:0.85; font-size:11px;">(${c.count})</span>
+        <i data-lucide="${c.icon}" class="lucide-sm"></i> ${esc(c.label)} <span style="opacity:0.85; font-size:11px;">(${c.count})</span>
       </button>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 function filterHistoryByChip(chipType) {
@@ -1863,29 +1867,29 @@ function renderHistoryTable(list) {
   if (!tbody) return;
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:40px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-clock-rotate-left" style="font-size:36px; margin-bottom:10px; display:block;"></i>Chưa có dữ liệu biến động nào phù hợp với bộ lọc đã chọn.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:40px; text-align:center; color:#94a3b8;"><i data-lucide="history" class="lucide-sm" style="font-size:36px; margin-bottom:10px; display:block;"></i>Chưa có dữ liệu biến động nào phù hợp với bộ lọc đã chọn.</td></tr>';
     return;
   }
 
   const targetIconMap = {
-    'Vật tư': { icon: 'fa-boxes-packing', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
-    'Nhật ký canh tác': { icon: 'fa-book-open-reader', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' },
-    'Thư viện media': { icon: 'fa-photo-film', bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe' },
-    'Cây trồng': { icon: 'fa-tree', bg: '#fef3c7', color: '#78350f', border: '#fde68a' },
-    'Trang trại': { icon: 'fa-house-chimney-window', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' }
+    'Vật tư': { icon: 'boxes', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
+    'Nhật ký canh tác': { icon: 'book-open', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' },
+    'Thư viện media': { icon: 'film', bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe' },
+    'Cây trồng': { icon: 'trees', bg: '#fef3c7', color: '#78350f', border: '#fde68a' },
+    'Trang trại': { icon: 'home', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' }
   };
 
   tbody.innerHTML = list.map(h => {
     const isSoftDelete = h.action_type === 'DELETE_SOFT';
     const isHardDelete = h.action_type === 'DELETE';
     const actionBadge = isSoftDelete
-      ? `<span class="badge" style="background:#fef3c7; color:#b45309; border:1.5px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-clock-rotate-left"></i> XÓA MỀM</span>`
+      ? `<span class="badge" style="background:#fef3c7; color:#b45309; border:1.5px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="history" class="lucide-sm"></i> XÓA MỀM</span>`
       : (isHardDelete
-        ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-trash-can"></i> XÓA VĨNH VIỄN</span>`
-        : `<span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1.5px solid #bfdbfe; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-pen-to-square"></i> CẬP NHẬT</span>`);
+        ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="trash-2" class="lucide-sm"></i> XÓA VĨNH VIỄN</span>`
+        : `<span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1.5px solid #bfdbfe; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="edit" class="lucide-sm"></i> CẬP NHẬT</span>`);
 
-    const tCfg = targetIconMap[h.target_type] || { icon: 'fa-database', bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
-    const targetBadge = `<span class="badge" style="background:${tCfg.bg}; color:${tCfg.color}; border:1px solid ${tCfg.border}; font-weight:800; padding:4px 10px; border-radius:8px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid ${tCfg.icon}"></i> ${esc(h.target_type)}</span>`;
+    const tCfg = targetIconMap[h.target_type] || { icon: 'database', bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' };
+    const targetBadge = `<span class="badge" style="background:${tCfg.bg}; color:${tCfg.color}; border:1px solid ${tCfg.border}; font-weight:800; padding:4px 10px; border-radius:8px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="${tCfg.icon}" class="lucide-sm"></i> ${esc(h.target_type)}</span>`;
 
     const relTime = formatRelativeTime(h.created_at);
     const absDateStr = h.created_at ? new Date(h.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
@@ -1894,7 +1898,7 @@ function renderHistoryTable(list) {
       <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
         <td style="padding:12px 14px;">
           <div style="font-size:12.5px; font-weight:800; color:#0f172a;">${relTime}</div>
-          <div style="font-size:11px; color:#64748b; margin-top:2px;"><i class="fa-regular fa-clock"></i> ${absDateStr}</div>
+          <div style="font-size:11px; color:#64748b; margin-top:2px;"><i data-lucide="clock" class="lucide-sm"></i> ${absDateStr}</div>
         </td>
         <td style="padding:12px 14px;">${actionBadge}</td>
         <td style="padding:12px 14px;">${targetBadge}</td>
@@ -1910,18 +1914,18 @@ function renderHistoryTable(list) {
         <td style="padding:12px 14px; text-align:center;">
           <div style="display:inline-flex; gap:6px; align-items:center; flex-wrap:nowrap;">
             <button class="btn btn-primary btn-sm" onclick="openViewHistoryModal(${h.id})" style="padding:5px 10px; font-size:11.5px; font-weight:700; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:6px;" title="Xem đối chiếu thay đổi dữ liệu">
-              <i class="fa-solid fa-eye"></i> Chi tiết
+              <i data-lucide="eye" class="lucide-sm"></i> Chi tiết
             </button>
             ${isSoftDelete ? `
               <button class="btn btn-sm" onclick="adminRestoreAuditItem(${h.id}, '${esc(h.target_type)}')" style="padding:5px 9px; font-size:11px; font-weight:800; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; border-radius:6px; cursor:pointer;" title="Khôi phục lại dữ liệu đã bị xóa mềm">
-                <i class="fa-solid fa-rotate-left"></i> Khôi phục
+                <i data-lucide="rotate-ccw" class="lucide-sm"></i> Khôi phục
               </button>
               <button class="btn btn-danger btn-sm" onclick="adminPurgeAuditItem(${h.id}, '${esc(h.target_type)}')" style="padding:5px 9px; font-size:11px; font-weight:800; background:#dc2626; color:#ffffff; border:none; border-radius:6px; cursor:pointer;" title="Xóa vĩnh viễn khỏi CSDL">
-                <i class="fa-solid fa-trash-can"></i> Xóa CSDL
+                <i data-lucide="trash-2" class="lucide-sm"></i> Xóa CSDL
               </button>
             ` : `
               <button class="btn btn-secondary btn-sm" onclick="deleteAuditLogItem(${h.id})" style="padding:5px 9px; font-size:11px; font-weight:700; color:#dc2626; border-color:#fca5a5; background:#fff1f2; border-radius:6px;" title="Xóa bản ghi nhật ký kiểm toán này">
-                <i class="fa-solid fa-trash"></i>
+                <i data-lucide="trash-2" class="lucide-sm"></i>
               </button>
             `}
           </div>
@@ -1929,6 +1933,7 @@ function renderHistoryTable(list) {
       </tr>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 async function adminRestoreAuditItem(auditId, targetType) {
@@ -2086,7 +2091,7 @@ function openViewHistoryModal(id) {
     diffContentHtml = `
       <div style="background:#fff1f2; border:1.5px solid #fecdd3; border-radius:12px; padding:16px; margin-bottom:16px;">
         <div style="font-size:13px; font-weight:800; color:#dc2626; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-triangle-exclamation"></i> Bản ghi đã bị xóa khỏi hệ thống:
+          <i data-lucide="alert-triangle" class="lucide-sm"></i> Bản ghi đã bị xóa khỏi hệ thống:
         </div>
         
         <table style="width:100%; border-collapse:collapse; background:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #fecdd3;">
@@ -2143,7 +2148,7 @@ function openViewHistoryModal(id) {
             ${esc(oldValStr)}
           </td>
           <td style="padding:10px 14px; width:35%; ${isChanged ? 'background:#f0fdf4; color:#15803d; font-weight:800;' : 'color:#334155;'}">
-            ${isChanged ? `<span style="font-size:10px; background:#bbf7d0; color:#166534; padding:1px 5px; border-radius:4px; margin-right:4px;"><i class="fa-solid fa-arrow-right"></i> Mới</span>` : ''}
+            ${isChanged ? `<span style="font-size:10px; background:#bbf7d0; color:#166534; padding:1px 5px; border-radius:4px; margin-right:4px;"><i data-lucide="arrow-right" class="lucide-sm"></i> Mới</span>` : ''}
             ${esc(newValStr)}
           </td>
         </tr>
@@ -2153,7 +2158,7 @@ function openViewHistoryModal(id) {
     diffContentHtml = `
       <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
         <span style="font-size:13px; font-weight:800; color:#0f172a;">
-          <i class="fa-solid fa-sliders" style="color:#059669;"></i> Ma trận đối chiếu chi tiết:
+          <i data-lucide="sliders" class="lucide-sm" style="color:#059669;"></i> Ma trận đối chiếu chi tiết:
         </span>
         <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:800; padding:3px 10px; border-radius:12px; font-size:11.5px;">
           ${changedCount} trường có sự thay đổi
@@ -2196,10 +2201,10 @@ function openViewHistoryModal(id) {
 
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; border-top:1px solid #e2e8f0; padding-top:10px; font-size:12px; color:#64748b;">
         <div>
-          <i class="fa-regular fa-clock"></i> Thời gian: <strong style="color:#0f172a;">${dateStr}</strong> <span style="color:#059669;">(${relTime})</span>
+          <i data-lucide="clock" class="lucide-sm"></i> Thời gian: <strong style="color:#0f172a;">${dateStr}</strong> <span style="color:#059669;">(${relTime})</span>
         </div>
         <div>
-          <i class="fa-regular fa-user"></i> Người thực hiện: <strong style="color:#0f172a;">${esc(item.user_name || item.current_user_name || 'Admin')}</strong>
+          <i data-lucide="user" class="lucide-sm"></i> Người thực hiện: <strong style="color:#0f172a;">${esc(item.user_name || item.current_user_name || 'Admin')}</strong>
         </div>
       </div>
     </div>
@@ -2211,11 +2216,11 @@ function openViewHistoryModal(id) {
       <div style="margin-top:16px; padding-top:14px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
         ${item.action_type === 'DELETE_SOFT' ? `
           <button type="button" class="btn" onclick="adminRestoreAuditItem(${item.id}, '${esc(item.target_type)}'); closeViewHistoryModal();" style="background:#059669; color:#ffffff; font-weight:800; font-size:12.5px; padding:8px 16px; border-radius:8px; border:none; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
-            <i class="fa-solid fa-rotate-left"></i> Khôi phục lại dữ liệu
+            <i data-lucide="rotate-ccw" class="lucide-sm"></i> Khôi phục lại dữ liệu
           </button>
         ` : ''}
         <button type="button" class="btn btn-danger" onclick="adminPurgeAuditItem(${item.id}, '${esc(item.target_type)}'); closeViewHistoryModal();" style="font-weight:800; font-size:12.5px; padding:8px 16px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
-          <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn khỏi CSDL
+          <i data-lucide="trash-2" class="lucide-sm"></i> Xóa vĩnh viễn khỏi CSDL
         </button>
       </div>
     ` : ''}
@@ -2263,7 +2268,7 @@ async function loadDbSchemaCheck() {
   const grid = document.getElementById('db-schema-tables-grid');
   if (!grid) return;
 
-  grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#64748b;"><i class="fa fa-spinner fa-spin fa-2x"></i><br><br>Đang thanh tra Schema & Telemetry CSDL PostgreSQL...</div>';
+  grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-lg"></i><br><br>Đang thanh tra Schema & Telemetry CSDL PostgreSQL...</div>';
 
   try {
     const data = await api('/database/check');
@@ -2279,7 +2284,7 @@ async function loadDbSchemaCheck() {
         <div onclick="viewTableRecords('${esc(t.table_name)}')" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 14px rgba(0,0,0,0.03);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <span style="font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-table" style="color:#059669;"></i> ${esc(t.table_name)}
+              <i data-lucide="table" class="lucide-sm" style="color:#059669;"></i> ${esc(t.table_name)}
             </span>
             <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;">
               ${t.row_count.toLocaleString('vi-VN')} dòng
@@ -2289,8 +2294,8 @@ async function loadDbSchemaCheck() {
             Số cột: <strong>${t.column_count} cột</strong> · Kiểu dữ liệu PostgreSQL
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:#059669; border-top:1px solid #f1f5f9; padding-top:10px;">
-            <span><i class="fa-solid fa-eye"></i> Xem & Thao tác Dữ liệu</span>
-            <i class="fa-solid fa-arrow-right"></i>
+            <span><i data-lucide="eye" class="lucide-sm"></i> Xem & Thao tác Dữ liệu</span>
+            <i data-lucide="arrow-right" class="lucide-sm"></i>
           </div>
         </div>
       `;
@@ -2309,7 +2314,7 @@ async function viewTableRecords(tableName, syncUrl = true) {
   }
 
   container.style.display = 'block';
-  container.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b;"><i class="fa fa-spinner fa-spin fa-2x"></i><br><br>Đang nạp dữ liệu trực tiếp từ bảng <strong>${esc(tableName)}</strong>...</div>`;
+  container.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-lg"></i><br><br>Đang nạp dữ liệu trực tiếp từ bảng <strong>${esc(tableName)}</strong>...</div>`;
 
   try {
     const data = await api(`/database/tables/${tableName}/records?limit=50`);
@@ -2331,14 +2336,14 @@ async function viewTableRecords(tableName, syncUrl = true) {
     container.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
         <h3 style="margin:0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-database" style="color:#059669;"></i> Dữ liệu Bảng "${esc(tableName)}" (${data.total_records} dòng)
+          <i data-lucide="database" class="lucide-sm" style="color:#059669;"></i> Dữ liệu Bảng "${esc(tableName)}" (${data.total_records} dòng)
         </h3>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-primary btn-sm" onclick="adminAddRecord('${esc(tableName)}')" style="background:#059669; border:none; padding:6px 14px; font-weight:700;">
-            <i class="fa-solid fa-plus"></i> Thêm bản ghi mới
+            <i data-lucide="plus" class="lucide-sm"></i> Thêm bản ghi mới
           </button>
           <button class="btn btn-secondary btn-sm" onclick="document.getElementById('db-table-records-container').style.display='none'" style="padding:6px 12px;">
-            <i class="fa-solid fa-xmark"></i> Đóng
+            <i data-lucide="x" class="lucide-sm"></i> Đóng
           </button>
         </div>
       </div>
@@ -2359,10 +2364,10 @@ async function viewTableRecords(tableName, syncUrl = true) {
                 <tr style="border-bottom:1px solid #e2e8f0;">
                   <td style="padding:8px; white-space:nowrap;">
                     <button class="btn btn-sm btn-secondary" onclick="adminEditRecord('${esc(tableName)}', ${r.id})" style="padding:3px 8px; font-size:11px; margin-right:4px;">
-                      <i class="fa-solid fa-pen"></i> Sửa
+                      <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
                     </button>
                     <button class="btn btn-sm btn-danger" onclick="adminDeleteRecord('${esc(tableName)}', ${r.id})" style="padding:3px 8px; font-size:11px; background:#dc2626; color:#fff; border:none; border-radius:4px;">
-                      <i class="fa-solid fa-trash"></i> Xóa
+                      <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
                     </button>
                   </td>
                   ${colHeaders.map(c => {
@@ -2540,7 +2545,7 @@ async function handlePushVersionToDB(e) {
   const originalHtml = btn ? btn.innerHTML : '';
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu vào CSDL...`;
+    btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu vào CSDL...`;
   }
 
   try {

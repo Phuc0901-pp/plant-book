@@ -2,7 +2,7 @@
   <div class="modal supply-modal-custom">
     <div class="modal-header supply-modal-header">
       <div style="display:flex; align-items:center; gap:12px;">
-        <div class="supply-modal-icon-wrap"><i class="fa-solid fa-boxes-packing"></i></div>
+        <div class="supply-modal-icon-wrap"><i data-lucide="package" class="lucide-sm"></i></div>
         <div>
           <h2 id="modal-supply-title" style="margin:0; font-size:18px; font-weight:700; color:#fff; display:block !important;">Khai báo vật tư mới</h2>
           <p style="margin:2px 0 0 0; font-size:12px; color:rgba(255,255,255,0.85); font-weight:400;">Nhập khối lượng và giá mua để tự động suy ra đơn giá chi tiết</p>
@@ -18,7 +18,7 @@
       <div style="background:linear-gradient(135deg, #0f172a, #1e293b); border-radius:14px; padding:14px 18px; color:#ffffff; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 4px 14px rgba(0,0,0,0.1);">
         <div>
           <div style="font-size:13.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <i class="fa-solid fa-wand-magic-sparkles" style="color:#10b981; font-size:16px;"></i> Quét Bao bì Phân bón / Thuốc BVTV bằng AI
+            <i data-lucide="sparkles" class="lucide-sm" style="color:#10b981; font-size:16px;"></i> Quét Bao bì Phân bón / Thuốc BVTV bằng AI
           </div>
           <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">Chụp ảnh bao bì để AI tự động trích xuất Tên, Hạng mục &amp; Quy cách</div>
         </div>
@@ -26,7 +26,7 @@
         <div>
           <input type="file" id="sp-ai-scan-file" accept="image/*" capture="environment" style="display:none;" onchange="handleAiScanImageUpload(event)">
           <button type="button" class="btn" id="sp-ai-scan-btn" onclick="document.getElementById('sp-ai-scan-file').click()" style="background:linear-gradient(135deg, #10b981, #059669); color:#ffffff; font-weight:800; border:none; padding:8px 16px; border-radius:10px; font-size:12.5px; display:flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
-            <i class="fa-solid fa-camera"></i> <span id="sp-ai-scan-text"> Chụp / Chọn ảnh bao bì</span>
+            <i data-lucide="camera" class="lucide-sm"></i> <span id="sp-ai-scan-text"> Chụp / Chọn ảnh bao bì</span>
           </button>
         </div>
       </div>
@@ -35,7 +35,7 @@
       <div class="form-row-2">
 
         <div class="field" style="margin-bottom:0;">
-          <label class="form-label"><i class="fa-solid fa-layer-group"></i> Hạng mục gốc <span class="req-star">*</span></label>
+          <label class="form-label"><i data-lucide="layers" class="lucide-sm"></i> Hạng mục gốc <span class="req-star">*</span></label>
           <select id="sp-category" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
             <option value="Bón phân"> Bón phân</option>
             <option value="Tiền nước"> Tiền nước (m³)</option>
@@ -45,7 +45,7 @@
         </div>
 
         <div class="field" id="field-package-unit" style="margin-bottom:0;">
-          <label class="form-label"><i class="fa-solid fa-scale-balanced"></i> Quy cách / Đơn vị gói <span class="req-star">*</span></label>
+          <label class="form-label"><i data-lucide="scale" class="lucide-sm"></i> Quy cách / Đơn vị gói <span class="req-star">*</span></label>
           <select id="sp-package-unit" class="form-control-custom" onchange="autoCalculateSupplyUnits()">
             <option value="kg">kg (Bao / Túi kg)</option>
             <option value="g">g (Gam / Gram)</option>
@@ -60,7 +60,7 @@
 
       <!-- Fertilizer Type dropdown (when category = 'Bón phân') -->
       <div class="field" id="field-fertilizer-type" style="margin-top:12px; margin-bottom:16px;">
-        <label class="form-label"><i class="fa-solid fa-tags"></i> Loại phân bón <span class="req-star">*</span></label>
+        <label class="form-label"><i data-lucide="tags" class="lucide-sm"></i> Loại phân bón <span class="req-star">*</span></label>
         <select id="sp-fertilizer-type" class="form-control-custom">
           <option value="Phân vô cơ (NPK / Hóa học)"> Phân vô cơ / Hóa học (NPK, Ure, DAP, Kali...)</option>
           <option value="Phân hữu cơ"> Phân hữu cơ (Trùn quế, Vi sinh, Đạm cá...)</option>
@@ -73,14 +73,14 @@
 
       <!-- Row 2: Tên vật tư -->
       <div class="field" id="field-name" style="margin-bottom:16px;">
-        <label class="form-label"><i class="fa-solid fa-box-open"></i> Tên vật tư / Dịch vụ <span class="req-star">*</span></label>
+        <label class="form-label"><i data-lucide="package-open" class="lucide-sm"></i> Tên vật tư / Dịch vụ <span class="req-star">*</span></label>
         <input type="text" id="sp-name" class="form-control-custom" placeholder="Ví dụ: Phân NPK Đầu Trâu 20-20-15+TE, Thuốc Anvil 5SC...">
       </div>
 
       <!-- ════ VietGAP Compliance Specifications (Active Ingredients & Target Pests) ════ -->
       <div id="field-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
         <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
+          <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
         </div>
         <div style="display:flex; gap:10px;">
           <div style="flex:1;">
@@ -97,17 +97,17 @@
       <!-- Row 3: Khối lượng 1 gói, Số lượng bao/chai & Tổng giá tiền -->
       <div class="form-row-2" id="row-package-qty-price" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
         <div class="field" id="field-package-qty" style="margin-bottom:0;">
-          <label class="form-label"><i class="fa-solid fa-weight-hanging"></i> Khối lượng 1 gói <span class="req-star">*</span></label>
+          <label class="form-label"><i data-lucide="scale" class="lucide-sm"></i> Khối lượng 1 gói <span class="req-star">*</span></label>
           <input type="number" id="sp-package-qty" class="form-control-custom" value="50" min="0.001" step="any" oninput="autoCalculateSupplyUnits()" placeholder="VD: 50">
         </div>
 
         <div class="field" id="field-stock-count" style="margin-bottom:0;">
-          <label class="form-label"><i class="fa-solid fa-boxes-stacked"></i> Số bao/chai mua <span class="req-star">*</span></label>
+          <label class="form-label"><i data-lucide="package" class="lucide-sm"></i> Số bao/chai mua <span class="req-star">*</span></label>
           <input type="number" id="sp-stock-count" class="form-control-custom" value="1" min="1" step="1" oninput="autoCalculateSupplyUnits()" placeholder="VD: 1 bao/chai">
         </div>
 
         <div class="field" id="field-package-price" style="margin-bottom:0;">
-          <label class="form-label" id="label-package-price"><i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span></label>
+          <label class="form-label" id="label-package-price"><i data-lucide="dollar-sign" class="lucide-sm"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span></label>
           <input type="number" id="sp-package-price" class="form-control-custom" min="0" step="100" oninput="autoCalculateSupplyUnits()" placeholder="VD: 1530000" style="font-weight:700; color:var(--green-dark);">
         </div>
       </div>
@@ -115,7 +115,7 @@
       <!-- Live Auto Calculation Breakdown Card -->
       <div class="calc-breakdown-card" id="card-breakdown">
         <div class="calc-card-title">
-          <i class="fa-solid fa-calculator"></i> BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT
+          <i data-lucide="calculator" class="lucide-sm"></i> BẢNG TỰ ĐỘNG QUY ĐỔI ĐƠN GIÁ CHI TIẾT
         </div>
         <div class="calc-card-grid">
           <div class="calc-metric-box">
@@ -131,20 +131,20 @@
 
       <!-- Row 4: Hình ảnh bao bì / nhãn hiệu phân bón / thuốc BVTV -->
       <div class="field" id="field-image-upload" style="margin-bottom:16px;">
-        <label class="form-label"><i class="fa-solid fa-camera"></i> Hình ảnh bao bì / Nhãn hiệu sản phẩm (Tùy chọn)</label>
+        <label class="form-label"><i data-lucide="camera" class="lucide-sm"></i> Hình ảnh bao bì / Nhãn hiệu sản phẩm (Tùy chọn)</label>
         <div class="sp-image-upload-card">
           <div class="sp-img-preview-box">
-            <i class="fa-solid fa-image" style="color:#94a3b8; font-size:24px;" id="sp-image-placeholder-icon"></i>
+            <i data-lucide="image" class="lucide-sm" style="color:#94a3b8; font-size:24px;" id="sp-image-placeholder-icon"></i>
             <img id="sp-image-preview" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
           </div>
           <div style="flex:1;">
             <input type="file" id="sp-image-file" accept="image/*" style="display:none;" onchange="uploadSupplyImage(this)">
             <div style="display:flex; align-items:center; gap:8px;">
               <button type="button" class="btn btn-secondary btn-sm" id="sp-upload-btn" onclick="document.getElementById('sp-image-file').click()" style="display:inline-flex; align-items:center; gap:6px; background:#fff; border:1.5px solid #cbd5e1; font-weight:600;">
-                <i class="fa-solid fa-cloud-arrow-up" style="color:var(--green); font-size:15px;"></i> <span id="sp-upload-btn-text">Tải ảnh bao bì sản phẩm...</span>
+                <i data-lucide="upload-cloud" class="lucide-sm" style="color:var(--green); font-size:15px;"></i> <span id="sp-upload-btn-text">Tải ảnh bao bì sản phẩm...</span>
               </button>
               <button type="button" class="btn btn-secondary btn-sm" id="sp-remove-img-btn" onclick="removeSupplyImage()" style="display:none; align-items:center; gap:4px; color:#ef4444; background:#fef2f2; border:1px solid #fecaca;">
-                <i class="fa-solid fa-trash"></i> Xóa ảnh
+                <i data-lucide="trash-2" class="lucide-sm"></i> Xóa ảnh
               </button>
             </div>
             <input type="hidden" id="sp-image-url" value="">
@@ -161,7 +161,7 @@
 
       <!-- Row 5: Ghi chú -->
       <div class="field" style="margin-bottom:0;">
-        <label class="form-label"><i class="fa-solid fa-note-sticky"></i> Ghi chú / Thông tin thêm</label>
+        <label class="form-label"><i data-lucide="sticky-note" class="lucide-sm"></i> Ghi chú / Thông tin thêm</label>
         <textarea id="sp-note" class="form-control-custom" rows="2" placeholder="Ví dụ: Phân bón đợt 1 cho sầu riêng; Đơn giá 5.000đ/m3 nước..."></textarea>
       </div>
     </div>
@@ -169,7 +169,7 @@
     <div class="modal-footer supply-modal-footer">
       <button class="btn btn-secondary" onclick="closeSupplyModal()">Hủy bỏ</button>
       <button class="btn btn-primary" id="supply-save-btn" onclick="saveSupply()">
-        <span id="supply-save-text"><i class="fa-solid fa-floppy-disk"></i> Lưu vật tư</span>
+        <span id="supply-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu vật tư</span>
       </button>
     </div>
   </div>
@@ -179,7 +179,7 @@
 <div class="modal-overlay" id="modal-supply-usage" style="display:none" onclick="if(event.target===this)closeRecordUsageModal()">
   <div class="modal" style="max-width:480px;">
     <div class="modal-header">
-      <h2><i class="fa-solid fa-pen-to-square" style="color:var(--green)"></i> Ghi nhận tiêu hao vật tư</h2>
+      <h2><i data-lucide="edit" class="lucide-sm" style="color:var(--green)"></i> Ghi nhận tiêu hao vật tư</h2>
       <button class="modal-close" onclick="closeRecordUsageModal()">×</button>
     </div>
     <div class="modal-body">
@@ -225,7 +225,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeRecordUsageModal()">Hủy</button>
       <button class="btn btn-primary" id="su-save-btn" onclick="saveSupplyUsage()">
-        <span id="su-save-text"><i class="fa fa-floppy-disk"></i> Ghi nhận tiêu hao</span>
+        <span id="su-save-text"><i data-lucide="save" class="lucide-sm"></i> Ghi nhận tiêu hao</span>
       </button>
     </div>
   </div>
@@ -237,7 +237,7 @@
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color:#ffffff; padding:16px 20px;">
       <div style="display:flex; align-items:center; gap:12px;">
         <div style="width:40px; height:40px; border-radius:10px; background:rgba(52,211,153,0.2); color:#34d399; display:flex; align-items:center; justify-content:center; font-size:18px;">
-          <i class="fa-solid fa-boxes-packing"></i>
+          <i data-lucide="package" class="lucide-sm"></i>
         </div>
         <div>
           <h2 style="margin:0; font-size:17px; font-weight:800; color:#fff;">Nhập Thêm Hàng Vào Kho</h2>
@@ -268,7 +268,7 @@
       <!-- Input: Added Quantity -->
       <div class="field" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
-          <i class="fa-solid fa-plus-circle" style="color:#059669;"></i> Số lượng nhập thêm <span style="color:#ef4444;">*</span>
+          <i data-lucide="plus-circle" class="lucide-sm" style="color:#059669;"></i> Số lượng nhập thêm <span style="color:#ef4444;">*</span>
         </label>
         <div style="display:flex; align-items:center; gap:8px;">
           <input type="number" id="restock-added-qty" min="0.01" step="any" placeholder="VD: 10" oninput="calculateRestockPreview()" style="flex:1; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:14px; font-weight:700; color:#0f172a; outline:none;">
@@ -279,7 +279,7 @@
       <!-- Input: New Package Price -->
       <div class="field" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
-          <i class="fa-solid fa-money-bill-wave" style="color:#0284c7;"></i> Đơn giá mua đợt này (VNĐ / bao/chai) <span style="font-size:11px; color:#64748b; font-weight:400;">(Tùy chọn)</span>
+          <i data-lucide="dollar-sign" class="lucide-sm" style="color:#0284c7;"></i> Đơn giá mua đợt này (VNĐ / bao/chai) <span style="font-size:11px; color:#64748b; font-weight:400;">(Tùy chọn)</span>
         </label>
         <input type="number" id="restock-package-price" min="0" step="100" placeholder="VD: 850000" oninput="calculateRestockPreview()" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13.5px; font-weight:700; color:#0f172a; outline:none;">
       </div>
@@ -287,7 +287,7 @@
       <!-- Input: Batch No / Supplier -->
       <div class="field" style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
-          <i class="fa-solid fa-barcode" style="color:#64748b;"></i> Số lô sản xuất / Nhà cung cấp (Tùy chọn)
+          <i data-lucide="scan" class="lucide-sm" style="color:#64748b;"></i> Số lô sản xuất / Nhà cung cấp (Tùy chọn)
         </label>
         <input type="text" id="restock-batch-no" placeholder="VD: Lô NPK-2026-09 / Đại lý Nông Dược Hưng Phát" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none;">
       </div>
@@ -307,7 +307,7 @@
       <!-- Note -->
       <div class="field" style="margin-bottom:0;">
         <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
-          <i class="fa-solid fa-note-sticky" style="color:#64748b;"></i> Ghi chú đợt nhập
+          <i data-lucide="sticky-note" class="lucide-sm" style="color:#64748b;"></i> Ghi chú đợt nhập
         </label>
         <input type="text" id="restock-note" placeholder="Nhập ghi chú thêm nếu có..." style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none;">
       </div>
@@ -316,7 +316,7 @@
     <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn btn-secondary" onclick="closeRestockModal()">Hủy bỏ</button>
       <button class="btn btn-primary" id="restock-save-btn" onclick="submitRestockSupply()" style="font-weight:800;">
-        <span id="restock-save-text"><i class="fa-solid fa-truck-ramp-box"></i> Xác Nhận Nhập Kho</span>
+        <span id="restock-save-text"><i data-lucide="truck" class="lucide-sm"></i> Xác Nhận Nhập Kho</span>
       </button>
     </div>
   </div>
@@ -328,7 +328,7 @@
     <div class="modal-header" style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:16px 20px;">
       <div style="display:flex; align-items:center; gap:12px;">
         <div style="width:40px; height:40px; border-radius:10px; background:rgba(56,189,248,0.2); color:#38bdf8; display:flex; align-items:center; justify-content:center; font-size:18px;">
-          <i class="fa-solid fa-book-bookmark"></i>
+          <i data-lucide="bookmark" class="lucide-sm"></i>
         </div>
         <div>
           <h2 id="ledger-modal-title" style="margin:0; font-size:17px; font-weight:800; color:#fff;">Sổ Thẻ Kho Vật Tư</h2>
@@ -357,12 +357,12 @@
     <!-- Ledger Timeline Body -->
     <div class="modal-body" style="padding:20px; overflow-y:auto; flex:1;">
       <div id="ledger-timeline-container" class="stock-timeline-wrap">
-        <div style="text-align:center; padding:30px; color:#64748b;"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu thẻ kho...</div>
+        <div style="text-align:center; padding:30px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu thẻ kho...</div>
       </div>
     </div>
 
     <div class="modal-footer" style="padding:12px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:11.5px; color:#64748b;"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> Dữ liệu tự động đồng bộ theo thời gian thực</span>
+      <span style="font-size:11.5px; color:#64748b;"><i data-lucide="shield-check" class="lucide-sm" style="color:#10b981;"></i> Dữ liệu tự động đồng bộ theo thời gian thực</span>
       <button class="btn btn-secondary btn-sm" onclick="closeStockLedgerModal()">Đóng</button>
     </div>
   </div>

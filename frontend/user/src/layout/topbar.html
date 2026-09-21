@@ -1,16 +1,16 @@
 ﻿    <div class="topbar">
       <div style="display:flex;align-items:center;">
         <button class="mobile-toggle-btn" onclick="toggleMobileSidebar()" style="display:none; background:#ffffff; border:1.5px solid #cbd5e1; color:#0f172a; border-radius:8px;">
-          <i class="fa fa-bars"></i>
+          <i data-lucide="menu" class="lucide-sm"></i>
         </button>
-        <h1 id="page-title"><i class="fa-solid fa-leaf" style="color:#059669; font-size:16px;"></i> Trang chủ</h1>
+        <h1 id="page-title"><i data-lucide="leaf" class="lucide-sm" style="color:#059669; font-size:16px;"></i> Trang chủ</h1>
       </div>
       <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:12px;">
         
         <!-- Autonomous In-App Notification Center Bell Button -->
         <div style="position:relative;">
           <button onclick="toggleNotificationDropdown()" title="Thông báo hệ thống" style="position:relative; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; width:38px; height:38px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#334155; font-size:15px; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:all 0.2s;">
-            <i class="fa-solid fa-bell"></i>
+            <i data-lucide="bell" class="lucide-sm"></i>
             <span id="notif-badge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:10px; font-weight:800; border-radius:10px; padding:2px 6px; border:2px solid #ffffff;">0</span>
           </button>
 
@@ -21,7 +21,7 @@
           <div id="notif-dropdown" class="notif-panel">
             <div style="padding:14px 16px; background:#ffffff; border-bottom:1.5px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
               <strong style="font-size:14px; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-bell" style="color:#059669;"></i> Thông Báo Hệ Thống Nông Hộ
+                <i data-lucide="bell" class="lucide-sm" style="color:#059669;"></i> Thông Báo Hệ Thống Nông Hộ
               </strong>
               <div style="display:flex; align-items:center; gap:10px;">
                 <button onclick="markAllNotificationsRead()" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; font-size:11px; font-weight:700; cursor:pointer; border-radius:6px; padding:3px 8px;">Đã đọc hết</button>
@@ -29,7 +29,7 @@
               </div>
             </div>
             <div id="notif-list" style="overflow-y:auto; max-height:320px; padding:8px 12px; display:flex; flex-direction:column; gap:8px; background:#f8fafc;">
-              <div style="text-align:center; padding:20px; color:#64748b; font-size:13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải thông báo...</div>
+              <div style="text-align:center; padding:20px; color:#64748b; font-size:13px;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải thông báo...</div>
             </div>
             <div style="padding:10px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; flex-direction:column; gap:6px;">
               <div style="display:flex; gap:6px;">
@@ -41,7 +41,7 @@
                 </button>
               </div>
               <button onclick="requestWebPushPermission()" class="royal-pill-btn royal-pill-btn-primary" style="width:100%;">
-                <i class="fa-solid fa-mobile-screen"></i> Bật Thông báo Đẩy màn hình
+                <i data-lucide="smartphone" class="lucide-sm"></i> Bật Thông báo Đẩy màn hình
               </button>
             </div>
           </div>

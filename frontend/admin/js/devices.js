@@ -64,7 +64,7 @@ function toggleIotMasterPower() {
     if (text) text.textContent = 'TRẠM IOT ĐANG HOẠT ĐỘNG (LIVE)';
     if (btn) {
       btn.style.background = '#10b981';
-      btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Đang Bật Trạm IoT';
+      btn.innerHTML = '<i data-lucide="power" class="lucide-sm"></i> Đang Bật Trạm IoT';
     }
     toast('Đã bật kết nối Trạm Cảm biến IoT & Trạm Thời tiết!', 'success');
   } else {
@@ -76,7 +76,7 @@ function toggleIotMasterPower() {
     if (text) text.textContent = 'TRẠM IOT ĐÃ TẮT (OFFLINE)';
     if (btn) {
       btn.style.background = '#64748b';
-      btn.innerHTML = '<i class="fa-solid fa-power-off"></i> Đã Tắt Trạm IoT';
+      btn.innerHTML = '<i data-lucide="power" class="lucide-sm"></i> Đã Tắt Trạm IoT';
     }
     toast('Đã tắt kết nối Trạm Cảm biến IoT.', 'info');
   }
@@ -138,7 +138,7 @@ function renderSoilMetrics(depth) {
       </div>
       <div style="text-align:right; margin-top:12px;">
         <div style="width:42px; height:42px; background:#ecfdf5; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#10b981; font-size:18px;">
-          <i class="fa-solid fa-flask-vial"></i>
+          <i data-lucide="flask-round" class="lucide-sm"></i>
         </div>
       </div>
     </div>
@@ -152,7 +152,7 @@ function renderSoilMetrics(depth) {
       </div>
       <div style="text-align:right; margin-top:12px;">
         <div style="width:42px; height:42px; background:#fff7ed; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#ea580c; font-size:18px;">
-          <i class="fa-solid fa-temperature-half"></i>
+          <i data-lucide="thermometer" class="lucide-sm"></i>
         </div>
       </div>
     </div>
@@ -166,7 +166,7 @@ function renderSoilMetrics(depth) {
       </div>
       <div style="text-align:right; margin-top:12px;">
         <div style="width:42px; height:42px; background:#f0f9ff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#0284c7; font-size:18px;">
-          <i class="fa-solid fa-droplet"></i>
+          <i data-lucide="droplet" class="lucide-sm"></i>
         </div>
       </div>
     </div>
@@ -180,7 +180,7 @@ function renderSoilMetrics(depth) {
       </div>
       <div style="text-align:right; margin-top:12px;">
         <div style="width:42px; height:42px; background:#fef3c7; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#d97706; font-size:18px;">
-          <i class="fa-solid fa-bolt"></i>
+          <i data-lucide="zap" class="lucide-sm"></i>
         </div>
       </div>
     </div>
@@ -194,7 +194,7 @@ function renderSoilMetrics(depth) {
       </div>
       <div style="text-align:right; margin-top:12px;">
         <div style="width:42px; height:42px; background:#eff6ff; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#3b82f6; font-size:18px;">
-          <i class="fa-solid fa-seedling"></i>
+          <i data-lucide="sprout" class="lucide-sm"></i>
         </div>
       </div>
     </div>
@@ -208,7 +208,7 @@ function renderSoilMetrics(depth) {
       </div>
       <div style="text-align:right; margin-top:12px;">
         <div style="width:42px; height:42px; background:#f1f5f9; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#64748b; font-size:18px;">
-          <i class="fa-solid fa-cubes-stacked"></i>
+          <i data-lucide="boxes" class="lucide-sm"></i>
         </div>
       </div>
     </div>
@@ -295,7 +295,7 @@ function openAddRuleModal() {
 async function loadDevices() {
   const tbody = document.getElementById('devices-table');
   if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách thiết bị...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách thiết bị...</td></tr>';
   }
 
   try {
@@ -305,7 +305,7 @@ async function loadDevices() {
   } catch (err) {
     console.error('Lỗi tải danh sách thiết bị:', err);
     if (tbody) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${esc(err.message)}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i data-lucide="alert-triangle" class="lucide-sm"></i> Lỗi: ${esc(err.message)}</td></tr>`;
     }
   }
 }
@@ -332,15 +332,15 @@ function renderDevices(devices) {
   if (!tbody) return;
 
   if (!devices || devices.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-microchip"></i> Không tìm thấy thiết bị nào phù hợp với bộ lọc. Nhấp "+ Đăng ký thiết bị mới" để thêm.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i data-lucide="cpu" class="lucide-sm"></i> Không tìm thấy thiết bị nào phù hợp với bộ lọc. Nhấp "+ Đăng ký thiết bị mới" để thêm.</td></tr>';
     return;
   }
 
   tbody.innerHTML = devices.map(d => {
-    let batteryIcon = 'fa-battery-full';
+    let batteryIcon = 'battery';
     let batteryColor = '#059669';
-    if (d.battery_level <= 20) { batteryIcon = 'fa-battery-empty'; batteryColor = '#dc2626'; }
-    else if (d.battery_level <= 50) { batteryIcon = 'fa-battery-quarter'; batteryColor = '#d97706'; }
+    if (d.battery_level <= 20) { batteryIcon = 'battery-low'; batteryColor = '#dc2626'; }
+    else if (d.battery_level <= 50) { batteryIcon = 'battery-medium'; batteryColor = '#d97706'; }
 
     let statusStyle = 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;';
     if (d.status === 'Mất kết nối') statusStyle = 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;';
@@ -351,7 +351,7 @@ function renderDevices(devices) {
         <td data-label="Thiết bị" style="padding:12px 14px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <div style="width:34px; height:34px; border-radius:8px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">
-              <i class="fa-solid fa-microchip"></i>
+              <i data-lucide="cpu" class="lucide-sm"></i>
             </div>
             <div>
               <div style="font-weight:800; color:#0f172a; font-size:13.5px;">${esc(d.name)}</div>
@@ -360,10 +360,10 @@ function renderDevices(devices) {
           </div>
         </td>
         <td data-label="Phân loại"><span style="font-size:12px; font-weight:700; color:#334155; background:#f8fafc; padding:4px 8px; border-radius:6px; border:1px solid #e2e8f0;">${esc(d.device_type)}</span></td>
-        <td data-label="Trang trại"><strong style="color:#059669; font-size:12.5px;"><i class="fa-solid fa-house-chimney" style="font-size:11px;"></i> ${esc(d.farm_name || 'Toàn hệ thống')}</strong></td>
+        <td data-label="Trang trại"><strong style="color:#059669; font-size:12.5px;"><i data-lucide="home" class="lucide-sm" style="font-size:11px;"></i> ${esc(d.farm_name || 'Toàn hệ thống')}</strong></td>
         <td data-label="Mức Pin">
           <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; color:${batteryColor}; font-size:12.5px;">
-            <i class="fa-solid ${batteryIcon}"></i> ${d.battery_level !== null ? d.battery_level : 100}%
+            <i data-lucide="${batteryIcon}" class="lucide-sm"></i> ${d.battery_level !== null ? d.battery_level : 100}%
           </span>
         </td>
         <td data-label="Trạng thái"><span class="badge" style="font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; ${statusStyle}">${esc(d.status || 'Hoạt động')}</span></td>
@@ -371,16 +371,17 @@ function renderDevices(devices) {
         <td data-label="Thao tác" style="text-align:center;">
           <div style="display:inline-flex; gap:6px;">
             <button class="btn btn-sm" onclick="openDeviceModal(${d.id})" title="Chỉnh sửa" style="padding:4px 8px; font-size:11px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; color:#0284c7; cursor:pointer;">
-              <i class="fa fa-pen"></i>
+              <i data-lucide="edit-3" class="lucide-sm"></i>
             </button>
             <button class="btn btn-sm" onclick="deleteDevice(${d.id})" title="Xóa" style="padding:4px 8px; font-size:11px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#dc2626; cursor:pointer;">
-              <i class="fa fa-trash"></i>
+              <i data-lucide="trash-2" class="lucide-sm"></i>
             </button>
           </div>
         </td>
       </tr>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 function filterDbDevices() {

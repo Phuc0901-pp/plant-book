@@ -2,7 +2,7 @@
 <div class="modal-overlay" id="user-modal" style="display:none" onclick="if(event.target===this)closeUserModal()">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header">
-      <h2 id="user-modal-title"><i class="fa-solid fa-user-plus" style="color:var(--green)"></i> Thêm người dùng mới</h2>
+      <h2 id="user-modal-title"><i data-lucide="user-plus" class="lucide-sm" style="color:var(--green)"></i> Thêm người dùng mới</h2>
       <button class="modal-close" onclick="closeUserModal()">×</button>
     </div>
     <div class="modal-body">
@@ -16,11 +16,11 @@
       
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <div class="field" style="flex:1; min-width:180px;">
-          <label><i class="fa-solid fa-phone" style="color:var(--green)"></i> Số điện thoại</label>
+          <label><i data-lucide="phone" class="lucide-sm" style="color:var(--green)"></i> Số điện thoại</label>
           <input type="tel" id="f-user-phone" placeholder="VD: 0901234567..." autocomplete="tel">
         </div>
         <div class="field" style="flex:1; min-width:180px;">
-          <label><i class="fa-solid fa-envelope" style="color:var(--green)"></i> Email (Tùy chọn)</label>
+          <label><i data-lucide="mail" class="lucide-sm" style="color:var(--green)"></i> Email (Tùy chọn)</label>
           <input type="email" id="f-user-email" placeholder="VD: farmer@tanbaocorp.vn..." autocomplete="username">
         </div>
       </div>
@@ -29,7 +29,7 @@
       </small>
 
       <div class="field">
-        <label><i class="fa-solid fa-location-dot" style="color:var(--green)"></i> Địa chỉ</label>
+        <label><i data-lucide="map-pin" class="lucide-sm" style="color:var(--green)"></i> Địa chỉ</label>
         <input type="text" id="f-user-address" placeholder="VD: Xã Ea Ktur, Huyện Cư Kuin, Đắk Lắk...">
       </div>
       
@@ -50,7 +50,7 @@
       </div>
 
       <div class="field">
-        <label><i class="fa-solid fa-earth-asia" style="color:var(--green)"></i> Gắn vào Trang trại đã khởi tạo</label>
+        <label><i data-lucide="globe" class="lucide-sm" style="color:var(--green)"></i> Gắn vào Trang trại đã khởi tạo</label>
         <select id="f-user-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px;">
           <option value="">— Chưa gán trang trại nào —</option>
         </select>
@@ -62,7 +62,7 @@
       <!-- Cấu hình Phân quyền xem dữ liệu riêng cá nhân -->
       <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:14px; margin-top:14px;">
         <div style="font-size:12px; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-user-gear" style="color:var(--green)"></i> Cấu hình Quyền xem dữ liệu cho Nông hộ này:
+          <i data-lucide="user-cog" class="lucide-sm" style="color:var(--green)"></i> Cấu hình Quyền xem dữ liệu cho Nông hộ này:
         </div>
 
         <div class="field" style="margin-bottom:10px;">
@@ -107,7 +107,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>
       <button class="btn btn-primary" id="user-save-btn" onclick="saveUser()">
-        <span id="user-save-text"><i class="fa fa-floppy-disk"></i> Lưu người dùng</span>
+        <span id="user-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu người dùng</span>
       </button>
     </div>
   </div>

@@ -59,8 +59,8 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
     window._existingMediaUrls = log.media_urls || [];
     window._activePlantTreeCode = treeCode || log.tree_code || plantId;
 
-    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square" style="color:var(--green)"></i> Chỉnh sửa nhật ký`;
-    if (saveTextEl) saveTextEl.innerHTML = `<i class="fa fa-floppy-disk"></i> Cập nhật nhật ký`;
+    if (titleEl) titleEl.innerHTML = `<i data-lucide="edit" class="lucide-sm" style="color:var(--green)"></i> Chỉnh sửa nhật ký`;
+    if (saveTextEl) saveTextEl.innerHTML = `<i data-lucide="save" class="lucide-sm"></i> Cập nhật nhật ký`;
 
     if (idEl) idEl.value = plantId || log.plant_id;
     if (displayEl) {
@@ -98,8 +98,8 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
     window._activeEditLogId = null;
     window._existingMediaUrls = [];
 
-    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký chăm sóc`;
-    if (saveTextEl) saveTextEl.innerHTML = `<i class="fa fa-floppy-disk"></i> Lưu nhật ký`;
+    if (titleEl) titleEl.innerHTML = `<i data-lucide="file-check" class="lucide-sm" style="color:var(--green)"></i> Ghi nhật ký chăm sóc`;
+    if (saveTextEl) saveTextEl.innerHTML = `<i data-lucide="save" class="lucide-sm"></i> Lưu nhật ký`;
 
     if (noteEl) noteEl.value = '';
     if (logTypeEl) {
@@ -242,7 +242,7 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     html = `
       <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:16px; text-align:center; box-shadow:0 4px 12px rgba(5,150,105,0.08);">
         <div style="font-size:15px; font-weight:800; color:#047857; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <i class="fa-solid fa-house-chimney"></i> PHẠM VI: TOÀN VƯỜN — ${esc(farmName)}
+          <i data-lucide="home" class="lucide-sm"></i> PHẠM VI: TOÀN VƯỜN — ${esc(farmName)}
         </div>
         <div style="font-size:13px; color:#065f46; font-weight:600;">
           Áp dụng nhật ký chăm sóc cho tổng số <strong style="color:#047857; font-size:15px; text-decoration:underline;">${count} cây trồng</strong> trong trang trại.
@@ -255,10 +255,10 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
         <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh sách Cây trồng (${totalPlantsCount})</span>
         <div style="display:flex; gap:6px;">
           <button type="button" onclick="window.toggleSelectAllGlobal(true)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:6px; cursor:pointer;">
-            <i class="fa-solid fa-check-double"></i> Chọn tất cả
+            <i data-lucide="check-check" class="lucide-sm"></i> Chọn tất cả
           </button>
           <button type="button" onclick="window.toggleSelectAllGlobal(false)" style="padding:4px 10px; font-size:11px; font-weight:700; color:#475569; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
-            <i class="fa-solid fa-xmark"></i> Bỏ chọn
+            <i data-lucide="x" class="lucide-sm"></i> Bỏ chọn
           </button>
         </div>
       </div>
@@ -271,7 +271,7 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
       <div style="margin-bottom: 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
         <div style="font-weight: 700; font-size: 13px; color: #15803d; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
           <span style="display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-tree" style="color:#22c55e;"></i> Vườn: ${esc(group.name)} (${group.list.length} cây)
+            <i data-lucide="trees" class="lucide-sm" style="color:#22c55e;"></i> Vườn: ${esc(group.name)} (${group.list.length} cây)
           </span>
           <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; font-weight: 600; color: #475569; margin: 0; background: #f8fafc; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
             <input type="checkbox" class="farm-select-all-cb" onchange="toggleFarmSelectAll(this, ${farmId})" style="accent-color: #22c55e; cursor: pointer;" ${(!preselectedPlantId) ? 'checked' : ''}> Chọn cả vườn
@@ -520,7 +520,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
           <select id="c-detail-method">${methods.map(m => `<option>${esc(m)}</option>`).join('')}</select>
         </div>
         <div class="field">
-          <label><i class="fa-solid fa-droplet" style="color:var(--green)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
+          <label><i data-lucide="droplet" class="lucide-sm" style="color:var(--green)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
           ${waterSupplies.length > 0 ? `
             <select id="c-detail-supply-id" onchange="calculateWaterCostPreview()">
               ${waterSupplies.map(s => `<option value="${s.id}">💧 ${_formatSupplyOptionText(s)}</option>`).join('')}
@@ -528,9 +528,9 @@ function _buildDetailFields(logType, configs, supplies = []) {
             </select>
           ` : `
             <div style="padding:8px 12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:12px; color:#166534;">
-              <i class="fa-solid fa-circle-info"></i> Chưa khai báo đơn giá m³ nước. 
+              <i data-lucide="info" class="lucide-sm"></i> Chưa khai báo đơn giá m³ nước. 
               <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:700;">
-                <i class="fa-solid fa-plus"></i> Khai báo đơn giá 1m³ nước
+                <i data-lucide="plus" class="lucide-sm"></i> Khai báo đơn giá 1m³ nước
               </a>
             </div>
           `}
@@ -542,7 +542,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
         ${waterSupplies.length > 0 ? `
           <div id="water-conversion-preview-box" class="calc-breakdown-card" style="margin-top:10px; padding:12px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1px solid #7dd3fc; border-radius:12px;">
             <div style="font-size:11px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
-              <i class="fa-solid fa-calculator"></i> TỰ ĐỘNG QUY ĐỔI LÍT ➔ M³ & QUY THÀNH TIỀN
+              <i data-lucide="calculator" class="lucide-sm"></i> TỰ ĐỘNG QUY ĐỔI LÍT ➔ M³ & QUY THÀNH TIỀN
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
               <span style="font-size:13px; font-weight:600; color:#0c4a6e;" id="water-calc-vol">200 Lít = 0.2 m³</span>
@@ -559,7 +559,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
         const firstImg = declaredFertilizers[0].image_url || '';
         return `
           <div class="field">
-            <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
+            <label><i data-lucide="link" class="lucide-sm" style="color:var(--green)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer')">
               ${declaredFertilizers.map(s => {
                 const isOut = (s.category !== 'Tiền nước' && s.category !== 'Nhân công') && (parseFloat(s.stock_quantity) || 0) <= 0;
@@ -576,7 +576,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
               <span style="font-size:12px; color:var(--text-muted); font-weight:500;">Ảnh bao bì / nhãn hiệu sản phẩm</span>
             </div>
             <small style="color:var(--green-dark); font-weight:600; margin-top:4px; display:block;">
-              <i class="fa-solid fa-circle-check"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí)
+              <i data-lucide="check-circle-2" class="lucide-sm"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí)
             </small>
           </div>
           <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
@@ -592,7 +592,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <select id="c-detail-fertilizer">${fertilizers.map(f => `<option>${esc(f)}</option>`).join('')}</select>
             <small style="color:var(--text-muted); margin-top:4px; display:block;">
               <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:600;">
-                <i class="fa-solid fa-plus"></i> Khai báo loại phân này vào Kho Vật tư để tự động tính tiền
+                <i data-lucide="plus" class="lucide-sm"></i> Khai báo loại phân này vào Kho Vật tư để tự động tính tiền
               </a>
             </small>
           </div>
@@ -615,7 +615,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
 
         return `
           <div class="field">
-            <label><i class="fa-solid fa-link" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
+            <label><i data-lucide="link" class="lucide-sm" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
             <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide'); updatePesticideNotice(this);">
               ${declaredPesticides.map(s => {
                 const isOut = (s.category !== 'Tiền nước' && s.category !== 'Nhân công') && (parseFloat(s.stock_quantity) || 0) <= 0;
@@ -631,7 +631,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <!-- VietGAP Active Ingredient Info -->
             <div id="c-pesticide-active-notice" style="margin-top:8px; padding:10px 12px; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; font-size:12px; color:#065f46;">
               <div style="font-weight:800; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu Chuẩn VietGAP - Hoạt Chất & Nguồn Gốc:
+                <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu Chuẩn VietGAP - Hoạt Chất & Nguồn Gốc:
               </div>
               <div style="margin-top:4px; font-size:11.5px; line-height:1.4;">
                 Hoạt chất đăng ký: <strong id="c-pesticide-ing-val">${esc(activeIng) || 'Chưa khai báo'}</strong>.
@@ -643,7 +643,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
               <span style="font-size:12px; color:var(--text-muted); font-weight:500;">Ảnh bao bì / nhãn hiệu sản phẩm</span>
             </div>
             <small style="color:var(--green-dark); font-weight:600; margin-top:4px; display:block;">
-              <i class="fa-solid fa-circle-check"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí & lưu vết VietGAP)
+              <i data-lucide="check-circle-2" class="lucide-sm"></i> Đã liên kết với Kho vật tư (Tự động hạch toán chi phí & lưu vết VietGAP)
             </small>
           </div>
           <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
@@ -659,7 +659,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <select id="c-detail-pesticide">${pesticides.map(p => `<option>${esc(p)}</option>`).join('')}</select>
             <small style="color:var(--text-muted); margin-top:4px; display:block;">
               <a href="#" onclick="closeCareModal(); showPage('supplies'); openSupplyModal(); return false;" style="color:#2563eb; font-weight:600;">
-                <i class="fa-solid fa-plus"></i> Khai báo loại thuốc này vào Kho Vật tư để quản lý chi phí & hoạt chất VietGAP
+                <i data-lucide="plus" class="lucide-sm"></i> Khai báo loại thuốc này vào Kho Vật tư để quản lý chi phí & hoạt chất VietGAP
               </a>
             </small>
           </div>
@@ -693,14 +693,14 @@ function _buildDetailFields(logType, configs, supplies = []) {
       return `
         <!-- VietGAP Batch Code Preview -->
         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px;">
-          <i class="fa-solid fa-barcode" style="color:#0284c7;"></i> Mã Lô Nông Sản VietGAP (Batch Code) Tự Sinh:
+          <i data-lucide="scan" class="lucide-sm" style="color:#0284c7;"></i> Mã Lô Nông Sản VietGAP (Batch Code) Tự Sinh:
           <div style="font-family:monospace; font-weight:800; font-size:13px; color:#0369a1; margin-top:2px;">
             ${batchCodePreview}
           </div>
         </div>
 
         <div class="field">
-          <label><i class="fa-solid fa-wheat-awn" style="color:#d97706"></i> Sản lượng thu hoạch *</label>
+          <label><i data-lucide="wheat" class="lucide-sm" style="color:#d97706"></i> Sản lượng thu hoạch *</label>
           <div style="display:flex; gap:8px;">
             <input type="number" step="any" id="c-detail-harvest-amount" value="50" placeholder="Số lượng (VD: 50)" style="flex:2;">
             <select id="c-detail-harvest-unit" style="flex:1;">
@@ -734,10 +734,10 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
             <div style="display:flex;gap:8px;">
               <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:6px;padding:10px;display:inline-flex;align-items:center;">
-                <i class="fa-solid fa-camera"></i> Chụp hình
+                <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
               </button>
               <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:6px;padding:10px;background:#fff;display:inline-flex;align-items:center;">
-                <i class="fa-solid fa-images"></i> Thư viện
+                <i data-lucide="images" class="lucide-sm"></i> Thư viện
               </button>
             </div>
             <div id="c-media-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
@@ -824,7 +824,7 @@ export function renderMediaPreviews() {
     div.innerHTML = `
       <img src="${item.url}" style="width:100%;height:100%;object-fit:cover;">
       <button type="button" onclick="window.removeExistingPhoto(${index})" style="position:absolute; top:2px; right:2px; background:rgba(239,68,68,0.85); color:#fff; border:none; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:9px;">
-        <i class="fa-solid fa-xmark"></i>
+        <i data-lucide="x" class="lucide-sm"></i>
       </button>`;
     preview.appendChild(div);
   });
@@ -846,7 +846,7 @@ export function renderMediaPreviews() {
       } else {
         div.innerHTML = `
           <div style="width:100%;height:100%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;">
-            <i class="fa-solid fa-video" style="color:var(--text-muted)"></i>
+            <i data-lucide="video" class="lucide-sm" style="color:var(--text-muted)"></i>
           </div>`;
       }
       preview.appendChild(div);
@@ -1157,7 +1157,11 @@ export function startVoiceInput() {
     recognition.interimResults = false;
 
     recognition.onstart = () => {
-      if (micIcon) micIcon.className = 'fa-solid fa-spinner fa-spin';
+      if (micIcon) {
+        micIcon.setAttribute('data-lucide', 'loader-2');
+        micIcon.classList.add('lucide-spin');
+        if (window.lucide) lucide.createIcons({ targets: [micIcon.parentElement || micIcon] });
+      }
       if (micLabel) micLabel.textContent = 'Đang nghe...';
       toast('🎙️ Hãy đọc nội dung nhật ký bằng tiếng Việt...', 'info');
     };
@@ -1176,7 +1180,11 @@ export function startVoiceInput() {
     };
 
     recognition.onend = () => {
-      if (micIcon) micIcon.className = 'fa-solid fa-microphone';
+      if (micIcon) {
+        micIcon.setAttribute('data-lucide', 'mic');
+        micIcon.classList.remove('lucide-spin');
+        if (window.lucide) lucide.createIcons({ targets: [micIcon.parentElement || micIcon] });
+      }
       if (micLabel) micLabel.textContent = 'Đọc giọng nói';
     };
 

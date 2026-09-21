@@ -38,7 +38,7 @@ export function renderNotificationsUI(unreadCount, list) {
   if (!list || list.length === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding:24px 12px; color:#94a3b8; font-size:13px;">
-        <i class="fa-solid fa-bell-slash" style="font-size:24px; color:#cbd5e1; margin-bottom:6px; display:block;"></i>
+        <i data-lucide="bell-off" class="lucide-sm" style="font-size:24px; color:#cbd5e1; margin-bottom:6px; display:block;"></i>
         Chưa có thông báo nào.
       </div>
     `;
@@ -46,9 +46,9 @@ export function renderNotificationsUI(unreadCount, list) {
   }
 
   const typeStyles = {
-    danger: { bg: '#fef2f2', border: '#fecaca', icon: 'fa-triangle-exclamation', color: '#ef4444' },
-    warning: { bg: '#fff7ed', border: '#ffedd5', icon: 'fa-cloud-sun-rain', color: '#f59e0b' },
-    info: { bg: '#f0fdf4', border: '#bbf7d0', icon: 'fa-seedling', color: '#10b981' }
+    danger: { bg: '#fef2f2', border: '#fecaca', icon: 'alert-triangle', color: '#ef4444' },
+    warning: { bg: '#fff7ed', border: '#ffedd5', icon: 'cloud-sun-rain', color: '#f59e0b' },
+    info: { bg: '#f0fdf4', border: '#bbf7d0', icon: 'sprout', color: '#10b981' }
   };
 
   container.innerHTML = list.map(n => {
@@ -63,7 +63,7 @@ export function renderNotificationsUI(unreadCount, list) {
         </button>
         ${isUnread ? `<span style="position:absolute; top:12px; right:28px; width:8px; height:8px; background:#ef4444; border-radius:50%;"></span>` : ''}
         <div style="display:flex; align-items:flex-start; gap:10px; padding-right:20px;">
-          <i class="fa-solid ${st.icon}" style="color:${st.color}; font-size:16px; margin-top:2px;"></i>
+          <i data-lucide="${st.icon}" class="lucide-sm" style="color:${st.color}; font-size:16px; margin-top:2px;"></i>
           <div style="flex:1;">
             <div style="font-size:12.5px; font-weight:800; color:#0f172a; margin-bottom:2px;">${n.title}</div>
             <div style="font-size:12px; color:#475569; line-height:1.4;">${n.message}</div>
@@ -73,6 +73,7 @@ export function renderNotificationsUI(unreadCount, list) {
       </div>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 export async function dismissSingleNotification(e, id) {

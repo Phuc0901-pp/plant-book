@@ -27,13 +27,13 @@ function formatVND(amount) {
 function getCategoryBadge(category) {
   switch (category) {
     case 'Bón phân':
-      return `<span class="badge-cat-fertilizer"><i class="fa-solid fa-flask"></i> Bón phân</span>`;
+      return `<span class="badge-cat-fertilizer"><i data-lucide="flask-conical" class="lucide-sm"></i> Bón phân</span>`;
     case 'Tiền nước':
-      return `<span class="badge-cat-water"><i class="fa-solid fa-droplet"></i> Tiền nước</span>`;
+      return `<span class="badge-cat-water"><i data-lucide="droplet" class="lucide-sm"></i> Tiền nước</span>`;
     case 'Phun thuốc':
-      return `<span class="badge-cat-pesticide"><i class="fa-solid fa-shield-virus"></i> Phun thuốc</span>`;
+      return `<span class="badge-cat-pesticide"><i data-lucide="shield-alert" class="lucide-sm"></i> Phun thuốc</span>`;
     case 'Nhân công':
-      return `<span class="badge-cat-labor"><i class="fa-solid fa-user-gear"></i> Nhân công</span>`;
+      return `<span class="badge-cat-labor"><i data-lucide="user-cog" class="lucide-sm"></i> Nhân công</span>`;
     default:
       return `<span class="badge-gray">${category}</span>`;
   }
@@ -74,9 +74,9 @@ export function autoCalculateSupplyUnits() {
 
     if (labelPrice) {
       if (category === 'Tiền nước') {
-        labelPrice.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Đơn giá nước (VNĐ / m³) <span class="req-star">*</span>`;
+        labelPrice.innerHTML = `<i data-lucide="dollar-sign" class="lucide-sm"></i> Đơn giá nước (VNĐ / m³) <span class="req-star">*</span>`;
       } else {
-        labelPrice.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Đơn giá nhân công (VNĐ / ngày công) <span class="req-star">*</span>`;
+        labelPrice.innerHTML = `<i data-lucide="dollar-sign" class="lucide-sm"></i> Đơn giá nhân công (VNĐ / ngày công) <span class="req-star">*</span>`;
       }
     }
 
@@ -107,7 +107,7 @@ export function autoCalculateSupplyUnits() {
     if (rowPrice) rowPrice.style.gridTemplateColumns = '1fr 1fr 1fr';
 
     if (labelPrice) {
-      labelPrice.innerHTML = `<i class="fa-solid fa-money-bill-wave"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span>`;
+      labelPrice.innerHTML = `<i data-lucide="dollar-sign" class="lucide-sm"></i> Tổng giá mua (VNĐ) <span class="req-star">*</span>`;
     }
 
     const pkgQty = parseFloat(document.getElementById('sp-package-qty')?.value) || 1;
@@ -384,10 +384,10 @@ export function renderSuppliesTable(supplies) {
     tbody.innerHTML = `
       <tr>
         <td colspan="7" class="empty-state" style="padding: 40px; text-align: center;">
-          <i class="fa-solid fa-boxes-packing" style="font-size:32px; color:var(--gray-300); margin-bottom:8px; display:block;"></i>
+          <i data-lucide="package" class="lucide-sm" style="font-size:32px; color:var(--gray-300); margin-bottom:8px; display:block;"></i>
           Không tìm thấy vật tư nào phù hợp với bộ lọc hiện tại.<br>
           <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="margin-top:10px;">
-            <i class="fa-solid fa-plus"></i> Khai báo vật tư mới
+            <i data-lucide="plus" class="lucide-sm"></i> Khai báo vật tư mới
           </button>
         </td>
       </tr>
@@ -410,19 +410,19 @@ export function renderSuppliesTable(supplies) {
 
     // 1. SKU & Icon
     let sku = `VT-${String(sp.id).padStart(3, '0')}`;
-    let categoryIcon = 'fa-solid fa-flask';
+    let categoryIcon = 'flask-conical';
     let categoryColor = '#059669';
     if (sp.category === 'Tiền nước') {
       sku = `NUOC-${String(sp.id).padStart(2, '0')}`;
-      categoryIcon = 'fa-solid fa-droplet';
+      categoryIcon = 'droplets';
       categoryColor = '#0284c7';
     } else if (sp.category === 'Phun thuốc') {
       sku = `THUOC-${String(sp.id).padStart(2, '0')}`;
-      categoryIcon = 'fa-solid fa-shield-virus';
+      categoryIcon = 'spray-can';
       categoryColor = '#ea580c';
     } else if (sp.category === 'Nhân công') {
       sku = `CONG-${String(sp.id).padStart(2, '0')}`;
-      categoryIcon = 'fa-solid fa-user-gear';
+      categoryIcon = 'user-cog';
       categoryColor = '#8b5cf6';
     }
 
@@ -432,21 +432,21 @@ export function renderSuppliesTable(supplies) {
           ${sku}
         </span>
         <span style="font-size:10px; font-weight:700; color:${categoryColor}; display:inline-flex; align-items:center; gap:4px;">
-          <i class="${categoryIcon}"></i> ${esc(sp.category)}
+          <i data-lucide="${categoryIcon}" class="lucide-xs"></i> ${esc(sp.category)}
         </span>
       </div>
     `;
 
     // 2. Name & Specs
     const activeIngDisplay = sp.active_ingredient 
-      ? `<div style="font-size:11px; color:#047857; font-weight:600; margin-top:2px;"><i class="fa-solid fa-flask-vial"></i> Hoạt chất: ${esc(sp.active_ingredient)}</div>` 
+      ? `<div style="font-size:11px; color:#047857; font-weight:600; margin-top:2px;"><i data-lucide="flask-round" class="lucide-sm"></i> Hoạt chất: ${esc(sp.active_ingredient)}</div>` 
       : (sp.fertilizer_type ? `<div style="font-size:11px; color:#64748b; font-weight:600; margin-top:2px;">${esc(sp.fertilizer_type)}</div>` : '');
 
     const nameHtml = `
       <div style="display:flex; align-items:center; gap:10px;">
         ${sp.image_url 
           ? `<img src="${esc(sp.image_url)}" style="width:42px; height:42px; border-radius:10px; object-fit:cover; border:1.5px solid #e2e8f0; box-shadow:0 2px 5px rgba(0,0,0,0.04); flex-shrink:0;" onclick="openLightbox('${esc(sp.image_url)}', 'image')" class="clickable" title="Xem ảnh bao bì">` 
-          : `<div style="width:42px; height:42px; border-radius:10px; background:#f8fafc; border:1.5px solid #e2e8f0; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:18px; flex-shrink:0;"><i class="fa-solid fa-boxes-packing"></i></div>`}
+          : `<div style="width:42px; height:42px; border-radius:10px; background:#f8fafc; border:1.5px solid #e2e8f0; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:18px; flex-shrink:0;"><i data-lucide="package" class="lucide-sm"></i></div>`}
         <div>
           <strong style="font-size:13.5px; color:#0f172a; display:block;">${esc(sp.name)}</strong>
           <div style="font-size:11.5px; color:#64748b; font-weight:600; margin-top:2px;">
@@ -463,7 +463,7 @@ export function renderSuppliesTable(supplies) {
       stockProgressHtml = `
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-size:12.5px; font-weight:900; color:#0284c7;"><i class="fa-solid fa-infinity"></i> Vô tận</span>
+            <span style="font-size:12.5px; font-weight:900; color:#0284c7;"><i data-lucide="infinity" class="lucide-sm"></i> Vô tận</span>
             <span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;">Vĩnh cửu</span>
           </div>
           <div class="stock-level-bar" style="height:6px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
@@ -526,12 +526,12 @@ export function renderSuppliesTable(supplies) {
 
     // 6. VietGAP / Tiêu chuẩn
     const vietgapHtml = (sp.active_ingredient)
-      ? `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Hoạt chất: ${sp.active_ingredient}"><i class="fa-solid fa-circle-check"></i> ${sp.active_ingredient}</span>`
-      : `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle-check"></i> Đạt chuẩn</span>`;
+      ? `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Hoạt chất: ${sp.active_ingredient}"><i data-lucide="check-circle-2" class="lucide-sm"></i> ${sp.active_ingredient}</span>`
+      : `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đạt chuẩn</span>`;
 
     // 7. Actions
     const restockBtn = !isPermanent 
-      ? `<button type="button" class="btn btn-primary btn-xs" onclick="openRestockModal(${sp.id})" title="Nhập thêm hàng vào kho" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px; background:#059669; border-color:#059669;"><i class="fa-solid fa-truck-ramp-box"></i> Nhập</button>`
+      ? `<button type="button" class="btn btn-primary btn-xs" onclick="openRestockModal(${sp.id})" title="Nhập thêm hàng vào kho" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px; background:#059669; border-color:#059669;"><i data-lucide="truck" class="lucide-sm"></i> Nhập</button>`
       : '';
 
     return `
@@ -545,9 +545,9 @@ export function renderSuppliesTable(supplies) {
         <td style="padding: 12px 14px; text-align: right; white-space: nowrap;">
           <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
             ${restockBtn}
-            <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho chi tiết" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i class="fa-solid fa-book-bookmark" style="color:#0284c7;"></i> Thẻ kho</button>
-            <button type="button" class="btn btn-secondary btn-xs" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i class="fa-solid fa-pen"></i></button>
-            <button type="button" class="btn btn-danger btn-xs" onclick="deleteSupply(${sp.id})" title="Xóa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i class="fa-solid fa-trash"></i></button>
+            <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho chi tiết" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i data-lucide="bookmark" class="lucide-sm" style="color:#0284c7;"></i> Thẻ kho</button>
+            <button type="button" class="btn btn-secondary btn-xs" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i data-lucide="edit-3" class="lucide-sm"></i></button>
+            <button type="button" class="btn btn-danger btn-xs" onclick="deleteSupply(${sp.id})" title="Xóa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i data-lucide="trash-2" class="lucide-sm"></i></button>
           </div>
         </td>
       </tr>
@@ -579,7 +579,7 @@ export function openSupplyModal(id = null) {
   if (id) {
     const sp = cachedSupplies.find(item => item.id == id);
     if (sp) {
-      if (title) title.innerHTML = '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa vật tư';
+      if (title) title.innerHTML = '<i data-lucide="edit-3" class="lucide-sm" style="color:var(--green)"></i> Chỉnh sửa vật tư';
       document.getElementById('sp-category').value = sp.category;
       document.getElementById('sp-name').value = sp.name;
       document.getElementById('sp-package-qty').value = sp.package_qty || 1;
@@ -600,7 +600,7 @@ export function openSupplyModal(id = null) {
       setSupplyImagePreview(sp.image_url || '');
     }
   } else {
-    if (title) title.innerHTML = '<i class="fa-solid fa-boxes-packing" style="color:var(--green)"></i> Khai báo vật tư mới';
+    if (title) title.innerHTML = '<i data-lucide="package" class="lucide-sm" style="color:var(--green)"></i> Khai báo vật tư mới';
     if (document.getElementById('sp-fertilizer-type')) {
       document.getElementById('sp-fertilizer-type').value = 'Phân vô cơ (NPK / Hóa học)';
     }
@@ -812,7 +812,7 @@ export async function openStockLedgerModal(id) {
   const sp = cachedSupplies.find(item => item.id == id);
   if (!sp) return;
 
-  if (title) title.innerHTML = `<i class="fa-solid fa-book-bookmark" style="color:#38bdf8;"></i> Sổ Thẻ Kho: ${esc(sp.name)}`;
+  if (title) title.innerHTML = `<i data-lucide="bookmark" class="lucide-sm" style="color:#38bdf8;"></i> Sổ Thẻ Kho: ${esc(sp.name)}`;
   if (subtitle) subtitle.textContent = `Hạng mục: ${sp.category} • Mã SKU: VT-${String(sp.id).padStart(3, '0')}`;
 
   const currentStock = parseFloat(sp.stock_quantity) || 0;
@@ -825,7 +825,7 @@ export async function openStockLedgerModal(id) {
   document.getElementById('ledger-stat-valuation').textContent = isPermanent ? 'Theo thực tế' : formatVND(currentStock * unitPrice);
 
   modal.style.display = 'flex';
-  if (container) container.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu biến động thẻ kho...</div>';
+  if (container) container.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu biến động thẻ kho...</div>';
 
   try {
     const usages = await api(`/supplies/usages?limit=100`);
@@ -840,7 +840,7 @@ export async function openStockLedgerModal(id) {
         <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#10b981; border:3px solid #fff; box-shadow:0 0 0 2px #10b981;"></div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#059669; font-size:13px;"><i class="fa-solid fa-flag-checkered"></i> Khai báo &amp; Nhập kho ban đầu</strong>
+            <strong style="color:#059669; font-size:13px;"><i data-lucide="flag" class="lucide-sm"></i> Khai báo &amp; Nhập kho ban đầu</strong>
             <span style="font-size:11.5px; color:#64748b; font-weight:600;">${createdDate}</span>
           </div>
           <div style="font-size:12px; color:#334155; margin-top:4px;">
@@ -862,7 +862,7 @@ export async function openStockLedgerModal(id) {
             <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#dc2626; border:3px solid #fff; box-shadow:0 0 0 2px #dc2626;"></div>
             <div style="background:#fff; border:1px solid #fecaca; border-radius:10px; padding:10px 14px; box-shadow:0 2px 4px rgba(220,38,38,0.02);">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong style="color:#dc2626; font-size:13px;"><i class="fa-solid fa-arrow-up-from-bracket"></i> Xuất dùng chăm sóc cây</strong>
+                <strong style="color:#dc2626; font-size:13px;"><i data-lucide="upload" class="lucide-sm"></i> Xuất dùng chăm sóc cây</strong>
                 <span style="font-size:11.5px; color:#64748b; font-weight:600;">${uDate}</span>
               </div>
               <div style="font-size:12.5px; color:#1e293b; margin-top:4px; display:flex; justify-content:space-between; align-items:center;">
@@ -882,7 +882,7 @@ export async function openStockLedgerModal(id) {
         <div style="position:absolute; left:-31px; top:2px; width:14px; height:14px; border-radius:50%; background:#0284c7; border:3px solid #fff; box-shadow:0 0 0 2px #0284c7;"></div>
         <div style="background:linear-gradient(135deg, #eff6ff, #f8fafc); border:1.5px solid #bfdbfe; border-radius:10px; padding:10px 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#0369a1; font-size:13px;"><i class="fa-solid fa-boxes-stacked"></i> Tồn kho cuối kỳ thời gian thực</strong>
+            <strong style="color:#0369a1; font-size:13px;"><i data-lucide="package" class="lucide-sm"></i> Tồn kho cuối kỳ thời gian thực</strong>
             <span class="badge" style="background:#0284c7; color:#fff; font-size:10.5px; font-weight:800;">Hiện tại</span>
           </div>
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:4px;">
@@ -1101,7 +1101,7 @@ function renderCostHeatmap(breakdown, grandTotal) {
   if (!breakdown || breakdown.length === 0) {
     container.innerHTML = `
       <div style="text-align:center; padding:32px 16px; color:var(--text-muted); background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1;">
-        <i class="fa-solid fa-chart-line" style="font-size:28px; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+        <i data-lucide="trending-up" class="lucide-sm" style="font-size:28px; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
         Chưa có dữ liệu tiêu hao chi phí trong khoảng thời gian này.
       </div>`;
     return;
@@ -1172,7 +1172,7 @@ function renderCostHeatmap(breakdown, grandTotal) {
     <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <span style="font-size:12px; font-weight:700; color:#15803d; display:inline-flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-chart-line"></i> BIỂU ĐỒ ĐƯỜNG CHI PHÍ TIÊU HAO (${labels.length} KỲ CHỌN)
+          <i data-lucide="trending-up" class="lucide-sm"></i> BIỂU ĐỒ ĐƯỜNG CHI PHÍ TIÊU HAO (${labels.length} KỲ CHỌN)
         </span>
         <span style="font-size:12px; font-weight:700; color:#1e293b; background:#f0fdf4; padding:4px 12px; border-radius:20px; border:1px solid #bbf7d0;">
           Tổng chi phí: ${formatVND(grandTotal)}
@@ -1208,7 +1208,7 @@ function renderBreakdownTable(breakdown, grandTotal) {
   };
 
   if (title) {
-    title.innerHTML = `<i class="fa-solid fa-chart-bar" style="color:var(--green)"></i> Bảng tổng hợp chi phí vật tư (${periodNames[currentPeriodFilter] || 'Theo thời gian'})`;
+    title.innerHTML = `<i data-lucide="bar-chart-3" class="lucide-sm" style="color:var(--green)"></i> Bảng tổng hợp chi phí vật tư (${periodNames[currentPeriodFilter] || 'Theo thời gian'})`;
   }
 
   if (!tbody) return;
@@ -1385,7 +1385,7 @@ function renderSupplyUsagesPage() {
   if (!cachedUsageLogs || cachedUsageLogs.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:14px; border:1px solid #e2e8f0; text-align:center;">
-        <i class="fa-solid fa-boxes-packing" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
+        <i data-lucide="package" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
         <p style="font-size:14px; font-weight:700; color:#475569;">Chưa có đợt tiêu hao vật tư nào được ghi nhận.</p>
       </div>`;
     if (paginationContainer) paginationContainer.innerHTML = '';
@@ -1429,7 +1429,7 @@ function renderSupplyUsagesPage() {
         <!-- Date Header Bar -->
         <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="font-size:14px; font-weight:800; display:flex; align-items:center; gap:8px;">
-            <i class="fa-regular fa-calendar-check" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
+            <i data-lucide="calendar-check" class="lucide-sm" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <span class="badge" style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:11.5px; font-weight:700;">${dayItems.length} mục tiêu hao</span>
@@ -1513,8 +1513,8 @@ function renderSupplyUsagesPage() {
                 Tổng số lượng dùng: <strong style="color:#047857;">${formattedQty} ${esc(grp.unit)}</strong> · Đơn giá: <strong>${formatVND(grp.unit_price)}</strong>
               </div>
               <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <span><i class="fa-solid fa-house-chimney" style="color:#059669;"></i> ${esc(targetsStr)}</span>
-                ${notesStr ? `<span><i class="fa-solid fa-note-sticky" style="color:#eab308;"></i> <em>${esc(notesStr)}</em></span>` : ''}
+                <span><i data-lucide="home" class="lucide-sm" style="color:#059669;"></i> ${esc(targetsStr)}</span>
+                ${notesStr ? `<span><i data-lucide="sticky-note" class="lucide-sm" style="color:#eab308;"></i> <em>${esc(notesStr)}</em></span>` : ''}
               </div>
             </div>
 
@@ -1523,7 +1523,7 @@ function renderSupplyUsagesPage() {
                 ${formatVND(grp.total_cost)}
               </div>
               <button class="btn btn-danger btn-xs" onclick='deleteSupplyUsagesGroup(${idsJson})' title="Xóa đợt tiêu hao" style="padding:6px 10px;">
-                <i class="fa fa-trash"></i>
+                <i data-lucide="trash-2" class="lucide-sm"></i>
               </button>
             </div>
           </div>
@@ -1548,17 +1548,17 @@ function renderSupplyUsagesPage() {
   if (paginationContainer) {
     paginationContainer.innerHTML = `
       <div style="font-size:13px; font-weight:600; color:#64748b; display:flex; align-items:center; gap:6px;">
-        <i class="fa-solid fa-list-check" style="color:var(--green)"></i> Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> / Tổng <strong>${totalLogs}</strong> đợt tiêu hao
+        <i data-lucide="clipboard-check" class="lucide-sm" style="color:var(--green)"></i> Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> / Tổng <strong>${totalLogs}</strong> đợt tiêu hao
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <button class="btn btn-secondary btn-sm" onclick="changeSupplyUsagePage(-1)" ${currentUsageLogPage === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
-          <i class="fa-solid fa-chevron-left"></i> Trang trước
+          <i data-lucide="chevron-left" class="lucide-sm"></i> Trang trước
         </button>
         <span style="font-size:13px; font-weight:700; color:#1e293b; padding:4px 10px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px;">
           ${currentUsageLogPage} / ${totalPages}
         </span>
         <button class="btn btn-secondary btn-sm" onclick="changeSupplyUsagePage(1)" ${currentUsageLogPage === totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
-          Trang sau <i class="fa-solid fa-chevron-right"></i>
+          Trang sau <i data-lucide="chevron-right" class="lucide-sm"></i>
         </button>
       </div>
     `;
@@ -1759,7 +1759,7 @@ export async function handleAiScanImageUpload(event) {
   const textEl = document.getElementById('sp-ai-scan-text');
 
   if (btn) btn.disabled = true;
-  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI đang nén ảnh & quét chữ bao bì...';
+  if (textEl) textEl.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> AI đang nén ảnh & quét chữ bao bì...';
 
   try {
     let d = null;
@@ -1790,7 +1790,7 @@ export async function handleAiScanImageUpload(event) {
 
     // 2. If Backend Gemini is rate-limited or not configured, run Client-Side Tesseract.js OCR
     if (!d && typeof Tesseract !== 'undefined') {
-      if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét bằng OCR thiết bị...';
+      if (textEl) textEl.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang quét bằng OCR thiết bị...';
       const ocrResult = await Tesseract.recognize(compressedFile, 'vie+eng');
       const ocrText = ocrResult?.data?.text || '';
       d = parseAgriculturalProductText(ocrText);
@@ -1848,7 +1848,7 @@ export async function handleAiScanImageUpload(event) {
     toast('Lỗi AI quét bao bì: ' + err.message, 'error');
   } finally {
     if (btn) btn.disabled = false;
-    if (textEl) textEl.innerHTML = '<i class="fa-solid fa-camera"></i> Chụp / Chọn ảnh bao bì';
+    if (textEl) textEl.innerHTML = '<i data-lucide="camera" class="lucide-sm"></i> Chụp / Chọn ảnh bao bì';
     event.target.value = '';
   }
 }

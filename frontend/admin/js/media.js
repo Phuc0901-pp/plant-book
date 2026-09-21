@@ -1,4 +1,4 @@
-// ── Media ─────────────────────────────────────────────────
+﻿// ── Media ─────────────────────────────────────────────────
 
 function renderMediaSection(plantId) {
   return `
@@ -11,7 +11,7 @@ function renderMediaSection(plantId) {
         onmouseover="this.style.background='#ecfdf5'; this.style.borderColor='#059669';"
         onmouseout="this.style.background='#f0fdf4'; this.style.borderColor='#34d399';">
         <div style="width:48px; height:48px; border-radius:50%; background:#dcfce7; color:#059669; display:inline-flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:8px;">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <i data-lucide="upload-cloud" class="lucide-sm"></i>
         </div>
         <div style="font-size:13.5px; font-weight:800; color:#065f46; margin-bottom:3px;">Nhấn hoặc kéo thả Ảnh / Video thực địa vào đây</div>
         <div style="font-size:11.5px; color:#047857;">Hỗ trợ: JPG, PNG, GIF, WebP, MP4, MOV (Tối đa 100MB/file)</div>
@@ -22,7 +22,7 @@ function renderMediaSection(plantId) {
     <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
         <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-images" style="color:#059669;"></i> Thư viện ảnh / video cây trồng
+          <i data-lucide="images" class="lucide-sm" style="color:#059669;"></i> Thư viện ảnh / video cây trồng
         </div>
         <span id="plant-media-header-count" style="font-size:11.5px; font-weight:700; color:#047857; background:#ecfdf5; padding:2px 8px; border-radius:6px; border:1px solid #a7f3d0;">0 tệp</span>
       </div>
@@ -55,7 +55,7 @@ async function loadPlantMedia(plantId) {
     if (!plant.media?.length) {
       grid.innerHTML = `
         <div style="grid-column: 1/-1; text-align:center; padding:32px 20px; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
-          <i class="fa-solid fa-photo-film" style="font-size:32px; color:#94a3b8; margin-bottom:8px; display:inline-block;"></i>
+          <i data-lucide="film" class="lucide-sm" style="font-size:32px; color:#94a3b8; margin-bottom:8px; display:inline-block;"></i>
           <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Chưa có tệp ảnh hoặc video nào cho cây này.</p>
           <small style="color:#94a3b8;">Kéo thả ảnh thực địa hoặc nhấn vào khung tải lên phía trên.</small>
         </div>`;
@@ -72,13 +72,13 @@ async function loadPlantMedia(plantId) {
             ${m.media_type === 'video' ? '🎬 Video' : '📷 Ảnh'}
           </span>
           <button onclick="deleteMedia(${plantId},${m.id})" title="Xóa tệp" style="position:absolute; top:6px; right:6px; width:26px; height:26px; border-radius:50%; background:rgba(239,68,68,0.9); color:#ffffff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-            <i class="fa-solid fa-trash-can"></i>
+            <i data-lucide="trash-2" class="lucide-sm"></i>
           </button>
         </div>
         <div style="padding:6px 8px; background:#ffffff; display:flex; justify-content:space-between; align-items:center; gap:4px; border-top:1px solid #f1f5f9;">
           <span style="font-size:11px; font-weight:700; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(m.caption || 'Phương tiện')}">${esc(m.caption || (m.uploaded_at ? fmtDate(m.uploaded_at) : 'Ảnh thực địa'))}</span>
           <a href="${esc(m.url)}" target="_blank" download style="color:#059669; font-size:11.5px; text-decoration:none;" title="Tải về">
-            <i class="fa-solid fa-arrow-down"></i>
+            <i data-lucide="arrow-down" class="lucide-sm"></i>
           </a>
         </div>
       </div>`).join('');
@@ -151,7 +151,7 @@ function renderLogsSection(plantId) {
   return `
     <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
       <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-        <i class="fa-solid fa-pen-to-square" style="color:#059669;"></i> Ghi nhật ký chăm sóc / canh tác thực địa
+        <i data-lucide="edit" class="lucide-sm" style="color:#059669;"></i> Ghi nhật ký chăm sóc / canh tác thực địa
       </div>
       <div class="form-row" style="margin-bottom:12px;">
         <div class="field" style="margin-bottom:0;">
@@ -177,13 +177,13 @@ function renderLogsSection(plantId) {
         <textarea id="log-note-${plantId}" rows="2" placeholder="VD: Bón 200g phân NPK 20-20-15, tưới đẫm nước quanh tán lá, cây phát triển tốt..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:500; width:100%; box-sizing:border-box; font-family:inherit; outline:none;"></textarea>
       </div>
       <button class="btn btn-primary btn-sm" onclick="addLog(${plantId})" style="background:linear-gradient(135deg, #10b981, #047857); border:none; font-weight:800; font-size:12.5px; padding:8px 16px; border-radius:8px; box-shadow:0 2px 6px rgba(16,185,129,0.3); cursor:pointer;">
-        <i class="fa fa-plus"></i> Thêm nhật ký vào hồ sơ cây
+        <i data-lucide="plus" class="lucide-sm"></i> Thêm nhật ký vào hồ sơ cây
       </button>
     </div>
     <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
         <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-          <i class="fa-solid fa-clock-rotate-left" style="color:#059669;"></i> Dòng thời gian nhật ký chăm sóc
+          <i data-lucide="history" class="lucide-sm" style="color:#059669;"></i> Dòng thời gian nhật ký chăm sóc
         </div>
         <span id="plant-logs-header-count" style="font-size:11.5px; font-weight:700; color:#047857; background:#ecfdf5; padding:2px 8px; border-radius:6px; border:1px solid #a7f3d0;">0 nhật ký</span>
       </div>
@@ -216,7 +216,7 @@ async function loadPlantLogs(plantId) {
     if (!plant.logs?.length) {
       el.innerHTML = `
         <div style="text-align:center; padding:32px 20px; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
-          <i class="fa-solid fa-book-open" style="font-size:32px; color:#94a3b8; margin-bottom:8px; display:inline-block;"></i>
+          <i data-lucide="book-open" class="lucide-sm" style="font-size:32px; color:#94a3b8; margin-bottom:8px; display:inline-block;"></i>
           <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Chưa có nhật ký chăm sóc nào được ghi nhận.</p>
           <small style="color:#94a3b8;">Nhập thông tin chăm sóc vào biểu mẫu phía trên để bắt đầu ghi nhật ký.</small>
         </div>`;
@@ -234,7 +234,7 @@ async function loadPlantLogs(plantId) {
             <div style="flex:1;">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap;">
                 <span class="badge" style="${badgeInfo.style}; font-weight:700; font-size:11px; padding:2px 8px; border-radius:6px;">${esc(badgeInfo.label)}</span>
-                ${l.creator_name ? `<span style="font-size:11px; color:#64748b; font-weight:600;"><i class="fa-solid fa-user-pen" style="color:#059669;"></i> ${esc(l.creator_name)}</span>` : ''}
+                ${l.creator_name ? `<span style="font-size:11px; color:#64748b; font-weight:600;"><i data-lucide="user-check" class="lucide-sm" style="color:#059669;"></i> ${esc(l.creator_name)}</span>` : ''}
               </div>
               <div style="font-size:13px; color:#334155; line-height:1.45; font-weight:500;">
                 ${esc(l.note || 'Không có ghi chú chi tiết.')}
@@ -242,7 +242,7 @@ async function loadPlantLogs(plantId) {
             </div>
           </div>
           <button class="btn btn-danger btn-sm" onclick="deleteLog(${plantId},${l.id})" style="padding:5px 9px; font-size:11px; border-radius:6px; background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; cursor:pointer;" title="Xóa nhật ký này">
-            <i class="fa fa-trash"></i>
+            <i data-lucide="trash-2" class="lucide-sm"></i>
           </button>
         </div>
       `;
@@ -406,7 +406,7 @@ async function loadGlobalMediaGallery() {
   const foldersGrid = document.getElementById('media-folders-grid');
   const empty = document.getElementById('media-gallery-empty');
 
-  if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray-400);"><i class="fa fa-spinner fa-spin" style="font-size:24px; margin-bottom:8px; display:block;"></i> Đang tải dữ liệu thư viện phương tiện...</div>';
+  if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray-400);"><i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size:24px; margin-bottom:8px; display:block;"></i> Đang tải dữ liệu thư viện phương tiện...</div>';
   if (foldersGrid) foldersGrid.innerHTML = '';
   if (empty) empty.style.display = 'none';
 
@@ -414,7 +414,7 @@ async function loadGlobalMediaGallery() {
     globalMediaCache = await api(`/plants/media/all?${queryParams.toString()}`) || [];
     renderMediaView();
   } catch (err) {
-    if (grid) grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--red);"><i class="fa fa-circle-xmark" style="font-size:24px; margin-bottom:8px; display:block;"></i> Lỗi: ${esc(err.message)}</div>`;
+    if (grid) grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--red);"><i data-lucide="x-circle" class="lucide-sm" style="font-size:24px; margin-bottom:8px; display:block;"></i> Lỗi: ${esc(err.message)}</div>`;
   }
 }
 
@@ -505,7 +505,7 @@ function renderMediaView() {
 
   // Update Breadcrumb UI
   if (breadcrumb) {
-    let bcHtml = `<span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder(-1)"><i class="fa-solid fa-folder-tree"></i> Thư viện gốc</span>`;
+    let bcHtml = `<span style="color:#059669; cursor:pointer;" onclick="navigateToMediaFolder(-1)"><i data-lucide="folder-tree" class="lucide-sm"></i> Thư viện gốc</span>`;
     currentFolderPath.forEach((item, idx) => {
       bcHtml += ` <span style="color:#94a3b8;">/</span> <span style="color:#047857; cursor:pointer;" onclick="navigateToMediaFolder(${idx})">${item.icon || '📁'} ${esc(item.name)}</span>`;
     });
@@ -559,7 +559,7 @@ function renderMediaView() {
       <div class="folder-card" onclick="enterMediaFolder('farm', ${g.id}, '${esc(g.name)}', '🏡')" style="background:#ffffff; border:2px solid #a7f3d0; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="this.style.borderColor='#a7f3d0'">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:44px; height:44px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-            <i class="fa-solid fa-folder-tree"></i>
+            <i data-lucide="folder-tree" class="lucide-sm"></i>
           </div>
           <div style="flex:1;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a;">🏡 ${esc(g.name)}</div>
@@ -587,7 +587,7 @@ function renderMediaView() {
       <div class="folder-card" onclick="enterMediaFolder('plant', ${g.id}, '${esc(g.name)}', '🌳')" style="background:#ffffff; border:2px solid #bfdbfe; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(37,99,235,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#bfdbfe'">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:44px; height:44px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-            <i class="fa-solid fa-folder-closed"></i>
+            <i data-lucide="folder" class="lucide-sm"></i>
           </div>
           <div style="flex:1;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a;">🌳 ${esc(g.name)}</div>
@@ -611,7 +611,7 @@ function renderMediaView() {
       <div class="folder-card" onclick="enterMediaFolder('year', ${g.id}, '${esc(g.name)}', '📅')" style="background:#ffffff; border:2px solid #fde68a; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(217,119,6,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#d97706'" onmouseout="this.style.borderColor='#fde68a'">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:44px; height:44px; border-radius:12px; background:#fffbeb; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-            <i class="fa-solid fa-folder"></i>
+            <i data-lucide="folder" class="lucide-sm"></i>
           </div>
           <div style="flex:1;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a;">📅 ${esc(g.name)}</div>
@@ -635,7 +635,7 @@ function renderMediaView() {
       <div class="folder-card" onclick="enterMediaFolder('quarter', '${esc(g.id)}', '${esc(g.name)}', '📊')" style="background:#ffffff; border:2px solid #ddd6fe; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(139,92,246,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#ddd6fe'">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:44px; height:44px; border-radius:12px; background:#f5f3ff; color:#7c3aed; display:flex; align-items:center; justify-content:center; font-size:22px;">
-            <i class="fa-solid fa-folder-open"></i>
+            <i data-lucide="folder-open" class="lucide-sm"></i>
           </div>
           <div style="flex:1;">
             <div style="font-size:13.5px; font-weight:800; color:#0f172a;">📊 ${esc(g.name)}</div>
@@ -701,10 +701,10 @@ function renderMediaCardsList(mediaList) {
       actionButtonsHtml = `
         <div style="margin-top: 8px; display: flex; gap: 8px;">
           <button onclick="approveDeleteMedia(${m.plant_id}, ${m.id})" class="btn btn-danger btn-sm" style="flex: 1; padding: 5px; font-size: 11px; font-weight:800;">
-            <i class="fa fa-check"></i> Duyệt xóa
+            <i data-lucide="check" class="lucide-sm"></i> Duyệt xóa
           </button>
           <button onclick="rejectDeleteMedia(${m.plant_id}, ${m.id})" class="btn btn-secondary btn-sm" style="flex: 1; padding: 5px; font-size: 11px; font-weight:700;">
-            <i class="fa fa-rotate-left"></i> Khôi phục
+            <i data-lucide="rotate-ccw" class="lucide-sm"></i> Khôi phục
           </button>
         </div>
       `;
@@ -714,10 +714,10 @@ function renderMediaCardsList(mediaList) {
           <span title="${esc(stdName)}" style="font-weight:700; color:#334155; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(stdName)}</span>
           <div style="display:flex; gap:6px; align-items:center;">
             <button onclick="downloadMediaWithStandardName('${esc(m.url)}', '${esc(stdName)}')" style="border: none; background: #ecfdf5; color: #047857; font-weight:800; border-radius:4px; padding: 3px 6px; cursor: pointer; font-size:11px;" title="Tải xuống tên chuẩn: ${esc(stdName)}">
-              <i class="fa-solid fa-download"></i>
+              <i data-lucide="download" class="lucide-sm"></i>
             </button>
             <button onclick="approveDeleteMedia(${m.plant_id}, ${m.id}, true)" style="border: none; background: none; color: var(--red); cursor: pointer; padding: 2px;" title="Xóa vĩnh viễn">
-              <i class="fa fa-trash-can"></i>
+              <i data-lucide="trash-2" class="lucide-sm"></i>
             </button>
           </div>
         </div>
@@ -740,7 +740,7 @@ function renderMediaCardsList(mediaList) {
         <div style="padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">${esc(treeLabel)}</div>
-            <div style="font-size: 11px; color: var(--gray-500);"><i class="fa fa-location-dot" style="margin-right:2px"></i> ${esc(farmLabel)}${esc(ownerLabel)}</div>
+            <div style="font-size: 11px; color: var(--gray-500);"><i data-lucide="map-pin" class="lucide-sm" style="margin-right:2px"></i> ${esc(farmLabel)}${esc(ownerLabel)}</div>
           </div>
           ${actionButtonsHtml}
         </div>

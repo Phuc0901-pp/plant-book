@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════════════
    Plant Book Admin — app.js (Core Application Router & Globals)
    ════════════════════════════════════════════════════════ */
 // Passive Event Listeners Patch for 60fps smooth scrolling
@@ -71,8 +71,8 @@ function toast(msg, type = 'success') {
 
   if (iconEl) {
     iconEl.innerHTML = type === 'success'
-      ? '<i class="fa-solid fa-circle-check" style="color:#4ade80"></i>'
-      : (type === 'error' ? '<i class="fa-solid fa-circle-xmark" style="color:#f87171"></i>' : '<i class="fa-solid fa-circle-info" style="color:#60a5fa"></i>');
+      ? '<i data-lucide="check-circle-2" class="lucide-sm" style="color:#4ade80"></i>'
+      : (type === 'error' ? '<i data-lucide="x-circle" class="lucide-sm" style="color:#f87171"></i>' : '<i data-lucide="info" class="lucide-sm" style="color:#60a5fa"></i>');
   }
   msgEl.textContent = msg;
   toastEl.style.display = 'block';

@@ -25,7 +25,7 @@ export async function updateOfflineSyncBadge() {
     badge.style.borderColor = '#93c5fd';
     badge.style.color = '#1d4ed8';
     badge.innerHTML = `
-      <i class="fa-solid fa-arrows-rotate fa-spin" style="color:#2563eb;"></i>
+      <i data-lucide="refresh-cw" class="lucide-spin lucide-sm" style="color:#2563eb;"></i>
       <span id="sync-status-text">Đang đồng bộ (${count})...</span>
     `;
     return;
@@ -44,7 +44,7 @@ export async function updateOfflineSyncBadge() {
     badge.style.borderColor = '#bfdbfe';
     badge.style.color = '#1e40af';
     badge.innerHTML = `
-      <i class="fa-solid fa-cloud-arrow-up" style="color:#2563eb;"></i>
+      <i data-lucide="upload-cloud" class="lucide-sm" style="color:#2563eb;"></i>
       <span id="sync-status-text">Chờ gửi (${count})</span>
     `;
   } else {

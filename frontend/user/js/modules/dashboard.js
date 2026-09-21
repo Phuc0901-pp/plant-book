@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/dashboard.js — Main data loader & state orchestrator
    ═══════════════════════════════════════════════════════════════ */
@@ -37,7 +37,7 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   if (emailEl) {
     if (user.email && user.email.trim()) {
       emailEl.style.display = 'flex';
-      emailEl.innerHTML = `<i class="fa-solid fa-envelope" style="color:#0284c7; font-size:11px;"></i> <span style="word-break:break-all;">${esc(user.email.trim())}</span>`;
+      emailEl.innerHTML = `<i data-lucide="mail" class="lucide-sm" style="color:#0284c7; font-size:11px;"></i> <span style="word-break:break-all;">${esc(user.email.trim())}</span>`;
     } else {
       emailEl.style.display = 'none';
     }
@@ -47,7 +47,7 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   if (phoneEl) {
     if (user.phone && user.phone.trim()) {
       phoneEl.style.display = 'flex';
-      phoneEl.innerHTML = `<i class="fa-solid fa-phone" style="color:#059669; font-size:11px;"></i> <span>${esc(user.phone.trim())}</span>`;
+      phoneEl.innerHTML = `<i data-lucide="phone" class="lucide-sm" style="color:#059669; font-size:11px;"></i> <span>${esc(user.phone.trim())}</span>`;
     } else {
       phoneEl.style.display = 'none';
     }
@@ -67,10 +67,10 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     }
     if (addrStr) {
       addrEl.style.display = 'flex';
-      addrEl.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#ea580c; font-size:12px; margin-top:2px;"></i> <span>${esc(addrStr)}</span>`;
+      addrEl.innerHTML = `<i data-lucide="map-pin" class="lucide-sm" style="color:#ea580c; font-size:12px; margin-top:2px;"></i> <span>${esc(addrStr)}</span>`;
     } else {
       addrEl.style.display = 'flex';
-      addrEl.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#94a3b8; font-size:12px; margin-top:2px;"></i> <span style="color:#94a3b8; font-style:italic;">Chưa cập nhật địa chỉ</span>`;
+      addrEl.innerHTML = `<i data-lucide="map-pin" class="lucide-sm" style="color:#94a3b8; font-size:12px; margin-top:2px;"></i> <span style="color:#94a3b8; font-style:italic;">Chưa cập nhật địa chỉ</span>`;
     }
   }
 
@@ -80,10 +80,10 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     const isPro = (user.account_tier === 'pro' || !user.account_tier || user.account_tier === 'normal');
     tierBadgeEl.innerHTML = isPro
       ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
-           <i class="fa-solid fa-crown" style="color:#fde047;"></i> Gói Nông Hộ PRO 👑
+           <i data-lucide="crown" class="lucide-sm" style="color:#fde047;"></i> Gói Nông Hộ PRO 👑
          </span>`
       : `<span style="background:rgba(241,245,249,0.15); color:#cbd5e1; border:1px solid rgba(255,255,255,0.2); font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
-           <i class="fa-solid fa-user"></i> Gói Normal (Cơ bản)
+           <i data-lucide="user" class="lucide-sm"></i> Gói Normal (Cơ bản)
          </span>`;
   }
 
@@ -161,20 +161,20 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
       return `
         <div class="farm-popover-item" onclick="if(window.showPage) window.showPage('farms')" title="Xem bản đồ và danh sách cây thuộc ${esc(f.name || 'Trang trại')}">
           <div class="farm-name">
-            <i class="fa-solid fa-tree" style="color:#059669; font-size:11px;"></i>
+            <i data-lucide="trees" class="lucide-sm" style="color:#059669; font-size:11px;"></i>
             <span>${esc(f.name || `Trang trại #${idx + 1}`)}</span>
           </div>
           <div class="farm-meta">
-            <span><i class="fa-solid fa-ruler-combined" style="color:#0284c7; font-size:10px;"></i> ${fAreaHa} ha (${Number(fAreaSqM.toFixed(1)).toLocaleString('vi-VN')} m²)</span>
+            <span><i data-lucide="ruler" class="lucide-sm" style="color:#0284c7; font-size:10px;"></i> ${fAreaHa} ha (${Number(fAreaSqM.toFixed(1)).toLocaleString('vi-VN')} m²)</span>
             <span style="font-weight:700; color:#059669;">${fPlantsCount} cây trồng</span>
           </div>
           <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
             <div style="font-size:11px; color:#065f46; display:flex; justify-content:space-between; align-items:center;">
-              <span><i class="fa-solid fa-certificate" style="font-size:10px; color:#059669;"></i> VietGAP: <strong>${esc(fVietgap)}</strong></span>
-              <span style="color:#0284c7; font-weight:700; font-size:11px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở GIS</span>
+              <span><i data-lucide="award" class="lucide-sm" style="font-size:10px; color:#059669;"></i> VietGAP: <strong>${esc(fVietgap)}</strong></span>
+              <span style="color:#0284c7; font-weight:700; font-size:11px;"><i data-lucide="external-link" class="lucide-sm"></i> Mở GIS</span>
             </div>
             <div style="font-size:11px; color:#0369a1; display:flex; justify-content:space-between; align-items:center;">
-              <span><i class="fa-solid fa-earth-americas" style="font-size:10px; color:#0284c7;"></i> Mã PUC: <strong>${esc(fPuc)}</strong></span>
+              <span><i data-lucide="globe" class="lucide-sm" style="font-size:10px; color:#0284c7;"></i> Mã PUC: <strong>${esc(fPuc)}</strong></span>
             </div>
           </div>
         </div>
@@ -379,11 +379,11 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
     const critCount = alerts.filter(a => a.severity === 'CRITICAL').length;
     const warnCount = alerts.filter(a => a.severity === 'WARNING').length;
     if (critCount > 0) {
-      badgeEl.innerHTML = `<span style="color:#dc2626; font-weight:800;"><i class="fa-solid fa-circle-exclamation"></i> ${critCount} cảnh báo khẩn cấp</span>`;
+      badgeEl.innerHTML = `<span style="color:#dc2626; font-weight:800;"><i data-lucide="alert-circle" class="lucide-sm"></i> ${critCount} cảnh báo khẩn cấp</span>`;
     } else if (warnCount > 0) {
-      badgeEl.innerHTML = `<span style="color:#d97706; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> ${warnCount} cảnh báo cần chú ý</span>`;
+      badgeEl.innerHTML = `<span style="color:#d97706; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-sm"></i> ${warnCount} cảnh báo cần chú ý</span>`;
     } else {
-      badgeEl.innerHTML = `<span style="color:#059669; font-weight:800;"><i class="fa-solid fa-circle-check"></i> Toàn bộ ${plants.length || 6} cây trồng đạt thể trạng TỐT</span>`;
+      badgeEl.innerHTML = `<span style="color:#059669; font-weight:800;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Toàn bộ ${plants.length || 6} cây trồng đạt thể trạng TỐT</span>`;
     }
   }
 
@@ -405,11 +405,11 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
         <div>
           ${al.plantId ? `
             <button type="button" class="btn btn-secondary btn-sm" onclick="openCareModal(${al.plantId}, '${esc(al.treeCode)}', '${esc(al.plantType)}')" style="font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 8px; background: #ffffff; border-color: #cbd5e1; color: #0f172a; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-              <i class="fa-solid fa-bolt" style="color: #059669;"></i> <span>${al.actionText}</span>
+              <i data-lucide="zap" class="lucide-sm" style="color: #059669;"></i> <span>${al.actionText}</span>
             </button>
           ` : `
             <button type="button" class="btn btn-secondary btn-sm" onclick="openCareModal()" style="font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 8px; background: #ffffff; border-color: #cbd5e1; color: #0f172a; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-              <i class="fa-solid fa-bolt" style="color: #059669;"></i> <span>${al.actionText}</span>
+              <i data-lucide="zap" class="lucide-sm" style="color: #059669;"></i> <span>${al.actionText}</span>
             </button>
           `}
         </div>

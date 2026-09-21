@@ -188,14 +188,14 @@ export function addConditionRow(data = null) {
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed #e2e8f0; padding-bottom:8px;">
       <div style="display:flex; align-items:center; gap:8px;">
         <span class="condition-index-badge" style="font-size:11.5px; font-weight:800; color:#047857; background:#dcfce7; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-          <i class="fa-solid fa-code-commit"></i> Điều kiện <span class="cond-num"></span>
+          <i data-lucide="git-commit" class="lucide-sm"></i> Điều kiện <span class="cond-num"></span>
         </span>
         <span class="cond-device-badge" style="font-size:11px; font-weight:700; color:#475569; background:#f1f5f9; padding:3px 8px; border-radius:6px;">
           ${DEVICE_GROUPS[devKey]?.badge || 'Đất'}
         </span>
       </div>
       <button type="button" onclick="removeConditionRow('${rowId}')" title="Xóa điều kiện này" style="background:#fee2e2; border:none; color:#dc2626; width:26px; height:26px; border-radius:6px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 0.2s;">
-        <i class="fa-solid fa-trash-can"></i>
+        <i data-lucide="trash-2" class="lucide-sm"></i>
       </button>
     </div>
 
@@ -429,7 +429,7 @@ export function renderThresholdRulesUI(rules) {
   if (!rules || rules.length === 0) {
     container.innerHTML = `
       <div style="background:#ffffff; border:2px dashed #cbd5e1; border-radius:18px; padding:36px 20px; text-align:center;">
-        <i class="fa-solid fa-bell-concierge" style="font-size:36px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <i data-lucide="bell" class="lucide-sm" style="font-size:36px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
         <h4 style="margin:0 0 6px 0; color:#334155; font-size:16px; font-weight:800;">Chưa có quy tắc cài đặt thông báo tự động nào</h4>
         <p style="margin:0 0 18px 0; color:#64748b; font-size:13px;">Bấm nút bên dưới để khởi tạo quy tắc Cảnh báo, Khuyến cáo hoặc Thông báo tự động.</p>
         <button onclick="openAddThresholdRuleModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:10px 22px; font-size:13.5px; font-weight:800; border-radius:12px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
@@ -446,7 +446,7 @@ export function renderThresholdRulesUI(rules) {
       border: '#fecaca',
       badgeBg: '#fee2e2',
       badgeText: '#dc2626',
-      icon: 'fa-triangle-exclamation',
+      icon: 'alert-triangle',
       label: '🚨 Cảnh báo (Màu Đỏ - Icon ⚠️)'
     },
     warning: {
@@ -454,7 +454,7 @@ export function renderThresholdRulesUI(rules) {
       border: '#fed7aa',
       badgeBg: '#ffedd5',
       badgeText: '#d97706',
-      icon: 'fa-bullhorn',
+      icon: 'megaphone',
       label: '📢 Khuyến cáo (Màu Cam - Icon 📢 Cái loa)'
     },
     info: {
@@ -462,7 +462,7 @@ export function renderThresholdRulesUI(rules) {
       border: '#bbf7d0',
       badgeBg: '#dcfce7',
       badgeText: '#16a34a',
-      icon: 'fa-circle-info',
+      icon: 'info',
       label: 'ℹ️ Thông báo (Màu Xanh lá - Icon ℹ️)'
     }
   };
@@ -496,32 +496,31 @@ export function renderThresholdRulesUI(rules) {
           <div style="flex:1; min-width:280px;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
               <span class="badge" style="background:${st.badgeBg}; color:${st.badgeText}; border:1px solid ${st.border}; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
-                <i class="fa-solid ${st.icon}"></i> ${st.label}
+                <i data-lucide="${st.icon}" class="lucide-sm"></i> ${st.label}
               </span>
               
               <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:700;">
-                <i class="fa-solid fa-seedling"></i> ${r.action_type || 'Canh tác'}
+                <i data-lucide="sprout" class="lucide-sm"></i> ${r.action_type || 'Canh tác'}
               </span>
 
-              ${r.check_offline_iot ? `<span class="badge" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-rss"></i> Quét IoT Offline/0</span>` : ''}
-              ${r.check_disease_history ? `<span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-bug"></i> Tra lịch sử bệnh cây</span>` : ''}
-              ${r.reconfirm_event_type ? `<span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:10.5px; font-weight:800;"><i class="fa-solid fa-square-check"></i> Reconfirm Hệ thống</span>` : ''}
-              
-              <span class="badge" style="background:#f3e8ff; color:#6b21a8; border:1px solid #e9d5ff; font-size:11px; font-weight:700;">
-                <i class="fa-solid fa-clock"></i> ${r.notify_time_type === 'custom' ? (r.custom_time || '07:00') : (r.notify_time_type === 'morning' ? 'Sáng (06-08h)' : (r.notify_time_type === 'noon' ? 'Trưa (11-13h)' : (r.notify_time_type === 'afternoon' ? 'Chiều (16-18h)' : (r.notify_time_type === 'evening' ? 'Tối (19-21h)' : 'Ngay lập tức'))))}
+              ${r.check_offline_iot ? `<span class="badge" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-size:10.5px; font-weight:800;"><i data-lucide="radio" class="lucide-sm"></i> Quét IoT Offline/0</span>` : ''}
+              ${r.check_disease_history ? `<span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10.5px; font-weight:800;"><i data-lucide="bug" class="lucide-sm"></i> Tra lịch sử bệnh cây</span>` : ''}
+              ${r.reconfirm_event_type ? `<span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:10.5px; font-weight:800;"><i data-lucide="check-square" class="lucide-sm"></i> Reconfirm Hệ thống</span>` : ''}
+
+              <span style="font-size:12px; color:#64748b; font-weight:600;">
+                Tạo lúc: ${new Date(r.created_at || Date.now()).toLocaleDateString('vi-VN')}
               </span>
             </div>
-            
-            <h4 style="margin:0 0 6px 0; font-size:15.5px; font-weight:900; color:#0f172a; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
-              <span>${ruleTitle}</span>
-            </h4>
 
-            <!-- Conditions Badges List -->
+            <h4 style="margin:0 0 8px 0; font-size:16px; font-weight:800; color:#0f172a;">${esc(ruleTitle)}</h4>
+
+            <!-- Conditions Badges -->
             ${conditions.length > 0 ? `
-              <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:6px 0 8px 0;">
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; align-items:center;">
+                <span style="font-size:12px; font-weight:700; color:#475569;">Điều kiện kích hoạt:</span>
                 ${conditions.map((c, i) => `
-                  ${i > 0 ? `<span style="font-size:10.5px; font-weight:900; color:#059669; background:#ecfdf5; padding:2px 6px; border-radius:6px;">${matchWord}</span>` : ''}
-                  <span style="background:#f1f5f9; color:#0f172a; border:1px solid #e2e8f0; padding:3px 8px; border-radius:8px; font-size:11.5px; font-weight:800;">
+                  ${i > 0 ? `<span style="font-size:11px; font-weight:800; color:#6366f1; background:#e0e7ff; padding:2px 6px; border-radius:4px;">${matchWord}</span>` : ''}
+                  <span class="badge" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; font-weight:700; font-size:11.5px;">
                     ${c.metric_name || c.metric_key}: ${c.operator} ${c.threshold_value} ${c.unit || ''}
                   </span>
                 `).join('')}
@@ -541,17 +540,18 @@ export function renderThresholdRulesUI(rules) {
             </label>
 
             <button onclick="editThresholdRule(${r.id})" style="background:#ffffff; border:1.5px solid #cbd5e1; color:#334155; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-pen"></i> Sửa
+              <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
             </button>
 
             <button onclick="deleteThresholdRule(${r.id})" style="background:#fef2f2; border:1.5px solid #fecaca; color:#dc2626; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-trash-can"></i> Xóa
+              <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
             </button>
           </div>
         </div>
       </div>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 export function onRuleCategoryChange(category) {
@@ -566,6 +566,8 @@ export function onRuleCategoryChange(category) {
   if (category === 'info') {
     if (iotPane) iotPane.style.display = 'none';
     if (infoPane) infoPane.style.display = 'flex';
+    if (dangerBox) dangerBox.style.display = 'none';
+    if (warningBox) warningBox.style.display = 'none';
     if (matchBox) matchBox.style.display = 'none';
   } else {
     if (iotPane) iotPane.style.display = 'flex';
@@ -581,8 +583,9 @@ export function onRuleCategoryChange(category) {
       previewBox.style.borderColor = '#fecaca';
     }
     if (previewIcon) {
-      previewIcon.className = 'fa-solid fa-triangle-exclamation';
+      previewIcon.setAttribute('data-lucide', 'alert-triangle');
       previewIcon.style.color = '#dc2626';
+      if (window.lucide) lucide.createIcons({ targets: [previewIcon.parentElement || previewIcon] });
     }
   } else if (category === 'warning') {
     if (dangerBox) dangerBox.style.display = 'none';
@@ -592,8 +595,9 @@ export function onRuleCategoryChange(category) {
       previewBox.style.borderColor = '#fed7aa';
     }
     if (previewIcon) {
-      previewIcon.className = 'fa-solid fa-bullhorn';
+      previewIcon.setAttribute('data-lucide', 'megaphone');
       previewIcon.style.color = '#d97706';
+      if (window.lucide) lucide.createIcons({ targets: [previewIcon.parentElement || previewIcon] });
     }
   } else if (category === 'info') {
     if (previewBox) {
@@ -601,8 +605,9 @@ export function onRuleCategoryChange(category) {
       previewBox.style.borderColor = '#bbf7d0';
     }
     if (previewIcon) {
-      previewIcon.className = 'fa-solid fa-circle-info';
+      previewIcon.setAttribute('data-lucide', 'info');
       previewIcon.style.color = '#16a34a';
+      if (window.lucide) lucide.createIcons({ targets: [previewIcon.parentElement || previewIcon] });
     }
   }
   updateRuleConditionsSummary();
@@ -1018,7 +1023,7 @@ export async function uploadUserAvatar(file) {
 export async function saveUserProfile() {
   const btn = document.getElementById('settings-save-profile');
   const orig = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...'; }
 
   try {
     const payload = {
@@ -1034,7 +1039,7 @@ export async function saveUserProfile() {
     if (data.success) {
       toast('Đã cập nhật thông tin cá nhân!', 'success');
       if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã lưu';
+        btn.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Đã lưu';
         btn.classList.add('saved');
         setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('saved'); btn.disabled = false; }, 2500);
       }
@@ -1049,7 +1054,7 @@ export async function saveUserProfile() {
 export async function changeUserPassword() {
   const btn = document.getElementById('settings-change-password');
   const orig = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang xử lý...'; }
 
   const oldPw  = _getVal('settings-old-password');
   const newPw  = _getVal('settings-new-password');
@@ -1080,7 +1085,7 @@ export async function changeUserPassword() {
       toast('✅ Đổi mật khẩu thành công!', 'success');
       ['settings-old-password','settings-new-password','settings-confirm-password'].forEach(id => _setVal(id,''));
       if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Thành công';
+        btn.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Thành công';
         btn.classList.add('saved');
         setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('saved'); btn.disabled = false; }, 2500);
       }

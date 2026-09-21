@@ -1,4 +1,4 @@
-<!-- ── MODAL IMPORT KHO THẺ NFC (CSV / EXCEL SYMMETRICAL IMPORT) ── -->
+﻿<!-- ── MODAL IMPORT KHO THẺ NFC (CSV / EXCEL SYMMETRICAL IMPORT) ── -->
 <div id="nfc-import-modal" class="modal-overlay" style="display:none; z-index:9999;">
   <div class="modal-box" style="max-width: 840px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 20px; box-shadow: 0 25px 70px rgba(0,0,0,0.35); border: 1px solid #cbd5e1;">
     
@@ -6,7 +6,7 @@
     <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); padding: 18px 24px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #a7f3d0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
-          <i class="fa-solid fa-file-import"></i>
+          <i data-lucide="upload" class="lucide-sm"></i>
         </div>
         <div>
           <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #ffffff;">Import Thẻ NFC Vào Kho (CSV / Excel)</h2>
@@ -28,14 +28,14 @@
       <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div style="flex: 1; min-width: 260px;">
           <div style="font-weight: 800; font-size: 13px; color: #065f46; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-            <i class="fa-solid fa-circle-info" style="color: #059669;"></i> Định dạng tương thích 100% hai chiều
+            <i data-lucide="info" class="lucide-sm" style="color: #059669;"></i> Định dạng tương thích 100% hai chiều
           </div>
           <p style="margin: 0; font-size: 12px; color: #047857; line-height: 1.4;">
             Chấp nhận file <code>.csv</code> xuất ra từ hệ thống, hoặc file danh sách cột <strong>Mã Thẻ NFC (UID)</strong>. Tự động nhận diện định dạng phân cách dấu hai chấm <code>04:XX:XX...</code> hoặc mã hex liên tục.
           </p>
         </div>
         <button type="button" class="btn btn-secondary btn-sm" onclick="downloadNfcSampleCsv()" style="background: #ffffff; color: #047857; border: 1.5px solid #059669; font-weight: 800; font-size: 12px; padding: 8px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <i class="fa-solid fa-file-csv" style="font-size: 15px; color: #059669;"></i> Tải File Mẫu CSV
+          <i data-lucide="file-spreadsheet" class="lucide-sm" style="font-size: 15px; color: #059669;"></i> Tải File Mẫu CSV
         </button>
       </div>
 
@@ -47,7 +47,7 @@
            style="border: 2px dashed #cbd5e1; border-radius: 14px; background: #f8fafc; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
         <input type="file" id="nfc-import-file-input" accept=".csv,.txt" style="display: none;" onchange="handleNfcImportFileSelect(event)">
         <div style="width: 52px; height: 52px; border-radius: 50%; background: #e0f2fe; color: #0284c7; font-size: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <i data-lucide="upload-cloud" class="lucide-sm"></i>
         </div>
         <div style="font-size: 14.5px; font-weight: 800; color: #1e293b; margin-bottom: 4px;">
           Kéo thả file CSV vào đây hoặc <span style="color: #059669; text-decoration: underline;">chọn từ thiết bị</span>
@@ -56,7 +56,7 @@
           Hỗ trợ định dạng: <code>.csv</code> hoặc <code>.txt</code> (Dung lượng tối đa: 10MB)
         </div>
         <div id="nfc-import-file-badge" style="display: none; margin-top: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-weight: 800; font-size: 13px; padding: 6px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-file-circle-check" style="color: #059669;"></i> <span id="nfc-import-file-name">filename.csv</span>
+          <i data-lucide="file-check" class="lucide-sm" style="color: #059669;"></i> <span id="nfc-import-file-name">filename.csv</span>
         </div>
       </div>
 
@@ -86,7 +86,7 @@
         <!-- Preview Table Box -->
         <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
           <div style="background: #f1f5f9; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 12.5px; font-weight: 800; color: #334155; display: flex; justify-content: space-between; align-items: center;">
-            <span><i class="fa-solid fa-table" style="color: #059669;"></i> Xem trước dữ liệu (tối đa 10 dòng đầu)</span>
+            <span><i data-lucide="table" class="lucide-sm" style="color: #059669;"></i> Xem trước dữ liệu (tối đa 10 dòng đầu)</span>
             <span id="nfc-preview-table-note" style="font-size: 11.5px; font-weight: 600; color: #64748b;"></span>
           </div>
           <div style="max-height: 200px; overflow-y: auto;">
@@ -113,7 +113,7 @@
       <!-- Advanced Import Options -->
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px;">
         <div style="font-size: 12.5px; font-weight: 800; color: #334155; display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-sliders" style="color: #059669;"></i> Tùy Chọn Xử Lý Import
+          <i data-lucide="sliders" class="lucide-sm" style="color: #059669;"></i> Tùy Chọn Xử Lý Import
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
           <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;">
@@ -133,7 +133,7 @@
 
       <!-- Processing Progress Box (Hidden until submit) -->
       <div id="nfc-import-progress-box" style="display: none; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 14px 18px; text-align: center;">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #059669; margin-bottom: 8px;"></i>
+        <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="font-size: 24px; color: #059669; margin-bottom: 8px;"></i>
         <div id="nfc-import-progress-text" style="font-size: 13.5px; font-weight: 800; color: #065f46;">
           Đang nạp thẻ vào kho trang trại, vui lòng chờ trong giây lát...
         </div>
@@ -144,14 +144,14 @@
     <!-- Modal Footer -->
     <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
       <div style="font-size: 12px; color: #64748b;">
-        <i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Quá trình import hoàn toàn an toàn và có cơ chế kiểm tra trùng lặp tự động.
+        <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i> Quá trình import hoàn toàn an toàn và có cơ chế kiểm tra trùng lặp tự động.
       </div>
       <div style="display: flex; gap: 10px;">
         <button type="button" class="btn btn-secondary" onclick="closeAdminNfcImportModal()" style="padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 13px;">
-          <i class="fa-solid fa-xmark"></i> Hủy Bỏ
+          <i data-lucide="x" class="lucide-sm"></i> Hủy Bỏ
         </button>
         <button type="button" id="btn-submit-nfc-import" onclick="submitAdminNfcImport()" disabled style="padding: 9px 22px; border-radius: 10px; font-weight: 800; font-size: 13px; background: #cbd5e1; color: #64748b; border: none; cursor: not-allowed; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s ease;">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Import Vào Kho
+          <i data-lucide="upload-cloud" class="lucide-sm"></i> Bắt Đầu Import Vào Kho
         </button>
       </div>
     </div>

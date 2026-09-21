@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -85,13 +85,13 @@
       <div class="brand-logo-img-wrap">
         <img src="/assets/logo.png" alt="TANBAO AgTech">
       </div>
-      <span class="brand-logo-tagline"><i class="fa-solid fa-book-open" style="color:var(--green-bright);margin-right:5px"></i>Hồ sơ cây trồng <span class="app-version-badge" style="font-size:10px; background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:100px; font-weight:700; border:1px solid #cbd5e1; margin-left:4px;">v1.2.8</span></span>
+      <span class="brand-logo-tagline"><i data-lucide="book-open" class="lucide-sm" style="color:var(--green-bright);margin-right:5px"></i>Hồ sơ cây trồng <span class="app-version-badge" style="font-size:10px; background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:100px; font-weight:700; border:1px solid #cbd5e1; margin-left:4px;">v1.2.8</span></span>
 
 
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; margin-top: 4px;">
-      <button class="share-btn" onclick="openExportModal()" style="background: #f0fdf4; border-color: #bbf7d0; color: #15803d;"><i class="fa-solid fa-file-pdf"></i> Xuất nhật ký</button>
-      <button class="share-btn" onclick="sharePage()" style="background: #f8fafc; border-color: #cbd5e1; color: #334155;"><i class="fa fa-share-nodes"></i> Chia sẻ</button>
+      <button class="share-btn" onclick="openExportModal()" style="background: #f0fdf4; border-color: #bbf7d0; color: #15803d;"><i data-lucide="file-text" class="lucide-sm"></i> Xuất nhật ký</button>
+      <button class="share-btn" onclick="sharePage()" style="background: #f8fafc; border-color: #cbd5e1; color: #334155;"><i data-lucide="share-2" class="lucide-sm"></i> Chia sẻ</button>
     </div>
   </header>
 
@@ -121,7 +121,7 @@
   <!-- Error View -->
   <div id="error-view" style="display: none;">
     <div class="glass-panel error-state">
-      <div class="icon"><i class="fa-solid fa-leaf" style="font-size:56px;color:rgba(239,68,68,0.5)"></i></div>
+      <div class="icon"><i data-lucide="leaf" class="lucide-sm" style="font-size:56px;color:rgba(239,68,68,0.5)"></i></div>
       <h2>Không tìm thấy</h2>
       <p id="error-msg">Trang hồ sơ cây này không tồn tại hoặc đã được tắt chế độ công khai.</p>
     </div>
@@ -140,8 +140,8 @@
             <span class="auth-gate-tag" id="gate-plant-type">Cây trồng</span>
             <h2 class="auth-gate-title" id="gate-plant-name">—</h2>
             <div class="auth-gate-meta">
-              <span><i class="fa-solid fa-tree" style="color:var(--green-bright)"></i> Mã cây: <strong id="gate-plant-code">—</strong></span>
-              <span><i class="fa-solid fa-location-dot" style="color:var(--green-bright)"></i> Trang trại: <strong id="gate-plant-farm">—</strong></span>
+              <span><i data-lucide="trees" class="lucide-sm" style="color:var(--green-bright)"></i> Mã cây: <strong id="gate-plant-code">—</strong></span>
+              <span><i data-lucide="map-pin" class="lucide-sm" style="color:var(--green-bright)"></i> Trang trại: <strong id="gate-plant-farm">—</strong></span>
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@
         <!-- Login Section -->
         <div class="auth-gate-login-section">
           <div class="auth-gate-badge">
-            <i class="fa-solid fa-shield-halved" style="color:#059669"></i>
+            <i data-lucide="shield-check" class="lucide-sm" style="color:#059669"></i>
             <span>Cổng Quản lý &amp; Cập nhật Canh tác</span>
           </div>
           <p class="auth-gate-desc">
@@ -159,21 +159,21 @@
           </p>
 
           <div class="login-error" id="gate-login-error" style="display: none; background:#fef2f2; border:1px solid #fca5a5; color:#dc2626; padding:10px 14px; border-radius:8px; font-size:12.5px; font-weight:600; margin-bottom:14px; align-items:center; gap:8px;">
-            <i class="fa-solid fa-circle-exclamation"></i>
+            <i data-lucide="alert-circle" class="lucide-sm"></i>
             <span id="gate-login-error-text"></span>
           </div>
 
           <form id="form-gate-login" onsubmit="event.preventDefault(); doGateLogin();">
             <div class="field" style="margin-bottom: 14px;">
-              <label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 6px; display: block;"><i class="fa-solid fa-user" style="color:#059669"></i> Email hoặc Số điện thoại</label>
+              <label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 6px; display: block;"><i data-lucide="user" class="lucide-sm" style="color:#059669"></i> Email hoặc Số điện thoại</label>
               <input type="text" id="gate-login-email" placeholder="Nhập email hoặc SĐT nông hộ..." required autocomplete="username">
             </div>
             <div class="field" style="margin-bottom: 18px;">
-              <label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 6px; display: block;"><i class="fa-solid fa-lock" style="color:#059669"></i> Mật khẩu</label>
+              <label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 6px; display: block;"><i data-lucide="lock" class="lucide-sm" style="color:#059669"></i> Mật khẩu</label>
               <input type="password" id="gate-login-pass" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
             </div>
             <button type="submit" class="btn-gate-submit" id="btn-gate-login">
-              <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập &amp; Cập nhật canh tác
+              <i data-lucide="log-in" class="lucide-sm"></i> Đăng nhập &amp; Cập nhật canh tác
             </button>
           </form>
 
@@ -185,7 +185,7 @@
 
           <!-- Nút xem chi tiết chỉ đọc -->
           <button type="button" class="btn-gate-readonly" onclick="enterReadOnlyMode()">
-            <i class="fa-solid fa-eye" style="color:#059669; font-size: 16px;"></i>
+            <i data-lucide="eye" class="lucide-sm" style="color:#059669; font-size: 16px;"></i>
             <span>Xem chi tiết (Chỉ xem dữ liệu canh tác — Không chỉnh sửa)</span>
           </button>
           <div class="auth-gate-readonly-hint">
@@ -202,7 +202,7 @@
 
 <!-- Lightbox Modal -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <button class="lightbox-close" onclick="closeLightbox()"><i class="fa fa-xmark"></i></button>
+  <button class="lightbox-close" onclick="closeLightbox()"><i data-lucide="x" class="lucide-sm"></i></button>
   <div id="lightbox-content"></div>
 </div>
 
@@ -212,7 +212,7 @@
 <div class="modal-overlay" id="modal-water" onclick="closeModalOnOuterClick(event, 'modal-water')">
   <div class="glass-panel modal">
     <div class="modal-header">
-      <h3 class="modal-title" style="color: var(--color-water);"><i class="fa-solid fa-droplet"></i> Quy trình tưới nước</h3>
+      <h3 class="modal-title" style="color: var(--color-water);"><i data-lucide="droplet" class="lucide-sm"></i> Quy trình tưới nước</h3>
       <button class="modal-close" onclick="closeModal('modal-water')">×</button>
     </div>
     <form id="form-water" onsubmit="submitCareLog(event, 'Tưới nước', 'modal-water', 'form-water')">
@@ -269,7 +269,7 @@
 <div class="modal-overlay" id="modal-fertilize" onclick="closeModalOnOuterClick(event, 'modal-fertilize')">
   <div class="glass-panel modal">
     <div class="modal-header">
-      <h3 class="modal-title" style="color: var(--color-fertilize);"><i class="fa-solid fa-leaf"></i> Quy trình bón phân</h3>
+      <h3 class="modal-title" style="color: var(--color-fertilize);"><i data-lucide="leaf" class="lucide-sm"></i> Quy trình bón phân</h3>
       <button class="modal-close" onclick="closeModal('modal-fertilize')">×</button>
     </div>
     <form id="form-fertilize" onsubmit="submitCareLog(event, 'Bón phân', 'modal-fertilize', 'form-fertilize')">
@@ -327,7 +327,7 @@
 <div class="modal-overlay" id="modal-pesticide" onclick="closeModalOnOuterClick(event, 'modal-pesticide')">
   <div class="glass-panel modal">
     <div class="modal-header">
-      <h3 class="modal-title" style="color: var(--color-pesticide);"><i class="fa-solid fa-flask"></i> Quy trình phun thuốc</h3>
+      <h3 class="modal-title" style="color: var(--color-pesticide);"><i data-lucide="flask-conical" class="lucide-sm"></i> Quy trình phun thuốc</h3>
       <button class="modal-close" onclick="closeModal('modal-pesticide')">×</button>
     </div>
     <form id="form-pesticide" onsubmit="submitCareLog(event, 'Phun thuốc', 'modal-pesticide', 'form-pesticide')">
@@ -389,7 +389,7 @@
   <div class="modal-overlay" id="modal-harvest" onclick="closeModalOnOuterClick(event, 'modal-harvest')">
     <div class="glass-panel modal">
       <div class="modal-header">
-        <h3 class="modal-title" style="color: #d97706;"><i class="fa-solid fa-wheat-awn"></i> Quy trình Ghi nhận Thu hoạch</h3>
+        <h3 class="modal-title" style="color: #d97706;"><i data-lucide="wheat" class="lucide-sm"></i> Quy trình Ghi nhận Thu hoạch</h3>
         <button class="modal-close" onclick="closeModal('modal-harvest')">×</button>
       </div>
       <form id="form-harvest" onsubmit="submitCareLog(event, 'Thu hoạch', 'modal-harvest', 'form-harvest')">
@@ -434,7 +434,7 @@
 <div class="modal-overlay" id="modal-leaf" onclick="closeModalOnOuterClick(event, 'modal-leaf')">
   <div class="glass-panel modal">
     <div class="modal-header">
-      <h3 class="modal-title" style="color: var(--color-leaf);"><i class="fa-solid fa-scissors"></i> Quy trình cắt lá / tỉa cành</h3>
+      <h3 class="modal-title" style="color: var(--color-leaf);"><i data-lucide="scissors" class="lucide-sm"></i> Quy trình cắt lá / tỉa cành</h3>
       <button class="modal-close" onclick="closeModal('modal-leaf')">×</button>
     </div>
     <form id="form-leaf" onsubmit="submitCareLog(event, 'Cắt lá', 'modal-leaf', 'form-leaf')">
@@ -473,7 +473,7 @@
 <div class="modal-overlay" id="modal-flower" onclick="closeModalOnOuterClick(event, 'modal-flower')">
   <div class="glass-panel modal">
     <div class="modal-header">
-      <h3 class="modal-title" style="color: var(--color-flower);"><i class="fa-solid fa-spa"></i> Quy trình tỉa hoa / trái</h3>
+      <h3 class="modal-title" style="color: var(--color-flower);"><i data-lucide="flower" class="lucide-sm"></i> Quy trình tỉa hoa / trái</h3>
       <button class="modal-close" onclick="closeModal('modal-flower')">×</button>
     </div>
     <form id="form-flower" onsubmit="submitCareLog(event, 'Tỉa hoa', 'modal-flower', 'form-flower')">
@@ -512,7 +512,7 @@
 <div class="modal-overlay" id="modal-disease" onclick="closeModalOnOuterClick(event, 'modal-disease')">
   <div class="glass-panel modal">
     <div class="modal-header">
-      <h3 class="modal-title" style="color: var(--color-disease);"><i class="fa-solid fa-virus"></i> Báo cáo bệnh cây</h3>
+      <h3 class="modal-title" style="color: var(--color-disease);"><i data-lucide="shield-alert" class="lucide-sm"></i> Báo cáo bệnh cây</h3>
       <button class="modal-close" onclick="closeModal('modal-disease')">×</button>
     </div>
     <form id="form-disease" onsubmit="submitDiseaseLog(event)">
@@ -540,10 +540,10 @@
 
         <!-- Image upload zone -->
         <div class="field">
-          <label><i class="fa-solid fa-camera" style="color:var(--color-disease)"></i> Chụp ảnh (tối đa 10 ảnh)</label>
+          <label><i data-lucide="camera" class="lucide-sm" style="color:var(--color-disease)"></i> Chụp ảnh (tối đa 10 ảnh)</label>
           <div class="upload-zone" id="disease-img-zone">
             <input type="file" id="disease-images" accept="image/*" capture="environment" onchange="handleDiseaseFiles(this, 'images')">
-            <div class="upload-zone-icon"><i class="fa-solid fa-camera"></i></div>
+            <div class="upload-zone-icon"><i data-lucide="camera" class="lucide-sm"></i></div>
             <div class="upload-zone-label">Nhấp để mở camera chụp ảnh</div>
           </div>
           <div class="upload-preview-grid" id="disease-img-preview"></div>
@@ -551,10 +551,10 @@
 
         <!-- Video upload zone -->
         <div class="field">
-          <label><i class="fa-solid fa-video" style="color:var(--color-disease)"></i> Quay video (tối đa 2 video)</label>
+          <label><i data-lucide="video" class="lucide-sm" style="color:var(--color-disease)"></i> Quay video (tối đa 2 video)</label>
           <div class="upload-zone" id="disease-vid-zone">
             <input type="file" id="disease-videos" accept="video/*" capture="environment" onchange="handleDiseaseFiles(this, 'videos')">
-            <div class="upload-zone-icon"><i class="fa-solid fa-video"></i></div>
+            <div class="upload-zone-icon"><i data-lucide="video" class="lucide-sm"></i></div>
             <div class="upload-zone-label">Nhấp để mở camera quay video<br><small>Tối đa 100MB/file</small></div>
           </div>
           <div class="upload-preview-grid" id="disease-vid-preview"></div>
@@ -568,7 +568,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-disease')">Hủy</button>
         <button type="submit" class="btn btn-submit btn-disease" id="btn-disease-submit">
-          <i class="fa-solid fa-flag"></i> Ghi nhận bệnh
+          <i data-lucide="flag" class="lucide-sm"></i> Ghi nhận bệnh
         </button>
       </div>
     </form>
@@ -583,7 +583,7 @@
   <div class="export-modal">
     <div class="export-modal-header">
       <div class="export-modal-title">
-        <i class="fa-solid fa-file-pdf" style="color:var(--green-bright)"></i> Xuất báo cáo & Nhật ký
+        <i data-lucide="file-text" class="lucide-sm" style="color:var(--green-bright)"></i> Xuất báo cáo & Nhật ký
       </div>
       <button class="export-modal-close" onclick="closeExportModal()">×</button>
     </div>
@@ -613,7 +613,7 @@
     <div class="export-modal-footer">
       <button class="export-btn-secondary" onclick="closeExportModal()">Hủy bỏ</button>
       <button class="export-btn-primary" onclick="generateExportReport()">
-        <i class="fa-solid fa-print"></i> Tạo báo cáo
+        <i data-lucide="printer" class="lucide-sm"></i> Tạo báo cáo
       </button>
     </div>
   </div>

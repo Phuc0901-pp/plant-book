@@ -1,4 +1,4 @@
-      <!-- ── Dashboard (STRIPE / LINEAR ULTRA-CLEAN ENTERPRISE COCKPIT) ── -->
+﻿      <!-- ── Dashboard (STRIPE / LINEAR ULTRA-CLEAN ENTERPRISE COCKPIT) ── -->
       <div class="page-section active" id="page-dashboard">
         
         <!-- ── HEADER: EXECUTIVE ENTERPRISE ERP COMMAND CENTER ── -->
@@ -14,13 +14,13 @@
                   Hệ thống hoạt động bình thường
                 </span>
                 <span style="background:#f8fafc; color:#064e3b; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid #cbd5e1; display:inline-flex; align-items:center; gap:5px;">
-                  <i class="fa-solid fa-satellite-dish" style="color:#059669;"></i> GIS Hub Enterprise <span class="app-version-badge">{{APP_VERSION}}</span>
+                  <i data-lucide="satellite" class="lucide-sm" style="color:#059669;"></i> GIS Hub Enterprise <span class="app-version-badge">{{APP_VERSION}}</span>
                 </span>
               </div>
 
               <!-- Main Heading -->
               <h2 class="royal-page-header-title" style="margin:0; font-size:18.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; letter-spacing:-0.2px;">
-                <i class="fa-solid fa-layer-group" style="color:#059669;"></i> Trung Tâm Điều Hành Chuỗi Trang Trại
+                <i data-lucide="layers" class="lucide-sm" style="color:#059669;"></i> Trung Tâm Điều Hành Chuỗi Trang Trại
               </h2>
               <p class="royal-page-header-desc" style="margin:4px 0 0 0; font-size:12.5px; color:#64748b; line-height:1.5;">
                 Giám sát không gian GIS đa giác, định danh tài sản nông hộ, truy xuất nguồn gốc NFC và phân tích rủi ro vận hành thời gian thực.
@@ -33,7 +33,7 @@
               <!-- Live Telemetry Digital Clock Card -->
               <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px; padding:6px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
                 <div style="color:#059669; font-size:16px;">
-                  <i class="fa-regular fa-clock"></i>
+                  <i data-lucide="clock" class="lucide-sm"></i>
                 </div>
                 <div>
                   <div id="dashboard-live-clock" style="font-size:12.5px; font-weight:800; color:#0f172a; font-family:'Segoe UI', Inter, sans-serif; white-space:nowrap;">
@@ -47,7 +47,7 @@
 
               <!-- Refresh Data Button -->
               <button onclick="loadDashboard()" class="btn btn-primary" style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; border:none; padding:8px 16px; border-radius:10px; font-weight:700; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(4,120,87,0.25); cursor:pointer; height:38px;">
-                <i class="fa-solid fa-arrows-rotate"></i> Làm mới dữ liệu
+                <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm mới dữ liệu
               </button>
 
             </div>
@@ -65,7 +65,7 @@
             </div>
             <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farmers">—</div>
             <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-circle-check" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
+              <i data-lucide="check-circle-2" class="lucide-sm" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
             </div>
           </div>
 
@@ -77,7 +77,7 @@
             </div>
             <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farms">—</div>
             <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-draw-polygon" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
+              <i data-lucide="shapes" class="lucide-sm" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
             </div>
           </div>
 
@@ -110,7 +110,7 @@
         <div class="dashboard-status-strip">
           <div class="status-strip-header">
             <div class="status-strip-title">
-              <i class="fa-solid fa-shield-heart" style="color:#059669;"></i>
+              <i data-lucide="shield" class="lucide-sm" style="color:#059669;"></i>
               <span>Trạng Thái Vận Hành &amp; Thiết Bị:</span>
             </div>
             <span class="status-strip-incidents" id="stat-total-incidents">0 sự cố cần theo dõi</span>
@@ -150,12 +150,12 @@
             <!-- Dark Gradient Header -->
             <div class="gis-sidebar-header">
               <button class="gis-back-btn" id="gis-back-btn" style="display:none;" onclick="backToFarmsList()">
-                <i class="fa fa-arrow-left"></i>
+                <i data-lucide="arrow-left" class="lucide-sm"></i>
               </button>
               <h3 id="gis-sidebar-title"><i data-lucide="map" class="lucide-sm"></i> Quản lý Trang trại</h3>
               <div id="gis-header-actions">
                 <button class="btn btn-primary btn-sm" onclick="openFarmForm()">
-                  <i class="fa fa-plus"></i> Thêm mới
+                  <i data-lucide="plus" class="lucide-sm"></i> Thêm mới
                 </button>
               </div>
             </div>
@@ -167,14 +167,14 @@
               <div id="gis-view-list">
                 <div class="gis-section-card" style="animation-delay:0.05s;">
                   <div class="gis-section-label">
-                    <i class="fa-solid fa-filter"></i> Lọc theo Nông hộ
+                    <i data-lucide="filter" class="lucide-sm"></i> Lọc theo Nông hộ
                   </div>
                   <select id="filter-farm-user" onchange="filterFarmsByCustomer()" style="width:100%; padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:12px; outline:none; background:#f8fafc; color:#0f172a; transition:border-color 0.2s;">
                     <option value="all">Tất cả khách hàng (nông hộ)</option>
                   </select>
                 </div>
                 <div id="farms-list-container">
-                  <div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách trang trại...</div>
+                  <div class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách trang trại...</div>
                 </div>
               </div>
 
@@ -189,7 +189,7 @@
                   <!-- VietGAP Production Unit Code (PUC) & Certification -->
                   <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px; margin-bottom:12px;">
                     <div style="font-size:11.5px; font-weight:800; color:#047857; margin-bottom:6px;">
-                      <i class="fa-solid fa-shield-halved"></i> Thông Tin Chứng Nhận VietGAP:
+                      <i data-lucide="shield-check" class="lucide-sm"></i> Thông Tin Chứng Nhận VietGAP:
                     </div>
                     <div class="field" style="margin-bottom:8px;">
                       <label style="font-size:11px; color:#065f46; font-weight:700;">Mã số Vùng trồng (PUC Code)</label>
@@ -221,17 +221,17 @@
                   <div class="field">
                     <label>Ranh giới bản đồ</label>
                     <div class="alert alert-success" style="padding:8px 12px; margin-bottom:8px; font-size:11px; line-height:1.4;">
-                      <i class="fa fa-circle-info"></i> <strong>Chế độ chỉnh sửa đỉnh:</strong> Kéo các điểm tròn trắng trên đường viền để dời đỉnh, hoặc bấm các nút dưới đây:
+                      <i data-lucide="info" class="lucide-sm"></i> <strong>Chế độ chỉnh sửa đỉnh:</strong> Kéo các điểm tròn trắng trên đường viền để dời đỉnh, hoặc bấm các nút dưới đây:
                     </div>
                     <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
                       <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:85px; font-size:11px; padding:6px 8px; font-weight:700;" onclick="enableDirectSelectMode()" title="Bật chỉnh các điểm neo/đỉnh ranh giới">
-                        <i class="fa-solid fa-arrows-up-down-left-right" style="color:#0284c7;"></i> Chỉnh đỉnh
+                        <i data-lucide="move" class="lucide-sm" style="color:#0284c7;"></i> Chỉnh đỉnh
                       </button>
                       <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:85px; font-size:11px; padding:6px 8px; font-weight:700;" onclick="enableRedrawPolygonMode()" title="Vẽ lại đa giác ranh giới mới">
-                        <i class="fa-solid fa-draw-polygon" style="color:#059669;"></i> Vẽ lại mới
+                        <i data-lucide="shapes" class="lucide-sm" style="color:#059669;"></i> Vẽ lại mới
                       </button>
                       <button type="button" class="btn btn-secondary btn-sm" style="flex:1; min-width:75px; font-size:11px; padding:6px 8px; font-weight:700; color:#dc2626;" onclick="clearDrawnPolygon()" title="Xóa ranh giới đang vẽ">
-                        <i class="fa-solid fa-trash-can"></i> Xóa
+                        <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
                       </button>
                     </div>
                     <div style="font-size:11.5px; color:#475569; margin-bottom:8px;">
@@ -251,47 +251,47 @@
                 <!-- Farm info -->
                 <div class="gis-section-card" style="animation-delay:0.05s;">
                   <p id="farm-details-desc" class="gis-farm-info" style="font-style:italic; min-height:16px;"></p>
-                  <p id="farm-details-area" class="gis-farm-area-badge"><i class="fa-solid fa-chart-area"></i> 0 m²</p>
+                  <p id="farm-details-area" class="gis-farm-area-badge"><i data-lucide="trending-up" class="lucide-sm"></i> 0 m²</p>
                 </div>
 
                 <!-- Thêm cây -->
                 <div class="gis-section-card" style="animation-delay:0.10s;">
                   <div class="gis-section-label" style="color:#047857;">
-                    <i class="fa-solid fa-seedling" style="color:#10b981;"></i> Thêm cây vào trang trại
+                    <i data-lucide="sprout" class="lucide-sm" style="color:#10b981;"></i> Thêm cây vào trang trại
                   </div>
                   <button id="btn-gis-import-mode" class="gis-action-btn gis-btn-green" onclick="toggleGisImportMode()">
-                    <i class="fa-solid fa-map-pin"></i> Import GIS — Chọn vị trí cây
+                    <i data-lucide="map-pin" class="lucide-sm"></i> Import GIS — Chọn vị trí cây
                   </button>
                   <div class="gis-btn-row">
                     <button class="gis-action-btn gis-btn-ghost" onclick="openAddPlantsManual()">
-                      <i class="fa fa-keyboard"></i> Thủ công
+                      <i data-lucide="keyboard" class="lucide-sm"></i> Thủ công
                     </button>
                     <button class="gis-action-btn gis-btn-ghost" onclick="openCsvImportModal()">
-                      <i class="fa fa-file-csv"></i> Import CSV
+                      <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Import CSV
                     </button>
                   </div>
                   <button id="btn-toggle-plant-markers" class="gis-action-btn gis-btn-ghost" style="margin-top:4px;" onclick="togglePlantMarkers()">
-                    <i class="fa-solid fa-eye"></i> Hiện / Ẩn Vị Trí Cây
+                    <i data-lucide="eye" class="lucide-sm"></i> Hiện / Ẩn Vị Trí Cây
                   </button>
                   <button id="btn-clear-farm-gps" class="gis-action-btn gis-btn-ghost" style="margin-top:4px; color:#dc2626; border-color:#fecaca;" onclick="confirmClearFarmPlantsGps()">
-                    <i class="fa-solid fa-location-crosshairs"></i> Xóa Hết Định Vị GPS Cây Trong Vườn
+                    <i data-lucide="crosshair" class="lucide-sm"></i> Xóa Hết Định Vị GPS Cây Trong Vườn
                   </button>
                 </div>
 
                 <!-- Hồ sơ bản vẽ CAD -->
                 <div class="gis-section-card" style="animation-delay:0.15s;">
                   <div class="gis-section-label" style="color:#1d4ed8;">
-                    <i class="fa-solid fa-compass-drafting" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD)
+                    <i data-lucide="compass" class="lucide-sm" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD)
                   </div>
                   <button class="gis-action-btn gis-btn-blue" onclick="openDesignDrawingModal()">
-                    <i class="fa-solid fa-file-import"></i> Import Bản Vẽ Thiết Kế (CAD / Overlay)
+                    <i data-lucide="upload" class="lucide-sm"></i> Import Bản Vẽ Thiết Kế (CAD / Overlay)
                   </button>
                 </div>
 
                 <!-- Danh sách cây -->
                 <div class="gis-section-card" style="animation-delay:0.20s;">
                   <div class="gis-section-label">
-                    <i class="fa-solid fa-tree" style="color:#10b981;"></i>
+                    <i data-lucide="trees" class="lucide-sm" style="color:#10b981;"></i>
                     Cây trồng — <span id="farm-details-plant-count" style="color:#047857;">0</span> cây
                   </div>
                   <div id="farm-details-plants-list" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent;">
@@ -304,14 +304,14 @@
 
             <!-- Footer: Sửa / Xóa -->
             <div class="gis-footer-actions" id="gis-detail-footer" style="display:none;">
-              <button class="btn btn-secondary btn-sm" onclick="editFarm()"><i class="fa fa-pen"></i> Sửa</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteFarm()"><i class="fa fa-trash"></i> Xóa</button>
+              <button class="btn btn-secondary btn-sm" onclick="editFarm()"><i data-lucide="edit-3" class="lucide-sm"></i> Sửa</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteFarm()"><i data-lucide="trash-2" class="lucide-sm"></i> Xóa</button>
             </div>
           </div>
           <!-- GIS Map Container -->
           <div class="gis-map-container" style="position: relative;">
             <div id="gis-import-active-banner" style="display:none; position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:12; background:linear-gradient(135deg, #059669, #10b981); color:#fff; padding:10px 18px; border-radius:30px; font-size:12.5px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.4); pointer-events:auto; display:flex; align-items:center; gap:10px;">
-              <span><i class="fa-solid fa-location-crosshairs fa-bounce"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!</span>
+              <span><i data-lucide="crosshair" class="lucide-sm"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!</span>
               <button class="btn btn-sm" style="background:rgba(0,0,0,0.3); border:none; color:#fff; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer;" onclick="toggleGisImportMode(false)">Tắt Chế Độ</button>
             </div>
             <div id="gis-map" class="gis-map"></div>

@@ -1,7 +1,7 @@
-<div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
+﻿<div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="care-modal-title"><i class="fa-solid fa-file-signature" style="color:var(--green)"></i> Ghi nhật ký chăm sóc</h2>
+      <h2 id="care-modal-title"><i data-lucide="file-check" class="lucide-sm" style="color:var(--green)"></i> Ghi nhật ký chăm sóc</h2>
       <button class="modal-close" onclick="closeCareModal()">×</button>
     </div>
     <div class="modal-body">
@@ -12,9 +12,9 @@
         <div id="c-plant-selection-wrap">
           <input type="text" id="c-plant-display" readonly style="display:none; background:var(--gray-50); font-weight:600;">
           <div id="c-plant-single-switch-wrap" style="display:none; justify-content:space-between; align-items:center; margin-top:6px;">
-            <span style="font-size:12px; color:#64748b;"><i class="fa-solid fa-tree"></i> Đang chọn 1 cây</span>
+            <span style="font-size:12px; color:#64748b;"><i data-lucide="trees" class="lucide-sm"></i> Đang chọn 1 cây</span>
             <button type="button" onclick="if(typeof window.enableMultiTreeSelect==='function')window.enableMultiTreeSelect()" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-size:12px; font-weight:700; padding:4px 10px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-layer-group"></i> Chọn nhiều cây / Toàn vườn
+              <i data-lucide="layers" class="lucide-sm"></i> Chọn nhiều cây / Toàn vườn
             </button>
           </div>
           <select id="c-plant-id-select" style="display:none; width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600; background:#fff;"></select>
@@ -22,7 +22,7 @@
             <div id="c-plant-checkboxes-list"></div>
           </div>
           <div id="c-selected-trees-count" style="display:none; margin-top: 8px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 13px; font-weight: 700; color: #15803d;">
-            <i class="fa-solid fa-circle-check" style="font-size: 15px;"></i>
+            <i data-lucide="check-circle-2" class="lucide-sm" style="font-size: 15px;"></i>
             <span>Đã chọn: <strong id="c-selected-count-number" style="font-size: 14px; color:#166534;">0</strong> cây trồng.</span>
           </div>
         </div>
@@ -53,7 +53,7 @@
       <!-- ════ VietGAP Operator & Equipment Personnel Box ════ -->
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:12px;">
         <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
-          <i class="fa-solid fa-user-check"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện & Thiết Bị
+          <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện & Thiết Bị
         </div>
         <div style="display:flex; gap:8px;">
           <div style="flex:1;">
@@ -71,7 +71,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <label style="margin:0;">Ghi chú thêm</label>
           <button type="button" class="btn btn-secondary btn-xs" id="btn-voice-dictate" onclick="startVoiceInput()" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; padding:4px 10px; font-size:12px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5;">
-            <i class="fa-solid fa-microphone" id="mic-icon"></i> <span id="mic-label">Đọc giọng nói</span>
+            <i data-lucide="mic" class="lucide-sm" id="mic-icon"></i> <span id="mic-label">Đọc giọng nói</span>
           </button>
         </div>
         <textarea id="c-note" rows="2" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>
@@ -81,7 +81,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeCareModal()">Hủy</button>
       <button class="btn btn-primary" id="care-save-btn" onclick="saveCareLog()">
-        <span id="care-save-text"><i class="fa fa-floppy-disk"></i> Lưu nhật ký</span>
+        <span id="care-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu nhật ký</span>
       </button>
     </div>
   </div>

@@ -5,7 +5,7 @@
             <!-- KPI 1: Tổng Mặt Hàng -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-boxes-stacked"></i>
+                <i data-lucide="package" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Mặt Hàng (SKU)</div>
@@ -16,7 +16,7 @@
             <!-- KPI 2: Tổng Giá Trị Tồn Kho -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-coins"></i>
+                <i data-lucide="coins" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tổng Giá Trị Tồn Kho</div>
@@ -27,7 +27,7 @@
             <!-- KPI 3: Cảnh Báo Sắp Hết Hàng (Low Stock) -->
             <div class="card" onclick="filterSuppliesByChip('low_stock')" style="padding:16px 20px; border-radius:14px; border:1px solid #fecaca; background:#fffafb; box-shadow:0 2px 10px rgba(220,38,38,0.05); display:flex; align-items:center; gap:16px; cursor:pointer;" title="Bấm để lọc ngay các mặt hàng sắp hết">
               <div style="width:48px; height:48px; border-radius:12px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+                <i data-lucide="alert-triangle" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px;">Cảnh Báo Tồn Thấp (≤ 5)</div>
@@ -38,7 +38,7 @@
             <!-- KPI 4: Phân Loại Danh Mục -->
             <div class="card" style="padding:16px 20px; border-radius:14px; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 2px 10px rgba(0,0,0,0.02); display:flex; align-items:center; gap:16px;">
               <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                <i class="fa-solid fa-layer-group"></i>
+                <i data-lucide="layers" class="lucide-sm"></i>
               </div>
               <div>
                 <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Phân Loại Danh Mục</div>
@@ -78,11 +78,11 @@
                 <!-- Right: Action Buttons -->
                 <div class="db-supply-action-btns" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                   <button class="btn btn-secondary btn-sm" onclick="exportSuppliesPDF()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:8px 14px; font-size:12.5px;">
-                    <i class="fa-solid fa-file-pdf" style="color:#dc2626;"></i> In / Xuất Báo Cáo
+                    <i data-lucide="file-text" class="lucide-sm" style="color:#dc2626;"></i> In / Xuất Báo Cáo
                   </button>
 
                   <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:800; background:linear-gradient(135deg, #059669, #047857); border:none; border-radius:10px; padding:8px 16px; font-size:12.5px; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
-                    <i class="fa fa-plus"></i> + Nhập Vật Tư Mới
+                    <i data-lucide="plus" class="lucide-sm"></i> + Nhập Vật Tư Mới
                   </button>
                 </div>
               </div>
@@ -97,19 +97,19 @@
                 <!-- View Mode Switcher -->
                 <div class="db-supply-view-switcher" style="display:flex; background:#f1f5f9; padding:3px; border-radius:10px; gap:4px; border:1px solid #e2e8f0; flex-wrap:wrap;">
                   <button type="button" id="btn-supply-group-flat" onclick="setSupplyGroupMode('flat')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">
-                    <i class="fa-solid fa-table-list"></i> Bảng ERP
+                    <i data-lucide="table" class="lucide-sm"></i> Bảng ERP
                   </button>
                   <button type="button" id="btn-supply-group-grid" onclick="setSupplyGroupMode('grid')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-grip"></i> Lưới Thẻ
+                    <i data-lucide="grip-vertical" class="lucide-sm"></i> Lưới Thẻ
                   </button>
                   <button type="button" id="btn-supply-group-chart" onclick="setSupplyGroupMode('chart')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-chart-line"></i> Biểu đồ Chi phí
+                    <i data-lucide="trending-up" class="lucide-sm"></i> Biểu đồ Chi phí
                   </button>
                   <button type="button" id="btn-supply-group-cat" onclick="setSupplyGroupMode('category')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-layer-group"></i> Nhóm Loại
+                    <i data-lucide="layers" class="lucide-sm"></i> Nhóm Loại
                   </button>
                   <button type="button" id="btn-supply-group-farm" onclick="setSupplyGroupMode('farm')" style="padding:6px 12px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:#475569;">
-                    <i class="fa-solid fa-house-chimney-window"></i> Nhóm Trang Trại
+                    <i data-lucide="home" class="lucide-sm"></i> Nhóm Trang Trại
                   </button>
                 </div>
               </div>
@@ -136,7 +136,7 @@
                   </tr>
                 </thead>
                 <tbody id="supplies-table-body">
-                  <tr><td colspan="8" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải dữ liệu kho vật tư...</td></tr>
+                  <tr><td colspan="8" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu kho vật tư...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -151,7 +151,7 @@
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
                 <div>
                   <h4 style="margin:0 0 4px 0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-chart-area" style="color:#059669;"></i> Xu Hướng Chi Phí Tiêu Hao Vật Tư Canh Tác Theo 12 Tháng
+                    <i data-lucide="trending-up" class="lucide-sm" style="color:#059669;"></i> Xu Hướng Chi Phí Tiêu Hao Vật Tư Canh Tác Theo 12 Tháng
                   </h4>
                   <div style="font-size:12.5px; color:#64748b;">Dữ liệu hạch toán thực tế từ nhật ký canh tác và xuất kho vật tư</div>
                 </div>

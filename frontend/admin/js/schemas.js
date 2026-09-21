@@ -1,4 +1,4 @@
-// ── Helpers & Translation ───────────────────────────────
+﻿// ── Helpers & Translation ───────────────────────────────
 
 const CROP_TRANSLATIONS = {
   // Trái cây / Fruits
@@ -290,7 +290,7 @@ function renderSchemasTable(schemas) {
   const tbody = document.getElementById('schemas-table');
   if (!tbody) return;
   if (!schemas.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:24px; text-align:center; color:#94a3b8;"><i class="fa fa-layer-group" style="font-size:32px; margin-bottom:8px; display:block;"></i><p>Chưa có loại cây hoặc schema nào phù hợp</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:24px; text-align:center; color:#94a3b8;"><i data-lucide="layers" class="lucide-sm" style="font-size:32px; margin-bottom:8px; display:block;"></i><p>Chưa có loại cây hoặc schema nào phù hợp</p></div></td></tr>';
     return;
   }
   tbody.innerHTML = schemas.map(s => {
@@ -331,10 +331,10 @@ function renderSchemasTable(schemas) {
         <td style="text-align:center;">
           <div style="display:inline-flex; gap:6px;">
             <button class="btn btn-sm" onclick="openSchemaModal(${s.id})" style="background:#f8fafc; border:1px solid #cbd5e1; color:#0284c7; font-weight:700; padding:5px 9px; font-size:11.5px; border-radius:6px; cursor:pointer;" title="Chỉnh sửa Schema">
-              <i class="fa fa-pen"></i> Sửa
+              <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
             </button>
             <button class="btn btn-sm" onclick="deleteSchema(${s.id}, '${escapeHtml(s.name)}')" style="background:#fef2f2; border:1px solid #fca5a5; color:#dc2626; font-weight:700; padding:5px 9px; font-size:11.5px; border-radius:6px; cursor:pointer;" title="Xóa Schema">
-              <i class="fa fa-trash"></i>
+              <i data-lucide="trash-2" class="lucide-sm"></i>
             </button>
           </div>
         </td>
@@ -409,8 +409,8 @@ async function openSchemaModal(id = null, syncUrl = true) {
   }
 
   document.getElementById('schema-modal-title').innerHTML = id
-    ? '<i class="fa-solid fa-pen" style="color:var(--green)"></i> Chỉnh sửa Schema'
-    : '<i class="fa-solid fa-sliders" style="color:var(--green)"></i> Tạo Schema loại cây';
+    ? '<i data-lucide="edit-3" class="lucide-sm" style="color:var(--green)"></i> Chỉnh sửa Schema'
+    : '<i data-lucide="sliders" class="lucide-sm" style="color:var(--green)"></i> Tạo Schema loại cây';
   document.getElementById('s-name').value = '';
   document.getElementById('s-desc').value = '';
 
@@ -516,7 +516,7 @@ function renderSchemaFields() {
         <div class="field-type">${typeLabels[f.type]||f.type}</div>
       </div>
       <button class="btn btn-danger btn-sm" onclick="removeSchemaField(${i})">
-        <i class="fa fa-trash"></i>
+        <i data-lucide="trash-2" class="lucide-sm"></i>
       </button>
     </div>`).join('');
 }

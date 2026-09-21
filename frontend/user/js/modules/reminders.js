@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/reminders.js — Care reminders, disease alerts, quick care
    ═══════════════════════════════════════════════════════════════ */
@@ -55,7 +55,7 @@ export function renderUserReminders(plants) {
   if (sickPlants.length > 0) {
     reminderCount += sickPlants.length;
     html += `<div style="font-size:11px;font-weight:700;color:#ef4444;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.04em;">
-      <i class="fa-solid fa-triangle-exclamation"></i> Phát hiện cây bệnh (${sickPlants.length})
+      <i data-lucide="alert-triangle" class="lucide-sm"></i> Phát hiện cây bệnh (${sickPlants.length})
     </div>`;
 
     sickPlants.forEach(p => {
@@ -67,7 +67,7 @@ export function renderUserReminders(plants) {
 
       html += `
         <div class="disease-alert-card" style="padding:12px;background:#fef2f2;border:1px solid #fee2e2;border-radius:10px;margin-bottom:8px;box-shadow:0 2px 4px rgba(239,68,68,0.03);">
-          <div style="font-size:12px;color:#991b1b;font-weight:700;"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; margin-right:4px;"></i> Cây ${esc(p.tree_code || p.id)}: Bị ${esc(diseaseName)}</div>
+          <div style="font-size:12px;color:#991b1b;font-weight:700;"><i data-lucide="alert-triangle" class="lucide-sm" style="color:#ef4444; margin-right:4px;"></i> Cây ${esc(p.tree_code || p.id)}: Bị ${esc(diseaseName)}</div>
           <div style="font-size:11px;color:#b91c1c;margin-top:4px;">
             Mức độ: <span class="badge" style="background:#fee2e2;color:#b91c1c;font-size:9px;padding:2px 6px;">${esc(severity)}</span>
             ${diseaseLog?.note ? `<br><span style="color:#7f1d1d;font-style:italic;">"${esc(diseaseLog.note)}"</span>` : ''}
@@ -82,8 +82,8 @@ export function renderUserReminders(plants) {
     reminderCount++;
     const isAll     = unwatered.length === plants.length;
     const alertHtml = isAll
-      ? '<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Chưa tưới nước hôm nay (Toàn vườn)'
-      : `<i class="fa-solid fa-droplet" style="color:#3b82f6; margin-right:4px;"></i> Cây chưa được tưới hôm nay: ${unwatered.map(p => p.tree_code || p.id).join(', ')}`;
+      ? '<i data-lucide="droplet" class="lucide-sm" style="color:#3b82f6; margin-right:4px;"></i> Chưa tưới nước hôm nay (Toàn vườn)'
+      : `<i data-lucide="droplet" class="lucide-sm" style="color:#3b82f6; margin-right:4px;"></i> Cây chưa được tưới hôm nay: ${unwatered.map(p => p.tree_code || p.id).join(', ')}`;
 
     html += `
       <div style="padding:10px 12px;background:#eff6ff;border:1px solid #dbeafe;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
@@ -97,8 +97,8 @@ export function renderUserReminders(plants) {
     reminderCount++;
     const isAll     = unfertilized.length === plants.length;
     const alertHtml = isAll
-      ? '<i class="fa-solid fa-flask" style="color:#d97706; margin-right:4px;"></i> Chưa bón phân cả vườn (quá 7 ngày)'
-      : `<i class="fa-solid fa-flask" style="color:#d97706; margin-right:4px;"></i> Cây chưa bón phân (quá 7 ngày): ${unfertilized.map(p => p.tree_code || p.id).join(', ')}`;
+      ? '<i data-lucide="flask-conical" class="lucide-sm" style="color:#d97706; margin-right:4px;"></i> Chưa bón phân cả vườn (quá 7 ngày)'
+      : `<i data-lucide="flask-conical" class="lucide-sm" style="color:#d97706; margin-right:4px;"></i> Cây chưa bón phân (quá 7 ngày): ${unfertilized.map(p => p.tree_code || p.id).join(', ')}`;
 
     html += `
       <div style="padding:10px 12px;background:#fffbeb;border:1px solid #fef3c7;border-radius:10px;margin-bottom:8px;">
@@ -109,7 +109,7 @@ export function renderUserReminders(plants) {
   if (countEl) countEl.textContent = `${reminderCount} nhắc nhở`;
 
   container.innerHTML = reminderCount === 0
-    ? '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-circle-check" style="color:var(--green)"></i><p>Tất cả cây đã được chăm sóc đầy đủ hôm nay!</p></div>'
+    ? '<div class="empty-state" style="padding:16px"><i data-lucide="check-circle-2" class="lucide-sm" style="color:var(--green)"></i><p>Tất cả cây đã được chăm sóc đầy đủ hôm nay!</p></div>'
     : html;
 }
 

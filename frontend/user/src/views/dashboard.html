@@ -8,7 +8,7 @@
               <div>
                 <div style="font-size:11.5px; color:#059669; margin-bottom:4px; font-weight:800; display:flex; align-items:center; gap:6px; letter-spacing:0.4px; text-transform:uppercase;">
                   <span style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; padding:2px 8px; display:inline-flex; align-items:center; gap:4px; color:#059669;">
-                    <i class="fa fa-leaf" style="color:#059669;"></i> Plant Book Enterprise
+                    <i data-lucide="leaf" class="lucide-sm" style="color:#059669;"></i> Plant Book Enterprise
                   </span>
                   <span style="color:#64748b;">· Cổng Điều Hành Nông Hộ</span>
                 </div>
@@ -17,7 +17,7 @@
                     <span style="color:#064e3b;">Xin chào,</span> <span id="welcome-name" style="color:#059669; font-weight:900;">nông hộ</span>
                   </h2>
                   <span class="badge-pro" style="background:#fef3c7; border:1.5px solid #fde68a; color:#b45309; font-size:11px; padding:3px 10px; border-radius:20px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
-                    <i class="fa-solid fa-crown" style="color:#d97706;"></i> Gói Nông Hộ PRO
+                    <i data-lucide="crown" class="lucide-sm" style="color:#d97706;"></i> Gói Nông Hộ PRO
                   </span>
                 </div>
               </div>
@@ -28,7 +28,7 @@
                 <!-- Live Clock Card -->
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:6px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                   <div style="color:#059669; font-size:16px;">
-                    <i class="fa-regular fa-clock"></i>
+                    <i data-lucide="clock" class="lucide-sm"></i>
                   </div>
                   <div>
                     <div style="display:flex; align-items:baseline;">
@@ -43,7 +43,7 @@
 
                 <!-- GPS Weather Refresh Button -->
                 <button type="button" onclick="refreshDeviceWeather()" title="Quét lại tọa độ GPS thiết bị & cập nhật thời tiết" class="royal-pill-btn">
-                  <i id="btn-refresh-weather" class="fa-solid fa-arrows-rotate" style="color:#059669;"></i>
+                  <i id="btn-refresh-weather" data-lucide="rotate-cw" class="lucide-sm" style="color:#059669;"></i>
                   <span>Làm mới GPS</span>
                 </button>
 
@@ -53,7 +53,7 @@
             <!-- Bottom Row: Real-Time GPS Weather Widget Content -->
             <div id="weather-widget-content" style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px 16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
               <div style="display:flex; align-items:center; gap:10px; color:#64748b; font-size:13px; font-weight:700;">
-                <i class="fa-solid fa-spinner fa-spin" style="color:#059669;"></i> <span id="weather-status-text">Đang kết nối trạm vệ tinh GPS & Dự báo Khí tượng Open-Meteo...</span>
+                <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#059669;"></i> <span id="weather-status-text">Đang kết nối trạm vệ tinh GPS & Dự báo Khí tượng Open-Meteo...</span>
               </div>
             </div>
 
@@ -71,12 +71,12 @@
             <!-- Cockpit Header -->
             <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top-left-radius: 17px; border-top-right-radius: 17px;">
               <div style="display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 800; letter-spacing: 0.3px;">
-                <i class="fa-solid fa-id-card-clip" style="color: #10b981; font-size: 16px;"></i>
+                <i data-lucide="contact" class="lucide-sm" style="color: #10b981; font-size: 16px;"></i>
                 <span>HỒ SƠ NÔNG HỘ &amp; NĂNG LỰC SẢN XUẤT VIETGAP</span>
               </div>
               <div id="cockpit-tier-badge">
                 <span style="background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.4); font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa-solid fa-crown" style="color: #fde047;"></i> Gói Nông Hộ PRO
+                  <i data-lucide="crown" class="lucide-sm" style="color: #fde047;"></i> Gói Nông Hộ PRO
                 </span>
               </div>
             </div>
@@ -88,19 +88,19 @@
               <div class="cockpit-col cockpit-col-1" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                   <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
-                    <i class="fa-solid fa-user-tie" style="color: #059669;"></i> Chủ Hộ &amp; Định Danh
+                    <i data-lucide="user-check" class="lucide-sm" style="color: #059669;"></i> Chủ Hộ &amp; Định Danh
                   </div>
                   <div id="cockpit-farmer-name" style="font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
                     Đang tải...
                   </div>
                   <div id="cockpit-farmer-email" style="font-size: 13px; font-weight: 600; color: #0284c7; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-envelope" style="color: #0284c7; font-size: 11px;"></i> <span>--</span>
+                    <i data-lucide="mail" class="lucide-sm" style="color: #0284c7; font-size: 11px;"></i> <span>--</span>
                   </div>
                   <div id="cockpit-farmer-phone" style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-phone" style="color: #059669; font-size: 11px;"></i> <span>--</span>
+                    <i data-lucide="phone" class="lucide-sm" style="color: #059669; font-size: 11px;"></i> <span>--</span>
                   </div>
                   <div id="cockpit-farmer-address" style="font-size: 12.5px; color: #64748b; line-height: 1.4; display: flex; align-items: flex-start; gap: 6px;">
-                    <i class="fa-solid fa-location-dot" style="color: #ea580c; font-size: 12px; margin-top: 2px;"></i>
+                    <i data-lucide="map-pin" class="lucide-sm" style="color: #ea580c; font-size: 12px; margin-top: 2px;"></i>
                     <span>Đang xác định vị trí...</span>
                   </div>
                 </div>
@@ -111,10 +111,10 @@
                 <div>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">
-                      <i class="fa-solid fa-tree" style="color: #059669;"></i> Quy Mô &amp; Chứng Nhận
+                      <i data-lucide="trees" class="lucide-sm" style="color: #059669;"></i> Quy Mô &amp; Chứng Nhận
                     </div>
                     <span class="badge" id="btn-farm-detail-badge" style="font-size: 10.5px; background: #e0f2fe; color: #0284c7; padding: 2px 7px; border-radius: 6px; font-weight: 700; cursor: pointer;" title="Nhấn để xem danh sách chi tiết trang trại">
-                      <i class="fa-solid fa-circle-info"></i> Chi tiết
+                      <i data-lucide="info" class="lucide-sm"></i> Chi tiết
                     </span>
                   </div>
 
@@ -125,7 +125,7 @@
                         <span id="cockpit-farm-count" style="font-size: 22px; font-weight: 900; color: #059669;">1</span>
                         <span style="font-size: 13.5px; font-weight: 800; color: #334155;">Trang trại sở hữu</span>
                       </div>
-                      <i class="fa-solid fa-chevron-down" style="font-size: 11px; color: #94a3b8; transition: transform 0.2s;" id="farm-chevron-icon"></i>
+                      <i data-lucide="chevron-down" class="lucide-sm" style="font-size: 11px; color: #94a3b8; transition: transform 0.2s;" id="farm-chevron-icon"></i>
                     </div>
                     <div id="cockpit-total-area" style="font-size: 13px; font-weight: 700; color: #0284c7; margin-top: 2px;">
                       Diện tích: <span style="font-weight: 900;">0.57 ha</span> (5,733.9 m²)
@@ -134,10 +134,10 @@
 
                   <div id="cockpit-cert-container" style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
                     <div id="cockpit-vietgap-badge" style="font-size: 11.5px; font-weight: 700; color: #065f46; background: #dcfce7; border: 1px solid #86efac; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content;">
-                      <i class="fa-solid fa-certificate" style="color: #059669;"></i> VietGAP: <strong id="cockpit-vietgap-number">--</strong>
+                      <i data-lucide="award" class="lucide-sm" style="color: #059669;"></i> VietGAP: <strong id="cockpit-vietgap-number">--</strong>
                     </div>
                     <div id="cockpit-puc-badge" style="font-size: 11.5px; font-weight: 700; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; width: fit-content;">
-                      <i class="fa-solid fa-earth-americas" style="color: #0284c7;"></i> Mã PUC: <strong id="cockpit-puc-number">--</strong>
+                      <i data-lucide="globe" class="lucide-sm" style="color: #0284c7;"></i> Mã PUC: <strong id="cockpit-puc-number">--</strong>
                     </div>
                   </div>
                 </div>
@@ -146,7 +146,7 @@
                 <div id="cockpit-farm-popover" class="farm-popover-dropdown" style="display: none;">
                   <div class="farm-popover-header">
                     <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 12.5px; color: #0f172a;">
-                      <i class="fa-solid fa-layer-group" style="color: #059669;"></i> Danh Sách Trang Trại Sở Hữu
+                      <i data-lucide="layers" class="lucide-sm" style="color: #059669;"></i> Danh Sách Trang Trại Sở Hữu
                     </div>
                     <button type="button" id="btn-close-farm-popover" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 4px;" title="Đóng">&times;</button>
                   </div>
@@ -161,7 +161,7 @@
                 <div>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">
-                      <i class="fa-solid fa-chart-pie" style="color: #059669;"></i> Cơ Cấu Cây Trồng
+                      <i data-lucide="pie-chart" class="lucide-sm" style="color: #059669;"></i> Cơ Cấu Cây Trồng
                     </div>
                     <div id="cockpit-crop-total-badge" style="font-size: 11px; font-weight: 800; color: #059669; background: #d1fae5; padding: 2px 8px; border-radius: 12px;">
                       <!-- 6 cây -->
@@ -180,13 +180,13 @@
 
                   <!-- Tình trạng sinh trưởng -->
                   <div id="cockpit-health-status-row" style="font-size: 12px; color: #16a34a; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
-                    <i class="fa-solid fa-circle-check"></i> <span id="cockpit-health-status-text">100% Cây sinh trưởng tốt</span>
+                    <i data-lucide="check-circle-2" class="lucide-sm"></i> <span id="cockpit-health-status-text">100% Cây sinh trưởng tốt</span>
                   </div>
                 </div>
 
                 <div>
                   <button type="button" class="btn btn-primary" onclick="showPage('farms')" style="width: 100%; padding: 8px 12px; font-size: 12.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(5,150,105,0.25);">
-                    <i class="fa-solid fa-earth-asia"></i> <span>Mở Bản Đồ GIS Thửa Đất</span> <i class="fa-solid fa-arrow-right" style="font-size: 11px;"></i>
+                    <i data-lucide="globe" class="lucide-sm"></i> <span>Mở Bản Đồ GIS Thửa Đất</span> <i data-lucide="arrow-right" class="lucide-sm" style="font-size: 11px;"></i>
                   </button>
                 </div>
               </div>
@@ -201,7 +201,7 @@
           <div class="card" id="user-priority-alerts-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
             <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <h3 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-triangle-exclamation" style="color: #eab308; font-size: 17px;"></i>
+                <i data-lucide="alert-triangle" class="lucide-sm" style="color: #eab308; font-size: 17px;"></i>
                 <span>Trung Tâm Giám Sát Cảnh Báo &amp; Sức Khỏe Vườn Cây</span>
               </h3>
               <div id="alerts-count-badge" style="font-size: 12px; font-weight: 700; color: #64748b;">
@@ -217,7 +217,7 @@
           <!-- Tóm tắt Danh sách Cây trồng -->
           <div class="card" id="user-plants-summary-card">
             <div class="card-header">
-              <h3><i class="fa-solid fa-seedling" style="color:var(--green)"></i> Danh sách Cây trồng</h3>
+              <h3><i data-lucide="sprout" class="lucide-sm" style="color:var(--green)"></i> Danh sách Cây trồng</h3>
               <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count">0</strong> cây</span>
             </div>
             <div style="overflow-x: auto;">
@@ -233,13 +233,13 @@
                   </tr>
                 </thead>
                 <tbody id="user-plants-summary-table">
-                  <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                  <tr><td colspan="6" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải...</td></tr>
                 </tbody>
               </table>
             </div>
             <div style="padding: 12px 16px; border-top: 1px solid var(--gray-100);">
               <button class="btn btn-secondary btn-sm" onclick="showPage('myplants')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
-                Xem tất cả cây trồng <i class="fa fa-arrow-right"></i>
+                Xem tất cả cây trồng <i data-lucide="arrow-right" class="lucide-sm"></i>
               </button>
             </div>
           </div>
@@ -247,7 +247,7 @@
           <!-- Hoạt động canh tác gần đây -->
           <div class="card">
             <div class="card-header">
-              <h3><i class="fa-solid fa-clipboard-list" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3>
+              <h3><i data-lucide="clipboard-list" class="lucide-sm" style="color:var(--green)"></i> Hoạt động canh tác gần đây (3 ngày qua)</h3>
             </div>
             <div style="overflow-x: auto;">
               <table>
@@ -262,13 +262,13 @@
                   </tr>
                 </thead>
                 <tbody id="user-logs-table">
-                  <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                  <tr><td colspan="6" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải...</td></tr>
                 </tbody>
               </table>
             </div>
             <div style="padding: 12px 16px; border-top: 1px solid var(--gray-100);" id="user-logs-more-btn-wrap">
               <button class="btn btn-secondary btn-sm" onclick="showPage('logs')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
-                Xem chi tiết lịch sử <i class="fa-solid fa-clock-rotate-left"></i>
+                Xem chi tiết lịch sử <i data-lucide="history" class="lucide-sm"></i>
               </button>
             </div>
           </div>

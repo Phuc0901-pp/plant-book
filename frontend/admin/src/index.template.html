@@ -1,4 +1,4 @@
-<!-- ====================================================================
+﻿<!-- ====================================================================
      PLANT BOOK ENTERPRISE ERP — ADMIN PORTAL
      Auto-assembled via backend/scripts/build-html.js
      DO NOT edit index.html directly; edit modular files in src/
@@ -27,10 +27,10 @@
         <div class="royal-page-header">
           <div style="position:relative; z-index:1;">
             <div style="font-size:11px; color:#059669; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
-              <i class="fa-solid fa-database" style="color:#059669;"></i> CSDL Nông Nghiệp & Danh Mục Master Data ERP
+              <i data-lucide="database" class="lucide-sm" style="color:#059669;"></i> CSDL Nông Nghiệp & Danh Mục Master Data ERP
             </div>
             <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:4px 0 0 0; letter-spacing:-0.2px; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-server" style="color:#059669;"></i> Cơ Sở Dữ Liệu Nông Nghiệp &amp; Vận Hành
+              <i data-lucide="server" class="lucide-sm" style="color:#059669;"></i> Cơ Sở Dữ Liệu Nông Nghiệp &amp; Vận Hành
             </h2>
             <p style="margin:3px 0 0 0; font-size:13px; color:#64748b; line-height:1.4;">
               Trung tâm quản trị dữ liệu cây trồng, kho thẻ NFC, cảm biến IoT, quy trình loại cây, vật tư và lưu trữ media.
@@ -39,7 +39,7 @@
 
           <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button onclick="if(typeof window.refreshCurrentDatabaseTab==='function')window.refreshCurrentDatabaseTab(); else location.reload();" class="royal-pill-btn">
-              <i class="fa-solid fa-rotate" style="color:#059669;"></i> Tải Lại Dữ Liệu
+              <i data-lucide="refresh-cw" class="lucide-sm" style="color:#059669;"></i> Tải Lại Dữ Liệu
             </button>
           </div>
         </div>
@@ -47,31 +47,31 @@
         <!-- 8 Sub-tabs in Database section -->
         <div class="tabs" style="margin-bottom: 20px;">
           <div class="tab active" id="db-tab-cultivation" onclick="switchDatabaseTab('cultivation')">
-            <i class="fa-solid fa-seedling"></i> Dữ liệu canh tác
+            <i data-lucide="sprout" class="lucide-sm"></i> Dữ liệu canh tác
           </div>
           <div class="tab" id="db-tab-nfc" onclick="switchDatabaseTab('nfc')">
-            <i class="fa-solid fa-boxes-stacked"></i> Kho Thẻ NFC
+            <i data-lucide="package" class="lucide-sm"></i> Kho Thẻ NFC
           </div>
           <div class="tab" id="db-tab-devices" onclick="switchDatabaseTab('devices')">
-            <i class="fa-solid fa-microchip"></i> Thiết bị IoT &amp; Cảm biến
+            <i data-lucide="cpu" class="lucide-sm"></i> Thiết bị IoT &amp; Cảm biến
           </div>
           <div class="tab" id="db-tab-schemas" onclick="switchDatabaseTab('schemas')">
-            <i class="fa-solid fa-sliders"></i> Cấu hình &amp; Quy trình Loại cây
+            <i data-lucide="sliders" class="lucide-sm"></i> Cấu hình &amp; Quy trình Loại cây
           </div>
           <div class="tab" id="db-tab-supplies" onclick="switchDatabaseTab('supplies')">
-            <i class="fa-solid fa-boxes-packing"></i> Vật tư &amp; Kho
+            <i data-lucide="package" class="lucide-sm"></i> Vật tư &amp; Kho
           </div>
           <div class="tab" id="db-tab-media" onclick="switchDatabaseTab('media')">
-            <i class="fa-solid fa-images"></i> Thư viện media
+            <i data-lucide="images" class="lucide-sm"></i> Thư viện media
           </div>
           <div class="tab" id="db-tab-history" onclick="switchDatabaseTab('history')">
-            <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động
+            <i data-lucide="history" class="lucide-sm"></i> Lịch sử biến động
           </div>
           <div class="tab" id="db-tab-check" onclick="switchDatabaseTab('check')">
-            <i class="fa-solid fa-server"></i> Thanh tra CSDL (Schema &amp; Tables)
+            <i data-lucide="server" class="lucide-sm"></i> Thanh tra CSDL (Schema &amp; Tables)
           </div>
           <div class="tab" id="db-tab-version" onclick="switchDatabaseTab('version')">
-            <i class="fa-solid fa-code-branch"></i> Phiên bản Ứng dụng
+            <i data-lucide="git-branch" class="lucide-sm"></i> Phiên bản Ứng dụng
           </div>
         </div>
 

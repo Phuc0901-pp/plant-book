@@ -232,9 +232,9 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
       <!-- Top Header Strip: Location & Status -->
       <div class="weather-header-strip" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-bottom:8px; border-bottom:1px solid #e2e8f0; width:100%;">
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <i class="fa-solid fa-location-dot" style="color:#e11d48; font-size:13px;"></i>
+          <i data-lucide="map-pin" class="lucide-sm" style="color:#e11d48; font-size:13px;"></i>
           <span style="font-weight:800; color:#064e3b; font-size:13px;">${locationName}</span>
-          ${isRealGps ? `<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-satellite" style="color:#059669; font-size:10px;"></i> GPS Thiết bị</span>` : `<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-seedling" style="color:#d97706; font-size:10px;"></i> Trang trại</span>`}
+          ${isRealGps ? `<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="satellite" class="lucide-sm" style="color:#059669; font-size:10px;"></i> GPS Thiết bị</span>` : `<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="sprout" class="lucide-sm" style="color:#d97706; font-size:10px;"></i> Trang trại</span>`}
           ${statusBadge ? `<span style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
         </div>
         <div style="font-size:11.5px; font-weight:700; color:#64748b; display:inline-flex; align-items:center; gap:5px;">
@@ -268,7 +268,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
           <!-- Humidity Chip -->
           <div class="weather-metric-chip" style="background:#ecfdf5; border:1.2px solid #a7f3d0; border-radius:10px; padding:7px 10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
             <div style="font-size:10.5px; color:#059669; font-weight:800; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-droplet" style="color:#059669;"></i> Độ ẩm KK
+              <i data-lucide="droplet" class="lucide-sm" style="color:#059669;"></i> Độ ẩm KK
             </div>
             <div id="weather-val-humidity" style="font-size:15px; font-weight:900; color:#064e3b; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${humidity}%</div>
           </div>
@@ -276,7 +276,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
           <!-- Wind Chip -->
           <div class="weather-metric-chip" style="background:#f0fdfa; border:1.2px solid #99f6e4; border-radius:10px; padding:7px 10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
             <div style="font-size:10.5px; color:#0f766e; font-weight:800; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-wind" style="color:#0d9488;"></i> Gió & Hướng
+              <i data-lucide="wind" class="lucide-sm" style="color:#0d9488;"></i> Gió & Hướng
             </div>
             <div style="font-size:13px; font-weight:900; color:#115e59; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:10.5px; font-weight:700; color:#0f766e;">${windDir}</span></div>
           </div>
@@ -284,7 +284,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
           <!-- Rain Prob Chip -->
           <div class="weather-metric-chip" style="background:#eff6ff; border:1.2px solid #bfdbfe; border-radius:10px; padding:7px 10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
             <div style="font-size:10.5px; color:#2563eb; font-weight:800; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-cloud-rain" style="color:#3b82f6;"></i> Khả năng mưa
+              <i data-lucide="cloud-rain" class="lucide-sm" style="color:#3b82f6;"></i> Khả năng mưa
             </div>
             <div id="weather-val-rain" style="font-size:15px; font-weight:900; color:#1e40af; margin-top:2px; font-family:'Segoe UI', Inter, sans-serif;">${rainProb}%</div>
           </div>
@@ -292,7 +292,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
           <!-- UV Chip -->
           <div class="weather-metric-chip" style="background:#fffbeb; border:1.2px solid #fde68a; border-radius:10px; padding:7px 10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
             <div style="font-size:10.5px; color:#d97706; font-weight:800; display:flex; align-items:center; gap:5px;">
-              <i class="fa-solid fa-sun" style="color:#d97706;"></i> Chỉ số UV
+              <i data-lucide="sun" class="lucide-sm" style="color:#d97706;"></i> Chỉ số UV
             </div>
             <div style="font-size:14px; font-weight:900; color:#92400e; margin-top:2px;"><span id="weather-val-uv">${uv}</span> <span style="font-size:10px; font-weight:800; color:${parseFloat(uv) > 6 ? '#dc2626' : '#16a34a'};">(${parseFloat(uv) > 6 ? 'Cao' : 'An toàn'})</span></div>
           </div>
@@ -303,7 +303,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
 
       <!-- Bottom Advisory Box (Full Width) -->
       <div class="weather-advice-strip" style="background:#ecfdf5; border:1px solid #a7f3d0; border-left:3.5px solid #059669; border-radius:10px; padding:9px 14px; display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:#064e3b; line-height:1.45; box-shadow:0 1px 2px rgba(0,0,0,0.02); width:100%; box-sizing:border-box;">
-        <i class="fa-solid fa-seedling" style="color:#059669; font-size:14px; margin-top:2px; flex-shrink:0;"></i>
+        <i data-lucide="sprout" class="lucide-sm" style="color:#059669; font-size:14px; margin-top:2px; flex-shrink:0;"></i>
         <div style="flex:1;">
           <strong style="color:#047857; font-weight:800; margin-right:4px;">Khuyến cáo canh tác:</strong>
           <span>${agriTip}</span>
@@ -337,7 +337,7 @@ export async function refreshDeviceWeather() {
   const statusEl = document.getElementById('weather-status-text');
   const refreshBtn = document.getElementById('btn-refresh-weather');
 
-  if (refreshBtn) refreshBtn.classList.add('fa-spin');
+  if (refreshBtn) refreshBtn.classList.add('lucide-spin');
   if (statusEl) statusEl.textContent = 'Đang xác định vị trí trang trại...';
 
   // Step 1: Obtain registered farm coordinates or fallback
@@ -456,7 +456,7 @@ export async function refreshDeviceWeather() {
     const tempMin = daily.temperature_2m_min?.[0] ? Math.round(daily.temperature_2m_min[0]) : temp - 4;
 
     const weatherCode = current.weather_code ?? 0;
-    const wmo = WMO_WEATHER_MAP[weatherCode] || { label: 'Trời quang đãng', icon: 'fa-solid fa-sun', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' };
+    const wmo = WMO_WEATHER_MAP[weatherCode] || { label: 'Trời quang đãng', icon: 'sun', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' };
 
     let agriTip = 'Thời tiết thuận lợi cho việc chăm sóc cây trồng và theo dõi độ ẩm đất.';
     if (rainProb >= 60) {
@@ -515,14 +515,14 @@ export async function refreshDeviceWeather() {
         rainProb: 20,
         tempMax: estTemp + 3,
         tempMin: estTemp - 4,
-        wmo: { label: 'Trời quang, ít mây', icon: 'fa-solid fa-cloud-sun', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
+        wmo: { label: 'Trời quang, ít mây', icon: 'cloud-sun', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
         agriTip: 'Thời tiết ổn định, thuận lợi cho các hoạt động canh tác nông nghiệp.'
       };
 
       _renderWeatherUI(fallbackPayload, isRealGps ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` : 'Vùng Nông nghiệp Trọng điểm (Bến Tre)', isRealGps, '🌤️ Dữ liệu dự phòng');
     }
   } finally {
-    if (refreshBtn) refreshBtn.classList.remove('fa-spin');
+    if (refreshBtn) refreshBtn.classList.remove('lucide-spin');
     if (statusEl) statusEl.textContent = 'Thời tiết thực tế';
   }
 }

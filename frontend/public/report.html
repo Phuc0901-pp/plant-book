@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -29,10 +29,10 @@
     </div>
     <div class="actions-wrap">
       <button class="btn btn-secondary" id="btn-copy-link" onclick="copyReportLink()">
-        <i class="fa-solid fa-link"></i> Sao chép liên kết
+        <i data-lucide="link" class="lucide-sm"></i> Sao chép liên kết
       </button>
       <button class="btn btn-primary" onclick="window.print()">
-        <i class="fa-solid fa-print"></i> In báo cáo / Tải PDF
+        <i data-lucide="printer" class="lucide-sm"></i> In báo cáo / Tải PDF
       </button>
     </div>
   </div>
@@ -45,7 +45,7 @@
 
   <!-- Error State -->
   <div id="error-view" class="status-container" style="display: none;">
-    <i class="fa-solid fa-circle-exclamation" style="font-size: 32px; color: #e53e3e; margin-bottom: 12px;"></i>
+    <i data-lucide="alert-circle" class="lucide-sm" style="font-size: 32px; color: #e53e3e; margin-bottom: 12px;"></i>
     <div class="error-title" style="font-size: 16px;">Lỗi tải dữ liệu</div>
     <div id="error-msg" style="font-size: 13.5px; color: var(--text-secondary);">Không tìm thấy thông tin cây trồng này.</div>
   </div>

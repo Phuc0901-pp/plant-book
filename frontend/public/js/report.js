@@ -1,4 +1,4 @@
-    // Global State
+﻿    // Global State
     let plantData = null;
 
     // Helpers
@@ -52,7 +52,7 @@
       const btn = document.getElementById('btn-copy-link');
       navigator.clipboard.writeText(window.location.href).then(() => {
         const originalContent = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã sao chép!';
+        btn.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Đã sao chép!';
         btn.style.borderColor = 'var(--green-primary)';
         btn.style.color = 'var(--green-primary)';
         

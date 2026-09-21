@@ -5,12 +5,20 @@
     const passInput = document.getElementById('login-pass');
     const icon = document.getElementById('toggle-pass-icon');
     if (!passInput || !icon) return;
-    if (passInput.type === 'password') {
-      passInput.type = 'text';
-      icon.className = 'fa fa-eye-slash';
-    } else {
-      passInput.type = 'password';
-      icon.className = 'fa fa-eye';
+    const isPass = passInput.type === 'password';
+    passInput.type = isPass ? 'text' : 'password';
+    icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+    if (window.lucide) lucide.createIcons({ targets: [icon.parentElement || icon] });
+  };
+  window.toggleSettingsPw = window.toggleSettingsPw || function(btn) {
+    const inp = btn.previousElementSibling;
+    if (!inp) return;
+    const isPass = inp.type === 'password';
+    inp.type = isPass ? 'text' : 'password';
+    const icon = btn.querySelector('[data-lucide]') || btn.querySelector('svg');
+    if (icon) {
+      icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+      if (window.lucide) lucide.createIcons({ targets: [btn] });
     }
   };
   window.openRegisterModal = window.openRegisterModal || function() {

@@ -1,10 +1,10 @@
-
+﻿
 <!-- ════════════ VIEW SUPPLY DETAILS MODAL ════════════ -->
 
 <div class="modal-overlay" id="supply-view-modal" style="display:none" onclick="if(event.target===this)closeViewSupplyModal()">
   <div class="modal" style="max-width: 500px; border-radius:16px; overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px;">
-      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i class="fa-solid fa-eye" style="color:#6ee7b7"></i> Chi tiết Sản phẩm Vật tư & Tồn kho</h2>
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;"><i data-lucide="eye" class="lucide-sm" style="color:#6ee7b7"></i> Chi tiết Sản phẩm Vật tư & Tồn kho</h2>
       <button class="modal-close" onclick="closeViewSupplyModal()" style="color:#fff; opacity:0.9;">×</button>
     </div>
     <div class="modal-body" id="supply-view-modal-body" style="padding:20px; background:#ffffff;">
@@ -13,7 +13,7 @@
     <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
       <button class="btn btn-secondary" onclick="closeViewSupplyModal()">Đóng</button>
       <button class="btn btn-primary" id="btn-edit-from-view" onclick="">
-        <i class="fa fa-pen"></i> Chỉnh sửa vật tư này
+        <i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa vật tư này
       </button>
     </div>
   </div>
@@ -23,7 +23,7 @@
 <div class="modal-overlay" id="supply-form-modal" style="display:none" onclick="if(event.target===this)closeSupplyFormModal()">
   <div class="modal" style="max-width: 520px; border-radius:16px; overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; padding:16px 20px;">
-      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;" id="supply-modal-title"><i class="fa-solid fa-box-archive"></i> Khai báo Vật tư & Phân bón</h2>
+      <h2 style="font-size:16px; margin:0; color:#fff; font-weight:700;" id="supply-modal-title"><i data-lucide="archive" class="lucide-sm"></i> Khai báo Vật tư & Phân bón</h2>
       <button class="modal-close" onclick="closeSupplyFormModal()" style="color:#fff; opacity:0.9;">×</button>
     </div>
     <div class="modal-body" style="padding:20px; background:#ffffff;">
@@ -71,7 +71,7 @@
       <!-- ════ VietGAP Compliance Fields (Active Ingredients & Target Pests) ════ -->
       <div id="f-supply-vietgap-box" style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
         <div style="font-size:12px; font-weight:800; color:#047857; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-          <i class="fa-solid fa-shield-halved" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
+          <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu chuẩn VietGAP: Hoạt Chất &amp; Đối Tượng Phòng Trừ
         </div>
 
         <div style="display:flex; gap:12px;">
@@ -104,7 +104,7 @@
     <div class="modal-footer" style="padding:14px 20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
       <button class="btn btn-secondary" onclick="closeSupplyFormModal()">Hủy</button>
       <button class="btn btn-primary" id="btn-save-supply" onclick="saveSupplySubmit()">
-        <i class="fa fa-floppy-disk"></i> Lưu thông tin vật tư
+        <i data-lucide="save" class="lucide-sm"></i> Lưu thông tin vật tư
       </button>
     </div>
   </div>

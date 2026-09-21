@@ -4,7 +4,7 @@
     
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
       <h3 style="margin:0; font-size:18px; font-weight:900; color:#0f172a; display:flex; align-items:center; gap:10px;">
-        <i class="fa-solid fa-bell-concierge" style="color:#059669; font-size:20px;"></i>
+        <i data-lucide="bell" class="lucide-sm" style="color:#059669; font-size:20px;"></i>
         <span id="threshold-modal-title">Cấu hình Quy tắc Thông báo Tự động</span>
       </h3>
       <button type="button" onclick="closeThresholdRuleModal()" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; font-size:18px; color:#64748b; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">&times;</button>
@@ -26,21 +26,21 @@
           
           <label style="position:relative; border:2px solid #fecaca; background:#fef2f2; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
             <input type="radio" name="rule_category" value="danger" checked onchange="onRuleCategoryChange('danger')" style="position:absolute; top:8px; right:8px; accent-color:#dc2626;" />
-            <i class="fa-solid fa-triangle-exclamation" style="font-size:22px; color:#dc2626; margin-top:2px;"></i>
+            <i data-lucide="alert-triangle" class="lucide-sm" style="font-size:22px; color:#dc2626; margin-top:2px;"></i>
             <span style="color:#991b1b; font-size:13px; font-weight:800;">Cảnh báo</span>
             <span style="font-size:10px; color:#dc2626; font-weight:600;">Màu Đỏ + Icon Cảnh báo</span>
           </label>
 
           <label style="position:relative; border:2px solid #fed7aa; background:#fff7ed; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
             <input type="radio" name="rule_category" value="warning" onchange="onRuleCategoryChange('warning')" style="position:absolute; top:8px; right:8px; accent-color:#d97706;" />
-            <i class="fa-solid fa-bullhorn" style="font-size:22px; color:#d97706; margin-top:2px;"></i>
+            <i data-lucide="megaphone" class="lucide-sm" style="font-size:22px; color:#d97706; margin-top:2px;"></i>
             <span style="color:#92400e; font-size:13px; font-weight:800;">Khuyến cáo</span>
             <span style="font-size:10px; color:#d97706; font-weight:600;">Màu Cam + Icon Loa</span>
           </label>
 
           <label style="position:relative; border:2px solid #bbf7d0; background:#f0fdf4; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
             <input type="radio" name="rule_category" value="info" onchange="onRuleCategoryChange('info')" style="position:absolute; top:8px; right:8px; accent-color:#16a34a;" />
-            <i class="fa-solid fa-circle-info" style="font-size:22px; color:#16a34a; margin-top:2px;"></i>
+            <i data-lucide="info" class="lucide-sm" style="font-size:22px; color:#16a34a; margin-top:2px;"></i>
             <span style="color:#166534; font-size:13px; font-weight:800;">Thông báo</span>
             <span style="font-size:10px; color:#16a34a; font-weight:600;">Xanh lá + Icon Thông tin</span>
           </label>
@@ -51,10 +51,10 @@
       <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <label style="font-size:13px; font-weight:800; color:#1e293b; margin:0;">
-            <i class="fa-solid fa-sliders" style="color:#059669;"></i> 3. Thiết lập Điều kiện Kích hoạt
+            <i data-lucide="sliders" class="lucide-sm" style="color:#059669;"></i> 3. Thiết lập Điều kiện Kích hoạt
           </label>
           <button type="button" onclick="addConditionRow()" class="btn-xs" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; border-radius:8px; padding:4px 10px; font-weight:700; cursor:pointer;">
-            <i class="fa fa-plus"></i> Thêm điều kiện
+            <i data-lucide="plus" class="lucide-sm"></i> Thêm điều kiện
           </button>
         </div>
 
@@ -84,7 +84,7 @@
 
           <!-- Live Combined Condition Logic Summary -->
           <div id="rule-conditions-summary-box" style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:10px; padding:8px 12px; font-size:12px; color:#0369a1; font-weight:600; display:flex; align-items:flex-start; gap:6px;">
-            <i class="fa-solid fa-code-branch" style="margin-top:2px; color:#0284c7;"></i>
+            <i data-lucide="git-branch" class="lucide-sm" style="margin-top:2px; color:#0284c7;"></i>
             <div>
               <span style="font-weight:800; color:#0c4a6e;">Tóm tắt Logic: </span>
               <span id="rule-conditions-summary">Độ ẩm đất tầng 10cm &lt; 50%</span>
@@ -122,7 +122,7 @@
       <!-- 5. Thời gian thông báo -->
       <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px;">
         <label style="font-size:13px; font-weight:800; color:#1e293b; display:block; margin-bottom:8px;">
-          <i class="fa-solid fa-clock" style="color:#059669;"></i> 5. Thời gian Thông báo & Tần suất gửi
+          <i data-lucide="clock" class="lucide-sm" style="color:#059669;"></i> 5. Thời gian Thông báo & Tần suất gửi
         </label>
         <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:10px; align-items:start;">
           <div>
@@ -160,9 +160,9 @@
 
       <!-- Live Notification Card Preview -->
       <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:14px; padding:12px;">
-        <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;"><i class="fa-solid fa-eye"></i> Mẫu Thông báo hiển thị cho Nông hộ:</span>
+        <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;"><i data-lucide="eye" class="lucide-sm"></i> Mẫu Thông báo hiển thị cho Nông hộ:</span>
         <div id="rule-live-preview-box" style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:10px 12px; display:flex; align-items:flex-start; gap:10px;">
-          <i id="preview-icon" class="fa-solid fa-triangle-exclamation" style="color:#dc2626; font-size:18px; margin-top:2px;"></i>
+          <i id="preview-icon" data-lucide="alert-triangle" class="lucide-sm" style="color:#dc2626; font-size:18px; margin-top:2px;"></i>
           <div>
             <div id="preview-title" style="font-size:12.5px; font-weight:800; color:#0f172a;">Cảnh báo Độ ẩm Đất Tầng 10cm & Dự báo Mưa rào</div>
             <div id="preview-message" style="font-size:12px; color:#475569; margin-top:2px;">Độ ẩm đất tầng 10cm < 50% & Sáng mai dự báo mưa rào. Khuyến nghị tưới bổ sung đến khi độ ẩm đất >= 50%!</div>
@@ -174,7 +174,7 @@
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:4px;">
         <button type="button" onclick="closeThresholdRuleModal()" style="background:#f1f5f9; color:#475569; border:none; padding:11px 20px; border-radius:12px; font-size:13.5px; font-weight:700; cursor:pointer;">Hủy</button>
         <button type="submit" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:11px 24px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
-          <i class="fa-solid fa-check-circle"></i> Lưu Quy tắc Cài đặt
+          <i data-lucide="check-circle-2" class="lucide-sm"></i> Lưu Quy tắc Cài đặt
         </button>
       </div>
     </form>

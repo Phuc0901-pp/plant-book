@@ -350,7 +350,7 @@ export function renderUserLogsTable(logs) {
   if (!tbody) return;
 
   if (!logs || !logs.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i data-lucide="clipboard-list" class="lucide-sm"></i><p>Không có hoạt động canh tác nào trong 3 ngày qua</p></td></tr>';
     if (moreWrap) moreWrap.style.display = 'none';
     return;
   }
@@ -400,7 +400,7 @@ export function renderUserLogsTable(logs) {
         <td colspan="6" style="padding: 10px 16px; font-weight: 800; font-size: 13px; color: #0f172a;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <i class="fa-regular fa-calendar-days" style="color: #059669; font-size: 15px;"></i>
+              <i data-lucide="calendar-days" class="lucide-sm" style="color: #059669; font-size: 15px;"></i>
               <span style="font-size: 13.5px; font-weight: 900; color: #0f172a;">Ngày ${dateFormatted}</span>
               ${dateTag}
             </div>
@@ -429,7 +429,7 @@ export function renderUserLogsTable(logs) {
       }
 
       const timeChipsHtml = timeList.length > 0 
-        ? timeList.map(t => `<span class="log-time-chip" style="display:inline-flex; align-items:center; gap:3px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:6px; padding:2px 6px; font-family:monospace; font-size:11.5px; font-weight:700;"><i class="fa-regular fa-clock" style="color:#059669; font-size:10px;"></i>${esc(t)}</span>`).join(' ')
+        ? timeList.map(t => `<span class="log-time-chip" style="display:inline-flex; align-items:center; gap:3px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:6px; padding:2px 6px; font-family:monospace; font-size:11.5px; font-weight:700;"><i data-lucide="clock" class="lucide-sm" style="color:#059669; font-size:10px;"></i>${esc(t)}</span>`).join(' ')
         : `<span style="color:#94a3b8; font-size:12px;">Trong ngày</span>`;
 
       // 2. Đối tượng Cây trồng / Toàn vườn
@@ -438,25 +438,25 @@ export function renderUserLogsTable(logs) {
 
       // 3. Activity Type Badge & Icon
       let badgeClass = 'badge-green';
-      let icon = 'fa-solid fa-leaf';
+      let icon = 'leaf';
       if (l.log_type === 'Tưới nước') {
         badgeClass = 'badge-blue';
-        icon = 'fa-solid fa-droplet';
+        icon = 'droplets';
       } else if (l.log_type === 'Phun thuốc') {
         badgeClass = 'badge-orange';
-        icon = 'fa-solid fa-flask';
+        icon = 'flask-conical';
       } else if (l.log_type === 'Bón phân') {
         badgeClass = 'badge-brown';
-        icon = 'fa-solid fa-seedling';
+        icon = 'sprout';
       } else if (l.log_type === 'Bệnh cây') {
         badgeClass = 'badge-red';
-        icon = 'fa-solid fa-virus';
+        icon = 'bug';
       } else if (l.log_type === 'Thu hoạch') {
         badgeClass = 'badge-yellow';
-        icon = 'fa-solid fa-wheat-awn';
+        icon = 'wheat';
       } else if (l.log_type === 'Cắt lá' || l.log_type === 'Cắt tỉa') {
         badgeClass = 'badge-gray';
-        icon = 'fa-solid fa-scissors';
+        icon = 'scissors';
       }
 
       // 4. Chi tiết, Vật tư, Khối lượng & Chú thích
@@ -495,16 +495,16 @@ export function renderUserLogsTable(logs) {
           </td>
           <td data-label="Cây trồng" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
             <strong style="color: ${isDisease ? '#dc2626' : '#0f172a'}; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-tree" style="color: ${isDisease ? '#ef4444' : '#10b981'}; font-size: 12px;"></i>
+              <i data-lucide="trees" class="lucide-sm" style="color: ${isDisease ? '#ef4444' : '#10b981'}; font-size: 12px;"></i>
               <span>${esc(targetDisplay)}</span>
             </strong>
             ${farmName ? `<span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">${farmName}</span>` : ''}
           </td>
           <td data-label="Hoạt động" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap;">
             <span class="badge ${badgeClass}" style="font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;">
-              <i class="${icon}"></i> ${esc(l.log_type)}
+              <i data-lucide="${icon}" class="lucide-xs"></i> ${esc(l.log_type)}
             </span>
-            ${l.occurrenceCount > 1 ? `<span class="badge" style="font-size: 10px; font-weight: 800; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 10px; margin-left: 4px;" title="Gom nhóm ${l.occurrenceCount} lượt trong cùng ngày"><i class="fa-solid fa-layer-group" style="font-size: 9px;"></i> ${l.occurrenceCount} lượt</span>` : ''}
+            ${l.occurrenceCount > 1 ? `<span class="badge" style="font-size: 10px; font-weight: 800; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 10px; margin-left: 4px;" title="Gom nhóm ${l.occurrenceCount} lượt trong cùng ngày"><i data-lucide="layers" class="lucide-sm" style="font-size: 9px;"></i> ${l.occurrenceCount} lượt</span>` : ''}
           </td>
           <td data-label="Chi tiết / Ghi chú" style="vertical-align: middle; padding: 12px 14px; font-size: 13px; color: #334155; line-height: 1.5;">
             <div>${detailsStr || 'Đã hoàn thành công việc theo quy trình chuẩn.'}</div>
@@ -512,13 +512,16 @@ export function renderUserLogsTable(logs) {
           </td>
           <td data-label="Người thực hiện" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap; font-size: 12.5px; color: #475569;">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-user" style="color: #94a3b8; font-size: 11px;"></i>
+              <i data-lucide="user" class="lucide-sm" style="color: #94a3b8; font-size: 11px;"></i>
               <span style="font-weight: 600; color: #334155;">${esc(creatorName)}</span>
             </div>
           </td>
           <td data-label="Thao tác" style="vertical-align: middle; padding: 12px 14px; text-align: right; white-space: nowrap;">
             <button type="button" class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id || 'null'}, '${esc(l.tree_code || '')}', '${esc(l.plant_type || '')}', ${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
-              <i class="fa-solid fa-pen" style="color: #059669;"></i> Sửa
+              <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
+            </button>
+            <button type="button" class="btn btn-danger btn-xs" onclick="deleteCareLog(${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
+              <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
             </button>
           </td>
         </tr>
@@ -527,6 +530,7 @@ export function renderUserLogsTable(logs) {
   }
 
   tbody.innerHTML = html;
+  if (window.lucide) lucide.createIcons();
 }
 
 export function changeLogPage(direction) {
@@ -547,7 +551,7 @@ function _renderLogPage() {
   if (!_currentFilteredLogs || !_currentFilteredLogs.length) {
     container.innerHTML = `
       <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:14px; border:1px solid #e2e8f0; text-align:center;">
-        <i class="fa-solid fa-clipboard-list" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
+        <i data-lucide="clipboard-list" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
         <p style="font-size:14px; font-weight:700; color:#475569;">Không tìm thấy hoạt động canh tác nào được ghi nhận.</p>
       </div>`;
     if (paginationContainer) paginationContainer.innerHTML = '';
@@ -583,14 +587,14 @@ function _renderLogPage() {
         <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px;">
             ${_batchSelectMode ? `<input type="checkbox" class="log-day-select-all" onchange="toggleSelectAllDay('${esc(dateStr)}', this.checked)" style="width:17px; height:17px; cursor:pointer; accent-color:#10b981; margin-right:4px;" title="Chọn tất cả mục trong ngày này">` : ''}
-            <i class="fa-regular fa-calendar-days" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
+            <i data-lucide="calendar-days" class="lucide-sm" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:700; padding:3px 12px; border-radius:20px;">
               ${dayItems.length} nhật ký hoạt động
             </span>
             <button type="button" class="btn btn-xs" onclick="deleteDayLogs('${esc(dateStr)}')" style="background:rgba(220,38,38,0.25); color:#fca5a5; border:1px solid rgba(220,38,38,0.4); border-radius:8px; padding:4px 10px; font-size:11.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Xóa mềm toàn bộ hoạt động trong ngày ${esc(dateStr)}">
-              <i class="fa-solid fa-trash-can"></i> Xóa ngày này
+              <i data-lucide="trash-2" class="lucide-sm"></i> Xóa ngày này
             </button>
           </div>
         </div>
@@ -635,7 +639,7 @@ function _renderLogPage() {
               <div>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:800; font-size:11px;">🐛 Bệnh cây</span>
-                  <strong style="color:#dc2626; font-size:14px;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(targetDisplay)}</strong>
+                  <strong style="color:#dc2626; font-size:14px;"><i data-lucide="alert-triangle" class="lucide-sm"></i> ${esc(targetDisplay)}</strong>
                 </div>
                 <div style="font-size:12.5px; color:#7f1d1d; margin-top:4px; font-weight:600;">${detailsStr}</div>
                 ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
@@ -647,10 +651,10 @@ function _renderLogPage() {
 
             <div style="display:flex; gap:6px;">
               <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})" style="border-color:#fca5a5; color:#dc2626;">
-                <i class="fa fa-pen"></i> Sửa
+                <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
               </button>
               <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id}, ${l.plant_id || 'null'})" title="Xóa mềm nhật ký này">
-                <i class="fa fa-trash"></i>
+                <i data-lucide="trash-2" class="lucide-sm"></i>
               </button>
             </div>
           </div>
@@ -674,10 +678,10 @@ function _renderLogPage() {
 
             <div style="display:flex; gap:6px;">
               <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})">
-                <i class="fa fa-pen"></i> Sửa
+                <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
               </button>
               <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id}, ${l.plant_id || 'null'})" title="Xóa mềm nhật ký này">
-                <i class="fa fa-trash"></i>
+                <i data-lucide="trash-2" class="lucide-sm"></i>
               </button>
             </div>
           </div>
@@ -696,22 +700,23 @@ function _renderLogPage() {
   if (paginationContainer) {
     paginationContainer.innerHTML = `
       <div style="font-size:13px; font-weight:600; color:#64748b; display:flex; align-items:center; gap:6px;">
-        <i class="fa-solid fa-list-check" style="color:var(--green)"></i> Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> / Tổng <strong>${totalLogs}</strong> nhật ký
+        <i data-lucide="clipboard-check" class="lucide-sm" style="color:var(--green)"></i> Hiển thị <strong>${startIndex + 1} - ${endIndex}</strong> / Tổng <strong>${totalLogs}</strong> nhật ký
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <button class="btn btn-secondary btn-sm" onclick="changeLogPage(-1)" ${_currentLogPage === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
-          <i class="fa-solid fa-chevron-left"></i> Trang trước
+          <i data-lucide="chevron-left" class="lucide-sm"></i> Trang trước
         </button>
         <span style="font-size:13px; font-weight:700; color:#1e293b; padding:4px 10px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px;">
           ${_currentLogPage} / ${totalPages}
         </span>
 
         <button class="btn btn-secondary btn-sm" onclick="changeLogPage(1)" ${_currentLogPage === totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px;">
-          Trang sau <i class="fa-solid fa-chevron-right"></i>
+          Trang sau <i data-lucide="chevron-right" class="lucide-sm"></i>
         </button>
       </div>
     `;
   }
+  if (window.lucide) lucide.createIcons();
 }
 
 /**
@@ -754,7 +759,7 @@ function _logRow(l) {
         <td data-label="Thời gian"><div style="font-weight:600; color:#991b1b;">${formatDate(l.log_date)}</div></td>
         <td data-label="Cây trồng">
           <div style="font-weight:700; color:#dc2626;">
-            <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; margin-right:4px;"></i>
+            <i data-lucide="alert-triangle" class="lucide-sm" style="color:#ef4444; margin-right:4px;"></i>
             ${esc(l.targetDisplay || `Cây #${l.tree_code || l.plant_id}`)}
             <small style="color:#b91c1c; display:block; font-weight:500;">(${esc(l.plant_type || '')})</small>
           </div>
@@ -775,7 +780,7 @@ function _logRow(l) {
         <td data-label="Thao tác">
           <div>
             <button class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})" style="gap:4px; padding:6px 10px; border-color:#fca5a5; color:#dc2626;">
-              <i class="fa-solid fa-pen-to-square" style="color:#dc2626"></i> Sửa
+              <i data-lucide="edit" class="lucide-sm" style="color:#dc2626"></i> Sửa
             </button>
           </div>
         </td>
@@ -802,7 +807,7 @@ function _logRow(l) {
       <td data-label="Thao tác">
         <div>
           <button class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})" style="gap:4px; padding:6px 10px;">
-            <i class="fa-solid fa-pen-to-square" style="color:var(--green)"></i> Sửa
+            <i data-lucide="edit" class="lucide-sm" style="color:var(--green)"></i> Sửa
           </button>
         </div>
       </td>
@@ -955,12 +960,12 @@ export function toggleBatchSelectMode(forceState) {
       btn.style.background = '#0284c7';
       btn.style.color = '#ffffff';
       btn.style.borderColor = '#0284c7';
-      btn.innerHTML = `<i class="fa-solid fa-square-check"></i> Đang chọn (${_selectedLogIds.size})`;
+      btn.innerHTML = `<i data-lucide="check-square" class="lucide-sm"></i> Đang chọn (${_selectedLogIds.size})`;
     } else {
       btn.style.background = '#f8fafc';
       btn.style.color = '#334155';
       btn.style.borderColor = '#cbd5e1';
-      btn.innerHTML = `<i class="fa-solid fa-square-check" style="color:#0284c7;"></i> Chọn nhiều`;
+      btn.innerHTML = `<i data-lucide="check-square" class="lucide-sm" style="color:#0284c7;"></i> Chọn nhiều`;
     }
   }
 
@@ -1018,7 +1023,7 @@ function updateBatchSelectionUI() {
   if (countEl) countEl.textContent = count;
   if (btnDelCount) btnDelCount.textContent = count;
   if (toggleBtn && _batchSelectMode) {
-    toggleBtn.innerHTML = `<i class="fa-solid fa-square-check"></i> Đang chọn (${count})`;
+    toggleBtn.innerHTML = `<i data-lucide="check-square" class="lucide-sm"></i> Đang chọn (${count})`;
   }
   if (delBtn) {
     delBtn.disabled = (count === 0);
@@ -1199,7 +1204,7 @@ export async function executeSelectiveDelete() {
   const confirmBtn = document.getElementById('btn-modal-confirm-selective-delete');
   if (confirmBtn) {
     confirmBtn.disabled = true;
-    confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa mềm...`;
+    confirmBtn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang xóa mềm...`;
   }
 
   try {
@@ -1216,7 +1221,7 @@ export async function executeSelectiveDelete() {
   } finally {
     if (confirmBtn) {
       confirmBtn.disabled = false;
-      confirmBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Xác nhận xóa mềm (<span id="btn-del-count-text">${countText}</span> mục)`;
+      confirmBtn.innerHTML = `<i data-lucide="trash-2" class="lucide-sm"></i> Xác nhận xóa mềm (<span id="btn-del-count-text">${countText}</span> mục)`;
     }
   }
 }

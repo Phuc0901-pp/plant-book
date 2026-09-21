@@ -1,4 +1,4 @@
-// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
+﻿// Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
 function getFarmExactGpsCenter(farm, plants) {
   if (!farm) return null;
 
@@ -344,8 +344,8 @@ function initDashboardMap(farms, plants) {
               .setLngLat(e.lngLat)
               .setHTML(`
                 <div class="map-tooltip">
-                  <h4 style="color:${farmColor}"><i class="fa-solid fa-house-flag"></i> Trang trại: ${esc(farm.name)}</h4>
-                  <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
+                  <h4 style="color:${farmColor}"><i data-lucide="home" class="lucide-sm"></i> Trang trại: ${esc(farm.name)}</h4>
+                  <p><i data-lucide="user" class="lucide-sm"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
                   <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
                   <div style="margin-top:8px">
                     <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
@@ -376,11 +376,11 @@ function initDashboardMap(farms, plants) {
           <div class="farm-pin-dot-wrap" title="Trang trại: ${esc(farm.name)} (Bấm để phóng to)">
             <div class="farm-pin-pulse" style="background:${farmColor};"></div>
             <div class="farm-pin-dot" style="background:${farmColor};">
-              <i class="fa-solid fa-house" style="font-size:7.5px; color:#ffffff;"></i>
+              <i data-lucide="home" class="lucide-sm" style="font-size:7.5px; color:#ffffff;"></i>
             </div>
           </div>
           <div class="farm-pin-badge" style="background:${farmColor};">
-            <i class="fa-solid fa-house-flag"></i> ${esc(farm.name)}
+            <i data-lucide="home" class="lucide-sm"></i> ${esc(farm.name)}
             ${farm.user_name ? `<small class="farm-pin-user">👤 ${esc(farm.user_name)}</small>` : ''}
           </div>
         `;
@@ -403,8 +403,8 @@ function initDashboardMap(farms, plants) {
           .setPopup(new mapboxgl.Popup({ offset: 20 })
             .setHTML(`
               <div class="map-tooltip">
-                <h4 style="color:${farmColor}"><i class="fa-solid fa-house-flag"></i> Trang trại: ${esc(farm.name)}</h4>
-                <p><i class="fa fa-user"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
+                <h4 style="color:${farmColor}"><i data-lucide="home" class="lucide-sm"></i> Trang trại: ${esc(farm.name)}</h4>
+                <p><i data-lucide="user" class="lucide-sm"></i> Khách hàng: <strong>${esc(farm.user_name || 'Chưa gán')}</strong></p>
                 <p>Diện tích: <strong>${farm.area ? Math.round(parseFloat(farm.area)).toLocaleString('vi-VN') : 0} m²</strong></p>
                 <div style="margin-top:8px">
                   <button class="btn btn-primary btn-sm" onclick="showPage('gis'); selectFarm(${farm.id});">Xem trang trại</button>
@@ -451,7 +451,7 @@ async function initGisPage(targetFarmId = null) {
   if (!window._pendingSelectFarmId) {
     activeFarmId = null;
     document.getElementById('gis-back-btn').style.display = 'none';
-    document.getElementById('gis-sidebar-title').innerHTML = '<i class="fa-solid fa-map" style="color:var(--green)"></i> Trang trại';
+    document.getElementById('gis-sidebar-title').innerHTML = '<i data-lucide="map" class="lucide-sm" style="color:var(--green)"></i> Trang trại';
     document.getElementById('gis-header-actions').style.display = 'block';
     switchGisView('list');
   }
@@ -498,21 +498,21 @@ function renderFarmsList(farms) {
   const uniqueFarms = Array.from(new Map((farms || []).map(f => [f.id, f])).values());
   const container = document.getElementById('farms-list-container');
   if (!uniqueFarms.length) {
-    container.innerHTML = '<div class="empty-state"><i class="fa fa-map-location-dot"></i><p>Chưa có trang trại nào. Hãy thêm mới!</p></div>';
+    container.innerHTML = '<div class="empty-state"><i data-lucide="map" class="lucide-sm"></i><p>Chưa có trang trại nào. Hãy thêm mới!</p></div>';
     return;
   }
   container.innerHTML = uniqueFarms.map(f => `
     <div class="farm-item" id="farm-item-${f.id}" data-farm-id="${f.id}" onclick="selectFarm(${f.id})">
       <div class="farm-item-name">${esc(f.name)}</div>
       <div class="farm-item-meta" style="flex-wrap: wrap; gap: 8px;">
-        <span><i class="fa-solid fa-ruler-combined" style="color:var(--green-dark)"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
-        <span><i class="fa-solid fa-seedling" style="color:var(--green)"></i> ${f.plant_count} cây</span>
-        <span><i class="fa fa-user" style="color:#ea580c"></i> ${esc(f.user_name || 'Chưa gán')}</span>
+        <span><i data-lucide="ruler" class="lucide-sm" style="color:var(--green-dark)"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+        <span><i data-lucide="sprout" class="lucide-sm" style="color:var(--green)"></i> ${f.plant_count} cây</span>
+        <span><i data-lucide="user" class="lucide-sm" style="color:#ea580c"></i> ${esc(f.user_name || 'Chưa gán')}</span>
       </div>
       ${(f.vietgap_cert_number || f.puc_code) ? `
         <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px;">
-          ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i class="fa-solid fa-certificate"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : ''}
-          ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i class="fa-solid fa-earth-americas"></i> PUC: ${esc(f.puc_code)}</span>` : ''}
+          ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i data-lucide="award" class="lucide-sm"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : ''}
+          ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i data-lucide="globe" class="lucide-sm"></i> PUC: ${esc(f.puc_code)}</span>` : ''}
         </div>
       ` : ''}
     </div>
@@ -580,7 +580,7 @@ function initGisMap(farms, plants) {
     const el = document.createElement('div');
     el.className = 'gis-temp-click-pin';
     el.style.cssText = 'font-size:32px; color:#ef4444; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.6)); pointer-events:none;';
-    el.innerHTML = '<i class="fa-solid fa-location-dot fa-bounce"></i>';
+    el.innerHTML = '<i data-lucide="map-pin" class="lucide-sm"></i>';
 
     gisImportTempMarker = new mapboxgl.Marker({ element: el })
       .setLngLat([lng, lat])
@@ -614,7 +614,7 @@ function toggleGisImportMode(forceState) {
 
   if (isGisImportMode) {
     if (btn) {
-      btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang Bật Import GIS (Click Bản Đồ)';
+      btn.innerHTML = '<i data-lucide="check-circle-2" class="lucide-sm"></i> Đang Bật Import GIS (Click Bản Đồ)';
       btn.style.background = '#059669';
       btn.style.borderColor = '#047857';
     }
@@ -623,7 +623,7 @@ function toggleGisImportMode(forceState) {
     toast('Đã bật chế độ Import GIS: Click vào vị trí cây trên bản đồ để lấy tọa độ GPS!', 'info');
   } else {
     if (btn) {
-      btn.innerHTML = '<i class="fa-solid fa-map-pin"></i> Import GIS (Click chọn vị trí cây trên bản đồ)';
+      btn.innerHTML = '<i data-lucide="map-pin" class="lucide-sm"></i> Import GIS (Click chọn vị trí cây trên bản đồ)';
       btn.style.background = '#10b981';
       btn.style.borderColor = '#059669';
     }
@@ -835,7 +835,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           .setPopup(new mapboxgl.Popup({ offset: 25 })
             .setHTML(`
               <div class="map-tooltip">
-                <h4><i class="fa-solid fa-tree" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
+                <h4><i data-lucide="trees" class="lucide-sm" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
                 ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
                 <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
                 <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
@@ -1064,27 +1064,27 @@ async function selectFarm(farmId, syncUrl = true) {
 
     const isOwnerPro = farm.user_account_tier === 'pro' || farm.user_role === 'admin';
     const tierBadgeHtml = isOwnerPro
-      ? `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;"><i class="fa-solid fa-crown" style="color:#f59e0b;"></i> Gói PRO</span>`
+      ? `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;"><i data-lucide="crown" class="lucide-sm" style="color:#f59e0b;"></i> Gói PRO</span>`
       : `<span style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;">⚪ Gói NORMAL</span>`;
 
     const ownerHtml = `
       <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:12px;">
         <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:4px;">Nông hộ phụ trách Trang trại</div>
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <span style="font-size:13.5px; font-weight:800; color:#0f172a;"><i class="fa fa-user" style="color:#059669"></i> ${esc(farm.user_name || 'Chưa gán')}</span>
+          <span style="font-size:13.5px; font-weight:800; color:#0f172a;"><i data-lucide="user" class="lucide-sm" style="color:#059669"></i> ${esc(farm.user_name || 'Chưa gán')}</span>
           ${tierBadgeHtml}
         </div>
         ${!isOwnerPro ? `
           <div style="margin-top:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px; font-size:11.5px; color:#78350f;">
-            <div style="font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation" style="color:#d97706;"></i> Nông hộ NORMAL (Giới hạn GIS)</div>
+            <div style="font-weight:800; margin-bottom:4px;"><i data-lucide="alert-triangle" class="lucide-sm" style="color:#d97706;"></i> Nông hộ NORMAL (Giới hạn GIS)</div>
             <div>Bản vẽ CAD quy hoạch, Chấm GIS cây lẻ &amp; Đường đồng mức 3D tối ưu cho Gói PRO.</div>
             <button onclick="openUserTierModalFromGis(${farm.user_id})" style="margin-top:8px; width:100%; background:linear-gradient(135deg, #059669, #047857); color:#fff; border:none; border-radius:8px; padding:7px 10px; font-size:11.5px; font-weight:800; cursor:pointer;">
-              <i class="fa-solid fa-crown" style="color:#fde047;"></i> Kích hoạt Gói PRO cho Nông hộ này
+              <i data-lucide="crown" class="lucide-sm" style="color:#fde047;"></i> Kích hoạt Gói PRO cho Nông hộ này
             </button>
           </div>
         ` : `
           <div style="margin-top:8px; font-size:11px; color:#047857; font-weight:700; display:flex; align-items:center; gap:4px;">
-            <i class="fa-solid fa-circle-check"></i> Đã mở khóa 100% Công cụ GIS, Cảm biến IoT & CAD
+            <i data-lucide="check-circle-2" class="lucide-sm"></i> Đã mở khóa 100% Công cụ GIS, Cảm biến IoT & CAD
           </div>
         `}
       </div>
@@ -1094,7 +1094,7 @@ async function selectFarm(farmId, syncUrl = true) {
     document.getElementById('gis-sidebar-title').textContent = farm.name;
     
     const areaVal = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
-    document.getElementById('farm-details-area').innerHTML = `<i class="fa-solid fa-chart-area"></i> ${areaVal}`;
+    document.getElementById('farm-details-area').innerHTML = `<i data-lucide="trending-up" class="lucide-sm"></i> ${areaVal}`;
     document.getElementById('farm-details-plant-count').textContent = farm.plants ? farm.plants.length : 0;
 
     const listEl = document.getElementById('farm-details-plants-list');
@@ -1111,7 +1111,7 @@ async function selectFarm(farmId, syncUrl = true) {
           <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
             <span class="gis-plant-health-dot" style="background:${healthColors[p.health_status] || '#3b82f6'};"></span>
             <button class="btn btn-secondary btn-sm" style="padding:2px 6px; font-size:10px;" onclick="event.stopPropagation(); openPlantModal(${p.id})">
-              <i class="fa fa-pen"></i>
+              <i data-lucide="edit-3" class="lucide-sm"></i>
             </button>
           </div>
         </div>
@@ -1210,8 +1210,8 @@ function togglePlantMarkers(forceState) {
   const btn = document.getElementById('btn-toggle-plant-markers');
   if (btn) {
     btn.innerHTML = arePlantMarkersVisible 
-      ? '<i class="fa-solid fa-eye"></i> Hiện / Ẩn Vị Trí Cây' 
-      : '<i class="fa-solid fa-eye-slash"></i> Đã Ẩn Vị Trí Cây';
+      ? '<i data-lucide="eye" class="lucide-sm"></i> Hiện / Ẩn Vị Trí Cây' 
+      : '<i data-lucide="eye-off" class="lucide-sm"></i> Đã Ẩn Vị Trí Cây';
     btn.style.background = arePlantMarkersVisible ? '#fff' : '#fef3c7';
     btn.style.borderColor = arePlantMarkersVisible ? '#cbd5e1' : '#f59e0b';
     btn.style.color = arePlantMarkersVisible ? 'inherit' : '#d97706';
@@ -1371,7 +1371,7 @@ function renderFarmDimensions(farm) {
     pointer-events: auto;
   `;
   summaryBadgeEl.innerHTML = `
-    <div style="font-size:13px; color:#fff; font-weight:900;"><i class="fa-solid fa-wheat-awn"></i> ${esc(farm.name)}</div>
+    <div style="font-size:13px; color:#fff; font-weight:900;"><i data-lucide="wheat" class="lucide-sm"></i> ${esc(farm.name)}</div>
     <div style="font-size:11px; opacity:0.95; margin-top:2px;">
       📐 Diện tích: <strong>${Math.round(farmAreaM2).toLocaleString('vi-VN')} m² (${farmAreaHa} ha)</strong> | ⭕ Chu vi: <strong>${formattedPerimeter}</strong>
     </div>
@@ -1659,7 +1659,7 @@ async function deleteFarm() {
   const backBtn = document.getElementById('gis-back-btn');
   if (backBtn) backBtn.style.display = 'none';
   const sbTitle = document.getElementById('gis-sidebar-title');
-  if (sbTitle) sbTitle.innerHTML = '<i class="fa-solid fa-map" style="color:var(--green)"></i> Trang trại';
+  if (sbTitle) sbTitle.innerHTML = '<i data-lucide="map" class="lucide-sm" style="color:var(--green)"></i> Trang trại';
   const hdActions = document.getElementById('gis-header-actions');
   if (hdActions) hdActions.style.display = 'block';
   switchGisView('list');
@@ -2206,7 +2206,7 @@ function addContourLinesToMap(map, options = {}) {
               border: none;
               cursor: pointer;
             `;
-            btnContour.innerHTML = '<i class="fa-solid fa-mountain"></i>';
+            btnContour.innerHTML = '<i data-lucide="mountain" class="lucide-sm"></i>';
 
             let isVisible = defaultVisible;
 
@@ -2686,7 +2686,7 @@ async function openAdminFarmA4ExportModal(map) {
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     ">
       <div style="display:flex; align-items:center; gap:10px;">
-        <i class="fa-solid fa-drafting-compass" style="font-size:22px; color:#4ade80;"></i>
+        <i data-lucide="compass" class="lucide-sm" style="font-size:22px; color:#4ade80;"></i>
         <div>
           <h3 style="font-size:15px; font-weight:800; margin:0; color:#4ade80;">HỒ SƠ BẢN VẼ KỸ THUẬT A4 CHUẨN TỶ LỆ (CAD VECTOR HD)</h3>
           <p style="font-size:11.5px; color:#94a3b8; margin:0;">Bản đồ vector & vệ tinh sắc nét 100% khi zoom | Nhấp trực tiếp vào ô chữ/số để tùy chỉnh</p>
@@ -2700,28 +2700,28 @@ async function openAdminFarmA4ExportModal(map) {
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2,132,199,0.4);
           transition: all 0.2s ease;
         " title="Bật hoặc Tắt khung vòng tròn chi tiết mặt cắt A-A">
-          <i class="fa-solid fa-circle-dot"></i> Khung Chi Tiết A-A: BẬT
+          <i data-lucide="circle-dot" class="lucide-sm"></i> Khung Chi Tiết A-A: BẬT
         </button>
         <button id="btn-add-a4-point" style="
           background: #ea580c; color: #fff; border: none; padding: 7px 14px;
           border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(234,88,12,0.4);
         " title="Chấm điểm & Gõ chữ trực tiếp lên bản vẽ (Thêm nhiều điểm tùy ý)">
-          <i class="fa-solid fa-location-dot"></i> + Chấm điểm / Gõ Text
+          <i data-lucide="map-pin" class="lucide-sm"></i> + Chấm điểm / Gõ Text
         </button>
         <button id="btn-do-print-a4" style="
           background: #3b82f6; color: #fff; border: none; padding: 7px 15px;
           border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(59,130,246,0.4);
         ">
-          <i class="fa-solid fa-print"></i> In bản vẽ (Print)
+          <i data-lucide="printer" class="lucide-sm"></i> In bản vẽ (Print)
         </button>
         <button id="btn-download-pdf-a4" style="
           background: #16a34a; color: #fff; border: none; padding: 7px 16px;
           border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer;
           display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(22,163,74,0.4);
         ">
-          <i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)
+          <i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)
         </button>
         <button id="btn-close-a4-modal" style="
           background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 7px 12px;
@@ -2763,11 +2763,11 @@ async function openAdminFarmA4ExportModal(map) {
         <!-- Sub-Header Row: Farm name & Owner name -->
         <div style="display:flex; justify-content:flex-start; gap:50px; font-size:11.5px; font-weight:700; margin-top:5px; padding:3px 8px; background:#f8fafc; border-radius:4px; border:1px solid #e2e8f0;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-house-chimney" style="color:#15803d;"></i> Tên trang trại: 
+            <i data-lucide="home" class="lucide-sm" style="color:#15803d;"></i> Tên trang trại: 
             <input type="text" id="a4-input-farm-name" class="a4-edit-field" value="${esc(farmName)}" style="font-size:11.5px; font-weight:800; color:#15803d; width:220px;">
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-user-tie" style="color:#2563eb;"></i> Khách hàng: 
+            <i data-lucide="user-check" class="lucide-sm" style="color:#2563eb;"></i> Khách hàng: 
             <input type="text" id="a4-input-owner-name" class="a4-edit-field" value="${esc(ownerName)}" style="font-size:11.5px; font-weight:800; color:#15803d; width:220px;">
           </div>
         </div>
@@ -2788,12 +2788,12 @@ async function openAdminFarmA4ExportModal(map) {
             <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:4px; z-index:25;">
               <button id="btn-a4-main-zoom-in" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:28px; height:28px; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Phóng to Bản đồ chính (Zoom In)">+</button>
               <button id="btn-a4-main-zoom-out" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:28px; height:28px; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Thu nhỏ Bản đồ chính (Zoom Out)">-</button>
-              <button id="btn-a4-main-zoom-reset" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:28px; height:28px; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Đặt lại vị trí ban đầu"><i class="fa-solid fa-rotate-left"></i></button>
+              <button id="btn-a4-main-zoom-reset" style="background:#ffffff; color:#0f172a; border:1.5px solid #000000; border-radius:4px; width:28px; height:28px; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer;" title="Đặt lại vị trí ban đầu"><i data-lucide="rotate-ccw" class="lucide-sm"></i></button>
             </div>
 
             <!-- Compass Indicator Top-Left -->
             <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.92); color:#0f172a; padding:3px 8px; border-radius:4px; border:1px solid #000; font-weight:800; font-size:9.5px; box-shadow:0 2px 6px rgba(0,0,0,0.2); display:flex; align-items:center; gap:4px; z-index:22;">
-              <i class="fa-solid fa-compass" style="color:#0f172a; font-size:11px;"></i> HƯỚNG BẮC (N)
+              <i data-lucide="compass" class="lucide-sm" style="color:#0f172a; font-size:11px;"></i> HƯỚNG BẮC (N)
             </div>
 
             <!-- Elevation Vertical Color Bar Widget (Bottom-Right inside map) -->
@@ -2813,7 +2813,7 @@ async function openAdminFarmA4ExportModal(map) {
             <div id="a4-cutout-circle" style="position:absolute; bottom:12px; left:12px; width:125px; height:125px; border-radius:50%; border:3px solid #ef4444; box-shadow:0 6px 20px rgba(0,0,0,0.5); background:#0f172a; user-select:none; z-index:24; display:block;" title="Kéo nắp đỏ để dời vị trí khung trên bản vẽ; Nhấp ✕ trên nắp hoặc nút công cụ để ẩn/tắt">
               <!-- Nút Nắp Kéo Khung (Handle màu đỏ trên đỉnh kèm nút ✕ đóng nhanh) -->
               <div id="a4-cutout-frame-handle" style="position:absolute; top:-13px; left:50%; transform:translateX(-50%); background:#ef4444; color:#ffffff; font-size:8.5px; font-weight:800; padding:2px 8px; border-radius:12px; cursor:grab; z-index:30; box-shadow:0 2px 6px rgba(0,0,0,0.4); white-space:nowrap; display:flex; align-items:center; gap:4px;" title="Nhấp giữ để kéo di chuyển Vị Trí Khung">
-                <i class="fa-solid fa-up-down-left-right"></i> Vị trí khung
+                <i data-lucide="move" class="lucide-sm"></i> Vị trí khung
                 <span id="btn-close-cutout-x" style="margin-left:4px; cursor:pointer; font-weight:900; background:rgba(0,0,0,0.3); width:13px; height:13px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9.5px;" title="Tắt khung chi tiết này">✕</span>
               </div>
 
@@ -2828,7 +2828,7 @@ async function openAdminFarmA4ExportModal(map) {
           <!-- Bottom Symbology Legend Bar (Directly below map) -->
           <div style="display:flex; justify-content:space-around; align-items:center; padding:4px 8px; background:#fff; border:1.5px solid #000; border-radius:4px; font-size:9.5px; font-weight:700; color:#1e293b;">
             <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#ef4444; border:1px solid #fff;"></span> <strong style="color:#ef4444;">A-${lastVertexLabel}</strong> Mốc ranh giới</span>
-            <span style="display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-arrows-left-right" style="color:#0284c7;"></i> Chiều dài cạnh</span>
+            <span style="display:flex; align-items:center; gap:4px;"><i data-lucide="move-horizontal" class="lucide-sm" style="color:#0284c7;"></i> Chiều dài cạnh</span>
             <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:#ef4444; color:#fff; text-align:center; font-size:7.5px; font-weight:900; line-height:11px;">1</span> Vị trí khu vực</span>
             <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:11px; height:9px; background:rgba(16,185,129,0.35); border:1px solid #10b981;"></span> Diện tích trang trại</span>
           </div>
@@ -2839,7 +2839,7 @@ async function openAdminFarmA4ExportModal(map) {
           <!-- Section 1: Thống Kê Trang Trại -->
           <div style="border:1.5px solid #000; border-radius:4px; padding:5px 7px; background:#fff;">
             <div style="font-weight:800; font-size:10px; color:#15803d; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-              <i class="fa-solid fa-leaf"></i> THỐNG KÊ TRANG TRẠI
+              <i data-lucide="leaf" class="lucide-sm"></i> THỐNG KÊ TRANG TRẠI
             </div>
             <table style="width:100%; font-size:9.5px; border-collapse:collapse;">
               <tr>
@@ -2867,7 +2867,7 @@ async function openAdminFarmA4ExportModal(map) {
                 </td>
               </tr>
               <tr>
-                <td style="padding:2px 0; color:#dc2626; font-weight:700; width:45%;"><i class="fa-solid fa-triangle-exclamation"></i> Kích thước sai số:</td>
+                <td style="padding:2px 0; color:#dc2626; font-weight:700; width:45%;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Kích thước sai số:</td>
                 <td style="padding:2px 0; text-align:right;">
                   <input type="text" class="a4-edit-field" value="± 3 %" style="font-size:9.5px; font-weight:900; color:#dc2626; width:100%; text-align:right;">
                 </td>
@@ -2878,7 +2878,7 @@ async function openAdminFarmA4ExportModal(map) {
           <!-- Section 3: Chú Giải Cao Độ (Tìm/Bậc) -->
           <div style="border:1.5px solid #000; border-radius:4px; padding:4px 6px; background:#fff;">
             <div style="font-weight:800; font-size:9px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:3px; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-              <i class="fa-solid fa-layer-group" style="color:#2563eb;"></i> CHÚ GIẢI CAO ĐỘ (TÌM/BẬC)
+              <i data-lucide="layers" class="lucide-sm" style="color:#2563eb;"></i> CHÚ GIẢI CAO ĐỘ (TÌM/BẬC)
             </div>
             <div style="height:9px; width:100%; border-radius:2px; background: linear-gradient(to right, #000080, #0066ff, #00ff99, #ffff00, #ff6600, #800000); border:1px solid #94a3b8; margin-bottom:2px;"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:8.5px; font-weight:700; gap:1px;">
@@ -2893,7 +2893,7 @@ async function openAdminFarmA4ExportModal(map) {
           <!-- Section 4: Chiều Dài Các Cạnh Ranh Giới Table -->
           <div style="flex:1; border:1.5px solid #000; border-radius:4px; padding:5px 7px; background:#fff; overflow-y:auto;">
             <div style="font-weight:800; font-size:9.5px; color:#1e293b; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:3px; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-              <i class="fa-solid fa-ruler-combined"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
+              <i data-lucide="ruler" class="lucide-sm"></i> CHIỀU DÀI CÁC CẠNH RANH GIỚI
             </div>
             <table style="width:100%; font-size:9px; border-collapse:collapse;">
               <thead>
@@ -2911,7 +2911,7 @@ async function openAdminFarmA4ExportModal(map) {
           <!-- Section 5: Legend for sensors & custom points -->
           <div style="border:1.5px solid #000; border-radius:4px; padding:4px 6px; background:#fff; font-size:9px;">
             <div style="font-weight:800; font-size:8.5px; color:#475569; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:3px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between;">
-              <span><i class="fa-solid fa-list-check" style="color:#ea580c;"></i> CHÚ GIẢI VỊ TRÍ & CHẤM ĐIỂM</span>
+              <span><i data-lucide="clipboard-check" class="lucide-sm" style="color:#ea580c;"></i> CHÚ GIẢI VỊ TRÍ & CHẤM ĐIỂM</span>
               <small style="color:#94a3b8; font-weight:600; text-transform:none;">(Đồng bộ)</small>
             </div>
             <table style="width:100%; border-collapse:collapse;" id="a4-legend-custom-table-body">
@@ -2926,19 +2926,19 @@ async function openAdminFarmA4ExportModal(map) {
           <tr>
             <td style="width:40%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:middle;">
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
-                <i class="fa-solid fa-user-check" style="color:#15803d;"></i> NGƯỜI THỰC HIỆN
+                <i data-lucide="user-check" class="lucide-sm" style="color:#15803d;"></i> NGƯỜI THỰC HIỆN
               </div>
               <input type="text" id="a4-input-performer-name" class="a4-edit-field" value="${esc(performerName || 'Phạm Hoàng Phúc')}" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
             </td>
             <td style="width:35%; border-right:1.5px solid #000; padding:6px 10px; vertical-align:middle;">
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
-                <i class="fa-solid fa-calendar-days" style="color:#2563eb;"></i> NGÀY XUẤT
+                <i data-lucide="calendar-days" class="lucide-sm" style="color:#2563eb;"></i> NGÀY XUẤT
               </div>
               <input type="text" id="a4-input-export-date" class="a4-edit-field" value="${exportDate}" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
             </td>
             <td style="width:25%; padding:6px 10px; vertical-align:middle;">
               <div style="font-size:8.5px; color:#64748b; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
-                <i class="fa-solid fa-ruler-horizontal" style="color:#d97706;"></i> TỶ LỆ
+                <i data-lucide="ruler" class="lucide-sm" style="color:#d97706;"></i> TỶ LỆ
               </div>
               <input type="text" id="a4-input-scale-val" class="a4-edit-field" value="1 : 1" style="font-size:11.5px; font-weight:900; color:#0f172a; width:95%; margin-top:2px;">
             </td>
@@ -3171,7 +3171,7 @@ async function openAdminFarmA4ExportModal(map) {
       if (cutoutEl) cutoutEl.style.display = isCutoutVisible ? 'block' : 'none';
       if (btnToggleCutout) {
         if (isCutoutVisible) {
-          btnToggleCutout.innerHTML = '<i class="fa-solid fa-circle-dot"></i> Khung Chi Tiết A-A: BẬT';
+          btnToggleCutout.innerHTML = '<i data-lucide="circle-dot" class="lucide-sm"></i> Khung Chi Tiết A-A: BẬT';
           btnToggleCutout.style.background = '#0284c7';
           btnToggleCutout.style.boxShadow = '0 2px 8px rgba(2,132,199,0.4)';
           btnToggleCutout.title = 'Nhấp để TẮT / ẨN khung chi tiết A-A';
@@ -3179,7 +3179,7 @@ async function openAdminFarmA4ExportModal(map) {
             setTimeout(() => { try { a4CutoutMap.resize(); } catch (_) {} }, 100);
           }
         } else {
-          btnToggleCutout.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Khung Chi Tiết A-A: TẮT';
+          btnToggleCutout.innerHTML = '<i data-lucide="x-circle" class="lucide-sm"></i> Khung Chi Tiết A-A: TẮT';
           btnToggleCutout.style.background = '#475569';
           btnToggleCutout.style.boxShadow = 'none';
           btnToggleCutout.title = 'Nhấp để BẬT / HIỆN khung chi tiết A-A';
@@ -3636,7 +3636,7 @@ async function openAdminFarmA4ExportModal(map) {
 
   document.getElementById('btn-download-pdf-a4').onclick = async () => {
     const btn = document.getElementById('btn-download-pdf-a4');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo PDF...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tạo PDF...';
     btn.disabled = true;
 
     preparePrintMode();
@@ -3655,18 +3655,18 @@ async function openAdminFarmA4ExportModal(map) {
 
       html2pdfLib().set(opt).from(element).save().then(() => {
         cleanupPrintMode();
-        btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)';
+        btn.innerHTML = '<i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)';
         btn.disabled = false;
       }).catch(err => {
         console.error('Lỗi xuất PDF:', err);
         cleanupPrintMode();
-        btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)';
+        btn.innerHTML = '<i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)';
         btn.disabled = false;
         document.getElementById('btn-do-print-a4').click();
       });
     } else {
       cleanupPrintMode();
-      btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Tải PDF (A4 Nằm Ngang)';
+      btn.innerHTML = '<i data-lucide="file-text" class="lucide-sm"></i> Tải PDF (A4 Nằm Ngang)';
       btn.disabled = false;
       document.getElementById('btn-do-print-a4').click();
     }
@@ -3720,7 +3720,7 @@ async function openAdminFarmA4ExportModal(map) {
 
     tip.innerHTML =
       '<div class="pht-title">' +
-        '<i class="fa-solid fa-seedling" style="color:#10b981;font-size:14px;"></i>' +
+        '<i data-lucide="sprout" class="lucide-sm" style="color:#10b981;font-size:14px;"></i>' +
         'Cây ' + esc(plant.tree_code || plant.id || '—') +
       '</div>' +
       '<div class="pht-row"><span class="pht-label">Loại cây</span><span class="pht-value">' + esc(plant.plant_type || '—') + '</span></div>' +

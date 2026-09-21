@@ -11,7 +11,7 @@ import { connectWebSocket, closeWebSocket } from './core/websocket.js';
 export function resetLoginBtnState() {
   const btn = document.getElementById('login-btn');
   if (btn) {
-    btn.innerHTML = '<span id="login-btn-text"><i class="fa fa-right-to-bracket"></i> Đăng nhập</span>';
+    btn.innerHTML = '<span id="login-btn-text"><i data-lucide="log-in" class="lucide-sm"></i> Đăng nhập</span>';
     btn.disabled = false;
   }
 }
@@ -76,13 +76,10 @@ function togglePasswordVisibility() {
   const passInput = document.getElementById('login-pass');
   const icon = document.getElementById('toggle-pass-icon');
   if (!passInput || !icon) return;
-  if (passInput.type === 'password') {
-    passInput.type = 'text';
-    icon.className = 'fa fa-eye-slash';
-  } else {
-    passInput.type = 'password';
-    icon.className = 'fa fa-eye';
-  }
+  const isPass = passInput.type === 'password';
+  passInput.type = isPass ? 'text' : 'password';
+  icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+  if (window.lucide) lucide.createIcons({ targets: [icon.parentElement || icon] });
 }
 window.togglePasswordVisibility = togglePasswordVisibility;
 
@@ -139,7 +136,7 @@ async function submitForgotPasswordRequest() {
       errEl.style.display = 'flex';
     }
   } finally {
-    if (btn) { btn.innerHTML = '<span id="forgot-submit-text"><i class="fa fa-paper-plane"></i> Gửi yêu cầu</span>'; btn.disabled = false; }
+    if (btn) { btn.innerHTML = '<span id="forgot-submit-text"><i data-lucide="send" class="lucide-sm"></i> Gửi yêu cầu</span>'; btn.disabled = false; }
   }
 }
 window.submitForgotPasswordRequest = submitForgotPasswordRequest;
@@ -200,12 +197,12 @@ function showApp() {
   const rolePill = document.getElementById('sb-role-pill');
   if (rolePill) {
     if (user?.account_tier === 'pro') {
-      rolePill.innerHTML = '<i class="fa-solid fa-crown" style="font-size:10px; color:#fde047"></i> Nông hộ PRO';
+      rolePill.innerHTML = '<i data-lucide="crown" class="lucide-sm" style="font-size:10px; color:#fde047"></i> Nông hộ PRO';
       rolePill.style.background = 'linear-gradient(135deg, #064e3b, #047857)';
       rolePill.style.color = '#ffffff';
       rolePill.style.border = '1px solid #059669';
     } else {
-      rolePill.innerHTML = '<i class="fa fa-user" style="font-size:9px"></i> Nông hộ NORMAL';
+      rolePill.innerHTML = '<i data-lucide="user" class="lucide-sm" style="font-size:9px"></i> Nông hộ NORMAL';
       rolePill.style.background = '#f1f5f9';
       rolePill.style.color = '#475569';
       rolePill.style.border = '1px solid #cbd5e1';
@@ -296,7 +293,7 @@ function updateRegStepUI() {
   if (s3) s3.style.display = currentRegStep === 3 ? 'block' : 'none';
 
   const titleEl = document.getElementById('reg-modal-title');
-  if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-user-plus" style="color:var(--green)"></i> Đăng ký tài khoản Nông hộ (Bước ${currentRegStep}/3)`;
+  if (titleEl) titleEl.innerHTML = `<i data-lucide="user-plus" class="lucide-sm" style="color:var(--green)"></i> Đăng ký tài khoản Nông hộ (Bước ${currentRegStep}/3)`;
 
   // Dots
   const dot1 = document.getElementById('step-dot-1');
@@ -323,8 +320,8 @@ function updateRegStepUI() {
   if (prevBtn) prevBtn.style.display = currentRegStep > 1 ? 'inline-flex' : 'none';
   if (nextBtn) {
     nextBtn.innerHTML = currentRegStep === 3
-      ? '<i class="fa fa-paper-plane"></i> Gửi yêu cầu đăng ký'
-      : 'Tiếp theo <i class="fa fa-arrow-right"></i>';
+      ? '<i data-lucide="send" class="lucide-sm"></i> Gửi yêu cầu đăng ký'
+      : 'Tiếp theo <i data-lucide="arrow-right" class="lucide-sm"></i>';
   }
 
   // Reset body scroll position
@@ -372,7 +369,7 @@ async function nextRegStep() {
     } catch (e) {
       console.warn('Check phone error:', e);
     } finally {
-      if (nextBtn) { nextBtn.innerHTML = 'Tiếp theo <i class="fa fa-arrow-right"></i>'; nextBtn.disabled = false; }
+      if (nextBtn) { nextBtn.innerHTML = 'Tiếp theo <i data-lucide="arrow-right" class="lucide-sm"></i>'; nextBtn.disabled = false; }
     }
 
     currentRegStep = 2;
@@ -462,7 +459,7 @@ async function submitRegister() {
       errEl.style.display = 'flex';
     }
   } finally {
-    if (nextBtn) { nextBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Gửi yêu cầu đăng ký'; nextBtn.disabled = false; }
+    if (nextBtn) { nextBtn.innerHTML = '<i data-lucide="send" class="lucide-sm"></i> Gửi yêu cầu đăng ký'; nextBtn.disabled = false; }
   }
 }
 window.submitRegister = submitRegister;

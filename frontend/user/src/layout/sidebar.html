@@ -1,4 +1,4 @@
-  <aside class="sidebar">
+﻿  <aside class="sidebar">
     <div class="sidebar-header">
       <div class="brand">
         <div class="sidebar-logo-wrap">
@@ -12,7 +12,7 @@
     <div class="sidebar-user">
       <div class="user-name" id="sb-user-name">—</div>
       <div class="user-email" id="sb-user-email">—</div>
-      <div class="sb-role-pill" id="sb-role-pill"><i class="fa fa-user" style="font-size:9px"></i> Nông hộ NORMAL</div>
+      <div class="sb-role-pill" id="sb-role-pill"><i data-lucide="user" class="lucide-sm" style="font-size:9px"></i> Nông hộ NORMAL</div>
 
     </div>
 
@@ -20,29 +20,29 @@
     <nav>
       <div class="nav-section">Chức năng</div>
       <div class="nav-item active" data-page="home" onclick="showPage('home')">
-        <i class="fa fa-house"></i> Trang chủ
+        <i data-lucide="home" class="lucide-sm"></i> Trang chủ
       </div>
       <div class="nav-item" data-page="myplants" onclick="showPage('myplants')">
-        <i class="fa-solid fa-map-location-dot"></i> Trang trại
+        <i data-lucide="map" class="lucide-sm"></i> Trang trại
       </div>
       <div class="nav-item" data-page="supplies" onclick="showPage('supplies')">
-        <i class="fa-solid fa-boxes-packing"></i> Vật tư
+        <i data-lucide="package" class="lucide-sm"></i> Vật tư
       </div>
       <div class="nav-item" data-page="logs" onclick="showPage('logs')">
-        <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử
+        <i data-lucide="history" class="lucide-sm"></i> Lịch sử
       </div>
       <div class="nav-item" data-page="wiki" onclick="showPage('wiki')">
-        <i class="fa-solid fa-graduation-cap"></i> Tính năng nâng cao &amp; HDSD
+        <i data-lucide="graduation-cap" class="lucide-sm"></i> Tính năng nâng cao &amp; HDSD
       </div>
       <div class="nav-item" data-page="settings" onclick="showPage('settings')">
-        <i class="fa fa-gear"></i> Cài đặt
+        <i data-lucide="settings" class="lucide-sm"></i> Cài đặt
       </div>
 
     </nav>
 
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="logout()">
-        <i class="fa fa-right-from-bracket"></i> Đăng xuất
+        <i data-lucide="log-out" class="lucide-sm"></i> Đăng xuất
       </button>
       <div style="text-align:center; margin-top:12px; font-size:11px; color:rgba(255,255,255,0.7); font-weight:600;">
         <span style="background:rgba(255,255,255,0.15); color:#ffffff; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:800; margin-right:4px;">{{APP_VERSION}}</span> {{APP_COPYRIGHT}}

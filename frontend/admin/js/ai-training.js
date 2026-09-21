@@ -1,4 +1,4 @@
-/**
+﻿/**
  * frontend/admin/js/ai-training.js
  * Trung Tâm Huấn Luyện AI Bé Mầm (AI Training Studio) & Quản Lý Tri Thức Nông Nghiệp
  * - Phân trang 10 bản ghi / trang cho tất cả các bảng dữ liệu
@@ -58,10 +58,10 @@
     // First & Prev Button
     pageButtonsHtml += `
       <button type="button" class="btn btn-outline" onclick="${onPageChangeFnName}(1)" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:5px 9px; font-size:12px;"' : 'style="padding:5px 9px; font-size:12px; cursor:pointer;"'} title="Trang đầu">
-        <i class="fa-solid fa-angles-left"></i>
+        <i data-lucide="chevrons-left" class="lucide-sm"></i>
       </button>
       <button type="button" class="btn btn-outline" onclick="${onPageChangeFnName}(${currentPage - 1})" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:5px 9px; font-size:12px;"' : 'style="padding:5px 9px; font-size:12px; cursor:pointer;"'} title="Trang trước">
-        <i class="fa-solid fa-chevron-left"></i>
+        <i data-lucide="chevron-left" class="lucide-sm"></i>
       </button>
     `;
 
@@ -84,10 +84,10 @@
     // Next & Last Button
     pageButtonsHtml += `
       <button type="button" class="btn btn-outline" onclick="${onPageChangeFnName}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:5px 9px; font-size:12px;"' : 'style="padding:5px 9px; font-size:12px; cursor:pointer;"'} title="Trang sau">
-        <i class="fa-solid fa-chevron-right"></i>
+        <i data-lucide="chevron-right" class="lucide-sm"></i>
       </button>
       <button type="button" class="btn btn-outline" onclick="${onPageChangeFnName}(${totalPages})" ${currentPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:5px 9px; font-size:12px;"' : 'style="padding:5px 9px; font-size:12px; cursor:pointer;"'} title="Trang cuối">
-        <i class="fa-solid fa-angles-right"></i>
+        <i data-lucide="chevrons-right" class="lucide-sm"></i>
       </button>
     `;
 
@@ -241,16 +241,16 @@
           </td>
           <td style="padding:12px 14px; text-align:center;">
             ${a.is_active 
-              ? `<span style="color:#059669; font-weight:700; font-size:12px;"><i class="fa-solid fa-circle-check"></i> Đang bật</span>` 
-              : `<span style="color:#94a3b8; font-weight:600; font-size:12px;"><i class="fa-solid fa-circle-pause"></i> Tạm dừng</span>`}
+              ? `<span style="color:#059669; font-weight:700; font-size:12px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đang bật</span>` 
+              : `<span style="color:#94a3b8; font-weight:600; font-size:12px;"><i data-lucide="pause-circle" class="lucide-sm"></i> Tạm dừng</span>`}
           </td>
           <td style="padding:12px 14px; text-align:center;">
             <div style="display:flex; justify-content:center; gap:6px;">
               <button class="btn-table-action" onclick="openAiKnowledgeModal(${a.id})" title="Chỉnh sửa" style="padding:5px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#0284c7; cursor:pointer;">
-                <i class="fa-solid fa-pen-to-square"></i>
+                <i data-lucide="edit" class="lucide-sm"></i>
               </button>
               <button class="btn-table-action" onclick="deleteAiKnowledgeArticle(${a.id})" title="Xóa" style="padding:5px 8px; border-radius:6px; border:1px solid #fee2e2; background:#fff1f2; color:#dc2626; cursor:pointer;">
-                <i class="fa-solid fa-trash"></i>
+                <i data-lucide="trash-2" class="lucide-sm"></i>
               </button>
             </div>
           </td>
@@ -345,7 +345,7 @@
     const btn = document.getElementById('btn-save-ai-knowledge');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+      btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...';
     }
 
     try {
@@ -374,7 +374,7 @@
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Bài Viết Tri Thức';
+        btn.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu Bài Viết Tri Thức';
       }
     }
   };
@@ -473,14 +473,14 @@
               <span style="background:#eff6ff; color:#0284c7; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:20px;">
                 ${escapeHtml(q.category)}
               </span>
-              ${q.is_active ? `<span style="color:#059669; font-size:11.5px; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Đang kích hoạt</span>` : `<span style="color:#94a3b8; font-size:11.5px;"><i class="fa-solid fa-circle-pause"></i> Tạm dừng</span>`}
+              ${q.is_active ? `<span style="color:#059669; font-size:11.5px; font-weight:700;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đang kích hoạt</span>` : `<span style="color:#94a3b8; font-size:11.5px;"><i data-lucide="pause-circle" class="lucide-sm"></i> Tạm dừng</span>`}
             </div>
             <div style="display:flex; gap:6px;">
               <button type="button" onclick="openAiQaModal(${q.id})" style="padding:4px 10px; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#0284c7; font-size:12px; font-weight:700; cursor:pointer;">
-                <i class="fa-solid fa-pen-to-square"></i> Sửa
+                <i data-lucide="edit" class="lucide-sm"></i> Sửa
               </button>
               <button type="button" onclick="deleteAiQaPair(${q.id})" style="padding:4px 10px; border-radius:6px; border:1px solid #fee2e2; background:#fff1f2; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer;">
-                <i class="fa-solid fa-trash"></i> Xóa
+                <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
               </button>
             </div>
           </div>
@@ -588,7 +588,7 @@
     const btn = document.getElementById('btn-save-ai-qa');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+      btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...';
     }
 
     try {
@@ -617,7 +617,7 @@
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Cặp Q&A';
+        btn.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu Cặp Q&A';
       }
     }
   };
@@ -668,10 +668,10 @@
 
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...';
+      btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang phân tích...';
     }
     if (resultBox) {
-      resultBox.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> Đang quét kho tri thức và đối sánh mô hình...</div>';
+      resultBox.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang quét kho tri thức và đối sánh mô hình...</div>';
     }
 
     try {
@@ -693,7 +693,7 @@
 
         let outputHtml = `
           <div style="margin-bottom:12px;">
-            <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:4px;"><i class="fa-solid fa-bullseye"></i> Đề xuất định tuyến &amp; xử lý:</div>
+            <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:4px;"><i data-lucide="target" class="lucide-sm"></i> Đề xuất định tuyến &amp; xử lý:</div>
             <div style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; padding:8px 12px; border-radius:8px; font-size:12.5px; font-weight:700;">
               ${escapeHtml(data.recommendation)}
             </div>
@@ -704,7 +704,7 @@
           outputHtml += `
             <div style="margin-bottom:14px; background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:10px; padding:12px;">
               <div style="font-weight:800; color:#1e40af; font-size:12.5px; margin-bottom:4px;">
-                <i class="fa-solid fa-circle-check"></i> Khớp Cặp Q&amp;A Huấn Luyện (Ưu tiên số 1 - Phản hồi tức thì 0ms):
+                <i data-lucide="check-circle-2" class="lucide-sm"></i> Khớp Cặp Q&amp;A Huấn Luyện (Ưu tiên số 1 - Phản hồi tức thì 0ms):
               </div>
               <div style="font-size:12.5px; color:#1e293b; line-height:1.5; white-space:pre-wrap;">${escapeHtml(data.matchedQA.expectedAnswer)}</div>
             </div>
@@ -742,7 +742,7 @@
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-play"></i> Chạy Kiểm Thử Ngay (Run Test)';
+        btn.innerHTML = '<i data-lucide="play" class="lucide-sm"></i> Chạy Kiểm Thử Ngay (Run Test)';
       }
     }
   };
@@ -787,7 +787,7 @@
     if (!d || typeof d !== 'object') d = { raw: String(details || '') };
 
     if (action === 'BLOCKED_BOT') {
-      return `<div style="color:#b91c1c; font-weight:700; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-shield-virus"></i> Bẫy Honeypot tự động chặn Bot xâm nhập</div>`;
+      return `<div style="color:#b91c1c; font-weight:700; display:flex; align-items:center; gap:6px;"><i data-lucide="shield-alert" class="lucide-sm"></i> Bẫy Honeypot tự động chặn Bot xâm nhập</div>`;
     }
 
     if (targetType === 'KNOWLEDGE_ARTICLE') {
@@ -798,7 +798,7 @@
         return `<div style="font-weight:700; color:#0f172a;">Cập nhật SOP: "${escapeHtml(d.new || d.title || '')}"</div><div style="font-size:11.5px; color:#64748b;">${d.old ? `Cũ: ${escapeHtml(d.old)}` : ''}</div>`;
       }
       if (action === 'DELETE') {
-        return `<div style="font-weight:700; color:#dc2626;"><i class="fa-solid fa-trash-can"></i> Xóa SOP: "${escapeHtml(d.title || '')}"</div>`;
+        return `<div style="font-weight:700; color:#dc2626;"><i data-lucide="trash-2" class="lucide-sm"></i> Xóa SOP: "${escapeHtml(d.title || '')}"</div>`;
       }
     }
 
@@ -810,7 +810,7 @@
         return `<div style="font-weight:700; color:#0284c7;">Cập nhật Q&A: [${escapeHtml(d.category || 'Q&A')}]</div><div style="font-size:11.5px; color:#64748b;">"${escapeHtml(d.sample || '')}"</div>`;
       }
       if (action === 'DELETE') {
-        return `<div style="font-weight:700; color:#dc2626;"><i class="fa-solid fa-trash-can"></i> Xóa cặp Q&A [${escapeHtml(d.category || 'Q&A')}]</div>`;
+        return `<div style="font-weight:700; color:#dc2626;"><i data-lucide="trash-2" class="lucide-sm"></i> Xóa cặp Q&A [${escapeHtml(d.category || 'Q&A')}]</div>`;
       }
     }
 
@@ -825,16 +825,16 @@
       const publicId = l.admin_public_id || (l.admin_id ? `adm-${l.admin_id}` : 'adm-****');
       return `<div style="font-weight:700; color:#0f172a; font-size:12.5px;">${escapeHtml(l.admin_name)}</div><div style="font-size:11px; color:#64748b;">${escapeHtml(publicId)}</div>`;
     }
-    return '<span style="color:#64748b; font-size:12px;"><i class="fa-solid fa-shield-halved"></i> Quản trị viên (adm-****)</span>';
+    return '<span style="color:#64748b; font-size:12px;"><i data-lucide="shield-check" class="lucide-sm"></i> Quản trị viên (adm-****)</span>';
   }
 
   function formatIpBadge(ip) {
     if (!ip) return '<span style="color:#94a3b8; font-family:monospace; font-size:11.5px;">127.0.0.1</span>';
     const isInternal = ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('127.0.') || ip.startsWith('172.');
     if (isInternal) {
-      return `<span style="font-family:monospace; background:#f1f5f9; color:#475569; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Cân bằng tải / Proxy nội bộ Render"><i class="fa-solid fa-network-wired"></i> ${escapeHtml(ip)} <small style="color:#94a3b8;">(Proxy)</small></span>`;
+      return `<span style="font-family:monospace; background:#f1f5f9; color:#475569; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Cân bằng tải / Proxy nội bộ Render"><i data-lucide="network" class="lucide-sm"></i> ${escapeHtml(ip)} <small style="color:#94a3b8;">(Proxy)</small></span>`;
     }
-    return `<span style="font-family:monospace; background:#ecfdf5; color:#059669; font-weight:700; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Công Khai Của Quản Trị Viên"><i class="fa-solid fa-globe"></i> ${escapeHtml(ip)}</span>`;
+    return `<span style="font-family:monospace; background:#ecfdf5; color:#059669; font-weight:700; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Công Khai Của Quản Trị Viên"><i data-lucide="globe" class="lucide-sm"></i> ${escapeHtml(ip)}</span>`;
   }
 
   function renderSecurityLogsTable(logs) {
@@ -861,7 +861,7 @@
           ? `<span style="background:#eff6ff; color:#0284c7; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">CẬP NHẬT</span>`
           : (l.action === 'DELETE' 
             ? `<span style="background:#fef2f2; color:#dc2626; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">XÓA BỎ</span>`
-            : `<span style="background:#fff1f2; color:#b91c1c; font-weight:900; font-size:11px; padding:3px 8px; border-radius:6px;"><i class="fa-solid fa-shield-virus"></i> CHẶN BOT</span>`));
+            : `<span style="background:#fff1f2; color:#b91c1c; font-weight:900; font-size:11px; padding:3px 8px; border-radius:6px;"><i data-lucide="shield-alert" class="lucide-sm"></i> CHẶN BOT</span>`));
 
       const timeFormatted = new Date(l.created_at).toLocaleString('vi-VN');
 

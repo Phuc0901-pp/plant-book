@@ -6,7 +6,7 @@
     <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); padding: 16px 22px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative;">
       <div style="display: flex; align-items: center; gap: 14px;">
         <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #34d399; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(0,0,0,0.15); flex-shrink: 0;">
-          <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i>
+          <i data-lucide="map-pin" class="lucide-sm"></i>
         </div>
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -14,7 +14,7 @@
             <span style="background: rgba(52,211,153,0.2); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.35); font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; text-transform: uppercase;">IoT Field</span>
           </div>
           <p style="margin: 3px 0 0 0; font-size: 12px; color: #a7f3d0; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-wheat-awn" style="font-size: 11px;"></i> Trang trại: <strong id="field-tag-farm-name" style="color: #ffffff; font-weight: 700;">Đang chọn...</strong>
+            <i data-lucide="wheat" class="lucide-sm" style="font-size: 11px;"></i> Trang trại: <strong id="field-tag-farm-name" style="color: #ffffff; font-weight: 700;">Đang chọn...</strong>
           </p>
         </div>
       </div>
@@ -28,7 +28,7 @@
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; display: flex; align-items: center; gap: 5px;">
-            <i class="fa-solid fa-crosshairs" style="color: #059669;"></i> Cây Mục Tiêu Đang Chọn
+            <i data-lucide="crosshair" class="lucide-sm" style="color: #059669;"></i> Cây Mục Tiêu Đang Chọn
           </span>
           <span id="field-tag-progress-badge" style="font-size: 11.5px; font-weight: 800; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 10px; border-radius: 20px;">
             Cây 1 / 1
@@ -37,7 +37,7 @@
 
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
           <button class="btn btn-secondary btn-sm" id="btn-field-prev-tree" onclick="prevFieldTree()" style="width: 42px; height: 42px; padding: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid #cbd5e1; flex-shrink: 0; cursor: pointer; transition: all 0.15s;" title="Cây trước">
-            <i class="fa-solid fa-chevron-left"></i>
+            <i data-lucide="chevron-left" class="lucide-sm"></i>
           </button>
           
           <div style="text-align: center; flex: 1; min-width: 0;" id="field-tag-current-tree-display">
@@ -52,7 +52,7 @@
           </div>
 
           <button class="btn btn-secondary btn-sm" id="btn-field-next-tree" onclick="nextFieldTree()" style="width: 42px; height: 42px; padding: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid #cbd5e1; flex-shrink: 0; cursor: pointer; transition: all 0.15s;" title="Cây tiếp theo">
-            <i class="fa-solid fa-chevron-right"></i>
+            <i data-lucide="chevron-right" class="lucide-sm"></i>
           </button>
         </div>
       </div>
@@ -67,7 +67,7 @@
             </span>
           </div>
           <button onclick="refreshFieldGps()" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #047857; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
-            <i class="fa-solid fa-arrows-rotate"></i> Lấy lại GPS
+            <i data-lucide="refresh-cw" class="lucide-sm"></i> Lấy lại GPS
           </button>
         </div>
 
@@ -91,7 +91,7 @@
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 13px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">
-            <i class="fa-solid fa-tag" style="color: #6366f1;"></i> Trạng Thái Thẻ NFC Hiện Tại
+            <i data-lucide="tag" class="lucide-sm" style="color: #6366f1;"></i> Trạng Thái Thẻ NFC Hiện Tại
           </span>
           <span id="field-tag-status-pill" style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">
             Chưa liên kết
@@ -112,7 +112,7 @@
         <button id="btn-field-touch-nfc" onclick="startFieldNfcTouch()" style="width: 100%; background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%); color: #ffffff; border: none; border-radius: 18px; padding: 18px 16px; font-size: 15.5px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(5,150,105,0.32); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; border: 1.5px solid rgba(255,255,255,0.3);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 12px 28px rgba(5,150,105,0.4)'" onmouseout="this.style.transform='none'; this.style.boxShadow='0 8px 24px rgba(5,150,105,0.32)'">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-              <i class="fa-solid fa-nfc-symbol"></i>
+              <i data-lucide="radio" class="lucide-sm"></i>
             </div>
             <span style="letter-spacing: 0.02em;">CHẠM THẺ VÀO ĐIỆN THOẠI ĐỂ GÁN CÂY</span>
           </div>
@@ -130,7 +130,7 @@
         <div style="display: flex; gap: 8px;">
           <input type="text" id="field-tag-manual-uid" placeholder="Ví dụ: 04:20:CF:5A:25:20:91" style="flex: 1; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-family: ui-monospace, monospace; font-size: 12.5px; font-weight: 700; background: #f8fafc; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#059669'; this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'">
           <button class="btn btn-primary" onclick="submitFieldTagManual()" style="white-space: nowrap; padding: 8px 16px; font-weight: 700; font-size: 12px; border-radius: 10px; background: #059669; color: #fff; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-floppy-disk"></i> Gán Cây
+            <i data-lucide="save" class="lucide-sm"></i> Gán Cây
           </button>
         </div>
       </div>
@@ -155,7 +155,7 @@
         </button>
       </div>
       <button class="btn btn-secondary" onclick="closeFieldTaggingModal()" style="padding: 8px 18px; border-radius: 10px; font-weight: 700; font-size: 12.5px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; cursor: pointer;">
-        <i class="fa-solid fa-check"></i> Hoàn thành &amp; Đóng
+        <i data-lucide="check" class="lucide-sm"></i> Hoàn thành &amp; Đóng
       </button>
     </div>
 

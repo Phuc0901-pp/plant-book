@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════════════
    Plant Book Admin — users.js (User/Farmer Management)
    ════════════════════════════════════════════════════════ */
 let allUsers = [];
@@ -12,9 +12,9 @@ async function loadUsers(silent = false) {
   if (!tbody) return;
 
   if (!silent) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách tài khoản...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách tài khoản...</td></tr>';
     if (tbodyStatus) {
-      tbodyStatus.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>';
+      tbodyStatus.innerHTML = '<tr><td colspan="5" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải...</td></tr>';
     }
   }
 
@@ -42,7 +42,7 @@ async function loadUsers(silent = false) {
   } catch (err) {
     if (!silent) {
       toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
-      tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i class="fa fa-triangle-exclamation"></i> Lỗi: ${escapeHtml(err.message)}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-danger"><i data-lucide="alert-triangle" class="lucide-sm"></i> Lỗi: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 }
@@ -157,8 +157,8 @@ function renderUsersTable(users) {
     const publicId = u.public_id || (typeof generateIsoPublicId === 'function' ? generateIsoPublicId(u.role, u.id) : (u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`));
 
     const roleBadge = u.role === 'admin' 
-      ? '<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
-      : '<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i class="fa-solid fa-seedling"></i> Nông hộ</span>';
+      ? '<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="shield-check" class="lucide-sm"></i> Admin</span>'
+      : '<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="sprout" class="lucide-sm"></i> Nông hộ</span>';
 
     let tierBadge = '';
     if (u.account_tier === 'pro') {
@@ -170,19 +170,19 @@ function renderUsersTable(users) {
           const bg = isWarning ? '#fffbeb' : '#ecfdf5';
           const color = isWarning ? '#b45309' : '#047857';
           const border = isWarning ? '#fde68a' : '#a7f3d0';
-          tierBadge = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (${diffDays}d)</span>`;
+          tierBadge = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> PRO (${diffDays}d)</span>`;
         } else {
-          tierBadge = `<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> PRO (Hết hạn)</span>`;
+          tierBadge = `<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-sm"></i> PRO (Hết hạn)</span>`;
         }
       } else {
-        tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i class="fa-solid fa-crown" style="color:#059669"></i> PRO (Vĩnh viễn)</span>`;
+        tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> PRO (Vĩnh viễn)</span>`;
       }
     } else {
       tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;">⚪ Standard</span>`;
     }
 
     const farmBadge = u.farm_name
-      ? `<span style="font-weight:700; color:#059669; font-size:12.5px;"><i class="fa-solid fa-house-chimney" style="font-size:11px;"></i> ${escapeHtml(u.farm_name)}</span>`
+      ? `<span style="font-weight:700; color:#059669; font-size:12.5px;"><i data-lucide="home" class="lucide-sm" style="font-size:11px;"></i> ${escapeHtml(u.farm_name)}</span>`
       : '<span style="color:#94a3b8; font-size:12px;">— Chưa gán —</span>';
 
     const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN', {
@@ -192,8 +192,8 @@ function renderUsersTable(users) {
     const initialLetter = (u.full_name || 'U').charAt(0).toUpperCase();
 
     const deleteBtn = isSelf 
-      ? `<button class="btn btn-secondary btn-sm" disabled style="opacity:0.4; cursor:not-allowed; padding:4px 8px; font-size:11px;" title="Bạn không thể tự xóa tài khoản của mình"><i class="fa fa-trash"></i></button>`
-      : `<button class="btn btn-sm" onclick="deleteUser(${u.id})" style="background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#dc2626; padding:4px 8px; font-size:11px; cursor:pointer;" title="Xóa tài khoản"><i class="fa fa-trash"></i></button>`;
+      ? `<button class="btn btn-secondary btn-sm" disabled style="opacity:0.4; cursor:not-allowed; padding:4px 8px; font-size:11px;" title="Bạn không thể tự xóa tài khoản của mình"><i data-lucide="trash-2" class="lucide-sm"></i></button>`
+      : `<button class="btn btn-sm" onclick="deleteUser(${u.id})" style="background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#dc2626; padding:4px 8px; font-size:11px; cursor:pointer;" title="Xóa tài khoản"><i data-lucide="trash-2" class="lucide-sm"></i></button>`;
 
     return `
       <tr data-user-id="${u.id}" style="border-bottom:1px solid #f1f5f9; font-size:13px;">
@@ -213,9 +213,9 @@ function renderUsersTable(users) {
           </div>
         </td>
         <td style="color:#334155;">
-          <div style="font-weight:600;"><i class="fa-solid fa-phone" style="font-size:10.5px; color:#059669;"></i> ${escapeHtml(u.phone || '—')}</div>
-          <div style="font-size:11.5px; color:#64748b; margin-top:2px;"><i class="fa-solid fa-envelope" style="font-size:10px;"></i> ${escapeHtml(u.email || '—')}</div>
-          ${u.address ? `<div style="font-size:11px; color:#475569; margin-top:2px;"><i class="fa-solid fa-location-dot" style="font-size:10px; color:#ea580c;"></i> ${escapeHtml(u.address)}</div>` : ''}
+          <div style="font-weight:600;"><i data-lucide="phone" class="lucide-sm" style="font-size:10.5px; color:#059669;"></i> ${escapeHtml(u.phone || '—')}</div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:2px;"><i data-lucide="mail" class="lucide-sm" style="font-size:10px;"></i> ${escapeHtml(u.email || '—')}</div>
+          ${u.address ? `<div style="font-size:11px; color:#475569; margin-top:2px;"><i data-lucide="map-pin" class="lucide-sm" style="font-size:10px; color:#ea580c;"></i> ${escapeHtml(u.address)}</div>` : ''}
         </td>
         <td>${farmBadge}</td>
         <td>${tierBadge}</td>
@@ -224,10 +224,10 @@ function renderUsersTable(users) {
         <td style="text-align:center;">
           <div style="display:inline-flex; gap:6px;">
             <button class="btn btn-sm" onclick="openUserTierModal(${u.id})" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-weight:700; padding:4px 8px; font-size:11px; border-radius:6px; cursor:pointer;" title="Quản lý gói cước PRO">
-              <i class="fa-solid fa-crown" style="color:#059669"></i> PRO
+              <i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> PRO
             </button>
             <button class="btn btn-sm" onclick="openUserModal(${u.id})" style="background:#f8fafc; border:1px solid #cbd5e1; color:#0284c7; font-weight:700; padding:4px 8px; font-size:11px; border-radius:6px; cursor:pointer;" title="Chỉnh sửa hồ sơ & gán trại">
-              <i class="fa fa-pen"></i>
+              <i data-lucide="edit-3" class="lucide-sm"></i>
             </button>
             ${deleteBtn}
           </div>
@@ -299,7 +299,7 @@ async function openUserModal(userId = null, syncUrl = true) {
     const u = allUsers.find(x => x.id === userId);
     if (!u) return;
 
-    title.innerHTML = '<i class="fa-solid fa-user-pen" style="color:var(--green)"></i> Gán Trang trại & Chỉnh sửa Nông hộ';
+    title.innerHTML = '<i data-lucide="user-check" class="lucide-sm" style="color:var(--green)"></i> Gán Trang trại & Chỉnh sửa Nông hộ';
     document.getElementById('f-user-id').value = u.id;
     document.getElementById('f-user-name').value = u.full_name || '';
     if (document.getElementById('f-user-phone')) document.getElementById('f-user-phone').value = u.phone || '';
@@ -320,7 +320,7 @@ async function openUserModal(userId = null, syncUrl = true) {
     passInput.placeholder = 'Để trống nếu giữ nguyên';
   } else {
     // Create mode
-    title.innerHTML = '<i class="fa-solid fa-user-plus" style="color:var(--green)"></i> Thêm người dùng mới';
+    title.innerHTML = '<i data-lucide="user-plus" class="lucide-sm" style="color:var(--green)"></i> Thêm người dùng mới';
     passLabel.textContent = 'Mật khẩu *';
     passHelp.style.display = 'none';
     passInput.placeholder = '••••••••';
@@ -351,7 +351,7 @@ async function toggleAssignedPlantsPicker(userObj = null) {
   }
 
   container.style.display = 'block';
-  checkboxesEl.innerHTML = '<div style="font-size:11px; color:#64748b;"><i class="fa fa-spinner fa-spin"></i> Đang tải danh sách cây...</div>';
+  checkboxesEl.innerHTML = '<div style="font-size:11px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách cây...</div>';
 
   try {
     const farmId = document.getElementById('f-user-farm-id')?.value;
@@ -612,7 +612,7 @@ function renderUserStatusTable(users) {
         <td style="color: var(--text-muted); font-size: 13px;">${lastActiveStr}</td>
         <td>
           <button class="btn btn-secondary btn-sm" onclick="openUserActivityModal(${u.id}, '${escapeHtml(u.full_name)}')">
-            <i class="fa fa-clock-rotate-left"></i> Xem lịch sử
+            <i data-lucide="history" class="lucide-sm"></i> Xem lịch sử
           </button>
         </td>
       </tr>
@@ -641,13 +641,13 @@ async function openUserActivityModal(userId, userName) {
   if (!modal || !timeline) return;
   
   titleName.textContent = userName;
-  timeline.innerHTML = '<div class="empty-state"><i class="fa fa-spinner fa-spin"></i> Đang tải lịch sử hoạt động...</div>';
+  timeline.innerHTML = '<div class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải lịch sử hoạt động...</div>';
   modal.style.display = 'flex';
   
   try {
     const activities = await api(`/users/${userId}/activities`);
     if (activities.length === 0) {
-      timeline.innerHTML = '<div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i> Không có lịch sử hoạt động nào gần đây.</div>';
+      timeline.innerHTML = '<div class="empty-state"><i data-lucide="history" class="lucide-sm"></i> Không có lịch sử hoạt động nào gần đây.</div>';
       return;
     }
     
@@ -725,11 +725,11 @@ async function loadResetRequests() {
             <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:nowrap;">
               ${isPending ? `
                 <button class="btn btn-sm btn-primary" onclick="approveResetRequestFromAdmin('${r.token}')" style="background:var(--green); font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;" title="Phê duyệt cấp mật khẩu mới">
-                  <i class="fa fa-check"></i> Duyệt &amp; Cấp MK
+                  <i data-lucide="check" class="lucide-sm"></i> Duyệt &amp; Cấp MK
                 </button>
               ` : ''}
               <button class="btn btn-sm" onclick="deleteResetRequest(${r.id})" style="background:#fee2e2; color:#dc2626; border:1px solid #fecdd3; font-size:11.5px; padding:4px 8px; font-weight:700; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; transition:all 0.15s ease;" title="Xóa vĩnh viễn yêu cầu này khỏi hệ thống">
-                <i class="fa-solid fa-trash-can"></i> Xóa
+                <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
               </button>
             </div>
           </td>
@@ -811,7 +811,7 @@ async function loadPendingFarmerUsers() {
     }
 
     if (!pendingUsers || pendingUsers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa fa-check-circle" style="color:var(--green)"></i> Tất cả tài khoản nông hộ đã được phê duyệt.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i data-lucide="check-circle-2" class="lucide-sm" style="color:var(--green)"></i> Tất cả tài khoản nông hộ đã được phê duyệt.</td></tr>';
       return;
     }
 
@@ -831,10 +831,10 @@ async function loadPendingFarmerUsers() {
           <td>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-sm btn-primary" onclick="approveFarmerUser(${u.id})" style="background:var(--green); font-size:12px; padding:5px 12px;">
-                <i class="fa fa-check"></i> Phê duyệt & Mở khóa
+                <i data-lucide="check" class="lucide-sm"></i> Phê duyệt & Mở khóa
               </button>
               <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" style="font-size:12px; padding:5px 10px;">
-                <i class="fa fa-times"></i> Từ chối
+                <i data-lucide="x" class="lucide-sm"></i> Từ chối
               </button>
             </div>
           </td>
@@ -928,7 +928,7 @@ async function submitUserTierUpdate() {
   }
 
   const btn = document.getElementById('btn-submit-user-tier');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang lưu...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...'; }
 
   try {
     await api(`/users/${userId}/tier`, {
@@ -945,7 +945,7 @@ async function submitUserTierUpdate() {
   } catch (err) {
     toast('Lỗi cập nhật gói cước: ' + err.message, 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu Kích Hoạt PRO'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu Kích Hoạt PRO'; }
   }
 }
 

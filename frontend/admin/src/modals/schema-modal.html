@@ -1,8 +1,8 @@
-<!-- ════════════ SCHEMA MODAL ════════════ -->
+﻿<!-- ════════════ SCHEMA MODAL ════════════ -->
 <div class="modal-overlay" id="schema-modal" style="display:none" onclick="if(event.target===this)closeSchemaModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="schema-modal-title"><i class="fa-solid fa-sliders" style="color:var(--green)"></i> Tạo Schema loại cây</h2>
+      <h2 id="schema-modal-title"><i data-lucide="sliders" class="lucide-sm" style="color:var(--green)"></i> Tạo Schema loại cây</h2>
       <button class="modal-close" onclick="closeSchemaModal()">×</button>
     </div>
     <div class="modal-body">
@@ -19,7 +19,7 @@
         <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
           <input type="file" id="s-image" accept="image/*" style="display:none;" onchange="previewSchemaImage(this)">
           <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('s-image').click()" style="padding:8px 12px; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
-            <i class="fa fa-image"></i> Chọn ảnh đại diện
+            <i data-lucide="image" class="lucide-sm"></i> Chọn ảnh đại diện
           </button>
           <div id="schema-image-preview-container" style="display:none; align-items:center; gap:8px;">
             <img id="schema-image-preview" src="" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--gray-300);">
@@ -40,17 +40,17 @@
             <option value="select">Lựa chọn</option>
             <option value="textarea">Đoạn văn</option>
           </select>
-          <button class="btn btn-primary btn-sm" onclick="addSchemaField()"><i class="fa fa-plus"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="addSchemaField()"><i data-lucide="plus" class="lucide-sm"></i></button>
         </div>
         <p style="font-size:11px;color:var(--gray-400);margin-top:8px">
-          <i class="fa-solid fa-lightbulb" style="color:var(--amber)"></i> Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
+          <i data-lucide="lightbulb" class="lucide-sm" style="color:var(--amber)"></i> Gợi ý: Ngày trồng, Diện tích (m²), Phân bón sử dụng, Nguồn nước, Phương pháp canh tác, Ghi chú sâu bệnh...
         </p>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeSchemaModal()">Hủy</button>
       <button class="btn btn-primary" onclick="saveSchema()">
-        <i class="fa fa-floppy-disk"></i> Lưu Schema
+        <i data-lucide="save" class="lucide-sm"></i> Lưu Schema
       </button>
     </div>
   </div>

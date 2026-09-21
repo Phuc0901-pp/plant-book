@@ -11,14 +11,14 @@ let costCurrentTab = 'consumable';
 let costConsumables = [];
 
 const costCategoryConfigs = {
-  'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'fa-seedling', iconColor: '#92400e', chartColor: '#f59e0b' },
-  'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'fa-spray-can-sparkles', iconColor: '#8b5cf6', chartColor: '#8b5cf6' },
-  'Tiền nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'fa-droplet', iconColor: '#3b82f6', chartColor: '#3b82f6' },
-  'Nhân công': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'fa-user-gear', iconColor: '#10b981', chartColor: '#10b981' }
+  'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'sprout', iconColor: '#92400e', chartColor: '#f59e0b' },
+  'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'spray-can', iconColor: '#8b5cf6', chartColor: '#8b5cf6' },
+  'Tiền nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'droplets', iconColor: '#3b82f6', chartColor: '#3b82f6' },
+  'Nhân công': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'user-cog', iconColor: '#10b981', chartColor: '#10b981' }
 };
 
 function getCostCatConfig(catName) {
-  return costCategoryConfigs[catName] || { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1', icon: 'fa-box-open', iconColor: '#64748b', chartColor: '#64748b' };
+  return costCategoryConfigs[catName] || { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1', icon: 'package', iconColor: '#64748b', chartColor: '#64748b' };
 }
 
 async function initCostPage() {
@@ -169,7 +169,7 @@ function renderConsumableTable(cons) {
   if (!cons || cons.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; text-align:center;">
-        <i class="fa-solid fa-boxes-packing" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
+        <i data-lucide="package" class="lucide-sm" style="font-size:42px; color:#94a3b8; margin-bottom:12px;"></i>
         <p style="font-size:14px; font-weight:700; color:#475569;">Chưa có dữ liệu chi phí tiêu hao vật tư. Bấm "Thêm vật tư mới" để khai báo.</p>
       </div>`;
     return;
@@ -203,7 +203,7 @@ function renderConsumableTable(cons) {
         <!-- Date Header Bar -->
         <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="font-size:14px; font-weight:800; display:flex; align-items:center; gap:8px;">
-            <i class="fa-regular fa-calendar-check" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
+            <i data-lucide="calendar-check" class="lucide-sm" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <span class="badge" style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:11.5px; font-weight:700;">${dayItems.length} mục tiêu hao</span>
@@ -251,7 +251,7 @@ function renderConsumableTable(cons) {
           <!-- Category Header -->
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed ${cfg.border}; flex-wrap:wrap; gap:8px;">
             <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; font-size:12px; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
-              <i class="fa-solid ${cfg.icon}" style="color:${cfg.iconColor}"></i> ${esc(catName).toUpperCase()}
+              <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(catName).toUpperCase()}
             </span>
             <span style="font-size:13px; font-weight:800; color:${cfg.color};">Tổng nhóm: ${catTotalCost.toLocaleString('vi-VN')} ₫</span>
           </div>
@@ -270,15 +270,15 @@ function renderConsumableTable(cons) {
             <div>
               <div style="font-size:14px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
                 ${esc(s.name)}
-                ${isEndless ? `<span class="badge" style="background:#ecfdf5; color:#047857; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px; border:1px solid #a7f3d0;"><i class="fa-solid fa-infinity"></i> Vô hạn ∞</span>` : ''}
+                ${isEndless ? `<span class="badge" style="background:#ecfdf5; color:#047857; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px; border:1px solid #a7f3d0;"><i data-lucide="infinity" class="lucide-sm"></i> Vô hạn ∞</span>` : ''}
               </div>
               <div style="font-size:12px; color:#475569; margin-top:3px; font-weight:600;">
                 Tổng số lượng: <strong style="color:#047857;">${isEndless && s.totalQty === 0 ? 'Theo đợt' : `${s.totalQty.toLocaleString('vi-VN')} ${esc(s.unit)}`}</strong>
                 ${avgPrice > 0 ? ` · Đơn giá bình quân: <strong>${avgPrice.toLocaleString('vi-VN')} ₫</strong>` : ''}
               </div>
               <div style="font-size:12px; color:#64748b; margin-top:4px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-                ${farmsList.length > 0 ? `<span><i class="fa-solid fa-house-chimney" style="color:#059669;"></i> Trang trại: <strong>${esc(farmsList.join(', '))}</strong></span>` : ''}
-                ${s.notes.length > 0 ? `<span><i class="fa-solid fa-note-sticky" style="color:#eab308;"></i> Ghi chú: <em>${esc(s.notes.join('; '))}</em></span>` : ''}
+                ${farmsList.length > 0 ? `<span><i data-lucide="home" class="lucide-sm" style="color:#059669;"></i> Trang trại: <strong>${esc(farmsList.join(', '))}</strong></span>` : ''}
+                ${s.notes.length > 0 ? `<span><i data-lucide="sticky-note" class="lucide-sm" style="color:#eab308;"></i> Ghi chú: <em>${esc(s.notes.join('; '))}</em></span>` : ''}
               </div>
             </div>
 
@@ -304,6 +304,7 @@ function renderConsumableTable(cons) {
   });
 
   container.innerHTML = html;
+  if (window.lucide) lucide.createIcons();
 }
 
 // ── Render Cost Chart: Categorized by Supply Category (Bón phân, Phun thuốc, Tiền nước, Nhân công) ──
@@ -318,11 +319,11 @@ function renderCostChart() {
   const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 
   const categoryConfigs = {
-    'Bón phân': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', icon: 'fa-seedling' },
-    'Phun thuốc': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', icon: 'fa-spray-can-sparkles' },
-    'Tiền nước': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', icon: 'fa-droplet' },
-    'Nhân công': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', icon: 'fa-user-gear' },
-    'Vật tư khác': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)', icon: 'fa-box-open' }
+    'Bón phân': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', icon: 'sprout' },
+    'Phun thuốc': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', icon: 'spray-can' },
+    'Tiền nước': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', icon: 'droplets' },
+    'Nhân công': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', icon: 'user-cog' },
+    'Vật tư khác': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)', icon: 'package' }
   };
 
   const monthlyTotals = {
@@ -399,7 +400,7 @@ function renderCostChart() {
       return `
         <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="width:40px; height:40px; background:${cfg.bg}; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i class="fa-solid ${cfg.icon}" style="color:${cfg.color}; font-size:16px;"></i>
+            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.color}; font-size:16px;"></i>
           </div>
           <div>
             <div style="font-size:11px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">${esc(cat)}</div>
@@ -414,7 +415,7 @@ function renderCostChart() {
 
 function openCostEntryModal(type = 'consumable') {
   document.getElementById('ce-type').value = 'consumable';
-  document.getElementById('cost-entry-modal-title').innerHTML = '<i class="fa-solid fa-boxes-stacked" style="color:#10b981;"></i> Khai báo Vật tư &amp; Chi phí Canh tác mới';
+  document.getElementById('cost-entry-modal-title').innerHTML = '<i data-lucide="package" class="lucide-sm" style="color:#10b981;"></i> Khai báo Vật tư &amp; Chi phí Canh tác mới';
   document.getElementById('ce-fields-consumable').style.display = 'block';
   document.getElementById('ce-fields-fixed').style.display = 'none';
   document.getElementById('ce-date').value = new Date().toISOString().split('T')[0];

@@ -118,6 +118,13 @@
     width: 0.75em;
     height: 0.75em;
   }
+  .lucide-spin {
+    animation: lucide-spin 1s linear infinite;
+  }
+  @keyframes lucide-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
   /* FORCE HIGH-CONTRAST DARK TEXT AND CLEAR BORDERS FOR MODALS ON DARK LOGIN PAGE */
 #register-modal .modal, #forgot-modal .modal, #self-init-farm-modal .modal, #edit-farm-modal .modal {
   background: #ffffff !important;

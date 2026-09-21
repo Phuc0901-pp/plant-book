@@ -20,7 +20,7 @@ async function loadPlants() {
     if (!plants || plants.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="padding:40px; background:#ffffff; border-radius:14px; border:1px solid #e2e8f0; text-align:center;">
-          <i class="fa-solid fa-seedling" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
+          <i data-lucide="sprout" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px;"></i>
           <p style="font-size:14px; font-weight:700; color:#475569;">Không tìm thấy cây trồng phù hợp.</p>
         </div>`;
       return;
@@ -54,7 +54,7 @@ async function loadPlants() {
           <!-- Folder Header -->
           <div onclick="toggleFarmFolder('${folderId}')" style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:12px;">
-              <i class="fa-solid fa-folder-open" id="folder-icon-${folderId}" style="font-size:22px; color:#10b981;"></i>
+              <i data-lucide="folder-open" class="lucide-sm" id="folder-icon-${folderId}" style="font-size:22px; color:#10b981;"></i>
               <div>
                 <div style="font-size:15px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
                   ${esc(group.farm_name)}
@@ -71,9 +71,9 @@ async function loadPlants() {
                 ${totSick > 0 ? `<span style="background:#fef2f2; color:#b91c1c; padding:3px 10px; border-radius:12px;">🔴 Bệnh: ${totSick}</span>` : ''}
               </div>
               <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openPlantModal(null, ${group.farm_id || 'null'})" style="font-size:12px; padding:5px 12px;">
-                <i class="fa fa-plus"></i> Thêm cây
+                <i data-lucide="plus" class="lucide-sm"></i> Thêm cây
               </button>
-              <i class="fa-solid fa-chevron-down" id="folder-arrow-${folderId}" style="color:#94a3b8; transition:transform 0.3s;"></i>
+              <i data-lucide="chevron-down" class="lucide-sm" id="folder-arrow-${folderId}" style="color:#94a3b8; transition:transform 0.3s;"></i>
             </div>
           </div>
 
@@ -96,7 +96,7 @@ async function loadPlants() {
                     <td style="padding:12px 16px;">
                       <div style="display:flex; align-items:center; gap:10px;">
                         <div style="width:36px; height:36px; background:#ecfdf5; color:#10b981; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">
-                          <i class="fa-solid fa-tree"></i>
+                          <i data-lucide="trees" class="lucide-sm"></i>
                         </div>
                         <div>
                           <strong style="color:#0f172a; font-size:13.5px;">#${esc(p.tree_code || p.id)}</strong>
@@ -111,19 +111,19 @@ async function loadPlants() {
                     <td>${healthBadge(p.health_status)}</td>
                     <td style="color:#475569;">${esc(p.plant_age || '—')}</td>
                     <td style="font-size:11.5px; color:#64748b;">
-                      ${p.latitude && p.longitude ? `<i class="fa-solid fa-location-dot" style="color:#10b981;"></i> ${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : '<span style="color:#cbd5e1;">Chưa định vị</span>'}
+                      ${p.latitude && p.longitude ? `<i data-lucide="map-pin" class="lucide-sm" style="color:#10b981;"></i> ${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : '<span style="color:#cbd5e1;">Chưa định vị</span>'}
                     </td>
                     <td style="text-align:center;">
                       <div style="display:inline-flex; gap:6px;">
                         <button class="btn btn-secondary btn-sm" onclick="openPlantModal(${p.id})" title="Chỉnh sửa">
-                          <i class="fa fa-pen"></i>
+                          <i data-lucide="edit-3" class="lucide-sm"></i>
                         </button>
                         ${p.is_public ? `
                         <a href="/plant/${esc(p.public_slug)}" target="_blank" class="btn btn-primary btn-sm" title="Trang công khai">
-                          <i class="fa fa-arrow-up-right-from-square"></i>
+                          <i data-lucide="external-link" class="lucide-sm"></i>
                         </a>` : ''}
                         <button class="btn btn-danger btn-sm" onclick="deletePlant(${p.id},'${esc(p.plant_type)}')" title="Xóa">
-                          <i class="fa fa-trash"></i>
+                          <i data-lucide="trash-2" class="lucide-sm"></i>
                         </button>
                       </div>
                     </td>
@@ -150,11 +150,17 @@ function toggleFarmFolder(folderId) {
 
   if (content.style.display === 'none') {
     content.style.display = 'block';
-    if (icon) icon.className = 'fa-solid fa-folder-open';
+    if (icon) {
+      icon.setAttribute('data-lucide', 'folder-open');
+      if (window.lucide) lucide.createIcons({ targets: [icon.parentElement || icon] });
+    }
     if (arrow) arrow.style.transform = 'rotate(0deg)';
   } else {
     content.style.display = 'none';
-    if (icon) icon.className = 'fa-solid fa-folder-closed';
+    if (icon) {
+      icon.setAttribute('data-lucide', 'folder');
+      if (window.lucide) lucide.createIcons({ targets: [icon.parentElement || icon] });
+    }
     if (arrow) arrow.style.transform = 'rotate(-90deg)';
   }
 }
@@ -238,7 +244,7 @@ function togglePlantCreateMode(mode) {
     if (rangeTypeWrap) rangeTypeWrap.style.display = 'none';
     if (labelSingle) { labelSingle.style.background = '#ecfdf5'; labelSingle.style.borderColor = '#34d399'; labelSingle.style.color = '#065f46'; }
     if (labelRange) { labelRange.style.background = '#ffffff'; labelRange.style.borderColor = '#cbd5e1'; labelRange.style.color = '#334155'; }
-    if (saveText) saveText.innerHTML = '<i class="fa fa-floppy-disk"></i> Lưu cây';
+    if (saveText) saveText.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu cây';
   }
 }
 window.togglePlantCreateMode = togglePlantCreateMode;
@@ -257,13 +263,13 @@ function updateRangePreview() {
 
   if (isNaN(start) || isNaN(end)) {
     if (previewEl) previewEl.innerHTML = '🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây.';
-    if (saveText) saveText.innerHTML = '<i class="fa-solid fa-layer-group"></i> Tạo cây hàng loạt';
+    if (saveText) saveText.innerHTML = '<i data-lucide="layers" class="lucide-sm"></i> Tạo cây hàng loạt';
     return;
   }
 
   if (start > end) {
     if (previewEl) previewEl.innerHTML = '<span style="color:#dc2626; font-weight:800;">⚠️ Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!</span>';
-    if (saveText) saveText.innerHTML = '<i class="fa-solid fa-layer-group"></i> Tạo cây hàng loạt';
+    if (saveText) saveText.innerHTML = '<i data-lucide="layers" class="lucide-sm"></i> Tạo cây hàng loạt';
     return;
   }
 
@@ -286,7 +292,7 @@ function updateRangePreview() {
   if (count > 1) previewStr += `, <code>${esc(lastCode)}</code>`;
 
   if (previewEl) previewEl.innerHTML = previewStr;
-  if (saveText) saveText.innerHTML = `<i class="fa-solid fa-layer-group"></i> Tạo ${count} cây hàng loạt`;
+  if (saveText) saveText.innerHTML = `<i data-lucide="layers" class="lucide-sm"></i> Tạo ${count} cây hàng loạt`;
 }
 window.updateRangePreview = updateRangePreview;
 
@@ -326,11 +332,12 @@ async function openPlantModal(id = null, syncUrl = true) {
 
   if (titleEl) {
     titleEl.innerHTML = id
-      ? '<i class="fa-solid fa-pen-to-square" style="color:#34d399"></i> Chỉnh sửa hồ sơ cây'
-      : '<i class="fa-solid fa-seedling" style="color:#34d399"></i> Thêm cây trồng mới';
+      ? '<i data-lucide="edit" class="lucide-sm" style="color:#34d399"></i> Chỉnh sửa hồ sơ cây'
+      : '<i data-lucide="sprout" class="lucide-sm" style="color:#34d399"></i> Thêm cây trồng mới';
   }
   if (headerIcon) {
-    headerIcon.className = id ? 'fa-solid fa-tree' : 'fa-solid fa-seedling';
+    headerIcon.setAttribute('data-lucide', id ? 'trees' : 'sprout');
+    if (window.lucide) lucide.createIcons({ targets: [headerIcon.parentElement || headerIcon] });
   }
 
   document.getElementById('public-url-section').style.display = 'none';
@@ -438,7 +445,7 @@ function resetPlantForm() {
   if (extraCont) {
     extraCont.innerHTML = `
       <div class="empty-state" style="padding:40px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:1.5px dashed #cbd5e1;">
-        <i class="fa-solid fa-shapes" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+        <i data-lucide="shapes" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
         <p style="font-size:13px; font-weight:700; color:#475569; margin:0 0 4px 0;">Không có trường thuộc tính đặc thù nào.</p>
         <small style="color:#94a3b8;">Cấu hình schema tại Cài đặt > Quản lý Schema để thêm thuộc tính chuyên sâu (Độ pH, Độ ngọt Brix, Mã PUC...) cho giống cây này.</small>
       </div>`;
@@ -447,7 +454,7 @@ function resetPlantForm() {
   if (mediaCont) {
     mediaCont.innerHTML = `
       <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
-        <i class="fa-solid fa-images" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+        <i data-lucide="images" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
         <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi tải ảnh/video.</p>
         <small style="color:#94a3b8;">Hệ thống tự động liên kết tệp phương tiện với cây trồng sau khi khởi tạo ID.</small>
       </div>`;
@@ -456,7 +463,7 @@ function resetPlantForm() {
   if (logsCont) {
     logsCont.innerHTML = `
       <div class="empty-state" style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:14px; border:1.5px dashed #cbd5e1;">
-        <i class="fa-solid fa-book-bookmark" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
+        <i data-lucide="bookmark" class="lucide-sm" style="font-size:36px; color:#94a3b8; margin-bottom:10px; display:inline-block;"></i>
         <p style="font-size:13.5px; font-weight:700; color:#475569; margin:0 0 4px 0;">Vui lòng lưu thông tin cây trước khi ghi nhật ký canh tác.</p>
         <small style="color:#94a3b8;">Nhật ký chăm sóc sẽ ghi nhận lịch sử bón phân, tưới tiêu, phun thuốc và truy xuất nguồn gốc.</small>
       </div>`;
@@ -562,7 +569,7 @@ async function savePlant() {
       toast('Lỗi tạo hàng loạt: ' + err.message, 'error');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu cây</span>';
+      btn.innerHTML = '<span id="plant-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu cây</span>';
     }
     return;
   }
@@ -613,7 +620,7 @@ async function savePlant() {
     }
 
     toast(editingPlantId ? 'Đã cập nhật cây!' : 'Đã tạo cây mới!');
-    document.getElementById('plant-modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:#34d399"></i> Chỉnh sửa hồ sơ cây';
+    document.getElementById('plant-modal-title').innerHTML = '<i data-lucide="edit" class="lucide-sm" style="color:#34d399"></i> Chỉnh sửa hồ sơ cây';
     const codeBadge = document.getElementById('plant-modal-code-badge');
     if (codeBadge) { codeBadge.textContent = `#${plant.tree_code || plant.id}`; codeBadge.style.display = 'inline-block'; }
     const healthPill = document.getElementById('plant-modal-health-pill');
@@ -637,7 +644,7 @@ async function savePlant() {
     toast('Lỗi lưu cây: ' + err.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span id="plant-save-text"><i class="fa fa-floppy-disk"></i> Lưu cây</span>';
+    btn.innerHTML = '<span id="plant-save-text"><i data-lucide="save" class="lucide-sm"></i> Lưu cây</span>';
   }
 }
 
@@ -670,7 +677,7 @@ async function renderExtraFields() {
   const schemaId = document.getElementById('f-schema-id').value;
   const container = document.getElementById('extra-fields-container');
   if (!schemaId) {
-    container.innerHTML = '<div class="empty-state" style="padding:24px"><i class="fa fa-layer-group"></i><p>Chọn schema để hiển thị các trường mở rộng</p></div>';
+    container.innerHTML = '<div class="empty-state" style="padding:24px"><i data-lucide="layers" class="lucide-sm"></i><p>Chọn schema để hiển thị các trường mở rộng</p></div>';
     return;
   }
   try {
@@ -854,7 +861,7 @@ async function initAdminNfcPage(farmId = null) {
       tbody.innerHTML = `
         <tr>
           <td colspan="6" style="text-align:center; padding:46px 20px; color:#94a3b8;">
-            <i class="fa-solid fa-triangle-exclamation" style="font-size:36px; margin-bottom:12px; display:inline-block; color:#f59e0b;"></i>
+            <i data-lucide="alert-triangle" class="lucide-sm" style="font-size:36px; margin-bottom:12px; display:inline-block; color:#f59e0b;"></i>
             <p style="margin:0 0 6px 0; font-weight:800; font-size:14.5px; color:#475569;">Chưa có trang trại nào trong hệ thống.</p>
             <small style="color:#94a3b8;">Vui lòng tạo ít nhất một Trang trại trước khi sử dụng Kho thẻ NFC.</small>
           </td>
@@ -941,7 +948,7 @@ function renderAdminNfcPageTable(tags) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align:center; padding:46px 20px; color:#94a3b8;">
-          <i class="fa-solid fa-boxes-stacked" style="font-size:36px; margin-bottom:12px; display:inline-block; color:#cbd5e1;"></i>
+          <i data-lucide="package" class="lucide-sm" style="font-size:36px; margin-bottom:12px; display:inline-block; color:#cbd5e1;"></i>
           <p style="margin:0 0 6px 0; font-weight:800; font-size:14.5px; color:#475569;">Kho thẻ NFC của trang trại này đang trống (0 thẻ).</p>
           <small style="color:#94a3b8;">Hãy bật "Quét thẻ liên tục" hoặc dùng đầu đọc USB / nhập mã UID ở trên để nạp thẻ vào kho.</small>
         </td>
@@ -964,10 +971,10 @@ function renderAdminNfcPageTable(tags) {
   tbody.innerHTML = pageItems.map((t, idx) => {
     const isAssigned = t.status === 'assigned';
     const statusPill = isAssigned
-      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-link"></i> Đã gán cây</span>`
-      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-check"></i> Còn trống (Sẵn sàng)</span>`;
+      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="link" class="lucide-sm"></i> Đã gán cây</span>`
+      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check" class="lucide-sm"></i> Còn trống (Sẵn sàng)</span>`;
 
-    let plantInfo = `<span style="color:#94a3b8; font-style:italic; display:inline-flex; align-items:center; gap:5px;"><i class="fa-regular fa-clock"></i> — Sẵn sàng gán —</span>`;
+    let plantInfo = `<span style="color:#94a3b8; font-style:italic; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="clock" class="lucide-sm"></i> — Sẵn sàng gán —</span>`;
     if (isAssigned && (t.tree_code || t.plant_id)) {
       const treeCodeText = t.tree_code ? `Cây #${t.tree_code}` : `Cây #${t.plant_id}`;
       const plantTypeDesc = t.plant_variety ? `${t.plant_type || 'Cây'} (${t.plant_variety})` : (t.plant_type || 'Cây trồng');
@@ -986,26 +993,26 @@ function renderAdminNfcPageTable(tags) {
               <span style="font-size:12px; color:#475569; font-weight:600;">${esc(plantTypeDesc)}</span>
             </div>
             <button type="button" onclick="unassignAdminNfcTag(${t.id}, '${esc(t.nfc_uid)}', ${t.plant_id || 'null'})" title="Gỡ thẻ khỏi cây này (chuyển về trạng thái sẵn sàng trong kho)" style="background:#fff7ed; color:#c2410c; border:1px solid #fdba74; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
-              <i class="fa-solid fa-link-slash"></i> Gỡ thẻ
+              <i data-lucide="unlink" class="lucide-sm"></i> Gỡ thẻ
             </button>
           </div>
 
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:2px;">
             ${hasGps ? `
               <div style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:#047857; font-weight:700; background:#f0fdf4; padding:2px 8px; border-radius:4px; border:1px solid #bbf7d0;">
-                <i class="fa-solid fa-location-dot" style="color:#059669;"></i> GPS: ${gpsLat}, ${gpsLng}
+                <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> GPS: ${gpsLat}, ${gpsLng}
                 <a href="https://www.google.com/maps?q=${gpsLat},${gpsLng}" target="_blank" title="Mở bản đồ Google Maps" style="color:#2563eb; text-decoration:none; margin-left:3px; display:inline-flex; align-items:center; gap:2px;">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Bản đồ
+                  <i data-lucide="external-link" class="lucide-sm"></i> Bản đồ
                 </a>
               </div>
             ` : `
               <span style="color:#d97706; font-size:11px; display:inline-flex; align-items:center; gap:4px; background:#fffbeb; padding:2px 6px; border-radius:4px; border:1px solid #fef3c7;">
-                <i class="fa-solid fa-circle-exclamation"></i> Chưa lấy tọa độ GPS
+                <i data-lucide="alert-circle" class="lucide-sm"></i> Chưa lấy tọa độ GPS
               </span>
             `}
             ${locationText ? `
               <div style="color:#475569; font-size:11px; display:inline-flex; align-items:center; gap:4px; background:#f8fafc; padding:2px 6px; border-radius:4px; border:1px solid #e2e8f0;">
-                <i class="fa-solid fa-tag" style="color:#0284c7;"></i> Vị trí: <strong>${esc(locationText)}</strong>
+                <i data-lucide="tag" class="lucide-sm" style="color:#0284c7;"></i> Vị trí: <strong>${esc(locationText)}</strong>
               </div>
             ` : ''}
           </div>
@@ -1023,7 +1030,7 @@ function renderAdminNfcPageTable(tags) {
           <div style="display:flex; align-items:center; gap:8px;">
             <code style="font-size:13px; font-weight:800; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; padding:4px 10px; border-radius:6px; font-family:monospace;">${esc(t.nfc_uid)}</code>
             <button type="button" onclick="navigator.clipboard.writeText('${esc(t.nfc_uid)}'); toast('Đã copy UID: ${esc(t.nfc_uid)}');" title="Sao chép UID" style="border:none; background:transparent; color:#64748b; cursor:pointer; font-size:13px; padding:3px 6px;">
-              <i class="fa-regular fa-copy"></i>
+              <i data-lucide="copy" class="lucide-sm"></i>
             </button>
           </div>
         </td>
@@ -1032,7 +1039,7 @@ function renderAdminNfcPageTable(tags) {
         <td style="padding:12px 14px; font-size:12.5px; color:#64748b; font-weight:600;">${timeStr}</td>
         <td style="padding:12px 14px; text-align:center;">
           <button type="button" onclick="deleteAdminNfcTag(${t.id}, '${esc(t.nfc_uid)}')" title="Xóa thẻ khỏi kho" style="border:none; background:#fee2e2; color:#dc2626; border-radius:8px; width:32px; height:32px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s ease;">
-            <i class="fa-solid fa-trash-can"></i>
+            <i data-lucide="trash-2" class="lucide-sm"></i>
           </button>
         </td>
       </tr>
@@ -1126,12 +1133,12 @@ function updateAdminNfcSortIcons() {
       iconEl.style.opacity = '1';
       iconEl.style.color = '#059669';
       iconEl.innerHTML = _adminNfcSortOrder === 'asc' 
-        ? '<i class="fa-solid fa-sort-up"></i>' 
-        : '<i class="fa-solid fa-sort-down"></i>';
+        ? '<i data-lucide="arrow-up" class="lucide-sm"></i>' 
+        : '<i data-lucide="arrow-down" class="lucide-sm"></i>';
     } else {
       iconEl.style.opacity = '0.4';
       iconEl.style.color = '#94a3b8';
-      iconEl.innerHTML = '<i class="fa-solid fa-sort"></i>';
+      iconEl.innerHTML = '<i data-lucide="arrow-up-down" class="lucide-sm"></i>';
     }
   });
 }
@@ -1357,13 +1364,13 @@ async function startContinuousNfcScanPage() {
     const btn = document.getElementById('btn-toggle-continuous-nfc-page');
     if (btn) {
       btn.style.background = '#dc2626';
-      btn.innerHTML = '<i class="fa-solid fa-stop"></i> Dừng Quét Liên Tục';
+      btn.innerHTML = '<i data-lucide="square" class="lucide-sm"></i> Dừng Quét Liên Tục';
     }
 
     const pill = document.getElementById('db-nfc-scan-status-pill');
     const text = document.getElementById('db-nfc-scan-status-text');
     if (pill) { pill.style.background = '#fef2f2'; pill.style.color = '#991b1b'; pill.style.borderColor = '#fca5a5'; }
-    if (text) text.innerHTML = '<i class="fa-solid fa-rss fa-spin"></i> ĐANG QUÉT LIÊN TỤC — CHẠM THẺ VÀO LƯNG MÁY';
+    if (text) text.innerHTML = '<i data-lucide="radio" class="lucide-spin lucide-sm"></i> ĐANG QUÉT LIÊN TỤC — CHẠM THẺ VÀO LƯNG MÁY';
 
     _ndefReaderInstancePage.addEventListener('reading', async ({ serialNumber }) => {
       if (!serialNumber) return;
@@ -1385,7 +1392,7 @@ function stopContinuousNfcScanPage() {
   const btn = document.getElementById('btn-toggle-continuous-nfc-page');
   if (btn) {
     btn.style.background = 'linear-gradient(135deg, #10b981, #047857)';
-    btn.innerHTML = '<i class="fa-solid fa-play"></i> Bật Quét Thẻ Liên Tục (Web NFC)';
+    btn.innerHTML = '<i data-lucide="play" class="lucide-sm"></i> Bật Quét Thẻ Liên Tục (Web NFC)';
   }
 
   const pill = document.getElementById('db-nfc-scan-status-pill');
@@ -1476,7 +1483,7 @@ function renderNfcInventoryTable(tags) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
-          <i class="fa-solid fa-boxes-stacked" style="font-size:32px; margin-bottom:10px; display:inline-block; color:#cbd5e1;"></i>
+          <i data-lucide="package" class="lucide-sm" style="font-size:32px; margin-bottom:10px; display:inline-block; color:#cbd5e1;"></i>
           <p style="margin:0; font-weight:700; font-size:13.5px; color:#64748b;">Kho thẻ NFC của trang trại này chưa có thẻ nào.</p>
           <small style="color:#94a3b8;">Hãy bật chế độ quét liên tục hoặc quẹt thẻ USB để nạp cọc thẻ vào kho.</small>
         </td>
@@ -1499,8 +1506,8 @@ function renderNfcInventoryTable(tags) {
   tbody.innerHTML = pageItems.map((t, idx) => {
     const isAssigned = t.status === 'assigned';
     const statusPill = isAssigned
-      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-link"></i> Đã gán</span>`
-      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-check"></i> Chưa gán</span>`;
+      ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="link" class="lucide-sm"></i> Đã gán</span>`
+      : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check" class="lucide-sm"></i> Chưa gán</span>`;
 
     let plantInfo = `<span style="color:#94a3b8; font-style:italic;">— Sẵn sàng gán —</span>`;
     if (isAssigned && (t.tree_code || t.plant_id)) {
@@ -1519,17 +1526,17 @@ function renderNfcInventoryTable(tags) {
           </div>
           ${hasGps ? `
             <div style="display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#047857; font-weight:700;">
-              <i class="fa-solid fa-location-dot" style="color:#059669;"></i> ${gpsLat}, ${gpsLng}
+              <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> ${gpsLat}, ${gpsLng}
               <a href="https://www.google.com/maps?q=${gpsLat},${gpsLng}" target="_blank" title="Mở Google Maps" style="color:#2563eb; text-decoration:none; margin-left:2px;">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                <i data-lucide="external-link" class="lucide-sm"></i>
               </a>
             </div>
           ` : `
-            <span style="color:#d97706; font-size:10.5px;"><i class="fa-solid fa-circle-exclamation"></i> Chưa lấy GPS</span>
+            <span style="color:#d97706; font-size:10.5px;"><i data-lucide="alert-circle" class="lucide-sm"></i> Chưa lấy GPS</span>
           `}
           ${locationText ? `
             <div style="color:#64748b; font-size:10.5px;">
-              <i class="fa-solid fa-tag"></i> ${esc(locationText)}
+              <i data-lucide="tag" class="lucide-sm"></i> ${esc(locationText)}
             </div>
           ` : ''}
         </div>
@@ -1546,7 +1553,7 @@ function renderNfcInventoryTable(tags) {
           <div style="display:flex; align-items:center; gap:8px;">
             <code style="font-size:13px; font-weight:800; color:#065f46; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 8px; border-radius:6px; font-family:monospace;">${esc(t.nfc_uid)}</code>
             <button type="button" onclick="navigator.clipboard.writeText('${esc(t.nfc_uid)}'); toast('Đã copy mã UID: ${esc(t.nfc_uid)}');" title="Sao chép UID" style="border:none; background:transparent; color:#64748b; cursor:pointer; font-size:12px; padding:2px 4px;">
-              <i class="fa-regular fa-copy"></i>
+              <i data-lucide="copy" class="lucide-sm"></i>
             </button>
           </div>
         </td>
@@ -1555,7 +1562,7 @@ function renderNfcInventoryTable(tags) {
         <td style="padding:10px 12px; font-size:12px; color:#64748b;">${timeStr}</td>
         <td style="padding:10px 12px; text-align:center;">
           <button type="button" onclick="deleteAdminNfcTag(${t.id}, '${esc(t.nfc_uid)}')" title="Xóa thẻ khỏi kho" style="border:none; background:#fee2e2; color:#dc2626; border-radius:6px; width:30px; height:30px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all 0.2s ease;">
-            <i class="fa-solid fa-trash-can"></i>
+            <i data-lucide="trash-2" class="lucide-sm"></i>
           </button>
         </td>
       </tr>
@@ -1643,13 +1650,13 @@ async function startContinuousNfcScan() {
     const btn = document.getElementById('btn-toggle-continuous-nfc');
     if (btn) {
       btn.style.background = '#dc2626';
-      btn.innerHTML = '<i class="fa-solid fa-stop"></i> Dừng Quét Liên Tục';
+      btn.innerHTML = '<i data-lucide="square" class="lucide-sm"></i> Dừng Quét Liên Tục';
     }
 
     const pill = document.getElementById('nfc-scan-status-pill');
     const text = document.getElementById('nfc-scan-status-text');
     if (pill) { pill.style.background = '#fef2f2'; pill.style.color = '#991b1b'; pill.style.borderColor = '#fca5a5'; }
-    if (text) text.innerHTML = '<i class="fa-solid fa-rss fa-spin"></i> ĐANG QUÉT LIÊN TỤC — CHẠM THẺ VÀO LƯNG MÁY';
+    if (text) text.innerHTML = '<i data-lucide="radio" class="lucide-spin lucide-sm"></i> ĐANG QUÉT LIÊN TỤC — CHẠM THẺ VÀO LƯNG MÁY';
 
     _ndefReaderInstance.addEventListener('reading', async ({ serialNumber }) => {
       if (!serialNumber) return;
@@ -1671,7 +1678,7 @@ function stopContinuousNfcScan() {
   const btn = document.getElementById('btn-toggle-continuous-nfc');
   if (btn) {
     btn.style.background = 'linear-gradient(135deg, #10b981, #047857)';
-    btn.innerHTML = '<i class="fa-solid fa-play"></i> Bật Quét Thẻ Liên Tục (Web NFC)';
+    btn.innerHTML = '<i data-lucide="play" class="lucide-sm"></i> Bật Quét Thẻ Liên Tục (Web NFC)';
   }
 
   const pill = document.getElementById('nfc-scan-status-pill');
@@ -1931,7 +1938,7 @@ async function openAdminNfcImportModal(farmId = null) {
     submitBtn.style.background = '#cbd5e1';
     submitBtn.style.color = '#64748b';
     submitBtn.style.cursor = 'not-allowed';
-    submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Import Vào Kho';
+    submitBtn.innerHTML = '<i data-lucide="upload-cloud" class="lucide-sm"></i> Bắt Đầu Import Vào Kho';
   }
 
   const modal = document.getElementById('nfc-import-modal');
@@ -2179,7 +2186,7 @@ function renderNfcImportPreview(parsed) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align:center; padding:20px; color:#dc2626; font-weight:700;">
-          <i class="fa-solid fa-triangle-exclamation"></i> Không phát hiện mã UID thẻ NFC hợp lệ nào trong file!
+          <i data-lucide="alert-triangle" class="lucide-sm"></i> Không phát hiện mã UID thẻ NFC hợp lệ nào trong file!
         </td>
       </tr>`;
     if (submitBtn) {
@@ -2207,7 +2214,7 @@ function renderNfcImportPreview(parsed) {
           <td style="padding:8px 12px; font-size:11.5px; color:#475569;">${locText}</td>
           <td style="padding:8px 12px; text-align:center;">
             <span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; display:inline-flex; align-items:center; gap:4px;">
-              <i class="fa-solid fa-check"></i> Sẵn sàng
+              <i data-lucide="check" class="lucide-sm"></i> Sẵn sàng
             </span>
           </td>
         </tr>
@@ -2219,7 +2226,7 @@ function renderNfcImportPreview(parsed) {
       submitBtn.style.background = 'linear-gradient(135deg, #10b981, #047857)';
       submitBtn.style.color = '#ffffff';
       submitBtn.style.cursor = 'pointer';
-      submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Bắt Đầu Import Vào Kho (${parsed.items.length} Thẻ)`;
+      submitBtn.innerHTML = `<i data-lucide="upload-cloud" class="lucide-sm"></i> Bắt Đầu Import Vào Kho (${parsed.items.length} Thẻ)`;
     }
   }
 
@@ -2407,10 +2414,10 @@ function renderCurrentFieldTree() {
       urlPreviewEl.innerHTML = `
         <div style="display:flex; align-items:center; gap:6px;">
           <a href="${pubUrl}" target="_blank" style="color:#4f46e5; text-decoration:none; font-weight:700; font-size:11.5px; display:inline-flex; align-items:center; gap:4px; background:#eef2ff; padding:3px 8px; border-radius:6px; border:1px solid #c7d2fe;" title="Mở trang nhật ký công khai">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem Web Public
+            <i data-lucide="external-link" class="lucide-sm"></i> Xem Web Public
           </a>
           <button type="button" onclick="navigator.clipboard.writeText('${pubUrl}'); toast('Đã sao chép link công khai!');" style="background:#f8fafc; border:1px solid #cbd5e1; color:#475569; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" title="Sao chép link">
-            <i class="fa-solid fa-copy"></i>
+            <i data-lucide="copy" class="lucide-sm"></i>
           </button>
         </div>
       `;
@@ -2731,7 +2738,7 @@ async function submitCsvImport() {
   const submitBtn = document.getElementById('csv-import-submit-btn');
   const oldText = submitBtn.innerHTML;
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang import...';
+  submitBtn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang import...';
 
   const body = {
     farm_id: activeFarmId,
