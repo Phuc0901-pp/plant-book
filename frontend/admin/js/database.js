@@ -57,47 +57,47 @@ async function initDatabasePage() {
     const fSelect = document.getElementById('db-filter-farm');
     if (fSelect) {
       fSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại trước —</option>' +
-        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+        dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
     // Populate Tab NFC Farm Filter
     const nfcFarmSelect = document.getElementById('db-nfc-filter-farm');
     if (nfcFarmSelect) {
       nfcFarmSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
-        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+        dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
     // Populate Modal NFC Farm Filter
     const nfcModalSelect = document.getElementById('nfc-inv-farm-select');
     if (nfcModalSelect) {
       nfcModalSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
-        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+        dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
 
     // Populate Tab IoT Farm Filter
     const iotFarmSelect = document.getElementById('db-iot-filter-farm');
     if (iotFarmSelect) {
-      iotFarmSelect.innerHTML = '<option value="all">🌐 Tất cả Trang trại (Toàn bộ IoT)</option>' +
-        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+      iotFarmSelect.innerHTML = '<option value="all">Tất cả Trang trại (Toàn bộ IoT)</option>' +
+        dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
     }
 
     // Populate Tab Supplies Filters
     const suUserSelect = document.getElementById('db-supply-filter-user');
     if (suUserSelect) {
       suUserSelect.innerHTML = '<option value="">— Tất cả Khách hàng —</option>' +
-        normalUsers.map(u => `<option value="${u.id}">👤 ${esc(u.full_name)} (${esc(u.phone || u.email)})</option>`).join('');
+        normalUsers.map(u => `<option value="${u.id}">${esc(u.full_name)} (${esc(u.phone || u.email)})</option>`).join('');
     }
 
     const suFarmSelect = document.getElementById('db-supply-filter-farm');
     if (suFarmSelect) {
       suFarmSelect.innerHTML = '<option value="">— Tất cả Trang trại —</option>' +
-        dbFarmsCache.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+        dbFarmsCache.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
     }
 
     const fSupplyUser = document.getElementById('f-supply-user');
     if (fSupplyUser) {
       fSupplyUser.innerHTML = '<option value="">— Mặc định (Admin) —</option>' +
-        normalUsers.map(u => `<option value="${u.id}">👤 ${esc(u.full_name)}</option>`).join('');
+        normalUsers.map(u => `<option value="${u.id}">${esc(u.full_name)}</option>`).join('');
     }
 
     window._allFarmsCache = dbFarmsCache;
@@ -178,7 +178,7 @@ async function onDbFarmChange() {
 
   const farm = dbFarmsCache.find(f => f.id == farmId);
   if (farmTitle) {
-    farmTitle.textContent = `🏡 ${farm ? farm.name : 'Trang trại'} ${farm && farm.owner_name ? `· Nông hộ: ${farm.owner_name}` : ''}`;
+    farmTitle.textContent = `${farm ? farm.name : 'Trang trại'} ${farm && farm.owner_name ? `· Nông hộ: ${farm.owner_name}` : ''}`;
   }
 
   // 1. Gather Personnel (Owner + assigned users) - NO ROLE DISPLAYED
@@ -452,7 +452,7 @@ async function selectTreeForDetail(plantId) {
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
               <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
-                🏡 TỔNG HỢP CANH TÁC TOÀN TRANG TRẠI · ${esc(farm ? farm.name : '')}
+                <i class="fa-solid fa-map-location-dot"></i> TỔNG HỢP CANH TÁC TOÀN TRANG TRẠI · ${esc(farm ? farm.name : '')}
               </div>
               <div style="font-size:20px; font-weight:800; margin-top:2px;">
                 ${currentDbFarmPlantsCache.length} Cây Trồng Đang Hoạt Động
@@ -467,7 +467,7 @@ async function selectTreeForDetail(plantId) {
                 <i class="fa fa-plus"></i> Thêm cây mới
               </button>
               <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:10px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
-                <div style="font-size:10.5px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG CHI PHÍ</div>
+                <div style="font-size:10.5px; text-transform:uppercase; opacity:0.85; font-weight:700;">TỔNG CHI PHÍ</div>
                 <div style="font-size:18px; font-weight:800; color:#fde047; margin-top:2px;">
                   ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
                 </div>
@@ -503,7 +503,7 @@ async function selectTreeForDetail(plantId) {
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
               <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
-                🌳 HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
+                <i class="fa-solid fa-tree"></i> HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
               </div>
               <div style="font-size:20px; font-weight:800; margin-top:2px;">
                 ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''}

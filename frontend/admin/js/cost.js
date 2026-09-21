@@ -35,8 +35,8 @@ async function initCostPage() {
     }
     const chartFarmSel = document.getElementById('cost-chart-farm');
     if (farmSel && farmSel.options.length <= 1) {
-      const farmOpts = '<option value="all">🌿 Tất cả trang trại</option>' +
-        farms.map(f => '<option value="' + f.id + '">' + esc(f.name) + '</option>').join('');
+      const farmOpts = '<option value="all">Tất cả trang trại</option>' + 
+        farms.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
       farmSel.innerHTML = farmOpts;
       if (chartFarmSel) chartFarmSel.innerHTML = farmOpts;
     }

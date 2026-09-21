@@ -143,7 +143,7 @@
 
         if (elArt) elArt.innerHTML = `${s.articles.total} <span style="font-size:12px; font-weight:600; color:#059669;">(${s.articles.active} đang dùng)</span>`;
         if (elQa) elQa.innerHTML = `${s.qa.total} <span style="font-size:12px; font-weight:600; color:#0284c7;">(${s.qa.active} đang dùng)</span>`;
-        if (elLogs) elLogs.innerHTML = `${s.logsTotal} <span style="font-size:12px; font-weight:600; color:#16a34a;">(Anti-Bot 🛡️)</span>`;
+        if (elLogs) elLogs.innerHTML = `${s.logsTotal} <span style="font-size:12px; font-weight:600; color:#16a34a;">(Anti-Bot)</span>`;
       }
     } catch (err) {
       console.warn('Lỗi tải thống kê AI:', err);
@@ -688,12 +688,12 @@
       if (data.success) {
         if (latencyBadge) {
           latencyBadge.style.display = 'inline-block';
-          latencyBadge.innerText = `⚡ ${data.elapsedMs} ms`;
+          latencyBadge.innerText = `${data.elapsedMs} ms`;
         }
 
         let outputHtml = `
           <div style="margin-bottom:12px;">
-            <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:4px;">🎯 Đề xuất định tuyến &amp; xử lý:</div>
+            <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:4px;"><i class="fa-solid fa-bullseye"></i> Đề xuất định tuyến &amp; xử lý:</div>
             <div style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; padding:8px 12px; border-radius:8px; font-size:12.5px; font-weight:700;">
               ${escapeHtml(data.recommendation)}
             </div>
@@ -792,25 +792,25 @@
 
     if (targetType === 'KNOWLEDGE_ARTICLE') {
       if (action === 'CREATE') {
-        return `<div style="font-weight:700; color:#0f172a;">✨ Thêm SOP: "${escapeHtml(d.title || '')}"</div><div style="font-size:11.5px; color:#64748b;">Phân loại: ${escapeHtml(d.category || 'Chung')}</div>`;
+        return `<div style="font-weight:700; color:#0f172a;">Thêm SOP: "${escapeHtml(d.title || '')}"</div><div style="font-size:11.5px; color:#64748b;">Phân loại: ${escapeHtml(d.category || 'Chung')}</div>`;
       }
       if (action === 'UPDATE') {
-        return `<div style="font-weight:700; color:#0f172a;">📝 Cập nhật SOP: "${escapeHtml(d.new || d.title || '')}"</div><div style="font-size:11.5px; color:#64748b;">${d.old ? `Cũ: ${escapeHtml(d.old)}` : ''}</div>`;
+        return `<div style="font-weight:700; color:#0f172a;">Cập nhật SOP: "${escapeHtml(d.new || d.title || '')}"</div><div style="font-size:11.5px; color:#64748b;">${d.old ? `Cũ: ${escapeHtml(d.old)}` : ''}</div>`;
       }
       if (action === 'DELETE') {
-        return `<div style="font-weight:700; color:#dc2626;">🗑️ Xóa SOP: "${escapeHtml(d.title || '')}"</div>`;
+        return `<div style="font-weight:700; color:#dc2626;"><i class="fa-solid fa-trash-can"></i> Xóa SOP: "${escapeHtml(d.title || '')}"</div>`;
       }
     }
 
     if (targetType === 'TRAINING_QA') {
       if (action === 'CREATE') {
-        return `<div style="font-weight:700; color:#0284c7;">✨ Thêm Q&A: [${escapeHtml(d.category || 'Q&A')}]</div><div style="font-size:11.5px; color:#64748b;">"${escapeHtml(d.sample || '')}"</div>`;
+        return `<div style="font-weight:700; color:#0284c7;">Thêm Q&A: [${escapeHtml(d.category || 'Q&A')}]</div><div style="font-size:11.5px; color:#64748b;">"${escapeHtml(d.sample || '')}"</div>`;
       }
       if (action === 'UPDATE') {
-        return `<div style="font-weight:700; color:#0284c7;">📝 Cập nhật Q&A: [${escapeHtml(d.category || 'Q&A')}]</div><div style="font-size:11.5px; color:#64748b;">"${escapeHtml(d.sample || '')}"</div>`;
+        return `<div style="font-weight:700; color:#0284c7;">Cập nhật Q&A: [${escapeHtml(d.category || 'Q&A')}]</div><div style="font-size:11.5px; color:#64748b;">"${escapeHtml(d.sample || '')}"</div>`;
       }
       if (action === 'DELETE') {
-        return `<div style="font-weight:700; color:#dc2626;">🗑️ Xóa cặp Q&A [${escapeHtml(d.category || 'Q&A')}]</div>`;
+        return `<div style="font-weight:700; color:#dc2626;"><i class="fa-solid fa-trash-can"></i> Xóa cặp Q&A [${escapeHtml(d.category || 'Q&A')}]</div>`;
       }
     }
 
@@ -825,16 +825,16 @@
       const publicId = l.admin_public_id || (l.admin_id ? `adm-${l.admin_id}` : 'adm-****');
       return `<div style="font-weight:700; color:#0f172a; font-size:12.5px;">${escapeHtml(l.admin_name)}</div><div style="font-size:11px; color:#64748b;">${escapeHtml(publicId)}</div>`;
     }
-    return '<span style="color:#64748b; font-size:12px;">🛡️ Quản trị viên (adm-****)</span>';
+    return '<span style="color:#64748b; font-size:12px;"><i class="fa-solid fa-shield-halved"></i> Quản trị viên (adm-****)</span>';
   }
 
   function formatIpBadge(ip) {
     if (!ip) return '<span style="color:#94a3b8; font-family:monospace; font-size:11.5px;">127.0.0.1</span>';
     const isInternal = ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('127.0.') || ip.startsWith('172.');
     if (isInternal) {
-      return `<span style="font-family:monospace; background:#f1f5f9; color:#475569; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Cân bằng tải / Proxy nội bộ Render">🌐 ${escapeHtml(ip)} <small style="color:#94a3b8;">(Proxy)</small></span>`;
+      return `<span style="font-family:monospace; background:#f1f5f9; color:#475569; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Cân bằng tải / Proxy nội bộ Render"><i class="fa-solid fa-network-wired"></i> ${escapeHtml(ip)} <small style="color:#94a3b8;">(Proxy)</small></span>`;
     }
-    return `<span style="font-family:monospace; background:#ecfdf5; color:#059669; font-weight:700; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Công Khai Của Quản Trị Viên">🌐 ${escapeHtml(ip)}</span>`;
+    return `<span style="font-family:monospace; background:#ecfdf5; color:#059669; font-weight:700; padding:3px 8px; border-radius:6px; font-size:11.5px;" title="IP Công Khai Của Quản Trị Viên"><i class="fa-solid fa-globe"></i> ${escapeHtml(ip)}</span>`;
   }
 
   function renderSecurityLogsTable(logs) {
@@ -861,7 +861,7 @@
           ? `<span style="background:#eff6ff; color:#0284c7; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">CẬP NHẬT</span>`
           : (l.action === 'DELETE' 
             ? `<span style="background:#fef2f2; color:#dc2626; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">XÓA BỎ</span>`
-            : `<span style="background:#fff1f2; color:#b91c1c; font-weight:900; font-size:11px; padding:3px 8px; border-radius:6px;">CHẶN BOT 🛡️</span>`));
+            : `<span style="background:#fff1f2; color:#b91c1c; font-weight:900; font-size:11px; padding:3px 8px; border-radius:6px;"><i class="fa-solid fa-shield-virus"></i> CHẶN BOT</span>`));
 
       const timeFormatted = new Date(l.created_at).toLocaleString('vi-VN');
 

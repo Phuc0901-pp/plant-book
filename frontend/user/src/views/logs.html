@@ -23,29 +23,29 @@
         <div class="card" style="border-radius:18px; border:1px solid #e2e8f0; box-shadow:0 4px 20px rgba(0,0,0,0.04); overflow:hidden;">
           <!-- Thanh tìm kiếm, lọc và sắp xếp lịch sử -->
           <div class="search-bar" style="display:flex; gap:10px; padding: 14px 18px; border-bottom:1px solid #e2e8f0; flex-wrap: wrap; align-items: center; background:#f8fafc;">
-            <input type="text" id="user-log-search" placeholder="🔍 Tìm mã cây, ghi chú, phân bón/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:9px 14px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; outline:none; background:#ffffff;">
+            <input type="text" id="user-log-search" placeholder="Tìm mã cây, ghi chú, phân bón/thuốc..." oninput="filterUserLogs()" style="flex:2; min-width: 180px; padding:9px 14px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; outline:none; background:#ffffff;">
             
             <select id="user-log-filter-farm" onchange="filterUserLogs()" style="flex:1; min-width: 140px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; background:#fff; outline:none;">
-              <option value="all">🏡 Tất cả trang trại</option>
+              <option value="all">Tất cả trang trại</option>
             </select>
 
             <select id="user-log-filter-type" onchange="filterUserLogs()" style="flex:1; min-width: 130px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; background:#fff; outline:none;">
-              <option value="all">🧪 Tất cả hoạt động</option>
-              <option value="Tưới nước">💧 Tưới cây</option>
-              <option value="Bón phân">🧪 Bón phân</option>
-              <option value="Phun thuốc">💊 Phun thuốc</option>
-              <option value="Cắt lá">🍃 Cắt cành/lá</option>
-              <option value="Tỉa hoa">🌸 Tỉa hoa/quả</option>
-              <option value="Thu hoạch">🌾 Thu hoạch</option>
-              <option value="Bệnh cây">🐛 Bệnh cây</option>
+              <option value="all">Tất cả hoạt động</option>
+              <option value="Tưới nước">Tưới cây</option>
+              <option value="Bón phân">Bón phân</option>
+              <option value="Phun thuốc">Phun thuốc</option>
+              <option value="Cắt lá">Cắt cành/lá</option>
+              <option value="Tỉa hoa">Tỉa hoa/quả</option>
+              <option value="Thu hoạch">Thu hoạch</option>
+              <option value="Bệnh cây">Bệnh cây</option>
             </select>
 
             <select id="user-log-sort-by" onchange="filterUserLogs()" style="flex:1; min-width: 150px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:10px; font-size:13px; background:#fff; outline:none; font-weight:600; color:#1e293b;">
-              <option value="date_desc">📅 Mới nhất</option>
-              <option value="date_asc">📅 Cũ nhất</option>
-              <option value="disease_first">🚨 Ưu tiên Cây bệnh</option>
-              <option value="plant_asc">🪴 Theo Mã cây (1 ➔ n)</option>
-              <option value="activity_asc">🏷️ Theo loại Hoạt động</option>
+              <option value="date_desc">Mới nhất</option>
+              <option value="date_asc">Cũ nhất</option>
+              <option value="disease_first">Ưu tiên Cây bệnh</option>
+              <option value="plant_asc">Theo Mã cây (1 ➔ n)</option>
+              <option value="activity_asc">Theo loại Hoạt động</option>
             </select>
 
             <button type="button" id="user-log-disease-toggle" onclick="toggleDiseaseOnlyFilter()" style="padding:9px 14px; border-radius:10px; border:1.5px solid #fca5a5; background:#fff1f2; color:#dc2626; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
@@ -113,14 +113,14 @@
             <!-- Filter 1: Trang trại & Cây trồng -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
               <div>
-                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;">🏡 Trang trại:</label>
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="map-pin" class="lucide-xs"></i> Trang trại:</label>
                 <select id="modal-del-farm" onchange="onModalDelFarmChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
                   <option value="all">Tất cả trang trại</option>
                 </select>
               </div>
 
               <div>
-                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;">🪴 Cây trồng:</label>
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="sprout" class="lucide-xs"></i> Cây trồng:</label>
                 <select id="modal-del-plant" onchange="previewSelectiveDelete()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
                   <option value="all">Tất cả cây trồng</option>
                 </select>
@@ -129,22 +129,22 @@
 
             <!-- Filter 2: Loại hoạt động canh tác -->
             <div>
-              <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;">🧪 Loại hoạt động canh tác:</label>
+              <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="activity" class="lucide-xs"></i> Loại hoạt động canh tác:</label>
               <select id="modal-del-type" onchange="previewSelectiveDelete()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
                 <option value="all">Tất cả loại hoạt động</option>
-                <option value="Tưới nước">💧 Tưới cây</option>
-                <option value="Bón phân">🧪 Bón phân</option>
-                <option value="Phun thuốc">💊 Phun thuốc</option>
-                <option value="Cắt lá">🍃 Cắt cành / tỉa lá</option>
-                <option value="Tỉa hoa">🌸 Tỉa hoa / tỉa trái</option>
-                <option value="Thu hoạch">🌾 Thu hoạch</option>
-                <option value="Bệnh cây">🐛 Bệnh cây</option>
+                <option value="Tưới nước">Tưới cây</option>
+                <option value="Bón phân">Bón phân</option>
+                <option value="Phun thuốc">Phun thuốc</option>
+                <option value="Cắt lá">Cắt cành / tỉa lá</option>
+                <option value="Tỉa hoa">Tỉa hoa / tỉa trái</option>
+                <option value="Thu hoạch">Thu hoạch</option>
+                <option value="Bệnh cây">Bệnh cây</option>
               </select>
             </div>
 
             <!-- Filter 3: Phạm vi thời gian canh tác -->
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">
-              <label style="display:block; font-size:12px; font-weight:800; color:#1e293b; margin-bottom:10px;">📅 Phạm vi ngày canh tác:</label>
+              <label style="display:block; font-size:12px; font-weight:800; color:#1e293b; margin-bottom:10px;"><i data-lucide="calendar" class="lucide-xs"></i> Phạm vi ngày canh tác:</label>
               
               <div style="display:flex; gap:16px; margin-bottom:12px; flex-wrap:wrap;">
                 <label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
@@ -178,7 +178,7 @@
 
             <!-- Filter 4: Từ khóa bổ sung (optional) -->
             <div>
-              <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;">🔍 Từ khóa chi tiết (Ghi chú, tên vật tư, hoạt chất...):</label>
+              <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="search" class="lucide-xs"></i> Từ khóa chi tiết (Ghi chú, tên vật tư, hoạt chất...):</label>
               <input type="text" id="modal-del-keyword" placeholder="Để trống nếu muốn áp dụng toàn bộ..." oninput="previewSelectiveDelete()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; outline:none;">
             </div>
 

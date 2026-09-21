@@ -620,10 +620,10 @@ function toggleGisImportMode(forceState) {
     }
     if (banner) banner.style.display = 'flex';
     if (gMap) gMap.getCanvas().style.cursor = 'crosshair';
-    toast('📍 Đã bật chế độ Import GIS: Click vào vị trí cây trên bản đồ để lấy tọa độ GPS!', 'info');
+    toast('Đã bật chế độ Import GIS: Click vào vị trí cây trên bản đồ để lấy tọa độ GPS!', 'info');
   } else {
     if (btn) {
-      btn.innerHTML = '<i class="fa-solid fa-map-pin"></i> 📍 Import GIS (Click chọn vị trí cây trên bản đồ)';
+      btn.innerHTML = '<i class="fa-solid fa-map-pin"></i> Import GIS (Click chọn vị trí cây trên bản đồ)';
       btn.style.background = '#10b981';
       btn.style.borderColor = '#059669';
     }
@@ -671,7 +671,7 @@ async function openPlantModalForGisClick(lng, lat) {
   const typeInput = document.getElementById('f-plant-type');
   if (typeInput) typeInput.focus();
 
-  toast(`📍 Đã ghim GPS (${lat.toFixed(5)}, ${lng.toFixed(5)}). Hãy nhập thông tin chi tiết cây trồng!`, 'success');
+  toast(`Đã ghim GPS (${lat.toFixed(5)}, ${lng.toFixed(5)}). Hãy nhập thông tin chi tiết cây trồng!`, 'success');
 }
 
 // Hook gọi sau khi lưu cây thành công từ Modal
@@ -909,7 +909,7 @@ function enableDirectSelectMode() {
     const featureId = all.features[0].id;
     if (featureId) {
       drawControl.changeMode('direct_select', { featureId });
-      toast('🎯 Đã bật chế độ chỉnh đỉnh: Hãy kéo các điểm tròn trắng trên ranh giới để đổi hình dạng!', 'info');
+      toast('Đã bật chế độ chỉnh đỉnh: Hãy kéo các điểm tròn trắng trên ranh giới để đổi hình dạng!', 'info');
     }
   } else {
     toast('Chưa có ranh giới nào được vẽ. Hãy bấm "Vẽ lại mới" để vẽ!', 'warning');
@@ -922,7 +922,7 @@ function enableRedrawPolygonMode() {
   drawControl.deleteAll();
   updateAreaDisplay();
   drawControl.changeMode('draw_polygon');
-  toast('✏️ Chế độ vẽ mới: Nhấp chuột trên bản đồ để chấm các đỉnh ranh giới.', 'info');
+  toast('Chế độ vẽ mới: Nhấp chuột trên bản đồ để chấm các đỉnh ranh giới.', 'info');
 }
 window.enableRedrawPolygonMode = enableRedrawPolygonMode;
 
@@ -930,7 +930,7 @@ function clearDrawnPolygon() {
   if (!drawControl) return;
   drawControl.deleteAll();
   updateAreaDisplay();
-  toast('🗑️ Đã xóa ranh giới đang vẽ', 'info');
+  toast('Đã xóa ranh giới đang vẽ', 'info');
 }
 window.clearDrawnPolygon = clearDrawnPolygon;
 
@@ -1077,9 +1077,9 @@ async function selectFarm(farmId, syncUrl = true) {
         ${!isOwnerPro ? `
           <div style="margin-top:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px; font-size:11.5px; color:#78350f;">
             <div style="font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation" style="color:#d97706;"></i> Nông hộ NORMAL (Giới hạn GIS)</div>
-            <div>Bản vẽ CAD quy hoạch, Chấm GIS cây lẻ & Đường đồng mức 3D tối ưu cho Gói PRO 👑.</div>
+            <div>Bản vẽ CAD quy hoạch, Chấm GIS cây lẻ &amp; Đường đồng mức 3D tối ưu cho Gói PRO.</div>
             <button onclick="openUserTierModalFromGis(${farm.user_id})" style="margin-top:8px; width:100%; background:linear-gradient(135deg, #059669, #047857); color:#fff; border:none; border-radius:8px; padding:7px 10px; font-size:11.5px; font-weight:800; cursor:pointer;">
-              👑 Kích hoạt Gói PRO cho Nông hộ này
+              <i class="fa-solid fa-crown" style="color:#fde047;"></i> Kích hoạt Gói PRO cho Nông hộ này
             </button>
           </div>
         ` : `
@@ -1210,14 +1210,14 @@ function togglePlantMarkers(forceState) {
   const btn = document.getElementById('btn-toggle-plant-markers');
   if (btn) {
     btn.innerHTML = arePlantMarkersVisible 
-      ? '<i class="fa-solid fa-eye"></i> 🌳 Hiện / Ẩn Vị Trí Cây' 
-      : '<i class="fa-solid fa-eye-slash"></i> 🙈 Đã Ẩn Vị Trí Cây';
+      ? '<i class="fa-solid fa-eye"></i> Hiện / Ẩn Vị Trí Cây' 
+      : '<i class="fa-solid fa-eye-slash"></i> Đã Ẩn Vị Trí Cây';
     btn.style.background = arePlantMarkersVisible ? '#fff' : '#fef3c7';
     btn.style.borderColor = arePlantMarkersVisible ? '#cbd5e1' : '#f59e0b';
     btn.style.color = arePlantMarkersVisible ? 'inherit' : '#d97706';
   }
 
-  toast(arePlantMarkersVisible ? '🌳 Đã BẬT vị trí cây trồng' : '🙈 Đã ẨN vị trí cây trồng', 'info');
+  toast(arePlantMarkersVisible ? 'Đã BẬT vị trí cây trồng' : 'Đã ẨN vị trí cây trồng', 'info');
 }
 
 // ── Đo đạc hiển thị kích thước cạnh ranh giới, diện tích & chu vi ───────
@@ -2206,7 +2206,7 @@ function addContourLinesToMap(map, options = {}) {
               border: none;
               cursor: pointer;
             `;
-            btnContour.innerHTML = '⛰️';
+            btnContour.innerHTML = '<i class="fa-solid fa-mountain"></i>';
 
             let isVisible = defaultVisible;
 

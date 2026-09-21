@@ -362,10 +362,10 @@ export function renderSuppliesCockpitKpi(supplies) {
   
   if (lowStockCountEl) {
     if (lowStockCount > 0) {
-      lowStockCountEl.innerHTML = `${lowStockCount} mặt hàng ⚠️`;
+      lowStockCountEl.innerHTML = `${lowStockCount} mặt hàng <i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c;"></i>`;
       if (lowStockDescEl) lowStockDescEl.innerHTML = outOfStockCount > 0 ? `Có <strong>${outOfStockCount}</strong> mặt hàng đã hết kho` : `Có <strong>${lowStockCount}</strong> mặt hàng sắp hết`;
     } else {
-      lowStockCountEl.innerHTML = `0 mặt hàng 🟢`;
+      lowStockCountEl.innerHTML = `0 mặt hàng <i data-lucide="check-circle-2" class="lucide-xs" style="color:#10b981;"></i>`;
       if (lowStockDescEl) lowStockDescEl.innerHTML = `Đầy đủ tồn kho an toàn`;
     }
   }
@@ -477,17 +477,17 @@ export function renderSuppliesTable(supplies) {
       const pct = benchmark > 0 ? Math.min(100, Math.round((stock / benchmark) * 100)) : 0;
       
       let barColor = 'linear-gradient(90deg, #34d399, #10b981)';
-      let statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;">🟢 Còn hàng</span>`;
+      let statusBadge = `<span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;"><i data-lucide="check" class="lucide-xs"></i> Còn hàng</span>`;
       
       if (stock <= 0) {
         barColor = '#ef4444';
-        statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px; border:1px solid #fca5a5;">🚫 HẾT HÀNG</span>`;
+        statusBadge = `<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px; border:1px solid #fca5a5;"><i data-lucide="ban" class="lucide-xs"></i> HẾT HÀNG</span>`;
       } else if (pct < 20) {
         barColor = 'linear-gradient(90deg, #f87171, #ef4444)';
-        statusBadge = `<span class="badge" style="background:#fff7ed; color:#ea580c; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px; border:1px solid #fed7aa;">⚠️ Sắp hết</span>`;
+        statusBadge = `<span class="badge" style="background:#fff7ed; color:#ea580c; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px; border:1px solid #fed7aa;"><i data-lucide="alert-triangle" class="lucide-xs"></i> Sắp hết</span>`;
       } else if (pct < 50) {
         barColor = 'linear-gradient(90deg, #fbbf24, #f59e0b)';
-        statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;">🟡 Mức TB</span>`;
+        statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;"><i data-lucide="minus-circle" class="lucide-xs"></i> Mức TB</span>`;
       }
 
       const packageUnitsCount = pkgQty > 0 ? Number((stock / pkgQty).toFixed(1)) : stock;
@@ -553,6 +553,9 @@ export function renderSuppliesTable(supplies) {
       </tr>
     `;
   }).join('');
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
 }
 
 export function openSupplyModal(id = null) {
@@ -817,7 +820,7 @@ export async function openStockLedgerModal(id) {
   const unitPrice = parseFloat(sp.unit_price) || 0;
   const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
 
-  document.getElementById('ledger-stat-current-stock').textContent = isPermanent ? 'Vô tận ♾️' : `${currentStock} ${sp.unit}`;
+  document.getElementById('ledger-stat-current-stock').textContent = isPermanent ? 'Vô tận' : `${currentStock} ${sp.unit}`;
   document.getElementById('ledger-stat-total-used').textContent = `${totalUsed} ${sp.unit} (${formatVND(sp.total_spent || 0)})`;
   document.getElementById('ledger-stat-valuation').textContent = isPermanent ? 'Theo thực tế' : formatVND(currentStock * unitPrice);
 
@@ -883,7 +886,7 @@ export async function openStockLedgerModal(id) {
             <span class="badge" style="background:#0284c7; color:#fff; font-size:10.5px; font-weight:800;">Hiện tại</span>
           </div>
           <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:4px;">
-            Số lượng còn: <span style="color:#059669;">${isPermanent ? 'Vô tận ♾️' : `${currentStock} ${sp.unit}`}</span>
+            Số lượng còn: <span style="color:#059669;">${isPermanent ? 'Vô tận' : `${currentStock} ${sp.unit}`}</span>
           </div>
         </div>
       </div>
@@ -1002,8 +1005,8 @@ export function populateSuppliesFilterFarms() {
   const currentVal = farmSelect.value || 'all';
   const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
   if (farms.length > 0 && farmSelect.options.length <= 1) {
-    farmSelect.innerHTML = `<option value="all">🏡 Tất cả trang trại</option>` +
-      farms.map(f => `<option value="${f.id}" ${String(f.id) === String(currentVal) ? 'selected' : ''}>🏡 ${esc(f.name)}</option>`).join('');
+    farmSelect.innerHTML = `<option value="all">Tất cả trang trại</option>` +
+      farms.map(f => `<option value="${f.id}" ${String(f.id) === String(currentVal) ? 'selected' : ''}>${esc(f.name)}</option>`).join('');
   }
 }
 window.populateSuppliesFilterFarms = populateSuppliesFilterFarms;
@@ -1266,7 +1269,7 @@ export async function openRecordUsageModal() {
         const stock = parseFloat(s.stock_quantity) || 0;
         const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
         const isOut = !isPermanent && stock <= 0;
-        const stockText = isPermanent ? '' : (isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Tồn: ${stock} ${s.unit})`);
+        const stockText = isPermanent ? '' : (isOut ? ' [HẾT HÀNG]' : ` (Tồn: ${stock} ${s.unit})`);
         return `
           <option value="${s.id}" data-price="${s.unit_price}" data-unit="${s.unit}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
             [${s.category}] ${esc(s.name)} ${s.package_size ? `(${esc(s.package_size)})` : ''} — ${formatVND(s.unit_price)} / ${s.unit}${stockText}
@@ -1756,7 +1759,7 @@ export async function handleAiScanImageUpload(event) {
   const textEl = document.getElementById('sp-ai-scan-text');
 
   if (btn) btn.disabled = true;
-  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🤖 AI đang nén ảnh & quét chữ bao bì...';
+  if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI đang nén ảnh & quét chữ bao bì...';
 
   try {
     let d = null;
@@ -1787,7 +1790,7 @@ export async function handleAiScanImageUpload(event) {
 
     // 2. If Backend Gemini is rate-limited or not configured, run Client-Side Tesseract.js OCR
     if (!d && typeof Tesseract !== 'undefined') {
-      if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 🔍 Đang quét bằng OCR thiết bị...';
+      if (textEl) textEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét bằng OCR thiết bị...';
       const ocrResult = await Tesseract.recognize(compressedFile, 'vie+eng');
       const ocrText = ocrResult?.data?.text || '';
       d = parseAgriculturalProductText(ocrText);
@@ -1831,11 +1834,11 @@ export async function handleAiScanImageUpload(event) {
       }
 
       if (isCached) {
-        toast('⚡ Đã bóc tách & tự đính kèm ảnh bao bì từ bộ nhớ đệm!', 'success');
+        toast('Đã bóc tách & tự đính kèm ảnh bao bì từ bộ nhớ đệm!', 'success');
       } else if (isGeminiUsed) {
-        toast('✨ AI Gemini 3.6 Flash đã bóc tách & tự đính kèm ảnh bao bì thành công!', 'success');
+        toast('AI Gemini 3.6 Flash đã bóc tách & tự đính kèm ảnh bao bì thành công!', 'success');
       } else {
-        toast('⚠️ Đã quét OCR & tự đính kèm ảnh bao bì! Vui lòng kiểm tra lại thông tin.', 'warning');
+        toast('Đã quét OCR & tự đính kèm ảnh bao bì! Vui lòng kiểm tra lại thông tin.', 'warning');
       }
     } else {
       toast('Không thể quét được chữ trên bao bì. Vui lòng chụp rõ nét hơn hoặc nhập tay.', 'warning');
@@ -1845,7 +1848,7 @@ export async function handleAiScanImageUpload(event) {
     toast('Lỗi AI quét bao bì: ' + err.message, 'error');
   } finally {
     if (btn) btn.disabled = false;
-    if (textEl) textEl.innerHTML = '📷 Chụp / Chọn ảnh bao bì';
+    if (textEl) textEl.innerHTML = '<i class="fa-solid fa-camera"></i> Chụp / Chọn ảnh bao bì';
     event.target.value = '';
   }
 }
