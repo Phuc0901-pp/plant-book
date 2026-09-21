@@ -659,7 +659,7 @@ router.put('/:id', auth, admin, async (req, res) => {
 router.put('/:id/gps', auth, async (req, res) => {
   try {
     const plantId = parseInt(req.params.id);
-    const { latitude, longitude } = req.body;
+    const { latitude, longitude, location } = req.body;
 
     const plantRes = await pool.query(
       `SELECT p.id, p.farm_id, p.tree_code, p.created_by, p.assigned_to_user_id, f.user_id as farm_owner_id
@@ -680,23 +680,41 @@ router.put('/:id/gps', auth, async (req, res) => {
     const latVal = (latitude !== undefined && latitude !== null && latitude !== '') ? parseFloat(latitude) : null;
     const lngVal = (longitude !== undefined && longitude !== null && longitude !== '') ? parseFloat(longitude) : null;
 
-    const updated = await pool.query(
-      `UPDATE plants 
-       SET latitude = $1, longitude = $2, updated_at = NOW()
-       WHERE id = $3
-       RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude`,
-      [latVal, lngVal, plantId]
-    );
+    let updateQuery;
+    let updateParams;
+    if (location !== undefined) {
+      const locVal = (location !== null && location !== '') ? String(location).trim() : null;
+      updateQuery = `UPDATE plants 
+                     SET latitude = $1, longitude = $2, location = $3, updated_at = NOW()
+                     WHERE id = $4
+                     RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude, location`;
+      updateParams = [latVal, lngVal, locVal, plantId];
+    } else {
+      updateQuery = `UPDATE plants 
+                     SET latitude = $1, longitude = $2, updated_at = NOW()
+                     WHERE id = $3
+                     RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude, location`;
+      updateParams = [latVal, lngVal, plantId];
+    }
+
+    const updated = await pool.query(updateQuery, updateParams);
 
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated', { plant_id: plantId, action: 'gps_updated' });
 
+    let msg = 'Đã cập nhật vị trí cho cây thành công.';
+    if (latVal !== null && lngVal !== null) {
+      msg = `Đã lưu tọa độ GPS (${latVal.toFixed(6)}, ${lngVal.toFixed(6)}) cho cây #${plant.tree_code || plantId}`;
+    } else if (location !== undefined && location) {
+      msg = `Đã lưu vị trí "${location}" cho cây #${plant.tree_code || plantId}`;
+    } else if (latVal === null && lngVal === null) {
+      msg = `Đã xóa tọa độ GPS của cây #${plant.tree_code || plantId}`;
+    }
+
     res.json({
       success: true,
       plant: updated.rows[0],
-      message: latVal !== null && lngVal !== null 
-        ? `Đã lưu tọa độ GPS (${latVal.toFixed(6)}, ${lngVal.toFixed(6)}) cho cây #${plant.tree_code || plantId}`
-        : `Đã xóa tọa độ GPS của cây #${plant.tree_code || plantId}`
+      message: msg
     });
   } catch (err) {
     console.error('GPS update error:', err);

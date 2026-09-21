@@ -41,7 +41,7 @@ import {
   getConditionsFromUI, onNotifyTimeTypeChange, onConditionDeviceChange, 
   onCustomUnitInput 
 } from './modules/settings.js';
-import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag, prevNfcPlant, nextNfcPlant, getNfcCurrentGps, clearNfcGps } from './modules/nfc.js';
+import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactivateNfcTag, prevNfcPlant, nextNfcPlant, getNfcCurrentGps, clearNfcGps, saveNfcLocationManually } from './modules/nfc.js';
 import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-clock.js?v=v1.2.4';
 import { animateValue, triggerPageCountUpAnimations } from './modules/countup.js';
 import { initChibiMascot, onMascotClick, setMascotState } from './modules/mascot-chibi.js';
@@ -346,6 +346,7 @@ window.prevNfcPlant         = prevNfcPlant;
 window.nextNfcPlant         = nextNfcPlant;
 window.getNfcCurrentGps     = getNfcCurrentGps;
 window.clearNfcGps          = clearNfcGps;
+window.saveNfcLocationManually = saveNfcLocationManually;
 
 window.togglePlantMenu      = togglePlantMenu;
 window.closePlantMenu       = closePlantMenu;
