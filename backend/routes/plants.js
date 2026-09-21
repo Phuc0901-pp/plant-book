@@ -7,6 +7,10 @@ const { logAuditAction } = require('./history');
 const jwt = require('jsonwebtoken');
 const nfcSecurity = require('../services/nfcSecurityService');
 const zaloService = require('../services/zaloService');
+const { singleflight } = require('../services/singleflight');
+const { invalidateAndBroadcast } = require('../services/eventBus');
+const { logAudit } = require('../services/auditLogger');
+const { calculateSmartReminders } = require('../services/agriReminder');
 
 const checkTier = require('../middleware/checkTier');
 
@@ -108,89 +112,227 @@ function generatePublicPlantUrl(farmId, plantId, nfcUid) {
 
 router.get('/', auth, async (req, res) => {
   try {
-    const { search, health_status, plant_type, user_id, farm_id } = req.query;
-    let query = `
-      SELECT p.*, ps.name as schema_name, u.full_name as creator_name,
-             f.name as farm_name, f.puc_code as farm_puc_code, f.vietgap_cert_number,
-             COALESCE(fu.full_name, fu_assigned.full_name) as farm_owner_name,
-             COALESCE(fu.id, fu_assigned.id) as farm_owner_id,
-             (SELECT COUNT(*) FROM plant_media pm WHERE pm.plant_id = p.id) as media_count,
-             (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id AND (pl.is_deleted IS NOT TRUE)) as log_count,
-             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_watered,
-             TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_fertilized,
-             CASE 
-               WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
-               THEN (p.phi_until_date - CURRENT_DATE) 
-               ELSE 0 
-              END as phi_remaining_days,
-             CASE 
-               WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
-               THEN 'quarantine' 
-               ELSE 'safe' 
-             END as current_phi_status
-      FROM plants p
-      LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
-      LEFT JOIN users u ON u.id = p.created_by
-      LEFT JOIN farms f ON f.id = p.farm_id
-      LEFT JOIN users fu ON fu.id = f.user_id
-      LEFT JOIN users fu_assigned ON fu_assigned.farm_id = f.id AND fu_assigned.role != 'admin'
-      WHERE 1=1
-    `;
-    const params = [];
-    let idx = 1;
+    const { search, health_status, plant_type, user_id, farm_id, range_min, range_max, chunk_group } = req.query;
 
-    if (req.user.role !== 'admin') {
-      if (req.user.view_plants_scope === 'assigned') {
-        query += ` AND (p.created_by = $${idx} OR p.assigned_to_user_id = $${idx} OR f.user_id = $${idx} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx}))`;
-        params.push(req.user.id);
-        idx++;
-      } else {
-        query += ` AND (
-          f.user_id = $${idx} 
-          OR p.created_by = $${idx} 
-          OR p.assigned_to_user_id = $${idx} 
-          OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${idx} AND is_deleted IS NOT TRUE)
-          OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx})
-        )`;
-        params.push(req.user.id);
+    // Singleflight Cache Key định danh truy vấn
+    const sfKey = `plants:user_${req.user.id}:${farm_id || 'all'}:${range_min || ''}_${range_max || ''}:${chunk_group || ''}:${health_status || ''}:${plant_type || ''}:${search || ''}`;
+
+    const rows = await singleflight.do(sfKey, async () => {
+      let query = `
+        SELECT p.*, ps.name as schema_name, u.full_name as creator_name,
+               f.name as farm_name, f.puc_code as farm_puc_code, f.vietgap_cert_number,
+               COALESCE(fu.full_name, fu_assigned.full_name) as farm_owner_name,
+               COALESCE(fu.id, fu_assigned.id) as farm_owner_id,
+               (SELECT COUNT(*) FROM plant_media pm WHERE pm.plant_id = p.id) as media_count,
+               (SELECT COUNT(*) FROM plant_logs pl WHERE pl.plant_id = p.id AND (pl.is_deleted IS NOT TRUE)) as log_count,
+               TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Tưới nước' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_watered,
+               TO_CHAR((SELECT MAX(log_date) FROM plant_logs WHERE plant_id = p.id AND log_type = 'Bón phân' AND (is_deleted IS NOT TRUE)), 'YYYY-MM-DD') as last_fertilized,
+               CASE 
+                 WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
+                 THEN (p.phi_until_date - CURRENT_DATE) 
+                 ELSE 0 
+                END as phi_remaining_days,
+               CASE 
+                 WHEN p.phi_until_date IS NOT NULL AND p.phi_until_date >= CURRENT_DATE 
+                 THEN 'quarantine' 
+                 ELSE 'safe' 
+               END as current_phi_status
+        FROM plants p
+        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
+        LEFT JOIN users u ON u.id = p.created_by
+        LEFT JOIN farms f ON f.id = p.farm_id
+        LEFT JOIN users fu ON fu.id = f.user_id
+        LEFT JOIN users fu_assigned ON fu_assigned.farm_id = f.id AND fu_assigned.role != 'admin'
+        WHERE (p.deleted_at IS NULL)
+      `;
+      const params = [];
+      let idx = 1;
+
+      if (req.user.role !== 'admin') {
+        if (req.user.view_plants_scope === 'assigned') {
+          query += ` AND (p.created_by = $${idx} OR p.assigned_to_user_id = $${idx} OR f.user_id = $${idx} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx}))`;
+          params.push(req.user.id);
+          idx++;
+        } else {
+          query += ` AND (
+            f.user_id = $${idx} 
+            OR p.created_by = $${idx} 
+            OR p.assigned_to_user_id = $${idx} 
+            OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${idx} AND is_deleted IS NOT TRUE)
+            OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx})
+          )`;
+          params.push(req.user.id);
+          idx++;
+        }
+      }
+
+      if (search) {
+        query += ` AND (p.plant_type ILIKE $${idx} OR p.plant_variety ILIKE $${idx} OR p.location ILIKE $${idx} OR p.tree_code ILIKE $${idx})`;
+        params.push(`%${search}%`);
         idx++;
       }
-    }
+      if (health_status) {
+        query += ` AND p.health_status = $${idx}`;
+        params.push(health_status);
+        idx++;
+      }
+      if (plant_type) {
+        query += ` AND p.plant_type ILIKE $${idx}`;
+        params.push(`%${plant_type}%`);
+        idx++;
+      }
+      if (user_id) {
+        query += ` AND f.user_id = $${idx}`;
+        params.push(parseInt(user_id));
+        idx++;
+      }
+      if (farm_id) {
+        query += ` AND p.farm_id = $${idx}`;
+        params.push(parseInt(farm_id));
+        idx++;
+      }
 
+      // ── Range & Chunk Group Querying (0..20, 21..40, 41..60, 61..80) ──
+      let rMin = null;
+      let rMax = null;
+      if (chunk_group) {
+        const cg = parseInt(chunk_group, 10);
+        if (cg === 1) { rMin = 1; rMax = 20; }
+        else if (cg === 2) { rMin = 21; rMax = 40; }
+        else if (cg === 3) { rMin = 41; rMax = 60; }
+        else if (cg === 4) { rMin = 61; rMax = 80; }
+      } else if (range_min !== undefined || range_max !== undefined) {
+        if (range_min !== undefined && !isNaN(parseInt(range_min, 10))) rMin = parseInt(range_min, 10);
+        if (range_max !== undefined && !isNaN(parseInt(range_max, 10))) rMax = parseInt(range_max, 10);
+      }
 
+      if (rMin !== null && rMax !== null) {
+        query += ` AND (
+          (p.tree_code ~ '^[0-9]+$' AND p.tree_code::int >= $${idx} AND p.tree_code::int <= $${idx + 1})
+          OR (p.id >= $${idx} AND p.id <= $${idx + 1})
+        )`;
+        params.push(rMin, rMax);
+        idx += 2;
+      } else if (rMin !== null) {
+        query += ` AND (
+          (p.tree_code ~ '^[0-9]+$' AND p.tree_code::int >= $${idx})
+          OR (p.id >= $${idx})
+        )`;
+        params.push(rMin);
+        idx++;
+      } else if (rMax !== null) {
+        query += ` AND (
+          (p.tree_code ~ '^[0-9]+$' AND p.tree_code::int <= $${idx})
+          OR (p.id <= $${idx})
+        )`;
+        params.push(rMax);
+        idx++;
+      }
 
-    if (search) {
-      query += ` AND (p.plant_type ILIKE $${idx} OR p.plant_variety ILIKE $${idx} OR p.location ILIKE $${idx} OR p.tree_code ILIKE $${idx})`;
-      params.push(`%${search}%`);
-      idx++;
-    }
-    if (health_status) {
-      query += ` AND p.health_status = $${idx}`;
-      params.push(health_status);
-      idx++;
-    }
-    if (plant_type) {
-      query += ` AND p.plant_type ILIKE $${idx}`;
-      params.push(`%${plant_type}%`);
-      idx++;
-    }
-    if (user_id) {
-      query += ` AND f.user_id = $${idx}`;
-      params.push(parseInt(user_id));
-      idx++;
-    }
-    if (farm_id) {
-      query += ` AND p.farm_id = $${idx}`;
-      params.push(parseInt(farm_id));
-      idx++;
-    }
+      query += ' ORDER BY p.created_at DESC';
+      const result = await pool.query(query, params);
+      return result.rows;
+    });
 
-    query += ' ORDER BY p.created_at DESC';
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
+// ─── GPS Proximity Query (Tìm cây gần vị trí GPS của người dùng) ──────────────
+router.get('/nearby-gps', auth, async (req, res) => {
+  try {
+    const { lat, lng, radius = 500, farm_id } = req.query;
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+    const radiusMeters = parseFloat(radius) || 500;
+
+    if (isNaN(userLat) || isNaN(userLng)) {
+      return res.status(400).json({ error: 'Tọa độ GPS (lat, lng) không hợp lệ.' });
+    }
+
+    const sfKey = `plants:nearby:${userLat.toFixed(5)}_${userLng.toFixed(5)}:${radiusMeters}:${farm_id || 'all'}`;
+
+    const rows = await singleflight.do(sfKey, async () => {
+      let query = `
+        SELECT p.*, f.name as farm_name,
+               (
+                 6371000 * 2 * ASIN(SQRT(
+                   POWER(SIN(RADIANS(p.latitude - $1) / 2), 2) +
+                   COS(RADIANS($1)) * COS(RADIANS(p.latitude)) *
+                   POWER(SIN(RADIANS(p.longitude - $2) / 2), 2)
+                 ))
+               ) AS distance_meters
+        FROM plants p
+        LEFT JOIN farms f ON f.id = p.farm_id
+        WHERE p.latitude IS NOT NULL 
+          AND p.longitude IS NOT NULL
+          AND p.deleted_at IS NULL
+      `;
+      const params = [userLat, userLng];
+      let idx = 3;
+
+      if (farm_id) {
+        query += ` AND p.farm_id = $${idx}`;
+        params.push(parseInt(farm_id, 10));
+        idx++;
+      }
+
+      if (req.user.role !== 'admin') {
+        query += ` AND (f.user_id = $${idx} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${idx}) OR p.created_by = $${idx})`;
+        params.push(req.user.id);
+        idx++;
+      }
+
+      query += ` AND (
+        6371000 * 2 * ASIN(SQRT(
+          POWER(SIN(RADIANS(p.latitude - $1) / 2), 2) +
+          COS(RADIANS($1)) * COS(RADIANS(p.latitude)) *
+          POWER(SIN(RADIANS(p.longitude - $2) / 2), 2)
+        ))
+      ) <= $${idx}`;
+      params.push(radiusMeters);
+
+      query += ` ORDER BY distance_meters ASC LIMIT 100`;
+
+      const result = await pool.query(query, params);
+      return result.rows.map(r => ({
+        ...r,
+        distance_meters: Math.round(parseFloat(r.distance_meters) * 10) / 10
+      }));
+    });
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Nearby GPS error:', err);
+    res.status(500).json({ error: 'Lỗi server khi tìm kiếm cây theo GPS: ' + err.message });
+  }
+});
+
+// ─── Smart Agronomic Reminders (Nhắc việc thông minh theo chu kỳ) ─────────────
+router.get('/smart-reminders', auth, async (req, res) => {
+  try {
+    const { farm_id } = req.query;
+    let plantsQuery = 'SELECT * FROM plants WHERE (deleted_at IS NULL)';
+    const params = [];
+    if (farm_id) {
+      plantsQuery += ' AND farm_id = $1';
+      params.push(parseInt(farm_id, 10));
+    } else if (req.user.role !== 'admin') {
+      plantsQuery += ' AND (created_by = $1 OR farm_id = (SELECT farm_id FROM users WHERE id = $1))';
+      params.push(req.user.id);
+    }
+
+    const plantsRes = await pool.query(plantsQuery, params);
+    const logsRes = await pool.query('SELECT * FROM plant_logs WHERE is_deleted IS NOT TRUE ORDER BY log_date DESC LIMIT 500');
+
+    const reminders = calculateSmartReminders(plantsRes.rows, logsRes.rows);
+    res.json(reminders);
+  } catch (err) {
+    console.error('Smart reminders error:', err);
+    res.status(500).json({ error: 'Lỗi server khi tính toán nhắc việc: ' + err.message });
   }
 });
 
@@ -608,9 +750,23 @@ router.post('/', auth, admin, async (req, res) => {
     await pool.query('UPDATE plants SET public_url = $1 WHERE id = $2', [publicUrl, insertedPlant.id]);
     insertedPlant.public_url = publicUrl;
 
-    // Broadcast WebSocket event
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast('plants_updated');
+    // Ghi nhận Audit Log
+    await logAudit({
+      actionType: 'CREATE_PLANT',
+      tableName: 'plants',
+      recordId: insertedPlant.id,
+      userId: req.user.id,
+      newData: insertedPlant,
+      ipAddress: req.ip,
+      notes: `Tạo mới cây #${insertedPlant.tree_code || insertedPlant.id}`
+    });
+
+    // Invalidate Cache & Broadcast WebSocket event
+    await invalidateAndBroadcast('plants_updated', {
+      plant_id: insertedPlant.id,
+      farm_id: insertedPlant.farm_id,
+      action: 'create'
+    }, ['farms_', 'plants_']);
 
     res.status(201).json(insertedPlant);
   } catch (err) {
@@ -621,6 +777,11 @@ router.post('/', auth, admin, async (req, res) => {
 
 router.put('/:id', auth, admin, async (req, res) => {
   try {
+    const plantId = parseInt(req.params.id, 10);
+    const existingRes = await pool.query('SELECT * FROM plants WHERE id=$1', [plantId]);
+    if (existingRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
+    const oldPlant = existingRes.rows[0];
+
     const { plant_type, plant_variety, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude, tree_code } = req.body;
     const slug = tree_code ? `${req.user.id}_${farm_id || 0}_${tree_code}` : generateSlug(plant_type);
 
@@ -636,18 +797,32 @@ router.put('/:id', auth, admin, async (req, res) => {
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
        tree_code || null,
        slug,
-       req.params.id]
+       plantId]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
 
     const updatedPlant = result.rows[0];
     const publicUrl = generatePublicPlantUrl(updatedPlant.farm_id, updatedPlant.id, updatedPlant.nfc_uid);
     await pool.query('UPDATE plants SET public_url = $1 WHERE id = $2', [publicUrl, updatedPlant.id]);
     updatedPlant.public_url = publicUrl;
 
-    // Broadcast WebSocket event
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast('plants_updated');
+    // Ghi nhận Audit Log
+    await logAudit({
+      actionType: 'UPDATE_PLANT',
+      tableName: 'plants',
+      recordId: plantId,
+      userId: req.user.id,
+      oldData: oldPlant,
+      newData: updatedPlant,
+      ipAddress: req.ip,
+      notes: `Cập nhật thông tin cây #${updatedPlant.tree_code || plantId}`
+    });
+
+    // Invalidate Cache & Broadcast WebSocket event
+    await invalidateAndBroadcast('plants_updated', {
+      plant_id: updatedPlant.id,
+      farm_id: updatedPlant.farm_id,
+      action: 'update'
+    }, ['farms_', 'plants_']);
 
     res.json(updatedPlant);
   } catch (err) {
@@ -1973,19 +2148,94 @@ router.get('/nfc/:uid', async (req, res) => {
   }
 });
 
+// ─── Soft Delete Plant (Chống xóa nhầm & Audit Trail) ────────────────────────
 router.delete('/:id', auth, admin, async (req, res) => {
   try {
-    const mediaResult = await pool.query('SELECT object_name FROM plant_media WHERE plant_id=$1', [req.params.id]);
-    for (const row of mediaResult.rows) {
-      await deleteFile(row.object_name);
+    const plantId = parseInt(req.params.id, 10);
+    const existing = await pool.query('SELECT * FROM plants WHERE id=$1', [plantId]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
     }
-    await pool.query('DELETE FROM plants WHERE id=$1', [req.params.id]);
-    // Broadcast WebSocket event
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast('plants_updated');
+    const oldPlant = existing.rows[0];
 
-    res.json({ message: 'Đã xóa cây.' });
+    // Soft Delete: Đánh dấu deleted_at = NOW()
+    const result = await pool.query(
+      `UPDATE plants SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [plantId]
+    );
+
+    // Ghi nhận Audit Log
+    await logAudit({
+      actionType: 'DELETE_PLANT',
+      tableName: 'plants',
+      recordId: plantId,
+      userId: req.user.id,
+      oldData: oldPlant,
+      newData: { deleted_at: new Date().toISOString() },
+      ipAddress: req.ip,
+      notes: `Xóa mềm cây #${oldPlant.tree_code || plantId}`
+    });
+
+    // Xóa Cache & Broadcast Live Sync
+    await invalidateAndBroadcast('plants_updated', {
+      plant_id: plantId,
+      farm_id: oldPlant.farm_id,
+      action: 'soft_delete'
+    }, ['farms_', 'plants_']);
+
+    res.json({
+      success: true,
+      message: `Đã đưa cây #${oldPlant.tree_code || plantId} vào thùng rác an toàn (có thể khôi phục).`,
+      plant: result.rows[0]
+    });
   } catch (err) {
+    console.error('Delete plant error:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa cây: ' + err.message });
+  }
+});
+
+// ─── Restore Soft-Deleted Plant (Khôi phục cây từ thùng rác) ──────────────────
+router.post('/:id/restore', auth, admin, async (req, res) => {
+  try {
+    const plantId = parseInt(req.params.id, 10);
+    const existing = await pool.query('SELECT * FROM plants WHERE id=$1', [plantId]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+    }
+    const oldPlant = existing.rows[0];
+
+    const result = await pool.query(
+      `UPDATE plants SET deleted_at = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [plantId]
+    );
+
+    await logAudit({
+      actionType: 'RESTORE_PLANT',
+      tableName: 'plants',
+      recordId: plantId,
+      userId: req.user.id,
+      oldData: oldPlant,
+      newData: { deleted_at: null },
+      ipAddress: req.ip,
+      notes: `Khôi phục cây #${oldPlant.tree_code || plantId}`
+    });
+
+    await invalidateAndBroadcast('plants_updated', {
+      plant_id: plantId,
+      farm_id: oldPlant.farm_id,
+      action: 'restore'
+    }, ['farms_', 'plants_']);
+
+    res.json({
+      success: true,
+      message: `Đã khôi phục thành công cây #${oldPlant.tree_code || plantId}!`,
+      plant: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Restore plant error:', err);
+    res.status(500).json({ error: 'Lỗi server khi khôi phục cây: ' + err.message });
+  }
+});
     res.status(500).json({ error: 'Lỗi server.' });
   }
 });

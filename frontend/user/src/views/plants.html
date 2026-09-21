@@ -146,12 +146,40 @@
                   <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count-full">0</strong> cây</span>
                 </div>
               </div>
-              <!-- Thanh tìm kiếm danh sách cây trồng -->
-              <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 12px; padding: 12px 16px 0; flex-wrap:wrap;">
+              <!-- Thanh tìm kiếm danh sách cây trồng & Bộ lọc Phân đoạn Lô cây -->
+              <div class="search-bar" style="display:flex; gap:10px; margin-bottom: 8px; padding: 12px 16px 0; flex-wrap:wrap;">
                 <input type="text" id="user-plant-search" placeholder="🔍 Tìm theo mã cây, giống, loại, vị trí..." oninput="filterUserPlants()" style="flex:2; min-width:160px; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; outline:none; background:#fff;">
                 <select id="user-plant-filter-farm" onchange="filterUserPlants()" style="flex:1; min-width:140px; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; background:#fff; outline:none; cursor:pointer;">
                   <option value="">Tất cả trang trại</option>
                 </select>
+                <button type="button" class="btn btn-sm" id="btn-gps-nearby-radar" onclick="locateNearbyPlantsFromGPS()" title="Tìm các cây xung quanh vị trí GPS hiện tại của tôi" style="background:#f0fdf4; border:1.5px solid #86efac; color:#15803d; font-weight:700; font-size:12px; padding:8px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap;">
+                  <i class="fa-solid fa-radar" style="color:#16a34a;"></i> <span>Radar Cây Gần Tôi</span>
+                </button>
+              </div>
+
+              <!-- ── Pill Filter Lọc Nhanh Phân Đoạn Lô Cây (0-20, 20-40, 40-60, 60-80) ── -->
+              <div id="plant-range-pill-filter" style="display:flex; gap:6px; padding:6px 16px 10px; overflow-x:auto; align-items:center; flex-wrap:nowrap; -webkit-overflow-scrolling:touch;">
+                <span style="font-size:11px; font-weight:800; color:#047857; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; margin-right:4px;">
+                  <i class="fa-solid fa-layer-group"></i> Lô Cây:
+                </span>
+                <button type="button" class="range-pill active" onclick="setPlantRangeFilter('all', this)" data-range="all" style="padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #10b981; background:#10b981; color:#fff; white-space:nowrap; transition:all 0.2s;">
+                  Tất cả cây
+                </button>
+                <button type="button" class="range-pill" onclick="setPlantRangeFilter('1-20', this)" data-range="1-20" style="padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; white-space:nowrap; transition:all 0.2s;">
+                  Cây 1 ➔ 20
+                </button>
+                <button type="button" class="range-pill" onclick="setPlantRangeFilter('21-40', this)" data-range="21-40" style="padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; white-space:nowrap; transition:all 0.2s;">
+                  Cây 21 ➔ 40
+                </button>
+                <button type="button" class="range-pill" onclick="setPlantRangeFilter('41-60', this)" data-range="41-60" style="padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; white-space:nowrap; transition:all 0.2s;">
+                  Cây 41 ➔ 60
+                </button>
+                <button type="button" class="range-pill" onclick="setPlantRangeFilter('61-80', this)" data-range="61-80" style="padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; white-space:nowrap; transition:all 0.2s;">
+                  Cây 61 ➔ 80
+                </button>
+                <span id="range-filter-status" style="font-size:11px; color:#059669; font-weight:700; margin-left:auto; white-space:nowrap; display:none;">
+                  ⚡ Đang lọc phân đoạn
+                </span>
               </div>
               <div style="overflow-x: auto;">
                 <table>

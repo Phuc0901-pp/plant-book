@@ -646,6 +646,30 @@ async function initDB() {
       console.log(`ℹ️  Admin user already exists: ${adminEmail}`);
     }
 
+    // ════════════════ SMART ARCHITECTURE & AUDIT TRAIL ════════════════
+    await client.query(`
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
+      
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id SERIAL PRIMARY KEY,
+        action_type VARCHAR(100) NOT NULL,
+        table_name VARCHAR(100) NOT NULL,
+        record_id VARCHAR(100),
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        old_data JSONB,
+        new_data JSONB,
+        ip_address VARCHAR(100),
+        notes TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_plants_farm_deleted ON plants(farm_id, deleted_at);
+      CREATE INDEX IF NOT EXISTS idx_plants_tree_code ON plants(tree_code);
+      CREATE INDEX IF NOT EXISTS idx_plants_gps ON plants(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_table_record ON audit_logs(table_name, record_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action_type);
+    `);
+
     // Tự động hoán đổi và sửa lỗi tọa độ nếu latitude > 90 (bị lưu ngược với longitude)
     try {
       await client.query(`

@@ -23,6 +23,7 @@ require('./suites/12_soft_delete_and_audit.test');
 require('./suites/13_ai_training_security.test');
 require('./suites/14_data_streaming_and_ingestion.test');
 require('./suites/15_rate_limit_and_anti_freeze.test');
+require('./suites/16_smart_performance_and_sync.test');
 
 async function main() {
   try {

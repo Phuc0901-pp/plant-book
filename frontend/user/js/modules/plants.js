@@ -413,20 +413,136 @@ function _plantRow(p) {
     </tr>`;
 }
 
+// ── Range Filter & GPS Radar State ─────────────────────────────
+let _activeRangeFilter = 'all';
+let _gpsNearbyPlants = null;
+
+/**
+ * Đặt bộ lọc phân đoạn dải cây (1-20, 21-40, 41-60, 61-80)
+ * @param {string} range 'all' | '1-20' | '21-40' | '41-60' | '61-80'
+ * @param {HTMLElement} btn
+ */
+export function setPlantRangeFilter(range, btn) {
+  _activeRangeFilter = range || 'all';
+  _gpsNearbyPlants = null;
+
+  document.querySelectorAll('.range-pill').forEach(el => {
+    el.classList.remove('active');
+    el.style.background = '#f8fafc';
+    el.style.color = '#475569';
+    el.style.borderColor = '#cbd5e1';
+  });
+
+  if (btn) {
+    btn.classList.add('active');
+    btn.style.background = '#10b981';
+    btn.style.color = '#ffffff';
+    btn.style.borderColor = '#10b981';
+  }
+
+  const statusEl = document.getElementById('range-filter-status');
+  if (statusEl) {
+    if (range !== 'all') {
+      statusEl.style.display = 'inline';
+      statusEl.textContent = `⚡ Lô: ${range}`;
+    } else {
+      statusEl.style.display = 'none';
+    }
+  }
+
+  filterUserPlants();
+}
+window.setPlantRangeFilter = setPlantRangeFilter;
+
+/**
+ * Radar định vị và tìm kiếm các cây gần tọa độ GPS của người dùng nhất
+ */
+export async function locateNearbyPlantsFromGPS() {
+  if (!navigator.geolocation) {
+    if (window.toast) window.toast('Trình duyệt không hỗ trợ định vị GPS.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-gps-nearby-radar');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color:#16a34a;"></i> <span>Đang dò GPS...</span>';
+    btn.disabled = true;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const farmId = document.getElementById('user-plant-filter-farm')?.value || (_activeFarmId || '');
+
+      try {
+        const url = `/plants/nearby-gps?lat=${lat}&lng=${lng}&radius=2000${farmId ? `&farm_id=${farmId}` : ''}`;
+        const nearbyPlants = await api(url);
+
+        if (!nearbyPlants || !nearbyPlants.length) {
+          if (window.toast) window.toast(`Không tìm thấy cây nào quanh tọa độ (${lat.toFixed(4)}, ${lng.toFixed(4)}).`, 'warning');
+          _gpsNearbyPlants = null;
+        } else {
+          _gpsNearbyPlants = nearbyPlants;
+          if (window.toast) window.toast(`🛰️ Đã tìm thấy ${nearbyPlants.length} cây gần vị trí bạn nhất!`, 'success');
+        }
+
+        filterUserPlants();
+      } catch (err) {
+        if (window.toast) window.toast('Lỗi truy vấn GPS: ' + err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+        }
+      }
+    },
+    (err) => {
+      if (btn) {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+      let msg = 'Không thể lấy tọa độ GPS.';
+      if (err.code === 1) msg = 'Vui lòng cấp quyền truy cập Vị trí (GPS) trên trình duyệt.';
+      if (window.toast) window.toast(msg, 'warning');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+window.locateNearbyPlantsFromGPS = locateNearbyPlantsFromGPS;
+
 // ── Search / Filter ───────────────────────────────────────────
 
 /**
- * Lọc danh sách cây theo từ khoá nhập vào #user-plant-search.
+ * Lọc danh sách cây theo từ khoá, dải cây (Range) hoặc khoảng cách GPS.
  * Kết quả được render vào bảng đầy đủ.
  */
 export function filterUserPlants() {
   const query  = (document.getElementById('user-plant-search')?.value || '').trim().toLowerCase();
   const farmId = document.getElementById('user-plant-filter-farm')?.value || '';
 
-  let filtered = _plantsCache;
+  let filtered = _gpsNearbyPlants ? [..._gpsNearbyPlants] : [..._plantsCache];
 
   if (farmId) {
     filtered = filtered.filter(p => String(p.farm_id) === farmId);
+  }
+
+  // Lọc theo Dải số thứ tự cây (Range Filter)
+  if (!_gpsNearbyPlants && _activeRangeFilter && _activeRangeFilter !== 'all') {
+    const parts = _activeRangeFilter.split('-');
+    if (parts.length === 2) {
+      const min = parseInt(parts[0], 10);
+      const max = parseInt(parts[1], 10);
+      filtered = filtered.filter(p => {
+        const rawCode = String(p.tree_code || p.id || '').replace(/\D/g, '');
+        const num = parseInt(rawCode, 10);
+        if (!isNaN(num)) {
+          return num >= min && num <= max;
+        }
+        return false;
+      });
+    }
   }
 
   if (query) {

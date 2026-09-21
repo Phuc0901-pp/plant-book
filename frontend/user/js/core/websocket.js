@@ -107,6 +107,8 @@ export function closeWebSocket() {
   }
 }
 
+let _syncDebounceTimer = null;
+
 function handleUserRealtimeEvent(msg) {
   const { event, data } = msg;
 
@@ -116,15 +118,39 @@ function handleUserRealtimeEvent(msg) {
       el.textContent = vTag;
     });
     if (typeof window.showToast === 'function') {
-      window.showToast(`[UPDATED] Sổ Nông đã cập nhật phiên bản mới: ${vTag}!`, 'info');
+      window.showToast(`✨ Sổ Nông vừa cập nhật phiên bản mới: ${vTag}!`, 'info');
     }
   }
 
   if (event === 'plants_updated' || event === 'farms_updated' || event === 'supplies_updated' || event === 'new_care_log') {
-    console.log('[RELOAD] Live refresh from server event:', event);
-    if (typeof loadUserDashboard === 'function') loadUserDashboard();
-    if (typeof window.loadSupplies === 'function') window.loadSupplies();
-    if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
-    if (typeof window.refreshCareSuppliesDropdowns === 'function') window.refreshCareSuppliesDropdowns(true);
+    console.log('⚡ [LiveSync] Nhận tín hiệu thay đổi dữ liệu thời gian thực:', event, data);
+    
+    // Debounce 300ms để gom các event liên tiếp thành 1 lần làm mới ngầm duy nhất
+    if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
+    _syncDebounceTimer = setTimeout(async () => {
+      // 1. Làm mới dữ liệu ngầm (Silent Swap - Không chớp màn hình, không cần F5)
+      if (typeof loadUserDashboard === 'function') {
+        await loadUserDashboard(true /* isSilent */);
+      }
+      if (typeof window.loadSupplies === 'function') {
+        window.loadSupplies();
+      }
+      if (typeof window.loadSuppliesAnalytics === 'function') {
+        window.loadSuppliesAnalytics();
+      }
+      if (typeof window.refreshCareSuppliesDropdowns === 'function') {
+        window.refreshCareSuppliesDropdowns(true);
+      }
+
+      // 2. Hiển thị thông báo Toast tinh tế
+      if (typeof window.toast === 'function' && event === 'plants_updated' && data?.action) {
+        let actionMsg = 'Dữ liệu cây trồng vừa được đồng bộ tự động';
+        if (data.action === 'reorder_gps') actionMsg = '✨ Đã tự động đồng bộ mã số cây mới theo GPS';
+        else if (data.action === 'create') actionMsg = '🌱 Đã nhận thêm cây trồng mới vào hệ thống';
+        else if (data.action === 'soft_delete') actionMsg = '🗑️ Một cây trồng vừa được đưa vào thùng rác';
+        else if (data.action === 'restore') actionMsg = '♻️ Một cây trồng vừa được khôi phục';
+        window.toast(`⚡ [Live Sync] ${actionMsg}`, 'info');
+      }
+    }, 300);
   }
 }
