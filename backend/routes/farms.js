@@ -374,14 +374,14 @@ function generateDefaultFarmIoTData(farmId) {
   };
 
   const today = new Date();
-  const dayNames = ['Chá»§ Nháº­t', 'Thá»© Hai', 'Thá»© Ba', 'Thá»© TÆ°', 'Thá»© NÄƒm', 'Thá»© SÃ¡u', 'Thá»© Báº£y'];
+  const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
   const weatherTemplates = [
-    { icon: 'fa-sun', color: '#f59e0b', temp: '25Â°C - 33Â°C', rain: '10%', humidity: `${airHumidity}%`, wind: `${windSpeed} km/h`, advice: 'â˜€ï¸ Náº¯ng áº¥m: ThÃ­ch há»£p bÃ³n phÃ¢n rá»… & tÆ°á»›i nÆ°á»›c buá»•i sÃ¡ng.' },
-    { icon: 'fa-cloud-sun-rain', color: '#0284c7', temp: '24Â°C - 31Â°C', rain: '65%', humidity: '82%', wind: '15 km/h', advice: 'ðŸŒ¦ï¸ MÆ°a rÃ o ráº£i rÃ¡c: Háº¡n cháº¿ phun thuá»‘c sÃ¢u vÃ¬ dá»… bá»‹ rá»­a trÃ´i.' },
-    { icon: 'fa-cloud-sun', color: '#059669', temp: '23Â°C - 30Â°C', rain: '20%', humidity: '75%', wind: '10 km/h', advice: 'â›… Nhiá»u mÃ¢y mÃ¡t: Thá»i Ä‘iá»ƒm tá»‘t nháº¥t Ä‘á»ƒ lÃ m cá» & táº¡o tÃ¡n cÃ¢y.' },
-    { icon: 'fa-cloud-sun', color: '#eab308', temp: '25Â°C - 32Â°C', rain: '15%', humidity: '68%', wind: '14 km/h', advice: 'ðŸŒ¤ï¸ Náº¯ng giÃ¡n Ä‘oáº¡n: ThÃ­ch há»£p phun phÃ¢n bÃ³n lÃ¡ & vi lÆ°á»£ng.' },
-    { icon: 'fa-cloud-showers-heavy', color: '#7c3aed', temp: '23Â°C - 29Â°C', rain: '85%', humidity: '88%', wind: '22 km/h', advice: 'â›ˆï¸ MÆ°a giÃ´ng chiá»u: KhÆ¡i thÃ´ng rÃ£nh thÃ¡o nÆ°á»›c trÃ¡nh ngáº­p Ãºng.' },
-    { icon: 'fa-sun', color: '#ea580c', temp: '26Â°C - 34Â°C', rain: '5%', humidity: '62%', wind: '11 km/h', advice: 'â˜€ï¸ Náº¯ng rá»±c rá»¡: Duy trÃ¬ há»‡ thá»‘ng tÆ°á»›i nhá» giá»t tá»± Ä‘á»™ng.' }
+    { icon: 'fa-sun', color: '#f59e0b', temp: '25°C - 33°C', rain: '10%', humidity: `${airHumidity}%`, wind: `${windSpeed} km/h`, advice: '☀️ Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.' },
+    { icon: 'fa-cloud-sun-rain', color: '#0284c7', temp: '24°C - 31°C', rain: '65%', humidity: '82%', wind: '15 km/h', advice: '🌦️ Mưa rào rải rác: Hạn chế phun thuốc sâu vì dễ bị rửa trôi.' },
+    { icon: 'fa-cloud-sun', color: '#059669', temp: '23°C - 30°C', rain: '20%', humidity: '75%', wind: '10 km/h', advice: '⛅ Nhiều mây mát: Thời điểm tốt nhất để làm cỏ & tạo tán cây.' },
+    { icon: 'fa-cloud-sun', color: '#eab308', temp: '25°C - 32°C', rain: '15%', humidity: '68%', wind: '14 km/h', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng.' },
+    { icon: 'fa-cloud-showers-heavy', color: '#7c3aed', temp: '23°C - 29°C', rain: '85%', humidity: '88%', wind: '22 km/h', advice: '⛈️ Mưa dông chiều: Khơi thông rãnh tháo nước tránh ngập úng.' },
+    { icon: 'fa-sun', color: '#ea580c', temp: '26°C - 34°C', rain: '5%', humidity: '62%', wind: '11 km/h', advice: '☀️ Nắng rực rỡ: Duy trì hệ thống tưới nhỏ giọt tự động.' }
   ];
 
   const weather_forecast = weatherTemplates.map((w, i) => {
@@ -389,7 +389,7 @@ function generateDefaultFarmIoTData(farmId) {
     d.setDate(today.getDate() + i);
     return {
       date: d.toISOString().split('T')[0],
-      day_label: i === 0 ? 'HÃ´m nay' : dayNames[d.getDay()],
+      day_label: i === 0 ? 'Hôm nay' : dayNames[d.getDay()],
       date_str: `${d.getDate()}/${d.getMonth() + 1}`,
       ...w
     };
