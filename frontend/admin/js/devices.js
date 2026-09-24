@@ -13,6 +13,8 @@ let currentSoilDepth = 10;
 let iotCurrentTab = 'weather';
 let weatherChartInstance = null;
 let _cachedWeatherFarmId = null;
+let _cachedWeatherData = null;
+let _selectedHourlyDayMode = 'live24';
 
 // WMO Weather Interpretation Codes Map to Lucide icons
 const WMO_WEATHER_MAP = {
@@ -159,7 +161,7 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
   }
 
   try {
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,precipitation_probability,precipitation,weather_code,surface_pressure,et0_fao_evapotranspiration,soil_temperature_0cm,soil_temperature_18cm,soil_moisture_0_to_1cm,soil_moisture_1_to_3cm,direct_normal_irradiance&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,rain_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration,shortwave_radiation_sum&timezone=auto`;
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,surface_pressure,et0_fao_evapotranspiration,soil_temperature_0cm,soil_temperature_18cm,soil_moisture_0_to_1cm,soil_moisture_1_to_3cm,wind_speed_10m,wind_gusts_10m,uv_index,direct_normal_irradiance&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,rain_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration,shortwave_radiation_sum&forecast_days=7&timezone=auto`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 7000);
@@ -168,6 +170,7 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
 
     if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
     const data = await res.json();
+    _cachedWeatherData = data;
 
     const cur = data.current || {};
     const daily = data.daily || {};
@@ -234,7 +237,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     }
 
     // 2. Render 6 Specialized AgTech Telemetry Cards
-    // Card 1: Wind & Wind Gusts
     const windEl = document.getElementById('iot-weather-wind');
     if (windEl) {
       windEl.innerHTML = cur.wind_speed_10m !== undefined && cur.wind_speed_10m !== null
@@ -254,7 +256,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       windGustsEl.textContent = todayWindGusts !== null ? `Gió giật max: ${todayWindGusts} km/h` : 'Gió giật max: -- km/h';
     }
 
-    // Card 2: Rain & Rain Probability & 24h Rain Sum
     const rainEl = document.getElementById('iot-weather-rain');
     if (rainEl) {
       rainEl.innerHTML = cur.precipitation !== undefined && cur.precipitation !== null
@@ -272,7 +273,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       rainSumEl.textContent = `Tổng mưa 24h: ${todayRainSum !== null ? todayRainSum + ' mm' : '0 mm'}`;
     }
 
-    // Card 3: Humidity & Dew Point
     const humEl = document.getElementById('iot-weather-humidity');
     if (humEl) {
       humEl.innerHTML = cur.relative_humidity_2m !== undefined && cur.relative_humidity_2m !== null
@@ -290,7 +290,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       dewPointEl.textContent = `Điểm sương: ${curDewPoint !== null ? curDewPoint + '°C' : '--°C'}`;
     }
 
-    // Card 4: Evapotranspiration ET0 & Irrigation Recommendation
     const et0El = document.getElementById('iot-weather-et0');
     if (et0El) {
       et0El.innerHTML = todayEt0 !== null ? `${todayEt0} <small style="font-size:12px; color:#64748b;">mm/ngày</small>` : '<span style="color:#94a3b8;">null</span>';
@@ -308,7 +307,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       irrigEl.textContent = `Tưới bù: ~${irrigationLiters} Lít/cây`;
     }
 
-    // Card 5: UV Index & Solar Radiation
     const uvEl = document.getElementById('iot-weather-uv');
     const uvVal = cur.uv_index !== undefined && cur.uv_index !== null ? cur.uv_index : ((daily.uv_index_max && daily.uv_index_max[0]) || 0);
     if (uvEl) {
@@ -330,7 +328,6 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       solarRadEl.textContent = curSolarRad !== null ? `Bức xạ: ${curSolarRad} W/m²` : 'Bức xạ: -- W/m²';
     }
 
-    // Card 6: Satellite Soil & Pressure
     const soilMoistEl = document.getElementById('iot-weather-soil-moist');
     if (soilMoistEl) {
       soilMoistEl.textContent = `${satelliteSoilMoist}%`;
@@ -396,11 +393,11 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       timeEl.textContent = `Cập nhật lúc ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
     }
 
-    // 4. Render Hourly Temperature Chart (Next 8 hours)
-    renderWeatherHourlyChart(data.hourly);
+    // 4. Render Dynamic 24-Hour Continuous Hourly Timeline & Chart
+    render24HourHourlySection(hourly, daily, _selectedHourlyDayMode);
 
     // 5. Render 7-Day Forecast Cards
-    render7DayForecast(data.daily);
+    render7DayForecast(daily);
 
   } catch (err) {
     console.warn('[devices.js] Lỗi tải Open-Meteo API:', err.message);
@@ -412,7 +409,270 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
   }
 }
 
-// Render 7-Day Forecast Cards with AgTech metrics & actionable crop advisories
+// Render 24-Hour Continuous Real-time Hourly Section (Filter Pills + Chart + Scrollable Cards)
+function render24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24') {
+  if (!hourlyData || !hourlyData.time || !Array.isArray(hourlyData.time) || hourlyData.time.length === 0) {
+    const track = document.getElementById('iot-24h-hourly-track');
+    if (track) track.innerHTML = '<div style="padding:16px; text-align:center; color:#94a3b8; font-size:12px;">Chưa nhận được dữ liệu 24 khung giờ (null).</div>';
+    return;
+  }
+
+  _selectedHourlyDayMode = selectedMode;
+
+  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+  // 1. Render Day Selector Pills
+  const pillsContainer = document.getElementById('iot-hourly-day-pills');
+  if (pillsContainer && dailyData && dailyData.time) {
+    let pillsHtml = `
+      <button type="button" class="btn btn-sm ${selectedMode === 'live24' ? 'active' : ''}" onclick="selectHourlyForecastDay('live24')" style="padding:4px 10px; font-size:11.5px; font-weight:800; border-radius:8px; white-space:nowrap; cursor:pointer; ${selectedMode === 'live24' ? 'background:#059669; color:#ffffff; border:1px solid #059669; box-shadow:0 1px 4px rgba(5,150,105,0.25);' : 'background:#f8fafc; color:#475569; border:1px solid #cbd5e1;'}">
+        <i data-lucide="clock" class="lucide-xs"></i> 24h Tiếp Theo (Live)
+      </button>
+    `;
+
+    const dayCount = Math.min(dailyData.time.length, 7);
+    for (let i = 0; i < dayCount; i++) {
+      const d = new Date(dailyData.time[i]);
+      let dayName = i === 0 ? 'Hôm nay' : i === 1 ? 'Ngày mai' : daysOfWeek[d.getDay()];
+      const isAct = selectedMode === `day_${i}`;
+      pillsHtml += `
+        <button type="button" class="btn btn-sm ${isAct ? 'active' : ''}" onclick="selectHourlyForecastDay('day_${i}')" style="padding:4px 10px; font-size:11.5px; font-weight:700; border-radius:8px; white-space:nowrap; cursor:pointer; ${isAct ? 'background:#059669; color:#ffffff; border:1px solid #059669; box-shadow:0 1px 4px rgba(5,150,105,0.25);' : 'background:#f8fafc; color:#475569; border:1px solid #cbd5e1;'}">
+          ${dayName} (${d.getDate()}/${d.getMonth() + 1})
+        </button>
+      `;
+    }
+    pillsContainer.innerHTML = pillsHtml;
+  }
+
+  // 2. Determine 24-hour Slice Range
+  let startIdx = 0;
+  let viewTitleStr = '';
+
+  if (selectedMode === 'live24') {
+    const nowIso = new Date().toISOString().slice(0, 13);
+    let curIdx = hourlyData.time.findIndex(t => t.startsWith(nowIso));
+    if (curIdx === -1) curIdx = 0;
+    // Start from immediate next hour forward (e.g. 4 PM -> 5 PM)
+    startIdx = curIdx + 1;
+    if (startIdx >= hourlyData.time.length) startIdx = curIdx;
+
+    const startObj = new Date(hourlyData.time[startIdx]);
+    const endObj = new Date(hourlyData.time[Math.min(startIdx + 23, hourlyData.time.length - 1)]);
+    viewTitleStr = `Dự báo 24 giờ liên tục từ <strong>${startObj.getHours()}:00 ${startObj.getDate()}/${startObj.getMonth() + 1}</strong> đến <strong>${endObj.getHours()}:00 ${endObj.getDate()}/${endObj.getMonth() + 1}</strong> (Thời gian thực)`;
+  } else {
+    const dayIdx = parseInt(selectedMode.replace('day_', ''), 10) || 0;
+    startIdx = dayIdx * 24;
+    if (startIdx >= hourlyData.time.length) startIdx = 0;
+    const targetDate = new Date(hourlyData.time[startIdx]);
+    let dayLabel = dayIdx === 0 ? 'Hôm nay' : dayIdx === 1 ? 'Ngày mai' : daysOfWeek[targetDate.getDay()];
+    viewTitleStr = `Dự báo trọn vẹn 24 khung giờ của <strong>${dayLabel} (${targetDate.toLocaleDateString('vi-VN')})</strong> (00:00 - 23:00)`;
+  }
+
+  const titleEl = document.getElementById('iot-hourly-view-title');
+  if (titleEl) titleEl.innerHTML = viewTitleStr;
+
+  const endIdx = Math.min(startIdx + 24, hourlyData.time.length);
+  const sliceTimes = hourlyData.time.slice(startIdx, endIdx);
+  const sliceTemps = hourlyData.temperature_2m ? hourlyData.temperature_2m.slice(startIdx, endIdx) : [];
+  const sliceAppTemps = hourlyData.apparent_temperature ? hourlyData.apparent_temperature.slice(startIdx, endIdx) : sliceTemps;
+  const sliceRainProbs = hourlyData.precipitation_probability ? hourlyData.precipitation_probability.slice(startIdx, endIdx) : [];
+  const sliceRainSums = hourlyData.precipitation ? hourlyData.precipitation.slice(startIdx, endIdx) : [];
+  const sliceWmoCodes = hourlyData.weather_code ? hourlyData.weather_code.slice(startIdx, endIdx) : [];
+  const sliceWinds = hourlyData.wind_speed_10m ? hourlyData.wind_speed_10m.slice(startIdx, endIdx) : [];
+  const sliceWindGusts = hourlyData.wind_gusts_10m ? hourlyData.wind_gusts_10m.slice(startIdx, endIdx) : [];
+  const sliceEt0s = hourlyData.et0_fao_evapotranspiration ? hourlyData.et0_fao_evapotranspiration.slice(startIdx, endIdx) : [];
+
+  // 3. Render Dual-Axis Chart.js
+  renderWeatherHourlyChartData(sliceTimes, sliceTemps, sliceRainProbs, sliceWinds);
+
+  // 4. Render Scrollable 24-Hour Hourly Cards Track
+  const track = document.getElementById('iot-24h-hourly-track');
+  if (track) {
+    let cardsHtml = '';
+    const firstDateDay = sliceTimes.length > 0 ? new Date(sliceTimes[0]).getDate() : null;
+
+    for (let i = 0; i < sliceTimes.length; i++) {
+      const dObj = new Date(sliceTimes[i]);
+      const hourNum = dObj.getHours();
+      const hourLabel = (hourNum < 10 ? '0' : '') + hourNum + ':00';
+      const isNextDay = firstDateDay !== null && dObj.getDate() !== firstDateDay;
+
+      const code = sliceWmoCodes[i] !== undefined ? sliceWmoCodes[i] : 0;
+      const wmo = getWmoDetails(code);
+      const temp = sliceTemps[i] !== undefined ? Math.round(sliceTemps[i]) : '--';
+      const appT = sliceAppTemps[i] !== undefined ? Math.round(sliceAppTemps[i]) : temp;
+      const rainP = sliceRainProbs[i] !== undefined ? sliceRainProbs[i] : 0;
+      const rainM = sliceRainSums[i] !== undefined ? sliceRainSums[i] : 0;
+      const wind = sliceWinds[i] !== undefined ? Math.round(sliceWinds[i]) : 0;
+      const gusts = sliceWindGusts[i] !== undefined ? Math.round(sliceWindGusts[i]) : null;
+      const et0 = sliceEt0s[i] !== undefined ? (Math.round(sliceEt0s[i] * 10) / 10) : null;
+
+      // Spray Safety Assessment for this specific hour
+      let sprayBadge = '<span style="font-size:10px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 6px; border-radius:6px; display:inline-block;">🟢 Phun tốt</span>';
+      if (rainP >= 50 || wind >= 25 || (gusts && gusts >= 35)) {
+        sprayBadge = '<span style="font-size:10px; font-weight:800; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; padding:2px 6px; border-radius:6px; display:inline-block;">🔴 Không phun</span>';
+      } else if (rainP >= 25 || wind >= 15) {
+        sprayBadge = '<span style="font-size:10px; font-weight:800; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 6px; border-radius:6px; display:inline-block;">🟡 Thận trọng</span>';
+      }
+
+      cardsHtml += `
+        <div style="min-width:138px; max-width:142px; background:#ffffff; border:1.5px solid ${i === 0 ? '#059669' : '#e2e8f0'}; border-radius:12px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.02); flex-shrink:0; transition:transform 0.15s ease;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:12.5px; font-weight:900; color:#0f172a; background:#f1f5f9; padding:2px 6px; border-radius:6px;">${hourLabel}</span>
+              ${isNextDay ? '<span style="font-size:9.5px; font-weight:800; color:#059669; background:#ecfdf5; padding:1px 4px; border-radius:4px;">+1d</span>' : ''}
+            </div>
+
+            <div style="text-align:center; padding:6px 0 4px;">
+              <i data-lucide="${wmo.icon}" class="lucide-sm" style="color:${wmo.color};"></i>
+              <div style="font-size:18px; font-weight:900; color:#0f172a; margin-top:2px;">${temp}°C</div>
+              <div style="font-size:10.5px; color:#64748b;">(Cảm giác ${appT}°)</div>
+            </div>
+
+            <div style="font-size:11px; color:#475569; display:flex; flex-direction:column; gap:3px; background:#f8fafc; padding:6px 8px; border-radius:6px; margin:4px 0 6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="display:inline-flex; align-items:center; gap:3px; color:#0284c7;"><i data-lucide="cloud-rain" class="lucide-xs"></i> Mưa:</span>
+                <strong style="color:#0369a1;">${rainP}%${rainM > 0 ? ` (${rainM}mm)` : ''}</strong>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="display:inline-flex; align-items:center; gap:3px; color:#64748b;"><i data-lucide="wind" class="lucide-xs"></i> Gió:</span>
+                <strong>${wind}km/h</strong>
+              </div>
+              ${et0 !== null ? `
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="display:inline-flex; align-items:center; gap:3px; color:#16a34a;"><i data-lucide="sprout" class="lucide-xs"></i> ET₀:</span>
+                <strong style="color:#15803d;">${et0}mm</strong>
+              </div>` : ''}
+            </div>
+          </div>
+
+          <div style="text-align:center; padding-top:2px;">
+            ${sprayBadge}
+          </div>
+        </div>
+      `;
+    }
+    track.innerHTML = cardsHtml;
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+// Select Hourly Forecast Day & Re-render
+function selectHourlyForecastDay(dayMode) {
+  _selectedHourlyDayMode = dayMode;
+  if (_cachedWeatherData && _cachedWeatherData.hourly && _cachedWeatherData.daily) {
+    render24HourHourlySection(_cachedWeatherData.hourly, _cachedWeatherData.daily, dayMode);
+    render7DayForecast(_cachedWeatherData.daily);
+  }
+}
+
+// Scroll Horizontal 24-Hour Hourly Cards Track
+function scrollHourlyTrack(direction) {
+  const track = document.getElementById('iot-24h-hourly-track');
+  if (!track) return;
+  const scrollAmount = direction === 'left' ? -340 : 340;
+  track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+}
+
+// Render Weather Hourly Dual-Axis Line & Bar Chart (24 points)
+function renderWeatherHourlyChartData(times, temps, rainProbs, winds) {
+  const canvas = document.getElementById('weather-hourly-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const labels = times.map(t => {
+    const d = new Date(t);
+    const h = d.getHours();
+    return (h < 10 ? '0' : '') + h + ':00';
+  });
+
+  if (weatherChartInstance) {
+    weatherChartInstance.destroy();
+    weatherChartInstance = null;
+  }
+
+  weatherChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Nhiệt độ (°C)',
+          data: temps.map(v => Math.round(v)),
+          borderColor: '#059669',
+          backgroundColor: 'rgba(5, 150, 105, 0.08)',
+          borderWidth: 2.5,
+          pointRadius: 3.5,
+          pointBackgroundColor: '#059669',
+          tension: 0.35,
+          fill: true,
+          yAxisID: 'yTemp'
+        },
+        {
+          label: 'Xác suất mưa (%)',
+          data: rainProbs,
+          borderColor: '#0284c7',
+          backgroundColor: 'rgba(2, 132, 199, 0.15)',
+          borderWidth: 1.8,
+          borderDash: [4, 4],
+          pointRadius: 3,
+          pointBackgroundColor: '#0284c7',
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'yRain'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { boxWidth: 10, font: { size: 10.5, weight: '700' }, color: '#475569' }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}${ctx.datasetIndex === 0 ? '°C' : '%'}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', font: { size: 10, weight: '700' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 },
+          grid: { display: false }
+        },
+        yTemp: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: { display: true, text: 'Nhiệt độ (°C)', color: '#059669', font: { size: 10, weight: '700' } },
+          ticks: { color: '#059669', font: { size: 10 } },
+          grid: { color: '#f1f5f9' }
+        },
+        yRain: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          min: 0,
+          max: 100,
+          title: { display: true, text: 'Mưa (%)', color: '#0284c7', font: { size: 10, weight: '700' } },
+          ticks: { color: '#0284c7', font: { size: 10 }, stepSize: 25 },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
+}
+
+// Render 7-Day Forecast Cards with AgTech metrics & interactive 24-hour hour trigger
 function render7DayForecast(dailyData) {
   const container = document.getElementById('iot-7day-forecast-list');
   if (!container) return;
@@ -443,6 +703,8 @@ function render7DayForecast(dailyData) {
     const windMax = dailyData.wind_speed_10m_max ? Math.round(dailyData.wind_speed_10m_max[i]) : null;
     const windGusts = dailyData.wind_gusts_10m_max ? Math.round(dailyData.wind_gusts_10m_max[i]) : null;
 
+    const isSelected = _selectedHourlyDayMode === `day_${i}`;
+
     // Actionable Agri-Advisory Tag
     let agriActionChip = '';
     if (rainProb >= 60 || rainSum >= 15) {
@@ -456,10 +718,11 @@ function render7DayForecast(dailyData) {
     }
 
     html += `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:${i === 0 ? '#ecfdf5' : '#f8fafc'}; border-radius:10px; font-size:12.5px; border:1px solid ${i === 0 ? '#a7f3d0' : '#e2e8f0'}; transition:all 0.15s ease; gap:8px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:center; gap:8px; min-width:110px;">
+      <div onclick="selectHourlyForecastDay('day_${i}')" style="display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:${isSelected ? '#ecfdf5' : (i === 0 ? '#f0fdf4' : '#f8fafc')}; border-radius:10px; font-size:12.5px; border:1.5px solid ${isSelected ? '#059669' : (i === 0 ? '#a7f3d0' : '#e2e8f0')}; transition:all 0.15s ease; gap:8px; flex-wrap:wrap; cursor:pointer; box-shadow:${isSelected ? '0 2px 8px rgba(5,150,105,0.15)' : 'none'};" title="Nhấp để xem chi tiết 24 khung giờ của ${dayLabel}">
+        <div style="display:flex; align-items:center; gap:8px; min-width:120px;">
           <strong style="color:#0f172a; font-weight:800;">${dayLabel}</strong>
           <span style="font-size:11px; color:#64748b;">(${dateStr})</span>
+          ${isSelected ? '<span style="font-size:10px; font-weight:800; color:#059669; background:#d1fae5; padding:1px 6px; border-radius:10px;">Đang xem</span>' : ''}
         </div>
         <div style="display:flex; align-items:center; gap:6px; font-weight:700; color:${wmo.color}; flex:1; justify-content:center; flex-wrap:wrap;">
           <i data-lucide="${wmo.icon}" class="lucide-sm"></i>
@@ -469,8 +732,13 @@ function render7DayForecast(dailyData) {
           ${et0 !== null ? `<span style="font-size:10.5px; color:#059669; background:#d1fae5; padding:1px 5px; border-radius:6px; font-weight:700;">ET₀: ${et0}mm</span>` : ''}
           ${agriActionChip}
         </div>
-        <div style="font-weight:800; color:#0f172a; text-align:right; min-width:70px;">
-          <span>${tMax}°</span> <span style="color:#94a3b8; font-weight:600; font-size:11.5px;">/ ${tMin}°</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="font-weight:800; color:#0f172a; text-align:right; min-width:65px;">
+            <span>${tMax}°</span> <span style="color:#94a3b8; font-weight:600; font-size:11.5px;">/ ${tMin}°</span>
+          </div>
+          <button type="button" class="btn btn-sm" style="padding:2px 8px; font-size:10.5px; font-weight:800; border-radius:6px; background:${isSelected ? '#059669' : '#f1f5f9'}; color:${isSelected ? '#ffffff' : '#0284c7'}; border:1px solid ${isSelected ? '#059669' : '#cbd5e1'};">
+            <i data-lucide="clock" class="lucide-xs"></i> 24h
+          </button>
         </div>
       </div>
     `;
@@ -567,6 +835,11 @@ function renderNullWeather(farmDisplayName = '') {
   if (weatherChartInstance) {
     weatherChartInstance.destroy();
     weatherChartInstance = null;
+  }
+
+  const track = document.getElementById('iot-24h-hourly-track');
+  if (track) {
+    track.innerHTML = '<div style="padding:16px; text-align:center; color:#94a3b8; font-size:12px; width:100%;">Chưa nhận được dữ liệu 24 khung giờ (null).</div>';
   }
 
   const container = document.getElementById('iot-7day-forecast-list');
@@ -1022,4 +1295,7 @@ window.filterDevices = filterDevices;
 window.filterDbDevices = filterDbDevices;
 window.renderDevices = renderDevices;
 window.updateIotKpis = updateIotKpis;
+window.selectHourlyForecastDay = selectHourlyForecastDay;
+window.scrollHourlyTrack = scrollHourlyTrack;
+window.render24HourHourlySection = render24HourHourlySection;
 

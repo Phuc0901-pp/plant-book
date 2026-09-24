@@ -1341,21 +1341,48 @@
 
             </div>
 
-            <!-- SECTION 2: DỰ BÁO THỜI TIẾT 6 NGÀY TỚI DÀNH CHO NÔNG NGHIỆP -->
-            <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;">
-                <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                  <i data-lucide="cloud-sun-rain" class="lucide-sm" style="color:#0284c7;"></i> Dự báo Thời tiết 6 ngày tới & Khuyến nghị Canh tác
-                </h3>
+            <!-- SECTION 2: DỰ BÁO THỜI TIẾT 7 NGÀY & 24 KHUNG GIỜ CHI TIẾT (OPEN-METEO LIVE) -->
+            <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03); display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:10px;">
+                <div>
+                  <h3 style="margin:0; font-size:16.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="cloud-sun-rain" class="lucide-sm" style="color:#0284c7;"></i> Dự báo Nông vụ 7 ngày tới (Open-Meteo Live)
+                  </h3>
+                  <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Nhấp vào từng ngày để xem trọn vẹn 24 khung giờ dự báo thời gian thực</p>
+                </div>
                 <span id="iot-weather-source-badge" style="font-size:12px; color:#047857; font-weight:700; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;">
-                  <i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Khí tượng Vệ tinh Open-Meteo (Live GPS)
+                  <i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Khí tượng Vệ tinh Live GPS
                 </span>
               </div>
 
-              <!-- 6 Days Weather Grid Cards -->
-              <div id="iot-weather-forecast-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px;">
-                <!-- JS dynamic render 6 days weather -->
+              <!-- 7 Days Weather Grid Cards -->
+              <div id="iot-weather-forecast-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px;">
+                <!-- JS dynamic render 7 days weather -->
               </div>
+
+              <!-- 24-HOUR HOURLY SECTION FOR USER PORTAL -->
+              <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; margin-top:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                  <div>
+                    <h4 style="margin:0; font-size:14px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
+                      <i data-lucide="clock" class="lucide-sm" style="color:#059669;"></i> Chi tiết 24 khung giờ dự báo
+                    </h4>
+                    <span id="user-iot-hourly-title" style="font-size:11.5px; color:#64748b; font-weight:600;">Dự báo liên tục từ giờ kế tiếp</span>
+                  </div>
+                  <!-- Day filter pills for User Portal -->
+                  <div id="user-iot-hourly-day-pills" style="display:flex; gap:6px; overflow-x:auto; max-width:100%; padding-bottom:2px;" class="scroll-pills">
+                    <!-- Dynamic rendered pills -->
+                  </div>
+                </div>
+
+                <!-- Scrollable 24-Hour Cards Track -->
+                <div id="user-iot-24h-hourly-track" style="display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; scroll-behavior:smooth;">
+                  <div style="padding:16px; text-align:center; color:#64748b; font-size:12px; width:100%;">
+                    <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải 24 khung giờ dự báo...
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div><!-- end farm-subtab-pane-iot -->
         </div><!-- end farm-detail-view -->

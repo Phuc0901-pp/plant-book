@@ -1108,21 +1108,26 @@ const WMO_FORECAST_CONFIG = {
   99: { icon: 'cloud-lightning', color: '#991b1b', bg: '#fef2f2', border: '#f87171', label: 'Dông lốc nguy hiểm', advice: '⛔ Dông bão mạnh: Tạm dừng toàn bộ hoạt động ngoài đồng ruộng để an toàn.' }
 };
 
+let _userCachedForecastData = null;
+let _userSelectedHourlyDayMode = 'live24';
+
 export async function fetchLiveOpenMeteoForecast(lat, lng) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,relative_humidity_2m_mean,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,surface_pressure,et0_fao_evapotranspiration,soil_temperature_0cm,soil_temperature_18cm,soil_moisture_0_to_1cm,soil_moisture_1_to_3cm,wind_speed_10m,wind_gusts_10m,uv_index,direct_normal_irradiance&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,rain_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration,shortwave_radiation_sum&forecast_days=7&timezone=auto`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    _userCachedForecastData = data;
+
     const daily = data.daily || {};
     if (!daily.time || !Array.isArray(daily.time)) return null;
 
     const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
     const forecastList = [];
-    const count = Math.min(daily.time.length, 6);
+    const count = Math.min(daily.time.length, 7);
 
     for (let i = 0; i < count; i++) {
       const dateStr = daily.time[i];
@@ -1149,6 +1154,7 @@ export async function fetchLiveOpenMeteoForecast(lat, lng) {
 
       forecastList.push({
         date: dateStr,
+        day_index: i,
         day_label: i === 0 ? 'Hôm nay' : dayNames[d.getDay()],
         date_str: `${d.getDate()}/${d.getMonth() + 1}`,
         icon: cfg.icon,
@@ -1166,6 +1172,10 @@ export async function fetchLiveOpenMeteoForecast(lat, lng) {
         is_live_meteo: true
       });
     }
+
+    // Render 24-Hour Continuous Timeline for User Portal
+    renderUser24HourHourlySection(data.hourly, data.daily, _userSelectedHourlyDayMode);
+
     return forecastList;
   } catch (err) {
     console.warn('[IoTWeather] Could not fetch live Open-Meteo forecast, using fallback.', err);
@@ -1173,6 +1183,154 @@ export async function fetchLiveOpenMeteoForecast(lat, lng) {
   }
 }
 window.fetchLiveOpenMeteoForecast = fetchLiveOpenMeteoForecast;
+
+export function renderUser24HourHourlySection(hourlyData, dailyData, selectedMode = 'live24') {
+  if (!hourlyData || !hourlyData.time || !Array.isArray(hourlyData.time)) return;
+
+  _userSelectedHourlyDayMode = selectedMode;
+  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+  // 1. Render Day Selector Pills
+  const pillsContainer = document.getElementById('user-iot-hourly-day-pills');
+  if (pillsContainer && dailyData && dailyData.time) {
+    let pillsHtml = `
+      <button type="button" class="btn btn-sm ${selectedMode === 'live24' ? 'active' : ''}" onclick="selectUserHourlyForecastDay('live24')" style="padding:3px 9px; font-size:11px; font-weight:800; border-radius:6px; white-space:nowrap; cursor:pointer; ${selectedMode === 'live24' ? 'background:#059669; color:#fff; border:1px solid #059669;' : 'background:#ffffff; color:#475569; border:1px solid #cbd5e1;'}">
+        <i data-lucide="clock" class="lucide-xs"></i> 24h Tiếp theo (Live)
+      </button>
+    `;
+
+    const dayCount = Math.min(dailyData.time.length, 7);
+    for (let i = 0; i < dayCount; i++) {
+      const d = new Date(dailyData.time[i]);
+      let dayName = i === 0 ? 'Hôm nay' : i === 1 ? 'Ngày mai' : daysOfWeek[d.getDay()];
+      const isAct = selectedMode === `day_${i}`;
+      pillsHtml += `
+        <button type="button" class="btn btn-sm ${isAct ? 'active' : ''}" onclick="selectUserHourlyForecastDay('day_${i}')" style="padding:3px 9px; font-size:11px; font-weight:700; border-radius:6px; white-space:nowrap; cursor:pointer; ${isAct ? 'background:#059669; color:#fff; border:1px solid #059669;' : 'background:#ffffff; color:#475569; border:1px solid #cbd5e1;'}">
+          ${dayName} (${d.getDate()}/${d.getMonth() + 1})
+        </button>
+      `;
+    }
+    pillsContainer.innerHTML = pillsHtml;
+  }
+
+  // 2. Determine 24-hour Slice Range
+  let startIdx = 0;
+  let viewTitleStr = '';
+
+  if (selectedMode === 'live24') {
+    const nowIso = new Date().toISOString().slice(0, 13);
+    let curIdx = hourlyData.time.findIndex(t => t.startsWith(nowIso));
+    if (curIdx === -1) curIdx = 0;
+    // Start from next hour forward (e.g. 4 PM -> 5 PM)
+    startIdx = curIdx + 1;
+    if (startIdx >= hourlyData.time.length) startIdx = curIdx;
+
+    const startObj = new Date(hourlyData.time[startIdx]);
+    const endObj = new Date(hourlyData.time[Math.min(startIdx + 23, hourlyData.time.length - 1)]);
+    viewTitleStr = `Dự báo 24 giờ liên tục từ ${startObj.getHours()}:00 ${startObj.getDate()}/${startObj.getMonth() + 1} đến ${endObj.getHours()}:00 ${endObj.getDate()}/${endObj.getMonth() + 1}`;
+  } else {
+    const dayIdx = parseInt(selectedMode.replace('day_', ''), 10) || 0;
+    startIdx = dayIdx * 24;
+    if (startIdx >= hourlyData.time.length) startIdx = 0;
+    const targetDate = new Date(hourlyData.time[startIdx]);
+    let dayLabel = dayIdx === 0 ? 'Hôm nay' : dayIdx === 1 ? 'Ngày mai' : daysOfWeek[targetDate.getDay()];
+    viewTitleStr = `Dự báo trọn vẹn 24 khung giờ của ${dayLabel} (${targetDate.toLocaleDateString('vi-VN')}) (00:00 - 23:00)`;
+  }
+
+  const titleEl = document.getElementById('user-iot-hourly-title');
+  if (titleEl) titleEl.textContent = viewTitleStr;
+
+  const endIdx = Math.min(startIdx + 24, hourlyData.time.length);
+  const sliceTimes = hourlyData.time.slice(startIdx, endIdx);
+  const sliceTemps = hourlyData.temperature_2m ? hourlyData.temperature_2m.slice(startIdx, endIdx) : [];
+  const sliceRainProbs = hourlyData.precipitation_probability ? hourlyData.precipitation_probability.slice(startIdx, endIdx) : [];
+  const sliceRainSums = hourlyData.precipitation ? hourlyData.precipitation.slice(startIdx, endIdx) : [];
+  const sliceWmoCodes = hourlyData.weather_code ? hourlyData.weather_code.slice(startIdx, endIdx) : [];
+  const sliceWinds = hourlyData.wind_speed_10m ? hourlyData.wind_speed_10m.slice(startIdx, endIdx) : [];
+  const sliceWindGusts = hourlyData.wind_gusts_10m ? hourlyData.wind_gusts_10m.slice(startIdx, endIdx) : [];
+  const sliceEt0s = hourlyData.et0_fao_evapotranspiration ? hourlyData.et0_fao_evapotranspiration.slice(startIdx, endIdx) : [];
+
+  // 3. Render Scrollable 24-Hour Hourly Cards Track
+  const track = document.getElementById('user-iot-24h-hourly-track');
+  if (track) {
+    let cardsHtml = '';
+    const firstDateDay = sliceTimes.length > 0 ? new Date(sliceTimes[0]).getDate() : null;
+
+    for (let i = 0; i < sliceTimes.length; i++) {
+      const dObj = new Date(sliceTimes[i]);
+      const hourNum = dObj.getHours();
+      const hourLabel = (hourNum < 10 ? '0' : '') + hourNum + ':00';
+      const isNextDay = firstDateDay !== null && dObj.getDate() !== firstDateDay;
+
+      const code = sliceWmoCodes[i] !== undefined ? sliceWmoCodes[i] : 0;
+      const cfg = WMO_FORECAST_CONFIG[code] || WMO_FORECAST_CONFIG[0];
+      const temp = sliceTemps[i] !== undefined ? Math.round(sliceTemps[i]) : '--';
+      const rainP = sliceRainProbs[i] !== undefined ? sliceRainProbs[i] : 0;
+      const rainM = sliceRainSums[i] !== undefined ? sliceRainSums[i] : 0;
+      const wind = sliceWinds[i] !== undefined ? Math.round(sliceWinds[i]) : 0;
+      const gusts = sliceWindGusts[i] !== undefined ? Math.round(sliceWindGusts[i]) : null;
+      const et0 = sliceEt0s[i] !== undefined ? (Math.round(sliceEt0s[i] * 10) / 10) : null;
+
+      // Spray Safety Assessment
+      let sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 5px; border-radius:6px; display:inline-block;">🟢 Phun tốt</span>';
+      if (rainP >= 50 || wind >= 25 || (gusts && gusts >= 35)) {
+        sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; padding:2px 5px; border-radius:6px; display:inline-block;">🔴 Không phun</span>';
+      } else if (rainP >= 25 || wind >= 15) {
+        sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 5px; border-radius:6px; display:inline-block;">🟡 Thận trọng</span>';
+      }
+
+      cardsHtml += `
+        <div style="min-width:130px; max-width:134px; background:#ffffff; border:1.5px solid ${i === 0 ? '#059669' : '#e2e8f0'}; border-radius:12px; padding:9px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,0.02); flex-shrink:0;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+              <span style="font-size:12px; font-weight:900; color:#0f172a; background:#f1f5f9; padding:2px 5px; border-radius:6px;">${hourLabel}</span>
+              ${isNextDay ? '<span style="font-size:9px; font-weight:800; color:#059669; background:#ecfdf5; padding:1px 3px; border-radius:4px;">+1d</span>' : ''}
+            </div>
+
+            <div style="text-align:center; padding:5px 0 3px;">
+              <i data-lucide="${cfg.icon}" style="width:24px; height:24px; color:${cfg.color}; margin-bottom:2px; display:inline-block;"></i>
+              <div style="font-size:16px; font-weight:900; color:#0f172a;">${temp}°C</div>
+            </div>
+
+            <div style="font-size:10.5px; color:#475569; display:flex; flex-direction:column; gap:2px; background:#f8fafc; padding:5px 6px; border-radius:6px; margin:3px 0 5px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="color:#0284c7;"><i data-lucide="cloud-rain" class="lucide-xs"></i> Mưa:</span>
+                <strong>${rainP}%${rainM > 0 ? ` (${rainM}mm)` : ''}</strong>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="color:#64748b;"><i data-lucide="wind" class="lucide-xs"></i> Gió:</span>
+                <strong>${wind}km/h</strong>
+              </div>
+              ${et0 !== null ? `
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="color:#16a34a;"><i data-lucide="sprout" class="lucide-xs"></i> ET₀:</span>
+                <strong style="color:#15803d;">${et0}mm</strong>
+              </div>` : ''}
+            </div>
+          </div>
+
+          <div style="text-align:center;">
+            ${sprayBadge}
+          </div>
+        </div>
+      `;
+    }
+    track.innerHTML = cardsHtml;
+  }
+
+  if (window.lucide) {
+    try { lucide.createIcons(); } catch (_) {}
+  }
+}
+window.renderUser24HourHourlySection = renderUser24HourHourlySection;
+
+export function selectUserHourlyForecastDay(dayMode) {
+  _userSelectedHourlyDayMode = dayMode;
+  if (_userCachedForecastData && _userCachedForecastData.hourly && _userCachedForecastData.daily) {
+    renderUser24HourHourlySection(_userCachedForecastData.hourly, _userCachedForecastData.daily, dayMode);
+  }
+}
+window.selectUserHourlyForecastDay = selectUserHourlyForecastDay;
 
 export async function renderIoTDemoData(farmId, forceRefresh = false) {
   if (!farmId) return;
@@ -1184,7 +1342,7 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
       _currentFarmIoTData = res;
       _applyIoTDemoDataToUI(res);
 
-      // Asynchronously fetch 100% real-time Open-Meteo 6-day weather forecast based on farm GPS coordinates
+      // Asynchronously fetch 100% real-time Open-Meteo 7-day & 24h weather forecast based on farm GPS coordinates
       const farmObj = (_farmsCache && _farmsCache.length) ? _farmsCache.find(f => String(f.id) === String(farmId)) : null;
       let lat = null;
       let lng = null;
@@ -1230,7 +1388,7 @@ function _renderForecastGrid(forecast) {
   const grid = document.getElementById('iot-weather-forecast-grid');
   if (!grid || !forecast || !forecast.length) return;
 
-  grid.innerHTML = forecast.map((w) => {
+  grid.innerHTML = forecast.map((w, idx) => {
     let iconName = w.icon || 'sun';
     if (iconName.startsWith('fa-')) {
       if (iconName.includes('sun-rain')) iconName = 'cloud-sun-rain';
@@ -1241,38 +1399,35 @@ function _renderForecastGrid(forecast) {
       else if (iconName.includes('cloud')) iconName = 'cloud';
       else iconName = 'sun';
     }
+    const isAct = _userSelectedHourlyDayMode === `day_${idx}`;
     return `
-      <div style="background:${w.bg || '#fff7ed'}; border:1.5px solid ${w.border || '#ffedd5'}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div onclick="selectUserHourlyForecastDay('day_${idx}')" style="background:${isAct ? '#ecfdf5' : (w.bg || '#fff7ed')}; border:1.5px solid ${isAct ? '#059669' : (w.border || '#ffedd5')}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:${isAct ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(0,0,0,0.02)'}; cursor:pointer;" title="Nhấp để xem 24 khung giờ chi tiết của ${w.day_label}">
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <strong style="font-size:13.5px; color:#0f172a;">${w.day_label || 'Hôm nay'}</strong>
             <span style="font-size:11px; color:#64748b; font-weight:700;">${w.date_str || ''}</span>
           </div>
-          <div style="text-align:center; padding:10px 0;">
-            <i data-lucide="${iconName}" style="width:36px; height:36px; stroke-width:2.2; color:${w.color || '#f59e0b'}; margin-bottom:6px; display:inline-block;"></i>
+          <div style="text-align:center; padding:8px 0;">
+            <i data-lucide="${iconName}" style="width:34px; height:34px; stroke-width:2.2; color:${w.color || '#f59e0b'}; margin-bottom:4px; display:inline-block;"></i>
             <div style="font-size:16px; font-weight:900; color:#0f172a;">${w.temp || '25°C - 33°C'}</div>
           </div>
-          <div style="font-size:11.5px; color:#475569; display:flex; flex-direction:column; gap:6px; margin-bottom:10px; background:rgba(255,255,255,0.7); padding:8px 10px; border-radius:8px;">
+          <div style="font-size:11px; color:#475569; display:flex; flex-direction:column; gap:5px; margin-bottom:10px; background:rgba(255,255,255,0.75); padding:8px 10px; border-radius:8px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="cloud-rain" class="lucide-xs" style="color:#0284c7;"></i> Mưa:</span>
+              <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="cloud-rain" class="lucide-xs" style="color:#0284c7;"></i> Mưa:</span>
               <strong>${w.rain || '10%'}${w.rainSum > 0 ? ` (${w.rainSum}mm)` : ''}</strong>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="droplets" class="lucide-xs" style="color:#0284c7;"></i> Độ ẩm:</span>
-              <strong>${w.humidity || '70%'}</strong>
-            </div>
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="sprout" class="lucide-xs" style="color:#16a34a;"></i> Bốc hơi ET₀:</span>
+              <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="sprout" class="lucide-xs" style="color:#16a34a;"></i> Bốc hơi ET₀:</span>
               <strong style="color:#15803d;">${w.et0 ? w.et0 + ' mm' : '--'}</strong>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="wind" class="lucide-xs" style="color:#64748b;"></i> Gió:</span>
-              <strong>${w.wind || '12 km/h'}${w.windGusts ? ` (Giật ${w.windGusts})` : ''}</strong>
+              <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="wind" class="lucide-xs" style="color:#64748b;"></i> Gió:</span>
+              <strong>${w.wind || '12 km/h'}${w.windGusts ? ` (${w.windGusts})` : ''}</strong>
             </div>
           </div>
         </div>
-        <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px;">
-          ${w.advice || ''}
+        <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>${w.advice || ''}</span>
         </div>
       </div>
     `;
@@ -1282,12 +1437,6 @@ function _renderForecastGrid(forecast) {
     try { lucide.createIcons(); } catch (_) {}
   }
 }
-
-  if (window.lucide) {
-    try { lucide.createIcons(); } catch (_) {}
-  }
-}
-
 function _applyIoTDemoDataToUI(res) {
   const air = res.air_data || {};
   const water = res.water_data || {};
