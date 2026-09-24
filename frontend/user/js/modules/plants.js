@@ -1110,7 +1110,7 @@ const WMO_FORECAST_CONFIG = {
 
 export async function fetchLiveOpenMeteoForecast(lat, lng) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,relative_humidity_2m_mean,wind_speed_10m_max&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,relative_humidity_2m_mean,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration&timezone=auto`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
     const res = await fetch(url, { signal: controller.signal });
@@ -1131,15 +1131,20 @@ export async function fetchLiveOpenMeteoForecast(lat, lng) {
       const tMax = daily.temperature_2m_max ? Math.round(daily.temperature_2m_max[i]) : 32;
       const tMin = daily.temperature_2m_min ? Math.round(daily.temperature_2m_min[i]) : 25;
       const rain = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : 10;
+      const rainSum = daily.precipitation_sum ? daily.precipitation_sum[i] : 0;
       const humidity = daily.relative_humidity_2m_mean ? Math.round(daily.relative_humidity_2m_mean[i]) : 70;
       const wind = daily.wind_speed_10m_max ? Math.round(daily.wind_speed_10m_max[i]) : 12;
+      const windGusts = daily.wind_gusts_10m_max ? Math.round(daily.wind_gusts_10m_max[i]) : null;
+      const et0 = daily.et0_fao_evapotranspiration ? Math.round(daily.et0_fao_evapotranspiration[i] * 10) / 10 : 4.2;
 
       const cfg = WMO_FORECAST_CONFIG[code] || WMO_FORECAST_CONFIG[0];
       let advice = cfg.advice;
-      if (rain >= 70) {
+      if (rain >= 70 || rainSum >= 15) {
         advice = '⚠️ Khả năng mưa rất cao: Tuyệt đối không bón phân hay phun xịt thuốc BVTV vì sẽ bị rửa trôi.';
-      } else if (tMax >= 35) {
-        advice = '☀️ Nắng nóng gay gắt: Khuyến nghị tăng lưu lượng tưới và che mát đất bằng rơm rạ.';
+      } else if (et0 >= 5.0) {
+        advice = `☀️ Bốc thoát hơi nước cao (${et0}mm/ngày): Khuyến nghị tưới bù ~${Math.round(et0 * 30 * 0.85)}L/cây và che phủ gốc.`;
+      } else if (windGusts && windGusts >= 35) {
+        advice = `💨 Cảnh báo gió giật ${windGusts} km/h: Kiểm tra giàn chống cành mang trái non.`;
       }
 
       forecastList.push({
@@ -1152,8 +1157,11 @@ export async function fetchLiveOpenMeteoForecast(lat, lng) {
         border: cfg.border,
         temp: `${tMin}°C - ${tMax}°C`,
         rain: `${rain}%`,
+        rainSum: rainSum,
         humidity: `${humidity}%`,
         wind: `${wind} km/h`,
+        windGusts: windGusts,
+        et0: et0,
         advice: advice,
         is_live_meteo: true
       });
@@ -1245,9 +1253,22 @@ function _renderForecastGrid(forecast) {
             <div style="font-size:16px; font-weight:900; color:#0f172a;">${w.temp || '25°C - 33°C'}</div>
           </div>
           <div style="font-size:11.5px; color:#475569; display:flex; flex-direction:column; gap:6px; margin-bottom:10px; background:rgba(255,255,255,0.7); padding:8px 10px; border-radius:8px;">
-            <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="cloud-rain" class="lucide-xs" style="color:#0284c7;"></i> Mưa: <strong>${w.rain || '10%'}</strong></div>
-            <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="droplets" class="lucide-xs" style="color:#0284c7;"></i> Độ ẩm: <strong>${w.humidity || '70%'}</strong></div>
-            <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="wind" class="lucide-xs" style="color:#64748b;"></i> Gió: <strong>${w.wind || '12 km/h'}</strong></div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="cloud-rain" class="lucide-xs" style="color:#0284c7;"></i> Mưa:</span>
+              <strong>${w.rain || '10%'}${w.rainSum > 0 ? ` (${w.rainSum}mm)` : ''}</strong>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="droplets" class="lucide-xs" style="color:#0284c7;"></i> Độ ẩm:</span>
+              <strong>${w.humidity || '70%'}</strong>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="sprout" class="lucide-xs" style="color:#16a34a;"></i> Bốc hơi ET₀:</span>
+              <strong style="color:#15803d;">${w.et0 ? w.et0 + ' mm' : '--'}</strong>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="wind" class="lucide-xs" style="color:#64748b;"></i> Gió:</span>
+              <strong>${w.wind || '12 km/h'}${w.windGusts ? ` (Giật ${w.windGusts})` : ''}</strong>
+            </div>
           </div>
         </div>
         <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px;">
@@ -1256,6 +1277,11 @@ function _renderForecastGrid(forecast) {
       </div>
     `;
   }).join('');
+
+  if (window.lucide) {
+    try { lucide.createIcons(); } catch (_) {}
+  }
+}
 
   if (window.lucide) {
     try { lucide.createIcons(); } catch (_) {}

@@ -121,7 +121,7 @@
                   <div class="iot-weather-hero-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                     <div>
                       <div style="font-size:12px; color:#64748b; font-weight:600; display:flex; align-items:center; gap:6px;">
-                        <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> <span id="iot-weather-location">Trạm Khí tượng Nông nghiệp · Live Sensor Station</span>
+                        <span id="iot-weather-location">Trạm Khí tượng Nông nghiệp · Live Sensor Station</span>
                       </div>
                       <div style="display:flex; align-items:center; gap:14px; margin-top:6px;">
                         <span id="iot-weather-temp" style="font-size:42px; font-weight:900; color:#0f172a; line-height:1;">--°C</span>
@@ -134,41 +134,95 @@
                         </div>
                       </div>
                     </div>
-                    <div class="iot-hourly-chart-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; min-width:240px; text-align:center;">
-                      <div style="font-size:10.5px; color:#64748b; font-weight:700; margin-bottom:4px; text-transform:uppercase;">Dự báo nhiệt độ theo giờ (Hôm nay)</div>
-                      <canvas id="weather-hourly-chart" style="max-height:100px; width:100%;"></canvas>
+                    <div class="iot-hourly-chart-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; min-width:260px; text-align:center;">
+                      <div style="font-size:10.5px; color:#64748b; font-weight:700; margin-bottom:4px; text-transform:uppercase;">Dự báo nhiệt độ &amp; Khả năng mưa theo giờ</div>
+                      <canvas id="weather-hourly-chart" style="max-height:105px; width:100%;"></canvas>
                     </div>
                   </div>
 
-                  <div class="iot-weather-metrics-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
-                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                        <i data-lucide="wind" class="lucide-sm" style="color:#0ea5e9;"></i> Tốc độ &amp; Hướng gió
+                  <!-- 6 Specialized AgTech Telemetry Cards -->
+                  <div class="iot-weather-metrics-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+                    <!-- Card 1: Gió & Gió giật -->
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                        <i data-lucide="wind" class="lucide-sm" style="color:#0284c7;"></i> Tốc độ &amp; Hướng gió
                       </div>
-                      <div id="iot-weather-wind" style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">-- <small style="font-size:12px; color:#64748b;">km/h</small></div>
-                      <div id="iot-weather-wind-dir" style="font-size:11px; color:#0284c7; font-weight:600; margin-top:2px;">Hướng: Đang nạp...</div>
+                      <div id="iot-weather-wind" style="font-size:20px; font-weight:800; color:#0f172a; margin-top:3px;">-- <small style="font-size:12px; color:#64748b;">km/h</small></div>
+                      <div id="iot-weather-wind-dir" style="font-size:11.5px; color:#0369a1; font-weight:700; margin-top:2px;">Hướng: Đang nạp...</div>
+                      <div id="iot-weather-wind-gusts" style="font-size:10.5px; color:#64748b; margin-top:2px;">Gió giật max: -- km/h</div>
                     </div>
-                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+
+                    <!-- Card 2: Mưa & Khả năng mưa -->
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
                         <i data-lucide="cloud-rain" class="lucide-sm" style="color:#059669;"></i> Lượng mưa &amp; Xác suất
                       </div>
-                      <div id="iot-weather-rain" style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">-- <small style="font-size:12px; color:#64748b;">mm</small></div>
-                      <div id="iot-weather-rain-prob" style="font-size:11px; color:#059669; font-weight:600; margin-top:2px;">Xác suất mưa: --%</div>
+                      <div id="iot-weather-rain" style="font-size:20px; font-weight:800; color:#0f172a; margin-top:3px;">-- <small style="font-size:12px; color:#64748b;">mm</small></div>
+                      <div id="iot-weather-rain-prob" style="font-size:11.5px; color:#047857; font-weight:700; margin-top:2px;">Xác suất mưa: --%</div>
+                      <div id="iot-weather-rain-sum" style="font-size:10.5px; color:#64748b; margin-top:2px;">Tổng mưa 24h: -- mm</div>
                     </div>
-                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                        <i data-lucide="droplet" class="lucide-sm" style="color:#0284c7;"></i> Độ ẩm không khí &amp; UV
+
+                    <!-- Card 3: Độ ẩm & Điểm sương -->
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                        <i data-lucide="droplet" class="lucide-sm" style="color:#0284c7;"></i> Độ ẩm &amp; Điểm sương
                       </div>
-                      <div id="iot-weather-humidity" style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">--%</div>
-                      <div id="iot-weather-apparent" style="font-size:11px; color:#0284c7; font-weight:600; margin-top:2px;">Cảm giác: --°C · UV: --</div>
+                      <div id="iot-weather-humidity" style="font-size:20px; font-weight:800; color:#0f172a; margin-top:3px;">--%</div>
+                      <div id="iot-weather-apparent" style="font-size:11.5px; color:#0369a1; font-weight:700; margin-top:2px;">Cảm giác: --°C</div>
+                      <div id="iot-weather-dewpoint" style="font-size:10.5px; color:#64748b; margin-top:2px;">Điểm sương: --°C</div>
+                    </div>
+
+                    <!-- Card 4: Bốc thoát hơi nước ET0 -->
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                        <i data-lucide="sprout" class="lucide-sm" style="color:#16a34a;"></i> Bốc thoát hơi nước (ET₀)
+                      </div>
+                      <div id="iot-weather-et0" style="font-size:20px; font-weight:800; color:#15803d; margin-top:3px;">-- <small style="font-size:12px; color:#64748b;">mm/ngày</small></div>
+                      <div id="iot-weather-et0-status" style="font-size:11.5px; color:#15803d; font-weight:700; margin-top:2px;">Nhu cầu nước: Vừa phải</div>
+                      <div id="iot-weather-irrigation-rec" style="font-size:10.5px; color:#64748b; margin-top:2px;">Tưới bù: ~-- Lít/cây</div>
+                    </div>
+
+                    <!-- Card 5: Chỉ số UV & Bức xạ -->
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                        <i data-lucide="sun" class="lucide-sm" style="color:#d97706;"></i> Chỉ số UV &amp; Bức xạ
+                      </div>
+                      <div id="iot-weather-uv" style="font-size:20px; font-weight:800; color:#b45309; margin-top:3px;">--</div>
+                      <div id="iot-weather-uv-level" style="font-size:11.5px; color:#b45309; font-weight:700; margin-top:2px;">Mức độ: Đang nạp...</div>
+                      <div id="iot-weather-solar-rad" style="font-size:10.5px; color:#64748b; margin-top:2px;">Bức xạ: -- W/m²</div>
+                    </div>
+
+                    <!-- Card 6: Độ ẩm & Nhiệt độ đất vệ tinh -->
+                    <div class="iot-metric-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+                        <i data-lucide="layers" class="lucide-sm" style="color:#8b5cf6;"></i> Đất Vệ Tinh (0-30cm)
+                      </div>
+                      <div id="iot-weather-soil-moist" style="font-size:20px; font-weight:800; color:#6d28d9; margin-top:3px;">--%</div>
+                      <div id="iot-weather-soil-temp" style="font-size:11.5px; color:#6d28d9; font-weight:700; margin-top:2px;">Nhiệt độ đất: --°C</div>
+                      <div id="iot-weather-pressure" style="font-size:10.5px; color:#64748b; margin-top:2px;">Áp suất: -- hPa</div>
+                    </div>
+                  </div>
+
+                  <!-- Smart AgTech Crop Advisory Box -->
+                  <div id="iot-weather-agri-advisory-box" style="background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #059669; border-radius:12px; padding:14px 18px; display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                      <span style="font-weight:800; font-size:13px; color:#15803d; display:inline-flex; align-items:center; gap:6px;">
+                        <i data-lucide="shield-check" class="lucide-sm"></i> ĐÁNH GIÁ ĐIỀU KIỆN CANH TÁC THỜI GIAN THỰC
+                      </span>
+                      <span id="iot-weather-spray-window" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:2px 10px; border-radius:12px;">
+                        Cửa sổ Phun thuốc: Đang đánh giá...
+                      </span>
+                    </div>
+                    <div id="iot-weather-advisory-detail" style="font-size:12.5px; color:#166534; line-height:1.5;">
+                      Đang phân tích dữ liệu khí tượng Open-Meteo và độ ẩm đất...
                     </div>
                   </div>
                 </div>
 
-                <!-- 7-day Forecast -->
+                <!-- 7-day Agricultural Forecast -->
                 <div class="iot-7day-forecast-box" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
                   <div style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; padding-bottom:6px; border-bottom:1px solid #f1f5f9;">
-                    <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="calendar-days" class="lucide-sm" style="color:#059669;"></i> DỰ BÁO 7 NGÀY TỚI (OPEN-METEO)</span>
+                    <span style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="calendar-days" class="lucide-sm" style="color:#059669;"></i> DỰ BÁO NÔNG VỤ 7 NGÀY TỚI (OPEN-METEO)</span>
                     <span id="iot-weather-updated-time" style="font-size:11px; color:#64748b;">Thời gian thực</span>
                   </div>
                   <div id="iot-7day-forecast-list" style="display:flex; flex-direction:column; gap:6px;">

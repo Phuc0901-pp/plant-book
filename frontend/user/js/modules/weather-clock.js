@@ -403,7 +403,7 @@ export async function refreshDeviceWeather() {
 
   // Step 2: Fetch Open-Meteo Real-Time Weather API with automatic resilient fallback
   try {
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,uv_index&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`;
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration&timezone=auto`;
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 7000);
@@ -450,21 +450,28 @@ export async function refreshDeviceWeather() {
     const humidity = Math.round(current.relative_humidity_2m ?? 75);
     const windSpeed = Math.round(current.wind_speed_10m ?? 12);
     const windDir = _getWindDirection(current.wind_direction_10m);
-    const uv = current.uv_index !== undefined ? current.uv_index.toFixed(1) : '4.5';
+    const uv = current.uv_index !== undefined ? current.uv_index.toFixed(1) : ((daily.uv_index_max && daily.uv_index_max[0]) ? daily.uv_index_max[0].toFixed(1) : '4.5');
     const rainProb = daily.precipitation_probability_max?.[0] !== undefined ? daily.precipitation_probability_max[0] : 15;
+    const rainSum = daily.precipitation_sum?.[0] !== undefined ? daily.precipitation_sum[0] : 0;
     const tempMax = daily.temperature_2m_max?.[0] ? Math.round(daily.temperature_2m_max[0]) : temp + 3;
     const tempMin = daily.temperature_2m_min?.[0] ? Math.round(daily.temperature_2m_min[0]) : temp - 4;
+    const et0 = daily.et0_fao_evapotranspiration?.[0] ? Math.round(daily.et0_fao_evapotranspiration[0] * 10) / 10 : 4.2;
+    const windGusts = daily.wind_gusts_10m_max?.[0] ? Math.round(daily.wind_gusts_10m_max[0]) : null;
 
     const weatherCode = current.weather_code ?? 0;
     const wmo = WMO_WEATHER_MAP[weatherCode] || { label: 'Trời quang đãng', icon: 'sun', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' };
 
-    let agriTip = 'Thời tiết thuận lợi cho việc chăm sóc cây trồng và theo dõi độ ẩm đất.';
-    if (rainProb >= 60) {
-      agriTip = '⚠️ Khả năng mưa cao: Cân nhắc hoãn phun thuốc BVTV và bón phân để tránh bị rửa trôi.';
-    } else if (temp >= 34) {
-      agriTip = '☀️ Nắng nóng gay gắt: Khuyến nghị tăng lượng tưới giữ ẩm đất và phun sương làm mát tán.';
+    // Agricultural Advisory Formula & Advice
+    const irrigLiters = Math.round(et0 * 30 * 0.85);
+    let agriTip = `Bốc thoát hơi nước hôm nay ~${et0} mm/ngày (tưới bù ~${irrigLiters}L/gốc). Thời tiết thuận lợi cho các hoạt động chăm sóc cây trồng.`;
+    if (rainProb >= 60 || rainSum >= 10) {
+      agriTip = `⚠️ Khả năng mưa cao (${rainProb}%, ~${rainSum}mm): Tuyệt đối hoãn phun thuốc BVTV và bón phân để tránh bị rửa trôi.`;
+    } else if (temp >= 34 || et0 >= 5.5) {
+      agriTip = `☀️ Nắng gắt & bốc thoát hơi nước mạnh (${et0}mm/ngày): Khuyến nghị tưới bù ~${irrigLiters}L/cây vào sáng sớm và tủ gốc giữ ẩm.`;
+    } else if (windGusts && windGusts >= 35) {
+      agriTip = `💨 Cảnh báo gió giật mạnh (${windGusts} km/h): Kiểm tra chằng chống cành sầu riêng mang quả và hạn chế phun thuốc trừ sâu.`;
     } else if (humidity >= 85) {
-      agriTip = '💧 Độ ẩm không khí cao: Chú ý kiểm tra nấm bệnh và sâu rầy trên đọt non.';
+      agriTip = `💧 Độ ẩm không khí cao (${humidity}%): Cần kiểm tra kỹ nấm lá thán thư và xì mủ Phytophthora trên cơi đọt.`;
     }
 
     const weatherPayload = {
@@ -477,6 +484,7 @@ export async function refreshDeviceWeather() {
       rainProb,
       tempMax,
       tempMin,
+      et0,
       wmo,
       agriTip
     };

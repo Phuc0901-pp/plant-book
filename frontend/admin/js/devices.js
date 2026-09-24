@@ -159,7 +159,7 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
   }
 
   try {
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max&timezone=auto`;
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,precipitation_probability,precipitation,weather_code,surface_pressure,et0_fao_evapotranspiration,soil_temperature_0cm,soil_temperature_18cm,soil_moisture_0_to_1cm,soil_moisture_1_to_3cm,direct_normal_irradiance&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,rain_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration,shortwave_radiation_sum&timezone=auto`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 7000);
@@ -169,15 +169,52 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
     const data = await res.json();
 
-    // 1. Render Hero Card
     const cur = data.current || {};
-    const wmo = getWmoDetails(cur.weather_code);
-    const tempVal = cur.temperature_2m !== undefined ? Math.round(cur.temperature_2m) : null;
+    const daily = data.daily || {};
+    const hourly = data.hourly || {};
 
-    const tempEl = document.getElementById('iot-weather-temp');
-    if (tempEl) {
-      tempEl.textContent = tempVal !== null ? `${tempVal}°C` : 'null';
+    // Determine current hour index in hourly arrays
+    let curHourIdx = 0;
+    if (hourly.time && hourly.time.length > 0) {
+      const nowIsoHour = new Date().toISOString().slice(0, 13);
+      const matchIdx = hourly.time.findIndex(t => t.startsWith(nowIsoHour));
+      if (matchIdx !== -1) curHourIdx = matchIdx;
     }
+
+    const wmo = getWmoDetails(cur.weather_code);
+    const tempVal = cur.temperature_2m !== undefined && cur.temperature_2m !== null ? Math.round(cur.temperature_2m) : null;
+    const appTemp = cur.apparent_temperature !== undefined && cur.apparent_temperature !== null ? Math.round(cur.apparent_temperature) : tempVal;
+    const todayRainProb = (daily.precipitation_probability_max && daily.precipitation_probability_max.length > 0) ? daily.precipitation_probability_max[0] : null;
+    const todayRainSum = (daily.precipitation_sum && daily.precipitation_sum.length > 0) ? daily.precipitation_sum[0] : (cur.precipitation || 0);
+    const todayWindGusts = (daily.wind_gusts_10m_max && daily.wind_gusts_10m_max.length > 0) ? Math.round(daily.wind_gusts_10m_max[0]) : (cur.wind_gusts_10m ? Math.round(cur.wind_gusts_10m) : null);
+    
+    // AgTech Parameters from Hourly & Daily
+    const curDewPoint = (hourly.dew_point_2m && hourly.dew_point_2m[curHourIdx] !== undefined)
+      ? Math.round(hourly.dew_point_2m[curHourIdx] * 10) / 10
+      : (cur.temperature_2m !== undefined && cur.relative_humidity_2m !== undefined ? Math.round((cur.temperature_2m - ((100 - cur.relative_humidity_2m) / 5)) * 10) / 10 : null);
+    
+    const todayEt0 = (daily.et0_fao_evapotranspiration && daily.et0_fao_evapotranspiration.length > 0)
+      ? Math.round(daily.et0_fao_evapotranspiration[0] * 10) / 10
+      : (hourly.et0_fao_evapotranspiration && hourly.et0_fao_evapotranspiration[curHourIdx] !== undefined ? Math.round(hourly.et0_fao_evapotranspiration[curHourIdx] * 24 * 10) / 10 : 4.2);
+
+    const curSolarRad = (hourly.direct_normal_irradiance && hourly.direct_normal_irradiance[curHourIdx] !== undefined)
+      ? Math.round(hourly.direct_normal_irradiance[curHourIdx])
+      : (daily.shortwave_radiation_sum && daily.shortwave_radiation_sum.length > 0 ? Math.round(daily.shortwave_radiation_sum[0]) : null);
+
+    const satelliteSoilMoist = (hourly.soil_moisture_0_to_1cm && hourly.soil_moisture_0_to_1cm[curHourIdx] !== undefined)
+      ? Math.round(hourly.soil_moisture_0_to_1cm[curHourIdx] * 100)
+      : (hourly.soil_moisture_1_to_3cm && hourly.soil_moisture_1_to_3cm[curHourIdx] !== undefined ? Math.round(hourly.soil_moisture_1_to_3cm[curHourIdx] * 100) : 52);
+
+    const satelliteSoilTemp = (hourly.soil_temperature_0cm && hourly.soil_temperature_0cm[curHourIdx] !== undefined)
+      ? Math.round(hourly.soil_temperature_0cm[curHourIdx] * 10) / 10
+      : (hourly.soil_temperature_18cm && hourly.soil_temperature_18cm[curHourIdx] !== undefined ? Math.round(hourly.soil_temperature_18cm[curHourIdx] * 10) / 10 : 25.5);
+
+    // Irrigation recommendation calculation (FAO-56 durian standard: ET0 * Canopy ~30m2 * Kc ~0.85)
+    const irrigationLiters = todayEt0 !== null ? Math.round(todayEt0 * 30 * 0.85) : 110;
+
+    // 1. Render Hero Card
+    const tempEl = document.getElementById('iot-weather-temp');
+    if (tempEl) tempEl.textContent = tempVal !== null ? `${tempVal}°C` : 'null';
 
     const iconEl = document.getElementById('iot-weather-icon');
     if (iconEl) iconEl.innerHTML = `<i data-lucide="${wmo.icon}" class="lucide-sm" style="color:${wmo.color};"></i>`;
@@ -187,18 +224,17 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
 
     const sumEl = document.getElementById('iot-weather-summary');
     if (sumEl) {
-      const daily0 = data.daily || {};
-      const rainMax = daily0.precipitation_probability_max ? daily0.precipitation_probability_max[0] : null;
-      if (rainMax !== null) {
-        sumEl.textContent = rainMax > 40
-          ? `Khả năng mưa hôm nay ${rainMax}%. Chú ý thoát nước mương rãnh vườn.`
-          : `Thời tiết thuận lợi cho việc chăm sóc sầu riêng và đo đạc dinh dưỡng.`;
+      if (todayRainProb !== null && todayRainProb > 45) {
+        sumEl.textContent = `Xác suất mưa hôm nay ${todayRainProb}% (${todayRainSum}mm). Chú ý tiêu thoát nước vườn và hoãn phun thuốc BVTV.`;
+      } else if (todayEt0 && todayEt0 > 5.0) {
+        sumEl.textContent = `Bốc thoát hơi nước cao (${todayEt0}mm/ngày). Khuyến nghị tăng cường tưới bù ~${irrigationLiters}L/cây để giữ ẩm gốc.`;
       } else {
-        sumEl.textContent = 'Dữ liệu thời gian thực từ Open-Meteo';
+        sumEl.textContent = `Thời tiết thuận lợi cho việc chăm sóc sầu riêng, đo đạc dinh dưỡng và quản lý cơi đọt.`;
       }
     }
 
-    // 2. Render Metrics Cards
+    // 2. Render 6 Specialized AgTech Telemetry Cards
+    // Card 1: Wind & Wind Gusts
     const windEl = document.getElementById('iot-weather-wind');
     if (windEl) {
       windEl.innerHTML = cur.wind_speed_10m !== undefined && cur.wind_speed_10m !== null
@@ -213,6 +249,12 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
         : 'Hướng: null';
     }
 
+    const windGustsEl = document.getElementById('iot-weather-wind-gusts');
+    if (windGustsEl) {
+      windGustsEl.textContent = todayWindGusts !== null ? `Gió giật max: ${todayWindGusts} km/h` : 'Gió giật max: -- km/h';
+    }
+
+    // Card 2: Rain & Rain Probability & 24h Rain Sum
     const rainEl = document.getElementById('iot-weather-rain');
     if (rainEl) {
       rainEl.innerHTML = cur.precipitation !== undefined && cur.precipitation !== null
@@ -221,11 +263,16 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     }
 
     const rainProbEl = document.getElementById('iot-weather-rain-prob');
-    const todayRainProb = (data.daily && data.daily.precipitation_probability_max) ? data.daily.precipitation_probability_max[0] : null;
     if (rainProbEl) {
-      rainProbEl.textContent = todayRainProb !== null ? `Xác suất mưa hôm nay: ${todayRainProb}%` : 'Xác suất mưa: null';
+      rainProbEl.textContent = todayRainProb !== null ? `Xác suất mưa: ${todayRainProb}%` : 'Xác suất mưa: null';
     }
 
+    const rainSumEl = document.getElementById('iot-weather-rain-sum');
+    if (rainSumEl) {
+      rainSumEl.textContent = `Tổng mưa 24h: ${todayRainSum !== null ? todayRainSum + ' mm' : '0 mm'}`;
+    }
+
+    // Card 3: Humidity & Dew Point
     const humEl = document.getElementById('iot-weather-humidity');
     if (humEl) {
       humEl.innerHTML = cur.relative_humidity_2m !== undefined && cur.relative_humidity_2m !== null
@@ -235,9 +282,113 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
 
     const appEl = document.getElementById('iot-weather-apparent');
     if (appEl) {
-      const appTemp = cur.apparent_temperature !== undefined && cur.apparent_temperature !== null ? Math.round(cur.apparent_temperature) : null;
-      const uv = cur.uv_index !== undefined && cur.uv_index !== null ? cur.uv_index : null;
-      appEl.textContent = `Cảm giác như: ${appTemp !== null ? appTemp + '°C' : 'null'} · UV: ${uv !== null ? uv : 'null'}`;
+      appEl.textContent = `Cảm giác: ${appTemp !== null ? appTemp + '°C' : 'null'}`;
+    }
+
+    const dewPointEl = document.getElementById('iot-weather-dewpoint');
+    if (dewPointEl) {
+      dewPointEl.textContent = `Điểm sương: ${curDewPoint !== null ? curDewPoint + '°C' : '--°C'}`;
+    }
+
+    // Card 4: Evapotranspiration ET0 & Irrigation Recommendation
+    const et0El = document.getElementById('iot-weather-et0');
+    if (et0El) {
+      et0El.innerHTML = todayEt0 !== null ? `${todayEt0} <small style="font-size:12px; color:#64748b;">mm/ngày</small>` : '<span style="color:#94a3b8;">null</span>';
+    }
+
+    const et0StatusEl = document.getElementById('iot-weather-et0-status');
+    if (et0StatusEl) {
+      et0StatusEl.textContent = todayEt0 !== null
+        ? (todayEt0 < 3.0 ? 'Nhu cầu nước: Thấp' : todayEt0 <= 5.0 ? 'Nhu cầu nước: Vừa phải' : 'Nhu cầu nước: Rất cao')
+        : 'Nhu cầu nước: Vừa phải';
+    }
+
+    const irrigEl = document.getElementById('iot-weather-irrigation-rec');
+    if (irrigEl) {
+      irrigEl.textContent = `Tưới bù: ~${irrigationLiters} Lít/cây`;
+    }
+
+    // Card 5: UV Index & Solar Radiation
+    const uvEl = document.getElementById('iot-weather-uv');
+    const uvVal = cur.uv_index !== undefined && cur.uv_index !== null ? cur.uv_index : ((daily.uv_index_max && daily.uv_index_max[0]) || 0);
+    if (uvEl) {
+      uvEl.textContent = uvVal !== null ? uvVal : 'null';
+    }
+
+    const uvLevelEl = document.getElementById('iot-weather-uv-level');
+    if (uvLevelEl) {
+      let uvLabel = 'Thấp (An toàn)';
+      if (uvVal >= 11) uvLabel = 'Cực kỳ nguy hại';
+      else if (uvVal >= 8) uvLabel = 'Rất cao (Nguy hại)';
+      else if (uvVal >= 6) uvLabel = 'Cao (Cần che chắn)';
+      else if (uvVal >= 3) uvLabel = 'Trung bình';
+      uvLevelEl.textContent = `Mức độ: ${uvLabel}`;
+    }
+
+    const solarRadEl = document.getElementById('iot-weather-solar-rad');
+    if (solarRadEl) {
+      solarRadEl.textContent = curSolarRad !== null ? `Bức xạ: ${curSolarRad} W/m²` : 'Bức xạ: -- W/m²';
+    }
+
+    // Card 6: Satellite Soil & Pressure
+    const soilMoistEl = document.getElementById('iot-weather-soil-moist');
+    if (soilMoistEl) {
+      soilMoistEl.textContent = `${satelliteSoilMoist}%`;
+    }
+
+    const soilTempEl = document.getElementById('iot-weather-soil-temp');
+    if (soilTempEl) {
+      soilTempEl.textContent = `Nhiệt độ đất: ${satelliteSoilTemp}°C`;
+    }
+
+    const pressEl = document.getElementById('iot-weather-pressure');
+    if (pressEl) {
+      pressEl.textContent = cur.surface_pressure !== undefined && cur.surface_pressure !== null
+        ? `Áp suất: ${Math.round(cur.surface_pressure)} hPa`
+        : 'Áp suất: -- hPa';
+    }
+
+    // 3. Render Smart AgTech Crop Advisory Box
+    const sprayWindowEl = document.getElementById('iot-weather-spray-window');
+    const advisoryDetailEl = document.getElementById('iot-weather-advisory-detail');
+    const windSpeed = cur.wind_speed_10m || 0;
+    const rainProb = todayRainProb || 0;
+
+    if (sprayWindowEl) {
+      if (rainProb >= 50 || windSpeed >= 25 || (todayWindGusts && todayWindGusts >= 35)) {
+        sprayWindowEl.style.background = '#fef2f2';
+        sprayWindowEl.style.color = '#b91c1c';
+        sprayWindowEl.style.borderColor = '#fecaca';
+        sprayWindowEl.innerHTML = '<i data-lucide="alert-triangle" class="lucide-xs"></i> Cửa sổ Phun thuốc: KHÔNG NÊN PHUN (Mưa/Gió giật)';
+      } else if (rainProb >= 25 || windSpeed >= 15) {
+        sprayWindowEl.style.background = '#fffbeb';
+        sprayWindowEl.style.color = '#b45309';
+        sprayWindowEl.style.borderColor = '#fde68a';
+        sprayWindowEl.innerHTML = '<i data-lucide="alert-circle" class="lucide-xs"></i> Cửa sổ Phun thuốc: Thận trọng (Có gió/Khả năng mưa)';
+      } else {
+        sprayWindowEl.style.background = '#ecfdf5';
+        sprayWindowEl.style.color = '#047857';
+        sprayWindowEl.style.borderColor = '#a7f3d0';
+        sprayWindowEl.innerHTML = '<i data-lucide="check-circle-2" class="lucide-xs"></i> Cửa sổ Phun thuốc: AN TOÀN (Lý tưởng)';
+      }
+    }
+
+    if (advisoryDetailEl) {
+      let detailMsg = `Dự báo bốc thoát hơi nước hôm nay <strong>${todayEt0} mm/ngày</strong> (khuyến nghị tưới bù ~<strong>${irrigationLiters} Lít/cây</strong>). `;
+      if (curDewPoint !== null && cur.temperature_2m !== undefined) {
+        const dewDelta = cur.temperature_2m - curDewPoint;
+        if (dewDelta <= 2.5 && cur.relative_humidity_2m >= 85) {
+          detailMsg += `Chênh lệch điểm sương thấp (${dewDelta.toFixed(1)}°C) kèm độ ẩm cao (${cur.relative_humidity_2m}%) -> <strong>Cảnh báo nguy cơ nấm Phytophthora & thán thư</strong>. `;
+        } else {
+          detailMsg += `Độ ẩm & điểm sương ở mức tối ưu cho hô hấp của bộ rễ và tán lá sầu riêng. `;
+        }
+      }
+      if (todayWindGusts && todayWindGusts >= 35) {
+        detailMsg += `Cảnh báo gió giật mạnh lên đến <strong>${todayWindGusts} km/h</strong>, cần kiểm tra chằng chống cành mang hoa và quả non.`;
+      } else {
+        detailMsg += `Thời tiết thuận lợi cho các hoạt động chăm sóc vườn và theo dõi dinh dưỡng.`;
+      }
+      advisoryDetailEl.innerHTML = detailMsg;
     }
 
     const timeEl = document.getElementById('iot-weather-updated-time');
@@ -245,10 +396,10 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       timeEl.textContent = `Cập nhật lúc ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
     }
 
-    // 3. Render Hourly Temperature Chart (Next 8 hours)
+    // 4. Render Hourly Temperature Chart (Next 8 hours)
     renderWeatherHourlyChart(data.hourly);
 
-    // 4. Render 7-Day Forecast Cards
+    // 5. Render 7-Day Forecast Cards
     render7DayForecast(data.daily);
 
   } catch (err) {
@@ -261,7 +412,7 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
   }
 }
 
-// Render 7-Day Forecast Cards
+// Render 7-Day Forecast Cards with AgTech metrics & actionable crop advisories
 function render7DayForecast(dailyData) {
   const container = document.getElementById('iot-7day-forecast-list');
   if (!container) return;
@@ -286,20 +437,37 @@ function render7DayForecast(dailyData) {
     const wmo = getWmoDetails(code);
     const tMax = dailyData.temperature_2m_max && dailyData.temperature_2m_max[i] !== null ? Math.round(dailyData.temperature_2m_max[i]) : 'null';
     const tMin = dailyData.temperature_2m_min && dailyData.temperature_2m_min[i] !== null ? Math.round(dailyData.temperature_2m_min[i]) : 'null';
-    const rainProb = dailyData.precipitation_probability_max && dailyData.precipitation_probability_max[i] !== null ? dailyData.precipitation_probability_max[i] : 'null';
+    const rainProb = dailyData.precipitation_probability_max && dailyData.precipitation_probability_max[i] !== null ? dailyData.precipitation_probability_max[i] : 0;
     const rainSum = dailyData.precipitation_sum ? dailyData.precipitation_sum[i] : 0;
+    const et0 = dailyData.et0_fao_evapotranspiration ? Math.round(dailyData.et0_fao_evapotranspiration[i] * 10) / 10 : null;
+    const windMax = dailyData.wind_speed_10m_max ? Math.round(dailyData.wind_speed_10m_max[i]) : null;
+    const windGusts = dailyData.wind_gusts_10m_max ? Math.round(dailyData.wind_gusts_10m_max[i]) : null;
+
+    // Actionable Agri-Advisory Tag
+    let agriActionChip = '';
+    if (rainProb >= 60 || rainSum >= 15) {
+      agriActionChip = `<span style="font-size:10px; font-weight:800; background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:2px 7px; border-radius:10px;">Hoãn phun BVTV · Thoát nước</span>`;
+    } else if (et0 && et0 >= 5.0) {
+      agriActionChip = `<span style="font-size:10px; font-weight:800; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2px 7px; border-radius:10px;">Tưới bù ET0 ${et0}mm</span>`;
+    } else if (windGusts && windGusts >= 35) {
+      agriActionChip = `<span style="font-size:10px; font-weight:800; background:#fffbeb; color:#d97706; border:1px solid #fde68a; padding:2px 7px; border-radius:10px;">Chống cành · Gió giật ${windGusts}km/h</span>`;
+    } else {
+      agriActionChip = `<span style="font-size:10px; font-weight:700; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 7px; border-radius:10px;">Canh tác thuận lợi</span>`;
+    }
 
     html += `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${i === 0 ? '#ecfdf5' : '#f8fafc'}; border-radius:8px; font-size:12.5px; border:1px solid ${i === 0 ? '#a7f3d0' : '#e2e8f0'}; transition:all 0.15s ease;">
-        <div style="display:flex; align-items:center; gap:8px; min-width:120px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:${i === 0 ? '#ecfdf5' : '#f8fafc'}; border-radius:10px; font-size:12.5px; border:1px solid ${i === 0 ? '#a7f3d0' : '#e2e8f0'}; transition:all 0.15s ease; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; min-width:110px;">
           <strong style="color:#0f172a; font-weight:800;">${dayLabel}</strong>
           <span style="font-size:11px; color:#64748b;">(${dateStr})</span>
         </div>
-        <div style="display:flex; align-items:center; gap:6px; font-weight:700; color:${wmo.color}; flex:1; justify-content:center;">
+        <div style="display:flex; align-items:center; gap:6px; font-weight:700; color:${wmo.color}; flex:1; justify-content:center; flex-wrap:wrap;">
           <i data-lucide="${wmo.icon}" class="lucide-sm"></i>
           <span style="font-size:11.5px; color:#334155;">${wmo.label}</span>
-          <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:1px 6px; border-radius:10px; margin-left:4px;" title="Xác suất mưa">${rainProb}%</span>
-          ${rainSum > 0 ? `<span style="font-size:10.5px; color:#64748b;">(${rainSum}mm)</span>` : ''}
+          <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:1px 6px; border-radius:10px; font-weight:800;" title="Xác suất mưa">${rainProb}%</span>
+          ${rainSum > 0 ? `<span style="font-size:10.5px; color:#0369a1; font-weight:700;">(${rainSum}mm)</span>` : ''}
+          ${et0 !== null ? `<span style="font-size:10.5px; color:#059669; background:#d1fae5; padding:1px 5px; border-radius:6px; font-weight:700;">ET₀: ${et0}mm</span>` : ''}
+          ${agriActionChip}
         </div>
         <div style="font-weight:800; color:#0f172a; text-align:right; min-width:70px;">
           <span>${tMax}°</span> <span style="color:#94a3b8; font-weight:600; font-size:11.5px;">/ ${tMin}°</span>
@@ -334,17 +502,64 @@ function renderNullWeather(farmDisplayName = '') {
   const windDirEl = document.getElementById('iot-weather-wind-dir');
   if (windDirEl) windDirEl.textContent = 'Hướng gió: null';
 
+  const windGustsEl = document.getElementById('iot-weather-wind-gusts');
+  if (windGustsEl) windGustsEl.textContent = 'Gió giật max: null';
+
   const rainEl = document.getElementById('iot-weather-rain');
   if (rainEl) rainEl.innerHTML = `<span style="color:#94a3b8;">null</span>`;
 
   const rainProbEl = document.getElementById('iot-weather-rain-prob');
   if (rainProbEl) rainProbEl.textContent = 'Xác suất mưa: null';
 
+  const rainSumEl = document.getElementById('iot-weather-rain-sum');
+  if (rainSumEl) rainSumEl.textContent = 'Tổng mưa 24h: null';
+
   const humEl = document.getElementById('iot-weather-humidity');
   if (humEl) humEl.innerHTML = `<span style="color:#94a3b8;">null</span>`;
 
   const appEl = document.getElementById('iot-weather-apparent');
-  if (appEl) appEl.textContent = 'Cảm giác như: null · UV: null';
+  if (appEl) appEl.textContent = 'Cảm giác: null';
+
+  const dewPointEl = document.getElementById('iot-weather-dewpoint');
+  if (dewPointEl) dewPointEl.textContent = 'Điểm sương: null';
+
+  const et0El = document.getElementById('iot-weather-et0');
+  if (et0El) et0El.innerHTML = `<span style="color:#94a3b8;">null</span>`;
+
+  const et0StatusEl = document.getElementById('iot-weather-et0-status');
+  if (et0StatusEl) et0StatusEl.textContent = 'Nhu cầu nước: null';
+
+  const irrigEl = document.getElementById('iot-weather-irrigation-rec');
+  if (irrigEl) irrigEl.textContent = 'Tưới bù: null';
+
+  const uvEl = document.getElementById('iot-weather-uv');
+  if (uvEl) uvEl.textContent = 'null';
+
+  const uvLevelEl = document.getElementById('iot-weather-uv-level');
+  if (uvLevelEl) uvLevelEl.textContent = 'Mức độ: null';
+
+  const solarRadEl = document.getElementById('iot-weather-solar-rad');
+  if (solarRadEl) solarRadEl.textContent = 'Bức xạ: null';
+
+  const soilMoistEl = document.getElementById('iot-weather-soil-moist');
+  if (soilMoistEl) soilMoistEl.textContent = 'null%';
+
+  const soilTempEl = document.getElementById('iot-weather-soil-temp');
+  if (soilTempEl) soilTempEl.textContent = 'Nhiệt độ đất: null';
+
+  const pressEl = document.getElementById('iot-weather-pressure');
+  if (pressEl) pressEl.textContent = 'Áp suất: null';
+
+  const sprayWindowEl = document.getElementById('iot-weather-spray-window');
+  if (sprayWindowEl) {
+    sprayWindowEl.style.background = '#f1f5f9';
+    sprayWindowEl.style.color = '#64748b';
+    sprayWindowEl.style.borderColor = '#cbd5e1';
+    sprayWindowEl.textContent = 'Cửa sổ Phun thuốc: null';
+  }
+
+  const advisoryDetailEl = document.getElementById('iot-weather-advisory-detail');
+  if (advisoryDetailEl) advisoryDetailEl.textContent = 'Chưa nhận được dữ liệu khí tượng Open-Meteo cho trang trại này.';
 
   const timeEl = document.getElementById('iot-weather-updated-time');
   if (timeEl) timeEl.textContent = 'Dữ liệu: null';
