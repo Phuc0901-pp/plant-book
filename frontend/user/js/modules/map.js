@@ -1,10 +1,10 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/map.js — Mapbox GIS map for farms & plants
    ═══════════════════════════════════════════════════════════════ */
 
 import { API } from '../core/api.js';
-import { esc } from '../core/utils.js';
+import { esc, sanitizeCoordinates } from '../core/utils.js';
 
 /** Instance Mapbox map hiện tại */
 export let userMap = null;
@@ -117,21 +117,15 @@ export function initUserMap(farms, plants) {
 
     // ── Vẽ Trang trại (Polygon) ──────────────────────────
     farms.forEach(farm => {
-      let coords = [];
-      try {
-        coords = typeof farm.polygon_coordinates === 'string'
-          ? JSON.parse(farm.polygon_coordinates)
-          : farm.polygon_coordinates;
-      } catch (_) {}
-
-      if (!coords || coords.length === 0) return;
+      const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
+      if (!validCoords || validCoords.length === 0) return;
 
       const srcId     = `user-farm-src-${farm.id}`;
       const layerId   = `user-farm-layer-${farm.id}`;
       const outlineId = `user-farm-outline-${farm.id}`;
 
       // Đóng polygon nếu cần
-      const poly = [...coords];
+      const poly = [...validCoords];
       if (poly.length > 0 && (poly[0][0] !== poly[poly.length - 1][0] || poly[0][1] !== poly[poly.length - 1][1])) {
         poly.push(poly[0]);
       }
@@ -172,15 +166,9 @@ export function initUserMap(farms, plants) {
       }
 
       // Render Farm GPS Marker
-      let ptLng = coords[0][0];
-      let ptLat = coords[0][1];
+      const ptLng = validCoords[0][0];
+      const ptLat = validCoords[0][1];
       if (ptLng && ptLat) {
-        if (ptLng < 50 && ptLat > 90) {
-          const tmp = ptLng;
-          ptLng = ptLat;
-          ptLat = tmp;
-        }
-
         const farmMarkerWrap = document.createElement('div');
         farmMarkerWrap.className = 'farm-gps-point-marker';
         farmMarkerWrap.title = `${farm.name} (${farm.plant_count || farm.total_plants || 0} cây)`;
@@ -199,7 +187,7 @@ export function initUserMap(farms, plants) {
           `))
           .addTo(map);
 
-        bounds.extend([ptLng, ptLat]);
+        validCoords.forEach(pt => bounds.extend(pt));
         hasBounds = true;
       }
     });

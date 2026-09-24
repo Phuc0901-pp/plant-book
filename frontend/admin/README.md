@@ -1,8 +1,8 @@
-# 🔐 Thư mục Quản trị (Admin Panel) - `/admin`
+# Thư mục Quản trị (Admin Panel) - `/admin`
 
 Thư mục này chứa toàn bộ mã nguồn giao diện quản trị viên của hệ thống **Plant Book**.
 
-## 📌 Mục đích
+## Mục đích
 Dành cho người quản lý hệ thống (Admin) thực hiện các tác vụ:
 1. Quản lý bản đồ GIS trang trại (vẽ ranh giới đất, định vị cây trồng).
 2. Thiết lập quy trình chăm sóc (Tưới nước, Bón phân, Phun thuốc, Cắt cành/lá, Tỉa hoa/quả, Bệnh cây).
@@ -12,7 +12,7 @@ Dành cho người quản lý hệ thống (Admin) thực hiện các tác vụ:
 
 ---
 
-## 📂 Cấu trúc Tệp tin
+## Cấu trúc Tệp tin
 
 *   **`index.html`**: File giao diện SPA (Single Page Application) chính chứa khung sidebar, các tab chức năng và hộp thoại modal quản trị.
 *   **`css/`**:
@@ -29,6 +29,6 @@ Dành cho người quản lý hệ thống (Admin) thực hiện các tác vụ:
 
 ---
 
-## ⚙️ Hướng dẫn bảo trì & mở rộng
+## Hướng dẫn bảo trì & mở rộng
 *   **Thêm bộ lọc mới**: Chỉnh sửa HTML trong `index.html` (phần `.search-bar` tương ứng) và cập nhật logic lọc trong file JS tương ứng (ví dụ: `plants.js`).
 *   **Cập nhật Marker bản đồ**: Chỉnh sửa định dạng CSS của `.plant-id-marker` trong `admin-gis.css` hoặc logic vẽ marker trong `gis.js`. Chú ý lớp `.low-zoom` được sử dụng để chuyển số hiển thị thành chấm tròn khi bản đồ thu nhỏ.

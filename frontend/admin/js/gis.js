@@ -1537,16 +1537,13 @@ async function selectFarm(farmId, syncUrl = true) {
     window.syncAdminUrl({ page: 'gis', farm: farmId });
   }
 
-  document.getElementById('gis-back-btn').style.display = 'block';
-  document.getElementById('gis-header-actions').style.display = 'none';
+  const backBtn = document.getElementById('gis-back-btn');
+  if (backBtn) backBtn.style.display = 'block';
+  const headerActions = document.getElementById('gis-header-actions');
+  if (headerActions) headerActions.style.display = 'none';
   switchGisView('details');
-  
-  try {
-    const farm = await api(`/farms/${farmId}`);
-    if (window._pendingSelectFarmId === farmId) {
-      window._pendingSelectFarmId = null;
-    }
 
+  function renderFarmDetailsUI(farm) {
     const isOwnerPro = farm.user_account_tier === 'pro' || farm.user_role === 'admin';
     const tierBadgeHtml = isOwnerPro
       ? `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:2px 8px; border-radius:12px;"><i data-lucide="crown" class="lucide-sm" style="color:#f59e0b;"></i> Gói PRO</span>`
@@ -1556,7 +1553,7 @@ async function selectFarm(farmId, syncUrl = true) {
       <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:12px;">
         <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:4px;">Nông hộ phụ trách Trang trại</div>
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <span style="font-size:13.5px; font-weight:800; color:#0f172a;"><i data-lucide="user" class="lucide-sm" style="color:#059669"></i> ${esc(farm.user_name || 'Chưa gán')}</span>
+          <span style="font-size:13.5px; font-weight:800; color:#0f172a;"><i data-lucide="user" class="lucide-sm" style="color:#059669"></i> ${esc(farm.user_name || farm.owner_name || 'Chưa gán')}</span>
           ${tierBadgeHtml}
         </div>
         ${!isOwnerPro ? `
@@ -1575,99 +1572,110 @@ async function selectFarm(farmId, syncUrl = true) {
       </div>
     `;
 
-    document.getElementById('farm-details-desc').innerHTML = ownerHtml + (farm.description ? `<p class="gis-farm-info" style="margin-top:6px;">${esc(farm.description)}</p>` : '<p class="gis-farm-info" style="font-style:italic; color:#94a3b8; margin-top:6px;">Không có mô tả.</p>');
-    document.getElementById('gis-sidebar-title').textContent = farm.name;
+    const descEl = document.getElementById('farm-details-desc');
+    if (descEl) descEl.innerHTML = ownerHtml + (farm.description ? `<p class="gis-farm-info" style="margin-top:6px;">${esc(farm.description)}</p>` : '<p class="gis-farm-info" style="font-style:italic; color:#94a3b8; margin-top:6px;">Không có mô tả.</p>');
     
-    const areaVal = Math.round(parseFloat(farm.area || 0)).toLocaleString('vi-VN') + ' m²';
-    document.getElementById('farm-details-area').innerHTML = `<i data-lucide="trending-up" class="lucide-sm"></i> ${areaVal}`;
-    document.getElementById('farm-details-plant-count').textContent = farm.plants ? farm.plants.length : 0;
+    const sbTitle = document.getElementById('gis-sidebar-title');
+    if (sbTitle) sbTitle.textContent = farm.name;
+    
+    const areaVal = formatSmartArea(farm.area);
+    const areaEl = document.getElementById('farm-details-area');
+    if (areaEl) areaEl.innerHTML = `<i data-lucide="trending-up" class="lucide-sm"></i> ${areaVal}`;
+    
+    const plantCountEl = document.getElementById('farm-details-plant-count');
+    if (plantCountEl) plantCountEl.textContent = farm.plants ? farm.plants.length : (farm.plant_count || farm.total_plants || 0);
 
     const listEl = document.getElementById('farm-details-plants-list');
-    if (!farm.plants || farm.plants.length === 0) {
-      listEl.innerHTML = '<p style="font-size:12px;color:#94a3b8;text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
-    } else {
-      const healthColors = { 'Tốt': '#10b981', 'Bình thường': '#f59e0b', 'Cần chú ý': '#f97316', 'Bệnh': '#ef4444' };
-      listEl.innerHTML = farm.plants.map(p => `
-        <div class="gis-plant-item" onclick="openPlantModal(${p.id})">
-          <div style="flex:1; min-width:0;">
-            <strong style="font-size:11.5px; color:#0f172a; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Cây ${esc(p.tree_code || p.id)}: ${esc(p.plant_type)}</strong>
-            ${p.plant_variety ? `<small style="color:#64748b">${esc(p.plant_variety)}</small>` : ''}
+    if (listEl) {
+      if (!farm.plants || farm.plants.length === 0) {
+        listEl.innerHTML = '<p style="font-size:12px;color:#94a3b8;text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
+      } else {
+        const healthColors = { 'Tốt': '#10b981', 'Bình thường': '#f59e0b', 'Cần chú ý': '#f97316', 'Bệnh': '#ef4444' };
+        listEl.innerHTML = farm.plants.map(p => `
+          <div class="gis-plant-item" onclick="openPlantModal(${p.id})">
+            <div style="flex:1; min-width:0;">
+              <strong style="font-size:11.5px; color:#0f172a; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Cây ${esc(p.tree_code || p.id)}: ${esc(p.plant_type)}</strong>
+              ${p.plant_variety ? `<small style="color:#64748b">${esc(p.plant_variety)}</small>` : ''}
+            </div>
+            <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+              <span class="gis-plant-health-dot" style="background:${healthColors[p.health_status] || '#3b82f6'};"></span>
+              <button class="btn btn-secondary btn-sm" style="padding:2px 6px; font-size:10px;" onclick="event.stopPropagation(); openPlantModal(${p.id})">
+                <i data-lucide="edit-3" class="lucide-sm"></i>
+              </button>
+            </div>
           </div>
-          <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-            <span class="gis-plant-health-dot" style="background:${healthColors[p.health_status] || '#3b82f6'};"></span>
-            <button class="btn btn-secondary btn-sm" style="padding:2px 6px; font-size:10px;" onclick="event.stopPropagation(); openPlantModal(${p.id})">
-              <i data-lucide="edit-3" class="lucide-sm"></i>
-            </button>
-          </div>
-        </div>
-      `).join('');
-      bindPlantTooltips(farm.plants);
+        `).join('');
+        bindPlantTooltips(farm.plants);
+      }
     }
     if (window.lucide && typeof window.lucide.createIcons === 'function') lucide.createIcons();
+  }
 
-    let coords = [];
-    try {
-      coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
-      while (Array.isArray(coords) && coords.length > 0 && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
-        coords = coords[0];
-      }
-    } catch(e) {}
+  function zoomMapToFarm(farm) {
+    if (!gMap) return;
+    try { gMap.resize(); } catch (_) {}
+    gMap._contourOffsetLocked = false;
+    delete gMap._contourEleOffset;
 
-    if (gMap) {
-      // Bắt buộc gọi resize bản đồ khi chuyển từ trang khác sang
-      gMap.resize();
+    drawFarmsAndPlantsLayers(currentFarms, farm.plants || []);
+    renderFarmDimensions(farm);
 
-      // Clear elevation offset lock so contour elevation calibrates cleanly for selected farm
-      gMap._contourOffsetLocked = false;
-      delete gMap._contourEleOffset;
+    const bounds = new mapboxgl.LngLatBounds();
+    let hasBounds = false;
 
-      // Re-render farm polygon highlights & plant markers for selected farm
-      drawFarmsAndPlantsLayers(currentFarms, farm.plants);
-
-      // Render edge dimensions (kích thước từng cạnh), chu vi & tổng diện tích
-      renderFarmDimensions(farm);
-
-      const bounds = new mapboxgl.LngLatBounds();
-      let hasBounds = false;
-
-      const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
-      if (validCoords.length > 0) {
-        validCoords.forEach(pt => {
-          bounds.extend(pt);
-          hasBounds = true;
-        });
-      }
-
-      if (!hasBounds && Array.isArray(farm.plants) && farm.plants.length > 0) {
-        farm.plants.forEach(p => {
-          if (p.latitude && p.longitude) {
-            const lat = parseFloat(p.latitude);
-            const lng = parseFloat(p.longitude);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              bounds.extend([lng, lat]);
-              hasBounds = true;
-            }
-          }
-        });
-      }
-
-      if (hasBounds) {
-        setTimeout(() => {
-          if (gMap) {
-            gMap.resize();
-            gMap.fitBounds(bounds, { padding: 60, maxZoom: 19.5, duration: 1000 });
-          }
-        }, 100);
-      }
-      
-      if (gMap && coords && coords.length > 0) {
-        addContourLinesToMap(gMap, { farmCoords: coords });
-      } else if (gMap) {
-        removeContourLinesFromMap(gMap);
-      }
+    const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
+    if (validCoords.length > 0) {
+      validCoords.forEach(pt => {
+        bounds.extend(pt);
+        hasBounds = true;
+      });
     }
+
+    if (!hasBounds && Array.isArray(farm.plants) && farm.plants.length > 0) {
+      farm.plants.forEach(p => {
+        if (p.latitude && p.longitude) {
+          const lat = parseFloat(p.latitude);
+          const lng = parseFloat(p.longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            bounds.extend([lng, lat]);
+            hasBounds = true;
+          }
+        }
+      });
+    }
+
+    if (hasBounds) {
+      gMap.fitBounds(bounds, { padding: 60, maxZoom: 19.5, duration: 800 });
+    }
+
+    if (validCoords.length > 0) {
+      addContourLinesToMap(gMap, { farmCoords: validCoords });
+    } else {
+      removeContourLinesFromMap(gMap);
+    }
+  }
+
+  // 1. INSTANT LOCAL CACHE RENDERING & ZOOM (0ms perceived latency)
+  const cachedFarm = (currentFarms || []).find(f => String(f.id) === String(farmId));
+  if (cachedFarm) {
+    renderFarmDetailsUI(cachedFarm);
+    zoomMapToFarm(cachedFarm);
+  }
+
+  // 2. BACKGROUND DATA SYNC (Updates plant tree details & live certs)
+  try {
+    const farm = await api(`/farms/${farmId}`);
+    if (window._pendingSelectFarmId === farmId) {
+      window._pendingSelectFarmId = null;
+    }
+    if (String(activeFarmId) !== String(farmId)) return;
+
+    renderFarmDetailsUI(farm);
+    zoomMapToFarm(farm);
   } catch (err) {
-    toast('Lỗi tải chi tiết trang trại: ' + err.message, 'error');
+    if (!cachedFarm) {
+      toast('Lỗi tải chi tiết trang trại: ' + err.message, 'error');
+    }
   }
 }
 

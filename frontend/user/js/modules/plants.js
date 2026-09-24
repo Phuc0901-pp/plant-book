@@ -3,7 +3,7 @@
    modules/plants.js — Plant list rendering & search filter
    ═══════════════════════════════════════════════════════════════ */
 
-import { esc, healthBadge } from '../core/utils.js';
+import { esc, healthBadge, sanitizeCoordinates, formatSmartArea } from '../core/utils.js';
 import { api } from '../core/api.js';
 import { animateValue } from './countup.js';
 
@@ -675,59 +675,46 @@ export function openFarmDetailView(farmId, updateHash = true) {
       filterUserPlants();
     }
 
-    // Trigger map resize & navigate/fly directly down to farm A!
-    setTimeout(() => {
+    // Trigger instant map resize & smooth bounds navigation down to farm!
+    const zoomToFarm = () => {
       const targetMap = userMap || window.userMap;
-      if (targetMap) {
-        try { targetMap.resize(); } catch (_) {}
+      if (!targetMap) return;
+      try { targetMap.resize(); } catch (_) {}
 
-        let coords = [];
-        try {
-          coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
-        } catch (_) {}
+      const bounds = new mapboxgl.LngLatBounds();
+      let hasPoints = false;
 
-        const bounds = new mapboxgl.LngLatBounds();
-        let hasPoints = false;
-
-        if (coords && coords.length > 0) {
-          coords.forEach(pt => {
-            if (Array.isArray(pt) && pt.length >= 2) {
-              let lng = parseFloat(pt[0]);
-              let lat = parseFloat(pt[1]);
-              if ((lng >= -90 && lng <= 90) && (lat > 90 || lat < -90 || lat > 30)) {
-                const tmp = lng; lng = lat; lat = tmp;
-              }
-              if (!isNaN(lng) && !isNaN(lat) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-                bounds.extend([lng, lat]);
-                hasPoints = true;
-              }
-            }
-          });
-        }
-
-        // If no polygon points, find plants in this farm
-        if (!hasPoints) {
-          const farmPlants = (_plantsCache || []).filter(p => String(p.farm_id) === String(farm.id) && p.latitude && p.longitude);
-          farmPlants.forEach(p => {
-            let lat = parseFloat(p.latitude);
-            let lng = parseFloat(p.longitude);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
-                const tmp = lat; lat = lng; lng = tmp;
-              }
-              if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-                bounds.extend([lng, lat]);
-                hasPoints = true;
-              }
-            }
-          });
-        }
-
-        if (hasPoints) {
-          targetMap.fitBounds(bounds, { padding: 60, maxZoom: 19.5, duration: 1200 });
-        }
+      const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
+      if (validCoords && validCoords.length > 0) {
+        validCoords.forEach(pt => {
+          bounds.extend(pt);
+          hasPoints = true;
+        });
       }
-    }, 150);
+
+      // If no polygon points, find plants in this farm
+      if (!hasPoints) {
+        const farmPlants = (_plantsCache || []).filter(p => String(p.farm_id) === String(farm.id) && p.latitude && p.longitude);
+        farmPlants.forEach(p => {
+          let lat = parseFloat(p.latitude);
+          let lng = parseFloat(p.longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            if (lat > 50 && lng < 50) { const tmp = lat; lat = lng; lng = tmp; }
+            if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+              bounds.extend([lng, lat]);
+              hasPoints = true;
+            }
+          }
+        });
+      }
+
+      if (hasPoints) {
+        targetMap.fitBounds(bounds, { padding: 60, maxZoom: 19.5, duration: 800 });
+      }
+    };
+
+    zoomToFarm();
+    setTimeout(zoomToFarm, 80);
   }
 }
 window.openFarmDetailView = openFarmDetailView;
@@ -847,21 +834,14 @@ export function selectUserFarm(farmId) {
   _activeFarmId = farmId;
   if (_farmsCache && _farmsCache.length) {
     renderUserFarmsGrid(_farmsCache);
-    const farm = _farmsCache.find(f => f.id === farmId);
+    const farm = _farmsCache.find(f => String(f.id) === String(farmId));
     if (farm && window.userMap && farm.polygon_coordinates) {
-      try {
-        let coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
-        if (coords && coords.length > 0) {
-          let ptLng = coords[0][0];
-          let ptLat = coords[0][1];
-          if (ptLng < 50 && ptLat > 90) {
-            const tmp = ptLng;
-            ptLng = ptLat;
-            ptLat = tmp;
-          }
-          window.userMap.flyTo({ center: [ptLng, ptLat], zoom: 16, essential: true });
-        }
-      } catch (_) {}
+      const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
+      if (validCoords && validCoords.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds();
+        validCoords.forEach(pt => bounds.extend(pt));
+        window.userMap.fitBounds(bounds, { padding: 60, maxZoom: 19.5, duration: 800 });
+      }
     }
   }
 }
@@ -869,7 +849,7 @@ export function selectUserFarm(farmId) {
 // ── Farm Edit Functions ────────────────────────────────────────
 export function openEditFarmModal(farmId = null) {
   const targetId = farmId || _activeFarmId;
-  const farm = (_farmsCache || []).find(f => f.id == targetId);
+  const farm = (_farmsCache || []).find(f => String(f.id) === String(targetId));
   if (!farm) {
     alert('Không tìm thấy trang trại để chỉnh sửa.');
     return;
@@ -894,20 +874,11 @@ export function openEditFarmModal(farmId = null) {
   document.getElementById('edit-farm-desc').value = farm.description || '';
 
   let lat = '', lng = '';
-  try {
-    let coords = typeof farm.polygon_coordinates === 'string' ? JSON.parse(farm.polygon_coordinates) : farm.polygon_coordinates;
-    if (coords && coords.length > 0) {
-      let ptLng = coords[0][0];
-      let ptLat = coords[0][1];
-      if (ptLng < 50 && ptLat > 90) {
-        lat = ptLng;
-        lng = ptLat;
-      } else {
-        lat = ptLat;
-        lng = ptLng;
-      }
-    }
-  } catch (_) {}
+  const validCoords = sanitizeCoordinates(farm.polygon_coordinates);
+  if (validCoords && validCoords.length > 0) {
+    lng = validCoords[0][0];
+    lat = validCoords[0][1];
+  }
 
   document.getElementById('edit-farm-lat').value = lat;
   document.getElementById('edit-farm-lng').value = lng;
@@ -1206,7 +1177,7 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
       _applyIoTDemoDataToUI(res);
 
       // Asynchronously fetch 100% real-time Open-Meteo 6-day weather forecast based on farm GPS coordinates
-      const farmObj = (_farmsCache && _farmsCache.length) ? _farmsCache.find(f => f.id == farmId) : null;
+      const farmObj = (_farmsCache && _farmsCache.length) ? _farmsCache.find(f => String(f.id) === String(farmId)) : null;
       let lat = null;
       let lng = null;
       if (farmObj) {
@@ -1214,16 +1185,13 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
           lat = parseFloat(farmObj.latitude);
           lng = parseFloat(farmObj.longitude);
         } else if (farmObj.polygon_coordinates) {
-          try {
-            const poly = typeof farmObj.polygon_coordinates === 'string' ? JSON.parse(farmObj.polygon_coordinates) : farmObj.polygon_coordinates;
-            if (Array.isArray(poly) && poly.length > 0) {
-              const ring = Array.isArray(poly[0][0]) ? poly[0] : poly;
-              let sumLat = 0, sumLng = 0;
-              ring.forEach(pt => { sumLng += parseFloat(pt[0]); sumLat += parseFloat(pt[1]); });
-              lat = sumLat / ring.length;
-              lng = sumLng / ring.length;
-            }
-          } catch (_) {}
+          const validPts = sanitizeCoordinates(farmObj.polygon_coordinates);
+          if (validPts.length > 0) {
+            let sumLat = 0, sumLng = 0;
+            validPts.forEach(pt => { sumLng += pt[0]; sumLat += pt[1]; });
+            lat = sumLat / validPts.length;
+            lng = sumLng / validPts.length;
+          }
         }
       }
       if (!lat || !lng || isNaN(lat) || isNaN(lng)) {

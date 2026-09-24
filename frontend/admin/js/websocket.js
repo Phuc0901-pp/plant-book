@@ -97,9 +97,48 @@ function closeWebSocket() {
     reconnectTimer = null;
   }
   if (socket) {
-    socket.close();
+    try { socket.close(); } catch (_) {}
     socket = null;
   }
+}
+
+// Clean lifecycle & Back-Forward Cache (bfcache) handlers
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    if (socket) {
+      try { socket.close(1000, 'Page entered background/bfcache'); } catch (_) {}
+      socket = null;
+    }
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+  });
+
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted || !socket) {
+      isManualClose = false;
+      connectWebSocket();
+    }
+  });
+
+  document.addEventListener('freeze', () => {
+    if (socket) {
+      try { socket.close(1000, 'Page frozen'); } catch (_) {}
+      socket = null;
+    }
+  });
+
+  document.addEventListener('resume', () => {
+    isManualClose = false;
+    connectWebSocket();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !socket && !isManualClose && typeof token !== 'undefined' && token) {
+      connectWebSocket();
+    }
+  });
 }
 
 function handleRealtimeEvent(msg) {
