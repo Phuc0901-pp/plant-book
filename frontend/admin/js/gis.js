@@ -1540,6 +1540,7 @@ async function selectFarm(farmId, syncUrl = true) {
       `).join('');
       bindPlantTooltips(farm.plants);
     }
+    if (window.lucide && typeof window.lucide.createIcons === 'function') lucide.createIcons();
 
     let coords = [];
     try {
@@ -2617,7 +2618,7 @@ function addContourLinesToMap(map, options = {}) {
       setTimeout(updateDense1mContours, 600);
       setTimeout(updateDense1mContours, 1500);
 
-      // 5. Nút Bật/Tắt đường đồng mức & Nút Xuất Bản Vẽ A4 Nằm Ngang
+      // 5. Nút Bật/Tắt đường đồng mức, Nút Phủ Bản Vẽ CAD & Nút Xuất Bản Vẽ A4 Nằm Ngang
       if (showControl && !map._contourControlAdded) {
         map._contourControlAdded = true;
 
@@ -2638,14 +2639,12 @@ function addContourLinesToMap(map, options = {}) {
               justify-content: center;
               width: 29px;
               height: 29px;
-              font-size: 13px;
-              font-weight: bold;
-              background: ${defaultVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent'};
-              color: ${defaultVisible ? '#f59e0b' : '#555'};
+              background: ${defaultVisible ? '#fef3c7' : 'transparent'};
+              color: ${defaultVisible ? '#d97706' : '#64748b'};
               border: none;
               cursor: pointer;
             `;
-            btnContour.innerHTML = '<i data-lucide="mountain" class="lucide-sm"></i>';
+            btnContour.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="m4.14 15.08 2.86-2.86 5 5"/></svg>`;
 
             let isVisible = defaultVisible;
 
@@ -2655,11 +2654,34 @@ function addContourLinesToMap(map, options = {}) {
               if (m.getLayer('dense-1m-contour-lines')) m.setLayoutProperty('dense-1m-contour-lines', 'visibility', visVal);
               if (m.getLayer('dense-1m-contour-labels')) m.setLayoutProperty('dense-1m-contour-labels', 'visibility', visVal);
 
-              btnContour.style.background = isVisible ? 'rgba(245, 158, 11, 0.25)' : 'transparent';
-              btnContour.style.color = isVisible ? '#f59e0b' : '#555';
+              btnContour.style.background = isVisible ? '#fef3c7' : 'transparent';
+              btnContour.style.color = isVisible ? '#d97706' : '#64748b';
 
               const legendEl = m.getContainer().querySelector('.elevation-legend-widget-container');
               if (legendEl) legendEl.style.display = isVisible ? 'block' : 'none';
+            };
+
+            const btnImportDrawing = document.createElement('button');
+            btnImportDrawing.className = 'mapboxgl-ctrl-icon mapbox-ctrl-drawing-btn';
+            btnImportDrawing.type = 'button';
+            btnImportDrawing.title = 'Hồ sơ bản vẽ CAD & Phủ bản vẽ quy hoạch (CAD / Image Overlay)';
+            btnImportDrawing.setAttribute('aria-label', 'Import CAD Drawing Overlay');
+            btnImportDrawing.style.cssText = `
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 29px;
+              height: 29px;
+              background: transparent;
+              color: #2563eb;
+              border: none;
+              border-top: 1px solid #e2e8f0;
+              cursor: pointer;
+            `;
+            btnImportDrawing.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/></svg>`;
+
+            btnImportDrawing.onclick = () => {
+              openDesignDrawingModal();
             };
 
             const btnExportA4 = document.createElement('button');
@@ -2673,21 +2695,20 @@ function addContourLinesToMap(map, options = {}) {
               justify-content: center;
               width: 29px;
               height: 29px;
-              font-size: 13px;
-              font-weight: bold;
               background: transparent;
-              color: #16a34a;
+              color: #059669;
               border: none;
               border-top: 1px solid #e2e8f0;
               cursor: pointer;
             `;
-            btnExportA4.innerHTML = '📐';
+            btnExportA4.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="5" r="2"/><path d="m3.2 21 7.8-13.8"/><path d="m20.8 21-7.8-13.8"/><path d="m9 15 6 0"/></svg>`;
 
             btnExportA4.onclick = () => {
               openAdminFarmA4ExportModal(m);
             };
 
             this._container.appendChild(btnContour);
+            this._container.appendChild(btnImportDrawing);
             this._container.appendChild(btnExportA4);
             return this._container;
           }
