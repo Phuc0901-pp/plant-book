@@ -89,17 +89,17 @@ async function initDevicesPage() {
 async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
   const farmVal = targetFarmId || document.getElementById('db-iot-filter-farm')?.value || 'all';
   
-  // Resolve latitude & longitude
-  let lat = 10.9415; // Default Long Khánh
-  let lng = 107.2418;
-  let farmDisplayName = 'Toàn hệ thống (Long Khánh, Đồng Nai)';
+  let lat = null;
+  let lng = null;
+  let farmDisplayName = 'Toàn hệ thống';
 
   const farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
+
   if (farmVal !== 'all' && farms.length > 0) {
     const selectedFarm = farms.find(f => f.id == farmVal);
     if (selectedFarm) {
       farmDisplayName = selectedFarm.name || `Trang trại #${selectedFarm.id}`;
-      if (selectedFarm.latitude && selectedFarm.longitude) {
+      if (selectedFarm.latitude && selectedFarm.longitude && !isNaN(parseFloat(selectedFarm.latitude)) && !isNaN(parseFloat(selectedFarm.longitude))) {
         lat = parseFloat(selectedFarm.latitude);
         lng = parseFloat(selectedFarm.longitude);
       } else if (selectedFarm.polygon_coordinates) {
@@ -109,29 +109,54 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
             : selectedFarm.polygon_coordinates;
           if (Array.isArray(poly) && poly.length > 0) {
             const ring = Array.isArray(poly[0][0]) ? poly[0] : poly;
-            let sumLat = 0, sumLng = 0;
+            let sumLat = 0, sumLng = 0, validCount = 0;
             ring.forEach(pt => {
-              sumLng += parseFloat(pt[0]);
-              sumLat += parseFloat(pt[1]);
+              const pLng = parseFloat(pt[0]);
+              const pLat = parseFloat(pt[1]);
+              if (!isNaN(pLng) && !isNaN(pLat)) {
+                sumLng += pLng;
+                sumLat += pLat;
+                validCount++;
+              }
             });
-            lat = sumLat / ring.length;
-            lng = sumLng / ring.length;
+            if (validCount > 0) {
+              lat = sumLat / validCount;
+              lng = sumLng / validCount;
+            }
           }
         } catch (_) {}
       }
     }
-  } else if (farms.length > 0) {
-    const f0 = farms[0];
-    if (f0.latitude && f0.longitude) {
-      lat = parseFloat(f0.latitude);
-      lng = parseFloat(f0.longitude);
-      farmDisplayName = f0.name ? `${f0.name} · Khu vực trọng điểm` : farmDisplayName;
+  } else {
+    // "all" mode: use first farm with valid GPS or benchmark Long Khánh, Đồng Nai
+    const farmWithCoords = farms.find(f => f.latitude && f.longitude && !isNaN(parseFloat(f.latitude)) && !isNaN(parseFloat(f.longitude)));
+    if (farmWithCoords) {
+      lat = parseFloat(farmWithCoords.latitude);
+      lng = parseFloat(farmWithCoords.longitude);
+      farmDisplayName = `Toàn hệ thống · Chuẩn ${farmWithCoords.name}`;
+    } else {
+      // Tọa độ vùng trồng Long Khánh, Đồng Nai làm chuẩn hệ thống
+      lat = 10.9415;
+      lng = 107.2418;
+      farmDisplayName = 'Toàn hệ thống (Chuẩn GPS Long Khánh, Đồng Nai)';
     }
   }
 
   // Update Location Name
   const locEl = document.getElementById('iot-weather-location');
-  if (locEl) locEl.textContent = `Trạm Khí tượng Nông nghiệp · ${farmDisplayName}`;
+  if (locEl) {
+    if (lat !== null && lng !== null) {
+      locEl.innerHTML = `<i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> Trạm Khí tượng Nông nghiệp · ${esc(farmDisplayName)} <span style="font-size:11px; color:#64748b; font-weight:600;">(${lat.toFixed(4)}, ${lng.toFixed(4)})</span>`;
+    } else {
+      locEl.innerHTML = `<i data-lucide="map-pin-off" class="lucide-sm" style="color:#dc2626;"></i> Trạm Khí tượng Nông nghiệp · ${esc(farmDisplayName)} <span style="color:#dc2626; font-weight:700; font-size:11px;">(Tọa độ GPS: null)</span>`;
+    }
+  }
+
+  // If GPS coordinates could not be retrieved, display null state
+  if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+    renderNullWeather(farmDisplayName);
+    return;
+  }
 
   try {
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,uv_index&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max&timezone=auto`;
@@ -147,48 +172,72 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
     // 1. Render Hero Card
     const cur = data.current || {};
     const wmo = getWmoDetails(cur.weather_code);
-    const tempVal = cur.temperature_2m !== undefined ? Math.round(cur.temperature_2m) : 28;
+    const tempVal = cur.temperature_2m !== undefined ? Math.round(cur.temperature_2m) : null;
 
     const tempEl = document.getElementById('iot-weather-temp');
-    if (tempEl) tempEl.textContent = `${tempVal}°C`;
+    if (tempEl) {
+      tempEl.textContent = tempVal !== null ? `${tempVal}°C` : 'null';
+    }
 
     const iconEl = document.getElementById('iot-weather-icon');
     if (iconEl) iconEl.innerHTML = `<i data-lucide="${wmo.icon}" class="lucide-sm" style="color:${wmo.color};"></i>`;
 
     const descEl = document.getElementById('iot-weather-desc');
-    if (descEl) descEl.textContent = wmo.label;
+    if (descEl) descEl.textContent = wmo.label || 'null';
 
     const sumEl = document.getElementById('iot-weather-summary');
     if (sumEl) {
       const daily0 = data.daily || {};
-      const rainMax = daily0.precipitation_probability_max ? daily0.precipitation_probability_max[0] : 0;
-      sumEl.textContent = rainMax > 40
-        ? `Khả năng mưa hôm nay ${rainMax}%. Chú ý thoát nước mương rãnh vườn.`
-        : `Thời tiết thuận lợi cho việc chăm sóc sầu riêng và đo đạc dinh dưỡng.`;
+      const rainMax = daily0.precipitation_probability_max ? daily0.precipitation_probability_max[0] : null;
+      if (rainMax !== null) {
+        sumEl.textContent = rainMax > 40
+          ? `Khả năng mưa hôm nay ${rainMax}%. Chú ý thoát nước mương rãnh vườn.`
+          : `Thời tiết thuận lợi cho việc chăm sóc sầu riêng và đo đạc dinh dưỡng.`;
+      } else {
+        sumEl.textContent = 'Dữ liệu thời gian thực từ Open-Meteo';
+      }
     }
 
     // 2. Render Metrics Cards
     const windEl = document.getElementById('iot-weather-wind');
-    if (windEl) windEl.innerHTML = `${Math.round(cur.wind_speed_10m || 0)} <small style="font-size:12px; color:#64748b;">km/h</small>`;
+    if (windEl) {
+      windEl.innerHTML = cur.wind_speed_10m !== undefined && cur.wind_speed_10m !== null
+        ? `${Math.round(cur.wind_speed_10m)} <small style="font-size:12px; color:#64748b;">km/h</small>`
+        : '<span style="color:#94a3b8;">null</span>';
+    }
 
     const windDirEl = document.getElementById('iot-weather-wind-dir');
-    if (windDirEl) windDirEl.textContent = `Hướng: ${getWindDirectionVietnamese(cur.wind_direction_10m)}`;
+    if (windDirEl) {
+      windDirEl.textContent = cur.wind_direction_10m !== undefined && cur.wind_direction_10m !== null
+        ? `Hướng: ${getWindDirectionVietnamese(cur.wind_direction_10m)}`
+        : 'Hướng: null';
+    }
 
     const rainEl = document.getElementById('iot-weather-rain');
-    if (rainEl) rainEl.innerHTML = `${cur.precipitation !== undefined ? cur.precipitation : 0} <small style="font-size:12px; color:#64748b;">mm</small>`;
+    if (rainEl) {
+      rainEl.innerHTML = cur.precipitation !== undefined && cur.precipitation !== null
+        ? `${cur.precipitation} <small style="font-size:12px; color:#64748b;">mm</small>`
+        : '<span style="color:#94a3b8;">null</span>';
+    }
 
     const rainProbEl = document.getElementById('iot-weather-rain-prob');
-    const todayRainProb = (data.daily && data.daily.precipitation_probability_max) ? data.daily.precipitation_probability_max[0] : 0;
-    if (rainProbEl) rainProbEl.textContent = `Xác suất mưa hôm nay: ${todayRainProb}%`;
+    const todayRainProb = (data.daily && data.daily.precipitation_probability_max) ? data.daily.precipitation_probability_max[0] : null;
+    if (rainProbEl) {
+      rainProbEl.textContent = todayRainProb !== null ? `Xác suất mưa hôm nay: ${todayRainProb}%` : 'Xác suất mưa: null';
+    }
 
     const humEl = document.getElementById('iot-weather-humidity');
-    if (humEl) humEl.textContent = `${cur.relative_humidity_2m || 0}%`;
+    if (humEl) {
+      humEl.innerHTML = cur.relative_humidity_2m !== undefined && cur.relative_humidity_2m !== null
+        ? `${cur.relative_humidity_2m}%`
+        : '<span style="color:#94a3b8;">null</span>';
+    }
 
     const appEl = document.getElementById('iot-weather-apparent');
     if (appEl) {
-      const appTemp = cur.apparent_temperature !== undefined ? Math.round(cur.apparent_temperature) : tempVal;
-      const uv = cur.uv_index !== undefined ? cur.uv_index : 0;
-      appEl.textContent = `Cảm giác như: ${appTemp}°C · UV: ${uv}`;
+      const appTemp = cur.apparent_temperature !== undefined && cur.apparent_temperature !== null ? Math.round(cur.apparent_temperature) : null;
+      const uv = cur.uv_index !== undefined && cur.uv_index !== null ? cur.uv_index : null;
+      appEl.textContent = `Cảm giác như: ${appTemp !== null ? appTemp + '°C' : 'null'} · UV: ${uv !== null ? uv : 'null'}`;
     }
 
     const timeEl = document.getElementById('iot-weather-updated-time');
@@ -204,7 +253,7 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
 
   } catch (err) {
     console.warn('[devices.js] Lỗi tải Open-Meteo API:', err.message);
-    renderFallbackWeather();
+    renderNullWeather(farmDisplayName);
   }
 
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -218,7 +267,7 @@ function render7DayForecast(dailyData) {
   if (!container) return;
 
   if (!dailyData || !dailyData.time || dailyData.time.length === 0) {
-    container.innerHTML = '<div style="padding:16px; text-align:center; color:#64748b; font-size:12px;">Không có dữ liệu dự báo 7 ngày.</div>';
+    container.innerHTML = '<div style="padding:16px; text-align:center; color:#94a3b8; font-size:12px;">Chưa nhận được dữ liệu dự báo 7 ngày (null).</div>';
     return;
   }
 
@@ -235,9 +284,9 @@ function render7DayForecast(dailyData) {
     const dateStr = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
     const code = dailyData.weather_code ? dailyData.weather_code[i] : 0;
     const wmo = getWmoDetails(code);
-    const tMax = dailyData.temperature_2m_max ? Math.round(dailyData.temperature_2m_max[i]) : '--';
-    const tMin = dailyData.temperature_2m_min ? Math.round(dailyData.temperature_2m_min[i]) : '--';
-    const rainProb = dailyData.precipitation_probability_max ? dailyData.precipitation_probability_max[i] : 0;
+    const tMax = dailyData.temperature_2m_max && dailyData.temperature_2m_max[i] !== null ? Math.round(dailyData.temperature_2m_max[i]) : 'null';
+    const tMin = dailyData.temperature_2m_min && dailyData.temperature_2m_min[i] !== null ? Math.round(dailyData.temperature_2m_min[i]) : 'null';
+    const rainProb = dailyData.precipitation_probability_max && dailyData.precipitation_probability_max[i] !== null ? dailyData.precipitation_probability_max[i] : 'null';
     const rainSum = dailyData.precipitation_sum ? dailyData.precipitation_sum[i] : 0;
 
     html += `
@@ -265,41 +314,61 @@ function render7DayForecast(dailyData) {
   }
 }
 
-// Fallback Weather Render if offline or rate-limited
-function renderFallbackWeather() {
+// Render Null State when GPS or weather data is not received
+function renderNullWeather(farmDisplayName = '') {
   const tempEl = document.getElementById('iot-weather-temp');
-  if (tempEl) tempEl.textContent = '28°C';
+  if (tempEl) tempEl.innerHTML = '<span style="color:#94a3b8; font-size:32px;">null</span>';
 
   const iconEl = document.getElementById('iot-weather-icon');
-  if (iconEl) iconEl.innerHTML = `<i data-lucide="cloud-sun" class="lucide-sm" style="color:#0ea5e9;"></i>`;
+  if (iconEl) iconEl.innerHTML = `<i data-lucide="cloud-off" class="lucide-sm" style="color:#94a3b8;"></i>`;
 
   const descEl = document.getElementById('iot-weather-desc');
-  if (descEl) descEl.textContent = 'Trời quang, mây nhẹ';
+  if (descEl) descEl.innerHTML = `<span style="color:#94a3b8; font-weight:700;">null (Chưa nhận được dữ liệu)</span>`;
 
   const sumEl = document.getElementById('iot-weather-summary');
-  if (sumEl) sumEl.textContent = 'Khí hậu ổn định, thích hợp kiểm tra độ ẩm rễ cây';
+  if (sumEl) sumEl.textContent = 'Trang trại chưa cấu hình tọa độ GPS hoặc trạm khí tượng chưa gửi dữ liệu.';
 
   const windEl = document.getElementById('iot-weather-wind');
-  if (windEl) windEl.innerHTML = `14 <small style="font-size:12px; color:#64748b;">km/h</small>`;
+  if (windEl) windEl.innerHTML = `<span style="color:#94a3b8;">null</span>`;
+
+  const windDirEl = document.getElementById('iot-weather-wind-dir');
+  if (windDirEl) windDirEl.textContent = 'Hướng gió: null';
 
   const rainEl = document.getElementById('iot-weather-rain');
-  if (rainEl) rainEl.innerHTML = `0 <small style="font-size:12px; color:#64748b;">mm</small>`;
+  if (rainEl) rainEl.innerHTML = `<span style="color:#94a3b8;">null</span>`;
+
+  const rainProbEl = document.getElementById('iot-weather-rain-prob');
+  if (rainProbEl) rainProbEl.textContent = 'Xác suất mưa: null';
 
   const humEl = document.getElementById('iot-weather-humidity');
-  if (humEl) humEl.textContent = '72%';
+  if (humEl) humEl.innerHTML = `<span style="color:#94a3b8;">null</span>`;
 
-  renderWeatherHourlyChart(null);
-  
+  const appEl = document.getElementById('iot-weather-apparent');
+  if (appEl) appEl.textContent = 'Cảm giác như: null · UV: null';
+
+  const timeEl = document.getElementById('iot-weather-updated-time');
+  if (timeEl) timeEl.textContent = 'Dữ liệu: null';
+
+  if (weatherChartInstance) {
+    weatherChartInstance.destroy();
+    weatherChartInstance = null;
+  }
+
   const container = document.getElementById('iot-7day-forecast-list');
   if (container) {
-    const days = ['Hôm nay', 'Ngày mai', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật', 'Thứ Hai'];
-    container.innerHTML = days.map((d, i) => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#f8fafc; border-radius:8px; font-size:12.5px; border:1px solid #e2e8f0;">
-        <div><strong>${d}</strong></div>
-        <div style="display:flex; align-items:center; gap:6px; color:#0ea5e9;"><i data-lucide="cloud-sun" class="lucide-sm"></i> 20%</div>
-        <div><strong>30°</strong> <span style="color:#94a3b8; font-size:11.5px;">/ 24°</span></div>
+    container.innerHTML = `
+      <div style="padding:28px 16px; text-align:center; color:#94a3b8; font-size:12.5px; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">
+        <div style="width:40px; height:40px; border-radius:50%; background:#f1f5f9; color:#94a3b8; display:inline-flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:8px;">
+          <i data-lucide="cloud-off" class="lucide-sm"></i>
+        </div>
+        <div style="font-weight:800; color:#475569; font-size:13px;">Chưa nhận được dữ liệu dự báo 7 ngày (null)</div>
+        <div style="font-size:11.5px; color:#64748b; margin-top:4px;">Vui lòng cài đặt tọa độ GPS trong mục Quản lý Trang trại để kích hoạt dự báo tự động.</div>
       </div>
-    `).join('');
+    `;
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
   }
 }
 
