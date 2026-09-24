@@ -105,24 +105,40 @@
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
   <link rel="stylesheet" href="/user/css/user-layout.css?v=v1.2.8">
 <style>
+  /* ════ Universal +4px Icon System Enhancement ════ */
   .lucide {
-    width: 1.15em;
-    height: 1.15em;
+    width: calc(1.15em + 4px) !important;
+    height: calc(1.15em + 4px) !important;
     display: inline-block;
-    vertical-align: -0.15em;
+    vertical-align: -0.18em;
     stroke-width: 2;
   }
-  .lucide-lg {
-    width: 1.45em;
-    height: 1.45em;
+  .lucide-lg, svg.lucide-lg {
+    width: calc(1.45em + 4px) !important;
+    height: calc(1.45em + 4px) !important;
   }
-  .lucide-sm {
-    width: 0.9em;
-    height: 0.9em;
+  .lucide-sm, svg.lucide-sm {
+    width: calc(0.9em + 4px) !important;
+    height: calc(0.9em + 4px) !important;
   }
-  .lucide-xs {
-    width: 0.75em;
-    height: 0.75em;
+  .lucide-xs, svg.lucide-xs {
+    width: calc(0.75em + 4px) !important;
+    height: calc(0.75em + 4px) !important;
+  }
+  .lucide-xl, svg.lucide-xl {
+    width: calc(1.85em + 4px) !important;
+    height: calc(1.85em + 4px) !important;
+  }
+  i.fa, i.fas, i.far, i.fab, i.bi {
+    font-size: calc(1em + 4px);
+    vertical-align: -0.12em;
+  }
+  .nav-item i, .sidebar-nav i {
+    font-size: 18px !important;
+    width: 22px !important;
+  }
+  .bottom-nav-item i {
+    font-size: 22px !important;
   }
   .lucide-spin {
     animation: lucide-spin 1s linear infinite;

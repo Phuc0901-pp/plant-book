@@ -9,6 +9,29 @@
   if (window.__LucideHydratorInitialized) return;
   window.__LucideHydratorInitialized = true;
 
+  // Universal +4px Icon System Styles Injector
+  function injectIconStyles() {
+    if (typeof document === 'undefined' || document.getElementById('lucide-plus4px-styles')) return;
+    var style = document.createElement('style');
+    style.id = 'lucide-plus4px-styles';
+    style.textContent = [
+      '.lucide { width: calc(1.15em + 4px) !important; height: calc(1.15em + 4px) !important; display: inline-block; vertical-align: -0.18em; stroke-width: 2; }',
+      '.lucide-lg, svg.lucide-lg { width: calc(1.45em + 4px) !important; height: calc(1.45em + 4px) !important; }',
+      '.lucide-sm, svg.lucide-sm { width: calc(0.9em + 4px) !important; height: calc(0.9em + 4px) !important; }',
+      '.lucide-xs, svg.lucide-xs { width: calc(0.75em + 4px) !important; height: calc(0.75em + 4px) !important; }',
+      '.lucide-xl, svg.lucide-xl { width: calc(1.85em + 4px) !important; height: calc(1.85em + 4px) !important; }',
+      'i.fa, i.fas, i.far, i.fab, i.bi { font-size: calc(1em + 4px); vertical-align: -0.12em; }'
+    ].join('\n');
+    var head = document.head || document.getElementsByTagName('head')[0];
+    if (head) head.appendChild(style);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectIconStyles);
+  } else {
+    injectIconStyles();
+  }
+
   var scheduledTimer = null;
   var isHydrating = false;
 
