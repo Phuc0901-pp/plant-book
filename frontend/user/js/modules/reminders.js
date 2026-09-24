@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/reminders.js — Care reminders, disease alerts, quick care
    ═══════════════════════════════════════════════════════════════ */
@@ -111,6 +111,9 @@ export function renderUserReminders(plants) {
   container.innerHTML = reminderCount === 0
     ? '<div class="empty-state" style="padding:16px"><i data-lucide="check-circle-2" class="lucide-sm" style="color:var(--green)"></i><p>Tất cả cây đã được chăm sóc đầy đủ hôm nay!</p></div>'
     : html;
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 // ── Quick Care ─────────────────────────────────────────────────

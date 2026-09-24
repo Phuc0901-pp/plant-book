@@ -373,6 +373,9 @@ export function renderSuppliesCockpitKpi(supplies) {
   if (phiActiveEl) {
     phiActiveEl.innerHTML = `100% Đạt Chuẩn`;
   }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 export function renderSuppliesTable(supplies) {
@@ -393,6 +396,9 @@ export function renderSuppliesTable(supplies) {
       </tr>
     `;
     if (countLabel) countLabel.textContent = 'Hiển thị 0 mặt hàng';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
     return;
   }
 
@@ -553,8 +559,8 @@ export function renderSuppliesTable(supplies) {
       </tr>
     `;
   }).join('');
-  if (typeof window.refreshIcons === 'function') {
-    window.refreshIcons();
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
   }
 }
 
@@ -608,6 +614,9 @@ export function openSupplyModal(id = null) {
 
   autoCalculateSupplyUnits();
   modal.style.display = 'flex';
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 export function closeSupplyModal() {
@@ -825,7 +834,10 @@ export async function openStockLedgerModal(id) {
   document.getElementById('ledger-stat-valuation').textContent = isPermanent ? 'Theo thực tế' : formatVND(currentStock * unitPrice);
 
   modal.style.display = 'flex';
-  if (container) container.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu biến động thẻ kho...</div>';
+  if (container) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải dữ liệu biến động thẻ kho...</div>';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+  }
 
   try {
     const usages = await api(`/supplies/usages?limit=100`);
@@ -893,7 +905,10 @@ export async function openStockLedgerModal(id) {
     `;
 
     timelineHtml += '</div>';
-    if (container) container.innerHTML = timelineHtml;
+    if (container) {
+      container.innerHTML = timelineHtml;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    }
 
   } catch (err) {
     if (container) container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Lỗi tải dữ liệu thẻ kho: ${err.message}</div>`;
@@ -1104,6 +1119,7 @@ function renderCostHeatmap(breakdown, grandTotal) {
         <i data-lucide="trending-up" class="lucide-sm" style="font-size:28px; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
         Chưa có dữ liệu tiêu hao chi phí trong khoảng thời gian này.
       </div>`;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -1194,6 +1210,7 @@ function renderCostHeatmap(breakdown, grandTotal) {
   `;
 
   container.innerHTML = svgHtml;
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 }
 
 function renderBreakdownTable(breakdown, grandTotal) {
@@ -1215,6 +1232,7 @@ function renderBreakdownTable(breakdown, grandTotal) {
 
   if (!breakdown || breakdown.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Không có dữ liệu tiêu hao vật tư trong khoảng thời gian này.</td></tr>';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -1239,6 +1257,7 @@ function renderBreakdownTable(breakdown, grandTotal) {
       </tr>
     `;
   }).join('');
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 }
 
 // ─── GHI NHẬN TIÊU HAO VẬT TƯ (USAGE LOGS) ─────────────────────
@@ -1389,6 +1408,7 @@ function renderSupplyUsagesPage() {
         <p style="font-size:14px; font-weight:700; color:#475569;">Chưa có đợt tiêu hao vật tư nào được ghi nhận.</p>
       </div>`;
     if (paginationContainer) paginationContainer.innerHTML = '';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -1562,6 +1582,9 @@ function renderSupplyUsagesPage() {
         </button>
       </div>
     `;
+  }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
   }
 }
 

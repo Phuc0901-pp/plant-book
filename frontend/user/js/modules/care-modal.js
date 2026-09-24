@@ -148,6 +148,9 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
 
   const modal = document.getElementById('care-modal');
   if (modal) modal.style.display = 'flex';
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 
   // Tự động tải lại vật tư mới nhất từ server trong nền
   refreshCareSuppliesDropdowns(true).catch(() => {});
@@ -297,6 +300,9 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
   checkboxListEl.innerHTML = html || '<div style="font-size:13px; color:var(--text-muted);">Không có cây trồng nào.</div>';
   multiEl.style.display = 'block';
   window.updateSelectedCount();
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 /**
@@ -332,6 +338,9 @@ export async function onCareLogTypeChange() {
 
   if (logType === 'Tưới nước') {
     calculateWaterCostPreview();
+  }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
   }
 }
 
@@ -828,6 +837,9 @@ export function renderMediaPreviews() {
       </button>`;
     preview.appendChild(div);
   });
+  if (existing.length > 0 && window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 
   // 2. Ảnh mới (Đang chờ upload)
   selectedCareFiles.forEach((file) => {
@@ -850,6 +862,9 @@ export function renderMediaPreviews() {
           </div>`;
       }
       preview.appendChild(div);
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
     };
     reader.readAsDataURL(file);
   });

@@ -1,4 +1,4 @@
-﻿/* ════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════
    Plant Book Admin — app.js (Core Application Router & Globals)
    ════════════════════════════════════════════════════════ */
 // Passive Event Listeners Patch for 60fps smooth scrolling
@@ -21,6 +21,12 @@
 var API = '/api';
 var token = localStorage.getItem('pb_token') || '';
 var currentUser = null;
+
+window.refreshIcons = function() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+};
 var editingPlantId = null;
 var editingSchemaId = null;
 var schemaFields = [];

@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/plants.js — Plant list rendering & search filter
    ═══════════════════════════════════════════════════════════════ */
@@ -96,6 +96,9 @@ export function renderUserFarmsList(farms) {
         </div>
       </div>
     `).join('');
+  }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
   }
 }
 
@@ -240,10 +243,14 @@ export function renderUserPlantsSummaryTable(plants) {
   if (!tbody) return;
   if (!plants.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i data-lucide="sprout" class="lucide-sm"></i><p>Không có cây trồng nào được giao</p></td></tr>';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
   const sorted = sortPlantsByHealthThenId(plants);
   tbody.innerHTML = sorted.slice(0, 3).map(p => _plantRow(p)).join('');
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 export const USER_PLANTS_PAGE_SIZE = 10;
@@ -285,6 +292,7 @@ export function renderUserPlantsTablePage() {
     if (pagInfo) pagInfo.textContent = 'Không có cây trồng nào';
     if (pagBtns) pagBtns.innerHTML = '';
     if (paginationContainer) paginationContainer.style.display = 'none';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -308,6 +316,7 @@ export function renderUserPlantsTablePage() {
   if (pagBtns) {
     if (totalPages <= 1) {
       pagBtns.innerHTML = '';
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
       return;
     }
 
@@ -350,6 +359,9 @@ export function renderUserPlantsTablePage() {
     `;
 
     pagBtns.innerHTML = btnsHtml;
+  }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
   }
 }
 
@@ -749,6 +761,7 @@ export function renderUserFarmsGrid(farms) {
           <div style="font-size:13px; color:#166534;">Bấm vào đây để lấy tọa độ thực tế từ GPS thiết bị</div>
         </div>
       `;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     }
     return;
   }
@@ -806,6 +819,9 @@ export function renderUserFarmsGrid(farms) {
     }
 
     gridContainer.innerHTML = html;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   }
 }
 

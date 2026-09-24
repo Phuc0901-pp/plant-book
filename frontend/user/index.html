@@ -4691,6 +4691,11 @@
 
 <!-- Scripts (ES Modules) -->
 <script>
+  window.refreshIcons = window.refreshIcons || function() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  };
   // Inline fallbacks to ensure login buttons work immediately even before ES module evaluation
   window.togglePasswordVisibility = window.togglePasswordVisibility || function() {
     const passInput = document.getElementById('login-pass');

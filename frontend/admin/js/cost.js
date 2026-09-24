@@ -400,7 +400,7 @@ function renderCostChart() {
       return `
         <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="width:40px; height:40px; background:${cfg.bg}; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.color}; font-size:16px;"></i>
+            <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.color}; font-size:16px;"></i>
           </div>
           <div>
             <div style="font-size:11px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">${esc(cat)}</div>
@@ -410,6 +410,7 @@ function renderCostChart() {
       `;
     }).join('');
     summary.innerHTML = cardsHtml;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   }
 }
 

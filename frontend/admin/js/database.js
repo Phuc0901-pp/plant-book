@@ -1164,7 +1164,7 @@ function renderSupplyCostChart() {
       return `
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; align-items:center; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
           <div style="width:44px; height:44px; background:${cfg.bg}; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.color}; font-size:18px;"></i>
+            <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.color}; font-size:18px;"></i>
           </div>
           <div>
             <div style="font-size:11.5px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">${esc(cat)}</div>
@@ -1174,6 +1174,7 @@ function renderSupplyCostChart() {
       `;
     }).join('');
     summary.innerHTML = cardsHtml;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   }
 }
 window.renderSupplyCostChart = renderSupplyCostChart;
@@ -1240,6 +1241,7 @@ function renderSuppliesTable(supplies) {
     if (tableContainer) tableContainer.style.display = 'block';
     if (gridContainer) gridContainer.style.display = 'none';
     tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px; text-align:center; color:#94a3b8;"><i data-lucide="package-open" class="lucide-sm" style="font-size:36px; margin-bottom:10px; display:block;"></i>Kho vật tư hiện chưa có sản phẩm nào theo bộ lọc đã chọn.</td></tr>';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -1257,7 +1259,7 @@ function renderSuppliesTable(supplies) {
     return `
       <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
         <td style="padding:12px 14px;">
-          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:46px; height:46px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` : `<div style="width:46px; height:46px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i data-lucide="circle" class="${cfg.icon} lucide-sm"></i></div>`}
+          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:46px; height:46px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` : `<div style="width:46px; height:46px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`}
         </td>
         <td style="padding:12px 14px; font-weight:700; color:#0f172a;">
           <a href="javascript:void(0)" onclick="openViewSupplyModal(${s.id})" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#059669'" onmouseout="this.style.color='#0f172a'">
@@ -1267,7 +1269,7 @@ function renderSuppliesTable(supplies) {
         </td>
         <td style="padding:12px 14px;">
           <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;">
-            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(cat)}
+            <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(cat)}
           </span>
         </td>
         <td style="padding:12px 14px;">
@@ -1306,7 +1308,7 @@ function renderSuppliesTable(supplies) {
             <div style="padding:16px;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;">
                 <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:3px 10px; border-radius:20px; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
-                  <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(cat)}
+                  <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(cat)}
                 </span>
                 <span style="font-size:14px; font-weight:800; color:#059669;">${priceDisplay}</span>
               </div>
@@ -1314,7 +1316,7 @@ function renderSuppliesTable(supplies) {
               <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
                 ${s.image_url 
                   ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" style="width:54px; height:54px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">` 
-                  : `<div style="width:54px; height:54px; border-radius:10px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i data-lucide="circle" class="${cfg.icon} lucide-sm"></i></div>`
+                  : `<div style="width:54px; height:54px; border-radius:10px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;" onclick="openViewSupplyModal(${s.id})"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
                 }
                 <div style="flex:1;">
                   <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:800; color:#0f172a; line-height:1.3; cursor:pointer;" onclick="openViewSupplyModal(${s.id})">
@@ -1342,6 +1344,7 @@ function renderSuppliesTable(supplies) {
         `;
       }).join('');
     }
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -1352,6 +1355,7 @@ function renderSuppliesTable(supplies) {
   // 2. Flat List View
   if (supplyGroupMode === 'flat') {
     tbody.innerHTML = supplies.map(renderRow).join('');
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -1375,7 +1379,7 @@ function renderSuppliesTable(supplies) {
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="width:24px; height:24px; border-radius:6px; background:${cfg.bg}; color:${cfg.iconColor}; display:inline-flex; align-items:center; justify-content:center; font-size:13px; border:1px solid ${cfg.border};">
-                  <i data-lucide="circle" class="${cfg.icon} lucide-sm"></i>
+                  <i data-lucide="${cfg.icon}" class="lucide-sm"></i>
                 </span>
                 <strong style="font-size:13px; color:${cfg.color}; font-weight:800;">NHÓM VẬT TƯ: ${esc(catName).toUpperCase()}</strong>
               </div>
@@ -1391,6 +1395,7 @@ function renderSuppliesTable(supplies) {
     });
 
     tbody.innerHTML = html;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
 
@@ -1422,6 +1427,7 @@ function renderSuppliesTable(supplies) {
     });
 
     tbody.innerHTML = html;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   }
 }
 
@@ -1485,11 +1491,11 @@ function openViewSupplyModal(supplyId) {
       <div style="display:flex; gap:16px; align-items:flex-start; margin-bottom:20px;">
         ${supply.image_url 
           ? `<img src="${esc(supply.image_url)}" alt="${esc(supply.name)}" style="width:110px; height:110px; object-fit:cover; border-radius:12px; border:2px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.1);">` 
-          : `<div style="width:110px; height:110px; border-radius:12px; background:${cfg.bg}; color:${cfg.iconColor}; border:2px solid ${cfg.border}; display:flex; align-items:center; justify-content:center; font-size:42px;"><i data-lucide="circle" class="${cfg.icon} lucide-sm"></i></div>`
+          : `<div style="width:110px; height:110px; border-radius:12px; background:${cfg.bg}; color:${cfg.iconColor}; border:2px solid ${cfg.border}; display:flex; align-items:center; justify-content:center; font-size:42px;"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
         }
         <div style="flex:1;">
           <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; font-weight:800; padding:4px 12px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:6px; margin-bottom:6px;">
-            <i data-lucide="circle" class="${cfg.icon} lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(supply.category)}
+            <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(supply.category)}
           </span>
           <h3 style="font-size:18px; font-weight:800; color:#0f172a; margin:0 0 6px 0; line-height:1.3;">${esc(supply.name)}</h3>
           <div style="font-size:13px; color:#475569;">Sở hữu / Nông hộ: <strong>${esc(supply.creator_name || supply.supplier || 'Admin')}</strong></div>
@@ -1540,6 +1546,7 @@ function openViewSupplyModal(supplyId) {
   }
 
   document.getElementById('supply-view-modal').style.display = 'flex';
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 }
 
 function closeViewSupplyModal() {

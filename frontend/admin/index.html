@@ -4569,6 +4569,13 @@
 <!-- Plant Hover Tooltip -->
 <div id="plant-hover-tooltip"></div>
 
+  <script>
+    window.refreshIcons = window.refreshIcons || function() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+  </script>
   <script src="/admin/js/countup.js?v=v1.2.8"></script>
   <script src="/admin/js/mascot-chibi.js?v=v1.2.8"></script>
   <script src="/admin/js/app.js?v=v1.2.8"></script>

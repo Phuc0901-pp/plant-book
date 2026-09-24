@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    app.js — Entry point (Slim)
    Imports tất cả module và expose ra window cho HTML inline handlers
@@ -46,6 +46,12 @@ import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-
 import { animateValue, triggerPageCountUpAnimations } from './modules/countup.js';
 import { initChibiMascot, onMascotClick, setMascotState } from './modules/mascot-chibi.js';
 import './supplies.js?v=2.8.0';
+
+window.refreshIcons = function() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+};
 
 window.openSelfInitFarmModal = openSelfInitFarmModal;
 window.closeSelfInitFarmModal = closeSelfInitFarmModal;

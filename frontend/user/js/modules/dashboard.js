@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/dashboard.js — Main data loader & state orchestrator
    ═══════════════════════════════════════════════════════════════ */
@@ -180,6 +180,9 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
         </div>
       `;
     }).join('');
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   }
 
   // Toggle popover function
@@ -418,6 +421,9 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
   });
 
   container.innerHTML = html;
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 // ── 15-Minute Smooth Auto-Refresh ────────────────────────────
@@ -516,6 +522,10 @@ export async function loadUserDashboard(isSilent = false) {
     if (!isSilent) {
       await ensureUserMapboxToken();
       initUserMap(farms, plants);
+    }
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
     }
 
     // ── Khởi động hẹn giờ 15 phút tải lại ngầm ────────────────
