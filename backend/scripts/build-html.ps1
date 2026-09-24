@@ -45,8 +45,8 @@ function Apply-Placeholders {
     $copyright = if ($Config.brand.copyright) { $Config.brand.copyright } else { "Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech" }
     $owner = if ($Config.brand.owner) { $Config.brand.owner } else { "TBSG Agtech © 2026" }
     $company = if ($Config.brand.company) { $Config.brand.company } else { "TBSG Agtech" }
-    $userTitle = if ($Config.brand.userPortalTitle) { $Config.brand.userPortalTitle } else { "$appName $versionTag — Cổng nông hộ" }
-    $adminTitle = if ($Config.brand.adminPortalTitle) { $Config.brand.adminPortalTitle } else { "$appName $versionTag — Quản trị" }
+    $userTitle = if ($Config.brand.userPortalTitle) { $Config.brand.userPortalTitle } else { "$appName $versionTag" }
+    $adminTitle = if ($Config.brand.adminPortalTitle) { $Config.brand.adminPortalTitle } else { "$appName $versionTag - Admin" }
     $swCache = if ($Config.cache.swCacheName) { $Config.cache.swCacheName } else { "pb-farmer-cache-$versionTag" }
 
     $res = $Content.Replace("{{APP_VERSION}}", $versionTag)
@@ -73,12 +73,12 @@ if (Test-Path $configPath) {
     $config = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
 } else {
     $config = @{
-        app = @{ name = "Sổ Nông Tân Bảo Agtech"; version = "1.2.4"; versionTag = "v1.2.4" };
+        app = @{ name = "Plant Book Agtech"; version = "1.2.4"; versionTag = "v1.2.4" };
         brand = @{
-            copyright = "Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech";
+            copyright = "Plant Book (c) 2026 TBSG Agtech";
             company = "TBSG Agtech";
-            userPortalTitle = "Sổ Nông Tân Bảo Agtech v1.2.4 — Cổng nông hộ";
-            adminPortalTitle = "Sổ Nông Tân Bảo Agtech v1.2.4 — Quản trị"
+            userPortalTitle = "Plant Book Agtech v1.2.4";
+            adminPortalTitle = "Plant Book Agtech v1.2.4 - Admin"
         };
         cache = @{ swCacheName = "pb-farmer-cache-v1.2.4" }
     }

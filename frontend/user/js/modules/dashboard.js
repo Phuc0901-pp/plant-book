@@ -80,7 +80,7 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
     const isPro = (user.account_tier === 'pro' || !user.account_tier || user.account_tier === 'normal');
     tierBadgeEl.innerHTML = isPro
       ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
-           <i data-lucide="crown" class="lucide-sm" style="color:#fde047;"></i> Gói Nông Hộ PRO 👑
+           <i data-lucide="crown" class="lucide-sm" style="color:#fde047;"></i> Gói Nông Hộ PRO
          </span>`
       : `<span style="background:rgba(241,245,249,0.15); color:#cbd5e1; border:1px solid rgba(255,255,255,0.2); font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
            <i data-lucide="user" class="lucide-sm"></i> Gói Normal (Cơ bản)

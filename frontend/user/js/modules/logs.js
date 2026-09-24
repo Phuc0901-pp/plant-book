@@ -41,7 +41,7 @@ export function getLogsCache() {
 export function populateLogFarmFilter(farms) {
   const sel = document.getElementById('user-log-filter-farm');
   if (!sel) return;
-  sel.innerHTML = `<option value="all">🏡 Tất cả trang trại</option>`
+  sel.innerHTML = `<option value="all">Tất cả trang trại</option>`
     + (farms || []).map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
 }
 

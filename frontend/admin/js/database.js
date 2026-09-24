@@ -898,7 +898,7 @@ function onSupplyFilterChange() {
 
   if (farmSelect) {
     farmSelect.innerHTML = '<option value="">— Tất cả Trang trại —</option>' +
-      filteredFarms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+      filteredFarms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
   }
 
   loadSuppliesTab();

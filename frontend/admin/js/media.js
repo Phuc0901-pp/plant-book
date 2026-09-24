@@ -1,4 +1,4 @@
-﻿// ── Media ─────────────────────────────────────────────────
+// ── Media ─────────────────────────────────────────────────
 
 function renderMediaSection(plantId) {
   return `
@@ -329,7 +329,7 @@ async function initGlobalMediaLibrary() {
     const farmSelect = document.getElementById('media-filter-farm');
     if (farmSelect) {
       farmSelect.innerHTML = '<option value="">2. Tất cả trang trại</option>' +
-        allMediaFarms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+        allMediaFarms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
     }
 
     const plantSelect = document.getElementById('media-filter-plant');
@@ -366,7 +366,7 @@ async function onMediaFilterChange() {
   }
   if (farmSelect) {
     farmSelect.innerHTML = '<option value="">2. Tất cả trang trại</option>' +
-      filteredFarms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)}</option>`).join('');
+      filteredFarms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
   }
 
   let filteredPlants = allMediaPlants;
@@ -556,13 +556,13 @@ function renderMediaView() {
     });
 
     foldersGrid.innerHTML = Object.values(farmGroups).map(g => `
-      <div class="folder-card" onclick="enterMediaFolder('farm', ${g.id}, '${esc(g.name)}', '🏡')" style="background:#ffffff; border:2px solid #a7f3d0; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="this.style.borderColor='#a7f3d0'">
+      <div class="folder-card" onclick="enterMediaFolder('farm', ${g.id}, '${esc(g.name)}', '')" style="background:#ffffff; border:2px solid #a7f3d0; border-radius:14px; padding:16px; cursor:pointer; box-shadow:0 4px 12px rgba(5,150,105,0.08); transition:all 0.2s;" onmouseover="this.style.borderColor='#059669'" onmouseout="this.style.borderColor='#a7f3d0'">
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="width:44px; height:44px; border-radius:12px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:22px;">
             <i data-lucide="folder-tree" class="lucide-sm"></i>
           </div>
           <div style="flex:1;">
-            <div style="font-size:13.5px; font-weight:800; color:#0f172a;">🏡 ${esc(g.name)}</div>
+            <div style="font-size:13.5px; font-weight:800; color:#0f172a;">${esc(g.name)}</div>
             <div style="font-size:11.5px; color:#64748b; margin-top:2px;">👤 ${esc(g.owner)}</div>
             <div style="font-size:11px; color:#047857; font-weight:700; margin-top:3px;">
               <span class="badge" style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px;">${g.items.length} tệp phương tiện</span>

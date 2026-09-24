@@ -1,4 +1,4 @@
-﻿/* ════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════
    Plant Book Admin — users.js (User/Farmer Management)
    ════════════════════════════════════════════════════════ */
 let allUsers = [];
@@ -29,8 +29,8 @@ async function loadUsers(silent = false) {
     const farmSelect = document.getElementById('user-filter-farm');
     if (farmSelect) {
       const curVal = farmSelect.value;
-      farmSelect.innerHTML = '<option value="all">🌐 Tất cả Trang trại</option>' +
-        (farms || []).map(f => `<option value="${f.id}">🏡 ${escapeHtml(f.name)}</option>`).join('');
+      farmSelect.innerHTML = '<option value="all">Tất cả Trang trại</option>' +
+        (farms || []).map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');
       if (curVal) farmSelect.value = curVal;
     }
 
@@ -39,6 +39,9 @@ async function loadUsers(silent = false) {
     renderUserStatusTable(allUsers);
     loadPendingFarmerUsers();
     loadResetRequests();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   } catch (err) {
     if (!silent) {
       toast('Lỗi tải danh sách người dùng: ' + err.message, 'error');
@@ -178,7 +181,7 @@ function renderUsersTable(users) {
         tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> PRO (Vĩnh viễn)</span>`;
       }
     } else {
-      tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;">⚪ Standard</span>`;
+      tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="shield" class="lucide-sm"></i> Standard</span>`;
     }
 
     const farmBadge = u.farm_name
@@ -254,6 +257,10 @@ function renderUsersTable(users) {
 
     pagBtns.innerHTML = btnsHtml;
   }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 function changeUsersPage(page) {
@@ -288,7 +295,7 @@ async function openUserModal(userId = null, syncUrl = true) {
     const farms = await api('/farms');
     if (farmSelect) {
       farmSelect.innerHTML = '<option value="">— Chưa gán trang trại nào —</option>' +
-        (farms || []).map(f => `<option value="${f.id}">🏡 ${escapeHtml(f.name)} (${f.area ? f.area + ' ha' : 'Chưa nhập diện tích'})</option>`).join('');
+        (farms || []).map(f => `<option value="${f.id}">${escapeHtml(f.name)} (${f.area ? f.area + ' ha' : 'Chưa nhập diện tích'})</option>`).join('');
     }
   } catch (e) {
     console.warn('Lỗi tải danh sách trang trại:', e);
@@ -600,7 +607,7 @@ function renderUserStatusTable(users) {
   tbody.innerHTML = users.map(u => {
     const statusHtml = u.is_online
       ? '<span class="badge" style="background:#dcfce7; color:#15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><span class="dot-live" style="background:#22c55e; margin-right:4px;"></span> Trực tuyến</span>'
-      : '<span class="badge" style="background:#f3f4f6; color:#4b5563; border: 1px solid #e5e7eb; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">⚪ Ngoại tuyến</span>';
+      : '<span class="badge" style="background:#f3f4f6; color:#4b5563; border: 1px solid #e5e7eb; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;"><i data-lucide="circle-off" class="lucide-sm"></i> Ngoại tuyến</span>';
 
     const lastActiveStr = formatRelativeTime(u.last_active_at);
 
@@ -618,6 +625,10 @@ function renderUserStatusTable(users) {
       </tr>
     `;
   }).join('');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 function filterUserStatuses() {
@@ -736,6 +747,9 @@ async function loadResetRequests() {
         </tr>
       `;
     }).join('');
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   } catch (err) {
     console.warn('Lỗi tải yêu cầu cấp mật khẩu:', err);
   }
@@ -812,6 +826,9 @@ async function loadPendingFarmerUsers() {
 
     if (!pendingUsers || pendingUsers.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i data-lucide="check-circle-2" class="lucide-sm" style="color:var(--green)"></i> Tất cả tài khoản nông hộ đã được phê duyệt.</td></tr>';
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
       return;
     }
 
@@ -841,6 +858,10 @@ async function loadPendingFarmerUsers() {
         </tr>
       `;
     }).join('');
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   } catch (err) {
     console.warn('Lỗi tải danh sách chờ duyệt:', err);
   }

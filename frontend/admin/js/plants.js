@@ -831,7 +831,7 @@ async function initAdminNfcPage(farmId = null) {
   if (sel && farms && farms.length > 0) {
     const prevVal = sel.value;
     sel.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
-      farms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+      farms.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     if (prevVal && farms.some(f => f.id == prevVal)) {
       sel.value = prevVal;
     }
@@ -1414,7 +1414,7 @@ async function openNfcInventoryModal(farmId = null) {
   if (modalFarmSelect) {
     if (farms.length > 0) {
       modalFarmSelect.innerHTML = '<option value="">— Vui lòng chọn Trang trại —</option>' +
-        farms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+        farms.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     }
     modalFarmSelect.value = targetFarmId;
   }
@@ -1914,7 +1914,7 @@ async function openAdminNfcImportModal(farmId = null) {
   const farms = window._allFarmsCache || (typeof dbFarmsCache !== 'undefined' ? dbFarmsCache : []);
   const selectEl = document.getElementById('nfc-import-farm-select');
   if (selectEl && farms && farms.length > 0) {
-    selectEl.innerHTML = farms.map(f => `<option value="${f.id}">🏡 ${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
+    selectEl.innerHTML = farms.map(f => `<option value="${f.id}">${esc(f.name)} ${f.owner_name ? `(${esc(f.owner_name)})` : ''}</option>`).join('');
     selectEl.value = targetFarmId;
   }
 
