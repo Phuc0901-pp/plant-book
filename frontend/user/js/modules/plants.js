@@ -767,8 +767,25 @@ export function renderUserFarmsGrid(farms) {
   }
 
   if (gridContainer) {
+function formatSmartArea(val) {
+  const num = parseFloat(val);
+  if (!num || isNaN(num) || num <= 0) return '0 m²';
+  if (num >= 10000) {
+    const ha = num / 10000;
+    const haFormatted = ha.toLocaleString('vi-VN', {
+      minimumFractionDigits: (ha % 1 === 0) ? 0 : (ha < 10 ? 2 : 1),
+      maximumFractionDigits: 2
+    });
+    return `${haFormatted} ha`;
+  }
+  return `${Math.round(num).toLocaleString('vi-VN')} m²`;
+}
+window.formatSmartArea = formatSmartArea;
+
     let html = farms.map(f => {
       const totalPlants = f.plant_count || f.total_plants || 0;
+      const rawAreaFormatted = f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') + ' m²' : '0 m²';
+      const smartArea = formatSmartArea(f.area);
       return `
         <div onclick="openFarmDetailView(${f.id})" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:18px; position:relative; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
@@ -782,10 +799,10 @@ export function renderUserFarmsGrid(farms) {
           </p>
           <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#334155; display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
             <span><i data-lucide="sprout" class="lucide-sm" style="color:#059669;"></i> ${totalPlants} cây</span>
-            <span><i data-lucide="ruler" class="lucide-sm" style="color:#059669;"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
+            <span title="Tổng diện tích: ${rawAreaFormatted}"><i data-lucide="ruler" class="lucide-sm" style="color:#059669;"></i> ${smartArea}</span>
           </div>
           <div style="font-size:11.5px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px;">
-            ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:2px 7px; border-radius:6px; font-weight:700;"><i data-lucide="award" class="lucide-sm"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">VietGAP: Chưa cấp</span>`}
+            ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:2px 7px; border-radius:6px; font-weight:700;"><i data-lucide="shield-check" class="lucide-sm"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">VietGAP: Chưa cấp</span>`}
             ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 7px; border-radius:6px; font-weight:700;"><i data-lucide="globe" class="lucide-sm"></i> PUC: ${esc(f.puc_code)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">PUC: Chưa cấp</span>`}
           </div>
           <div style="display:flex; gap:8px;">

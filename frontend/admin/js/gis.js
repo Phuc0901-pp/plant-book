@@ -494,6 +494,21 @@ function switchGisView(view) {
   if (footer) footer.style.display = view === 'details' ? 'flex' : 'none';
 }
 
+function formatSmartArea(val) {
+  const num = parseFloat(val);
+  if (!num || isNaN(num) || num <= 0) return '0 m²';
+  if (num >= 10000) {
+    const ha = num / 10000;
+    const haFormatted = ha.toLocaleString('vi-VN', {
+      minimumFractionDigits: (ha % 1 === 0) ? 0 : (ha < 10 ? 2 : 1),
+      maximumFractionDigits: 2
+    });
+    return `${haFormatted} ha`;
+  }
+  return `${Math.round(num).toLocaleString('vi-VN')} m²`;
+}
+window.formatSmartArea = formatSmartArea;
+
 function renderFarmsList(farms) {
   const uniqueFarms = Array.from(new Map((farms || []).map(f => [f.id, f])).values());
   const container = document.getElementById('farms-list-container');
@@ -501,22 +516,70 @@ function renderFarmsList(farms) {
     container.innerHTML = '<div class="empty-state"><i data-lucide="map" class="lucide-sm"></i><p>Chưa có trang trại nào. Hãy thêm mới!</p></div>';
     return;
   }
-  container.innerHTML = uniqueFarms.map(f => `
-    <div class="farm-item" id="farm-item-${f.id}" data-farm-id="${f.id}" onclick="selectFarm(${f.id})">
-      <div class="farm-item-name">${esc(f.name)}</div>
-      <div class="farm-item-meta" style="flex-wrap: wrap; gap: 8px;">
-        <span><i data-lucide="ruler" class="lucide-sm" style="color:var(--green-dark)"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
-        <span><i data-lucide="sprout" class="lucide-sm" style="color:var(--green)"></i> ${f.plant_count} cây</span>
-        <span><i data-lucide="user" class="lucide-sm" style="color:#ea580c"></i> ${esc(f.user_name || 'Chưa gán')}</span>
-      </div>
-      ${(f.vietgap_cert_number || f.puc_code) ? `
-        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px;">
-          ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i data-lucide="award" class="lucide-sm"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : ''}
-          ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:700;"><i data-lucide="globe" class="lucide-sm"></i> PUC: ${esc(f.puc_code)}</span>` : ''}
+
+  container.innerHTML = uniqueFarms.map(f => {
+    const rawAreaFormatted = f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') + ' m²' : '0 m²';
+    const smartArea = formatSmartArea(f.area);
+    const plantCountStr = (f.plant_count || 0).toLocaleString('vi-VN');
+    const ownerName = esc(f.user_name || 'Chưa gán nông hộ');
+
+    return `
+      <div class="farm-item" id="farm-item-${f.id}" data-farm-id="${f.id}" onclick="selectFarm(${f.id})">
+        <!-- 1. Header: Avatar + Title + Arrow Indicator -->
+        <div class="farm-item-header">
+          <div class="farm-item-title-wrap">
+            <div class="farm-item-avatar">
+              <i data-lucide="map-pin" class="lucide-xs"></i>
+            </div>
+            <div class="farm-item-name" title="${esc(f.name)}">${esc(f.name)}</div>
+          </div>
+          <div class="farm-item-arrow">
+            <i data-lucide="chevron-right" class="lucide-xs"></i>
+          </div>
         </div>
-      ` : ''}
-    </div>
-  `).join('');
+
+        <!-- 2. Owner / Enterprise Sub-row -->
+        <div class="farm-item-owner" title="Chủ thể quản lý: ${ownerName}">
+          <i data-lucide="building-2" class="lucide-xs" style="color:#64748b;"></i>
+          <span>${ownerName}</span>
+        </div>
+
+        <!-- 3. Key Agronomic Metrics Chips (Area & Plants) -->
+        <div class="farm-item-chips">
+          <div class="farm-chip" title="Tổng diện tích: ${rawAreaFormatted}">
+            <i data-lucide="ruler" class="lucide-xs" style="color:#059669;"></i>
+            <span>${smartArea}</span>
+          </div>
+          <div class="farm-chip" title="Số lượng cây trồng thực tế">
+            <i data-lucide="sprout" class="lucide-xs" style="color:#10b981;"></i>
+            <span>${plantCountStr} cây</span>
+          </div>
+        </div>
+
+        <!-- 4. Compliance & Traceability Badges (VietGAP, PUC) -->
+        ${(f.vietgap_cert_number || f.puc_code) ? `
+          <div class="farm-item-badges">
+            ${f.vietgap_cert_number ? `
+              <span class="farm-badge farm-badge-vietgap" title="Chứng nhận VietGAP: ${esc(f.vietgap_cert_number)}">
+                <i data-lucide="shield-check" class="lucide-xs"></i>
+                <span>VietGAP: <strong>${esc(f.vietgap_cert_number)}</strong></span>
+              </span>
+            ` : ''}
+            ${f.puc_code ? `
+              <span class="farm-badge farm-badge-puc" title="Mã số Vùng trồng (PUC): ${esc(f.puc_code)}">
+                <i data-lucide="globe" class="lucide-xs"></i>
+                <span>PUC: <strong>${esc(f.puc_code)}</strong></span>
+              </span>
+            ` : ''}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
 }
 
 function initGisMap(farms, plants) {
