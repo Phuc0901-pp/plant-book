@@ -3409,6 +3409,7 @@ async function openAdminFarmA4ExportModal(map) {
   `;
 
   document.body.appendChild(modalContainer);
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 
   let a4Map = null;
   let a4CutoutMap = null;
