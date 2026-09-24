@@ -76,7 +76,10 @@ function openForgotPasswordModal() {
   if (errEl) errEl.style.display = 'none';
   if (identity) identity.value = '';
   if (note) note.value = '';
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  }
 }
 
 function closeForgotPasswordModal() {
@@ -171,6 +174,12 @@ async function showApp() {
   document.getElementById('sb-user-name').textContent = currentUser?.name || currentUser?.full_name || 'Quản trị viên';
   document.getElementById('sb-user-email').textContent = currentUser?.email || '';
 
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+    setTimeout(window.refreshIcons, 50);
+    setTimeout(window.refreshIcons, 250);
+  }
+
   if (typeof ensureMapboxToken === 'function') {
     await ensureMapboxToken();
   }
@@ -228,7 +237,10 @@ function openRegisterModal() {
   if (document.getElementById('reg-plant-age')) document.getElementById('reg-plant-age').value = '';
   if (document.getElementById('reg-farm-area')) document.getElementById('reg-farm-area').value = '';
 
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  }
 }
 window.openRegisterModal = openRegisterModal;
 
@@ -281,6 +293,10 @@ function updateRegStepUI() {
   // Reset body scroll position
   const modalBody = document.querySelector('#register-modal .modal-body');
   if (modalBody) modalBody.scrollTop = 0;
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
 }
 
 async function nextRegStep() {

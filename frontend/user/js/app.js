@@ -82,7 +82,10 @@ window.getFarmsCache = getFarmsCache;
 
 window.openProUpgradeModal = function() {
   const modal = document.getElementById('pro-upgrade-modal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  }
 };
 
 window.closeProUpgradeModal = function() {
@@ -220,6 +223,7 @@ window.openFeatureDetailModal = function(type) {
   }
 
   modal.style.display = 'flex';
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
 };
 
 window.closeFeatureDetailModal = function() {
@@ -255,6 +259,10 @@ window.switchWikiSubtab = function(tabName) {
   } else {
     if (paneAdv) paneAdv.style.display = 'block';
     if (btnAdv) btnAdv.classList.add('active');
+  }
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
   }
 };
 

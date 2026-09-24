@@ -92,7 +92,10 @@ function openForgotPasswordModal() {
   if (errEl) errEl.style.display = 'none';
   if (identity) identity.value = '';
   if (note) note.value = '';
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  }
 }
 window.openForgotPasswordModal = openForgotPasswordModal;
 
@@ -188,6 +191,12 @@ function showApp() {
   if (loginPage) loginPage.style.display = 'none';
   if (app)       app.style.display       = 'flex';
 
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+    setTimeout(window.refreshIcons, 50);
+    setTimeout(window.refreshIcons, 250);
+  }
+
   const user = currentUser;
   const nameEl  = document.getElementById('sb-user-name');
   const emailEl = document.getElementById('sb-user-email');
@@ -271,7 +280,10 @@ function openRegisterModal() {
   if (document.getElementById('reg-plant-age')) document.getElementById('reg-plant-age').value = '';
   if (document.getElementById('reg-farm-area')) document.getElementById('reg-farm-area').value = '';
 
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  }
 }
 window.openRegisterModal = openRegisterModal;
 
@@ -327,6 +339,10 @@ function updateRegStepUI() {
   // Reset body scroll position
   const modalBody = document.querySelector('#register-modal .modal-body');
   if (modalBody) modalBody.scrollTop = 0;
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
 }
 
 async function nextRegStep() {

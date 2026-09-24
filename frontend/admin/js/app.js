@@ -273,6 +273,13 @@ async function showPage(page, pushUrl = true) {
   targetSection.classList.add('active');
   targetSection.style.display = 'block';
 
+  // Instant Lucide icon hydration on page transitions
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+    setTimeout(window.refreshIcons, 40);
+    setTimeout(window.refreshIcons, 250);
+  }
+
   // Highlight active sidebar menu item safely
   const navItem = document.querySelector(`.nav-item[onclick*="'${page}'"]`);
   if (navItem) navItem.classList.add('active');
@@ -424,6 +431,10 @@ function switchTab(el, tabId) {
   if (tabId === 'tab-extra' && typeof renderExtraFields === 'function') renderExtraFields();
   if (tabId === 'tab-media' && editingPlantId && typeof loadPlantMedia === 'function') loadPlantMedia(editingPlantId);
   if (tabId === 'tab-logs' && editingPlantId && typeof loadPlantLogs === 'function') loadPlantLogs(editingPlantId);
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
 }
 
 // ── Configuration tabs & care options ──────────────────────
@@ -435,6 +446,10 @@ function switchConfigTab(tab) {
   const paneCare = document.getElementById('pane-config-care');
   if (paneSchema) paneSchema.style.display = tab === 'schema' ? 'block' : 'none';
   if (paneCare) paneCare.style.display = tab === 'care' ? 'block' : 'none';
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
 }
 
 async function loadCareConfigs() {

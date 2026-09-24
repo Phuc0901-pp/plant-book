@@ -129,6 +129,13 @@ export function showPage(page, updateHash = true) {
   const section = document.getElementById(`page-${targetPage}`);
   if (section) section.classList.add('active');
 
+  // Instant Lucide icon hydration on page transitions
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+    setTimeout(window.refreshIcons, 40);
+    setTimeout(window.refreshIcons, 250);
+  }
+
   // Đánh dấu nav active
   const navKey = targetPage === 'myplants' ? 'myplants' : targetPage;
   const navEl = document.querySelector(`[data-page="${navKey}"]`);

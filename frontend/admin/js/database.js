@@ -142,6 +142,12 @@ function switchDatabaseTab(tab, syncUrl = true) {
   } else if (tab === 'version') {
     if (typeof loadVersionManagerData === 'function') loadVersionManagerData();
   }
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+    setTimeout(window.refreshIcons, 40);
+    setTimeout(window.refreshIcons, 200);
+  }
 }
 
 
