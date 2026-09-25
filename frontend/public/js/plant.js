@@ -1160,8 +1160,11 @@ async function submitFieldBinding(allowReplace = false) {
     if (repModal) repModal.style.display = 'none';
 
     // Update URL in browser history to reflect bound public route
-    if (data.public_url) {
-      history.replaceState({}, '', data.public_url);
+    try {
+      const boundUid = (data.plant && data.plant.nfc_uid) || nfcUid;
+      history.replaceState({}, '', `/${farmId}/public/${encodeURIComponent(boundUid)}`);
+    } catch (histErr) {
+      console.warn('Could not update browser history state:', histErr);
     }
 
     // Hide binding view and render plant

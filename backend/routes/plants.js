@@ -3096,8 +3096,10 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       });
     }
 
-    // 4. Generate public URL: https://plant-book.onrender.com/{farm_id}/public/{nfc_uid}
-    const publicUrl = `https://plant-book.onrender.com/${farmId}/public/${cleanUid}`;
+    // 4. Generate public URL
+    const host = req.get('host') || 'plant-book.onrender.com';
+    const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
+    const publicUrl = `${proto}://${host}/${farmId}/public/${cleanUid}`;
 
     // 5. Atomic Update Plant
     const updateRes = await client.query(
