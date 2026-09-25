@@ -3207,7 +3207,7 @@ async function renderPlant(plant, isEditable) {
               <i data-lucide="shield-alert" class="lucide-sm" style="color: var(--color-disease)"></i>
               <span>Bệnh cây</span>
             </button>
-            <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a;">
+            <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')">
               <i data-lucide="wheat" class="lucide-sm" style="color: #d97706"></i>
               <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
             </button>
