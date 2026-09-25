@@ -134,8 +134,8 @@ app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
-// ─── Direct NFC Public Route: /:farmId/public/:nfcUid ─────────────────────
-app.get('/:farmId/public/:nfcUid', (req, res) => {
+// ─── Direct NFC Public & Farm Gateway Routes: /:farmId/public or /:farmId/public/:nfcUid ─────────────────────
+app.get(['/:farmId/public', '/:farmId/public/', '/:farmId/public/:nfcUid'], (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 

@@ -3118,6 +3118,58 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
   }
 });
 
+// ─── Public Farm Gateway & Smart NFC Portal: /farms/:farmId/public-portal ───
+router.get('/farms/:farmId/public-portal', async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) {
+      return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    }
+
+    const farmRes = await pool.query(`
+      SELECT f.id, f.name, f.description, f.address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
+             f.polygon_coordinates, f.latitude, f.longitude, f.user_id,
+             u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
+      FROM farms f
+      LEFT JOIN users u ON u.id = f.user_id
+      WHERE f.id = $1 AND (f.is_deleted IS NOT TRUE)
+      LIMIT 1
+    `, [farmId]);
+
+    if (farmRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
+    }
+
+    const farm = farmRes.rows[0];
+
+    const plantsRes = await pool.query(`
+      SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.location,
+             p.latitude, p.longitude, p.nfc_uid, p.public_url, p.public_slug
+      FROM plants p
+      WHERE p.farm_id = $1 AND (p.deleted_at IS NULL)
+      ORDER BY CAST(NULLIF(regexp_replace(p.tree_code, '\\D', '', 'g'), '') AS INTEGER) ASC NULLS LAST, p.tree_code ASC, p.id ASC
+    `, [farmId]);
+
+    const totalPlants = plantsRes.rows.length;
+    const assignedCount = plantsRes.rows.filter(p => p.nfc_uid && p.nfc_uid.trim().length > 0).length;
+    const unassignedCount = totalPlants - assignedCount;
+
+    res.json({
+      success: true,
+      farm: {
+        ...farm,
+        total_plants: totalPlants,
+        assigned_count: assignedCount,
+        unassigned_count: unassignedCount
+      },
+      plants: plantsRes.rows
+    });
+  } catch (err) {
+    console.error('Error loading public farm portal:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải thông tin trang trại: ' + err.message });
+  }
+});
+
 // ─── Public Tag State Lookup by Farm & NFC UID: /public-by-farm-uid/:farmId/:nfcUid ───
 router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
   try {
