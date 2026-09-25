@@ -3034,6 +3034,11 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
     if (!targetPlant && tree_code) {
       const cleanCode = String(tree_code).trim();
       const codeWithoutHash = cleanCode.replace(/^#/, '');
+      const rawCode = cleanCode.replace(/[^A-Za-z0-9]/g, '');
+      const digitsMatch = cleanCode.match(/\d+/);
+      const digitsOnly = digitsMatch ? digitsMatch[0] : '';
+      const intDigits = digitsOnly ? parseInt(digitsOnly, 10) : null;
+
       const pRes = await client.query(
         `SELECT * FROM plants 
          WHERE (farm_id = $1 OR 1=1)
@@ -3043,19 +3048,37 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
              OR UPPER(tree_code) = UPPER($3)
              OR UPPER(tree_code) = UPPER($4)
              OR UPPER(regexp_replace(COALESCE(tree_code, ''), '[^A-Za-z0-9]', '', 'g')) = UPPER($5)
+             OR (
+               $6::int IS NOT NULL 
+               AND CAST(NULLIF(regexp_replace(tree_code, '\\D', '', 'g'), '') AS INTEGER) = $6::int
+             )
            ) 
            AND deleted_at IS NULL 
          ORDER BY (CASE WHEN farm_id = $1 THEN 1 ELSE 2 END) ASC, id ASC
          LIMIT 1 
          FOR UPDATE`,
-        [farmId, cleanCode, `#${codeWithoutHash}`, codeWithoutHash, cleanCode.replace(/[^A-Za-z0-9]/g, '')]
+        [farmId, cleanCode, `#${codeWithoutHash}`, codeWithoutHash, rawCode, intDigits]
       );
       if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
     }
 
+    // If target plant still does not exist, AUTO-CREATE it on-the-fly for this farm
+    if (!targetPlant && tree_code) {
+      const cleanCode = String(tree_code).trim();
+      const newSlug = `${farmId}_${cleanCode.replace(/[^A-Za-z0-9_-]/g, '') || Date.now()}`;
+      const pubUrl = generatePublicPlantUrl(farmId, null, cleanUid);
+      const insertPlant = await client.query(
+        `INSERT INTO plants (farm_id, tree_code, plant_type, plant_variety, health_status, is_public, latitude, longitude, nfc_uid, public_url, created_by, public_slug)
+         VALUES ($1, $2, 'Sầu riêng (durian)', 'Dona', 'Tốt', true, $3, $4, $5, $6, $7, $8)
+         RETURNING *`,
+        [farmId, cleanCode, lat, lng, cleanUid, pubUrl, req.user.id, newSlug]
+      );
+      targetPlant = insertPlant.rows[0];
+    }
+
     if (!targetPlant) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: `Không tìm thấy cây số "${tree_code || plant_id}" trong nông trại này.` });
+      return res.status(404).json({ error: `Không thể tìm thấy hoặc tạo cây số "${tree_code || plant_id}" trong nông trại này.` });
     }
 
     let replacedOldUid = null;

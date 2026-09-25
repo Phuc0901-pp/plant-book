@@ -377,13 +377,17 @@
             </label>
             
             <div style="position: relative;">
-              <input type="text" id="bind-tree-search" placeholder="Gõ STT hoặc mã cây (VD: 15, SR-15, Cây 12)..." autocomplete="off" oninput="handleTreeSearchInput(this.value)" style="width: 100%; padding: 12px 14px; font-size: 14px; font-weight: 600; border: 1.5px solid #cbd5e1; border-radius: 10px; outline: none; transition: border-color 0.2s;" required>
-              <div id="bind-tree-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 220px; overflow-y: auto; background: #ffffff; border: 1.5px solid #10b981; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000;">
+              <input type="text" id="bind-tree-search" placeholder="Gõ STT hoặc mã cây (VD: S-A-001, 15, Cây 1)..." autocomplete="off" oninput="handleTreeSearchInput(this.value)" onfocus="handleTreeSearchInput(this.value)" style="width: 100%; padding: 12px 14px; font-size: 14px; font-weight: 600; border: 1.5px solid #cbd5e1; border-radius: 10px; outline: none; transition: border-color 0.2s;" required>
+              <div id="bind-tree-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 240px; overflow-y: auto; background: #ffffff; border: 1.5px solid #10b981; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000;">
                 <!-- Dynamically populated -->
               </div>
             </div>
             <input type="hidden" id="bind-selected-plant-id" value="">
             <input type="hidden" id="bind-selected-tree-code" value="">
+            
+            <!-- Quick Tap Chips for Available Trees -->
+            <div id="bind-unassigned-chips" style="margin-top: 10px;"></div>
+
             <div id="bind-selected-preview" style="display: none; margin-top: 8px; padding: 8px 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac; font-size: 12.5px; color: #166534; display: flex; justify-content: space-between; align-items: center;">
               <span><i data-lucide="check-circle" class="lucide-sm" style="color: #16a34a; vertical-align: -2px;"></i> Đã chọn: <strong id="bind-selected-tree-text">--</strong></span>
               <button type="button" onclick="clearSelectedTree()" style="background: none; border: none; color: #dc2626; font-size: 11.5px; font-weight: 700; cursor: pointer;">Thay đổi</button>

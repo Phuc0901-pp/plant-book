@@ -934,10 +934,34 @@ async function refreshUnassignedTrees() {
     const data = await res.json();
     window.currentUnassignedTrees = data.trees || [];
     if (countEl) countEl.textContent = window.currentUnassignedTrees.length;
+    renderUnassignedTreeChips();
   } catch (err) {
     console.warn('Lỗi tải danh sách cây chưa gắn thẻ:', err);
     if (countEl) countEl.textContent = '0';
+    renderUnassignedTreeChips();
   }
+}
+
+function renderUnassignedTreeChips() {
+  const container = document.getElementById('bind-unassigned-chips');
+  if (!container) return;
+  const trees = window.currentUnassignedTrees || [];
+  if (trees.length === 0) {
+    container.innerHTML = '<div style="font-size:12px; color:#64748b; font-style:italic;">Chưa có danh sách cây tạo sẵn. Bạn có thể nhập bất kỳ mã cây nào (ví dụ: A-A-001) vào ô bên trên để hệ thống tự động tạo và gắn thẻ.</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div style="font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px;">Chạm nhanh để chọn cây:</div>
+    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+      ${trees.map(t => `
+        <button type="button" onclick="selectUnassignedTree(${t.id}, '${esc(t.tree_code || t.id)}', '${esc(t.plant_type || '')}', '${esc(t.plant_variety || '')}')" 
+                style="padding:6px 12px; border-radius:8px; border:1.5px solid #10b981; background:#ecfdf5; color:#047857; font-weight:700; font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s;">
+          <i data-lucide="leaf" class="lucide-xs"></i> Cây #${esc(t.tree_code || t.id)}
+        </button>
+      `).join('')}
+    </div>
+  `;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function acquireGpsPosition(isUserAction) {
@@ -1020,25 +1044,22 @@ function handleTreeSearchInput(query) {
 
   hideBindingError();
   const q = String(query || '').trim().toLowerCase();
-
-  if (!q) {
-    dropdown.style.display = 'none';
-    return;
-  }
-
   const unassigned = window.currentUnassignedTrees || [];
-  const filtered = unassigned.filter(t => {
-    const code = String(t.tree_code || t.id).toLowerCase();
-    const type = String(t.plant_type || '').toLowerCase();
-    const loc = String(t.location || '').toLowerCase();
-    return code.includes(q) || type.includes(q) || loc.includes(q);
-  });
+
+  const filtered = !q 
+    ? unassigned 
+    : unassigned.filter(t => {
+        const code = String(t.tree_code || t.id).toLowerCase();
+        const type = String(t.plant_type || '').toLowerCase();
+        const loc = String(t.location || '').toLowerCase();
+        return code.includes(q) || type.includes(q) || loc.includes(q);
+      });
 
   if (filtered.length === 0) {
     dropdown.innerHTML = `
       <div style="padding: 12px 14px; font-size: 12.5px; color: #64748b; text-align: center;">
-        Không tìm thấy cây chưa gắn thẻ khớp với "<strong>${esc(query)}</strong>".<br>
-        <span style="font-size: 11.5px; color: #94a3b8;">(Có thể cây này đã được gắn thẻ trước đó hoặc chưa tạo).</span>
+        Không tìm thấy cây có sẵn khớp với "<strong>${esc(query)}</strong>".<br>
+        <span style="font-size: 11.5px; color: #047857; font-weight:700;">(Hệ thống sẽ tự động tạo mới cây "${esc(query)}" khi bấm Xác nhận).</span>
       </div>
     `;
     dropdown.style.display = 'block';
