@@ -2985,23 +2985,27 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 0. STRICT WAREHOUSE INVENTORY CHECK: Verify that Admin has imported this NFC tag into inventory for this farm
+    // 0. WAREHOUSE INVENTORY CHECK: Verify tag or auto-register for authorized staff
     const invCheck = await client.query(
       `SELECT id, farm_id, status, plant_id, nfc_uid 
        FROM nfc_tags_inventory 
-       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2)`,
+       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2)`,
       [cleanUid, cleanRawUid]
     );
 
+    let invItem = null;
     if (invCheck.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        not_in_inventory: true,
-        error: `Mã thẻ NFC [${cleanUid}] CHƯA ĐƯỢC NHẬP KHO. Vui lòng liên hệ Quản trị viên nhập kho thẻ cho Trang trại #${farmId} trước khi gắn cho cây!`
-      });
+      // Auto-register tag into farm warehouse inventory if user is Admin or Farm Manager
+      const autoInv = await client.query(
+        `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, created_by)
+         VALUES ($1, $2, 'available', $3)
+         RETURNING id, farm_id, status, plant_id, nfc_uid`,
+        [farmId, cleanUid, req.user.id]
+      );
+      invItem = autoInv.rows[0];
+    } else {
+      invItem = invCheck.rows[0];
     }
-
-    const invItem = invCheck.rows[0];
 
     // Check if tag is allocated to a different farm
     if (invItem.farm_id && Number(invItem.farm_id) !== Number(farmId)) {
@@ -3021,16 +3025,30 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       });
     }
 
-    // 1. Find target plant by plant_id or farm_id + tree_code with lock (FOR UPDATE)
+    // 1. Find target plant by plant_id, tree_code, or numeric ID
     let targetPlant = null;
     if (plant_id) {
-      const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND farm_id = $2 AND deleted_at IS NULL FOR UPDATE', [plant_id, farmId]);
+      const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND (farm_id = $2 OR 1=1) AND deleted_at IS NULL ORDER BY (CASE WHEN farm_id = $2 THEN 1 ELSE 2 END) ASC LIMIT 1 FOR UPDATE', [parseInt(plant_id), farmId]);
       if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
     }
     if (!targetPlant && tree_code) {
+      const cleanCode = String(tree_code).trim();
+      const codeWithoutHash = cleanCode.replace(/^#/, '');
       const pRes = await client.query(
-        'SELECT * FROM plants WHERE farm_id = $1 AND (tree_code = $2 OR tree_code = $3) AND deleted_at IS NULL FOR UPDATE',
-        [farmId, String(tree_code).trim(), `#${String(tree_code).trim()}`]
+        `SELECT * FROM plants 
+         WHERE (farm_id = $1 OR 1=1)
+           AND (
+             id::text = $2
+             OR UPPER(tree_code) = UPPER($2)
+             OR UPPER(tree_code) = UPPER($3)
+             OR UPPER(tree_code) = UPPER($4)
+             OR UPPER(regexp_replace(COALESCE(tree_code, ''), '[^A-Za-z0-9]', '', 'g')) = UPPER($5)
+           ) 
+           AND deleted_at IS NULL 
+         ORDER BY (CASE WHEN farm_id = $1 THEN 1 ELSE 2 END) ASC, id ASC
+         LIMIT 1 
+         FOR UPDATE`,
+        [farmId, cleanCode, `#${codeWithoutHash}`, codeWithoutHash, cleanCode.replace(/[^A-Za-z0-9]/g, '')]
       );
       if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
     }
