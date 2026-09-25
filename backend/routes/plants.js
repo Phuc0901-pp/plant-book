@@ -2947,7 +2947,7 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     const farmId = parseInt(req.params.farmId);
-    const { nfc_uid, plant_id, tree_code, latitude, longitude, accuracy } = req.body;
+    const { nfc_uid, plant_id, tree_code, latitude, longitude, accuracy, allow_replace } = req.body;
 
     if (isNaN(farmId)) {
       return res.status(400).json({ error: 'ID nông trại không hợp lệ.' });
@@ -3001,14 +3001,46 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       return res.status(404).json({ error: `Không tìm thấy cây số "${tree_code || plant_id}" trong nông trại này.` });
     }
 
-    // 2. STRICT TREE GOVERNANCE: If plant already has a tag, reject with 409 Conflict!
+    let replacedOldUid = null;
+
+    // 2. TREE GOVERNANCE & REPLACEMENT CHECK
     if (targetPlant.nfc_uid && String(targetPlant.nfc_uid).trim().length > 0) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({
-        error: `Cây #${targetPlant.tree_code || targetPlant.id} đã được gắn thẻ NFC [${targetPlant.nfc_uid}]. Theo quy chuẩn Quản trị 1 Cây - 1 Thẻ, tuyệt đối không được phép gán đè! Vui lòng chọn cây chưa gắn thẻ.`,
-        assigned_uid: targetPlant.nfc_uid,
-        tree_code: targetPlant.tree_code || targetPlant.id
-      });
+      const existingTag = targetPlant.nfc_uid.trim().toUpperCase();
+      
+      // If tapping the exact same tag on the same tree -> allow updating GPS without replacing
+      if (existingTag !== cleanUid) {
+        if (!allow_replace) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({
+            can_replace: true,
+            conflict: true,
+            tree_code: targetPlant.tree_code || targetPlant.id,
+            plant_id: targetPlant.id,
+            plant_type: targetPlant.plant_type,
+            current_uid: targetPlant.nfc_uid,
+            new_uid: cleanUid,
+            error: `Cây #${targetPlant.tree_code || targetPlant.id} hiện đang gắn thẻ [${targetPlant.nfc_uid}]. Bạn có muốn THAY THẾ bằng thẻ mới này không?`
+          });
+        }
+
+        // USER CONFIRMED REPLACEMENT: Revoke & Freeze Old Tag permanently
+        replacedOldUid = existingTag;
+        await client.query(
+          `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, tagged_at, created_by)
+           VALUES ($1, $2, 'revoked', NULL, NULL, $3)
+           ON CONFLICT (nfc_uid)
+           DO UPDATE SET status = 'revoked', plant_id = NULL, tagged_at = NULL`,
+          [farmId, existingTag, req.user.id]
+        );
+
+        try {
+          await client.query(
+            `INSERT INTO audit_logs (user_id, farm_id, action, target_type, target_id, details, ip_address, created_at)
+             VALUES ($1, $2, 'NFC_TAG_REVOKE_REPLACE', 'PLANT', $3, $4, $5, NOW())`,
+            [req.user.id, farmId, targetPlant.id, JSON.stringify({ old_uid: existingTag, new_uid: cleanUid, tree_code: targetPlant.tree_code, lat, lng }), req.ip || '']
+          );
+        } catch(e) {}
+      }
     }
 
     // 3. Check if cleanUid is already assigned to ANOTHER plant anywhere in the system
@@ -3045,7 +3077,7 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     const updatedPlant = updateRes.rows[0];
 
-    // 6. Update or Upsert NFC Inventory
+    // 6. Update or Upsert NFC Inventory for the new tag
     await client.query(
       `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, last_scanned_lat, last_scanned_lng, tagged_at, created_by)
        VALUES ($1, $2, 'assigned', $3, $4, $5, NOW(), $6)
@@ -3059,7 +3091,7 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       await client.query(
         `INSERT INTO audit_logs (user_id, farm_id, action, target_type, target_id, details, ip_address, created_at)
          VALUES ($1, $2, 'NFC_TAG_FIELD_BIND', 'PLANT', $3, $4, $5, NOW())`,
-        [req.user.id, farmId, targetPlant.id, JSON.stringify({ nfc_uid: cleanUid, tree_code: targetPlant.tree_code, lat, lng, accuracy: acc }), req.ip || '']
+        [req.user.id, farmId, targetPlant.id, JSON.stringify({ nfc_uid: cleanUid, tree_code: targetPlant.tree_code, lat, lng, accuracy: acc, replaced_old_uid: replacedOldUid }), req.ip || '']
       );
     } catch(auditErr) { /* ignore if audit_logs table differs */ }
 
@@ -3070,9 +3102,12 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     res.json({
       success: true,
-      message: `Đã gắn thẻ NFC ${cleanUid} và định vị GPS cho cây #${updatedPlant.tree_code || updatedPlant.id} thành công!`,
+      message: replacedOldUid 
+        ? `Đã thay thế thẻ mới ${cleanUid} cho cây #${updatedPlant.tree_code || updatedPlant.id} và thu hồi thẻ cũ ${replacedOldUid}!`
+        : `Đã gắn thẻ NFC ${cleanUid} và định vị GPS cho cây #${updatedPlant.tree_code || updatedPlant.id} thành công!`,
       plant: updatedPlant,
-      public_url: publicUrl
+      public_url: publicUrl,
+      replaced_old_uid: replacedOldUid
     });
   } catch (err) {
     await client.query('ROLLBACK');

@@ -1034,7 +1034,7 @@ function hideBindingError() {
   if (errBox) errBox.style.display = 'none';
 }
 
-async function submitFieldBinding() {
+async function submitFieldBinding(allowReplace = false) {
   const farmId = window.currentBindingFarmId;
   const nfcUid = window.currentBindingUid;
   const plantId = document.getElementById('bind-selected-plant-id').value;
@@ -1052,9 +1052,11 @@ async function submitFieldBinding() {
   }
 
   hideBindingError();
-  const oldBtnHtml = btn.innerHTML;
-  btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang khóa thẻ &amp; Lưu tọa độ GPS...';
-  btn.disabled = true;
+  const oldBtnHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang khóa thẻ &amp; Lưu tọa độ GPS...';
+    btn.disabled = true;
+  }
 
   try {
     const token = localStorage.getItem('pb_token') || localStorage.getItem('token');
@@ -1064,7 +1066,8 @@ async function submitFieldBinding() {
       tree_code: treeCodeInput,
       latitude: window.currentBindingGps?.lat ?? null,
       longitude: window.currentBindingGps?.lng ?? null,
-      accuracy: window.currentBindingGps?.accuracy ?? null
+      accuracy: window.currentBindingGps?.accuracy ?? null,
+      allow_replace: allowReplace === true
     };
 
     const res = await fetch(`/api/plants/farms/${encodeURIComponent(farmId)}/bind-tag-quick`, {
@@ -1080,7 +1083,11 @@ async function submitFieldBinding() {
 
     if (!res.ok) {
       if (res.status === 409) {
-        showBindingError(data.error || 'Cây này đã được gắn thẻ trước đó! Không thể gán đè.');
+        if (data.can_replace) {
+          openReplaceConfirmModal(data);
+          return;
+        }
+        showBindingError(data.error || 'Mã thẻ này đã được sử dụng cho cây khác! Không thể gán đè.');
         return;
       }
       throw new Error(data.error || 'Lỗi khi gắn thẻ vào cây.');
@@ -1092,6 +1099,10 @@ async function submitFieldBinding() {
     }
 
     showNfcGpsToast(data.message || 'Đã gắn thẻ và lưu GPS thành công!');
+
+    // Close any replace modal
+    const repModal = document.getElementById('replace-tag-confirm-modal');
+    if (repModal) repModal.style.display = 'none';
 
     // Update URL in browser history to reflect bound public route
     if (data.public_url) {
@@ -1107,9 +1118,49 @@ async function submitFieldBinding() {
     console.error('Lỗi khi gắn thẻ:', err);
     showBindingError(err.message || 'Lỗi server khi gắn thẻ.');
   } finally {
-    btn.innerHTML = oldBtnHtml;
-    btn.disabled = false;
+    if (btn) {
+      btn.innerHTML = oldBtnHtml;
+      btn.disabled = false;
+    }
     if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+// ─── Modal Functions: Replace & Revoke Old NFC Tag ───
+
+function openReplaceConfirmModal(conflictData) {
+  window.pendingConflictData = conflictData;
+  const modal = document.getElementById('replace-tag-confirm-modal');
+  if (!modal) return;
+
+  const treeEl = document.getElementById('rep-modal-tree-name');
+  if (treeEl) treeEl.textContent = '#' + (conflictData.tree_code || conflictData.plant_id);
+
+  const oldUidEl = document.getElementById('rep-modal-old-uid');
+  if (oldUidEl) oldUidEl.textContent = conflictData.current_uid || 'Không xác định';
+
+  const newUidEl = document.getElementById('rep-modal-new-uid');
+  if (newUidEl) newUidEl.textContent = conflictData.new_uid || window.currentBindingUid;
+
+  modal.style.display = 'flex';
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function confirmReplaceTagSubmit() {
+  const modal = document.getElementById('replace-tag-confirm-modal');
+  if (modal) modal.style.display = 'none';
+  submitFieldBinding(true);
+}
+
+function cancelReplaceAndPickAnother() {
+  const modal = document.getElementById('replace-tag-confirm-modal');
+  if (modal) modal.style.display = 'none';
+  clearSelectedTree();
+  showPublicToast('Đã hủy. Vui lòng chọn hoặc nhập số cây chưa gắn thẻ.');
+  const searchInput = document.getElementById('bind-tree-search');
+  if (searchInput) {
+    searchInput.focus();
+    handleTreeSearchInput('');
   }
 }
 

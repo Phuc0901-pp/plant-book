@@ -307,6 +307,48 @@
     </div>
   </div>
 
+  <!-- Replace & Revoke Tag Confirmation Modal -->
+  <div class="modal-overlay" id="replace-tag-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.75); z-index:99999; align-items:center; justify-content:center;">
+    <div class="modal" style="max-width:500px; width:92%; background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.35); border:2px solid #ef4444;">
+      <div style="background:linear-gradient(135deg, #991b1b, #dc2626); color:#ffffff; padding:18px 22px; display:flex; align-items:center; gap:10px;">
+        <i data-lucide="alert-triangle" class="lucide-sm" style="font-size:24px; color:#fef08a;"></i>
+        <div>
+          <h3 style="margin:0; font-size:16px; font-weight:800; color:#ffffff;">CÂY ĐÃ CÓ THẺ — XÁC NHẬN THAY THẾ</h3>
+          <span style="font-size:11.5px; color:#fecaca;">Quy chuẩn Quản trị 1 Cây - 1 Thẻ Định Danh</span>
+        </div>
+      </div>
+      <div style="padding:20px 22px; font-size:13px; color:#334155; line-height:1.6;">
+        <p style="margin:0 0 14px 0;">
+          Cây <strong id="rep-modal-tree-name" style="color:#0f172a; font-size:14px;">#15</strong> hiện đang được liên kết với một thẻ định danh khác:
+        </p>
+
+        <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:10px; padding:12px; margin-bottom:12px;">
+          <div style="font-size:12px; color:#991b1b; font-weight:700; margin-bottom:4px;">THẺ CŨ (SẼ BỊ HỦY VÀ ĐÓNG BĂNG TRUY CẬP):</div>
+          <div style="font-family:monospace; font-size:13.5px; font-weight:800; color:#b91c1c;" id="rep-modal-old-uid">04:--:--:--</div>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:12px; color:#166534; font-weight:700; margin-bottom:4px;">THẺ MỚI (SẼ GÁN VÀO CÂY NÀY):</div>
+          <div style="font-family:monospace; font-size:13.5px; font-weight:800; color:#047857;" id="rep-modal-new-uid">04:--:--:--</div>
+        </div>
+
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px 12px; font-size:12px; color:#92400e; margin-bottom:18px; display:flex; gap:8px; align-items:flex-start;">
+          <i data-lucide="shield-alert" class="lucide-sm" style="color:#d97706; font-size:18px; flex-shrink:0; margin-top:2px;"></i>
+          <span><strong>Hậu quả bảo mật:</strong> Khi xác nhận thay thế, thẻ cũ sẽ bị thu hồi. Bất kỳ ai quét lại thẻ cũ sau này sẽ <strong>KHÔNG</strong> xem được lịch sử cây này nữa!</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button type="button" onclick="confirmReplaceTagSubmit()" style="width:100%; height:46px; background:linear-gradient(135deg, #dc2626, #b91c1c); color:#ffffff; border:none; border-radius:10px; font-size:13.5px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(220,38,38,0.35);">
+            <i data-lucide="refresh-cw" class="lucide-sm"></i> 1. Đồng ý Thay Thế &amp; Hủy Thẻ Cũ
+          </button>
+          <button type="button" onclick="cancelReplaceAndPickAnother()" style="width:100%; height:42px; background:#ffffff; color:#334155; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i data-lucide="x" class="lucide-sm"></i> 2. Không, Tôi Muốn Nhập Số Cây Chưa Gắn Thẻ
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Plant Profile View -->
   <div id="plant-view" style="display: none;"></div>
 </div>
