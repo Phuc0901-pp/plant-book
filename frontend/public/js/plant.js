@@ -1261,7 +1261,12 @@ async function loadFarmPortal(farmId) {
 
     const addrEl = document.getElementById('gateway-farm-address');
     if (addrEl) {
-      addrEl.innerHTML = `<i data-lucide="map-pin" class="lucide-sm" style="vertical-align: -2px;"></i> ${esc(farm.address || 'Khu vực canh tác nông nghiệp Tân Bảo')}`;
+      if (farm.address && farm.address.trim()) {
+        addrEl.innerHTML = `<i data-lucide="map-pin" class="lucide-sm" style="vertical-align: -2px;"></i> ${esc(farm.address)}`;
+        addrEl.style.display = 'block';
+      } else {
+        addrEl.style.display = 'none';
+      }
     }
 
     // Stats
@@ -1355,9 +1360,9 @@ function openGatewayLoginModal() {
 }
 
 async function autoStartGatewayWebNfc(farmId) {
+  const statusText = document.getElementById('gateway-nfc-status-text');
   if (!('NDEFReader' in window)) {
-    const statusText = document.getElementById('gateway-nfc-status-text');
-    if (statusText) statusText.textContent = 'Web NFC sẵn sàng (Bấm nút bên dưới để bắt đầu quét)';
+    if (statusText) statusText.innerHTML = 'Chưa có thẻ định danh cho cây, liên hệ <a href="tel:090804895" style="color: #047857; text-decoration: underline; font-weight: 800;">(090804895)</a>';
     return;
   }
 
@@ -1366,7 +1371,6 @@ async function autoStartGatewayWebNfc(farmId) {
       _gatewayNdefReader = new NDEFReader();
       await _gatewayNdefReader.scan();
 
-      const statusText = document.getElementById('gateway-nfc-status-text');
       if (statusText) statusText.innerHTML = '<i data-lucide="radio" class="lucide-spin"></i> Đang tự động nhận diện thẻ NFC chạm vào máy...';
 
       _gatewayNdefReader.addEventListener('reading', async ({ serialNumber }) => {
@@ -1378,6 +1382,7 @@ async function autoStartGatewayWebNfc(farmId) {
     }
   } catch (err) {
     console.warn('Auto Web NFC scanner not started passively:', err);
+    if (statusText) statusText.innerHTML = 'Chưa có thẻ định danh cho cây, liên hệ <a href="tel:090804895" style="color: #047857; text-decoration: underline; font-weight: 800;">(090804895)</a>';
   }
 }
 
@@ -1507,7 +1512,9 @@ function renderGatewayTreesGrid(plants) {
       ? `<span style="background:#ecfdf5; color:#047857; font-size:11px; font-weight:800; padding:2px 8px; border-radius:100px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="check" class="lucide-sm"></i> Đã gắn thẻ</span>`
       : `<span style="background:#f1f5f9; color:#64748b; font-size:11px; font-weight:700; padding:2px 8px; border-radius:100px; border:1px solid #cbd5e1;">⚪ Chưa gắn thẻ</span>`;
 
-    const hasGps = p.latitude != null && p.longitude != null && !isNaN(Number(p.latitude)) && !isNaN(Number(p.longitude));
+    const locLabel = p.location && p.location !== 'Vườn chính' && !p.location.includes('canh tác nông nghiệp') 
+      ? esc(p.location) 
+      : (hasGps ? `GPS: ${Number(p.latitude).toFixed(6)}, ${Number(p.longitude).toFixed(6)}` : '');
 
     return `
       <div onclick="onGatewayTreeClick(${p.id}, '${esc(p.tree_code || p.id)}', '${esc(p.nfc_uid || '')}', ${isAssigned})"
@@ -1524,7 +1531,7 @@ function renderGatewayTreesGrid(plants) {
           ${esc(p.plant_type || 'Cây trồng')}${varietyStr}
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b;">
-          <span>${esc(p.location || 'Vườn chính')}</span>
+          <span>${locLabel}</span>
           ${hasGps ? '<span style="color:#047857; font-weight:700;"><i data-lucide="map-pin" class="lucide-sm"></i> Có GPS</span>' : '<span style="color:#94a3b8;">Chưa có GPS</span>'}
         </div>
       </div>
