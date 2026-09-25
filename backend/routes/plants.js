@@ -99,13 +99,14 @@ function generateSlug(plantType) {
   return `${base}-${uuidv4().slice(0, 8)}`;
 }
 
-function generatePublicPlantUrl(farmId, plantId, nfcUid) {
+function generatePublicPlantUrl(farmId, plantId, nfcUid, host, proto) {
   const fId = farmId || 0;
   const pId = plantId || 0;
+  const baseUrl = host ? `${proto || 'https'}://${host}` : (process.env.BASE_URL || 'https://plant-book.onrender.com');
   if (nfcUid && String(nfcUid).trim()) {
-    return `https://plant-book.onrender.com/${fId}/${pId}/${encodeURIComponent(String(nfcUid).trim())}`;
+    return `${baseUrl}/${fId}/${pId}/${encodeURIComponent(String(nfcUid).trim())}`;
   }
-  return `https://plant-book.onrender.com/${fId}/${pId}`;
+  return `${baseUrl}/${fId}/${pId}`;
 }
 
 // ─── Admin routes (require auth) ─────────────────────────────────
