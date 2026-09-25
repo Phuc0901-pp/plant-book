@@ -310,7 +310,7 @@ async function doGateLogin() {
       if (isAuthorized) {
         document.getElementById('auth-gate-view').style.display = 'none';
         showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Đang mở giao diện gán thẻ.`);
-        initFieldBindingModule(pFarm.farmId, pFarm.farmName, pFarm.pucCode, pFarm.nfcUid);
+        initFieldBindingModule(pFarm.farmId, pFarm.farmName, pFarm.pucCode, pFarm.nfcUid, pFarm.inInventory, pFarm.inventoryWarning);
         return;
       } else {
         errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" không thuộc nông trại này. Vui lòng đăng nhập tài khoản nông trại "${pFarm.farmName || 'này'}" hoặc Admin để gán thẻ.`;
@@ -746,9 +746,9 @@ async function loadPlant() {
       const isFarmAuthorized = user && (user.role === 'admin' || Number(user.farm_id) === Number(farmId));
 
       if (isFarmAuthorized) {
-        initFieldBindingModule(farmId, tagData.farm_name, tagData.puc_code, nfcUid);
+        initFieldBindingModule(farmId, tagData.farm_name, tagData.puc_code, nfcUid, tagData.in_inventory, tagData.inventory_warning);
       } else {
-        window.pendingBindingFarm = { farmId, farmName: tagData.farm_name, pucCode: tagData.puc_code, nfcUid };
+        window.pendingBindingFarm = { farmId, farmName: tagData.farm_name, pucCode: tagData.puc_code, nfcUid, inInventory: tagData.in_inventory, inventoryWarning: tagData.inventory_warning };
         document.getElementById('loader').style.display = 'none';
         document.getElementById('auth-gate-view').style.display = 'block';
         document.getElementById('plant-view').style.display = 'none';
@@ -820,10 +820,11 @@ async function loadPlant() {
 
 // ─── Field Binding Module Functions (NTAG213 On-Site Binding & Strict Governance) ───
 
-function initFieldBindingModule(farmId, farmName, pucCode, nfcUid) {
+function initFieldBindingModule(farmId, farmName, pucCode, nfcUid, inInventory = true, inventoryWarning = null) {
   window.currentBindingFarmId = farmId;
   window.currentBindingFarmName = farmName;
   window.currentBindingUid = nfcUid;
+  window.currentTagInInventory = inInventory !== false;
 
   document.getElementById('loader').style.display = 'none';
   document.getElementById('auth-gate-view').style.display = 'none';
@@ -841,9 +842,44 @@ function initFieldBindingModule(farmId, farmName, pucCode, nfcUid) {
   const pucEl = document.getElementById('bind-farm-puc');
   if (pucEl) pucEl.textContent = pucCode ? `PUC: ${pucCode}` : 'PUC: N/A';
 
+  // Warehouse Inventory Status Verification
+  const invBadgeEl = document.getElementById('bind-inventory-badge');
+  const btn = document.getElementById('btn-submit-binding');
+
+  if (inInventory === false) {
+    if (invBadgeEl) {
+      invBadgeEl.style.background = '#fef2f2';
+      invBadgeEl.style.color = '#b91c1c';
+      invBadgeEl.style.borderColor = '#fca5a5';
+      invBadgeEl.innerHTML = '<i data-lucide="alert-circle" class="lucide-sm"></i> CHƯA NHẬP KHO TRANG TRẠI';
+    }
+    showBindingError(inventoryWarning || `Mã thẻ NFC [${nfcUid}] chưa được Quản trị viên khai báo nhập kho cho trang trại này. Vui lòng liên hệ Admin nhập kho thẻ trước khi gắn cho cây!`);
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+      btn.style.background = '#94a3b8';
+      btn.innerHTML = '<i data-lucide="ban" class="lucide-sm"></i> Thẻ Chưa Nhập Kho — Không Thể Gán';
+    }
+  } else {
+    if (invBadgeEl) {
+      invBadgeEl.style.background = '#ecfdf5';
+      invBadgeEl.style.color = '#047857';
+      invBadgeEl.style.borderColor = '#a7f3d0';
+      invBadgeEl.innerHTML = '<i data-lucide="package-check" class="lucide-sm"></i> Thẻ hợp lệ (Đã nhập kho trang trại)';
+    }
+    hideBindingError();
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+      btn.innerHTML = '<i data-lucide="link" class="lucide-sm"></i> Xác nhận Gắn Thẻ &amp; Lưu Tọa Độ GPS';
+    }
+  }
+
   // Clear previous state
   clearSelectedTree();
-  hideBindingError();
 
   // Pre-warm GPS sensor immediately
   acquireGpsPosition(false);
@@ -1404,11 +1440,18 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
 
     if (isAuthorized) {
       document.getElementById('farm-gateway-view').style.display = 'none';
-      initFieldBindingModule(farmId, data.farm_name, data.puc_code, cleanUid);
+      initFieldBindingModule(farmId, data.farm_name, data.puc_code, cleanUid, data.in_inventory, data.inventory_warning);
     } else {
+      if (data.in_inventory === false) {
+        showPublicToast(data.inventory_warning || `Thẻ NFC [${cleanUid}] chưa được nhập kho trang trại.`);
+      }
       // Prompt staff login
-      if (confirm(`🏷️ Đã nhận diện thẻ NFC [${cleanUid}] chưa gán cây!\n\nNếu bạn là Kỹ thuật viên / Chủ vườn, bạn có muốn Đăng nhập ngay để gán thẻ này vào cây và lưu GPS không?`)) {
-        window.pendingBindingFarm = { farmId, farmName: data.farm_name, pucCode: data.puc_code, nfcUid: cleanUid };
+      const promptMsg = data.in_inventory === false
+        ? `⚠️ Đã nhận diện thẻ NFC [${cleanUid}] (CHƯA NHẬP KHO)!\n\nNếu bạn là Quản trị viên / Kỹ thuật viên, bạn có muốn Đăng nhập để kiểm tra không?`
+        : `🏷️ Đã nhận diện thẻ NFC [${cleanUid}] hợp lệ (chưa gán cây)!\n\nNếu bạn là Kỹ thuật viên / Chủ vườn, bạn có muốn Đăng nhập ngay để gán thẻ này vào cây và lưu GPS không?`;
+
+      if (confirm(promptMsg)) {
+        window.pendingBindingFarm = { farmId, farmName: data.farm_name, pucCode: data.puc_code, nfcUid: cleanUid, inInventory: data.in_inventory, inventoryWarning: data.inventory_warning };
         document.getElementById('farm-gateway-view').style.display = 'none';
         document.getElementById('auth-gate-view').style.display = 'block';
         const gateTitle = document.getElementById('gate-plant-name');

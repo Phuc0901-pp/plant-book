@@ -2964,7 +2964,9 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
     if (!nfc_uid || !String(nfc_uid).trim()) {
       return res.status(400).json({ error: 'Mã thẻ NFC (UID) là bắt buộc.' });
     }
-    const cleanUid = nfcSecurity.sanitizeUid(nfc_uid) || String(nfc_uid).trim().toUpperCase();
+    const rawUid = String(nfc_uid).trim();
+    const cleanUid = (nfcSecurity.sanitizeUid ? nfcSecurity.sanitizeUid(rawUid) : (nfcSecurity.normalizeNfcUid ? nfcSecurity.normalizeNfcUid(rawUid) : rawUid)) || rawUid.toUpperCase();
+    const cleanRawUid = cleanUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
     if (!plant_id && !tree_code) {
       return res.status(400).json({ error: 'Vui lòng chọn hoặc nhập số thứ tự cây cần gắn thẻ.' });
@@ -2981,6 +2983,42 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
     }
 
     await client.query('BEGIN');
+
+    // 0. STRICT WAREHOUSE INVENTORY CHECK: Verify that Admin has imported this NFC tag into inventory for this farm
+    const invCheck = await client.query(
+      `SELECT id, farm_id, status, plant_id, nfc_uid 
+       FROM nfc_tags_inventory 
+       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2)`,
+      [cleanUid, cleanRawUid]
+    );
+
+    if (invCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        not_in_inventory: true,
+        error: `Mã thẻ NFC [${cleanUid}] CHƯA ĐƯỢC NHẬP KHO. Vui lòng liên hệ Quản trị viên nhập kho thẻ cho Trang trại #${farmId} trước khi gắn cho cây!`
+      });
+    }
+
+    const invItem = invCheck.rows[0];
+
+    // Check if tag is allocated to a different farm
+    if (invItem.farm_id && Number(invItem.farm_id) !== Number(farmId)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        wrong_farm: true,
+        error: `Thẻ NFC [${cleanUid}] thuộc kho của Trang trại #${invItem.farm_id}, không thể gắn cho cây thuộc Trang trại #${farmId}!`
+      });
+    }
+
+    // Check if tag is revoked/frozen
+    if (invItem.status === 'revoked') {
+      await client.query('ROLLBACK');
+      return res.status(410).json({
+        is_revoked: true,
+        error: `Thẻ NFC [${cleanUid}] đã bị thu hồi / khóa bảo mật và không thể tái sử dụng.`
+      });
+    }
 
     // 1. Find target plant by plant_id or farm_id + tree_code with lock (FOR UPDATE)
     let targetPlant = null;
@@ -3006,9 +3044,10 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
     // 2. TREE GOVERNANCE & REPLACEMENT CHECK
     if (targetPlant.nfc_uid && String(targetPlant.nfc_uid).trim().length > 0) {
       const existingTag = targetPlant.nfc_uid.trim().toUpperCase();
+      const existingRawTag = existingTag.replace(/[^A-Za-z0-9]/g, '');
       
       // If tapping the exact same tag on the same tree -> allow updating GPS without replacing
-      if (existingTag !== cleanUid) {
+      if (existingTag !== cleanUid && existingRawTag !== cleanRawUid) {
         if (!allow_replace) {
           await client.query('ROLLBACK');
           return res.status(409).json({
@@ -3045,8 +3084,9 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     // 3. Check if cleanUid is already assigned to ANOTHER plant anywhere in the system
     const uidConflict = await client.query(
-      'SELECT id, tree_code, farm_id FROM plants WHERE UPPER(nfc_uid) = UPPER($1) AND id != $2 AND deleted_at IS NULL',
-      [cleanUid, targetPlant.id]
+      `SELECT id, tree_code, farm_id FROM plants 
+       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2) AND id != $3 AND deleted_at IS NULL`,
+      [cleanUid, cleanRawUid, targetPlant.id]
     );
     if (uidConflict.rows.length > 0) {
       await client.query('ROLLBACK');
@@ -3077,13 +3117,17 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
 
     const updatedPlant = updateRes.rows[0];
 
-    // 6. Update or Upsert NFC Inventory for the new tag
+    // 6. Update NFC Inventory for the newly assigned tag
     await client.query(
-      `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, last_scanned_lat, last_scanned_lng, tagged_at, created_by)
-       VALUES ($1, $2, 'assigned', $3, $4, $5, NOW(), $6)
-       ON CONFLICT (nfc_uid) 
-       DO UPDATE SET farm_id = EXCLUDED.farm_id, status = 'assigned', plant_id = EXCLUDED.plant_id, last_scanned_lat = COALESCE(EXCLUDED.last_scanned_lat, nfc_tags_inventory.last_scanned_lat), last_scanned_lng = COALESCE(EXCLUDED.last_scanned_lng, nfc_tags_inventory.last_scanned_lng), tagged_at = NOW()`,
-      [farmId, cleanUid, targetPlant.id, lat, lng, req.user.id]
+      `UPDATE nfc_tags_inventory 
+       SET farm_id = $1, 
+           status = 'assigned', 
+           plant_id = $2, 
+           last_scanned_lat = COALESCE($3, last_scanned_lat), 
+           last_scanned_lng = COALESCE($4, last_scanned_lng), 
+           tagged_at = NOW()
+       WHERE id = $5`,
+      [farmId, targetPlant.id, lat, lng, invItem.id]
     );
 
     // 7. Audit Log
@@ -3175,7 +3219,8 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
   try {
     const farmId = parseInt(req.params.farmId);
     const nfcUidRaw = req.params.nfcUid ? req.params.nfcUid.trim() : '';
-    const cleanUid = nfcSecurity.sanitizeUid(nfcUidRaw) || nfcUidRaw.toUpperCase();
+    const cleanUid = (nfcSecurity.sanitizeUid ? nfcSecurity.sanitizeUid(nfcUidRaw) : (nfcSecurity.normalizeNfcUid ? nfcSecurity.normalizeNfcUid(nfcUidRaw) : nfcUidRaw)) || nfcUidRaw.toUpperCase();
+    const cleanRawUid = cleanUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
     if (isNaN(farmId) || !cleanUid) {
       return res.status(400).json({ error: 'Nông trại hoặc mã thẻ NFC không hợp lệ.' });
@@ -3205,9 +3250,9 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
-       WHERE p.farm_id = $1 AND UPPER(p.nfc_uid) = UPPER($2) AND (p.deleted_at IS NULL)
+       WHERE p.farm_id = $1 AND (UPPER(p.nfc_uid) = UPPER($2) OR UPPER(regexp_replace(p.nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $3) AND (p.deleted_at IS NULL)
        LIMIT 1`,
-      [farmId, cleanUid]
+      [farmId, cleanUid, cleanRawUid]
     );
 
     if (plantQuery.rows.length > 0) {
@@ -3272,31 +3317,64 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
 
       return res.json({
         assigned: true,
+        in_inventory: true,
         farm_id: farmId,
         nfc_uid: cleanUid,
         plant: { ...row, media: media.rows, logs: scrubbedLogs, farm_boundary }
       });
     }
 
-    // 3. Not assigned to any plant in this farm -> check inventory for revoked status
+    // 3. Not assigned to any plant in this farm -> check inventory status
     const invCheck = await pool.query(
-      'SELECT id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1) AND (farm_id = $2 OR farm_id IS NULL)',
-      [cleanUid, farmId]
+      `SELECT id, farm_id, status, plant_id 
+       FROM nfc_tags_inventory 
+       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2)`,
+      [cleanUid, cleanRawUid]
     );
 
-    if (invCheck.rows.length > 0 && invCheck.rows[0].status === 'revoked') {
+    if (invCheck.rows.length === 0) {
+      return res.json({
+        assigned: false,
+        in_inventory: false,
+        not_in_inventory: true,
+        farm_id: farmId,
+        farm_name: farm.name,
+        puc_code: farm.puc_code,
+        nfc_uid: cleanUid,
+        inventory_warning: `Thẻ NFC [${cleanUid}] chưa được khai báo nhập kho cho trang trại này.`
+      });
+    }
+
+    const invItem = invCheck.rows[0];
+
+    if (invItem.farm_id && Number(invItem.farm_id) !== Number(farmId)) {
+      return res.json({
+        assigned: false,
+        in_inventory: false,
+        wrong_farm: true,
+        tag_farm_id: invItem.farm_id,
+        farm_id: farmId,
+        farm_name: farm.name,
+        puc_code: farm.puc_code,
+        nfc_uid: cleanUid,
+        inventory_warning: `Thẻ NFC [${cleanUid}] thuộc kho của Trang trại #${invItem.farm_id}, không thể sử dụng tại Trang trại #${farmId}.`
+      });
+    }
+
+    if (invItem.status === 'revoked') {
       return res.status(410).json({
         assigned: false,
         is_revoked: true,
         farm_id: farmId,
         nfc_uid: cleanUid,
-        error: `Thẻ NFC [${cleanUid}] này đã bị thu hồi. Không thể gán thẻ này vào cây.`
+        error: `Thẻ NFC [${cleanUid}] này đã bị thu hồi / khóa bảo mật. Không thể gán thẻ này vào cây.`
       });
     }
 
-    // Return unassigned response for on-site binding
+    // Return unassigned valid inventory response for on-site binding
     return res.json({
       assigned: false,
+      in_inventory: true,
       farm_id: farmId,
       farm_name: farm.name,
       puc_code: farm.puc_code,

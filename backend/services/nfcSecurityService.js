@@ -197,8 +197,17 @@ function buildNtag213MirrorConfig({ farmId, plantId, uid, baseUrl = 'https://pla
   };
 }
 
+/**
+ * Sanitizes and normalizes an NFC UID
+ */
+function sanitizeUid(uid) {
+  if (!uid || typeof uid !== 'string') return '';
+  return normalizeNfcUid(uid);
+}
+
 module.exports = {
   normalizeNfcUid,
+  sanitizeUid,
   generateHmacSignature,
   verifyHmacSignature,
   calculateHaversineDistance,
