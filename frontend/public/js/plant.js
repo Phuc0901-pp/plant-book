@@ -524,6 +524,159 @@ function formatVnd(amount) {
   return new Intl.NumberFormat('vi-VN').format(val) + ' VNĐ';
 }
 
+function _getCategoryIconHtml(category) {
+  let bg = '#f1f5f9';
+  let color = '#64748b';
+  let icon = 'boxes';
+  if (category === 'Bón phân') { bg = '#ecfdf5'; color = '#059669'; icon = 'leaf'; }
+  else if (category === 'Phun thuốc') { bg = '#fef2f2'; color = '#dc2626'; icon = 'flask-conical'; }
+  else if (category === 'Tiền nước') { bg = '#e0f2fe'; color = '#0284c7'; icon = 'droplet'; }
+  else if (category === 'Nhân công') { bg = '#fef3c7'; color = '#d97706'; icon = 'user-check'; }
+
+  return `<div style="width: 44px; height: 44px; border-radius: 8px; background: ${bg}; color: ${color}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.06);"><i data-lucide="${icon}" class="lucide-sm"></i></div>`;
+}
+
+function getSupplyThumbnailHtml(s) {
+  if (s && s.image_url && s.image_url.trim()) {
+    const safeUrl = esc(s.image_url.trim());
+    return `<img src="${safeUrl}" alt="${esc(s.name)}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0; cursor: pointer; flex-shrink: 0;" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" onclick="openLightbox('${safeUrl}', 'image')"><div style="display:none;">${_getCategoryIconHtml(s.category)}</div>`;
+  }
+  return _getCategoryIconHtml(s?.category);
+}
+
+function renderSuppliesTableHtml(supplies = [], currentPage = 1, pageSize = 10, onPageChangeFnName = 'changePlantSuppliesPage') {
+  if (!supplies || supplies.length === 0) {
+    return `
+      <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 24px; text-align: center; color: #64748b; font-size: 13px;">
+        <i data-lucide="boxes" class="lucide-sm" style="color: #94a3b8; font-size: 24px; margin-bottom: 6px;"></i>
+        <div>Trang trại chưa khai báo danh mục vật tư trong kho.</div>
+      </div>
+    `;
+  }
+
+  const totalItems = supplies.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  let page = parseInt(currentPage) || 1;
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+
+  const startIdx = (page - 1) * pageSize;
+  const currentSlice = supplies.slice(startIdx, startIdx + pageSize);
+
+  return `
+    <div style="overflow-x: auto; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.3px;">
+            <th style="padding: 10px 12px; width: 64px; text-align: center;">Ảnh</th>
+            <th style="padding: 10px 12px; min-width: 220px;">Tên vật tư / Sản phẩm</th>
+            <th style="padding: 10px 12px; width: 110px;">Phân loại</th>
+            <th style="padding: 10px 12px; width: 155px;">Mức tồn kho &amp; Trạng thái</th>
+            <th style="padding: 10px 12px; text-align: right; width: 140px;">Đơn giá hạch toán</th>
+            <th style="padding: 10px 12px; text-align: right; width: 140px;">Tổng giá trị tồn</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${currentSlice.map(s => {
+            const stock = parseFloat(s.stock_quantity) || 0;
+            const unitPrice = parseFloat(s.unit_price) || 0;
+            const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
+            const isLow = !isPermanent && stock <= 5 && stock > 0;
+            const isOut = !isPermanent && stock <= 0;
+
+            let stockBadge = `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:700; padding:3px 8px; border-radius:100px; display:inline-block;">Còn: <strong>${stock} ${esc(s.unit)}</strong></span>`;
+            if (isPermanent) {
+              stockBadge = `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:11px; font-weight:700; padding:3px 8px; border-radius:100px; display:inline-block;">Cung ứng liên tục (Vô hạn)</span>`;
+            } else if (isOut) {
+              stockBadge = `<span style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; font-size:11px; font-weight:800; padding:3px 8px; border-radius:100px; display:inline-block;">⚠️ HẾT HÀNG (0 ${esc(s.unit)})</span>`;
+            } else if (isLow) {
+              stockBadge = `<span style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:11px; font-weight:700; padding:3px 8px; border-radius:100px; display:inline-block;">Sắp hết: ${stock} ${esc(s.unit)}</span>`;
+            }
+
+            let catBg = '#f1f5f9';
+            let catColor = '#334155';
+            if (s.category === 'Bón phân') { catBg = '#ecfdf5'; catColor = '#166534'; }
+            else if (s.category === 'Phun thuốc') { catBg = '#fef2f2'; catColor = '#991b1b'; }
+            else if (s.category === 'Tiền nước') { catBg = '#f0f9ff'; catColor = '#0369a1'; }
+            else if (s.category === 'Nhân công') { catBg = '#fef3c7'; catColor = '#92400e'; }
+
+            const totalStockVal = (!isPermanent && stock > 0 && unitPrice > 0) ? formatVnd(stock * unitPrice) : '—';
+
+            return `
+              <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                <td style="padding: 10px 12px; text-align: center; vertical-align: middle;">
+                  ${getSupplyThumbnailHtml(s)}
+                </td>
+                <td style="padding: 10px 12px; vertical-align: middle;">
+                  <div style="font-weight: 800; font-size: 13px; color: #0f172a; line-height: 1.35;">${esc(s.name)}</div>
+                  ${s.active_ingredient ? `<div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 2px;"><i data-lucide="leaf" class="lucide-xs" style="vertical-align: -1px;"></i> Hoạt chất: ${esc(s.active_ingredient)}</div>` : ''}
+                  ${s.package_size ? `<div style="font-size: 11px; color: #64748b; margin-top: 1px;">Quy cách: ${esc(s.package_size)}</div>` : ''}
+                  ${s.phi_days && Number(s.phi_days) > 0 ? `<div style="font-size: 10.5px; color: #d97706; font-weight: 700; margin-top: 1px;">⏱️ Cách ly PHI: ${s.phi_days} ngày</div>` : ''}
+                </td>
+                <td style="padding: 10px 12px; vertical-align: middle; white-space: nowrap;">
+                  <span style="background: ${catBg}; color: ${catColor}; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-block;">${esc(s.category)}</span>
+                </td>
+                <td style="padding: 10px 12px; vertical-align: middle; white-space: nowrap;">
+                  ${stockBadge}
+                </td>
+                <td style="padding: 10px 12px; vertical-align: middle; text-align: right; white-space: nowrap; font-weight: 700; color: #047857;">
+                  ${formatVnd(s.unit_price)} <span style="font-size: 11px; color: #64748b; font-weight: 500;">/ ${esc(s.unit)}</span>
+                </td>
+                <td style="padding: 10px 12px; vertical-align: middle; text-align: right; white-space: nowrap; font-weight: 800; color: #0f172a;">
+                  ${totalStockVal}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination / Footer Bar (10 records per page) -->
+    ${totalItems > pageSize ? `
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding: 8px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 12px; color: #64748b; font-weight: 600;">
+          Hiển thị <strong>${startIdx + 1} - ${Math.min(startIdx + pageSize, totalItems)}</strong> trên tổng số <strong>${totalItems}</strong> vật tư (10 bản ghi / trang)
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-xs" ${page <= 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="${onPageChangeFnName}(${page - 1})"`} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer; border-radius: 6px;">
+            <i data-lucide="chevron-left" class="lucide-xs"></i> Trang trước
+          </button>
+          <span style="font-size: 12px; font-weight: 700; color: #0f172a; padding: 4px 10px; background: #ffffff; border-radius: 6px; border: 1px solid #cbd5e1;">
+            Trang ${page} / ${totalPages}
+          </span>
+          <button type="button" class="btn btn-secondary btn-xs" ${page >= totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="${onPageChangeFnName}(${page + 1})"`} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer; border-radius: 6px;">
+            Trang tiếp <i data-lucide="chevron-right" class="lucide-xs"></i>
+          </button>
+        </div>
+      </div>
+    ` : `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 11.5px; color: #64748b; padding: 0 4px;">
+        <span>Tổng số: <strong>${totalItems}</strong> mặt hàng vật tư trong kho</span>
+        <span>Trang 1 / 1 (10 bản ghi / trang)</span>
+      </div>
+    `}
+  `;
+}
+
+window.changePlantSuppliesPage = function(page) {
+  window._plantSuppliesCurrentPage = page;
+  const container = document.getElementById('plant-supplies-table-container');
+  if (container) {
+    container.innerHTML = renderSuppliesTableHtml(window._plantSuppliesData || [], page, 10, 'changePlantSuppliesPage');
+    if (window.lucide) window.lucide.createIcons();
+  }
+};
+
+window.changeGatewaySuppliesPage = function(page) {
+  window._gatewaySuppliesCurrentPage = page;
+  const container = document.getElementById('gateway-supplies-container');
+  if (container) {
+    container.innerHTML = renderSuppliesTableHtml(window._gatewaySuppliesData || [], page, 10, 'changeGatewaySuppliesPage');
+    if (window.lucide) window.lucide.createIcons();
+  }
+};
+
 function _formatSupplyOptionText(s) {
   const pkgQty = parseFloat(s.package_qty) || 1;
   const pkgPrice = parseFloat(s.package_price) || 0;
@@ -1881,74 +2034,19 @@ async function loadFarmPortal(farmId) {
   }
 }
 
-function renderGatewaySupplies(supplies = [], totalInvestment = 0) {
+function renderGatewaySupplies(supplies = [], totalInvestment = 0, page = 1) {
+  window._gatewaySuppliesData = supplies || [];
+  window._gatewaySuppliesCurrentPage = page || 1;
+
   const badge = document.getElementById('gateway-total-investment-badge');
   if (badge) {
     badge.textContent = `Tổng đầu tư: ${formatVnd(totalInvestment)}`;
   }
-  const grid = document.getElementById('gateway-supplies-grid');
-  if (!grid) return;
+  const container = document.getElementById('gateway-supplies-container') || document.getElementById('gateway-supplies-grid');
+  if (!container) return;
 
-  if (supplies.length === 0) {
-    grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #64748b; font-size: 12.5px; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1;">
-        <i data-lucide="info" class="lucide-sm" style="color: #94a3b8; margin-bottom: 4px;"></i>
-        <div>Trang trại chưa khai báo danh mục vật tư nào.</div>
-      </div>
-    `;
-    return;
-  }
-
-  grid.innerHTML = supplies.map(s => {
-    const stock = parseFloat(s.stock_quantity) || 0;
-    const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
-    const isLow = !isPermanent && stock <= 5 && stock > 0;
-    const isOut = !isPermanent && stock <= 0;
-    let stockBadgeColor = '#f0fdf4';
-    let stockBorderColor = '#86efac';
-    let stockTextColor = '#166534';
-    let stockText = `Còn: ${stock} ${s.unit}`;
-
-    if (isPermanent) {
-      stockText = 'Cung ứng liên tục';
-    } else if (isOut) {
-      stockBadgeColor = '#fef2f2';
-      stockBorderColor = '#fca5a5';
-      stockTextColor = '#dc2626';
-      stockText = `HẾT HÀNG (0 ${s.unit})`;
-    } else if (isLow) {
-      stockBadgeColor = '#fffbeb';
-      stockBorderColor = '#fde68a';
-      stockTextColor = '#b45309';
-      stockText = `Sắp hết: ${stock} ${s.unit}`;
-    }
-
-    let catBg = '#f1f5f9';
-    let catColor = '#334155';
-    if (s.category === 'Bón phân') { catBg = '#f0fdf4'; catColor = '#166534'; }
-    else if (s.category === 'Phun thuốc') { catBg = '#fef2f2'; catColor = '#991b1b'; }
-    else if (s.category === 'Tiền nước') { catBg = '#f0f9ff'; catColor = '#0369a1'; }
-
-    return `
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
-            <span style="background: ${catBg}; color: ${catColor}; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${esc(s.category)}</span>
-            <span style="background: ${stockBadgeColor}; border: 1px solid ${stockBorderColor}; color: ${stockTextColor}; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">${stockText}</span>
-          </div>
-          <div style="font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.3;">
-            ${esc(s.name)}
-          </div>
-          ${s.package_size ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px;">Quy cách: ${esc(s.package_size)}</div>` : ''}
-          ${s.active_ingredient ? `<div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 2px;">Hoạt chất: ${esc(s.active_ingredient)}</div>` : ''}
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 4px;">
-          <span style="font-size: 11px; color: #64748b;">Đơn giá chuẩn:</span>
-          <strong style="font-size: 12.5px; color: #047857;">${formatVnd(s.unit_price)} / ${esc(s.unit)}</strong>
-        </div>
-      </div>
-    `;
-  }).join('');
+  container.innerHTML = renderSuppliesTableHtml(supplies, page, 10, 'changeGatewaySuppliesPage');
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderGatewayStaffArea(farmId, farm) {
@@ -2586,6 +2684,11 @@ async function renderPlant(plant, isEditable) {
   window._publicLogPageSize = 5;
   window._publicLogIsExpanded = false;
 
+  // Cache supplies for plant profile pagination (10 items / page)
+  window._plantSuppliesData = plant.farm_supplies || [];
+  window._plantSuppliesCurrentPage = 1;
+  window._plantSuppliesPageSize = 10;
+
   logs.forEach(log => {
     const dateStr = fmtDate(log.log_date);
     if (!window._publicLogsGrouped[dateStr]) {
@@ -2796,61 +2899,8 @@ async function renderPlant(plant, isEditable) {
               <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">Tổng ${(plant.farm_supplies || []).length} loại vật tư đã khai báo</span>
             </h3>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px;">
-              ${(!plant.farm_supplies || plant.farm_supplies.length === 0) ? `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 14px; color: #64748b; font-size: 12px; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1;">
-                  Trang trại chưa khai báo vật tư trong kho.
-                </div>
-              ` : plant.farm_supplies.map(s => {
-                const stock = parseFloat(s.stock_quantity) || 0;
-                const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
-                const isLow = !isPermanent && stock <= 5 && stock > 0;
-                const isOut = !isPermanent && stock <= 0;
-                let stockBadgeColor = '#f0fdf4';
-                let stockBorderColor = '#86efac';
-                let stockTextColor = '#166534';
-                let stockText = `Còn: ${stock} ${s.unit}`;
-
-                if (isPermanent) {
-                  stockText = 'Cung ứng liên tục';
-                } else if (isOut) {
-                  stockBadgeColor = '#fef2f2';
-                  stockBorderColor = '#fca5a5';
-                  stockTextColor = '#dc2626';
-                  stockText = `HẾT HÀNG (0 ${s.unit})`;
-                } else if (isLow) {
-                  stockBadgeColor = '#fffbeb';
-                  stockBorderColor = '#fde68a';
-                  stockTextColor = '#b45309';
-                  stockText = `Sắp hết: ${stock} ${s.unit}`;
-                }
-
-                let catBg = '#f1f5f9';
-                let catColor = '#334155';
-                if (s.category === 'Bón phân') { catBg = '#f0fdf4'; catColor = '#166534'; }
-                else if (s.category === 'Phun thuốc') { catBg = '#fef2f2'; catColor = '#991b1b'; }
-                else if (s.category === 'Tiền nước') { catBg = '#f0f9ff'; catColor = '#0369a1'; }
-
-                return `
-                  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                    <div>
-                      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
-                        <span style="background: ${catBg}; color: ${catColor}; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${esc(s.category)}</span>
-                        <span style="background: ${stockBadgeColor}; border: 1px solid ${stockBorderColor}; color: ${stockTextColor}; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">${stockText}</span>
-                      </div>
-                      <div style="font-size: 12.5px; font-weight: 800; color: #0f172a; line-height: 1.3;">
-                        ${esc(s.name)}
-                      </div>
-                      ${s.package_size ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px;">Quy cách: ${esc(s.package_size)}</div>` : ''}
-                      ${s.active_ingredient ? `<div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 2px;">Hoạt chất: ${esc(s.active_ingredient)}</div>` : ''}
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed #f1f5f9; padding-top: 6px; margin-top: 4px;">
-                      <span style="font-size: 11px; color: #64748b;">Đơn giá hạch toán:</span>
-                      <strong style="font-size: 12px; color: #047857;">${formatVnd(s.unit_price)} / ${esc(s.unit)}</strong>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
+            <div id="plant-supplies-table-container">
+              ${renderSuppliesTableHtml(plant.farm_supplies || [], 1, 10, 'changePlantSuppliesPage')}
             </div>
           </div>
         </div>

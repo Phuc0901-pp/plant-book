@@ -3253,7 +3253,12 @@ router.get('/farms/:farmId/public-portal', async (req, res) => {
                COALESCE(SUM(su.quantity), 0) as total_used_qty
         FROM supplies s
         LEFT JOIN supply_usages su ON su.supply_id = s.id AND su.farm_id = $1
-        WHERE (s.user_id = $2 OR s.farm_id = $1 OR s.user_id = 1 OR s.farm_id IS NULL OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $1))
+        WHERE (
+          s.farm_id = $1 
+          OR s.user_id = $2 
+          OR s.user_id IN (SELECT id FROM users WHERE farm_id = $1)
+          OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $1)
+        )
         GROUP BY s.id
         ORDER BY s.category ASC, s.name ASC
       `, [farmId, farm.user_id]);
@@ -3414,9 +3419,14 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
                  s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
                  s.target_pests, s.phi_days, s.note
           FROM supplies s
-          WHERE (s.user_id = $1 OR s.farm_id = $2 OR s.user_id = 1 OR s.farm_id IS NULL OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2))
+          WHERE (
+            s.farm_id = $2 
+            OR s.user_id = $1 
+            OR s.user_id IN (SELECT id FROM users WHERE farm_id = $2)
+            OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2 OR plant_id = $3)
+          )
           ORDER BY s.category ASC, s.name ASC
-        `, [row.farm_owner_user_id || farm.user_id, farmId || row.farm_id]);
+        `, [row.farm_owner_user_id || farm.user_id, farmId || row.farm_id, row.id]);
         farmSupplies = farmSuppliesRes.rows;
       } catch (supErr) {
         console.warn('Error fetching supply usages for plant:', supErr.message);
@@ -3636,9 +3646,17 @@ router.get('/public/:slug', async (req, res) => {
                s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
                s.target_pests, s.phi_days, s.note
         FROM supplies s
-        WHERE (s.user_id = $1 OR s.farm_id = $2 OR s.user_id = 1 OR s.farm_id IS NULL OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2))
+        WHERE (
+          ($2::int IS NOT NULL AND (
+            s.farm_id = $2 
+            OR s.user_id = $1 
+            OR s.user_id IN (SELECT id FROM users WHERE farm_id = $2)
+            OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2 OR plant_id = $3)
+          ))
+          OR ($2::int IS NULL AND (s.user_id = $1 OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)))
+        )
         ORDER BY s.category ASC, s.name ASC
-      `, [row.farm_owner_user_id, row.farm_id]);
+      `, [row.farm_owner_user_id || row.created_by, row.farm_id, row.id]);
       farmSupplies = farmSuppliesRes.rows;
     } catch (supErr) {
       console.warn('Error fetching supply usages for plant:', supErr.message);
