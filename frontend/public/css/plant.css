@@ -95,43 +95,49 @@
   .glass-panel {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.06);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   /* Brand Bar Header */
   .brand-bar {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 24px 16px;
+    padding: 20px 16px 16px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 14px;
-    text-align: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  @media(max-width: 640px) {
+    .brand-bar {
+      flex-direction: column;
+      text-align: center;
+      padding: 16px 12px;
+    }
   }
   .brand-logo {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 14px;
   }
   .brand-logo-img-wrap {
     background: #ffffff;
-    border-radius: 16px;
-    padding: 14px 32px;
+    border-radius: 12px;
+    padding: 8px 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     border: 1px solid #e2e8f0;
   }
   .brand-logo-img-wrap img {
-    height: 64px; /* Phóng lớn 50%+ nổi bật */
-    max-height: 80px;
+    height: 48px;
+    max-height: 60px;
     width: auto;
     display: block;
     object-fit: contain;
@@ -142,16 +148,59 @@
   }
   .brand-logo-tagline {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-secondary);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  @media(max-width: 640px) {
+    .brand-logo-tagline {
+      align-items: center;
+    }
   }
 
+  /* ═══ ENTERPRISE ERP COCKPIT & TELEMETRY SYSTEM ═══ */
+  .erp-top-cockpit {
+    max-width: 1200px;
+    margin: 0 auto 12px;
+    padding: 0 16px;
+  }
+  .erp-top-nav-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .erp-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-weight: 600;
+    flex-wrap: wrap;
+  }
+  .erp-breadcrumb a {
+    color: #059669;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .erp-breadcrumb a:hover {
+    text-decoration: underline;
+  }
 
   /* Hero Section */
   .hero-container {
-    max-width: 900px;
-    margin: 0 auto 24px;
+    max-width: 1200px;
+    margin: 0 auto 20px;
     padding: 0 16px;
   }
   .hero-card {
@@ -160,13 +209,14 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    border-radius: 16px;
   }
   .cover-image-container {
     position: relative;
     width: 100%;
-    height: 320px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 20px 20px 0 0;
+    height: 300px;
+    background: #0f172a;
+    border-radius: 16px 16px 0 0;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -176,10 +226,11 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    filter: brightness(0.92);
   }
   .cover-image-container img.cover-image-fallback {
-    max-width: 150px;
-    max-height: 150px;
+    max-width: 140px;
+    max-height: 140px;
     object-fit: contain;
     z-index: 2;
   }
@@ -189,94 +240,168 @@
     justify-content: center;
     height: 100%;
     font-size: 80px;
-    color: rgba(255, 255, 255, 0.05);
-    background: linear-gradient(135deg, rgba(12,41,27,0.3) 0%, rgba(7,25,16,0.5) 100%);
+    color: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
   }
   .cover-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 30%, rgba(7, 25, 16, 0.95) 100%);
+    background: linear-gradient(to bottom, rgba(15,23,42,0.15) 0%, rgba(15,23,42,0.7) 60%, rgba(15,23,42,0.96) 100%);
   }
+
+  /* Top Cockpit Overlay Badges on Cover */
+  .cover-erp-badges {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    z-index: 5;
+  }
+  .cover-erp-pill {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.02em;
+  }
+  .cover-erp-pill.puc {
+    background: rgba(6, 78, 59, 0.88);
+    border-color: #34d399;
+    color: #ecfdf5;
+  }
+  .cover-erp-pill.vietgap {
+    background: rgba(30, 64, 175, 0.88);
+    border-color: #93c5fd;
+    color: #eff6ff;
+  }
+
   .hero-details {
-    padding: 24px;
-    margin-top: -60px;
+    padding: 20px 24px 24px;
+    margin-top: -64px;
     position: relative;
-    z-index: 2;
+    z-index: 3;
   }
   .plant-title-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: flex-end;
     flex-wrap: wrap;
     gap: 16px;
   }
   .plant-name {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #fff;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    letter-spacing: -0.025em;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    line-height: 1.25;
+  }
+  @media(min-width: 768px) {
+    .plant-name {
+      font-size: 32px;
+    }
   }
   .plant-variety {
-    font-size: 15px;
-    color: var(--text-secondary);
+    font-size: 14px;
+    color: #cbd5e1;
     margin-top: 4px;
+    font-weight: 500;
   }
   .badges-row {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     margin-top: 12px;
+    align-items: center;
   }
   .badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 14px;
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 600;
-    border: 1px solid rgba(255,255,255,0.05);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid transparent;
   }
-  .badge-tot { background: rgba(34, 197, 94, 0.15); color: #4ade80; border-color: rgba(74, 222, 128, 0.2); }
-  .badge-binhthuong { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(96, 165, 250, 0.2); }
-  .badge-chuyi { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.2); }
-  .badge-benh { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(248, 113, 113, 0.2); }
-  
-  .badge-info { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+  .badge-tot { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+  .badge-binhthuong { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .badge-chuyi { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+  .badge-benh { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+  .badge-info { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+  .badge-gray { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
 
-  /* Info Grid */
-  .info-grid {
+  /* ═══ 5-COLUMN ERP TELEMETRY KPI TILES ═══ */
+  .erp-telemetry-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 12px;
     margin-top: 20px;
   }
-  .info-tile {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+  .erp-kpi-tile {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content: space-between;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   }
-  .info-tile .label {
+  .erp-kpi-tile:hover {
+    border-color: #10b981;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.08);
+  }
+  .erp-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .erp-kpi-label {
     font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
+    font-weight: 700;
+    color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  .info-tile .value {
-    font-size: 14px;
+  .erp-kpi-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.3;
+  }
+  .erp-kpi-subtext {
+    font-size: 11px;
+    color: #64748b;
     font-weight: 500;
-    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   /* Main Layout */
   .main-layout {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 16px;
     display: grid;
@@ -284,23 +409,90 @@
     gap: 24px;
   }
 
-  @media(min-width: 768px) {
+  @media(min-width: 900px) {
     .main-layout {
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 1fr 380px;
       align-items: start;
     }
     .left-col {
       display: flex;
       flex-direction: column;
       gap: 24px;
+      min-width: 0;
     }
     .right-col {
       position: sticky;
-      top: 24px;
+      top: 20px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
+      min-width: 0;
     }
+  }
+
+  /* ERP Passport & Security Seal Card */
+  .erp-passport-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .erp-passport-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+  .erp-passport-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .erp-passport-stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1.5px solid #34d399;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    transform: rotate(-2deg);
+  }
+  .erp-passport-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .erp-passport-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dashed #f1f5f9;
+  }
+  .erp-passport-lbl {
+    color: #64748b;
+    font-weight: 600;
+  }
+  .erp-passport-val {
+    color: #0f172a;
+    font-weight: 700;
+    text-align: right;
   }
 
   /* Section Title */
