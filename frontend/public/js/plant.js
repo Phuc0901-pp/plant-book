@@ -420,10 +420,11 @@ let configData = {
 
 // Toggle Custom Input field when "Khác..." is chosen
 function toggleCustomInput(prefix) {
-  const select = document.getElementById(`${prefix}-select`);
+  const select = document.getElementById(`${prefix}-select`) || document.getElementById(`${prefix}-supply-select`);
   const custom = document.getElementById(`${prefix}-custom`);
+  if (!select || !custom) return;
   if (select.value === '__custom__') {
-    custom.style.display = 'block';
+    custom.style.display = 'inline-block';
     custom.required = true;
   } else {
     custom.style.display = 'none';
@@ -469,10 +470,11 @@ function closeModalOnOuterClick(event, id) {
 // Populates a dropdown select with options and appends a "Khác..." option
 function populateDropdown(selectId, list, prefix) {
   const select = document.getElementById(selectId);
+  if (!select || !list) return;
   let html = list.map(item => `<option value="${esc(item)}">${esc(item)}</option>`).join('');
   html += `<option value="__custom__">➕ Khác...</option>`;
   select.innerHTML = html;
-  toggleCustomInput(prefix);
+  if (prefix) toggleCustomInput(prefix);
 }
 
 // Load configurations from backend API
@@ -491,10 +493,12 @@ async function loadConfigurations() {
     console.warn('Cannot fetch configurations, using local fallbacks', err);
   }
 
-  // Populate all dropdowns
+  // Populate all dropdowns safely
   populateDropdown('water-method-select', configData.water_methods, 'water-method');
   populateDropdown('fertilizer-select', configData.fertilizers, 'fertilizer');
+  populateDropdown('fertilizer-supply-select', configData.fertilizers, 'fertilizer');
   populateDropdown('pesticide-select', configData.pesticides, 'pesticide');
+  populateDropdown('pesticide-supply-select', configData.pesticides, 'pesticide');
   populateDropdown('leaf-reason-select', configData.leaf_cut_reasons, 'leaf-reason');
   populateDropdown('flower-reason-select', configData.flower_prune_reasons, 'flower-reason');
 }
