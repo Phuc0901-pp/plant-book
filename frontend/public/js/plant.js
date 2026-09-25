@@ -8,40 +8,59 @@ window.addEventListener('unhandledrejection', function(event) {
   }
 });
 
-// Parse Slug info from /:farmId/:plantId/:nfcUid, /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
+// Parse Slug info from /:farmId/public/:nfcUid, /:farmId/:plantId/:nfcUid, /:userId/:farmId/:plantId/:nfcUid or /plant/:slug
 function getPublicSlugInfoFromUrl() {
   const pathParts = location.pathname.split('/').filter(p => p.length > 0);
-  if (pathParts.length === 0) return { slug: '', plantId: '', nfcUid: '' };
+  if (pathParts.length === 0) return { slug: '', plantId: '', nfcUid: '', farmId: '' };
   if (pathParts[0] === 'plant') {
-    return { slug: decodeURIComponent(pathParts[1] || ''), plantId: decodeURIComponent(pathParts[1] || ''), nfcUid: '' };
+    return { slug: decodeURIComponent(pathParts[1] || ''), plantId: decodeURIComponent(pathParts[1] || ''), nfcUid: '', farmId: '' };
   }
   if (pathParts[0] === 'nfc') {
-    return { slug: decodeURIComponent(pathParts[1] || ''), plantId: '', nfcUid: decodeURIComponent(pathParts[1] || '') };
+    return { slug: decodeURIComponent(pathParts[1] || ''), plantId: '', nfcUid: decodeURIComponent(pathParts[1] || ''), farmId: '' };
   }
   
-  // Format: /:farmId/:plantId/:nfcUid? OR legacy /:userId/:farmId/:plantId/:nfcUid
+  // Format: /:farmId/public/:nfcUid (Direct NTAG213 URL format)
+  if (pathParts.length === 3 && pathParts[1] === 'public') {
+    return {
+      farmId: decodeURIComponent(pathParts[0]),
+      plantId: '',
+      nfcUid: decodeURIComponent(pathParts[2]),
+      slug: decodeURIComponent(pathParts[2]),
+      isDirectNfcRoute: true
+    };
+  }
+
+  // Format: legacy /:userId/:farmId/:plantId/:nfcUid
   if (pathParts.length >= 4) {
     return {
-      slug: decodeURIComponent(pathParts[3]), // nfcUid
-      plantId: decodeURIComponent(pathParts[2]), // plantId
-      nfcUid: decodeURIComponent(pathParts[3])
+      farmId: decodeURIComponent(pathParts[1]),
+      plantId: decodeURIComponent(pathParts[2]),
+      nfcUid: decodeURIComponent(pathParts[3]),
+      slug: decodeURIComponent(pathParts[3]),
+      isDirectNfcRoute: false
     };
   }
+  // Format: /:farmId/:plantId/:nfcUid
   if (pathParts.length === 3) {
     return {
-      slug: decodeURIComponent(pathParts[2]), // nfcUid
-      plantId: decodeURIComponent(pathParts[1]), // plantId
-      nfcUid: decodeURIComponent(pathParts[2])
+      farmId: decodeURIComponent(pathParts[0]),
+      plantId: decodeURIComponent(pathParts[1]),
+      nfcUid: decodeURIComponent(pathParts[2]),
+      slug: decodeURIComponent(pathParts[2]),
+      isDirectNfcRoute: false
     };
   }
+  // Format: /:farmId/:plantId
   if (pathParts.length === 2) {
     return {
-      slug: decodeURIComponent(pathParts[1]),
+      farmId: decodeURIComponent(pathParts[0]),
       plantId: decodeURIComponent(pathParts[1]),
-      nfcUid: ''
+      slug: decodeURIComponent(pathParts[1]),
+      nfcUid: '',
+      isDirectNfcRoute: false
     };
   }
-  return { slug: decodeURIComponent(pathParts[0]), plantId: decodeURIComponent(pathParts[0]), nfcUid: '' };
+  return { slug: decodeURIComponent(pathParts[0]), plantId: decodeURIComponent(pathParts[0]), nfcUid: '', farmId: '' };
 }
 
 
@@ -270,6 +289,22 @@ async function doGateLogin() {
     localStorage.setItem('pb_token', data.token);
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
+
+    // Handle Unassigned NFC Tag On-Site Binding Flow
+    if (window.pendingBindingFarm) {
+      const pFarm = window.pendingBindingFarm;
+      const isAuthorized = data.user.role === 'admin' || Number(data.user.farm_id) === Number(pFarm.farmId);
+      if (isAuthorized) {
+        document.getElementById('auth-gate-view').style.display = 'none';
+        showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Đang mở giao diện gán thẻ.`);
+        initFieldBindingModule(pFarm.farmId, pFarm.farmName, pFarm.pucCode, pFarm.nfcUid);
+        return;
+      } else {
+        errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" không thuộc nông trại này. Vui lòng đăng nhập tài khoản nông trại "${pFarm.farmName || 'này'}" hoặc Admin để gán thẻ.`;
+        errBox.style.display = 'flex';
+        return;
+      }
+    }
 
     const hasAccess = userHasPlantAccess(data.user, currentPlantData);
 
@@ -638,9 +673,81 @@ function renderRevokedTagView(nfcUid, errorMsg) {
   }
 }
 
+// Global State for Field Binding
+window.currentBindingFarmId = null;
+window.currentBindingFarmName = null;
+window.currentBindingUid = null;
+window.currentBindingGps = null;
+window.currentUnassignedTrees = [];
+
 // Load Plant Profile on startup
 async function loadPlant() {
   try {
+    // ─── Case 1: Direct NTAG213 Route /:farmId/public/:nfcUid (hoặc có farmId và nfcUid) ───
+    if (slugInfo.farmId && (slugInfo.isDirectNfcRoute || slugInfo.nfcUid)) {
+      const farmId = slugInfo.farmId;
+      const nfcUid = slugInfo.nfcUid || slugInfo.slug;
+      
+      const tagRes = await fetch(`/api/plants/public-by-farm-uid/${encodeURIComponent(farmId)}/${encodeURIComponent(nfcUid)}`);
+      const tagData = await tagRes.json();
+
+      if (tagRes.status === 410 || tagData.is_revoked) {
+        renderRevokedTagView(nfcUid, tagData.error);
+        return;
+      }
+
+      if (!tagRes.ok) {
+        throw new Error(tagData.error || 'Không tìm thấy thông tin thẻ hoặc nông trại.');
+      }
+
+      // If already assigned to a plant:
+      if (tagData.assigned && tagData.plant) {
+        const plant = tagData.plant;
+        currentPlantData = plant;
+        document.title = `${plant.plant_type || 'Cây trồng'} #${plant.tree_code || plant.id} — Sổ Nông Tân Bảo Agtech`;
+        populateGateInfo(plant);
+
+        const { token, user } = getStoredAuth();
+        const hasAccess = userHasPlantAccess(user, plant);
+
+        if (hasAccess) {
+          await renderPlant(plant, true);
+        } else {
+          // Public visitor view: Full traceability without care edit
+          await renderPlant(plant, false);
+        }
+
+        // Auto-sync GPS in background if full NFC UID
+        autoSyncNfcGpsLocation(plant, nfcUid);
+        return;
+      }
+
+      // If UNASSIGNED TAG:
+      const { token, user } = getStoredAuth();
+      const isFarmAuthorized = user && (user.role === 'admin' || Number(user.farm_id) === Number(farmId));
+
+      if (isFarmAuthorized) {
+        initFieldBindingModule(farmId, tagData.farm_name, tagData.puc_code, nfcUid);
+      } else {
+        window.pendingBindingFarm = { farmId, farmName: tagData.farm_name, pucCode: tagData.puc_code, nfcUid };
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('auth-gate-view').style.display = 'block';
+        document.getElementById('plant-view').style.display = 'none';
+        if (document.getElementById('field-binding-view')) document.getElementById('field-binding-view').style.display = 'none';
+
+        const gateTitle = document.getElementById('gate-plant-name');
+        if (gateTitle) gateTitle.textContent = `Thẻ NFC: ${nfcUid}`;
+        const gateCode = document.getElementById('gate-plant-code');
+        if (gateCode) gateCode.textContent = 'Chưa gắn vào cây';
+        const gateFarm = document.getElementById('gate-plant-farm');
+        if (gateFarm) gateFarm.textContent = tagData.farm_name || `Trang trại #${farmId}`;
+        const gateType = document.getElementById('gate-plant-type');
+        if (gateType) gateType.textContent = 'NTAG213 Chưa kích hoạt';
+      }
+      return;
+    }
+
+    // ─── Case 2: Standard Plant Slug / ID ───
     const primarySlug = slugInfo.slug || slug;
     let res = await fetch(`/api/plants/public/${encodeURIComponent(primarySlug)}`);
     let plant = await res.json();
@@ -689,6 +796,320 @@ async function loadPlant() {
     document.getElementById('loader').style.display = 'none';
     document.getElementById('error-view').style.display = 'block';
     document.getElementById('error-msg').textContent = err.message;
+  }
+}
+
+// ─── Field Binding Module Functions (NTAG213 On-Site Binding & Strict Governance) ───
+
+function initFieldBindingModule(farmId, farmName, pucCode, nfcUid) {
+  window.currentBindingFarmId = farmId;
+  window.currentBindingFarmName = farmName;
+  window.currentBindingUid = nfcUid;
+
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('auth-gate-view').style.display = 'none';
+  document.getElementById('plant-view').style.display = 'none';
+  document.getElementById('error-view').style.display = 'none';
+
+  const bindView = document.getElementById('field-binding-view');
+  if (bindView) bindView.style.display = 'block';
+
+  // Populate metadata
+  const badgeEl = document.getElementById('bind-tag-uid-badge');
+  if (badgeEl) badgeEl.textContent = nfcUid || '--';
+  const farmEl = document.getElementById('bind-farm-name');
+  if (farmEl) farmEl.textContent = farmName || `Farm #${farmId}`;
+  const pucEl = document.getElementById('bind-farm-puc');
+  if (pucEl) pucEl.textContent = pucCode ? `PUC: ${pucCode}` : 'PUC: N/A';
+
+  // Clear previous state
+  clearSelectedTree();
+  hideBindingError();
+
+  // Pre-warm GPS sensor immediately
+  acquireGpsPosition(false);
+
+  // Load unassigned trees
+  refreshUnassignedTrees();
+
+  // Re-hydrate Lucide icons
+  if (window.lucide) window.lucide.createIcons();
+}
+
+async function refreshUnassignedTrees() {
+  const farmId = window.currentBindingFarmId;
+  if (!farmId) return;
+
+  const countEl = document.getElementById('bind-unassigned-count');
+  if (countEl) countEl.textContent = '...';
+
+  try {
+    const token = localStorage.getItem('pb_token') || localStorage.getItem('token');
+    const res = await fetch(`/api/plants/farms/${encodeURIComponent(farmId)}/unassigned-trees`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Không lấy được danh sách cây.');
+    const data = await res.json();
+    window.currentUnassignedTrees = data.trees || [];
+    if (countEl) countEl.textContent = window.currentUnassignedTrees.length;
+  } catch (err) {
+    console.warn('Lỗi tải danh sách cây chưa gắn thẻ:', err);
+    if (countEl) countEl.textContent = '0';
+  }
+}
+
+function acquireGpsPosition(isUserAction) {
+  const latEl = document.getElementById('bind-gps-lat');
+  const lngEl = document.getElementById('bind-gps-lng');
+  const accEl = document.getElementById('bind-gps-acc');
+  const hintEl = document.getElementById('bind-gps-hint');
+  const pulseEl = document.getElementById('gps-status-pulse');
+
+  if (latEl) latEl.textContent = 'Đang dò...';
+  if (lngEl) lngEl.textContent = 'Đang dò...';
+  if (accEl) accEl.textContent = 'Đang bắt vệ tinh';
+  if (pulseEl) {
+    pulseEl.style.background = '#f59e0b';
+    pulseEl.style.boxShadow = '0 0 0 6px rgba(245, 158, 11, 0.25)';
+  }
+
+  if (!navigator.geolocation) {
+    if (latEl) latEl.textContent = 'Không hỗ trợ';
+    if (lngEl) lngEl.textContent = 'Không hỗ trợ';
+    if (accEl) accEl.textContent = 'Lỗi GPS';
+    if (hintEl) hintEl.innerHTML = '<span style="color:#ef4444;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Thiết bị không hỗ trợ Geolocation GPS.</span>';
+    if (pulseEl) pulseEl.style.background = '#ef4444';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = pos.coords.accuracy;
+
+      window.currentBindingGps = { lat, lng, accuracy: acc };
+
+      if (latEl) latEl.textContent = lat.toFixed(6);
+      if (lngEl) lngEl.textContent = lng.toFixed(6);
+      if (accEl) accEl.textContent = `Sai số: ±${acc.toFixed(1)}m`;
+
+      if (pulseEl) {
+        pulseEl.style.background = acc <= 10 ? '#10b981' : '#f59e0b';
+        pulseEl.style.boxShadow = acc <= 10 ? '0 0 0 6px rgba(16, 185, 129, 0.25)' : '0 0 0 6px rgba(245, 158, 11, 0.25)';
+      }
+
+      if (hintEl) {
+        if (acc <= 5) {
+          hintEl.innerHTML = '<span style="color:#059669; font-weight:700;"><i data-lucide="check-circle" class="lucide-sm"></i> Vệ tinh khóa tọa độ xuất sắc (&lt; 5m).</span>';
+        } else if (acc <= 15) {
+          hintEl.innerHTML = '<span style="color:#047857;"><i data-lucide="check" class="lucide-sm"></i> Vệ tinh khóa tốt (5 - 15m).</span>';
+        } else {
+          hintEl.innerHTML = '<span style="color:#d97706;"><i data-lucide="info" class="lucide-sm"></i> Tín hiệu trung bình (±' + acc.toFixed(1) + 'm). Bạn có thể bấm Lấy lại GPS khi đứng sát gốc cây.</span>';
+        }
+      }
+
+      if (isUserAction) {
+        showPublicToast(`Đã khóa tọa độ GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)} (±${acc.toFixed(1)}m)`);
+      }
+      if (window.lucide) window.lucide.createIcons();
+    },
+    (err) => {
+      console.warn('GPS Error:', err.message);
+      if (latEl) latEl.textContent = 'Chưa có';
+      if (lngEl) lngEl.textContent = 'Chưa có';
+      if (accEl) accEl.textContent = 'Chưa cấp quyền';
+      if (pulseEl) {
+        pulseEl.style.background = '#ef4444';
+        pulseEl.style.boxShadow = '0 0 0 6px rgba(239, 68, 68, 0.25)';
+      }
+      if (hintEl) {
+        hintEl.innerHTML = '<span style="color:#dc2626;"><i data-lucide="alert-circle" class="lucide-sm"></i> Vui lòng cho phép quyền truy cập GPS trên trình duyệt để ghi nhận vị trí cây.</span>';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+function handleTreeSearchInput(query) {
+  const dropdown = document.getElementById('bind-tree-dropdown');
+  if (!dropdown) return;
+
+  hideBindingError();
+  const q = String(query || '').trim().toLowerCase();
+
+  if (!q) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  const unassigned = window.currentUnassignedTrees || [];
+  const filtered = unassigned.filter(t => {
+    const code = String(t.tree_code || t.id).toLowerCase();
+    const type = String(t.plant_type || '').toLowerCase();
+    const loc = String(t.location || '').toLowerCase();
+    return code.includes(q) || type.includes(q) || loc.includes(q);
+  });
+
+  if (filtered.length === 0) {
+    dropdown.innerHTML = `
+      <div style="padding: 12px 14px; font-size: 12.5px; color: #64748b; text-align: center;">
+        Không tìm thấy cây chưa gắn thẻ khớp với "<strong>${esc(query)}</strong>".<br>
+        <span style="font-size: 11.5px; color: #94a3b8;">(Có thể cây này đã được gắn thẻ trước đó hoặc chưa tạo).</span>
+      </div>
+    `;
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  dropdown.innerHTML = filtered.slice(0, 15).map(t => `
+    <div onclick="selectUnassignedTree(${t.id}, '${esc(t.tree_code || t.id)}', '${esc(t.plant_type || '')}', '${esc(t.plant_variety || '')}')" 
+         style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;" 
+         onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='#fff'">
+      <div>
+        <div style="font-weight: 700; font-size: 13.5px; color: #0f172a;">
+          <i data-lucide="leaf" class="lucide-sm" style="color: #059669; vertical-align: -2px; margin-right: 4px;"></i>
+          Cây #${esc(t.tree_code || t.id)}
+        </div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+          ${esc(t.plant_type || 'Cây trồng')} ${t.plant_variety ? '— ' + esc(t.plant_variety) : ''} ${t.location ? '— ' + esc(t.location) : ''}
+        </div>
+      </div>
+      <span style="background: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #86efac;">
+        Chưa có thẻ
+      </span>
+    </div>
+  `).join('');
+
+  dropdown.style.display = 'block';
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function selectUnassignedTree(plantId, treeCode, plantType, plantVariety) {
+  document.getElementById('bind-selected-plant-id').value = plantId;
+  document.getElementById('bind-selected-tree-code').value = treeCode;
+  document.getElementById('bind-tree-search').value = treeCode;
+
+  const dropdown = document.getElementById('bind-tree-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+
+  const preview = document.getElementById('bind-selected-preview');
+  const previewText = document.getElementById('bind-selected-tree-text');
+  if (preview && previewText) {
+    previewText.textContent = `Cây #${treeCode} (${plantType || 'Cây'} ${plantVariety ? '— ' + plantVariety : ''})`;
+    preview.style.display = 'flex';
+  }
+
+  hideBindingError();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function clearSelectedTree() {
+  document.getElementById('bind-selected-plant-id').value = '';
+  document.getElementById('bind-selected-tree-code').value = '';
+  document.getElementById('bind-tree-search').value = '';
+
+  const dropdown = document.getElementById('bind-tree-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+
+  const preview = document.getElementById('bind-selected-preview');
+  if (preview) preview.style.display = 'none';
+
+  hideBindingError();
+}
+
+function showBindingError(msg) {
+  const errBox = document.getElementById('bind-error-alert');
+  const errText = document.getElementById('bind-error-text');
+  if (errBox && errText) {
+    errText.innerHTML = msg;
+    errBox.style.display = 'block';
+    errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function hideBindingError() {
+  const errBox = document.getElementById('bind-error-alert');
+  if (errBox) errBox.style.display = 'none';
+}
+
+async function submitFieldBinding() {
+  const farmId = window.currentBindingFarmId;
+  const nfcUid = window.currentBindingUid;
+  const plantId = document.getElementById('bind-selected-plant-id').value;
+  const treeCodeInput = document.getElementById('bind-tree-search').value.trim();
+  const btn = document.getElementById('btn-submit-binding');
+
+  if (!farmId || !nfcUid) {
+    showBindingError('Thông tin thẻ NFC hoặc Nông trại không hợp lệ.');
+    return;
+  }
+
+  if (!plantId && !treeCodeInput) {
+    showBindingError('Vui lòng chọn hoặc nhập số thứ tự cây cần gắn thẻ.');
+    return;
+  }
+
+  hideBindingError();
+  const oldBtnHtml = btn.innerHTML;
+  btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang khóa thẻ &amp; Lưu tọa độ GPS...';
+  btn.disabled = true;
+
+  try {
+    const token = localStorage.getItem('pb_token') || localStorage.getItem('token');
+    const payload = {
+      nfc_uid: nfcUid,
+      plant_id: plantId ? parseInt(plantId) : null,
+      tree_code: treeCodeInput,
+      latitude: window.currentBindingGps?.lat ?? null,
+      longitude: window.currentBindingGps?.lng ?? null,
+      accuracy: window.currentBindingGps?.accuracy ?? null
+    };
+
+    const res = await fetch(`/api/plants/farms/${encodeURIComponent(farmId)}/bind-tag-quick`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (res.status === 409) {
+        showBindingError(data.error || 'Cây này đã được gắn thẻ trước đó! Không thể gán đè.');
+        return;
+      }
+      throw new Error(data.error || 'Lỗi khi gắn thẻ vào cây.');
+    }
+
+    // Success Haptic Feedback
+    if (navigator.vibrate) {
+      try { navigator.vibrate([100, 50, 100]); } catch(e) {}
+    }
+
+    showNfcGpsToast(data.message || 'Đã gắn thẻ và lưu GPS thành công!');
+
+    // Update URL in browser history to reflect bound public route
+    if (data.public_url) {
+      history.replaceState({}, '', data.public_url);
+    }
+
+    // Hide binding view and render plant
+    document.getElementById('field-binding-view').style.display = 'none';
+    currentPlantData = data.plant;
+    await renderPlant(data.plant, true);
+
+  } catch (err) {
+    console.error('Lỗi khi gắn thẻ:', err);
+    showBindingError(err.message || 'Lỗi server khi gắn thẻ.');
+  } finally {
+    btn.innerHTML = oldBtnHtml;
+    btn.disabled = false;
+    if (window.lucide) window.lucide.createIcons();
   }
 }
 

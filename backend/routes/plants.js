@@ -2894,6 +2894,332 @@ router.delete(['/:plantId/logs/:logId', '/logs/:logId'], auth, async (req, res) 
   }
 });
 
+// ─── Get Unassigned Trees in Farm (Auth required) ───────────────────
+router.get('/farms/:farmId/unassigned-trees', auth, async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.farmId);
+    if (isNaN(farmId)) {
+      return res.status(400).json({ error: 'ID nông trại không hợp lệ.' });
+    }
+
+    // Permission check
+    if (req.user.role !== 'admin' && Number(req.user.farm_id) !== farmId) {
+      const farmOwn = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
+      if (farmOwn.rows.length === 0 || Number(farmOwn.rows[0].user_id) !== Number(req.user.id)) {
+        return res.status(403).json({ error: 'Bạn không có quyền truy cập nông trại này.' });
+      }
+    }
+
+    const { search } = req.query;
+    let query = `
+      SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.location, p.latitude, p.longitude,
+             ps.name as schema_name
+      FROM plants p
+      LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
+      WHERE p.farm_id = $1 
+        AND (p.nfc_uid IS NULL OR TRIM(p.nfc_uid) = '') 
+        AND (p.deleted_at IS NULL)
+    `;
+    const params = [farmId];
+
+    if (search && search.trim()) {
+      query += ` AND (p.tree_code ILIKE $2 OR p.plant_type ILIKE $2 OR p.location ILIKE $2)`;
+      params.push(`%${search.trim()}%`);
+    }
+
+    query += ` ORDER BY CAST(NULLIF(regexp_replace(p.tree_code, '\\D', '', 'g'), '') AS INTEGER) ASC NULLS LAST, p.tree_code ASC, p.id ASC`;
+
+    const treesRes = await pool.query(query, params);
+    res.json({
+      success: true,
+      farm_id: farmId,
+      total_unassigned: treesRes.rows.length,
+      trees: treesRes.rows
+    });
+  } catch (err) {
+    console.error('Error fetching unassigned trees:', err);
+    res.status(500).json({ error: 'Lỗi server khi lấy danh sách cây chưa gắn thẻ: ' + err.message });
+  }
+});
+
+// ─── Quick On-Site Tag Binding with Strict 1-Tree-1-Tag Governance & Auto GPS ───
+router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const farmId = parseInt(req.params.farmId);
+    const { nfc_uid, plant_id, tree_code, latitude, longitude, accuracy } = req.body;
+
+    if (isNaN(farmId)) {
+      return res.status(400).json({ error: 'ID nông trại không hợp lệ.' });
+    }
+
+    // Permission check
+    if (req.user.role !== 'admin' && Number(req.user.farm_id) !== farmId) {
+      const farmOwn = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
+      if (farmOwn.rows.length === 0 || Number(farmOwn.rows[0].user_id) !== Number(req.user.id)) {
+        return res.status(403).json({ error: 'Bạn không có quyền thực hiện gắn thẻ cho nông trại này.' });
+      }
+    }
+
+    if (!nfc_uid || !String(nfc_uid).trim()) {
+      return res.status(400).json({ error: 'Mã thẻ NFC (UID) là bắt buộc.' });
+    }
+    const cleanUid = nfcSecurity.sanitizeUid(nfc_uid) || String(nfc_uid).trim().toUpperCase();
+
+    if (!plant_id && !tree_code) {
+      return res.status(400).json({ error: 'Vui lòng chọn hoặc nhập số thứ tự cây cần gắn thẻ.' });
+    }
+
+    let lat = latitude !== undefined && latitude !== '' && latitude !== null ? parseFloat(latitude) : null;
+    let lng = longitude !== undefined && longitude !== '' && longitude !== null ? parseFloat(longitude) : null;
+    let acc = accuracy !== undefined && accuracy !== '' && accuracy !== null ? parseFloat(accuracy) : null;
+
+    if (lat !== null && lng !== null) {
+      if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+        const tmp = lat; lat = lng; lng = tmp;
+      }
+    }
+
+    await client.query('BEGIN');
+
+    // 1. Find target plant by plant_id or farm_id + tree_code with lock (FOR UPDATE)
+    let targetPlant = null;
+    if (plant_id) {
+      const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND farm_id = $2 AND deleted_at IS NULL FOR UPDATE', [plant_id, farmId]);
+      if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
+    }
+    if (!targetPlant && tree_code) {
+      const pRes = await client.query(
+        'SELECT * FROM plants WHERE farm_id = $1 AND (tree_code = $2 OR tree_code = $3) AND deleted_at IS NULL FOR UPDATE',
+        [farmId, String(tree_code).trim(), `#${String(tree_code).trim()}`]
+      );
+      if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
+    }
+
+    if (!targetPlant) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Không tìm thấy cây số "${tree_code || plant_id}" trong nông trại này.` });
+    }
+
+    // 2. STRICT TREE GOVERNANCE: If plant already has a tag, reject with 409 Conflict!
+    if (targetPlant.nfc_uid && String(targetPlant.nfc_uid).trim().length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: `Cây #${targetPlant.tree_code || targetPlant.id} đã được gắn thẻ NFC [${targetPlant.nfc_uid}]. Theo quy chuẩn Quản trị 1 Cây - 1 Thẻ, tuyệt đối không được phép gán đè! Vui lòng chọn cây chưa gắn thẻ.`,
+        assigned_uid: targetPlant.nfc_uid,
+        tree_code: targetPlant.tree_code || targetPlant.id
+      });
+    }
+
+    // 3. Check if cleanUid is already assigned to ANOTHER plant anywhere in the system
+    const uidConflict = await client.query(
+      'SELECT id, tree_code, farm_id FROM plants WHERE UPPER(nfc_uid) = UPPER($1) AND id != $2 AND deleted_at IS NULL',
+      [cleanUid, targetPlant.id]
+    );
+    if (uidConflict.rows.length > 0) {
+      await client.query('ROLLBACK');
+      const confTree = uidConflict.rows[0];
+      return res.status(409).json({
+        error: `Mã thẻ NFC [${cleanUid}] đã được gắn cho cây #${confTree.tree_code || confTree.id}. Mỗi thẻ chỉ được gắn cho 1 cây duy nhất.`
+      });
+    }
+
+    // 4. Generate public URL: https://plant-book.onrender.com/{farm_id}/public/{nfc_uid}
+    const publicUrl = `https://plant-book.onrender.com/${farmId}/public/${cleanUid}`;
+
+    // 5. Atomic Update Plant
+    const updateRes = await client.query(
+      `UPDATE plants 
+       SET nfc_uid = $1, 
+           latitude = COALESCE($2, latitude), 
+           longitude = COALESCE($3, longitude), 
+           gps_accuracy = COALESCE($4, gps_accuracy),
+           nfc_tagged_at = NOW(),
+           nfc_tagged_by = $5,
+           public_url = $6,
+           updated_at = NOW()
+       WHERE id = $7
+       RETURNING *`,
+      [cleanUid, lat, lng, acc, req.user.id, publicUrl, targetPlant.id]
+    );
+
+    const updatedPlant = updateRes.rows[0];
+
+    // 6. Update or Upsert NFC Inventory
+    await client.query(
+      `INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, last_scanned_lat, last_scanned_lng, tagged_at, created_by)
+       VALUES ($1, $2, 'assigned', $3, $4, $5, NOW(), $6)
+       ON CONFLICT (nfc_uid) 
+       DO UPDATE SET farm_id = EXCLUDED.farm_id, status = 'assigned', plant_id = EXCLUDED.plant_id, last_scanned_lat = COALESCE(EXCLUDED.last_scanned_lat, nfc_tags_inventory.last_scanned_lat), last_scanned_lng = COALESCE(EXCLUDED.last_scanned_lng, nfc_tags_inventory.last_scanned_lng), tagged_at = NOW()`,
+      [farmId, cleanUid, targetPlant.id, lat, lng, req.user.id]
+    );
+
+    // 7. Audit Log
+    try {
+      await client.query(
+        `INSERT INTO audit_logs (user_id, farm_id, action, target_type, target_id, details, ip_address, created_at)
+         VALUES ($1, $2, 'NFC_TAG_FIELD_BIND', 'PLANT', $3, $4, $5, NOW())`,
+        [req.user.id, farmId, targetPlant.id, JSON.stringify({ nfc_uid: cleanUid, tree_code: targetPlant.tree_code, lat, lng, accuracy: acc }), req.ip || '']
+      );
+    } catch(auditErr) { /* ignore if audit_logs table differs */ }
+
+    await client.query('COMMIT');
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { plant_id: updatedPlant.id, farm_id: farmId, action: 'nfc_tagged_quick' });
+
+    res.json({
+      success: true,
+      message: `Đã gắn thẻ NFC ${cleanUid} và định vị GPS cho cây #${updatedPlant.tree_code || updatedPlant.id} thành công!`,
+      plant: updatedPlant,
+      public_url: publicUrl
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error quick binding NFC tag and GPS:', err);
+    res.status(500).json({ error: 'Lỗi server khi gắn thẻ và GPS: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ─── Public Tag State Lookup by Farm & NFC UID: /public-by-farm-uid/:farmId/:nfcUid ───
+router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.farmId);
+    const nfcUidRaw = req.params.nfcUid ? req.params.nfcUid.trim() : '';
+    const cleanUid = nfcSecurity.sanitizeUid(nfcUidRaw) || nfcUidRaw.toUpperCase();
+
+    if (isNaN(farmId) || !cleanUid) {
+      return res.status(400).json({ error: 'Nông trại hoặc mã thẻ NFC không hợp lệ.' });
+    }
+
+    // 1. Verify Farm exists
+    const farmCheck = await pool.query(
+      'SELECT id, name, address, puc_code, vietgap_cert_number, vietgap_cert_org, polygon_coordinates, user_id FROM farms WHERE id = $1 AND (is_deleted IS NOT TRUE)',
+      [farmId]
+    );
+    if (farmCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Nông trại không tồn tại trên hệ thống.' });
+    }
+    const farm = farmCheck.rows[0];
+
+    // 2. Check if a plant in this farm is assigned this NFC UID
+    const plantQuery = await pool.query(
+      `SELECT p.*, 
+              p.latitude,
+              p.longitude,
+              p.gps_accuracy,
+              ps.name as schema_name, ps.fields as schema_fields,
+              f.name as farm_name, f.address as farm_address, f.puc_code, f.vietgap_cert_number, f.vietgap_cert_org,
+              f.polygon_coordinates as farm_polygon, f.user_id as farm_owner_user_id,
+              u.full_name as owner_name, u.phone as owner_phone, u.email as owner_email
+       FROM plants p 
+       LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
+       LEFT JOIN farms f ON f.id = p.farm_id
+       LEFT JOIN users u ON u.id = f.user_id
+       WHERE p.farm_id = $1 AND UPPER(p.nfc_uid) = UPPER($2) AND (p.deleted_at IS NULL)
+       LIMIT 1`,
+      [farmId, cleanUid]
+    );
+
+    if (plantQuery.rows.length > 0) {
+      const row = plantQuery.rows[0];
+      const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [row.id]);
+      const logs = await pool.query('SELECT * FROM plant_logs WHERE plant_id=$1 AND (is_deleted IS NOT TRUE) ORDER BY log_date DESC', [row.id]);
+
+      // Data Scrubbing
+      const scrubbedLogs = logs.rows.map(log => {
+        let safeDetails = {};
+        if (log.details) {
+          let rawDetails = typeof log.details === 'string' ? JSON.parse(log.details) : { ...log.details };
+          delete rawDetails.unit_price;
+          delete rawDetails.total_cost;
+          delete rawDetails.cost;
+          delete rawDetails.package_price;
+          delete rawDetails.package_unit;
+          delete rawDetails.formula_secret;
+          delete rawDetails.supplier_price;
+          delete rawDetails.vendor_name;
+          delete rawDetails.vendor_phone;
+          delete rawDetails.accounting_code;
+          delete rawDetails.stock_deducted;
+          safeDetails = rawDetails;
+        }
+        return {
+          id: log.id,
+          plant_id: log.plant_id,
+          log_date: log.log_date,
+          log_type: log.log_type,
+          note: log.note,
+          details: safeDetails,
+          media_url: log.media_url,
+          created_at: log.created_at
+        };
+      });
+
+      let farm_boundary = null;
+      if (row.farm_polygon) {
+        try {
+          let coords = typeof row.farm_polygon === 'string' ? JSON.parse(row.farm_polygon) : row.farm_polygon;
+          if (Array.isArray(coords) && coords.length > 0) {
+            const sanitizeRing = (ring) => ring.map(pt => {
+              if (Array.isArray(pt) && pt.length >= 2) {
+                let pLng = parseFloat(pt[0]);
+                let pLat = parseFloat(pt[1]);
+                if (Math.abs(pLat) > 90 && Math.abs(pLng) <= 90) {
+                  const tmp = pLat; pLat = pLng; pLng = tmp;
+                }
+                return [pLng, pLat];
+              }
+              return pt;
+            });
+            if (Array.isArray(coords[0]) && !Array.isArray(coords[0][0])) {
+              farm_boundary = { type: 'Polygon', coordinates: [sanitizeRing(coords)] };
+            } else {
+              farm_boundary = { type: 'Polygon', coordinates: coords.map(r => Array.isArray(r) ? sanitizeRing(r) : r) };
+            }
+          }
+        } catch(e) {}
+      }
+
+      return res.json({
+        assigned: true,
+        farm_id: farmId,
+        nfc_uid: cleanUid,
+        plant: { ...row, media: media.rows, logs: scrubbedLogs, farm_boundary }
+      });
+    }
+
+    // 3. Not assigned to any plant in this farm -> check inventory for revoked status
+    const invCheck = await pool.query(
+      'SELECT id, status, plant_id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1) AND (farm_id = $2 OR farm_id IS NULL)',
+      [cleanUid, farmId]
+    );
+
+    if (invCheck.rows.length > 0 && invCheck.rows[0].status === 'revoked') {
+      return res.status(410).json({
+        assigned: false,
+        is_revoked: true,
+        farm_id: farmId,
+        nfc_uid: cleanUid,
+        error: `Thẻ NFC [${cleanUid}] này đã bị thu hồi. Không thể gán thẻ này vào cây.`
+      });
+    }
+
+    // Return unassigned response for on-site binding
+    return res.json({
+      assigned: false,
+      farm_id: farmId,
+      farm_name: farm.name,
+      puc_code: farm.puc_code,
+      nfc_uid: cleanUid
+    });
+  } catch (err) {
+    console.error('Error lookup plant by farm and NFC UID:', err);
+    res.status(500).json({ error: 'Lỗi server khi tra cứu thẻ NFC: ' + err.message });
+  }
+});
 
 // ─── Public routes ────────────────────────────────────────────────
 router.get('/public/:slug', async (req, res) => {

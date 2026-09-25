@@ -336,6 +336,11 @@ async function initDB() {
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(100) UNIQUE;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS planting_date DATE;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS public_url TEXT;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS gps_accuracy NUMERIC;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_tagged_at TIMESTAMPTZ;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_tagged_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      CREATE INDEX IF NOT EXISTS idx_plants_farm_nfc ON plants (farm_id, UPPER(nfc_uid)) WHERE deleted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_plants_unassigned_trees ON plants (farm_id, tree_code) WHERE (nfc_uid IS NULL OR nfc_uid = '') AND deleted_at IS NULL;
     `);
 
     // NFC Tags Inventory table (Batch registration, continuous tap & tagging status)
@@ -346,10 +351,14 @@ async function initDB() {
         nfc_uid VARCHAR(100) UNIQUE NOT NULL,
         status VARCHAR(50) DEFAULT 'unassigned',
         plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL,
+        last_scanned_lat NUMERIC,
+        last_scanned_lng NUMERIC,
         scanned_at TIMESTAMPTZ DEFAULT NOW(),
         tagged_at TIMESTAMPTZ NULL,
         created_by INTEGER REFERENCES users(id)
       );
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lat NUMERIC;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lng NUMERIC;
       CREATE INDEX IF NOT EXISTS idx_nfc_inventory_farm ON nfc_tags_inventory(farm_id);
       CREATE INDEX IF NOT EXISTS idx_nfc_inventory_uid ON nfc_tags_inventory(nfc_uid);
       CREATE INDEX IF NOT EXISTS idx_nfc_inventory_status ON nfc_tags_inventory(status);

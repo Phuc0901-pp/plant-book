@@ -134,6 +134,11 @@ app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
+// ─── Direct NFC Public Route: /:farmId/public/:nfcUid ─────────────────────
+app.get('/:farmId/public/:nfcUid', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
+});
+
 // ─── Hierarchical Public Plant Route: /:farmId/:plantId/:nfcUid? (or legacy /:userId/:farmId/:plantId/:nfcUid?) ───
 app.get(['/:farmId/:plantId/:nfcUid?', '/:userId/:farmId/:plantId/:nfcUid?'], (req, res, next) => {
   const reserved = ['admin', 'user', 'api', 'plant', 'nfc', 'assets', 'public', 'favicon.ico'];
