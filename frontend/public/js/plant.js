@@ -514,6 +514,342 @@ function fmtDateTime(d) {
   return `${hhmm} — ${ddmmyyyy}`;
 }
 
+// Format VNĐ Currency
+function formatVnd(amount) {
+  const val = Math.round(parseFloat(amount) || 0);
+  return new Intl.NumberFormat('vi-VN').format(val) + ' VNĐ';
+}
+
+function _formatSupplyOptionText(s) {
+  const pkgQty = parseFloat(s.package_qty) || 1;
+  const pkgPrice = parseFloat(s.package_price) || 0;
+  let unitPrice = parseFloat(s.unit_price) || 0;
+
+  if (pkgPrice > 0 && pkgQty > 1 && unitPrice >= pkgPrice) {
+    unitPrice = pkgPrice / pkgQty;
+  }
+
+  const pkgUnit = s.package_unit || s.unit || '';
+  const pkgText = s.package_size
+    ? (s.package_size.toLowerCase().includes(pkgUnit.toLowerCase()) ? s.package_size : `${s.package_size} ${pkgUnit}`)
+    : `${pkgQty} ${pkgUnit}`;
+
+  const formattedPrice = formatVnd(unitPrice);
+  const stock = parseFloat(s.stock_quantity) || 0;
+  const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
+  const isOut = !isPermanent && stock <= 0;
+  const stockBadge = isPermanent ? '' : (isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Còn: ${stock} ${s.unit})`);
+
+  return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}${stockBadge}`;
+}
+
+// Populate farm supplies into care modals
+function populateCareSuppliesDropdowns(supplies = []) {
+  window._publicFarmSupplies = supplies;
+
+  // 1. Water supply dropdown
+  const waterSelect = document.getElementById('water-supply-select');
+  if (waterSelect) {
+    const waterSupplies = supplies.filter(s => s.category === 'Tiền nước');
+    if (waterSupplies.length > 0) {
+      let html = waterSupplies.map(s => `
+        <option value="${s.id}" data-price="${parseFloat(s.unit_price) || 0}" data-unit="${esc(s.unit || 'm³')}">
+          💧 ${_formatSupplyOptionText(s)}
+        </option>
+      `).join('');
+      html += '<option value="" data-price="0">Không hạch toán tiền nước</option>';
+      waterSelect.innerHTML = html;
+    } else {
+      waterSelect.innerHTML = `
+        <option value="" data-price="0">💧 Nước giếng khoan trang trại (Không tính phí)</option>
+        <option value="" data-price="0">Không hạch toán tiền nước</option>
+      `;
+    }
+    calculatePublicWaterCost();
+  }
+
+  // 2. Fertilizer supply dropdown
+  const fertSelect = document.getElementById('fertilizer-supply-select');
+  if (fertSelect) {
+    const fertSupplies = supplies.filter(s => s.category === 'Bón phân');
+    let html = '';
+    if (fertSupplies.length > 0) {
+      html += fertSupplies.map(s => {
+        const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+        return `
+          <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-price="${parseFloat(s.unit_price) || 0}" data-unit="${esc(s.unit || 'kg')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+            🧪 ${_formatSupplyOptionText(s)}
+          </option>
+        `;
+      }).join('');
+    } else {
+      (configData.fertilizers || ['NPK 20-20-15', 'Phân hữu cơ vi sinh', 'DAP', 'Ure', 'Kali']).forEach(f => {
+        html += `<option value="" data-name="${esc(f)}" data-price="0" data-unit="kg">🧪 ${esc(f)}</option>`;
+      });
+    }
+    html += '<option value="__custom__">➕ Phân bón khác (Nhập thủ công)...</option>';
+    fertSelect.innerHTML = html;
+    onPublicFertilizerSelected(fertSelect);
+  }
+
+  // 3. Pesticide supply dropdown
+  const pestSelect = document.getElementById('pesticide-supply-select');
+  if (pestSelect) {
+    const pestSupplies = supplies.filter(s => s.category === 'Phun thuốc');
+    let html = '';
+    if (pestSupplies.length > 0) {
+      html += pestSupplies.map(s => {
+        const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
+        return `
+          <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-ing="${esc(s.active_ingredient || '')}" data-phi="${s.phi_days || 14}" data-price="${parseFloat(s.unit_price) || 0}" data-unit="${esc(s.unit || 'ml')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
+            🛡️ ${_formatSupplyOptionText(s)}
+          </option>
+        `;
+      }).join('');
+    } else {
+      (configData.pesticides || ['Ridomil Gold 68WG', 'Anvil 5SC', 'Radiant 60SC', 'Confidor 200SL', 'Coc 85']).forEach(p => {
+        html += `<option value="" data-name="${esc(p)}" data-ing="Hoạt chất phổ thông" data-phi="14" data-price="0" data-unit="ml">🛡️ ${esc(p)}</option>`;
+      });
+    }
+    html += '<option value="__custom__">➕ Thuốc BVTV khác (Nhập thủ công)...</option>';
+    pestSelect.innerHTML = html;
+    onPublicPesticideSelected(pestSelect);
+  }
+}
+
+// Auto Water Cost Calculation
+function calculatePublicWaterCost() {
+  const amountInput = document.getElementById('water-amount');
+  const unitSelect = document.getElementById('water-unit');
+  const supplySelect = document.getElementById('water-supply-select');
+  const volEl = document.getElementById('public-water-calc-vol');
+  const costEl = document.getElementById('public-water-calc-cost');
+
+  if (!volEl || !costEl) return;
+
+  const rawAmount = parseFloat(amountInput?.value) || 0;
+  const unit = unitSelect?.value || 'Lít';
+
+  let amountLiters = rawAmount;
+  if (unit === 'ml') amountLiters = rawAmount / 1000;
+  else if (unit === 'm³') amountLiters = rawAmount * 1000;
+
+  const volumeM3 = amountLiters / 1000;
+  volEl.textContent = `${rawAmount} ${unit} = ${volumeM3 < 0.01 ? volumeM3.toFixed(3) : volumeM3.toFixed(2)} m³`;
+
+  const opt = supplySelect?.options[supplySelect?.selectedIndex];
+  const unitPriceM3 = opt ? (parseFloat(opt.getAttribute('data-price')) || 0) : 0;
+  const totalCost = volumeM3 * unitPriceM3;
+
+  costEl.textContent = totalCost > 0 ? formatVnd(totalCost) : '0 VNĐ (Không tính phí)';
+}
+
+// Auto Fertilizer Cost Calculation
+function onPublicFertilizerSelected(selectEl) {
+  if (!selectEl) return;
+  const customInput = document.getElementById('fertilizer-custom');
+  if (selectEl.value === '__custom__') {
+    if (customInput) customInput.style.display = 'inline-block';
+  } else {
+    if (customInput) customInput.style.display = 'none';
+  }
+
+  const opt = selectEl.options[selectEl.selectedIndex];
+  const imgWrap = document.getElementById('fertilizer-supply-img-wrap');
+  const imgEl = document.getElementById('fertilizer-supply-img-preview');
+  const imgUrl = opt?.getAttribute('data-img');
+
+  if (imgWrap && imgEl) {
+    if (imgUrl) {
+      imgEl.src = imgUrl;
+      imgWrap.style.display = 'flex';
+    } else {
+      imgWrap.style.display = 'none';
+    }
+  }
+
+  calculatePublicFertilizerCost();
+}
+
+function calculatePublicFertilizerCost() {
+  const amount = parseFloat(document.getElementById('fertilizer-amount')?.value) || 0;
+  const unit = document.getElementById('fertilizer-unit')?.value || 'g';
+  const selectEl = document.getElementById('fertilizer-supply-select');
+  const descEl = document.getElementById('public-fertilizer-calc-desc');
+  const costEl = document.getElementById('public-fertilizer-calc-cost');
+
+  if (descEl) descEl.textContent = `Liều lượng: ${amount} ${unit}`;
+  if (!costEl) return;
+
+  const opt = selectEl?.options[selectEl?.selectedIndex];
+  if (!opt || selectEl?.value === '__custom__') {
+    costEl.textContent = '0 VNĐ (Tự nhập)';
+    return;
+  }
+
+  const unitPrice = parseFloat(opt.getAttribute('data-price')) || 0;
+  const supplyUnit = (opt.getAttribute('data-unit') || 'kg').toLowerCase();
+
+  let multiplier = 1;
+  if (supplyUnit === 'kg' || supplyUnit === 'kilogram') {
+    if (unit === 'g' || unit === 'gam') multiplier = 0.001;
+    else if (unit === 'kg') multiplier = 1;
+  } else if (supplyUnit === 'g' || supplyUnit === 'gam') {
+    if (unit === 'kg') multiplier = 1000;
+    else if (unit === 'g' || unit === 'gam') multiplier = 1;
+  } else if (supplyUnit === 'lít' || supplyUnit === 'lit' || supplyUnit === 'l') {
+    if (unit === 'ml') multiplier = 0.001;
+    else if (unit === 'Lít' || unit === 'lít') multiplier = 1;
+  } else if (supplyUnit === 'ml') {
+    if (unit === 'Lít' || unit === 'lít') multiplier = 1000;
+    else if (unit === 'ml') multiplier = 1;
+  }
+
+  const cost = amount * multiplier * unitPrice;
+  costEl.textContent = cost > 0 ? formatVnd(cost) : '0 VNĐ';
+}
+
+// Auto Pesticide Cost Calculation & Notice
+function onPublicPesticideSelected(selectEl) {
+  if (!selectEl) return;
+  const customInput = document.getElementById('pesticide-custom');
+  if (selectEl.value === '__custom__') {
+    if (customInput) customInput.style.display = 'inline-block';
+  } else {
+    if (customInput) customInput.style.display = 'none';
+  }
+
+  const opt = selectEl.options[selectEl.selectedIndex];
+  const activeIng = opt?.getAttribute('data-ing') || 'Chưa khai báo';
+  const phiDays = opt?.getAttribute('data-phi') || '14';
+  const imgUrl = opt?.getAttribute('data-img');
+
+  const ingTextEl = document.getElementById('pesticide-active-ingredient-text');
+  if (ingTextEl) ingTextEl.textContent = activeIng;
+
+  const phiTextEl = document.getElementById('pesticide-phi-days-text');
+  if (phiTextEl) phiTextEl.textContent = `${phiDays} ngày (Không thu hoạch)`;
+
+  const imgWrap = document.getElementById('pesticide-supply-img-wrap');
+  const imgEl = document.getElementById('pesticide-supply-img-preview');
+  if (imgWrap && imgEl) {
+    if (imgUrl) {
+      imgEl.src = imgUrl;
+      imgWrap.style.display = 'flex';
+    } else {
+      imgWrap.style.display = 'none';
+    }
+  }
+
+  calculatePublicPesticideCost();
+}
+
+function calculatePublicPesticideCost() {
+  const amount = parseFloat(document.getElementById('pesticide-amount')?.value) || 0;
+  const unit = document.getElementById('pesticide-unit')?.value || 'ml';
+  const selectEl = document.getElementById('pesticide-supply-select');
+  const descEl = document.getElementById('public-pesticide-calc-desc');
+  const costEl = document.getElementById('public-pesticide-calc-cost');
+
+  if (descEl) descEl.textContent = `Liều lượng: ${amount} ${unit}`;
+  if (!costEl) return;
+
+  const opt = selectEl?.options[selectEl?.selectedIndex];
+  if (!opt || selectEl?.value === '__custom__') {
+    costEl.textContent = '0 VNĐ (Tự nhập)';
+    return;
+  }
+
+  const unitPrice = parseFloat(opt.getAttribute('data-price')) || 0;
+  const supplyUnit = (opt.getAttribute('data-unit') || 'ml').toLowerCase();
+
+  let multiplier = 1;
+  if (supplyUnit === 'lít' || supplyUnit === 'lit' || supplyUnit === 'l') {
+    if (unit === 'ml') multiplier = 0.001;
+    else if (unit === 'Lít' || unit === 'lít') multiplier = 1;
+  } else if (supplyUnit === 'ml') {
+    if (unit === 'Lít' || unit === 'lít') multiplier = 1000;
+    else if (unit === 'ml') multiplier = 1;
+  } else if (supplyUnit === 'kg') {
+    if (unit === 'g') multiplier = 0.001;
+    else if (unit === 'kg') multiplier = 1;
+  } else if (supplyUnit === 'g') {
+    if (unit === 'kg') multiplier = 1000;
+    else if (unit === 'g') multiplier = 1;
+  }
+
+  const cost = amount * multiplier * unitPrice;
+  costEl.textContent = cost > 0 ? formatVnd(cost) : '0 VNĐ';
+}
+
+// Voice Recognition Handler for Public Modals
+let _publicActiveSpeechRec = null;
+function startPublicVoiceInput(textareaId, btnEl) {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    alert('Trình duyệt của bạn chưa hỗ trợ nhận diện giọng nói (Web Speech API). Vui lòng sử dụng Google Chrome hoặc Safari mới nhất.');
+    return;
+  }
+
+  const textarea = document.getElementById(textareaId);
+  if (!textarea) return;
+
+  if (_publicActiveSpeechRec) {
+    _publicActiveSpeechRec.stop();
+    _publicActiveSpeechRec = null;
+    if (btnEl) {
+      btnEl.style.background = '#fef2f2';
+      btnEl.style.color = '#dc2626';
+      btnEl.innerHTML = '<i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>';
+      if (window.lucide) window.lucide.createIcons();
+    }
+    return;
+  }
+
+  try {
+    const recognition = new SpeechRec();
+    recognition.lang = 'vi-VN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    if (btnEl) {
+      btnEl.style.background = '#fee2e2';
+      btnEl.style.color = '#991b1b';
+      btnEl.innerHTML = '<i data-lucide="radio" class="lucide-spin lucide-sm"></i> <span>Đang nghe...</span>';
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        textarea.value = textarea.value ? `${textarea.value.trim()} ${transcript}` : transcript;
+        showPublicToast(`🎙️ Đã ghi nhận: "${transcript}"`);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.warn('Speech recognition error:', event.error);
+      showPublicToast(`Không nhận diện được giọng nói (${event.error})`);
+    };
+
+    recognition.onend = () => {
+      _publicActiveSpeechRec = null;
+      if (btnEl) {
+        btnEl.style.background = '#fef2f2';
+        btnEl.style.color = '#dc2626';
+        btnEl.innerHTML = '<i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>';
+        if (window.lucide) window.lucide.createIcons();
+      }
+    };
+
+    _publicActiveSpeechRec = recognition;
+    recognition.start();
+  } catch (err) {
+    console.error('Speech recognition start error:', err);
+    alert('Lỗi khởi động micro thu âm: ' + err.message);
+  }
+}
+
 // Escape HTML utility
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1519,6 +1855,9 @@ async function loadFarmPortal(farmId) {
     // Render tree grid
     renderGatewayTreesGrid(_allGatewayPlants);
 
+    // Render farm supplies & investment section
+    renderGatewaySupplies(data.supplies || [], data.total_investment || 0);
+
     // Hide loader, show gateway
     document.getElementById('loader').style.display = 'none';
     document.getElementById('error-view').style.display = 'none';
@@ -1536,6 +1875,76 @@ async function loadFarmPortal(farmId) {
     document.getElementById('error-view').style.display = 'block';
     document.getElementById('error-msg').textContent = err.message;
   }
+}
+
+function renderGatewaySupplies(supplies = [], totalInvestment = 0) {
+  const badge = document.getElementById('gateway-total-investment-badge');
+  if (badge) {
+    badge.textContent = `Tổng đầu tư: ${formatVnd(totalInvestment)}`;
+  }
+  const grid = document.getElementById('gateway-supplies-grid');
+  if (!grid) return;
+
+  if (supplies.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #64748b; font-size: 12.5px; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1;">
+        <i data-lucide="info" class="lucide-sm" style="color: #94a3b8; margin-bottom: 4px;"></i>
+        <div>Trang trại chưa khai báo danh mục vật tư nào.</div>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = supplies.map(s => {
+    const stock = parseFloat(s.stock_quantity) || 0;
+    const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
+    const isLow = !isPermanent && stock <= 5 && stock > 0;
+    const isOut = !isPermanent && stock <= 0;
+    let stockBadgeColor = '#f0fdf4';
+    let stockBorderColor = '#86efac';
+    let stockTextColor = '#166534';
+    let stockText = `Còn: ${stock} ${s.unit}`;
+
+    if (isPermanent) {
+      stockText = 'Cung ứng liên tục';
+    } else if (isOut) {
+      stockBadgeColor = '#fef2f2';
+      stockBorderColor = '#fca5a5';
+      stockTextColor = '#dc2626';
+      stockText = `HẾT HÀNG (0 ${s.unit})`;
+    } else if (isLow) {
+      stockBadgeColor = '#fffbeb';
+      stockBorderColor = '#fde68a';
+      stockTextColor = '#b45309';
+      stockText = `Sắp hết: ${stock} ${s.unit}`;
+    }
+
+    let catBg = '#f1f5f9';
+    let catColor = '#334155';
+    if (s.category === 'Bón phân') { catBg = '#f0fdf4'; catColor = '#166534'; }
+    else if (s.category === 'Phun thuốc') { catBg = '#fef2f2'; catColor = '#991b1b'; }
+    else if (s.category === 'Tiền nước') { catBg = '#f0f9ff'; catColor = '#0369a1'; }
+
+    return `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
+            <span style="background: ${catBg}; color: ${catColor}; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${esc(s.category)}</span>
+            <span style="background: ${stockBadgeColor}; border: 1px solid ${stockBorderColor}; color: ${stockTextColor}; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">${stockText}</span>
+          </div>
+          <div style="font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.3;">
+            ${esc(s.name)}
+          </div>
+          ${s.package_size ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px;">Quy cách: ${esc(s.package_size)}</div>` : ''}
+          ${s.active_ingredient ? `<div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 2px;">Hoạt chất: ${esc(s.active_ingredient)}</div>` : ''}
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 4px;">
+          <span style="font-size: 11px; color: #64748b;">Đơn giá chuẩn:</span>
+          <strong style="font-size: 12.5px; color: #047857;">${formatVnd(s.unit_price)} / ${esc(s.unit)}</strong>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderGatewayStaffArea(farmId, farm) {
@@ -2286,6 +2695,162 @@ async function renderPlant(plant, isEditable) {
         </div>
         ` : ''}
 
+        <!-- 💼 Supplies & Cost Section -->
+        <div class="glass-panel glass-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+            <h2 class="sec-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="package-check" class="lucide-sm" style="color: var(--green-bright)"></i>
+              <span>Vật Tư &amp; Chi Phí Canh Tác (Đầu Tư &amp; Tiêu Hao)</span>
+            </h2>
+            <span class="badge" style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 12.5px; border: 1.5px solid #86efac; padding: 4px 12px; border-radius: 100px;">
+              <i data-lucide="coins" class="lucide-sm" style="vertical-align: -2px;"></i> Tổng đầu tư: ${formatVnd(plant.total_cost || 0)}
+            </span>
+          </div>
+
+          <!-- 3 Quick Metric Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 18px;">
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px; text-align: center;">
+              <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase;">Chi Phí Đã Đầu Tư</div>
+              <div style="font-size: 17px; font-weight: 800; color: #059669; margin-top: 3px;">${formatVnd(plant.total_cost || 0)}</div>
+              <div style="font-size: 10.5px; color: #15803d; margin-top: 2px;">Tiền nước, phân &amp; thuốc</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center;">
+              <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Đợt Dùng Vật Tư</div>
+              <div style="font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 3px;">${(plant.supply_usages || []).length} lần</div>
+              <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">Ghi nhận thực tế</div>
+            </div>
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 12px; text-align: center;">
+              <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Kho Vật Tư Trang Trại</div>
+              <div style="font-size: 17px; font-weight: 800; color: #2563eb; margin-top: 3px;">${(plant.farm_supplies || []).length} loại</div>
+              <div style="font-size: 10.5px; color: #3b82f6; margin-top: 2px;">Sẵn sàng cấp cho cây</div>
+            </div>
+          </div>
+
+          <!-- Sub-section 1: Lịch Sử Tiêu Hao Vật Tư Của Cây Này -->
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="receipt" class="lucide-sm" style="color: #059669;"></i>
+              <span>Lịch Sử Vật Tư &amp; Chi Phí Thực Tế Đã Dùng Cho Cây</span>
+            </h3>
+            ${(!plant.supply_usages || plant.supply_usages.length === 0) ? `
+              <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
+                <i data-lucide="info" class="lucide-sm" style="color: #94a3b8; margin-bottom: 4px;"></i>
+                <div>Chưa có dữ liệu tiêu hao vật tư cho cây này. Các lần bón phân, phun thuốc, tưới nước được ghi nhận sẽ tự động hạch toán tại đây.</div>
+              </div>
+            ` : `
+              <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                  <thead>
+                    <tr style="background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; color: #475569; font-weight: 700;">
+                      <th style="padding: 10px 12px;">Ngày dùng</th>
+                      <th style="padding: 10px 12px;">Hoạt động</th>
+                      <th style="padding: 10px 12px;">Tên vật tư / Hoạt chất</th>
+                      <th style="padding: 10px 12px; text-align: right;">Số lượng</th>
+                      <th style="padding: 10px 12px; text-align: right;">Đơn giá</th>
+                      <th style="padding: 10px 12px; text-align: right;">Thành tiền</th>
+                      <th style="padding: 10px 12px;">Người thực hiện &amp; Thiết bị</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${plant.supply_usages.map(u => `
+                      <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 9px 12px; white-space: nowrap; font-weight: 600; color: #334155;">${fmtDate(u.used_date || u.log_date)}</td>
+                        <td style="padding: 9px 12px; white-space: nowrap;">
+                          <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 10.5px; font-weight: 700;">${esc(u.log_type || u.supply_category || 'Chăm sóc')}</span>
+                        </td>
+                        <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">
+                          ${esc(u.supply_name || 'Vật tư')}
+                          ${u.active_ingredient ? `<div style="font-size: 10.5px; font-weight: 500; color: #059669;">Hoạt chất: ${esc(u.active_ingredient)}</div>` : ''}
+                        </td>
+                        <td style="padding: 9px 12px; text-align: right; font-weight: 600; color: #0f172a; white-space: nowrap;">
+                          ${u.quantity} ${esc(u.supply_unit || '')}
+                        </td>
+                        <td style="padding: 9px 12px; text-align: right; color: #64748b; white-space: nowrap;">
+                          ${formatVnd(u.unit_price)}
+                        </td>
+                        <td style="padding: 9px 12px; text-align: right; font-weight: 800; color: #166534; white-space: nowrap;">
+                          ${formatVnd(u.total_cost)}
+                        </td>
+                        <td style="padding: 9px 12px; color: #475569; font-size: 11.5px;">
+                          ${esc(u.operator_name || '—')}${u.equipment_used ? ` <span style="color:#94a3b8;">(${esc(u.equipment_used)})</span>` : ''}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+
+          <!-- Sub-section 2: Danh Mục Vật Tư Tồn Kho Của Trang Trại -->
+          <div>
+            <h3 style="font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="boxes" class="lucide-sm" style="color: #059669;"></i>
+                <span>Danh Mục Vật Tư Tồn Kho Trang Trại</span>
+              </span>
+              <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">Tổng ${(plant.farm_supplies || []).length} loại vật tư đã khai báo</span>
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px;">
+              ${(!plant.farm_supplies || plant.farm_supplies.length === 0) ? `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 14px; color: #64748b; font-size: 12px; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1;">
+                  Trang trại chưa khai báo vật tư trong kho.
+                </div>
+              ` : plant.farm_supplies.map(s => {
+                const stock = parseFloat(s.stock_quantity) || 0;
+                const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
+                const isLow = !isPermanent && stock <= 5 && stock > 0;
+                const isOut = !isPermanent && stock <= 0;
+                let stockBadgeColor = '#f0fdf4';
+                let stockBorderColor = '#86efac';
+                let stockTextColor = '#166534';
+                let stockText = `Còn: ${stock} ${s.unit}`;
+
+                if (isPermanent) {
+                  stockText = 'Cung ứng liên tục';
+                } else if (isOut) {
+                  stockBadgeColor = '#fef2f2';
+                  stockBorderColor = '#fca5a5';
+                  stockTextColor = '#dc2626';
+                  stockText = `HẾT HÀNG (0 ${s.unit})`;
+                } else if (isLow) {
+                  stockBadgeColor = '#fffbeb';
+                  stockBorderColor = '#fde68a';
+                  stockTextColor = '#b45309';
+                  stockText = `Sắp hết: ${stock} ${s.unit}`;
+                }
+
+                let catBg = '#f1f5f9';
+                let catColor = '#334155';
+                if (s.category === 'Bón phân') { catBg = '#f0fdf4'; catColor = '#166534'; }
+                else if (s.category === 'Phun thuốc') { catBg = '#fef2f2'; catColor = '#991b1b'; }
+                else if (s.category === 'Tiền nước') { catBg = '#f0f9ff'; catColor = '#0369a1'; }
+
+                return `
+                  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div>
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
+                        <span style="background: ${catBg}; color: ${catColor}; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${esc(s.category)}</span>
+                        <span style="background: ${stockBadgeColor}; border: 1px solid ${stockBorderColor}; color: ${stockTextColor}; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">${stockText}</span>
+                      </div>
+                      <div style="font-size: 12.5px; font-weight: 800; color: #0f172a; line-height: 1.3;">
+                        ${esc(s.name)}
+                      </div>
+                      ${s.package_size ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px;">Quy cách: ${esc(s.package_size)}</div>` : ''}
+                      ${s.active_ingredient ? `<div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 2px;">Hoạt chất: ${esc(s.active_ingredient)}</div>` : ''}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed #f1f5f9; padding-top: 6px; margin-top: 4px;">
+                      <span style="font-size: 11px; color: #64748b;">Đơn giá hạch toán:</span>
+                      <strong style="font-size: 12px; color: #047857;">${formatVnd(s.unit_price)} / ${esc(s.unit)}</strong>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
         <!-- Timeline Diary Card -->
         <div class="glass-panel glass-card">
           <h2 class="sec-title" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
@@ -2389,6 +2954,9 @@ async function renderPlant(plant, isEditable) {
   const view = document.getElementById('plant-view');
   view.innerHTML = html;
   view.style.display = 'block';
+
+  // Populate farm supplies into care modals
+  populateCareSuppliesDropdowns(plant.farm_supplies || []);
 
   // Render initial care timeline (3 days default)
   renderPublicLogTimeline(1, false);
@@ -2609,41 +3177,66 @@ async function submitCareLog(event, type, modalId, formId) {
   let note = '';
 
   if (type === 'Tưới nước') {
-    const selectVal = document.getElementById('water-method-select').value;
-    details.method = selectVal === '__custom__' ? document.getElementById('water-method-custom').value.trim() : selectVal;
-    details.amount = parseFloat(document.getElementById('water-amount').value);
-    details.unit = document.getElementById('water-unit').value;
-    details.time = document.getElementById('water-time').value;
-    note = document.getElementById('water-note').value.trim();
+    const selectVal = document.getElementById('water-method-select')?.value;
+    details.method = selectVal === '__custom__' ? document.getElementById('water-method-custom')?.value.trim() : selectVal;
+    details.amount = parseFloat(document.getElementById('water-amount')?.value) || 0;
+    details.unit = document.getElementById('water-unit')?.value || 'Lít';
+    details.time = document.getElementById('water-time')?.value || 'Sáng';
+    details.supply_id = document.getElementById('water-supply-select')?.value || null;
+    details.operator_name = document.getElementById('water-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('water-equipment-used')?.value.trim() || '';
+    note = document.getElementById('water-note')?.value.trim() || '';
   } 
   else if (type === 'Bón phân') {
-    const selectVal = document.getElementById('fertilizer-select').value;
-    details.type = selectVal === '__custom__' ? document.getElementById('fertilizer-custom').value.trim() : selectVal;
-    details.amount = parseFloat(document.getElementById('fertilizer-amount').value);
-    details.unit = document.getElementById('fertilizer-unit').value;
-    details.method = document.getElementById('fertilizer-method').value;
-    note = document.getElementById('fertilizer-note').value.trim();
+    const selectEl = document.getElementById('fertilizer-supply-select');
+    const selectVal = selectEl?.value;
+    const opt = selectEl?.options[selectEl?.selectedIndex];
+    const isCustom = selectVal === '__custom__';
+    details.type = isCustom 
+      ? document.getElementById('fertilizer-custom')?.value.trim() 
+      : (opt?.getAttribute('data-name') || selectVal || 'Phân bón');
+    details.supply_id = (isCustom || !selectVal) ? null : selectVal;
+    details.amount = parseFloat(document.getElementById('fertilizer-amount')?.value) || 0;
+    details.unit = document.getElementById('fertilizer-unit')?.value || 'g';
+    details.method = document.getElementById('fertilizer-method')?.value || 'Bón gốc';
+    details.operator_name = document.getElementById('fertilizer-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('fertilizer-equipment-used')?.value.trim() || '';
+    note = document.getElementById('fertilizer-note')?.value.trim() || '';
   } 
   else if (type === 'Phun thuốc') {
-    const selectVal = document.getElementById('pesticide-select').value;
-    details.type = selectVal === '__custom__' ? document.getElementById('pesticide-custom').value.trim() : selectVal;
-    details.amount = parseFloat(document.getElementById('pesticide-amount').value);
-    details.unit = document.getElementById('pesticide-unit').value;
-    details.water_volume = parseFloat(document.getElementById('pesticide-water').value);
-    details.purpose = document.getElementById('pesticide-purpose').value;
-    note = document.getElementById('pesticide-note').value.trim();
+    const selectEl = document.getElementById('pesticide-supply-select');
+    const selectVal = selectEl?.value;
+    const opt = selectEl?.options[selectEl?.selectedIndex];
+    const isCustom = selectVal === '__custom__';
+    details.type = isCustom 
+      ? document.getElementById('pesticide-custom')?.value.trim() 
+      : (opt?.getAttribute('data-name') || selectVal || 'Thuốc BVTV');
+    details.supply_id = (isCustom || !selectVal) ? null : selectVal;
+    details.active_ingredient = opt?.getAttribute('data-ing') || '';
+    details.phi_days = parseInt(opt?.getAttribute('data-phi') || '14');
+    details.amount = parseFloat(document.getElementById('pesticide-amount')?.value) || 0;
+    details.unit = document.getElementById('pesticide-unit')?.value || 'ml';
+    details.water_volume = parseFloat(document.getElementById('pesticide-water')?.value) || 0;
+    details.purpose = document.getElementById('pesticide-purpose')?.value || 'Trừ sâu';
+    details.operator_name = document.getElementById('pesticide-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('pesticide-equipment-used')?.value.trim() || '';
+    note = document.getElementById('pesticide-note')?.value.trim() || '';
   } 
   else if (type === 'Cắt lá') {
-    details.amount = document.getElementById('leaf-amount').value.trim();
-    const selectVal = document.getElementById('leaf-reason-select').value;
-    details.reason = selectVal === '__custom__' ? document.getElementById('leaf-reason-custom').value.trim() : selectVal;
-    note = document.getElementById('leaf-note').value.trim();
+    details.amount = document.getElementById('leaf-amount')?.value.trim() || '';
+    const selectVal = document.getElementById('leaf-reason-select')?.value;
+    details.reason = selectVal === '__custom__' ? document.getElementById('leaf-reason-custom')?.value.trim() : selectVal;
+    details.operator_name = document.getElementById('leaf-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('leaf-equipment-used')?.value.trim() || '';
+    note = document.getElementById('leaf-note')?.value.trim() || '';
   } 
   else if (type === 'Tỉa hoa') {
-    details.amount = document.getElementById('flower-amount').value.trim();
-    const selectVal = document.getElementById('flower-reason-select').value;
-    details.reason = selectVal === '__custom__' ? document.getElementById('flower-reason-custom').value.trim() : selectVal;
-    note = document.getElementById('flower-note').value.trim();
+    details.amount = document.getElementById('flower-amount')?.value.trim() || '';
+    const selectVal = document.getElementById('flower-reason-select')?.value;
+    details.reason = selectVal === '__custom__' ? document.getElementById('flower-reason-custom')?.value.trim() : selectVal;
+    details.operator_name = document.getElementById('flower-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('flower-equipment-used')?.value.trim() || '';
+    note = document.getElementById('flower-note')?.value.trim() || '';
   }
   else if (type === 'Thu hoạch') {
     const harvestAmountInput = document.getElementById('harvest-amount');
@@ -2653,6 +3246,8 @@ async function submitCareLog(event, type, modalId, formId) {
     details.unit = harvestUnitInput ? harvestUnitInput.value : 'kg';
     const harvestQualityInput = document.getElementById('harvest-quality');
     details.quality = harvestQualityInput ? harvestQualityInput.value.trim() : '';
+    details.operator_name = document.getElementById('harvest-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('harvest-equipment-used')?.value.trim() || '';
     const harvestNoteInput = document.getElementById('harvest-note');
     note = harvestNoteInput ? harvestNoteInput.value.trim() : '';
   }
@@ -2911,10 +3506,15 @@ async function submitDiseaseLog(event) {
     logDate = dtInput.value.slice(0, 10);
   }
 
+  const operatorName = document.getElementById('disease-operator-name')?.value.trim() || '';
+  const equipmentUsed = document.getElementById('disease-equipment-used')?.value.trim() || '';
+
   const details = {
     disease_name: diseaseName,
     description: desc,
     severity: severity,
+    operator_name: operatorName,
+    equipment_used: equipmentUsed,
     performed_at: performedAt
   };
 
@@ -2923,6 +3523,8 @@ async function submitDiseaseLog(event) {
     formData.append('log_type', 'Bệnh cây');
     formData.append('log_date', logDate);
     formData.append('note', note);
+    formData.append('operator_name', operatorName);
+    formData.append('equipment_used', equipmentUsed);
     formData.append('details', JSON.stringify(details));
 
     diseaseImageFiles.forEach(f => formData.append('files', f));

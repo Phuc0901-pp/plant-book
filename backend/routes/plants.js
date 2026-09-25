@@ -3241,15 +3241,40 @@ router.get('/farms/:farmId/public-portal', async (req, res) => {
     const assignedCount = plantsRes.rows.filter(p => p.nfc_uid && p.nfc_uid.trim().length > 0).length;
     const unassignedCount = totalPlants - assignedCount;
 
+    // Fetch farm supplies inventory and investment costs
+    let supplies = [];
+    let totalInvestment = 0;
+    try {
+      const suppliesRes = await pool.query(`
+        SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
+               s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
+               s.target_pests, s.phi_days, s.note,
+               COALESCE(SUM(su.total_cost), 0) as total_spent,
+               COALESCE(SUM(su.quantity), 0) as total_used_qty
+        FROM supplies s
+        LEFT JOIN supply_usages su ON su.supply_id = s.id AND su.farm_id = $1
+        WHERE (s.user_id = $2 OR s.farm_id = $1 OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $1))
+        GROUP BY s.id
+        ORDER BY s.category ASC, s.name ASC
+      `, [farmId, farm.user_id]);
+      supplies = suppliesRes.rows;
+      totalInvestment = supplies.reduce((sum, s) => sum + parseFloat(s.total_spent || 0), 0);
+    } catch(supErr) {
+      console.warn('Error fetching farm supplies for portal:', supErr.message);
+    }
+
     res.json({
       success: true,
       farm: {
         ...farm,
         total_plants: totalPlants,
         assigned_count: assignedCount,
-        unassigned_count: unassignedCount
+        unassigned_count: unassignedCount,
+        total_investment: totalInvestment,
+        total_supplies_count: supplies.length
       },
-      plants: plantsRes.rows
+      plants: plantsRes.rows,
+      supplies: supplies
     });
   } catch (err) {
     console.error('Error loading public farm portal:', err);
@@ -3367,12 +3392,50 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
         } catch(e) {}
       }
 
+      // Fetch supply usages, total care costs, and available farm supplies
+      let supplyUsages = [];
+      let totalCareCost = 0;
+      let farmSupplies = [];
+
+      try {
+        const usagesRes = await pool.query(`
+          SELECT su.id, su.supply_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
+                 s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url
+          FROM supply_usages su
+          LEFT JOIN supplies s ON s.id = su.supply_id
+          WHERE su.plant_id = $1
+          ORDER BY su.usage_date DESC, su.id DESC
+        `, [row.id]);
+        supplyUsages = usagesRes.rows;
+        totalCareCost = supplyUsages.reduce((sum, u) => sum + parseFloat(u.total_cost || 0), 0);
+
+        const farmSuppliesRes = await pool.query(`
+          SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
+                 s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
+                 s.target_pests, s.phi_days, s.note
+          FROM supplies s
+          WHERE (s.user_id = $1 OR s.farm_id = $2 OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2))
+          ORDER BY s.category ASC, s.name ASC
+        `, [row.farm_owner_user_id || farm.user_id, farmId || row.farm_id]);
+        farmSupplies = farmSuppliesRes.rows;
+      } catch (supErr) {
+        console.warn('Error fetching supply usages for plant:', supErr.message);
+      }
+
       return res.json({
         assigned: true,
         in_inventory: true,
         farm_id: farmId,
         nfc_uid: cleanUid,
-        plant: { ...row, media: media.rows, logs: scrubbedLogs, farm_boundary }
+        plant: { 
+          ...row, 
+          media: media.rows, 
+          logs: scrubbedLogs, 
+          farm_boundary,
+          supply_usages: supplyUsages,
+          total_cost: totalCareCost,
+          farm_supplies: farmSupplies
+        }
       });
     }
 
@@ -3551,7 +3614,45 @@ router.get('/public/:slug', async (req, res) => {
       } catch(e) { /* ignore parse errors */ }
     }
 
-    res.json({ ...row, media: media.rows, logs: scrubbedLogs, farm_boundary });
+    // Fetch supply usages, total care costs, and available farm supplies
+    let supplyUsages = [];
+    let totalCareCost = 0;
+    let farmSupplies = [];
+
+    try {
+      const usagesRes = await pool.query(`
+        SELECT su.id, su.supply_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
+               s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url
+        FROM supply_usages su
+        LEFT JOIN supplies s ON s.id = su.supply_id
+        WHERE su.plant_id = $1
+        ORDER BY su.usage_date DESC, su.id DESC
+      `, [row.id]);
+      supplyUsages = usagesRes.rows;
+      totalCareCost = supplyUsages.reduce((sum, u) => sum + parseFloat(u.total_cost || 0), 0);
+
+      const farmSuppliesRes = await pool.query(`
+        SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
+               s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
+               s.target_pests, s.phi_days, s.note
+        FROM supplies s
+        WHERE (s.user_id = $1 OR s.farm_id = $2 OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2))
+        ORDER BY s.category ASC, s.name ASC
+      `, [row.farm_owner_user_id, row.farm_id]);
+      farmSupplies = farmSuppliesRes.rows;
+    } catch (supErr) {
+      console.warn('Error fetching supply usages for plant:', supErr.message);
+    }
+
+    res.json({ 
+      ...row, 
+      media: media.rows, 
+      logs: scrubbedLogs, 
+      farm_boundary,
+      supply_usages: supplyUsages,
+      total_cost: totalCareCost,
+      farm_supplies: farmSupplies
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Lỗi server.' });
@@ -3723,6 +3824,8 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
     const log_type = req.body.log_type;
     const note = req.body.note || '';
     const log_date = req.body.log_date || new Date().toISOString().slice(0, 10);
+    const operator_name = req.body.operator_name || (req.body.details && typeof req.body.details === 'object' ? req.body.details.operator_name : null) || access.user.full_name || access.user.email;
+    const equipment_used = req.body.equipment_used || (req.body.details && typeof req.body.details === 'object' ? req.body.details.equipment_used : null) || null;
 
     // details can be a JSON string (multipart) or object (json body)
     let details = {};
@@ -3731,6 +3834,9 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
         details = typeof req.body.details === 'string' ? JSON.parse(req.body.details) : req.body.details;
       } catch (e) { details = {}; }
     }
+
+    if (operator_name && !details.operator_name) details.operator_name = operator_name;
+    if (equipment_used && !details.equipment_used) details.equipment_used = equipment_used;
 
     // Upload files to Supabase if any
     const uploadedMediaUrls = [];
@@ -3763,12 +3869,95 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
 
     const allMediaUrls = [...existingMediaUrls, ...uploadedMediaUrls];
 
+    // PHI Quarantine & Pesticide Notice
+    if (log_type === 'Phun thuốc') {
+      let phiDays = parseInt(details.phi_days) || 0;
+      const pesticideName = details.name || details.pesticide_name || note || 'Thuốc BVTV';
+
+      if (phiDays <= 0 && pesticideName) {
+        const supLookup = await pool.query(
+          `SELECT phi_days FROM supplies WHERE category = 'Phun thuốc' AND (name ILIKE $1 OR $2 ILIKE '%' || name || '%') AND phi_days > 0 LIMIT 1`,
+          [pesticideName.trim(), pesticideName.trim()]
+        );
+        if (supLookup.rows.length > 0) phiDays = supLookup.rows[0].phi_days;
+      }
+
+      if (phiDays > 0) {
+        details.phi_days = phiDays;
+        const sprayDateObj = new Date(log_date);
+        sprayDateObj.setDate(sprayDateObj.getDate() + phiDays);
+        const phiUntilDateStr = sprayDateObj.toISOString().slice(0, 10);
+        details.phi_until_date = phiUntilDateStr;
+
+        await pool.query(
+          `UPDATE plants 
+           SET phi_until_date = $1, phi_status = 'quarantine', last_pesticide_date = $2, last_pesticide_name = $3, updated_at = NOW() 
+           WHERE id = $4`,
+          [phiUntilDateStr, log_date, pesticideName, plantId]
+        );
+      }
+    }
+
+    // Harvest batch code
+    let generatedBatchCode = null;
+    let farmPuc = access.plant?.puc_code || 'VN-TB';
+    if (log_type === 'Thu hoạch') {
+      const dateClean = log_date.replace(/-/g, '');
+      const codeClean = (access.plant?.tree_code || plantId).replace(/[^a-zA-Z0-9]/g, '');
+      generatedBatchCode = `${farmPuc}-${dateClean}-${codeClean}`;
+      details.batch_code = generatedBatchCode;
+      details.puc_code = farmPuc;
+    }
+
     const result = await pool.query(
-      `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by, operator_name, equipment_used, batch_code, puc_code)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [plantId, log_date, log_type, note,
-       JSON.stringify(allMediaUrls), JSON.stringify(details), access.user.id]
+       JSON.stringify(allMediaUrls), JSON.stringify(details), access.user.id, operator_name, equipment_used, generatedBatchCode, farmPuc]
     );
+
+    // Update health status if disease
+    if (log_type === 'Bệnh cây') {
+      await pool.query(`UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = $1`, [plantId]);
+    }
+
+    // Auto-record supply usage and stock deduction
+    try {
+      let resolvedSupplyId = details.supply_id || null;
+      const usageQty = parseFloat(details.quantity || details.volume || details.amount || 0);
+      const supplyName = details.supply_name || details.fertilizer_name || details.pesticide_name || null;
+
+      if (!resolvedSupplyId && supplyName) {
+        const foundSup = await pool.query(
+          `SELECT id, unit_price FROM supplies WHERE (farm_id = $1 OR 1=1) AND (name ILIKE $2 OR $2 ILIKE '%' || name || '%') LIMIT 1`,
+          [access.plant?.farm_id || null, supplyName]
+        );
+        if (foundSup.rows.length > 0) {
+          resolvedSupplyId = foundSup.rows[0].id;
+        }
+      }
+
+      if (resolvedSupplyId && usageQty > 0) {
+        const supInfo = await pool.query('SELECT * FROM supplies WHERE id = $1', [resolvedSupplyId]);
+        if (supInfo.rows.length > 0) {
+          const sup = supInfo.rows[0];
+          const uPrice = parseFloat(details.unit_price) || parseFloat(sup.unit_price) || 0;
+          const totCost = parseFloat(details.total_cost) || (usageQty * uPrice);
+
+          await pool.query(
+            `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [access.user.id, sup.id, access.plant?.farm_id || null, plantId, log_date, usageQty, uPrice, totCost, `Tự động từ nhật ký [${log_type}] tại vườn`]
+          );
+
+          if (sup.category !== 'Tiền nước' && sup.category !== 'Nhân công' && sup.stock_quantity > 0) {
+            await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1) WHERE id = $2', [usageQty, sup.id]);
+          }
+        }
+      }
+    } catch (supErr) {
+      console.warn('Cảnh báo ghi nhận tiêu hao vật tư từ nhật ký công khai:', supErr.message);
+    }
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error inserting public log:', err);

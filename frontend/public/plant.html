@@ -315,6 +315,22 @@
       </div>
     </div>
 
+    <!-- Farm Supplies & Inventory Section -->
+    <div id="gateway-supplies-section" class="glass-panel" style="border-radius: 20px; padding: 20px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.04); margin-top: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+        <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="boxes" class="lucide-sm" style="color: #059669;"></i> Kho Vật Tư &amp; Ngân Sách Đầu Tư Trang Trại
+        </h3>
+        <span id="gateway-total-investment-badge" class="badge" style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 12px; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 100px;">
+          Tổng chi phí: 0 VNĐ
+        </span>
+      </div>
+
+      <div id="gateway-supplies-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
   </div>
 
   <!-- Field Binding View (Gán thẻ NFC trực tiếp tại vườn + Auto GPS + Chống ghi đè) -->
@@ -556,7 +572,7 @@
     <form id="form-water" onsubmit="submitCareLog(event, 'Tưới nước', 'modal-water', 'form-water')">
       <div class="modal-body">
         <div class="field">
-          <label>Phương pháp tưới</label>
+          <label>Phương pháp tưới *</label>
           <div class="custom-select-wrap">
             <select id="water-method-select" onchange="toggleCustomInput('water-method')">
               <!-- Loaded dynamically -->
@@ -564,40 +580,85 @@
             <input type="text" id="water-method-custom" placeholder="Phương pháp khác..." style="display:none; width: 40%;">
           </div>
         </div>
+
+        <div class="field">
+          <label><i data-lucide="droplet" class="lucide-sm" style="color:var(--green-bright)"></i> Nguồn nước / Tiền nước (Từ Kho vật tư)</label>
+          <select id="water-supply-select" onchange="calculatePublicWaterCost()">
+            <!-- Loaded dynamically from farm supplies -->
+          </select>
+        </div>
+
         <div class="form-row">
-          <div class="field">
-            <label>Lượng nước tưới</label>
-            <input type="number" step="any" id="water-amount" placeholder="VD: 2, 500..." required>
+          <div class="field" style="flex:2;">
+            <label>Lượng nước tưới *</label>
+            <input type="number" step="any" id="water-amount" value="200" placeholder="VD: 200..." oninput="calculatePublicWaterCost()" onchange="calculatePublicWaterCost()" required>
           </div>
-          <div class="field">
+          <div class="field" style="flex:1;">
             <label>Đơn vị</label>
-            <select id="water-unit">
+            <select id="water-unit" onchange="calculatePublicWaterCost()">
               <option value="Lít">Lít</option>
               <option value="ml">ml</option>
+              <option value="m³">m³</option>
             </select>
           </div>
         </div>
+
+        <!-- Auto Conversion & Cost Preview Box -->
+        <div id="water-conversion-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border:1px solid #7dd3fc; border-radius:12px;">
+          <div style="font-size:11px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="calculator" class="lucide-sm"></i> TỰ ĐỘNG QUY ĐỔI LÍT ➔ M³ &amp; QUY THÀNH TIỀN
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+            <span style="font-size:13px; font-weight:600; color:#0c4a6e;" id="public-water-calc-vol">200 Lít = 0.20 m³</span>
+            <span style="font-size:14px; font-weight:800; color:var(--green-bright);" id="public-water-calc-cost">0 VNĐ</span>
+          </div>
+        </div>
+
         <div class="field">
           <label>Thời điểm tưới</label>
           <select id="water-time">
-            <option value="Sáng">Sáng</option>
+            <option value="Sáng">Sáng sớm</option>
             <option value="Trưa">Trưa</option>
-            <option value="Chiều">Chiều</option>
+            <option value="Chiều">Chiều mát</option>
             <option value="Tối">Tối</option>
           </select>
         </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thực hiện</label>
+              <input type="text" id="water-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Thiết bị / Dụng cụ</label>
+              <input type="text" id="water-equipment-used" placeholder="VD: Hệ thống tưới nhỏ giọt..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
         <div class="field">
-          <label>Thời gian thực hiện</label>
+          <label>Thời gian thực hiện *</label>
           <input type="datetime-local" id="water-datetime" required>
         </div>
+
         <div class="field">
-          <label>Ghi chú thêm</label>
-          <textarea id="water-note" rows="3" placeholder="Tình trạng thấm đất, thời tiết lúc tưới..."></textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('water-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="water-note" rows="2" placeholder="Tình trạng thấm đất, thời tiết lúc tưới..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-water')">Hủy</button>
-        <button type="submit" class="btn btn-submit btn-water">Lưu nhật ký</button>
+        <button type="submit" class="btn btn-submit btn-water">Lưu nhật ký tưới nước</button>
       </div>
     </form>
   </div>
@@ -613,49 +674,91 @@
     <form id="form-fertilize" onsubmit="submitCareLog(event, 'Bón phân', 'modal-fertilize', 'form-fertilize')">
       <div class="modal-body">
         <div class="field">
-          <label>Loại phân bón</label>
+          <label><i data-lucide="link" class="lucide-sm" style="color:var(--green-bright)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
           <div class="custom-select-wrap">
-            <select id="fertilizer-select" onchange="toggleCustomInput('fertilizer')">
-              <!-- Loaded dynamically -->
+            <select id="fertilizer-supply-select" onchange="onPublicFertilizerSelected(this)">
+              <!-- Loaded dynamically from farm supplies -->
             </select>
             <input type="text" id="fertilizer-custom" placeholder="Tên phân bón..." style="display:none; width: 40%;">
           </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Liều lượng bón</label>
-            <input type="number" step="any" id="fertilizer-amount" placeholder="VD: 50, 1..." required>
+          
+          <div id="fertilizer-supply-img-wrap" style="display:none; align-items:center; gap:8px; margin-top:8px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+            <img id="fertilizer-supply-img-preview" src="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; border:1px solid #cbd5e1;">
+            <span style="font-size:12px; color:#64748b; font-weight:500;">Bao bì / Nhãn hiệu sản phẩm trong kho</span>
           </div>
-          <div class="field">
+        </div>
+
+        <div class="form-row">
+          <div class="field" style="flex:2;">
+            <label>Liều lượng bón *</label>
+            <input type="number" step="any" id="fertilizer-amount" value="100" placeholder="VD: 100, 1..." oninput="calculatePublicFertilizerCost()" onchange="calculatePublicFertilizerCost()" required>
+          </div>
+          <div class="field" style="flex:1;">
             <label>Đơn vị</label>
-            <select id="fertilizer-unit">
+            <select id="fertilizer-unit" onchange="calculatePublicFertilizerCost()">
               <option value="g">g (Gram)</option>
-              <option value="kg">kg</option>
+              <option value="kg">kg (Kilogram)</option>
               <option value="ml">ml</option>
               <option value="Lít">Lít</option>
             </select>
           </div>
         </div>
+
+        <!-- Auto Cost Preview Box for Fertilizer -->
+        <div id="fertilizer-cost-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:10px 14px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border:1px solid #86efac; border-radius:10px;">
+          <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="calculator" class="lucide-sm"></i> DỰ TOÁN CHI PHÍ PHÂN BÓN CHO CÂY
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <span style="font-size:12.5px; font-weight:600; color:#166534;" id="public-fertilizer-calc-desc">Liều lượng: 100 g</span>
+            <span style="font-size:14px; font-weight:800; color:#047857;" id="public-fertilizer-calc-cost">0 VNĐ</span>
+          </div>
+        </div>
+
         <div class="field">
           <label>Phương pháp bón</label>
           <select id="fertilizer-method">
             <option value="Bón gốc">Bón trực tiếp vào gốc</option>
             <option value="Phun lá">Hòa nước phun lá</option>
-            <option value="Trộn nước tưới">Trộn hòa vào nước tưới</option>
+            <option value="Trộn nước tưới">Trộn hòa vào hệ thống tưới</option>
           </select>
         </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thực hiện</label>
+              <input type="text" id="fertilizer-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Thiết bị / Dụng cụ</label>
+              <input type="text" id="fertilizer-equipment-used" placeholder="VD: Xẻng bón phân, máy định lượng..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
         <div class="field">
-          <label>Thời gian thực hiện</label>
+          <label>Thời gian thực hiện *</label>
           <input type="datetime-local" id="fertilizer-datetime" required>
         </div>
+
         <div class="field">
-          <label>Ghi chú thêm</label>
-          <textarea id="fertilizer-note" rows="3" placeholder="Độ ẩm đất trước khi bón, phản ứng cây..."></textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('fertilizer-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="fertilizer-note" rows="2" placeholder="Độ ẩm đất trước khi bón, phản ứng cây..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-fertilize')">Hủy</button>
-        <button type="submit" class="btn btn-submit btn-fertilize">Lưu nhật ký</button>
+        <button type="submit" class="btn btn-submit btn-fertilize">Lưu nhật ký bón phân</button>
       </div>
     </form>
   </div>
@@ -671,102 +774,190 @@
     <form id="form-pesticide" onsubmit="submitCareLog(event, 'Phun thuốc', 'modal-pesticide', 'form-pesticide')">
       <div class="modal-body">
         <div class="field">
-          <label>Tên thuốc BVTV</label>
+          <label><i data-lucide="shield-check" class="lucide-sm" style="color:var(--green-bright)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
           <div class="custom-select-wrap">
-            <select id="pesticide-select" onchange="toggleCustomInput('pesticide')">
-              <!-- Loaded dynamically -->
+            <select id="pesticide-supply-select" onchange="onPublicPesticideSelected(this)">
+              <!-- Loaded dynamically from farm supplies -->
             </select>
             <input type="text" id="pesticide-custom" placeholder="Tên thuốc..." style="display:none; width: 40%;">
           </div>
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Liều lượng thuốc</label>
-            <input type="number" step="any" id="pesticide-amount" placeholder="Lượng thuốc..." required>
+
+          <!-- VietGAP Active Ingredient & PHI Notice -->
+          <div id="pesticide-active-notice" style="margin-top:8px; padding:10px 12px; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; font-size:12px; color:#065f46;">
+            <div style="font-weight:800; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> Tiêu Chuẩn VietGAP - Hoạt Chất &amp; Cách Ly (PHI):
+            </div>
+            <div style="margin-top:4px; font-size:11.5px; line-height:1.4;">
+              Hoạt chất: <strong id="pesticide-active-ingredient-text">Chưa khai báo</strong> &nbsp;|&nbsp; 
+              Thời gian cách ly: <strong id="pesticide-phi-days-text" style="color:#b91c1c;">14 ngày</strong>
+            </div>
           </div>
-          <div class="field">
+
+          <div id="pesticide-supply-img-wrap" style="display:none; align-items:center; gap:8px; margin-top:8px; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+            <img id="pesticide-supply-img-preview" src="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; border:1px solid #cbd5e1;">
+            <span style="font-size:12px; color:#64748b; font-weight:500;">Bao bì / Nhãn hiệu thuốc trong kho</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field" style="flex:2;">
+            <label>Liều lượng thuốc *</label>
+            <input type="number" step="any" id="pesticide-amount" value="50" placeholder="Lượng thuốc..." oninput="calculatePublicPesticideCost()" onchange="calculatePublicPesticideCost()" required>
+          </div>
+          <div class="field" style="flex:1;">
             <label>Đơn vị thuốc</label>
-            <select id="pesticide-unit">
+            <select id="pesticide-unit" onchange="calculatePublicPesticideCost()">
               <option value="ml">ml</option>
               <option value="g">g (Gram)</option>
+              <option value="Lít">Lít</option>
             </select>
           </div>
         </div>
+
         <div class="field">
-          <label>Lượng nước pha (Lít)</label>
-          <input type="number" step="any" id="pesticide-water" placeholder="Pha với bao nhiêu lít nước..." required>
+          <label>Lượng nước pha (Lít) *</label>
+          <input type="number" step="any" id="pesticide-water" value="20" placeholder="Pha với bao nhiêu lít nước..." required>
         </div>
+
+        <!-- Auto Cost Preview Box for Pesticide -->
+        <div id="pesticide-cost-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:10px 14px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border:1px solid #86efac; border-radius:10px;">
+          <div style="font-size:11px; font-weight:700; color:#15803d; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="calculator" class="lucide-sm"></i> DỰ TOÁN CHI PHÍ THUỐC BVTV
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <span style="font-size:12.5px; font-weight:600; color:#166534;" id="public-pesticide-calc-desc">Liều lượng: 50 ml</span>
+            <span style="font-size:14px; font-weight:800; color:#047857;" id="public-pesticide-calc-cost">0 VNĐ</span>
+          </div>
+        </div>
+
         <div class="field">
           <label>Mục đích phun</label>
           <select id="pesticide-purpose">
-            <option value="Trừ sâu">Phòng/Trừ sâu hại</option>
-            <option value="Trừ bệnh">Trị bệnh/Virus</option>
-            <option value="Trừ nấm">Trị nấm hại</option>
-            <option value="Dưỡng lá/rễ">Phun dưỡng lá / kích rễ</option>
-            <option value="Kích thích sinh trưởng">Kích thích sinh trưởng</option>
+            <option value="Trừ sâu">Phòng / Trừ sâu hại</option>
+            <option value="Trừ bệnh">Trị bệnh / Virus</option>
+            <option value="Trừ nấm">Trị nấm hại (Thán thư, xì mủ...)</option>
+            <option value="Dưỡng lá/rễ">Phun dưỡng lá / Kích rễ</option>
+            <option value="Kích thích sinh trưởng">Kích thích sinh trưởng &amp; đọt non</option>
           </select>
         </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thực hiện</label>
+              <input type="text" id="pesticide-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Thiết bị / Dụng cụ</label>
+              <input type="text" id="pesticide-equipment-used" placeholder="VD: Bình phun 20L, bảo hộ VietGAP..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
         <div class="field">
-          <label>Thời gian thực hiện</label>
+          <label>Thời gian thực hiện *</label>
           <input type="datetime-local" id="pesticide-datetime" required>
         </div>
-        <div class="field">
-          <label>Ghi chú thêm</label>
-          <textarea id="pesticide-note" rows="3" placeholder="Tình trạng sâu hại, thời tiết gió lặng..."></textarea>
-        </div>
-      </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-disease')">Hủy</button>
-          <button type="submit" class="btn btn-submit btn-disease" id="disease-submit-btn">Lưu báo cáo bệnh</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- 🌾 Harvest Modal -->
-  <div class="modal-overlay" id="modal-harvest" onclick="closeModalOnOuterClick(event, 'modal-harvest')">
-    <div class="glass-panel modal">
-      <div class="modal-header">
-        <h3 class="modal-title" style="color: #d97706;"><i data-lucide="wheat" class="lucide-sm"></i> Quy trình Ghi nhận Thu hoạch</h3>
-        <button class="modal-close" onclick="closeModal('modal-harvest')">×</button>
+        <div class="field">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('pesticide-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="pesticide-note" rows="2" placeholder="Tình trạng sâu hại, thời tiết gió lặng..."></textarea>
+        </div>
       </div>
-      <form id="form-harvest" onsubmit="submitCareLog(event, 'Thu hoạch', 'modal-harvest', 'form-harvest')">
-        <div class="modal-body">
-          <div class="form-row">
-            <div class="field" style="flex:2;">
-              <label>Sản lượng thu hoạch *</label>
-              <input type="number" step="any" id="harvest-amount" placeholder="Nhập sản lượng (VD: 50)..." required>
-            </div>
-            <div class="field" style="flex:1;">
-              <label>Đơn vị</label>
-              <select id="harvest-unit">
-                <option value="kg">kg (Kilogram)</option>
-                <option value="tấn">tấn (Tấn)</option>
-                <option value="trái">trái / quả</option>
-                <option value="thùng">thùng / sọt</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label>Chất lượng trái / Độ Brix</label>
-            <input type="text" id="harvest-quality" placeholder="Ví dụ: Loại A (Brix 18%), Hàng xuất khẩu..." value="Loại A (Đạt chuẩn xuất khẩu)">
-          </div>
-          <div class="field">
-            <label>Thời gian thu hoạch *</label>
-            <input type="datetime-local" id="harvest-datetime" required>
-          </div>
-          <div class="field">
-            <label>Ghi chú đợt thu hoạch</label>
-            <textarea id="harvest-note" rows="3" placeholder="Ví dụ: Thu hoạch đợt 1, chất lượng trái rất đều..."></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-harvest')">Hủy</button>
-          <button type="submit" class="btn btn-submit" style="background:linear-gradient(135deg, #d97706 0%, #b45309 100%); color:#fff;">Lưu nhật ký thu hoạch</button>
-        </div>
-      </form>
-    </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pesticide')">Hủy</button>
+        <button type="submit" class="btn btn-submit btn-pesticide">Lưu nhật ký phun thuốc</button>
+      </div>
+    </form>
   </div>
+</div>
+
+<!-- 🌾 Harvest Modal -->
+<div class="modal-overlay" id="modal-harvest" onclick="closeModalOnOuterClick(event, 'modal-harvest')">
+  <div class="glass-panel modal">
+    <div class="modal-header">
+      <h3 class="modal-title" style="color: #d97706;"><i data-lucide="wheat" class="lucide-sm"></i> Quy trình Ghi nhận Thu hoạch</h3>
+      <button class="modal-close" onclick="closeModal('modal-harvest')">×</button>
+    </div>
+    <form id="form-harvest" onsubmit="submitCareLog(event, 'Thu hoạch', 'modal-harvest', 'form-harvest')">
+      <div class="modal-body">
+        <!-- VietGAP Batch Code Preview -->
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px;">
+          <div style="color:#64748b; font-weight:600;"><i data-lucide="scan" class="lucide-sm" style="color:#0284c7; vertical-align:-2px;"></i> Mã Lô Nông Sản VietGAP (Batch Code) Tự Sinh:</div>
+          <div style="font-family:monospace; font-weight:800; font-size:13px; color:#0369a1; margin-top:3px;" id="harvest-batch-code-preview">
+            VN-TB-LOT-001
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field" style="flex:2;">
+            <label>Sản lượng thu hoạch *</label>
+            <input type="number" step="any" id="harvest-amount" placeholder="Nhập sản lượng (VD: 50)..." required>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Đơn vị</label>
+            <select id="harvest-unit">
+              <option value="kg">kg (Kilogram)</option>
+              <option value="tấn">tấn (Tấn)</option>
+              <option value="trái">trái / quả</option>
+              <option value="thùng">thùng / sọt</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Chất lượng trái / Độ Brix</label>
+          <input type="text" id="harvest-quality" placeholder="Ví dụ: Loại A (Brix 18%), Hàng xuất khẩu..." value="Loại A (Đạt chuẩn xuất khẩu)">
+        </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thu hái</label>
+              <input type="text" id="harvest-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Dụng cụ thu hoạch</label>
+              <input type="text" id="harvest-equipment-used" placeholder="VD: Kéo cắt cành chuyên dụng, sọt nhựa..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Thời gian thu hoạch *</label>
+          <input type="datetime-local" id="harvest-datetime" required>
+        </div>
+
+        <div class="field">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú đợt thu hoạch</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('harvest-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="harvest-note" rows="2" placeholder="Ví dụ: Thu hoạch đợt 1, chất lượng trái rất đều..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-harvest')">Hủy</button>
+        <button type="submit" class="btn btn-submit" style="background:linear-gradient(135deg, #d97706 0%, #b45309 100%); color:#fff;">Lưu nhật ký thu hoạch</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- ✂️ Leaf Cut Modal -->
 <div class="modal-overlay" id="modal-leaf" onclick="closeModalOnOuterClick(event, 'modal-leaf')">
@@ -778,7 +969,7 @@
     <form id="form-leaf" onsubmit="submitCareLog(event, 'Cắt lá', 'modal-leaf', 'form-leaf')">
       <div class="modal-body">
         <div class="field">
-          <label>Số lượng lá/cành cắt tỉa</label>
+          <label>Số lượng lá/cành cắt tỉa *</label>
           <input type="text" id="leaf-amount" placeholder="Ví dụ: Tỉa 10 lá chân, Tỉa cành phụ..." required>
         </div>
         <div class="field">
@@ -790,18 +981,42 @@
             <input type="text" id="leaf-reason-custom" placeholder="Lý do khác..." style="display:none; width: 40%;">
           </div>
         </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thực hiện</label>
+              <input type="text" id="leaf-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Dụng cụ cắt tỉa</label>
+              <input type="text" id="leaf-equipment-used" placeholder="VD: Kéo cắt tỉa, thuốc bôi liền sẹo..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
         <div class="field">
-          <label>Thời gian thực hiện</label>
+          <label>Thời gian thực hiện *</label>
           <input type="datetime-local" id="leaf-datetime" required>
         </div>
+
         <div class="field">
-          <label>Ghi chú thêm</label>
-          <textarea id="leaf-note" rows="3" placeholder="Trạng thái cành cắt, xử lý vết cắt (nếu có)..."></textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('leaf-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="leaf-note" rows="2" placeholder="Trạng thái cành cắt, xử lý vết cắt (nếu có)..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-leaf')">Hủy</button>
-        <button type="submit" class="btn btn-submit btn-leaf">Lưu nhật ký</button>
+        <button type="submit" class="btn btn-submit btn-leaf">Lưu nhật ký cắt tỉa</button>
       </div>
     </form>
   </div>
@@ -817,7 +1032,7 @@
     <form id="form-flower" onsubmit="submitCareLog(event, 'Tỉa hoa', 'modal-flower', 'form-flower')">
       <div class="modal-body">
         <div class="field">
-          <label>Số lượng hoa/trái tỉa</label>
+          <label>Số lượng hoa/trái tỉa *</label>
           <input type="text" id="flower-amount" placeholder="Ví dụ: Tỉa 5 chùm hoa tàn, 3 quả nhỏ..." required>
         </div>
         <div class="field">
@@ -829,18 +1044,42 @@
             <input type="text" id="flower-reason-custom" placeholder="Lý do khác..." style="display:none; width: 40%;">
           </div>
         </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Thiết Bị
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người thực hiện</label>
+              <input type="text" id="flower-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Dụng cụ tỉa</label>
+              <input type="text" id="flower-equipment-used" placeholder="VD: Kéo chuyên dụng tỉa hoa..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
         <div class="field">
-          <label>Thời gian thực hiện</label>
+          <label>Thời gian thực hiện *</label>
           <input type="datetime-local" id="flower-datetime" required>
         </div>
+
         <div class="field">
-          <label>Ghi chú thêm</label>
-          <textarea id="flower-note" rows="3" placeholder="Mật độ hoa còn lại, sức hoa..."></textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('flower-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="flower-note" rows="2" placeholder="Mật độ hoa còn lại, sức hoa..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-flower')">Hủy</button>
-        <button type="submit" class="btn btn-submit btn-flower">Lưu nhật ký</button>
+        <button type="submit" class="btn btn-submit btn-flower">Lưu nhật ký tỉa hoa</button>
       </div>
     </form>
   </div>
@@ -867,10 +1106,28 @@
           <label>Mức độ nghiêm trọng</label>
           <select id="disease-severity">
             <option value="Nhẹ">🟡 Nhẹ — Ít ảnh hưởng, theo dõi thêm</option>
-            <option value="Trung bình">🟠 Trung bình — Cần xử lý sớm</option>
+            <option value="Trung bình" selected>🟠 Trung bình — Cần xử lý sớm</option>
             <option value="Nghiêm trọng">🔴 Nghiêm trọng — Cần can thiệp ngay</option>
           </select>
         </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Khảo Sát &amp; Dụng Cụ
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người phát hiện</label>
+              <input type="text" id="disease-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Dụng cụ / Kính lúp</label>
+              <input type="text" id="disease-equipment-used" placeholder="VD: Kính lúp thực địa..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
         <div class="field">
           <label>Thời gian phát hiện <span style="color:var(--color-disease)">*</span></label>
           <input type="datetime-local" id="disease-datetime" required>
@@ -899,7 +1156,12 @@
         </div>
 
         <div class="field">
-          <label>Ghi chú thêm</label>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('disease-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
           <textarea id="disease-note" rows="2" placeholder="Cây đã được xử lý gì chưa, vị trí phát hiện bệnh..."></textarea>
         </div>
       </div>
