@@ -564,16 +564,19 @@ function renderSuppliesTableHtml(supplies = [], currentPage = 1, pageSize = 10, 
   const currentSlice = supplies.slice(startIdx, startIdx + pageSize);
 
   return `
-    <div style="overflow-x: auto; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-      <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+    <div class="erp-mobile-scroll-hint">
+      <i data-lucide="chevrons-left-right" class="lucide-xs"></i> <span>Kéo vuốt ngang để xem đủ 6 cột kho</span>
+    </div>
+    <div class="erp-table-container">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; min-width: 580px;">
         <thead>
           <tr style="background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.3px;">
             <th style="padding: 10px 12px; width: 64px; text-align: center;">Ảnh</th>
-            <th style="padding: 10px 12px; min-width: 220px;">Tên vật tư / Sản phẩm</th>
+            <th style="padding: 10px 12px; min-width: 200px;">Tên vật tư / Sản phẩm</th>
             <th style="padding: 10px 12px; width: 110px;">Phân loại</th>
             <th style="padding: 10px 12px; width: 155px;">Mức tồn kho &amp; Trạng thái</th>
-            <th style="padding: 10px 12px; text-align: right; width: 140px;">Đơn giá hạch toán</th>
-            <th style="padding: 10px 12px; text-align: right; width: 140px;">Tổng giá trị tồn</th>
+            <th style="padding: 10px 12px; text-align: right; width: 130px;">Đơn giá</th>
+            <th style="padding: 10px 12px; text-align: right; width: 130px;">Tổng giá trị tồn</th>
           </tr>
         </thead>
         <tbody>
@@ -619,10 +622,10 @@ function renderSuppliesTableHtml(supplies = [], currentPage = 1, pageSize = 10, 
                 <td style="padding: 10px 12px; vertical-align: middle; white-space: nowrap;">
                   ${stockBadge}
                 </td>
-                <td style="padding: 10px 12px; vertical-align: middle; text-align: right; white-space: nowrap; font-weight: 700; color: #047857;">
+                <td style="padding: 10px 12px; vertical-align: middle; text-align: right; white-space: nowrap; font-weight: 700; color: #047857; font-family:var(--font-mono);">
                   ${formatVnd(s.unit_price)} <span style="font-size: 11px; color: #64748b; font-weight: 500;">/ ${esc(s.unit)}</span>
                 </td>
-                <td style="padding: 10px 12px; vertical-align: middle; text-align: right; white-space: nowrap; font-weight: 800; color: #0f172a;">
+                <td style="padding: 10px 12px; vertical-align: middle; text-align: right; white-space: nowrap; font-weight: 800; color: #0f172a; font-family:var(--font-mono);">
                   ${totalStockVal}
                 </td>
               </tr>
@@ -636,7 +639,7 @@ function renderSuppliesTableHtml(supplies = [], currentPage = 1, pageSize = 10, 
     ${totalItems > pageSize ? `
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding: 8px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
         <div style="font-size: 12px; color: #64748b; font-weight: 600;">
-          Hiển thị <strong>${startIdx + 1} - ${Math.min(startIdx + pageSize, totalItems)}</strong> trên tổng số <strong>${totalItems}</strong> vật tư (10 bản ghi / trang)
+          Hiển thị <strong>${startIdx + 1} - ${Math.min(startIdx + pageSize, totalItems)}</strong> trên <strong>${totalItems}</strong> vật tư (10 bản ghi / trang)
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <button type="button" class="btn btn-secondary btn-xs" ${page <= 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="${onPageChangeFnName}(${page - 1})"`} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer; border-radius: 6px;">
@@ -2993,21 +2996,33 @@ async function renderPlant(plant, isEditable) {
           </div>
 
           <!-- 3 Quick Metric Cards -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px; text-align: center;">
-              <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase;">Chi Phí Đã Hạch Toán</div>
-              <div style="font-size: 17px; font-weight: 800; color: #059669; margin-top: 3px; font-family:var(--font-mono);">${formatVnd(plant.total_cost || 0)}</div>
-              <div style="font-size: 10.5px; color: #15803d; margin-top: 2px;">Nước tưới, phân &amp; thuốc BVTV</div>
+          <div class="erp-ledger-kpi-grid">
+            <div class="erp-ledger-kpi-card" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+              <div class="kpi-label-block">
+                <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase;">Chi Phí Đã Hạch Toán</div>
+                <div style="font-size: 10.5px; color: #15803d; margin-top: 2px;">Nước tưới, phân &amp; thuốc BVTV</div>
+              </div>
+              <div class="kpi-val-block">
+                <div class="kpi-main-val" style="font-size: 17px; font-weight: 800; color: #059669; margin-top: 3px; font-family:var(--font-mono);">${formatVnd(plant.total_cost || 0)}</div>
+              </div>
             </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; text-align: center;">
-              <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Đợt Tiêu Hao Vật Tư</div>
-              <div style="font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 3px;">${(plant.supply_usages || []).length} lần</div>
-              <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">Ghi nhận thực tế trên cây</div>
+            <div class="erp-ledger-kpi-card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div class="kpi-label-block">
+                <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Đợt Tiêu Hao Vật Tư</div>
+                <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">Ghi nhận thực tế trên cây</div>
+              </div>
+              <div class="kpi-val-block">
+                <div class="kpi-main-val" style="font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 3px;">${(plant.supply_usages || []).length} lần</div>
+              </div>
             </div>
-            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px; text-align: center;">
-              <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Kho Vật Tư Trang Trại</div>
-              <div style="font-size: 17px; font-weight: 800; color: #2563eb; margin-top: 3px;">${(plant.farm_supplies || []).length} loại</div>
-              <div style="font-size: 10.5px; color: #3b82f6; margin-top: 2px;">Đã phân bổ cho trang trại</div>
+            <div class="erp-ledger-kpi-card" style="background: #eff6ff; border: 1px solid #bfdbfe;">
+              <div class="kpi-label-block">
+                <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Kho Vật Tư Trang Trại</div>
+                <div style="font-size: 10.5px; color: #3b82f6; margin-top: 2px;">Đã phân bổ cho trang trại</div>
+              </div>
+              <div class="kpi-val-block">
+                <div class="kpi-main-val" style="font-size: 17px; font-weight: 800; color: #2563eb; margin-top: 3px;">${(plant.farm_supplies || []).length} loại</div>
+              </div>
             </div>
           </div>
 
@@ -3026,8 +3041,11 @@ async function renderPlant(plant, isEditable) {
                 <div>Chưa có dữ liệu tiêu hao vật tư cho cây này. Các lần bón phân, phun thuốc, tưới nước được ghi nhận sẽ tự động hạch toán tại đây.</div>
               </div>
             ` : `
-              <div style="overflow-x: auto; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #ffffff;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+              <div class="erp-mobile-scroll-hint">
+                <i data-lucide="chevrons-left-right" class="lucide-xs"></i> <span>Kéo vuốt ngang để xem đủ 7 cột hạch toán</span>
+              </div>
+              <div class="erp-table-container">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; min-width: 580px;">
                   <thead>
                     <tr style="background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.2px;">
                       <th style="padding: 10px 12px;">Ngày dùng</th>
