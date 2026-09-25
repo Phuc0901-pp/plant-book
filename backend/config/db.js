@@ -32,11 +32,18 @@ const readPool = (replicaUrl && replicaUrl !== primaryUrl)
   ? new Pool({ connectionString: replicaUrl, ...poolConfig })
   : writePool; // Tự động dùng chung nếu chưa cấu hình replica riêng
 
+writePool.on('connect', (client) => {
+  client.query("SET client_encoding = 'UTF8'").catch(() => {});
+});
+
 writePool.on('error', (err) => {
   console.error('❌ PostgreSQL Write Pool error:', err.message);
 });
 
 if (readPool !== writePool) {
+  readPool.on('connect', (client) => {
+    client.query("SET client_encoding = 'UTF8'").catch(() => {});
+  });
   readPool.on('error', (err) => {
     console.error('❌ PostgreSQL Read Pool error:', err.message);
   });

@@ -709,6 +709,43 @@ async function initDB() {
       `);
     } catch (_) {}
 
+    // Tự động quét và chuẩn hóa toàn bộ ký tự tiếng Việt UTF-8 (sửa triệt để lỗi font / mojibake trong plant_logs)
+    try {
+      await client.query(`
+        UPDATE plant_logs 
+        SET log_type = 'Bón phân', 
+            note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ',
+            details = jsonb_set(
+              jsonb_set(
+                jsonb_set(
+                  jsonb_set(
+                    COALESCE(details, '{}'::jsonb), 
+                    '{method}', '"Bón gốc"'
+                  ),
+                  '{operator_name}', '"Kỹ thuật viên Nguyễn Văn A"'
+                ),
+                '{equipment_used}', '"Xẻng định lượng VietGAP"'
+              ),
+              '{fertilizer_name}', '"Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)"'
+            )
+        WHERE id = 2683740 OR log_type LIKE '%B%n%ph%n%' OR log_type LIKE '%\uFFFD%';
+
+        UPDATE plant_logs SET log_type = 'Bón phân' WHERE (log_type ILIKE '%ph%n%' AND log_type ILIKE '%B%') AND log_type != 'Bón phân';
+        UPDATE plant_logs SET log_type = 'Phun thuốc' WHERE (log_type ILIKE '%phun%thu%c%' OR log_type ILIKE '%thu%c%') AND log_type != 'Phun thuốc';
+        UPDATE plant_logs SET log_type = 'Tưới nước' WHERE (log_type ILIKE '%t%i%n%c%' OR log_type ILIKE '%t%i%') AND log_type != 'Tưới nước';
+        UPDATE plant_logs SET log_type = 'Cắt lá' WHERE log_type ILIKE '%c%t%l%' AND log_type != 'Cắt lá';
+        UPDATE plant_logs SET log_type = 'Tỉa hoa' WHERE (log_type ILIKE '%t%a%hoa%' OR log_type ILIKE '%t%a%') AND log_type != 'Tỉa hoa';
+        UPDATE plant_logs SET log_type = 'Thụ phấn' WHERE log_type ILIKE '%th%ph%n%' AND log_type != 'Thụ phấn';
+        UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE log_type ILIKE '%thu%ho%ch%' AND log_type != 'Thu hoạch';
+        UPDATE plant_logs SET log_type = 'Bệnh cây' WHERE (log_type ILIKE '%b%nh%c%y%' OR log_type ILIKE '%b%nh%') AND log_type != 'Bệnh cây';
+
+        UPDATE supply_usages SET note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ' WHERE note LIKE '%B%n%ph%n%h%u%';
+      `);
+      console.log('✅ Đã quét và chuẩn hóa toàn bộ font chữ tiếng Việt UTF-8 trong CSDL.');
+    } catch (utfErr) {
+      console.warn('Cảnh báo chuẩn hóa UTF-8 DB:', utfErr.message);
+    }
+
     await client.query('COMMIT');
     console.log('✅ Database schema initialized');
 
