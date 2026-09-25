@@ -3028,36 +3028,37 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
     // 1. Find target plant by plant_id, tree_code, or numeric ID
     let targetPlant = null;
     if (plant_id) {
-      const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND (farm_id = $2 OR 1=1) AND deleted_at IS NULL ORDER BY (CASE WHEN farm_id = $2 THEN 1 ELSE 2 END) ASC LIMIT 1 FOR UPDATE', [parseInt(plant_id), farmId]);
+      const pRes = await client.query('SELECT * FROM plants WHERE id = $1 AND farm_id = $2 AND deleted_at IS NULL LIMIT 1 FOR UPDATE', [parseInt(plant_id), farmId]);
       if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
     }
     if (!targetPlant && tree_code) {
       const cleanCode = String(tree_code).trim();
       const codeWithoutHash = cleanCode.replace(/^#/, '');
       const rawCode = cleanCode.replace(/[^A-Za-z0-9]/g, '');
-      const digitsMatch = cleanCode.match(/\d+/);
-      const digitsOnly = digitsMatch ? digitsMatch[0] : '';
-      const intDigits = digitsOnly ? parseInt(digitsOnly, 10) : null;
+      const isPureDigits = /^\d+$/.test(codeWithoutHash);
+      const intDigits = isPureDigits ? parseInt(codeWithoutHash, 10) : null;
 
       const pRes = await client.query(
         `SELECT * FROM plants 
-         WHERE (farm_id = $1 OR 1=1)
+         WHERE farm_id = $1
            AND (
              id::text = $2
              OR UPPER(tree_code) = UPPER($2)
              OR UPPER(tree_code) = UPPER($3)
-             OR UPPER(tree_code) = UPPER($4)
-             OR UPPER(regexp_replace(COALESCE(tree_code, ''), '[^A-Za-z0-9]', '', 'g')) = UPPER($5)
+             OR UPPER(regexp_replace(COALESCE(tree_code, ''), '[^A-Za-z0-9]', '', 'g')) = UPPER($4)
              OR (
-               $6::int IS NOT NULL 
-               AND CAST(NULLIF(regexp_replace(tree_code, '\\D', '', 'g'), '') AS INTEGER) = $6::int
+               $5::int IS NOT NULL 
+               AND (
+                 id = $5::int
+                 OR CAST(NULLIF(regexp_replace(tree_code, '\\D', '', 'g'), '') AS INTEGER) = $5::int
+               )
              )
            ) 
            AND deleted_at IS NULL 
-         ORDER BY (CASE WHEN farm_id = $1 THEN 1 ELSE 2 END) ASC, id ASC
+         ORDER BY (CASE WHEN UPPER(tree_code) = UPPER($2) THEN 1 WHEN UPPER(tree_code) = UPPER($3) THEN 2 ELSE 3 END) ASC, id ASC
          LIMIT 1 
          FOR UPDATE`,
-        [farmId, cleanCode, `#${codeWithoutHash}`, codeWithoutHash, rawCode, intDigits]
+        [farmId, cleanCode, codeWithoutHash, rawCode, intDigits]
       );
       if (pRes.rows.length > 0) targetPlant = pRes.rows[0];
     }
@@ -3113,21 +3114,13 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
            DO UPDATE SET status = 'revoked', plant_id = NULL, tagged_at = NULL`,
           [farmId, existingTag, req.user.id]
         );
-
-        try {
-          await client.query(
-            `INSERT INTO audit_logs (user_id, farm_id, action, target_type, target_id, details, ip_address, created_at)
-             VALUES ($1, $2, 'NFC_TAG_REVOKE_REPLACE', 'PLANT', $3, $4, $5, NOW())`,
-            [req.user.id, farmId, targetPlant.id, JSON.stringify({ old_uid: existingTag, new_uid: cleanUid, tree_code: targetPlant.tree_code, lat, lng }), req.ip || '']
-          );
-        } catch(e) {}
       }
     }
 
     // 3. Check if cleanUid is already assigned to ANOTHER plant anywhere in the system
     const uidConflict = await client.query(
       `SELECT id, tree_code, farm_id FROM plants 
-       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2) AND id != $3 AND deleted_at IS NULL`,
+       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2) AND id != $3 AND deleted_at IS NULL`,
       [cleanUid, cleanRawUid, targetPlant.id]
     );
     if (uidConflict.rows.length > 0) {
@@ -3174,16 +3167,22 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
       [farmId, targetPlant.id, lat, lng, invItem.id]
     );
 
-    // 7. Audit Log
-    try {
-      await client.query(
-        `INSERT INTO audit_logs (user_id, farm_id, action, target_type, target_id, details, ip_address, created_at)
-         VALUES ($1, $2, 'NFC_TAG_FIELD_BIND', 'PLANT', $3, $4, $5, NOW())`,
-        [req.user.id, farmId, targetPlant.id, JSON.stringify({ nfc_uid: cleanUid, tree_code: targetPlant.tree_code, lat, lng, accuracy: acc, replaced_old_uid: replacedOldUid }), req.ip || '']
-      );
-    } catch(auditErr) { /* ignore if audit_logs table differs */ }
-
     await client.query('COMMIT');
+
+    // Safe async audit logging after commit
+    try {
+      await logAuditAction(
+        req.user.id,
+        req.user.full_name || req.user.email,
+        replacedOldUid ? 'NFC_REPLACE' : 'NFC_BIND',
+        'Cây trồng',
+        updatedPlant.id,
+        `Gắn thẻ NFC [${cleanUid}] cho Cây #${updatedPlant.tree_code || updatedPlant.id}`,
+        { old_uid: replacedOldUid },
+        { nfc_uid: cleanUid, tree_code: updatedPlant.tree_code, lat, lng },
+        `Gắn thẻ NFC thực địa tại trang trại #${farmId}`
+      );
+    } catch(auditErr) { /* ignore non-critical audit log error */ }
 
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated', { plant_id: updatedPlant.id, farm_id: farmId, action: 'nfc_tagged_quick' });
@@ -3295,9 +3294,12 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
        WHERE (
-         UPPER(COALESCE(p.nfc_uid, '')) = UPPER($1) 
-         OR UPPER(regexp_replace(COALESCE(p.nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2
-         OR UPPER(COALESCE(p.nfc_uid, '')) = UPPER($3)
+         p.nfc_uid IS NOT NULL AND p.nfc_uid != '' AND (
+           UPPER(p.nfc_uid) = UPPER($1) 
+           OR UPPER(replace(replace(p.nfc_uid, ':', ''), '-', '')) = $2
+           OR UPPER(regexp_replace(p.nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2
+           OR UPPER(p.nfc_uid) = UPPER($3)
+         )
        ) 
        AND (p.deleted_at IS NULL)
        ORDER BY (CASE WHEN p.farm_id = $4 THEN 1 ELSE 2 END) ASC, p.id DESC
@@ -3378,20 +3380,20 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
     const invCheck = await pool.query(
       `SELECT id, farm_id, status, plant_id 
        FROM nfc_tags_inventory 
-       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $2)`,
+       WHERE (UPPER(nfc_uid) = UPPER($1) OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2)`,
       [cleanUid, cleanRawUid]
     );
 
     if (invCheck.rows.length === 0) {
+      // Uninventoried tag: allow seamless field binding for farm staff/admin
       return res.json({
         assigned: false,
-        in_inventory: false,
-        not_in_inventory: true,
+        in_inventory: true,
+        is_new_tag: true,
         farm_id: farmId,
         farm_name: farm.name,
         puc_code: farm.puc_code,
-        nfc_uid: cleanUid,
-        inventory_warning: `Thẻ NFC [${cleanUid}] chưa được khai báo nhập kho cho trang trại này.`
+        nfc_uid: cleanUid
       });
     }
 

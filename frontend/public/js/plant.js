@@ -1390,11 +1390,14 @@ function cancelNfcDirectWriteSession() {
   const modal = document.getElementById('nfc-write-modal');
   if (modal) modal.style.display = 'none';
 
-  if (_pendingNfcWritePlant) {
-    const p = _pendingNfcWritePlant;
-    _pendingNfcWritePlant = null;
+  const p = _pendingNfcWritePlant || currentPlantData;
+  _pendingNfcWritePlant = null;
+  if (p) {
     currentPlantData = p;
-    document.getElementById('field-binding-view').style.display = 'none';
+    const bindView = document.getElementById('field-binding-view');
+    if (bindView) bindView.style.display = 'none';
+    const authGate = document.getElementById('auth-gate-view');
+    if (authGate) authGate.style.display = 'none';
     renderPlant(p, true);
   }
 }
