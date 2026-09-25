@@ -3643,6 +3643,7 @@ router.all('/public/:slug/gps', async (req, res) => {
 
 // Submit care log (Requires login from the same farm or Admin)
 router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) => {
+  try {
     const slugParam = req.params.slug.trim();
     const cleanRawUid = slugParam.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     // Find plant ID by slug, ID, or NFC UID
