@@ -887,9 +887,6 @@ function onPublicPesticideSelected(selectEl) {
   const ingTextEl = document.getElementById('pesticide-active-ingredient-text');
   if (ingTextEl) ingTextEl.textContent = activeIng;
 
-  const phiTextEl = document.getElementById('pesticide-phi-days-text');
-  if (phiTextEl) phiTextEl.textContent = `${phiDays} ngày (Không thu hoạch)`;
-
   const imgWrap = document.getElementById('pesticide-supply-img-wrap');
   const imgEl = document.getElementById('pesticide-supply-img-preview');
   if (imgWrap && imgEl) {

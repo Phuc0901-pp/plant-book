@@ -739,13 +739,17 @@ function _buildDetailFields(logType, configs, supplies = []) {
         <div class="field">
           <label>Hình ảnh / Video thực tế (Tự động đóng dấu ảnh) *</label>
           <div style="display:flex;flex-direction:column;gap:8px;">
-            <input type="file" id="c-detail-media-capture" accept="image/*,video/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
+            <input type="file" id="c-detail-media-capture" accept="image/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
+            <input type="file" id="c-detail-media-video" accept="video/*" capture="environment" style="display:none;" onchange="onCareMediaSelected('video')">
             <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:6px;padding:10px;display:inline-flex;align-items:center;">
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
                 <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
               </button>
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:6px;padding:10px;background:#fff;display:inline-flex;align-items:center;">
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-video').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">
+                <i data-lucide="video" class="lucide-sm"></i> Quay video
+              </button>
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;background:#fff;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
                 <i data-lucide="images" class="lucide-sm"></i> Thư viện
               </button>
             </div>

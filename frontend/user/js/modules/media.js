@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/media.js — File upload preview, watermark & lightbox
    ═══════════════════════════════════════════════════════════════ */
@@ -16,18 +16,24 @@ export function clearSelectedFiles() {
 }
 
 /**
- * Xử lý khi người dùng chọn file từ camera hoặc thư viện.
+ * Xử lý khi người dùng chọn file từ camera, quay video hoặc thư viện.
  * Tích luỹ các file vào selectedCareFiles và hiển thị thumbnail xem trước.
- * @param {'capture'|'library'} source
+ * @param {'capture'|'video'|'library'} source
  */
 export function onCareMediaSelected(source) {
-  const inputId = source === 'capture' ? 'c-detail-media-capture' : 'c-detail-media-library';
+  let inputId = 'c-detail-media-library';
+  if (source === 'capture') inputId = 'c-detail-media-capture';
+  else if (source === 'video') inputId = 'c-detail-media-video';
+
   const input   = document.getElementById(inputId);
   const preview = document.getElementById('c-media-preview');
   if (!input || !preview) return;
 
   const newFiles = Array.from(input.files);
+  if (newFiles.length === 0) return;
+
   selectedCareFiles = selectedCareFiles.concat(newFiles);
+  input.value = ''; // Reset for re-selection
 
   if (typeof window.renderMediaPreviews === 'function') {
     window.renderMediaPreviews();
