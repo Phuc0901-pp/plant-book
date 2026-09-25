@@ -473,6 +473,63 @@
     </div>
   </div>
 
+  <!-- NFC Direct Write Modal (Ghi đè link vào chip NFC) -->
+  <div class="modal-overlay" id="nfc-write-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.82); z-index:999999; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+    <div class="modal" style="max-width:480px; width:92%; background:#ffffff; border-radius:20px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.4); border:2px solid #10b981; text-align:center;">
+      
+      <!-- Modal Header -->
+      <div style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; padding:20px 22px;">
+        <h3 style="margin:0 0 4px 0; font-size:17px; font-weight:800; color:#ffffff; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i data-lucide="nfc" class="lucide-sm" style="font-size:22px;"></i> NẠP LINK VÀO CHIP NFC
+        </h3>
+        <p style="margin:0; font-size:12px; color:#a7f3d0;" id="nfc-write-modal-subtitle">Ghi đè đường dẫn mở thẳng vào chip NFC</p>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding:24px 20px;">
+        
+        <!-- Radar Scanning Animation -->
+        <div id="nfc-write-anim-container" style="margin:10px auto 20px auto; width:96px; height:96px; border-radius:50%; background:linear-gradient(135deg, #ecfdf5, #d1fae5); border:3px solid #10b981; display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 0 0 12px rgba(16,185,129,0.15), 0 0 0 24px rgba(16,185,129,0.06);">
+          <i data-lucide="radio" id="nfc-write-icon" class="lucide-spin" style="font-size:44px; color:#047857;"></i>
+        </div>
+
+        <h4 id="nfc-write-status-title" style="font-size:16px; font-weight:800; color:#0f172a; margin:0 0 8px 0;">HÃY CHẠM MẶT SAU ĐIỆN THOẠI VÀO THẺ</h4>
+        
+        <p id="nfc-write-status-desc" style="font-size:13px; color:#475569; line-height:1.5; margin:0 0 16px 0;">
+          Giữ mặt sau điện thoại sát vào thẻ NFC trên cây khoảng <strong>1 - 2 giây</strong> cho đến khi máy rung để nạp link trực tiếp.
+        </p>
+
+        <!-- Target Plant & URL Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:20px; text-align:left; font-size:12.5px;">
+          <div style="margin-bottom:6px; display:flex; justify-content:space-between;">
+            <span style="color:#64748b; font-weight:600;">Cây trồng:</span>
+            <strong id="nfc-write-tree-code" style="color:#0f172a;">#--</strong>
+          </div>
+          <div style="margin-bottom:6px; display:flex; justify-content:space-between;">
+            <span style="color:#64748b; font-weight:600;">Mã thẻ UID:</span>
+            <strong id="nfc-write-target-uid" style="color:#047857; font-family:monospace;">04:--</strong>
+          </div>
+          <div>
+            <span style="color:#64748b; font-weight:600;">Link đích danh:</span>
+            <div id="nfc-write-direct-url" style="color:#0284c7; font-family:monospace; font-size:11px; word-break:break-all; margin-top:2px; font-weight:700;">--</div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex; gap:10px;">
+          <button type="button" id="btn-nfc-write-retry" onclick="startNfcDirectWriteSession()" style="flex:1; height:44px; background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:10px; font-size:13.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+            <i data-lucide="refresh-cw" class="lucide-sm"></i> Thử Lại
+          </button>
+          <button type="button" onclick="cancelNfcDirectWriteSession()" style="flex:1; height:44px; background:#ffffff; color:#64748b; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer;">
+            Bỏ Qua (Vào Cây)
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
   <!-- Plant Profile View -->
   <div id="plant-view" style="display: none;"></div>
 </div>

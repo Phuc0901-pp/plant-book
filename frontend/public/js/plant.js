@@ -1195,25 +1195,16 @@ async function submitFieldBinding(allowReplace = false) {
       console.warn('Could not update browser history state:', histErr);
     }
 
-    // Auto-burn direct plant URL to the physical NFC chip if Web NFC is active
-    if ('NDEFReader' in window) {
-      try {
-        const directUrl = `${window.location.origin}/${farmId}/public/${cleanRawUid}`;
-        const ndef = new NDEFReader();
-        await ndef.write({
-          records: [{ recordType: "url", data: directUrl }]
-        });
-        console.log('Successfully burned direct plant URL to NFC chip:', directUrl);
-        showPublicToast(`✅ Đã nạp thành công link trực tiếp vào thẻ NFC! Lần sau chạm thẻ sẽ mở thẳng cây #${data.plant.tree_code || data.plant.id}.`);
-      } catch (nfcWriteErr) {
-        console.warn('NDEF write notice (tag might have moved away):', nfcWriteErr);
-      }
-    }
-
-    // Hide binding view and render plant
+    // Hide binding view
     document.getElementById('field-binding-view').style.display = 'none';
     currentPlantData = data.plant;
-    await renderPlant(data.plant, true);
+
+    // Open dedicated NFC Write Modal if Web NFC is supported, otherwise render plant directly
+    if ('NDEFReader' in window) {
+      await openNfcWriteModal(data.plant, true);
+    } else {
+      await renderPlant(data.plant, true);
+    }
 
   } catch (err) {
     console.error('Lỗi khi gắn thẻ:', err);
@@ -1227,37 +1218,171 @@ async function submitFieldBinding(allowReplace = false) {
   }
 }
 
-// ─── Manual Web NFC Burn Tool: Write direct URL to NFC chip ─────────
-async function writePlantUrlToNfcChip(plant) {
+// ═════════════════════════════════════════════════════════════════════════════
+// ─── INTERACTIVE WEB NFC DIRECT WRITE MODAL MODULE ───────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+
+let _nfcWriteAbortController = null;
+let _pendingNfcWritePlant = null;
+
+async function openNfcWriteModal(plant, isAutoFlow = false) {
   if (!plant) plant = currentPlantData;
   if (!plant) return;
+  _pendingNfcWritePlant = plant;
 
-  if (!('NDEFReader' in window)) {
-    alert('Trình duyệt hoặc thiết bị này không hỗ trợ Web NFC. Vui lòng mở trang web trên Google Chrome điện thoại Android có NFC.');
+  const modal = document.getElementById('nfc-write-modal');
+  if (!modal) {
+    await renderPlant(plant, true);
     return;
   }
 
   const farmId = plant.farm_id || slugInfo.farmId;
   const nfcUid = plant.nfc_uid || slugInfo.nfcUid || slugInfo.slug;
-  if (!farmId || !nfcUid) {
-    alert('Cây trồng chưa được liên kết với mã thẻ NFC.');
+  const cleanRawUid = nfcUid ? nfcUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : '';
+  const directUrl = `${window.location.origin}/${farmId}/public/${cleanRawUid}`;
+
+  const treeCodeEl = document.getElementById('nfc-write-tree-code');
+  if (treeCodeEl) treeCodeEl.textContent = `#${plant.tree_code || plant.id} (${plant.plant_type || 'Cây trồng'})`;
+  const targetUidEl = document.getElementById('nfc-write-target-uid');
+  if (targetUidEl) targetUidEl.textContent = nfcUid || cleanRawUid;
+  const directUrlEl = document.getElementById('nfc-write-direct-url');
+  if (directUrlEl) directUrlEl.textContent = directUrl;
+
+  const subtitleEl = document.getElementById('nfc-write-modal-subtitle');
+  if (subtitleEl) subtitleEl.textContent = isAutoFlow ? 'Bước cuối: Nạp link trực tiếp vào chip NFC' : 'Ghi đè đường dẫn mở thẳng vào chip NFC';
+
+  // Reset visual state to waiting
+  const titleEl = document.getElementById('nfc-write-status-title');
+  if (titleEl) titleEl.textContent = 'HÃY CHẠM MẶT SAU ĐIỆN THOẠI VÀO THẺ';
+  const descEl = document.getElementById('nfc-write-status-desc');
+  if (descEl) descEl.innerHTML = 'Giữ mặt sau điện thoại sát vào thẻ NFC trên cây khoảng <strong>1 - 2 giây</strong> cho đến khi máy rung để nạp link trực tiếp.';
+  const animContainer = document.getElementById('nfc-write-anim-container');
+  if (animContainer) {
+    animContainer.style.background = 'linear-gradient(135deg, #ecfdf5, #d1fae5)';
+    animContainer.style.borderColor = '#10b981';
+  }
+  const iconEl = document.getElementById('nfc-write-icon');
+  if (iconEl) {
+    iconEl.className = 'lucide-spin';
+    iconEl.setAttribute('data-lucide', 'radio');
+    iconEl.style.color = '#047857';
+  }
+
+  modal.style.display = 'flex';
+  if (window.lucide) window.lucide.createIcons();
+
+  await startNfcDirectWriteSession();
+}
+
+async function startNfcDirectWriteSession() {
+  const plant = _pendingNfcWritePlant;
+  if (!plant) return;
+
+  const farmId = plant.farm_id || slugInfo.farmId;
+  const nfcUid = plant.nfc_uid || slugInfo.nfcUid || slugInfo.slug;
+  const cleanRawUid = nfcUid ? nfcUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : '';
+  const directUrl = `${window.location.origin}/${farmId}/public/${cleanRawUid}`;
+
+  if (!('NDEFReader' in window)) {
+    const titleEl = document.getElementById('nfc-write-status-title');
+    if (titleEl) titleEl.textContent = 'TRÌNH DUYỆT KHÔNG HỖ TRỢ GHI NFC';
+    const descEl = document.getElementById('nfc-write-status-desc');
+    if (descEl) descEl.innerHTML = 'Ghi thẻ NFC yêu cầu trình duyệt <strong>Google Chrome trên Android</strong>.<br>Dữ liệu cây trồng và tọa độ GPS đã được lưu trên hệ thống an toàn!';
     return;
   }
 
-  const cleanRawUid = nfcUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  const directUrl = `${window.location.origin}/${farmId}/public/${cleanRawUid}`;
+  // Cancel any existing session
+  if (_nfcWriteAbortController) {
+    try { _nfcWriteAbortController.abort(); } catch(_) {}
+  }
+  _nfcWriteAbortController = new AbortController();
+
+  const titleEl = document.getElementById('nfc-write-status-title');
+  const descEl = document.getElementById('nfc-write-status-desc');
+  const animContainer = document.getElementById('nfc-write-anim-container');
+  const iconEl = document.getElementById('nfc-write-icon');
+
+  if (titleEl) titleEl.textContent = '📡 ĐANG CHỜ CHẠM THẺ NFC...';
+  if (descEl) descEl.innerHTML = 'Hãy áp mặt sau điện thoại vào thẻ NFC trên cây ngay bây giờ...';
+  if (animContainer) {
+    animContainer.style.background = 'linear-gradient(135deg, #ecfdf5, #d1fae5)';
+    animContainer.style.borderColor = '#10b981';
+  }
+  if (iconEl) {
+    iconEl.className = 'lucide-spin';
+    iconEl.setAttribute('data-lucide', 'radio');
+    iconEl.style.color = '#047857';
+  }
+  if (window.lucide) window.lucide.createIcons();
 
   try {
-    showPublicToast('📡 Hãy chạm và giữ mặt sau điện thoại vào thẻ NFC để nạp link...');
     const ndef = new NDEFReader();
     await ndef.write({
       records: [{ recordType: 'url', data: directUrl }]
-    });
-    showPublicToast(`✅ Đã nạp thành công link trực tiếp vào chip NFC! Lần sau chạm thẻ từ màn hình khóa sẽ mở thẳng Cây #${plant.tree_code || plant.id}.`);
+    }, { signal: _nfcWriteAbortController.signal });
+
+    // Success!
+    if (navigator.vibrate) {
+      try { navigator.vibrate([150, 50, 150]); } catch(_) {}
+    }
+
+    if (titleEl) titleEl.textContent = '✅ ĐÃ NẠP LINK THÀNH CÔNG!';
+    if (descEl) descEl.innerHTML = `Đã ghi đè link đích danh <strong>/${farmId}/public/${cleanRawUid}</strong> vào chip NFC!<br>Từ lần sau, chạm thẻ từ màn hình khóa sẽ mở thẳng Cây #${plant.tree_code || plant.id}.`;
+    if (animContainer) {
+      animContainer.style.background = '#dcfce7';
+      animContainer.style.borderColor = '#16a34a';
+    }
+    if (iconEl) {
+      iconEl.className = '';
+      iconEl.setAttribute('data-lucide', 'check-circle-2');
+      iconEl.style.color = '#16a34a';
+    }
+    if (window.lucide) window.lucide.createIcons();
+
+    setTimeout(() => {
+      cancelNfcDirectWriteSession();
+    }, 2000);
+
   } catch (err) {
-    console.warn('Write NFC error:', err);
-    alert('Không thể nạp link vào thẻ NFC: ' + err.message + '\n(Hãy đảm bảo bạn giữ thẻ sát mặt sau điện thoại khi bấm)');
+    if (err.name === 'AbortError') return;
+    console.warn('NFC Write Error:', err);
+    if (titleEl) titleEl.textContent = '⚠️ CHƯA GHI ĐƯỢC VÀO THẺ';
+    if (descEl) descEl.innerHTML = `Không thể ghi vào thẻ: <strong>${esc(err.message)}</strong>.<br>(Hãy giữ điện thoại sát vào chip NFC và bấm "Thử Lại")`;
+    if (animContainer) {
+      animContainer.style.background = '#fef2f2';
+      animContainer.style.borderColor = '#ef4444';
+    }
+    if (iconEl) {
+      iconEl.className = '';
+      iconEl.setAttribute('data-lucide', 'alert-triangle');
+      iconEl.style.color = '#dc2626';
+    }
+    if (window.lucide) window.lucide.createIcons();
   }
+}
+
+function cancelNfcDirectWriteSession() {
+  if (_nfcWriteAbortController) {
+    try { _nfcWriteAbortController.abort(); } catch(_) {}
+    _nfcWriteAbortController = null;
+  }
+  const modal = document.getElementById('nfc-write-modal');
+  if (modal) modal.style.display = 'none';
+
+  if (_pendingNfcWritePlant) {
+    const p = _pendingNfcWritePlant;
+    _pendingNfcWritePlant = null;
+    currentPlantData = p;
+    document.getElementById('field-binding-view').style.display = 'none';
+    renderPlant(p, true);
+  }
+}
+
+// ─── Manual Trigger from Plant Profile ──────────────────────────────
+async function writePlantUrlToNfcChip(plant) {
+  if (!plant) plant = currentPlantData;
+  if (!plant) return;
+  await openNfcWriteModal(plant, false);
 }
 
 // ─── Modal Functions: Replace & Revoke Old NFC Tag ───
