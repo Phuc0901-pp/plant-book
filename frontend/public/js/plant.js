@@ -1461,8 +1461,12 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
     if (data.assigned && data.plant) {
       // Switch directly to plant view
       currentPlantData = data.plant;
-      history.replaceState({}, '', `/${farmId}/public/${cleanUid}`);
+      try {
+        history.replaceState({}, '', `/${data.farm_id || farmId}/public/${encodeURIComponent(data.plant.nfc_uid || cleanUid)}`);
+      } catch (e) {}
       document.getElementById('farm-gateway-view').style.display = 'none';
+      if (document.getElementById('field-binding-view')) document.getElementById('field-binding-view').style.display = 'none';
+      if (document.getElementById('auth-gate-view')) document.getElementById('auth-gate-view').style.display = 'none';
       const { user } = getStoredAuth();
       const hasAccess = userHasPlantAccess(user, data.plant);
       await renderPlant(data.plant, hasAccess);

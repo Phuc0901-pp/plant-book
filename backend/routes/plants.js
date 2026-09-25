@@ -3239,7 +3239,7 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
     }
     const farm = farmCheck.rows[0];
 
-    // 2. Check if a plant in this farm is assigned this NFC UID
+    // 2. Check if a plant is assigned this NFC UID (any format, prioritizing current farm)
     const plantQuery = await pool.query(
       `SELECT p.*, 
               p.latitude,
@@ -3253,14 +3253,15 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
-       WHERE p.farm_id = $1 
-         AND (
-           UPPER(COALESCE(p.nfc_uid, '')) = UPPER($2) 
-           OR UPPER(regexp_replace(COALESCE(p.nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $3
-         ) 
-         AND (p.deleted_at IS NULL)
+       WHERE (
+         UPPER(COALESCE(p.nfc_uid, '')) = UPPER($1) 
+         OR UPPER(regexp_replace(COALESCE(p.nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2
+         OR UPPER(COALESCE(p.nfc_uid, '')) = UPPER($3)
+       ) 
+       AND (p.deleted_at IS NULL)
+       ORDER BY (CASE WHEN p.farm_id = $4 THEN 1 ELSE 2 END) ASC, p.id DESC
        LIMIT 1`,
-      [farmId, cleanUid, cleanRawUid]
+      [cleanUid, cleanRawUid, nfcUidRaw, farmId]
     );
 
     if (plantQuery.rows.length > 0) {
