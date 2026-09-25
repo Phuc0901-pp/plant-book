@@ -931,7 +931,7 @@ async function loadAdminNfcPageData(farmId) {
 
     // Update NTAG213 Master Template URL for this farm
     const origin = (window.location.origin && !window.location.origin.includes('localhost')) ? window.location.origin : 'https://plant-book.onrender.com';
-    const templateUrl = `${origin}/${farmId}/public/00000000000000`;
+    const templateUrl = `${origin}/${farmId}/public/`;
     const templateInput = document.getElementById('db-nfc-template-url-input');
     if (templateInput) templateInput.value = templateUrl;
     const guideSampleUrl = document.getElementById('guide-modal-sample-url');
@@ -970,9 +970,7 @@ function openTestFieldBindingUrl() {
     toast('Vui lòng chọn trang trại trước.', 'warning');
     return;
   }
-  // Generate a random 7-byte hex string simulating an unassigned NTAG213 chip
-  const testHex = '04' + Array.from({length: 12}, () => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
-  const url = `/${farmId}/public/${testHex}`;
+  const url = `/${farmId}/public/`;
   window.open(url, '_blank');
 }
 window.openTestFieldBindingUrl = openTestFieldBindingUrl;

@@ -1334,7 +1334,7 @@
         <div>
           <h4 style="margin:0; font-size:14px; font-weight:800; color:#064e3b; display:flex; align-items:center; gap:8px;">
             ĐƯỜNG DẪN PUBLIC NẠP THẺ MẪU NTAG213
-            <span class="badge" style="background:#064e3b; color:#34d399; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:100px;">UID Mirror Chuẩn</span>
+            <span class="badge" style="background:#064e3b; color:#34d399; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:100px;">Cổng Trang Trại Tĩnh</span>
           </h4>
           <span style="font-size:12px; color:#047857;">Link công khai mẫu dùng để nạp hàng loạt vào thẻ trắng NTAG213 cho trang trại đang chọn:</span>
         </div>
@@ -1348,20 +1348,20 @@
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
       <div style="position:relative; flex:1; min-width:280px;">
         <input type="text" id="db-nfc-template-url-input" readonly 
-               value="https://plant-book.onrender.com/1/public/00000000000000"
+               value="https://plant-book.onrender.com/1/public/"
                style="width:100%; padding:11px 14px; border:1.5px solid #10b981; border-radius:10px; font-size:13.5px; font-family:monospace; font-weight:800; color:#064e3b; background:#ffffff; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05); outline:none;">
       </div>
       <button type="button" onclick="copyNfcTemplateUrl()" style="background:linear-gradient(135deg, #059669, #047857); color:#ffffff; border:none; padding:11px 20px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(5,150,105,0.3); transition:all 0.15s;">
         <i data-lucide="copy" class="lucide-sm"></i> Sao chép Link Nạp Thẻ
       </button>
       <button type="button" onclick="openTestFieldBindingUrl()" style="background:#ffffff; color:#0284c7; border:1.5px solid #38bdf8; padding:11px 16px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-        <i data-lucide="external-link" class="lucide-sm"></i> Thử Mở Trang Gán Cây Thực Địa
+        <i data-lucide="external-link" class="lucide-sm"></i> Thử Mở Cổng Trang Trại & Quét NFC
       </button>
     </div>
 
     <div style="margin-top:10px; display:flex; align-items:center; gap:8px; font-size:11.5px; color:#047857;">
       <i data-lucide="info" class="lucide-sm" style="flex-shrink:0;"></i>
-      <span><strong>Cách nạp hàng loạt:</strong> Nạp 1 link trên vào toàn bộ thẻ trắng NTAG213 &amp; Bật tính năng <strong>UID Mirror</strong>. Khi mang thẻ ra vườn quét, chip NTAG213 sẽ tự động điền mã UID thực tế để kỹ sư gán cây và cập nhật GPS!</span>
+      <span><strong>Cách nạp hàng loạt:</strong> Nạp 1 link tĩnh duy nhất ở trên vào toàn bộ thẻ trắng NTAG213 (không cần cấu hình UID Mirror). Khi cán bộ mang thẻ quét điện thoại, cổng trang trại thông minh sẽ tự động đọc mã thẻ thực tế để kỹ sư gán cây và cập nhật GPS!</span>
     </div>
   </div>
 
@@ -1371,7 +1371,7 @@
       <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:10px;">
           <i data-lucide="cpu" class="lucide-sm" style="color:#34d399; font-size:22px;"></i>
-          <h3 style="margin:0; font-size:16px; font-weight:800; color:#ffffff;">Hướng Dẫn Nạp Thẻ Trắng NTAG213 (UID Mirror)</h3>
+          <h3 style="margin:0; font-size:16px; font-weight:800; color:#ffffff;">Hướng Dẫn Nạp Thẻ Trắng NTAG213 (Cổng Trang Trại Tĩnh)</h3>
         </div>
         <button class="modal-close" onclick="closeNtag213GuideModal()" style="color:#ffffff; background:none; border:none; font-size:24px; cursor:pointer;">×</button>
       </div>
@@ -1382,7 +1382,7 @@
             <i data-lucide="zap" class="lucide-sm" style="color:#10b981;"></i> Nạp 1 Link Mẫu Dùng Cho Hàng Nghìn Thẻ
           </div>
           <p style="margin:0; color:#15803d; font-size:12.5px;">
-            Bạn không cần phải nạp link riêng cho từng cây! Nhờ tính năng <strong>UID Mirroring</strong> của chip NTAG213, bạn chỉ cần nạp 1 link duy nhất vào 1.000 thẻ trắng. Khi mang thẻ ra vườn cắm và quét, chip sẽ tự động điền mã UID để kỹ sư gán cây.
+            Bạn không cần phải nạp link riêng cho từng cây hay cấu hình UID Mirror phức tạp! Bạn chỉ cần nạp 1 link tĩnh duy nhất vào toàn bộ thẻ trắng. Khi mang thẻ ra vườn cắm và quét, cổng thông minh Web NFC sẽ tự động đọc mã thẻ thực tế để kỹ sư gán cây.
           </p>
         </div>
 
@@ -1390,9 +1390,9 @@
         <ol style="padding-left:20px; margin:0 0 16px 0; display:flex; flex-direction:column; gap:8px;">
           <li><strong>Bước 1:</strong> Mở app <i>NFC Tools</i> trên điện thoại &rarr; Chọn <strong>Write (Ghi)</strong> &rarr; <strong>Add a record (Thêm bản ghi)</strong> &rarr; Chọn <strong>URL / URI</strong>.</li>
           <li><strong>Bước 2:</strong> Dán đường dẫn mẫu của trang trại: <br>
-            <code id="guide-modal-sample-url" style="background:#0f172a; color:#34d399; padding:6px 10px; border-radius:6px; font-weight:700; font-size:12px; display:inline-block; margin-top:4px;">https://plant-book.onrender.com/1/public/00000000000000</code>
+            <code id="guide-modal-sample-url" style="background:#0f172a; color:#34d399; padding:6px 10px; border-radius:6px; font-weight:700; font-size:12px; display:inline-block; margin-top:4px;">https://plant-book.onrender.com/1/public/</code>
           </li>
-          <li><strong>Bước 3:</strong> Bật tùy chọn <strong>"UID Mirror"</strong> (nằm trong phần Advanced / Mirroring) &rarr; Bấm <strong>Write</strong> và chạm lưng điện thoại vào từng thẻ trắng để nạp hàng loạt.</li>
+          <li><strong>Bước 3:</strong> Bấm <strong>Write</strong> và chạm lưng điện thoại vào từng thẻ trắng để nạp hàng loạt (Rất nhanh và không lo lỗi cấu hình Mirror).</li>
         </ol>
 
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-top:14px; display:flex; gap:10px; align-items:center;">
