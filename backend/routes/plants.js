@@ -3253,7 +3253,12 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
        LEFT JOIN plant_schemas ps ON ps.id = p.schema_id
        LEFT JOIN farms f ON f.id = p.farm_id
        LEFT JOIN users u ON u.id = f.user_id
-       WHERE p.farm_id = $1 AND (UPPER(p.nfc_uid) = UPPER($2) OR UPPER(regexp_replace(p.nfc_uid, '[^A-Za-z0-9]', '', 'g')) = $3) AND (p.deleted_at IS NULL)
+       WHERE p.farm_id = $1 
+         AND (
+           UPPER(COALESCE(p.nfc_uid, '')) = UPPER($2) 
+           OR UPPER(regexp_replace(COALESCE(p.nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $3
+         ) 
+         AND (p.deleted_at IS NULL)
        LIMIT 1`,
       [farmId, cleanUid, cleanRawUid]
     );

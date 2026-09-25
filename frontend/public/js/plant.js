@@ -303,18 +303,45 @@ async function doGateLogin() {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
 
-    // Handle Unassigned NFC Tag On-Site Binding Flow
+    // Handle Pending Binding Farm or Gateway Login Flow
     if (window.pendingBindingFarm) {
       const pFarm = window.pendingBindingFarm;
       const isAuthorized = data.user.role === 'admin' || Number(data.user.farm_id) === Number(pFarm.farmId);
-      if (isAuthorized) {
+      if (!isAuthorized) {
+        errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" không thuộc nông trại này. Vui lòng đăng nhập tài khoản nông trại "${pFarm.farmName || 'này'}" hoặc Admin.`;
+        errBox.style.display = 'flex';
+        return;
+      }
+
+      // If an NFC UID was attached, check if it's already assigned
+      if (pFarm.nfcUid) {
+        try {
+          const checkRes = await fetch(`/api/plants/public-by-farm-uid/${encodeURIComponent(pFarm.farmId)}/${encodeURIComponent(pFarm.nfcUid)}`);
+          const checkData = await checkRes.json();
+          if (checkRes.ok && checkData.assigned && checkData.plant) {
+            // Already assigned -> Direct redirect into plant profile!
+            window.pendingBindingFarm = null;
+            currentPlantData = checkData.plant;
+            history.replaceState({}, '', `/${pFarm.farmId}/public/${encodeURIComponent(checkData.plant.nfc_uid || pFarm.nfcUid)}`);
+            document.getElementById('auth-gate-view').style.display = 'none';
+            showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Đang mở hồ sơ cây #${checkData.plant.tree_code || checkData.plant.id}.`);
+            await renderPlant(checkData.plant, true);
+            return;
+          }
+        } catch (_) {}
+
+        // Unassigned tag -> open field binding module
+        window.pendingBindingFarm = null;
         document.getElementById('auth-gate-view').style.display = 'none';
         showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}! Đang mở giao diện gán thẻ.`);
         initFieldBindingModule(pFarm.farmId, pFarm.farmName, pFarm.pucCode, pFarm.nfcUid, pFarm.inInventory, pFarm.inventoryWarning);
         return;
       } else {
-        errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" không thuộc nông trại này. Vui lòng đăng nhập tài khoản nông trại "${pFarm.farmName || 'này'}" hoặc Admin để gán thẻ.`;
-        errBox.style.display = 'flex';
+        // Logged in from Smart Farm Gateway without NFC tag
+        window.pendingBindingFarm = null;
+        document.getElementById('auth-gate-view').style.display = 'none';
+        showPublicToast(`Chào mừng ${data.user.full_name || data.user.email}!`);
+        await loadFarmPortal(pFarm.farmId);
         return;
       }
     }
