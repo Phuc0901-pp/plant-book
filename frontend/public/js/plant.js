@@ -2442,12 +2442,18 @@ async function submitCareLog(event, type, modalId, formId) {
     media_urls: []
   };
 
+  const targetSlug = currentPlantData?.id || currentPlantData?.nfc_uid || currentPlantData?.public_slug || slug || slugInfo.plantId || slugInfo.nfcUid;
+  if (!targetSlug) {
+    alert('Không xác định được mã cây trồng để lưu nhật ký. Vui lòng tải lại trang.');
+    return;
+  }
+
   const { token } = getStoredAuth();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   try {
-    const res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}/logs`, {
+    const res = await fetch(`/api/plants/public/${encodeURIComponent(targetSlug)}/logs`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(payload)
@@ -2460,14 +2466,28 @@ async function submitCareLog(event, type, modalId, formId) {
         openPublicAuthModal(modalId);
         return;
       }
-      throw new Error(errData.error || 'Lỗi server');
+      throw new Error(errData.error || 'Lỗi server khi lưu nhật ký');
     }
     
     closeModal(modalId);
     showPublicToast(`Đã lưu nhật ký "${type}" thành công!`);
     
-    // Reload plant logs and information
-    await loadPlant();
+    // Refresh current plant logs directly without breaking view
+    try {
+      const fetchKey = currentPlantData?.id || targetSlug;
+      const refRes = await fetch(`/api/plants/public/${encodeURIComponent(fetchKey)}`);
+      if (refRes.ok) {
+        const updatedPlant = await refRes.json();
+        currentPlantData = updatedPlant;
+        const { user } = getStoredAuth();
+        const hasAccess = userHasPlantAccess(user, updatedPlant);
+        await renderPlant(updatedPlant, hasAccess);
+      } else {
+        await loadPlant();
+      }
+    } catch (_) {
+      await loadPlant();
+    }
   } catch (err) {
     alert('Không thể lưu nhật ký: ' + err.message);
   } finally {
@@ -2674,11 +2694,17 @@ async function submitDiseaseLog(event) {
     diseaseImageFiles.forEach(f => formData.append('files', f));
     diseaseVideoFiles.forEach(f => formData.append('files', f));
 
+    const targetSlug = currentPlantData?.id || currentPlantData?.nfc_uid || currentPlantData?.public_slug || slug || slugInfo.plantId || slugInfo.nfcUid;
+    if (!targetSlug) {
+      alert('Không xác định được mã cây trồng để ghi nhận bệnh cây.');
+      return;
+    }
+
     const { token } = getStoredAuth();
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}/logs`, {
+    const res = await fetch(`/api/plants/public/${encodeURIComponent(targetSlug)}/logs`, {
       method: 'POST',
       headers: headers,
       // Do NOT set Content-Type — browser sets multipart/form-data with boundary automatically
@@ -2692,7 +2718,7 @@ async function submitDiseaseLog(event) {
         openPublicAuthModal('modal-disease');
         return;
       }
-      throw new Error(errData.error || 'Lỗi server');
+      throw new Error(errData.error || 'Lỗi server khi lưu nhật ký');
     }
 
     // Reset form and clear drafts
@@ -2706,7 +2732,23 @@ async function submitDiseaseLog(event) {
 
     closeModal('modal-disease');
     showPublicToast('Đã ghi nhận nhật ký bệnh cây thành công!');
-    await loadPlant();
+
+    // Refresh current plant logs directly without breaking view
+    try {
+      const fetchKey = currentPlantData?.id || targetSlug;
+      const refRes = await fetch(`/api/plants/public/${encodeURIComponent(fetchKey)}`);
+      if (refRes.ok) {
+        const updatedPlant = await refRes.json();
+        currentPlantData = updatedPlant;
+        const { user } = getStoredAuth();
+        const hasAccess = userHasPlantAccess(user, updatedPlant);
+        await renderPlant(updatedPlant, hasAccess);
+      } else {
+        await loadPlant();
+      }
+    } catch (_) {
+      await loadPlant();
+    }
   } catch (err) {
     alert('Không thể lưu nhật ký bệnh cây: ' + err.message);
   } finally {
@@ -2786,8 +2828,22 @@ async function toggleHealthStatus() {
     }
     
     showPublicToast(`Đã chuyển trạng thái sức khỏe thành: ${nextStatus}`);
-    // Reload plant profile to reflect status changes
-    await loadPlant();
+    // Reload plant profile directly to reflect status changes
+    try {
+      const fetchKey = currentPlantData?.id || targetId;
+      const refRes = await fetch(`/api/plants/public/${encodeURIComponent(fetchKey)}`);
+      if (refRes.ok) {
+        const updatedPlant = await refRes.json();
+        currentPlantData = updatedPlant;
+        const { user } = getStoredAuth();
+        const hasAccess = userHasPlantAccess(user, updatedPlant);
+        await renderPlant(updatedPlant, hasAccess);
+      } else {
+        await loadPlant();
+      }
+    } catch (_) {
+      await loadPlant();
+    }
   } catch (err) {
     alert('Không thể cập nhật trạng thái sức khỏe: ' + err.message);
   }

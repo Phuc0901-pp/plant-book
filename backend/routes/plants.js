@@ -3643,15 +3643,23 @@ router.all('/public/:slug/gps', async (req, res) => {
 
 // Submit care log (Requires login from the same farm or Admin)
 router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) => {
-  try {
     const slugParam = req.params.slug.trim();
+    const cleanRawUid = slugParam.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     // Find plant ID by slug, ID, or NFC UID
     const plantResult = await pool.query(
-      'SELECT id, farm_id FROM plants WHERE (public_slug=$1 OR id::text=$1 OR UPPER(nfc_uid)=UPPER($1)) AND is_public=true',
-      [slugParam]
+      `SELECT id, farm_id FROM plants 
+       WHERE (
+         public_slug = $1 
+         OR id::text = $1 
+         OR UPPER(nfc_uid) = UPPER($1)
+         OR UPPER(regexp_replace(COALESCE(nfc_uid, ''), '[^A-Za-z0-9]', '', 'g')) = $2
+       ) 
+       AND (deleted_at IS NULL)
+       LIMIT 1`,
+      [slugParam, cleanRawUid]
     );
     if (plantResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Trang cây không tồn tại hoặc chưa công khai.' });
+      return res.status(404).json({ error: 'Trang cây không tồn tại hoặc đã bị xóa.' });
     }
     const plantId = plantResult.rows[0].id;
 
