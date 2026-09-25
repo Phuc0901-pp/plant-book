@@ -536,8 +536,31 @@ export async function refreshDeviceWeather() {
 }
 window.refreshDeviceWeather = refreshDeviceWeather;
 
+let _userWeatherAutoInterval = null;
+let _lastUserWeatherFetch = 0;
+
+export function setupUserWeatherAutoRefresh() {
+  if (_userWeatherAutoInterval) clearInterval(_userWeatherAutoInterval);
+  // Auto refresh every 10 minutes in background
+  _userWeatherAutoInterval = setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      refreshDeviceWeather();
+    }
+  }, 10 * 60 * 1000);
+
+  if (!window._userWeatherVisBound) {
+    window._userWeatherVisBound = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && (Date.now() - _lastUserWeatherFetch > 10 * 60 * 1000)) {
+        refreshDeviceWeather();
+      }
+    });
+  }
+}
+
 export function initWeatherClockWidget() {
   startLiveClock();
+  setupUserWeatherAutoRefresh();
   refreshDeviceWeather();
 }
 window.initWeatherClockWidget = initWeatherClockWidget;

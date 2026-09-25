@@ -78,9 +78,35 @@ const soilDepthData = {
   }
 };
 
+let _weatherAutoRefreshTimer = null;
+let _lastWeatherFetchTimestamp = 0;
+
+function setupWeatherAutoRefresh() {
+  if (_weatherAutoRefreshTimer) clearInterval(_weatherAutoRefreshTimer);
+  // Auto refresh every 10 minutes in background
+  _weatherAutoRefreshTimer = setInterval(() => {
+    if (document.visibilityState === 'visible' && iotCurrentTab === 'weather') {
+      fetchDeviceWeatherTelemetry();
+    }
+  }, 10 * 60 * 1000);
+
+  // Tab Wakeup / Focus listener: refresh if more than 10 minutes have elapsed
+  if (!window._weatherVisibilityListenerBound) {
+    window._weatherVisibilityListenerBound = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && (Date.now() - _lastWeatherFetchTimestamp > 10 * 60 * 1000)) {
+        if (typeof fetchDeviceWeatherTelemetry === 'function') {
+          fetchDeviceWeatherTelemetry();
+        }
+      }
+    });
+  }
+}
+
 // Initialize IoT Devices Page
 async function initDevicesPage() {
   renderSoilMetrics(currentSoilDepth);
+  setupWeatherAutoRefresh();
   await Promise.all([
     fetchDeviceWeatherTelemetry(),
     loadDevices()
@@ -89,6 +115,7 @@ async function initDevicesPage() {
 
 // Fetch Real-time & 7-day Open-Meteo Weather Data
 async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
+  _lastWeatherFetchTimestamp = Date.now();
   const farmVal = targetFarmId || document.getElementById('db-iot-filter-farm')?.value || 'all';
   
   let lat = null;
