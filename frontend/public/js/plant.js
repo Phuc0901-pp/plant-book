@@ -1187,11 +1187,27 @@ async function submitFieldBinding(allowReplace = false) {
     if (repModal) repModal.style.display = 'none';
 
     // Update URL in browser history to reflect bound public route
+    const boundUid = (data.plant && data.plant.nfc_uid) || nfcUid;
+    const cleanRawUid = boundUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     try {
-      const boundUid = (data.plant && data.plant.nfc_uid) || nfcUid;
-      history.replaceState({}, '', `/${farmId}/public/${encodeURIComponent(boundUid)}`);
+      history.replaceState({}, '', `/${farmId}/public/${cleanRawUid}`);
     } catch (histErr) {
       console.warn('Could not update browser history state:', histErr);
+    }
+
+    // Auto-burn direct plant URL to the physical NFC chip if Web NFC is active
+    if ('NDEFReader' in window) {
+      try {
+        const directUrl = `${window.location.origin}/${farmId}/public/${cleanRawUid}`;
+        const ndef = new NDEFReader();
+        await ndef.write({
+          records: [{ recordType: "url", data: directUrl }]
+        });
+        console.log('Successfully burned direct plant URL to NFC chip:', directUrl);
+        showPublicToast(`✅ Đã nạp thành công link trực tiếp vào thẻ NFC! Lần sau chạm thẻ sẽ mở thẳng cây #${data.plant.tree_code || data.plant.id}.`);
+      } catch (nfcWriteErr) {
+        console.warn('NDEF write notice (tag might have moved away):', nfcWriteErr);
+      }
     }
 
     // Hide binding view and render plant
@@ -1208,6 +1224,39 @@ async function submitFieldBinding(allowReplace = false) {
       btn.disabled = false;
     }
     if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+// ─── Manual Web NFC Burn Tool: Write direct URL to NFC chip ─────────
+async function writePlantUrlToNfcChip(plant) {
+  if (!plant) plant = currentPlantData;
+  if (!plant) return;
+
+  if (!('NDEFReader' in window)) {
+    alert('Trình duyệt hoặc thiết bị này không hỗ trợ Web NFC. Vui lòng mở trang web trên Google Chrome điện thoại Android có NFC.');
+    return;
+  }
+
+  const farmId = plant.farm_id || slugInfo.farmId;
+  const nfcUid = plant.nfc_uid || slugInfo.nfcUid || slugInfo.slug;
+  if (!farmId || !nfcUid) {
+    alert('Cây trồng chưa được liên kết với mã thẻ NFC.');
+    return;
+  }
+
+  const cleanRawUid = nfcUid.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const directUrl = `${window.location.origin}/${farmId}/public/${cleanRawUid}`;
+
+  try {
+    showPublicToast('📡 Hãy chạm và giữ mặt sau điện thoại vào thẻ NFC để nạp link...');
+    const ndef = new NDEFReader();
+    await ndef.write({
+      records: [{ recordType: 'url', data: directUrl }]
+    });
+    showPublicToast(`✅ Đã nạp thành công link trực tiếp vào chip NFC! Lần sau chạm thẻ từ màn hình khóa sẽ mở thẳng Cây #${plant.tree_code || plant.id}.`);
+  } catch (err) {
+    console.warn('Write NFC error:', err);
+    alert('Không thể nạp link vào thẻ NFC: ' + err.message + '\n(Hãy đảm bảo bạn giữ thẻ sát mặt sau điện thoại khi bấm)');
   }
 }
 
@@ -2043,6 +2092,11 @@ async function renderPlant(plant, isEditable) {
               ? `<span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i data-lucide="activity" class="lucide-sm"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`
               : `<span class="badge ${healthClass}" style="cursor:default;" title="Chế độ chỉ xem — Không thể can thiệp"><i data-lucide="activity" class="lucide-sm"></i> Sức khỏe: ${esc(plant.health_status || 'Bình thường')}</span>`}
             ${plant.nfc_uid ? `<span class="badge badge-info"><i data-lucide="radio" class="lucide-sm"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
+            ${isEditable && plant.nfc_uid ? `
+              <span class="badge" onclick="writePlantUrlToNfcChip(currentPlantData)" style="background:#ecfdf5; border:1px solid #10b981; color:#047857; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="Chạm máy vào thẻ NFC để nạp link trực tiếp vào chip">
+                <i data-lucide="smartphone-nfc" class="lucide-sm"></i> Nạp link thẻ NFC (1 chạm)
+              </span>
+            ` : ''}
           </div>
           
           <div class="info-grid">
