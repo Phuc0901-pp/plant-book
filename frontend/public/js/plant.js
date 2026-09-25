@@ -1508,6 +1508,7 @@ function renderGatewayTreesGrid(plants) {
   container.innerHTML = plants.map(p => {
     const isAssigned = p.nfc_uid && p.nfc_uid.trim().length > 0;
     const varietyStr = p.plant_variety ? ` — ${esc(p.plant_variety)}` : '';
+    const hasGps = p.latitude != null && p.longitude != null && !isNaN(Number(p.latitude)) && !isNaN(Number(p.longitude)) && (Number(p.latitude) !== 0 || Number(p.longitude) !== 0);
     const statusBadge = isAssigned
       ? `<span style="background:#ecfdf5; color:#047857; font-size:11px; font-weight:800; padding:2px 8px; border-radius:100px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="check" class="lucide-sm"></i> Đã gắn thẻ</span>`
       : `<span style="background:#f1f5f9; color:#64748b; font-size:11px; font-weight:700; padding:2px 8px; border-radius:100px; border:1px solid #cbd5e1;">⚪ Chưa gắn thẻ</span>`;
