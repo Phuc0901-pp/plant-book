@@ -739,6 +739,7 @@ async function initDB() {
         UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE log_type ILIKE '%thu%ho%ch%' AND log_type != 'Thu hoạch';
         UPDATE plant_logs SET log_type = 'Bệnh cây' WHERE (log_type ILIKE '%b%nh%c%y%' OR log_type ILIKE '%b%nh%') AND log_type != 'Bệnh cây';
 
+        UPDATE supply_usages SET note = 'Tự động từ nhật ký [Bón phân] tại vườn' WHERE note LIKE '%T%đ%ng t%nh%t k%[B%' OR note LIKE '%[B%n%ph%n]%';
         UPDATE supply_usages SET note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ' WHERE note LIKE '%B%n%ph%n%h%u%';
       `);
       console.log('✅ Đã quét và chuẩn hóa toàn bộ font chữ tiếng Việt UTF-8 trong CSDL.');
