@@ -929,12 +929,66 @@ async function loadAdminNfcPageData(farmId) {
     if (unassignedEl) unassignedEl.textContent = unassigned;
     if (badgeEl) badgeEl.textContent = `${total} thẻ`;
 
+    // Update NTAG213 Master Template URL for this farm
+    const origin = (window.location.origin && !window.location.origin.includes('localhost')) ? window.location.origin : 'https://plant-book.onrender.com';
+    const templateUrl = `${origin}/${farmId}/public/00000000000000`;
+    const templateInput = document.getElementById('db-nfc-template-url-input');
+    if (templateInput) templateInput.value = templateUrl;
+    const guideSampleUrl = document.getElementById('guide-modal-sample-url');
+    if (guideSampleUrl) guideSampleUrl.textContent = templateUrl;
+
     renderAdminNfcPageTable(_nfcInventoryCache);
   } catch (err) {
     toast('Lỗi tải danh sách kho thẻ: ' + err.message, 'error');
   }
 }
 window.loadAdminNfcPageData = loadAdminNfcPageData;
+
+function copyNfcTemplateUrl() {
+  const templateInput = document.getElementById('db-nfc-template-url-input');
+  if (templateInput && templateInput.value) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(templateInput.value).then(() => {
+        toast('Đã sao chép link nạp thẻ mẫu NTAG213 của trang trại!');
+      }).catch(() => {
+        templateInput.select();
+        document.execCommand('copy');
+        toast('Đã sao chép link nạp thẻ mẫu NTAG213!');
+      });
+    } else {
+      templateInput.select();
+      document.execCommand('copy');
+      toast('Đã sao chép link nạp thẻ mẫu NTAG213!');
+    }
+  }
+}
+window.copyNfcTemplateUrl = copyNfcTemplateUrl;
+
+function openTestFieldBindingUrl() {
+  const farmId = _currentInvFarmId;
+  if (!farmId) {
+    toast('Vui lòng chọn trang trại trước.', 'warning');
+    return;
+  }
+  // Generate a random 7-byte hex string simulating an unassigned NTAG213 chip
+  const testHex = '04' + Array.from({length: 12}, () => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
+  const url = `/${farmId}/public/${testHex}`;
+  window.open(url, '_blank');
+}
+window.openTestFieldBindingUrl = openTestFieldBindingUrl;
+
+function openNtag213GuideModal() {
+  const modal = document.getElementById('ntag213-guide-modal');
+  if (modal) modal.style.display = 'flex';
+  if (window.lucide) window.lucide.createIcons();
+}
+window.openNtag213GuideModal = openNtag213GuideModal;
+
+function closeNtag213GuideModal() {
+  const modal = document.getElementById('ntag213-guide-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeNtag213GuideModal = closeNtag213GuideModal;
 
 function renderAdminNfcPageTable(tags) {
   const tbody = document.getElementById('db-nfc-inventory-table-body');
