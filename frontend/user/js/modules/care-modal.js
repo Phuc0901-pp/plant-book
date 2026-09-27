@@ -230,6 +230,9 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     if (typeof calculateWaterCostPreview === 'function') {
       calculateWaterCostPreview();
     }
+    if (typeof calculateCareSupplyCostPreview === 'function') {
+      calculateCareSupplyCostPreview();
+    }
   };
 
   const totalPlantsCount = _plants().length;
@@ -341,6 +344,8 @@ export async function onCareLogTypeChange() {
 
   if (logType === 'Tưới nước') {
     calculateWaterCostPreview();
+  } else if (logType === 'Bón phân' || logType === 'Phun thuốc') {
+    calculateCareSupplyCostPreview();
   }
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
@@ -365,6 +370,10 @@ export function onCareSupplySelected(selectEl, hiddenInputId) {
     } else {
       imgPreviewWrap.style.display = 'none';
     }
+  }
+
+  if (typeof calculateCareSupplyCostPreview === 'function') {
+    calculateCareSupplyCostPreview();
   }
 }
 window.onCareSupplySelected = onCareSupplySelected;
@@ -517,6 +526,64 @@ export function calculateWaterCostPreview() {
 }
 window.calculateWaterCostPreview = calculateWaterCostPreview;
 
+export function calculateCareSupplyCostPreview() {
+  const logType = document.getElementById('c-log-type')?.value;
+  if (logType === 'Tưới nước') {
+    calculateWaterCostPreview();
+    return;
+  }
+
+  const amount = parseFloat(document.getElementById('c-detail-amount')?.value) || 0;
+  const unit = (document.getElementById('c-detail-unit')?.value || 'gam').toLowerCase().trim();
+  const supplyId = document.getElementById('c-detail-supply-id')?.value;
+  const volEl = document.getElementById('supply-calc-vol');
+  const costEl = document.getElementById('supply-calc-cost');
+
+  if (!volEl || !costEl) return;
+
+  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
+  let treeCount = 1;
+  if (isMulti) {
+    treeCount = document.querySelectorAll('.c-plant-checkbox:checked').length || 1;
+  }
+
+  const supplies = window._declaredSuppliesCache || [];
+  const supply = supplies.find(s => s.id == supplyId);
+
+  if (!supply || !supplyId) {
+    volEl.textContent = `${amount} ${unit}`;
+    costEl.textContent = '0 VNĐ (Chưa chọn vật tư)';
+    return;
+  }
+
+  const supUnit = (supply.unit || 'kg').toLowerCase().trim();
+  const unitPrice = parseFloat(supply.unit_price) || 0;
+
+  let singleBaseQty = amount;
+  if ((supUnit === 'kg' || supUnit === 'kilogram') && (unit === 'gam' || unit === 'g' || unit === 'gram' || unit === 'gr')) {
+    singleBaseQty = amount / 1000;
+  } else if ((supUnit === 'lít' || supUnit === 'lit' || supUnit === 'l') && (unit === 'ml' || unit === 'cc')) {
+    singleBaseQty = amount / 1000;
+  } else if ((supUnit === 'm3' || supUnit === 'm³') && (unit === 'lít' || unit === 'lit' || unit === 'l')) {
+    singleBaseQty = amount / 1000;
+  }
+
+  const totalBaseQty = singleBaseQty * treeCount;
+  const singleCost = singleBaseQty * unitPrice;
+  const totalCost = singleCost * treeCount;
+
+  const fmtVND = (v) => new Intl.NumberFormat('vi-VN').format(Math.round(v)) + ' VNĐ';
+
+  if (treeCount > 1) {
+    volEl.textContent = `${amount} ${unit}/cây x ${treeCount} cây = ${(amount * treeCount).toLocaleString('vi-VN')} ${unit} (${totalBaseQty < 0.01 ? totalBaseQty.toFixed(4) : totalBaseQty.toFixed(3)} ${supply.unit})`;
+    costEl.textContent = `${fmtVND(totalCost)} (${fmtVND(singleCost)}/cây)`;
+  } else {
+    volEl.textContent = `${amount} ${unit} = ${singleBaseQty < 0.01 ? singleBaseQty.toFixed(4) : singleBaseQty.toFixed(3)} ${supply.unit}`;
+    costEl.textContent = fmtVND(totalCost);
+  }
+}
+window.calculateCareSupplyCostPreview = calculateCareSupplyCostPreview;
+
 /**
  * Trả về HTML form fields theo loại hoạt động.
  * @private
@@ -572,7 +639,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
         return `
           <div class="field">
             <label><i data-lucide="link" class="lucide-sm" style="color:var(--green)"></i> Chọn loại Phân bón (Từ Kho Vật tư) *</label>
-            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer')">
+            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-fertilizer'); calculateCareSupplyCostPreview();">
               ${declaredFertilizers.map(s => {
                 const isOut = (s.category !== 'Tiền nước' && s.category !== 'Nhân công') && (parseFloat(s.stock_quantity) || 0) <= 0;
                 return `
@@ -592,9 +659,18 @@ function _buildDetailFields(logType, configs, supplies = []) {
             </small>
           </div>
           <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
-            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="100"></div>
+            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="100" oninput="calculateCareSupplyCostPreview()" onchange="calculateCareSupplyCostPreview()"></div>
             <div class="field" style="flex:1;"><label>Đơn vị</label>
-              <select id="c-detail-unit"><option value="gam">gam</option><option value="kg">kg</option><option value="ml">ml</option><option value="lít">lít</option></select>
+              <select id="c-detail-unit" onchange="calculateCareSupplyCostPreview()"><option value="gam">gam</option><option value="kg">kg</option><option value="ml">ml</option><option value="lít">lít</option></select>
+            </div>
+          </div>
+          <div id="supply-conversion-preview-box" class="calc-breakdown-card" style="margin-top:10px; padding:12px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border:1px solid #a7f3d0; border-radius:12px;">
+            <div style="font-size:11px; font-weight:700; color:#065f46; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="calculator" class="lucide-sm"></i> TỰ ĐỘNG QUY ĐỔI ĐƠN VỊ &amp; HẠCH TOÁN CHI PHÍ KHO
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+              <span style="font-size:13px; font-weight:600; color:#064e3b;" id="supply-calc-vol">100 gam = 0.1 kg</span>
+              <span style="font-size:15px; font-weight:700; color:var(--green-dark);" id="supply-calc-cost">3.060 VNĐ</span>
             </div>
           </div>`;
       } else {
@@ -628,7 +704,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
         return `
           <div class="field">
             <label><i data-lucide="link" class="lucide-sm" style="color:var(--green)"></i> Chọn Thuốc BVTV (Từ Kho Vật tư) *</label>
-            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide'); updatePesticideNotice(this);">
+            <select id="c-detail-supply-id" onchange="onCareSupplySelected(this, 'c-detail-pesticide'); updatePesticideNotice(this); calculateCareSupplyCostPreview();">
               ${declaredPesticides.map(s => {
                 const isOut = (s.category !== 'Tiền nước' && s.category !== 'Nhân công') && (parseFloat(s.stock_quantity) || 0) <= 0;
                 return `
@@ -659,9 +735,18 @@ function _buildDetailFields(logType, configs, supplies = []) {
             </small>
           </div>
           <div class="field" style="display:flex;gap:10px;margin-bottom:0;">
-            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="50"></div>
+            <div class="field" style="flex:2;"><label>Liều lượng *</label><input type="number" step="any" id="c-detail-amount" value="50" oninput="calculateCareSupplyCostPreview()" onchange="calculateCareSupplyCostPreview()"></div>
             <div class="field" style="flex:1;"><label>Đơn vị</label>
-              <select id="c-detail-unit"><option value="ml">ml</option><option value="gam">gam</option><option value="lít">lít</option></select>
+              <select id="c-detail-unit" onchange="calculateCareSupplyCostPreview()"><option value="ml">ml</option><option value="gam">gam</option><option value="lít">lít</option><option value="kg">kg</option></select>
+            </div>
+          </div>
+          <div id="supply-conversion-preview-box" class="calc-breakdown-card" style="margin-top:10px; padding:12px 16px; background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border:1px solid #a7f3d0; border-radius:12px;">
+            <div style="font-size:11px; font-weight:700; color:#065f46; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="calculator" class="lucide-sm"></i> TỰ ĐỘNG QUY ĐỔI ĐƠN VỊ &amp; HẠCH TOÁN CHI PHÍ KHO
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+              <span style="font-size:13px; font-weight:600; color:#064e3b;" id="supply-calc-vol">50 ml = 0.05 lít</span>
+              <span style="font-size:15px; font-weight:700; color:var(--green-dark);" id="supply-calc-cost">0 VNĐ</span>
             </div>
           </div>`;
       } else {
@@ -958,12 +1043,24 @@ export async function saveCareLog() {
     if (logType === 'Tưới nước') {
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value);
       if (isNaN(amount) || amount <= 0) throw new Error('Vui lòng nhập lượng nước hợp lệ!');
-      body.details = { method: document.getElementById('c-detail-method')?.value, amount, unit: 'lít' };
+      const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      body.details = { 
+        method: document.getElementById('c-detail-method')?.value, 
+        amount, 
+        unit: 'lít',
+        supply_id: supplyId ? parseInt(supplyId) : null
+      };
 
     } else if (logType === 'Bón phân') {
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value);
       if (isNaN(amount) || amount <= 0) throw new Error('Vui lòng nhập liều lượng hợp lệ!');
-      body.details = { fertilizer_name: document.getElementById('c-detail-fertilizer')?.value, amount, unit: document.getElementById('c-detail-unit')?.value };
+      const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      body.details = { 
+        fertilizer_name: document.getElementById('c-detail-fertilizer')?.value, 
+        amount, 
+        unit: document.getElementById('c-detail-unit')?.value || 'gam',
+        supply_id: supplyId ? parseInt(supplyId) : null
+      };
 
     } else if (logType === 'Phun thuốc') {
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value);
@@ -972,7 +1069,7 @@ export async function saveCareLog() {
       body.details = { 
         pesticide_name: document.getElementById('c-detail-pesticide')?.value, 
         amount, 
-        unit: document.getElementById('c-detail-unit')?.value,
+        unit: document.getElementById('c-detail-unit')?.value || 'ml',
         supply_id: supplyId ? parseInt(supplyId) : null
       };
 
@@ -1086,35 +1183,17 @@ export async function saveCareLog() {
 
       let lastSavedResult = null;
       for (const plant of selectedPlants) {
-        // Gửi POST tạo nhật ký cho cây này
+        // Gửi POST tạo nhật ký cho cây này (Backend tự động chuẩn hóa liều lượng, hạch toán supply_usages & trừ kho)
         lastSavedResult = await api(`/plants/${plant.id}/logs`, { method: 'POST', body: JSON.stringify(body) });
-
-        // Tự động hạch toán vật tư cho cây này
-        if (supplyId) {
-          try {
-            await api('/supplies/usages', {
-              method: 'POST',
-              body: JSON.stringify({
-                supply_id: supplyId,
-                usage_date: logDate,
-                quantity: usageQty,
-                plant_id: plant.id,
-                note: `Tự động hạch toán từ Nhật ký Chăm sóc: ${logType} (${amount} Lít = ${usageQty} m³ cho Cây ${plant.treeCode})`
-              })
-            });
-          } catch (suppErr) {
-            console.error('Auto-recording supply usage failed for plant ' + plant.id, suppErr);
-          }
-        }
       }
 
       if (logType === 'Thu hoạch' && lastSavedResult && lastSavedResult.batch_code) {
         toast(`🌾 Thu hoạch thành công! Đã cấp Mã Lô VietGAP: ${lastSavedResult.batch_code}`, 'success');
       } else if (supplyId) {
         if (logType === 'Tưới nước') {
-          toast(`Đã quy đổi & tự động hạch toán tiền nước cho các cây được chọn!`, 'success');
+          toast(`💧 Đã ghi nhật ký, quy đổi m³ & tự động hạch toán tiền nước!`, 'success');
         } else {
-          toast('Đã ghi nhật ký & tự động hạch toán chi phí cho các cây được chọn!', 'success');
+          toast('🧪 Đã ghi nhật ký & tự động trừ kho, tính chi phí vật tư chính xác!', 'success');
         }
       } else {
         toast('Ghi nhật ký chăm sóc thành công!');

@@ -7,10 +7,104 @@ const { logAuditAction } = require('./history');
 
 // ─── 1. SUPPLIES CRUD ─────────────────────────────────────────────
 
+// Helper function chuẩn hóa đơn vị tiêu hao vật tư về đơn vị cơ sở
+function convertSupplyQtyToBaseUnit(rawAmount, rawUnit, supplyUnit) {
+  const amt = parseFloat(rawAmount) || 0;
+  if (amt <= 0) return 0;
+  const rUnit = (rawUnit || '').toLowerCase().trim();
+  const sUnit = (supplyUnit || 'kg').toLowerCase().trim();
+
+  if (sUnit === 'kg' || sUnit === 'kilogram' || sUnit === 'ký' || sUnit === 'ky') {
+    if (rUnit === 'gam' || rUnit === 'g' || rUnit === 'gram' || rUnit === 'gr') return amt / 1000;
+    if (rUnit === 'mg' || rUnit === 'miligam') return amt / 1000000;
+    if (rUnit === 'tạ' || rUnit === 'ta') return amt * 100;
+    if (rUnit === 'tấn' || rUnit === 'tan') return amt * 1000;
+    return amt;
+  }
+  if (sUnit === 'lít' || sUnit === 'lit' || sUnit === 'l') {
+    if (rUnit === 'ml' || rUnit === 'cc' || rUnit === 'mililit') return amt / 1000;
+    if (rUnit === 'm3' || rUnit === 'm³' || rUnit === 'khối') return amt * 1000;
+    return amt;
+  }
+  if (sUnit === 'm3' || sUnit === 'm³' || sUnit === 'khối') {
+    if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l') return amt / 1000;
+    if (rUnit === 'ml' || rUnit === 'cc') return amt / 1000000;
+    return amt;
+  }
+  if (sUnit === 'gam' || sUnit === 'g' || sUnit === 'gram') {
+    if (rUnit === 'kg' || rUnit === 'kilogram' || rUnit === 'ký') return amt * 1000;
+    return amt;
+  }
+  if (sUnit === 'ml') {
+    if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l') return amt * 1000;
+    return amt;
+  }
+  return amt;
+}
+
+// Function tự động kiểm tra và hiệu chỉnh dữ liệu tồn kho & tiêu hao bị lỗi đơn vị trước đây
+async function autoReconcileSuppliesData(userId) {
+  try {
+    // 1. Tìm các bản ghi supply_usages có liều lượng bất thường do chưa quy đổi gram -> kg
+    const corruptedUsages = await pool.query(`
+      SELECT su.id, su.supply_id, su.quantity, su.unit_price, su.note, s.unit, s.package_qty, s.package_price
+      FROM supply_usages su
+      JOIN supplies s ON su.supply_id = s.id
+      WHERE (su.user_id = $1 OR 1=1)
+        AND s.unit IN ('kg', 'lít', 'm3', 'm³')
+        AND su.quantity >= 10
+        AND (
+          su.note ILIKE '%gam%' OR su.note ILIKE '% g %' OR su.note ILIKE '% g)' OR su.note ILIKE '%ml%' OR su.note ILIKE '%gram%'
+          OR su.total_cost > (s.package_price * 1.5)
+        )
+    `, [userId || 0]);
+
+    for (const row of corruptedUsages.rows) {
+      const realQty = row.quantity / 1000;
+      const realCost = realQty * (parseFloat(row.unit_price) || 0);
+      await pool.query(
+        `UPDATE supply_usages 
+         SET quantity = $1, total_cost = $2, note = $3
+         WHERE id = $4`,
+        [realQty, realCost, (row.note || '') + ' [Đã chuẩn hóa đơn vị kg]', row.id]
+      );
+    }
+
+    // 2. Tự động phục hồi tồn kho cho các vật tư có stock_quantity = 0 hoặc bị âm bất thường
+    const suppliesToFix = await pool.query(`
+      SELECT s.id, s.package_qty, s.stock_quantity, s.category,
+             COALESCE(SUM(su.quantity), 0) as total_used
+      FROM supplies s
+      LEFT JOIN supply_usages su ON su.supply_id = s.id
+      WHERE s.category NOT IN ('Tiền nước', 'Nhân công')
+      GROUP BY s.id
+    `);
+
+    for (const sup of suppliesToFix.rows) {
+      const pkgQty = parseFloat(sup.package_qty) || 50;
+      const totalUsed = parseFloat(sup.total_used) || 0;
+      const currentStock = parseFloat(sup.stock_quantity) || 0;
+      
+      if (currentStock === 0 && totalUsed < pkgQty) {
+        const expectedStock = Math.max(0, pkgQty - totalUsed);
+        await pool.query(
+          `UPDATE supplies SET stock_quantity = $1, updated_at = NOW() WHERE id = $2`,
+          [expectedStock, sup.id]
+        );
+      }
+    }
+  } catch (reconcileErr) {
+    console.warn('Cảnh báo tự động cân đối dữ liệu kho vật tư:', reconcileErr.message);
+  }
+}
+
 // GET /api/supplies — Lấy danh sách vật tư khai báo (kèm hỗ trợ phân quyền dùng chung vật tư trang trại)
 router.get('/', auth, async (req, res) => {
   try {
     const { category, search, user_id, farm_id } = req.query;
+
+    // Tự động kiểm tra và cân đối số liệu kho nếu có sai sót đơn vị
+    await autoReconcileSuppliesData(req.user.id);
     
     let query = `
       SELECT s.*, 
@@ -439,15 +533,20 @@ router.post('/:id/restock', auth, async (req, res) => {
     let updatedUnitPrice = supply.unit_price;
     let updatedUnitPriceSmall = supply.unit_price_small;
 
+    const pkgQty = parseFloat(supply.package_qty) || 1;
+    let addedBaseQty = qty * pkgQty;
+    if (req.body.is_base_unit) {
+      addedBaseQty = qty;
+    }
+
     if (new_package_price && parseFloat(new_package_price) > 0) {
       updatedPkgPrice = parseFloat(new_package_price);
-      const pkgQty = parseFloat(supply.package_qty) || 1;
       updatedUnitPrice = updatedPkgPrice / pkgQty;
       updatedUnitPriceSmall = (pkgQty > 0) ? updatedUnitPrice / pkgQty : 0;
     }
 
-    const newStock = (parseFloat(supply.stock_quantity) || 0) + qty;
-    const restockNote = note ? `${supply.note ? supply.note + ' | ' : ''}Nhập kho +${qty} (${new Date().toLocaleDateString('vi-VN')}): ${note}${batch_no ? ' [Lô: ' + batch_no + ']' : ''}` : supply.note;
+    const newStock = (parseFloat(supply.stock_quantity) || 0) + addedBaseQty;
+    const restockNote = note ? `${supply.note ? supply.note + ' | ' : ''}Nhập kho +${qty} ${supply.package_unit || 'gói'} (+${addedBaseQty} ${supply.unit}) (${new Date().toLocaleDateString('vi-VN')}): ${note}${batch_no ? ' [Lô: ' + batch_no + ']' : ''}` : supply.note;
 
     const updatedRes = await pool.query(
       `UPDATE supplies 
@@ -466,7 +565,7 @@ router.post('/:id/restock', auth, async (req, res) => {
       'RESTOCK',
       'Vật tư',
       id,
-      `Nhập thêm +${qty} ${supply.package_unit || supply.unit} cho vật tư "${supply.name}" (Tồn mới: ${newStock})`,
+      `Nhập thêm +${qty} ${supply.package_unit || supply.unit} (+${addedBaseQty} ${supply.unit}) cho vật tư "${supply.name}" (Tồn mới: ${newStock})`,
       supply,
       updatedSupply
     );
@@ -479,7 +578,7 @@ router.post('/:id/restock', auth, async (req, res) => {
 
     res.json({
       success: true,
-      message: `Đã nhập thêm +${qty} ${supply.package_unit || supply.unit} vào kho thành công!`,
+      message: `Đã nhập thêm +${qty} ${supply.package_unit || supply.unit} (+${addedBaseQty} ${supply.unit}) vào kho thành công!`,
       supply: updatedSupply
     });
   } catch (err) {
@@ -535,7 +634,7 @@ router.get('/usages', auth, async (req, res) => {
 // POST /api/supplies/usages — Ghi nhận tiêu hao vật tư
 router.post('/usages', auth, async (req, res) => {
   try {
-    const { supply_id, farm_id, plant_id, usage_date, quantity, note } = req.body;
+    const { supply_id, farm_id, plant_id, usage_date, quantity, unit, note } = req.body;
     if (!supply_id || !quantity) {
       return res.status(400).json({ error: 'Vui lòng chọn vật tư và nhập số lượng tiêu hao.' });
     }
@@ -546,11 +645,12 @@ router.post('/usages', auth, async (req, res) => {
     }
     const supply = supplyRes.rows[0];
 
-    const qty = parseFloat(quantity);
-    if (isNaN(qty) || qty <= 0) {
+    const rawQty = parseFloat(quantity);
+    if (isNaN(rawQty) || rawQty <= 0) {
       return res.status(400).json({ error: 'Số lượng tiêu hao phải lớn hơn 0.' });
     }
 
+    const qty = convertSupplyQtyToBaseUnit(rawQty, unit, supply.unit);
     const unit_price = parseFloat(supply.unit_price) || 0;
     const total_cost = qty * unit_price;
 
@@ -574,7 +674,7 @@ router.post('/usages', auth, async (req, res) => {
 
     // Trừ kho vật tư (chỉ trừ cho phân bón & thuốc BVTV, không trừ cho Tiền nước & Nhân công vì là vật tư vĩnh cửu)
     if (supply.category !== 'Tiền nước' && supply.category !== 'Nhân công' && supply.stock_quantity > 0) {
-      await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1) WHERE id = $2', [qty, supply.id]);
+      await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1), updated_at = NOW() WHERE id = $2', [qty, supply.id]);
     }
 
     // Broadcast WebSocket event for real-time cost and supply update
@@ -598,11 +698,20 @@ router.delete('/usages/:id', auth, async (req, res) => {
     if (check.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy nhật ký tiêu hao.' });
     }
-    if (req.user.role !== 'admin' && check.rows[0].user_id !== req.user.id) {
+    const usage = check.rows[0];
+    if (req.user.role !== 'admin' && usage.user_id !== req.user.id) {
       return res.status(403).json({ error: 'Bạn không có quyền xóa bản ghi này.' });
     }
 
     await pool.query('DELETE FROM supply_usages WHERE id = $1', [id]);
+
+    // Restore stock if not permanent category
+    if (usage.supply_id && usage.quantity > 0) {
+      const supRes = await pool.query('SELECT category FROM supplies WHERE id = $1', [usage.supply_id]);
+      if (supRes.rows.length > 0 && supRes.rows[0].category !== 'Tiền nước' && supRes.rows[0].category !== 'Nhân công') {
+        await pool.query('UPDATE supplies SET stock_quantity = stock_quantity + $1, updated_at = NOW() WHERE id = $2', [usage.quantity, usage.supply_id]);
+      }
+    }
 
     // Broadcast WebSocket event for real-time cost and supply update
     const broadcast = req.app.get('broadcast');
@@ -610,7 +719,7 @@ router.delete('/usages/:id', auth, async (req, res) => {
       broadcast('supplies_updated', { userId: req.user.id, deletedId: id });
     }
 
-    res.json({ success: true, message: 'Đã xóa bản ghi tiêu hao vật tư.' });
+    res.json({ success: true, message: 'Đã xóa bản ghi tiêu hao vật tư và phục hồi tồn kho thành công.' });
   } catch (err) {
     console.error('Error deleting supply usage:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa nhật ký tiêu hao.' });
@@ -781,6 +890,21 @@ router.get('/analytics', auth, async (req, res) => {
   } catch (err) {
     console.error('Error fetching supplies analytics:', err);
     res.status(500).json({ error: 'Lỗi server khi thống kê chi phí vật tư.' });
+  }
+});
+
+// POST /api/supplies/recalculate-stock — Thủ công kích hoạt cân đối & tính lại tồn kho
+router.post('/recalculate-stock', auth, async (req, res) => {
+  try {
+    await autoReconcileSuppliesData(req.user.id);
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('supplies_updated', { userId: req.user.id });
+    }
+    res.json({ success: true, message: 'Đã hiệu chỉnh & cân đối lại tồn kho, vốn lưu kho và chi phí tiêu hao thành công!' });
+  } catch (err) {
+    console.error('Error recalculating stock:', err);
+    res.status(500).json({ error: 'Lỗi server khi tính lại tồn kho: ' + err.message });
   }
 });
 

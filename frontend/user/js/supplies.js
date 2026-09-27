@@ -496,12 +496,20 @@ export function renderSuppliesTable(supplies) {
         statusBadge = `<span class="badge" style="background:#fef3c7; color:#b45309; font-size:10px; font-weight:800; border-radius:8px; padding:1px 6px;"><i data-lucide="minus-circle" class="lucide-xs"></i> Mức TB</span>`;
       }
 
-      const packageUnitsCount = pkgQty > 0 ? Number((stock / pkgQty).toFixed(1)) : stock;
+      const packageUnitsCount = pkgQty > 0 ? (stock / pkgQty < 0.01 ? (stock / pkgQty).toFixed(4) : (stock / pkgQty).toFixed(3)) : stock;
+      let stockDisplay = `${stock} ${sp.unit}`;
+      if (sp.unit === 'kg' && stock > 0 && stock % 1 !== 0) {
+        const fullKg = Math.floor(stock);
+        const remG = Math.round((stock - fullKg) * 1000);
+        stockDisplay = `${Number(stock.toFixed(3))} kg (${fullKg > 0 ? fullKg + ' kg ' : ''}${remG} g)`;
+      } else if (stock > 0 && stock % 1 !== 0) {
+        stockDisplay = `${Number(stock.toFixed(3))} ${sp.unit}`;
+      }
 
       stockProgressHtml = `
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <strong style="font-size:13px; color:#0f172a;">${stock} ${sp.unit}</strong>
+            <strong style="font-size:13px; color:#0f172a;">${stockDisplay}</strong>
             ${statusBadge}
           </div>
           <div class="stock-level-bar" style="height:6px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
@@ -646,7 +654,19 @@ export async function saveSupply() {
   const target_pests = document.getElementById('sp-target-pests')?.value.trim() || null;
 
   const isWaterOrLabor = (category === 'Tiền nước' || category === 'Nhân công');
-  const stock_quantity = isWaterOrLabor ? 999999 : (package_qty * stock_count);
+  let stock_quantity = isWaterOrLabor ? 999999 : (package_qty * stock_count);
+  if (id) {
+    const existingSp = cachedSupplies.find(s => s.id == id);
+    if (existingSp && existingSp.stock_quantity !== undefined && existingSp.stock_quantity !== null) {
+      const origPkgQty = parseFloat(existingSp.package_qty) || 1;
+      const origStock = parseFloat(existingSp.stock_quantity) || 0;
+      const currentStockCount = parseFloat(document.getElementById('sp-stock-count')?.value) || 1;
+      const origStockCount = Math.max(1, Math.round(origStock / origPkgQty));
+      if (currentStockCount === origStockCount && origStock > 0) {
+        stock_quantity = origStock;
+      }
+    }
+  }
 
   if (!name || (!isWaterOrLabor && !package_price)) {
     toast('Vui lòng điền đầy đủ Tên vật tư và Đơn giá!', 'warning');
