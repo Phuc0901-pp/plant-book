@@ -1,4 +1,4 @@
-﻿/**
+/**
  * modules/mascot-chibi.js - Bé Mầm Ôm Nút Dấu Cộng (+) Đa Năng
  * Gom Bé Mầm và Nút Thao Tác (+) thành 1 thực thể thống nhất:
  * Khi bấm vào -> Mở Menu 2 mục:
@@ -39,13 +39,13 @@ function attachMascotDraggable(container, storageKey) {
     if (saved) {
       const pos = JSON.parse(saved);
       if (typeof pos.left === 'number' && typeof pos.top === 'number') {
-        const isMobile = window.innerWidth <= 768;
-        const containerW = 100;
-        const containerH = 115;
-        const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-        const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
-        const clampedLeft = Math.min(Math.max(10, pos.left), maxLeft);
-        const clampedTop = Math.min(Math.max(10, pos.top), maxTop);
+        const rect = container.getBoundingClientRect();
+        const containerW = rect.width > 0 ? rect.width : 100;
+        const containerH = rect.height > 0 ? rect.height : 115;
+        const maxLeft = Math.max(4, window.innerWidth - containerW - 4);
+        const maxTop = Math.max(4, window.innerHeight - containerH - 4);
+        const clampedLeft = Math.min(Math.max(4, pos.left), maxLeft);
+        const clampedTop = Math.min(Math.max(4, pos.top), maxTop);
         container.style.left = clampedLeft + 'px';
         container.style.top = clampedTop + 'px';
         container.style.right = 'auto';
@@ -81,6 +81,7 @@ function attachMascotDraggable(container, storageKey) {
     window.addEventListener('mouseup', onPointerUp);
     window.addEventListener('touchmove', onPointerMove, { passive: false });
     window.addEventListener('touchend', onPointerUp);
+    window.addEventListener('touchcancel', onPointerUp);
   }
 
   function onPointerMove(e) {
@@ -103,15 +104,15 @@ function attachMascotDraggable(container, storageKey) {
       const newLeft = initialLeft + deltaX;
       const newTop = initialTop + deltaY;
 
-      const isMobile = window.innerWidth <= 768;
-      const containerW = 100;
-      const containerH = 115;
+      const rect = container.getBoundingClientRect();
+      const containerW = rect.width > 0 ? rect.width : 100;
+      const containerH = rect.height > 0 ? rect.height : 115;
 
-      const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-      const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
+      const maxLeft = Math.max(4, window.innerWidth - containerW - 4);
+      const maxTop = Math.max(4, window.innerHeight - containerH - 4);
 
-      const clampedLeft = Math.min(Math.max(10, newLeft), maxLeft);
-      const clampedTop = Math.min(Math.max(10, newTop), maxTop);
+      const clampedLeft = Math.min(Math.max(4, newLeft), maxLeft);
+      const clampedTop = Math.min(Math.max(4, newTop), maxTop);
 
       container.style.left = clampedLeft + 'px';
       container.style.top = clampedTop + 'px';
@@ -129,6 +130,7 @@ function attachMascotDraggable(container, storageKey) {
     window.removeEventListener('mouseup', onPointerUp);
     window.removeEventListener('touchmove', onPointerMove);
     window.removeEventListener('touchend', onPointerUp);
+    window.removeEventListener('touchcancel', onPointerUp);
 
     if (hasMoved) {
       const rect = container.getBoundingClientRect();
@@ -148,18 +150,17 @@ function attachMascotDraggable(container, storageKey) {
 
   window.addEventListener('resize', () => {
     const rect = container.getBoundingClientRect();
-    const isMobile = window.innerWidth <= 768;
-    const containerW = 100;
-    const containerH = 115;
+    const containerW = rect.width > 0 ? rect.width : 100;
+    const containerH = rect.height > 0 ? rect.height : 115;
 
-    const maxLeft = Math.max(10, window.innerWidth - containerW - 10);
-    const maxTop = Math.max(10, window.innerHeight - containerH - (isMobile ? 80 : 10));
+    const maxLeft = Math.max(4, window.innerWidth - containerW - 4);
+    const maxTop = Math.max(4, window.innerHeight - containerH - 4);
 
     if (container.style.left && container.style.left !== 'auto') {
       const currentLeft = parseFloat(container.style.left) || rect.left;
       const currentTop = parseFloat(container.style.top) || rect.top;
-      const clampedLeft = Math.min(Math.max(10, currentLeft), maxLeft);
-      const clampedTop = Math.min(Math.max(10, currentTop), maxTop);
+      const clampedLeft = Math.min(Math.max(4, currentLeft), maxLeft);
+      const clampedTop = Math.min(Math.max(4, currentTop), maxTop);
       container.style.left = clampedLeft + 'px';
       container.style.top = clampedTop + 'px';
     }
