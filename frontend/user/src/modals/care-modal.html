@@ -1,4 +1,4 @@
-﻿<div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
+<div class="modal-overlay" id="care-modal" style="display:none" onclick="if(event.target===this)closeCareModal()">
   <div class="modal">
     <div class="modal-header">
       <h2 id="care-modal-title"><i data-lucide="file-check" class="lucide-sm" style="color:var(--green)"></i> Ghi nhật ký chăm sóc</h2>
@@ -69,9 +69,18 @@
 
       <div class="field">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <label style="margin:0;">Ghi chú thêm</label>
-          <button type="button" class="btn btn-secondary btn-xs" id="btn-voice-dictate" onclick="startVoiceInput()" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; padding:4px 10px; font-size:12px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5;">
+          <label style="margin:0; font-weight:700;">Ghi chú thêm</label>
+          <button type="button" class="btn btn-secondary btn-xs" id="btn-voice-dictate" onclick="startVoiceInput()" title="Bấm để bắt đầu đọc lời nói, bấm lần nữa để dừng" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; padding:4px 10px; font-size:12px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; transition:all 0.2s ease;">
             <i data-lucide="mic" class="lucide-sm" id="mic-icon"></i> <span id="mic-label">Đọc giọng nói</span>
+          </button>
+        </div>
+        <div id="c-voice-status" style="display:none; align-items:center; justify-content:space-between; background:#fef2f2; border:1.5px dashed #ef4444; border-radius:8px; padding:6px 12px; margin-bottom:6px; font-size:12px; color:#991b1b;">
+          <div style="display:flex; align-items:center; gap:8px; font-weight:700;">
+            <span class="rec-dot" style="width:10px; height:10px; background:#ef4444; border-radius:50%; display:inline-block; box-shadow:0 0 8px #ef4444; animation:blink-rec-dot 0.8s infinite alternate;"></span>
+            <span>Đang lắng nghe lời nói... Bác hãy đọc nội dung!</span>
+          </div>
+          <button type="button" onclick="stopVoiceInput()" style="background:#ef4444; color:#ffffff; border:none; border-radius:4px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+            <i data-lucide="square" style="width:11px; height:11px;"></i> Dừng ngay
           </button>
         </div>
         <textarea id="c-note" rows="2" placeholder="Nhập hoặc nhấn 'Đọc giọng nói' để ghi nhận bằng lời nói..."></textarea>

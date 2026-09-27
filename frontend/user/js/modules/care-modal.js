@@ -309,6 +309,9 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
  * Đóng modal nhật ký chăm sóc.
  */
 export function closeCareModal() {
+  if (typeof stopVoiceInput === 'function' && _isCareRecording) {
+    stopVoiceInput(true);
+  }
   const modal = document.getElementById('care-modal');
   if (modal) modal.style.display = 'none';
 }
@@ -1158,59 +1161,165 @@ export async function saveCareLog() {
 }
 
 // ── Voice-to-Text (Ghi âm giọng nói) ─────────────────────────
+let _careRecognition = null;
+let _isCareRecording = false;
+let _careVoiceTimeout = null;
+let _careBaseNote = '';
+
+export function stopVoiceInput(silent = false) {
+  if (_careVoiceTimeout) {
+    clearTimeout(_careVoiceTimeout);
+    _careVoiceTimeout = null;
+  }
+  if (_careRecognition) {
+    try {
+      _careRecognition.stop();
+    } catch (_) {}
+    _careRecognition = null;
+  }
+  _isCareRecording = false;
+
+  const btn = document.getElementById('btn-voice-dictate');
+  const micIcon = document.getElementById('mic-icon');
+  const micLabel = document.getElementById('mic-label');
+  const statusEl = document.getElementById('c-voice-status');
+
+  if (btn) {
+    btn.style.background = '#fef2f2';
+    btn.style.color = '#dc2626';
+    btn.style.borderColor = '#fca5a5';
+    btn.style.boxShadow = 'none';
+    btn.style.animation = 'none';
+  }
+  if (micIcon) {
+    micIcon.setAttribute('data-lucide', 'mic');
+    micIcon.classList.remove('lucide-spin');
+    if (window.lucide) lucide.createIcons({ targets: [micIcon.parentElement || micIcon] });
+  }
+  if (micLabel) {
+    micLabel.textContent = 'Đọc giọng nói';
+  }
+  if (statusEl) {
+    statusEl.style.display = 'none';
+  }
+
+  if (!silent) {
+    toast('⏹️ Đã dừng ghi âm & hoàn tất nội dung!', 'success');
+  }
+}
+
 export function startVoiceInput() {
+  // If currently recording, clicking the button triggers STOP immediately
+  if (_isCareRecording) {
+    stopVoiceInput();
+    return;
+  }
+
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     toast('Trình duyệt của bạn chưa hỗ trợ nhận diện giọng nói. Vui lòng dùng Chrome hoặc Safari mới hơn.', 'error');
     return;
   }
 
+  const btn = document.getElementById('btn-voice-dictate');
   const micIcon = document.getElementById('mic-icon');
   const micLabel = document.getElementById('mic-label');
   const noteEl = document.getElementById('c-note');
+  const statusEl = document.getElementById('c-voice-status');
 
   try {
     const recognition = new SpeechRecognition();
     recognition.lang = 'vi-VN';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    _careRecognition = recognition;
+    _careBaseNote = (noteEl?.value || '').trim();
 
     recognition.onstart = () => {
+      _isCareRecording = true;
+      if (btn) {
+        btn.style.background = '#ef4444';
+        btn.style.color = '#ffffff';
+        btn.style.borderColor = '#b91c1c';
+        btn.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.4)';
+        btn.style.animation = 'voice-pulse-btn 1.4s infinite';
+      }
       if (micIcon) {
-        micIcon.setAttribute('data-lucide', 'loader-2');
-        micIcon.classList.add('lucide-spin');
+        micIcon.setAttribute('data-lucide', 'square');
+        micIcon.classList.remove('lucide-spin');
         if (window.lucide) lucide.createIcons({ targets: [micIcon.parentElement || micIcon] });
       }
-      if (micLabel) micLabel.textContent = 'Đang nghe...';
-      toast('🎙️ Hãy đọc nội dung nhật ký bằng tiếng Việt...', 'info');
+      if (micLabel) {
+        micLabel.textContent = 'Dừng ghi âm';
+      }
+      if (statusEl) {
+        statusEl.style.display = 'flex';
+      }
+
+      toast('🎙️ Đang nghe... Bác hãy đọc nội dung nhật ký. Khi nói xong nhấn nút "Dừng ghi âm"!', 'info');
+
+      // Auto-stop safety timer (45 seconds continuous dictation)
+      if (_careVoiceTimeout) clearTimeout(_careVoiceTimeout);
+      _careVoiceTimeout = setTimeout(() => {
+        if (_isCareRecording) {
+          stopVoiceInput(true);
+          toast('✅ Đã hoàn tất ghi âm theo thời gian quy định.', 'success');
+        }
+      }, 45000);
     };
 
+    let sessionFinalTranscript = '';
+
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      if (noteEl && transcript) {
-        noteEl.value = (noteEl.value ? noteEl.value + ' ' : '') + transcript;
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          sessionFinalTranscript += event.results[i][0].transcript + ' ';
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
       }
-      toast('✅ Đã nhận diện giọng nói!', 'success');
+
+      if (noteEl) {
+        const fullNewText = (sessionFinalTranscript + interimTranscript).trim();
+        if (_careBaseNote) {
+          noteEl.value = `${_careBaseNote} ${fullNewText}`.trim();
+        } else {
+          noteEl.value = fullNewText;
+        }
+      }
     };
 
     recognition.onerror = (event) => {
       console.warn('Speech recognition error:', event.error);
-      toast('Không thể nhận diện giọng nói (' + event.error + '). Thử lại!', 'error');
+      if (event.error === 'no-speech') {
+        return; // Don't terminate on brief silence in continuous mode
+      }
+      stopVoiceInput(true);
+      if (event.error === 'not-allowed') {
+        toast('Vui lòng cấp quyền Micro trong trình duyệt để sử dụng tính năng đọc giọng nói.', 'error');
+      } else {
+        toast('Không thể nhận diện giọng nói (' + event.error + '). Vui lòng thử lại!', 'error');
+      }
     };
 
     recognition.onend = () => {
-      if (micIcon) {
-        micIcon.setAttribute('data-lucide', 'mic');
-        micIcon.classList.remove('lucide-spin');
-        if (window.lucide) lucide.createIcons({ targets: [micIcon.parentElement || micIcon] });
+      if (_isCareRecording) {
+        stopVoiceInput(true);
       }
-      if (micLabel) micLabel.textContent = 'Đọc giọng nói';
     };
 
     recognition.start();
   } catch (err) {
     console.error('Voice input error:', err);
+    _isCareRecording = false;
+    _careRecognition = null;
     toast('Lỗi khởi động nhận diện giọng nói.', 'error');
   }
 }
+
+window.stopVoiceInput = stopVoiceInput;
+window.startVoiceInput = startVoiceInput;
+
 

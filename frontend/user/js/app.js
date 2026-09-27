@@ -31,7 +31,7 @@ import { loadUserDashboard }          from './modules/dashboard.js';
 import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache, togglePlantMenu, closePlantMenu, openFarmerNfcListModal, fetchFarmerNfcStats, exportFarmerNfcCsv, openReorderGpsModal, closeReorderGpsModal, previewReorderGps, executeReorderGps } from './modules/plants.js';
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
-import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput } from './modules/care-modal.js?v=2.8.5';
+import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput, stopVoiceInput } from './modules/care-modal.js?v=2.8.5';
 import { onCareMediaSelected, openLightbox } from './modules/media.js?v=2.8.5';
 import { 
   loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, 
@@ -333,6 +333,7 @@ window.closeCareModal       = closeCareModal;
 window.saveCareLog          = saveCareLog;
 window.onCareLogTypeChange  = onCareLogTypeChange;
 window.startVoiceInput      = startVoiceInput;
+window.stopVoiceInput       = stopVoiceInput;
 
 
 window.onCareMediaSelected  = onCareMediaSelected;
