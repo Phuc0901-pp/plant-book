@@ -119,13 +119,13 @@ if (Test-Path $userPlantsJsPath) {
     
     $hasOpenCreate = $plantsJs.Contains("openUserCreatePlantModal")
     $hasToggleMode = $plantsJs.Contains("toggleUserPlantCreateMode")
-    $hasSchemaChange = $plantsJs.Contains("onUserPlantSchemaChange")
+    $hasRangePreview = $plantsJs.Contains("updateUserRangePreview")
     $hasGPS = $plantsJs.Contains("getUserPlantGPS")
     $handleSubmit = $plantsJs.Contains("submitUserCreatePlant")
     
     Record-Test "Feature Flow" "User Portal: openUserCreatePlantModal Defined" $hasOpenCreate
     Record-Test "Feature Flow" "User Portal: toggleUserPlantCreateMode Defined" $hasToggleMode
-    Record-Test "Feature Flow" "User Portal: onUserPlantSchemaChange Defined" $hasSchemaChange
+    Record-Test "Feature Flow" "User Portal: updateUserRangePreview Defined" $hasRangePreview
     Record-Test "Feature Flow" "User Portal: getUserPlantGPS Defined" $hasGPS
     Record-Test "Feature Flow" "User Portal: submitUserCreatePlant Defined" $handleSubmit
 }

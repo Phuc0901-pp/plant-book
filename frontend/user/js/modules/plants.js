@@ -2250,36 +2250,8 @@ export async function executeReorderGps() {
 window.executeReorderGps = executeReorderGps;
 
 
-// ── 12. FARMER PLANT CREATION (THEO CẤU TRÚC ADMIN SCHEMAS) ───────────
-let _userSchemasCache = [];
+// ── 12. FARMER PLANT CREATION (CHUẨN VIETGAP & GIS GPS) ───────────
 let _userPlantCreateMode = 'single';
-
-/**
- * Tải danh sách schemas cấu hình bởi admin
- */
-export async function loadUserSchemas() {
-  try {
-    const schemas = await api('/schemas');
-    _userSchemasCache = Array.isArray(schemas) ? schemas : [];
-    window._userSchemasCache = _userSchemasCache;
-    _populateUserSchemaSelect();
-  } catch (err) {
-    console.error('Lỗi khi tải schemas:', err);
-    _userSchemasCache = [];
-  }
-}
-window.loadUserSchemas = loadUserSchemas;
-
-function _populateUserSchemaSelect() {
-  const select = document.getElementById('user-plant-schema-select');
-  if (!select) return;
-  if (!_userSchemasCache.length) {
-    select.innerHTML = '<option value="">— Mẫu Tiêu Chuẩn Nông Nghiệp —</option>';
-    return;
-  }
-  select.innerHTML = '<option value="">— Chọn Schema áp dụng —</option>' +
-    _userSchemasCache.map(s => `<option value="${s.id}">${esc(s.name)}${s.plant_type ? ` (${esc(s.plant_type)})` : ''}</option>`).join('');
-}
 
 export function toggleUserPlantCreateMode(mode) {
   _userPlantCreateMode = mode;
@@ -2369,89 +2341,6 @@ export function updateUserRangePreview() {
 }
 window.updateUserRangePreview = updateUserRangePreview;
 
-export function onUserPlantSchemaChange() {
-  const schemaId = document.getElementById('user-plant-schema-select')?.value;
-  const descEl = document.getElementById('user-schema-desc');
-  const typeInput = document.getElementById('user-plant-type');
-  const container = document.getElementById('user-plant-extra-fields-container');
-
-  if (!schemaId) {
-    if (descEl) descEl.textContent = '';
-    if (container) {
-      container.innerHTML = `
-        <div class="empty-state" style="padding:24px 16px; text-align:center; background:#f8fafc; border-radius:10px; border:1.5px dashed #cbd5e1;">
-          <i data-lucide="shapes" class="lucide-sm" style="font-size:28px; color:#94a3b8; margin-bottom:6px; display:inline-block;"></i>
-          <p style="font-size:12.5px; font-weight:700; color:#475569; margin:0 0 2px 0;">Chọn một Schema ở phía trên để tải các thuộc tính đặc thù.</p>
-          <small style="color:#94a3b8;">Ví dụ: Độ pH, Độ ngọt Brix, Mã số vùng trồng PUC, Quy cách tán...</small>
-        </div>`;
-    }
-    if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
-    return;
-  }
-
-  const schema = _userSchemasCache.find(s => String(s.id) === String(schemaId));
-  if (!schema) return;
-
-  if (descEl) {
-    descEl.innerHTML = `✨ <strong>Mô tả:</strong> ${esc(schema.description || 'Không có mô tả')}`;
-  }
-
-  if (typeInput && (!typeInput.value || typeInput.dataset.autoFilled === 'true')) {
-    typeInput.value = schema.plant_type || schema.name || '';
-    typeInput.dataset.autoFilled = 'true';
-  }
-
-  const fields = Array.isArray(schema.fields) ? schema.fields : [];
-  if (!fields.length) {
-    if (container) {
-      container.innerHTML = '<p style="font-size:13px; color:#64748b; padding:12px; margin:0; text-align:center;">Schema này không yêu cầu thuộc tính mở rộng bắt buộc.</p>';
-    }
-    return;
-  }
-
-  if (container) {
-    container.innerHTML = `
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
-        ${fields.map(f => {
-          const key = `user-ef-${f.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}`;
-          const type = f.type || 'text';
-          let inputHtml = '';
-          if (type === 'textarea') {
-            inputHtml = `<textarea id="${key}" data-field="${esc(f.name)}" rows="2" placeholder="Nhập ${esc(f.name)}..." style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; outline:none; box-sizing:border-box; font-family:inherit;"></textarea>`;
-          } else if (type === 'select' && Array.isArray(f.options)) {
-            const opts = f.options.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
-            inputHtml = `<select id="${key}" data-field="${esc(f.name)}" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; background:#fff; outline:none; box-sizing:border-box;">${opts}</select>`;
-          } else if (type === 'checkbox') {
-            inputHtml = `<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; cursor:pointer; padding-top:6px;"><input type="checkbox" id="${key}" data-field="${esc(f.name)}" style="accent-color:#059669; width:16px; height:16px;"> Có / Đạt tiêu chuẩn</label>`;
-          } else {
-            inputHtml = `<input type="${type}" id="${key}" data-field="${esc(f.name)}" placeholder="Nhập ${esc(f.name)}..." style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; outline:none; box-sizing:border-box;">`;
-          }
-          return `
-            <div>
-              <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:4px; display:block;">${esc(f.name)}</label>
-              ${inputHtml}
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
-  if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
-}
-window.onUserPlantSchemaChange = onUserPlantSchemaChange;
-
-function collectUserSchemaExtraFields() {
-  const data = {};
-  document.querySelectorAll('#user-plant-extra-fields-container [data-field]').forEach(el => {
-    if (el.type === 'checkbox') {
-      data[el.dataset.field] = el.checked;
-    } else {
-      data[el.dataset.field] = el.value;
-    }
-  });
-  return data;
-}
-
 export function getUserPlantGPS() {
   if (!navigator.geolocation) {
     if (typeof toast === 'function') toast('Trình duyệt không hỗ trợ định vị GPS!', 'error');
@@ -2532,7 +2421,6 @@ export async function openUserCreatePlantModal() {
     const el = document.getElementById(id);
     if (el) {
       el.value = '';
-      if (el.dataset) delete el.dataset.autoFilled;
     }
   });
   const healthEl = document.getElementById('user-plant-health');
@@ -2540,22 +2428,15 @@ export async function openUserCreatePlantModal() {
   const publicEl = document.getElementById('user-plant-is-public');
   if (publicEl) publicEl.value = 'true';
 
-  // 3. Load Schemas & populate dropdown
-  if (!_userSchemasCache || !_userSchemasCache.length) {
-    await loadUserSchemas();
-  } else {
-    _populateUserSchemaSelect();
-  }
-
-  // 4. Default mode single
+  // 3. Default mode single
   const radioSingle = document.querySelector('input[name="user-plant-mode"][value="single"]');
   if (radioSingle) radioSingle.checked = true;
   toggleUserPlantCreateMode('single');
 
-  // 5. Load unassigned NFC for active farm
+  // 4. Load unassigned NFC for active farm
   onUserPlantFarmChange();
 
-  // 6. If farm has GPS, autofill or attempt device GPS
+  // 5. If farm has GPS, autofill coordinates
   const activeFarm = getActiveFarm();
   if (activeFarm && activeFarm.latitude && activeFarm.longitude) {
     const latEl = document.getElementById('user-plant-lat');
@@ -2583,10 +2464,9 @@ export async function submitUserCreatePlant() {
     return;
   }
 
-  const schemaId = document.getElementById('user-plant-schema-select')?.value || null;
   const plantType = (document.getElementById('user-plant-type')?.value || '').trim();
   if (!plantType) {
-    if (typeof toast === 'function') toast('Vui lòng nhập hoặc chọn loại cây trồng!', 'error');
+    if (typeof toast === 'function') toast('Vui lòng nhập loại cây trồng!', 'error');
     else alert('Vui lòng nhập loại cây trồng!');
     return;
   }
@@ -2598,7 +2478,6 @@ export async function submitUserCreatePlant() {
   const latVal = document.getElementById('user-plant-lat')?.value;
   const lngVal = document.getElementById('user-plant-lng')?.value;
   const isPublic = document.getElementById('user-plant-is-public')?.value === 'true';
-  const extraData = collectUserSchemaExtraFields();
 
   const latitude = latVal && !isNaN(parseFloat(latVal)) ? parseFloat(latVal) : null;
   const longitude = lngVal && !isNaN(parseFloat(lngVal)) ? parseFloat(lngVal) : null;
@@ -2626,7 +2505,6 @@ export async function submitUserCreatePlant() {
 
       const payload = {
         farm_id: parseInt(farmId, 10),
-        schema_id: schemaId ? parseInt(schemaId, 10) : null,
         plant_type: plantType,
         plant_variety: plantVariety,
         plant_age: plantAge,
@@ -2639,7 +2517,7 @@ export async function submitUserCreatePlant() {
         end_num: end,
         prefix,
         pad_zeros: !!padZeros,
-        data: extraData
+        data: {}
       };
 
       const res = await api('/plants/batch-range', {
@@ -2656,7 +2534,6 @@ export async function submitUserCreatePlant() {
 
       const payload = {
         farm_id: parseInt(farmId, 10),
-        schema_id: schemaId ? parseInt(schemaId, 10) : null,
         plant_type: plantType,
         plant_variety: plantVariety,
         plant_age: plantAge,
@@ -2667,7 +2544,7 @@ export async function submitUserCreatePlant() {
         is_public: isPublic,
         tree_code: treeCode || undefined,
         nfc_uid: nfcUid || undefined,
-        data: extraData
+        data: {}
       };
 
       const res = await api('/plants', {
@@ -2704,6 +2581,7 @@ export async function submitUserCreatePlant() {
   }
 }
 window.submitUserCreatePlant = submitUserCreatePlant;
+
 
 
 
