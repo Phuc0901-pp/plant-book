@@ -592,7 +592,7 @@ router.post('/batch', auth, admin, async (req, res) => {
 });
 
 // POST /api/plants/batch-range — Import sequential range of trees XX -> XY with identical attributes
-router.post('/batch-range', auth, admin, async (req, res) => {
+router.post('/batch-range', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     const { 
@@ -613,6 +613,22 @@ router.post('/batch-range', auth, admin, async (req, res) => {
       longitude, 
       schema_id 
     } = req.body;
+
+    if (req.user.role !== 'admin') {
+      if (!farm_id) {
+        return res.status(400).json({ error: 'Vui lòng chọn trang trại để tạo cây trồng.' });
+      }
+      const farmCheck = await client.query('SELECT id, user_id FROM farms WHERE id = $1', [farm_id]);
+      if (farmCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Trang trại không tồn tại.' });
+      }
+      const f = farmCheck.rows[0];
+      const isOwner = Number(f.user_id) === Number(req.user.id);
+      const isMember = req.user.farm_id && Number(req.user.farm_id) === Number(farm_id);
+      if (!isOwner && !isMember) {
+        return res.status(403).json({ error: 'Bạn không có quyền thêm cây vào trang trại này.' });
+      }
+    }
 
     if (!plant_type || !plant_type.trim()) {
       return res.status(400).json({ error: 'Loại cây là bắt buộc.' });
@@ -705,10 +721,26 @@ router.post('/batch-range', auth, admin, async (req, res) => {
   }
 });
 
-router.post('/', auth, admin, async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
-    const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code } = req.body;
+    const { schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code, nfc_uid } = req.body;
     
+    if (req.user.role !== 'admin') {
+      if (!farm_id) {
+        return res.status(400).json({ error: 'Vui lòng chọn trang trại để tạo cây trồng.' });
+      }
+      const farmCheck = await pool.query('SELECT id, user_id FROM farms WHERE id = $1', [farm_id]);
+      if (farmCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Trang trại không tồn tại.' });
+      }
+      const f = farmCheck.rows[0];
+      const isOwner = Number(f.user_id) === Number(req.user.id);
+      const isMember = req.user.farm_id && Number(req.user.farm_id) === Number(farm_id);
+      if (!isOwner && !isMember) {
+        return res.status(403).json({ error: 'Bạn không có quyền thêm cây vào trang trại này.' });
+      }
+    }
+
     let finalTreeCode = tree_code && tree_code.trim() ? tree_code.trim() : null;
     if (!finalTreeCode) {
       const year = new Date().getFullYear();
@@ -719,10 +751,11 @@ router.post('/', auth, admin, async (req, res) => {
     }
 
     const slug = finalTreeCode ? `${farm_id || 0}_${finalTreeCode}` : generateSlug(plant_type);
+    const cleanNfcUid = (nfc_uid && typeof nfc_uid === 'string') ? nfc_uid.trim().toUpperCase() : null;
 
     const result = await pool.query(
-      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code, nfc_uid)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        ON CONFLICT (public_slug) DO UPDATE 
        SET schema_id = EXCLUDED.schema_id,
            plant_type = EXCLUDED.plant_type,
@@ -737,19 +770,34 @@ router.post('/', auth, admin, async (req, res) => {
            longitude = EXCLUDED.longitude,
            created_by = EXCLUDED.created_by,
            tree_code = EXCLUDED.tree_code,
+           nfc_uid = COALESCE(EXCLUDED.nfc_uid, plants.nfc_uid),
            updated_at = NOW()
        RETURNING *`,
-      [slug, schema_id || null, plant_type, plant_variety, plant_age, health_status || 'Tốt',
+      [slug, schema_id || null, plant_type, plant_variety || '', plant_age || '', health_status || 'Tốt',
        location, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
-       req.user.id, finalTreeCode]
+       req.user.id, finalTreeCode, cleanNfcUid]
     );
 
     const insertedPlant = result.rows[0];
     const publicUrl = generatePublicPlantUrl(insertedPlant.farm_id, insertedPlant.id, insertedPlant.nfc_uid);
     await pool.query('UPDATE plants SET public_url = $1 WHERE id = $2', [publicUrl, insertedPlant.id]);
     insertedPlant.public_url = publicUrl;
+
+    if (cleanNfcUid) {
+      try {
+        await pool.query(
+          `INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, assigned_at)
+           VALUES ($1, $2, $3, 'assigned', NOW())
+           ON CONFLICT (nfc_uid) DO UPDATE
+           SET farm_id = EXCLUDED.farm_id, plant_id = EXCLUDED.plant_id, status = 'assigned', assigned_at = NOW()`,
+          [cleanNfcUid, insertedPlant.farm_id, insertedPlant.id]
+        );
+      } catch (nfcErr) {
+        console.warn('Auto-assigning NFC tag inventory warning:', nfcErr.message);
+      }
+    }
 
     // Ghi nhận Audit Log
     await logAudit({
