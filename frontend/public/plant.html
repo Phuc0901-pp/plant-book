@@ -1174,15 +1174,12 @@
   </div>
 </div>
 
-<!-- JavaScript Logic -->
-</script>
-
 <!-- Export Modal -->
 <div class="export-modal-overlay" id="export-modal" onclick="if(event.target===this)closeExportModal()">
   <div class="export-modal">
     <div class="export-modal-header">
       <div class="export-modal-title">
-        <i data-lucide="file-text" class="lucide-sm" style="color:var(--green-bright)"></i> Xuất báo cáo & Nhật ký
+        <i data-lucide="file-text" class="lucide-sm" style="color:var(--green-bright)"></i> Xuất báo cáo & Nhật ký canh tác
       </div>
       <button class="export-modal-close" onclick="closeExportModal()">×</button>
     </div>
@@ -1209,15 +1206,18 @@
         </div>
       </div>
     </div>
-    <div class="export-modal-footer">
-      <button class="export-btn-secondary" onclick="closeExportModal()">Hủy bỏ</button>
-      <button class="export-btn-primary" onclick="generateExportReport()">
-        <i data-lucide="printer" class="lucide-sm"></i> Tạo báo cáo
+    <div class="export-modal-footer" style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+      <button type="button" class="export-btn-secondary" onclick="closeExportModal()">Hủy bỏ</button>
+      <button type="button" class="export-btn-primary" style="background:#0284c7; border-color:#0284c7;" onclick="exportPublicLogsCsv()">
+        <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Tải Excel (CSV)
+      </button>
+      <button type="button" class="export-btn-primary" onclick="generateExportReport()">
+        <i data-lucide="printer" class="lucide-sm"></i> Báo cáo in / PDF
       </button>
     </div>
   </div>
 </div>
 
-  <script src="/js/plant.js?v=2.0.7" defer></script>
+  <script src="/js/plant.js?v=2.0.8" defer></script>
 </body>
 </html>

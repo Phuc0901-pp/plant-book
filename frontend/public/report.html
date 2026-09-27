@@ -31,6 +31,9 @@
       <button class="btn btn-secondary" id="btn-copy-link" onclick="copyReportLink()">
         <i data-lucide="link" class="lucide-sm"></i> Sao chép liên kết
       </button>
+      <button class="btn btn-secondary" id="btn-export-csv" onclick="exportReportCsv()" style="background: #f0fdf4; border-color: #86efac; color: #166534; font-weight: 700;">
+        <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Xuất CSV (Excel)
+      </button>
       <button class="btn btn-primary" onclick="window.print()">
         <i data-lucide="printer" class="lucide-sm"></i> In báo cáo / Tải PDF
       </button>
@@ -115,7 +118,6 @@
     </div>
   </div>
 
-  </script>
-  <script src="/js/report.js" defer></script>
+  <script src="/js/report.js?v=2.0.8" defer></script>
 </body>
 </html>

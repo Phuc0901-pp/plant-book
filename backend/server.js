@@ -101,11 +101,25 @@ app.use('/api/diagnostics', require('./routes/diagnostics'));
 app.use('/api', require('./middleware/errorHandler'));
 
 // ─── SPA fallback ────────────────────────────────────────────────
-app.get('/plant/:slug/report', (req, res) => {
+app.get([
+  '/plant/:slug/report',
+  '/:farmId/public/:slug/report',
+  '/:farmId/public/report',
+  '/:farmId/:plantId/report',
+  '/:farmId/:plantId/:nfcUid/report',
+  '/:userId/:farmId/:plantId/:nfcUid/report'
+], (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/report.html'));
 });
 
-app.get('/plant/:slug/map', (req, res) => {
+app.get([
+  '/plant/:slug/map',
+  '/:farmId/public/:slug/map',
+  '/:farmId/public/map',
+  '/:farmId/:plantId/map',
+  '/:farmId/:plantId/:nfcUid/map',
+  '/:userId/:farmId/:plantId/:nfcUid/map'
+], (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/map.html'));
 });
 

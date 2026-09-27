@@ -1,4 +1,4 @@
-﻿    // Global State
+    // Global State
     let plantData = null;
 
     // Helpers
@@ -66,13 +66,118 @@
       });
     }
 
+    // Helper to resolve the plant slug or UID from any URL pattern
+    function getReportTargetSlug() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('slug')) return urlParams.get('slug');
+      if (urlParams.get('nfc_uid')) return urlParams.get('nfc_uid');
+      if (urlParams.get('plant_id')) return urlParams.get('plant_id');
+
+      const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+      const reportIdx = pathParts.indexOf('report');
+      if (reportIdx > 0) {
+        return decodeURIComponent(pathParts[reportIdx - 1]);
+      }
+      if (pathParts.length >= 2) {
+        return decodeURIComponent(pathParts[pathParts.length - 1]);
+      }
+      return '';
+    }
+
+    // CSV Export functionality for Report page
+    function exportReportCsv() {
+      if (!plantData) {
+        alert("Dữ liệu báo cáo chưa sẵn sàng.");
+        return;
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromDate = urlParams.get('from');
+      const toDate = urlParams.get('to');
+      const categoriesParam = urlParams.get('categories');
+      const checkedCats = categoriesParam ? categoriesParam.split(',') : [];
+
+      const logs = plantData.logs || [];
+      const filteredLogs = logs.filter(log => {
+        const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
+        const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
+        const isMatchedCat = checkedCats.length === 0 || checkedCats.includes(log.log_type);
+        return isWithinDate && isMatchedCat;
+      });
+      filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
+
+      if (filteredLogs.length === 0) {
+        alert("Không có nhật ký canh tác nào để xuất trong phạm vi đã chọn.");
+        return;
+      }
+
+      const headers = [
+        "STT",
+        "Mã Số Cây",
+        "Loại Cây",
+        "Giống Cây",
+        "Trang Trại",
+        "Địa Chỉ Trang Trại",
+        "Ngày Thực Hiện",
+        "Hoạt Động Canh Tác",
+        "Chi Tiết Kỹ Thuật / Vật Tư / Bệnh",
+        "Người Thực Hiện",
+        "Ghi Chú",
+        "Hình Ảnh / Video Bằng Chứng"
+      ];
+
+      function escapeCsvCell(val) {
+        if (val === null || val === undefined) return '""';
+        const str = String(val).replace(/"/g, '""');
+        return `"${str}"`;
+      }
+
+      const rows = [];
+      rows.push(headers.map(escapeCsvCell).join(','));
+
+      filteredLogs.forEach((log, index) => {
+        const detailsText = getLogDetailsText(log).replace(/<[^>]*>/g, '');
+        const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) 
+          ? log.media_urls.map(m => m.url || m).join('; ') 
+          : '';
+
+        const row = [
+          index + 1,
+          plantData.tree_code || plantData.id || '',
+          plantData.plant_type || '',
+          plantData.plant_variety || '',
+          plantData.farm_name || '',
+          plantData.farm_address || '',
+          formatDate(log.log_date),
+          log.log_type || '',
+          detailsText,
+          log.creator_name || 'Nông hộ',
+          log.note || '',
+          mediaUrls
+        ];
+        rows.push(row.map(escapeCsvCell).join(','));
+      });
+
+      const csvContent = '\uFEFF' + rows.join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const cleanPlantType = (plantData.plant_type || 'Cay').replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_');
+      const cleanTreeCode = (plantData.tree_code || plantData.id || 'Tree').toString().replace(/[^a-zA-Z0-9_]/g, '_');
+      const dateSuffix = new Date().toISOString().slice(0, 10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `NhatKyCanhTac_${cleanPlantType}_${cleanTreeCode}_${dateSuffix}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+    window.exportReportCsv = exportReportCsv;
+
     // Initialization
     async function initReport() {
       try {
-        // Parse Slug from URL (/plant/:slug/report)
-        const pathParts = window.location.pathname.split('/');
-        // Format pathParts: ['', 'plant', ':slug', 'report']
-        const slug = pathParts[2];
+        const slug = getReportTargetSlug();
         if (!slug) throw new Error("Mã định danh cây trồng trống.");
 
         // Parse query params
@@ -83,9 +188,17 @@
         const checkedCats = categoriesParam ? categoriesParam.split(',') : [];
 
         // Fetch Plant Data
-        const res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}`);
+        let res = await fetch(`/api/plants/public/${encodeURIComponent(slug)}`);
         if (!res.ok) {
-          const errData = await res.json();
+          const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+          const farmId = (!isNaN(parseInt(pathParts[0]))) ? pathParts[0] : null;
+          if (farmId && slug) {
+            res = await fetch(`/api/plants/public-by-farm-uid/${farmId}/${encodeURIComponent(slug)}`);
+          }
+        }
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
           throw new Error(errData.error || 'Không tìm thấy thông tin hồ sơ cây trồng.');
         }
         plantData = await res.json();

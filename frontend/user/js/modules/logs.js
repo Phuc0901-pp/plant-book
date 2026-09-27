@@ -6,6 +6,7 @@
 import { esc, formatDate, toast } from '../core/utils.js';
 import { api } from '../core/api.js';
 import { buildMediaThumbnailsHtml } from './media.js';
+import { getPlantsCache } from './plants.js';
 
 // ── State ─────────────────────────────────────────────────────
 let _logsCache = [];
@@ -1226,4 +1227,487 @@ export async function executeSelectiveDelete() {
   }
 }
 window.executeSelectiveDelete = executeSelectiveDelete;
+
+// ── Export Modal & VietGAP Report Functions ───────────────────
+
+export function openUserExportLogsModal() {
+  const farmSel = document.getElementById('modal-export-farm');
+  const fromDateInput = document.getElementById('modal-export-date-from');
+  const toDateInput = document.getElementById('modal-export-date-to');
+  const catsContainer = document.getElementById('modal-export-categories-grid');
+
+  // Populate farm dropdown from user filter dropdown
+  const filterFarmSel = document.getElementById('user-log-filter-farm');
+  if (farmSel && filterFarmSel) {
+    farmSel.innerHTML = filterFarmSel.innerHTML;
+    farmSel.value = filterFarmSel.value || 'all';
+  }
+
+  // Populate plant dropdown
+  onModalExportFarmChange();
+
+  // Set default date range: Last 30 days up to today
+  const today = new Date().toISOString().slice(0, 10);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const fromDateStr = thirtyDaysAgo.toISOString().slice(0, 10);
+
+  if (fromDateInput) fromDateInput.value = fromDateStr;
+  if (toDateInput) toDateInput.value = today;
+
+  // Populate categories checkboxes
+  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Cắt lá", "Tỉa hoa", "Thu hoạch", "Bệnh cây", "Ghi chú khác"];
+  if (catsContainer) {
+    catsContainer.innerHTML = standardCats.map(cat => `
+      <label style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:6px 10px; border-radius:8px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
+        <input type="checkbox" name="user_export_cat" value="${esc(cat)}" checked style="accent-color:#059669; cursor:pointer;">
+        <span>${esc(cat)}</span>
+      </label>
+    `).join('');
+  }
+
+  const modal = document.getElementById('user-export-logs-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+window.openUserExportLogsModal = openUserExportLogsModal;
+
+export function closeUserExportLogsModal() {
+  const modal = document.getElementById('user-export-logs-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeUserExportLogsModal = closeUserExportLogsModal;
+
+export function onModalExportFarmChange() {
+  const farmSel = document.getElementById('modal-export-farm');
+  const plantSel = document.getElementById('modal-export-plant');
+  if (!plantSel) return;
+
+  const farmId = farmSel ? farmSel.value : 'all';
+  let allPlants = [];
+  try {
+    allPlants = getPlantsCache() || [];
+  } catch (_) {
+    allPlants = [];
+  }
+
+  let plants = allPlants;
+  if (farmId !== 'all') {
+    plants = allPlants.filter(p => String(p.farm_id) === String(farmId));
+  }
+
+  plantSel.innerHTML = `<option value="all">Tất cả cây trồng</option>`
+    + plants.map(p => `<option value="${p.id}">Cây #${esc(p.tree_code || p.id)} (${esc(p.plant_type || '')})</option>`).join('');
+}
+window.onModalExportFarmChange = onModalExportFarmChange;
+
+export function toggleAllUserExportCats(select) {
+  const checkboxes = document.querySelectorAll('input[name="user_export_cat"]');
+  checkboxes.forEach(cb => cb.checked = select);
+}
+window.toggleAllUserExportCats = toggleAllUserExportCats;
+
+function formatLogDetailsText(log) {
+  const d = log.details || {};
+  const parts = [];
+  if (log.log_type === 'Tưới nước') {
+    if (d.method) parts.push(`Phương pháp: ${d.method}`);
+    if (d.amount) parts.push(`Lượng nước: ${d.amount} ${d.unit || 'L'}`);
+  } else if (log.log_type === 'Bón phân') {
+    if (d.fertilizer_name || d.supply_name) parts.push(`Tên phân: ${d.fertilizer_name || d.supply_name}`);
+    if (d.type) parts.push(`Loại: ${d.type}`);
+    if (d.amount || d.quantity) parts.push(`Lượng: ${d.amount || d.quantity} ${d.unit || 'kg'}`);
+  } else if (log.log_type === 'Phun thuốc') {
+    if (d.pesticide_name || d.supply_name) parts.push(`Tên thuốc: ${d.pesticide_name || d.supply_name}`);
+    if (d.type) parts.push(`Loại thuốc: ${d.type}`);
+    if (d.amount || d.dosage) parts.push(`Liều lượng: ${d.amount || d.dosage} ${d.unit || ''}`);
+    if (d.reason) parts.push(`Đối tượng phòng trừ: ${d.reason}`);
+  } else if (log.log_type === 'Cắt lá') {
+    if (d.amount) parts.push(`Số lượng cành/lá: ${d.amount}`);
+    if (d.reason) parts.push(`Mục đích: ${d.reason}`);
+  } else if (log.log_type === 'Tỉa hoa') {
+    if (d.amount) parts.push(`Số lượng hoa/quả: ${d.amount}`);
+    if (d.reason) parts.push(`Mục đích: ${d.reason}`);
+  } else if (log.log_type === 'Thu hoạch') {
+    if (d.amount || d.yield_kg) parts.push(`Sản lượng: ${d.amount || d.yield_kg} ${d.unit || 'kg'}`);
+    if (d.fruit_count) parts.push(`Số lượng trái: ${d.fruit_count} trái`);
+    if (d.quality) parts.push(`Chất lượng: ${d.quality}`);
+  } else if (log.log_type === 'Bệnh cây') {
+    if (d.disease_name) parts.push(`Tên bệnh/sâu hại: ${d.disease_name}`);
+    if (d.severity) parts.push(`Mức độ: ${d.severity}`);
+    if (d.description) parts.push(`Mô tả triệu chứng: ${d.description}`);
+  } else {
+    if (d.method) parts.push(d.method);
+    if (d.amount) parts.push(`${d.amount} ${d.unit || ''}`);
+  }
+  return parts.join(' | ');
+}
+
+export function exportLogsToCsv(logs, filename = 'NhatKyCanhTac.csv') {
+  if (!Array.isArray(logs) || logs.length === 0) {
+    toast('Không có nhật ký canh tác nào để xuất file.', 'warning');
+    return;
+  }
+
+  const headers = [
+    "STT",
+    "Ngày Canh Tác",
+    "Mã Cây / Lô",
+    "Loại Cây",
+    "Giống Cây",
+    "Trang Trại",
+    "Hoạt Động Canh Tác",
+    "Chi Tiết Kỹ Thuật (Vật tư, Thuốc, Liều lượng)",
+    "Đơn Giá (VNĐ)",
+    "Thành Tiền (VNĐ)",
+    "Người Thực Hiện",
+    "Ghi Chú Bổ Sung",
+    "Hình Ảnh / Video Bằng Chứng"
+  ];
+
+  function escapeCsvCell(val) {
+    if (val === null || val === undefined) return '""';
+    const str = String(val).replace(/"/g, '""');
+    return `"${str}"`;
+  }
+
+  const rows = [];
+  rows.push(headers.map(escapeCsvCell).join(','));
+
+  logs.forEach((log, index) => {
+    const detailsStr = formatLogDetailsText(log);
+    const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) 
+      ? log.media_urls.map(m => m.url || m).join('; ') 
+      : '';
+
+    const d = log.details || {};
+    const unitPrice = d.unit_price || d.package_price || '';
+    const totalCost = d.total_cost || d.cost || '';
+
+    const dateStr = log.log_date ? new Date(log.log_date).toLocaleDateString('vi-VN') : '';
+
+    const row = [
+      index + 1,
+      dateStr,
+      log.tree_code || log.plant_id || 'Toàn vườn',
+      log.plant_type || '',
+      log.plant_variety || '',
+      log.farm_name || '',
+      log.log_type || '',
+      detailsStr,
+      unitPrice,
+      totalCost,
+      log.creator_name || 'Nông hộ',
+      log.note || '',
+      mediaUrls
+    ];
+    rows.push(row.map(escapeCsvCell).join(','));
+  });
+
+  const csvContent = '\uFEFF' + rows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  toast(`Đã xuất ${logs.length} dòng nhật ký ra file Excel thành công!`, 'success');
+}
+window.exportLogsToCsv = exportLogsToCsv;
+
+export function exportUserFilteredLogsCsv() {
+  const logsToExport = _currentFilteredLogs && _currentFilteredLogs.length > 0 ? _currentFilteredLogs : _logsCache;
+  if (!logsToExport || logsToExport.length === 0) {
+    toast('Không có nhật ký nào trong danh sách hiển thị để xuất.', 'warning');
+    return;
+  }
+  const dateSuffix = new Date().toISOString().slice(0, 10);
+  exportLogsToCsv(logsToExport, `NhatKyCanhTac_KetQuaLoc_${dateSuffix}.csv`);
+}
+window.exportUserFilteredLogsCsv = exportUserFilteredLogsCsv;
+
+export async function executeUserExport(mode = 'csv') {
+  const farmId = document.getElementById('modal-export-farm')?.value || 'all';
+  const plantId = document.getElementById('modal-export-plant')?.value || 'all';
+  const fromDate = document.getElementById('modal-export-date-from')?.value || '';
+  const toDate = document.getElementById('modal-export-date-to')?.value || '';
+  
+  const checkedCats = [];
+  document.querySelectorAll('input[name="user_export_cat"]:checked').forEach(cb => {
+    checkedCats.push(cb.value);
+  });
+
+  if (checkedCats.length === 0) {
+    alert('Vui lòng chọn ít nhất một hạng mục hoạt động để xuất.');
+    return;
+  }
+
+  // Fetch full logs or use cache
+  let allLogs = _logsCache;
+  try {
+    const freshRes = await api('/plants/logs/recent?days=all');
+    if (Array.isArray(freshRes) && freshRes.length > 0) {
+      allLogs = freshRes;
+      setLogsCache(allLogs);
+    }
+  } catch (err) {
+    console.warn('Fallback to local logs cache:', err);
+  }
+
+  let filtered = [...allLogs];
+  if (farmId !== 'all') {
+    filtered = filtered.filter(l => String(l.farm_id) === String(farmId));
+  }
+  if (plantId !== 'all') {
+    filtered = filtered.filter(l => String(l.plant_id) === String(plantId));
+  }
+  if (fromDate) {
+    filtered = filtered.filter(l => {
+      const d = new Date(l.log_date).toISOString().slice(0, 10);
+      return d >= fromDate;
+    });
+  }
+  if (toDate) {
+    filtered = filtered.filter(l => {
+      const d = new Date(l.log_date).toISOString().slice(0, 10);
+      return d <= toDate;
+    });
+  }
+  if (checkedCats.length > 0) {
+    filtered = filtered.filter(l => checkedCats.includes(l.log_type) || (l.log_type === 'Chăm sóc' && checkedCats.includes('Ghi chú khác')));
+  }
+
+  filtered.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
+
+  if (filtered.length === 0) {
+    alert('Không tìm thấy nhật ký canh tác nào khớp với các tiêu chí lọc đã chọn.');
+    return;
+  }
+
+  closeUserExportLogsModal();
+
+  const farmSel = document.getElementById('modal-export-farm');
+  const farmName = farmSel && farmSel.selectedIndex >= 0 ? farmSel.options[farmSel.selectedIndex].text : 'NongTrang';
+  const cleanFarmName = farmName.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_');
+  const dateSuffix = new Date().toISOString().slice(0, 10);
+
+  if (mode === 'csv') {
+    exportLogsToCsv(filtered, `So_Nhat_Ky_VietGAP_${cleanFarmName}_${dateSuffix}.csv`);
+  } else {
+    openPrintableVietGapReport(filtered, {
+      farmName: farmName === 'Tất cả trang trại' ? 'Toàn bộ trang trại' : farmName,
+      fromDate: fromDate,
+      toDate: toDate,
+      totalLogs: filtered.length
+    });
+  }
+}
+window.executeUserExport = executeUserExport;
+
+/**
+ * Mở cửa sổ in Báo Cáo / Sổ Nhật Ký Canh Tác Chuẩn VietGAP (Print / PDF)
+ */
+export function openPrintableVietGapReport(logs, meta = {}) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Trình duyệt đang chặn cửa sổ pop-up. Vui lòng cho phép mở pop-up để xem bản in báo cáo.');
+    return;
+  }
+
+  const now = new Date();
+  const printTimeStr = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const fromStr = meta.fromDate ? new Date(meta.fromDate).toLocaleDateString('vi-VN') : 'Ngày đầu số hóa';
+  const toStr = meta.toDate ? new Date(meta.toDate).toLocaleDateString('vi-VN') : 'Hiện tại';
+
+  let tableRowsHtml = '';
+  logs.forEach((log, index) => {
+    const detailsStr = formatLogDetailsText(log);
+    const dateStr = log.log_date ? new Date(log.log_date).toLocaleDateString('vi-VN') : '—';
+    const treeCodeStr = log.tree_code || log.plant_id || 'Toàn vườn';
+    const plantTypeStr = log.plant_type ? `${log.plant_type}${log.plant_variety ? ' (' + log.plant_variety + ')' : ''}` : '—';
+
+    tableRowsHtml += `
+      <tr>
+        <td style="text-align:center;">${index + 1}</td>
+        <td style="text-align:center; font-weight:600;">${dateStr}</td>
+        <td style="font-weight:700;">#${esc(treeCodeStr)} <small style="font-weight:400; color:#475569; display:block;">${esc(plantTypeStr)}</small></td>
+        <td style="font-weight:700; color:#065f46;">${esc(log.log_type || 'Chăm sóc')}</td>
+        <td>
+          <div style="font-weight:500;">${esc(detailsStr || 'Thực hiện theo quy trình chuẩn')}</div>
+          ${log.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;"><em>Ghi chú:</em> ${esc(log.note)}</div>` : ''}
+        </td>
+        <td style="text-align:center;">${esc(log.creator_name || 'Nông hộ')}</td>
+        <td style="text-align:center; color:#15803d; font-weight:700;">Đạt Chuẩn</td>
+      </tr>
+    `;
+  });
+
+  const htmlDoc = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <title>Sổ Nhật Ký Canh Tác VietGAP — ${esc(meta.farmName || 'Nông Trại')}</title>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+      <style>
+        @page { size: A4 landscape; margin: 12mm 10mm 15mm 10mm; }
+        body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          color: #0f172a;
+          background: #ffffff;
+          margin: 0;
+          padding: 20px;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        .header-grid {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          border-bottom: 2px solid #047857;
+          padding-bottom: 12px;
+          margin-bottom: 16px;
+        }
+        .org-info { text-align: left; }
+        .org-name { font-size: 15px; font-weight: 800; color: #047857; text-transform: uppercase; }
+        .system-name { font-size: 11px; color: #64748b; font-weight: 600; }
+        .report-title-box { text-align: center; margin-bottom: 16px; }
+        .report-title { font-size: 18px; font-weight: 800; color: #064e3b; text-transform: uppercase; margin: 0 0 4px 0; }
+        .report-sub { font-size: 12.5px; color: #334155; font-weight: 600; }
+        .meta-strip {
+          display: flex;
+          justify-content: space-between;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          padding: 8px 14px;
+          border-radius: 8px;
+          margin-bottom: 14px;
+          font-size: 12px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+        }
+        th, td {
+          border: 1px solid #cbd5e1;
+          padding: 7px 9px;
+          vertical-align: middle;
+          font-size: 11.5px;
+        }
+        th {
+          background-color: #f1f5f9;
+          font-weight: 700;
+          color: #0f172a;
+          text-align: center;
+        }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .signature-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          text-align: center;
+          margin-top: 30px;
+          page-break-inside: avoid;
+        }
+        .sig-title { font-weight: 700; font-size: 12.5px; color: #0f172a; }
+        .sig-sub { font-size: 11px; color: #64748b; margin-top: 2px; font-style: italic; }
+        .sig-space { height: 70px; }
+        .sig-name { font-weight: 700; color: #1e293b; font-size: 12px; }
+        .no-print-bar {
+          background: #0f172a;
+          color: #ffffff;
+          padding: 10px 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          border-radius: 8px;
+        }
+        @media print {
+          .no-print-bar { display: none !important; }
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="no-print-bar">
+        <div><strong>Bản in Sổ Nhật Ký Canh Tác VietGAP</strong> · Số lượng: ${logs.length} dòng ghi chép</div>
+        <button onclick="window.print()" style="background:#10b981; color:#ffffff; border:none; padding:6px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px;">
+          🖨️ In Báo Cáo / Xuất PDF
+        </button>
+      </div>
+
+      <div class="header-grid">
+        <div class="org-info">
+          <div class="org-name">TÂN BẢO AGTECH — HỆ SINH THÁI NÔNG NGHIỆP SỐ</div>
+          <div class="system-name">Hệ Thống Quản Lý Canh Tác & Định Danh Cây Trồng NFC Plant Book</div>
+        </div>
+        <div style="text-align: right; font-size: 11px; color: #64748b;">
+          <div>Tiêu chuẩn áp dụng: <strong>VietGAP / GlobalGAP</strong></div>
+          <div>Thời gian trích xuất: ${printTimeStr}</div>
+        </div>
+      </div>
+
+      <div class="report-title-box">
+        <h1 class="report-title">SỔ NHẬT KÝ CANH TÁC & CHĂM SÓC CÂY TRỒNG</h1>
+        <div class="report-sub">Trang trại: <strong>${esc(meta.farmName || 'Nông Trại')}</strong></div>
+      </div>
+
+      <div class="meta-strip">
+        <div>Khoảng thời gian: <strong>${fromStr}</strong> đến <strong>${toStr}</strong></div>
+        <div>Tổng số hoạt động: <strong>${logs.length}</strong> nhật ký</div>
+        <div>Tình trạng dữ liệu: <strong>Hợp Lệ & Đã Xác Thực</strong></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 4%">STT</th>
+            <th style="width: 10%">Ngày</th>
+            <th style="width: 13%">Mã Cây / Giống</th>
+            <th style="width: 13%">Hoạt Động</th>
+            <th style="width: 42%">Nội Dung Kỹ Thuật (Vật tư, Thuốc, Liều lượng, Ghi chú)</th>
+            <th style="width: 10%">Người Làm</th>
+            <th style="width: 8%">Đánh Giá</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRowsHtml}
+        </tbody>
+      </table>
+
+      <div class="signature-grid">
+        <div>
+          <div class="sig-title">NGƯỜI LẬP SỔ</div>
+          <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
+          <div class="sig-space"></div>
+          <div class="sig-name">${esc(logs[0]?.creator_name || 'Nông hộ')}</div>
+        </div>
+        <div>
+          <div class="sig-title">KỸ THUẬT VIÊN / TỔ TRƯỞNG</div>
+          <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
+          <div class="sig-space"></div>
+          <div class="sig-name">................................................</div>
+        </div>
+        <div>
+          <div class="sig-title">CHỦ TRANG TRẠI / GIÁM SÁT VIETGAP</div>
+          <div class="sig-sub">(Ký, đóng dấu hoặc xác nhận)</div>
+          <div class="sig-space"></div>
+          <div class="sig-name">................................................</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(htmlDoc);
+  printWindow.document.close();
+}
+window.openPrintableVietGapReport = openPrintableVietGapReport;
 

@@ -1907,6 +1907,9 @@
           </div>
 
           <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="royal-pill-btn" id="btn-open-user-export-logs" onclick="openUserExportLogsModal()" style="border-color:#a7f3d0; background:#ecfdf5; color:#065f46 !important;" title="Xuất báo cáo & sổ nhật ký canh tác điện tử chuẩn VietGAP / Excel">
+              <i data-lucide="file-spreadsheet" class="lucide-sm" style="color:#059669;"></i> Xuất Báo Cáo / Excel
+            </button>
             <button type="button" class="royal-pill-btn" id="btn-open-selective-log-delete" onclick="openSelectiveDeleteModal()" style="border-color:#fecaca; background:#fff1f2; color:#dc2626 !important;" title="Mở bộ lọc xóa mềm chọn lọc theo ngày, hoạt động, cây...">
               <i data-lucide="trash-2" class="lucide-sm" style="color:#dc2626;"></i> Xóa chọn lọc
             </button>
@@ -1943,6 +1946,10 @@
 
             <button type="button" id="user-log-disease-toggle" onclick="toggleDiseaseOnlyFilter()" style="padding:9px 14px; border-radius:10px; border:1.5px solid #fca5a5; background:#fff1f2; color:#dc2626; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
               <i data-lucide="shield-alert" class="lucide-sm"></i> Chỉ Cây bệnh
+            </button>
+
+            <button type="button" id="btn-user-quick-export-csv" onclick="exportUserFilteredLogsCsv()" style="padding:9px 14px; border-radius:10px; border:1.5px solid #a7f3d0; background:#f0fdf4; color:#047857; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" title="Tải nhanh toàn bộ kết quả đang lọc ra file Excel (CSV UTF-8 BOM)">
+              <i data-lucide="download" class="lucide-sm" style="color:#059669;"></i> Xuất Excel
             </button>
 
             <button type="button" id="btn-toggle-batch-log-mode" onclick="toggleBatchSelectMode()" style="padding:9px 14px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;" title="Bật chế độ tick chọn nhiều dòng để xóa hàng loạt">
@@ -2099,6 +2106,100 @@
             <button type="button" class="btn btn-danger" id="btn-modal-confirm-selective-delete" onclick="executeSelectiveDelete()" style="padding:9px 20px; font-size:13px; font-weight:800; border-radius:10px; background:#dc2626; border:none; display:inline-flex; align-items:center; gap:8px;">
               <i data-lucide="trash-2" class="lucide-sm"></i> Xác nhận xóa mềm (<span id="btn-del-count-text">0</span> mục)
             </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ════════════════ MODAL: XUẤT BÁO CÁO & SỔ NHẬT KÝ CANH TÁC VIETGAP / EXCEL ════════════════ -->
+      <div id="user-export-logs-modal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(15,23,42,0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:16px;">
+        <div class="modal-content" style="background:#ffffff; border-radius:20px; max-width:620px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid #e2e8f0; overflow:hidden; animation:modalFadeIn 0.25s ease;">
+          
+          <!-- Modal Header -->
+          <div style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:18px; color:#ffffff;">
+                <i data-lucide="file-spreadsheet" class="lucide-sm"></i>
+              </div>
+              <div>
+                <h3 style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff;">Xuất Báo Cáo & Nhật Ký VietGAP</h3>
+                <div style="font-size:12px; color:#a7f3d0; margin-top:2px;">Trích xuất sổ canh tác điện tử · Chuẩn hóa file Excel & Bản in PDF</div>
+              </div>
+            </div>
+            <button type="button" onclick="closeUserExportLogsModal()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer; padding:4px;">
+              <i data-lucide="x" class="lucide-sm"></i>
+            </button>
+          </div>
+
+          <!-- Modal Body Form -->
+          <div style="padding:22px 24px; display:flex; flex-direction:column; gap:16px; max-height:75vh; overflow-y:auto;">
+            
+            <!-- Filter 1: Trang trại & Cây trồng -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="map-pin" class="lucide-xs"></i> Trang trại:</label>
+                <select id="modal-export-farm" onchange="onModalExportFarmChange()" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
+                  <option value="all">Tất cả trang trại</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;"><i data-lucide="sprout" class="lucide-xs"></i> Cây trồng / Lô:</label>
+                <select id="modal-export-plant" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none; background:#ffffff;">
+                  <option value="all">Tất cả cây trồng</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Filter 2: Phạm vi thời gian -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">
+              <label style="display:block; font-size:12px; font-weight:800; color:#1e293b; margin-bottom:8px;"><i data-lucide="calendar" class="lucide-xs"></i> Khoảng thời gian xuất báo cáo:</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                  <span style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Từ ngày:</span>
+                  <input type="date" id="modal-export-date-from" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                </div>
+                <div>
+                  <span style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Đến ngày:</span>
+                  <input type="date" id="modal-export-date-to" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:600; outline:none; background:#ffffff;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Filter 3: Hạng mục canh tác -->
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="font-size:12px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
+                  <i data-lucide="check-square" class="lucide-xs" style="color:#059669;"></i> Hạng mục hoạt động:
+                </label>
+                <div style="display:flex; gap:10px;">
+                  <button type="button" onclick="toggleAllUserExportCats(true)" style="background:none; border:none; color:#059669; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Chọn hết</button>
+                  <button type="button" onclick="toggleAllUserExportCats(false)" style="background:none; border:none; color:#64748b; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Bỏ chọn</button>
+                </div>
+              </div>
+
+              <div id="modal-export-categories-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:8px;">
+                <!-- Filled dynamically -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeUserExportLogsModal()" style="padding:9px 18px; font-size:13px; font-weight:700; border-radius:10px;">
+              Hủy bỏ
+            </button>
+
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary" onclick="executeUserExport('csv')" style="padding:9px 18px; font-size:13px; font-weight:800; border-radius:10px; background:#f0fdf4; border:1.5px solid #86efac; color:#166534; display:inline-flex; align-items:center; gap:6px;">
+                <i data-lucide="download" class="lucide-sm" style="color:#166534;"></i> Tải Excel (.CSV)
+              </button>
+
+              <button type="button" class="btn btn-primary" onclick="executeUserExport('print')" style="padding:9px 20px; font-size:13px; font-weight:800; border-radius:10px; background:linear-gradient(135deg, #059669, #047857); border:none; color:#ffffff; display:inline-flex; align-items:center; gap:6px;">
+                <i data-lucide="printer" class="lucide-sm"></i> In Báo Cáo / PDF
+              </button>
+            </div>
           </div>
 
         </div>
