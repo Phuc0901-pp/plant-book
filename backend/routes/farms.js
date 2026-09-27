@@ -43,7 +43,7 @@ router.get('/', auth, async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error('Error getting farms:', err);
-    res.status(500).json({ error: 'Lá»—i server khi táº£i danh sÃ¡ch trang tráº¡i.' });
+    res.status(500).json({ error: 'Lỗi server khi tải danh sách trang trại.' });
   }
 });
 
@@ -65,31 +65,31 @@ router.get('/:id', auth, async (req, res) => {
       LIMIT 1
     `, [req.params.id]);
     if (farmResult.rows.length === 0) {
-      return res.status(404).json({ error: 'KhÃ´ng tÃ¬m tháº¥y trang tráº¡i.' });
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
     const farm = farmResult.rows[0];
     
     // Check if user is farm owner, admin, or assigned farmer
     const isAssigned = req.user.farm_id && farm.id === req.user.farm_id;
     if (req.user.role !== 'admin' && farm.user_id !== req.user.id && !isAssigned) {
-      return res.status(403).json({ error: 'Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p trang tráº¡i nÃ y.' });
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập trang trại này.' });
     }
 
     const plantsResult = await pool.query('SELECT * FROM plants WHERE farm_id = $1 ORDER BY id ASC', [farm.id]);
     res.json({ ...farm, plants: plantsResult.rows });
   } catch (err) {
     console.error('Error getting farm details:', err);
-    res.status(500).json({ error: 'Lá»—i server khi táº£i chi tiáº¿t trang tráº¡i.' });
+    res.status(500).json({ error: 'Lỗi server khi tải chi tiết trang trại.' });
   }
 });
 
-// POST /api/farms/self-init â€” Self-initialize farm via GPS by a farmer (requires auth)
+// POST /api/farms/self-init — Self-initialize farm via GPS by a farmer (requires auth)
 router.post('/self-init', auth, async (req, res) => {
   const client = await pool.connect();
   try {
     const { name, description, latitude, longitude, area, total_plants, plant_count } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'TÃªn trang tráº¡i lÃ  báº¯t buá»™c.' });
+      return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     // Check account tier limit: Normal users can only possess max 1 active farm!
@@ -101,7 +101,7 @@ router.post('/self-init', auth, async (req, res) => {
       );
       if (existingFarmsCount.rows[0].count >= 1) {
         return res.status(403).json({
-          error: 'ðŸ”’ TÃ i khoáº£n NÃ´ng há»™ NORMAL chá»‰ Ä‘Æ°á»£c táº¡o tá»‘i Ä‘a 1 Trang tráº¡i. Vui lÃ²ng nÃ¢ng cáº¥p tÃ i khoáº£n PRO ðŸ‘‘ Ä‘á»ƒ sá»Ÿ há»¯u nhiá»u trang tráº¡i!',
+          error: '🔒 Tài khoản Nông hộ NORMAL chỉ được tạo tối đa 1 Trang trại. Vui lòng nâng cấp tài khoản PRO 👑 để sở hữu nhiều trang trại!',
           require_pro: true
         });
       }
@@ -140,13 +140,13 @@ router.post('/self-init', auth, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Khá»Ÿi táº¡o trang tráº¡i báº±ng tá»a Ä‘á»™ GPS thÃ nh cÃ´ng!',
+      message: 'Khởi tạo trang trại bằng tọa độ GPS thành công!',
       farm: newFarm
     });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error self-initializing farm:', err);
-    res.status(500).json({ error: 'Lá»—i server khi khá»Ÿi táº¡o trang tráº¡i: ' + err.message });
+    res.status(500).json({ error: 'Lỗi server khi khởi tạo trang trại: ' + err.message });
   } finally {
     client.release();
   }
@@ -157,7 +157,7 @@ router.post('/', auth, admin, async (req, res) => {
   try {
     const { name, description, polygon_coordinates, area, user_id, puc_code, vietgap_cert_number, vietgap_cert_date, vietgap_cert_org } = req.body;
     if (!name) {
-      return res.status(400).json({ error: 'TÃªn trang tráº¡i lÃ  báº¯t buá»™c.' });
+      return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     const result = await pool.query(`
@@ -186,24 +186,24 @@ router.post('/', auth, admin, async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating farm:', err);
-    res.status(500).json({ error: 'Lá»—i server khi táº¡o trang tráº¡i.' });
+    res.status(500).json({ error: 'Lỗi server khi tạo trang trại.' });
   }
 });
 
-// PUT update farm (requires auth â€” admin or farm owner)
+// PUT update farm (requires auth — admin or farm owner)
 router.put('/:id', auth, async (req, res) => {
   try {
     const farmId = req.params.id;
     const farmCheck = await pool.query('SELECT * FROM farms WHERE id = $1', [farmId]);
     if (farmCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'KhÃ´ng tÃ¬m tháº¥y trang tráº¡i.' });
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
     const farm = farmCheck.rows[0];
 
     // Check ownership
     const isOwner = farm.user_id === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
     if (req.user.role !== 'admin' && !isOwner) {
-      return res.status(403).json({ error: 'Báº¡n khÃ´ng cÃ³ quyá»n chá»‰nh sá»­a trang tráº¡i nÃ y.' });
+      return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa trang trại này.' });
     }
 
     const { 
@@ -212,7 +212,7 @@ router.put('/:id', auth, async (req, res) => {
     } = req.body;
     
     if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'TÃªn trang tráº¡i lÃ  báº¯t buá»™c.' });
+      return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
     let finalCoords = polygon_coordinates;
@@ -265,27 +265,27 @@ router.put('/:id', auth, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Cáº­p nháº­t thÃ´ng tin trang tráº¡i thÃ nh cÃ´ng!',
+      message: 'Cập nhật thông tin trang trại thành công!',
       farm: result.rows[0]
     });
   } catch (err) {
     console.error('Error updating farm:', err);
-    res.status(500).json({ error: 'Lá»—i server khi cáº­p nháº­t trang tráº¡i: ' + err.message });
+    res.status(500).json({ error: 'Lỗi server khi cập nhật trang trại: ' + err.message });
   }
 });
 
-// POST /api/farms/:id/clear-gps â€” Reset/Clear all plants GPS in a farm (requires auth â€” admin or farm owner)
+// POST /api/farms/:id/clear-gps — Reset/Clear all plants GPS in a farm (requires auth — admin or farm owner)
 router.post('/:id/clear-gps', auth, async (req, res) => {
   try {
     const farmId = req.params.id;
     const farmCheck = await pool.query('SELECT * FROM farms WHERE id = $1', [farmId]);
     if (farmCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'KhÃ´ng tÃ¬m tháº¥y trang tráº¡i.' });
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
     const farm = farmCheck.rows[0];
     const isOwner = farm.user_id === req.user.id || (req.user.farm_id && req.user.farm_id === farm.id);
     if (req.user.role !== 'admin' && !isOwner) {
-      return res.status(403).json({ error: 'Báº¡n khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y.' });
+      return res.status(403).json({ error: 'Bạn không có quyền thực hiện thao tác này.' });
     }
 
     const resetRes = await pool.query(`
@@ -302,23 +302,23 @@ router.post('/:id/clear-gps', auth, async (req, res) => {
 
     res.json({
       success: true,
-      message: `ÄÃ£ xÃ³a thÃ nh cÃ´ng tá»a Ä‘á»™ Ä‘á»‹nh vá»‹ GPS cá»§a ${resetRes.rows.length} cÃ¢y trong trang tráº¡i!`,
+      message: `Đã xóa thành công tọa độ định vị GPS của ${resetRes.rows.length} cây trong trang trại!`,
       cleared_count: resetRes.rows.length
     });
   } catch (err) {
     console.error('Error clearing plants GPS in farm:', err);
-    res.status(500).json({ error: 'Lá»—i server khi xÃ³a tá»a Ä‘á»™ GPS: ' + err.message });
+    res.status(500).json({ error: 'Lỗi server khi xóa tọa độ GPS: ' + err.message });
   }
 });
 
-// â”€â”€ FARM IOT SENSORS & WEATHER FORECAST ENDPOINTS (PERSISTENT DB) â”€â”€
+// ── FARM IOT SENSORS & WEATHER FORECAST ENDPOINTS (PERSISTENT DB) ──
 function generateDefaultFarmIoTData(farmId) {
   const seed = (parseInt(farmId) || 1);
   const airTemp = (27.5 + (seed % 3) * 0.7).toFixed(1);
   const airHumidity = 72 + (seed % 5);
   const pressure = 1010 + (seed % 4);
   const windSpeed = 12 + (seed % 6);
-  const windDirections = ['ÄÃ´ng Nam', 'ÄÃ´ng', 'Nam', 'TÃ¢y Nam', 'ÄÃ´ng Báº¯c'];
+  const windDirections = ['Đông Nam', 'Đông', 'Nam', 'Tây Nam', 'Đông Bắc'];
   const windDirection = windDirections[seed % windDirections.length];
   const rainfall = (1.5 + (seed % 3) * 0.5).toFixed(1);
   const rainIntensity = (0.5 + (seed % 2) * 0.3).toFixed(1);
@@ -435,7 +435,7 @@ router.get('/:id/iot-data', auth, async (req, res) => {
     res.json(payload);
   } catch (err) {
     console.error('Error fetching farm IoT data:', err);
-    res.status(500).json({ error: 'Lá»—i server khi láº¥y dá»¯ liá»‡u cáº£m biáº¿n IoT.' });
+    res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu cảm biến IoT.' });
   }
 });
 
@@ -457,7 +457,7 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
     const row = updateRes.rows[0];
     const payload = {
       success: true,
-      message: 'ÄÃ£ lÃ m má»›i dá»¯ liá»‡u cáº£m biáº¿n IoT thÃ nh cÃ´ng!',
+      message: 'Đã làm mới dữ liệu cảm biến IoT thành công!',
       farm_id: farmId,
       air_data: typeof row.air_data === 'string' ? JSON.parse(row.air_data) : row.air_data,
       soil_data: typeof row.soil_data === 'string' ? JSON.parse(row.soil_data) : row.soil_data,
@@ -473,7 +473,7 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
     res.json(payload);
   } catch (err) {
     console.error('Error refreshing farm IoT data:', err);
-    res.status(500).json({ error: 'Lá»—i server khi lÃ m má»›i dá»¯ liá»‡u cáº£m biáº¿n IoT.' });
+    res.status(500).json({ error: 'Lỗi server khi làm mới dữ liệu cảm biến IoT.' });
   }
 });
 
@@ -600,4 +600,3 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 module.exports = router;
-
