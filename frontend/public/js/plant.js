@@ -2517,15 +2517,52 @@ function _renderTimelineItemHtml(log) {
   const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
   const fullDateTime = fmtDateTime(timeVal);
 
-  const mediaUrls = (log.media_urls && Array.isArray(log.media_urls)) ? log.media_urls : [];
+  let mediaUrls = [];
+  if (log.media_urls) {
+    if (Array.isArray(log.media_urls)) {
+      mediaUrls = log.media_urls;
+    } else if (typeof log.media_urls === 'string') {
+      try { mediaUrls = JSON.parse(log.media_urls); } catch(_) { mediaUrls = []; }
+    }
+  }
+  if ((!mediaUrls || mediaUrls.length === 0) && log.media_url) {
+    mediaUrls = [{ url: log.media_url, type: (/\.(mp4|mov|avi|mkv|webm)/i.test(log.media_url) ? 'video' : 'image') }];
+  }
+  if ((!mediaUrls || mediaUrls.length === 0) && log.details && log.details.media_urls) {
+    mediaUrls = Array.isArray(log.details.media_urls) ? log.details.media_urls : [];
+  }
+  // Smart correlation fallback: If mediaUrls is empty and currentPlantData has media gallery items
+  if ((!mediaUrls || mediaUrls.length === 0) && currentPlantData && Array.isArray(currentPlantData.media) && currentPlantData.media.length > 0) {
+    const logDateStr = log.log_date ? new Date(log.log_date).toISOString().slice(0, 10) : '';
+    if (log.log_type === 'Bệnh cây') {
+      const matched = currentPlantData.media.filter(m => {
+        const cap = (m.caption || '').toLowerCase();
+        const mDateStr = m.uploaded_at ? new Date(m.uploaded_at).toISOString().slice(0, 10) : '';
+        return cap.includes('bệnh cây') || (logDateStr && mDateStr === logDateStr);
+      });
+      if (matched.length > 0) {
+        mediaUrls = matched.map(m => ({ url: m.url, type: m.media_type || (/\.(mp4|mov|avi|mkv|webm)/i.test(m.url) ? 'video' : 'image') }));
+      }
+    }
+  }
+
+  const mediaBadge = mediaUrls.length > 0 ? `
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd;padding:2px 7px;border-radius:6px;margin-left:6px;" title="${mediaUrls.length} tệp đính kèm">
+      <i data-lucide="camera" class="lucide-xs"></i> ${mediaUrls.length} ảnh/video
+    </span>` : '';
+
   const mediaThumbs = mediaUrls.length > 0 ? `
     <div class="log-media-gallery">
+      <div style="width:100%;font-size:11.5px;font-weight:700;color:#475569;margin-bottom:2px;display:flex;align-items:center;gap:4px;">
+        <i data-lucide="paperclip" class="lucide-xs" style="color:#059669;"></i> Minh chứng hình ảnh & video thực địa (${mediaUrls.length}):
+      </div>
       ${mediaUrls.map(m => {
-        const isVideo = (m.type === 'video') || /\.(mp4|mov|avi|mkv|webm)/i.test(m.url || m);
-        const url = m.url || m;
+        const url = (typeof m === 'object' && m !== null) ? (m.url || '') : String(m || '');
+        if (!url) return '';
+        const isVideo = (typeof m === 'object' && (m.type === 'video' || m.media_type === 'video')) || /\.(mp4|mov|avi|mkv|webm)/i.test(url);
         return isVideo
-          ? `<div class="log-media-item" onclick="openLightbox('${esc(url)}','video')"><video src="${esc(url)}" muted preload="metadata"></video><div class="video-play-icon"><i data-lucide="play-circle" class="lucide-sm"></i></div></div>`
-          : `<div class="log-media-item" onclick="openLightbox('${esc(url)}','image')"><img src="${esc(url)}" alt="ảnh nhật ký" loading="lazy"></div>`;
+          ? `<div class="log-media-item" onclick="openLightbox('${esc(url)}','video')" title="Bấm để phát video"><video src="${esc(url)}" muted preload="metadata"></video><div class="video-play-icon"><i data-lucide="play-circle" class="lucide-sm"></i></div></div>`
+          : `<div class="log-media-item" onclick="openLightbox('${esc(url)}','image')" title="Bấm để phóng to ảnh"><img src="${esc(url)}" alt="ảnh nhật ký" loading="lazy"></div>`;
       }).join('')}
     </div>` : '';
 
@@ -2538,7 +2575,10 @@ function _renderTimelineItemHtml(log) {
       <div class="timeline-marker ${markerClass}"></div>
       <div class="timeline-content" onclick="toggleTimelineItem(event, this)">
         <div class="log-header">
-          <span class="log-tag ${tagClass}"><i data-lucide="${icon}" class="lucide-xs"></i> ${esc(log.log_type || 'Ghi chú')}</span>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+            <span class="log-tag ${tagClass}"><i data-lucide="${icon}" class="lucide-xs"></i> ${esc(log.log_type || 'Ghi chú')}</span>
+            ${mediaBadge}
+          </div>
           <div class="log-header-right">
             <span class="log-time-indicator"><i data-lucide="clock" class="lucide-sm"></i> ${fullDateTime}</span>
             <i data-lucide="chevron-down" class="toggle-arrow lucide-sm"></i>

@@ -625,9 +625,17 @@ function _renderLogPage() {
         }
       }
 
-      const mediaHtml = l.log_type === 'Bệnh cây'
-        ? buildMediaThumbnailsHtml(l.media_urls, 36)
-        : '';
+      let mediaList = [];
+      if (l.media_urls) {
+        if (Array.isArray(l.media_urls)) mediaList = l.media_urls;
+        else if (typeof l.media_urls === 'string') {
+          try { mediaList = JSON.parse(l.media_urls); } catch (_) { mediaList = []; }
+        }
+      }
+      if (mediaList.length === 0 && l.media_url) {
+        mediaList = [{ url: l.media_url, type: /\.(mp4|mov|avi|mkv|webm)/i.test(l.media_url) ? 'video' : 'image' }];
+      }
+      const mediaHtml = mediaList.length > 0 ? buildMediaThumbnailsHtml(mediaList, 40) : '';
 
       const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
       const isSelected = l.id && _selectedLogIds.has(l.id);
@@ -671,6 +679,7 @@ function _renderLogPage() {
                   <strong style="color:#0f172a; font-size:14px;">${esc(targetDisplay)}</strong>
                 </div>
                 ${detailsStr ? `<div style="font-size:12.5px; color:#475569; margin-top:4px;">${detailsStr}</div>` : ''}
+                ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
                 <div style="font-size:11.5px; color:#64748b; margin-top:4px;">
                   👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
                 </div>

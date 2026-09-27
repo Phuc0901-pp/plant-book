@@ -3360,6 +3360,19 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
           delete rawDetails.stock_deducted;
           safeDetails = rawDetails;
         }
+
+        let parsedMediaUrls = [];
+        if (log.media_urls) {
+          if (Array.isArray(log.media_urls)) {
+            parsedMediaUrls = log.media_urls;
+          } else if (typeof log.media_urls === 'string') {
+            try { parsedMediaUrls = JSON.parse(log.media_urls); } catch (_) { parsedMediaUrls = []; }
+          }
+        }
+        if (parsedMediaUrls.length === 0 && log.media_url) {
+          parsedMediaUrls = [{ url: log.media_url, type: /\.(mp4|mov|avi|mkv|webm)/i.test(log.media_url) ? 'video' : 'image' }];
+        }
+
         return {
           id: log.id,
           plant_id: log.plant_id,
@@ -3368,6 +3381,7 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
           note: log.note,
           details: safeDetails,
           media_url: log.media_url,
+          media_urls: parsedMediaUrls,
           created_at: log.created_at
         };
       });
@@ -3566,6 +3580,19 @@ router.get('/public/:slug', async (req, res) => {
         delete rawDetails.stock_deducted;
         safeDetails = rawDetails;
       }
+
+      let parsedMediaUrls = [];
+      if (log.media_urls) {
+        if (Array.isArray(log.media_urls)) {
+          parsedMediaUrls = log.media_urls;
+        } else if (typeof log.media_urls === 'string') {
+          try { parsedMediaUrls = JSON.parse(log.media_urls); } catch (_) { parsedMediaUrls = []; }
+        }
+      }
+      if (parsedMediaUrls.length === 0 && log.media_url) {
+        parsedMediaUrls = [{ url: log.media_url, type: /\.(mp4|mov|avi|mkv|webm)/i.test(log.media_url) ? 'video' : 'image' }];
+      }
+
       return {
         id: log.id,
         plant_id: log.plant_id,
@@ -3574,6 +3601,7 @@ router.get('/public/:slug', async (req, res) => {
         note: log.note,
         details: safeDetails,
         media_url: log.media_url,
+        media_urls: parsedMediaUrls,
         created_at: log.created_at
       };
     });
