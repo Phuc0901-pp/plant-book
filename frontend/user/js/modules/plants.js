@@ -1347,7 +1347,7 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
       let lat = null;
       let lng = null;
       if (farmObj) {
-        if (farmObj.latitude && farmObj.longitude) {
+        if (farmObj.latitude && farmObj.longitude && !isNaN(parseFloat(farmObj.latitude)) && !isNaN(parseFloat(farmObj.longitude))) {
           lat = parseFloat(farmObj.latitude);
           lng = parseFloat(farmObj.longitude);
         } else if (farmObj.polygon_coordinates) {
@@ -1361,28 +1361,76 @@ export async function renderIoTDemoData(farmId, forceRefresh = false) {
         }
       }
       if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-        lat = 10.9415; // Default Long Khánh / Mekong Delta
-        lng = 107.2418;
+        lat = null;
+        lng = null;
       }
 
-      fetchLiveOpenMeteoForecast(lat, lng).then(liveForecast => {
-        if (liveForecast && liveForecast.length > 0) {
-          _renderForecastGrid(liveForecast);
-          const badge = document.getElementById('iot-weather-source-badge');
-          if (badge) {
-            badge.innerHTML = `<i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Realtime (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+      if (lat && lng) {
+        fetchLiveOpenMeteoForecast(lat, lng).then(liveForecast => {
+          if (liveForecast && liveForecast.length > 0) {
+            _renderForecastGrid(liveForecast);
+            const badge = document.getElementById('iot-weather-source-badge');
+            if (badge) {
+              badge.innerHTML = `<i data-lucide="satellite" class="lucide-xs" style="color:#059669;"></i> Realtime (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+            }
+            if (window.lucide) {
+              try { lucide.createIcons(); } catch (_) {}
+            }
           }
-          if (window.lucide) {
-            try { lucide.createIcons(); } catch (_) {}
-          }
+        });
+      } else {
+        const badge = document.getElementById('iot-weather-source-badge');
+        if (badge) {
+          badge.innerHTML = `<i data-lucide="map-pin-off" class="lucide-xs" style="color:#f59e0b;"></i> GPS: null (Chưa thiết lập tọa độ)`;
         }
-      });
+      }
     }
   } catch (err) {
     console.warn('Lỗi tải dữ liệu IoT từ Database:', err);
   }
 }
 window.renderIoTDemoData = renderIoTDemoData;
+
+function _cleanUtf8Mojibake(str) {
+  if (!str || typeof str !== 'string') return str || '';
+  return str
+    .replace(/TÃ¢y/g, 'Tây')
+    .replace(/Ã¢/g, 'â')
+    .replace(/Ã´/g, 'ô')
+    .replace(/Ãª/g, 'ê')
+    .replace(/Ä\x90Ã´ng/g, 'Đông')
+    .replace(/Ä\x90/g, 'Đ')
+    .replace(/Ã¡/g, 'á')
+    .replace(/Ã /g, 'à')
+    .replace(/áº£/g, 'ả')
+    .replace(/Ã£/g, 'ã')
+    .replace(/áº¡/g, 'ạ')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¨/g, 'è')
+    .replace(/áº½/g, 'ẽ')
+    .replace(/áº¹/g, 'ẹ')
+    .replace(/Ã­/g, 'í')
+    .replace(/Ã¬/g, 'ì')
+    .replace(/á»\x89/g, 'ỉ')
+    .replace(/Ä©/g, 'ĩ')
+    .replace(/á»\x8b/g, 'ị')
+    .replace(/Ã³/g, 'ó')
+    .replace(/Ã²/g, 'ò')
+    .replace(/á»\x8f/g, 'ỏ')
+    .replace(/Ãµ/g, 'õ')
+    .replace(/á»\x8d/g, 'ọ')
+    .replace(/Ãº/g, 'ú')
+    .replace(/Ã¹/g, 'ù')
+    .replace(/á»§/g, 'ủ')
+    .replace(/Å©/g, 'ũ')
+    .replace(/á»¥/g, 'ụ')
+    .replace(/Ã½/g, 'ý')
+    .replace(/á»³/g, 'ỳ')
+    .replace(/á»·/g, 'ỷ')
+    .replace(/á»¹/g, 'ỹ')
+    .replace(/á»µ/g, 'ỵ')
+    .replace(/Ä\x91/g, 'đ');
+}
 
 function _renderForecastGrid(forecast) {
   const grid = document.getElementById('iot-weather-forecast-grid');
@@ -1400,11 +1448,15 @@ function _renderForecastGrid(forecast) {
       else iconName = 'sun';
     }
     const isAct = _userSelectedHourlyDayMode === `day_${idx}`;
+    const dayLabelClean = _cleanUtf8Mojibake(w.day_label || 'Hôm nay');
+    const adviceClean = _cleanUtf8Mojibake(w.advice || '');
+    const windClean = _cleanUtf8Mojibake(w.wind || '12 km/h');
+
     return `
-      <div onclick="selectUserHourlyForecastDay('day_${idx}')" style="background:${isAct ? '#ecfdf5' : (w.bg || '#fff7ed')}; border:1.5px solid ${isAct ? '#059669' : (w.border || '#ffedd5')}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:${isAct ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(0,0,0,0.02)'}; cursor:pointer;" title="Nhấp để xem 24 khung giờ chi tiết của ${w.day_label}">
+      <div onclick="selectUserHourlyForecastDay('day_${idx}')" style="background:${isAct ? '#ecfdf5' : (w.bg || '#fff7ed')}; border:1.5px solid ${isAct ? '#059669' : (w.border || '#ffedd5')}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:${isAct ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(0,0,0,0.02)'}; cursor:pointer;" title="Nhấp để xem 24 khung giờ chi tiết của ${dayLabelClean}">
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="font-size:13.5px; color:#0f172a;">${w.day_label || 'Hôm nay'}</strong>
+            <strong style="font-size:13.5px; color:#0f172a;">${dayLabelClean}</strong>
             <span style="font-size:11px; color:#64748b; font-weight:700;">${w.date_str || ''}</span>
           </div>
           <div style="text-align:center; padding:8px 0;">
@@ -1422,12 +1474,12 @@ function _renderForecastGrid(forecast) {
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="wind" class="lucide-xs" style="color:#64748b;"></i> Gió:</span>
-              <strong>${w.wind || '12 km/h'}${w.windGusts ? ` (${w.windGusts})` : ''}</strong>
+              <strong>${windClean}${w.windGusts ? ` (${w.windGusts})` : ''}</strong>
             </div>
           </div>
         </div>
         <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
-          <span>${w.advice || ''}</span>
+          <span>${adviceClean}</span>
         </div>
       </div>
     `;
@@ -1442,11 +1494,13 @@ function _applyIoTDemoDataToUI(res) {
   const water = res.water_data || {};
   const forecast = res.weather_forecast || [];
 
+  const windDirClean = _cleanUtf8Mojibake(air.wind_direction || 'Đông Nam');
+
   // Update Air Environment
   if (document.getElementById('iot-air-temp')) document.getElementById('iot-air-temp').textContent = `${air.temperature || 28.5} °C`;
   if (document.getElementById('iot-air-humidity')) document.getElementById('iot-air-humidity').textContent = `${air.humidity || 74} %`;
   if (document.getElementById('iot-air-pressure')) document.getElementById('iot-air-pressure').textContent = `${air.pressure || 1012} hPa`;
-  if (document.getElementById('iot-air-wind')) document.getElementById('iot-air-wind').textContent = `${air.wind_speed || 12} km/h - ${air.wind_direction || 'Đông Nam'}`;
+  if (document.getElementById('iot-air-wind')) document.getElementById('iot-air-wind').textContent = `${air.wind_speed || 12} km/h - ${windDirClean}`;
   if (document.getElementById('iot-air-rain')) document.getElementById('iot-air-rain').textContent = `${air.rainfall || 1.5} mm (${air.rain_intensity || 0.5} mm/h)`;
   if (document.getElementById('iot-air-uv')) document.getElementById('iot-air-uv').innerHTML = `${air.uv_index || 4.2} <span style="font-size:11px; color:#64748b;">(Vừa)</span>`;
   if (document.getElementById('iot-air-solar')) document.getElementById('iot-air-solar').textContent = `${air.solar_radiation || 650} W/m²`;

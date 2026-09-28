@@ -157,17 +157,16 @@ async function fetchDeviceWeatherTelemetry(targetFarmId = null) {
       }
     }
   } else {
-    // "all" mode: use first farm with valid GPS or benchmark Long Khánh, Đồng Nai
+    // "all" mode: use first farm with valid GPS
     const farmWithCoords = farms.find(f => f.latitude && f.longitude && !isNaN(parseFloat(f.latitude)) && !isNaN(parseFloat(f.longitude)));
     if (farmWithCoords) {
       lat = parseFloat(farmWithCoords.latitude);
       lng = parseFloat(farmWithCoords.longitude);
       farmDisplayName = `Toàn hệ thống · Chuẩn ${farmWithCoords.name}`;
     } else {
-      // Tọa độ vùng trồng Long Khánh, Đồng Nai làm chuẩn hệ thống
-      lat = 10.9415;
-      lng = 107.2418;
-      farmDisplayName = 'Toàn hệ thống (Chuẩn GPS Long Khánh, Đồng Nai)';
+      lat = null;
+      lng = null;
+      farmDisplayName = 'Chưa thiết lập tọa độ GPS';
     }
   }
 

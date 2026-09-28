@@ -146,40 +146,45 @@ export function renderFarmerCockpitCard(user, farms = [], plants = []) {
   const chevronIcon = document.getElementById('farm-chevron-icon');
 
   if (popoverListEl) {
-    const renderFarms = farms.length > 0 ? farms : [
-      { id: 1, name: 'Trang Trại Sầu Riêng Long Khánh #1', area: 5733.9, puc_code: '', vietgap_cert_number: '', address: 'Long Khánh, Đồng Nai' }
-    ];
-
-    popoverListEl.innerHTML = renderFarms.map((f, idx) => {
-      const fAreaSqM = f.area ? parseFloat(f.area) : 5733.9;
-      const fAreaHa = (fAreaSqM / 10000).toFixed(2);
-      const matchingPlants = plants.filter(p => String(p.farm_id) === String(f.id));
-      const fPlantsCount = matchingPlants.length > 0 ? matchingPlants.length : (f.plant_count || f.total_plants || plants.length || 0);
-      const fVietgap = f.vietgap_cert_number ? f.vietgap_cert_number : 'Chưa cấp';
-      const fPuc = f.puc_code ? f.puc_code : 'Chưa cấp';
-
-      return `
-        <div class="farm-popover-item" onclick="if(window.showPage) window.showPage('farms')" title="Xem bản đồ và danh sách cây thuộc ${esc(f.name || 'Trang trại')}">
-          <div class="farm-name">
-            <i data-lucide="trees" class="lucide-sm" style="color:#059669; font-size:11px;"></i>
-            <span>${esc(f.name || `Trang trại #${idx + 1}`)}</span>
-          </div>
-          <div class="farm-meta">
-            <span><i data-lucide="ruler" class="lucide-sm" style="color:#0284c7; font-size:10px;"></i> ${fAreaHa} ha (${Number(fAreaSqM.toFixed(1)).toLocaleString('vi-VN')} m²)</span>
-            <span style="font-weight:700; color:#059669;">${fPlantsCount} cây trồng</span>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
-            <div style="font-size:11px; color:#065f46; display:flex; justify-content:space-between; align-items:center;">
-              <span><i data-lucide="award" class="lucide-sm" style="font-size:10px; color:#059669;"></i> VietGAP: <strong>${esc(fVietgap)}</strong></span>
-              <span style="color:#0284c7; font-weight:700; font-size:11px;"><i data-lucide="external-link" class="lucide-sm"></i> Mở GIS</span>
-            </div>
-            <div style="font-size:11px; color:#0369a1; display:flex; justify-content:space-between; align-items:center;">
-              <span><i data-lucide="globe" class="lucide-sm" style="font-size:10px; color:#0284c7;"></i> Mã PUC: <strong>${esc(fPuc)}</strong></span>
-            </div>
-          </div>
+    if (!farms || farms.length === 0) {
+      popoverListEl.innerHTML = `
+        <div style="padding:18px 12px; text-align:center; color:#64748b; font-size:12.5px;">
+          <i data-lucide="sprout" class="lucide-md" style="color:#059669; margin:0 auto 8px; display:block; opacity:0.6;"></i>
+          <span>Chưa có nông trại nào được khởi tạo.</span>
         </div>
       `;
-    }).join('');
+    } else {
+      popoverListEl.innerHTML = farms.map((f, idx) => {
+        const fAreaSqM = f.area ? parseFloat(f.area) : 0;
+        const fAreaHa = (fAreaSqM / 10000).toFixed(2);
+        const matchingPlants = plants.filter(p => String(p.farm_id) === String(f.id));
+        const fPlantsCount = matchingPlants.length > 0 ? matchingPlants.length : (f.plant_count || f.total_plants || plants.length || 0);
+        const fVietgap = f.vietgap_cert_number ? f.vietgap_cert_number : 'Chưa cấp';
+        const fPuc = f.puc_code ? f.puc_code : 'Chưa cấp';
+
+        return `
+          <div class="farm-popover-item" onclick="if(window.showPage) window.showPage('farms')" title="Xem bản đồ và danh sách cây thuộc ${esc(f.name || 'Trang trại')}">
+            <div class="farm-name">
+              <i data-lucide="trees" class="lucide-sm" style="color:#059669; font-size:11px;"></i>
+              <span>${esc(f.name || `Trang trại #${idx + 1}`)}</span>
+            </div>
+            <div class="farm-meta">
+              <span><i data-lucide="ruler" class="lucide-sm" style="color:#0284c7; font-size:10px;"></i> ${fAreaHa} ha (${Number(fAreaSqM.toFixed(1)).toLocaleString('vi-VN')} m²)</span>
+              <span style="font-weight:700; color:#059669;">${fPlantsCount} cây trồng</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
+              <div style="font-size:11px; color:#065f46; display:flex; justify-content:space-between; align-items:center;">
+                <span><i data-lucide="award" class="lucide-sm" style="font-size:10px; color:#059669;"></i> VietGAP: <strong>${esc(fVietgap)}</strong></span>
+                <span style="color:#0284c7; font-weight:700; font-size:11px;"><i data-lucide="external-link" class="lucide-sm"></i> Mở GIS</span>
+              </div>
+              <div style="font-size:11px; color:#0369a1; display:flex; justify-content:space-between; align-items:center;">
+                <span><i data-lucide="globe" class="lucide-sm" style="font-size:10px; color:#0284c7;"></i> Mã PUC: <strong>${esc(fPuc)}</strong></span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
     }

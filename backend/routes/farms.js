@@ -312,6 +312,61 @@ router.post('/:id/clear-gps', auth, async (req, res) => {
 });
 
 // ── FARM IOT SENSORS & WEATHER FORECAST ENDPOINTS (PERSISTENT DB) ──
+function fixMojibakeString(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/TÃ¢y/g, 'Tây')
+    .replace(/Ã¢/g, 'â')
+    .replace(/Ã´/g, 'ô')
+    .replace(/Ãª/g, 'ê')
+    .replace(/Ä\x90Ã´ng/g, 'Đông')
+    .replace(/Ä\x90/g, 'Đ')
+    .replace(/Ã¡/g, 'á')
+    .replace(/Ã /g, 'à')
+    .replace(/áº£/g, 'ả')
+    .replace(/Ã£/g, 'ã')
+    .replace(/áº¡/g, 'ạ')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¨/g, 'è')
+    .replace(/áº½/g, 'ẽ')
+    .replace(/áº¹/g, 'ẹ')
+    .replace(/Ã­/g, 'í')
+    .replace(/Ã¬/g, 'ì')
+    .replace(/á»\x89/g, 'ỉ')
+    .replace(/Ä©/g, 'ĩ')
+    .replace(/á»\x8b/g, 'ị')
+    .replace(/Ã³/g, 'ó')
+    .replace(/Ã²/g, 'ò')
+    .replace(/á»\x8f/g, 'ỏ')
+    .replace(/Ãµ/g, 'õ')
+    .replace(/á»\x8d/g, 'ọ')
+    .replace(/Ãº/g, 'ú')
+    .replace(/Ã¹/g, 'ù')
+    .replace(/á»§/g, 'ủ')
+    .replace(/Å©/g, 'ũ')
+    .replace(/á»¥/g, 'ụ')
+    .replace(/Ã½/g, 'ý')
+    .replace(/á»³/g, 'ỳ')
+    .replace(/á»·/g, 'ỷ')
+    .replace(/á»¹/g, 'ỹ')
+    .replace(/á»µ/g, 'ỵ')
+    .replace(/Ä\x91/g, 'đ');
+}
+
+function deepCleanMojibake(val) {
+  if (!val) return val;
+  if (typeof val === 'string') return fixMojibakeString(val);
+  if (Array.isArray(val)) return val.map(deepCleanMojibake);
+  if (typeof val === 'object') {
+    const out = {};
+    for (const k of Object.keys(val)) {
+      out[k] = deepCleanMojibake(val[k]);
+    }
+    return out;
+  }
+  return val;
+}
+
 function generateDefaultFarmIoTData(farmId) {
   const seed = (parseInt(farmId) || 1);
   const airTemp = (27.5 + (seed % 3) * 0.7).toFixed(1);
@@ -395,7 +450,7 @@ function generateDefaultFarmIoTData(farmId) {
     };
   });
 
-  return { air_data, soil_data, water_data, weather_forecast };
+  return deepCleanMojibake({ air_data, soil_data, water_data, weather_forecast });
 }
 
 // GET /api/farms/:id/iot-data
@@ -405,7 +460,7 @@ router.get('/:id/iot-data', auth, async (req, res) => {
     const cacheKey = `farm_iot_${farmId}`;
     const cachedData = await getCache(cacheKey);
     if (cachedData) {
-      return res.json(cachedData);
+      return res.json(deepCleanMojibake(cachedData));
     }
 
     let result = await pool.query('SELECT * FROM farm_iot_sensors WHERE farm_id = $1', [farmId]);
@@ -421,13 +476,18 @@ router.get('/:id/iot-data', auth, async (req, res) => {
     }
 
     const row = result.rows[0];
+    const rawAir = typeof row.air_data === 'string' ? JSON.parse(row.air_data) : row.air_data;
+    const rawSoil = typeof row.soil_data === 'string' ? JSON.parse(row.soil_data) : row.soil_data;
+    const rawWater = typeof row.water_data === 'string' ? JSON.parse(row.water_data) : row.water_data;
+    const rawForecast = typeof row.weather_forecast === 'string' ? JSON.parse(row.weather_forecast) : row.weather_forecast;
+
     const payload = {
       success: true,
       farm_id: farmId,
-      air_data: typeof row.air_data === 'string' ? JSON.parse(row.air_data) : row.air_data,
-      soil_data: typeof row.soil_data === 'string' ? JSON.parse(row.soil_data) : row.soil_data,
-      water_data: typeof row.water_data === 'string' ? JSON.parse(row.water_data) : row.water_data,
-      weather_forecast: typeof row.weather_forecast === 'string' ? JSON.parse(row.weather_forecast) : row.weather_forecast,
+      air_data: deepCleanMojibake(rawAir),
+      soil_data: deepCleanMojibake(rawSoil),
+      water_data: deepCleanMojibake(rawWater),
+      weather_forecast: deepCleanMojibake(rawForecast),
       updated_at: row.updated_at
     };
 
@@ -455,21 +515,24 @@ router.post('/:id/iot-data/refresh', auth, async (req, res) => {
     `, [farmId, JSON.stringify(defaultData.air_data), JSON.stringify(defaultData.soil_data), JSON.stringify(defaultData.water_data), JSON.stringify(defaultData.weather_forecast)]);
 
     const row = updateRes.rows[0];
+    const rawAir = typeof row.air_data === 'string' ? JSON.parse(row.air_data) : row.air_data;
+    const rawSoil = typeof row.soil_data === 'string' ? JSON.parse(row.soil_data) : row.soil_data;
+    const rawWater = typeof row.water_data === 'string' ? JSON.parse(row.water_data) : row.water_data;
+    const rawForecast = typeof row.weather_forecast === 'string' ? JSON.parse(row.weather_forecast) : row.weather_forecast;
+
     const payload = {
       success: true,
       message: 'Đã làm mới dữ liệu cảm biến IoT thành công!',
       farm_id: farmId,
-      air_data: typeof row.air_data === 'string' ? JSON.parse(row.air_data) : row.air_data,
-      soil_data: typeof row.soil_data === 'string' ? JSON.parse(row.soil_data) : row.soil_data,
-      water_data: typeof row.water_data === 'string' ? JSON.parse(row.water_data) : row.water_data,
-      weather_forecast: typeof row.weather_forecast === 'string' ? JSON.parse(row.weather_forecast) : row.weather_forecast,
+      air_data: deepCleanMojibake(rawAir),
+      soil_data: deepCleanMojibake(rawSoil),
+      water_data: deepCleanMojibake(rawWater),
+      weather_forecast: deepCleanMojibake(rawForecast),
       updated_at: row.updated_at
     };
 
     // Invalidate Redis cache
     await delCache(`farm_iot_${farmId}`);
-    await setCache(`farm_iot_${farmId}`, payload, 300);
-
     res.json(payload);
   } catch (err) {
     console.error('Error refreshing farm IoT data:', err);

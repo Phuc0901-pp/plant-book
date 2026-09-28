@@ -150,11 +150,52 @@ const WMO_WEATHER_MAP = {
   99: { label: 'Dông mạnh kèm mưa đá lớn', code: 99, color: '#dc2626', bg: 'rgba(220,38,38,0.3)' }
 };
 
+function _sanitizeVietnameseText(str) {
+  if (!str || typeof str !== 'string') return str || '';
+  return str
+    .replace(/TÃ¢y/g, 'Tây')
+    .replace(/Ã¢/g, 'â')
+    .replace(/Ã´/g, 'ô')
+    .replace(/Ãª/g, 'ê')
+    .replace(/Ä\x90Ã´ng/g, 'Đông')
+    .replace(/Ä\x90/g, 'Đ')
+    .replace(/Ã¡/g, 'á')
+    .replace(/Ã /g, 'à')
+    .replace(/áº£/g, 'ả')
+    .replace(/Ã£/g, 'ã')
+    .replace(/áº¡/g, 'ạ')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¨/g, 'è')
+    .replace(/áº½/g, 'ẽ')
+    .replace(/áº¹/g, 'ẹ')
+    .replace(/Ã­/g, 'í')
+    .replace(/Ã¬/g, 'ì')
+    .replace(/á»\x89/g, 'ỉ')
+    .replace(/Ä©/g, 'ĩ')
+    .replace(/á»\x8b/g, 'ị')
+    .replace(/Ã³/g, 'ó')
+    .replace(/Ã²/g, 'ò')
+    .replace(/á»\x8f/g, 'ỏ')
+    .replace(/Ãµ/g, 'õ')
+    .replace(/á»\x8d/g, 'ọ')
+    .replace(/Ãº/g, 'ú')
+    .replace(/Ã¹/g, 'ù')
+    .replace(/á»§/g, 'ủ')
+    .replace(/Å©/g, 'ũ')
+    .replace(/á»¥/g, 'ụ')
+    .replace(/Ã½/g, 'ý')
+    .replace(/á»³/g, 'ỳ')
+    .replace(/á»·/g, 'ỷ')
+    .replace(/á»¹/g, 'ỹ')
+    .replace(/á»µ/g, 'ỵ')
+    .replace(/Ä\x91/g, 'đ');
+}
+
 function _getWindDirection(deg) {
   if (deg === undefined || deg === null || isNaN(deg)) return 'Gió nhẹ';
   const directions = ['Bắc', 'Đông Bắc', 'Đông', 'Đông Nam', 'Nam', 'Tây Nam', 'Tây', 'Tây Bắc'];
   const index = Math.round((((deg % 360) + 360) % 360) / 45) % 8;
-  return directions[index];
+  return _sanitizeVietnameseText(directions[index]);
 }
 
 function _saveCachedWeather(payload) {
@@ -173,6 +214,53 @@ function _getCachedWeather() {
     return JSON.parse(raw);
   } catch (_) {
     return null;
+  }
+}
+
+function _renderNoLocationUI(farmDisplayName) {
+  const widgetBox = document.getElementById('weather-widget-content');
+  if (!widgetBox) return;
+
+  const farmLabel = farmDisplayName || 'Trang trại Nông hộ';
+
+  widgetBox.innerHTML = `
+    <div class="weather-widget-wrapper" style="display:flex; flex-direction:column; gap:12px; width:100%;">
+      <!-- Header -->
+      <div class="weather-header-strip" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-bottom:8px; border-bottom:1px solid #e2e8f0; width:100%;">
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <i data-lucide="map-pin-off" class="lucide-sm" style="color:#d97706; font-size:13px;"></i>
+          <span style="font-weight:800; color:#475569; font-size:13px;">${farmLabel} · Chưa xác định vị trí</span>
+          <span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px;">GPS: null</span>
+        </div>
+        <div style="font-size:11.5px; font-weight:700; color:#94a3b8; display:inline-flex; align-items:center; gap:5px;">
+          <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block;"></span> Chờ cấp quyền GPS
+        </div>
+      </div>
+
+      <!-- Null State Prompt -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; background:#fffbeb; border:1.5px dashed #fde68a; border-radius:12px; padding:14px 16px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
+          <div style="width:44px; height:44px; border-radius:10px; background:#fef3c7; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="locate" class="lucide-md" style="color:#d97706; font-size:22px;"></i>
+          </div>
+          <div>
+            <div style="font-weight:800; color:#92400e; font-size:13px;">Chưa nhận diện được tọa độ GPS hoặc vị trí trang trại</div>
+            <div style="color:#78350f; font-size:12px; margin-top:2px; line-height:1.4;">
+              Vui lòng bấm <strong>"Bật vị trí GPS"</strong> trên thiết bị hoặc thiết lập tọa độ/ranh giới lô trong <strong>Cài đặt Trang trại</strong> để hệ thống tự động kết nối dữ liệu khí tượng Open-Meteo chuẩn xác.
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" onclick="refreshDeviceWeather(true)" style="background:#059669; color:#ffffff; border:none; border-radius:8px; padding:8px 16px; font-size:12.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(5,150,105,0.25);">
+            <i data-lucide="crosshair" class="lucide-sm"></i> Bật vị trí GPS
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (window.lucide) {
+    try { lucide.createIcons(); } catch (_) {}
   }
 }
 
@@ -224,6 +312,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
     agriTip = 'Thời tiết thuận lợi cho việc chăm sóc cây trồng và theo dõi độ ẩm đất.'
   } = data;
 
+  const sanitizedWindDir = _sanitizeVietnameseText(windDir);
   const weatherSvg = getCorporateWeatherSvg(wmo.code !== undefined ? wmo.code : weatherCode);
 
   widgetBox.innerHTML = `
@@ -233,7 +322,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
       <div class="weather-header-strip" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-bottom:8px; border-bottom:1px solid #e2e8f0; width:100%;">
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <i data-lucide="map-pin" class="lucide-sm" style="color:#e11d48; font-size:13px;"></i>
-          <span style="font-weight:800; color:#064e3b; font-size:13px;">${locationName}</span>
+          <span style="font-weight:800; color:#064e3b; font-size:13px;">${_sanitizeVietnameseText(locationName)}</span>
           ${isRealGps ? `<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="satellite" class="lucide-sm" style="color:#059669; font-size:10px;"></i> GPS Thiết bị</span>` : `<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="sprout" class="lucide-sm" style="color:#d97706; font-size:10px;"></i> Trang trại</span>`}
           ${statusBadge ? `<span style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">${statusBadge}</span>` : ''}
         </div>
@@ -278,7 +367,7 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
             <div style="font-size:10.5px; color:#0f766e; font-weight:800; display:flex; align-items:center; gap:5px;">
               <i data-lucide="wind" class="lucide-sm" style="color:#0d9488;"></i> Gió & Hướng
             </div>
-            <div style="font-size:13px; font-weight:900; color:#115e59; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:10.5px; font-weight:700; color:#0f766e;">${windDir}</span></div>
+            <div style="font-size:13px; font-weight:900; color:#115e59; margin-top:2px;"><span id="weather-val-wind">${windSpeed}</span> km/h <span style="font-size:10.5px; font-weight:700; color:#0f766e;">${sanitizedWindDir}</span></div>
           </div>
 
           <!-- Rain Prob Chip -->
@@ -331,16 +420,20 @@ function _renderWeatherUI(data, locationName, isRealGps, statusBadge = '') {
       window.setMascotState('thirsty');
     }
   }
+
+  if (window.lucide) {
+    try { lucide.createIcons(); } catch (_) {}
+  }
 }
 
-export async function refreshDeviceWeather() {
+export async function refreshDeviceWeather(forcePrompt = false) {
   const statusEl = document.getElementById('weather-status-text');
   const refreshBtn = document.getElementById('btn-refresh-weather');
 
   if (refreshBtn) refreshBtn.classList.add('lucide-spin');
-  if (statusEl) statusEl.textContent = 'Đang xác định vị trí trang trại...';
+  if (statusEl) statusEl.textContent = 'Đang xác định vị trí...';
 
-  // Step 1: Obtain registered farm coordinates or fallback
+  // Step 1: Check active farm coordinates
   const activeFarm = (typeof window.getActiveFarm === 'function' ? window.getActiveFarm() : null)
     || (window._allFarmsCache && window._allFarmsCache.length > 0 ? window._allFarmsCache[0] : null);
 
@@ -350,7 +443,7 @@ export async function refreshDeviceWeather() {
   let farmDisplayName = '';
 
   if (activeFarm) {
-    if (activeFarm.latitude && activeFarm.longitude) {
+    if (activeFarm.latitude && activeFarm.longitude && !isNaN(parseFloat(activeFarm.latitude)) && !isNaN(parseFloat(activeFarm.longitude))) {
       lat = parseFloat(activeFarm.latitude);
       lng = parseFloat(activeFarm.longitude);
     } else if (activeFarm.polygon_coordinates) {
@@ -361,47 +454,61 @@ export async function refreshDeviceWeather() {
         if (Array.isArray(poly) && poly.length > 0) {
           const ring = Array.isArray(poly[0][0]) ? poly[0] : poly;
           let sumLat = 0, sumLng = 0;
+          let validPts = 0;
           ring.forEach(pt => {
-            sumLng += parseFloat(pt[0]);
-            sumLat += parseFloat(pt[1]);
+            if (Array.isArray(pt) && pt.length >= 2 && !isNaN(parseFloat(pt[0])) && !isNaN(parseFloat(pt[1]))) {
+              sumLng += parseFloat(pt[0]);
+              sumLat += parseFloat(pt[1]);
+              validPts++;
+            }
           });
-          lat = sumLat / ring.length;
-          lng = sumLng / ring.length;
+          if (validPts > 0) {
+            lat = sumLat / validPts;
+            lng = sumLng / validPts;
+          }
         }
       } catch (_) {}
     }
-    farmDisplayName = activeFarm.name ? `${activeFarm.name} (${activeFarm.address || 'Khu vực canh tác'})` : '';
+    farmDisplayName = activeFarm.name ? `${activeFarm.name}${activeFarm.address ? ` (${activeFarm.address})` : ''}` : '';
   }
 
-  // Try real-time device Geolocation
+  // Try real-time device Geolocation (prioritized if available or user prompted)
   try {
     if ('geolocation' in navigator) {
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 4000,
-          maximumAge: 60000
+          timeout: forcePrompt ? 10000 : 4000,
+          maximumAge: forcePrompt ? 0 : 60000
         });
       });
-      lat = position.coords.latitude;
-      lng = position.coords.longitude;
-      isRealGps = true;
+      if (position && position.coords && !isNaN(position.coords.latitude) && !isNaN(position.coords.longitude)) {
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+        isRealGps = true;
+      }
     }
   } catch (err) {
-    console.warn('[WeatherWidget] GPS position error or permission denied. Using registered Farm coordinates.', err.message);
+    console.warn('[WeatherWidget] GPS position error or permission denied.', err.message);
   }
 
-  // Fallback coordinates if still undefined
+  // If GPS coordinates could not be retrieved from GPS or Farm: Set to null (do NOT default to Long Khánh)
   if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-    lat = 10.9415; // Default Long Khánh, Đồng Nai or Mekong Delta
-    lng = 107.2418;
+    lat = null;
+    lng = null;
+    _currentCoords = null;
+
+    _renderNoLocationUI(farmDisplayName || (activeFarm ? activeFarm.name : ''));
+    if (refreshBtn) refreshBtn.classList.remove('lucide-spin');
+    if (statusEl) statusEl.textContent = 'Chưa xác định vị trí';
+    return;
   }
 
   _currentCoords = { lat, lng, isRealGps };
 
   if (statusEl) statusEl.textContent = 'Đang tải dữ liệu khí tượng Open-Meteo...';
 
-  // Step 2: Fetch Open-Meteo Real-Time Weather API with automatic resilient fallback
+  // Step 2: Fetch Open-Meteo Real-Time Weather API
   try {
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,et0_fao_evapotranspiration&timezone=auto`;
     
@@ -527,7 +634,7 @@ export async function refreshDeviceWeather() {
         agriTip: 'Thời tiết ổn định, thuận lợi cho các hoạt động canh tác nông nghiệp.'
       };
 
-      _renderWeatherUI(fallbackPayload, isRealGps ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` : 'Vùng Nông nghiệp Trọng điểm (Bến Tre)', isRealGps, '🌤️ Dữ liệu dự phòng');
+      _renderWeatherUI(fallbackPayload, isRealGps ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` : (farmDisplayName || 'Vùng canh tác nông nghiệp'), isRealGps, '🌤️ Dữ liệu dự phòng');
     }
   } finally {
     if (refreshBtn) refreshBtn.classList.remove('lucide-spin');
