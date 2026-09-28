@@ -215,13 +215,39 @@ function getStoredAuth() {
   return { token, user };
 }
 
+function userHasFarmAccess(user, farmId, farmObj = null) {
+  if (!user || !user.id) return false;
+  if (user.role === 'admin') return true;
+  const targetFarmId = Number(farmId);
+  if (user.farm_id && Number(user.farm_id) === targetFarmId) return true;
+  if (Array.isArray(user.owned_farm_ids) && user.owned_farm_ids.map(Number).includes(targetFarmId)) return true;
+  
+  if (farmObj) {
+    if (farmObj.user_id && Number(farmObj.user_id) === Number(user.id)) return true;
+    if (farmObj.farm_owner_user_id && Number(farmObj.farm_owner_user_id) === Number(user.id)) return true;
+    if (farmObj.owner_id && Number(farmObj.owner_id) === Number(user.id)) return true;
+    if (farmObj.userId && Number(farmObj.userId) === Number(user.id)) return true;
+    if (farmObj.farmOwnerUserId && Number(farmObj.farmOwnerUserId) === Number(user.id)) return true;
+  }
+  
+  const currentFarm = window._currentFarmPortalData?.farm;
+  if (currentFarm && (!targetFarmId || Number(currentFarm.id) === targetFarmId)) {
+    if (currentFarm.user_id && Number(currentFarm.user_id) === Number(user.id)) return true;
+    if (currentFarm.owner_id && Number(currentFarm.owner_id) === Number(user.id)) return true;
+  }
+  return false;
+}
+
 function userHasPlantAccess(user, plant) {
   if (!user || !user.id || !plant) return false;
   if (user.role === 'admin') return true;
+  if (plant.farm_id && userHasFarmAccess(user, plant.farm_id, plant)) return true;
   if (user.farm_id && plant.farm_id && Number(user.farm_id) === Number(plant.farm_id)) return true;
+  if (Array.isArray(user.owned_farm_ids) && plant.farm_id && user.owned_farm_ids.map(Number).includes(Number(plant.farm_id))) return true;
   if (plant.assigned_to_user_id && Number(user.id) === Number(plant.assigned_to_user_id)) return true;
   if (plant.farm_owner_user_id && Number(user.id) === Number(plant.farm_owner_user_id)) return true;
   if (plant.farm_owner_id && Number(user.id) === Number(plant.farm_owner_id)) return true;
+  if (plant.farm_user_id && Number(user.id) === Number(plant.farm_user_id)) return true;
   if (plant.created_by && Number(user.id) === Number(plant.created_by)) return true;
   return false;
 }
@@ -306,7 +332,7 @@ async function doGateLogin() {
     // Handle Pending Binding Farm or Gateway Login Flow
     if (window.pendingBindingFarm) {
       const pFarm = window.pendingBindingFarm;
-      const isAuthorized = data.user.role === 'admin' || Number(data.user.farm_id) === Number(pFarm.farmId);
+      const isAuthorized = userHasFarmAccess(data.user, pFarm.farmId, pFarm);
       if (!isAuthorized) {
         errText.textContent = `Tài khoản "${data.user.full_name || data.user.email}" không thuộc nông trại này. Vui lòng đăng nhập tài khoản nông trại "${pFarm.farmName || 'này'}" hoặc Admin.`;
         errBox.style.display = 'flex';
@@ -2054,7 +2080,7 @@ function renderGatewayStaffArea(farmId, farm) {
   if (!staffInfo || !staffActions) return;
 
   const { user } = getStoredAuth();
-  const isAuthorized = user && (user.role === 'admin' || Number(user.farm_id) === Number(farmId));
+  const isAuthorized = user && userHasFarmAccess(user, farmId, farm);
 
   if (isAuthorized) {
     staffInfo.innerHTML = `
@@ -2082,7 +2108,14 @@ function renderGatewayStaffArea(farmId, farm) {
 function openGatewayLoginModal() {
   const farmId = slugInfo.farmId;
   const farm = _currentFarmPortalData?.farm || {};
-  window.pendingBindingFarm = { farmId, farmName: farm.name, pucCode: farm.puc_code, nfcUid: null };
+  window.pendingBindingFarm = { 
+    farmId, 
+    farmName: farm.name, 
+    pucCode: farm.puc_code, 
+    nfcUid: null, 
+    farmOwnerUserId: farm.user_id, 
+    userId: farm.user_id 
+  };
   document.getElementById('farm-gateway-view').style.display = 'none';
   document.getElementById('auth-gate-view').style.display = 'block';
 
@@ -2183,7 +2216,7 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
 
     // Unassigned Tag:
     const { user } = getStoredAuth();
-    const isAuthorized = user && (user.role === 'admin' || Number(user.farm_id) === Number(farmId));
+    const isAuthorized = user && userHasFarmAccess(user, farmId, data);
 
     if (isAuthorized) {
       document.getElementById('farm-gateway-view').style.display = 'none';
@@ -2198,7 +2231,16 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
         : `🏷️ Đã nhận diện thẻ NFC [${cleanUid}] hợp lệ (chưa gán cây)!\n\nNếu bạn là Kỹ thuật viên / Chủ vườn, bạn có muốn Đăng nhập ngay để gán thẻ này vào cây và lưu GPS không?`;
 
       if (confirm(promptMsg)) {
-        window.pendingBindingFarm = { farmId, farmName: data.farm_name, pucCode: data.puc_code, nfcUid: cleanUid, inInventory: data.in_inventory, inventoryWarning: data.inventory_warning };
+        window.pendingBindingFarm = { 
+          farmId, 
+          farmName: data.farm_name, 
+          pucCode: data.puc_code, 
+          nfcUid: cleanUid, 
+          inInventory: data.in_inventory, 
+          inventoryWarning: data.inventory_warning,
+          farmOwnerUserId: data.farm_user_id || data.farm_owner_user_id || data.user_id,
+          userId: data.farm_user_id || data.farm_owner_user_id || data.user_id
+        };
         document.getElementById('farm-gateway-view').style.display = 'none';
         document.getElementById('auth-gate-view').style.display = 'block';
         const gateTitle = document.getElementById('gate-plant-name');
@@ -2349,7 +2391,7 @@ async function onGatewayTreeClick(plantId, treeCode, nfcUid, isAssigned) {
     // Unassigned tree
     const { user } = getStoredAuth();
     const farmId = slugInfo.farmId;
-    const isAuthorized = user && (user.role === 'admin' || Number(user.farm_id) === Number(farmId));
+    const isAuthorized = user && userHasFarmAccess(user, farmId);
 
     if (isAuthorized) {
       showPublicToast(`🌳 Cây #${treeCode} chưa có thẻ. Hãy chạm thẻ NFC vào máy để gán.`);

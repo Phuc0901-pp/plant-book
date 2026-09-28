@@ -96,6 +96,18 @@ router.post('/login', async (req, res) => {
       broadcast('user_status_changed', { id: user.id, is_online: true, last_active_at: new Date() });
     }
 
+    // Query all farm IDs owned by or assigned to this user
+    let ownedFarmIds = [];
+    try {
+      const farmsRes = await pool.query(
+        `SELECT id FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
+        [user.id, user.farm_id || null]
+      );
+      ownedFarmIds = farmsRes.rows.map(r => r.id);
+    } catch (_) {}
+
+    const primaryFarmId = user.farm_id || (ownedFarmIds.length > 0 ? ownedFarmIds[0] : null);
+
     res.json({
       token,
       user: {
@@ -103,6 +115,8 @@ router.post('/login', async (req, res) => {
         public_id: generateIsoPublicId(user.role, user.id),
         email: user.email,
         role: user.role,
+        farm_id: primaryFarmId,
+        owned_farm_ids: ownedFarmIds,
         name: user.full_name,
         full_name: user.full_name,
         phone: user.phone,
@@ -270,12 +284,24 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, full_name, role, avatar_url, phone, address, city, country, gender, created_at, account_tier, tier_expires_at, tier_admin_note FROM users WHERE id=$1',
+      'SELECT id, email, full_name, role, avatar_url, phone, address, city, country, gender, created_at, account_tier, tier_expires_at, tier_admin_note, farm_id FROM users WHERE id=$1',
       [req.user.id]
     );
     const u = result.rows[0];
     if (u) {
       u.public_id = generateIsoPublicId(u.role, u.id);
+      try {
+        const farmsRes = await pool.query(
+          `SELECT id FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
+          [u.id, u.farm_id || null]
+        );
+        u.owned_farm_ids = farmsRes.rows.map(r => r.id);
+        if (!u.farm_id && u.owned_farm_ids.length > 0) {
+          u.farm_id = u.owned_farm_ids[0];
+        }
+      } catch (_) {
+        u.owned_farm_ids = u.farm_id ? [u.farm_id] : [];
+      }
     }
     res.json(u);
   } catch (err) {
