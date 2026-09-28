@@ -121,8 +121,17 @@ foreach ($file in $jsFiles) {
         Record-Test -Category "JS Syntax" -TestName "Unmatched template literals in $($file.Name)" -Passed $false -Details "Odd count of backticks: $backtickCount"
         $syntaxPass = $false
     }
+    # Check for invalid indented nested export statements
+    $lines = $content -split "`r?`n"
+    for ($i = 0; $i -lt $lines.Length; $i++) {
+        $line = $lines[$i]
+        if ($line -match '^\s{2,}(export\s+(default\s+)?(function|class|let|const|var|async\s+function))') {
+            Record-Test -Category "JS Syntax" -TestName "Nested export in $($file.Name):$($i+1)" -Passed $false -Details "ES Module export cannot be nested inside function or block"
+            $syntaxPass = $false
+        }
+    }
 }
-Record-Test -Category "JS Syntax" -TestName "Validated $totalJsFiles JS Frontend Modules Syntax" -Passed $syntaxPass
+Record-Test -Category "JS Syntax" -TestName "Validated $totalJsFiles JS Frontend Modules Syntax & Top-Level Exports" -Passed $syntaxPass
 
 $userPlantsJsPath = Join-Path $root "frontend\user\js\modules\plants.js"
 if (Test-Path $userPlantsJsPath) {

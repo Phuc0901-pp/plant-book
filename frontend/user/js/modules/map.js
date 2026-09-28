@@ -192,6 +192,17 @@ export function initUserMap(farms, plants) {
       }
     });
 
+    // ── Vẽ Cây trồng (Marker chấm tròn màu) ─────────────
+    updateUserMapMarkers(plants, !hasBounds);
+
+    if (hasBounds) {
+      map.fitBounds(bounds, { padding: 40, maxZoom: 19.5, duration: 1000 });
+    }
+
+    // ── Không hiển thị lớp đường đồng mức trên tài khoản User ──
+    // (Bản đồ tài khoản User giữ nguyên trải nghiệm mượt mà, tối giản)
+  });
+}
 
 /**
  * Cập nhật động toàn bộ marker cây trồng trên bản đồ GIS người dùng
@@ -284,18 +295,6 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
 }
 window.updateUserMapMarkers = updateUserMapMarkers;
 window.renderUserMapMarkers = updateUserMapMarkers;
-
-    // ── Vẽ Cây trồng (Marker chấm tròn màu) ─────────────
-    updateUserMapMarkers(plants, !hasBounds);
-
-    if (hasBounds) {
-      map.fitBounds(bounds, { padding: 40, maxZoom: 19.5, duration: 1000 });
-    }
-
-    // ── Không hiển thị lớp đường đồng mức trên tài khoản User ──
-    // (Bản đồ tài khoản User giữ nguyên trải nghiệm mượt mà, tối giản)
-  });
-}
 
 /**
  * Thêm đường đồng mức siêu dày 1m (1-Meter High-Density Contour Lines)
