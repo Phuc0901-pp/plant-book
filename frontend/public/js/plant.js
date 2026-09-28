@@ -2038,10 +2038,9 @@ function renderGatewaySupplies(supplies = [], totalInvestment = 0, page = 1) {
   window._gatewaySuppliesData = supplies || [];
   window._gatewaySuppliesCurrentPage = page || 1;
 
-  const badge = document.getElementById('gateway-total-investment-badge');
-  if (badge) {
-    badge.textContent = `Tổng đầu tư: ${formatVnd(totalInvestment)}`;
-  }
+  const section = document.getElementById('gateway-supplies-section');
+  if (section) section.style.display = 'none';
+
   const container = document.getElementById('gateway-supplies-container') || document.getElementById('gateway-supplies-grid');
   if (!container) return;
 
