@@ -337,6 +337,16 @@ export function getNfcCurrentGps() {
           renderUserPlantsTable(cache);
         }
 
+        // Live sync: instantly render marker on Mapbox map and focus view to tree location!
+        if (typeof window.updateUserMapMarkers === 'function') {
+          window.updateUserMapMarkers(cache, true);
+        }
+        if (window.userMap) {
+          try {
+            window.userMap.flyTo({ center: [lng, lat], zoom: 18, duration: 1000 });
+          } catch (_) {}
+        }
+
         toast(res.message || `✨ Đã lưu vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây!`, 'success');
       } catch (saveErr) {
         console.error('Save GPS error:', saveErr);
@@ -390,6 +400,11 @@ export async function clearNfcGps() {
       cache[idx].longitude = null;
       cache[idx].location = null;
       renderUserPlantsTable(cache);
+    }
+
+    // Live sync: update Mapbox map markers
+    if (typeof window.updateUserMapMarkers === 'function') {
+      window.updateUserMapMarkers(cache, false);
     }
 
     toast(res.message || 'Đã xóa vị trí & tọa độ GPS của cây.', 'success');
@@ -464,6 +479,16 @@ export async function saveNfcLocationManually() {
         cache[idx].longitude = lng;
       }
       renderUserPlantsTable(cache);
+    }
+
+    // Live sync: instantly render marker on Mapbox map!
+    if (typeof window.updateUserMapMarkers === 'function') {
+      window.updateUserMapMarkers(cache, lat !== null && lng !== null);
+    }
+    if (lat !== null && lng !== null && window.userMap) {
+      try {
+        window.userMap.flyTo({ center: [lng, lat], zoom: 18, duration: 1000 });
+      } catch (_) {}
     }
 
     toast(res.message || `✨ Đã cập nhật vị trí "${loc}" cho cây!`, 'success');

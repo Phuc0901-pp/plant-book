@@ -568,6 +568,11 @@ export function filterUserPlants() {
   if (countFullEl) countFullEl.textContent = filtered.length;
 
   renderUserPlantsTable(filtered, 1);
+
+  // Sync Mapbox markers with filtered plant results
+  if (typeof window.updateUserMapMarkers === 'function') {
+    window.updateUserMapMarkers(filtered, false);
+  }
 }
 
 // ── Action Menu Toggle ─────────────────────────────────────────
@@ -1001,10 +1006,14 @@ export function switchFarmSubtab(tab) {
     if (paneMap) paneMap.style.display = 'block';
     if (paneIot) paneIot.style.display = 'none';
 
-    // Resize map when switching back to map tab
+    // Resize map when switching back to map tab & refresh plant markers
     setTimeout(() => {
       if (window.userMap) {
         try { window.userMap.resize(); } catch (_) {}
+      }
+      if (typeof window.updateUserMapMarkers === 'function') {
+        const farmPlants = _activeFarmId ? (_plantsCache || []).filter(p => String(p.farm_id) === String(_activeFarmId)) : _plantsCache;
+        window.updateUserMapMarkers(farmPlants, false);
       }
     }, 100);
   } else {

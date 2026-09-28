@@ -160,11 +160,16 @@ export function showPage(page, updateHash = true) {
     if (typeof window.loadUserDashboard === 'function') window.loadUserDashboard();
   }
 
-  if (targetPage === 'myplants') {
+  if (targetPage === 'myplants' || targetPage === 'farms') {
     import('../modules/map.js').then(mapModule => {
       if (mapModule.userMap) {
         setTimeout(() => {
-          try { mapModule.userMap.resize(); } catch (_) {}
+          try {
+            mapModule.userMap.resize();
+            if (typeof mapModule.updateUserMapMarkers === 'function') {
+              mapModule.updateUserMapMarkers(window._allPlantsCache, false);
+            }
+          } catch (_) {}
         }, 150);
       }
     });

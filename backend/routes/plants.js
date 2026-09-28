@@ -923,8 +923,12 @@ router.put('/:id/gps', auth, async (req, res) => {
 
     const updated = await pool.query(updateQuery, updateParams);
 
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast('plants_updated', { plant_id: plantId, action: 'gps_updated' });
+    // Invalidate Cache & Broadcast WebSocket event
+    await invalidateAndBroadcast('plants_updated', {
+      plant_id: plantId,
+      farm_id: updated.rows[0].farm_id || plant.farm_id,
+      action: 'gps_updated'
+    }, ['farms_', 'plants_']);
 
     let msg = 'Đã cập nhật vị trí cho cây thành công.';
     if (latVal !== null && lngVal !== null) {

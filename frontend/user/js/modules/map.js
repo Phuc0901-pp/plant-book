@@ -193,59 +193,100 @@ export function initUserMap(farms, plants) {
     });
 
 
-    // ── Vẽ Cây trồng (Marker chấm tròn màu) ─────────────
-    plants.forEach(plant => {
-      if (!plant.latitude || !plant.longitude) return;
-      let lat = parseFloat(plant.latitude);
-      let lng = parseFloat(plant.longitude);
-      if (isNaN(lat) || isNaN(lng)) return;
+/**
+ * Cập nhật động toàn bộ marker cây trồng trên bản đồ GIS người dùng
+ * @param {Array} plants — Danh sách cây trồng
+ * @param {boolean} flyToBounds — Có tự động fit/fly tới các marker hay không
+ */
+export function updateUserMapMarkers(plants, flyToBounds = false) {
+  const targetMap = userMap || window.userMap;
+  if (!targetMap) return;
 
-      // Auto-fix swapped latitude/longitude
-      if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
-        const tmp = lat;
-        lat = lng;
-        lng = tmp;
-      }
+  const targetPlants = Array.isArray(plants) ? plants : (window._allPlantsCache || []);
 
-      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
-
-      const wrapper = Object.assign(document.createElement('div'), { className: 'plant-marker-wrap' });
-      wrapper.style.cursor = 'pointer';
-
-      const el       = Object.assign(document.createElement('div'), { className: 'plant-id-marker' });
-      const colorMap = { 'Tốt': '#22c55e', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
-      const color    = colorMap[plant.health_status] || '#3b82f6';
-      Object.assign(el.style, {
-        width: '30px', height: '30px', borderRadius: '50%',
-        border: '2px solid white', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        fontSize: '9px', fontWeight: '700', color: '#fff',
-        background: color, boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-      });
-      el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
-      wrapper.appendChild(el);
-
-      const marker = new mapboxgl.Marker(wrapper)
-        .setLngLat([lng, lat])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`
-          <div class="map-tooltip" style="font-family:inherit;font-size:12px;min-width:160px;">
-            <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:6px;">
-              <i data-lucide="trees" class="lucide-sm"></i> Cây ${esc(plant.tree_code || plant.id)}
-            </h4>
-            <p style="margin-bottom:3px;">Loại: <strong>${esc(plant.plant_type)}</strong></p>
-            <p style="margin-bottom:3px;">Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
-            <p style="margin-bottom:6px;color:var(--text-muted);">Vị trí: ${esc(plant.location || 'Chưa rõ')}</p>
-            <button class="btn btn-primary btn-xs" onclick="openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type)}')">
-              <i data-lucide="file-check" class="lucide-sm"></i> Nhật ký
-            </button>
-          </div>`))
-        .addTo(map);
-
-      userMarkers.push({ marker, plant });
-      bounds.extend([lng, lat]);
-      hasBounds = true;
+  // Xóa toàn bộ marker cây trồng cũ trên bản đồ
+  if (Array.isArray(userMarkers)) {
+    userMarkers.forEach(m => {
+      try {
+        if (m && m.marker) m.marker.remove();
+      } catch (_) {}
     });
+  }
+  userMarkers = [];
 
+  const bounds = new mapboxgl.LngLatBounds();
+  let hasBounds = false;
+
+  targetPlants.forEach(plant => {
+    if (!plant || plant.latitude === undefined || plant.longitude === undefined || plant.latitude === null || plant.longitude === null) return;
+    let lat = parseFloat(plant.latitude);
+    let lng = parseFloat(plant.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    // Tự động hoán đổi nếu bị đảo ngược kinh độ/vĩ độ (Chuẩn Việt Nam: Vĩ độ 8-24, Kinh độ 102-110)
+    if (lat > 50 && lng < 50) {
+      const tmp = lat;
+      lat = lng;
+      lng = tmp;
+    }
+    if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
+      const tmp = lat;
+      lat = lng;
+      lng = tmp;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
+    const wrapper = Object.assign(document.createElement('div'), { className: 'plant-marker-wrap' });
+    wrapper.style.cursor = 'pointer';
+
+    const el = Object.assign(document.createElement('div'), { className: 'plant-id-marker' });
+    const colorMap = { 'Tốt': '#22c55e', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
+    const color = colorMap[plant.health_status] || '#10b981';
+    Object.assign(el.style, {
+      width: '28px', height: '28px', borderRadius: '50%',
+      border: '2px solid white', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      fontSize: '9.5px', fontWeight: '800', color: '#fff',
+      background: color, boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+      transition: 'transform 0.15s ease'
+    });
+    el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
+    wrapper.appendChild(el);
+
+    const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'center' })
+      .setLngLat([lng, lat])
+      .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`
+        <div class="map-tooltip" style="font-family:inherit;font-size:12px;min-width:160px;">
+          <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:6px;">
+            <i data-lucide="trees" class="lucide-sm"></i> Cây ${esc(plant.tree_code || plant.id)}
+          </h4>
+          <p style="margin-bottom:3px;">Loại: <strong>${esc(plant.plant_type || 'Cây trồng')}</strong></p>
+          <p style="margin-bottom:3px;">Sức khỏe: <strong>${esc(plant.health_status || 'Bình thường')}</strong></p>
+          <p style="margin-bottom:6px;color:var(--text-muted);">Vị trí: ${esc(plant.location || 'Chưa rõ')} <br><small style="color:#0284c7; font-weight:600;">(GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)})</small></p>
+          <button class="btn btn-primary btn-xs" onclick="if(window.openCareModal) openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type || '')}')">
+            <i data-lucide="file-check" class="lucide-sm"></i> Nhật ký
+          </button>
+        </div>`))
+      .addTo(targetMap);
+
+    userMarkers.push({ marker, plant });
+    bounds.extend([lng, lat]);
+    hasBounds = true;
+  });
+
+  if (flyToBounds && hasBounds) {
+    targetMap.fitBounds(bounds, { padding: 50, maxZoom: 19.5, duration: 800 });
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    try { window.lucide.createIcons(); } catch (_) {}
+  }
+}
+window.updateUserMapMarkers = updateUserMapMarkers;
+window.renderUserMapMarkers = updateUserMapMarkers;
+
+    // ── Vẽ Cây trồng (Marker chấm tròn màu) ─────────────
+    updateUserMapMarkers(plants, !hasBounds);
 
     if (hasBounds) {
       map.fitBounds(bounds, { padding: 40, maxZoom: 19.5, duration: 1000 });
