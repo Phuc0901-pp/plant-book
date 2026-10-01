@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — database.js (Cơ sở dữ liệu & Nhật ký Canh tác)
    Sub-tabs: 1. Dữ liệu canh tác, 2. Vật tư & Kho, 3. Thư viện media

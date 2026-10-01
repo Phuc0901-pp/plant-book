@@ -1,4 +1,5 @@
-﻿/* ═══════════════════════════════════════════════════════════════
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* ═══════════════════════════════════════════════════════════════
    Plant Book — IndexedDB Offline Storage & Auto-Sync Engine
    Cho phép lưu Nhật ký & Chi phí khi mất mạng 4G/Wifi
    Tự động đồng bộ (Auto-Sync) khi có mạng trở lại.

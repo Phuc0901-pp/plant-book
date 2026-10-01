@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – Admin Portal
    core/api.js — Token management & API fetch helper

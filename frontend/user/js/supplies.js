@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    supplies.js — Quản lý & Giám sát Vật tư (Bón phân, Tiền nước, Phun thuốc, Nhân công)

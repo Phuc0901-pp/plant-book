@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 // Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
 function getFarmExactGpsCenter(farm, plants) {
   if (!farm) return null;

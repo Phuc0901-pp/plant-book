@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /**
  * modules/mascot-chibi.js - Bé Mầm Ôm Nút Dấu Cộng (+) Đa Năng
  * Gom Bé Mầm và Nút Thao Tác (+) thành 1 thực thể thống nhất:

@@ -1,4 +1,5 @@
-﻿// ── Helpers & Translation ───────────────────────────────
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+// ── Helpers & Translation ───────────────────────────────
 
 const CROP_TRANSLATIONS = {
   // Trái cây / Fruits

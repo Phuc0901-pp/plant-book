@@ -1,4 +1,5 @@
-﻿/**
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/**
  * admin/js/countup.js - Universal Number Count-Up Animation (0 -> target) for Admin Portal
  */
 

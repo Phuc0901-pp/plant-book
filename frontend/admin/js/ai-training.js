@@ -1,4 +1,5 @@
-﻿/**
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/**
  * frontend/admin/js/ai-training.js
  * Trung Tâm Huấn Luyện AI Bé Mầm (AI Training Studio) & Quản Lý Tri Thức Nông Nghiệp
  * - Phân trang 10 bản ghi / trang cho tất cả các bảng dữ liệu

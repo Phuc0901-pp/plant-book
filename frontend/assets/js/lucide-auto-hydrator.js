@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book Enterprise AgTech — Universal Lucide Icon Auto-Hydrator
    Automatically watches DOM mutations & guarantees instant icon hydration

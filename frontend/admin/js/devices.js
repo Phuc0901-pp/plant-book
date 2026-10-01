@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — devices.js
    Hệ thống Trạm Thời tiết & Cảm biến Đất IoT Canh tác Thông minh

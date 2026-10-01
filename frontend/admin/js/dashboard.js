@@ -1,4 +1,5 @@
-﻿// ── Dashboard (SAP Fiori Horizon Enterprise Operations Cockpit) ───────
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+// ── Dashboard (SAP Fiori Horizon Enterprise Operations Cockpit) ───────
 
 let dashboardClockInterval = null;
 

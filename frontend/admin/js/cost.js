@@ -1,3 +1,4 @@
+﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — cost.js (Quản trị Chi phí Canh tác & Đầu tư)
    1. Gom nhóm theo Ngày -> Loại vật tư -> Tên sản phẩm
