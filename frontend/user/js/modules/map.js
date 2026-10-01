@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/map.js — Mapbox GIS map for farms & plants
@@ -350,6 +350,12 @@ export function viewInternalPlantProfile(plantId) {
   document.querySelectorAll('.mapboxgl-popup').forEach(p => {
     try { p.remove(); } catch (_) {}
   });
+
+  // Mở ngay Modal Hồ sơ cây trồng nội bộ ERP (bảo toàn GPS 100%, không ghi đè tọa độ)
+  if (typeof window.openPlantProfileModal === 'function') {
+    window.openPlantProfileModal(plantId);
+    return;
+  }
 
   const allPlants = window._allPlantsCache || [];
   const targetPlant = allPlants.find(p => String(p.id) === String(plantId));

@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    app.js — Entry point (Slim)
@@ -44,7 +44,8 @@ import {
   applyBulkPlotToMatrix, updateMatrixPlot, updateMatrixRow, onUserSinglePlotChange, 
   togglePastDiseaseChip, getSelectedPastDiseases, resetPastDiseaseChips,
   onUserBatchPlantingDateChange, autoCalcMatrixAge, applyBulkAgronomyToMatrix,
-  updateMatrixPastDiseases, getSelectedBatchPastDiseases, resetBatchPastDiseaseChips
+  updateMatrixPastDiseases, getSelectedBatchPastDiseases, resetBatchPastDiseaseChips,
+  openPlantProfileModal, closePlantProfileModal, switchErpProfileTab, onErpProfileCareClick, onErpProfileNfcClick
 } from './modules/plants.js';
 import { viewInternalPlantProfile, updateUserMapMarkers } from './modules/map.js';
 import { filterUserLogs }             from './modules/logs.js';
@@ -421,6 +422,11 @@ window.applyBulkAgronomyToMatrix = applyBulkAgronomyToMatrix;
 window.updateMatrixPastDiseases = updateMatrixPastDiseases;
 window.getSelectedBatchPastDiseases = getSelectedBatchPastDiseases;
 window.resetBatchPastDiseaseChips = resetBatchPastDiseaseChips;
+window.openPlantProfileModal = openPlantProfileModal;
+window.closePlantProfileModal = closePlantProfileModal;
+window.switchErpProfileTab = switchErpProfileTab;
+window.onErpProfileCareClick = onErpProfileCareClick;
+window.onErpProfileNfcClick = onErpProfileNfcClick;
 
 window.viewInternalPlantProfile = viewInternalPlantProfile;
 window.updateUserMapMarkers = updateUserMapMarkers;

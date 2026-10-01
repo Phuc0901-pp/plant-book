@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/plants.js — Plant list rendering & search filter
@@ -428,7 +428,10 @@ function _plantRow(p) {
       <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="URL Công khai"><div>${publicUrlCell}</div></td>
       <td data-label="Thao tác" class="plant-actions-cell">
-        <div class="erp-plant-action-btns">
+                                <div class="erp-plant-action-btns">
+          <button type="button" class="btn-erp-plant-action btn-erp-plant-profile" onclick="openPlantProfileModal(${p.id})" title="Xem hồ sơ nội bộ cây trồng (Bảo toàn GPS)">
+            <i data-lucide="file-text" class="lucide-sm"></i> <span>Hồ sơ ERP</span>
+          </button>
           <button type="button" class="btn-erp-plant-action btn-erp-plant-care" onclick="openCareModal(${p.id}, '${treeCodeSafe}', '${plantTypeSafe}')" title="Ghi chép hoạt động chăm sóc & canh tác">
             <i data-lucide="file-check" class="lucide-sm"></i> <span>Ghi nhật ký</span>
           </button>
@@ -438,6 +441,7 @@ function _plantRow(p) {
         </div>
       </td>
     </tr>`;
+
 }
 
 // ── Range Filter & GPS Radar State ─────────────────────────────
@@ -3337,7 +3341,382 @@ export async function submitUserCreatePlant() {
 }
 window.submitUserCreatePlant = submitUserCreatePlant;
 
+// ── Enterprise Plant Profile Modal Controller (Bảo toàn GPS 100%) ──
+let _currentErpPlant = null;
 
+export async function openPlantProfileModal(plantId) {
+  const modal = document.getElementById('internal-plant-profile-modal');
+  if (!modal) return;
 
+  // 1. Retrieve plant data from memory cache first for instant zero-lag rendering
+  let plant = (_plantsCache || []).find(p => String(p.id) === String(plantId));
+  if (!plant && window._allPlantsCache) {
+    plant = window._allPlantsCache.find(p => String(p.id) === String(plantId));
+  }
 
+  // 2. Fetch full plant details from API if needed
+  try {
+    const res = await api(`/plants/${plantId}`);
+    if (res && res.id) {
+      plant = { ...plant, ...res };
+    }
+  } catch (err) {
+    console.warn('[ERP Profile] Fetching plant details fallback to cache:', err);
+  }
 
+  if (!plant) {
+    if (typeof toast === 'function') toast('Không tìm thấy dữ liệu cây trồng!', 'warning');
+    else if (window.toast) window.toast('Không tìm thấy dữ liệu cây trồng!', 'warning');
+    return;
+  }
+
+  _currentErpPlant = plant;
+
+  // 3. Reset active tab to Tab 1 (Overview)
+  switchErpProfileTab('overview');
+
+  // 4. Fill Header & Badges
+  const titleEl = document.getElementById('erp-plant-modal-title');
+  if (titleEl) titleEl.textContent = `Hồ Sơ Cây Trồng #${plant.tree_code || plant.id}`;
+
+  const healthBadgeEl = document.getElementById('erp-plant-health-badge');
+  if (healthBadgeEl) {
+    const st = String(plant.health_status || '').toLowerCase();
+    if (st.includes('tốt') || st.includes('khỏe') || st.includes('khoe') || st === 'good') {
+      healthBadgeEl.style.background = '#22c55e';
+      healthBadgeEl.innerHTML = '<i data-lucide="check-circle-2" class="lucide-xs"></i> Khỏe mạnh';
+    } else if (st.includes('chú ý') || st.includes('chu y') || st.includes('warning')) {
+      healthBadgeEl.style.background = '#f59e0b';
+      healthBadgeEl.innerHTML = '<i data-lucide="alert-triangle" class="lucide-xs"></i> Cần chăm sóc';
+    } else if (st.includes('bệnh') || st.includes('benh') || st.includes('sick')) {
+      healthBadgeEl.style.background = '#ef4444';
+      healthBadgeEl.innerHTML = '<i data-lucide="shield-alert" class="lucide-xs"></i> Nhiễm bệnh';
+    } else {
+      healthBadgeEl.style.background = '#3b82f6';
+      healthBadgeEl.innerHTML = `<i data-lucide="activity" class="lucide-xs"></i> ${esc(plant.health_status || 'Bình thường')}`;
+    }
+  }
+
+  const farmName = plant.farm_name || (_farmsCache.find(f => f.id == plant.farm_id)?.name) || 'Trang trại';
+  const plotStr = plant.plot_code || plant.location || 'Chưa phân lô';
+  const varietyStr = plant.plant_variety ? `${plant.plant_type || 'Cây'} (${plant.plant_variety})` : (plant.plant_type || 'Cây trồng');
+  const subtitleEl = document.getElementById('erp-plant-modal-subtitle');
+  if (subtitleEl) {
+    subtitleEl.textContent = `Trang trại: ${farmName} · Lô: ${plotStr} · Giống: ${varietyStr}`;
+  }
+
+  // 5. Fill Executive Quick Stats Bar
+  const ageVal = plant.plant_age || (plant.planting_date ? calculatePlantAge(plant.planting_date) : '—');
+  const statAgeEl = document.getElementById('erp-stat-plant-age');
+  if (statAgeEl) {
+    statAgeEl.textContent = `${ageVal}${plant.planting_date ? ` (${plant.planting_date})` : ''}`;
+  }
+
+  const statLocEl = document.getElementById('erp-stat-location');
+  if (statLocEl) {
+    statLocEl.textContent = `${plotStr}${plant.row_number ? ` · Hàng ${plant.row_number}` : ''}`;
+  }
+
+  const yieldVal = plant.data?.initial_yield || plant.initial_yield || (plant.schema_data?.initial_yield);
+  const statYieldEl = document.getElementById('erp-stat-initial-yield');
+  if (statYieldEl) {
+    statYieldEl.textContent = yieldVal ? `${yieldVal}` : 'Chưa ghi nhận';
+  }
+
+  const nfcVal = plant.nfc_uid || (plant.tags && plant.tags.length > 0 ? plant.tags[0].nfc_uid : null);
+  const statNfcEl = document.getElementById('erp-stat-nfc-uid');
+  if (statNfcEl) {
+    statNfcEl.textContent = nfcVal ? nfcVal : 'Chưa gán thẻ';
+  }
+
+  // 6. Fill Tab 1: Detailed Agronomic Attributes & Locked Coordinates
+  const dtTreeCode = document.getElementById('erp-plant-detail-treecode');
+  if (dtTreeCode) dtTreeCode.textContent = plant.tree_code || plant.id;
+
+  const dtType = document.getElementById('erp-plant-detail-type');
+  if (dtType) dtType.textContent = plant.plant_type || '—';
+
+  const dtVariety = document.getElementById('erp-plant-detail-variety');
+  if (dtVariety) dtVariety.textContent = plant.plant_variety || 'Chưa phân loại';
+
+  const dtPlantingDate = document.getElementById('erp-plant-detail-planting-date');
+  if (dtPlantingDate) dtPlantingDate.textContent = plant.planting_date ? `${plant.planting_date} (${ageVal})` : 'Chưa cập nhật';
+
+  const dtPlot = document.getElementById('erp-plant-detail-plot');
+  if (dtPlot) dtPlot.textContent = plant.plot_code || plant.location || '—';
+
+  const dtRow = document.getElementById('erp-plant-detail-row');
+  if (dtRow) dtRow.textContent = plant.row_number ? `Hàng số ${plant.row_number}` : '—';
+
+  // Past Diseases Badges Rendering
+  const pastDiseases = plant.data?.past_diseases || plant.past_diseases || (plant.schema_data?.past_diseases);
+  const diseasesContainer = document.getElementById('erp-plant-past-diseases-container');
+  if (diseasesContainer) {
+    let diseaseList = [];
+    if (Array.isArray(pastDiseases)) {
+      diseaseList = pastDiseases.filter(Boolean);
+    } else if (typeof pastDiseases === 'string' && pastDiseases.trim()) {
+      try {
+        const parsed = JSON.parse(pastDiseases);
+        if (Array.isArray(parsed)) diseaseList = parsed;
+        else diseaseList = pastDiseases.split(',').map(s => s.trim());
+      } catch (_) {
+        diseaseList = pastDiseases.split(',').map(s => s.trim());
+      }
+    }
+
+    if (!diseaseList.length || diseaseList.includes('Chưa từng nhiễm bệnh') || diseaseList.includes('Chưa từng nhiễm bệnh (Cây khỏe)')) {
+      diseasesContainer.innerHTML = `
+        <span style="display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;">
+          <i data-lucide="shield-check" class="lucide-xs"></i> Cây khỏe mạnh, chưa từng ghi nhận bệnh dịch trước đây
+        </span>
+      `;
+    } else {
+      diseasesContainer.innerHTML = diseaseList.map(d => `
+        <span style="display:inline-flex;align-items:center;gap:5px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;">
+          <i data-lucide="shield-alert" class="lucide-xs"></i> ${esc(d)}
+        </span>
+      `).join('');
+    }
+  }
+
+  // Coordinates GPS Display (Strictly Read-Only, 0 mutation)
+  const gpsEl = document.getElementById('erp-plant-gps-text');
+  if (gpsEl) {
+    const lat = parseFloat(plant.latitude);
+    const lng = parseFloat(plant.longitude);
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      gpsEl.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    } else {
+      gpsEl.textContent = 'Chưa xác định tọa độ GPS';
+    }
+  }
+
+  // NFC UID Display
+  const nfcValEl = document.getElementById('erp-plant-nfc-val');
+  if (nfcValEl) {
+    nfcValEl.textContent = nfcVal ? nfcVal : 'Chưa gán thẻ RFID';
+  }
+
+  // 7. Load Tab 2 (VietGAP Timeline) & Tab 3 (Cost Analysis)
+  _loadErpPlantLogsAndCosts(plant.id, plant);
+
+  // 8. Display modal
+  modal.style.display = 'flex';
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+export function closePlantProfileModal() {
+  const modal = document.getElementById('internal-plant-profile-modal');
+  if (modal) modal.style.display = 'none';
+  _currentErpPlant = null;
+}
+
+export function switchErpProfileTab(tab) {
+  const tabs = ['overview', 'logs', 'cost'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`tab-btn-erp-${t}`);
+    const pane = document.getElementById(`erp-tab-pane-${t}`);
+    if (btn) {
+      if (t === tab) {
+        btn.classList.add('active');
+        btn.style.color = '#059669';
+        btn.style.borderBottomColor = '#059669';
+      } else {
+        btn.classList.remove('active');
+        btn.style.color = '#64748b';
+        btn.style.borderBottomColor = 'transparent';
+      }
+    }
+    if (pane) {
+      pane.style.display = (t === tab) ? 'block' : 'none';
+    }
+  });
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+export function onErpProfileCareClick() {
+  if (!_currentErpPlant) return;
+  const p = _currentErpPlant;
+  if (window.openCareModal) {
+    window.openCareModal(p.id, p.tree_code || p.id, p.plant_type || '');
+  }
+}
+
+export function onErpProfileNfcClick() {
+  if (!_currentErpPlant) return;
+  const p = _currentErpPlant;
+  if (window.openNfcModal) {
+    window.openNfcModal(p.id, p.tree_code || p.id, p.public_slug || '', p.nfc_uid || null);
+  }
+}
+
+async function _loadErpPlantLogsAndCosts(plantId, plant) {
+  const timelineContainer = document.getElementById('erp-plant-logs-timeline-container');
+  const logsCountEl = document.getElementById('erp-plant-logs-count');
+  const costTotalEl = document.getElementById('erp-cost-total-amount');
+  const costFertilizerEl = document.getElementById('erp-cost-fertilizer-amount');
+  const costPesticideEl = document.getElementById('erp-cost-pesticide-amount');
+  const costWaterEl = document.getElementById('erp-cost-water-amount');
+  const materialsListEl = document.getElementById('erp-cost-materials-list');
+
+  let logs = (plant && Array.isArray(plant.logs)) ? plant.logs : [];
+
+  if (!logs.length) {
+    try {
+      const res = await api(`/plants/${plantId}/logs`);
+      if (res && Array.isArray(res.logs)) {
+        logs = res.logs;
+      } else if (Array.isArray(res)) {
+        logs = res;
+      }
+    } catch (err) {
+      console.warn('[ERP Profile] Could not fetch logs from API, fallback to memory logs:', err);
+      if (window._allLogsCache) {
+        logs = window._allLogsCache.filter(l => String(l.plant_id) === String(plantId));
+      }
+    }
+  }
+
+  if (logsCountEl) logsCountEl.textContent = logs.length;
+
+  // Render Timeline
+  if (timelineContainer) {
+    if (!logs.length) {
+      timelineContainer.innerHTML = `
+        <div style="text-align:center;padding:28px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;">
+          <i data-lucide="calendar-off" class="lucide-md" style="color:#94a3b8;margin-bottom:6px;"></i>
+          <div style="font-weight:700;font-size:13px;color:#334155;">Chưa có dữ liệu nhật ký canh tác</div>
+          <div style="font-size:12px;margin-top:2px;">Bấm nút "+ Thêm nhật ký mới" để ghi lại hoạt động tưới tiêu, bón phân hoặc phun thuốc.</div>
+        </div>
+      `;
+    } else {
+      timelineContainer.innerHTML = logs.map((log) => {
+        let typeColor = '#059669';
+        let typeBg = '#ecfdf5';
+        let iconName = 'clipboard-check';
+        const typeStr = String(log.log_type || '').toLowerCase();
+        if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
+          typeColor = '#0284c7'; typeBg = '#f0f9ff'; iconName = 'droplet';
+        } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
+          typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
+        } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
+          typeColor = '#d97706'; typeBg = '#fffbeb'; iconName = 'shield-alert';
+        } else if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
+          typeColor = '#9333ea'; typeBg = '#faf5ff'; iconName = 'package-check';
+        } else if (typeStr.includes('tỉa') || typeStr.includes('pruning')) {
+          typeColor = '#475569'; typeBg = '#f8fafc'; iconName = 'scissors';
+        }
+
+        const photos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
+
+        return `
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid ${typeColor};border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+            <div style="width:34px;height:34px;border-radius:8px;background:${typeBg};color:${typeColor};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;">
+              <i data-lucide="${iconName}" class="lucide-sm"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+                <span style="font-size:13px;font-weight:800;color:#0f172a;">${esc(log.log_type || 'Nhật ký chăm sóc')}</span>
+                <span style="font-size:11.5px;color:#64748b;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                  <i data-lucide="clock" class="lucide-xs"></i> ${esc(log.log_date || log.created_at || '—')}
+                </span>
+              </div>
+              <div style="font-size:12px;color:#334155;line-height:1.5;">
+                ${esc(log.note || log.action || 'Không có ghi chú chi tiết.')}
+              </div>
+              ${(log.operator_name || log.equipment_used) ? `
+                <div style="font-size:11px;color:#64748b;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap;">
+                  ${log.operator_name ? `<span><i data-lucide="user" class="lucide-xs"></i> Nhân sự: <strong>${esc(log.operator_name)}</strong></span>` : ''}
+                  ${log.equipment_used ? `<span><i data-lucide="wrench" class="lucide-xs"></i> Thiết bị: <strong>${esc(log.equipment_used)}</strong></span>` : ''}
+                </div>` : ''}
+              ${photos.length ? `
+                <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
+                  ${photos.map(pUrl => `<img src="${esc(pUrl)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;" onclick="if(window.openLightbox) openLightbox('${esc(pUrl)}')">`).join('')}
+                </div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Calculate Costs & Supplies Breakdown
+  let totalCost = 0;
+  let fertCost = 0;
+  let pestCost = 0;
+  let waterCost = 0;
+  const materialsUsed = [];
+
+  logs.forEach(log => {
+    const typeStr = String(log.log_type || '').toLowerCase();
+    const details = log.details || {};
+    const cost = parseFloat(log.cost || details.cost || details.total_cost || 0) || 0;
+    const materialName = log.material_name || details.material_name || details.fertilizer_name || details.pesticide_name;
+    const quantity = log.quantity || details.quantity || details.amount;
+    const unit = log.unit || details.unit || 'đơn vị';
+
+    if (materialName) {
+      materialsUsed.push({
+        date: log.log_date,
+        type: log.log_type,
+        name: materialName,
+        quantity: quantity ? `${quantity} ${unit}` : '',
+        cost: cost
+      });
+    }
+
+    if (cost > 0) {
+      totalCost += cost;
+      if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
+        fertCost += cost;
+      } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest')) {
+        pestCost += cost;
+      } else if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
+        waterCost += cost;
+      }
+    }
+  });
+
+  if (costTotalEl) costTotalEl.textContent = `${totalCost.toLocaleString('vi-VN')} VNĐ`;
+  if (costFertilizerEl) costFertilizerEl.textContent = `${fertCost.toLocaleString('vi-VN')} VNĐ`;
+  if (costPesticideEl) costPesticideEl.textContent = `${pestCost.toLocaleString('vi-VN')} VNĐ`;
+  if (costWaterEl) costWaterEl.textContent = `${waterCost.toLocaleString('vi-VN')} VNĐ`;
+
+  if (materialsListEl) {
+    if (!materialsUsed.length) {
+      materialsListEl.innerHTML = '<span style="color:#64748b;">Chưa phát sinh vật tư phân bón / thuốc BVTV riêng biệt cho cây này.</span>';
+    } else {
+      materialsListEl.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">
+          <thead>
+            <tr style="background:#f1f5f9;color:#475569;text-align:left;">
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Ngày</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Vật tư / Phân thuốc</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Định lượng</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Chi phí</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${materialsUsed.map(m => `
+              <tr>
+                <td style="padding:6px 8px;border:1px solid #e2e8f0;color:#64748b;">${esc(m.date || '—')}</td>
+                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#0f172a;">${esc(m.name)}</td>
+                <td style="padding:6px 8px;border:1px solid #e2e8f0;color:#334155;">${esc(m.quantity || 'Theo liều lượng chuẩn')}</td>
+                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#059669;">${m.cost > 0 ? `${m.cost.toLocaleString('vi-VN')} VNĐ` : 'Định mức chung'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+  }
+
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+window.openPlantProfileModal = openPlantProfileModal;
+window.closePlantProfileModal = closePlantProfileModal;
+window.switchErpProfileTab = switchErpProfileTab;
+window.onErpProfileCareClick = onErpProfileCareClick;
+window.onErpProfileNfcClick = onErpProfileNfcClick;

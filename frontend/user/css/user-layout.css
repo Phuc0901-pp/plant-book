@@ -4243,6 +4243,18 @@ td[data-label="Thao tác"] {
   color: #065f46 !important;
 }
 
+.btn-erp-plant-profile {
+  background: #f0fdf4 !important;
+  border-color: #86efac !important;
+  color: #15803d !important;
+}
+
+.btn-erp-plant-profile:hover {
+  background: #dcfce7 !important;
+  border-color: #4ade80 !important;
+  color: #166534 !important;
+}
+
 .btn-erp-plant-nfc {
   background: #eff6ff !important;
   border-color: #bfdbfe !important;
