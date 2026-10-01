@@ -180,10 +180,10 @@
             <i data-lucide="heart-pulse" class="lucide-xs" style="color:#059669;"></i> Tình trạng sức khỏe ban đầu
           </label>
           <select id="user-plant-health" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; width:100%; box-sizing:border-box; background:#ffffff; outline:none;">
-            <option value="Tốt">Tốt (Sinh trưởng mạnh)</option>
+            <option value="Tốt">Tốt</option>
             <option value="Bình thường">Bình thường</option>
-            <option value="Cần chú ý">Cần chú ý (Thiếu nước / Dinh dưỡng)</option>
-            <option value="Bệnh">Bệnh (Cần can thiệp thuốc BVTV)</option>
+            <option value="Cần chú ý">Cần chú ý</option>
+            <option value="Bệnh">Bệnh</option>
           </select>
         </div>
 
@@ -276,7 +276,7 @@
       <div id="user-single-gps-card" class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px; flex-wrap:wrap; gap:8px;">
           <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> Vị trí &amp; Tọa độ GPS Vệ tinh
+            <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> Vị trí &amp; Tọa độ GPS
           </div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="getUserPlantGPS()" style="font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:8px; background:#ecfdf5; border:1.5px solid #a7f3d0; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
             <i data-lucide="crosshair" class="lucide-sm"></i> <span>Lấy GPS Thực Địa</span>
@@ -361,10 +361,10 @@
             <div>
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:2px;">Sức khỏe ban đầu</label>
               <select id="user-batch-health" style="width:100%; padding:5px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:700; outline:none; background:#fff; box-sizing:border-box;">
-                <option value="Tốt">Tốt (Sinh trưởng mạnh)</option>
+                <option value="Tốt">Tốt</option>
                 <option value="Bình thường">Bình thường</option>
                 <option value="Cần chú ý">Cần chú ý</option>
-                <option value="Bệnh">Bệnh (Cần thuốc BVTV)</option>
+                <option value="Bệnh">Bệnh</option>
               </select>
             </div>
             <div>
@@ -419,7 +419,7 @@
               </button>
               <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Chưa từng nhiễm bệnh')">
                 <i data-lucide="shield-check" class="lucide-xs"></i>
-                <span>Chưa từng nhiễm bệnh (Cây khỏe)</span>
+                <span>Cây khỏe</span>
                 <i data-lucide="check" class="lucide-xs chip-check-icon"></i>
               </button>
               <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Bệnh khác')">
@@ -435,7 +435,7 @@
 
           <div style="text-align:right; border-top:1px dashed #cbd5e1; padding-top:8px;">
             <button type="button" class="btn btn-sm" onclick="applyBulkAgronomyToMatrix()" style="background:#047857; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(4,120,87,0.25);">
-              <i data-lucide="sparkles" class="lucide-xs"></i> <span>Áp dụng thông số Nông học cho toàn bộ Ma trận</span>
+              <i data-lucide="sparkles" class="lucide-xs"></i> <span>Bảng thông số cây trồng</span>
             </button>
           </div>
         </div>
