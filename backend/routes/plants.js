@@ -655,6 +655,8 @@ router.post('/batch-range', auth, async (req, res) => {
         const pHealth = it.health_status || health_status || 'Tốt';
         const pType = (it.plant_type || plant_type).trim();
         const pVariety = (it.plant_variety !== undefined ? it.plant_variety : plant_variety || '').trim();
+        const pYield = it.initial_yield !== undefined ? it.initial_yield : (req.body.initial_yield || (data && data.initial_yield) || '');
+        const pDiseases = it.past_diseases !== undefined ? it.past_diseases : (req.body.past_diseases || (data && data.past_diseases) || []);
         return {
           code,
           location: pLoc,
@@ -666,10 +668,14 @@ router.post('/batch-range', auth, async (req, res) => {
           plant_age: pAge,
           health_status: pHealth,
           plant_type: pType,
-          plant_variety: pVariety
+          plant_variety: pVariety,
+          initial_yield: pYield,
+          past_diseases: pDiseases
         };
       }).filter(t => t.code);
     } else if (Array.isArray(tree_codes) && tree_codes.length > 0) {
+      const bYield = req.body.initial_yield || (data && data.initial_yield) || '';
+      const bDiseases = req.body.past_diseases || (data && data.past_diseases) || [];
       treesToInsert = tree_codes.map(c => String(c).trim()).filter(Boolean).map(code => ({
         code,
         location: (location || '').trim(),
@@ -679,7 +685,9 @@ router.post('/batch-range', auth, async (req, res) => {
         plant_age: (plant_age || '').trim(),
         health_status: health_status || 'Tốt',
         plant_type: plant_type.trim(),
-        plant_variety: (plant_variety || '').trim()
+        plant_variety: (plant_variety || '').trim(),
+        initial_yield: bYield,
+        past_diseases: bDiseases
       }));
     } else if (start_num !== undefined && end_num !== undefined) {
       const s = parseInt(start_num, 10);
@@ -692,6 +700,8 @@ router.post('/batch-range', auth, async (req, res) => {
       }
       const pre = prefix || '';
       const padLen = pad_zeros ? Math.max(String(start_num).length, String(end_num).length) : 0;
+      const bYield = req.body.initial_yield || (data && data.initial_yield) || '';
+      const bDiseases = req.body.past_diseases || (data && data.past_diseases) || [];
       for (let i = s; i <= e; i++) {
         const numStr = padLen > 1 ? String(i).padStart(padLen, '0') : String(i);
         treesToInsert.push({
@@ -703,7 +713,9 @@ router.post('/batch-range', auth, async (req, res) => {
           plant_age: (plant_age || '').trim(),
           health_status: health_status || 'Tốt',
           plant_type: plant_type.trim(),
-          plant_variety: (plant_variety || '').trim()
+          plant_variety: (plant_variety || '').trim(),
+          initial_yield: bYield,
+          past_diseases: bDiseases
         });
       }
     }
@@ -750,6 +762,12 @@ router.post('/batch-range', auth, async (req, res) => {
         } catch (_) {}
       }
 
+      const itemData = {
+        ...(data || {}),
+        ...(tree.initial_yield ? { initial_yield: tree.initial_yield } : {}),
+        ...(tree.past_diseases && tree.past_diseases.length ? { past_diseases: tree.past_diseases } : {})
+      };
+
       const resDb = await client.query(
         `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
@@ -773,7 +791,7 @@ router.post('/batch-range', auth, async (req, res) => {
              updated_at = NOW()
          RETURNING id`,
         [slug, schema_id || null, tree.plant_type, tree.plant_variety, tree.planting_date || null, tree.plant_age, tree.health_status,
-         tree.location, plotCode, rowNum, JSON.stringify(data || {}), is_public !== false, farm_id || null, tree.latitude, tree.longitude, req.user.id, tree.code]
+         tree.location, plotCode, rowNum, JSON.stringify(itemData), is_public !== false, farm_id || null, tree.latitude, tree.longitude, req.user.id, tree.code]
       );
 
       const newId = resDb.rows[0].id;
@@ -840,7 +858,7 @@ router.get(['/farms/:farmId/tags', '/farm/:farmId/tags', '/nfc/farm/:farmId/tags
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, tree_code, nfc_uid } = req.body;
+    const { schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, tree_code, nfc_uid, initial_yield, past_diseases } = req.body;
     
     if (req.user.role !== 'admin') {
       if (!farm_id) {
@@ -897,6 +915,12 @@ router.post('/', auth, async (req, res) => {
       } catch (_) {}
     }
 
+    const plantData = {
+      ...(data || {}),
+      ...(initial_yield ? { initial_yield } : {}),
+      ...(past_diseases && (Array.isArray(past_diseases) ? past_diseases.length : past_diseases) ? { past_diseases } : {})
+    };
+
     const result = await pool.query(
       `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, created_by, tree_code, nfc_uid)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
@@ -921,7 +945,7 @@ router.post('/', auth, async (req, res) => {
            updated_at = NOW()
        RETURNING *`,
       [slug, schema_id || null, plant_type, plant_variety || '', planting_date || null, plant_age || '', health_status || 'Tốt',
-       location, finalPlotCode, finalRowNum, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
+       location, finalPlotCode, finalRowNum, JSON.stringify(plantData), is_public !== false, farm_id || null, 
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
        req.user.id, finalTreeCode, cleanNfcUid]

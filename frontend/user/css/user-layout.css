@@ -92,15 +92,118 @@ code, kbd, samp, pre, .font-mono {
   font-size: 16px;
   font-weight: 700;
 }
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--gray-400);
+/* ── Universal Premium Animated Modal Close Button System ── */
+.modal-close,
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #ffffff;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
   cursor: pointer;
+  outline: none;
+  font-size: 0 !important;
+  line-height: 1 !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s ease,
+              color 0.2s ease !important;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
 }
-.modal-close:hover {
-  color: var(--gray-800);
+.modal-close svg,
+.modal-close i,
+.modal-close-btn svg,
+.modal-close-btn i {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 2.4 !important;
+  color: inherit !important;
+  display: block !important;
+  margin: auto !important;
+  pointer-events: none;
+}
+.modal-close:hover,
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.32) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+  transform: rotate(90deg) scale(1.1) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
+}
+.modal-close:active,
+.modal-close-btn:active {
+  transform: rotate(90deg) scale(0.92) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
+}
+.modal-header:not([style*="background:linear-gradient"]):not([style*="background:#0"]):not([style*="background: #0"]) .modal-close,
+.modal-header:not([style*="background:linear-gradient"]):not([style*="background:#0"]):not([style*="background: #0"]) .modal-close-btn,
+.modal-close.modal-close-dark {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+.modal-header:not([style*="background:linear-gradient"]):not([style*="background:#0"]):not([style*="background: #0"]) .modal-close:hover,
+.modal-close.modal-close-dark:hover {
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #ef4444 !important;
+  transform: rotate(90deg) scale(1.1) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* ── Selectable Past Disease Badges / Chips ── */
+.past-disease-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.past-disease-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.past-disease-chip:hover {
+  border-color: #10b981;
+  background: #f0fdf4;
+  color: #065f46;
+  transform: translateY(-1px);
+}
+.past-disease-chip.active {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #047857;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+.past-disease-chip.active i[data-lucide="check"] {
+  display: inline-block !important;
+}
+.past-disease-chip i[data-lucide="check"] {
+  display: none;
 }
 .modal-body {
   padding: 24px;
@@ -1532,17 +1635,6 @@ tr:hover td {
   font-weight: 700;
   color: var(--green-dark);
   margin: 0;
-}
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--gray-400);
-  cursor: pointer;
-  line-height: 1;
-}
-.modal-close:hover {
-  color: var(--gray-800);
 }
 .modal-body {
   padding: 24px;

@@ -41,7 +41,8 @@ import {
   calculatePlantAge, onUserPlantingDateChange, generateUserPlantMatrix, 
   renderUserPlantMatrix, updateMatrixItem, deleteMatrixRow, applyBulkLocationToMatrix, 
   applyBulkPlotToMatrix, updateMatrixPlot, updateMatrixRow, onUserSinglePlotChange, 
-  normalizePlotName, autoSequenceRowsInPlot, applyBulkGpsToMatrix, addCustomMatrixRow 
+  normalizePlotName, autoSequenceRowsInPlot, applyBulkGpsToMatrix, addCustomMatrixRow,
+  togglePastDiseaseChip, getSelectedPastDiseases, resetPastDiseaseChips
 } from './modules/plants.js';
 import { viewInternalPlantProfile, updateUserMapMarkers } from './modules/map.js';
 import { filterUserLogs }             from './modules/logs.js';
@@ -409,6 +410,9 @@ window.normalizePlotName = normalizePlotName;
 window.autoSequenceRowsInPlot = autoSequenceRowsInPlot;
 window.applyBulkGpsToMatrix = applyBulkGpsToMatrix;
 window.addCustomMatrixRow = addCustomMatrixRow;
+window.togglePastDiseaseChip = togglePastDiseaseChip;
+window.getSelectedPastDiseases = getSelectedPastDiseases;
+window.resetPastDiseaseChips = resetPastDiseaseChips;
 
 window.viewInternalPlantProfile = viewInternalPlantProfile;
 window.updateUserMapMarkers = updateUserMapMarkers;

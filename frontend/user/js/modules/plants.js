@@ -414,7 +414,16 @@ function _plantRow(p) {
           ${p.planting_date ? `<br><small style="color:var(--text-muted); font-size:11px;"><i data-lucide="calendar" class="lucide-xs"></i> ${esc(p.planting_date)}</small>` : ''}
         </div>
       </td>
-      <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
+      <td data-label="Sức khỏe">
+        <div>
+          ${healthBadge(p.health_status)}
+          ${(p.data?.initial_yield || p.initial_yield) ? `<div style="margin-top:3px;font-size:11px;color:#047857;font-weight:700;"><i data-lucide="trending-up" class="lucide-xs"></i> Vụ trước: ${esc(p.data?.initial_yield || p.initial_yield)}</div>` : ''}
+          ${((p.data?.past_diseases && (Array.isArray(p.data.past_diseases) ? p.data.past_diseases.length : p.data.past_diseases)) || (p.past_diseases && p.past_diseases.length)) ? `
+            <div style="margin-top:2px;font-size:10.5px;color:#b45309;line-height:1.2;" title="Tiền sử bệnh: ${esc(Array.isArray(p.data?.past_diseases) ? p.data.past_diseases.join(', ') : (p.data?.past_diseases || p.past_diseases))}">
+              <i data-lucide="shield-alert" class="lucide-xs"></i> ${esc(Array.isArray(p.data?.past_diseases) ? p.data.past_diseases.slice(0, 2).join(', ') + (p.data.past_diseases.length > 2 ? '...' : '') : String(p.data?.past_diseases || p.past_diseases))}
+            </div>` : ''}
+        </div>
+      </td>
       <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="URL Công khai"><div>${publicUrlCell}</div></td>
       <td data-label="Thao tác" class="plant-actions-cell">
@@ -2865,7 +2874,7 @@ export async function openUserCreatePlantModal() {
   }
 
   // 2. Reset Fields
-  ['user-plant-tree-code', 'user-plant-nfc-uid', 'user-plant-type', 'user-plant-variety', 'user-plant-planting-date', 'user-plant-age', 'user-plant-plot', 'user-plant-row', 'user-plant-location', 'user-plant-lat', 'user-plant-lng', 'user-plant-range-prefix', 'user-plant-range-start', 'user-plant-range-end', 'user-matrix-bulk-plot'].forEach(id => {
+  ['user-plant-tree-code', 'user-plant-nfc-uid', 'user-plant-type', 'user-plant-variety', 'user-plant-planting-date', 'user-plant-age', 'user-plant-plot', 'user-plant-row', 'user-plant-location', 'user-plant-lat', 'user-plant-lng', 'user-plant-range-prefix', 'user-plant-range-start', 'user-plant-range-end', 'user-matrix-bulk-plot', 'user-plant-initial-yield', 'user-plant-custom-past-disease'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.value = (id === 'user-plant-row') ? '1' : '';
@@ -2875,6 +2884,7 @@ export async function openUserCreatePlantModal() {
   if (healthEl) healthEl.value = 'Tốt';
   const publicEl = document.getElementById('user-plant-is-public');
   if (publicEl) publicEl.value = 'true';
+  resetPastDiseaseChips();
 
   _userPlantMatrix = [];
   const matrixCard = document.getElementById('user-plant-matrix-card');
@@ -2909,8 +2919,78 @@ window.openUserCreatePlantModal = openUserCreatePlantModal;
 export function closeUserCreatePlantModal() {
   const modal = document.getElementById('user-create-plant-modal');
   if (modal) modal.style.display = 'none';
+  resetPastDiseaseChips();
 }
 window.closeUserCreatePlantModal = closeUserCreatePlantModal;
+
+// ── Selectable Past Diseases Badges / Chips Handlers ──
+export function togglePastDiseaseChip(btn, diseaseName) {
+  if (!btn) return;
+  const container = document.getElementById('past-disease-chips-container');
+  const customWrap = document.getElementById('user-plant-custom-disease-wrap');
+
+  if (diseaseName === 'Chưa từng nhiễm bệnh') {
+    if (container) {
+      container.querySelectorAll('.past-disease-chip').forEach(chip => {
+        if (chip !== btn) chip.classList.remove('active');
+      });
+    }
+    btn.classList.toggle('active');
+    if (customWrap) customWrap.style.display = 'none';
+    return;
+  }
+
+  // If another disease is selected, deselect "Chưa từng nhiễm bệnh"
+  if (container) {
+    const healthyChip = Array.from(container.querySelectorAll('.past-disease-chip'))
+      .find(c => c.textContent.includes('Chưa từng nhiễm bệnh'));
+    if (healthyChip) healthyChip.classList.remove('active');
+  }
+
+  btn.classList.toggle('active');
+
+  if (diseaseName === 'Bệnh khác') {
+    if (customWrap) {
+      customWrap.style.display = btn.classList.contains('active') ? 'block' : 'none';
+      if (btn.classList.contains('active')) {
+        const inp = document.getElementById('user-plant-custom-past-disease');
+        if (inp) inp.focus();
+      }
+    }
+  }
+}
+window.togglePastDiseaseChip = togglePastDiseaseChip;
+
+export function getSelectedPastDiseases() {
+  const container = document.getElementById('past-disease-chips-container');
+  if (!container) return [];
+  const selected = [];
+  container.querySelectorAll('.past-disease-chip.active').forEach(chip => {
+    const text = chip.querySelector('span')?.textContent?.trim() || chip.textContent.trim();
+    if (text === 'Bệnh khác...') {
+      const customVal = (document.getElementById('user-plant-custom-past-disease')?.value || '').trim();
+      if (customVal) selected.push(customVal);
+    } else if (text) {
+      selected.push(text);
+    }
+  });
+  return selected;
+}
+window.getSelectedPastDiseases = getSelectedPastDiseases;
+
+export function resetPastDiseaseChips() {
+  const container = document.getElementById('past-disease-chips-container');
+  if (container) {
+    container.querySelectorAll('.past-disease-chip').forEach(chip => chip.classList.remove('active'));
+  }
+  const customWrap = document.getElementById('user-plant-custom-disease-wrap');
+  if (customWrap) customWrap.style.display = 'none';
+  const customInp = document.getElementById('user-plant-custom-past-disease');
+  if (customInp) customInp.value = '';
+  const yieldInp = document.getElementById('user-plant-initial-yield');
+  if (yieldInp) yieldInp.value = '';
+}
+window.resetPastDiseaseChips = resetPastDiseaseChips;
 
 export async function submitUserCreatePlant() {
   const farmId = document.getElementById('user-plant-farm-id')?.value;
@@ -2931,6 +3011,8 @@ export async function submitUserCreatePlant() {
   const plantingDate = document.getElementById('user-plant-planting-date')?.value || null;
   const plantAge = (document.getElementById('user-plant-age')?.value || '').trim();
   const healthStatus = document.getElementById('user-plant-health')?.value || 'Tốt';
+  const initialYield = (document.getElementById('user-plant-initial-yield')?.value || '').trim();
+  const pastDiseases = getSelectedPastDiseases();
   const latVal = document.getElementById('user-plant-lat')?.value;
   const lngVal = document.getElementById('user-plant-lng')?.value;
   const isPublic = document.getElementById('user-plant-is-public')?.value === 'true';
@@ -2956,6 +3038,8 @@ export async function submitUserCreatePlant() {
           planting_date: plantingDate,
           plant_age: plantAge,
           health_status: healthStatus,
+          initial_yield: initialYield,
+          past_diseases: pastDiseases,
           is_public: isPublic,
           items: _userPlantMatrix.map(it => {
             const itemPlot = it.plot_code ? normalizePlotName(it.plot_code) : '';
@@ -2972,10 +3056,15 @@ export async function submitUserCreatePlant() {
               plant_variety: plantVariety,
               planting_date: plantingDate,
               plant_age: plantAge,
-              health_status: healthStatus
+              health_status: healthStatus,
+              initial_yield: initialYield,
+              past_diseases: pastDiseases
             };
           }),
-          data: {}
+          data: {
+            initial_yield: initialYield,
+            past_diseases: pastDiseases
+          }
         };
       } else {
         const prefix = (document.getElementById('user-plant-range-prefix')?.value || '').trim();
@@ -3011,7 +3100,12 @@ export async function submitUserCreatePlant() {
           end_num: end,
           prefix,
           pad_zeros: !!padZeros,
-          data: {}
+          initial_yield: initialYield,
+          past_diseases: pastDiseases,
+          data: {
+            initial_yield: initialYield,
+            past_diseases: pastDiseases
+          }
         };
       }
 
@@ -3045,7 +3139,12 @@ export async function submitUserCreatePlant() {
         is_public: isPublic,
         tree_code: treeCode || undefined,
         nfc_uid: nfcUid || undefined,
-        data: {}
+        initial_yield: initialYield,
+        past_diseases: pastDiseases,
+        data: {
+          initial_yield: initialYield,
+          past_diseases: pastDiseases
+        }
       };
 
       const res = await api('/plants', {

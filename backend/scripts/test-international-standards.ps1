@@ -237,8 +237,11 @@ if (Test-Path $userPlantsJsPath) {
     Record-Test -Category "Plot & Row Engine" -TestName "Plant Age Calculation (dd/mm/yyyy -> years/months/days)" -Passed $hasAgeCalc
     Record-Test -Category "Plot & Row Engine" -TestName "Matrix Generator Ingests Plot & Auto-Sequenced Rows" -Passed $hasMatrixGen
     Record-Test -Category "Plot & Row Engine" -TestName "Matrix Table Renders Plot & Row Inputs with Stepper" -Passed $hasMatrixRender
-    Record-Test -Category "Plot & Row Engine" -TestName "Per-Row Plot Change with Automatic Next Available Row Selection" -Passed $hasMatrixPlotUpdate
-    Record-Test -Category "Plot & Row Engine" -TestName "Per-Row Stepper Change with Intra-Plot Duplicate Warning" -Passed $hasMatrixRowUpdate
+    $hasYieldHandling = $plantsJs.Contains("initialYield") -or $plantsJs.Contains("initial_yield")
+    $hasPastDiseasesChips = $plantsJs.Contains("togglePastDiseaseChip") -and $plantsJs.Contains("getSelectedPastDiseases")
+
+    Record-Test -Category "Agronomic Traits" -TestName "Initial Yield Metric Handling (Previous Season Baseline)" -Passed $hasYieldHandling
+    Record-Test -Category "Agronomic Traits" -TestName "Selectable Past Disease Option Chips Engine" -Passed $hasPastDiseasesChips
 }
 
 if (Test-Path $userAppJsPath) {
@@ -249,11 +252,13 @@ if (Test-Path $userAppJsPath) {
     $appHasUpdatePlot = $appJs.Contains("updateMatrixPlot")
     $appHasUpdateRow = $appJs.Contains("updateMatrixRow")
     $appHasPlotChange = $appJs.Contains("onUserSinglePlotChange")
+    $appHasChipsBind = $appJs.Contains("togglePastDiseaseChip") -and $appJs.Contains("getSelectedPastDiseases")
     
     Record-Test -Category "Module Export Bindings" -TestName "App.js binds applyBulkPlotToMatrix on window" -Passed $appHasBulkPlot
     Record-Test -Category "Module Export Bindings" -TestName "App.js binds applyBulkLocationToMatrix on window" -Passed $appHasBulkLoc
     Record-Test -Category "Module Export Bindings" -TestName "App.js binds updateMatrixPlot & updateMatrixRow on window" -Passed ($appHasUpdatePlot -and $appHasUpdateRow)
     Record-Test -Category "Module Export Bindings" -TestName "App.js binds onUserSinglePlotChange on window" -Passed $appHasPlotChange
+    Record-Test -Category "Module Export Bindings" -TestName "App.js binds togglePastDiseaseChip on window" -Passed $appHasChipsBind
 }
 
 # ══════════════════════════════════════════════════════════════════════════

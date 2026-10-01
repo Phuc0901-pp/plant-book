@@ -2012,8 +2012,8 @@
                 <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Cơ chế Xóa Mềm an toàn · Có thể khôi phục tại Lịch sử biến động</div>
               </div>
             </div>
-            <button type="button" onclick="closeSelectiveDeleteModal()" style="background:transparent; border:none; color:#94a3b8; font-size:20px; cursor:pointer; padding:4px;">
-              <i data-lucide="x" class="lucide-sm"></i>
+            <button type="button" class="modal-close" onclick="closeSelectiveDeleteModal()" aria-label="Đóng" title="Đóng">
+              <i data-lucide="x"></i>
             </button>
           </div>
 
@@ -2136,8 +2136,8 @@
                 <div style="font-size:12px; color:#a7f3d0; margin-top:2px;">Trích xuất sổ canh tác điện tử · Chuẩn hóa file Excel & Bản in PDF</div>
               </div>
             </div>
-            <button type="button" onclick="closeUserExportLogsModal()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer; padding:4px;">
-              <i data-lucide="x" class="lucide-sm"></i>
+            <button type="button" class="modal-close" onclick="closeUserExportLogsModal()" aria-label="Đóng" title="Đóng">
+              <i data-lucide="x"></i>
             </button>
           </div>
 
@@ -3415,7 +3415,9 @@
           </div>
         </div>
       </div>
-      <button class="modal-close" onclick="closeUserCreatePlantModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); width:34px; height:34px; border-radius:10px; color:#ffffff; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">×</button>
+      <button class="modal-close" onclick="closeUserCreatePlantModal()" aria-label="Đóng" title="Đóng cửa sổ">
+        <i data-lucide="x"></i>
+      </button>
     </div>
 
     <!-- 2. Scrollable Modal Body -->
@@ -3541,7 +3543,7 @@
           </div>
         </div>
 
-        <!-- Planting Date & Age (Requirement 1) -->
+        <!-- Planting Date & Age -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; gap:5px;">
@@ -3557,8 +3559,8 @@
           </div>
         </div>
 
-        <!-- Initial Health Status (Requirement 2 with Lucide Icon Library) -->
-        <div>
+        <!-- Initial Health Status -->
+        <div style="margin-bottom:12px;">
           <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; gap:5px;">
             <i data-lucide="heart-pulse" class="lucide-xs" style="color:#059669;"></i> Tình trạng sức khỏe ban đầu
           </label>
@@ -3568,6 +3570,90 @@
             <option value="Cần chú ý">Cần chú ý (Thiếu nước / Dinh dưỡng)</option>
             <option value="Bệnh">Bệnh (Cần can thiệp thuốc BVTV)</option>
           </select>
+        </div>
+
+        <!-- New Optional Field 1: Năng suất ban đầu (Sản lượng mùa vụ trước đó) -->
+        <div style="margin-bottom:14px; padding:12px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="font-size:12px; font-weight:700; color:#334155; display:flex; align-items:center; gap:5px; margin:0;">
+              <i data-lucide="trending-up" class="lucide-xs" style="color:#059669;"></i> Năng suất ban đầu (Sản lượng vụ trước khi dùng App)
+            </label>
+            <span style="font-size:10.5px; font-weight:700; color:#64748b; background:#e2e8f0; padding:1px 7px; border-radius:4px;">Tùy chọn</span>
+          </div>
+          <input type="text" id="user-plant-initial-yield" placeholder="VD: 80 kg/cây/năm, 150 trái/cây, 25 tấn/ha..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:12.5px; font-weight:600; width:100%; box-sizing:border-box; outline:none; background:#ffffff;">
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">
+            Dùng làm mốc đối chứng để đo lường độ tăng trưởng năng suất sau khi ứng dụng quy trình VietGAP.
+          </div>
+        </div>
+
+        <!-- New Optional Field 2: Các bệnh trước đó của cây (Khối tùy chọn đa lựa chọn) -->
+        <div style="padding:12px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="font-size:12px; font-weight:700; color:#334155; display:flex; align-items:center; gap:5px; margin:0;">
+              <i data-lucide="shield-alert" class="lucide-xs" style="color:#059669;"></i> Các bệnh / Vấn đề trước đây của cây
+            </label>
+            <span style="font-size:10.5px; font-weight:700; color:#64748b; background:#e2e8f0; padding:1px 7px; border-radius:4px;">Tùy chọn</span>
+          </div>
+          <div style="font-size:11.5px; color:#64748b; margin-bottom:8px;">
+            Nhấp chọn các khối bệnh cây đã từng gặp trước khi sử dụng ứng dụng (chọn nhiều mục):
+          </div>
+          
+          <div class="past-disease-chips-wrap" id="past-disease-chips-container">
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Rệp sáp / Rệp muội')">
+              <i data-lucide="bug" class="lucide-xs"></i>
+              <span>Rệp sáp / Rệp muội</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Nứt thân xì mủ')">
+              <i data-lucide="activity" class="lucide-xs"></i>
+              <span>Nứt thân xì mủ (Phytophthora)</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Vàng lá thối rễ')">
+              <i data-lucide="alert-triangle" class="lucide-xs"></i>
+              <span>Vàng lá thối rễ</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Cháy lá / Chết đọt')">
+              <i data-lucide="flame" class="lucide-xs"></i>
+              <span>Cháy lá / Chết đọt</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Đốm rong / Tảo đỏ')">
+              <i data-lucide="sun" class="lucide-xs"></i>
+              <span>Đốm rong / Tảo đỏ</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Thán thư')">
+              <i data-lucide="biohazard" class="lucide-xs"></i>
+              <span>Thán thư (Colletotrichum)</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Bọ trĩ / Nhện đỏ')">
+              <i data-lucide="shield-alert" class="lucide-xs"></i>
+              <span>Bọ trĩ / Nhện đỏ</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Sâu đục thân / Trái')">
+              <i data-lucide="crosshair" class="lucide-xs"></i>
+              <span>Sâu đục thân / Trái</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Chưa từng nhiễm bệnh')">
+              <i data-lucide="shield-check" class="lucide-xs"></i>
+              <span>Chưa từng nhiễm bệnh (Cây khỏe)</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+            <button type="button" class="past-disease-chip" onclick="togglePastDiseaseChip(this, 'Bệnh khác')">
+              <i data-lucide="plus" class="lucide-xs"></i>
+              <span>Bệnh khác...</span>
+              <i data-lucide="check" class="lucide-xs"></i>
+            </button>
+          </div>
+
+          <div id="user-plant-custom-disease-wrap" style="display:none; margin-top:10px;">
+            <input type="text" id="user-plant-custom-past-disease" placeholder="Nhập tên bệnh khác hoặc ghi chú tiền sử bệnh..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; width:100%; box-sizing:border-box; outline:none; background:#ffffff;">
+          </div>
         </div>
       </div>
 
@@ -3703,7 +3789,7 @@
           <h2 class="nfc-modal-title" style="font-size: 16px;">Định danh Thẻ NFC</h2>
           <p class="nfc-modal-subtitle">Cây: <strong id="nfc-modal-plant-name">...</strong></p>
         </div>
-        <button class="modal-close-btn" onclick="closeNfcModal()" aria-label="Đóng" style="width: 32px; height: 32px; font-size: 20px; flex-shrink: 0;">×</button>
+        <button class="modal-close-btn" onclick="closeNfcModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
       </div>
 
       <!-- ── STEPPER / TREE NAVIGATOR (Cùng Trang Trại Theo Thứ Tự) ── -->
@@ -3859,7 +3945,7 @@
           </p>
         </div>
       </div>
-      <button class="modal-close-btn" onclick="closeNfcInventoryModal()" aria-label="Đóng" style="color: #ffffff; background: rgba(255,255,255,0.15); border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
+      <button class="modal-close-btn" onclick="closeNfcInventoryModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <!-- Quick Stats Bar -->
@@ -4099,7 +4185,7 @@
   <div class="modal">
     <div class="modal-header">
       <h2 id="care-modal-title"><i data-lucide="file-check" class="lucide-sm" style="color:var(--green)"></i> Ghi nhật ký chăm sóc</h2>
-      <button class="modal-close" onclick="closeCareModal()">×</button>
+      <button class="modal-close" onclick="closeCareModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="c-plant-id">
@@ -4204,7 +4290,7 @@
           <p style="margin:2px 0 0 0; font-size:12px; color:rgba(255,255,255,0.85); font-weight:400;">Nhập khối lượng và giá mua để tự động suy ra đơn giá chi tiết</p>
         </div>
       </div>
-      <button class="modal-close" onclick="closeSupplyModal()" style="color:#fff; opacity:0.85;">×</button>
+      <button class="modal-close" onclick="closeSupplyModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <div class="modal-body supply-modal-body">
@@ -4376,7 +4462,7 @@
   <div class="modal" style="max-width:480px;">
     <div class="modal-header">
       <h2><i data-lucide="edit" class="lucide-sm" style="color:var(--green)"></i> Ghi nhận tiêu hao vật tư</h2>
-      <button class="modal-close" onclick="closeRecordUsageModal()">×</button>
+      <button class="modal-close" onclick="closeRecordUsageModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
     <div class="modal-body">
       <div class="field">
@@ -4440,7 +4526,7 @@
           <p style="margin:2px 0 0 0; font-size:11.5px; color:#cbd5e1;">Cộng dồn số lượng tồn kho và cập nhật đơn giá lô mới</p>
         </div>
       </div>
-      <button class="modal-close" onclick="closeRestockModal()" style="color:#fff; opacity:0.85;">×</button>
+      <button class="modal-close" onclick="closeRestockModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <div class="modal-body" style="padding:20px;">
@@ -4531,7 +4617,7 @@
           <p id="ledger-modal-subtitle" style="margin:2px 0 0 0; font-size:11.5px; color:#cbd5e1;">Lịch sử chi tiết Nhập - Xuất - Tồn theo dòng thời gian</p>
         </div>
       </div>
-      <button class="modal-close" onclick="closeStockLedgerModal()" style="color:#fff; opacity:0.85;">×</button>
+      <button class="modal-close" onclick="closeStockLedgerModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <!-- Summary Stats Bar inside Ledger Modal -->
@@ -4572,7 +4658,7 @@
       <h2 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;">
         <i data-lucide="crosshair" class="lucide-sm" style="color:#6ee7b7"></i> Khởi tạo Trang trại bằng GPS
       </h2>
-      <button class="modal-close" onclick="closeSelfInitFarmModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
+      <button class="modal-close" onclick="closeSelfInitFarmModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <div class="modal-body" style="padding:22px; background:#ffffff;">
@@ -4633,7 +4719,7 @@
       <h2 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;">
         <i data-lucide="edit" class="lucide-sm" style="color:#6ee7b7"></i> Chỉnh sửa thông tin Trang trại
       </h2>
-      <button class="modal-close" onclick="closeEditFarmModal()" style="color:#ffffff; opacity:0.9; font-size:22px;">×</button>
+      <button class="modal-close" onclick="closeEditFarmModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <div class="modal-body" style="padding:22px; background:#ffffff;">
@@ -4712,7 +4798,7 @@
       <h2 style="font-size:16.5px; margin:0; color:#ffffff; font-weight:800; display:flex; align-items:center; gap:10px;" id="feature-modal-title">
         <i data-lucide="sparkles" class="lucide-sm"></i> Chi tiết Tính năng Nâng cao
       </h2>
-      <button class="modal-close" onclick="closeFeatureDetailModal()" style="color:#ffffff; opacity:0.9; font-size:24px;">×</button>
+      <button class="modal-close" onclick="closeFeatureDetailModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <div class="modal-body" style="padding:0; background:#ffffff; color:#0f172a; max-height:75vh; overflow-y:auto;">
@@ -4759,7 +4845,7 @@
       <h2 style="font-size:17px; margin:0; color:#ffffff; font-weight:800; display:flex; align-items:center; gap:10px;">
         <i data-lucide="crown" class="lucide-sm" style="color:#fde047"></i> Tính năng Nâng cao dành cho Tài khoản PRO
       </h2>
-      <button class="modal-close" onclick="closeProUpgradeModal()" style="color:#ffffff; opacity:0.9; font-size:24px;">×</button>
+      <button class="modal-close" onclick="closeProUpgradeModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <div class="modal-body" style="padding:22px; background:#ffffff; color:#0f172a;">
@@ -4831,7 +4917,7 @@
         <i data-lucide="bell" class="lucide-sm" style="color:#059669; font-size:20px;"></i>
         <span id="threshold-modal-title">Cấu hình Quy tắc Thông báo Tự động</span>
       </h3>
-      <button type="button" onclick="closeThresholdRuleModal()" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; font-size:18px; color:#64748b; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">&times;</button>
+      <button type="button" class="modal-close modal-close-dark" onclick="closeThresholdRuleModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <form id="threshold-rule-form" onsubmit="saveThresholdRule(event)" style="display:flex; flex-direction:column; gap:16px;">
@@ -5028,7 +5114,7 @@
           </p>
         </div>
       </div>
-      <button class="modal-close" onclick="closeReorderGpsModal()" aria-label="Đóng" style="color: #ffffff; font-size: 24px; opacity: 0.9; cursor: pointer; background: transparent; border: none; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">×</button>
+      <button class="modal-close" onclick="closeReorderGpsModal()" aria-label="Đóng" title="Đóng"><i data-lucide="x"></i></button>
     </div>
 
     <!-- Modal Body (Scrollable) -->
