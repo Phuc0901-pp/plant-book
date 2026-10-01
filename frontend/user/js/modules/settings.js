@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { api, API, token } from '../core/api.js';
-import { toast } from '../core/utils.js';
+import { toast, esc } from '../core/utils.js';
 
 let _currentRules = [];
 

@@ -125,6 +125,11 @@ export function sanitizeCoordinates(rawCoords) {
 }
 
 if (typeof window !== 'undefined') {
+  window.esc = esc;
+  window.toast = toast;
+  window.healthBadge = healthBadge;
+  window.formatDate = formatDate;
+  window.todayString = todayString;
   window.sanitizeCoordinates = sanitizeCoordinates;
   window.formatSmartArea = formatSmartArea;
 }
