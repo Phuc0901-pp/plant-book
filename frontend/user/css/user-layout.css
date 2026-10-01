@@ -199,11 +199,15 @@ code, kbd, samp, pre, .font-mono {
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
 }
-.past-disease-chip.active i[data-lucide="check"] {
-  display: inline-block !important;
+.past-disease-chip .chip-check-icon,
+.past-disease-chip [data-lucide="check"],
+.past-disease-chip svg.lucide-check {
+  display: none !important;
 }
-.past-disease-chip i[data-lucide="check"] {
-  display: none;
+.past-disease-chip.active .chip-check-icon,
+.past-disease-chip.active [data-lucide="check"],
+.past-disease-chip.active svg.lucide-check {
+  display: inline-block !important;
 }
 .modal-body {
   padding: 24px;
