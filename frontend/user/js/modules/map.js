@@ -243,41 +243,59 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
     el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
     wrapper.appendChild(el);
 
-    const careCheckHtml = plant.last_care_date
-      ? `<span style="color:#059669; font-weight:700;"><i data-lucide="check-circle" class="lucide-xs"></i> Đã chăm sóc: ${esc(plant.last_care_date)}${plant.last_care_type ? ` (${esc(plant.last_care_type)})` : ''}</span>`
-      : `<span style="color:#e11d48; font-weight:700;"><i data-lucide="clock" class="lucide-xs"></i> Chưa có nhật ký</span>`;
+    const lucideCheckSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
+    const lucideClockSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+    const lucideCrosshairSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></svg>`;
+    const lucideFileCheckSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>`;
+    const lucideExternalLinkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`;
+    const lucideSproutSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>`;
+    const lucideCalendarSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`;
+    const lucideHourglassSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>`;
 
-    const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'center' })
-      .setLngLat([lng, lat])
-      .setPopup(new mapboxgl.Popup({ offset: 25, maxWidth: '300px' }).setHTML(`
-        <div class="map-plant-card" style="font-family:inherit;font-size:12px;min-width:210px;padding:4px;">
+    const careCheckHtml = plant.last_care_date
+      ? `<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:5px;">${lucideCheckSvg} Đã chăm sóc: ${esc(plant.last_care_date)}${plant.last_care_type ? ` (${esc(plant.last_care_type)})` : ''}</span>`
+      : `<span style="color:#e11d48; font-weight:700; display:inline-flex; align-items:center; gap:5px;">${lucideClockSvg} Chưa có nhật ký</span>`;
+
+    const popup = new mapboxgl.Popup({ offset: 25, maxWidth: '310px' })
+      .setHTML(`
+        <div class="map-plant-card" style="font-family:inherit;font-size:12px;min-width:215px;padding:4px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">
             <div style="font-weight:800;font-size:13.5px;color:#064e3b;display:flex;align-items:center;gap:5px;">
-              <i data-lucide="sprout" class="lucide-sm" style="color:#10b981;"></i> Cây #${esc(plant.tree_code || plant.id)}
+              ${lucideSproutSvg} Cây #${esc(plant.tree_code || plant.id)}
             </div>
             ${healthBadge(plant.health_status)}
           </div>
           <div style="margin-bottom:6px;line-height:1.5;color:#334155;font-size:12px;">
-            <p style="margin:0 0 2px 0;"><strong>Loại cây:</strong> ${esc(plant.plant_type || 'Cây trồng')}${plant.plant_variety ? ` (${esc(plant.plant_variety)})` : ''}</p>
-            ${plant.planting_date ? `<p style="margin:0 0 2px 0;"><strong>Ngày trồng:</strong> ${esc(plant.planting_date)}</p>` : ''}
-            ${plant.plant_age ? `<p style="margin:0 0 2px 0;"><strong>Tuổi cây:</strong> ${esc(plant.plant_age)}</p>` : ''}
-            <p style="margin:0 0 2px 0;"><strong>Lô trồng:</strong> ${esc(plant.location || 'Chưa phân lô')}</p>
-            <p style="margin:2px 0 0 0;color:#0284c7;font-size:11px;font-weight:600;">
-              <i data-lucide="crosshair" class="lucide-xs"></i> GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}
+            <p style="margin:0 0 3px 0;"><strong>Loại cây:</strong> ${esc(plant.plant_type || 'Cây trồng')}${plant.plant_variety ? ` (${esc(plant.plant_variety)})` : ''}</p>
+            ${plant.planting_date ? `<p style="margin:0 0 3px 0; display:flex; align-items:center; gap:4px;">${lucideCalendarSvg} <span><strong>Ngày trồng:</strong> ${esc(plant.planting_date)}</span></p>` : ''}
+            ${plant.plant_age ? `<p style="margin:0 0 3px 0; display:flex; align-items:center; gap:4px;">${lucideHourglassSvg} <span><strong>Tuổi cây:</strong> ${esc(plant.plant_age)}</span></p>` : ''}
+            <p style="margin:0 0 3px 0;"><strong>Lô trồng:</strong> ${esc(plant.location || 'Chưa phân lô')}</p>
+            <p style="margin:3px 0 0 0;color:#0284c7;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;">
+              ${lucideCrosshairSvg} <span>GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
             </p>
           </div>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;margin-bottom:8px;font-size:11px;">
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;margin-bottom:8px;font-size:11.5px;">
             ${careCheckHtml}
           </div>
           <div style="display:flex;gap:6px;margin-top:6px;">
-            <button type="button" class="btn btn-secondary btn-xs" style="flex:1;padding:5px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="if(window.openCareModal) openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type || '')}')">
-              <i data-lucide="file-check" class="lucide-xs"></i> Nhật ký
+            <button type="button" class="btn btn-secondary btn-xs" style="flex:1;padding:6px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="if(window.openCareModal) openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type || '')}')">
+              ${lucideFileCheckSvg} <span>Nhật ký</span>
             </button>
-            <button type="button" class="btn btn-primary btn-xs" style="flex:1;padding:5px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#059669;border:none;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="viewInternalPlantProfile(${plant.id})">
-              <i data-lucide="external-link" class="lucide-xs"></i> Xem chi tiết
+            <button type="button" class="btn btn-primary btn-xs" style="flex:1;padding:6px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#059669;border:none;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="viewInternalPlantProfile(${plant.id})">
+              ${lucideExternalLinkSvg} <span>Xem chi tiết</span>
             </button>
           </div>
-        </div>`))
+        </div>`);
+
+    popup.on('open', () => {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        try { window.lucide.createIcons(); } catch (_) {}
+      }
+    });
+
+    const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'center' })
+      .setLngLat([lng, lat])
+      .setPopup(popup)
       .addTo(targetMap);
 
     userMarkers.push({ marker, plant });

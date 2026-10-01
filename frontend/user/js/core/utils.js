@@ -38,10 +38,18 @@ export function esc(str) {
  * @returns {string} HTML string
  */
 export function healthBadge(status) {
-  if (status === 'Tốt')        return '<span class="badge badge-green" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="check-circle" class="lucide-xs"></i> Tốt</span>';
-  if (status === 'Bình thường') return '<span class="badge badge-gray" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="leaf" class="lucide-xs"></i> Bình thường</span>';
-  if (status === 'Cần chú ý')  return '<span class="badge badge-amber" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="alert-triangle" class="lucide-xs"></i> Cần chú ý</span>';
-  if (status === 'Bệnh')       return '<span class="badge badge-red" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="alert-circle" class="lucide-xs"></i> Bệnh</span>';
+  if (status === 'Tốt') {
+    return '<span class="badge badge-green" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg> Tốt</span>';
+  }
+  if (status === 'Bình thường') {
+    return '<span class="badge badge-gray" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg> Bình thường</span>';
+  }
+  if (status === 'Cần chú ý') {
+    return '<span class="badge badge-amber" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg> Cần chú ý</span>';
+  }
+  if (status === 'Bệnh') {
+    return '<span class="badge badge-red" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg> Bệnh</span>';
+  }
   return `<span class="badge badge-gray">${esc(status)}</span>`;
 }
 
