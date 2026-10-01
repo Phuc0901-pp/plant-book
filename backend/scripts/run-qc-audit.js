@@ -97,6 +97,38 @@ function runEnterpriseQCAudit() {
   }
   recordTest('JS Syntax', `Validated ${allJs.length} Frontend JS Modules for Balanced Syntax`, syntaxOk);
 
+  // ES Module Import-Export Cross-Validation Check
+  const entryFiles = [
+    path.join(ROOT_DIR, 'frontend/user/js/app.js'),
+    path.join(ROOT_DIR, 'frontend/admin/js/app.js')
+  ];
+  let importExportErrors = [];
+  for (const entryFile of entryFiles) {
+    if (!fs.existsSync(entryFile)) continue;
+    const content = fs.readFileSync(entryFile, 'utf8');
+    const importRegex = /import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g;
+    let match;
+    while ((match = importRegex.exec(content)) !== null) {
+      const symbols = match[1].split(',').map(s => s.trim().replace(/\r?\n/g, '')).filter(Boolean);
+      const relPath = match[2].split('?')[0];
+      const targetPath = path.resolve(path.dirname(entryFile), relPath);
+      if (!fs.existsSync(targetPath)) {
+        importExportErrors.push(`Target module not found: ${relPath} in ${path.basename(entryFile)}`);
+        continue;
+      }
+      const targetContent = fs.readFileSync(targetPath, 'utf8');
+      for (const sym of symbols) {
+        const origSym = sym.split(/\s+as\s+/)[0].trim();
+        if (!origSym) continue;
+        const exportRegex = new RegExp(`export\\s+(async\\s+)?(function|const|let|var|class)\\s+${origSym}\\b|export\\s*\\{[^}]*\\b${origSym}\\b[^}]*\\}|window\\.${origSym}\\s*=`, 'm');
+        if (!exportRegex.test(targetContent)) {
+          importExportErrors.push(`Symbol '${origSym}' imported by ${path.basename(entryFile)} is NOT exported by ${path.basename(targetPath)}`);
+        }
+      }
+    }
+  }
+  recordTest('ES Module Validation', 'All Imported Symbols Cross-Validated Against Target Module Exports', importExportErrors.length === 0, importExportErrors.join('; '));
+
   // Plants Module Verification
   const userPlantsPath = path.join(ROOT_DIR, 'frontend/user/js/modules/plants.js');
   if (fs.existsSync(userPlantsPath)) {

@@ -2381,6 +2381,22 @@ export function normalizePlotName(val) {
 }
 window.normalizePlotName = normalizePlotName;
 
+export function autoSequenceRowsInPlot(matrix) {
+  if (!Array.isArray(matrix)) return;
+  const plotCounters = {};
+  matrix.forEach(item => {
+    const plot = item.plot_code ? normalizePlotName(item.plot_code) : (item.location ? normalizePlotName(item.location) : '');
+    if (plot) {
+      item.plot_code = plot;
+      if (!plotCounters[plot]) plotCounters[plot] = 1;
+      item.row_number = Math.min(plotCounters[plot], 99);
+      plotCounters[plot]++;
+      item.location = `${plot} - Hàng ${item.row_number}`;
+    }
+  });
+}
+window.autoSequenceRowsInPlot = autoSequenceRowsInPlot;
+
 export function onUserSinglePlotChange() {
   const plotInput = document.getElementById('user-plant-plot');
   const rowInput = document.getElementById('user-plant-row');

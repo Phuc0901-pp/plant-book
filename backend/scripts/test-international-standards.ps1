@@ -149,6 +149,64 @@ foreach ($file in $jsFiles) {
 }
 Record-Test -Category "JS Syntax" -TestName "Validated $totalJsFiles Frontend JS Modules for Balanced Syntax & Clean Top-Level Exports" -Passed $syntaxPass
 
+# ES Module Static Import-Export Cross-Validation Check
+$entryFiles = @(
+    (Join-Path $root "frontend\user\js\app.js"),
+    (Join-Path $root "frontend\admin\js\app.js")
+)
+$importExportErrors = [System.Collections.Generic.List[string]]::new()
+$importMatchesCount = 0
+
+foreach ($entryFile in $entryFiles) {
+    if (-not (Test-Path $entryFile)) { continue }
+    $entryDir = [System.IO.Path]::GetDirectoryName($entryFile)
+    $entryFileName = [System.IO.Path]::GetFileName($entryFile)
+    $entryContent = [System.IO.File]::ReadAllText($entryFile, [System.Text.Encoding]::UTF8)
+    
+    $importPattern = [regex]'import\s*\{([^}]+)\}\s*from\s*[''"]([^''"]+)[''"]'
+    $matches = $importPattern.Matches($entryContent)
+    
+    foreach ($m in $matches) {
+        $rawSymbols = $m.Groups[1].Value
+        $relPath = $m.Groups[2].Value.Split('?')[0]
+        $targetPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($entryDir, $relPath))
+        
+        if (-not (Test-Path $targetPath)) {
+            $importExportErrors.Add("Target module not found: $relPath in $entryFileName")
+            continue
+        }
+        
+        $targetFileName = [System.IO.Path]::GetFileName($targetPath)
+        $targetContent = [System.IO.File]::ReadAllText($targetPath, [System.Text.Encoding]::UTF8)
+        $symList = $rawSymbols -split ','
+        
+        foreach ($s in $symList) {
+            $cleaned = ($s.Trim() -replace "`r|`n", "")
+            if (-not $cleaned) { continue }
+            $origSym = ($cleaned -split '\s+as\s+')[0].Trim()
+            if (-not $origSym) { continue }
+            $importMatchesCount++
+            
+            $hasExport = $false
+            if ($targetContent -match "export\s+(async\s+)?(function|const|let|var|class)\s+$origSym\b") {
+                $hasExport = $true
+            } elseif ($targetContent -match "export\s*\{[^}]*\b$origSym\b[^}]*\}") {
+                $hasExport = $true
+            } elseif ($targetContent -match "window\.$origSym\s*=") {
+                $hasExport = $true
+            }
+            
+            if (-not $hasExport) {
+                $importExportErrors.Add("Symbol '$origSym' imported in $entryFileName is NOT exported by $targetFileName")
+            }
+        }
+    }
+}
+
+$importPassed = ($importExportErrors.Count -eq 0)
+$importDetails = if ($importPassed) { "Validated $importMatchesCount imported symbols across entrypoints" } else { $importExportErrors -join "; " }
+Record-Test -Category "JS Syntax" -TestName "ES Module Static Import-Export Cross-Validation ($importMatchesCount symbols)" -Passed $importPassed -Details $importDetails
+
 # ══════════════════════════════════════════════════════════════════════════
 # -- SUITE 3: PLOT & ROW SPLIT, AUTO-INCREMENT & ANTI-DUPLICATION ENGINE --
 # ══════════════════════════════════════════════════════════════════════════
