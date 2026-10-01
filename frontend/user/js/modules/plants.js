@@ -2379,6 +2379,32 @@ export function onUserPlantingDateChange() {
 }
 window.onUserPlantingDateChange = onUserPlantingDateChange;
 
+export function onUserBatchPlantingDateChange() {
+  const dateInput = document.getElementById('user-batch-planting-date');
+  const ageInput = document.getElementById('user-batch-plant-age');
+  if (dateInput && ageInput && dateInput.value) {
+    const calculatedAge = calculatePlantAge(dateInput.value);
+    if (calculatedAge) {
+      ageInput.value = calculatedAge;
+    }
+  }
+}
+window.onUserBatchPlantingDateChange = onUserBatchPlantingDateChange;
+
+export function autoCalcMatrixAge(idx) {
+  if (!_userPlantMatrix[idx]) return;
+  const dateVal = _userPlantMatrix[idx].planting_date;
+  if (dateVal) {
+    const calculatedAge = calculatePlantAge(dateVal);
+    if (calculatedAge) {
+      _userPlantMatrix[idx].plant_age = calculatedAge;
+      const inp = document.getElementById(`matrix-age-${idx}`);
+      if (inp) inp.value = calculatedAge;
+    }
+  }
+}
+window.autoCalcMatrixAge = autoCalcMatrixAge;
+
 export function normalizePlotName(val) {
   if (!val || typeof val !== 'string') return '';
   const trimmed = val.trim();
@@ -2431,6 +2457,7 @@ export function toggleUserPlantCreateMode(mode) {
   const wrapRange = document.getElementById('user-wrap-range-code');
   const labelSingle = document.getElementById('user-label-mode-single');
   const labelRange = document.getElementById('user-label-mode-range');
+  const singleAgronomyCard = document.getElementById('user-single-agronomy-card');
   const singleGpsCard = document.getElementById('user-single-gps-card');
   const matrixCard = document.getElementById('user-plant-matrix-card');
   const btnText = document.getElementById('user-plant-save-btn-text');
@@ -2438,6 +2465,7 @@ export function toggleUserPlantCreateMode(mode) {
   if (mode === 'range') {
     if (wrapSingle) wrapSingle.style.display = 'none';
     if (wrapRange) wrapRange.style.display = 'block';
+    if (singleAgronomyCard) singleAgronomyCard.style.display = 'none';
     if (singleGpsCard) singleGpsCard.style.display = 'none';
     if (matrixCard) matrixCard.style.display = 'block';
     if (labelSingle) {
@@ -2454,6 +2482,7 @@ export function toggleUserPlantCreateMode(mode) {
   } else {
     if (wrapSingle) wrapSingle.style.display = 'grid';
     if (wrapRange) wrapRange.style.display = 'none';
+    if (singleAgronomyCard) singleAgronomyCard.style.display = 'block';
     if (singleGpsCard) singleGpsCard.style.display = 'block';
     if (matrixCard) matrixCard.style.display = 'none';
     if (labelSingle) {
@@ -2551,6 +2580,12 @@ export function generateUserPlantMatrix() {
 
   const defaultLat = document.getElementById('user-plant-lat')?.value || '';
   const defaultLng = document.getElementById('user-plant-lng')?.value || '';
+  const defaultPlantingDate = document.getElementById('user-batch-planting-date')?.value || document.getElementById('user-plant-planting-date')?.value || '';
+  const defaultPlantAge = (document.getElementById('user-batch-plant-age')?.value || document.getElementById('user-plant-age')?.value || '').trim();
+  const defaultHealth = document.getElementById('user-batch-health')?.value || document.getElementById('user-plant-health')?.value || 'Tốt';
+  const defaultYield = (document.getElementById('user-batch-initial-yield')?.value || document.getElementById('user-plant-initial-yield')?.value || '').trim();
+  const batchDiseases = getSelectedBatchPastDiseases();
+  const defaultDiseases = (batchDiseases && batchDiseases.length) ? batchDiseases : getSelectedPastDiseases();
 
   const padLen = padZeros ? Math.max(String(rawStart).length, String(rawEnd).length) : 0;
   const formatNum = (num) => padLen > 1 ? String(num).padStart(padLen, '0') : String(num);
@@ -2567,7 +2602,12 @@ export function generateUserPlantMatrix() {
       row_number: rowNum,
       location: loc,
       latitude: defaultLat && !isNaN(parseFloat(defaultLat)) ? parseFloat(defaultLat) : null,
-      longitude: defaultLng && !isNaN(parseFloat(defaultLng)) ? parseFloat(defaultLng) : null
+      longitude: defaultLng && !isNaN(parseFloat(defaultLng)) ? parseFloat(defaultLng) : null,
+      planting_date: defaultPlantingDate || null,
+      plant_age: defaultPlantAge || '',
+      health_status: defaultHealth || 'Tốt',
+      initial_yield: defaultYield || '',
+      past_diseases: Array.isArray(defaultDiseases) ? [...defaultDiseases] : []
     });
     rowCounter++;
   }
@@ -2594,38 +2634,60 @@ export function renderUserPlantMatrix() {
   if (!tbody) return;
 
   if (!_userPlantMatrix.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:16px; color:#94a3b8;">Chưa có cây nào trong ma trận. Bấm <strong>Tạo Bảng Ma Trận Lô & GPS</strong> hoặc <strong>+ Thêm 1 cây</strong>.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:18px; color:#94a3b8;">Chưa có cây nào trong ma trận. Bấm <strong>Tạo Bảng Ma Trận Lô, GPS &amp; Nông Học</strong> hoặc <strong>+ Thêm 1 cây</strong>.</td></tr>`;
     if (card) card.style.display = 'block';
     return;
   }
 
   if (card) card.style.display = 'block';
 
-  tbody.innerHTML = _userPlantMatrix.map((item, idx) => `
+  tbody.innerHTML = _userPlantMatrix.map((item, idx) => {
+    const diseasesStr = Array.isArray(item.past_diseases) ? item.past_diseases.join(', ') : (item.past_diseases || '');
+    return `
     <tr style="border-bottom:1px solid #f1f5f9; ${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
-      <td style="padding:6px 8px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
-      <td style="padding:6px 8px;">
-        <input type="text" value="${esc(item.tree_code)}" onchange="updateMatrixItem(${idx}, 'tree_code', this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:12px; color:#064e3b; outline:none; box-sizing:border-box;">
+      <td style="padding:5px 6px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
+      <td style="padding:5px 6px;">
+        <input type="text" value="${esc(item.tree_code)}" onchange="updateMatrixItem(${idx}, 'tree_code', this.value)" style="width:100%; min-width:85px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:11.5px; color:#064e3b; outline:none; box-sizing:border-box; background:#fff;">
       </td>
-      <td style="padding:6px 8px;">
-        <input type="text" value="${esc(item.plot_code || '')}" placeholder="VD: A1 hoặc Lô A1" onblur="updateMatrixPlot(${idx}, this.value)" onchange="updateMatrixPlot(${idx}, this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600; font-size:12px; outline:none; box-sizing:border-box;">
+      <td style="padding:5px 6px;">
+        <input type="text" value="${esc(item.plot_code || '')}" placeholder="VD: Lô A1" onblur="updateMatrixPlot(${idx}, this.value)" onchange="updateMatrixPlot(${idx}, this.value)" style="width:100%; min-width:95px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600; font-size:11.5px; outline:none; box-sizing:border-box; background:#fff;">
       </td>
-      <td style="padding:6px 8px;">
-        <input type="number" min="1" max="99" step="1" value="${item.row_number || 1}" onchange="updateMatrixRow(${idx}, this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:700; outline:none; box-sizing:border-box;">
+      <td style="padding:5px 6px;">
+        <input type="number" min="1" max="99" step="1" value="${item.row_number || 1}" onchange="updateMatrixRow(${idx}, this.value)" style="width:100%; min-width:65px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11.5px; font-weight:700; outline:none; box-sizing:border-box; background:#fff;">
       </td>
-      <td style="padding:6px 8px;">
-        <input type="number" step="any" value="${item.latitude !== null && item.latitude !== undefined ? item.latitude : ''}" placeholder="Vĩ độ" onchange="updateMatrixItem(${idx}, 'latitude', this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11.5px; font-family:monospace; outline:none; box-sizing:border-box;">
+      <td style="padding:5px 6px;">
+        <input type="number" step="any" value="${item.latitude !== null && item.latitude !== undefined ? item.latitude : ''}" placeholder="Vĩ độ" onchange="updateMatrixItem(${idx}, 'latitude', this.value)" style="width:100%; min-width:80px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-family:monospace; outline:none; box-sizing:border-box; background:#fff;">
       </td>
-      <td style="padding:6px 8px;">
-        <input type="number" step="any" value="${item.longitude !== null && item.longitude !== undefined ? item.longitude : ''}" placeholder="Kinh độ" onchange="updateMatrixItem(${idx}, 'longitude', this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11.5px; font-family:monospace; outline:none; box-sizing:border-box;">
+      <td style="padding:5px 6px;">
+        <input type="number" step="any" value="${item.longitude !== null && item.longitude !== undefined ? item.longitude : ''}" placeholder="Kinh độ" onchange="updateMatrixItem(${idx}, 'longitude', this.value)" style="width:100%; min-width:80px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; font-family:monospace; outline:none; box-sizing:border-box; background:#fff;">
       </td>
-      <td style="padding:6px 8px; text-align:center;">
-        <button type="button" onclick="deleteMatrixRow(${idx})" title="Xóa đệm cây này khỏi danh sách tạo" style="background:#fee2e2; border:1px solid #fecaca; color:#ef4444; border-radius:6px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; font-weight:bold; transition:all 0.15s;">
+      <td style="padding:5px 6px;">
+        <input type="date" value="${item.planting_date || ''}" onchange="updateMatrixItem(${idx}, 'planting_date', this.value); autoCalcMatrixAge(${idx});" style="width:100%; min-width:115px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; outline:none; box-sizing:border-box; background:#fff;">
+      </td>
+      <td style="padding:5px 6px;">
+        <input type="text" id="matrix-age-${idx}" value="${esc(item.plant_age || '')}" placeholder="VD: 2 năm" onchange="updateMatrixItem(${idx}, 'plant_age', this.value)" style="width:100%; min-width:85px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11.5px; outline:none; box-sizing:border-box; background:#fff;">
+      </td>
+      <td style="padding:5px 6px;">
+        <select onchange="updateMatrixItem(${idx}, 'health_status', this.value)" style="width:100%; min-width:90px; padding:4px 5px; border:1px solid #cbd5e1; border-radius:6px; font-size:11.5px; font-weight:700; outline:none; box-sizing:border-box; background:#fff;">
+          <option value="Tốt" ${item.health_status === 'Tốt' ? 'selected' : ''}>Tốt</option>
+          <option value="Bình thường" ${item.health_status === 'Bình thường' ? 'selected' : ''}>Bình thường</option>
+          <option value="Cần chú ý" ${item.health_status === 'Cần chú ý' ? 'selected' : ''}>Cần chú ý</option>
+          <option value="Bệnh" ${item.health_status === 'Bệnh' ? 'selected' : ''}>Bệnh</option>
+        </select>
+      </td>
+      <td style="padding:5px 6px;">
+        <input type="text" value="${esc(item.initial_yield || '')}" placeholder="VD: 80 kg" onchange="updateMatrixItem(${idx}, 'initial_yield', this.value)" style="width:100%; min-width:85px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; outline:none; box-sizing:border-box; background:#fff;">
+      </td>
+      <td style="padding:5px 6px;">
+        <input type="text" value="${esc(diseasesStr)}" placeholder="VD: Rệp sáp..." onchange="updateMatrixPastDiseases(${idx}, this.value)" style="width:100%; min-width:110px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; outline:none; box-sizing:border-box; background:#fff;">
+      </td>
+      <td style="padding:5px 6px; text-align:center;">
+        <button type="button" onclick="deleteMatrixRow(${idx})" title="Xóa cây này khỏi ma trận" style="background:#fee2e2; border:1px solid #fecaca; color:#ef4444; border-radius:6px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; font-weight:bold; transition:all 0.15s;">
           ×
         </button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     try { window.lucide.createIcons(); } catch (_) {}
@@ -2692,12 +2754,19 @@ export function updateMatrixItem(idx, field, value) {
 }
 window.updateMatrixItem = updateMatrixItem;
 
+export function updateMatrixPastDiseases(idx, val) {
+  if (!_userPlantMatrix[idx]) return;
+  const parts = (val || '').split(',').map(s => s.trim()).filter(Boolean);
+  _userPlantMatrix[idx].past_diseases = parts;
+}
+window.updateMatrixPastDiseases = updateMatrixPastDiseases;
+
 export function deleteMatrixRow(idx) {
   if (idx >= 0 && idx < _userPlantMatrix.length) {
     const removed = _userPlantMatrix.splice(idx, 1);
     renderUserPlantMatrix();
     if (window.toast) {
-      window.toast(`Đã xóa đệm cây ${removed[0]?.tree_code || ''}`, 'info');
+      window.toast(`Đã xóa cây ${removed[0]?.tree_code || ''} khỏi ma trận`, 'info');
     }
   }
 }
@@ -2767,6 +2836,33 @@ export function applyBulkGpsToMatrix() {
 }
 window.applyBulkGpsToMatrix = applyBulkGpsToMatrix;
 
+export function applyBulkAgronomyToMatrix() {
+  if (!_userPlantMatrix || !_userPlantMatrix.length) {
+    if (window.toast) window.toast('Chưa có cây nào trong ma trận để áp dụng!', 'warning');
+    else alert('Chưa có cây nào trong ma trận để áp dụng!');
+    return;
+  }
+  const dateVal = document.getElementById('user-batch-planting-date')?.value || '';
+  const ageVal = (document.getElementById('user-batch-plant-age')?.value || '').trim();
+  const healthVal = document.getElementById('user-batch-health')?.value || 'Tốt';
+  const yieldVal = (document.getElementById('user-batch-initial-yield')?.value || '').trim();
+  const diseasesVal = getSelectedBatchPastDiseases();
+
+  _userPlantMatrix.forEach(item => {
+    if (dateVal) item.planting_date = dateVal;
+    if (ageVal) item.plant_age = ageVal;
+    if (healthVal) item.health_status = healthVal;
+    if (yieldVal) item.initial_yield = yieldVal;
+    if (diseasesVal && diseasesVal.length) item.past_diseases = [...diseasesVal];
+  });
+
+  renderUserPlantMatrix();
+  if (window.toast) {
+    window.toast(`✅ Đã áp dụng thông số nông học cho tất cả ${_userPlantMatrix.length} cây!`, 'success');
+  }
+}
+window.applyBulkAgronomyToMatrix = applyBulkAgronomyToMatrix;
+
 export function addCustomMatrixRow() {
   const nextNum = _userPlantMatrix.length + 1;
   const prefix = (document.getElementById('user-plant-range-prefix')?.value || '').trim();
@@ -2774,6 +2870,12 @@ export function addCustomMatrixRow() {
   const bulkPlot = bulkPlotRaw ? normalizePlotName(bulkPlotRaw) : '';
   const defaultLat = document.getElementById('user-plant-lat')?.value || '';
   const defaultLng = document.getElementById('user-plant-lng')?.value || '';
+  const defaultPlantingDate = document.getElementById('user-batch-planting-date')?.value || document.getElementById('user-plant-planting-date')?.value || '';
+  const defaultPlantAge = (document.getElementById('user-batch-plant-age')?.value || document.getElementById('user-plant-age')?.value || '').trim();
+  const defaultHealth = document.getElementById('user-batch-health')?.value || document.getElementById('user-plant-health')?.value || 'Tốt';
+  const defaultYield = (document.getElementById('user-batch-initial-yield')?.value || document.getElementById('user-plant-initial-yield')?.value || '').trim();
+  const batchDiseases = getSelectedBatchPastDiseases();
+  const defaultDiseases = (batchDiseases && batchDiseases.length) ? batchDiseases : getSelectedPastDiseases();
 
   let nextRow = 1;
   if (bulkPlot) {
@@ -2792,7 +2894,12 @@ export function addCustomMatrixRow() {
     row_number: Math.min(nextRow, 99),
     location: bulkPlot ? `${bulkPlot} - Hàng ${Math.min(nextRow, 99)}` : '',
     latitude: defaultLat && !isNaN(parseFloat(defaultLat)) ? parseFloat(defaultLat) : null,
-    longitude: defaultLng && !isNaN(parseFloat(defaultLng)) ? parseFloat(defaultLng) : null
+    longitude: defaultLng && !isNaN(parseFloat(defaultLng)) ? parseFloat(defaultLng) : null,
+    planting_date: defaultPlantingDate || null,
+    plant_age: defaultPlantAge || '',
+    health_status: defaultHealth || 'Tốt',
+    initial_yield: defaultYield || '',
+    past_diseases: Array.isArray(defaultDiseases) ? [...defaultDiseases] : []
   });
   renderUserPlantMatrix();
 }
@@ -2874,7 +2981,7 @@ export async function openUserCreatePlantModal() {
   }
 
   // 2. Reset Fields
-  ['user-plant-tree-code', 'user-plant-nfc-uid', 'user-plant-type', 'user-plant-variety', 'user-plant-planting-date', 'user-plant-age', 'user-plant-plot', 'user-plant-row', 'user-plant-location', 'user-plant-lat', 'user-plant-lng', 'user-plant-range-prefix', 'user-plant-range-start', 'user-plant-range-end', 'user-matrix-bulk-plot', 'user-plant-initial-yield', 'user-plant-custom-past-disease'].forEach(id => {
+  ['user-plant-tree-code', 'user-plant-nfc-uid', 'user-plant-type', 'user-plant-variety', 'user-plant-planting-date', 'user-plant-age', 'user-plant-plot', 'user-plant-row', 'user-plant-location', 'user-plant-lat', 'user-plant-lng', 'user-plant-range-prefix', 'user-plant-range-start', 'user-plant-range-end', 'user-matrix-bulk-plot', 'user-plant-initial-yield', 'user-plant-custom-past-disease', 'user-batch-planting-date', 'user-batch-plant-age', 'user-batch-initial-yield', 'user-batch-custom-past-disease'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.value = (id === 'user-plant-row') ? '1' : '';
@@ -2882,9 +2989,12 @@ export async function openUserCreatePlantModal() {
   });
   const healthEl = document.getElementById('user-plant-health');
   if (healthEl) healthEl.value = 'Tốt';
+  const batchHealthEl = document.getElementById('user-batch-health');
+  if (batchHealthEl) batchHealthEl.value = 'Tốt';
   const publicEl = document.getElementById('user-plant-is-public');
   if (publicEl) publicEl.value = 'true';
   resetPastDiseaseChips();
+  resetBatchPastDiseaseChips();
 
   _userPlantMatrix = [];
   const matrixCard = document.getElementById('user-plant-matrix-card');
@@ -2920,14 +3030,16 @@ export function closeUserCreatePlantModal() {
   const modal = document.getElementById('user-create-plant-modal');
   if (modal) modal.style.display = 'none';
   resetPastDiseaseChips();
+  resetBatchPastDiseaseChips();
 }
 window.closeUserCreatePlantModal = closeUserCreatePlantModal;
 
 // ── Selectable Past Diseases Badges / Chips Handlers ──
 export function togglePastDiseaseChip(btn, diseaseName) {
   if (!btn) return;
-  const container = document.getElementById('past-disease-chips-container');
-  const customWrap = document.getElementById('user-plant-custom-disease-wrap');
+  const isBatch = btn.closest('#batch-past-disease-chips-container') !== null;
+  const container = isBatch ? document.getElementById('batch-past-disease-chips-container') : document.getElementById('past-disease-chips-container');
+  const customWrap = isBatch ? document.getElementById('user-batch-custom-disease-wrap') : document.getElementById('user-plant-custom-disease-wrap');
 
   if (diseaseName === 'Chưa từng nhiễm bệnh') {
     if (container) {
@@ -2953,7 +3065,7 @@ export function togglePastDiseaseChip(btn, diseaseName) {
     if (customWrap) {
       customWrap.style.display = btn.classList.contains('active') ? 'block' : 'none';
       if (btn.classList.contains('active')) {
-        const inp = document.getElementById('user-plant-custom-past-disease');
+        const inp = isBatch ? document.getElementById('user-batch-custom-past-disease') : document.getElementById('user-plant-custom-past-disease');
         if (inp) inp.focus();
       }
     }
@@ -2978,6 +3090,23 @@ export function getSelectedPastDiseases() {
 }
 window.getSelectedPastDiseases = getSelectedPastDiseases;
 
+export function getSelectedBatchPastDiseases() {
+  const container = document.getElementById('batch-past-disease-chips-container');
+  if (!container) return [];
+  const selected = [];
+  container.querySelectorAll('.past-disease-chip.active').forEach(chip => {
+    const text = chip.querySelector('span')?.textContent?.trim() || chip.textContent.trim();
+    if (text === 'Bệnh khác...') {
+      const customVal = (document.getElementById('user-batch-custom-past-disease')?.value || '').trim();
+      if (customVal) selected.push(customVal);
+    } else if (text) {
+      selected.push(text);
+    }
+  });
+  return selected;
+}
+window.getSelectedBatchPastDiseases = getSelectedBatchPastDiseases;
+
 export function resetPastDiseaseChips() {
   const container = document.getElementById('past-disease-chips-container');
   if (container) {
@@ -2991,6 +3120,26 @@ export function resetPastDiseaseChips() {
   if (yieldInp) yieldInp.value = '';
 }
 window.resetPastDiseaseChips = resetPastDiseaseChips;
+
+export function resetBatchPastDiseaseChips() {
+  const container = document.getElementById('batch-past-disease-chips-container');
+  if (container) {
+    container.querySelectorAll('.past-disease-chip').forEach(chip => chip.classList.remove('active'));
+  }
+  const customWrap = document.getElementById('user-batch-custom-disease-wrap');
+  if (customWrap) customWrap.style.display = 'none';
+  const customInp = document.getElementById('user-batch-custom-past-disease');
+  if (customInp) customInp.value = '';
+  const dateInp = document.getElementById('user-batch-planting-date');
+  if (dateInp) dateInp.value = '';
+  const ageInp = document.getElementById('user-batch-plant-age');
+  if (ageInp) ageInp.value = '';
+  const healthInp = document.getElementById('user-batch-health');
+  if (healthInp) healthInp.value = 'Tốt';
+  const yieldInp = document.getElementById('user-batch-initial-yield');
+  if (yieldInp) yieldInp.value = '';
+}
+window.resetBatchPastDiseaseChips = resetBatchPastDiseaseChips;
 
 export async function submitUserCreatePlant() {
   const farmId = document.getElementById('user-plant-farm-id')?.value;
@@ -3045,6 +3194,11 @@ export async function submitUserCreatePlant() {
             const itemPlot = it.plot_code ? normalizePlotName(it.plot_code) : '';
             const itemRow = it.row_number || null;
             const itemLoc = it.location || (itemPlot ? `${itemPlot}${itemRow ? ' - Hàng ' + itemRow : ''}` : '');
+            const itemDate = it.planting_date || plantingDate || null;
+            const itemAge = (it.plant_age !== undefined && it.plant_age !== '') ? it.plant_age : plantAge;
+            const itemHealth = it.health_status || healthStatus || 'Tốt';
+            const itemYield = (it.initial_yield !== undefined && it.initial_yield !== '') ? it.initial_yield : initialYield;
+            const itemDiseases = (it.past_diseases && it.past_diseases.length) ? it.past_diseases : pastDiseases;
             return {
               tree_code: it.tree_code,
               plot_code: itemPlot,
@@ -3054,11 +3208,11 @@ export async function submitUserCreatePlant() {
               longitude: it.longitude !== undefined && it.longitude !== null && !isNaN(parseFloat(it.longitude)) ? parseFloat(it.longitude) : longitude,
               plant_type: plantType,
               plant_variety: plantVariety,
-              planting_date: plantingDate,
-              plant_age: plantAge,
-              health_status: healthStatus,
-              initial_yield: initialYield,
-              past_diseases: pastDiseases
+              planting_date: itemDate,
+              plant_age: itemAge,
+              health_status: itemHealth,
+              initial_yield: itemYield,
+              past_diseases: itemDiseases
             };
           }),
           data: {

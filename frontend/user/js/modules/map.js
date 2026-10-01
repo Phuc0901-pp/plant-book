@@ -298,6 +298,13 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         try { window.lucide.createIcons(); } catch (_) {}
       }
+      if (targetMap && typeof targetMap.easeTo === 'function') {
+        targetMap.easeTo({
+          center: [lng, lat],
+          offset: [0, -110],
+          duration: 350
+        });
+      }
     });
 
     const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'center' })
@@ -308,6 +315,13 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
     wrapper.addEventListener('click', (e) => {
       if (e && e.stopPropagation) e.stopPropagation();
       marker.togglePopup();
+      if (targetMap && typeof targetMap.easeTo === 'function') {
+        targetMap.easeTo({
+          center: [lng, lat],
+          offset: [0, -110],
+          duration: 350
+        });
+      }
     });
 
     userMarkers.push({ marker, plant });
