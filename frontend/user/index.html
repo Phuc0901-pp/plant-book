@@ -3670,6 +3670,62 @@
         </div>
       </div>
 
+      <!-- Card 2.5: Ảnh Hiện Trường & Giai Đoạn Sinh Trưởng (CHẾ ĐỘ TẠO 1 CÂY ĐƠN LẺ) -->
+      <div id="user-single-photo-card" class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+        <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <i data-lucide="camera" class="lucide-sm" style="color:#059669;"></i> Ảnh hiện trường &amp; Giai đoạn sinh trưởng khởi tạo
+          </div>
+          <span style="font-size:11px; color:#047857; font-weight:700; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
+            Lưu trữ lịch sử (Append-Only)
+          </span>
+        </div>
+
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+          <!-- Preview Box -->
+          <div id="user-single-photo-preview-wrap" style="width:78px; height:78px; border-radius:12px; border:2px dashed #cbd5e1; background:#f8fafc; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; flex-shrink:0;">
+            <img id="user-single-photo-preview" src="" alt="Xem trước ảnh cây" style="width:100%; height:100%; object-fit:cover; display:none;">
+            <div id="user-single-photo-placeholder" style="text-align:center; color:#94a3b8; font-size:10.5px; padding:4px;">
+              <i data-lucide="image-plus" class="lucide-sm" style="color:#94a3b8; margin-bottom:2px; display:block; margin:0 auto 2px auto;"></i>
+              <div>Chưa có ảnh</div>
+            </div>
+          </div>
+
+          <!-- Action Buttons & Stage Selector -->
+          <div style="flex:1; min-width:220px;">
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+              <input type="file" id="user-single-photo-file" accept="image/*" style="display:none;" onchange="onSinglePlantPhotoSelected(this)">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('user-single-photo-file').click()" style="background:#ecfdf5; border:1.5px solid #a7f3d0; color:#047857; font-weight:700; font-size:12px; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+                <i data-lucide="camera" class="lucide-xs"></i> <span>Chụp / Chọn ảnh hiện trường</span>
+              </button>
+              <button type="button" id="user-single-photo-remove-btn" class="btn btn-xs" onclick="removeSinglePlantPhoto()" style="display:none; background:#fee2e2; border:1px solid #fecaca; color:#ef4444; border-radius:6px; padding:5px 8px; font-weight:700; cursor:pointer; align-items:center; gap:4px;">
+                <i data-lucide="trash-2" class="lucide-xs"></i> <span>Xóa</span>
+              </button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <label style="font-size:11.5px; font-weight:700; color:#475569; white-space:nowrap; display:flex; align-items:center; gap:4px;">
+                <i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> Giai đoạn:
+              </label>
+              <select id="user-single-photo-growth-stage" style="flex:1; border:1.5px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:11.5px; font-weight:600; background:#ffffff; outline:none;">
+                <option value="Xuống giống / Cây con">Xuống giống / Cây con</option>
+                <option value="Phát triển dinh dưỡng / Cơi đọt">Phát triển dinh dưỡng / Cơi đọt</option>
+                <option value="Phân hóa mầm hoa / Ra hoa">Phân hóa mầm hoa / Ra hoa</option>
+                <option value="Đậu trái non">Đậu trái non</option>
+                <option value="Nuôi trái / Phát triển quả">Nuôi trái / Phát triển quả</option>
+                <option value="Giai đoạn thu hoạch">Giai đoạn thu hoạch</option>
+                <option value="Phục hồi sau thu hoạch">Phục hồi sau thu hoạch</option>
+              </select>
+            </div>
+
+            <div style="font-size:11px; color:#64748b; margin-top:4px; display:flex; align-items:center; gap:4px;">
+              <i data-lucide="info" class="lucide-xs" style="color:#059669;"></i>
+              <span>Nếu để trống, hệ thống sẽ tự động hiển thị hình ảnh minh họa chuẩn theo giống cây trồng.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Card 3: Single Mode Location & GPS (CHẾ ĐỘ TẠO 1 CÂY ĐƠN LẺ) -->
       <div id="user-single-gps-card" class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px; flex-wrap:wrap; gap:8px;">
@@ -3713,7 +3769,7 @@
               <i data-lucide="layout-grid" class="lucide-sm" style="color:#059669;"></i> Ma Trận Lô Trồng, Tọa Độ GPS &amp; Thông Số Nông Học Từng Cây
             </div>
             <div style="font-size:11.5px; color:#64748b; margin-top:2px;">
-              Tùy biến Lô, Hàng, GPS, Ngày trồng, Tuổi cây, Sức khỏe, Năng suất và Tiền sử bệnh riêng cho từng cây trong lô.
+              Tùy biến Lô, Hàng, GPS, Ảnh hiện trường, Ngày trồng, Tuổi cây, Sức khỏe, Năng suất và Tiền sử bệnh riêng cho từng cây trong lô.
             </div>
           </div>
           <span id="user-matrix-count-badge" style="font-size:12px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px;">
@@ -3744,6 +3800,28 @@
             <button type="button" class="btn btn-sm" onclick="applyBulkPlotToMatrix()" style="background:#0284c7; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
               <i data-lucide="layers" class="lucide-xs"></i> <span>Áp dụng Lô &amp; Tự động tăng Hàng (1-99)</span>
             </button>
+          </div>
+
+          <!-- Quick Bulk Photo Selector for Batch -->
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px; padding:8px 12px; background:#ffffff; border:1px dashed #6ee7b7; border-radius:8px;">
+            <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:#047857;">
+              <i data-lucide="camera" class="lucide-xs"></i> <span>Ảnh hiện trường đồng bộ cho cả Lô:</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <select id="user-matrix-bulk-growth-stage" style="border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; font-size:11px; font-weight:600; background:#fff; outline:none;">
+                <option value="Xuống giống / Cây con">Giai đoạn: Xuống giống / Cây con</option>
+                <option value="Phát triển dinh dưỡng / Cơi đọt">Giai đoạn: Phát triển / Cơi đọt</option>
+                <option value="Phân hóa mầm hoa / Ra hoa">Giai đoạn: Phân hóa mầm hoa</option>
+                <option value="Đậu trái non">Giai đoạn: Đậu trái non</option>
+                <option value="Nuôi trái / Phát triển quả">Giai đoạn: Nuôi trái</option>
+                <option value="Giai đoạn thu hoạch">Giai đoạn: Thu hoạch</option>
+              </select>
+              <input type="file" id="user-matrix-bulk-photo-file" accept="image/*" style="display:none;" onchange="onMatrixBulkPhotoSelected(this)">
+              <button type="button" class="btn btn-secondary btn-xs" onclick="document.getElementById('user-matrix-bulk-photo-file').click()" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="image-plus" class="lucide-xs"></i> <span>Chọn ảnh áp dụng cả Lô</span>
+              </button>
+              <span id="user-matrix-bulk-photo-name" style="font-size:11px; color:#059669; font-weight:600; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+            </div>
           </div>
 
           <!-- Quick Agronomy Inputs Grid -->
@@ -3833,18 +3911,19 @@
 
           <div style="text-align:right; border-top:1px dashed #cbd5e1; padding-top:8px;">
             <button type="button" class="btn btn-sm" onclick="applyBulkAgronomyToMatrix()" style="background:#047857; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(4,120,87,0.25);">
-              <i data-lucide="sparkles" class="lucide-xs"></i> <span>Bảng thông số cây trồng</span>
+              <i data-lucide="sparkles" class="lucide-xs"></i> <span>Áp dụng thông số nông học</span>
             </button>
           </div>
         </div>
 
         <!-- Matrix Table Container with full horizontal scroll -->
         <div class="matrix-table-wrap" style="max-height:360px; overflow-x:auto; overflow-y:auto; border:1px solid #cbd5e1; border-radius:10px; background:#ffffff;">
-          <table class="matrix-table" style="width:100%; min-width:1150px; border-collapse:collapse; font-size:12px; text-align:left;">
+          <table class="matrix-table" style="width:100%; min-width:1250px; border-collapse:collapse; font-size:12px; text-align:left;">
             <thead style="position:sticky; top:0; background:#f1f5f9; z-index:2; border-bottom:1.5px solid #cbd5e1;">
               <tr>
                 <th style="padding:7px 6px; width:34px; text-align:center; color:#475569; font-weight:700;">#</th>
                 <th style="padding:7px 6px; width:105px; color:#475569; font-weight:700;">Mã số cây</th>
+                <th style="padding:7px 6px; width:100px; text-align:center; color:#475569; font-weight:700;">Ảnh cây</th>
                 <th style="padding:7px 6px; width:115px; color:#475569; font-weight:700;">Lô trồng</th>
                 <th style="padding:7px 6px; width:80px; color:#475569; font-weight:700;">Hàng (1-99)</th>
                 <th style="padding:7px 6px; width:95px; color:#475569; font-weight:700;">Vĩ độ (Lat)</th>
@@ -5457,20 +5536,45 @@
         <!-- Crop Variety & Identity Card with Image from Assets -->
         <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
           <div style="width: 68px; height: 68px; border-radius: 12px; overflow: hidden; border: 2px solid #059669; flex-shrink: 0; background: #ffffff; box-shadow: 0 4px 10px rgba(5,150,105,0.15); display: flex; align-items: center; justify-content: center;">
-            <img id="erp-plant-crop-tab-img" src="/assets/crop/durian.png" alt="Hình ảnh giống cây" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='/assets/crop/durian.png';">
+            <img id="erp-plant-crop-tab-img" src="/assets/crop/durian.png" alt="Hình ảnh giống cây" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="if(this.src && window.openLightbox) openLightbox(this.src, 'image')" onerror="this.onerror=null; this.src='/assets/crop/durian.png';">
           </div>
           <div style="flex: 1; min-width: 0;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; background: #d1fae5; padding: 2px 8px; border-radius: 6px;">
-                <i data-lucide="image" class="lucide-xs"></i> Giống cây trồng nông hộ
+              <span id="erp-plant-crop-source-tag" style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; background: #d1fae5; padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="sprout" class="lucide-xs"></i> <span>Giống cây trồng nông hộ</span>
               </span>
             </div>
             <div id="erp-plant-crop-variety-title" style="font-size: 15px; font-weight: 800; color: #064e3b; margin-top: 3px;">
-              Sầu riêng · Giống Ri6
+              Sầu riêng
             </div>
             <div id="erp-plant-crop-type-desc" style="font-size: 12px; color: #047857; margin-top: 2px;">
-              Hình ảnh nhận diện định danh trực quan từ kho dữ liệu nông sản (Assets)
+              Hình ảnh định danh mô tả cây trồng
             </div>
+          </div>
+        </div>
+
+        <!-- ════ KHỐI ALBUM & DÒNG THỜI GIAN ẢNH SINH TRƯỞNG (GROWTH PHOTO TIMELINE) ════ -->
+        <div style="background: #ffffff; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(5,150,105,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+            <div>
+              <div style="font-size: 13.5px; font-weight: 800; color: #064e3b; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="camera" class="lucide-sm" style="color: #059669;"></i> Lịch Sử Ảnh Sinh Trưởng &amp; Hiện Trường
+                <span id="erp-plant-media-count-badge" style="font-size: 11px; font-weight: 800; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 1px 7px; border-radius: 12px;">0 ảnh</span>
+              </div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                Lưu trữ bất biến qua các mùa vụ (Append-Only) · Tự động dùng ảnh giống khi chưa có ảnh thực tế
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" class="btn btn-sm" onclick="openErpUploadGrowthPhotoModal()" style="background: linear-gradient(135deg, #059669, #047857); color: #ffffff; border: none; font-weight: 800; font-size: 12px; border-radius: 8px; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.25);">
+                <i data-lucide="camera-plus" class="lucide-xs"></i> <span>+ Chụp / Tải ảnh mới</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Growth Stage Photo Carousel / Grid -->
+          <div id="erp-plant-growth-gallery-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; max-height: 250px; overflow-y: auto; padding: 2px;">
+            <!-- Populated dynamically via JS -->
           </div>
         </div>
 
@@ -5639,6 +5743,90 @@
 
   </div>
 </div>
+
+<!-- ════════════════ MODAL TẢI LÊN ẢNH SINH TRƯỞNG HIỆN TRƯỜNG (APPEND-ONLY) ════════════════ -->
+<div class="modal-overlay" id="erp-upload-growth-photo-modal" style="display:none; z-index:20005;" onclick="if(event.target===this)closeErpUploadGrowthPhotoModal()">
+  <div class="modal" style="max-width: 480px; width: 92%; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid #cbd5e1; animation: modalFadeIn 0.2s ease;">
+    
+    <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: #ffffff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="camera-plus" class="lucide-xs"></i>
+        </div>
+        <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #ffffff;">
+          Cập Nhật Ảnh Sinh Trưởng Hiện Trường
+        </h3>
+      </div>
+      <button type="button" class="modal-close" onclick="closeErpUploadGrowthPhotoModal()" aria-label="Đóng" style="color: #ffffff;">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <div style="padding: 16px 18px; background: #f8fafc;">
+      
+      <!-- Photo Dropzone / Picker -->
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+          Hình ảnh thực địa *
+        </label>
+        <input type="file" id="erp-growth-modal-file" accept="image/*" style="display: none;" onchange="onErpGrowthModalFileChange(this)">
+        
+        <div id="erp-growth-modal-dropzone" onclick="document.getElementById('erp-growth-modal-file').click()" style="border: 2px dashed #a7f3d0; background: #ffffff; border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative;">
+          <div id="erp-growth-modal-preview-wrap" style="display: none;">
+            <img id="erp-growth-modal-img-preview" src="" alt="Preview" style="max-height: 160px; max-width: 100%; border-radius: 8px; object-fit: contain; margin: 0 auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="margin-top: 8px; font-size: 11.5px; color: #059669; font-weight: 700;">
+              <i data-lucide="refresh-cw" class="lucide-xs"></i> Nhấp để chọn ảnh khác
+            </div>
+          </div>
+          <div id="erp-growth-modal-placeholder">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto;">
+              <i data-lucide="camera" class="lucide-md"></i>
+            </div>
+            <div style="font-size: 13px; font-weight: 700; color: #064e3b;">Chụp ảnh trực tiếp hoặc tải từ máy</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Hỗ trợ định dạng JPG, PNG, WEBP (Tự động nén tối ưu)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Stage Selector -->
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+          <i data-lucide="sprout" class="lucide-xs" style="color: #059669;"></i> Giai đoạn sinh trưởng *
+        </label>
+        <select id="erp-growth-modal-stage" style="border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; width: 100%; box-sizing: border-box; background: #ffffff; outline: none;">
+          <option value="Xuống giống / Cây con">🌱 Xuống giống / Cây con</option>
+          <option value="Phát triển dinh dưỡng / Cơi đọt">🌿 Phát triển dinh dưỡng / Cơi đọt</option>
+          <option value="Phân hóa mầm hoa / Ra hoa">🌸 Phân hóa mầm hoa / Ra hoa</option>
+          <option value="Đậu trái non">🍈 Đậu trái non</option>
+          <option value="Nuôi trái / Phát triển quả" selected>🥭 Nuôi trái / Phát triển quả</option>
+          <option value="Giai đoạn thu hoạch">🧺 Giai đoạn thu hoạch</option>
+          <option value="Phục hồi sau thu hoạch">🔄 Phục hồi sau thu hoạch</option>
+        </select>
+      </div>
+
+      <!-- Caption / Field Note -->
+      <div style="margin-bottom: 6px;">
+        <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; display: block;">
+          Ghi chú hiện trường (Tùy chọn)
+        </label>
+        <input type="text" id="erp-growth-modal-caption" placeholder="VD: Trái to đều đẹp, đợt cơi đọt thứ 2 lá xanh bóng..." style="border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; font-size: 12.5px; font-weight: 600; width: 100%; box-sizing: border-box; outline: none; background: #ffffff;">
+      </div>
+
+    </div>
+
+    <!-- Footer Actions -->
+    <div style="padding: 12px 18px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px; align-items: center;">
+      <button type="button" class="btn btn-secondary" onclick="closeErpUploadGrowthPhotoModal()" style="font-weight: 700; font-size: 12.5px; padding: 7px 14px; border-radius: 8px;">
+        Hủy
+      </button>
+      <button type="button" class="btn btn-primary" id="btn-submit-erp-growth-photo" onclick="submitErpGrowthPhoto()" style="background: linear-gradient(135deg, #10b981, #047857); color: #ffffff; border: none; font-weight: 800; font-size: 12.5px; padding: 8px 18px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 8px rgba(16,185,129,0.3);">
+        <i data-lucide="check" class="lucide-xs"></i> <span>Lưu Ảnh Sinh Trưởng</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
 
 
 <!-- Scripts (ES Modules) -->

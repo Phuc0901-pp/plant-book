@@ -2340,6 +2340,97 @@ window.executeReorderGps = executeReorderGps;
 // ── 12. FARMER PLANT CREATION (CHUẨN VIETGAP & GIS GPS) ───────────
 let _userPlantCreateMode = 'single';
 let _userPlantMatrix = [];
+let _singlePlantPhotoFile = null;
+
+export function onSinglePlantPhotoSelected(input) {
+  if (!input || !input.files || !input.files[0]) return;
+  const file = input.files[0];
+  _singlePlantPhotoFile = file;
+
+  const preview = document.getElementById('user-single-photo-preview');
+  const placeholder = document.getElementById('user-single-photo-placeholder');
+  const removeBtn = document.getElementById('user-single-photo-remove-btn');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (preview) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    if (removeBtn) removeBtn.style.display = 'inline-flex';
+    if (window.refreshIcons) window.refreshIcons();
+  };
+  reader.readAsDataURL(file);
+}
+window.onSinglePlantPhotoSelected = onSinglePlantPhotoSelected;
+
+export function removeSinglePlantPhoto() {
+  _singlePlantPhotoFile = null;
+  const fileInput = document.getElementById('user-single-photo-file');
+  if (fileInput) fileInput.value = '';
+  const preview = document.getElementById('user-single-photo-preview');
+  const placeholder = document.getElementById('user-single-photo-placeholder');
+  const removeBtn = document.getElementById('user-single-photo-remove-btn');
+
+  if (preview) {
+    preview.src = '';
+    preview.style.display = 'none';
+  }
+  if (placeholder) placeholder.style.display = 'block';
+  if (removeBtn) removeBtn.style.display = 'none';
+  if (window.refreshIcons) window.refreshIcons();
+}
+window.removeSinglePlantPhoto = removeSinglePlantPhoto;
+
+export function onMatrixRowPhotoSelected(idx, input) {
+  if (!_userPlantMatrix[idx] || !input || !input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const stage = document.getElementById('user-matrix-bulk-growth-stage')?.value || 'Xuống giống / Cây con';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    _userPlantMatrix[idx].photo_file = file;
+    _userPlantMatrix[idx].photo_preview = e.target.result;
+    _userPlantMatrix[idx].growth_stage = stage;
+    renderUserPlantMatrix();
+  };
+  reader.readAsDataURL(file);
+}
+window.onMatrixRowPhotoSelected = onMatrixRowPhotoSelected;
+
+export function removeMatrixRowPhoto(idx) {
+  if (!_userPlantMatrix[idx]) return;
+  _userPlantMatrix[idx].photo_file = null;
+  _userPlantMatrix[idx].photo_preview = null;
+  renderUserPlantMatrix();
+}
+window.removeMatrixRowPhoto = removeMatrixRowPhoto;
+
+export function onMatrixBulkPhotoSelected(input) {
+  if (!input || !input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const nameLabel = document.getElementById('user-matrix-bulk-photo-name');
+  if (nameLabel) nameLabel.textContent = file.name;
+
+  const stage = document.getElementById('user-matrix-bulk-growth-stage')?.value || 'Xuống giống / Cây con';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    _userPlantMatrix.forEach(item => {
+      item.photo_file = file;
+      item.photo_preview = dataUrl;
+      item.growth_stage = stage;
+    });
+    renderUserPlantMatrix();
+    if (window.toast) {
+      window.toast(`📸 Đã áp dụng ảnh "${file.name}" cho toàn bộ ${_userPlantMatrix.length} cây trong ma trận!`, 'success');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+window.onMatrixBulkPhotoSelected = onMatrixBulkPhotoSelected;
 
 export function calculatePlantAge(plantingDateStr) {
   if (!plantingDateStr) return '';
@@ -2617,7 +2708,10 @@ export function generateUserPlantMatrix() {
       plant_age: defaultPlantAge || '',
       health_status: defaultHealth || 'Tốt',
       initial_yield: defaultYield || '',
-      past_diseases: Array.isArray(defaultDiseases) ? [...defaultDiseases] : []
+      past_diseases: Array.isArray(defaultDiseases) ? [...defaultDiseases] : [],
+      photo_file: null,
+      photo_preview: null,
+      growth_stage: document.getElementById('user-matrix-bulk-growth-stage')?.value || 'Xuống giống / Cây con'
     });
     rowCounter++;
   }
@@ -2644,7 +2738,7 @@ export function renderUserPlantMatrix() {
   if (!tbody) return;
 
   if (!_userPlantMatrix.length) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:18px; color:#94a3b8;">Chưa có cây nào trong ma trận. Bấm <strong>Tạo Bảng Ma Trận Lô, GPS &amp; Nông Học</strong> hoặc <strong>+ Thêm 1 cây</strong>.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:18px; color:#94a3b8;">Chưa có cây nào trong ma trận. Bấm <strong>Tạo Bảng Ma Trận Lô, GPS &amp; Nông Học</strong> hoặc <strong>+ Thêm 1 cây</strong>.</td></tr>`;
     if (card) card.style.display = 'block';
     return;
   }
@@ -2653,11 +2747,28 @@ export function renderUserPlantMatrix() {
 
   tbody.innerHTML = _userPlantMatrix.map((item, idx) => {
     const diseasesStr = Array.isArray(item.past_diseases) ? item.past_diseases.join(', ') : (item.past_diseases || '');
+    const hasPhoto = !!item.photo_preview;
+    const photoCellHtml = hasPhoto
+      ? `<div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+           <img src="${item.photo_preview}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;border:1.5px solid #059669;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);" onclick="document.getElementById('matrix-photo-input-${idx}').click()" title="Đổi ảnh (${esc(item.growth_stage || 'Cây con')})">
+           <button type="button" onclick="removeMatrixRowPhoto(${idx})" title="Xóa ảnh" style="background:#fee2e2;border:1px solid #fecaca;color:#ef4444;border-radius:4px;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:bold;line-height:1;padding:0;">×</button>
+           <input type="file" id="matrix-photo-input-${idx}" accept="image/*" style="display:none;" onchange="onMatrixRowPhotoSelected(${idx}, this)">
+         </div>`
+      : `<div style="text-align:center;">
+           <button type="button" onclick="document.getElementById('matrix-photo-input-${idx}').click()" style="background:#f8fafc;border:1px dashed #cbd5e1;color:#64748b;border-radius:6px;padding:3px 6px;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;">
+             <i data-lucide="camera" class="lucide-xs"></i> <span>Chọn ảnh</span>
+           </button>
+           <input type="file" id="matrix-photo-input-${idx}" accept="image/*" style="display:none;" onchange="onMatrixRowPhotoSelected(${idx}, this)">
+         </div>`;
+
     return `
     <tr style="border-bottom:1px solid #f1f5f9; ${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
       <td style="padding:5px 6px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
       <td style="padding:5px 6px;">
         <input type="text" value="${esc(item.tree_code)}" onchange="updateMatrixItem(${idx}, 'tree_code', this.value)" style="width:100%; min-width:85px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:11.5px; color:#064e3b; outline:none; box-sizing:border-box; background:#fff;">
+      </td>
+      <td style="padding:5px 6px; text-align:center;">
+        ${photoCellHtml}
       </td>
       <td style="padding:5px 6px;">
         <input type="text" value="${esc(item.plot_code || '')}" placeholder="VD: Lô A1" onblur="updateMatrixPlot(${idx}, this.value)" onchange="updateMatrixPlot(${idx}, this.value)" style="width:100%; min-width:95px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600; font-size:11.5px; outline:none; box-sizing:border-box; background:#fff;">
@@ -2909,7 +3020,10 @@ export function addCustomMatrixRow() {
     plant_age: defaultPlantAge || '',
     health_status: defaultHealth || 'Tốt',
     initial_yield: defaultYield || '',
-    past_diseases: Array.isArray(defaultDiseases) ? [...defaultDiseases] : []
+    past_diseases: Array.isArray(defaultDiseases) ? [...defaultDiseases] : [],
+    photo_file: null,
+    photo_preview: null,
+    growth_stage: document.getElementById('user-matrix-bulk-growth-stage')?.value || 'Xuống giống / Cây con'
   });
   renderUserPlantMatrix();
 }
@@ -3005,6 +3119,11 @@ export async function openUserCreatePlantModal() {
   if (publicEl) publicEl.value = 'true';
   resetPastDiseaseChips();
   resetBatchPastDiseaseChips();
+  removeSinglePlantPhoto();
+  const bulkPhotoInput = document.getElementById('user-matrix-bulk-photo-file');
+  if (bulkPhotoInput) bulkPhotoInput.value = '';
+  const bulkPhotoLbl = document.getElementById('user-matrix-bulk-photo-name');
+  if (bulkPhotoLbl) bulkPhotoLbl.textContent = '';
 
   _userPlantMatrix = [];
   const matrixCard = document.getElementById('user-plant-matrix-card');
@@ -3041,6 +3160,11 @@ export function closeUserCreatePlantModal() {
   if (modal) modal.style.display = 'none';
   resetPastDiseaseChips();
   resetBatchPastDiseaseChips();
+  removeSinglePlantPhoto();
+  const bulkPhotoInput = document.getElementById('user-matrix-bulk-photo-file');
+  if (bulkPhotoInput) bulkPhotoInput.value = '';
+  const bulkPhotoLbl = document.getElementById('user-matrix-bulk-photo-name');
+  if (bulkPhotoLbl) bulkPhotoLbl.textContent = '';
 }
 window.closeUserCreatePlantModal = closeUserCreatePlantModal;
 
@@ -3278,6 +3402,32 @@ export async function submitUserCreatePlant() {
         body: JSON.stringify(payload)
       });
 
+      // Upload photos for any matrix trees that had photos attached
+      if (_userPlantMatrix && _userPlantMatrix.length > 0 && res && res.inserted_ids) {
+        const token = localStorage.getItem('token') || localStorage.getItem('pb_token');
+        const uploadPromises = [];
+        _userPlantMatrix.forEach((item, idx) => {
+          if (item.photo_file && res.inserted_ids[idx]) {
+            const pId = res.inserted_ids[idx];
+            const formData = new FormData();
+            formData.append('files', item.photo_file);
+            formData.append('growth_stage', item.growth_stage || 'Xuống giống / Cây con');
+            uploadPromises.push(
+              fetch(`/api/plants/${pId}/growth-photo`, {
+                method: 'POST',
+                headers: {
+                  ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: formData
+              }).catch(err => console.warn(`[Batch Matrix] Error uploading photo for tree #${pId}:`, err))
+            );
+          }
+        });
+        if (uploadPromises.length > 0) {
+          await Promise.allSettled(uploadPromises);
+        }
+      }
+
       const successMsg = res.message || `Đã tạo thành công ${res.count || (_userPlantMatrix.length || 'hàng loạt')} cây!`;
       if (typeof toast === 'function') toast(successMsg, 'success');
       else if (window.toast) window.toast(successMsg, 'success');
@@ -3315,6 +3465,27 @@ export async function submitUserCreatePlant() {
         method: 'POST',
         body: JSON.stringify(payload)
       });
+
+      // Upload single plant initial photo if provided
+      if (_singlePlantPhotoFile && res && res.id) {
+        try {
+          const token = localStorage.getItem('token') || localStorage.getItem('pb_token');
+          const formData = new FormData();
+          formData.append('files', _singlePlantPhotoFile);
+          const stage = document.getElementById('user-single-photo-growth-stage')?.value || 'Xuống giống / Cây con';
+          formData.append('growth_stage', stage);
+
+          await fetch(`/api/plants/${res.id}/growth-photo`, {
+            method: 'POST',
+            headers: {
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: formData
+          });
+        } catch (uploadErr) {
+          console.warn('[Single Plant] Error uploading initial growth photo:', uploadErr);
+        }
+      }
 
       const successMsg = `Đã tạo cây ${res.tree_code || ''} thành công!`;
       if (typeof toast === 'function') toast(successMsg, 'success');
@@ -3409,6 +3580,44 @@ export async function openPlantProfileModal(plantId) {
   if (subtitleEl) {
     subtitleEl.textContent = `Trang trại: ${farmName} · Lô: ${plotStr} · Giống: ${varietyStr}`;
   }
+
+  // Smart Crop Asset Fallback & Real Photo Resolver
+  const hasRealPhoto = !!(plant.cover_image && !plant.cover_image.includes('photo-1587293852726-70cdb56c2866'));
+  const cropImgSrc = getCropImageSrc(plant);
+
+  const headerImgEl = document.getElementById('erp-plant-crop-header-img');
+  if (headerImgEl) {
+    headerImgEl.src = cropImgSrc;
+  }
+
+  const tabImgEl = document.getElementById('erp-plant-crop-tab-img');
+  if (tabImgEl) {
+    tabImgEl.src = cropImgSrc;
+  }
+
+  const cropTitleEl = document.getElementById('erp-plant-crop-variety-title');
+  if (cropTitleEl) {
+    cropTitleEl.textContent = varietyStr;
+  }
+
+  const sourceTagEl = document.getElementById('erp-plant-crop-source-tag');
+  const descEl = document.getElementById('erp-plant-crop-type-desc');
+  if (sourceTagEl) {
+    if (hasRealPhoto) {
+      sourceTagEl.style.background = '#d1fae5';
+      sourceTagEl.style.color = '#047857';
+      sourceTagEl.innerHTML = '<i data-lucide="camera" class="lucide-xs"></i> <span>Ảnh Chụp Thực Tế</span>';
+      if (descEl) descEl.textContent = 'Ảnh chụp hiện trường cập nhật gần nhất của cây';
+    } else {
+      sourceTagEl.style.background = '#e0f2fe';
+      sourceTagEl.style.color = '#0369a1';
+      sourceTagEl.innerHTML = '<i data-lucide="sprout" class="lucide-xs"></i> <span>Ảnh Giống Cây Trồng</span>';
+      if (descEl) descEl.textContent = `Ảnh minh họa chuẩn định danh cho giống ${esc(plant.plant_variety || plant.plant_type || 'cây')}`;
+    }
+  }
+
+  // Render Growth Photo Gallery & Timeline
+  _renderGrowthPhotoGallery(plant.media || [], plant);
 
   // 5. Fill Executive Quick Stats Bar
   const ageVal = plant.plant_age || (plant.planting_date ? calculatePlantAge(plant.planting_date) : '—');
@@ -3725,3 +3934,192 @@ window.closePlantProfileModal = closePlantProfileModal;
 window.switchErpProfileTab = switchErpProfileTab;
 window.onErpProfileCareClick = onErpProfileCareClick;
 window.onErpProfileNfcClick = onErpProfileNfcClick;
+
+// ── Growth Stage Photo Timeline & Gallery Controller (Append-Only) ──
+export function _renderGrowthPhotoGallery(mediaList, plant) {
+  const container = document.getElementById('erp-plant-growth-gallery-container');
+  const countBadge = document.getElementById('erp-plant-media-count-badge');
+  if (!container) return;
+
+  const items = Array.isArray(mediaList) ? mediaList.filter(m => m.media_type !== 'video' || m.url) : [];
+  if (countBadge) countBadge.textContent = `${items.length} ảnh`;
+
+  if (!items.length) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 22px 16px; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; color: #64748b;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto;">
+          <i data-lucide="image" class="lucide-sm"></i>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: #334155;">Chưa có ảnh chụp sinh trưởng thực tế</div>
+        <div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">
+          Hệ thống đang hiển thị ảnh nhận diện chuẩn theo loài &amp; giống cây. Bấm nút <strong>+ Chụp / Tải ảnh mới</strong> để lưu mốc sinh trưởng.
+        </div>
+      </div>
+    `;
+    if (window.refreshIcons) window.refreshIcons();
+    return;
+  }
+
+  container.innerHTML = items.map((m, idx) => {
+    const stage = m.caption || m.growth_stage || 'Cập nhật sinh trưởng';
+    const dateStr = m.uploaded_at ? formatDate(m.uploaded_at) : (m.created_at ? formatDate(m.created_at) : 'Mới đây');
+    const isLatest = idx === 0;
+
+    return `
+      <div style="background: #ffffff; border: 1.5px solid ${isLatest ? '#10b981' : '#e2e8f0'}; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; flex-direction: column; position: relative;">
+        ${isLatest ? `<span style="position: absolute; top: 6px; left: 6px; z-index: 2; background: #059669; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.2);">Mới nhất</span>` : ''}
+        
+        <div style="height: 105px; width: 100%; overflow: hidden; position: relative; background: #f1f5f9; cursor: pointer;" onclick="if(window.openLightbox) openLightbox('${esc(m.url)}', 'image')">
+          <img src="${esc(m.url)}" alt="${esc(stage)}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.25s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+          <button type="button" style="position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 6px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Phóng to">
+            <i data-lucide="maximize-2" class="lucide-xs"></i>
+          </button>
+        </div>
+
+        <div style="padding: 8px 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; background: #ffffff;">
+          <div style="font-size: 11.5px; font-weight: 800; color: #064e3b; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(stage)}">
+            🌱 ${esc(stage)}
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 3px;">
+            <i data-lucide="calendar" class="lucide-xs"></i> <span>${esc(dateStr)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.refreshIcons) window.refreshIcons();
+}
+window._renderGrowthPhotoGallery = _renderGrowthPhotoGallery;
+
+let _erpGrowthModalFile = null;
+
+export function openErpUploadGrowthPhotoModal() {
+  if (!_currentErpPlant) {
+    if (window.toast) window.toast('Vui lòng mở hồ sơ cây trồng trước!', 'warning');
+    return;
+  }
+  _erpGrowthModalFile = null;
+  const modal = document.getElementById('erp-upload-growth-photo-modal');
+  const fileInp = document.getElementById('erp-growth-modal-file');
+  const previewWrap = document.getElementById('erp-growth-modal-preview-wrap');
+  const placeholder = document.getElementById('erp-growth-modal-placeholder');
+  const captionInp = document.getElementById('erp-growth-modal-caption');
+  
+  if (fileInp) fileInp.value = '';
+  if (previewWrap) previewWrap.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'block';
+  if (captionInp) captionInp.value = '';
+
+  if (modal) modal.style.display = 'flex';
+  if (window.refreshIcons) window.refreshIcons();
+}
+window.openErpUploadGrowthPhotoModal = openErpUploadGrowthPhotoModal;
+
+export function closeErpUploadGrowthPhotoModal() {
+  const modal = document.getElementById('erp-upload-growth-photo-modal');
+  if (modal) modal.style.display = 'none';
+  _erpGrowthModalFile = null;
+}
+window.closeErpUploadGrowthPhotoModal = closeErpUploadGrowthPhotoModal;
+
+export function onErpGrowthModalFileChange(input) {
+  if (!input || !input.files || !input.files[0]) return;
+  const file = input.files[0];
+  _erpGrowthModalFile = file;
+
+  const previewWrap = document.getElementById('erp-growth-modal-preview-wrap');
+  const imgPreview = document.getElementById('erp-growth-modal-img-preview');
+  const placeholder = document.getElementById('erp-growth-modal-placeholder');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (imgPreview) imgPreview.src = e.target.result;
+    if (previewWrap) previewWrap.style.display = 'block';
+    if (placeholder) placeholder.style.display = 'none';
+    if (window.refreshIcons) window.refreshIcons();
+  };
+  reader.readAsDataURL(file);
+}
+window.onErpGrowthModalFileChange = onErpGrowthModalFileChange;
+
+export async function submitErpGrowthPhoto() {
+  if (!_currentErpPlant) return;
+  if (!_erpGrowthModalFile) {
+    if (window.toast) window.toast('Vui lòng chụp hoặc chọn tệp tin ảnh!', 'warning');
+    else alert('Vui lòng chụp hoặc chọn tệp tin ảnh!');
+    return;
+  }
+
+  const stage = document.getElementById('erp-growth-modal-stage')?.value || 'Nuôi trái / Phát triển quả';
+  const caption = (document.getElementById('erp-growth-modal-caption')?.value || '').trim();
+  const fullCaption = caption ? `${stage} · ${caption}` : stage;
+
+  const btn = document.getElementById('btn-submit-erp-growth-photo');
+  const origBtn = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-xs"></i> Đang tải lên...';
+    btn.disabled = true;
+  }
+
+  try {
+    const token = localStorage.getItem('token') || localStorage.getItem('pb_token');
+    const formData = new FormData();
+    formData.append('files', _erpGrowthModalFile);
+    formData.append('growth_stage', fullCaption);
+
+    const resp = await fetch(`/api/plants/${_currentErpPlant.id}/growth-photo`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: formData
+    });
+
+    const res = await resp.json();
+    if (!resp.ok) {
+      throw new Error(res.error || 'Lỗi khi tải ảnh sinh trưởng.');
+    }
+
+    // Update active plant in memory
+    _currentErpPlant.cover_image = res.cover_image || (_currentErpPlant.cover_image);
+    _currentErpPlant.media = res.all_media || (_currentErpPlant.media || []);
+
+    // Refresh Profile Header & Tab Images
+    const headerImgEl = document.getElementById('erp-plant-crop-header-img');
+    const tabImgEl = document.getElementById('erp-plant-crop-tab-img');
+    if (headerImgEl && res.cover_image) headerImgEl.src = res.cover_image;
+    if (tabImgEl && res.cover_image) tabImgEl.src = res.cover_image;
+
+    const sourceTagEl = document.getElementById('erp-plant-crop-source-tag');
+    const descEl = document.getElementById('erp-plant-crop-type-desc');
+    if (sourceTagEl) {
+      sourceTagEl.style.background = '#d1fae5';
+      sourceTagEl.style.color = '#047857';
+      sourceTagEl.innerHTML = '<i data-lucide="camera" class="lucide-xs"></i> <span>Ảnh Chụp Thực Tế</span>';
+      if (descEl) descEl.textContent = 'Ảnh chụp hiện trường cập nhật gần nhất của cây';
+    }
+
+    // Re-render gallery
+    _renderGrowthPhotoGallery(_currentErpPlant.media, _currentErpPlant);
+
+    closeErpUploadGrowthPhotoModal();
+    if (window.toast) window.toast(`✅ Đã lưu ảnh sinh trưởng (${stage}) thành công!`, 'success');
+  } catch (err) {
+    console.error('Lỗi khi tải ảnh sinh trưởng:', err);
+    const msg = 'Lỗi tải ảnh: ' + err.message;
+    if (window.toast) window.toast(msg, 'error');
+    else alert(msg);
+  } finally {
+    if (btn) {
+      btn.innerHTML = origBtn || '<i data-lucide="check" class="lucide-xs"></i> <span>Lưu Ảnh Sinh Trưởng</span>';
+      btn.disabled = false;
+    }
+  }
+}
+window.submitErpGrowthPhoto = submitErpGrowthPhoto;
+window.openErpUploadGrowthPhotoModal = openErpUploadGrowthPhotoModal;
+window.closeErpUploadGrowthPhotoModal = closeErpUploadGrowthPhotoModal;
+window.onErpGrowthModalFileChange = onErpGrowthModalFileChange;
+window.onErpGrowthPhotoSelected = onErpGrowthModalFileChange;
+window.triggerErpGrowthPhotoUpload = openErpUploadGrowthPhotoModal;

@@ -809,6 +809,8 @@ router.post('/batch-range', auth, async (req, res) => {
     res.status(201).json({
       success: true,
       count: insertedIds.length,
+      inserted_ids: insertedIds,
+      items: treesToInsert.map((t, idx) => ({ id: insertedIds[idx], code: t.code })),
       first_code: treesToInsert[0].code,
       last_code: treesToInsert[treesToInsert.length - 1].code,
       message: `Đã tạo thành công ${insertedIds.length} cây từ ${treesToInsert[0].code} đến ${treesToInsert[treesToInsert.length - 1].code}!`
@@ -2459,32 +2461,42 @@ router.post('/:id/restore', auth, admin, async (req, res) => {
     console.error('Restore plant error:', err);
     res.status(500).json({ error: 'Lỗi server khi khôi phục cây: ' + err.message });
   }
+// GET /api/plants/:id/media & alias /growth-photos
+router.get(['/:id(\\d+)/media', '/:id(\\d+)/growth-photos'], auth, async (req, res) => {
+  try {
+    const plantId = req.params.id;
+    const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plantId]);
+    res.json({ success: true, count: media.rows.length, media: media.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi truy xuất lịch sử ảnh sinh trưởng: ' + err.message });
+  }
 });
 
-router.post('/:id/media', auth, upload.array('files', 20), async (req, res) => {
+router.post(['/:id/media', '/:id/growth-photo'], auth, upload.array('files', 20), async (req, res) => {
   try {
     const plantId = req.params.id;
     const plant = await pool.query('SELECT id FROM plants WHERE id=$1', [plantId]);
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây.' });
 
     const uploaded = [];
+    const growthStage = (req.body.growth_stage || req.body.caption || 'Cập nhật sinh trưởng').trim();
+
     for (const file of req.files) {
       const ext = path.extname(file.originalname).toLowerCase();
       const objectName = `plants/${plantId}/${uuidv4()}${ext}`;
       const url = await uploadFile(objectName, file.buffer, file.mimetype);
       const mediaType = file.mimetype.startsWith('video') ? 'video' : 'image';
-      const caption = req.body.caption || '';
 
       const result = await pool.query(
         'INSERT INTO plant_media (plant_id, object_name, url, media_type, caption) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-        [plantId, objectName, url, mediaType, caption]
+        [plantId, objectName, url, mediaType, growthStage]
       );
       uploaded.push(result.rows[0]);
     }
 
     if (uploaded.length > 0 && uploaded[0].media_type === 'image') {
       await pool.query(
-        'UPDATE plants SET cover_image=$1 WHERE id=$2 AND cover_image IS NULL',
+        'UPDATE plants SET cover_image=$1, updated_at=NOW() WHERE id=$2',
         [uploaded[0].url, plantId]
       );
     }
@@ -2493,15 +2505,22 @@ router.post('/:id/media', auth, upload.array('files', 20), async (req, res) => {
     if (uploaded.length > 0) {
       await pool.query(
         `INSERT INTO user_activities (user_id, activity_type, description)
-         VALUES ($1, 'Tải lên hình ảnh', $2)`,
-        [req.user.id, `Tải lên ${uploaded.length} tệp tin media cho cây #${plantId}`]
+         VALUES ($1, 'Tải lên hình ảnh sinh trưởng', $2)`,
+        [req.user.id, `Tải lên ${uploaded.length} ảnh sinh trưởng (${growthStage}) cho cây #${plantId}`]
       );
     }
 
-    res.json(uploaded);
+    const allMedia = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plantId]);
+
+    res.json({
+      success: true,
+      uploaded,
+      cover_image: uploaded.length > 0 ? uploaded[0].url : null,
+      all_media: allMedia.rows
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Lỗi upload: ' + err.message });
+    res.status(500).json({ error: 'Lỗi upload ảnh sinh trưởng: ' + err.message });
   }
 });
 
