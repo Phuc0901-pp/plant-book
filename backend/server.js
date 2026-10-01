@@ -86,6 +86,7 @@ app.use('/api/version', require('./routes/version'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
 app.use('/api/plants', require('./routes/plants'));
+app.use('/api/nfc', require('./routes/plants'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/farms', require('./routes/farms'));
 app.use('/api/users', require('./routes/users'));
@@ -101,6 +102,15 @@ app.use('/api/diagnostics', require('./routes/diagnostics'));
 app.use('/api', require('./middleware/errorHandler'));
 
 // ─── SPA fallback ────────────────────────────────────────────────
+app.get([
+  '/user',
+  '/user/*',
+  '/usr-*',
+  '/usr-*/*'
+], (req, res, next) => {
+  if (req.path.includes('.')) return next();
+  res.sendFile(path.join(__dirname, '../frontend/user/index.html'));
+});
 app.get([
   '/plant/:slug/report',
   '/:farmId/public/:slug/report',

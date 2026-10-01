@@ -185,10 +185,17 @@
           </button>
         </div>
 
-        <div style="margin-bottom:10px;">
-          <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Vị trí / Lô trồng cụ thể</label>
-          <input type="text" id="user-plant-location" placeholder="VD: Lô A1, Hàng 3, Khu đồi cao..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+        <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px; margin-bottom:10px;">
+          <div>
+            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Lô trồng (VD: A1 hoặc Lô A1)</label>
+            <input type="text" id="user-plant-plot" placeholder="VD: A1, B2, Lô 01..." oninput="onUserSinglePlotChange()" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none; background:#fff;">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Hàng số (1 - 99)</label>
+            <input type="number" id="user-plant-row" placeholder="1 - 99" min="1" max="99" value="1" oninput="onUserSinglePlotChange()" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none; background:#fff;">
+          </div>
         </div>
+        <input type="hidden" id="user-plant-location" value="">
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div>
@@ -210,7 +217,7 @@
               <i data-lucide="layout-grid" class="lucide-sm" style="color:#059669;"></i> Ma Trận Lô Trồng &amp; Tọa Độ GPS Từng Cây
             </div>
             <div style="font-size:11.5px; color:#64748b; margin-top:2px;">
-              Tùy biến lô trồng và GPS riêng cho từng cây (có thể xóa bớt các cây không muốn tạo).
+              Tùy biến Lô và Hàng (tự động tăng từ 1 - 99) cùng GPS riêng cho từng cây.
             </div>
           </div>
           <span id="user-matrix-count-badge" style="font-size:12px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px;">
@@ -221,9 +228,9 @@
         <!-- Matrix Quick Tools Toolbar -->
         <div style="background:#f1f5f9; border-radius:10px; padding:10px 12px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between;">
           <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:260px;">
-            <input type="text" id="user-matrix-bulk-location" placeholder="Nhập Lô trồng chung (VD: Lô A1, Hàng 1)..." style="flex:1; border:1.5px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:600; outline:none; background:#fff;">
-            <button type="button" class="btn btn-sm" onclick="applyBulkLocationToMatrix()" style="background:#0284c7; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
-              Áp dụng cho tất cả
+            <input type="text" id="user-matrix-bulk-plot" placeholder="Nhập Lô chung (VD: A1 hoặc Lô A1)..." style="flex:1; border:1.5px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:600; outline:none; background:#fff;">
+            <button type="button" class="btn btn-sm" onclick="applyBulkPlotToMatrix()" style="background:#0284c7; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
+              <i data-lucide="layers" class="lucide-xs"></i> <span>Áp dụng Lô &amp; Tự động tăng Hàng (1-99)</span>
             </button>
           </div>
           <div style="display:flex; gap:6px; align-items:center;">
@@ -237,15 +244,16 @@
         </div>
 
         <!-- Matrix Table Container -->
-        <div style="max-height:260px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#ffffff;">
+        <div style="max-height:280px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#ffffff;">
           <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
             <thead style="position:sticky; top:0; background:#f8fafc; z-index:1; border-bottom:1.5px solid #cbd5e1;">
               <tr>
-                <th style="padding:7px 8px; width:36px; text-align:center; color:#475569; font-weight:700;">#</th>
-                <th style="padding:7px 8px; width:120px; color:#475569; font-weight:700;">Mã số cây</th>
-                <th style="padding:7px 8px; color:#475569; font-weight:700;">Lô trồng cụ thể</th>
-                <th style="padding:7px 8px; width:110px; color:#475569; font-weight:700;">Vĩ độ (Lat)</th>
-                <th style="padding:7px 8px; width:110px; color:#475569; font-weight:700;">Kinh độ (Lng)</th>
+                <th style="padding:7px 8px; width:34px; text-align:center; color:#475569; font-weight:700;">#</th>
+                <th style="padding:7px 8px; width:110px; color:#475569; font-weight:700;">Mã số cây</th>
+                <th style="padding:7px 8px; width:130px; color:#475569; font-weight:700;">Lô trồng (VD: Lô A1)</th>
+                <th style="padding:7px 8px; width:110px; color:#475569; font-weight:700;">Hàng (1 - 99)</th>
+                <th style="padding:7px 8px; width:100px; color:#475569; font-weight:700;">Vĩ độ (Lat)</th>
+                <th style="padding:7px 8px; width:100px; color:#475569; font-weight:700;">Kinh độ (Lng)</th>
                 <th style="padding:7px 8px; width:44px; text-align:center; color:#ef4444; font-weight:700;">Xóa</th>
               </tr>
             </thead>

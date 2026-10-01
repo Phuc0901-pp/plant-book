@@ -331,16 +331,30 @@ async function initDB() {
 
 
 
-    // NFC Tag UID column, planting_date and public_url for plants
+    // NFC Tag UID column, planting_date, plot_code, row_number and public_url for plants
     await client.query(`
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_uid VARCHAR(100) UNIQUE;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS planting_date DATE;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS plot_code VARCHAR(100);
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS row_number INTEGER;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS public_url TEXT;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS gps_accuracy NUMERIC;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_tagged_at TIMESTAMPTZ;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_tagged_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
       CREATE INDEX IF NOT EXISTS idx_plants_farm_nfc ON plants (farm_id, UPPER(nfc_uid)) WHERE deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS idx_plants_unassigned_trees ON plants (farm_id, tree_code) WHERE (nfc_uid IS NULL OR nfc_uid = '') AND deleted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_plants_farm_plot ON plants (farm_id, plot_code);
+
+      CREATE TABLE IF NOT EXISTS farm_plots (
+        id SERIAL PRIMARY KEY,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE,
+        plot_code VARCHAR(100) NOT NULL,
+        plot_name VARCHAR(255),
+        description TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(farm_id, plot_code)
+      );
+      CREATE INDEX IF NOT EXISTS idx_farm_plots_farm ON farm_plots(farm_id);
     `);
 
     // NFC Tags Inventory table (Batch registration, continuous tap & tagging status)

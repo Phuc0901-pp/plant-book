@@ -298,6 +298,11 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
       .setPopup(popup)
       .addTo(targetMap);
 
+    wrapper.addEventListener('click', (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      marker.togglePopup();
+    });
+
     userMarkers.push({ marker, plant });
     bounds.extend([lng, lat]);
     hasBounds = true;

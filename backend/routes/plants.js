@@ -648,6 +648,8 @@ router.post('/batch-range', auth, async (req, res) => {
         const pLat = it.latitude !== undefined && it.latitude !== '' && !isNaN(parseFloat(it.latitude)) ? parseFloat(it.latitude) : (latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null);
         const pLng = it.longitude !== undefined && it.longitude !== '' && !isNaN(parseFloat(it.longitude)) ? parseFloat(it.longitude) : (longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null);
         const pLoc = (it.location !== undefined ? it.location : location || '').trim();
+        const pPlot = (it.plot_code !== undefined ? it.plot_code : '').trim();
+        const pRow = it.row_number !== undefined && it.row_number !== null && !isNaN(parseInt(it.row_number, 10)) ? parseInt(it.row_number, 10) : null;
         const pDate = it.planting_date || planting_date || null;
         const pAge = (it.plant_age !== undefined ? it.plant_age : plant_age || '').trim();
         const pHealth = it.health_status || health_status || 'Tốt';
@@ -656,6 +658,8 @@ router.post('/batch-range', auth, async (req, res) => {
         return {
           code,
           location: pLoc,
+          plot_code: pPlot,
+          row_number: pRow,
           latitude: pLat,
           longitude: pLng,
           planting_date: pDate,
@@ -718,9 +722,37 @@ router.post('/batch-range', auth, async (req, res) => {
     for (const tree of treesToInsert) {
       const slug = `${farm_id || 0}_${tree.code}`;
 
+      // Extract plot_code and row_number
+      let plotCode = tree.plot_code || null;
+      let rowNum = tree.row_number !== undefined && tree.row_number !== null ? parseInt(tree.row_number, 10) : null;
+      if (!plotCode && tree.location) {
+        const parts = tree.location.split(',');
+        if (parts[0]) {
+          plotCode = parts[0].trim();
+          if (!/^lô\s+/i.test(plotCode) && /^[a-zA-Z0-9\-_]+$/.test(plotCode)) {
+            plotCode = 'Lô ' + plotCode;
+          }
+        }
+        if (parts[1] && /hàng\s*(\d+)/i.test(parts[1])) {
+          const match = parts[1].match(/hàng\s*(\d+)/i);
+          if (match) rowNum = parseInt(match[1], 10);
+        }
+      }
+
+      if (farm_id && plotCode) {
+        try {
+          await client.query(
+            `INSERT INTO farm_plots (farm_id, plot_code, plot_name)
+             VALUES ($1, $2, $2)
+             ON CONFLICT (farm_id, plot_code) DO NOTHING`,
+            [farm_id, plotCode]
+          );
+        } catch (_) {}
+      }
+
       const resDb = await client.query(
-        `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+        `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, created_by, tree_code)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
          ON CONFLICT (public_slug) DO UPDATE 
          SET schema_id = EXCLUDED.schema_id,
              plant_type = EXCLUDED.plant_type,
@@ -729,6 +761,8 @@ router.post('/batch-range', auth, async (req, res) => {
              plant_age = EXCLUDED.plant_age,
              health_status = EXCLUDED.health_status,
              location = EXCLUDED.location,
+             plot_code = EXCLUDED.plot_code,
+             row_number = EXCLUDED.row_number,
              data = EXCLUDED.data,
              is_public = EXCLUDED.is_public,
              farm_id = EXCLUDED.farm_id,
@@ -739,7 +773,7 @@ router.post('/batch-range', auth, async (req, res) => {
              updated_at = NOW()
          RETURNING id`,
         [slug, schema_id || null, tree.plant_type, tree.plant_variety, tree.planting_date || null, tree.plant_age, tree.health_status,
-         tree.location, JSON.stringify(data || {}), is_public !== false, farm_id || null, tree.latitude, tree.longitude, req.user.id, tree.code]
+         tree.location, plotCode, rowNum, JSON.stringify(data || {}), is_public !== false, farm_id || null, tree.latitude, tree.longitude, req.user.id, tree.code]
       );
 
       const newId = resDb.rows[0].id;
@@ -770,9 +804,43 @@ router.post('/batch-range', auth, async (req, res) => {
   }
 });
 
+// GET /api/plants/farms/:farmId/plots - Get plots for a farm
+router.get('/farms/:farmId/plots', auth, async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.farmId, 10);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    const result = await pool.query(
+      'SELECT id, farm_id, plot_code, plot_name, description, created_at FROM farm_plots WHERE farm_id = $1 ORDER BY plot_code ASC',
+      [farmId]
+    );
+    res.json({ success: true, plots: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi tải danh sách lô: ' + err.message });
+  }
+});
+
+// GET /api/plants/farms/:farmId/tags & alias /api/nfc/farm/:farmId/tags
+router.get(['/farms/:farmId/tags', '/farm/:farmId/tags', '/nfc/farm/:farmId/tags'], auth, async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.farmId, 10);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+    const items = await pool.query(
+      `SELECT n.*, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.location, p.latitude, p.longitude, p.public_url, p.data as plant_data
+       FROM nfc_tags_inventory n
+       LEFT JOIN plants p ON n.plant_id = p.id
+       WHERE n.farm_id = $1
+       ORDER BY n.id DESC`,
+      [farmId]
+    );
+    res.json({ success: true, tags: items.rows, items: items.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi tải danh sách thẻ NFC: ' + err.message });
+  }
+});
+
 router.post('/', auth, async (req, res) => {
   try {
-    const { schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, tree_code, nfc_uid } = req.body;
+    const { schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, tree_code, nfc_uid } = req.body;
     
     if (req.user.role !== 'admin') {
       if (!farm_id) {
@@ -802,9 +870,36 @@ router.post('/', auth, async (req, res) => {
     const slug = finalTreeCode ? `${farm_id || 0}_${finalTreeCode}` : generateSlug(plant_type);
     const cleanNfcUid = (nfc_uid && typeof nfc_uid === 'string') ? nfc_uid.trim().toUpperCase() : null;
 
+    let finalPlotCode = plot_code || null;
+    let finalRowNum = row_number !== undefined && row_number !== null ? parseInt(row_number, 10) : null;
+    if (!finalPlotCode && location) {
+      const parts = location.split(',');
+      if (parts[0]) {
+        finalPlotCode = parts[0].trim();
+        if (!/^lô\s+/i.test(finalPlotCode) && /^[a-zA-Z0-9\-_]+$/.test(finalPlotCode)) {
+          finalPlotCode = 'Lô ' + finalPlotCode;
+        }
+      }
+      if (parts[1] && /hàng\s*(\d+)/i.test(parts[1])) {
+        const match = parts[1].match(/hàng\s*(\d+)/i);
+        if (match) finalRowNum = parseInt(match[1], 10);
+      }
+    }
+
+    if (farm_id && finalPlotCode) {
+      try {
+        await pool.query(
+          `INSERT INTO farm_plots (farm_id, plot_code, plot_name)
+           VALUES ($1, $2, $2)
+           ON CONFLICT (farm_id, plot_code) DO NOTHING`,
+          [farm_id, finalPlotCode]
+        );
+      } catch (_) {}
+    }
+
     const result = await pool.query(
-      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, data, is_public, farm_id, latitude, longitude, created_by, tree_code, nfc_uid)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      `INSERT INTO plants (public_slug, schema_id, plant_type, plant_variety, planting_date, plant_age, health_status, location, plot_code, row_number, data, is_public, farm_id, latitude, longitude, created_by, tree_code, nfc_uid)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
        ON CONFLICT (public_slug) DO UPDATE 
        SET schema_id = EXCLUDED.schema_id,
            plant_type = EXCLUDED.plant_type,
@@ -813,6 +908,8 @@ router.post('/', auth, async (req, res) => {
            plant_age = EXCLUDED.plant_age,
            health_status = EXCLUDED.health_status,
            location = EXCLUDED.location,
+           plot_code = EXCLUDED.plot_code,
+           row_number = EXCLUDED.row_number,
            data = EXCLUDED.data,
            is_public = EXCLUDED.is_public,
            farm_id = EXCLUDED.farm_id,
@@ -824,7 +921,7 @@ router.post('/', auth, async (req, res) => {
            updated_at = NOW()
        RETURNING *`,
       [slug, schema_id || null, plant_type, plant_variety || '', planting_date || null, plant_age || '', health_status || 'Tốt',
-       location, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
+       location, finalPlotCode, finalRowNum, JSON.stringify(data || {}), is_public !== false, farm_id || null, 
        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
        req.user.id, finalTreeCode, cleanNfcUid]
