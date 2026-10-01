@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    core/utils.js — Shared UI utilities
@@ -125,6 +125,120 @@ export function sanitizeCoordinates(rawCoords) {
   return validPts;
 }
 
+// ── Crop Asset Mappings ─────────────────────────────────────
+export const CROP_NAME_TO_ENGLISH = {
+  'sau_rieng': 'durian', 'sau rieng': 'durian', 'saurieng': 'durian', 'durian': 'durian',
+  'ri6': 'durian', 'ri 6': 'durian', 'dona': 'durian', 'musang_king': 'durian', 'musang king': 'durian', 'chuong_bo': 'durian', 'black_thorn': 'durian', 'sau': 'durian',
+  'ca_phe': 'coffee', 'ca phe': 'coffee', 'caphe': 'coffee', 'coffee': 'coffee',
+  'robusta': 'coffee', 'arabica': 'coffee', 'moka': 'coffee', 'culi': 'coffee',
+  'ca_cao': 'cacao', 'ca cao': 'cacao', 'cacao': 'cacao', 'cocoa': 'cacao',
+  'cao_su': 'rubber', 'cao su': 'rubber', 'caosu': 'rubber', 'rubber': 'rubber',
+  'buoi': 'pomelo', 'bưởi': 'pomelo', 'pomelo': 'pomelo', 'da_xanh': 'pomelo', 'da xanh': 'pomelo', 'nam_roi': 'pomelo', 'dien': 'pomelo',
+  'cam': 'orange', 'orange': 'orange', 'sanh': 'orange', 'cam_sanh': 'orange', 'cam sanh': 'orange', 'vinh': 'orange', 'xoan': 'orange',
+  'mit': 'jackfruit', 'mít': 'jackfruit', 'jackfruit': 'jackfruit', 'thai': 'jackfruit', 'mit_thai': 'jackfruit', 'ruot_do': 'jackfruit',
+  'bo': 'avocado', 'bơ': 'avocado', 'avocado': 'avocado', '034': 'avocado', 'bo_034': 'avocado', 'hass': 'avocado', 'bo_hass': 'avocado',
+  'tieu': 'pepper', 'ho_tieu': 'pepper', 'hồ tiêu': 'pepper', 'tiêu': 'pepper', 'pepper': 'pepper',
+  'chom_chom': 'rambutan', 'chôm chôm': 'rambutan', 'rambutan': 'rambutan',
+  'mang_cut': 'mangosteen', 'măng cụt': 'mangosteen', 'mangosteen': 'mangosteen',
+  'xoai': 'mango', 'xoài': 'mango', 'mango': 'mango', 'cat_hoa_loc': 'mango', 'cat_chu': 'mango', 'keo': 'mango',
+  'chuoi': 'banana', 'chuối': 'banana', 'banana': 'banana', 'gia_nam_my': 'banana', 'su': 'banana', 'cau': 'banana',
+  'thanh_long': 'dragon_fruit', 'thanh long': 'dragon_fruit', 'dragon_fruit': 'dragon_fruit', 'dragon fruit': 'dragon_fruit',
+  'dua': 'coconut', 'dừa': 'coconut', 'coconut': 'coconut', 'xiem': 'coconut', 'dua_xiem': 'coconut', 'sap': 'coconut',
+  'chanh': 'lemon', 'lemon': 'lemon', 'lime': 'lemon', 'khong_hat': 'lemon',
+  'nhan': 'longan', 'nhãn': 'longan', 'longan': 'longan', 'xuong_com_vang': 'longan', 'ido': 'longan',
+  'vai': 'lychee', 'vải': 'lychee', 'lychee': 'lychee', 'thieu': 'lychee',
+  'oi': 'guava', 'ổi': 'guava', 'guava': 'guava', 'nu_hoang': 'guava',
+  'chanh_day': 'passion_fruit', 'chanh day': 'passion_fruit', 'passion_fruit': 'passion_fruit',
+  'tra': 'tea', 'trà': 'tea', 'che': 'tea', 'chè': 'tea',
+  'dieu': 'cashew', 'điều': 'cashew', 'cashew': 'cashew',
+  'dau_tay': 'strawberry', 'strawberry': 'strawberry',
+  'mac_ca': 'macadamia', 'macadamia': 'macadamia',
+  'thom': 'pineapple', 'khom': 'pineapple', 'pineapple': 'pineapple'
+};
+
+export const LOCAL_CROP_ICONS = new Set(['durian', 'coffee', 'cacao', 'rubber']);
+
+export const CROP_DEFAULT_PHOTOS = {
+  durian: '/assets/crop/durian.png',
+  coffee: '/assets/crop/coffee.png',
+  cacao: '/assets/crop/cacao.png',
+  rubber: '/assets/crop/rubber.png',
+  mango: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=1200&auto=format&fit=crop&q=80',
+  avocado: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&auto=format&fit=crop&q=80',
+  pomelo: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=1200&auto=format&fit=crop&q=80',
+  orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=1200&auto=format&fit=crop&q=80',
+  dragon_fruit: 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=1200&auto=format&fit=crop&q=80',
+  jackfruit: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+  banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=1200&auto=format&fit=crop&q=80',
+  lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=1200&auto=format&fit=crop&q=80',
+  guava: 'https://images.unsplash.com/photo-1536511135899-738a081598f4?w=1200&auto=format&fit=crop&q=80',
+  passion_fruit: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200&auto=format&fit=crop&q=80',
+  tea: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
+  pepper: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=1200&auto=format&fit=crop&q=80',
+  cashew: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
+  strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1200&auto=format&fit=crop&q=80',
+  macadamia: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
+  pineapple: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&auto=format&fit=crop&q=80',
+  coconut: 'https://images.unsplash.com/photo-1589984662646-e7b2e4962f18?w=1200&auto=format&fit=crop&q=80',
+  lychee: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=1200&auto=format&fit=crop&q=80',
+  longan: 'https://images.unsplash.com/photo-1629813366051-b58137b2792c?w=1200&auto=format&fit=crop&q=80',
+  rambutan: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=1200&auto=format&fit=crop&q=80',
+  mangosteen: 'https://images.unsplash.com/photo-1596707323867-b50a24128f7d?w=1200&auto=format&fit=crop&q=80',
+  apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=1200&auto=format&fit=crop&q=80'
+};
+
+export function resolveCropEnglishName(term, variety = '') {
+  const combined = `${term || ''} ${variety || ''}`.trim();
+  if (!combined) return 'durian';
+  const raw = combined.toLowerCase();
+  
+  const clean = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // 1. Direct match
+  if (CROP_NAME_TO_ENGLISH[clean]) return CROP_NAME_TO_ENGLISH[clean];
+  const under = clean.replace(/\s+/g, '_');
+  if (CROP_NAME_TO_ENGLISH[under]) return CROP_NAME_TO_ENGLISH[under];
+
+  // 2. Substring search
+  for (const [k, v] of Object.entries(CROP_NAME_TO_ENGLISH)) {
+    if (clean.includes(k) || under.includes(k)) return v;
+  }
+  return 'durian';
+}
+
+export function getCropImageSrc(plantOrType, plantVariety = '') {
+  if (typeof plantOrType === 'object' && plantOrType !== null) {
+    if (plantOrType.cover_image && !plantOrType.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
+      return esc(plantOrType.cover_image);
+    }
+    const type = plantOrType.plant_type || '';
+    const variety = plantOrType.plant_variety || '';
+    const eng = resolveCropEnglishName(type, variety);
+    if (LOCAL_CROP_ICONS.has(eng)) {
+      return `/assets/crop/${eng}.png`;
+    }
+    if (CROP_DEFAULT_PHOTOS[eng]) {
+      return CROP_DEFAULT_PHOTOS[eng];
+    }
+    return `/assets/crop/${eng}.png`;
+  }
+  
+  const eng = resolveCropEnglishName(plantOrType, plantVariety);
+  if (LOCAL_CROP_ICONS.has(eng)) {
+    return `/assets/crop/${eng}.png`;
+  }
+  if (CROP_DEFAULT_PHOTOS[eng]) {
+    return CROP_DEFAULT_PHOTOS[eng];
+  }
+  return `/assets/crop/${eng}.png`;
+}
+
 if (typeof window !== 'undefined') {
   window.esc = esc;
   window.toast = toast;
@@ -133,4 +247,6 @@ if (typeof window !== 'undefined') {
   window.todayString = todayString;
   window.sanitizeCoordinates = sanitizeCoordinates;
   window.formatSmartArea = formatSmartArea;
+  window.resolveCropEnglishName = resolveCropEnglishName;
+  window.getCropImageSrc = getCropImageSrc;
 }

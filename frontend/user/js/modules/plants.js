@@ -4,7 +4,7 @@
    modules/plants.js — Plant list rendering & search filter
    ═══════════════════════════════════════════════════════════════ */
 
-import { esc, healthBadge, sanitizeCoordinates, formatSmartArea, toast } from '../core/utils.js';
+import { esc, healthBadge, sanitizeCoordinates, formatSmartArea, toast, getCropImageSrc } from '../core/utils.js';
 import { api } from '../core/api.js';
 import { animateValue } from './countup.js';
 
@@ -403,10 +403,15 @@ function _plantRow(p) {
           ${nfcBadge}
         </div>
       </td>
-      <td data-label="Loại & Giống">
-        <div>
-          <strong>${esc(p.plant_type || '')}</strong>
-          ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
+      <td data-label="Loáº¡i & Giá»‘ng">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;background:#f8fafc;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+            <img src="${getCropImageSrc(p)}" alt="${esc(p.plant_type || 'CÃ¢y')}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='/assets/crop/durian.png';">
+          </div>
+          <div style="min-width:0;">
+            <strong>${esc(p.plant_type || '')}</strong>
+            ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
+          </div>
         </div>
       </td>
       <td data-label="Tuổi cây">

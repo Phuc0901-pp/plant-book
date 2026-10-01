@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { API } from '../core/api.js';
-import { esc, sanitizeCoordinates, healthBadge } from '../core/utils.js';
+import { esc, sanitizeCoordinates, healthBadge, getCropImageSrc } from '../core/utils.js';
 
 /** Instance Mapbox map hiện tại */
 export let userMap = null;
@@ -261,10 +261,15 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
 
     const popup = new mapboxgl.Popup({ offset: 25, maxWidth: '310px' })
       .setHTML(`
-        <div class="map-plant-card" style="font-family:inherit;font-size:12px;min-width:215px;padding:4px;">
+        <div class="map-plant-card" style="font-family:inherit;font-size:12px;min-width:225px;padding:4px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">
-            <div style="font-weight:800;font-size:13.5px;color:#064e3b;display:flex;align-items:center;gap:5px;">
-              ${lucideSproutSvg} Cây #${esc(plant.tree_code || plant.id)}
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;border:1.5px solid #10b981;background:#f0fdf4;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                <img src="${typeof getCropImageSrc === 'function' ? getCropImageSrc(plant) : '/assets/crop/durian.png'}" alt="${esc(plant.plant_type || 'Cây')}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='/assets/crop/durian.png';">
+              </div>
+              <div style="font-weight:800;font-size:13.5px;color:#064e3b;">
+                Cây #${esc(plant.tree_code || plant.id)}
+              </div>
             </div>
             ${healthBadge(plant.health_status)}
           </div>
