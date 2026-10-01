@@ -212,10 +212,32 @@ export function resolveCropEnglishName(term, variety = '') {
   return 'durian';
 }
 
+export function isGrowthMedia(m) {
+  if (!m) return false;
+  if (m.media_type === 'video') return false;
+  const caption = (m.caption || m.growth_stage || '').toLowerCase();
+  const objName = (m.object_name || m.url || '').toLowerCase();
+  const cat = (m.category || '').toLowerCase();
+
+  if (cat === 'disease' || cat === 'pest' || cat === 'treatment' || cat === 'log') return false;
+  if (objName.includes('/disease/') || objName.includes('/benh/') || objName.includes('/pest/') || objName.includes('/logs/')) return false;
+  if (caption.startsWith('bệnh cây') || caption.startsWith('benh cay') || caption.includes('sâu bệnh') || caption.includes('bệnh hại') || caption.includes('chẩn đoán') || caption.includes('dịch bệnh')) {
+    return false;
+  }
+  return true;
+}
+
+export function isDiseaseMedia(m) {
+  if (!m) return false;
+  return !isGrowthMedia(m);
+}
+
 export function getCropImageSrc(plantOrType, plantVariety = '') {
   if (typeof plantOrType === 'object' && plantOrType !== null) {
-    if (plantOrType.cover_image && !plantOrType.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
-      return esc(plantOrType.cover_image);
+    const cover = plantOrType.cover_image || '';
+    const isDiseaseCover = cover.includes('/disease/') || cover.includes('/benh/') || cover.includes('photo-1587293852726-70cdb56c2866');
+    if (cover && !isDiseaseCover) {
+      return esc(cover);
     }
     const type = plantOrType.plant_type || '';
     const variety = plantOrType.plant_variety || '';
@@ -249,4 +271,6 @@ if (typeof window !== 'undefined') {
   window.formatSmartArea = formatSmartArea;
   window.resolveCropEnglishName = resolveCropEnglishName;
   window.getCropImageSrc = getCropImageSrc;
+  window.isGrowthMedia = isGrowthMedia;
+  window.isDiseaseMedia = isDiseaseMedia;
 }

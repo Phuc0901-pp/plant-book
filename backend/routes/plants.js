@@ -2463,14 +2463,49 @@ router.post('/:id/restore', auth, admin, async (req, res) => {
   }
 });
 
-// GET /api/plants/:id/media & alias /growth-photos
-router.get(['/:id(\\d+)/media', '/:id(\\d+)/growth-photos'], auth, async (req, res) => {
+// GET /api/plants/:id/growth-photos (Only actual growth timeline photos)
+router.get('/:id(\\d+)/growth-photos', auth, async (req, res) => {
+  try {
+    const plantId = req.params.id;
+    const media = await pool.query(
+      `SELECT * FROM plant_media 
+       WHERE plant_id=$1 
+         AND (object_name NOT LIKE '%/disease/%' AND (caption IS NULL OR caption NOT ILIKE 'Bệnh cây%'))
+         AND media_type != 'video'
+       ORDER BY uploaded_at DESC`, 
+      [plantId]
+    );
+    res.json({ success: true, count: media.rows.length, media: media.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi truy xuất lịch sử ảnh sinh trưởng: ' + err.message });
+  }
+});
+
+// GET /api/plants/:id/disease-media (Photos/videos recorded during pest/disease events)
+router.get('/:id(\\d+)/disease-media', auth, async (req, res) => {
+  try {
+    const plantId = req.params.id;
+    const media = await pool.query(
+      `SELECT * FROM plant_media 
+       WHERE plant_id=$1 
+         AND (object_name LIKE '%/disease/%' OR caption ILIKE 'Bệnh cây%' OR caption ILIKE '%sâu bệnh%')
+       ORDER BY uploaded_at DESC`, 
+      [plantId]
+    );
+    res.json({ success: true, count: media.rows.length, media: media.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi truy xuất media bệnh cây: ' + err.message });
+  }
+});
+
+// GET /api/plants/:id/media (All media)
+router.get('/:id(\\d+)/media', auth, async (req, res) => {
   try {
     const plantId = req.params.id;
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [plantId]);
     res.json({ success: true, count: media.rows.length, media: media.rows });
   } catch (err) {
-    res.status(500).json({ error: 'Lỗi truy xuất lịch sử ảnh sinh trưởng: ' + err.message });
+    res.status(500).json({ error: 'Lỗi truy xuất thư viện media: ' + err.message });
   }
 });
 

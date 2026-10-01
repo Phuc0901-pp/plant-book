@@ -4,7 +4,7 @@
    modules/plants.js — Plant list rendering & search filter
    ═══════════════════════════════════════════════════════════════ */
 
-import { esc, healthBadge, sanitizeCoordinates, formatSmartArea, toast, getCropImageSrc } from '../core/utils.js';
+import { esc, healthBadge, sanitizeCoordinates, formatSmartArea, toast, getCropImageSrc, isGrowthMedia, isDiseaseMedia, formatDate } from '../core/utils.js';
 import { api } from '../core/api.js';
 import { animateValue } from './countup.js';
 
@@ -3581,9 +3581,14 @@ export async function openPlantProfileModal(plantId) {
     subtitleEl.textContent = `Trang trại: ${farmName} · Lô: ${plotStr} · Giống: ${varietyStr}`;
   }
 
-  // Smart Crop Asset Fallback & Real Photo Resolver
-  const hasRealPhoto = !!(plant.cover_image && !plant.cover_image.includes('photo-1587293852726-70cdb56c2866'));
-  const cropImgSrc = getCropImageSrc(plant);
+  // Separate Growth Stage Media from Disease / Diagnosis Media
+  const allMedia = Array.isArray(plant.media) ? plant.media : [];
+  const growthMedia = allMedia.filter(isGrowthMedia);
+  const diseaseMedia = allMedia.filter(isDiseaseMedia);
+
+  // Smart Crop Asset Fallback & Real Growth Photo Resolver
+  const hasRealGrowthPhoto = growthMedia.length > 0 && growthMedia[0].url && !growthMedia[0].url.includes('photo-1587293852726-70cdb56c2866');
+  const cropImgSrc = hasRealGrowthPhoto ? esc(growthMedia[0].url) : getCropImageSrc(plant.plant_type, plant.plant_variety);
 
   const headerImgEl = document.getElementById('erp-plant-crop-header-img');
   if (headerImgEl) {
@@ -3603,11 +3608,11 @@ export async function openPlantProfileModal(plantId) {
   const sourceTagEl = document.getElementById('erp-plant-crop-source-tag');
   const descEl = document.getElementById('erp-plant-crop-type-desc');
   if (sourceTagEl) {
-    if (hasRealPhoto) {
+    if (hasRealGrowthPhoto) {
       sourceTagEl.style.background = '#d1fae5';
       sourceTagEl.style.color = '#047857';
       sourceTagEl.innerHTML = '<i data-lucide="camera" class="lucide-xs"></i> <span>Ảnh Chụp Thực Tế</span>';
-      if (descEl) descEl.textContent = 'Ảnh chụp hiện trường cập nhật gần nhất của cây';
+      if (descEl) descEl.textContent = 'Ảnh chụp hiện trường sinh trưởng gần nhất của cây';
     } else {
       sourceTagEl.style.background = '#e0f2fe';
       sourceTagEl.style.color = '#0369a1';
@@ -3616,8 +3621,8 @@ export async function openPlantProfileModal(plantId) {
     }
   }
 
-  // Render Growth Photo Gallery & Timeline
-  _renderGrowthPhotoGallery(plant.media || [], plant);
+  // Render Growth Photo Gallery & Timeline (ONLY growth photos)
+  _renderGrowthPhotoGallery(growthMedia, plant);
 
   // 5. Fill Executive Quick Stats Bar
   const ageVal = plant.plant_age || (plant.planting_date ? calculatePlantAge(plant.planting_date) : '—');
@@ -3662,7 +3667,7 @@ export async function openPlantProfileModal(plantId) {
   const dtRow = document.getElementById('erp-plant-detail-row');
   if (dtRow) dtRow.textContent = plant.row_number ? `Hàng số ${plant.row_number}` : '—';
 
-  // Past Diseases Badges Rendering
+  // Past Diseases Badges & Dedicated Disease Media Rendering
   const pastDiseases = plant.data?.past_diseases || plant.past_diseases || (plant.schema_data?.past_diseases);
   const diseasesContainer = document.getElementById('erp-plant-past-diseases-container');
   if (diseasesContainer) {
@@ -3679,19 +3684,56 @@ export async function openPlantProfileModal(plantId) {
       }
     }
 
+    let diseaseBadgesHtml = '';
     if (!diseaseList.length || diseaseList.includes('Chưa từng nhiễm bệnh') || diseaseList.includes('Chưa từng nhiễm bệnh (Cây khỏe)')) {
-      diseasesContainer.innerHTML = `
+      diseaseBadgesHtml = `
         <span style="display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;">
           <i data-lucide="shield-check" class="lucide-xs"></i> Cây khỏe mạnh, chưa từng ghi nhận bệnh dịch trước đây
         </span>
       `;
     } else {
-      diseasesContainer.innerHTML = diseaseList.map(d => `
+      diseaseBadgesHtml = diseaseList.map(d => `
         <span style="display:inline-flex;align-items:center;gap:5px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;">
           <i data-lucide="shield-alert" class="lucide-xs"></i> ${esc(d)}
         </span>
       `).join('');
     }
+
+    // Dedicated Disease Media Showcase (Separate from Growth Timeline)
+    let diseaseMediaHtml = '';
+    if (diseaseMedia.length > 0) {
+      diseaseMediaHtml = `
+        <div style="margin-top: 10px; background: #fff5f5; border: 1.5px solid #fecaca; border-radius: 12px; padding: 10px 12px;">
+          <div style="font-size: 11.5px; font-weight: 800; color: #b91c1c; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="display: flex; align-items: center; gap: 5px;">
+              <i data-lucide="shield-alert" class="lucide-xs"></i> Ảnh &amp; Video Bệnh Cây Đã Ghi Nhận
+            </span>
+            <span style="background: #fee2e2; color: #991b1b; padding: 1px 6px; border-radius: 6px; font-size: 10.5px; font-weight: 800;">${diseaseMedia.length} tệp</span>
+          </div>
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
+            ${diseaseMedia.map(dm => {
+              const isVid = dm.media_type === 'video' || (dm.url && (dm.url.endsWith('.mp4') || dm.url.endsWith('.mov') || dm.url.endsWith('.webm')));
+              const captionStr = dm.caption || 'Bệnh cây';
+              return `
+                <div style="flex-shrink: 0; width: 76px; text-align: center;">
+                  <div style="width: 76px; height: 58px; border-radius: 8px; overflow: hidden; border: 1.5px solid #f87171; position: relative; background: #0f172a; cursor: pointer;" onclick="if(window.openLightbox) openLightbox('${esc(dm.url)}', '${isVid ? 'video' : 'image'}')">
+                    ${isVid 
+                      ? `<video src="${esc(dm.url)}" style="width:100%;height:100%;object-fit:cover;"></video><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);color:#fff;"><i data-lucide="play" class="lucide-xs"></i></span>`
+                      : `<img src="${esc(dm.url)}" alt="${esc(captionStr)}" style="width:100%;height:100%;object-fit:cover;">`
+                    }
+                  </div>
+                  <div style="font-size: 10px; color: #991b1b; font-weight: 700; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(captionStr)}">
+                    ${esc(captionStr)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    diseasesContainer.innerHTML = diseaseBadgesHtml + diseaseMediaHtml;
   }
 
   // Coordinates GPS Display (Strictly Read-Only, 0 mutation)
@@ -3941,7 +3983,7 @@ export function _renderGrowthPhotoGallery(mediaList, plant) {
   const countBadge = document.getElementById('erp-plant-media-count-badge');
   if (!container) return;
 
-  const items = Array.isArray(mediaList) ? mediaList.filter(m => m.media_type !== 'video' || m.url) : [];
+  const items = (Array.isArray(mediaList) ? mediaList : []).filter(isGrowthMedia);
   if (countBadge) countBadge.textContent = `${items.length} ảnh`;
 
   if (!items.length) {
@@ -4085,6 +4127,8 @@ export async function submitErpGrowthPhoto() {
     _currentErpPlant.cover_image = res.cover_image || (_currentErpPlant.cover_image);
     _currentErpPlant.media = res.all_media || (_currentErpPlant.media || []);
 
+    const growthMedia = (_currentErpPlant.media || []).filter(isGrowthMedia);
+
     // Refresh Profile Header & Tab Images
     const headerImgEl = document.getElementById('erp-plant-crop-header-img');
     const tabImgEl = document.getElementById('erp-plant-crop-tab-img');
@@ -4097,11 +4141,11 @@ export async function submitErpGrowthPhoto() {
       sourceTagEl.style.background = '#d1fae5';
       sourceTagEl.style.color = '#047857';
       sourceTagEl.innerHTML = '<i data-lucide="camera" class="lucide-xs"></i> <span>Ảnh Chụp Thực Tế</span>';
-      if (descEl) descEl.textContent = 'Ảnh chụp hiện trường cập nhật gần nhất của cây';
+      if (descEl) descEl.textContent = 'Ảnh chụp hiện trường sinh trưởng gần nhất của cây';
     }
 
-    // Re-render gallery
-    _renderGrowthPhotoGallery(_currentErpPlant.media, _currentErpPlant);
+    // Re-render gallery with ONLY growth photos
+    _renderGrowthPhotoGallery(growthMedia, _currentErpPlant);
 
     closeErpUploadGrowthPhotoModal();
     if (window.toast) window.toast(`✅ Đã lưu ảnh sinh trưởng (${stage}) thành công!`, 'success');
