@@ -38,10 +38,10 @@ export function esc(str) {
  * @returns {string} HTML string
  */
 export function healthBadge(status) {
-  if (status === 'Tốt')        return '<span class="badge badge-green">Tốt</span>';
-  if (status === 'Bình thường') return '<span class="badge badge-gray">Bình thường</span>';
-  if (status === 'Cần chú ý')  return '<span class="badge badge-amber">Cần chú ý</span>';
-  if (status === 'Bệnh')       return '<span class="badge badge-red">Bệnh</span>';
+  if (status === 'Tốt')        return '<span class="badge badge-green" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="check-circle" class="lucide-xs"></i> Tốt</span>';
+  if (status === 'Bình thường') return '<span class="badge badge-gray" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="leaf" class="lucide-xs"></i> Bình thường</span>';
+  if (status === 'Cần chú ý')  return '<span class="badge badge-amber" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="alert-triangle" class="lucide-xs"></i> Cần chú ý</span>';
+  if (status === 'Bệnh')       return '<span class="badge badge-red" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="alert-circle" class="lucide-xs"></i> Bệnh</span>';
   return `<span class="badge badge-gray">${esc(status)}</span>`;
 }
 

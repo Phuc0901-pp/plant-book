@@ -395,7 +395,7 @@ function _plantRow(p) {
     </div>` : `<span style="font-size:11px;color:#94a3b8;">Chưa gán</span>`;
 
   return `
-    <tr>
+    <tr id="plant-row-${p.id}" style="transition:all 0.3s ease;">
       <td data-label="Mã cây">
         <div style="display:flex;align-items:center;gap:6px;">
           <strong>${treeCodeSafe}</strong>
@@ -408,7 +408,12 @@ function _plantRow(p) {
           ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
         </div>
       </td>
-      <td data-label="Tuổi cây"><div>${esc(p.plant_age || '—')}</div></td>
+      <td data-label="Tuổi cây">
+        <div>
+          ${esc(p.plant_age || '—')}
+          ${p.planting_date ? `<br><small style="color:var(--text-muted); font-size:11px;"><i data-lucide="calendar" class="lucide-xs"></i> ${esc(p.planting_date)}</small>` : ''}
+        </div>
+      </td>
       <td data-label="Sức khỏe"><div>${healthBadge(p.health_status)}</div></td>
       <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="URL Công khai"><div>${publicUrlCell}</div></td>
@@ -2315,6 +2320,55 @@ window.executeReorderGps = executeReorderGps;
 
 // ── 12. FARMER PLANT CREATION (CHUẨN VIETGAP & GIS GPS) ───────────
 let _userPlantCreateMode = 'single';
+let _userPlantMatrix = [];
+
+export function calculatePlantAge(plantingDateStr) {
+  if (!plantingDateStr) return '';
+  const plantingDate = new Date(plantingDateStr);
+  if (isNaN(plantingDate.getTime())) return '';
+  
+  const today = new Date();
+  if (plantingDate > today) return 'Mới ươm (Chưa đến ngày trồng)';
+
+  let years = today.getFullYear() - plantingDate.getFullYear();
+  let months = today.getMonth() - plantingDate.getMonth();
+  let days = today.getDate() - plantingDate.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  const parts = [];
+  if (years > 0) parts.push(`${years} năm`);
+  if (months > 0) parts.push(`${months} tháng`);
+  if (years === 0 && months === 0) {
+    parts.push(`${days} ngày`);
+  } else if (years === 0 && days > 0 && months < 3) {
+    parts.push(`${days} ngày`);
+  }
+
+  return parts.join(' ') || '0 ngày';
+}
+window.calculatePlantAge = calculatePlantAge;
+
+export function onUserPlantingDateChange() {
+  const dateInput = document.getElementById('user-plant-planting-date');
+  const ageInput = document.getElementById('user-plant-age');
+  if (dateInput && ageInput && dateInput.value) {
+    const calculatedAge = calculatePlantAge(dateInput.value);
+    if (calculatedAge) {
+      ageInput.value = calculatedAge;
+    }
+  }
+}
+window.onUserPlantingDateChange = onUserPlantingDateChange;
 
 export function toggleUserPlantCreateMode(mode) {
   _userPlantCreateMode = mode;
@@ -2322,11 +2376,15 @@ export function toggleUserPlantCreateMode(mode) {
   const wrapRange = document.getElementById('user-wrap-range-code');
   const labelSingle = document.getElementById('user-label-mode-single');
   const labelRange = document.getElementById('user-label-mode-range');
+  const singleGpsCard = document.getElementById('user-single-gps-card');
+  const matrixCard = document.getElementById('user-plant-matrix-card');
   const btnText = document.getElementById('user-plant-save-btn-text');
 
   if (mode === 'range') {
     if (wrapSingle) wrapSingle.style.display = 'none';
     if (wrapRange) wrapRange.style.display = 'block';
+    if (singleGpsCard) singleGpsCard.style.display = 'none';
+    if (matrixCard) matrixCard.style.display = 'block';
     if (labelSingle) {
       labelSingle.style.background = '#ffffff';
       labelSingle.style.borderColor = '#cbd5e1';
@@ -2341,6 +2399,8 @@ export function toggleUserPlantCreateMode(mode) {
   } else {
     if (wrapSingle) wrapSingle.style.display = 'grid';
     if (wrapRange) wrapRange.style.display = 'none';
+    if (singleGpsCard) singleGpsCard.style.display = 'block';
+    if (matrixCard) matrixCard.style.display = 'none';
     if (labelSingle) {
       labelSingle.style.background = '#ecfdf5';
       labelSingle.style.borderColor = '#34d399';
@@ -2403,6 +2463,203 @@ export function updateUserRangePreview() {
   if (btnText) btnText.textContent = `Tạo ${count} Cây Hàng Loạt`;
 }
 window.updateUserRangePreview = updateUserRangePreview;
+
+// ── Batch Range Data Matrix Helpers ──
+export function generateUserPlantMatrix() {
+  const prefix = (document.getElementById('user-plant-range-prefix')?.value || '').trim();
+  const rawStart = document.getElementById('user-plant-range-start')?.value;
+  const rawEnd = document.getElementById('user-plant-range-end')?.value;
+  const padZeros = document.getElementById('user-plant-range-pad-zeros')?.checked;
+  const commonLocation = (document.getElementById('user-plant-location')?.value || '').trim();
+  
+  const start = parseInt(rawStart, 10);
+  const end = parseInt(rawEnd, 10);
+
+  if (isNaN(start) || isNaN(end)) {
+    if (window.toast) window.toast('Vui lòng nhập đầy đủ Số bắt đầu và Số kết thúc!', 'warning');
+    else alert('Vui lòng nhập đầy đủ Số bắt đầu và Số kết thúc!');
+    return;
+  }
+  if (start > end) {
+    if (window.toast) window.toast('Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!', 'warning');
+    else alert('Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!');
+    return;
+  }
+
+  const count = end - start + 1;
+  if (count > 500) {
+    if (window.toast) window.toast(`Số lượng ${count} cây vượt quá giới hạn 500 cây mỗi lần!`, 'error');
+    else alert(`Số lượng ${count} cây vượt quá giới hạn 500 cây mỗi lần!`);
+    return;
+  }
+
+  const defaultLat = document.getElementById('user-plant-lat')?.value || '';
+  const defaultLng = document.getElementById('user-plant-lng')?.value || '';
+
+  const padLen = padZeros ? Math.max(String(rawStart).length, String(rawEnd).length) : 0;
+  const formatNum = (num) => padLen > 1 ? String(num).padStart(padLen, '0') : String(num);
+
+  _userPlantMatrix = [];
+  for (let i = start; i <= end; i++) {
+    const code = `${prefix}${formatNum(i)}`;
+    _userPlantMatrix.push({
+      tree_code: code,
+      location: commonLocation || '',
+      latitude: defaultLat && !isNaN(parseFloat(defaultLat)) ? parseFloat(defaultLat) : null,
+      longitude: defaultLng && !isNaN(parseFloat(defaultLng)) ? parseFloat(defaultLng) : null
+    });
+  }
+
+  renderUserPlantMatrix();
+
+  const card = document.getElementById('user-plant-matrix-card');
+  if (card) {
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+window.generateUserPlantMatrix = generateUserPlantMatrix;
+
+export function renderUserPlantMatrix() {
+  const tbody = document.getElementById('user-plant-matrix-tbody');
+  const countBadge = document.getElementById('user-matrix-count-badge');
+  const card = document.getElementById('user-plant-matrix-card');
+
+  if (countBadge) {
+    countBadge.textContent = `${_userPlantMatrix.length} cây trong ma trận`;
+  }
+
+  if (!tbody) return;
+
+  if (!_userPlantMatrix.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:#94a3b8;">Chưa có cây nào trong ma trận. Bấm <strong>Tạo Bảng Ma Trận Lô & GPS</strong> hoặc <strong>+ Thêm 1 cây</strong>.</td></tr>`;
+    if (card) card.style.display = 'block';
+    return;
+  }
+
+  if (card) card.style.display = 'block';
+
+  tbody.innerHTML = _userPlantMatrix.map((item, idx) => `
+    <tr style="border-bottom:1px solid #f1f5f9; ${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
+      <td style="padding:6px 8px; text-align:center; font-weight:700; color:#64748b;">${idx + 1}</td>
+      <td style="padding:6px 8px;">
+        <input type="text" value="${esc(item.tree_code)}" onchange="updateMatrixItem(${idx}, 'tree_code', this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:12px; color:#064e3b; outline:none; box-sizing:border-box;">
+      </td>
+      <td style="padding:6px 8px;">
+        <input type="text" value="${esc(item.location || '')}" placeholder="VD: Lô A1, Hàng 2..." onchange="updateMatrixItem(${idx}, 'location', this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; outline:none; box-sizing:border-box;">
+      </td>
+      <td style="padding:6px 8px;">
+        <input type="number" step="any" value="${item.latitude !== null && item.latitude !== undefined ? item.latitude : ''}" placeholder="Vĩ độ" onchange="updateMatrixItem(${idx}, 'latitude', this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11.5px; font-family:monospace; outline:none; box-sizing:border-box;">
+      </td>
+      <td style="padding:6px 8px;">
+        <input type="number" step="any" value="${item.longitude !== null && item.longitude !== undefined ? item.longitude : ''}" placeholder="Kinh độ" onchange="updateMatrixItem(${idx}, 'longitude', this.value)" style="width:100%; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-size:11.5px; font-family:monospace; outline:none; box-sizing:border-box;">
+      </td>
+      <td style="padding:6px 8px; text-align:center;">
+        <button type="button" onclick="deleteMatrixRow(${idx})" title="Xóa đệm cây này khỏi danh sách tạo" style="background:#fee2e2; border:1px solid #fecaca; color:#ef4444; border-radius:6px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; font-weight:bold; transition:all 0.15s;">
+          ×
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    try { window.lucide.createIcons(); } catch (_) {}
+  }
+}
+window.renderUserPlantMatrix = renderUserPlantMatrix;
+
+export function updateMatrixItem(idx, field, value) {
+  if (!_userPlantMatrix[idx]) return;
+  if (field === 'latitude' || field === 'longitude') {
+    const num = parseFloat(value);
+    _userPlantMatrix[idx][field] = (!isNaN(num)) ? num : null;
+  } else {
+    _userPlantMatrix[idx][field] = value;
+  }
+}
+window.updateMatrixItem = updateMatrixItem;
+
+export function deleteMatrixRow(idx) {
+  if (idx >= 0 && idx < _userPlantMatrix.length) {
+    const removed = _userPlantMatrix.splice(idx, 1);
+    renderUserPlantMatrix();
+    if (window.toast) {
+      window.toast(`Đã xóa đệm cây ${removed[0]?.tree_code || ''}`, 'info');
+    }
+  }
+}
+window.deleteMatrixRow = deleteMatrixRow;
+
+export function applyBulkLocationToMatrix() {
+  const bulkInput = document.getElementById('user-matrix-bulk-location');
+  const val = (bulkInput?.value || '').trim();
+  if (!val) {
+    if (window.toast) window.toast('Vui lòng nhập tên Lô trồng cần áp dụng!', 'warning');
+    else alert('Vui lòng nhập tên Lô trồng cần áp dụng!');
+    return;
+  }
+  if (!_userPlantMatrix.length) {
+    if (window.toast) window.toast('Chưa có cây nào trong ma trận. Vui lòng tạo bảng trước!', 'warning');
+    else alert('Chưa có cây nào trong ma trận. Vui lòng tạo bảng trước!');
+    return;
+  }
+  _userPlantMatrix.forEach(item => {
+    item.location = val;
+  });
+  renderUserPlantMatrix();
+  if (window.toast) window.toast(`Đã áp dụng lô "${val}" cho tất cả ${_userPlantMatrix.length} cây!`, 'success');
+}
+window.applyBulkLocationToMatrix = applyBulkLocationToMatrix;
+
+export function applyBulkGpsToMatrix() {
+  if (!_userPlantMatrix.length) {
+    if (window.toast) window.toast('Chưa có cây nào trong ma trận!', 'warning');
+    else alert('Chưa có cây nào trong ma trận!');
+    return;
+  }
+  if (!navigator.geolocation) {
+    if (window.toast) window.toast('Trình duyệt không hỗ trợ định vị GPS!', 'error');
+    else alert('Trình duyệt không hỗ trợ định vị GPS!');
+    return;
+  }
+  if (window.toast) window.toast('📡 Đang lấy GPS thiết bị...');
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = parseFloat(pos.coords.latitude.toFixed(6));
+      const lng = parseFloat(pos.coords.longitude.toFixed(6));
+      _userPlantMatrix.forEach(item => {
+        item.latitude = lat;
+        item.longitude = lng;
+      });
+      renderUserPlantMatrix();
+      if (window.toast) window.toast(`📍 Đã điền GPS (${lat}, ${lng}) cho ${_userPlantMatrix.length} cây!`, 'success');
+    },
+    (err) => {
+      if (window.toast) window.toast('Không thể lấy tọa độ GPS: ' + err.message, 'error');
+      else alert('Không thể lấy tọa độ GPS: ' + err.message);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+window.applyBulkGpsToMatrix = applyBulkGpsToMatrix;
+
+export function addCustomMatrixRow() {
+  const nextNum = _userPlantMatrix.length + 1;
+  const prefix = (document.getElementById('user-plant-range-prefix')?.value || '').trim();
+  const commonLocation = (document.getElementById('user-plant-location')?.value || '').trim();
+  const defaultLat = document.getElementById('user-plant-lat')?.value || '';
+  const defaultLng = document.getElementById('user-plant-lng')?.value || '';
+
+  _userPlantMatrix.push({
+    tree_code: `${prefix}${nextNum}`,
+    location: commonLocation || '',
+    latitude: defaultLat && !isNaN(parseFloat(defaultLat)) ? parseFloat(defaultLat) : null,
+    longitude: defaultLng && !isNaN(parseFloat(defaultLng)) ? parseFloat(defaultLng) : null
+  });
+  renderUserPlantMatrix();
+}
+window.addCustomMatrixRow = addCustomMatrixRow;
 
 export function getUserPlantGPS() {
   if (!navigator.geolocation) {
@@ -2480,7 +2737,7 @@ export async function openUserCreatePlantModal() {
   }
 
   // 2. Reset Fields
-  ['user-plant-tree-code', 'user-plant-nfc-uid', 'user-plant-type', 'user-plant-variety', 'user-plant-age', 'user-plant-location', 'user-plant-lat', 'user-plant-lng', 'user-plant-range-prefix', 'user-plant-range-start', 'user-plant-range-end'].forEach(id => {
+  ['user-plant-tree-code', 'user-plant-nfc-uid', 'user-plant-type', 'user-plant-variety', 'user-plant-planting-date', 'user-plant-age', 'user-plant-location', 'user-plant-lat', 'user-plant-lng', 'user-plant-range-prefix', 'user-plant-range-start', 'user-plant-range-end', 'user-matrix-bulk-location'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.value = '';
@@ -2490,6 +2747,14 @@ export async function openUserCreatePlantModal() {
   if (healthEl) healthEl.value = 'Tốt';
   const publicEl = document.getElementById('user-plant-is-public');
   if (publicEl) publicEl.value = 'true';
+
+  _userPlantMatrix = [];
+  const matrixCard = document.getElementById('user-plant-matrix-card');
+  if (matrixCard) matrixCard.style.display = 'none';
+  const matrixTbody = document.getElementById('user-plant-matrix-tbody');
+  if (matrixTbody) matrixTbody.innerHTML = '';
+  const matrixCountBadge = document.getElementById('user-matrix-count-badge');
+  if (matrixCountBadge) matrixCountBadge.textContent = '0 cây trong ma trận';
 
   // 3. Default mode single
   const radioSingle = document.querySelector('input[name="user-plant-mode"][value="single"]');
@@ -2535,6 +2800,7 @@ export async function submitUserCreatePlant() {
   }
 
   const plantVariety = (document.getElementById('user-plant-variety')?.value || '').trim();
+  const plantingDate = document.getElementById('user-plant-planting-date')?.value || null;
   const plantAge = (document.getElementById('user-plant-age')?.value || '').trim();
   const healthStatus = document.getElementById('user-plant-health')?.value || 'Tốt';
   const location = (document.getElementById('user-plant-location')?.value || '').trim();
@@ -2554,41 +2820,67 @@ export async function submitUserCreatePlant() {
 
   try {
     if (_userPlantCreateMode === 'range') {
-      const prefix = (document.getElementById('user-plant-range-prefix')?.value || '').trim();
-      const rawStart = document.getElementById('user-plant-range-start')?.value;
-      const rawEnd = document.getElementById('user-plant-range-end')?.value;
-      const padZeros = document.getElementById('user-plant-range-pad-zeros')?.checked;
+      let payload;
+      if (_userPlantMatrix && _userPlantMatrix.length > 0) {
+        payload = {
+          farm_id: parseInt(farmId, 10),
+          plant_type: plantType,
+          plant_variety: plantVariety,
+          planting_date: plantingDate,
+          plant_age: plantAge,
+          health_status: healthStatus,
+          is_public: isPublic,
+          items: _userPlantMatrix.map(it => ({
+            tree_code: it.tree_code,
+            location: it.location || location || '',
+            latitude: it.latitude !== undefined && it.latitude !== null && !isNaN(parseFloat(it.latitude)) ? parseFloat(it.latitude) : latitude,
+            longitude: it.longitude !== undefined && it.longitude !== null && !isNaN(parseFloat(it.longitude)) ? parseFloat(it.longitude) : longitude,
+            plant_type: plantType,
+            plant_variety: plantVariety,
+            planting_date: plantingDate,
+            plant_age: plantAge,
+            health_status: healthStatus
+          })),
+          data: {}
+        };
+      } else {
+        const prefix = (document.getElementById('user-plant-range-prefix')?.value || '').trim();
+        const rawStart = document.getElementById('user-plant-range-start')?.value;
+        const rawEnd = document.getElementById('user-plant-range-end')?.value;
+        const padZeros = document.getElementById('user-plant-range-pad-zeros')?.checked;
 
-      const start = parseInt(rawStart, 10);
-      const end = parseInt(rawEnd, 10);
+        const start = parseInt(rawStart, 10);
+        const end = parseInt(rawEnd, 10);
 
-      if (isNaN(start) || isNaN(end) || start > end) {
-        throw new Error('Dải số thứ tự không hợp lệ (số bắt đầu phải <= số kết thúc)!');
+        if (isNaN(start) || isNaN(end) || start > end) {
+          throw new Error('Dải số thứ tự không hợp lệ (số bắt đầu phải <= số kết thúc)!');
+        }
+
+        payload = {
+          farm_id: parseInt(farmId, 10),
+          plant_type: plantType,
+          plant_variety: plantVariety,
+          planting_date: plantingDate,
+          plant_age: plantAge,
+          health_status: healthStatus,
+          location: location,
+          latitude,
+          longitude,
+          is_public: isPublic,
+          start_num: start,
+          end_num: end,
+          prefix,
+          pad_zeros: !!padZeros,
+          data: {}
+        };
       }
-
-      const payload = {
-        farm_id: parseInt(farmId, 10),
-        plant_type: plantType,
-        plant_variety: plantVariety,
-        plant_age: plantAge,
-        health_status: healthStatus,
-        location: location,
-        latitude,
-        longitude,
-        is_public: isPublic,
-        start_num: start,
-        end_num: end,
-        prefix,
-        pad_zeros: !!padZeros,
-        data: {}
-      };
 
       const res = await api('/plants/batch-range', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
 
-      const successMsg = res.message || `Đã tạo thành công ${res.count || (end - start + 1)} cây!`;
+      const successMsg = res.message || `Đã tạo thành công ${res.count || (_userPlantMatrix.length || 'hàng loạt')} cây!`;
       if (typeof toast === 'function') toast(successMsg, 'success');
       else if (window.toast) window.toast(successMsg, 'success');
     } else {
@@ -2599,6 +2891,7 @@ export async function submitUserCreatePlant() {
         farm_id: parseInt(farmId, 10),
         plant_type: plantType,
         plant_variety: plantVariety,
+        planting_date: plantingDate,
         plant_age: plantAge,
         health_status: healthStatus,
         location: location,

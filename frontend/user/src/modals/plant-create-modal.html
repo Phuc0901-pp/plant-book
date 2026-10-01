@@ -1,40 +1,40 @@
 <!-- ════════════ MODAL THÊM CÂY TRỒNG MỚI (CHUẨN VIETGAP & GIS GPS) ════════════ -->
 <div class="modal-overlay" id="user-create-plant-modal" style="display:none" onclick="if(event.target===this)closeUserCreatePlantModal()">
-  <div class="modal" style="background:#ffffff; border-radius:18px; width:92%; max-width:800px; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 60px -15px rgba(0,0,0,0.35); border:1px solid #cbd5e1; position:relative; z-index:20001;">
+  <div class="modal" style="background:#ffffff; border-radius:18px; width:94%; max-width:880px; max-height:92vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 60px -15px rgba(0,0,0,0.35); border:1px solid #cbd5e1; position:relative; z-index:20001;">
     
     <!-- 1. Header with Live AgTech Gradient -->
-    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.12); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-      <div style="display:flex; align-items:center; gap:14px;">
-        <div style="width:46px; height:46px; border-radius:12px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:22px; color:#a7f3d0; border:1px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
+    <div class="modal-header" style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); color:#ffffff; padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.12); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:42px; height:42px; border-radius:12px; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:20px; color:#a7f3d0; border:1px solid rgba(255,255,255,0.25); box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
           <i data-lucide="sprout" class="lucide-sm"></i>
         </div>
         <div>
-          <h2 style="margin:0; font-size:18px; font-weight:800; color:#ffffff; letter-spacing:-0.2px; display:inline-flex; align-items:center; gap:8px;">
+          <h2 style="margin:0; font-size:17.5px; font-weight:800; color:#ffffff; letter-spacing:-0.2px; display:inline-flex; align-items:center; gap:8px;">
             Thêm Cây Trồng Mới
           </h2>
-          <div style="font-size:12px; color:#d1fae5; margin-top:3px; display:flex; align-items:center; gap:8px;">
+          <div style="font-size:11.5px; color:#d1fae5; margin-top:2px; display:flex; align-items:center; gap:6px;">
             <i data-lucide="satellite" class="lucide-xs" style="opacity:0.85;"></i>
             <span>Hồ sơ cây trồng chuẩn VietGAP &amp; Định vị tọa độ vệ tinh GPS</span>
           </div>
         </div>
       </div>
-      <button class="modal-close" onclick="closeUserCreatePlantModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); width:36px; height:36px; border-radius:10px; color:#ffffff; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">×</button>
+      <button class="modal-close" onclick="closeUserCreatePlantModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); width:34px; height:34px; border-radius:10px; color:#ffffff; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">×</button>
     </div>
 
     <!-- 2. Scrollable Modal Body -->
-    <div class="modal-body" style="padding:20px 24px; overflow-y:auto; background:#f8fafc; flex:1; min-height:0;">
+    <div class="modal-body" style="padding:18px 22px; overflow-y:auto; background:#f8fafc; flex:1; min-height:0;">
 
       <!-- Mode Selector: Single Tree vs Range Batch -->
-      <div id="user-plant-create-mode-wrap" style="margin-bottom:16px; padding:12px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
-        <div style="font-size:13px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
+      <div id="user-plant-create-mode-wrap" style="margin-bottom:14px; padding:10px 14px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+        <div style="font-size:12.5px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
           <i data-lucide="sliders" class="lucide-sm" style="color:#059669;"></i> Chế độ khởi tạo:
         </div>
         <div style="display:flex; gap:8px;">
-          <label id="user-label-mode-single" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#065f46; cursor:pointer; background:#ecfdf5; padding:7px 14px; border-radius:8px; border:1.5px solid #34d399; transition:all 0.15s;">
+          <label id="user-label-mode-single" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#065f46; cursor:pointer; background:#ecfdf5; padding:6px 12px; border-radius:8px; border:1.5px solid #34d399; transition:all 0.15s;">
             <input type="radio" name="user-plant-mode" value="single" checked onchange="toggleUserPlantCreateMode('single')" style="accent-color:#059669;">
             Tạo 1 cây đơn lẻ
           </label>
-          <label id="user-label-mode-range" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#334155; cursor:pointer; background:#ffffff; padding:7px 14px; border-radius:8px; border:1.5px solid #cbd5e1; transition:all 0.15s;">
+          <label id="user-label-mode-range" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#334155; cursor:pointer; background:#ffffff; padding:6px 12px; border-radius:8px; border:1.5px solid #cbd5e1; transition:all 0.15s;">
             <input type="radio" name="user-plant-mode" value="range" onchange="toggleUserPlantCreateMode('range')" style="accent-color:#059669;">
             Tạo dải cây hàng loạt (XX → XY)
           </label>
@@ -42,68 +42,73 @@
       </div>
 
       <!-- Card 1: Định Danh & Phân Loại Cây Trồng -->
-      <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-        <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-          <div style="display:flex; align-items:center; gap:8px;">
+      <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+        <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:6px;">
             <i data-lucide="tag" class="lucide-sm" style="color:#059669;"></i> Thông tin cơ bản &amp; Định danh cây
           </div>
-          <span style="font-size:11.5px; color:#059669; font-weight:700; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
+          <span style="font-size:11px; color:#059669; font-weight:700; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px;">
             Chuẩn VietGAP
           </span>
         </div>
 
         <!-- Farm Selection -->
-        <div style="margin-bottom:14px;">
+        <div style="margin-bottom:12px;">
           <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Thuộc Trang trại *</label>
-          <select id="user-plant-farm-id" onchange="onUserPlantFarmChange()" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff; outline:none;">
+          <select id="user-plant-farm-id" onchange="onUserPlantFarmChange()" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff; outline:none;">
             <!-- Rendered dynamically -->
           </select>
         </div>
 
         <!-- Single Mode Tree Code & NFC -->
-        <div id="user-wrap-single-code" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div id="user-wrap-single-code" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Mã số cây (ID trong vườn)</label>
-            <input type="text" id="user-plant-tree-code" placeholder="VD: 01, S-05, Cây 12 (để trống tự sinh)" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+            <input type="text" id="user-plant-tree-code" placeholder="VD: 01, S-05, Cây 12 (để trống tự sinh)" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
           </div>
           <div>
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Gán Thẻ NFC (Tùy chọn)</label>
             <div style="display:flex; gap:6px;">
-              <select id="user-plant-nfc-select" onchange="onUserPlantNfcSelectChange()" style="flex:1; border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 10px; font-size:12.5px; font-weight:600; background:#ffffff; outline:none;">
+              <select id="user-plant-nfc-select" onchange="onUserPlantNfcSelectChange()" style="flex:1; border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-size:12px; font-weight:600; background:#ffffff; outline:none;">
                 <option value="">— Chọn từ kho thẻ chưa gán —</option>
               </select>
-              <input type="text" id="user-plant-nfc-uid" placeholder="Hoặc nhập UID" style="flex:1; border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 10px; font-size:12.5px; font-weight:600; outline:none; text-transform:uppercase;">
+              <input type="text" id="user-plant-nfc-uid" placeholder="Hoặc nhập UID" style="flex:1; border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-size:12px; font-weight:600; outline:none; text-transform:uppercase;">
             </div>
           </div>
         </div>
 
         <!-- Range Mode Block (XX -> XY) -->
-        <div id="user-wrap-range-code" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; margin-bottom:14px;">
-          <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            <i data-lucide="layers" class="lucide-sm"></i> Tạo dải số hàng loạt các cây có cùng thông số:
-          </div>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
-            <div>
-              <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:4px;">Tiền tố mã cây (Tùy chọn)</label>
-              <input type="text" id="user-plant-range-prefix" placeholder="VD: SR- hoặc Cây-" oninput="updateUserRangePreview()" style="width:100%; padding:8px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
-            </div>
-            <div>
-              <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:4px;">Từ số thứ tự (XX) *</label>
-              <input type="number" id="user-plant-range-start" placeholder="VD: 1 hoặc 01" min="1" max="9999" oninput="updateUserRangePreview()" style="width:100%; padding:8px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
-            </div>
-            <div>
-              <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:4px;">Đến số thứ tự (XY) *</label>
-              <input type="number" id="user-plant-range-end" placeholder="VD: 50" min="1" max="9999" oninput="updateUserRangePreview()" style="width:100%; padding:8px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
-            </div>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:8px; border-top:1px dashed #a7f3d0;">
-            <div style="font-size:12px; font-weight:700; color:#065f46;" id="user-plant-range-preview-text">
-              🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây sẽ tạo.
+        <div id="user-wrap-range-code" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+          <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="layers" class="lucide-sm"></i> Tạo dải số hàng loạt các cây:
             </div>
             <label style="font-size:11.5px; font-weight:700; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
               <input type="checkbox" id="user-plant-range-pad-zeros" checked onchange="updateUserRangePreview()" style="accent-color:#059669;">
               Giữ số chữ số 0 đầu (VD: 01, 02...)
             </label>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:8px;">
+            <div>
+              <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:3px;">Tiền tố mã cây (Tùy chọn)</label>
+              <input type="text" id="user-plant-range-prefix" placeholder="VD: SR- hoặc Cây-" oninput="updateUserRangePreview()" style="width:100%; padding:7px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:3px;">Từ số thứ tự (XX) *</label>
+              <input type="number" id="user-plant-range-start" placeholder="VD: 1 hoặc 01" min="1" max="9999" oninput="updateUserRangePreview()" style="width:100%; padding:7px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:800; color:#047857; display:block; margin-bottom:3px;">Đến số thứ tự (XY) *</label>
+              <input type="number" id="user-plant-range-end" placeholder="VD: 50" min="1" max="9999" oninput="updateUserRangePreview()" style="width:100%; padding:7px 10px; border:1.5px solid #6ee7b7; border-radius:8px; font-size:12.5px; font-weight:700; background:#fff; outline:none; box-sizing:border-box;">
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:6px; border-top:1px dashed #a7f3d0;">
+            <div style="font-size:12px; font-weight:700; color:#065f46;" id="user-plant-range-preview-text">
+              🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây.
+            </div>
+            <button type="button" class="btn btn-sm" onclick="generateUserPlantMatrix()" style="background:#047857; color:#fff; font-weight:800; font-size:12px; border:none; padding:5px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(4,120,87,0.25);">
+              <i data-lucide="table" class="lucide-xs"></i> <span>Tạo Bảng Ma Trận Lô & GPS</span>
+            </button>
           </div>
         </div>
 
@@ -111,7 +116,7 @@
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Loại cây trồng *</label>
-            <input type="text" id="user-plant-type" list="user-plant-type-suggestions" placeholder="VD: Sầu riêng, Bưởi, Cà phê..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none; background:#ffffff;">
+            <input type="text" id="user-plant-type" list="user-plant-type-suggestions" placeholder="VD: Sầu riêng, Bưởi, Cà phê..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none; background:#ffffff;">
             <datalist id="user-plant-type-suggestions">
               <option value="Sầu riêng">
               <option value="Bưởi">
@@ -135,72 +140,140 @@
           </div>
           <div>
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Giống cây</label>
-            <input type="text" id="user-plant-variety" placeholder="VD: Dona, Ri6, Musang King, Da xanh..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+            <input type="text" id="user-plant-variety" placeholder="VD: Dona, Ri6, Musang King, Da xanh..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <!-- Planting Date & Age (Requirement 1) -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
-            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Tuổi cây / Thời gian sinh trưởng</label>
-            <input type="text" id="user-plant-age" placeholder="VD: 5 năm, 36 tháng..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; gap:5px;">
+              <i data-lucide="calendar" class="lucide-xs" style="color:#059669;"></i> Ngày trồng (dd/mm/yyyy)
+            </label>
+            <input type="date" id="user-plant-planting-date" onchange="onUserPlantingDateChange()" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none; background:#ffffff;">
           </div>
           <div>
-            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Tình trạng sức khỏe ban đầu</label>
-            <select id="user-plant-health" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; width:100%; box-sizing:border-box; background:#ffffff; outline:none;">
-              <option value="Tốt">🌿 Tốt (Sinh trưởng mạnh)</option>
-              <option value="Bình thường">🌱 Bình thường</option>
-              <option value="Cần chú ý">⚠️ Cần chú ý (Thiếu nước/dinh dưỡng)</option>
-              <option value="Bệnh">🥀 Bệnh (Cần can thiệp thuốc BVTV)</option>
-            </select>
+            <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; gap:5px;">
+              <i data-lucide="hourglass" class="lucide-xs" style="color:#059669;"></i> Tuổi cây / Thời gian sinh trưởng
+            </label>
+            <input type="text" id="user-plant-age" placeholder="VD: 2 năm 4 tháng, 36 tháng..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
           </div>
+        </div>
+
+        <!-- Initial Health Status (Requirement 2 with Lucide Icon Library) -->
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="heart-pulse" class="lucide-xs" style="color:#059669;"></i> Tình trạng sức khỏe ban đầu
+          </label>
+          <select id="user-plant-health" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; width:100%; box-sizing:border-box; background:#ffffff; outline:none;">
+            <option value="Tốt">🌱 Tốt (Sinh trưởng mạnh)</option>
+            <option value="Bình thường">🌿 Bình thường</option>
+            <option value="Cần chú ý">⚠️ Cần chú ý (Thiếu nước/dinh dưỡng)</option>
+            <option value="Bệnh">🥀 Bệnh (Cần can thiệp thuốc BVTV)</option>
+          </select>
         </div>
       </div>
 
-      <!-- Card 2: Quản lý Vị Trí & Tọa Độ GPS Thực Địa -->
-      <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:8px; flex-wrap:wrap; gap:8px;">
-          <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+      <!-- Card 2A: Single Mode Location & GPS -->
+      <div id="user-single-gps-card" class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
             <i data-lucide="map-pin" class="lucide-sm" style="color:#059669;"></i> Vị trí &amp; Tọa độ GPS Vệ tinh
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="getUserPlantGPS()" style="font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:8px; background:#ecfdf5; border:1.5px solid #a7f3d0; color:#047857; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="getUserPlantGPS()" style="font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:8px; background:#ecfdf5; border:1.5px solid #a7f3d0; color:#047857; display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
             <i data-lucide="crosshair" class="lucide-sm"></i> <span>Lấy GPS Thực Địa</span>
           </button>
         </div>
 
-        <div style="margin-bottom:12px;">
+        <div style="margin-bottom:10px;">
           <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Vị trí / Lô trồng cụ thể</label>
-          <input type="text" id="user-plant-location" placeholder="VD: Lô A1, Hàng 3, Khu đồi cao..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+          <input type="text" id="user-plant-location" placeholder="VD: Lô A1, Hàng 3, Khu đồi cao..." style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div>
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Vĩ độ (Latitude)</label>
-            <input type="number" step="any" id="user-plant-lat" placeholder="VD: 10.762622" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+            <input type="number" step="any" id="user-plant-lat" placeholder="VD: 10.762622" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
           </div>
           <div>
             <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Kinh độ (Longitude)</label>
-            <input type="number" step="any" id="user-plant-lng" placeholder="VD: 106.682341" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+            <input type="number" step="any" id="user-plant-lng" placeholder="VD: 106.682341" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; outline:none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2B: Batch Mode Data Matrix Table & Per-Tree Plot/GPS (Requirement 3) -->
+      <div id="user-plant-matrix-card" class="card" style="display:none; background:#ffffff; border:1.5px solid #10b981; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 4px 14px rgba(16,185,129,0.08);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:8px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="font-size:13.5px; font-weight:800; color:#064e3b; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="layout-grid" class="lucide-sm" style="color:#059669;"></i> Ma Trận Lô Trồng &amp; Tọa Độ GPS Từng Cây
+            </div>
+            <div style="font-size:11.5px; color:#64748b; margin-top:2px;">
+              Tùy biến lô trồng và GPS riêng cho từng cây (có thể xóa bớt các cây không muốn tạo).
+            </div>
+          </div>
+          <span id="user-matrix-count-badge" style="font-size:12px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px;">
+            0 cây trong ma trận
+          </span>
+        </div>
+
+        <!-- Matrix Quick Tools Toolbar -->
+        <div style="background:#f1f5f9; border-radius:10px; padding:10px 12px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:260px;">
+            <input type="text" id="user-matrix-bulk-location" placeholder="Nhập Lô trồng chung (VD: Lô A1, Hàng 1)..." style="flex:1; border:1.5px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:600; outline:none; background:#fff;">
+            <button type="button" class="btn btn-sm" onclick="applyBulkLocationToMatrix()" style="background:#0284c7; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
+              Áp dụng cho tất cả
+            </button>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="applyBulkGpsToMatrix()" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+              <i data-lucide="crosshair" class="lucide-xs"></i> <span>Điền GPS hiện tại</span>
+            </button>
+            <button type="button" class="btn btn-sm" onclick="addCustomMatrixRow()" style="background:#059669; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+              <i data-lucide="plus" class="lucide-xs"></i> <span>+ Thêm 1 cây</span>
+            </button>
           </div>
         </div>
 
-        <div>
-          <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Chế độ truy cập công khai</label>
-          <select id="user-plant-is-public" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff; outline:none;">
-            <option value="true">🌐 Công khai (Mọi người có thể quét mã NFC/QR hoặc xem qua link)</option>
-            <option value="false">🔒 Riêng tư (Chỉ chủ vườn và quản trị viên xem được)</option>
-          </select>
+        <!-- Matrix Table Container -->
+        <div style="max-height:260px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#ffffff;">
+          <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+            <thead style="position:sticky; top:0; background:#f8fafc; z-index:1; border-bottom:1.5px solid #cbd5e1;">
+              <tr>
+                <th style="padding:7px 8px; width:36px; text-align:center; color:#475569; font-weight:700;">#</th>
+                <th style="padding:7px 8px; width:120px; color:#475569; font-weight:700;">Mã số cây</th>
+                <th style="padding:7px 8px; color:#475569; font-weight:700;">Lô trồng cụ thể</th>
+                <th style="padding:7px 8px; width:110px; color:#475569; font-weight:700;">Vĩ độ (Lat)</th>
+                <th style="padding:7px 8px; width:110px; color:#475569; font-weight:700;">Kinh độ (Lng)</th>
+                <th style="padding:7px 8px; width:44px; text-align:center; color:#ef4444; font-weight:700;">Xóa</th>
+              </tr>
+            </thead>
+            <tbody id="user-plant-matrix-tbody">
+              <!-- Matrix rows populated dynamically -->
+            </tbody>
+          </table>
         </div>
+      </div>
+
+      <!-- Card 3: Chế độ truy cập công khai -->
+      <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px; margin-bottom:0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+        <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:5px; display:block;">Chế độ truy cập công khai</label>
+        <select id="user-plant-is-public" style="border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:12.5px; font-weight:600; width:100%; box-sizing:border-box; background:#ffffff; outline:none;">
+          <option value="true">🌐 Công khai (Mọi người có thể quét mã NFC/QR hoặc xem qua link)</option>
+          <option value="false">🔒 Riêng tư (Chỉ chủ vườn và quản trị viên xem được)</option>
+        </select>
       </div>
 
     </div>
 
     <!-- 3. Modal Sticky Footer -->
-    <div class="modal-footer" style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#ffffff; flex-shrink:0;">
+    <div class="modal-footer" style="padding:14px 22px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#ffffff; flex-shrink:0;">
       <div style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:6px;">
         <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> <span>Sổ Nông Tân Bảo AgTech · Chuẩn VietGAP</span>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
-        <button type="button" class="btn btn-secondary" onclick="closeUserCreatePlantModal()" style="font-weight:700; font-size:13px; padding:9px 18px; border-radius:10px; background:#f1f5f9; border:1px solid #cbd5e1; color:#475569;">
+        <button type="button" class="btn btn-secondary" onclick="closeUserCreatePlantModal()" style="font-weight:700; font-size:13px; padding:8px 16px; border-radius:10px; background:#f1f5f9; border:1px solid #cbd5e1; color:#475569;">
           Hủy
         </button>
         <button type="button" class="btn btn-primary" id="btn-submit-user-create-plant" onclick="submitUserCreatePlant()" style="font-weight:800; font-size:13px; padding:9px 24px; border-radius:10px; background:linear-gradient(135deg, #10b981, #047857); border:none; box-shadow:0 4px 14px rgba(16,185,129,0.3); color:#ffffff; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">

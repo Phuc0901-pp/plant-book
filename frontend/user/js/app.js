@@ -28,7 +28,21 @@ import { updateOfflineSyncBadge, triggerOfflineSync } from './core/offline-sync.
 // ── Modules ───────────────────────────────────────────────────
 import './modules/notifications.js';
 import { loadUserDashboard }          from './modules/dashboard.js';
-import { filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache, togglePlantMenu, closePlantMenu, openFarmerNfcListModal, fetchFarmerNfcStats, exportFarmerNfcCsv, openReorderGpsModal, closeReorderGpsModal, previewReorderGps, executeReorderGps } from './modules/plants.js';
+import { 
+  filterUserPlants, openSelfInitFarmModal, closeSelfInitFarmModal, getDeviceGPSPosition, 
+  submitSelfInitFarm, selectUserFarm, openEditFarmModal, closeEditFarmModal, 
+  getEditDeviceGPSPosition, submitEditFarm, deleteUserFarm, renderUserFarmsGrid, 
+  openFarmDetailView, closeFarmDetailView, getActiveFarm, getFarmsCache, 
+  togglePlantMenu, closePlantMenu, openFarmerNfcListModal, fetchFarmerNfcStats, 
+  exportFarmerNfcCsv, openReorderGpsModal, closeReorderGpsModal, previewReorderGps, 
+  executeReorderGps, openUserCreatePlantModal, closeUserCreatePlantModal, 
+  submitUserCreatePlant, toggleUserPlantCreateMode, updateUserRangePreview, 
+  getUserPlantGPS, onUserPlantNfcSelectChange, onUserPlantFarmChange, 
+  calculatePlantAge, onUserPlantingDateChange, generateUserPlantMatrix, 
+  renderUserPlantMatrix, updateMatrixItem, deleteMatrixRow, applyBulkLocationToMatrix, 
+  applyBulkGpsToMatrix, addCustomMatrixRow 
+} from './modules/plants.js';
+import { viewInternalPlantProfile, updateUserMapMarkers } from './modules/map.js';
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput, stopVoiceInput } from './modules/care-modal.js?v=2.8.5';
@@ -370,6 +384,27 @@ window.saveNfcLocationManually = saveNfcLocationManually;
 
 window.togglePlantMenu      = togglePlantMenu;
 window.closePlantMenu       = closePlantMenu;
+
+window.openUserCreatePlantModal = openUserCreatePlantModal;
+window.closeUserCreatePlantModal = closeUserCreatePlantModal;
+window.submitUserCreatePlant = submitUserCreatePlant;
+window.toggleUserPlantCreateMode = toggleUserPlantCreateMode;
+window.updateUserRangePreview = updateUserRangePreview;
+window.getUserPlantGPS = getUserPlantGPS;
+window.onUserPlantNfcSelectChange = onUserPlantNfcSelectChange;
+window.onUserPlantFarmChange = onUserPlantFarmChange;
+window.calculatePlantAge = calculatePlantAge;
+window.onUserPlantingDateChange = onUserPlantingDateChange;
+window.generateUserPlantMatrix = generateUserPlantMatrix;
+window.renderUserPlantMatrix = renderUserPlantMatrix;
+window.updateMatrixItem = updateMatrixItem;
+window.deleteMatrixRow = deleteMatrixRow;
+window.applyBulkLocationToMatrix = applyBulkLocationToMatrix;
+window.applyBulkGpsToMatrix = applyBulkGpsToMatrix;
+window.addCustomMatrixRow = addCustomMatrixRow;
+
+window.viewInternalPlantProfile = viewInternalPlantProfile;
+window.updateUserMapMarkers = updateUserMapMarkers;
 
 window.refreshDeviceWeather = refreshDeviceWeather;
 window.initWeatherClockWidget = initWeatherClockWidget;

@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { API } from '../core/api.js';
-import { esc, sanitizeCoordinates } from '../core/utils.js';
+import { esc, sanitizeCoordinates, healthBadge } from '../core/utils.js';
 
 /** Instance Mapbox map hiện tại */
 export let userMap = null;
@@ -142,22 +142,6 @@ export function initUserMap(farms, plants) {
       if (!map.getLayer(layerId)) {
         map.addLayer({ id: layerId, type: 'fill', source: srcId, layout: {},
           paint: { 'fill-color': '#10b981', 'fill-opacity': 0.25 } });
-
-        // Popup khi click vào trang trại
-        map.on('click', layerId, (e) => {
-          new mapboxgl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div class="map-tooltip" style="font-family:inherit;font-size:12px;">
-                <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(farm.name)}</h4>
-                <p style="margin-bottom:2px;">Tổng số cây: <strong>${farm.plant_count || farm.total_plants || 0} cây</strong></p>
-                <p style="margin-bottom:2px;">Diện tích: <strong>${farm.area ? farm.area : 0} ha</strong></p>
-                <p style="color:var(--text-muted);font-style:italic;">${esc(farm.description || 'Không có mô tả')}</p>
-              </div>`)
-            .addTo(map);
-        });
-        map.on('mouseenter', layerId, () => map.getCanvas().style.cursor = 'pointer');
-        map.on('mouseleave', layerId, () => map.getCanvas().style.cursor = '');
       }
 
       if (!map.getLayer(outlineId)) {
@@ -177,14 +161,6 @@ export function initUserMap(farms, plants) {
         `;
         new mapboxgl.Marker(farmMarkerWrap)
           .setLngLat([ptLng, ptLat])
-          .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(`
-            <div class="map-tooltip" style="font-family:inherit;font-size:12px;">
-              <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(farm.name)}</h4>
-              <p style="margin-bottom:2px;">Tổng số cây: <strong>${farm.plant_count || farm.total_plants || 0} cây</strong></p>
-              <p style="margin-bottom:2px;">Diện tích: <strong>${farm.area ? farm.area : 0} ha</strong></p>
-              <p style="color:var(--text-muted);font-style:italic;">${esc(farm.description || 'Không có mô tả')}</p>
-            </div>
-          `))
           .addTo(map);
 
         validCoords.forEach(pt => bounds.extend(pt));
@@ -249,9 +225,12 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
 
     const wrapper = Object.assign(document.createElement('div'), { className: 'plant-marker-wrap' });
     wrapper.style.cursor = 'pointer';
+    wrapper.addEventListener('click', (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+    });
 
     const el = Object.assign(document.createElement('div'), { className: 'plant-id-marker' });
-    const colorMap = { 'Tốt': '#22c55e', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
+    const colorMap = { 'Tốt': '#22c55e', 'Bình thường': '#0d9488', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
     const color = colorMap[plant.health_status] || '#10b981';
     Object.assign(el.style, {
       width: '28px', height: '28px', borderRadius: '50%',
@@ -264,19 +243,40 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
     el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
     wrapper.appendChild(el);
 
+    const careCheckHtml = plant.last_care_date
+      ? `<span style="color:#059669; font-weight:700;"><i data-lucide="check-circle" class="lucide-xs"></i> Đã chăm sóc: ${esc(plant.last_care_date)}${plant.last_care_type ? ` (${esc(plant.last_care_type)})` : ''}</span>`
+      : `<span style="color:#e11d48; font-weight:700;"><i data-lucide="clock" class="lucide-xs"></i> Chưa có nhật ký</span>`;
+
     const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'center' })
       .setLngLat([lng, lat])
-      .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`
-        <div class="map-tooltip" style="font-family:inherit;font-size:12px;min-width:160px;">
-          <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:6px;">
-            <i data-lucide="trees" class="lucide-sm"></i> Cây ${esc(plant.tree_code || plant.id)}
-          </h4>
-          <p style="margin-bottom:3px;">Loại: <strong>${esc(plant.plant_type || 'Cây trồng')}</strong></p>
-          <p style="margin-bottom:3px;">Sức khỏe: <strong>${esc(plant.health_status || 'Bình thường')}</strong></p>
-          <p style="margin-bottom:6px;color:var(--text-muted);">Vị trí: ${esc(plant.location || 'Chưa rõ')} <br><small style="color:#0284c7; font-weight:600;">(GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)})</small></p>
-          <button class="btn btn-primary btn-xs" onclick="if(window.openCareModal) openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type || '')}')">
-            <i data-lucide="file-check" class="lucide-sm"></i> Nhật ký
-          </button>
+      .setPopup(new mapboxgl.Popup({ offset: 25, maxWidth: '300px' }).setHTML(`
+        <div class="map-plant-card" style="font-family:inherit;font-size:12px;min-width:210px;padding:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">
+            <div style="font-weight:800;font-size:13.5px;color:#064e3b;display:flex;align-items:center;gap:5px;">
+              <i data-lucide="sprout" class="lucide-sm" style="color:#10b981;"></i> Cây #${esc(plant.tree_code || plant.id)}
+            </div>
+            ${healthBadge(plant.health_status)}
+          </div>
+          <div style="margin-bottom:6px;line-height:1.5;color:#334155;font-size:12px;">
+            <p style="margin:0 0 2px 0;"><strong>Loại cây:</strong> ${esc(plant.plant_type || 'Cây trồng')}${plant.plant_variety ? ` (${esc(plant.plant_variety)})` : ''}</p>
+            ${plant.planting_date ? `<p style="margin:0 0 2px 0;"><strong>Ngày trồng:</strong> ${esc(plant.planting_date)}</p>` : ''}
+            ${plant.plant_age ? `<p style="margin:0 0 2px 0;"><strong>Tuổi cây:</strong> ${esc(plant.plant_age)}</p>` : ''}
+            <p style="margin:0 0 2px 0;"><strong>Lô trồng:</strong> ${esc(plant.location || 'Chưa phân lô')}</p>
+            <p style="margin:2px 0 0 0;color:#0284c7;font-size:11px;font-weight:600;">
+              <i data-lucide="crosshair" class="lucide-xs"></i> GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}
+            </p>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;margin-bottom:8px;font-size:11px;">
+            ${careCheckHtml}
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <button type="button" class="btn btn-secondary btn-xs" style="flex:1;padding:5px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="if(window.openCareModal) openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type || '')}')">
+              <i data-lucide="file-check" class="lucide-xs"></i> Nhật ký
+            </button>
+            <button type="button" class="btn btn-primary btn-xs" style="flex:1;padding:5px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#059669;border:none;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="viewInternalPlantProfile(${plant.id})">
+              <i data-lucide="external-link" class="lucide-xs"></i> Xem chi tiết
+            </button>
+          </div>
         </div>`))
       .addTo(targetMap);
 
@@ -295,6 +295,66 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
 }
 window.updateUserMapMarkers = updateUserMapMarkers;
 window.renderUserMapMarkers = updateUserMapMarkers;
+
+/**
+ * Điều hướng người dùng sang xem Hồ sơ cây trồng nội bộ (không thay đổi hoặc ghi đè GPS)
+ * @param {number|string} plantId
+ */
+export function viewInternalPlantProfile(plantId) {
+  // Đóng tất cả map popup
+  document.querySelectorAll('.mapboxgl-popup').forEach(p => {
+    try { p.remove(); } catch (_) {}
+  });
+
+  const allPlants = window._allPlantsCache || [];
+  const targetPlant = allPlants.find(p => String(p.id) === String(plantId));
+
+  if (!targetPlant) {
+    if (window.toast) window.toast('Không tìm thấy dữ liệu cây trồng!', 'warning');
+    return;
+  }
+
+  // Đảm bảo mở chi tiết trang trại tương ứng
+  if (targetPlant.farm_id && window.openFarmDetailView) {
+    window.openFarmDetailView(targetPlant.farm_id, true);
+  }
+
+  // Chuyển sang tab Trang trại nếu đang ở tab khác
+  if (typeof window.showPage === 'function') {
+    window.showPage('myplants');
+  }
+
+  // Điền bộ lọc tìm kiếm cây
+  const searchInput = document.getElementById('user-plant-search');
+  if (searchInput) {
+    searchInput.value = targetPlant.tree_code || targetPlant.id;
+    if (typeof window.filterUserPlants === 'function') {
+      window.filterUserPlants();
+    }
+  }
+
+  // Cuộn mượt đến hàng dữ liệu của cây trong bảng và nhấp nháy làm nổi bật
+  setTimeout(() => {
+    const row = document.getElementById(`plant-row-${plantId}`);
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.style.background = '#dcfce7';
+      row.style.outline = '2px solid #10b981';
+      setTimeout(() => {
+        row.style.background = '';
+        row.style.outline = '';
+      }, 3000);
+    } else {
+      const tableCard = document.getElementById('user-plants-view') || document.getElementById('user-plants-table');
+      if (tableCard) tableCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 250);
+
+  if (window.toast) {
+    window.toast(`📋 Hồ sơ cây #${targetPlant.tree_code || targetPlant.id} (${targetPlant.plant_type || 'Cây trồng'})`, 'info');
+  }
+}
+window.viewInternalPlantProfile = viewInternalPlantProfile;
 
 /**
  * Thêm đường đồng mức siêu dày 1m (1-Meter High-Density Contour Lines)
