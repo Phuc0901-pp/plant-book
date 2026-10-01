@@ -2706,6 +2706,8 @@ export function applyBulkPlotToMatrix() {
   if (window.toast) window.toast(`✅ Đã áp dụng "${normPlot}" với số hàng tăng dần (1-${Math.min(rowCounter - 1, 99)}) không trùng lặp!`, 'success');
 }
 window.applyBulkPlotToMatrix = applyBulkPlotToMatrix;
+export const applyBulkLocationToMatrix = applyBulkPlotToMatrix;
+window.applyBulkLocationToMatrix = applyBulkPlotToMatrix;
 
 export function applyBulkGpsToMatrix() {
   if (!_userPlantMatrix.length) {

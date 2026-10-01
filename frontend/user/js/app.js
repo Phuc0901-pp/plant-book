@@ -40,7 +40,8 @@ import {
   getUserPlantGPS, onUserPlantNfcSelectChange, onUserPlantFarmChange, 
   calculatePlantAge, onUserPlantingDateChange, generateUserPlantMatrix, 
   renderUserPlantMatrix, updateMatrixItem, deleteMatrixRow, applyBulkLocationToMatrix, 
-  applyBulkGpsToMatrix, addCustomMatrixRow 
+  applyBulkPlotToMatrix, updateMatrixPlot, updateMatrixRow, onUserSinglePlotChange, 
+  normalizePlotName, autoSequenceRowsInPlot, applyBulkGpsToMatrix, addCustomMatrixRow 
 } from './modules/plants.js';
 import { viewInternalPlantProfile, updateUserMapMarkers } from './modules/map.js';
 import { filterUserLogs }             from './modules/logs.js';
@@ -400,6 +401,12 @@ window.renderUserPlantMatrix = renderUserPlantMatrix;
 window.updateMatrixItem = updateMatrixItem;
 window.deleteMatrixRow = deleteMatrixRow;
 window.applyBulkLocationToMatrix = applyBulkLocationToMatrix;
+window.applyBulkPlotToMatrix = applyBulkPlotToMatrix;
+window.updateMatrixPlot = updateMatrixPlot;
+window.updateMatrixRow = updateMatrixRow;
+window.onUserSinglePlotChange = onUserSinglePlotChange;
+window.normalizePlotName = normalizePlotName;
+window.autoSequenceRowsInPlot = autoSequenceRowsInPlot;
 window.applyBulkGpsToMatrix = applyBulkGpsToMatrix;
 window.addCustomMatrixRow = addCustomMatrixRow;
 
