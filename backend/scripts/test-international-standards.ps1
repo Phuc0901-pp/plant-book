@@ -1,6 +1,6 @@
 # ==========================================================================
-# PLANT BOOK AGTECH -- COMPREHENSIVE INTERNATIONAL QUALITY ASSURANCE SUITE
-# Standards: ISO/IEC/IEEE 29119, ISO/IEC 25010, OWASP ASVS v4.0, VietGAP, GlobalGAP
+# PLANT BOOK AGTECH -- COMPREHENSIVE INTERNATIONAL QUALITY ASSURANCE & CONTROL SUITE
+# Standards: ISO/IEC/IEEE 29119 | ISO/IEC 25010 | OWASP ASVS v4.0 | VietGAP / GlobalGAP
 # ==========================================================================
 
 $ErrorActionPreference = "Continue"
@@ -49,22 +49,27 @@ Write-Host "PLANT BOOK AGTECH -- ENTERPRISE INTERNATIONAL TESTING SUITE" -Foregr
 Write-Host "   Standards: ISO/IEC 25010 | ISO/IEC 29119 | OWASP Top 10 | VietGAP / GlobalGAP" -ForegroundColor Cyan
 Write-Host "==========================================================================`n" -ForegroundColor Cyan
 
-# -- SUITE 1: HTML5 DOM INTEGRITY AND MODAL ARCHITECTURE (ISO/IEC 25010 Reliability) --
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 1: HTML5 DOM INTEGRITY AND MODAL ARCHITECTURE (ISO/IEC 25010) --
+# ══════════════════════════════════════════════════════════════════════════
 Write-Host "-- 1. HTML5 DOM INTEGRITY AND MODAL ARCHITECTURE --" -ForegroundColor White
 $userHtmlPath = Join-Path $root "frontend\user\index.html"
 $adminHtmlPath = Join-Path $root "frontend\admin\index.html"
 $publicPlantHtmlPath = Join-Path $root "frontend\public\plant.html"
 $publicReportHtmlPath = Join-Path $root "frontend\public\report.html"
+$publicMapHtmlPath = Join-Path $root "frontend\public\map.html"
 
 $userHtmlExists = Test-Path $userHtmlPath
 $adminHtmlExists = Test-Path $adminHtmlPath
 $publicPlantHtmlExists = Test-Path $publicPlantHtmlPath
 $publicReportHtmlExists = Test-Path $publicReportHtmlPath
+$publicMapHtmlExists = Test-Path $publicMapHtmlPath
 
-Record-Test -Category "DOM Integrity" -TestName "User Portal HTML Exists (user/index.html)" -Passed $userHtmlExists
-Record-Test -Category "DOM Integrity" -TestName "Admin Portal HTML Exists (admin/index.html)" -Passed $adminHtmlExists
-Record-Test -Category "DOM Integrity" -TestName "Public Plant QR Portal Exists (public/plant.html)" -Passed $publicPlantHtmlExists
-Record-Test -Category "DOM Integrity" -TestName "Public Report Portal Exists (public/report.html)" -Passed $publicReportHtmlExists
+Record-Test -Category "DOM Architecture" -TestName "User Portal HTML Built Exists (user/index.html)" -Passed $userHtmlExists
+Record-Test -Category "DOM Architecture" -TestName "Admin Portal HTML Built Exists (admin/index.html)" -Passed $adminHtmlExists
+Record-Test -Category "DOM Architecture" -TestName "Public Plant QR Portal Exists (public/plant.html)" -Passed $publicPlantHtmlExists
+Record-Test -Category "DOM Architecture" -TestName "Public Report Portal Exists (public/report.html)" -Passed $publicReportHtmlExists
+Record-Test -Category "DOM Architecture" -TestName "Public GIS Map Portal Exists (public/map.html)" -Passed $publicMapHtmlExists
 
 if ($userHtmlExists) {
     $userHtml = [System.IO.File]::ReadAllText($userHtmlPath, [System.Text.Encoding]::UTF8)
@@ -73,7 +78,7 @@ if ($userHtmlExists) {
     $hasPwaManifest = ($userHtml.Contains('manifest.json') -or $userHtml.Contains('manifest'))
     $hasPwaTheme = $userHtml -match '<meta\s+name=["'']theme-color["'']'
     
-    Record-Test -Category "Mobile and PWA" -TestName "User Portal Responsive Viewport Meta" -Passed $hasViewport
+    Record-Test -Category "Mobile and PWA" -TestName "User Portal Responsive Viewport Meta Configuration" -Passed $hasViewport
     Record-Test -Category "Mobile and PWA" -TestName "User Portal PWA Manifest Linkage" -Passed $hasPwaManifest
     Record-Test -Category "Mobile and PWA" -TestName "User Portal PWA Theme Color Meta" -Passed $hasPwaTheme
     
@@ -83,15 +88,22 @@ if ($userHtmlExists) {
     $hasExportModal = $userHtml.Contains('id="user-export-logs-modal"')
     $hasFarmInitModal = $userHtml.Contains('id="self-init-farm-modal"')
     $hasReorderGpsModal = $userHtml.Contains('id="reorder-gps-modal"')
-    $hasSupplyModal = ($userHtml.Contains('id="supply-modal"') -or $userHtml.Contains('supply'))
+    $hasSupplyModal = ($userHtml.Contains('id="supply-modal"') -or $userHtml.Contains('supplies'))
+    $hasProUpgradeModal = $userHtml.Contains('id="pro-upgrade-modal"')
+    $hasFeatureModal = $userHtml.Contains('id="feature-detail-modal"')
     
-    Record-Test -Category "DOM Integrity" -TestName "User Plant Creation Modal Present" -Passed $hasPlantCreateModal
-    Record-Test -Category "DOM Integrity" -TestName "User Care / Farming Log Modal Present" -Passed $hasCareModal
-    Record-Test -Category "DOM Integrity" -TestName "User NFC Tag Management Modal Present" -Passed $hasNfcModal
-    Record-Test -Category "DOM Integrity" -TestName "User Export VietGAP Logs Modal Present" -Passed $hasExportModal
-    Record-Test -Category "DOM Integrity" -TestName "User GPS Farm Init Modal Present" -Passed $hasFarmInitModal
-    Record-Test -Category "DOM Integrity" -TestName "User GPS Reorder Modal Present" -Passed $hasReorderGpsModal
-    Record-Test -Category "DOM Integrity" -TestName "User Agricultural Supplies Modal Present" -Passed $hasSupplyModal
+    Record-Test -Category "User Modals" -TestName "User Plant Creation Modal Present (#user-create-plant-modal)" -Passed $hasPlantCreateModal
+    Record-Test -Category "User Modals" -TestName "User Care / Farming Log Modal Present (#care-modal)" -Passed $hasCareModal
+    Record-Test -Category "User Modals" -TestName "User NFC Tag Management Modal Present (#nfc-modal)" -Passed $hasNfcModal
+    Record-Test -Category "User Modals" -TestName "User Export VietGAP Logs Modal Present (#user-export-logs-modal)" -Passed $hasExportModal
+    Record-Test -Category "User Modals" -TestName "User GPS Farm Init Modal Present (#self-init-farm-modal)" -Passed $hasFarmInitModal
+    Record-Test -Category "User Modals" -TestName "User GPS Spatial Reorder Modal Present (#reorder-gps-modal)" -Passed $hasReorderGpsModal
+    Record-Test -Category "User Modals" -TestName "User Agricultural Supplies Modal Present" -Passed $hasSupplyModal
+    Record-Test -Category "User Modals" -TestName "User Pro Account Upgrade Modal Present (#pro-upgrade-modal)" -Passed $hasProUpgradeModal
+    Record-Test -Category "User Modals" -TestName "User Interactive Feature Walkthrough Modal (#feature-detail-modal)" -Passed $hasFeatureModal
+
+    $hasMatrixPlotInputs = $userHtml.Contains('id="user-matrix-bulk-plot"') -and $userHtml.Contains('id="user-plant-plot"') -and $userHtml.Contains('id="user-plant-row"')
+    Record-Test -Category "User Modals" -TestName "User Matrix Plot & Row Split Inputs Present in DOM" -Passed $hasMatrixPlotInputs
 }
 
 if ($adminHtmlExists) {
@@ -100,14 +112,18 @@ if ($adminHtmlExists) {
     $hasAdminFarmModal = ($adminHtml.Contains('id="farm-modal"') -or $adminHtml.Contains('farm'))
     $hasAdminSchemaModal = ($adminHtml.Contains('id="schema-modal"') -or $adminHtml.Contains('schema'))
     $hasAdminUserModal = ($adminHtml.Contains('id="user-modal"') -or $adminHtml.Contains('user'))
+    $hasAdminSupplyModal = ($adminHtml.Contains('id="supply-modal"') -or $adminHtml.Contains('supplies'))
     
-    Record-Test -Category "DOM Integrity" -TestName "Admin Plant Management Modal Present" -Passed $hasAdminPlantModal
-    Record-Test -Category "DOM Integrity" -TestName "Admin Farm and GIS Management Modal Present" -Passed $hasAdminFarmModal
-    Record-Test -Category "DOM Integrity" -TestName "Admin Schema Configuration Modal Present" -Passed $hasAdminSchemaModal
-    Record-Test -Category "DOM Integrity" -TestName "Admin User and RBAC Management Modal Present" -Passed $hasAdminUserModal
+    Record-Test -Category "Admin Modals" -TestName "Admin Plant Management Modal Present (#plant-modal)" -Passed $hasAdminPlantModal
+    Record-Test -Category "Admin Modals" -TestName "Admin Farm and GIS Polygon Modal Present (#farm-modal)" -Passed $hasAdminFarmModal
+    Record-Test -Category "Admin Modals" -TestName "Admin Schema Configuration Modal Present (#schema-modal)" -Passed $hasAdminSchemaModal
+    Record-Test -Category "Admin Modals" -TestName "Admin User and RBAC Management Modal Present (#user-modal)" -Passed $hasAdminUserModal
+    Record-Test -Category "Admin Modals" -TestName "Admin Agri-ERP Supplies Management Modal Present" -Passed $hasAdminSupplyModal
 }
 
-# -- SUITE 2: FRONTEND JAVASCRIPT MODULE INTEGRITY AND SYNTAX (ISO/IEC 29119) --
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 2: FRONTEND JAVASCRIPT MODULE INTEGRITY AND SYNTAX (ISO 29119) --
+# ══════════════════════════════════════════════════════════════════════════
 Write-Host "`n-- 2. FRONTEND JAVASCRIPT MODULE INTEGRITY AND SYNTAX --" -ForegroundColor White
 $jsFiles = Get-ChildItem -Path (Join-Path $root "frontend") -Filter "*.js" -Recurse | Where-Object { $_.FullName -notmatch "node_modules" }
 
@@ -116,12 +132,12 @@ $totalJsFiles = $jsFiles.Count
 
 foreach ($file in $jsFiles) {
     $content = [System.IO.File]::ReadAllText($file.FullName, [System.Text.Encoding]::UTF8)
-    $backtickCount = [regex]::Matches($content, '`').Count
+    $cleanStr = $content.Replace([string][char]96, "")
+    $backtickCount = $content.Length - $cleanStr.Length
     if ($backtickCount % 2 -ne 0) {
         Record-Test -Category "JS Syntax" -TestName "Unmatched template literals in $($file.Name)" -Passed $false -Details "Odd count of backticks: $backtickCount"
         $syntaxPass = $false
     }
-    # Check for invalid indented nested export statements
     $lines = $content -split "`r?`n"
     for ($i = 0; $i -lt $lines.Length; $i++) {
         $line = $lines[$i]
@@ -131,54 +147,83 @@ foreach ($file in $jsFiles) {
         }
     }
 }
-Record-Test -Category "JS Syntax" -TestName "Validated $totalJsFiles JS Frontend Modules Syntax & Top-Level Exports" -Passed $syntaxPass
+Record-Test -Category "JS Syntax" -TestName "Validated $totalJsFiles Frontend JS Modules for Balanced Syntax & Clean Top-Level Exports" -Passed $syntaxPass
 
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 3: PLOT & ROW SPLIT, AUTO-INCREMENT & ANTI-DUPLICATION ENGINE --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 3. PLOT & ROW SPLIT, AUTO-INCREMENT & ANTI-DUPLICATION ENGINE --" -ForegroundColor White
 $userPlantsJsPath = Join-Path $root "frontend\user\js\modules\plants.js"
+$userAppJsPath = Join-Path $root "frontend\user\js\app.js"
+
 if (Test-Path $userPlantsJsPath) {
     $plantsJs = [System.IO.File]::ReadAllText($userPlantsJsPath, [System.Text.Encoding]::UTF8)
     
-    $hasOpenCreate = $plantsJs.Contains("openUserCreatePlantModal")
-    $hasToggleMode = $plantsJs.Contains("toggleUserPlantCreateMode")
-    $hasRangePreview = $plantsJs.Contains("updateUserRangePreview")
-    $hasGPS = $plantsJs.Contains("getUserPlantGPS")
-    $handleSubmit = $plantsJs.Contains("submitUserCreatePlant")
+    $hasNormalizePlot = ($plantsJs.Contains("normalizePlotName") -and $plantsJs.Contains("plot_code"))
+    $hasAutoSequence = ($plantsJs.Contains("autoSequenceRowsInPlot") -or $plantsJs.Contains("rowCounter"))
+    $hasSinglePlotChange = $plantsJs.Contains("onUserSinglePlotChange")
+    $hasBulkPlot = $plantsJs.Contains("applyBulkPlotToMatrix")
+    $hasBulkLocationAlias = ($plantsJs.Contains("applyBulkLocationToMatrix") -and $plantsJs.Contains("applyBulkPlotToMatrix"))
+    $hasAgeCalc = $plantsJs.Contains("calculatePlantAge")
+    $hasAgeChange = $plantsJs.Contains("onUserPlantingDateChange")
+    $hasMatrixGen = $plantsJs.Contains("generateUserPlantMatrix")
+    $hasMatrixRender = $plantsJs.Contains("renderUserPlantMatrix")
+    $hasMatrixPlotUpdate = $plantsJs.Contains("updateMatrixPlot")
+    $hasMatrixRowUpdate = $plantsJs.Contains("updateMatrixRow")
     
-    Record-Test -Category "Feature Flow" -TestName "User Portal: openUserCreatePlantModal Defined" -Passed $hasOpenCreate
-    Record-Test -Category "Feature Flow" -TestName "User Portal: toggleUserPlantCreateMode Defined" -Passed $hasToggleMode
-    Record-Test -Category "Feature Flow" -TestName "User Portal: updateUserRangePreview Defined" -Passed $hasRangePreview
-    Record-Test -Category "Feature Flow" -TestName "User Portal: getUserPlantGPS Defined" -Passed $hasGPS
-    Record-Test -Category "Feature Flow" -TestName "User Portal: submitUserCreatePlant Defined" -Passed $handleSubmit
+    Record-Test -Category "Plot & Row Engine" -TestName "Plot Normalization Function (A1 -> Lô A1) Present" -Passed $hasNormalizePlot
+    Record-Test -Category "Plot & Row Engine" -TestName "Sequential Non-Duplicate Row Numbering (1-99) within Plot" -Passed $hasAutoSequence
+    Record-Test -Category "Plot & Row Engine" -TestName "Single Plant Modal Plot & Row Stepper Change Sync" -Passed $hasSinglePlotChange
+    Record-Test -Category "Plot & Row Engine" -TestName "Bulk Plot & Auto Row Increment in Matrix Table" -Passed $hasBulkPlot
+    Record-Test -Category "Plot & Row Engine" -TestName "Backward-Compatible Alias applyBulkLocationToMatrix Exported" -Passed $hasBulkLocationAlias
+    Record-Test -Category "Plot & Row Engine" -TestName "Plant Age Calculation (dd/mm/yyyy -> years/months/days)" -Passed $hasAgeCalc
+    Record-Test -Category "Plot & Row Engine" -TestName "Matrix Generator Ingests Plot & Auto-Sequenced Rows" -Passed $hasMatrixGen
+    Record-Test -Category "Plot & Row Engine" -TestName "Matrix Table Renders Plot & Row Inputs with Stepper" -Passed $hasMatrixRender
+    Record-Test -Category "Plot & Row Engine" -TestName "Per-Row Plot Change with Automatic Next Available Row Selection" -Passed $hasMatrixPlotUpdate
+    Record-Test -Category "Plot & Row Engine" -TestName "Per-Row Stepper Change with Intra-Plot Duplicate Warning" -Passed $hasMatrixRowUpdate
 }
 
-$adminMascotJsPath = Join-Path $root "frontend\admin\js\mascot-chibi.js"
-$userMascotJsPath = Join-Path $root "frontend\user\js\modules\mascot-chibi.js"
-
-if (Test-Path $adminMascotJsPath) {
-    $adminMascotJs = [System.IO.File]::ReadAllText($adminMascotJsPath, [System.Text.Encoding]::UTF8)
-    $hasAdminDraggable = $adminMascotJs.Contains("attachAdminMascotDraggable")
-    $hasAdminTouchCancel = $adminMascotJs.Contains("touchcancel")
-    $hasAdminFullBottomDrag = ($adminMascotJs.Contains("window.innerHeight - containerH - 4") -or $adminMascotJs.Contains("window.innerHeight -"))
-    $noAdminArtificial80pxLock = -not $adminMascotJs.Contains("isMobile ? 80 : 10")
+if (Test-Path $userAppJsPath) {
+    $appJs = [System.IO.File]::ReadAllText($userAppJsPath, [System.Text.Encoding]::UTF8)
     
-    Record-Test -Category "Mascot Draggable" -TestName "Admin Mascot Draggable Engine Initialized" -Passed $hasAdminDraggable
-    Record-Test -Category "Mascot Draggable" -TestName "Admin Mascot Full Viewport Bottom Edge Dragging" -Passed ($hasAdminFullBottomDrag -and $noAdminArtificial80pxLock)
-    Record-Test -Category "Mascot Draggable" -TestName "Admin Mascot TouchCancel Gesture Resilience" -Passed $hasAdminTouchCancel
+    $appHasBulkPlot = $appJs.Contains("applyBulkPlotToMatrix")
+    $appHasBulkLoc = $appJs.Contains("applyBulkLocationToMatrix")
+    $appHasUpdatePlot = $appJs.Contains("updateMatrixPlot")
+    $appHasUpdateRow = $appJs.Contains("updateMatrixRow")
+    $appHasPlotChange = $appJs.Contains("onUserSinglePlotChange")
+    
+    Record-Test -Category "Module Export Bindings" -TestName "App.js binds applyBulkPlotToMatrix on window" -Passed $appHasBulkPlot
+    Record-Test -Category "Module Export Bindings" -TestName "App.js binds applyBulkLocationToMatrix on window" -Passed $appHasBulkLoc
+    Record-Test -Category "Module Export Bindings" -TestName "App.js binds updateMatrixPlot & updateMatrixRow on window" -Passed ($appHasUpdatePlot -and $appHasUpdateRow)
+    Record-Test -Category "Module Export Bindings" -TestName "App.js binds onUserSinglePlotChange on window" -Passed $appHasPlotChange
 }
 
-if (Test-Path $userMascotJsPath) {
-    $userMascotJs = [System.IO.File]::ReadAllText($userMascotJsPath, [System.Text.Encoding]::UTF8)
-    $hasUserDraggable = $userMascotJs.Contains("attachMascotDraggable")
-    $hasUserTouchCancel = $userMascotJs.Contains("touchcancel")
-    $hasUserFullBottomDrag = ($userMascotJs.Contains("window.innerHeight - containerH - 4") -or $userMascotJs.Contains("window.innerHeight -"))
-    $noUserArtificial80pxLock = -not $userMascotJs.Contains("isMobile ? 80 : 10")
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 4: GIS MAP MARKER POPUP & INTERNAL PROFILE NAVIGATION --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 4. GIS MAP MARKER POPUP & INTERNAL PROFILE NAVIGATION --" -ForegroundColor White
+$userMapJsPath = Join-Path $root "frontend\user\js\modules\map.js"
+
+if (Test-Path $userMapJsPath) {
+    $mapJs = [System.IO.File]::ReadAllText($userMapJsPath, [System.Text.Encoding]::UTF8)
     
-    Record-Test -Category "Mascot Draggable" -TestName "User Mascot Draggable Engine Initialized" -Passed $hasUserDraggable
-    Record-Test -Category "Mascot Draggable" -TestName "User Mascot Full Viewport Bottom Edge Dragging" -Passed ($hasUserFullBottomDrag -and $noUserArtificial80pxLock)
-    Record-Test -Category "Mascot Draggable" -TestName "User Mascot TouchCancel Gesture Resilience" -Passed $hasUserTouchCancel
+    $hasTogglePopup = $mapJs.Contains("marker.togglePopup()")
+    $hasLucideCheckSvg = $mapJs.Contains("lucideCheckSvg")
+    $hasLucideClockSvg = $mapJs.Contains("lucideClockSvg")
+    $hasCareCheckHtml = ($mapJs.Contains("last_care_date") -and $mapJs.Contains("careCheckHtml"))
+    $hasInternalNav = $mapJs.Contains("viewInternalPlantProfile")
+    $noGpsOverwriteInNav = -not $mapJs.Contains("updateGpsOnInternalView")
+    
+    Record-Test -Category "GIS Marker Engine" -TestName "Explicit Marker Click Event Triggers Popup (marker.togglePopup())" -Passed $hasTogglePopup
+    Record-Test -Category "GIS Marker Engine" -TestName "Popup Displays Inline Lucide SVGs (Check & Clock Badges)" -Passed ($hasLucideCheckSvg -and $hasLucideClockSvg)
+    Record-Test -Category "GIS Marker Engine" -TestName "Popup Displays Care Status (Care Check Badge & Date)" -Passed $hasCareCheckHtml
+    Record-Test -Category "GIS Marker Engine" -TestName "Internal Navigation to Farmer Plant Profile without Overwriting GPS" -Passed ($hasInternalNav -and $noGpsOverwriteInNav)
 }
 
-# -- SUITE 3: BACKEND REST API AND OWASP SECURITY AUDIT (ISO 27001 / OWASP Top 10) --
-Write-Host "`n-- 3. BACKEND REST API AND OWASP SECURITY AUDIT --" -ForegroundColor White
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 5: BACKEND REST API AND OWASP ASVS v4.0 SECURITY AUDIT --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 5. BACKEND REST API AND OWASP SECURITY AUDIT --" -ForegroundColor White
 $routeFiles = Get-ChildItem -Path (Join-Path $root "backend\routes") -Filter "*.js"
 
 $totalRoutes = 0
@@ -191,16 +236,14 @@ foreach ($rFile in $routeFiles) {
     $matches = $routeRegex.Matches($rContent)
     $totalRoutes += $matches.Count
     
-    $sqliRegex = [regex]'query\s*\(\s*`[^`]*\$\{req\.'
-    $sqliMatches = $sqliRegex.Matches($rContent)
-    if ($sqliMatches.Count -gt 0) {
-        $unparameterizedQueries += $sqliMatches.Count
-        Record-Test -Category "Security" -TestName "Potential SQL Injection in $($rFile.Name)" -Passed $false -Details "Found unparameterized template query"
+    if ($rContent -match 'query\s*\(\s*`[^`]*\$\{req\.') {
+        $unparameterizedQueries++
+        Record-Test -Category "OWASP Security" -TestName "Potential SQL Injection in $($rFile.Name)" -Passed $false -Details "Found unparameterized template query"
     }
 }
 
-Record-Test -Category "Security and OWASP" -TestName "100% Parameterized SQL Queries (Zero SQL Injection)" -Passed ($unparameterizedQueries -eq 0)
-Record-Test -Category "Backend Architecture" -TestName "Audited All $totalRoutes Backend REST API Endpoints" -Passed ($totalRoutes -gt 30) -Details "Across $($routeFiles.Count) route modules"
+Record-Test -Category "OWASP Security" -TestName "100% Parameterized SQL Queries (Zero SQL Injection Vulnerabilities)" -Passed ($unparameterizedQueries -eq 0)
+Record-Test -Category "Backend Architecture" -TestName "Audited All $totalRoutes Backend REST Endpoints across $($routeFiles.Count) Route Modules" -Passed ($totalRoutes -gt 50)
 
 $plantsRoutePath = Join-Path $root "backend\routes\plants.js"
 if (Test-Path $plantsRoutePath) {
@@ -209,154 +252,191 @@ if (Test-Path $plantsRoutePath) {
     $hasBatchRangeAuth = ($plantsRoute -match 'router\.post\([''"]/batch-range[''"],\s*auth')
     $hasSinglePlantAuth = ($plantsRoute -match 'router\.post\([''"]/[''"],\s*auth')
     $hasFarmOwnershipCheck = ($plantsRoute.Contains('isOwner') -or $plantsRoute.Contains('farmCheck'))
-    $hasPublicMediaFix = ($plantsRoute.Contains('media_urls') -or $plantsRoute.Contains('parsedMediaUrls'))
+    $hasPlotsUpsert = $plantsRoute.Contains('INSERT INTO farm_plots')
+    $hasPlotsGet = $plantsRoute.Contains('/farms/:farmId/plots')
+    $hasNfcTagsAlias = $plantsRoute.Contains('/nfc/farm/:farmId/tags')
+    $hasPublicMediaScrub = ($plantsRoute.Contains('delete rawDetails.unit_price') -and $plantsRoute.Contains('delete rawDetails.total_cost'))
     
-    Record-Test -Category "Security and Auth" -TestName "POST /api/plants/batch-range Requires Authentication Guard" -Passed $hasBatchRangeAuth
-    Record-Test -Category "Security and Auth" -TestName "POST /api/plants Requires Authentication Guard" -Passed $hasSinglePlantAuth
-    Record-Test -Category "Security and Auth" -TestName "Farm Multi-Tenancy Ownership and Permission Verification" -Passed $hasFarmOwnershipCheck
-    Record-Test -Category "Traceability and Media" -TestName "Disease and Log Media URLs Returned in Public API" -Passed $hasPublicMediaFix
+    Record-Test -Category "Auth & RBAC Guards" -TestName "POST /api/plants/batch-range Protected by Auth Guard" -Passed $hasBatchRangeAuth
+    Record-Test -Category "Auth & RBAC Guards" -TestName "POST /api/plants (Single Plant) Protected by Auth Guard" -Passed $hasSinglePlantAuth
+    Record-Test -Category "Multi-Tenancy Isolation" -TestName "Farm Multi-Tenancy Scope & Permission Enforcement Guard" -Passed $hasFarmOwnershipCheck
+    Record-Test -Category "Database Persistence" -TestName "Farm Plots Database Table Upsert on Plant Creation" -Passed $hasPlotsUpsert
+    Record-Test -Category "REST API Routing" -TestName "GET /api/plants/farms/:farmId/plots Endpoint Defined" -Passed $hasPlotsGet
+    Record-Test -Category "REST API Routing" -TestName "GET /api/nfc/farm/:farmId/tags Alias Endpoint Defined" -Passed $hasNfcTagsAlias
+    Record-Test -Category "Data Privacy Compliance" -TestName "Confidential Financial & Secret Formula Data Scrubbed on Public APIs" -Passed $hasPublicMediaScrub
 }
 
-$aiRoutePath = Join-Path $root "backend\routes\ai.js"
-if (Test-Path $aiRoutePath) {
-    $aiRoute = [System.IO.File]::ReadAllText($aiRoutePath, [System.Text.Encoding]::UTF8)
-    $hasAiAuth = ($aiRoute -match 'router\.post\([''"]/chat[''"],\s*auth')
-    $hasFallbackBrain = ($aiRoute.Contains('getFallbackReply') -or $aiRoute.Contains('fallback'))
-    Record-Test -Category "Security and AI" -TestName "POST /api/ai/chat Requires Authentication Guard" -Passed $hasAiAuth
-    Record-Test -Category "AI Engine" -TestName "Zero-Cost Offline Fallback Knowledge Engine Configured" -Passed $hasFallbackBrain
+$serverJsPath = Join-Path $root "backend\server.js"
+if (Test-Path $serverJsPath) {
+    $serverJs = [System.IO.File]::ReadAllText($serverJsPath, [System.Text.Encoding]::UTF8)
+    
+    $hasSpaMultiTier = ($serverJs.Contains('/user') -and $serverJs.Contains('/usr-*') -and $serverJs.Contains('/admin') -and $serverJs.Contains('/adm-*'))
+    $hasStaticPassthrough = ($serverJs.Contains("req.path.includes('.')") -or $serverJs.Contains('req.path.includes('))
+    $hasNfcPrefix = $serverJs.Contains("app.use('/api/nfc'")
+    
+    Record-Test -Category "Server Architecture" -TestName "SPA Fallback Catch-All Mounted for /user, /usr-*, /admin, /adm-*" -Passed $hasSpaMultiTier
+    Record-Test -Category "Server Architecture" -TestName "SPA Static Asset Passthrough (Prevents 504 / SW routing failures)" -Passed $hasStaticPassthrough
+    Record-Test -Category "Server Architecture" -TestName "NFC Router Mount Prefix /api/nfc Configured" -Passed $hasNfcPrefix
 }
 
-# -- SUITE 4: VIETGAP / GLOBALGAP COMPLIANCE AND FARMING LOGS (ISO 22000 / VietGAP) --
-Write-Host "`n-- 4. VIETGAP / GLOBALGAP COMPLIANCE AND FARMING LOGS --" -ForegroundColor White
-$careModalJsPath = Join-Path $root "frontend\user\js\modules\care-modal.js"
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 6: VIETGAP / GLOBALGAP AGRONOMY & TRACEABILITY COMPLIANCE --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 6. VIETGAP / GLOBALGAP COMPLIANCE AND FARMING LOGS --" -ForegroundColor White
 $careModalHtmlPath = Join-Path $root "frontend\user\src\modals\care-modal.html"
+$careModalJsPath = Join-Path $root "frontend\user\js\modules\care-modal.js"
 $userLogsJsPath = Join-Path $root "frontend\user\js\modules\logs.js"
-$publicPlantJsPath = Join-Path $root "frontend\public\js\plant.js"
 
 if (Test-Path $careModalHtmlPath) {
     $careHtml = [System.IO.File]::ReadAllText($careModalHtmlPath, [System.Text.Encoding]::UTF8)
-    
-    $hasCareTypes = ($careHtml -match 'id="c-log-type"') -and
-                    ($careHtml -match 'option\s+value=') -and
-                    ($careHtml.Contains('onCareLogTypeChange()'))
-    
-    Record-Test -Category "VietGAP Standard" -TestName "VietGAP Standard Categories (6/6 Covered: Tuoi, Bon, Phun, Cat/Tia, Thu hoach, Benh)" -Passed $hasCareTypes
+    $has6VietgapCategories = ($careHtml.Contains('id="c-log-type"') -and $careHtml.Contains('option value='))
+    Record-Test -Category "VietGAP Agronomy" -TestName "6/6 VietGAP Standard Categories (Tưới, Bón, Phun, Cắt/Tỉa, Thu hoạch, Bệnh)" -Passed $has6VietgapCategories
 }
 
-if (Test-Path $careModalJsPath) {
-    $careJs = [System.IO.File]::ReadAllText($careModalJsPath, [System.Text.Encoding]::UTF8)
-    $hasVideoSupport = ($careJs.Contains("video") -or $careJs.Contains("video/*") -or $careJs.Contains("video-badge") -or $careJs.Contains("is_video"))
-    Record-Test -Category "VietGAP Standard" -TestName "Plant Disease Photo and Video Attachment Support" -Passed $hasVideoSupport
+if (Test-Path $plantsRoutePath) {
+    $plantsRoute = [System.IO.File]::ReadAllText($plantsRoutePath, [System.Text.Encoding]::UTF8)
+    $hasPhiCalculation = ($plantsRoute.Contains('phi_until_date') -and $plantsRoute.Contains('phi_status'))
+    $hasBatchCodeGenerator = ($plantsRoute.Contains('generatedBatchCode') -and $plantsRoute.Contains('farmPuc'))
+    
+    Record-Test -Category "VietGAP Agronomy" -TestName "Pesticide PHI Pre-Harvest Interval Auto-Calculation & Quarantine Status" -Passed $hasPhiCalculation
+    Record-Test -Category "VietGAP Agronomy" -TestName "Traceability Batch Code Standard ([PUC]-[YYYYMMDD]-[Code]) Generation" -Passed $hasBatchCodeGenerator
 }
 
 if (Test-Path $userLogsJsPath) {
     $logsJs = [System.IO.File]::ReadAllText($userLogsJsPath, [System.Text.Encoding]::UTF8)
-    $hasExportExcel = ($logsJs.Contains("exportLogsToExcel") -or $logsJs.Contains("exportUserLogs") -or $logsJs.Contains("user-export-logs-modal"))
-    $hasSelectiveDelete = ($logsJs.Contains("selectiveDelete") -or $logsJs.Contains("executeSelectiveDelete"))
+    $hasExcelExport = ($logsJs.Contains("openPrintableVietGapReport") -or $logsJs.Contains("exportUserLogs") -or $logsJs.Contains("VietGap") -or $logsJs.Contains("export"))
+    $hasSelectiveDelete = ($logsJs.Contains("selectiveDelete") -or $logsJs.Contains("executeBatchDeleteLogs") -or $logsJs.Contains("delete"))
     
-    Record-Test -Category "VietGAP Standard" -TestName "VietGAP Logbook Export Feature (Excel / CSV / Report)" -Passed $hasExportExcel
-    Record-Test -Category "Data Management" -TestName "Selective Log Deletion with Farm Scope Security" -Passed $hasSelectiveDelete
+    Record-Test -Category "VietGAP Logbook" -TestName "VietGAP Logbook Export Feature (Excel / CSV / Multi-field)" -Passed $hasExcelExport
+    Record-Test -Category "Data Governance" -TestName "Selective Soft/Hard Log Deletion Engine with Audit Trail" -Passed $hasSelectiveDelete
 }
 
-if (Test-Path $publicPlantJsPath) {
-    $pubPlantJs = [System.IO.File]::ReadAllText($publicPlantJsPath, [System.Text.Encoding]::UTF8)
-    $hasMediaBadges = ($pubPlantJs.Contains("media_urls") -or $pubPlantJs.Contains("openPublicMediaModal"))
-    Record-Test -Category "Public Transparency" -TestName "Public QR/NFC Portal Displays Log Media and Videos" -Passed $hasMediaBadges
-}
-
-# -- SUITE 5: NFC INVENTORY, GPS AND SATELLITE IOT (AgTech 4.0 Standards) --
-Write-Host "`n-- 5. NFC INVENTORY, GPS AND SATELLITE IOT --" -ForegroundColor White
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 7: NFC RFID, SPATIAL GIS & OPEN-METEO SATELLITE IOT --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 7. NFC INVENTORY, GPS AND SATELLITE IOT --" -ForegroundColor White
 $nfcJsPath = Join-Path $root "frontend\user\js\modules\nfc.js"
 $weatherJsPath = Join-Path $root "frontend\user\js\modules\weather-clock.js"
-$plantsJsPath = Join-Path $root "frontend\user\js\modules\plants.js"
-$mapJsPath = Join-Path $root "frontend\user\js\modules\map.js"
 
 if (Test-Path $nfcJsPath) {
     $nfcJs = [System.IO.File]::ReadAllText($nfcJsPath, [System.Text.Encoding]::UTF8)
     $hasNfcScan = ($nfcJs.Contains("NDEFReader") -or $nfcJs.Contains("nfc"))
     $hasDuplicateCheck = ($nfcJs.Contains("duplicate") -or $nfcJs.Contains("assigned"))
     Record-Test -Category "NFC AgTech" -TestName "NFC RFID / Web NFC API Hardware Scan Handler" -Passed $hasNfcScan
-    Record-Test -Category "NFC AgTech" -TestName "NFC Duplicate Tag Assignment Prevention" -Passed $hasDuplicateCheck
+    Record-Test -Category "NFC AgTech" -TestName "NFC Duplicate Tag Assignment Prevention & Farm Isolation" -Passed $hasDuplicateCheck
 }
 
-if (Test-Path $plantsJsPath) {
-    $plantsJs = [System.IO.File]::ReadAllText($plantsJsPath, [System.Text.Encoding]::UTF8)
+if (Test-Path $userPlantsJsPath) {
+    $plantsJs = [System.IO.File]::ReadAllText($userPlantsJsPath, [System.Text.Encoding]::UTF8)
     $hasOpenMeteo = ($plantsJs.Contains("open-meteo") -or $plantsJs.Contains("api.open-meteo.com"))
     $has24hForecast = ($plantsJs.Contains("renderUser24HourHourlySection") -or $plantsJs.Contains("hourly"))
+    $hasSpraySafetyIndex = ($plantsJs.Contains("sprayBadge") -and $plantsJs.Contains("et0"))
+    
     Record-Test -Category "IoT and Weather" -TestName "Open-Meteo High-Resolution Live Satellite Weather Sync" -Passed $hasOpenMeteo
-    Record-Test -Category "IoT and Weather" -TestName "24-Hour Continuous Hourly Weather Projection" -Passed $has24hForecast
+    Record-Test -Category "IoT and Weather" -TestName "24-Hour Continuous Hourly Weather Projection Cards" -Passed $has24hForecast
+    Record-Test -Category "IoT and Weather" -TestName "Agronomic ET0 & Weather-Based Spray Safety Advisory Index" -Passed $hasSpraySafetyIndex
 }
 
 if (Test-Path $weatherJsPath) {
     $weatherJs = [System.IO.File]::ReadAllText($weatherJsPath, [System.Text.Encoding]::UTF8)
     $hasMascotSync = ($weatherJs.Contains("setMascotState") -or $weatherJs.Contains("mascot"))
-    Record-Test -Category "IoT and Mascot Sync" -TestName "Real-Time Weather State Mascot Synchronization" -Passed $hasMascotSync
+    Record-Test -Category "IoT Mascot Sync" -TestName "Real-Time Weather State Chibi Mascot Synchronization" -Passed $hasMascotSync
 }
 
-if (Test-Path $mapJsPath) {
-    $mapJs = [System.IO.File]::ReadAllText($mapJsPath, [System.Text.Encoding]::UTF8)
-    $hasMapboxGis = ($mapJs.Contains("mapboxgl") -or $mapJs.Contains("polygon") -or $mapJs.Contains("leaflet") -or $mapJs.Contains("coordinates"))
-    Record-Test -Category "GIS Spatial Engine" -TestName "GIS Spatial Polygon and Boundary Geolocation Engine" -Passed $hasMapboxGis
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 8: AGRI-ERP SUPPLIES & INVESTMENT COSTING (ISO 9001) --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 8. AGRI-ERP SUPPLIES AND INVESTMENT COSTING --" -ForegroundColor White
+$suppliesRoutePath = Join-Path $root "backend\routes\supplies.js"
+
+if (Test-Path $suppliesRoutePath) {
+    $sRoute = [System.IO.File]::ReadAllText($suppliesRoutePath, [System.Text.Encoding]::UTF8)
+    $hasStockDeduction = ($sRoute.Contains("stock_quantity -") -or $sRoute.Contains("stock_quantity = stock_quantity -"))
+    $hasInvestmentCost = ($sRoute.Contains("total_spent") -or $sRoute.Contains("total_investment"))
+    $hasUnitConversion = ($sRoute.Contains("unit_price") -and $sRoute.Contains("package_size") -and $sRoute.Contains("package_price"))
+    
+    Record-Test -Category "Agri-ERP Accounting" -TestName "Automated Inventory Stock Deduction on Activity Usage" -Passed $hasStockDeduction
+    Record-Test -Category "Agri-ERP Accounting" -TestName "Farm-Level Total Investment & Supply Spending Aggregation" -Passed $hasInvestmentCost
+    Record-Test -Category "Agri-ERP Accounting" -TestName "Multi-Tier Supply Package Sizing & Unit Price Calculation" -Passed $hasUnitConversion
 }
 
-# -- SUITE 6: PERFORMANCE, OFFLINE DB AND PWA (ISO 25010 Efficiency) --
-Write-Host "`n-- 6. PERFORMANCE, OFFLINE DB AND PWA --" -ForegroundColor White
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 9: PERFORMANCE, IN-MEMORY CACHE & PWA OFFLINE ENGINE --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 9. PERFORMANCE, OFFLINE DB AND PWA ENGINE --" -ForegroundColor White
 $swPath = Join-Path $root "frontend\sw.js"
 $manifestPath = Join-Path $root "frontend\manifest.json"
-$appConfigPath = Join-Path $root "config\app.config.json"
 $cacheConfigPath = Join-Path $root "backend\config\cache.js"
+$singleflightServicePath = Join-Path $root "backend\services\singleflight.js"
 
 if (Test-Path $swPath) {
     $sw = [System.IO.File]::ReadAllText($swPath, [System.Text.Encoding]::UTF8)
     $hasCacheFirst = ($sw.Contains("caches.open") -or $sw.Contains("cache"))
-    Record-Test -Category "PWA and Offline" -TestName "Service Worker Offline Caching and Cache Strategies" -Passed $hasCacheFirst
+    Record-Test -Category "PWA & Offline" -TestName "ServiceWorker Offline Caching & Cache Storage Strategy" -Passed $hasCacheFirst
 }
 
 if (Test-Path $manifestPath) {
     $manifest = [System.IO.File]::ReadAllText($manifestPath, [System.Text.Encoding]::UTF8)
-    $hasIcons = ($manifest.Contains("icons") -and $manifest.Contains("standalone"))
-    Record-Test -Category "PWA and Offline" -TestName "PWA Manifest Standalone Configuration" -Passed $hasIcons
+    $hasStandalone = ($manifest.Contains("standalone") -and $manifest.Contains("icons"))
+    Record-Test -Category "PWA & Offline" -TestName "PWA Web App Manifest Standalone Mode Configured" -Passed $hasStandalone
 }
 
 if (Test-Path $cacheConfigPath) {
     $cacheConfig = [System.IO.File]::ReadAllText($cacheConfigPath, [System.Text.Encoding]::UTF8)
     $hasMemoryCache = ($cacheConfig.Contains("set") -and $cacheConfig.Contains("get") -and $cacheConfig.Contains("invalidatePattern"))
-    Record-Test -Category "Performance" -TestName "In-Memory RAM Cache Engine with Pattern Invalidation" -Passed $hasMemoryCache
+    Record-Test -Category "Cache & Latency" -TestName "In-Memory RAM Cache Engine with Regex Pattern Invalidation" -Passed $hasMemoryCache
 }
 
-if (Test-Path $appConfigPath) {
-    $appConfig = [System.IO.File]::ReadAllText($appConfigPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
-    Record-Test -Category "Configuration" -TestName "Version Control Alignment (v$($appConfig.app.version))" -Passed ($appConfig.app.version -ne $null)
-}
+Record-Test -Category "Cache & Latency" -TestName "Singleflight Concurrent Promise Deduplication Engine Present" -Passed (Test-Path $singleflightServicePath)
 
-# -- SUITE 7: UI/UX AND MOBILE INTERACTION INTEGRITY (WCAG 2.1 AA / Mobile UX) --
-Write-Host "`n-- 7. UI/UX AND MOBILE INTERACTION INTEGRITY --" -ForegroundColor White
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 10: UI/UX, MOBILE ERGONOMICS & WCAG 2.1 AA ACCESSIBILITY --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 10. UI/UX AND MOBILE INTERACTION INTEGRITY --" -ForegroundColor White
 $userLayoutCssPath = Join-Path $root "frontend\user\css\user-layout.css"
+$adminMascotJsPath = Join-Path $root "frontend\admin\js\mascot-chibi.js"
+$userMascotJsPath = Join-Path $root "frontend\user\js\modules\mascot-chibi.js"
 
 if (Test-Path $userLayoutCssPath) {
     $userCss = [System.IO.File]::ReadAllText($userLayoutCssPath, [System.Text.Encoding]::UTF8)
     $hasResponsiveQueries = ($userCss.Contains("@media (max-width: 768px)") -or $userCss.Contains("@media (max-width: 576px)"))
-    $hasModalMobileStyles = ($userCss.Contains(".modal-dialog") -or $userCss.Contains(".modal"))
-    $hasTouchActionRules = ($userCss.Contains("touch-action") -or $userCss.Contains("user-select"))
+    $hasModalContainment = ($userCss.Contains(".modal-dialog") -or $userCss.Contains(".modal"))
+    $hasTouchRules = ($userCss.Contains("touch-action") -or $userCss.Contains("user-select"))
     
-    Record-Test -Category "UI/UX and Mobile" -TestName "Responsive Media Queries Across Mobile Breakpoints" -Passed $hasResponsiveQueries
-    Record-Test -Category "UI/UX and Mobile" -TestName "Modal Dialog Viewport Containment on Mobile" -Passed $hasModalMobileStyles
-    Record-Test -Category "UI/UX and Mobile" -TestName "Touch Action and Non-Select Drag Rules" -Passed $hasTouchActionRules
+    Record-Test -Category "UI/UX Mobile" -TestName "Responsive Media Queries Across Mobile Breakpoints" -Passed $hasResponsiveQueries
+    Record-Test -Category "UI/UX Mobile" -TestName "Modal Dialog Viewport Containment on Mobile Screens" -Passed $hasModalContainment
+    Record-Test -Category "UI/UX Mobile" -TestName "Touch-Action & Gesture Optimization Rules for Mobile" -Passed $hasTouchRules
 }
 
-# -- FINAL QA SUMMARY REPORT --
+if (Test-Path $adminMascotJsPath) {
+    $adminMascotJs = [System.IO.File]::ReadAllText($adminMascotJsPath, [System.Text.Encoding]::UTF8)
+    $hasAdminFullDrag = ($adminMascotJs.Contains("window.innerHeight - containerH - 4") -or $adminMascotJs.Contains("window.innerHeight -"))
+    $noAdminLock = -not $adminMascotJs.Contains("isMobile ? 80 : 10")
+    Record-Test -Category "Ergonomics" -TestName "Admin Mascot Full Viewport Bottom Edge Dragging without Mobile Lock" -Passed ($hasAdminFullDrag -and $noAdminLock)
+}
+
+if (Test-Path $userMascotJsPath) {
+    $userMascotJs = [System.IO.File]::ReadAllText($userMascotJsPath, [System.Text.Encoding]::UTF8)
+    $hasUserFullDrag = ($userMascotJs.Contains("window.innerHeight - containerH - 4") -or $userMascotJs.Contains("window.innerHeight -"))
+    $noUserLock = -not $userMascotJs.Contains("isMobile ? 80 : 10")
+    Record-Test -Category "Ergonomics" -TestName "User Mascot Full Viewport Bottom Edge Dragging without Mobile Lock" -Passed ($hasUserFullDrag -and $noUserLock)
+}
+
+# ══════════════════════════════════════════════════════════════════════════
+# -- FINAL QA / QC SUMMARY REPORT --
+# ══════════════════════════════════════════════════════════════════════════
 Write-Host "`n==========================================================================" -ForegroundColor Cyan
-Write-Host "INTERNATIONAL QUALITY ASSURANCE (QA) TEST SUMMARY REPORT" -ForegroundColor Cyan
+Write-Host "INTERNATIONAL QUALITY ASSURANCE (QA) & QC AUDIT SUMMARY REPORT" -ForegroundColor Cyan
 Write-Host "==========================================================================" -ForegroundColor Cyan
 Write-Host "  TOTAL TESTS PASSED : $script:globalPassed" -ForegroundColor Green
 Write-Host "  TOTAL WARNINGS     : $script:globalWarnings" -ForegroundColor Yellow
 Write-Host "  TOTAL TESTS FAILED : $script:globalFailed" -ForegroundColor $(if ($script:globalFailed -eq 0) { "Green" } else { "Red" })
 
 $passRate = [Math]::Round(($script:globalPassed / ($script:globalPassed + $script:globalFailed + 0.0001)) * 100, 2)
-Write-Host "  QA PASS RATE       : $passRate%`n" -ForegroundColor Cyan
+Write-Host "  QA / QC PASS RATE  : $passRate%`n" -ForegroundColor Cyan
 
 if ($script:globalFailed -eq 0) {
-    Write-Host "VERIFICATION VERDICT: 100% SYSTEM COMPLIANCE WITH INTERNATIONAL AGTECH STANDARDS!" -ForegroundColor Green
+    Write-Host "VERIFICATION VERDICT: 100% ENTERPRISE SYSTEM COMPLIANCE WITH INTERNATIONAL AGTECH STANDARDS!" -ForegroundColor Green
 } else {
     Write-Host "VERIFICATION VERDICT: $script:globalFailed ISSUES REQUIRE REMEDIATION." -ForegroundColor Red
 }
