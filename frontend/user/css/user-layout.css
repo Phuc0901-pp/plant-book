@@ -63,13 +63,23 @@ code, kbd, samp, pre, .font-mono {
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
   z-index: 99999 !important;
-  display: flex !important;
+  display: none;
   align-items: center !important;
   justify-content: center !important;
   padding: 20px !important;
   box-sizing: border-box !important;
 }
+.modal-overlay[style*="display: flex"],
+.modal-overlay[style*="display:flex"],
+.modal-overlay[style*="display: block"],
+.modal-overlay[style*="display:block"],
+.modal-overlay.open,
+.modal-overlay.active,
+.modal-overlay.show {
+  display: flex !important;
+}
 .modal-overlay[style*="display: none"],
+.modal-overlay[style*="display:none"],
 .modal-overlay.hidden,
 .modal-overlay[hidden] {
   display: none !important;

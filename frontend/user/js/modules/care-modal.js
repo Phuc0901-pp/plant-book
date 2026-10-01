@@ -7,10 +7,17 @@ import { api, token, API }      from '../core/api.js';
 import { toast, esc }           from '../core/utils.js';
 import { selectedCareFiles, clearSelectedFiles, watermarkImage } from './media.js';
 import { getLogsCache }         from './logs.js';
+import { getPlantsCache }       from './plants.js';
 
 // ── Truy cập config/plants qua window để tránh circular import ──
 function _configs()  { return window._allConfigsCache || {}; }
-function _plants()   { return window._allPlantsCache  || []; }
+function _plants()   { 
+  const p = window._allPlantsCache;
+  if (Array.isArray(p) && p.length > 0) return p;
+  const fromCache = typeof getPlantsCache === 'function' ? getPlantsCache() : [];
+  if (Array.isArray(fromCache) && fromCache.length > 0) return fromCache;
+  return [];
+}
 
 // ── Open / Close ──────────────────────────────────────────────
 
@@ -312,12 +319,18 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
  * Đóng modal nhật ký chăm sóc.
  */
 export function closeCareModal() {
-  if (typeof stopVoiceInput === 'function' && _isCareRecording) {
-    stopVoiceInput(true);
-  }
+  try {
+    if (typeof stopVoiceInput === 'function' && _isCareRecording) {
+      stopVoiceInput(true);
+    }
+  } catch (_) {}
+
   const modal = document.getElementById('care-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.style.display = 'none';
+  }
 }
+window.closeCareModal = closeCareModal;
 
 // ── Dynamic Form Fields ───────────────────────────────────────
 
@@ -1398,6 +1411,15 @@ export function startVoiceInput() {
   }
 }
 
+window.openCareModal = openCareModal;
+window.closeCareModal = closeCareModal;
+window.saveCareLog = saveCareLog;
+window.onCareLogTypeChange = onCareLogTypeChange;
+window.calculateWaterCostPreview = calculateWaterCostPreview;
+window.calculateCareSupplyCostPreview = calculateCareSupplyCostPreview;
+window.refreshCareSuppliesDropdowns = refreshCareSuppliesDropdowns;
+window.onCareSupplySelected = onCareSupplySelected;
+window.updatePesticideNotice = updatePesticideNotice;
 window.stopVoiceInput = stopVoiceInput;
 window.startVoiceInput = startVoiceInput;
 
