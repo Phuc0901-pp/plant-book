@@ -2461,6 +2461,8 @@ router.post('/:id/restore', auth, admin, async (req, res) => {
     console.error('Restore plant error:', err);
     res.status(500).json({ error: 'Lỗi server khi khôi phục cây: ' + err.message });
   }
+});
+
 // GET /api/plants/:id/media & alias /growth-photos
 router.get(['/:id(\\d+)/media', '/:id(\\d+)/growth-photos'], auth, async (req, res) => {
   try {
