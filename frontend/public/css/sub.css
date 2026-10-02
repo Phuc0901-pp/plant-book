@@ -100,45 +100,116 @@ body {
 /* Header */
 .gateway-header {
   text-align: center;
-  margin-top: 8px;
+  margin-top: 4px;
   margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.gateway-logo-wrap {
+.gateway-brand-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
-  border-radius: 20px;
+  padding: 10px 24px;
   background: #ffffff;
   border: 1px solid var(--border-card);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  margin-bottom: 12px;
-  position: relative;
-  padding: 8px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin-bottom: 14px;
+  transition: all 0.25s ease;
+}
+
+.gateway-brand-badge:hover {
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.12);
+  border-color: #cbd5e1;
+}
+
+.gateway-logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
 }
 
 .gateway-logo-img {
-  width: 100%;
-  height: 100%;
+  height: 44px;
+  width: auto;
+  max-width: 240px;
   object-fit: contain;
   display: block;
 }
 
 .gateway-title {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 800;
   color: #0f172a;
-  letter-spacing: -0.5px;
-  margin-bottom: 4px;
+  letter-spacing: -0.3px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
 }
 
 .gateway-subtitle {
   font-size: 13.5px;
   color: #475569;
-  line-height: 1.4;
+  line-height: 1.5;
   font-weight: 500;
+}
+
+/* Enterprise Footer Card */
+.enterprise-footer-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-top: 18px;
+  text-align: center;
+}
+
+.footer-shield-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.footer-text-content {
+  font-size: 12.5px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-dot {
+  color: #cbd5e1;
+}
+
+.footer-portal-link {
+  color: #059669;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.footer-portal-link:hover {
+  color: #047857;
+  text-decoration: underline;
 }
 
 /* NFC Detection Pill */
