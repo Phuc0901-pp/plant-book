@@ -223,24 +223,83 @@
               <input type="date" id="input-planting-date" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Tuổi Cây / Năm</label>
-              <input type="text" id="input-plant-age" class="form-input" placeholder="Ví dụ: 4 năm">
+              <label class="form-label">Tuổi Cây (Tự Tính)</label>
+              <input type="text" id="input-plant-age" class="form-input" placeholder="Tự tính từ ngày trồng...">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Sức Khỏe</label>
+              <label class="form-label">Sức Khỏe Hiện Tại</label>
               <select id="input-health-status" class="form-select">
                 <option value="Tốt">Tốt (Khỏe mạnh)</option>
                 <option value="Bình thường">Bình thường</option>
                 <option value="Cần chăm sóc">Cần chăm sóc</option>
+                <option value="Bệnh">Bệnh</option>
               </select>
             </div>
             <div class="form-group">
               <label class="form-label">Năng Suất Vụ Trước (kg)</label>
-              <input type="number" id="input-initial-yield" class="form-input" placeholder="0">
+              <input type="number" id="input-initial-yield" class="form-input" placeholder="0" min="0">
             </div>
+          </div>
+
+          <!-- GIAI ĐOẠN SINH TRƯỞNG & ẢNH HIỆN TRƯỜNG KHỞI TẠO -->
+          <div class="form-group">
+            <label class="form-label">Giai Đoạn Sinh Trưởng Khởi Tạo</label>
+            <select id="input-growth-stage" class="form-select">
+              <option value="Kiến thiết cơ bản (Cây non)">🌱 Kiến thiết cơ bản (Cây non)</option>
+              <option value="Phục hồi sau thu hoạch">🍃 Phục hồi sau thu hoạch</option>
+              <option value="Chuẩn bị ra hoa (Làm cơi đọt)">🌿 Chuẩn bị ra hoa (Làm cơi đọt)</option>
+              <option value="Nhú mắt cua / Phân hóa mầm hoa">✨ Nhú mắt cua / Phân hóa mầm hoa</option>
+              <option value="Nở hoa / Thụ phấn">🌸 Nở hoa / Thụ phấn</option>
+              <option value="Đậu trái non">🍈 Đậu trái non</option>
+              <option value="Nuôi trái / Phát triển trái" selected>🥑 Nuôi trái / Phát triển trái</option>
+              <option value="Chuẩn bị thu hoạch">🏆 Chuẩn bị thu hoạch</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ảnh Chụp Thực Địa Hiện Trường (Khởi Tạo)</label>
+            <div class="photo-upload-box" id="btn-trigger-photo">
+              <input type="file" id="input-plant-photo" accept="image/*" capture="environment" style="display:none;">
+              <div id="photo-upload-placeholder">
+                <i data-lucide="camera" style="width:32px; height:32px; color:#34d399; margin-bottom:6px;"></i>
+                <div style="font-size:13px; font-weight:600; color:#e5e7eb;">Chụp ảnh hoặc tải ảnh gốc cây</div>
+                <div style="font-size:11px; color:#9ca3af;">Đóng dấu Watermark thời gian thực & GPS</div>
+              </div>
+              <div class="photo-preview-wrap" id="wrap-photo-preview">
+                <img id="img-photo-preview" src="" alt="Ảnh thực địa">
+                <div class="photo-watermark-overlay" id="text-photo-watermark">TBSG AGTECH · GPS LOCKED</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CÁC BỆNH / VẤN ĐỀ TRƯỚC ĐÂY CỦA CÂY -->
+          <div class="past-diseases-container">
+            <div class="past-diseases-header">
+              <span class="form-label" style="margin:0; display:flex; align-items:center; gap:6px; color:#34d399;">
+                <i data-lucide="shield-alert" style="width:16px; height:16px;"></i>
+                Các bệnh / Vấn đề trước đây của cây
+              </span>
+              <span style="font-size:11px; color:#9ca3af;">Tùy chọn</span>
+            </div>
+            <div class="past-diseases-subtitle">
+              Nhấp chọn các khối bệnh cây đã từng gặp trước khi sử dụng ứng dụng (chọn nhiều mục):
+            </div>
+            <div class="disease-chips-grid" id="disease-chips-grid">
+              <div class="disease-chip" data-disease="Rệp sáp / Rệp muội">🐛 Rệp sáp / Rệp muội</div>
+              <div class="disease-chip" data-disease="Nứt thân xì mủ (Phytophthora)">⚡ Nứt thân xì mủ (Phytophthora)</div>
+              <div class="disease-chip" data-disease="Vàng lá thối rễ">⚠️ Vàng lá thối rễ</div>
+              <div class="disease-chip" data-disease="Cháy lá / Chết đọt">🔥 Cháy lá / Chết đọt</div>
+              <div class="disease-chip" data-disease="Đốm rong / Tảo đỏ">🔆 Đốm rong / Tảo đỏ</div>
+              <div class="disease-chip" data-disease="Thán thư (Colletotrichum)">☣️ Thán thư (Colletotrichum)</div>
+              <div class="disease-chip" data-disease="Bọ trĩ / Nhện đỏ">🛡️ Bọ trĩ / Nhện đỏ</div>
+              <div class="disease-chip" data-disease="Sâu đục thân / Trái">🎯 Sâu đục thân / Trái</div>
+              <div class="disease-chip healthy" data-disease="Chưa từng nhiễm bệnh (Cây khỏe)">✅ Chưa từng nhiễm bệnh (Cây khỏe)</div>
+              <div class="disease-chip" id="chip-disease-other" data-disease="other">➕ Bệnh khác...</div>
+            </div>
+            <input type="text" id="input-other-disease" class="form-input" placeholder="Nhập tên bệnh khác..." style="display:none; margin-top:10px; font-size:12px;">
           </div>
 
           <!-- SUB-1M HIGH-PRECISION GPS ENGINE BOX -->
@@ -255,6 +314,10 @@
               </div>
             </div>
 
+            <div id="text-gps-guidance" class="gps-guidance-note">
+              📡 <strong>Gợi ý:</strong> Mang điện thoại ra ngoài trời thoáng tại gốc cây để cảm biến bắt trực tiếp vệ tinh GPS đạt sai số &lt; ±1m.
+            </div>
+
             <div class="gps-radar-wrap">
               <div class="radar-ring">
                 <div class="radar-center-icon">
@@ -267,9 +330,22 @@
               Đang thu thập mẫu vệ tinh đa tầng...
             </div>
 
-            <button type="button" id="btn-lock-gps" class="btn btn-outline-green" style="margin-top:12px;">
-              <i data-lucide="check-circle-2"></i> Khóa Tọa Độ GPS (Sai số &lt; ±1m)
-            </button>
+            <!-- Manual Lat/Lng Fallback Toggle -->
+            <div id="wrap-manual-gps" style="display:none; margin-top:10px;">
+              <div class="form-row">
+                <input type="text" id="manual-lat-input" class="form-input" placeholder="Vĩ độ (Lat, ví dụ: 10.731153)">
+                <input type="text" id="manual-lng-input" class="form-input" placeholder="Kinh độ (Lng, ví dụ: 106.688591)">
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button type="button" id="btn-lock-gps" class="btn btn-primary" style="flex:2;">
+                <i data-lucide="check-circle-2"></i> Khóa Tọa Độ GPS Cây
+              </button>
+              <button type="button" id="btn-toggle-manual-gps" class="btn btn-secondary btn-sm" style="flex:1;" title="Nhập thủ công tọa độ">
+                <i data-lucide="edit-3"></i> Tùy chỉnh
+              </button>
+            </div>
           </div>
 
           <div class="form-group">

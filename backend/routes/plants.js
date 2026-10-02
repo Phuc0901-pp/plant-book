@@ -3571,10 +3571,13 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       gps_accuracy,
       location,
       cover_image,
+      photo_url,
       nfc_uid,
       initial_yield,
       health_status,
-      notes
+      notes,
+      past_diseases,
+      initial_growth_stage
     } = req.body;
 
     const farmId = parseInt(farm_id || req.user.farm_id);
@@ -3640,6 +3643,16 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
     const randomSuffix = Math.floor(Math.random() * 8999 + 1000);
     const publicSlug = `${cleanVarietySlug}-${finalPlot.toLowerCase()}-${cleanCodeSlug}-${randomSuffix}`;
 
+    const effectiveCover = photo_url || cover_image || null;
+    const pastDiseasesList = Array.isArray(past_diseases) ? past_diseases : (past_diseases ? [past_diseases] : []);
+
+    const plantMetadata = {
+      gps_accuracy: acc,
+      provision_source: 'sub_gateway',
+      past_diseases: pastDiseasesList,
+      initial_growth_stage: initial_growth_stage || null
+    };
+
     // Insert plant
     const plantInsert = await client.query(`
       INSERT INTO plants (
@@ -3656,11 +3669,21 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
     `, [
       farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
       plant_age || null, finalPlot, finalRow, lat, lng,
-      location || `Lô ${finalPlot} - Hàng ${finalRow}`, cover_image || null, cleanUid, publicSlug, health_status || 'Tốt',
-      initial_yield ? parseFloat(initial_yield) : 0, notes || '', JSON.stringify({ gps_accuracy: acc, provision_source: 'sub_gateway' })
+      location || `Lô ${finalPlot} - Hàng ${finalRow}`, effectiveCover, cleanUid, publicSlug, health_status || 'Tốt',
+      initial_yield ? parseFloat(initial_yield) : 0, notes || '', JSON.stringify(plantMetadata)
     ]);
 
     const newPlant = plantInsert.rows[0];
+
+    // If initial photo provided, record in plant_media as growth photo
+    if (effectiveCover) {
+      try {
+        await client.query(`
+          INSERT INTO plant_media (plant_id, url, caption, media_type, category, uploaded_at)
+          VALUES ($1, $2, $3, 'image', 'growth', NOW())
+        `, [newPlant.id, effectiveCover, initial_growth_stage || 'Ảnh chụp hiện trường khởi tạo']);
+      } catch (_) {}
+    }
 
     // If NFC UID provided, register/update tag
     if (cleanUid) {

@@ -9,6 +9,8 @@ class SubGatewayApp {
   constructor() {
     this.nfcBridge = new SubNfcBridge();
     this.gpsEngine = null;
+    this.selectedDiseases = new Set();
+    this.capturedPhotoBase64 = null;
     this.state = {
       token: localStorage.getItem('token') || null,
       user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -53,9 +55,7 @@ class SubGatewayApp {
 
     // If user already logged in with valid token, prepare farm data
     if (this.state.token && this.state.user) {
-      this.loadUserFarms().then(() => {
-        // Ready for user
-      });
+      this.loadUserFarms().then(() => {});
     }
 
     this.showView('view-landing');
@@ -96,7 +96,7 @@ class SubGatewayApp {
     toast.style.bottom = '24px';
     toast.style.left = '50%';
     toast.style.transform = 'translateX(-50%)';
-    toast.style.background = type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(16,185,129,0.95)';
+    toast.style.background = type === 'error' ? 'rgba(239,68,68,0.95)' : (type === 'warning' ? 'rgba(245,158,11,0.95)' : 'rgba(16,185,129,0.95)');
     toast.style.color = '#fff';
     toast.style.padding = '12px 20px';
     toast.style.borderRadius = '30px';
@@ -111,6 +111,51 @@ class SubGatewayApp {
       toast.style.opacity = '0';
       setTimeout(() => toast.remove(), 300);
     }, 3200);
+  }
+
+  /**
+   * Calculate plant age from planting date string (DD/MM/YYYY or YYYY-MM-DD)
+   */
+  calculatePlantAge(dateStr) {
+    if (!dateStr) return '';
+    let plantingDate = null;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        plantingDate = new Date(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`);
+      }
+    } else {
+      plantingDate = new Date(dateStr);
+    }
+    if (!plantingDate || isNaN(plantingDate.getTime())) return '';
+
+    const today = new Date();
+    if (plantingDate > today) return 'Mới ươm (Chưa đến ngày trồng)';
+
+    let years = today.getFullYear() - plantingDate.getFullYear();
+    let months = today.getMonth() - plantingDate.getMonth();
+    let days = today.getDate() - plantingDate.getDate();
+
+    if (days < 0) {
+      months -= 1;
+      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+
+    const parts = [];
+    if (years > 0) parts.push(`${years} năm`);
+    if (months > 0) parts.push(`${months} tháng`);
+    if (years === 0 && months === 0) {
+      parts.push(`${days} ngày`);
+    } else if (years === 0 && days > 0 && months < 3) {
+      parts.push(`${days} ngày`);
+    }
+
+    return parts.join(' ') || '0 ngày';
   }
 
   bindEvents() {
@@ -142,7 +187,6 @@ class SubGatewayApp {
       await this.handleLogin();
     });
 
-    // Switch to register from login
     document.getElementById('btn-switch-register')?.addEventListener('click', () => {
       this.showView('view-register');
       this.autoCaptureFarmGps();
@@ -154,7 +198,6 @@ class SubGatewayApp {
       await this.handleRegisterAndFarmSetup();
     });
 
-    // Capture farm GPS button
     document.getElementById('btn-capture-farm-gps')?.addEventListener('click', () => {
       this.autoCaptureFarmGps();
     });
@@ -182,8 +225,89 @@ class SubGatewayApp {
       }
     });
 
-    // 5. GPS Engine Lock Button
+    // 5. Auto Calculate Plant Age on Planting Date Change
+    document.getElementById('input-planting-date')?.addEventListener('change', (e) => {
+      const calculated = this.calculatePlantAge(e.target.value);
+      const ageInput = document.getElementById('input-plant-age');
+      if (ageInput && calculated) {
+        ageInput.value = calculated;
+      }
+    });
+
+    // 6. Interactive Disease Chips Toggle
+    document.querySelectorAll('.disease-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const diseaseName = chip.dataset.disease;
+        if (diseaseName === 'other') {
+          const inp = document.getElementById('input-other-disease');
+          if (inp) {
+            const isShown = inp.style.display !== 'none';
+            inp.style.display = isShown ? 'none' : 'block';
+            chip.classList.toggle('active', !isShown);
+            if (!isShown) inp.focus();
+          }
+          return;
+        }
+
+        if (diseaseName.includes('Chưa từng')) {
+          // Healthy clicked: clear all others
+          this.selectedDiseases.clear();
+          document.querySelectorAll('.disease-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          this.selectedDiseases.add(diseaseName);
+          const inp = document.getElementById('input-other-disease');
+          if (inp) inp.style.display = 'none';
+        } else {
+          // Remove healthy chip if selecting a specific disease
+          const healthyChip = document.querySelector('.disease-chip.healthy');
+          if (healthyChip) {
+            healthyChip.classList.remove('active');
+            this.selectedDiseases.delete(healthyChip.dataset.disease);
+          }
+
+          if (this.selectedDiseases.has(diseaseName)) {
+            this.selectedDiseases.delete(diseaseName);
+            chip.classList.remove('active');
+          } else {
+            this.selectedDiseases.add(diseaseName);
+            chip.classList.add('active');
+          }
+        }
+      });
+    });
+
+    // 7. Photo Capture & Watermark
+    const photoBox = document.getElementById('btn-trigger-photo');
+    const photoInput = document.getElementById('input-plant-photo');
+    photoBox?.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT') {
+        photoInput?.click();
+      }
+    });
+
+    photoInput?.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        await this.processPlantPhoto(file);
+      }
+    });
+
+    // 8. GPS Engine Lock & Manual Toggle
     document.getElementById('btn-lock-gps')?.addEventListener('click', () => {
+      const manualLat = document.getElementById('manual-lat-input')?.value.trim();
+      const manualLng = document.getElementById('manual-lng-input')?.value.trim();
+
+      if (manualLat && manualLng && !isNaN(parseFloat(manualLat)) && !isNaN(parseFloat(manualLng))) {
+        if (this.gpsEngine) {
+          const locked = this.gpsEngine.setManualCoord(manualLat, manualLng);
+          this.state.gpsLocked = locked;
+          this.showToast(`Đã khóa tọa độ thủ công: ${manualLat}, ${manualLng}`, 'success');
+          document.getElementById('badge-gps-status').className = 'gps-accuracy-badge acc-excellent';
+          document.getElementById('badge-gps-status').innerText = `ĐÃ KHÓA THỦ CÔNG (±1m)`;
+          return;
+        }
+      }
+
       if (this.gpsEngine) {
         const locked = this.gpsEngine.lock();
         this.state.gpsLocked = locked;
@@ -193,13 +317,25 @@ class SubGatewayApp {
       }
     });
 
-    // 6. Plant Form Submit
+    document.getElementById('btn-toggle-manual-gps')?.addEventListener('click', () => {
+      const wrap = document.getElementById('wrap-manual-gps');
+      if (wrap) {
+        const isHidden = wrap.style.display === 'none';
+        wrap.style.display = isHidden ? 'block' : 'none';
+        if (isHidden && this.state.gpsLocked) {
+          document.getElementById('manual-lat-input').value = this.state.gpsLocked.latitude.toFixed(6);
+          document.getElementById('manual-lng-input').value = this.state.gpsLocked.longitude.toFixed(6);
+        }
+      }
+    });
+
+    // 9. Plant Form Submit
     document.getElementById('form-plant-detail')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       await this.handleSavePlant();
     });
 
-    // 7. NFC Write Action
+    // 10. NFC Write Action
     document.getElementById('btn-write-nfc-tag')?.addEventListener('click', async () => {
       await this.handleWriteNfc();
     });
@@ -211,6 +347,58 @@ class SubGatewayApp {
         this.showToast('Đã sao chép đường dẫn hồ sơ!', 'success');
       }
     });
+  }
+
+  async processPlantPhoto(file) {
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1200;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+
+          // Draw Watermark
+          const nowStr = new Date().toLocaleString('vi-VN');
+          const gpsStr = this.state.gpsLocked ? `GPS: ${this.state.gpsLocked.latitude.toFixed(6)}, ${this.state.gpsLocked.longitude.toFixed(6)}` : 'GPS: TBSG VIRTUAL FIELD';
+          const watermarkText = `TBSG AGTECH · ${nowStr} · ${gpsStr}`;
+
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+          ctx.fillRect(0, h - 36, w, 36);
+          ctx.fillStyle = '#34d399';
+          ctx.font = 'bold 14px monospace';
+          ctx.fillText(watermarkText, 12, h - 14);
+
+          this.capturedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+          // Update Preview UI
+          document.getElementById('photo-upload-placeholder').style.display = 'none';
+          const previewWrap = document.getElementById('wrap-photo-preview');
+          const previewImg = document.getElementById('img-photo-preview');
+          const watermarkOverlay = document.getElementById('text-photo-watermark');
+          if (previewWrap && previewImg) {
+            previewWrap.style.display = 'block';
+            previewImg.src = this.capturedPhotoBase64;
+            if (watermarkOverlay) watermarkOverlay.innerText = watermarkText;
+          }
+          this.showToast('Đã tải và đóng dấu Watermark ảnh thực địa!', 'success');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      this.showToast('Lỗi xử lý ảnh: ' + err.message, 'error');
+    }
   }
 
   // --- API CALLS ---
@@ -233,7 +421,6 @@ class SubGatewayApp {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại.');
 
       this.state.token = data.token;
@@ -315,7 +502,6 @@ class SubGatewayApp {
       this.showToast('Khởi tạo tài khoản & Nông trại thành công!', 'success');
       await this.loadUserFarms();
 
-      // Go directly to single plant registration
       this.prepareNewPlantForm();
       this.showView('view-plant-form');
       this.startGpsEngine();
@@ -396,6 +582,10 @@ class SubGatewayApp {
 
   prepareNewPlantForm() {
     this.state.selectedPlant = null;
+    this.selectedDiseases.clear();
+    this.capturedPhotoBase64 = null;
+    document.querySelectorAll('.disease-chip').forEach(c => c.classList.remove('active'));
+
     const codeEl = document.getElementById('input-tree-code');
     if (codeEl) codeEl.value = '';
     const tagEl = document.getElementById('input-tag-uid');
@@ -428,9 +618,10 @@ class SubGatewayApp {
 
     const badge = document.getElementById('badge-gps-status');
     const coordsText = document.getElementById('text-gps-live-coords');
+    const guidance = document.getElementById('text-gps-guidance');
 
     this.gpsEngine = new SubGpsEngine({
-      targetAccuracy: 1.0,
+      targetAccuracy: 2.0,
       onUpdate: (data) => {
         if (data.error) {
           if (badge) {
@@ -449,6 +640,10 @@ class SubGatewayApp {
         if (coordsText) {
           coordsText.innerText = `Lat: ${data.latitude.toFixed(6)} | Lng: ${data.longitude.toFixed(6)}`;
         }
+
+        if (guidance && data.statusText) {
+          guidance.innerHTML = `📡 <strong>Trạng thái:</strong> ${data.statusText}`;
+        }
       },
       onLock: (locked) => {
         this.state.gpsLocked = locked;
@@ -466,7 +661,6 @@ class SubGatewayApp {
 
     const treeCode = document.getElementById('input-tree-code')?.value.trim();
     const variety = document.getElementById('input-plant-variety')?.value.trim();
-    const plantType = document.getElementById('input-plant-type')?.value.trim();
     const plantingDate = document.getElementById('input-planting-date')?.value;
     const plantAge = document.getElementById('input-plant-age')?.value.trim();
     const plotCode = document.getElementById('input-plot-code')?.value.trim();
@@ -474,10 +668,27 @@ class SubGatewayApp {
     const tagUid = document.getElementById('input-tag-uid')?.value.trim() || this.state.tagUid;
     const initialYield = document.getElementById('input-initial-yield')?.value;
     const health = document.getElementById('input-health-status')?.value;
+    const growthStage = document.getElementById('input-growth-stage')?.value;
 
-    const lat = this.state.gpsLocked ? this.state.gpsLocked.latitude : null;
-    const lng = this.state.gpsLocked ? this.state.gpsLocked.longitude : null;
-    const acc = this.state.gpsLocked ? this.state.gpsLocked.accuracy : null;
+    // Past diseases list
+    const pastDiseases = Array.from(this.selectedDiseases);
+    const otherDiseaseInput = document.getElementById('input-other-disease')?.value.trim();
+    if (otherDiseaseInput && !pastDiseases.includes(otherDiseaseInput)) {
+      pastDiseases.push(otherDiseaseInput);
+    }
+
+    const manualLat = document.getElementById('manual-lat-input')?.value.trim();
+    const manualLng = document.getElementById('manual-lng-input')?.value.trim();
+
+    let lat = this.state.gpsLocked ? this.state.gpsLocked.latitude : null;
+    let lng = this.state.gpsLocked ? this.state.gpsLocked.longitude : null;
+    let acc = this.state.gpsLocked ? this.state.gpsLocked.accuracy : null;
+
+    if (manualLat && manualLng && !isNaN(parseFloat(manualLat)) && !isNaN(parseFloat(manualLng))) {
+      lat = parseFloat(manualLat);
+      lng = parseFloat(manualLng);
+      acc = 1.0;
+    }
 
     try {
       const btn = document.getElementById('btn-submit-plant');
@@ -487,7 +698,7 @@ class SubGatewayApp {
         farm_id: this.state.selectedFarmId,
         tree_code: treeCode || null,
         plant_variety: variety || 'Sầu riêng Ri6',
-        plant_type: plantType || 'Sầu riêng',
+        plant_type: variety || 'Sầu riêng',
         planting_date: plantingDate || null,
         plant_age: plantAge || null,
         plot_code: plotCode || 'A1',
@@ -497,7 +708,10 @@ class SubGatewayApp {
         gps_accuracy: acc,
         nfc_uid: tagUid || null,
         initial_yield: initialYield ? parseFloat(initialYield) : 0,
-        health_status: health || 'Tốt'
+        health_status: health || 'Tốt',
+        initial_growth_stage: growthStage || 'Nuôi trái / Phát triển trái',
+        photo_url: this.capturedPhotoBase64 || null,
+        past_diseases: pastDiseases
       };
 
       const res = await fetch('/api/plants/single-provision', {
@@ -568,7 +782,6 @@ class SubGatewayApp {
       this.showToast('🎉 ĐÃ NẠP HỒ SƠ VÀO THẺ THÀNH CÔNG 100%!', 'success');
       if (btn) btn.innerText = '✅ Đã Nạp Thẻ Thành Công';
 
-      // Open Success Banner
       document.getElementById('nfc-write-success-card').style.display = 'block';
     } catch (err) {
       this.showToast('Lỗi khi ghi thẻ: ' + err.message, 'error');
