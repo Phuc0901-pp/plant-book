@@ -7,19 +7,20 @@
   /* Microsoft Fluent / Light Enterprise ERP Colors */
   --bg-canvas: #f8fafc;
   --bg-card: #ffffff;
-  --bg-card-subtle: #f1f5f9;
-  --bg-card-hover: #f8fafc;
+  --bg-card-subtle: #f8fafc;
+  --bg-card-hover: #ffffff;
   
   --border-card: #e2e8f0;
   --border-card-hover: #cbd5e1;
-  --border-focus: #10b981;
+  --border-focus: #059669;
   
   --text-primary: #0f172a;       /* Slate 900 - high contrast text */
-  --text-secondary: #475569;     /* Slate 600 - body text */
+  --text-secondary: #334155;     /* Slate 700 - body text */
   --text-muted: #64748b;         /* Slate 500 - captions */
   --text-inverse: #ffffff;
   
   --primary-emerald: #059669;    /* Emerald 600 - Microsoft Agri theme */
+  --primary-emerald-dark: #047857;
   --primary-emerald-light: #10b981;
   --primary-emerald-bg: #ecfdf5; /* Emerald 50 */
   --primary-emerald-border: #a7f3d0;
@@ -36,9 +37,8 @@
   --error-border: #fecaca;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 16px 32px -4px rgba(16, 185, 129, 0.12);
-  --shadow-glow: 0 0 20px rgba(5, 150, 105, 0.2);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 10px 28px -4px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 8px 24px -4px rgba(5, 150, 105, 0.15);
   
   --radius-lg: 16px;
   --radius-md: 10px;
@@ -76,13 +76,13 @@ body {
 /* Subtle Background Ambient Orbs */
 .bg-glow-orb {
   position: fixed;
-  width: 400px;
-  height: 400px;
+  width: 420px;
+  height: 420px;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(110px);
   pointer-events: none;
   z-index: 0;
-  opacity: 0.45;
+  opacity: 0.4;
 }
 .orb-1 { top: -100px; left: -100px; background: #dcfce7; }
 .orb-2 { bottom: -100px; right: -100px; background: #e0f2fe; }
@@ -108,12 +108,12 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 18px;
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
   background: #ffffff;
   border: 1px solid var(--border-card);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 12px;
   position: relative;
   padding: 8px;
@@ -127,7 +127,7 @@ body {
 }
 
 .gateway-title {
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.5px;
@@ -135,8 +135,8 @@ body {
 }
 
 .gateway-subtitle {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 13.5px;
+  color: #475569;
   line-height: 1.4;
   font-weight: 500;
 }
@@ -145,7 +145,7 @@ body {
 .nfc-badge-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   font-size: 12px;
@@ -154,6 +154,7 @@ body {
   background: var(--primary-emerald-bg);
   border: 1px solid var(--primary-emerald-border);
   color: #065f46;
+  box-shadow: var(--shadow-sm);
 }
 .nfc-badge-pill.warning {
   background: var(--accent-amber-bg);
@@ -165,18 +166,18 @@ body {
   height: 8px;
   border-radius: 50%;
   background: var(--primary-emerald);
-  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25);
   animation: blink 2s infinite;
 }
 .pulse-dot.warning { 
   background: var(--accent-amber); 
-  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25);
 }
 
 /* Views / Steps Animation */
 .view-step {
   display: none;
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .view-step.active {
   display: block;
@@ -184,7 +185,7 @@ body {
 
 /* Enterprise Glassmorphism / Fluent Cards */
 .glass-card {
-  background: var(--bg-card);
+  background: #ffffff;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -200,7 +201,7 @@ body {
   gap: 16px;
   padding: 20px;
   border-radius: var(--radius-lg);
-  background: var(--bg-card);
+  background: #ffffff;
   border: 1px solid var(--border-card);
   cursor: pointer;
   margin-bottom: 16px;
@@ -212,18 +213,17 @@ body {
   transform: translateY(-2px);
   border-color: var(--primary-emerald-light);
   box-shadow: var(--shadow-hover);
-  background: #ffffff;
 }
 .option-card.primary {
-  border-left: 4px solid var(--primary-emerald);
+  border-left: 5px solid var(--primary-emerald);
 }
 .option-card:nth-child(2) {
-  border-left: 4px solid var(--accent-amber);
+  border-left: 5px solid var(--accent-amber);
 }
 
 .option-icon-box {
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -244,18 +244,18 @@ body {
 .option-content h3 {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #0f172a;
   margin-bottom: 3px;
   letter-spacing: -0.3px;
 }
 .option-content p {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: #475569;
   line-height: 1.4;
 }
 .option-arrow {
   margin-left: auto;
-  color: var(--text-muted);
+  color: #94a3b8;
   transition: transform 0.2s;
 }
 .option-card:hover .option-arrow {
@@ -273,7 +273,7 @@ body {
   gap: 6px;
   font-size: 12.5px;
   font-weight: 700;
-  color: #334155;
+  color: #1e293b;
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -286,18 +286,18 @@ body {
   width: 100%;
   padding: 11px 14px;
   background: #ffffff;
-  border: 1px solid #cbd5e1;
+  border: 1.5px solid #cbd5e1;
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: #0f172a;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-sm);
 }
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   outline: none;
   border-color: var(--primary-emerald);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 0 3.5px rgba(5, 150, 105, 0.18);
   background: #ffffff;
 }
 .form-input::placeholder {
@@ -308,6 +308,65 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+/* Farm Setup Section in Register */
+.form-section-wrap {
+  border-top: 1px dashed #cbd5e1;
+  margin: 18px 0 16px 0;
+  padding-top: 16px;
+}
+.form-section-header {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.form-section-header i, .form-section-header svg {
+  color: var(--primary-emerald);
+}
+
+/* Clean ERP Farm GPS Box (Replaces old dark gray box) */
+.farm-gps-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.farm-gps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.farm-gps-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+.farm-gps-label i, .farm-gps-label svg {
+  color: var(--primary-emerald);
+}
+.farm-gps-status {
+  font-size: 12px;
+  color: #0f172a;
+  font-family: monospace;
+  font-weight: 600;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  line-height: 1.4;
 }
 
 /* Past Disease Chips Component */
@@ -326,8 +385,9 @@ body {
 }
 .past-diseases-subtitle {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: #475569;
   margin-bottom: 12px;
+  line-height: 1.4;
 }
 .disease-chips-grid {
   display: flex;
@@ -338,13 +398,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 13px;
+  padding: 8px 14px;
   border-radius: var(--radius-pill);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   background: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #334155;
+  border: 1.5px solid #cbd5e1;
+  color: #1e293b;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
@@ -358,12 +418,14 @@ body {
   background: var(--primary-emerald-bg);
   border-color: var(--primary-emerald);
   color: #065f46;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.18);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
 }
 .disease-chip.healthy.active {
   background: #f0fdf4;
   border-color: #16a34a;
   color: #166534;
+  font-weight: 700;
 }
 
 /* Photo Upload Box */
@@ -403,7 +465,7 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   color: #34d399;
   font-size: 10px;
   font-family: monospace;
@@ -439,9 +501,10 @@ body {
 }
 .btn-secondary {
   background: #ffffff;
-  color: #334155;
-  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  border: 1.5px solid #cbd5e1;
   box-shadow: var(--shadow-sm);
+  font-weight: 600;
 }
 .btn-secondary:hover {
   background: #f1f5f9;
@@ -451,7 +514,8 @@ body {
 .btn-outline-green {
   background: #ffffff;
   color: var(--primary-emerald);
-  border: 1px solid var(--primary-emerald-border);
+  border: 1.5px solid var(--primary-emerald-border);
+  font-weight: 700;
 }
 .btn-outline-green:hover {
   background: var(--primary-emerald-bg);
@@ -476,8 +540,8 @@ body {
   align-items: center;
   gap: 6px;
   background: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: var(--text-secondary);
+  border: 1.5px solid #cbd5e1;
+  color: #334155;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   font-size: 12px;
@@ -487,13 +551,14 @@ body {
   box-shadow: var(--shadow-sm);
 }
 .back-btn:hover {
-  color: var(--text-primary);
+  color: #0f172a;
   background: #f1f5f9;
+  border-color: #94a3b8;
 }
 .step-title-badge {
   font-size: 13px;
   font-weight: 800;
-  color: var(--primary-emerald);
+  color: var(--primary-emerald-dark);
   background: var(--primary-emerald-bg);
   padding: 4px 12px;
   border-radius: var(--radius-pill);
@@ -503,7 +568,7 @@ body {
 /* High Precision GPS Box (Light Theme) */
 .gps-precision-card {
   background: #f8fafc;
-  border: 1px solid #a7f3d0;
+  border: 1.5px solid #a7f3d0;
   border-radius: var(--radius-md);
   padding: 16px;
   margin-bottom: 18px;
@@ -521,7 +586,7 @@ body {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: #0f172a;
 }
 .gps-status-indicator i, .gps-status-indicator svg {
@@ -540,7 +605,7 @@ body {
 
 .gps-guidance-note {
   font-size: 12px;
-  color: #475569;
+  color: #334155;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   padding: 8px 12px;
@@ -579,11 +644,16 @@ body {
   box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);
 }
 .gps-coords-text {
-  font-size: 12px;
-  color: #475569;
+  font-size: 12.5px;
+  color: #0f172a;
   text-align: center;
   font-family: monospace;
-  font-weight: 600;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-top: 6px;
 }
 
 /* NFC Touch Phone Graphic */
@@ -609,7 +679,7 @@ body {
 .tree-select-list {
   max-height: 220px;
   overflow-y: auto;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #cbd5e1;
   border-radius: var(--radius-md);
   margin-bottom: 14px;
   background: #ffffff;
@@ -650,7 +720,7 @@ body {
 @media (max-width: 480px) {
   body { padding: 12px 10px; }
   .glass-card { padding: 18px; border-radius: 14px; }
-  .gateway-title { font-size: 19px; }
+  .gateway-title { font-size: 20px; }
   .option-card { padding: 16px; }
   .option-icon-box { width: 44px; height: 44px; }
   .form-row { grid-template-columns: 1fr; }

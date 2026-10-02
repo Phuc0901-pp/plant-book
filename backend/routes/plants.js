@@ -3654,77 +3654,51 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       initial_yield: initial_yield ? parseFloat(initial_yield) : 0
     };
 
-    // Insert plant with resilient schema handling
-    let newPlant;
-    try {
-      const plantInsert = await client.query(`
-        INSERT INTO plants (
-          farm_id, tree_code, plant_variety, plant_type, planting_date,
-          plant_age, plot_code, row_number, latitude, longitude,
-          location, cover_image, nfc_uid, public_slug, health_status,
-          initial_yield, notes, data, is_public
-        ) VALUES (
-          $1, $2, $3, $4, $5,
-          $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15,
-          $16, $17, $18, true
-        ) RETURNING *
-      `, [
-        farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
-        plant_age || null, finalPlot, finalRow, lat, lng,
-        location || `Lô ${finalPlot} - Hàng ${finalRow}`, effectiveCover, cleanUid, publicSlug, health_status || 'Tốt',
-        initial_yield ? parseFloat(initial_yield) : 0, notes || '', JSON.stringify(plantMetadata)
-      ]);
-      newPlant = plantInsert.rows[0];
-    } catch (colErr) {
-      const plantInsertFallback = await client.query(`
-        INSERT INTO plants (
-          farm_id, tree_code, plant_variety, plant_type, planting_date,
-          plant_age, plot_code, row_number, latitude, longitude,
-          location, cover_image, nfc_uid, public_slug, health_status,
-          data, is_public
-        ) VALUES (
-          $1, $2, $3, $4, $5,
-          $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15,
-          $16, true
-        ) RETURNING *
-      `, [
-        farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
-        plant_age || null, finalPlot, finalRow, lat, lng,
-        location || `Lô ${finalPlot} - Hàng ${finalRow}`, effectiveCover, cleanUid, publicSlug, health_status || 'Tốt',
-        JSON.stringify(plantMetadata)
-      ]);
-      newPlant = plantInsertFallback.rows[0];
-    }
+    // Insert plant with clean standard schema
+    const plantInsert = await client.query(`
+      INSERT INTO plants (
+        farm_id, tree_code, plant_variety, plant_type, planting_date,
+        plant_age, plot_code, row_number, latitude, longitude,
+        location, cover_image, nfc_uid, public_slug, health_status,
+        data, is_public, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15,
+        $16, true, $17
+      ) RETURNING *
+    `, [
+      farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
+      plant_age || null, finalPlot, finalRow, lat, lng,
+      location || `Lô ${finalPlot} - Hàng ${finalRow}`, effectiveCover, cleanUid, publicSlug, health_status || 'Tốt',
+      JSON.stringify(plantMetadata), req.user.id
+    ]);
+    const newPlant = plantInsert.rows[0];
 
-    // If initial photo provided, record in plant_media as growth photo
+    // If initial photo provided, record in plant_media
     if (effectiveCover) {
       try {
         await client.query(`
-          INSERT INTO plant_media (plant_id, url, caption, media_type, category, uploaded_at)
-          VALUES ($1, $2, $3, 'image', 'growth', NOW())
-        `, [newPlant.id, effectiveCover, initial_growth_stage || 'Ảnh chụp hiện trường khởi tạo']);
-      } catch (_) {}
+          INSERT INTO plant_media (plant_id, object_name, url, caption, media_type, uploaded_at)
+          VALUES ($1, $2, $3, $4, 'image', NOW())
+        `, [newPlant.id, `growth_${newPlant.id}_${Date.now()}.jpg`, effectiveCover, initial_growth_stage || 'Ảnh chụp hiện trường khởi tạo']);
+      } catch (mediaErr) {
+        console.warn('Plant media insert notice:', mediaErr.message);
+      }
     }
 
-    // If NFC UID provided, register/update tag
+    // If NFC UID provided, register/update in nfc_tags_inventory
     if (cleanUid) {
-      await client.query(`
-        INSERT INTO plant_tags (plant_id, nfc_uid, tag_type, assigned_at)
-        VALUES ($1, $2, 'smart_nfc_gateway', NOW())
-        ON CONFLICT (nfc_uid) DO UPDATE
-        SET plant_id = $1, assigned_at = NOW()
-      `, [newPlant.id, cleanUid]);
-
       try {
         await client.query(`
-          INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, last_scanned_lat, last_scanned_lng, tagged_at, created_by)
-          VALUES ($1, $2, 'assigned', $3, $4, $5, NOW(), $6)
+          INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, assigned_at)
+          VALUES ($1, $2, $3, 'assigned', NOW())
           ON CONFLICT (nfc_uid) DO UPDATE
-          SET farm_id = $1, status = 'assigned', plant_id = $3, last_scanned_lat = $4, last_scanned_lng = $5, tagged_at = NOW()
-        `, [farmId, cleanUid, newPlant.id, lat, lng, req.user.id]);
-      } catch (_) {}
+          SET farm_id = EXCLUDED.farm_id, plant_id = EXCLUDED.plant_id, status = 'assigned', assigned_at = NOW()
+        `, [cleanUid, farmId, newPlant.id]);
+      } catch (nfcErr) {
+        console.warn('NFC inventory update notice:', nfcErr.message);
+      }
     }
 
     // Auto-increment total_plants on farm

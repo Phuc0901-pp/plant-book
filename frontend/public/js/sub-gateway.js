@@ -97,13 +97,13 @@ class SubGatewayApp {
     toast.style.bottom = '24px';
     toast.style.left = '50%';
     toast.style.transform = 'translateX(-50%)';
-    toast.style.background = type === 'error' ? 'rgba(239,68,68,0.95)' : (type === 'warning' ? 'rgba(245,158,11,0.95)' : 'rgba(16,185,129,0.95)');
-    toast.style.color = '#fff';
-    toast.style.padding = '12px 20px';
+    toast.style.background = type === 'error' ? '#dc2626' : (type === 'warning' ? '#d97706' : (type === 'success' ? '#059669' : '#0f172a'));
+    toast.style.color = '#ffffff';
+    toast.style.padding = '12px 22px';
     toast.style.borderRadius = '30px';
-    toast.style.fontSize = '13px';
+    toast.style.fontSize = '13.5px';
     toast.style.fontWeight = '700';
-    toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
+    toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
     toast.style.zIndex = '9999';
     toast.style.transition = 'all 0.3s';
     toast.innerText = msg;
@@ -452,7 +452,7 @@ class SubGatewayApp {
         const acc = pos.coords.accuracy ? ` (±${Math.round(pos.coords.accuracy)}m)` : '';
         document.getElementById('reg-farm-lat').value = lat;
         document.getElementById('reg-farm-lng').value = lng;
-        if (txt) txt.innerText = `Tọa độ: ${lat}, ${lng} ${acc}`;
+        if (txt) txt.innerHTML = `<strong>Tọa độ:</strong> ${lat}, ${lng} <span style="color:#059669; font-weight:700;">${acc}</span>`;
       },
       (err) => {
         if (txt) txt.innerText = 'Không thể lấy GPS (Có thể nhập thủ công sau)';
@@ -546,7 +546,7 @@ class SubGatewayApp {
     if (!listEl || !this.state.token) return;
 
     try {
-      listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#9ca3af;">Đang tải danh sách cây...</div>';
+      listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#64748b;">Đang tải danh sách cây...</div>';
       const res = await fetch(`/api/plants?farm_id=${farmId}`, {
         headers: { 'Authorization': `Bearer ${this.state.token}` }
       });
@@ -555,15 +555,15 @@ class SubGatewayApp {
       const plantArray = Array.isArray(plants) ? plants : (plants.data || []);
 
       if (plantArray.length === 0) {
-        listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#9ca3af;">Chưa có cây nào trong vườn này. Hãy bấm "+ Khai báo cây mới".</div>';
+        listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#64748b;">Chưa có cây nào trong vườn này. Hãy bấm "+ Khai báo cây mới".</div>';
         return;
       }
 
       listEl.innerHTML = plantArray.map(p => `
         <div class="tree-select-item" data-id="${p.id}" data-code="${p.tree_code || p.id}">
           <div>
-            <strong style="color:#34d399;">#${p.tree_code || p.id}</strong> · ${p.plant_variety || p.plant_type || 'Cây'}
-            <div style="font-size:11px; color:#9ca3af;">Lô ${p.plot_code || 'A1'} · Hàng ${p.row_number || 1} · ${p.nfc_uid ? `NFC: ${p.nfc_uid}` : 'Chưa gắn thẻ'}</div>
+            <strong style="color:#059669;">#${p.tree_code || p.id}</strong> <span style="color:#0f172a; font-weight:600;">· ${p.plant_variety || p.plant_type || 'Cây'}</span>
+            <div style="font-size:11.5px; color:#475569; margin-top:2px;">Lô ${p.plot_code || 'A1'} · Hàng ${p.row_number || 1} · ${p.nfc_uid ? `NFC: ${p.nfc_uid}` : 'Chưa gắn thẻ'}</div>
           </div>
           <button class="btn btn-sm btn-outline-green btn-bind-existing-tree" data-id="${p.id}">
             <i data-lucide="link" class="lucide-xs"></i> Chọn Gán Thẻ
