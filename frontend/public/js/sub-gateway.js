@@ -14,6 +14,8 @@ class SubGatewayApp {
     this.state = {
       token: localStorage.getItem('token') || null,
       user: JSON.parse(localStorage.getItem('user') || 'null'),
+      encryptedUserId: null,
+      currentStep: 1,
       farms: [],
       selectedFarmId: null,
       tagUid: this.getQueryParam('tag_uid') || '',
@@ -30,9 +32,80 @@ class SubGatewayApp {
     return urlParams.get(param) || '';
   }
 
+  parseEncryptedUserIdFromUrl() {
+    const path = window.location.pathname;
+    const match = path.match(/\/sub\/(usr_[a-f0-9]+_[a-f0-9]+_[a-f0-9]+)/i);
+    if (match) return match[1];
+    const qToken = this.getQueryParam('enc_id') || this.getQueryParam('user_token');
+    if (qToken && qToken.startsWith('usr_')) return qToken;
+    return null;
+  }
+
+  updateEncryptedUrl(encId) {
+    const token = encId || (this.state.user && this.state.user.encrypted_user_id) || this.state.encryptedUserId;
+    if (token) {
+      this.state.encryptedUserId = token;
+      const targetUrl = `/sub/${token}/set_up`;
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ encrypted_user_id: token }, '', targetUrl);
+      }
+    }
+  }
+
+  syncStepper(stepNumber) {
+    this.state.currentStep = stepNumber;
+    for (let i = 1; i <= 4; i++) {
+      const node = document.getElementById(`step-node-${i}`);
+      const line = document.getElementById(`step-line-${i}`);
+      if (!node) continue;
+      const circle = node.querySelector('.step-circle');
+      if (i < stepNumber) {
+        node.classList.remove('active');
+        node.classList.add('completed');
+        if (circle) circle.innerHTML = '<i data-lucide="check" class="lucide-xs"></i>';
+        if (line) line.classList.add('active');
+      } else if (i === stepNumber) {
+        node.classList.add('active');
+        node.classList.remove('completed');
+        if (circle) circle.innerText = `${i}`;
+        if (line) line.classList.remove('active');
+      } else {
+        node.classList.remove('active', 'completed');
+        if (circle) circle.innerText = `${i}`;
+        if (line) line.classList.remove('active');
+      }
+    }
+    this.renderIcons();
+  }
+
+  updateFarmSummaryBar() {
+    const bar = document.getElementById('active-farm-summary-bar');
+    if (!bar) return;
+    if (!this.state.token || !this.state.user || this.state.currentStep === 1) {
+      bar.style.display = 'none';
+      return;
+    }
+
+    const currentFarm = (this.state.farms || []).find(f => f.id === this.state.selectedFarmId) || (this.state.farms && this.state.farms[0]);
+    const farmName = currentFarm ? currentFarm.name : 'Trang trại của bạn';
+    const pucCode = currentFarm && currentFarm.puc_code ? currentFarm.puc_code : `Lô #${this.state.selectedFarmId || 'A1'}`;
+    const userName = (this.state.user && (this.state.user.full_name || this.state.user.name)) || 'Chủ Vườn';
+
+    const nameEl = document.getElementById('summary-farm-name');
+    const metaEl = document.getElementById('summary-farm-meta');
+    if (nameEl) nameEl.innerText = farmName;
+    if (metaEl) metaEl.innerText = `Chủ vườn: ${userName} · Mã Lô: ${pucCode}`;
+    bar.style.display = 'flex';
+  }
+
   init() {
     this.bindEvents();
     this.detectNfcSupport();
+
+    const urlEncId = this.parseEncryptedUserIdFromUrl();
+    if (urlEncId) {
+      this.state.encryptedUserId = urlEncId;
+    }
 
     // Check if initial tag_uid passed in URL
     if (this.state.tagUid) {
@@ -53,12 +126,20 @@ class SubGatewayApp {
       );
     }
 
-    // If user already logged in with valid token, prepare farm data
+    // If user already logged in with valid token, prepare farm data & jump to Farm Hub
     if (this.state.token && this.state.user) {
-      this.loadUserFarms().then(() => {});
+      if (this.state.user.encrypted_user_id) {
+        this.updateEncryptedUrl(this.state.user.encrypted_user_id);
+      } else if (this.state.encryptedUserId) {
+        this.updateEncryptedUrl(this.state.encryptedUserId);
+      }
+      this.loadUserFarms().then(() => {
+        this.showView('view-farm-hub');
+      });
+    } else {
+      this.showView('view-landing');
     }
 
-    this.showView('view-landing');
     this.renderIcons();
   }
 
@@ -81,6 +162,20 @@ class SubGatewayApp {
     if (target) {
       target.classList.add('active');
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (viewId === 'view-landing' || viewId === 'view-login' || viewId === 'view-register') {
+        this.syncStepper(1);
+      } else if (viewId === 'view-farm-hub') {
+        this.syncStepper(2);
+        this.updateEncryptedUrl();
+      } else if (viewId === 'view-plant-form') {
+        this.syncStepper(3);
+        this.updateEncryptedUrl();
+      } else if (viewId === 'view-nfc-write') {
+        this.syncStepper(4);
+        this.updateEncryptedUrl();
+      }
+      this.updateFarmSummaryBar();
       this.renderIcons();
     }
   }
@@ -172,6 +267,46 @@ class SubGatewayApp {
     document.getElementById('btn-opt-new')?.addEventListener('click', () => {
       this.showView('view-register');
       this.autoCaptureFarmGps();
+    });
+
+    // Quick Change Farm Button
+    document.getElementById('btn-quick-change-farm')?.addEventListener('click', () => {
+      this.showView('view-farm-hub');
+    });
+
+    // Stepper navigation click bindings
+    document.getElementById('step-node-1')?.addEventListener('click', () => {
+      if (!this.state.token) {
+        this.showView('view-landing');
+      } else {
+        this.showToast('Tài khoản đang đăng nhập.', 'info');
+      }
+    });
+
+    document.getElementById('step-node-2')?.addEventListener('click', () => {
+      if (this.state.token) {
+        this.showView('view-farm-hub');
+      } else {
+        this.showToast('Vui lòng đăng nhập trước!', 'warning');
+      }
+    });
+
+    document.getElementById('step-node-3')?.addEventListener('click', () => {
+      if (this.state.selectedFarmId) {
+        this.prepareNewPlantForm();
+        this.showView('view-plant-form');
+        this.startGpsEngine();
+      } else {
+        this.showToast('Vui lòng chọn trang trại trước!', 'warning');
+      }
+    });
+
+    document.getElementById('step-node-4')?.addEventListener('click', () => {
+      if (this.state.createdPlant) {
+        this.showView('view-nfc-write');
+      } else {
+        this.showToast('Vui lòng hoàn tất lưu cây ở Bước 3 trước!', 'warning');
+      }
     });
 
     // Back buttons
@@ -426,6 +561,10 @@ class SubGatewayApp {
 
       this.state.token = data.token;
       this.state.user = data.user;
+      if (data.encrypted_user_id || data.user?.encrypted_user_id) {
+        this.state.encryptedUserId = data.encrypted_user_id || data.user.encrypted_user_id;
+        this.updateEncryptedUrl(this.state.encryptedUserId);
+      }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -497,6 +636,10 @@ class SubGatewayApp {
       this.state.token = data.token;
       this.state.user = data.user;
       this.state.selectedFarmId = data.farm ? data.farm.id : data.user.farm_id;
+      if (data.encrypted_user_id || data.user?.encrypted_user_id) {
+        this.state.encryptedUserId = data.encrypted_user_id || data.user.encrypted_user_id;
+        this.updateEncryptedUrl(this.state.encryptedUserId);
+      }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -537,6 +680,7 @@ class SubGatewayApp {
 
       if (this.state.selectedFarmId) {
         await this.loadFarmPlantsList(this.state.selectedFarmId);
+        this.updateFarmSummaryBar();
       }
     } catch (_) {}
   }

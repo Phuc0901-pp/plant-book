@@ -30,6 +30,45 @@
       </div>
     </header>
 
+    <!-- ================= 4-STEP ERP PROGRESS WIZARD ================= -->
+    <div class="stepper-wizard" id="stepper-wizard">
+      <div class="step-node active" id="step-node-1" data-step="1">
+        <div class="step-circle">1</div>
+        <span class="step-text">Xác thực</span>
+      </div>
+      <div class="step-line" id="step-line-1"></div>
+      <div class="step-node" id="step-node-2" data-step="2">
+        <div class="step-circle">2</div>
+        <span class="step-text">Chọn Vườn</span>
+      </div>
+      <div class="step-line" id="step-line-2"></div>
+      <div class="step-node" id="step-node-3" data-step="3">
+        <div class="step-circle">3</div>
+        <span class="step-text">Tạo Cây</span>
+      </div>
+      <div class="step-line" id="step-line-3"></div>
+      <div class="step-node" id="step-node-4" data-step="4">
+        <div class="step-circle">4</div>
+        <span class="step-text">Nạp Thẻ</span>
+      </div>
+    </div>
+
+    <!-- ================= ACTIVE FARM & USER SUMMARY BANNER ================= -->
+    <div id="active-farm-summary-bar" class="farm-summary-bar" style="display:none;">
+      <div class="farm-summary-content">
+        <div class="farm-summary-icon">
+          <i data-lucide="trees" style="width:20px; height:20px;"></i>
+        </div>
+        <div class="farm-summary-details">
+          <div class="farm-summary-name" id="summary-farm-name">Trang trại đang chọn</div>
+          <div class="farm-summary-meta" id="summary-farm-meta">Chủ vườn: ... · Mã Lô: ...</div>
+        </div>
+      </div>
+      <button type="button" class="btn-change-farm" id="btn-quick-change-farm" title="Đổi trang trại">
+        <i data-lucide="repeat" class="lucide-xs"></i> Đổi Vườn
+      </button>
+    </div>
+
     <!-- ================= VIEW 0: LANDING DUAL OPTIONS ================= -->
     <div id="view-landing" class="view-step active">
       <div class="option-card primary" id="btn-opt-existing">

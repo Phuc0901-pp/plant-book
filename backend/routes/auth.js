@@ -8,6 +8,7 @@ const path = require('path');
 const { uploadFile, deleteFile } = require('../config/supabase');
 const { v4: uuidv4 } = require('uuid');
 const { delCacheByPattern } = require('../config/redis');
+const { encodeUserId, decodeUserId } = require('../utils/cryptoId');
 require('dotenv').config();
 
 /**
@@ -107,12 +108,15 @@ router.post('/login', async (req, res) => {
     } catch (_) {}
 
     const primaryFarmId = user.farm_id || (ownedFarmIds.length > 0 ? ownedFarmIds[0] : null);
+    const encUserId = encodeUserId(user.id);
 
     res.json({
       token,
+      encrypted_user_id: encUserId,
       user: {
         id: user.id,
         public_id: generateIsoPublicId(user.role, user.id),
+        encrypted_user_id: encUserId,
         email: user.email,
         role: user.role,
         farm_id: primaryFarmId,
@@ -203,9 +207,13 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    const encUserId = encodeUserId(newUser.id);
+    newUser.encrypted_user_id = encUserId;
+
     res.status(201).json({
       success: true,
       message: 'Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ bằng Số điện thoại và Mật khẩu vừa tạo.',
+      encrypted_user_id: encUserId,
       user: newUser
     });
   } catch (err) {
@@ -353,14 +361,18 @@ router.post('/onboard-lead', async (req, res) => {
       broadcast('farms_updated');
     }
 
+    const encUserId = encodeUserId(user.id);
+
     res.status(201).json({
       success: true,
       message: isNewUser ? 'Đăng ký tài khoản và thiết lập trang trại thành công!' : 'Đăng nhập thành công!',
       is_new_user: isNewUser,
       token,
+      encrypted_user_id: encUserId,
       user: {
         id: user.id,
         public_id: generateIsoPublicId(user.role, user.id),
+        encrypted_user_id: encUserId,
         email: user.email,
         role: user.role,
         farm_id: farm ? farm.id : null,
@@ -457,6 +469,7 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
     const u = result.rows[0];
     if (u) {
       u.public_id = generateIsoPublicId(u.role, u.id);
+      u.encrypted_user_id = encodeUserId(u.id);
       try {
         const farmsRes = await pool.query(
           `SELECT id FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
@@ -473,6 +486,35 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
     res.json(u);
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
+// GET /api/auth/verify-sub-token/:token — Safely check and decode encrypted user ID
+router.get('/verify-sub-token/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const userId = decodeUserId(token);
+    if (!userId) {
+      return res.status(400).json({ success: false, valid: false, error: 'Mã định danh bảo mật không hợp lệ hoặc đã bị thay đổi.' });
+    }
+
+    const result = await pool.query('SELECT id, full_name, email, role, farm_id FROM users WHERE id = $1', [userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, valid: false, error: 'Không tìm thấy người dùng tương ứng.' });
+    }
+
+    const u = result.rows[0];
+    res.json({
+      success: true,
+      valid: true,
+      user_id: u.id,
+      public_id: generateIsoPublicId(u.role, u.id),
+      encrypted_user_id: token,
+      name: u.full_name
+    });
+  } catch (err) {
+    console.error('Verify sub token error:', err);
+    res.status(500).json({ success: false, error: 'Lỗi server khi xác thực mã.' });
   }
 });
 
