@@ -360,6 +360,7 @@ async function initDB() {
         UNIQUE(farm_id, plot_code)
       );
       ALTER TABLE farm_plots ADD COLUMN IF NOT EXISTS total_rows INTEGER DEFAULT 10;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_farm_plots_unique ON farm_plots(farm_id, plot_code);
       CREATE INDEX IF NOT EXISTS idx_farm_plots_farm ON farm_plots(farm_id);
     `);
 

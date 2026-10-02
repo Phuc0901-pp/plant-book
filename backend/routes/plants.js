@@ -753,12 +753,16 @@ router.post('/batch-range', auth, async (req, res) => {
 
       if (farm_id && plotCode) {
         try {
-          await client.query(
-            `INSERT INTO farm_plots (farm_id, plot_code, plot_name)
-             VALUES ($1, $2, $2)
-             ON CONFLICT (farm_id, plot_code) DO NOTHING`,
+          const existingPlot = await pool.query(
+            'SELECT id FROM farm_plots WHERE farm_id = $1 AND UPPER(plot_code) = UPPER($2) LIMIT 1',
             [farm_id, plotCode]
           );
+          if (existingPlot.rows.length === 0) {
+            await pool.query(
+              'INSERT INTO farm_plots (farm_id, plot_code, plot_name) VALUES ($1, $2, $3)',
+              [farm_id, plotCode, `Lô ${plotCode}`]
+            );
+          }
         } catch (_) {}
       }
 
@@ -3609,29 +3613,30 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       cleanUid = (nfcSecurity.sanitizeUid ? nfcSecurity.sanitizeUid(rawUid) : (nfcSecurity.normalizeNfcUid ? nfcSecurity.normalizeNfcUid(rawUid) : rawUid)) || rawUid.toUpperCase();
     }
 
-    await client.query('BEGIN');
+    // Check plot & ensure plot exists in farm_plots (safely outside transaction)
+    const finalPlot = plot_code && String(plot_code).trim() ? String(plot_code).trim().toUpperCase() : 'A1';
+    const finalRow = row_number && parseInt(row_number) ? parseInt(row_number) : 1;
+
+    try {
+      const existingPlot = await pool.query(
+        'SELECT id FROM farm_plots WHERE farm_id = $1 AND UPPER(plot_code) = UPPER($2) LIMIT 1',
+        [farmId, finalPlot]
+      );
+      if (existingPlot.rows.length === 0) {
+        await pool.query(
+          'INSERT INTO farm_plots (farm_id, plot_code, plot_name) VALUES ($1, $2, $3)',
+          [farmId, finalPlot, `Lô ${finalPlot}`]
+        );
+      }
+    } catch (_) {}
 
     // Check tree_code or generate auto tree_code
     let finalCode = tree_code && String(tree_code).trim() ? String(tree_code).trim() : null;
     if (!finalCode) {
-      const countRes = await client.query('SELECT COUNT(*)::int as count FROM plants WHERE farm_id = $1', [farmId]);
+      const countRes = await pool.query('SELECT COUNT(*)::int as count FROM plants WHERE farm_id = $1', [farmId]);
       const nextNum = (countRes.rows[0].count || 0) + 1;
       finalCode = `C${String(nextNum).padStart(3, '0')}`;
     }
-
-    // Check plot
-    const finalPlot = plot_code && String(plot_code).trim() ? String(plot_code).trim().toUpperCase() : 'A1';
-    const finalRow = row_number && parseInt(row_number) ? parseInt(row_number) : 1;
-
-    // Ensure plot exists in farm_plots
-    try {
-      await client.query(
-        `INSERT INTO farm_plots (farm_id, plot_code, plot_name)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (farm_id, plot_code) DO NOTHING`,
-        [farmId, finalPlot, `Lô ${finalPlot}`]
-      );
-    } catch (_) {}
 
     // Generate public slug
     const cleanVarietySlug = (plant_variety || plant_type || 'tree')
@@ -3640,7 +3645,7 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-');
     const cleanCodeSlug = finalCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const randomSuffix = Math.floor(Math.random() * 8999 + 1000);
+    const randomSuffix = Math.floor(Math.random() * 89999 + 10000);
     const publicSlug = `${cleanVarietySlug}-${finalPlot.toLowerCase()}-${cleanCodeSlug}-${randomSuffix}`;
 
     const effectiveCover = photo_url || cover_image || null;
@@ -3654,7 +3659,10 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       initial_yield: initial_yield ? parseFloat(initial_yield) : 0
     };
 
-    // Insert plant with clean standard schema
+    // BEGIN Transaction for core plant creation
+    await client.query('BEGIN');
+
+    // Insert plant
     const plantInsert = await client.query(`
       INSERT INTO plants (
         farm_id, tree_code, plant_variety, plant_type, planting_date,
@@ -3675,10 +3683,27 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
     ]);
     const newPlant = plantInsert.rows[0];
 
-    // If initial photo provided, record in plant_media
+    // Auto-increment total_plants on farm
+    await client.query('UPDATE farms SET total_plants = COALESCE(total_plants, 0) + 1 WHERE id = $1', [farmId]);
+
+    await client.query('COMMIT');
+
+    // URLs
+    const origin = (process.env.APP_URL || 'https://dev-plantbook.onrender.com').replace(/\/$/, '');
+    const uidSuffix = cleanUid ? `/${encodeURIComponent(cleanUid)}` : '';
+    const hierarchicalUrl = `${origin}/${farmId}/${newPlant.id}${uidSuffix}`;
+    const publicUrl = `${origin}/plant/${newPlant.public_slug}`;
+
+    // Update public_url in DB
+    try {
+      await pool.query('UPDATE plants SET public_url = $1 WHERE id = $2', [hierarchicalUrl, newPlant.id]);
+      newPlant.public_url = hierarchicalUrl;
+    } catch (_) {}
+
+    // Record initial photo in plant_media if provided
     if (effectiveCover) {
       try {
-        await client.query(`
+        await pool.query(`
           INSERT INTO plant_media (plant_id, object_name, url, caption, media_type, uploaded_at)
           VALUES ($1, $2, $3, $4, 'image', NOW())
         `, [newPlant.id, `growth_${newPlant.id}_${Date.now()}.jpg`, effectiveCover, initial_growth_stage || 'Ảnh chụp hiện trường khởi tạo']);
@@ -3687,30 +3712,30 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       }
     }
 
-    // If NFC UID provided, register/update in nfc_tags_inventory
+    // Record NFC UID in nfc_tags_inventory if provided
     if (cleanUid) {
       try {
-        await client.query(`
-          INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, assigned_at)
-          VALUES ($1, $2, $3, 'assigned', NOW())
-          ON CONFLICT (nfc_uid) DO UPDATE
-          SET farm_id = EXCLUDED.farm_id, plant_id = EXCLUDED.plant_id, status = 'assigned', assigned_at = NOW()
-        `, [cleanUid, farmId, newPlant.id]);
+        const invCheck = await pool.query('SELECT id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1) LIMIT 1', [cleanUid]);
+        if (invCheck.rows.length > 0) {
+          await pool.query(
+            `UPDATE nfc_tags_inventory 
+             SET farm_id = $1, plant_id = $2, status = 'assigned', tagged_at = NOW() 
+             WHERE UPPER(nfc_uid) = UPPER($3)`,
+            [farmId, newPlant.id, cleanUid]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, assigned_at, tagged_at)
+             VALUES ($1, $2, $3, 'assigned', NOW(), NOW())`,
+            [cleanUid, farmId, newPlant.id]
+          );
+        }
       } catch (nfcErr) {
         console.warn('NFC inventory update notice:', nfcErr.message);
       }
     }
 
-    // Auto-increment total_plants on farm
-    await client.query('UPDATE farms SET total_plants = COALESCE(total_plants, 0) + 1 WHERE id = $1', [farmId]);
-
-    await client.query('COMMIT');
-
-    const origin = (process.env.APP_URL || 'https://dev-plantbook.onrender.com').replace(/\/$/, '');
-    const uidSuffix = cleanUid ? `/${encodeURIComponent(cleanUid)}` : '';
-    const hierarchicalUrl = `${origin}/${farmId}/${newPlant.id}${uidSuffix}`;
-    const publicUrl = `${origin}/plant/${newPlant.public_slug}`;
-
+    // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast('plants_updated', { plant_id: newPlant.id, farm_id: farmId, action: 'single_provision' });
 
@@ -3724,7 +3749,7 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       gps_accuracy: acc
     });
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Error in single-provision:', err);
     res.status(500).json({ error: 'Lỗi server khi khai báo cây: ' + err.message });
   } finally {
