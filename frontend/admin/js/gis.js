@@ -1675,8 +1675,7 @@ async function selectFarm(farmId, syncUrl = true) {
     zoomMapToFarm(farm);
   } catch (err) {
     if (!cachedFarm) {
-      toast('Lỗi tải chi tiết trang trại: ' + err.message, 'error');
-    }
+      console.warn("Cannot load farm details:", err.message); backToFarmsList(); }
   }
 }
 

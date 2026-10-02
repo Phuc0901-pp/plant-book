@@ -341,6 +341,11 @@ async function initDB() {
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS gps_accuracy NUMERIC;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_tagged_at TIMESTAMPTZ;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS nfc_tagged_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS initial_yield NUMERIC DEFAULT 0;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS past_diseases JSONB DEFAULT '[]';
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS initial_growth_stage VARCHAR(255);
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS notes TEXT;
+      ALTER TABLE plants ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
       CREATE INDEX IF NOT EXISTS idx_plants_farm_nfc ON plants (farm_id, UPPER(nfc_uid)) WHERE deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS idx_plants_unassigned_trees ON plants (farm_id, tree_code) WHERE (nfc_uid IS NULL OR nfc_uid = '') AND deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS idx_plants_farm_plot ON plants (farm_id, plot_code);

@@ -3650,30 +3650,53 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       gps_accuracy: acc,
       provision_source: 'sub_gateway',
       past_diseases: pastDiseasesList,
-      initial_growth_stage: initial_growth_stage || null
+      initial_growth_stage: initial_growth_stage || null,
+      initial_yield: initial_yield ? parseFloat(initial_yield) : 0
     };
 
-    // Insert plant
-    const plantInsert = await client.query(`
-      INSERT INTO plants (
-        farm_id, tree_code, plant_variety, plant_type, planting_date,
-        plant_age, plot_code, row_number, latitude, longitude,
-        location, cover_image, nfc_uid, public_slug, health_status,
-        initial_yield, notes, data, is_public
-      ) VALUES (
-        $1, $2, $3, $4, $5,
-        $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15,
-        $16, $17, $18, true
-      ) RETURNING *
-    `, [
-      farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
-      plant_age || null, finalPlot, finalRow, lat, lng,
-      location || `Lô ${finalPlot} - Hàng ${finalRow}`, effectiveCover, cleanUid, publicSlug, health_status || 'Tốt',
-      initial_yield ? parseFloat(initial_yield) : 0, notes || '', JSON.stringify(plantMetadata)
-    ]);
-
-    const newPlant = plantInsert.rows[0];
+    // Insert plant with resilient schema handling
+    let newPlant;
+    try {
+      const plantInsert = await client.query(`
+        INSERT INTO plants (
+          farm_id, tree_code, plant_variety, plant_type, planting_date,
+          plant_age, plot_code, row_number, latitude, longitude,
+          location, cover_image, nfc_uid, public_slug, health_status,
+          initial_yield, notes, data, is_public
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          $6, $7, $8, $9, $10,
+          $11, $12, $13, $14, $15,
+          $16, $17, $18, true
+        ) RETURNING *
+      `, [
+        farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
+        plant_age || null, finalPlot, finalRow, lat, lng,
+        location || `Lô ${finalPlot} - Hàng ${finalRow}`, effectiveCover, cleanUid, publicSlug, health_status || 'Tốt',
+        initial_yield ? parseFloat(initial_yield) : 0, notes || '', JSON.stringify(plantMetadata)
+      ]);
+      newPlant = plantInsert.rows[0];
+    } catch (colErr) {
+      const plantInsertFallback = await client.query(`
+        INSERT INTO plants (
+          farm_id, tree_code, plant_variety, plant_type, planting_date,
+          plant_age, plot_code, row_number, latitude, longitude,
+          location, cover_image, nfc_uid, public_slug, health_status,
+          data, is_public
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          $6, $7, $8, $9, $10,
+          $11, $12, $13, $14, $15,
+          $16, true
+        ) RETURNING *
+      `, [
+        farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
+        plant_age || null, finalPlot, finalRow, lat, lng,
+        location || `Lô ${finalPlot} - Hàng ${finalRow}`, effectiveCover, cleanUid, publicSlug, health_status || 'Tốt',
+        JSON.stringify(plantMetadata)
+      ]);
+      newPlant = plantInsertFallback.rows[0];
+    }
 
     // If initial photo provided, record in plant_media as growth photo
     if (effectiveCover) {
