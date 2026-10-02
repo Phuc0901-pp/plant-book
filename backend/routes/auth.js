@@ -216,6 +216,173 @@ router.post('/register', async (req, res) => {
 
 
 
+// POST /api/auth/onboard-lead — Quick Lead Onboarding & Farm Setup via Smart NFC Gateway
+router.post('/onboard-lead', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const {
+      full_name,
+      phone,
+      email: customEmail,
+      password,
+      farm_name,
+      farm_latitude,
+      farm_longitude,
+      source_tag_uid
+    } = req.body;
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: 'Số điện thoại là bắt buộc để kích hoạt tài khoản.' });
+    }
+    if (!password || !password.trim() || password.trim().length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+    }
+
+    const cleanPhone = phone.trim();
+    const cleanName = full_name && full_name.trim() ? full_name.trim() : `Nông hộ ${cleanPhone}`;
+    const cleanFarmName = farm_name && farm_name.trim() ? farm_name.trim() : `Vườn ${cleanName}`;
+    const email = customEmail && customEmail.trim() ? customEmail.trim() : `${cleanPhone}@farmer.tanbaocorp.vn`;
+
+    await client.query('BEGIN');
+
+    // 1. Check if user already exists
+    const existing = await client.query(
+      'SELECT * FROM users WHERE phone = $1 OR LOWER(email) = LOWER($2)',
+      [cleanPhone, email.toLowerCase()]
+    );
+
+    let user = null;
+    let isNewUser = false;
+
+    if (existing.rows.length > 0) {
+      user = existing.rows[0];
+      const valid = await bcrypt.compare(password.trim(), user.password_hash);
+      if (!valid) {
+        await client.query('ROLLBACK');
+        return res.status(401).json({
+          error: 'Số điện thoại này đã được đăng ký trên hệ thống. Vui lòng đăng nhập bằng mật khẩu của bạn để tiếp tục.',
+          user_exists: true
+        });
+      }
+    } else {
+      isNewUser = true;
+      const hash = await bcrypt.hash(password.trim(), 12);
+      const userRes = await client.query(
+        `INSERT INTO users (email, password_hash, full_name, role, phone, approved, account_tier)
+         VALUES ($1, $2, $3, 'user', $4, true, 'pro')
+         RETURNING id, email, full_name, phone, role, approved, account_tier, created_at`,
+        [email, hash, cleanName, cleanPhone]
+      );
+      user = userRes.rows[0];
+    }
+
+    // 2. Setup or retrieve primary farm
+    let farm = null;
+    const farmCheck = await client.query(
+      `SELECT * FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND is_deleted IS NOT TRUE ORDER BY id ASC LIMIT 1`,
+      [user.id, user.farm_id || null]
+    );
+
+    const lat = farm_latitude ? parseFloat(farm_latitude) : null;
+    const lng = farm_longitude ? parseFloat(farm_longitude) : null;
+    const polygonCoords = (lat && lng) ? [[lat, lng]] : [];
+
+    if (farmCheck.rows.length === 0) {
+      const generatedPuc = `PUC-${cleanPhone.slice(-4)}-${Math.floor(Math.random() * 899 + 100)}`;
+      const farmRes = await client.query(
+        `INSERT INTO farms (name, description, polygon_coordinates, created_by, user_id, puc_code)
+         VALUES ($1, $2, $3, $4, $4, $5)
+         RETURNING *`,
+        [cleanFarmName, 'Trang trại khởi tạo tự động từ cổng Smart NFC Gateway /sub', JSON.stringify(polygonCoords), user.id, generatedPuc]
+      );
+      farm = farmRes.rows[0];
+
+      // Create default plot A1
+      try {
+        await client.query(
+          `INSERT INTO farm_plots (farm_id, plot_code, plot_name, total_rows)
+           VALUES ($1, 'A1', 'Lô A1', 10)
+           ON CONFLICT DO NOTHING`,
+          [farm.id]
+        );
+      } catch (_) {}
+
+      // Update user's primary farm_id
+      await client.query('UPDATE users SET farm_id = $1 WHERE id = $2', [farm.id, user.id]);
+      user.farm_id = farm.id;
+    } else {
+      farm = farmCheck.rows[0];
+    }
+
+    // 3. Log lead onboarding activity
+    await client.query(
+      `INSERT INTO user_activities (user_id, activity_type, description)
+       VALUES ($1, 'Smart NFC Lead Onboarding', $2)`,
+      [user.id, `Khách hàng kích hoạt qua cổng số Smart NFC Gateway (/sub). Thẻ nguồn: ${source_tag_uid || 'N/A'}`]
+    );
+
+    await client.query('COMMIT');
+
+    // Invalidate Redis caches
+    try {
+      await delCacheByPattern('farms_');
+    } catch (_) {}
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        farm_id: farm ? farm.id : user.farm_id,
+        account_tier: user.account_tier || 'pro'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    // Broadcast event
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast('user_registered', {
+        id: user.id,
+        name: user.full_name,
+        phone: user.phone,
+        source: 'smart_nfc_sub_gateway'
+      });
+      broadcast('farms_updated');
+    }
+
+    res.status(201).json({
+      success: true,
+      message: isNewUser ? 'Đăng ký tài khoản và thiết lập trang trại thành công!' : 'Đăng nhập thành công!',
+      is_new_user: isNewUser,
+      token,
+      user: {
+        id: user.id,
+        public_id: generateIsoPublicId(user.role, user.id),
+        email: user.email,
+        role: user.role,
+        farm_id: farm ? farm.id : null,
+        full_name: user.full_name,
+        phone: user.phone,
+        account_tier: user.account_tier || 'pro'
+      },
+      farm: {
+        id: farm ? farm.id : null,
+        name: farm ? farm.name : cleanFarmName,
+        puc_code: farm ? farm.puc_code : null
+      }
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Onboard lead error:', err);
+    res.status(500).json({ error: 'Lỗi server khi kích hoạt tài khoản cổng Smart NFC: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // GET /api/auth/check-phone — Pre-check if phone number exists before registering
 router.get('/check-phone', async (req, res) => {
 

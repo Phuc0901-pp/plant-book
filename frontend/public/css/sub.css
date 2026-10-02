@@ -1,0 +1,486 @@
+/* Plant Book AgTech - Smart NFC Onboarding Gateway (/sub) CSS */
+:root {
+  --bg-dark: #091312;
+  --bg-card: rgba(16, 32, 28, 0.75);
+  --bg-card-hover: rgba(24, 48, 42, 0.85);
+  --border-card: rgba(52, 211, 153, 0.2);
+  --border-card-hover: rgba(52, 211, 153, 0.5);
+  --text-primary: #f0fdf4;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --primary-emerald: #10b981;
+  --primary-emerald-glow: rgba(16, 185, 129, 0.35);
+  --accent-amber: #f59e0b;
+  --accent-amber-glow: rgba(245, 158, 11, 0.35);
+  --accent-cyan: #06b6d4;
+  --accent-cyan-glow: rgba(6, 182, 212, 0.35);
+  --error-red: #ef4444;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 8px;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: radial-gradient(circle at 50% 10%, #0d2e24 0%, #061512 60%, #020807 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 16px;
+  overflow-x: hidden;
+}
+
+/* Background animated glow orbs */
+.bg-glow-orb {
+  position: fixed;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.25;
+}
+.orb-1 { top: -80px; left: -80px; background: var(--primary-emerald); }
+.orb-2 { bottom: -80px; right: -80px; background: var(--accent-cyan); }
+
+/* Main App Container */
+.app-container {
+  width: 100%;
+  max-width: 520px;
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Header */
+.gateway-header {
+  text-align: center;
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+.gateway-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+  border: 1px solid var(--border-card);
+  box-shadow: 0 0 25px var(--primary-emerald-glow);
+  margin-bottom: 12px;
+  position: relative;
+  animation: float 4s ease-in-out infinite;
+}
+.gateway-logo-wrap svg, .gateway-logo-wrap img {
+  width: 38px;
+  height: 38px;
+}
+.gateway-title {
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #a7f3d0 0%, #34d399 50%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+.gateway-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* NFC Detection Pill */
+.nfc-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: #a7f3d0;
+}
+.nfc-badge-pill.warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+}
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: blink 2s infinite;
+}
+.pulse-dot.warning { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+
+/* Views / Steps */
+.view-step {
+  display: none;
+  animation: fadeIn 0.35s ease-out forwards;
+}
+.view-step.active {
+  display: block;
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  margin-bottom: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Big Option Action Cards */
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.option-card:hover, .option-card:active {
+  transform: translateY(-2px);
+  background: var(--bg-card-hover);
+  border-color: var(--border-card-hover);
+  box-shadow: 0 8px 25px var(--primary-emerald-glow);
+}
+.option-card.primary {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.05));
+}
+.option-card.primary:hover {
+  border-color: #34d399;
+  box-shadow: 0 0 30px rgba(52, 211, 153, 0.35);
+}
+.option-icon-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.icon-box-green {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.icon-box-amber {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.option-content h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.option-content p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+.option-arrow {
+  margin-left: auto;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.option-card:hover .option-arrow {
+  transform: translateX(4px);
+  color: #34d399;
+}
+
+/* Forms & Inputs */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a7f3d0;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(9, 24, 20, 0.8);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: #34d399;
+  box-shadow: 0 0 12px var(--primary-emerald-glow);
+  background: rgba(12, 32, 27, 0.95);
+}
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+.btn-primary:hover, .btn-primary:active {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  box-shadow: 0 6px 22px rgba(52, 211, 153, 0.6);
+  transform: translateY(-1px);
+}
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.btn-outline-green {
+  background: transparent;
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+.btn-outline-green:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #34d399;
+}
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  width: auto;
+}
+
+/* Navigation & Back buttons */
+.nav-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+.step-title-badge {
+  font-size: 14px;
+  font-weight: 700;
+  color: #a7f3d0;
+}
+
+/* High Precision GPS Box */
+.gps-precision-card {
+  background: linear-gradient(145deg, rgba(6, 30, 24, 0.9), rgba(4, 18, 14, 0.95));
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.gps-precision-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.gps-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.gps-accuracy-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.acc-excellent { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid #34d399; }
+.acc-good { background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #fbbf24; }
+.acc-poor { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #f87171; }
+
+.gps-radar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0;
+  position: relative;
+}
+.radar-ring {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid rgba(52, 211, 153, 0.4);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: radarWave 2.5s infinite linear;
+}
+.radar-center-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary-emerald);
+  color: #022c22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 0 16px #34d399;
+}
+.gps-coords-text {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  font-family: monospace;
+}
+
+/* NFC Touch Phone Graphic */
+.nfc-touch-illustration {
+  width: 140px;
+  height: 140px;
+  margin: 20px auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: pulseTouch 2s infinite;
+}
+.nfc-touch-illustration svg {
+  width: 64px;
+  height: 64px;
+  color: #34d399;
+}
+
+/* Tree Selector Grid */
+.tree-select-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid rgba(52, 211, 153, 0.15);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.tree-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tree-select-item:hover, .tree-select-item.selected {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes radarWave {
+  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 15px rgba(52, 211, 153, 0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+@keyframes pulseTouch {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 12px #34d399); }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+  body { padding: 10px; }
+  .glass-card { padding: 16px; border-radius: 16px; }
+  .gateway-title { font-size: 20px; }
+  .option-card { padding: 16px; }
+  .option-icon-box { width: 48px; height: 48px; }
+}

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cổng Định Danh Số Smart NFC · Tân Bảo AgTech</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/sub.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- Animated Background Orbs -->
+  <div class="bg-glow-orb orb-1"></div>
+  <div class="bg-glow-orb orb-2"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="gateway-header">
+      <div class="gateway-logo-wrap">
+        <i data-lucide="radio" style="color:#34d399; width:34px; height:34px;"></i>
+      </div>
+      <h1 class="gateway-title">TÂN BẢO AGTECH</h1>
+      <p class="gateway-subtitle">Cổng Định Danh Số Cây Trồng & Kích Hoạt Thẻ Thông Minh</p>
+      <div id="nfc-detector-badge" class="nfc-badge-pill">
+        <span class="pulse-dot"></span> Đang kiểm tra phần cứng NFC...
+      </div>
+    </header>
+
+    <!-- ================= VIEW 0: LANDING DUAL OPTIONS ================= -->
+    <div id="view-landing" class="view-step active">
+      <div class="option-card primary" id="btn-opt-existing">
+        <div class="option-icon-box icon-box-green">
+          <i data-lucide="key-round" style="width:28px; height:28px;"></i>
+        </div>
+        <div class="option-content">
+          <h3>ĐÃ CÓ TÀI KHOẢN</h3>
+          <p>Đăng nhập để liên kết thẻ định danh vào vườn cây hiện tại của bạn.</p>
+        </div>
+        <div class="option-arrow">
+          <i data-lucide="chevron-right"></i>
+        </div>
+      </div>
+
+      <div class="option-card" id="btn-opt-new">
+        <div class="option-icon-box icon-box-amber">
+          <i data-lucide="sparkles" style="width:28px; height:28px;"></i>
+        </div>
+        <div class="option-content">
+          <h3>CHƯA CÓ TÀI KHOẢN</h3>
+          <p>Đăng ký siêu tốc 30 giây, tạo vườn mới và kích hoạt cây đầu tiên.</p>
+        </div>
+        <div class="option-arrow">
+          <i data-lucide="chevron-right"></i>
+        </div>
+      </div>
+
+      <div class="glass-card" style="text-align:center; padding:16px;">
+        <div style="font-size:12px; color:#9ca3af; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <i data-lucide="shield-check" style="width:16px; height:16px; color:#34d399;"></i>
+          Bảo mật chuẩn ISO/IEC 25010 & Định danh VietGAP 2026
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 1A: LOGIN ================= -->
+    <div id="view-login" class="view-step">
+      <div class="glass-card">
+        <div class="nav-header-row">
+          <button class="back-btn btn-back-landing">
+            <i data-lucide="arrow-left"></i> Quay lại
+          </button>
+          <span class="step-title-badge">ĐĂNG NHẬP</span>
+        </div>
+
+        <form id="form-login">
+          <div class="form-group">
+            <label class="form-label">Email hoặc Số điện thoại</label>
+            <input type="text" id="login-email" class="form-input" placeholder="Ví dụ: 0912345678" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mật khẩu</label>
+            <input type="password" id="login-password" class="form-input" placeholder="Nhập mật khẩu..." required>
+          </div>
+          <button type="submit" id="btn-submit-login" class="btn btn-primary" style="margin-top:10px;">
+            <i data-lucide="log-in"></i> Đăng Nhập
+          </button>
+        </form>
+
+        <div style="text-align:center; margin-top:18px; font-size:13px; color:#9ca3af;">
+          Chưa có tài khoản? 
+          <a href="javascript:void(0)" id="btn-switch-register" style="color:#34d399; font-weight:700; text-decoration:none;">Đăng ký ngay</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 1B: REGISTER & FARM SETUP ================= -->
+    <div id="view-register" class="view-step">
+      <div class="glass-card">
+        <div class="nav-header-row">
+          <button class="back-btn btn-back-landing">
+            <i data-lucide="arrow-left"></i> Quay lại
+          </button>
+          <span class="step-title-badge">ĐĂNG KÝ VƯỜN MỚI</span>
+        </div>
+
+        <form id="form-register">
+          <div class="form-group">
+            <label class="form-label">Họ và Tên Chủ Vườn</label>
+            <input type="text" id="reg-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn Nông" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Số Điện Thoại</label>
+              <input type="tel" id="reg-phone" class="form-input" placeholder="0912345678" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mật Khẩu</label>
+              <input type="password" id="reg-password" class="form-input" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+            </div>
+          </div>
+
+          <div style="border-top:1px dashed rgba(52,211,153,0.25); margin:16px 0; padding-top:14px;">
+            <label class="form-label" style="color:#fbbf24;">Thiết Lập Trang Trại</label>
+            <div class="form-group">
+              <input type="text" id="reg-farm-name" class="form-input" placeholder="Tên vườn (Ví dụ: Vườn Sầu Riêng Chín Sớm)" required>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:12px; margin-bottom:14px; border:1px solid rgba(52,211,153,0.15);">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:12px; font-weight:600; color:#a7f3d0;">TỌA ĐỘ VƯỜN THỰC ĐỊA</span>
+                <button type="button" id="btn-capture-farm-gps" class="btn btn-sm btn-outline-green">
+                  <i data-lucide="crosshair"></i> Lấy GPS
+                </button>
+              </div>
+              <div id="text-farm-gps-status" style="font-size:11px; color:#9ca3af; font-family:monospace;">
+                Chưa lấy tọa độ (Hệ thống sẽ tự nhận diện khi bấm)
+              </div>
+              <input type="hidden" id="reg-farm-lat">
+              <input type="hidden" id="reg-farm-lng">
+            </div>
+          </div>
+
+          <button type="submit" id="btn-submit-register" class="btn btn-primary">
+            <i data-lucide="sparkles"></i> Kích Hoạt Tài Khoản & Tạo Vườn
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 2: FARM HUB (SELECT FARM & ACTION) ================= -->
+    <div id="view-farm-hub" class="view-step">
+      <div class="glass-card">
+        <div class="nav-header-row">
+          <button class="back-btn btn-back-landing">
+            <i data-lucide="arrow-left"></i> Đăng xuất
+          </button>
+          <span class="step-title-badge">CHỌN TRANG TRẠI</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Trang Trại Của Bạn</label>
+          <select id="select-farm-hub" class="form-select"></select>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px;">
+          <button type="button" id="btn-action-new-plant" class="btn btn-primary" style="padding:16px;">
+            <i data-lucide="plus-circle"></i> + Khai Báo Cây Trồng Mới (1 Cây)
+          </button>
+          
+          <button type="button" id="btn-action-existing-plant" class="btn btn-secondary">
+            <i data-lucide="list"></i> Gán Thẻ Cho Cây Đã Có Trong Vườn
+          </button>
+        </div>
+
+        <!-- Collapsible List of Existing Plants -->
+        <div id="wrap-existing-plants-list" style="display:none; margin-top:18px;">
+          <label class="form-label">Chọn Cây Trong Danh Sách</label>
+          <div id="list-existing-plants" class="tree-select-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 3: DETAILED SINGLE PLANT FORM ================= -->
+    <div id="view-plant-form" class="view-step">
+      <div class="glass-card">
+        <div class="nav-header-row">
+          <button class="back-btn" id="btn-back-farm-hub">
+            <i data-lucide="arrow-left"></i> Đổi vườn
+          </button>
+          <span class="step-title-badge" id="plant-form-title">KHAI BÁO CÂY CHI TIẾT</span>
+        </div>
+
+        <form id="form-plant-detail">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Mã Cây / Số Hiệu</label>
+              <input type="text" id="input-tree-code" class="form-input" placeholder="Tự sinh (C001, C002...)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Giống Cây Trồng</label>
+              <input type="text" id="input-plant-variety" class="form-input" value="Sầu riêng Ri6" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Phân Lô (Plot)</label>
+              <input type="text" id="input-plot-code" class="form-input" value="A1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Số Hàng (Row)</label>
+              <input type="number" id="input-row-number" class="form-input" value="1" min="1">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Ngày Trồng</label>
+              <input type="date" id="input-planting-date" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tuổi Cây / Năm</label>
+              <input type="text" id="input-plant-age" class="form-input" placeholder="Ví dụ: 4 năm">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Sức Khỏe</label>
+              <select id="input-health-status" class="form-select">
+                <option value="Tốt">Tốt (Khỏe mạnh)</option>
+                <option value="Bình thường">Bình thường</option>
+                <option value="Cần chăm sóc">Cần chăm sóc</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Năng Suất Vụ Trước (kg)</label>
+              <input type="number" id="input-initial-yield" class="form-input" placeholder="0">
+            </div>
+          </div>
+
+          <!-- SUB-1M HIGH-PRECISION GPS ENGINE BOX -->
+          <div class="gps-precision-card">
+            <div class="gps-precision-header">
+              <div class="gps-status-indicator">
+                <i data-lucide="crosshair" style="color:#34d399;"></i>
+                <span>ĐỊNH VỊ GPS GỐC CÂY</span>
+              </div>
+              <div id="badge-gps-status" class="gps-accuracy-badge acc-good">
+                Đang đo vệ tinh...
+              </div>
+            </div>
+
+            <div class="gps-radar-wrap">
+              <div class="radar-ring">
+                <div class="radar-center-icon">
+                  <i data-lucide="map-pin" style="width:24px; height:24px;"></i>
+                </div>
+              </div>
+            </div>
+
+            <div id="text-gps-live-coords" class="gps-coords-text">
+              Đang thu thập mẫu vệ tinh đa tầng...
+            </div>
+
+            <button type="button" id="btn-lock-gps" class="btn btn-outline-green" style="margin-top:12px;">
+              <i data-lucide="check-circle-2"></i> Khóa Tọa Độ GPS (Sai số &lt; ±1m)
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mã Thẻ NFC (UID)</label>
+            <input type="text" id="input-tag-uid" class="form-input" placeholder="Tự nhận diện khi chạm thẻ..." style="font-family:monospace; color:#34d399; font-weight:700;">
+          </div>
+
+          <button type="submit" id="btn-submit-plant" class="btn btn-primary" style="margin-top:10px; padding:15px;">
+            <i data-lucide="save"></i> Lưu Cây & Chuẩn Bị Nạp Thẻ
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 4: PHYSICAL NFC WRITE STEP ================= -->
+    <div id="view-nfc-write" class="view-step">
+      <div class="glass-card" style="text-align:center;">
+        <span class="step-title-badge">BƯỚC CUỐI: NẠP DỮ LIỆU VÀO THẺ VẬT LÝ</span>
+        
+        <p id="write-tree-info-text" style="font-size:16px; font-weight:700; color:#34d399; margin:10px 0;">
+          Cây #C001 (Sầu riêng Ri6)
+        </p>
+
+        <!-- Illustration -->
+        <div class="nfc-touch-illustration">
+          <i data-lucide="smartphone-nfc"></i>
+        </div>
+
+        <p style="font-size:13px; color:#e5e7eb; margin-bottom:14px; line-height:1.4;">
+          Áp lưng điện thoại vào thẻ NFC gắn trên cây để truyền đường dẫn hồ sơ số công khai vào bộ nhớ thẻ.
+        </p>
+
+        <div class="form-group" style="text-align:left;">
+          <label class="form-label">Đường Dẫn Hồ Sơ Nông Sản Công Khai</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="text-public-plant-url" class="form-input" readonly style="font-size:12px; font-family:monospace;">
+            <button type="button" id="btn-copy-public-url" class="btn btn-secondary btn-sm" style="flex-shrink:0;">
+              <i data-lucide="copy"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" id="btn-write-nfc-tag" class="btn btn-primary" style="padding:16px; font-size:15px; margin-top:8px;">
+          <i data-lucide="radio"></i> Chạm Điện Thoại Vào Thẻ Để Ghi NDEF
+        </button>
+
+        <!-- Success Banner Card -->
+        <div id="nfc-write-success-card" style="display:none; margin-top:20px; padding:18px; border-radius:14px; background:rgba(16,185,129,0.2); border:1px solid #34d399;">
+          <i data-lucide="check-circle" style="width:40px; height:40px; color:#34d399; margin-bottom:8px;"></i>
+          <h4 style="color:#fff; margin-bottom:6px;">Định Danh Cây Thành Công!</h4>
+          <p style="font-size:12px; color:#a7f3d0; margin-bottom:14px;">Thẻ vật lý đã lưu hồ sơ và sẵn sàng quét mã truy xuất nguồn gốc.</p>
+          <div style="display:flex; gap:10px;">
+            <a href="#" id="link-view-public-profile" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none; flex:1;">
+              <i data-lucide="external-link"></i> Xem Hồ Sơ Cây
+            </a>
+            <a href="/user" class="btn btn-secondary btn-sm" style="text-decoration:none; flex:1;">
+              <i data-lucide="layout-dashboard"></i> Về Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Master Gateway Script -->
+  <script type="module" src="/js/sub-gateway.js"></script>
+</body>
+</html>

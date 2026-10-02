@@ -3553,6 +3553,189 @@ router.post('/farms/:farmId/bind-tag-quick', auth, async (req, res) => {
   }
 });
 
+// ─── Single Plant High-Precision Provisioning via Smart NFC Gateway /sub ───
+router.post(['/single-provision', '/plants/single-provision'], auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const {
+      farm_id,
+      tree_code,
+      plant_variety,
+      plant_type,
+      planting_date,
+      plant_age,
+      plot_code,
+      row_number,
+      latitude,
+      longitude,
+      gps_accuracy,
+      location,
+      cover_image,
+      nfc_uid,
+      initial_yield,
+      health_status,
+      notes
+    } = req.body;
+
+    const farmId = parseInt(farm_id || req.user.farm_id);
+    if (!farmId || isNaN(farmId)) {
+      return res.status(400).json({ error: 'Mã trang trại là bắt buộc.' });
+    }
+
+    // Permission check
+    if (req.user.role !== 'admin' && Number(req.user.farm_id) !== farmId) {
+      const farmOwn = await pool.query('SELECT user_id FROM farms WHERE id = $1', [farmId]);
+      if (farmOwn.rows.length === 0 || Number(farmOwn.rows[0].user_id) !== Number(req.user.id)) {
+        return res.status(403).json({ error: 'Bạn không có quyền thêm cây vào trang trại này.' });
+      }
+    }
+
+    let lat = latitude !== undefined && latitude !== '' && latitude !== null ? parseFloat(latitude) : null;
+    let lng = longitude !== undefined && longitude !== '' && longitude !== null ? parseFloat(longitude) : null;
+    let acc = gps_accuracy !== undefined && gps_accuracy !== '' && gps_accuracy !== null ? parseFloat(gps_accuracy) : null;
+
+    if (lat !== null && lng !== null) {
+      if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+        const tmp = lat; lat = lng; lng = tmp;
+      }
+    }
+
+    let cleanUid = null;
+    if (nfc_uid && String(nfc_uid).trim()) {
+      const rawUid = String(nfc_uid).trim();
+      cleanUid = (nfcSecurity.sanitizeUid ? nfcSecurity.sanitizeUid(rawUid) : (nfcSecurity.normalizeNfcUid ? nfcSecurity.normalizeNfcUid(rawUid) : rawUid)) || rawUid.toUpperCase();
+    }
+
+    await client.query('BEGIN');
+
+    // Check tree_code or generate auto tree_code
+    let finalCode = tree_code && String(tree_code).trim() ? String(tree_code).trim() : null;
+    if (!finalCode) {
+      const countRes = await client.query('SELECT COUNT(*)::int as count FROM plants WHERE farm_id = $1', [farmId]);
+      const nextNum = (countRes.rows[0].count || 0) + 1;
+      finalCode = `C${String(nextNum).padStart(3, '0')}`;
+    }
+
+    // Check plot
+    const finalPlot = plot_code && String(plot_code).trim() ? String(plot_code).trim().toUpperCase() : 'A1';
+    const finalRow = row_number && parseInt(row_number) ? parseInt(row_number) : 1;
+
+    // Ensure plot exists in farm_plots
+    try {
+      await client.query(
+        `INSERT INTO farm_plots (farm_id, plot_code, plot_name, total_rows)
+         VALUES ($1, $2, $3, 10)
+         ON CONFLICT (farm_id, plot_code) DO NOTHING`,
+        [farmId, finalPlot, `Lô ${finalPlot}`]
+      );
+    } catch (_) {}
+
+    // Generate public slug
+    const cleanVarietySlug = (plant_variety || plant_type || 'tree')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-');
+    const cleanCodeSlug = finalCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const randomSuffix = Math.floor(Math.random() * 8999 + 1000);
+    const publicSlug = `${cleanVarietySlug}-${finalPlot.toLowerCase()}-${cleanCodeSlug}-${randomSuffix}`;
+
+    // Insert plant
+    const plantInsert = await client.query(`
+      INSERT INTO plants (
+        farm_id, tree_code, plant_variety, plant_type, planting_date,
+        plant_age, plot_code, row_number, latitude, longitude,
+        location, cover_image, nfc_uid, public_slug, health_status,
+        initial_yield, notes, data, is_public
+      ) VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15,
+        $16, $17, $18, true
+      ) RETURNING *
+    `, [
+      farmId, finalCode, plant_variety || 'Sầu riêng Ri6', plant_type || 'Sầu riêng', planting_date || null,
+      plant_age || null, finalPlot, finalRow, lat, lng,
+      location || `Lô ${finalPlot} - Hàng ${finalRow}`, cover_image || null, cleanUid, publicSlug, health_status || 'Tốt',
+      initial_yield ? parseFloat(initial_yield) : 0, notes || '', JSON.stringify({ gps_accuracy: acc, provision_source: 'sub_gateway' })
+    ]);
+
+    const newPlant = plantInsert.rows[0];
+
+    // If NFC UID provided, register/update tag
+    if (cleanUid) {
+      await client.query(`
+        INSERT INTO plant_tags (plant_id, nfc_uid, tag_type, assigned_at)
+        VALUES ($1, $2, 'smart_nfc_gateway', NOW())
+        ON CONFLICT (nfc_uid) DO UPDATE
+        SET plant_id = $1, assigned_at = NOW()
+      `, [newPlant.id, cleanUid]);
+
+      try {
+        await client.query(`
+          INSERT INTO nfc_tags_inventory (farm_id, nfc_uid, status, plant_id, last_scanned_lat, last_scanned_lng, tagged_at, created_by)
+          VALUES ($1, $2, 'assigned', $3, $4, $5, NOW(), $6)
+          ON CONFLICT (nfc_uid) DO UPDATE
+          SET farm_id = $1, status = 'assigned', plant_id = $3, last_scanned_lat = $4, last_scanned_lng = $5, tagged_at = NOW()
+        `, [farmId, cleanUid, newPlant.id, lat, lng, req.user.id]);
+      } catch (_) {}
+    }
+
+    // Auto-increment total_plants on farm
+    await client.query('UPDATE farms SET total_plants = COALESCE(total_plants, 0) + 1 WHERE id = $1', [farmId]);
+
+    await client.query('COMMIT');
+
+    const origin = (process.env.APP_URL || 'https://dev-plantbook.onrender.com').replace(/\/$/, '');
+    const uidSuffix = cleanUid ? `/${encodeURIComponent(cleanUid)}` : '';
+    const hierarchicalUrl = `${origin}/${farmId}/${newPlant.id}${uidSuffix}`;
+    const publicUrl = `${origin}/plant/${newPlant.public_slug}`;
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast('plants_updated', { plant_id: newPlant.id, farm_id: farmId, action: 'single_provision' });
+
+    res.status(201).json({
+      success: true,
+      message: `Đã khai báo thành công cây #${newPlant.tree_code}!`,
+      plant: newPlant,
+      nfc_uid: cleanUid,
+      public_url: publicUrl,
+      hierarchical_url: hierarchicalUrl,
+      gps_accuracy: acc
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error in single-provision:', err);
+    res.status(500).json({ error: 'Lỗi server khi khai báo cây: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ─── Verify NFC Physical Tag Write Success ───
+router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req, res) => {
+  try {
+    const { plant_id, nfc_uid, written_url } = req.body;
+    if (!plant_id) {
+      return res.status(400).json({ error: 'Mã cây trồng là bắt buộc.' });
+    }
+
+    await pool.query(`
+      INSERT INTO user_activities (user_id, activity_type, description)
+      VALUES ($1, 'Ghi Thẻ NFC Thành Công', $2)
+    `, [req.user.id, `Đã ghi thành công URL [${written_url || 'N/A'}] vào thẻ NFC [${nfc_uid || 'N/A'}] cho Cây #${plant_id}`]);
+
+    res.json({
+      success: true,
+      message: 'Đã xác nhận ghi thẻ NFC thành công!',
+      verified_at: new Date()
+    });
+  } catch (err) {
+    console.error('Error verifying NFC write:', err);
+    res.status(500).json({ error: 'Lỗi server khi xác thực ghi thẻ: ' + err.message });
+  }
+});
+
 // ─── Public Farm Gateway & Smart NFC Portal: /farms/:farmId/public-portal ───
 router.get('/farms/:farmId/public-portal', async (req, res) => {
   try {

@@ -486,6 +486,65 @@ if (Test-Path $userMascotJsPath) {
 }
 
 # ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 11: SMART NFC GATEWAY (/sub) & SUB-1M GPS ONBOARDING ENGINE --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 11. SMART NFC GATEWAY (/sub) AND SUB-1M GPS ENGINE --" -ForegroundColor White
+$subHtmlPath = Join-Path $root "frontend\public\sub.html"
+$subCssPath = Join-Path $root "frontend\public\css\sub.css"
+$subGpsJsPath = Join-Path $root "frontend\public\js\sub-gps-engine.js"
+$subNfcJsPath = Join-Path $root "frontend\public\js\sub-nfc-bridge.js"
+$subGatewayJsPath = Join-Path $root "frontend\public\js\sub-gateway.js"
+
+$subHtmlExists = Test-Path $subHtmlPath
+$subCssExists = Test-Path $subCssPath
+$subGpsExists = Test-Path $subGpsJsPath
+$subNfcExists = Test-Path $subNfcJsPath
+$subGatewayExists = Test-Path $subGatewayJsPath
+
+Record-Test -Category "Smart NFC Gateway" -TestName "Smart NFC Gateway HTML5 Exists (public/sub.html)" -Passed $subHtmlExists
+Record-Test -Category "Smart NFC Gateway" -TestName "Smart NFC Gateway CSS Exists (public/css/sub.css)" -Passed $subCssExists
+Record-Test -Category "Smart NFC Gateway" -TestName "Sub-1m High Precision GPS Engine JS Module (sub-gps-engine.js)" -Passed $subGpsExists
+Record-Test -Category "Smart NFC Gateway" -TestName "Web NFC Hardware Read/Write Bridge Module (sub-nfc-bridge.js)" -Passed $subNfcExists
+Record-Test -Category "Smart NFC Gateway" -TestName "Smart NFC Master Controller JS Module (sub-gateway.js)" -Passed $subGatewayExists
+
+if ($subHtmlExists) {
+    $subHtml = [System.IO.File]::ReadAllText($subHtmlPath, [System.Text.Encoding]::UTF8)
+    $hasLanding = $subHtml.Contains('id="view-landing"')
+    $hasLogin = $subHtml.Contains('id="view-login"')
+    $hasRegister = $subHtml.Contains('id="view-register"')
+    $hasFarmHub = $subHtml.Contains('id="view-farm-hub"')
+    $hasPlantForm = $subHtml.Contains('id="view-plant-form"')
+    $hasNfcWrite = $subHtml.Contains('id="view-nfc-write"')
+    $hasGpsRadar = $subHtml.Contains('gps-radar-wrap') -and $subHtml.Contains('btn-lock-gps')
+
+    Record-Test -Category "Smart NFC Gateway" -TestName "Gateway 5-Step Workflow Views Present in DOM" -Passed ($hasLanding -and $hasLogin -and $hasRegister -and $hasFarmHub -and $hasPlantForm -and $hasNfcWrite)
+    Record-Test -Category "Smart NFC Gateway" -TestName "High-Precision Sub-1m GPS Radar & Lock UI Configured" -Passed $hasGpsRadar
+}
+
+$authJsPath = Join-Path $root "backend\routes\auth.js"
+if (Test-Path $authJsPath) {
+    $authJs = [System.IO.File]::ReadAllText($authJsPath, [System.Text.Encoding]::UTF8)
+    $hasOnboardLead = $authJs.Contains('/onboard-lead')
+    Record-Test -Category "Smart NFC Gateway" -TestName "Backend POST /api/auth/onboard-lead Endpoint Defined" -Passed $hasOnboardLead
+}
+
+$plantsJsPath = Join-Path $root "backend\routes\plants.js"
+if (Test-Path $plantsJsPath) {
+    $plantsJs = [System.IO.File]::ReadAllText($plantsJsPath, [System.Text.Encoding]::UTF8)
+    $hasSingleProvision = $plantsJs.Contains('/single-provision')
+    $hasVerifyWrite = $plantsJs.Contains('/nfc/verify-write')
+    Record-Test -Category "Smart NFC Gateway" -TestName "Backend POST /api/plants/single-provision Endpoint Defined" -Passed $hasSingleProvision
+    Record-Test -Category "Smart NFC Gateway" -TestName "Backend POST /api/nfc/verify-write Endpoint Defined" -Passed $hasVerifyWrite
+}
+
+$serverJsPath = Join-Path $root "backend\server.js"
+if (Test-Path $serverJsPath) {
+    $serverJs = [System.IO.File]::ReadAllText($serverJsPath, [System.Text.Encoding]::UTF8)
+    $hasSubRoute = $serverJs.Contains('/sub') -and $serverJs.Contains('sub.html')
+    Record-Test -Category "Smart NFC Gateway" -TestName "Server Mounts Static & SPA Fallback for /sub Route" -Passed $hasSubRoute
+}
+
+# ══════════════════════════════════════════════════════════════════════════
 # -- FINAL QA / QC SUMMARY REPORT --
 # ══════════════════════════════════════════════════════════════════════════
 Write-Host "`n==========================================================================" -ForegroundColor Cyan

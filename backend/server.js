@@ -158,6 +158,12 @@ app.get('/plant/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
 });
 
+// ─── Smart NFC Gateway & Lead Onboarding Route (/sub) ─────────────────────
+app.get(['/sub', '/sub/*', '/sub.html'], (req, res, next) => {
+  if (req.path.includes('.') && !req.path.endsWith('.html')) return next();
+  res.sendFile(path.join(__dirname, '../frontend/public/sub.html'));
+});
+
 // ─── Direct NFC Public & Farm Gateway Routes: /:farmId/public or /:farmId/public/:nfcUid ─────────────────────
 app.get(['/:farmId/public', '/:farmId/public/', '/:farmId/public/:nfcUid'], (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/public/plant.html'));
