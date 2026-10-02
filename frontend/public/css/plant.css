@@ -122,101 +122,230 @@
     box-sizing: border-box;
   }
 
-  /* Brand Bar Header */
-  .brand-bar {
+  /* ═══ 🏢 ENTERPRISE UNIFIED ERP TOP HEADER NAVBAR ═══ */
+  .erp-main-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    width: 100%;
+  }
+  .erp-header-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 16px 16px;
+    padding: 10px 16px;
     display: flex;
-    flex-direction: row;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    flex-wrap: wrap;
   }
-  @media(max-width: 640px) {
-    .brand-bar {
-      flex-direction: column;
-      text-align: center;
-      padding: 16px 12px;
-    }
-  }
-  .brand-logo {
+  .erp-header-left {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    gap: 14px;
+    flex-shrink: 0;
   }
-  .brand-logo-img-wrap {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 8px 18px;
-    display: inline-flex;
+  .erp-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .erp-header-logo-wrap {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 4px 8px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    border: 1px solid #e2e8f0;
   }
-  .brand-logo-img-wrap img {
-    height: 48px;
-    max-height: 60px;
+  .erp-header-logo {
+    height: 32px;
     width: auto;
     display: block;
     object-fit: contain;
   }
-
-  .brand-logo-divider {
-    display: none;
-  }
-  .brand-logo-tagline {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-secondary);
-    letter-spacing: 0.01em;
+  .erp-header-brand-text {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
   }
-  @media(max-width: 640px) {
-    .brand-logo-tagline {
-      align-items: center;
-    }
+  .erp-brand-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
   }
-
-  /* ═══ ENTERPRISE ERP COCKPIT & TELEMETRY SYSTEM ═══ */
-  .erp-top-cockpit {
-    max-width: 1200px;
-    margin: 0 auto 12px;
-    padding: 0 16px;
-  }
-  .erp-top-nav-bar {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    font-size: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-  }
-  .erp-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .erp-brand-sub {
+    font-size: 11px;
     color: #64748b;
     font-weight: 600;
-    flex-wrap: wrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  .erp-breadcrumb a {
+  .app-version-badge {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+  }
+
+  /* Center Breadcrumbs & Traceability Indicator */
+  .erp-header-center {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .erp-header-center-pill {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 100px;
+    padding: 4px 12px;
+    font-size: 11.5px;
+    color: #475569;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .erp-breadcrumbs-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .breadcrumb-item.home {
     color: #059669;
     text-decoration: none;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
-  .erp-breadcrumb a:hover {
+  .breadcrumb-item.home:hover {
     text-decoration: underline;
+  }
+  .breadcrumb-separator {
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+  }
+  .breadcrumb-item.current {
+    color: #0f172a;
+    font-weight: 600;
+  }
+  .breadcrumb-trace-tag {
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    font-family: var(--font-mono);
+  }
+
+  /* Right Header Action Buttons */
+  .erp-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .erp-nav-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+  .erp-nav-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+  }
+  .erp-nav-btn.primary {
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #047857;
+  }
+  .erp-nav-btn.primary:hover {
+    background: #059669;
+    border-color: #059669;
+    color: #ffffff;
+  }
+  .erp-nav-btn.login-btn, .erp-nav-btn.login {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #ffffff;
+  }
+  .erp-nav-btn.login-btn:hover, .erp-nav-btn.login:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+  }
+  .erp-nav-btn.user-btn {
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #166534;
+  }
+  .erp-nav-btn.user-btn:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+  }
+  .erp-nav-btn.user-btn .logout-icon {
+    display: none;
+  }
+  .erp-nav-btn.user-btn:hover .logout-icon {
+    display: inline-block;
+  }
+
+  @media(max-width: 900px) {
+    .erp-header-center {
+      display: none;
+    }
+  }
+  @media(max-width: 600px) {
+    .erp-header-container {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .erp-brand-title {
+      font-size: 13px;
+    }
+    .erp-brand-sub {
+      display: none;
+    }
+    .erp-nav-btn span {
+      display: none;
+    }
+    .erp-nav-btn {
+      padding: 6px 8px;
+    }
   }
 
   /* Hero Section & Core Identity Card */
@@ -431,15 +560,15 @@
     text-overflow: ellipsis;
   }
 
-  /* ═══ 📜 DIGITAL PLANT PASSPORT (STREAMLINED COMPACT ERP STANDARD) ═══ */
+  /* ═══ 📜 DIGITAL PLANT PASSPORT (FULL-WIDTH ENTERPRISE SPEC ROWS) ═══ */
   .erp-passport-card {
     background: #ffffff;
     border: 1.5px solid #86efac;
     border-radius: 16px;
-    padding: 16px;
+    padding: 18px 20px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.06);
+    box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.08);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -456,80 +585,112 @@
     background: linear-gradient(90deg, #10b981, #059669, #0284c7);
   }
 
-  .erp-passport-header {
+  .erp-passport-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .passport-header-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1.5px solid #bbf7d0;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid #dcfce7;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
-  .erp-passport-title {
-    font-size: 13px;
-    font-weight: 800;
-    color: #15803d;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+  .passport-title-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
   }
-  .erp-passport-live-badge {
+  .passport-emblem {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #ecfdf5;
+    border: 1.5px solid #86efac;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .passport-main-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #15803d;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+  .passport-sub-title {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.03em;
+  }
+  .passport-status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     font-size: 10px;
     font-weight: 800;
     color: #047857;
     background: #dcfce7;
     border: 1px solid #86efac;
-    padding: 2px 7px;
+    padding: 3px 8px;
     border-radius: 100px;
     text-transform: uppercase;
   }
+  .passport-status-pill .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+    animation: livePulse 2s infinite;
+  }
 
-  /* Compact Badges Strip (PUC & VietGAP Micro Pills) */
-  .erp-passport-badges-strip-compact {
+  /* 2 Top Certification Badges (PUC & VietGAP) */
+  .passport-certs-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 10px;
   }
   @media(max-width: 500px) {
-    .erp-passport-badges-strip-compact {
+    .passport-certs-row {
       grid-template-columns: 1fr;
     }
   }
-  .erp-cert-badge-compact {
+  .passport-cert-card {
     background: #f0fdf4;
-    border: 1px solid #86efac;
-    border-radius: 8px;
-    padding: 6px 10px;
+    border: 1.5px solid #86efac;
+    border-radius: 10px;
+    padding: 8px 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
   }
-  .erp-cert-badge-compact:hover {
+  .passport-cert-card:hover {
     background: #dcfce7;
     border-color: #059669;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
   }
-  .erp-cert-badge-compact.vietgap {
+  .passport-cert-card.vietgap {
     background: #fffbeb;
     border-color: #fde68a;
   }
-  .erp-cert-badge-compact.vietgap:hover {
+  .passport-cert-card.vietgap:hover {
     background: #fef3c7;
     border-color: #d97706;
   }
-  .erp-cert-badge-compact .badge-icon-box {
-    width: 26px;
-    height: 26px;
+  .passport-cert-card .cert-card-icon {
+    width: 28px;
+    height: 28px;
     border-radius: 6px;
     background: #059669;
     color: #ffffff;
@@ -538,26 +699,26 @@
     justify-content: center;
     flex-shrink: 0;
   }
-  .erp-cert-badge-compact.vietgap .badge-icon-box {
+  .passport-cert-card.vietgap .cert-card-icon {
     background: #d97706;
   }
-  .erp-cert-badge-compact .badge-text-box {
+  .passport-cert-card .cert-card-body {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
   }
-  .erp-cert-badge-compact .badge-lbl {
+  .passport-cert-card .cert-card-label {
     font-size: 8.5px;
     font-weight: 800;
     text-transform: uppercase;
     color: #166534;
     letter-spacing: 0.03em;
   }
-  .erp-cert-badge-compact.vietgap .badge-lbl {
+  .passport-cert-card.vietgap .cert-card-label {
     color: #92400e;
   }
-  .erp-cert-badge-compact .badge-code {
+  .passport-cert-card .cert-card-val {
     font-size: 11px;
     font-weight: 800;
     color: #0f172a;
@@ -566,154 +727,167 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .erp-cert-badge-compact .hint-icon {
+  .passport-cert-card .cert-card-arrow {
     color: #64748b;
     opacity: 0.6;
     flex-shrink: 0;
   }
 
-  /* Streamlined 2-Column Compact Specification Grid */
-  .erp-passport-compact-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  /* Full-Width Specification Table Rows (No Cramping) */
+  .passport-spec-table {
+    display: flex;
+    flex-direction: column;
     gap: 6px;
-    margin-bottom: 8px;
   }
-  @media(max-width: 580px) {
-    .erp-passport-compact-grid {
-      grid-template-columns: 1fr;
-      gap: 5px;
-    }
-  }
-  .erp-passport-cell {
+  .passport-spec-row {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 6px 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    font-size: 11.5px;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .erp-passport-cell:hover {
-    background: #ffffff;
-    border-color: #cbd5e1;
-  }
-  .erp-passport-cell .cell-lbl {
-    font-size: 10.5px;
-    color: #64748b;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
-  .erp-passport-cell .cell-val {
-    font-size: 11.5px;
-    color: #0f172a;
-    font-weight: 700;
-    text-align: right;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .erp-passport-cell .cell-val.mono {
-    font-family: var(--font-mono);
-    font-size: 11px;
-  }
-
-  /* Security Hash Bar */
-  .erp-passport-hash-bar {
-    background: #f1f5f9;
-    border: 1px dashed #cbd5e1;
-    border-radius: 6px;
-    padding: 4px 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-  }
-
-  /* Passport Footer Strip */
-  .erp-passport-footer-strip {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1.5px solid #e2e8f0;
+    padding: 7px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .erp-passport-seal-tag {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10.5px;
-    color: #047857;
-    font-weight: 700;
-  }
-  .erp-passport-btn-group {
-    display: flex;
-    gap: 6px;
-  }
-  .btn-passport-action {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    gap: 12px;
+    font-size: 12px;
     transition: all 0.15s ease;
   }
-  .btn-passport-action.sec {
-    background: #ecfdf5;
-    border: 1px solid #86efac;
-    color: #166534;
+  .passport-spec-row:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
-  .btn-passport-action.sec:hover {
-    background: #dcfce7;
-    border-color: #059669;
+  .passport-spec-row .spec-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 110px;
   }
-  .btn-passport-action.pri {
-    background: #059669;
-    border: none;
-    color: #ffffff;
+  .passport-spec-row .spec-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: right;
+    word-break: break-word;
   }
-  .btn-passport-action.pri:hover {
-    background: #047857;
+  .passport-spec-row .spec-value.mono {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
   }
-
-  .erp-copy-pill {
+  .passport-spec-row .spec-value.highlight-blue {
+    color: #0284c7;
+  }
+  .passport-spec-row .spec-value.highlight-green {
+    color: #059669;
+  }
+  .spec-phone-link {
+    color: #059669;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .spec-phone-link:hover {
+    text-decoration: underline;
+  }
+  .spec-copy-btn {
     display: inline-flex;
     align-items: center;
     gap: 2px;
     background: #ffffff;
     border: 1px solid #cbd5e1;
     color: #475569;
-    padding: 1px 4px;
+    padding: 1px 5px;
     border-radius: 4px;
-    font-size: 9px;
+    font-size: 9.5px;
     cursor: pointer;
     font-weight: 700;
-    margin-left: 4px;
+    margin-left: 6px;
     transition: all 0.15s ease;
   }
-  .erp-copy-pill:hover {
+  .spec-copy-btn:hover {
     background: #e2e8f0;
     color: #0f172a;
   }
-    flex-direction: column;
-    gap: 24px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
+
+  /* Security Hash Bar */
+  .passport-security-hash {
+    background: #f1f5f9;
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    color: #475569;
+  }
+  .passport-security-hash .hash-title {
+    font-weight: 700;
+    color: #64748b;
+    font-size: 10px;
+  }
+  .passport-security-hash .hash-code {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #059669;
+  }
+
+  /* Passport Bottom Actions Strip */
+  .passport-bottom-actions {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .passport-seal-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #047857;
+  }
+  .passport-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .passport-action-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+  }
+  .passport-action-btn.sec {
+    background: #ecfdf5;
+    border: 1px solid #86efac;
+    color: #166534;
+  }
+  .passport-action-btn.sec:hover {
+    background: #dcfce7;
+    border-color: #059669;
+  }
+  .passport-action-btn.pri {
+    background: #059669;
+    border: 1px solid #059669;
+    color: #ffffff;
+  }
+  .passport-action-btn.pri:hover {
+    background: #047857;
+    border-color: #047857;
   }
   .right-col {
     display: flex;
@@ -3186,4 +3360,221 @@
 
   .erp-detail-collapsible {
     animation: fadeIn 0.3s ease;
+  }
+
+  /* ═══ 🏢 ENTERPRISE ERP FOOTER & 2 NAVIGATION BLOCKS ═══ */
+  .erp-main-footer {
+    background: #ffffff;
+    border-top: 1.5px solid #e2e8f0;
+    margin-top: 48px;
+    padding: 40px 16px 28px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .erp-footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* 2-Block Main Quick Navigation Cards */
+  .footer-nav-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media(max-width: 768px) {
+    .footer-nav-grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+  }
+
+  .footer-nav-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 22px;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  .footer-nav-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* 🟢 Card 1: VỀ ỨNG DỤNG CHÍNH (Green Theme) */
+  .footer-nav-card.app-card {
+    border-color: #86efac;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  }
+  .footer-nav-card.app-card:hover {
+    border-color: #10b981;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.16);
+  }
+
+  /* 🔵 Card 2: WEBSITE DOANH NGHIỆP (Blue Theme) */
+  .footer-nav-card.web-card {
+    border-color: #93c5fd;
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  }
+  .footer-nav-card.web-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.16);
+  }
+
+  .nav-card-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .nav-card-icon-box.green {
+    background: #10b981;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+  .nav-card-icon-box.blue {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  .nav-card-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nav-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .nav-card-badge.green {
+    color: #047857;
+  }
+  .nav-card-badge.blue {
+    color: #1d4ed8;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .badge-dot.green {
+    background: #10b981;
+  }
+  .badge-dot.blue {
+    background: #3b82f6;
+  }
+
+  .nav-card-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .nav-card-desc {
+    font-size: 12.5px;
+    color: #64748b;
+    line-height: 1.45;
+    margin-bottom: 12px;
+  }
+
+  .nav-card-link-text {
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: gap 0.2s ease;
+  }
+  .footer-nav-card:hover .nav-card-link-text {
+    gap: 8px;
+  }
+  .app-card .nav-card-link-text {
+    color: #059669;
+  }
+  .web-card .nav-card-link-text {
+    color: #2563eb;
+  }
+
+  /* Corporate Footer Bottom Bar */
+  .footer-bottom-bar {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .footer-brand-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .footer-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .footer-logo-img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+  }
+  .footer-company-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .footer-company-sub {
+    font-size: 11.5px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .footer-trust-badges {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 11.5px;
+    color: #475569;
+  }
+  .footer-trust-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+
+  .footer-copyright {
+    font-size: 11.5px;
+    color: #94a3b8;
+    text-align: center;
+    border-top: 1px dashed #f1f5f9;
+    padding-top: 14px;
   }

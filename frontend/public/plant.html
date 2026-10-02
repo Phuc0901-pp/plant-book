@@ -83,19 +83,44 @@
 <body>
 
 <div id="root">
-  <!-- Brand Header -->
-  <header class="brand-bar">
-    <div class="brand-logo">
-      <div class="brand-logo-img-wrap">
-        <img src="/assets/logo.png" alt="TANBAO AgTech">
+  <!-- Enterprise Unified Header Navbar -->
+  <header class="erp-main-header">
+    <div class="erp-header-container">
+      <div class="erp-header-left">
+        <a href="/" class="erp-header-brand" title="Về trang chủ Sổ Nông Tân Bảo AgTech">
+          <div class="erp-header-logo-wrap">
+            <img src="/assets/logo.png" alt="TANBAO AgTech" class="erp-header-logo">
+          </div>
+          <div class="erp-header-brand-text">
+            <div class="erp-brand-title">TANBAO AgTech</div>
+            <div class="erp-brand-sub"><i data-lucide="shield-check" class="lucide-xs" style="color:#059669;"></i> Sổ Nông Số Hóa <span class="app-version-badge">v1.2.8</span></div>
+          </div>
+        </a>
       </div>
-      <span class="brand-logo-tagline"><i data-lucide="book-open" class="lucide-sm" style="color:var(--green-bright);margin-right:5px"></i>Hồ sơ cây trồng <span class="app-version-badge" style="font-size:10px; background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:100px; font-weight:700; border:1px solid #cbd5e1; margin-left:4px;">v1.2.8</span></span>
 
+      <!-- Dynamic Header Center Breadcrumbs & Identity (Managed by JS) -->
+      <div class="erp-header-center" id="erp-header-breadcrumbs-slot">
+        <div class="erp-header-center-pill">
+          <i data-lucide="award" class="lucide-xs" style="color:#059669;"></i>
+          <span>Cổng Thông Tin Truy Xuất Nguồn Gốc Cây Trồng Chuẩn VietGAP / ERP</span>
+        </div>
+      </div>
 
-    </div>
-    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 4px;">
-      <button class="share-btn" onclick="openExportModal()" style="background: #f0fdf4; border-color: #bbf7d0; color: #15803d;"><i data-lucide="file-text" class="lucide-sm"></i> Xuất nhật ký</button>
-      <button class="share-btn" onclick="sharePage()" style="background: #f8fafc; border-color: #cbd5e1; color: #334155;"><i data-lucide="share-2" class="lucide-sm"></i> Chia sẻ</button>
+      <!-- Header Right Action Group -->
+      <div class="erp-header-right" id="erp-header-actions-slot">
+        <button type="button" class="erp-nav-btn" onclick="window.print()" title="In hồ sơ cây trồng">
+          <i data-lucide="printer" class="lucide-xs"></i> <span>In hồ sơ</span>
+        </button>
+        <button type="button" class="erp-nav-btn primary" onclick="openExportModal()" title="Xuất dữ liệu nhật ký canh tác">
+          <i data-lucide="file-spreadsheet" class="lucide-xs"></i> <span>Xuất nhật ký</span>
+        </button>
+        <button type="button" class="erp-nav-btn" onclick="sharePage()" title="Chia sẻ liên kết">
+          <i data-lucide="share-2" class="lucide-xs"></i> <span>Chia sẻ</span>
+        </button>
+        <button type="button" class="erp-nav-btn login" onclick="showAuthGateView()" id="header-auth-login-btn" title="Đăng nhập tài khoản nông hộ">
+          <i data-lucide="lock" class="lucide-xs"></i> <span>Nông hộ</span>
+        </button>
+      </div>
     </div>
   </header>
 
