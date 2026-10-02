@@ -399,7 +399,7 @@ function logoutGate() {
   showAuthGateView();
 }
 
-function showPublicToast(msg) {
+function showPublicToast(msg, type = 'info') {
   let toast = document.getElementById('public-auth-toast');
   if (!toast) {
     toast = document.createElement('div');
@@ -408,25 +408,47 @@ function showPublicToast(msg) {
     toast.style.bottom = '24px';
     toast.style.left = '50%';
     toast.style.transform = 'translateX(-50%)';
-    toast.style.background = 'rgba(15, 23, 42, 0.92)';
+    toast.style.background = 'rgba(15, 23, 42, 0.94)';
     toast.style.color = '#fff';
-    toast.style.padding = '10px 18px';
+    toast.style.padding = '10px 20px';
     toast.style.borderRadius = '30px';
     toast.style.fontSize = '13px';
     toast.style.fontWeight = '600';
-    toast.style.zIndex = '9999';
+    toast.style.zIndex = '99999';
     toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
     toast.style.display = 'flex';
     toast.style.alignItems = 'center';
     toast.style.gap = '8px';
-    toast.style.backdropFilter = 'blur(6px)';
-    toast.style.border = '1px solid rgba(255,255,255,0.15)';
+    toast.style.backdropFilter = 'blur(8px)';
+    toast.style.border = '1px solid rgba(255,255,255,0.18)';
     toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
     document.body.appendChild(toast);
   }
-  toast.innerHTML = `<i data-lucide="info" class="lucide-sm" style="color:#10b981"></i> <span>${msg}</span>`;
+
+  let iconName = 'info';
+  let iconColor = '#34d399';
+  if (type === 'error' || /lỗi|thất bại|không thể|chưa|hết hàng/i.test(msg)) {
+    iconName = 'alert-circle';
+    iconColor = '#f87171';
+  } else if (type === 'warning' || /cảnh báo|chú ý/i.test(msg)) {
+    iconName = 'alert-triangle';
+    iconColor = '#fbbf24';
+  } else if (type === 'success' || /thành công|đã lưu|đã phát hiện|hợp lệ/i.test(msg)) {
+    iconName = 'check-circle-2';
+    iconColor = '#34d399';
+  } else if (/nfc|quét|chạm/i.test(msg)) {
+    iconName = 'radio';
+    iconColor = '#38bdf8';
+  } else if (/giọng nói|ghi nhận|micro/i.test(msg)) {
+    iconName = 'mic';
+    iconColor = '#a78bfa';
+  }
+
+  const cleanMsg = msg.replace(/^[\uD83C-\uDBFF\uDC00-\uDFFF\u2600-\u27BF\s]+/g, '').trim();
+  toast.innerHTML = `<i data-lucide="${iconName}" class="lucide-sm" style="color:${iconColor}; flex-shrink:0;"></i> <span>${cleanMsg}</span>`;
   toast.style.opacity = '1';
   toast.style.transform = 'translateX(-50%) translateY(0)';
+  if (window.lucide) window.lucide.createIcons();
   
   clearTimeout(window._publicToastTimer);
   window._publicToastTimer = setTimeout(() => {
@@ -724,7 +746,7 @@ function _formatSupplyOptionText(s) {
   const stock = parseFloat(s.stock_quantity) || 0;
   const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
   const isOut = !isPermanent && stock <= 0;
-  const stockBadge = isPermanent ? '' : (isOut ? ' ⚠️ [HẾT HÀNG]' : ` (Còn: ${stock} ${s.unit})`);
+  const stockBadge = isPermanent ? '' : (isOut ? ' [HẾT HÀNG]' : ` (Tồn kho: ${stock} ${s.unit})`);
 
   return `${esc(s.name)} (${pkgText}) — ${formattedPrice} / ${s.unit}${stockBadge}`;
 }
@@ -740,14 +762,14 @@ function populateCareSuppliesDropdowns(supplies = []) {
     if (waterSupplies.length > 0) {
       let html = waterSupplies.map(s => `
         <option value="${s.id}" data-price="${parseFloat(s.unit_price) || 0}" data-unit="${esc(s.unit || 'm³')}">
-          💧 ${_formatSupplyOptionText(s)}
+          ${_formatSupplyOptionText(s)}
         </option>
       `).join('');
       html += '<option value="" data-price="0">Không hạch toán tiền nước</option>';
       waterSelect.innerHTML = html;
     } else {
       waterSelect.innerHTML = `
-        <option value="" data-price="0">💧 Nước giếng khoan trang trại (Không tính phí)</option>
+        <option value="" data-price="0">Nước giếng khoan trang trại (Không tính phí)</option>
         <option value="" data-price="0">Không hạch toán tiền nước</option>
       `;
     }
@@ -764,16 +786,16 @@ function populateCareSuppliesDropdowns(supplies = []) {
         const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
         return `
           <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-price="${parseFloat(s.unit_price) || 0}" data-unit="${esc(s.unit || 'kg')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
-            🧪 ${_formatSupplyOptionText(s)}
+            ${_formatSupplyOptionText(s)}
           </option>
         `;
       }).join('');
     } else {
       (configData.fertilizers || ['NPK 20-20-15', 'Phân hữu cơ vi sinh', 'DAP', 'Ure', 'Kali']).forEach(f => {
-        html += `<option value="" data-name="${esc(f)}" data-price="0" data-unit="kg">🧪 ${esc(f)}</option>`;
+        html += `<option value="" data-name="${esc(f)}" data-price="0" data-unit="kg">${esc(f)}</option>`;
       });
     }
-    html += '<option value="__custom__">➕ Phân bón khác (Nhập thủ công)...</option>';
+    html += '<option value="__custom__">+ Phân bón khác (Nhập thủ công)...</option>';
     fertSelect.innerHTML = html;
     onPublicFertilizerSelected(fertSelect);
   }
@@ -788,16 +810,16 @@ function populateCareSuppliesDropdowns(supplies = []) {
         const isOut = (parseFloat(s.stock_quantity) || 0) <= 0;
         return `
           <option value="${s.id}" data-name="${esc(s.name)}" data-img="${esc(s.image_url || '')}" data-ing="${esc(s.active_ingredient || '')}" data-phi="${s.phi_days || 14}" data-price="${parseFloat(s.unit_price) || 0}" data-unit="${esc(s.unit || 'ml')}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
-            🛡️ ${_formatSupplyOptionText(s)}
+            ${_formatSupplyOptionText(s)}
           </option>
         `;
       }).join('');
     } else {
       (configData.pesticides || ['Ridomil Gold 68WG', 'Anvil 5SC', 'Radiant 60SC', 'Confidor 200SL', 'Coc 85']).forEach(p => {
-        html += `<option value="" data-name="${esc(p)}" data-ing="Hoạt chất phổ thông" data-phi="14" data-price="0" data-unit="ml">🛡️ ${esc(p)}</option>`;
+        html += `<option value="" data-name="${esc(p)}" data-ing="Hoạt chất phổ thông" data-phi="14" data-price="0" data-unit="ml">${esc(p)}</option>`;
       });
     }
-    html += '<option value="__custom__">➕ Thuốc BVTV khác (Nhập thủ công)...</option>';
+    html += '<option value="__custom__">+ Thuốc BVTV khác (Nhập thủ công)...</option>';
     pestSelect.innerHTML = html;
     onPublicPesticideSelected(pestSelect);
   }
@@ -1006,7 +1028,7 @@ function startPublicVoiceInput(textareaId, btnEl) {
       const transcript = event.results[0][0].transcript;
       if (transcript) {
         textarea.value = textarea.value ? `${textarea.value.trim()} ${transcript}` : transcript;
-        showPublicToast(`🎙️ Đã ghi nhận: "${transcript}"`);
+        showPublicToast(`Đã ghi nhận: "${transcript}"`, 'speech');
       }
     };
 
@@ -1842,7 +1864,7 @@ async function startNfcDirectWriteSession() {
   const animContainer = document.getElementById('nfc-write-anim-container');
   const iconEl = document.getElementById('nfc-write-icon');
 
-  if (titleEl) titleEl.textContent = '📡 ĐANG CHỜ CHẠM THẺ NFC...';
+  if (titleEl) titleEl.textContent = 'ĐANG CHỜ CHẠM THẺ NFC...';
   if (descEl) descEl.innerHTML = 'Hãy áp mặt sau điện thoại vào thẻ NFC trên cây ngay bây giờ...';
   if (animContainer) {
     animContainer.style.background = 'linear-gradient(135deg, #ecfdf5, #d1fae5)';
@@ -2171,7 +2193,7 @@ async function triggerGatewayWebNfc() {
     _gatewayNdefReader = new NDEFReader();
     await _gatewayNdefReader.scan();
     
-    showPublicToast('📡 Hãy chạm mặt sau điện thoại vào thẻ NFC trên cây ngay...');
+    showPublicToast('Hãy chạm mặt sau điện thoại vào thẻ NFC trên cây ngay...', 'info');
     const statusText = document.getElementById('gateway-nfc-status-text');
     if (statusText) statusText.innerHTML = '<i data-lucide="radio" class="lucide-spin"></i> Đang lắng nghe chạm thẻ NFC trên cây...';
 
@@ -2187,7 +2209,7 @@ async function triggerGatewayWebNfc() {
 }
 
 async function handleGatewayNfcDetected(farmId, cleanUid) {
-  showPublicToast(`📡 Đã phát hiện thẻ NFC: ${cleanUid}`);
+  showPublicToast(`Đã phát hiện thẻ NFC: ${cleanUid}`, 'success');
 
   try {
     const res = await fetch(`/api/plants/public-by-farm-uid/${encodeURIComponent(farmId)}/${encodeURIComponent(cleanUid)}`);
@@ -2223,12 +2245,12 @@ async function handleGatewayNfcDetected(farmId, cleanUid) {
       initFieldBindingModule(farmId, data.farm_name, data.puc_code, cleanUid, data.in_inventory, data.inventory_warning);
     } else {
       if (data.in_inventory === false) {
-        showPublicToast(data.inventory_warning || `Thẻ NFC [${cleanUid}] chưa được nhập kho trang trại.`);
+        showPublicToast(data.inventory_warning || `Thẻ NFC [${cleanUid}] chưa được nhập kho trang trại.`, 'warning');
       }
       // Prompt staff login
       const promptMsg = data.in_inventory === false
-        ? `⚠️ Đã nhận diện thẻ NFC [${cleanUid}] (CHƯA NHẬP KHO)!\n\nNếu bạn là Quản trị viên / Kỹ thuật viên, bạn có muốn Đăng nhập để kiểm tra không?`
-        : `🏷️ Đã nhận diện thẻ NFC [${cleanUid}] hợp lệ (chưa gán cây)!\n\nNếu bạn là Kỹ thuật viên / Chủ vườn, bạn có muốn Đăng nhập ngay để gán thẻ này vào cây và lưu GPS không?`;
+        ? `[Cảnh báo] Đã nhận diện thẻ NFC [${cleanUid}] (CHƯA NHẬP KHO)!\n\nNếu bạn là Quản trị viên / Kỹ thuật viên, bạn có muốn Đăng nhập để kiểm tra không?`
+        : `[Định danh] Đã nhận diện thẻ NFC [${cleanUid}] hợp lệ (chưa gán cây)!\n\nNếu bạn là Kỹ thuật viên / Chủ vườn, bạn có muốn Đăng nhập ngay để gán thẻ này vào cây và lưu GPS không?`;
 
       if (confirm(promptMsg)) {
         window.pendingBindingFarm = { 
@@ -2394,7 +2416,7 @@ async function onGatewayTreeClick(plantId, treeCode, nfcUid, isAssigned) {
     const isAuthorized = user && userHasFarmAccess(user, farmId);
 
     if (isAuthorized) {
-      showPublicToast(`🌳 Cây #${treeCode} chưa có thẻ. Hãy chạm thẻ NFC vào máy để gán.`);
+      showPublicToast(`Cây #${treeCode} chưa có thẻ. Hãy chạm thẻ NFC vào máy để gán.`, 'nfc');
       triggerGatewayWebNfc();
     } else {
       showPublicToast(`Cây #${treeCode} hiện chưa được gắn thẻ NFC thực địa.`);
@@ -2465,8 +2487,12 @@ function getCareLogSummary(log) {
     return `Đã thu hoạch: <strong>${esc(yieldKg)} kg</strong>${fruitCount}${revStr}${batchStr}.`;
   }
   if (log.log_type === 'Bệnh cây') {
-    const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
-    return `<span style="color:var(--color-disease);font-weight:700">${sevEmoji} ${esc(details.disease_name || 'Bệnh chưa xác định')}</span>${details.description ? '<br><span style="color:var(--text-secondary);font-size:12px">' + esc(details.description) + '</span>' : ''}`;
+    const sevIcon = details.severity === 'Nghiêm trọng' 
+      ? '<i data-lucide="alert-octagon" class="lucide-xs" style="color:#dc2626; vertical-align:-2px;"></i>' 
+      : (details.severity === 'Trung bình' 
+          ? '<i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c; vertical-align:-2px;"></i>' 
+          : '<i data-lucide="alert-circle" class="lucide-xs" style="color:#d97706; vertical-align:-2px;"></i>');
+    return `<span style="color:var(--color-disease);font-weight:700">${sevIcon} ${esc(details.disease_name || 'Bệnh chưa xác định')}</span>${details.description ? '<br><span style="color:var(--text-secondary);font-size:12px">' + esc(details.description) + '</span>' : ''}`;
   }
   return esc(log.note || '');
 }
@@ -2510,8 +2536,12 @@ function getShortSummary(log) {
     return `Thu hoạch ${yieldKg ? yieldKg + ' kg' : ''}${fruitCount} — Mã Lô: ${esc(log.batch_code || details.batch_code || 'VietGAP')}`;
   }
   if (log.log_type === 'Bệnh cây') {
-    const sevEmoji = details.severity === 'Nghiêm trọng' ? '🔴' : details.severity === 'Trung bình' ? '🟠' : '🟡';
-    return `${sevEmoji} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
+    const sevIcon = details.severity === 'Nghiêm trọng' 
+      ? '<i data-lucide="alert-octagon" class="lucide-xs" style="color:#dc2626; vertical-align:-2px;"></i>' 
+      : (details.severity === 'Trung bình' 
+          ? '<i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c; vertical-align:-2px;"></i>' 
+          : '<i data-lucide="alert-circle" class="lucide-xs" style="color:#d97706; vertical-align:-2px;"></i>');
+    return `${sevIcon} Phát hiện bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')}`;
   }
   return esc(log.note || '').slice(0, 50) + (log.note && log.note.length > 50 ? '...' : '');
 }
@@ -3069,7 +3099,7 @@ async function renderPlant(plant, isEditable) {
         </div>
         ` : ''}
 
-        <!-- 💼 Supplies & Cost Section (ERP Ledger) -->
+        <!-- Supplies & Cost Section (ERP Ledger) -->
         <div class="glass-panel glass-card">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
             <h2 class="sec-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px;">
@@ -3212,7 +3242,7 @@ async function renderPlant(plant, isEditable) {
       <!-- Right Column (Plant Passport, Quick Care Buttons or Read-Only Notice, Media Gallery) -->
       <div class="right-col">
         
-        <!-- 📜 Digital Plant Passport & Traceability Certificate Card -->
+        <!-- Digital Plant Passport & Traceability Certificate Card -->
         <div class="erp-passport-card">
           <div class="erp-passport-header">
             <div class="erp-passport-title">
@@ -3224,7 +3254,7 @@ async function renderPlant(plant, isEditable) {
             </div>
           </div>
 
-          <!-- 🎖️ Official Certification Badges Strip (PUC & VietGAP Standards) -->
+          <!-- Official Certification Badges Strip (PUC & VietGAP Standards) -->
           <div class="erp-passport-badges-strip">
             <!-- Badge 1: Mã Vùng Trồng (PUC) -->
             <div class="erp-cert-badge puc" onclick="openCertificateModal('puc')" title="Bấm để xem chi tiết chứng thư Vùng Trồng">
@@ -3274,7 +3304,7 @@ async function renderPlant(plant, isEditable) {
             </div>
           </div>
 
-          <!-- 📋 Detailed Passport Specifications Grid -->
+          <!-- Detailed Passport Specifications Grid -->
           <div class="erp-passport-grid">
             
             <div class="erp-passport-section-title">
@@ -5022,7 +5052,7 @@ function addContourLinesToMap(map, options = {}) {
               border: none;
               cursor: pointer;
             `;
-            btnContour.innerHTML = '⛰️';
+            btnContour.innerHTML = '<i data-lucide="mountain-snow" style="width:14px; height:14px;"></i>';
 
             let isVisible = defaultVisible;
 
@@ -5058,7 +5088,7 @@ function addContourLinesToMap(map, options = {}) {
               border-top: 1px solid #e2e8f0;
               cursor: pointer;
             `;
-            btnExportA4.innerHTML = '📐';
+            btnExportA4.innerHTML = '<i data-lucide="ruler" style="width:14px; height:14px;"></i>';
 
             btnExportA4.onclick = () => {
               openPublicFarmA4ExportModal(m);
@@ -5066,6 +5096,9 @@ function addContourLinesToMap(map, options = {}) {
 
             this._container.appendChild(btnContour);
             this._container.appendChild(btnExportA4);
+            if (window.lucide) {
+              setTimeout(() => window.lucide.createIcons({ root: this._container }), 10);
+            }
             return this._container;
           }
 
@@ -5372,8 +5405,9 @@ function openPublicFarmA4ExportModal(map) {
         <button id="btn-close-a4-modal" style="
           background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 8px 14px;
           border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+          display: flex; align-items: center; gap: 4px;
         ">
-          ✕ Đóng
+          <i data-lucide="x" class="lucide-xs"></i> Đóng
         </button>
       </div>
     </div>
@@ -5450,7 +5484,9 @@ function openPublicFarmA4ExportModal(map) {
               <span style="display:flex; align-items:center; gap:5px;">
                 <i data-lucide="palette" class="lucide-sm" style="color:#2563eb;"></i> CHÚ GIẢI DẢI MÀU CAO ĐỘ (${contourInterval}M/BẬC)
               </span>
-              <span style="font-size:9px; color:#15803d; font-weight:700;">⛰️ Nét vẽ CAD</span>
+              <span style="font-size:9px; color:#15803d; font-weight:700; display:flex; align-items:center; gap:3px;">
+                <i data-lucide="layers" class="lucide-xs"></i> Nét vẽ CAD
+              </span>
             </div>
 
             <!-- Thanh Dải Màu Gradient Thang Độ Liên Tục từ Thấp (Trái) -> Cao (Phải) -->

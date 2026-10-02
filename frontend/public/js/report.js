@@ -419,14 +419,17 @@
           const el = document.createElement('div');
           el.style.width = '26px';
           el.style.height = '26px';
-          el.style.backgroundColor = '#22c55e';
+          el.style.backgroundColor = '#16a34a';
           el.style.border = '2px solid white';
           el.style.borderRadius = '50%';
           el.style.display = 'flex';
           el.style.alignItems = 'center';
           el.style.justifyContent = 'center';
           el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
-          el.innerHTML = '<span style="font-size: 11px;">🌱</span>';
+          el.innerHTML = '<i data-lucide="sprout" style="width:14px; height:14px; color:#ffffff;"></i>';
+          if (window.lucide) {
+            window.lucide.createIcons({ root: el });
+          }
 
           new mapboxgl.Marker({ element: el })
             .setLngLat([lng, lat])

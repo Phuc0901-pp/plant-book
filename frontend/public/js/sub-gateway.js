@@ -197,7 +197,7 @@ class SubGatewayApp {
     toast.style.bottom = '24px';
     toast.style.left = '50%';
     toast.style.transform = 'translateX(-50%)';
-    toast.style.background = type === 'error' ? '#dc2626' : (type === 'warning' ? '#d97706' : (type === 'success' ? '#059669' : '#0f172a'));
+    toast.style.background = type === 'error' ? 'rgba(220, 38, 38, 0.95)' : (type === 'warning' ? 'rgba(217, 119, 6, 0.95)' : (type === 'success' ? 'rgba(5, 150, 105, 0.95)' : 'rgba(15, 23, 42, 0.95)'));
     toast.style.color = '#ffffff';
     toast.style.padding = '12px 22px';
     toast.style.borderRadius = '30px';
@@ -205,11 +205,27 @@ class SubGatewayApp {
     toast.style.fontWeight = '700';
     toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
     toast.style.zIndex = '9999';
-    toast.style.transition = 'all 0.3s';
-    toast.innerText = msg;
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '8px';
+    toast.style.backdropFilter = 'blur(8px)';
+    toast.style.border = '1px solid rgba(255,255,255,0.2)';
+    toast.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+
+    let iconName = 'info';
+    if (type === 'success') iconName = 'check-circle-2';
+    else if (type === 'error') iconName = 'alert-octagon';
+    else if (type === 'warning') iconName = 'alert-triangle';
+
+    const cleanMsg = (msg || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+    toast.innerHTML = `<i data-lucide="${iconName}" style="width:18px; height:18px; flex-shrink:0;"></i> <span>${cleanMsg}</span>`;
+
     document.body.appendChild(toast);
+    this.renderIcons();
+
     setTimeout(() => {
       toast.style.opacity = '0';
+      toast.style.transform = 'translate(-50%, 10px)';
       setTimeout(() => toast.remove(), 300);
     }, 3200);
   }
@@ -758,8 +774,8 @@ class SubGatewayApp {
           ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;"><i data-lucide="radio" style="width:11px; height:11px;"></i> ${p.nfc_uid}</span>`
           : `<span style="background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:4px; font-size:11px;">Chưa gắn thẻ</span>`;
         const healthBadge = p.health_status === 'Kém' 
-          ? `<span style="background:#fef2f2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;">⚠️ ${p.health_status}</span>`
-          : `<span style="background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;">🌿 ${p.health_status || 'Tốt'}</span>`;
+          ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#fef2f2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="alert-triangle" style="width:11px; height:11px;"></i> ${p.health_status}</span>`
+          : `<span style="display:inline-flex; align-items:center; gap:3px; background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;"><i data-lucide="sprout" style="width:11px; height:11px;"></i> ${p.health_status || 'Tốt'}</span>`;
 
         return `
           <div class="tree-select-item" data-id="${p.id}" data-code="${treeCode}">

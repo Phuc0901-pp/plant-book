@@ -610,7 +610,7 @@
                     border: none;
                     cursor: pointer;
                   `;
-                  btnContour.innerHTML = '⛰️';
+                  btnContour.innerHTML = '<i data-lucide="mountain-snow" style="width:14px; height:14px;"></i>';
 
                   let isVisible = defaultVisible;
 
@@ -646,7 +646,7 @@
                     border-top: 1px solid #e2e8f0;
                     cursor: pointer;
                   `;
-                  btnExportA4.innerHTML = '📐';
+                  btnExportA4.innerHTML = '<i data-lucide="ruler" style="width:14px; height:14px;"></i>';
 
                   btnExportA4.onclick = () => {
                     openPublicMapA4ExportModal(m);
@@ -654,6 +654,9 @@
 
                   this._container.appendChild(btnContour);
                   this._container.appendChild(btnExportA4);
+                  if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons({ root: this._container }), 10);
+                  }
                   return this._container;
                 }
 
@@ -870,7 +873,7 @@
               ctx.fillStyle = '#38bdf8';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
-              ctx.fillText(`📐 ${labelText}`, cx, cy);
+              ctx.fillText(labelText, cx, cy);
             }
           }
 
@@ -1060,8 +1063,9 @@
               <button id="btn-close-a4-modal" style="
                 background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 8px 14px;
                 border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+                display: flex; align-items: center; gap: 4px;
               ">
-                ✕ Đóng
+                <i data-lucide="x" class="lucide-xs"></i> Đóng
               </button>
             </div>
           </div>
@@ -1133,7 +1137,9 @@
                     <span style="display:flex; align-items:center; gap:5px;">
                       <i data-lucide="palette" class="lucide-sm" style="color:#2563eb;"></i> CHÚ GIẢI DẢI MÀU CAO ĐỘ (${contourInterval}M/BẬC)
                     </span>
-                    <span style="font-size:9px; color:#15803d; font-weight:700;">⛰️ Nét vẽ CAD</span>
+                    <span style="font-size:9px; color:#15803d; font-weight:700; display:flex; align-items:center; gap:3px;">
+                      <i data-lucide="layers" class="lucide-xs"></i> Nét vẽ CAD
+                    </span>
                   </div>
 
                   <!-- Thanh Dải Màu Gradient Thang Độ Liên Tục từ Thấp (Trái) -> Cao (Phải) -->
