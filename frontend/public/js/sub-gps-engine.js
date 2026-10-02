@@ -23,7 +23,7 @@ export class SubGpsEngine {
   start() {
     if (!('geolocation' in navigator)) {
       this.onUpdateCallback({
-        error: 'Thiết bị không hỗ trợ định vị GPS (Geolocation API).'
+        error: 'Thiết bị không hỗ trợ định vị GPS.'
       });
       return;
     }

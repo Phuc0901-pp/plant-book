@@ -694,7 +694,7 @@ class SubGatewayApp {
 
       if (label) {
         if (isAdmin) {
-          label.innerHTML = `<i data-lucide="shield-check" class="lucide-xs"></i> 👑 [QUẢN TRỊ VIÊN] Danh Sách Toàn Bộ Trang Trại (${this.state.farms.length} vườn)`;
+          label.innerHTML = `<i data-lucide="shield-check" class="lucide-xs"></i>  [QUẢN TRỊ VIÊN] Danh Sách Toàn Bộ Trang Trại (${this.state.farms.length} vườn)`;
         } else {
           label.innerHTML = `<i data-lucide="trees" class="lucide-xs"></i> Trang Trại Của Bạn (${this.state.farms.length} vườn)`;
         }
