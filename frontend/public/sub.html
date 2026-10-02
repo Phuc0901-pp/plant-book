@@ -78,11 +78,11 @@
 
         <form id="form-login">
           <div class="form-group">
-            <label class="form-label">Email hoặc Số điện thoại</label>
+            <label class="form-label"><i data-lucide="mail" class="lucide-xs"></i> Email hoặc Số điện thoại</label>
             <input type="text" id="login-email" class="form-input" placeholder="Ví dụ: 0912345678" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Mật khẩu</label>
+            <label class="form-label"><i data-lucide="lock" class="lucide-xs"></i> Mật khẩu</label>
             <input type="password" id="login-password" class="form-input" placeholder="Nhập mật khẩu..." required>
           </div>
           <button type="submit" id="btn-submit-login" class="btn btn-primary" style="margin-top:10px;">
@@ -109,29 +109,31 @@
 
         <form id="form-register">
           <div class="form-group">
-            <label class="form-label">Họ và Tên Chủ Vườn</label>
+            <label class="form-label"><i data-lucide="user" class="lucide-xs"></i> Họ và Tên Chủ Vườn</label>
             <input type="text" id="reg-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn Nông" required>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Số Điện Thoại</label>
+              <label class="form-label"><i data-lucide="phone" class="lucide-xs"></i> Số Điện Thoại</label>
               <input type="tel" id="reg-phone" class="form-input" placeholder="0912345678" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Mật Khẩu</label>
+              <label class="form-label"><i data-lucide="lock" class="lucide-xs"></i> Mật Khẩu</label>
               <input type="password" id="reg-password" class="form-input" placeholder="Tối thiểu 6 ký tự" required minlength="6">
             </div>
           </div>
 
           <div style="border-top:1px dashed rgba(52,211,153,0.25); margin:16px 0; padding-top:14px;">
-            <label class="form-label" style="color:#fbbf24;">Thiết Lập Trang Trại</label>
+            <label class="form-label" style="color:#fbbf24;"><i data-lucide="sprout" class="lucide-xs"></i> Thiết Lập Trang Trại</label>
             <div class="form-group">
               <input type="text" id="reg-farm-name" class="form-input" placeholder="Tên vườn (Ví dụ: Vườn Sầu Riêng Chín Sớm)" required>
             </div>
 
             <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:12px; margin-bottom:14px; border:1px solid rgba(52,211,153,0.15);">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                <span style="font-size:12px; font-weight:600; color:#a7f3d0;">TỌA ĐỘ VƯỜN THỰC ĐỊA</span>
+                <span style="font-size:12px; font-weight:600; color:#a7f3d0; display:flex; align-items:center; gap:5px;">
+                  <i data-lucide="map-pin" class="lucide-xs"></i> TỌA ĐỘ VƯỜN THỰC ĐỊA
+                </span>
                 <button type="button" id="btn-capture-farm-gps" class="btn btn-sm btn-outline-green">
                   <i data-lucide="crosshair"></i> Lấy GPS
                 </button>
@@ -162,13 +164,13 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Trang Trại Của Bạn</label>
+          <label class="form-label"><i data-lucide="trees" class="lucide-xs"></i> Trang Trại Của Bạn</label>
           <select id="select-farm-hub" class="form-select"></select>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px;">
           <button type="button" id="btn-action-new-plant" class="btn btn-primary" style="padding:16px;">
-            <i data-lucide="plus-circle"></i> + Khai Báo Cây Trồng Mới (1 Cây)
+            <i data-lucide="plus-circle"></i> Khai Báo Cây Trồng Mới (1 Cây)
           </button>
           
           <button type="button" id="btn-action-existing-plant" class="btn btn-secondary">
@@ -178,7 +180,7 @@
 
         <!-- Collapsible List of Existing Plants -->
         <div id="wrap-existing-plants-list" style="display:none; margin-top:18px;">
-          <label class="form-label">Chọn Cây Trong Danh Sách</label>
+          <label class="form-label"><i data-lucide="list-filter" class="lucide-xs"></i> Chọn Cây Trong Danh Sách</label>
           <div id="list-existing-plants" class="tree-select-list"></div>
         </div>
       </div>
@@ -197,40 +199,40 @@
         <form id="form-plant-detail">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Mã Cây / Số Hiệu</label>
+              <label class="form-label"><i data-lucide="tag" class="lucide-xs"></i> Mã Cây / Số Hiệu</label>
               <input type="text" id="input-tree-code" class="form-input" placeholder="Tự sinh (C001, C002...)">
             </div>
             <div class="form-group">
-              <label class="form-label">Giống Cây Trồng</label>
+              <label class="form-label"><i data-lucide="leaf" class="lucide-xs"></i> Giống Cây Trồng</label>
               <input type="text" id="input-plant-variety" class="form-input" value="Sầu riêng Ri6" required>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Phân Lô (Plot)</label>
+              <label class="form-label"><i data-lucide="grid" class="lucide-xs"></i> Phân Lô (Plot)</label>
               <input type="text" id="input-plot-code" class="form-input" value="A1">
             </div>
             <div class="form-group">
-              <label class="form-label">Số Hàng (Row)</label>
+              <label class="form-label"><i data-lucide="layers" class="lucide-xs"></i> Số Hàng (Row)</label>
               <input type="number" id="input-row-number" class="form-input" value="1" min="1">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Ngày Trồng</label>
+              <label class="form-label"><i data-lucide="calendar" class="lucide-xs"></i> Ngày Trồng</label>
               <input type="date" id="input-planting-date" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Tuổi Cây (Tự Tính)</label>
+              <label class="form-label"><i data-lucide="clock" class="lucide-xs"></i> Tuổi Cây (Tự Tính)</label>
               <input type="text" id="input-plant-age" class="form-input" placeholder="Tự tính từ ngày trồng...">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Sức Khỏe Hiện Tại</label>
+              <label class="form-label"><i data-lucide="heart-pulse" class="lucide-xs"></i> Sức Khỏe Hiện Tại</label>
               <select id="input-health-status" class="form-select">
                 <option value="Tốt">Tốt (Khỏe mạnh)</option>
                 <option value="Bình thường">Bình thường</option>
@@ -239,28 +241,28 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Năng Suất Vụ Trước (kg)</label>
+              <label class="form-label"><i data-lucide="scale" class="lucide-xs"></i> Năng Suất Vụ Trước (kg)</label>
               <input type="number" id="input-initial-yield" class="form-input" placeholder="0" min="0">
             </div>
           </div>
 
           <!-- GIAI ĐOẠN SINH TRƯỞNG & ẢNH HIỆN TRƯỜNG KHỞI TẠO -->
           <div class="form-group">
-            <label class="form-label">Giai Đoạn Sinh Trưởng Khởi Tạo</label>
+            <label class="form-label"><i data-lucide="trending-up" class="lucide-xs"></i> Giai Đoạn Sinh Trưởng Khởi Tạo</label>
             <select id="input-growth-stage" class="form-select">
-              <option value="Kiến thiết cơ bản (Cây non)">🌱 Kiến thiết cơ bản (Cây non)</option>
-              <option value="Phục hồi sau thu hoạch">🍃 Phục hồi sau thu hoạch</option>
-              <option value="Chuẩn bị ra hoa (Làm cơi đọt)">🌿 Chuẩn bị ra hoa (Làm cơi đọt)</option>
-              <option value="Nhú mắt cua / Phân hóa mầm hoa">✨ Nhú mắt cua / Phân hóa mầm hoa</option>
-              <option value="Nở hoa / Thụ phấn">🌸 Nở hoa / Thụ phấn</option>
-              <option value="Đậu trái non">🍈 Đậu trái non</option>
-              <option value="Nuôi trái / Phát triển trái" selected>🥑 Nuôi trái / Phát triển trái</option>
-              <option value="Chuẩn bị thu hoạch">🏆 Chuẩn bị thu hoạch</option>
+              <option value="Kiến thiết cơ bản (Cây non)">Kiến thiết cơ bản (Cây non)</option>
+              <option value="Phục hồi sau thu hoạch">Phục hồi sau thu hoạch</option>
+              <option value="Chuẩn bị ra hoa (Làm cơi đọt)">Chuẩn bị ra hoa (Làm cơi đọt)</option>
+              <option value="Nhú mắt cua / Phân hóa mầm hoa">Nhú mắt cua / Phân hóa mầm hoa</option>
+              <option value="Nở hoa / Thụ phấn">Nở hoa / Thụ phấn</option>
+              <option value="Đậu trái non">Đậu trái non</option>
+              <option value="Nuôi trái / Phát triển trái" selected>Nuôi trái / Phát triển trái</option>
+              <option value="Chuẩn bị thu hoạch">Chuẩn bị thu hoạch</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Ảnh Chụp Thực Địa Hiện Trường (Khởi Tạo)</label>
+            <label class="form-label"><i data-lucide="camera" class="lucide-xs"></i> Ảnh Chụp Thực Địa Hiện Trường (Khởi Tạo)</label>
             <div class="photo-upload-box" id="btn-trigger-photo">
               <input type="file" id="input-plant-photo" accept="image/*" capture="environment" style="display:none;">
               <div id="photo-upload-placeholder">
@@ -279,7 +281,7 @@
           <div class="past-diseases-container">
             <div class="past-diseases-header">
               <span class="form-label" style="margin:0; display:flex; align-items:center; gap:6px; color:#34d399;">
-                <i data-lucide="shield-alert" style="width:16px; height:16px;"></i>
+                <i data-lucide="shield-alert" class="lucide-xs"></i>
                 Các bệnh / Vấn đề trước đây của cây
               </span>
               <span style="font-size:11px; color:#9ca3af;">Tùy chọn</span>
@@ -288,16 +290,36 @@
               Nhấp chọn các khối bệnh cây đã từng gặp trước khi sử dụng ứng dụng (chọn nhiều mục):
             </div>
             <div class="disease-chips-grid" id="disease-chips-grid">
-              <div class="disease-chip" data-disease="Rệp sáp / Rệp muội">🐛 Rệp sáp / Rệp muội</div>
-              <div class="disease-chip" data-disease="Nứt thân xì mủ (Phytophthora)">⚡ Nứt thân xì mủ (Phytophthora)</div>
-              <div class="disease-chip" data-disease="Vàng lá thối rễ">⚠️ Vàng lá thối rễ</div>
-              <div class="disease-chip" data-disease="Cháy lá / Chết đọt">🔥 Cháy lá / Chết đọt</div>
-              <div class="disease-chip" data-disease="Đốm rong / Tảo đỏ">🔆 Đốm rong / Tảo đỏ</div>
-              <div class="disease-chip" data-disease="Thán thư (Colletotrichum)">☣️ Thán thư (Colletotrichum)</div>
-              <div class="disease-chip" data-disease="Bọ trĩ / Nhện đỏ">🛡️ Bọ trĩ / Nhện đỏ</div>
-              <div class="disease-chip" data-disease="Sâu đục thân / Trái">🎯 Sâu đục thân / Trái</div>
-              <div class="disease-chip healthy" data-disease="Chưa từng nhiễm bệnh (Cây khỏe)">✅ Chưa từng nhiễm bệnh (Cây khỏe)</div>
-              <div class="disease-chip" id="chip-disease-other" data-disease="other">➕ Bệnh khác...</div>
+              <div class="disease-chip" data-disease="Rệp sáp / Rệp muội">
+                <i data-lucide="bug" class="lucide-xs"></i> Rệp sáp / Rệp muội
+              </div>
+              <div class="disease-chip" data-disease="Nứt thân xì mủ (Phytophthora)">
+                <i data-lucide="activity" class="lucide-xs"></i> Nứt thân xì mủ (Phytophthora)
+              </div>
+              <div class="disease-chip" data-disease="Vàng lá thối rễ">
+                <i data-lucide="alert-triangle" class="lucide-xs"></i> Vàng lá thối rễ
+              </div>
+              <div class="disease-chip" data-disease="Cháy lá / Chết đọt">
+                <i data-lucide="flame" class="lucide-xs"></i> Cháy lá / Chết đọt
+              </div>
+              <div class="disease-chip" data-disease="Đốm rong / Tảo đỏ">
+                <i data-lucide="sun" class="lucide-xs"></i> Đốm rong / Tảo đỏ
+              </div>
+              <div class="disease-chip" data-disease="Thán thư (Colletotrichum)">
+                <i data-lucide="biohazard" class="lucide-xs"></i> Thán thư (Colletotrichum)
+              </div>
+              <div class="disease-chip" data-disease="Bọ trĩ / Nhện đỏ">
+                <i data-lucide="shield-alert" class="lucide-xs"></i> Bọ trĩ / Nhện đỏ
+              </div>
+              <div class="disease-chip" data-disease="Sâu đục thân / Trái">
+                <i data-lucide="target" class="lucide-xs"></i> Sâu đục thân / Trái
+              </div>
+              <div class="disease-chip healthy" data-disease="Chưa từng nhiễm bệnh (Cây khỏe)">
+                <i data-lucide="shield-check" class="lucide-xs"></i> Chưa từng nhiễm bệnh (Cây khỏe)
+              </div>
+              <div class="disease-chip" id="chip-disease-other" data-disease="other">
+                <i data-lucide="plus-circle" class="lucide-xs"></i> Bệnh khác...
+              </div>
             </div>
             <input type="text" id="input-other-disease" class="form-input" placeholder="Nhập tên bệnh khác..." style="display:none; margin-top:10px; font-size:12px;">
           </div>
@@ -315,7 +337,7 @@
             </div>
 
             <div id="text-gps-guidance" class="gps-guidance-note">
-              📡 <strong>Gợi ý:</strong> Mang điện thoại ra ngoài trời thoáng tại gốc cây để cảm biến bắt trực tiếp vệ tinh GPS đạt sai số &lt; ±1m.
+              <i data-lucide="satellite" class="lucide-xs"></i> <strong>Gợi ý:</strong> Mang điện thoại ra ngoài trời thoáng tại gốc cây để cảm biến bắt trực tiếp vệ tinh GPS đạt sai số &lt; ±1m.
             </div>
 
             <div class="gps-radar-wrap">
@@ -349,7 +371,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Mã Thẻ NFC (UID)</label>
+            <label class="form-label"><i data-lucide="cpu" class="lucide-xs"></i> Mã Thẻ NFC (UID)</label>
             <input type="text" id="input-tag-uid" class="form-input" placeholder="Tự nhận diện khi chạm thẻ..." style="font-family:monospace; color:#34d399; font-weight:700;">
           </div>
 
@@ -379,7 +401,7 @@
         </p>
 
         <div class="form-group" style="text-align:left;">
-          <label class="form-label">Đường Dẫn Hồ Sơ Nông Sản Công Khai</label>
+          <label class="form-label"><i data-lucide="link" class="lucide-xs"></i> Đường Dẫn Hồ Sơ Nông Sản Công Khai</label>
           <div style="display:flex; gap:8px;">
             <input type="text" id="text-public-plant-url" class="form-input" readonly style="font-size:12px; font-family:monospace;">
             <button type="button" id="btn-copy-public-url" class="btn btn-secondary btn-sm" style="flex-shrink:0;">

@@ -66,12 +66,13 @@ class SubGatewayApp {
     const badge = document.getElementById('nfc-detector-badge');
     if (!badge) return;
     if (this.nfcBridge.isSupported()) {
-      badge.innerHTML = `<span class="pulse-dot"></span> Web NFC Sẵn Sàng (Chạm thẻ để nạp)`;
+      badge.innerHTML = `<span class="pulse-dot"></span> <i data-lucide="radio" class="lucide-xs"></i> Web NFC Sẵn Sàng (Chạm thẻ để nạp)`;
       badge.className = 'nfc-badge-pill';
     } else {
-      badge.innerHTML = `<span class="pulse-dot warning"></span> Chế độ QR Code & Nhập thủ công (Không có Web NFC)`;
+      badge.innerHTML = `<span class="pulse-dot warning"></span> <i data-lucide="qr-code" class="lucide-xs"></i> Chế độ QR Code & Nhập thủ công (Không có Web NFC)`;
       badge.className = 'nfc-badge-pill warning';
     }
+    this.renderIcons();
   }
 
   showView(viewId) {
@@ -564,13 +565,16 @@ class SubGatewayApp {
             <strong style="color:#34d399;">#${p.tree_code || p.id}</strong> · ${p.plant_variety || p.plant_type || 'Cây'}
             <div style="font-size:11px; color:#9ca3af;">Lô ${p.plot_code || 'A1'} · Hàng ${p.row_number || 1} · ${p.nfc_uid ? `NFC: ${p.nfc_uid}` : 'Chưa gắn thẻ'}</div>
           </div>
-          <button class="btn btn-sm btn-outline-green btn-bind-existing-tree" data-id="${p.id}">Chọn Gán Thẻ</button>
+          <button class="btn btn-sm btn-outline-green btn-bind-existing-tree" data-id="${p.id}">
+            <i data-lucide="link" class="lucide-xs"></i> Chọn Gán Thẻ
+          </button>
         </div>
       `).join('');
+      this.renderIcons();
 
       listEl.querySelectorAll('.btn-bind-existing-tree').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const plantId = parseInt(e.target.dataset.id);
+          const plantId = parseInt(e.currentTarget.dataset.id);
           const found = plantArray.find(x => x.id === plantId);
           if (found) {
             this.prepareExistingPlantBind(found);
@@ -642,7 +646,8 @@ class SubGatewayApp {
         }
 
         if (guidance && data.statusText) {
-          guidance.innerHTML = `📡 <strong>Trạng thái:</strong> ${data.statusText}`;
+          guidance.innerHTML = `<i data-lucide="satellite" class="lucide-xs"></i> <strong>Trạng thái:</strong> ${data.statusText}`;
+          this.renderIcons();
         }
       },
       onLock: (locked) => {
@@ -779,13 +784,20 @@ class SubGatewayApp {
         }).catch(() => {});
       }
 
-      this.showToast('🎉 ĐÃ NẠP HỒ SƠ VÀO THẺ THÀNH CÔNG 100%!', 'success');
-      if (btn) btn.innerText = '✅ Đã Nạp Thẻ Thành Công';
+      this.showToast('ĐÃ NẠP HỒ SƠ VÀO THẺ THÀNH CÔNG 100%!', 'success');
+      if (btn) {
+        btn.innerHTML = '<i data-lucide="check-circle" class="lucide-sm"></i> Đã Nạp Thẻ Thành Công';
+        this.renderIcons();
+      }
 
       document.getElementById('nfc-write-success-card').style.display = 'block';
+      this.renderIcons();
     } catch (err) {
       this.showToast('Lỗi khi ghi thẻ: ' + err.message, 'error');
-      if (btn) btn.innerText = 'Thử Lại Chạm Thẻ';
+      if (btn) {
+        btn.innerHTML = '<i data-lucide="refresh-cw" class="lucide-sm"></i> Thử Lại Chạm Thẻ';
+        this.renderIcons();
+      }
     }
   }
 }

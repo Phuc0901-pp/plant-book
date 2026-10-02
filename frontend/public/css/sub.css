@@ -41,6 +41,11 @@ body {
   overflow-x: hidden;
 }
 
+/* Lucide Icon Sizing Helpers */
+.lucide-xs { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; }
+.lucide-sm { width: 16px; height: 16px; display: inline-block; vertical-align: -3px; }
+.lucide-md { width: 20px; height: 20px; display: inline-block; vertical-align: -4px; }
+
 /* Background animated glow orbs */
 .bg-glow-orb {
   position: fixed;
@@ -228,7 +233,9 @@ body {
   margin-bottom: 16px;
 }
 .form-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 600;
   color: #a7f3d0;
