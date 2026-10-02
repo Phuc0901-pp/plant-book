@@ -156,6 +156,103 @@ body {
   font-weight: 500;
 }
 
+/* Dual Navigation Hub Grid */
+.gateway-nav-links-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (max-width: 480px) {
+  .gateway-nav-links-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.gateway-nav-link-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.gateway-nav-link-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.12);
+  border-color: var(--primary-emerald-border);
+}
+
+.nav-link-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.gateway-nav-link-item:hover .nav-link-icon-wrap {
+  transform: scale(1.08);
+}
+
+.nav-link-icon-wrap.icon-app {
+  background: var(--primary-emerald-bg);
+  color: var(--primary-emerald);
+  border: 1px solid var(--primary-emerald-border);
+}
+
+.nav-link-icon-wrap.icon-web {
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue);
+  border: 1px solid #bae6fd;
+}
+
+.nav-link-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-link-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.nav-link-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.nav-link-arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.gateway-nav-link-item:hover .nav-link-arrow {
+  transform: translateX(3px);
+  color: var(--primary-emerald);
+}
+
 /* Enterprise Footer Card */
 .enterprise-footer-card {
   display: flex;
@@ -167,7 +264,7 @@ body {
   border: 1px solid var(--border-card);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  margin-top: 18px;
+  margin-top: 14px;
   text-align: center;
 }
 
