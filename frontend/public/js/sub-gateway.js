@@ -89,12 +89,20 @@ class SubGatewayApp {
     const currentFarm = (this.state.farms || []).find(f => f.id === this.state.selectedFarmId) || (this.state.farms && this.state.farms[0]);
     const farmName = currentFarm ? currentFarm.name : 'Trang trại của bạn';
     const pucCode = currentFarm && currentFarm.puc_code ? currentFarm.puc_code : `Lô #${this.state.selectedFarmId || 'A1'}`;
-    const userName = (this.state.user && (this.state.user.full_name || this.state.user.name)) || 'Chủ Vườn';
+    const isAdmin = this.state.user && this.state.user.role === 'admin';
+    const ownerName = currentFarm?.user_name || (this.state.user && (this.state.user.full_name || this.state.user.name)) || 'Chủ Vườn';
+    const treeCount = (currentFarm && currentFarm.plant_count !== undefined) ? ` · Quy mô: ${currentFarm.plant_count} cây` : '';
 
     const nameEl = document.getElementById('summary-farm-name');
     const metaEl = document.getElementById('summary-farm-meta');
     if (nameEl) nameEl.innerText = farmName;
-    if (metaEl) metaEl.innerText = `Chủ vườn: ${userName} · Mã Lô: ${pucCode}`;
+    if (metaEl) {
+      if (isAdmin) {
+        metaEl.innerText = `👑 Quản trị hệ thống · Chủ: ${ownerName} · Mã PUC: ${pucCode}${treeCount}`;
+      } else {
+        metaEl.innerText = `Chủ vườn: ${ownerName} · Mã Lô: ${pucCode}${treeCount}`;
+      }
+    }
     bar.style.display = 'flex';
   }
 
@@ -126,17 +134,14 @@ class SubGatewayApp {
       );
     }
 
-    // If user already logged in with valid token, prepare farm data & jump to Farm Hub
-    if (this.state.token && this.state.user) {
-      if (this.state.user.encrypted_user_id) {
-        this.updateEncryptedUrl(this.state.user.encrypted_user_id);
-      } else if (this.state.encryptedUserId) {
-        this.updateEncryptedUrl(this.state.encryptedUserId);
-      }
+    // If explicit URL with encrypted user id is opened (/sub/usr_.../set_up) and valid session exists:
+    if (urlEncId && this.state.token && this.state.user) {
+      this.updateEncryptedUrl(urlEncId);
       this.loadUserFarms().then(() => {
         this.showView('view-farm-hub');
       });
     } else {
+      // Default: always show landing page so user can choose action
       this.showView('view-landing');
     }
 
@@ -257,11 +262,7 @@ class SubGatewayApp {
   bindEvents() {
     // 1. Landing View Options
     document.getElementById('btn-opt-existing')?.addEventListener('click', () => {
-      if (this.state.token && this.state.user) {
-        this.loadUserFarms().then(() => this.showView('view-farm-hub'));
-      } else {
-        this.showView('view-login');
-      }
+      this.showView('view-login');
     });
 
     document.getElementById('btn-opt-new')?.addEventListener('click', () => {
@@ -279,7 +280,7 @@ class SubGatewayApp {
       if (!this.state.token) {
         this.showView('view-landing');
       } else {
-        this.showToast('Tài khoản đang đăng nhập.', 'info');
+        this.showToast('Tài khoản đang trong phiên làm việc.', 'info');
       }
     });
 
@@ -309,9 +310,22 @@ class SubGatewayApp {
       }
     });
 
-    // Back buttons
+    // Back / Logout buttons
     document.querySelectorAll('.btn-back-landing').forEach(btn => {
-      btn.addEventListener('click', () => this.showView('view-landing'));
+      btn.addEventListener('click', () => {
+        if (btn.innerText.includes('Đăng xuất')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          this.state.token = null;
+          this.state.user = null;
+          this.state.farms = [];
+          this.state.selectedFarmId = null;
+          this.state.encryptedUserId = null;
+          window.history.pushState({}, '', '/sub');
+          this.showToast('Đã đăng xuất tài khoản.', 'info');
+        }
+        this.showView('view-landing');
+      });
     });
     document.getElementById('btn-back-farm-hub')?.addEventListener('click', () => {
       this.showView('view-farm-hub');
@@ -561,14 +575,20 @@ class SubGatewayApp {
 
       this.state.token = data.token;
       this.state.user = data.user;
-      if (data.encrypted_user_id || data.user?.encrypted_user_id) {
-        this.state.encryptedUserId = data.encrypted_user_id || data.user.encrypted_user_id;
-        this.updateEncryptedUrl(this.state.encryptedUserId);
+      const encId = data.encrypted_user_id || data.user?.encrypted_user_id;
+      if (encId) {
+        this.state.encryptedUserId = encId;
+        this.updateEncryptedUrl(encId);
       }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      this.showToast('Đăng nhập thành công!', 'success');
+      if (data.user?.role === 'admin') {
+        this.showToast('👑 Đăng nhập thành công với quyền QUẢN TRỊ VIÊN!', 'success');
+      } else {
+        this.showToast('Đăng nhập thành công!', 'success');
+      }
+
       await this.loadUserFarms();
       this.showView('view-farm-hub');
     } catch (err) {
@@ -636,9 +656,10 @@ class SubGatewayApp {
       this.state.token = data.token;
       this.state.user = data.user;
       this.state.selectedFarmId = data.farm ? data.farm.id : data.user.farm_id;
-      if (data.encrypted_user_id || data.user?.encrypted_user_id) {
-        this.state.encryptedUserId = data.encrypted_user_id || data.user.encrypted_user_id;
-        this.updateEncryptedUrl(this.state.encryptedUserId);
+      const encId = data.encrypted_user_id || data.user?.encrypted_user_id;
+      if (encId) {
+        this.state.encryptedUserId = encId;
+        this.updateEncryptedUrl(encId);
       }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -668,10 +689,29 @@ class SubGatewayApp {
       this.state.farms = Array.isArray(farms) ? farms : [];
 
       const select = document.getElementById('select-farm-hub');
+      const label = document.getElementById('label-farm-hub-select');
+      const isAdmin = this.state.user && this.state.user.role === 'admin';
+
+      if (label) {
+        if (isAdmin) {
+          label.innerHTML = `<i data-lucide="shield-check" class="lucide-xs"></i> 👑 [QUẢN TRỊ VIÊN] Danh Sách Toàn Bộ Trang Trại (${this.state.farms.length} vườn)`;
+        } else {
+          label.innerHTML = `<i data-lucide="trees" class="lucide-xs"></i> Trang Trại Của Bạn (${this.state.farms.length} vườn)`;
+        }
+      }
+
       if (select) {
-        select.innerHTML = this.state.farms.map(f => 
-          `<option value="${f.id}" ${f.id === this.state.selectedFarmId ? 'selected' : ''}>${f.name} (Lô: ${f.puc_code || f.id})</option>`
-        ).join('');
+        if (this.state.farms.length === 0) {
+          select.innerHTML = '<option value="">Không có trang trại nào</option>';
+        } else {
+          select.innerHTML = this.state.farms.map(f => {
+            const owner = f.user_name || (f.user && f.user.full_name) || '';
+            const ownerInfo = (isAdmin && owner) ? ` · Chủ: ${owner}` : '';
+            const treeCount = f.plant_count !== undefined ? ` · ${f.plant_count} cây` : '';
+            const puc = f.puc_code ? `Mã PUC: ${f.puc_code}` : `Lô #${f.id}`;
+            return `<option value="${f.id}" ${f.id === this.state.selectedFarmId ? 'selected' : ''}>${f.name} (${puc}${ownerInfo}${treeCount})</option>`;
+          }).join('');
+        }
       }
 
       if (this.state.farms.length > 0 && !this.state.selectedFarmId) {
@@ -682,6 +722,7 @@ class SubGatewayApp {
         await this.loadFarmPlantsList(this.state.selectedFarmId);
         this.updateFarmSummaryBar();
       }
+      this.renderIcons();
     } catch (_) {}
   }
 
@@ -690,30 +731,53 @@ class SubGatewayApp {
     if (!listEl || !this.state.token) return;
 
     try {
-      listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#64748b;">Đang tải danh sách cây...</div>';
+      listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-xs"></i> Đang tải danh sách cây trong trang trại...</div>';
+      this.renderIcons();
+
       const res = await fetch(`/api/plants?farm_id=${farmId}`, {
         headers: { 'Authorization': `Bearer ${this.state.token}` }
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#dc2626;">Không thể tải danh sách cây.</div>';
+        return;
+      }
       const plants = await res.json();
       const plantArray = Array.isArray(plants) ? plants : (plants.data || []);
 
       if (plantArray.length === 0) {
-        listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#64748b;">Chưa có cây nào trong vườn này. Hãy bấm "+ Khai báo cây mới".</div>';
+        listEl.innerHTML = '<div style="padding:14px; text-align:center; color:#64748b;">Chưa có cây nào trong vườn này. Hãy bấm "+ Khai báo cây trồng mới".</div>';
         return;
       }
 
-      listEl.innerHTML = plantArray.map(p => `
-        <div class="tree-select-item" data-id="${p.id}" data-code="${p.tree_code || p.id}">
-          <div>
-            <strong style="color:#059669;">#${p.tree_code || p.id}</strong> <span style="color:#0f172a; font-weight:600;">· ${p.plant_variety || p.plant_type || 'Cây'}</span>
-            <div style="font-size:11.5px; color:#475569; margin-top:2px;">Lô ${p.plot_code || 'A1'} · Hàng ${p.row_number || 1} · ${p.nfc_uid ? `NFC: ${p.nfc_uid}` : 'Chưa gắn thẻ'}</div>
+      listEl.innerHTML = plantArray.map(p => {
+        const treeCode = p.tree_code || `#${p.id}`;
+        const variety = p.plant_variety || p.plant_type || 'Cây trồng';
+        const plot = p.plot_code || 'A1';
+        const row = p.row_number || 1;
+        const nfcBadge = p.nfc_uid 
+          ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;"><i data-lucide="radio" style="width:11px; height:11px;"></i> ${p.nfc_uid}</span>`
+          : `<span style="background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:4px; font-size:11px;">Chưa gắn thẻ</span>`;
+        const healthBadge = p.health_status === 'Kém' 
+          ? `<span style="background:#fef2f2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;">⚠️ ${p.health_status}</span>`
+          : `<span style="background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;">🌿 ${p.health_status || 'Tốt'}</span>`;
+
+        return `
+          <div class="tree-select-item" data-id="${p.id}" data-code="${treeCode}">
+            <div>
+              <strong style="color:#059669; font-size:14px;">${treeCode}</strong> 
+              <span style="color:#0f172a; font-weight:700;">· ${variety}</span>
+              <div style="font-size:12px; color:#475569; margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span>Lô ${plot} · Hàng ${row}</span>
+                ${nfcBadge}
+                ${healthBadge}
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-green btn-bind-existing-tree" data-id="${p.id}">
+              <i data-lucide="link" class="lucide-xs"></i> Chọn Gán Thẻ
+            </button>
           </div>
-          <button class="btn btn-sm btn-outline-green btn-bind-existing-tree" data-id="${p.id}">
-            <i data-lucide="link" class="lucide-xs"></i> Chọn Gán Thẻ
-          </button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
       this.renderIcons();
 
       listEl.querySelectorAll('.btn-bind-existing-tree').forEach(btn => {
@@ -725,7 +789,9 @@ class SubGatewayApp {
           }
         });
       });
-    } catch (_) {}
+    } catch (err) {
+      listEl.innerHTML = `<div style="padding:14px; text-align:center; color:#dc2626;">Lỗi tải danh sách cây: ${err.message}</div>`;
+    }
   }
 
   prepareNewPlantForm() {
