@@ -98,7 +98,7 @@ class SubGatewayApp {
     if (nameEl) nameEl.innerText = farmName;
     if (metaEl) {
       if (isAdmin) {
-        metaEl.innerText = `👑 Quản trị hệ thống · Chủ: ${ownerName} · Mã PUC: ${pucCode}${treeCount}`;
+        metaEl.innerText = `Quản trị hệ thống · Chủ: ${ownerName} · Mã PUC: ${pucCode}${treeCount}`;
       } else {
         metaEl.innerText = `Chủ vườn: ${ownerName} · Mã Lô: ${pucCode}${treeCount}`;
       }
@@ -155,7 +155,7 @@ class SubGatewayApp {
       badge.innerHTML = `<span class="pulse-dot"></span> <i data-lucide="radio" class="lucide-xs"></i> Web NFC Sẵn Sàng (Chạm thẻ để nạp)`;
       badge.className = 'nfc-badge-pill';
     } else {
-      badge.innerHTML = `<span class="pulse-dot warning"></span> <i data-lucide="qr-code" class="lucide-xs"></i> Chế độ QR Code & Nhập thủ công (Không có Web NFC)`;
+      badge.innerHTML = `<span class="pulse-dot warning"></span> <i data-lucide="qr-code" class="lucide-xs"></i> Chế độ đường dẫn URL cấu hình công khai`;
       badge.className = 'nfc-badge-pill warning';
     }
     this.renderIcons();
@@ -584,7 +584,7 @@ class SubGatewayApp {
       localStorage.setItem('user', JSON.stringify(data.user));
 
       if (data.user?.role === 'admin') {
-        this.showToast('👑 Đăng nhập thành công với quyền QUẢN TRỊ VIÊN!', 'success');
+        this.showToast(' Đăng nhập thành công với quyền QUẢN TRỊ VIÊN!', 'success');
       } else {
         this.showToast('Đăng nhập thành công!', 'success');
       }
