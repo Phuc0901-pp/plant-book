@@ -69,37 +69,37 @@ mindmap
     Định Danh Số Cây Trồng
       Mã Định Danh Duy Nhất tree_code
       Tọa Độ Không Gian Vệ Tinh GPS
-      Phân Lô Vùng Trồng & Tách Hàng Tự Động
+      Phân Lô Vùng Trồng và Tách Hàng Tự Động
       Thẻ Cứng NFC RFID Chống Trùng Lặp
       Mã QR Code Động Truy Xuất Nguồn Gốc
       Nhận Diện Giống Cây Thông Minh Fallback
-    Quản Trị Sinh Trưởng & Media
+    Quản Trị Sinh Trưởng và Media
       Album Sinh Trưởng Bất Biến Append-Only
       Ảnh Chụp Thực Địa Hiện Trường
-      Giai Đoạn Sinh Trưởng Ra hoa/Đậu trái/Nuôi trái
-      Tách Riêng Ảnh/Video Bệnh Cây
-      Canvas Đóng Dấu Watermark GPS & Thời Gian
+      Giai Đoạn Sinh Trưởng Ra hoa - Đậu trái - Nuôi trái
+      Tách Riêng Ảnh và Video Bệnh Cây
+      Canvas Đóng Dấu Watermark GPS và Thời Gian
     Nhật Ký Canh Tác VietGAP
-      6 Nhóm Hoạt Động Tưới/Bón/Phun/Tỉa/Bệnh/Thu hoạch
+      6 Nhóm Hoạt Động Tưới - Bón - Phun - Tỉa - Bệnh - Thu hoạch
       Kiểm Soát Cách Ly Thuốc BVTV PHI
       Khóa An Toàn Chống Thu Hoạch Sớm
       Cấp Mã Lô Nông Sản Xuất Khẩu
-      Xuất Báo Cáo Sổ Ký Điện Tử Excel/CSV
-    Agri-ERP & Chi Phí Đầu Tư
+      Xuất Báo Cáo Sổ Ký Điện Tử Excel và CSV
+    Agri-ERP và Chi Phí Đầu Tư
       Quản Lý Danh Mục Kho Phân Thuốc
       Tự Động Trừ Tồn Kho Khi Ghi Nhật Ký
-      Tính Chi Phí Nước Tưới m3 & Nhân Công
-      Báo Cáo Tài Chính Lũy Kế Từng Cây/Cả Vườn
+      Tính Chi Phí Nước Tưới m3 và Nhân Công
+      Báo Cáo Tài Chính Lũy Kế Từng Cây và Cả Vườn
     Bản Đồ Không Gian GIS
       Vẽ Ranh Giới Đa Giác Polygon Vùng Trồng
       Tự Động Tính Diện Tích m2 sang Hecta
       Marker Trạng Thái Sức Khỏe Màu Sắc
       Cửa Sổ Popup Đầy Đủ Không Làm Trôi GPS
       Sắp Xếp Thứ Tự Cây Trực Quan
-    Khí Tượng & IoT Nông Nghiệp
+    Khí Tượng và IoT Nông Nghiệp
       Dự Báo Thời Tiết Vệ Tinh Open-Meteo
-      Biểu Đồ 24 Giờ & Xác Suất Mưa
-      Chỉ Số Bốc Thoát Hơi Nước ET0 & An Toàn Phun
+      Biểu Đồ 24 Giờ và Xác Suất Mưa
+      Chỉ Số Bốc Thoát Hơi Nước ET0 và An Toàn Phun
       Linh Vật Chibi Đồng Bộ Thời Tiết Real-time
     Nền Tảng Ngoại Tuyến Offline-First
       Service Worker Cache UI 0.1s
@@ -175,35 +175,35 @@ mindmap
 
 ```mermaid
 flowchart TD
-    Start([Bắt đầu Mùa Vụ]) --> FarmSetup[1. Khởi tạo Trang Trại & Khoanh Vùng Polygon GIS]
-    FarmSetup --> SuppliesSetup[2. Thiết lập Kho Vật Tư, Phân Bón & Đơn Giá]
-    SuppliesSetup --> PlantBatch[3. Khai báo Cây Trồng Ma Trận: Phân Lô, Tách Hàng & Chụp Ảnh]
-    PlantBatch --> TagAssign[4. Gán Thẻ NFC RFID & In Tem QR Code]
+    Start(["Bắt đầu Mùa Vụ"]) --> FarmSetup["1. Khởi tạo Trang Trại và Khoanh Vùng Polygon GIS"]
+    FarmSetup --> SuppliesSetup["2. Thiết lập Kho Vật Tư, Phân Bón và Đơn Giá"]
+    SuppliesSetup --> PlantBatch["3. Khai báo Cây Trồng Ma Trận: Phân Lô, Tách Hàng và Chụp Ảnh"]
+    PlantBatch --> TagAssign["4. Gán Thẻ NFC RFID và In Tem QR Code"]
     
-    TagAssign --> CareCycle{5. Chu Kỳ Canh Tác Hàng Ngày}
+    TagAssign --> CareCycle{"5. Chu Kỳ Canh Tác Hàng Ngày"}
     
-    CareCycle -->|Tưới nước| LogWater[Ghi lượng nước -> Tự động tính tiền nước]
-    CareCycle -->|Bón phân| LogFert[Chọn phân bón -> Tự trừ tồn kho ERP]
-    CareCycle -->|Phun thuốc BVTV| LogPest[Ghi nhận thuốc -> Kích hoạt Đếm ngược Cách ly PHI]
-    CareCycle -->|Phát hiện sâu bệnh| LogDisease[Chụp ảnh có Watermark GPS -> Gửi cảnh báo kỹ thuật]
-    CareCycle -->|Chụp ảnh định kỳ| LogGrowth[Lưu ảnh Album Sinh Trưởng Bất Biến Append-Only]
+    CareCycle -->|"Tưới nước"| LogWater["Ghi lượng nước: Tự động tính tiền nước"]
+    CareCycle -->|"Bón phân"| LogFert["Chọn phân bón: Tự trừ tồn kho ERP"]
+    CareCycle -->|"Phun thuốc BVTV"| LogPest["Ghi nhận thuốc: Kích hoạt Đếm ngược Cách ly PHI"]
+    CareCycle -->|"Phát hiện sâu bệnh"| LogDisease["Chụp ảnh có Watermark GPS: Gửi cảnh báo kỹ thuật"]
+    CareCycle -->|"Chụp ảnh định kỳ"| LogGrowth["Lưu ảnh Album Sinh Trưởng Bất Biến Append-Only"]
     
-    LogWater --> UpdateERP[Cập nhật Dòng Thời Gian & Chi Phí Lũy Kế Cây]
+    LogWater --> UpdateERP["Cập nhật Dòng Thời Gian và Chi Phí Lũy Kế Cây"]
     LogFert --> UpdateERP
     LogPest --> UpdateERP
     LogDisease --> UpdateERP
     LogGrowth --> UpdateERP
     
-    UpdateERP --> HarvestCheck{6. Đến Thời Điểm Thu Hoạch?}
-    HarvestCheck -->|Chưa| CareCycle
-    HarvestCheck -->|Đến vụ| PHIVerify{Đã qua thời gian cách ly PHI?}
+    UpdateERP --> HarvestCheck{"6. Đến Thời Điểm Thu Hoạch?"}
+    HarvestCheck -->|"Chưa"| CareCycle
+    HarvestCheck -->|"Đến vụ"| PHIVerify{"Đã qua thời gian cách ly PHI?"}
     
-    PHIVerify -->|Chưa an toàn| BlockHarvest[CẢNH BÁO ĐỎ: Khóa thu hoạch - Bảo vệ an toàn thực phẩm]
+    PHIVerify -->|"Chưa an toàn"| BlockHarvest["CẢNH BÁO ĐỎ: Khóa thu hoạch - Bảo vệ an toàn thực phẩm"]
     BlockHarvest --> CareCycle
     
-    PHIVerify -->|Đạt chuẩn an toàn| AllowHarvest[7. Cho Phép Thu Hoạch & Cấp Mã Lô Nông Sản]
-    AllowHarvest --> PublicTrace[8. Người Tiêu Dùng Quét QR Truy Xuất Nguồn Gốc Minh Bạch]
-    PublicTrace --> EndSeason([Kết thúc Vụ Thu Hoạch & Kết Toán Chi Phí])
+    PHIVerify -->|"Đạt chuẩn an toàn"| AllowHarvest["7. Cho Phép Thu Hoạch và Cấp Mã Lô Nông Sản"]
+    AllowHarvest --> PublicTrace["8. Người Tiêu Dùng Quét QR Truy Xuất Nguồn Gốc Minh Bạch"]
+    PublicTrace --> EndSeason(["Kết thúc Vụ Thu Hoạch và Kết Toán Chi Phí"])
 ```
 
 ---
@@ -239,31 +239,31 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Step1[Mở Modal Thêm Cây Trồng] --> ModeSelect{Chọn Phương Thức Khai Báo}
+    Step1["Mở Modal Thêm Cây Trồng"] --> ModeSelect{"Chọn Phương Thức Khai Báo"}
     
     %% Khai báo đơn lẻ
-    ModeSelect -->|Tạo 1 Cây| SingleForm[Nhập Mã Cây, Giống, Ngày trồng, Chọn Lô/Hàng]
-    SingleForm --> SinglePhoto[Chụp ảnh thực địa / Chọn ảnh từ thiết bị]
-    SinglePhoto --> SingleSubmit[Bấm Lưu Cây Trồng]
+    ModeSelect -->|"Tạo 1 Cây"| SingleForm["Nhập Mã Cây, Giống, Ngày trồng, Chọn Lô và Hàng"]
+    SingleForm --> SinglePhoto["Chụp ảnh thực địa hoặc Chọn ảnh từ thiết bị"]
+    SinglePhoto --> SingleSubmit["Bấm Lưu Cây Trồng"]
     
     %% Khai báo Ma trận hàng loạt
-    ModeSelect -->|Tạo Hàng Loạt Ma Trận| MatrixConfig[Nhập Tiền tố, Số lượng cây ví dụ: S01-001 -> S01-050]
-    MatrixConfig --> MatrixPlot[Nhập Mã Lô chung ví dụ: A1 & Chọn Tự Tăng Số Hàng]
-    MatrixConfig --> MatrixBulkPhoto[Tùy chọn: Áp dụng 1 ảnh chung cho cả lô cây]
-    MatrixConfig --> MatrixGenerate[Bấm Tạo Bảng Ma Trận]
+    ModeSelect -->|"Tạo Hàng Loạt Ma Trận"| MatrixConfig["Nhập Tiền tố, Số lượng cây (ví dụ: S01-001 đến S01-050)"]
+    MatrixConfig --> MatrixPlot["Nhập Mã Lô chung (ví dụ: A1) và Chọn Tự Tăng Số Hàng"]
+    MatrixConfig --> MatrixBulkPhoto["Tùy chọn: Áp dụng 1 ảnh chung cho cả lô cây"]
+    MatrixConfig --> MatrixGenerate["Bấm Tạo Bảng Ma Trận"]
     
-    MatrixGenerate --> MatrixTable[Hiển thị Bảng Ma Trận Cây Trồng]
-    MatrixTable --> RowEdit[Tùy chỉnh riêng từng cây: Chụp ảnh riêng, đổi số hàng, sửa ngày trồng]
-    RowEdit --> MatrixSubmit[Bấm Xác Nhận Tạo Toàn Bộ Cây]
+    MatrixGenerate --> MatrixTable["Hiển thị Bảng Ma Trận Cây Trồng"]
+    MatrixTable --> RowEdit["Tùy chỉnh riêng từng cây: Chụp ảnh riêng, đổi số hàng, sửa ngày trồng"]
+    RowEdit --> MatrixSubmit["Bấm Xác Nhận Tạo Toàn Bộ Cây"]
     
-    SingleSubmit --> APICall[Gửi dữ liệu lên API Backend]
+    SingleSubmit --> APICall["Gửi dữ liệu lên API Backend"]
     MatrixSubmit --> APICall
     
-    APICall --> CloudUpload{Có đính kèm file ảnh?}
-    CloudUpload -->|Có| SaveMedia[Upload lên Storage Driver -> Ghi vào plant_media]
-    CloudUpload -->|Không| FallbackCrop[Gán ảnh nhận diện chuẩn từ /assets/crop/{variety}.png]
+    APICall --> CloudUpload{"Có đính kèm file ảnh?"}
+    CloudUpload -->|"Có"| SaveMedia["Upload lên Storage Driver và Ghi vào plant_media"]
+    CloudUpload -->|"Không"| FallbackCrop["Gán ảnh nhận diện chuẩn theo giống cây trồng"]
     
-    SaveMedia --> FinishRegistry[Lưu CSDL: Cây có tọa độ, mã QR & hồ sơ số hoàn chỉnh]
+    SaveMedia --> FinishRegistry["Lưu CSDL: Cây có tọa độ, mã QR và hồ sơ số hoàn chỉnh"]
     FallbackCrop --> FinishRegistry
 ```
 
@@ -309,47 +309,47 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[Quét thẻ NFC hoặc Click Cây trên Bản Đồ] --> B[Mở Modal Ghi Nhật Ký Canh Tác]
-    B --> C{Chọn Loại Nghiệp Vụ VietGAP}
+    A["Quét thẻ NFC hoặc Click Cây trên Bản Đồ"] --> B["Mở Modal Ghi Nhật Ký Canh Tác"]
+    B --> C{"Chọn Loại Nghiệp Vụ VietGAP"}
 
     %% 1. Tưới nước
-    C -->|1. Tưới Nước| W1[Nhập thời gian tưới phút / thể tích m3]
-    W1 --> W2[Tính chi phí: Thể tích m3 x Đơn giá nước kho = Chi phí tiền nước]
+    C -->|"1. Tưới Nước"| W1["Nhập thời gian tưới phút / thể tích m3"]
+    W1 --> W2["Tính chi phí: Thể tích m3 x Đơn giá nước kho = Chi phí tiền nước"]
 
     %% 2. Bón phân
-    C -->|2. Bón Phân| F1[Chọn phân bón từ danh mục kho ERP]
-    F1 --> F2[Nhập khối lượng bón kg/gốc]
-    F2 --> F3[Tự động trừ tồn kho farm_supplies & Cộng chi phí vào cây]
+    C -->|"2. Bón Phân"| F1["Chọn phân bón từ danh mục kho ERP"]
+    F1 --> F2["Nhập khối lượng bón kg/gốc"]
+    F2 --> F3["Tự động trừ tồn kho farm_supplies và Cộng chi phí vào cây"]
 
     %% 3. Phun thuốc BVTV
-    C -->|3. Phun Thuốc BVTV| P1[Chọn thuốc BVTV trong danh mục được phép]
-    P1 --> P2[Nhập liều lượng pha, đối tượng phòng trừ]
-    P2 --> P3[Tra cứu số ngày cách ly PHI từ kho vật tư]
-    P3 --> P4[Tự tính: Ngày hết cách ly = Ngày phun + PHI days]
-    P4 --> P5[Khóa trạng thái an toàn cây sang 'ĐANG CÁCH LY THUỐC']
+    C -->|"3. Phun Thuốc BVTV"| P1["Chọn thuốc BVTV trong danh mục được phép"]
+    P1 --> P2["Nhập liều lượng pha, đối tượng phòng trừ"]
+    P2 --> P3["Tra cứu số ngày cách ly PHI từ kho vật tư"]
+    P3 --> P4["Tự tính: Ngày hết cách ly = Ngày phun + PHI days"]
+    P4 --> P5["Khóa trạng thái an toàn cây sang: ĐANG CÁCH LY THUỐC"]
 
     %% 4. Cắt tỉa
-    C -->|4. Cắt Tỉa Cành/Hoa| T1[Chọn phương thức tỉa & Ghi chú kỹ thuật]
+    C -->|"4. Cắt Tỉa Cành/Hoa"| T1["Chọn phương thức tỉa và Ghi chú kỹ thuật"]
 
     %% 5. Bệnh cây
-    C -->|5. Bệnh Cây / Sâu Hại| D1[Chọn triệu chứng & Mức độ bệnh hại]
-    D1 --> D2[Chụp ảnh/video thực địa đóng dấu Watermark GPS]
-    D2 --> D3[Lưu vào danh mục Ảnh Bệnh Cây riêng biệt]
+    C -->|"5. Bệnh Cây / Sâu Hại"| D1["Chọn triệu chứng và Mức độ bệnh hại"]
+    D1 --> D2["Chụp ảnh/video thực địa đóng dấu Watermark GPS"]
+    D2 --> D3["Lưu vào danh mục Ảnh Bệnh Cây riêng biệt"]
 
     %% 6. Thu hoạch
-    C -->|6. Thu Hoạch| H1{Kiểm tra trạng thái cách ly PHI}
-    H1 -->|Còn trong thời gian PHI| H2[CHẶN THU HOẠCH: Vi phạm an toàn thực phẩm VietGAP]
-    H1 -->|Đã hết thời gian PHI| H3[Nhập sản lượng kg & Phân loại quả Loại 1/2/3]
-    H3 --> H4[Tự sinh Mã Lô Nông Sản: PUC-YYYYMMDD-TreeCode]
+    C -->|"6. Thu Hoạch"| H1{"Kiểm tra trạng thái cách ly PHI"}
+    H1 -->|"Còn trong thời gian PHI"| H2["CHẶN THU HOẠCH: Vi phạm an toàn thực phẩm VietGAP"]
+    H1 -->|"Đã hết thời gian PHI"| H3["Nhập sản lượng kg và Phân loại quả Loại 1/2/3"]
+    H3 --> H4["Tự sinh Mã Lô Nông Sản: PUC-YYYYMMDD-TreeCode"]
 
-    W2 --> SaveLog[Gửi POST /api/plants/:id/logs]
+    W2 --> SaveLog["Gửi POST /api/plants/:id/logs"]
     F3 --> SaveLog
     P5 --> SaveLog
     T1 --> SaveLog
     D3 --> SaveLog
     H4 --> SaveLog
 
-    SaveLog --> DBCommit[Lưu vào PostgreSQL & Đồng bộ sang IndexedDB Local]
+    SaveLog --> DBCommit["Lưu vào PostgreSQL và Đồng bộ sang IndexedDB Local"]
 ```
 
 ---
@@ -444,16 +444,16 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Consumer([Người Tiêu Dùng / Đối Tác Thu Mua]) --> Scan[Quét mã QR trên tem trái cây]
-    Scan --> Request[Gửi yêu cầu GET /plant/:slug]
-    Request --> CleanData[Backend lọc bỏ bí mật kinh doanh & giá vốn]
-    CleanData --> Response[Hiển thị Trang Hồ Sơ Nông Sản Minh Bạch]
+    Consumer(["Người Tiêu Dùng / Đối Tác Thu Mua"]) --> Scan["Quét mã QR trên tem trái cây"]
+    Scan --> Request["Gửi yêu cầu GET /plant/:slug"]
+    Request --> CleanData["Backend lọc bỏ bí mật kinh doanh & giá vốn"]
+    CleanData --> Response["Hiển thị Trang Hồ Sơ Nông Sản Minh Bạch"]
     
-    Response --> Card1[1. Định danh giống, Tuổi cây, Trang trại, Mã PUC]
-    Response --> Card2[2. Lịch sử canh tác minh bạch VietGAP]
-    Response --> Card3[3. Chứng thực An Toàn Cách Ly Thuốc BVTV PHI]
-    Response --> Card4[4. Vị trí bản đồ vệ tinh xuất xứ địa lý]
-    Response --> Card5[5. Mã lô thu hoạch & Giấy chứng nhận chất lượng]
+    Response --> Card1["1. Định danh giống, Tuổi cây, Trang trại, Mã PUC"]
+    Response --> Card2["2. Lịch sử canh tác minh bạch VietGAP"]
+    Response --> Card3["3. Chứng thực An Toàn Cách Ly Thuốc BVTV PHI"]
+    Response --> Card4["4. Vị trí bản đồ vệ tinh xuất xứ địa lý"]
+    Response --> Card5["5. Mã lô thu hoạch & Giấy chứng nhận chất lượng"]
 ```
 
 ---
@@ -577,17 +577,15 @@ SỔ NÔNG TÂN BẢO AGTECH (ENTERPRISE SUITE)
 
 ```mermaid
 erDiagram
-    users ||--o{ farms : "owns / manages"
-    users ||--o{ user_activities : "performs"
-    farms ||--o{ farm_plots : "contains"
-    farms ||--o{ farm_supplies : "manages stock"
-    farms ||--o{ plants : "cultivates"
-    
-    plant_schemas ||--o{ plants : "defines attributes"
-    
-    plants ||--o{ plant_logs : "records history"
-    plants ||--o{ plant_media : "stores growth & disease photos"
-    plants ||--o{ plant_tags : "identifies via NFC"
+    users ||--o{ farms : owns
+    users ||--o{ user_activities : performs
+    farms ||--o{ farm_plots : contains
+    farms ||--o{ farm_supplies : manages
+    farms ||--o{ plants : cultivates
+    plant_schemas ||--o{ plants : schemas
+    plants ||--o{ plant_logs : logs
+    plants ||--o{ plant_media : media
+    plants ||--o{ plant_tags : tags
     
     users {
         int id PK
@@ -595,8 +593,8 @@ erDiagram
         string password_hash
         string full_name
         string phone
-        string role "admin | user"
-        string tier "normal | pro"
+        string role
+        string tier
         int farm_id FK
         timestamp created_at
     }
@@ -605,9 +603,9 @@ erDiagram
         int id PK
         string name
         string description
-        jsonb polygon_coords "GeoJSON Polygon"
-        float area "Hectares"
-        string puc_code "VietGAP Planting Area Code"
+        jsonb polygon_coords
+        float area
+        string puc_code
         int user_id FK
         timestamp created_at
     }
@@ -615,7 +613,7 @@ erDiagram
     farm_plots {
         int id PK
         int farm_id FK
-        string plot_code "A1, B2..."
+        string plot_code
         string plot_name
         int total_rows
         timestamp created_at
@@ -625,19 +623,19 @@ erDiagram
         int id PK
         int farm_id FK
         int schema_id FK
-        string tree_code UK "S01-001-0001"
-        string public_slug UK "slug for QR"
-        string plant_type "Sầu riêng, Cà phê..."
-        string plant_variety "Ri6, Dona..."
+        string tree_code UK
+        string public_slug UK
+        string plant_type
+        string plant_variety
         string plot_code
         int row_number
         date planting_date
         string plant_age
-        string health_status "Khỏe mạnh, Cần chú ý, Bệnh"
+        string health_status
         float latitude
         float longitude
-        string cover_image "Newest growth photo URL"
-        jsonb data "Dynamic agronomic attributes"
+        string cover_image
+        jsonb data
         boolean is_public
         timestamp created_at
     }
@@ -646,10 +644,10 @@ erDiagram
         int id PK
         int plant_id FK
         date log_date
-        string log_type "Tưới/Bón/Phun/Cắt/Bệnh/Thu hoạch"
+        string log_type
         string note
-        jsonb details "quantities, costs, phi days"
-        jsonb media_urls "watermarked photos"
+        jsonb details
+        jsonb media_urls
         float cost_amount
         string operator_name
         boolean is_phi_violation
@@ -662,9 +660,9 @@ erDiagram
         int id PK
         int plant_id FK
         string object_name
-        string url "CDN URL"
-        string media_type "image | video"
-        string caption "Growth stage or Disease note"
+        string url
+        string media_type
+        string caption
         boolean delete_pending
         timestamp uploaded_at
     }
@@ -672,20 +670,20 @@ erDiagram
     plant_tags {
         int id PK
         int plant_id FK
-        string nfc_uid UK "RFID Hardware UID"
-        string tag_type "NTAG213 / NTAG215"
+        string nfc_uid UK
+        string tag_type
         timestamp assigned_at
     }
 
     farm_supplies {
         int id PK
         int farm_id FK
-        string name "NPK 16-16-8, Anvil..."
-        string category "Phân bón, Thuốc BVTV, Nước..."
-        string unit "kg, lít, chai, m3"
+        string name
+        string category
+        string unit
         float unit_price
         float stock_balance
-        int phi_days "Pre-harvest interval days"
+        int phi_days
         timestamp updated_at
     }
 ```
