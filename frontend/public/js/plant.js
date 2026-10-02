@@ -2981,9 +2981,6 @@ async function renderPlant(plant, isEditable) {
         <button type="button" class="erp-nav-btn" onclick="window.print()" title="In hồ sơ cây trồng">
           <i data-lucide="printer" class="lucide-xs"></i> <span>In hồ sơ</span>
         </button>
-        <button type="button" class="erp-nav-btn primary" onclick="openExportModal()" title="Xuất dữ liệu nhật ký canh tác">
-          <i data-lucide="file-spreadsheet" class="lucide-xs"></i> <span>Xuất nhật ký</span>
-        </button>
         <button type="button" class="erp-nav-btn" onclick="sharePage()" title="Chia sẻ liên kết">
           <i data-lucide="share-2" class="lucide-xs"></i> <span>Chia sẻ</span>
         </button>
@@ -2995,9 +2992,6 @@ async function renderPlant(plant, isEditable) {
       actionSlot.innerHTML = `
         <button type="button" class="erp-nav-btn" onclick="window.print()" title="In hồ sơ cây trồng">
           <i data-lucide="printer" class="lucide-xs"></i> <span>In hồ sơ</span>
-        </button>
-        <button type="button" class="erp-nav-btn primary" onclick="openExportModal()" title="Xuất dữ liệu nhật ký canh tác">
-          <i data-lucide="file-spreadsheet" class="lucide-xs"></i> <span>Xuất nhật ký</span>
         </button>
         <button type="button" class="erp-nav-btn" onclick="sharePage()" title="Chia sẻ liên kết">
           <i data-lucide="share-2" class="lucide-xs"></i> <span>Chia sẻ</span>
@@ -3253,11 +3247,8 @@ async function renderPlant(plant, isEditable) {
               <span>Chuẩn Quốc Gia &amp; Xuất Khẩu</span>
             </div>
             <div class="passport-btn-group">
-              <button type="button" onclick="openCertificateModal('vietgap')" class="passport-action-btn sec" title="Xem chứng thư VietGAP">
-                <i data-lucide="file-check" class="lucide-xs"></i> <span>Chứng thư</span>
-              </button>
-              <button type="button" onclick="openExportModal()" class="passport-action-btn pri" title="Xuất dữ liệu hồ sơ">
-                <i data-lucide="download" class="lucide-xs"></i> <span>Xuất hồ sơ</span>
+              <button type="button" onclick="openCertificateModal('vietgap')" class="passport-action-btn pri" title="Xem chứng thư điện tử VietGAP">
+                <i data-lucide="file-check" class="lucide-xs"></i> <span>Xem Chứng Thư VietGAP</span>
               </button>
             </div>
           </div>
@@ -3645,7 +3636,7 @@ async function renderPlant(plant, isEditable) {
       <div class="erp-footer-container">
         <!-- 2 Main Quick Navigation Cards -->
         <div class="footer-nav-grid">
-          <!-- 🟢 Card 1: VỀ ỨNG DỤNG CHÍNH -->
+          <!-- Card 1: VỀ ỨNG DỤNG CHÍNH -->
           <a href="/" class="footer-nav-card app-card" title="Về Trang chủ Quản trị & Sổ Nông Tân Bảo AgTech">
             <div class="nav-card-icon-box green">
               <i data-lucide="layout-dashboard" class="lucide-md"></i>
@@ -3655,15 +3646,15 @@ async function renderPlant(plant, isEditable) {
                 <span class="badge-dot green"></span>
                 <span>HỆ THỐNG QUẢN TRỊ</span>
               </div>
-              <div class="nav-card-title">🟢 VỀ ỨNG DỤNG CHÍNH</div>
-              <div class="nav-card-desc">Trang chủ Quản trị &amp; Sổ nông [Đường dẫn: domain/ -> /]</div>
+              <div class="nav-card-title">VỀ ỨNG DỤNG CHÍNH</div>
+              <div class="nav-card-desc">Truy cập hệ thống quản trị và sổ nông số hóa</div>
               <div class="nav-card-link-text">
                 <span>Truy cập hệ thống</span> <i data-lucide="arrow-right" class="lucide-xs"></i>
               </div>
             </div>
           </a>
 
-          <!-- 🔵 Card 2: WEBSITE DOANH NGHIỆP -->
+          <!-- Card 2: WEBSITE DOANH NGHIỆP -->
           <a href="https://tanbaocorp-agritech.vn" target="_blank" rel="noopener noreferrer" class="footer-nav-card web-card" title="Truy cập Website Doanh nghiệp Tân Bảo">
             <div class="nav-card-icon-box blue">
               <i data-lucide="globe" class="lucide-md"></i>
@@ -3673,8 +3664,8 @@ async function renderPlant(plant, isEditable) {
                 <span class="badge-dot blue"></span>
                 <span>CỔNG THÔNG TIN DOANH NGHIỆP</span>
               </div>
-              <div class="nav-card-title">🔵 WEBSITE DOANH NGHIỆP</div>
-              <div class="nav-card-desc">tanbaocorp-agritech.vn [Đường dẫn: Web công ty]</div>
+              <div class="nav-card-title">WEBSITE DOANH NGHIỆP</div>
+              <div class="nav-card-desc">Truy cập cổng thông tin doanh nghiệp TBSG Agtech</div>
               <div class="nav-card-link-text">
                 <span>Xem website công ty</span> <i data-lucide="external-link" class="lucide-xs"></i>
               </div>
@@ -3688,8 +3679,8 @@ async function renderPlant(plant, isEditable) {
             <div class="footer-logo-row">
               <img src="/assets/logo.png" alt="TANBAO AgTech" class="footer-logo-img">
               <div>
-                <div class="footer-company-name">CÔNG TY CỔ PHẦN TÂN BẢO SÀI GÒN — TÂN BẢO AGTECH</div>
-                <div class="footer-company-sub">Hệ thống Quản lý Vùng Trồng &amp; Sổ Nông Số Hóa Chuẩn VietGAP / GlobalGAP</div>
+                <div class="footer-company-name">CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN - TBSG AGTECH</div>
+                <div class="footer-company-sub">SỔ NÔNG NHÀN - TBSG AGTECH</div>
               </div>
             </div>
           </div>
@@ -3701,7 +3692,7 @@ async function renderPlant(plant, isEditable) {
             </div>
             <div class="footer-trust-item">
               <i data-lucide="cpu" class="lucide-xs" style="color:#0284c7;"></i>
-              <span>Định danh NTAG213 NFC Cryptography</span>
+              <span>Thẻ định danh Cây trồng</span>
             </div>
             <div class="footer-trust-item">
               <i data-lucide="clock" class="lucide-xs" style="color:#64748b;"></i>
