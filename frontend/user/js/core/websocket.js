@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    websocket.js — Real-time WebSockets synchronization
@@ -184,12 +184,12 @@ function handleUserRealtimeEvent(msg) {
 
       // 2. Hiển thị thông báo Toast tinh tế
       if (typeof window.toast === 'function' && event === 'plants_updated' && data?.action) {
-        let actionMsg = 'Dữ liệu cây trồng vừa được đồng bộ tự động';
-        if (data.action === 'reorder_gps') actionMsg = '✨ Đã tự động đồng bộ mã số cây mới theo GPS';
-        else if (data.action === 'create') actionMsg = '🌱 Đã nhận thêm cây trồng mới vào hệ thống';
-        else if (data.action === 'soft_delete') actionMsg = '🗑️ Một cây trồng vừa được đưa vào thùng rác';
-        else if (data.action === 'restore') actionMsg = '♻️ Một cây trồng vừa được khôi phục';
-        window.toast(`⚡ [Live Sync] ${actionMsg}`, 'info');
+        let actionMsg = 'Dữ liệu cây trồng vừa được đồng bộ tự động.';
+        if (data.action === 'reorder_gps') actionMsg = 'Đã cập nhật số hiệu cây mới theo tọa độ GPS.';
+        else if (data.action === 'create') actionMsg = 'Đã tiếp nhận thêm cây trồng mới vào vườn.';
+        else if (data.action === 'soft_delete') actionMsg = 'Đã chuyển cây trồng vào mục lưu trữ tạm.';
+        else if (data.action === 'restore') actionMsg = 'Đã khôi phục cây trồng thành công.';
+        window.toast(actionMsg, 'info');
       }
     }, 300);
   }

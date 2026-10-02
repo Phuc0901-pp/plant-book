@@ -5,18 +5,57 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /**
- * Hiển thị thông báo toast tạm thời.
+ * Hiển thị thông báo toast tạm thời chuẩn Apple/ERP với Lucide icon.
  * @param {string} msg   — nội dung thông báo
- * @param {'success'|'error'|'info'} type
+ * @param {'success'|'error'|'info'|'warning'} type
  */
 export function toast(msg, type = 'success') {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:999999; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;';
+    document.body.appendChild(container);
+  }
+
+  const iconMap = {
+    success: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+    error: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>',
+    warning: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+    info: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
+  };
+
+  const bgStyles = {
+    success: 'background:#0f172a; border:1px solid #334155; color:#ffffff;',
+    error: 'background:#450a0a; border:1px solid #b91c1c; color:#fee2e2;',
+    warning: 'background:#451a03; border:1px solid #d97706; color:#fef3c7;',
+    info: 'background:#0f172a; border:1px solid #0284c7; color:#ffffff;'
+  };
+
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.textContent = msg;
+  el.style.cssText = `display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:30px; font-size:13px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.22); transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity:0; transform:translateY(10px); pointer-events:auto; ${bgStyles[type] || bgStyles.info}`;
+  
+  el.innerHTML = `${iconMap[type] || iconMap.info} <span>${msg}</span>`;
   container.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+
+  // Trigger smooth entrance
+  requestAnimationFrame(() => {
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  });
+
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-8px)';
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
+
+export const showToast = toast;
+if (typeof window !== 'undefined') {
+  window.toast = toast;
+  window.showToast = toast;
 }
 
 /**

@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — websocket.js
    Real-time events synchronization via WebSockets
@@ -166,7 +166,9 @@ function handleRealtimeEvent(msg) {
     const activeSection = document.querySelector('.page-section.active');
     if (activeSection && activeSection.id === 'page-dashboard') {
       loadDashboard();
-      toast(`🔔 Hoạt động mới: Nông hộ ${data.creator_name} vừa ghi nhật ký [${data.log.log_type}] cho cây ${data.plant_type || ''}`, 'info');
+      if (typeof toast === 'function') {
+        toast(`Nhật ký canh tác mới: Nông hộ ${data.creator_name} vừa ghi nhận [${data.log.log_type}] cho cây ${data.plant_type || ''}`, 'info');
+      }
     }
 
     // 2. If viewing a plant modal and the tab is "tab-logs", reload it
@@ -202,7 +204,9 @@ function handleRealtimeEvent(msg) {
   }
 
   if (event === 'new_registration_pending') {
-    toast(`🔔 YÊU CẦU MỚI: Nông hộ ${data.name || data.phone} vừa gửi yêu cầu đăng ký tài khoản!`, 'warning');
+    if (typeof toast === 'function') {
+      toast(`Yêu cầu mở tài khoản: Nông hộ ${data.name || data.phone} vừa gửi thông tin đăng ký!`, 'warning');
+    }
     if (typeof loadPendingFarmerUsers === 'function') {
       loadPendingFarmerUsers();
     }
@@ -213,7 +217,9 @@ function handleRealtimeEvent(msg) {
     document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {
       el.textContent = vTag;
     });
-    toast(`🚀 Hệ thống vừa cập nhật phiên bản mới: ${vTag}!`, 'info');
+    if (typeof toast === 'function') {
+      toast(`Hệ thống cập nhật phiên bản mới: ${vTag}`, 'info');
+    }
     if (typeof loadVersionManagerData === 'function') {
       loadVersionManagerData();
     }

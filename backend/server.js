@@ -238,17 +238,21 @@ async function start() {
 
     // 2. Start listening on PORT immediately (Health Check responds in < 1s)
     server.listen(PORT, async () => {
-      console.log(`\n🌿 Plant Book Server running at port ${PORT}`);
-      console.log(`📋 Admin panel: /admin`);
-      console.log(`🔑 Login: ${process.env.ADMIN_EMAIL} / ${process.env.ADMIN_PASSWORD}\n`);
+      console.log('\n╔══════════════════════════════════════════════════════════════════╗');
+      console.log('║        🌿 TÂN BẢO SÀI GÒN AGTECH - PLANT BOOK PLATFORM           ║');
+      console.log('║             Hệ Thống Quản Trị & Định Danh Số Cây Trồng           ║');
+      console.log('╚══════════════════════════════════════════════════════════════════╝');
+      console.log(`🚀 [Server Engine] Sẵn sàng tại cổng : http://localhost:${PORT}`);
+      console.log(`📋 [Admin Portal]  Bảng điều khiển   : /admin`);
+      console.log(`📱 [Smart Gateway] Cổng nạp thẻ NFC : /sub\n`);
 
       // 3. Initialize DB & Storage in background (Non-blocking for Render Health Check)
       try {
         await initDB();
         await ensureBucket();
-        console.log('✅ Database & Supabase Storage Initialized Successfully');
+        console.log('[Database & Storage] ✅ Khởi tạo PostgreSQL DB Pool & Supabase Storage Thành Công');
       } catch (dbErr) {
-        console.error('⚠️ Database/Storage Init Warning:', dbErr.message);
+        console.error('[Database Warning] ⚠️ Lỗi khởi tạo DB/Storage:', dbErr.message);
       }
 
       // Setup interval to mark users offline after 30 minutes of inactivity
@@ -264,7 +268,7 @@ async function start() {
               RETURNING id, email
             `);
             if (res.rows.length > 0) {
-              console.log(`🧹 Marked ${res.rows.length} inactive users as offline:`, res.rows.map(r => r.email));
+              console.log(`[Session Manager] 🧹 Đã thu hồi phiên ${res.rows.length} tài khoản không hoạt động:`, res.rows.map(r => r.email).join(', '));
               for (const u of res.rows) {
                 await pool.query(`
                   INSERT INTO user_activities (user_id, activity_type, description)
@@ -278,11 +282,11 @@ async function start() {
               }
             }
           } catch (err) {
-            console.error('Error cleaning up inactive users:', err.message);
+            console.error('[Session Error] ⚠️ Lỗi dọn dẹp tài khoản không hoạt động:', err.message);
           }
         }, 30 * 60 * 1000); // 30 minutes
       } catch (poolErr) {
-        console.error('Inactive cleanup timer init warning:', poolErr.message);
+        console.error('[Session Timer Warning] ⚠️ Lỗi khởi tạo bộ hẹn giờ:', poolErr.message);
       }
 
       // Auto Keep-Alive Self-Ping (Ngăn Render Free-tier tự động ngủ)
@@ -292,9 +296,9 @@ async function start() {
         const httpModule = pingUrl.startsWith('https') ? require('https') : require('http');
         setInterval(() => {
           httpModule.get(pingUrl, (res) => {
-            console.log(`⏰ [Keep-Alive] Pinged ${pingUrl} - Status: ${res.statusCode}`);
+            console.log(`[Keep-Alive Engine] ⏰ Ping duy trì dịch vụ: ${pingUrl} (Mã phản hồi: ${res.statusCode})`);
           }).on('error', (e) => {
-            console.warn(`⚠️ [Keep-Alive Warning] ${e.message}`);
+            console.warn(`[Keep-Alive Warning] ⚠️ Không thể ping dịch vụ: ${e.message}`);
           });
         }, 10 * 60 * 1000); // Mỗi 10 phút
       }

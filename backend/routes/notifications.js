@@ -31,9 +31,9 @@ router.get('/', auth, async (req, res) => {
       await pool.query(`
         INSERT INTO user_notifications (user_id, title, message, type, is_read, is_archived)
         VALUES 
-          ($1, '🚨 Cảnh báo Độ ẩm Đất Tầng 20cm', 'Độ ẩm đất tại vườn giảm xuống 42% (Dưới ngưỡng 50%). Khuyến nghị bật hệ thống tưới rễ buổi sáng!', 'danger', false, false),
-          ($1, '🌦️ Cảnh báo Khí tượng Nông nghiệp', 'Chiều nay có khả năng mưa rào rải rác 65%. Hạn chế phun thuốc sâu tránh bị rửa trôi.', 'warning', false, false),
-          ($1, '🌱 Lịch trình Chăm sóc Cây trồng', 'Đã đến chu kỳ bón bổ sung phân hữu cơ vi sinh cho cây trồng trong tuần này.', 'info', true, false)
+          ($1, 'Cảnh Báo Độ Ẩm Đất Tầng 20cm Dưới Ngưỡng An Toàn', 'Cảm biến IoT ghi nhận độ ẩm đất tầng 20cm giảm còn 42% (dưới ngưỡng 50%). Khuyến nghị kích hoạt tưới nhỏ giọt bổ sung nước cho bộ rễ.', 'danger', false, false),
+          ($1, 'Dự Báo Khí Tượng & Khuyến Cáo Phun Thuốc Phòng Bệnh', 'Khả năng mưa rào rải rác 65% kèm độ ẩm không khí tăng cao (>80%). Khuyến nghị tạm hoãn phun thuốc phòng trừ sâu bệnh để tránh thất thoát do rửa trôi.', 'warning', false, false),
+          ($1, 'Lịch Trình Chăm Sóc & Bổ Sung Dinh Dưỡng Định Kỳ', 'Đến chu kỳ bón phân hữu cơ vi sinh và kiểm tra sức khỏe tán cây theo quy trình kỹ thuật VietGAP.', 'info', true, false)
       `, [userId]);
     }
 
@@ -120,9 +120,9 @@ router.get('/rules', auth, async (req, res) => {
           INSERT INTO user_alert_rules 
             (user_id, title, category_type, metric_key, metric_name, operator, threshold_value, unit, action_type, action_recommendation, alert_level, check_offline_iot, check_disease_history, reconfirm_event_type, is_enabled)
           VALUES
-            ($1, '🚨 Cảnh báo Độ ẩm Đất Tầng 10cm & Kiểm tra IoT', 'danger', 'soil_moisture_10cm', 'Độ ẩm đất tầng 10cm', '<', 50, '%', 'Tưới nước', 'Độ ẩm đất tầng 10cm xuống dưới 50%. Tự động quét kiểm tra các thiết bị cảm biến IoT không có dữ liệu (null/0). Khuyến nghị tưới bổ sung đến khi độ ẩm >= 50%!', 'danger', true, false, NULL, true),
-            ($1, '📢 Khuyến cáo Chăm sóc Cây từng ghi nhận Sâu bệnh', 'warning', 'air_humidity', 'Độ ẩm không khí', '>=', 80, '%', 'Phun thuốc', 'Độ ẩm không khí cao (>= 80%) kết hợp kiểm tra lịch sử canh tác các cây từng bị bệnh. Khuyến nghị phun phòng ngừa và chăm sóc đặc biệt!', 'warning', false, true, NULL, true),
-            ($1, 'ℹ️ Thông báo Xác nhận Cập nhật Canh tác', 'info', 'system_event', 'Sự kiện Hệ thống', '=', 1, '', 'Hệ thống', 'Xác nhận toàn bộ hoạt động cập nhật thông tin nhật ký canh tác (Tưới nước, Bón phân, Thu hoạch) được lưu thành công!', 'info', false, false, 'log_update', true)
+            ($1, 'Cảnh Báo Độ Ẩm Đất Tầng 10cm & Trạng Thái IoT', 'danger', 'soil_moisture_10cm', 'Độ ẩm đất tầng 10cm', '<', 50, '%', 'Tưới nước', 'Độ ẩm đất tầng 10cm xuống dưới 50%. Tự động quét kiểm tra các thiết bị cảm biến IoT không có dữ liệu (null/0). Khuyến nghị tưới bổ sung đến khi độ ẩm >= 50%!', 'danger', true, false, NULL, true),
+            ($1, 'Khuyến Cáo Chăm Sóc Cây Từng Ghi Nhận Sâu Bệnh', 'warning', 'air_humidity', 'Độ ẩm không khí', '>=', 80, '%', 'Phun thuốc', 'Độ ẩm không khí cao (>= 80%) kết hợp kiểm tra lịch sử canh tác các cây từng bị bệnh. Khuyến nghị phun phòng ngừa và chăm sóc đặc biệt!', 'warning', false, true, NULL, true),
+            ($1, 'Xác Nhận Cập Nhật Dữ Liệu Canh Tác Thực Địa', 'info', 'system_event', 'Sự kiện Hệ thống', '=', 1, '', 'Hệ thống', 'Xác nhận toàn bộ hoạt động cập nhật nhật ký canh tác (Tưới nước, Bón phân, Thu hoạch) được đồng bộ an toàn!', 'info', false, false, 'log_update', true)
         `, [userId]);
       }
       // Mark this user as initialized so we NEVER auto-seed again
