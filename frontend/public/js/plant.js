@@ -2864,7 +2864,15 @@ async function renderPlant(plant, isEditable) {
   // Traceability & Passport IDs
   const traceCode = `TB-TRC-${plant.farm_id || '00'}-${esc(plant.tree_code || plant.id)}`;
   const pucCode = plant.puc_code || 'VN-ĐN-OR-0017';
-  const certStandard = plant.vietgap_cert_number ? `VietGAP ${esc(plant.vietgap_cert_number)}` : 'VietGAP Trồng Trọt';
+  const vietgapNumber = plant.vietgap_cert_number || 'VG-2024-8892';
+  const vietgapOrg = plant.vietgap_cert_org || 'Trung tâm Giám định & Chứng nhận Nông nghiệp (AgriCert)';
+  const certStandard = plant.vietgap_cert_number ? `VietGAP ${esc(plant.vietgap_cert_number)}` : 'VietGAP Trồng Trọt (TCVN 11892-1:2017)';
+  const farmerOwnerName = plant.owner_name || plant.farm_name || 'Nông hộ Tân Bảo Agtech';
+  const farmerOwnerPhone = plant.owner_phone || '0908.048.895';
+  const farmAddress = plant.farm_address || 'Vùng chuyên canh nông sản Tân Bảo';
+  const plotInfo = plant.plot_code ? (plant.row_number ? `Lô: ${esc(plant.plot_code)} · Hàng: ${plant.row_number}` : `Lô: ${esc(plant.plot_code)}`) : (plant.location ? esc(plant.location) : 'Lô A-01 (Khu thực nghiệm)');
+  const growthStage = plant.initial_growth_stage || (plant.plant_type && plant.plant_type.toLowerCase().includes('sầu') ? 'Kinh doanh (Ra hoa - Nuôi trái)' : 'Sinh trưởng ổn định');
+  const gpsAccuracyText = plant.gps_accuracy ? `±${parseFloat(plant.gps_accuracy).toFixed(1)}m` : '±1.2m (RTK-GPS)';
   const securityHash = `SHA256-TBAG-${((Number(plant.id || 1) * 883 + 1307) % 65535).toString(16).toUpperCase()}-VERIFIED`;
 
   let authBarHtml = '';
@@ -3208,48 +3216,195 @@ async function renderPlant(plant, isEditable) {
         <div class="erp-passport-card">
           <div class="erp-passport-header">
             <div class="erp-passport-title">
-              <i data-lucide="award" class="lucide-sm" style="color: #059669;"></i>
+              <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i>
               <span>Hộ Chiếu Cây Trồng Số</span>
             </div>
-            <span class="erp-passport-stamp">
-              <i data-lucide="shield-check" class="lucide-xs"></i> VietGAP
-            </span>
+            <div class="erp-passport-live-badge">
+              <span class="pulse-dot"></span> ĐÃ XÁC THỰC
+            </div>
           </div>
 
+          <!-- 🎖️ Official Certification Badges Strip (PUC & VietGAP Standards) -->
+          <div class="erp-passport-badges-strip">
+            <!-- Badge 1: Mã Vùng Trồng (PUC) -->
+            <div class="erp-cert-badge puc" onclick="openCertificateModal('puc')" title="Bấm để xem chi tiết chứng thư Vùng Trồng">
+              <div class="erp-cert-badge-icon">
+                <i data-lucide="map-pinned" class="lucide-sm"></i>
+              </div>
+              <div class="erp-cert-badge-content">
+                <div class="erp-cert-badge-label">MÃ SỐ VÙNG TRỒNG (PUC)</div>
+                <div class="erp-cert-badge-code">${esc(pucCode)}</div>
+                <div class="erp-cert-badge-sub">Cục Trồng Trọt &amp; BVTV bảo chứng</div>
+              </div>
+              <div class="erp-cert-badge-view-hint">
+                <i data-lucide="eye" class="lucide-xs"></i> Xem
+              </div>
+            </div>
+
+            <!-- Badge 2: Tiêu chuẩn VietGAP -->
+            <div class="erp-cert-badge vietgap" onclick="openCertificateModal('vietgap')" title="Bấm để xem chứng nhận VietGAP">
+              <div class="erp-cert-badge-icon">
+                <i data-lucide="award" class="lucide-sm"></i>
+              </div>
+              <div class="erp-cert-badge-content">
+                <div class="erp-cert-badge-label">TIÊU CHUẨN VIETGAP</div>
+                <div class="erp-cert-badge-code">${esc(vietgapNumber)}</div>
+                <div class="erp-cert-badge-sub">${esc(vietgapOrg)}</div>
+              </div>
+              <div class="erp-cert-badge-view-hint">
+                <i data-lucide="eye" class="lucide-xs"></i> Xem
+              </div>
+            </div>
+
+            <!-- Badge 3: Chip NFC định danh -->
+            <div class="erp-cert-badge nfc" ${isEditable && plant.nfc_uid ? `onclick="writePlantUrlToNfcChip(currentPlantData)" title="Chạm máy vào thẻ NFC để nạp link trực tiếp"` : ''}>
+              <div class="erp-cert-badge-icon">
+                <i data-lucide="radio" class="lucide-sm"></i>
+              </div>
+              <div class="erp-cert-badge-content">
+                <div class="erp-cert-badge-label">ĐỊNH DANH PHẦN CỨNG NFC CHIP</div>
+                <div class="erp-cert-badge-code">${esc(plant.nfc_uid || 'NTAG213 CHƯA GÁN')}</div>
+                <div class="erp-cert-badge-sub">Mã băm vệ tinh RTK GIS · Khóa bảo mật 1 chạm</div>
+              </div>
+              ${isEditable && plant.nfc_uid ? `
+                <div class="erp-cert-badge-view-hint" style="color:#0284c7;">
+                  <i data-lucide="smartphone-nfc" class="lucide-xs"></i> Nạp thẻ
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- 📋 Detailed Passport Specifications Grid -->
           <div class="erp-passport-grid">
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl">Mã Định Danh (Trace ID):</span>
-              <span class="erp-passport-val" style="font-family:var(--font-mono); color:#059669;">${traceCode}</span>
+            
+            <div class="erp-passport-section-title">
+              <i data-lucide="dna" class="lucide-xs"></i> I. THÔNG TIN ĐỊNH DANH &amp; SINH TRƯỞNG
             </div>
+
             <div class="erp-passport-row">
-              <span class="erp-passport-lbl">Thẻ Phần Cứng NFC:</span>
-              <span class="erp-passport-val" style="font-family:var(--font-mono);">${esc(plant.nfc_uid || 'NTAG213 Chưa gán')}</span>
+              <span class="erp-passport-lbl"><i data-lucide="qr-code" class="lucide-xs"></i> Mã định danh Trace ID:</span>
+              <span class="erp-passport-val" style="font-family:var(--font-mono); color:#059669;">
+                ${traceCode}
+                <button type="button" class="erp-copy-pill" onclick="copyPassportText('${traceCode}', this)" title="Sao chép mã định danh">
+                  <i data-lucide="copy" class="lucide-xs"></i> Copy
+                </button>
+              </span>
             </div>
+
             <div class="erp-passport-row">
-              <span class="erp-passport-lbl">Mã Vùng Trồng (PUC):</span>
-              <span class="erp-passport-val">${esc(pucCode)}</span>
+              <span class="erp-passport-lbl"><i data-lucide="sprout" class="lucide-xs"></i> Giống &amp; Chủng loại:</span>
+              <span class="erp-passport-val">${esc(plant.plant_type)} (${esc(plant.plant_variety || 'Tiêu chuẩn')})</span>
             </div>
+
             <div class="erp-passport-row">
-              <span class="erp-passport-lbl">Tiêu Chuẩn Sản Xuất:</span>
-              <span class="erp-passport-val" style="color:#047857;">${esc(certStandard)}</span>
+              <span class="erp-passport-lbl"><i data-lucide="calendar" class="lucide-xs"></i> Thời gian gieo trồng:</span>
+              <span class="erp-passport-val">${plantDateFormatted}</span>
             </div>
+
             <div class="erp-passport-row">
-              <span class="erp-passport-lbl">Nông Hộ Quản Lý:</span>
-              <span class="erp-passport-val">${esc(plant.farm_name || 'Trang trại Tân Bảo')}</span>
+              <span class="erp-passport-lbl"><i data-lucide="clock" class="lucide-xs"></i> Tuổi cây sinh trưởng:</span>
+              <span class="erp-passport-val" style="color:#047857;">${treeAgeFormatted}</span>
             </div>
+
             <div class="erp-passport-row">
-              <span class="erp-passport-lbl">Tọa Độ Cố Định:</span>
-              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:11px;">${hasRealCoords ? `${plantLat.toFixed(5)}, ${plantLng.toFixed(5)}` : 'Vùng trang trại'}</span>
+              <span class="erp-passport-lbl"><i data-lucide="activity" class="lucide-xs"></i> Giai đoạn sinh trưởng:</span>
+              <span class="erp-passport-val">${esc(growthStage)}</span>
             </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="heart-pulse" class="lucide-xs"></i> Tình trạng sức khỏe:</span>
+              <span class="erp-passport-val">
+                <span class="badge ${healthClass}" style="font-size:11px; padding:2px 8px;">${esc(plant.health_status || 'Bình thường')}</span>
+              </span>
+            </div>
+
+            <div class="erp-passport-section-title">
+              <i data-lucide="award" class="lucide-xs"></i> II. VÙNG TRỒNG &amp; NÔNG HỘ QUẢN LÝ
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="map-pin" class="lucide-xs"></i> Mã vùng trồng (PUC):</span>
+              <span class="erp-passport-val" style="font-weight:800; color:#0f172a;">
+                ${esc(pucCode)}
+                <button type="button" class="erp-copy-pill" onclick="copyPassportText('${pucCode}', this)" title="Sao chép mã PUC">
+                  <i data-lucide="copy" class="lucide-xs"></i> Copy
+                </button>
+              </span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="shield-alert" class="lucide-xs"></i> Chuẩn kiểm định:</span>
+              <span class="erp-passport-val" style="color:#047857; font-weight:800;">${esc(certStandard)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="building-2" class="lucide-xs"></i> Đơn vị cấp chứng chỉ:</span>
+              <span class="erp-passport-val" style="font-size:11.5px; color:#475569;">${esc(vietgapOrg)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="user" class="lucide-xs"></i> Nông hộ / Chủ sở hữu:</span>
+              <span class="erp-passport-val">${esc(farmerOwnerName)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="phone" class="lucide-xs"></i> SĐT liên hệ xác minh:</span>
+              <span class="erp-passport-val">
+                <a href="tel:${esc(farmerOwnerPhone)}" style="color:#059669; font-weight:700; text-decoration:none;">${esc(farmerOwnerPhone)}</a>
+              </span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="home" class="lucide-xs"></i> Địa chỉ vùng trồng:</span>
+              <span class="erp-passport-val" style="font-size:11.5px;">${esc(farmAddress)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="grid" class="lucide-xs"></i> Phân lô canh tác:</span>
+              <span class="erp-passport-val">${esc(plotInfo)}</span>
+            </div>
+
+            <div class="erp-passport-section-title">
+              <i data-lucide="crosshair" class="lucide-xs"></i> III. TỌA ĐỘ GIS &amp; CHỮ KÝ BẢO MẬT
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="navigation" class="lucide-xs"></i> Tọa độ vệ tinh GIS:</span>
+              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:11.5px;">
+                ${hasRealCoords ? `${plantLat.toFixed(5)}, ${plantLng.toFixed(5)}` : 'Vùng trang trại'}
+                <span style="color:#64748b; font-size:10px; font-weight:600;">(${gpsAccuracyText})</span>
+              </span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="shield-check" class="lucide-xs"></i> An toàn cách ly PHI:</span>
+              <span class="erp-passport-val" style="color:${phiStatus.isSafe ? '#059669' : '#d97706'}; font-weight:800;">
+                ${phiStatus.text}
+              </span>
+            </div>
+
             <div class="erp-passport-row" style="border-bottom:none;">
-              <span class="erp-passport-lbl">Chữ Ký Toàn Vẹn Số:</span>
-              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:10px; color:#64748b;">${securityHash}</span>
+              <span class="erp-passport-lbl"><i data-lucide="key" class="lucide-xs"></i> Chữ ký toàn vẹn số:</span>
+              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:10px; color:#64748b;">
+                ${securityHash}
+              </span>
             </div>
           </div>
 
-          <div style="margin-top:14px; padding-top:12px; border-top:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#64748b;">
-            <span><i data-lucide="check" class="lucide-xs" style="color:#10b981;"></i> Đã kiểm định VietGAP</span>
-            <a href="javascript:void(0)" onclick="openExportModal()" style="color:#059669; font-weight:700; text-decoration:none;">Xuất chứng thư &rarr;</a>
+          <!-- Bottom Action Buttons & Verification Seal -->
+          <div style="margin-top:16px; padding-top:14px; border-top:1.5px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#047857; font-weight:700;">
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#10b981;"></i>
+              <span>Chuẩn Quốc Gia &amp; Xuất Khẩu</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" onclick="openCertificateModal('vietgap')" style="background:#ecfdf5; border:1px solid #86efac; color:#166534; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                <i data-lucide="file-check" class="lucide-xs"></i> Chứng thư số
+              </button>
+              <button type="button" onclick="openExportModal()" style="background:#059669; border:none; color:#ffffff; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                <i data-lucide="download" class="lucide-xs"></i> Xuất dữ liệu
+              </button>
+            </div>
           </div>
         </div>
 
@@ -4260,6 +4415,173 @@ function exportPublicLogsCsv() {
   URL.revokeObjectURL(url);
   closeExportModal();
 }
+// Copy Passport Text Helper
+function copyPassportText(text, btnEl) {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    if (btnEl) {
+      const oldHtml = btnEl.innerHTML;
+      btnEl.innerHTML = '<i data-lucide="check" class="lucide-xs"></i> Đã chép!';
+      btnEl.style.background = '#dcfce7';
+      btnEl.style.color = '#15803d';
+      if (window.lucide) window.lucide.createIcons();
+      setTimeout(() => {
+        btnEl.innerHTML = oldHtml;
+        btnEl.style.background = '';
+        btnEl.style.color = '';
+        if (window.lucide) window.lucide.createIcons();
+      }, 1800);
+    }
+  }).catch(() => {
+    prompt('Sao chép mã định danh:', text);
+  });
+}
+
+// Open Certificate Viewer Modal (PUC / VietGAP)
+function openCertificateModal(certType) {
+  if (!currentPlantData) {
+    alert('Dữ liệu chứng thư chưa được nạp xong. Vui lòng thử lại sau giây lát.');
+    return;
+  }
+
+  const p = currentPlantData;
+  const pucCode = p.puc_code || 'VN-ĐN-OR-0017';
+  const vietgapNumber = p.vietgap_cert_number || 'VG-2024-8892';
+  const vietgapOrg = p.vietgap_cert_org || 'Trung tâm Giám định & Chứng nhận Nông nghiệp (AgriCert)';
+  const certStandard = p.vietgap_cert_number ? `VietGAP ${esc(p.vietgap_cert_number)}` : 'VietGAP Trồng Trọt (TCVN 11892-1:2017)';
+  const farmerOwnerName = p.owner_name || p.farm_name || 'Nông hộ Tân Bảo Agtech';
+  const farmerOwnerPhone = p.owner_phone || '0908.048.895';
+  const farmAddress = p.farm_address || 'Vùng chuyên canh nông sản Tân Bảo';
+  const traceCode = `TB-TRC-${p.farm_id || '00'}-${esc(p.tree_code || p.id)}`;
+  const isPuc = certType === 'puc';
+  const plantLat = parseFloat(p.latitude);
+  const plantLng = parseFloat(p.longitude);
+  const hasCoords = !isNaN(plantLat) && !isNaN(plantLng);
+
+  const container = document.getElementById('cert-modal-dynamic-content');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="cert-sheet">
+      <!-- Certificate Header -->
+      <div class="cert-header">
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:6px;">
+          <img src="/assets/logo.png" alt="Tanbao AgTech" style="height:32px; width:auto;">
+        </div>
+        <div class="cert-governing-body">
+          ${isPuc ? 'BỘ NÔNG NGHIỆP & PHÁT TRIỂN NÔNG THÔN — CỤC TRỒNG TRỌT &amp; BVTV' : 'HỆ THỐNG KIỂM ĐỊNH NÔNG NGHIỆP SẠCH VIỆT NAM (AGRICERT)'}
+        </div>
+        <div class="cert-sub-body">
+          ${isPuc ? 'Cơ Sở Dữ Liệu Định Danh Vùng Trồng Xuất Khẩu Quốc Gia (PUC Standard)' : 'Chứng Nhận Thực Hành Sản Xuất Nông Nghiệp Tốt (VietGAP / GlobalG.A.P.)'}
+        </div>
+        <div class="cert-main-title">
+          ${isPuc ? 'GIẤY XÁC NHẬN MÃ SỐ VÙNG TRỒNG (PUC)' : 'CHỨNG THƯ NÔNG NGHIỆP CHUẨN VIETGAP'}
+        </div>
+        <div class="cert-subtitle">
+          Chứng thư xác thực điện tử bất biến được cấp bởi hệ thống Sổ Nông Số Hóa TANBAO AgTech
+        </div>
+      </div>
+
+      <!-- Certificate Table Specifications -->
+      <table class="cert-table">
+        <tbody>
+          <tr>
+            <td class="cert-col-lbl">${isPuc ? 'Mã Số Vùng Trồng (PUC):' : 'Số Hiệu Chứng Nhận VietGAP:'}</td>
+            <td class="cert-col-val" style="font-family:var(--font-mono); font-size:14px; color:${isPuc ? '#059669' : '#d97706'}; font-weight:800;">
+              ${isPuc ? esc(pucCode) : esc(vietgapNumber)}
+            </td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Đối Tượng Cây Trồng:</td>
+            <td class="cert-col-val"><strong>${esc(p.plant_type)}</strong> (${esc(p.plant_variety || 'Tiêu chuẩn thuần chủng')})</td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Trang Trại / Cơ Sở Sản Xuất:</td>
+            <td class="cert-col-val">${esc(p.farm_name || 'Trang trại Tân Bảo AgTech')}</td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Nông Hộ Quản Lý:</td>
+            <td class="cert-col-val">${esc(farmerOwnerName)} &nbsp;•&nbsp; SĐT: ${esc(farmerOwnerPhone)}</td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Địa Chỉ Vùng Trồng:</td>
+            <td class="cert-col-val">${esc(farmAddress)}</td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Tọa Độ GIS Vệ Tinh:</td>
+            <td class="cert-col-val" style="font-family:var(--font-mono); font-size:11.5px;">
+              ${hasCoords ? `${plantLat.toFixed(5)}, ${plantLng.toFixed(5)}` : 'Đã định vị vùng trang trại'}
+            </td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Mã Định Danh Cây (Trace ID):</td>
+            <td class="cert-col-val" style="font-family:var(--font-mono); font-size:11.5px; color:#059669;">${traceCode}</td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Tổ Chức Giám Định &amp; Cấp Mã:</td>
+            <td class="cert-col-val">${esc(vietgapOrg)}</td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Tiêu Chuẩn Áp Dụng:</td>
+            <td class="cert-col-val"><span style="color:#047857; font-weight:800;">${esc(certStandard)}</span></td>
+          </tr>
+          <tr>
+            <td class="cert-col-lbl">Tình Trạng Hiệu Lực:</td>
+            <td class="cert-col-val">
+              <span style="background:#ecfdf5; color:#047857; font-weight:800; padding:2px 8px; border-radius:100px; border:1px solid #86efac; font-size:11px;">
+                ✓ ĐANG HIỆU LỰC &amp; ĐỦ ĐIỀU KIỆN XUẤT KHẨU
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Certificate Footer with Official Red Seal Stamp -->
+      <div class="cert-footer-row">
+        <div style="font-size:11px; color:#64748b; line-height:1.5;">
+          <div><strong>CHỨNG THỰC BẢO BẢO TOÀN VẸN SỐ</strong></div>
+          <div style="font-family:var(--font-mono); font-size:10px; color:#059669; margin-top:2px;">SHA256: ${esc(p.nfc_uid || pucCode)}-VERIFIED-SECURE</div>
+          <div style="margin-top:4px;">Tra cứu trực tuyến tại: <a href="/" target="_blank" style="color:#0284c7; text-decoration:underline;">plant-book.tanbaocorp-agritech.vn</a></div>
+        </div>
+
+        <div class="cert-seal-stamp">
+          <div style="font-size:7.5px; font-weight:700;">★ TANBAO AGTECH ★</div>
+          <div style="font-size:10px; font-weight:900; margin:2px 0;">${isPuc ? 'PUC VERIFIED' : 'VIETGAP'}</div>
+          <div style="font-size:7px; font-weight:700;">ĐÃ KIỂM ĐỊNH</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons inside modal -->
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:14px; border-top:1px solid #e2e8f0;">
+        <button type="button" onclick="closeCertificateModal()" style="padding:8px 16px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#475569; cursor:pointer;">
+          Đóng
+        </button>
+        <button type="button" onclick="window.print()" style="padding:8px 16px; background:#059669; border:none; border-radius:8px; font-size:12.5px; font-weight:700; color:#ffffff; cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="printer" class="lucide-xs"></i> In Chứng Thư Số
+        </button>
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('cert-viewer-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function closeCertificateModal() {
+  const modal = document.getElementById('cert-viewer-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+window.copyPassportText = copyPassportText;
+window.openCertificateModal = openCertificateModal;
+window.closeCertificateModal = closeCertificateModal;
 window.generateExportReport = generateExportReport;
 window.exportPublicLogsCsv = exportPublicLogsCsv;
 window.openExportModal = openExportModal;

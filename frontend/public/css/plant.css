@@ -2217,5 +2217,349 @@
     }
   }
 
+  /* ═══ 📜 DIGITAL PLANT PASSPORT & CERTIFICATION STAMP STYLES ═══ */
+  .erp-passport-card {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+  .erp-passport-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981, #059669, #0284c7, #d97706);
+  }
+
+  .erp-passport-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+  .erp-passport-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .erp-passport-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #6ee7b7;
+    padding: 3px 9px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .erp-passport-live-badge .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+    animation: livePulse 2s infinite;
+  }
+  @keyframes livePulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+
+  /* Certification Badges Strip (PUC, VietGAP, NFC) */
+  .erp-passport-badges-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  @media(max-width: 640px) {
+    .erp-passport-badges-strip {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .erp-cert-badge {
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .erp-cert-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  }
+  .erp-cert-badge.puc {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 1.5px solid #86efac;
+  }
+  .erp-cert-badge.vietgap {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1.5px solid #fde68a;
+  }
+  .erp-cert-badge.nfc {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1.5px solid #bae6fd;
+    grid-column: 1 / -1;
+  }
+  .erp-cert-badge-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .erp-cert-badge.puc .erp-cert-badge-icon {
+    background: #059669;
+    color: #ffffff;
+  }
+  .erp-cert-badge.vietgap .erp-cert-badge-icon {
+    background: #d97706;
+    color: #ffffff;
+  }
+  .erp-cert-badge.nfc .erp-cert-badge-icon {
+    background: #0284c7;
+    color: #ffffff;
+  }
+  .erp-cert-badge-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .erp-cert-badge-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+  }
+  .erp-cert-badge.puc .erp-cert-badge-label { color: #166534; }
+  .erp-cert-badge.vietgap .erp-cert-badge-label { color: #92400e; }
+  .erp-cert-badge.nfc .erp-cert-badge-label { color: #075985; }
+
+  .erp-cert-badge-code {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+    font-family: var(--font-mono);
+    margin: 1px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .erp-cert-badge-sub {
+    font-size: 10.5px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .erp-cert-badge-view-hint {
+    font-size: 10px;
+    font-weight: 700;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Section Dividers inside Passport Grid */
+  .erp-passport-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #475569;
+    background: #f8fafc;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin: 12px 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-left: 3px solid #059669;
+  }
+
+  .erp-passport-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    font-size: 12px;
+  }
+  .erp-passport-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 4px;
+    border-bottom: 1px dashed #e2e8f0;
+    gap: 12px;
+    transition: background 0.15s ease;
+  }
+  .erp-passport-row:hover {
+    background: #f8fafc;
+  }
+  .erp-passport-lbl {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 12px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .erp-passport-val {
+    color: #0f172a;
+    font-weight: 700;
+    text-align: right;
+    word-break: break-word;
+    font-size: 12.5px;
+  }
+
+  .erp-copy-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.15s ease;
+    margin-left: 4px;
+  }
+  .erp-copy-pill:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* ═══ 🎖️ OFFICIAL CERTIFICATE VIEWER MODAL ═══ */
+  .cert-modal-dialog {
+    max-width: 680px;
+    width: 95%;
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+    border: 2px solid #059669;
+    position: relative;
+  }
+  .cert-sheet {
+    padding: 28px 24px;
+    background: radial-gradient(circle at center, #ffffff 0%, #fafffa 100%);
+    border: 8px double #a7f3d0;
+    margin: 12px;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(5, 150, 105, 0.03);
+  }
+  .cert-header {
+    text-align: center;
+    border-bottom: 2px solid #059669;
+    padding-bottom: 16px;
+    margin-bottom: 18px;
+  }
+  .cert-governing-body {
+    font-size: 11px;
+    font-weight: 800;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .cert-sub-body {
+    font-size: 11.5px;
+    color: #059669;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .cert-main-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: #065f46;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 12px 0 4px 0;
+  }
+  .cert-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
+  }
+  .cert-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin: 16px 0;
+  }
+  .cert-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .cert-table td.cert-col-lbl {
+    width: 40%;
+    font-weight: 700;
+    color: #475569;
+    background: rgba(248, 250, 252, 0.7);
+  }
+  .cert-table td.cert-col-val {
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .cert-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px dashed #cbd5e1;
+  }
+  .cert-seal-stamp {
+    width: 90px;
+    height: 90px;
+    border: 3px double #dc2626;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+    text-align: center;
+    font-weight: 800;
+    font-size: 9px;
+    text-transform: uppercase;
+    transform: rotate(-12deg);
+    line-height: 1.1;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+  }
+
 
 

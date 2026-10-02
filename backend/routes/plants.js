@@ -4010,10 +4010,15 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
                  s.target_pests, s.phi_days, s.note
           FROM supplies s
           WHERE (
-            s.farm_id = $2 
-            OR s.user_id = $1 
-            OR s.user_id IN (SELECT id FROM users WHERE farm_id = $2)
-            OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2 OR plant_id = $3)
+            ($2::int IS NOT NULL AND (
+              s.farm_id = $2 
+              OR (s.user_id = $1 AND s.farm_id IS NULL AND $1 != 1)
+              OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)
+            ))
+            OR ($2::int IS NULL AND (
+              (s.user_id = $1 AND ($1 != 1 OR $3 IS NOT NULL))
+              OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)
+            ))
           )
           ORDER BY s.category ASC, s.name ASC
         `, [row.farm_owner_user_id || farm.user_id, farmId || row.farm_id, row.id]);
@@ -4253,11 +4258,13 @@ router.get('/public/:slug', async (req, res) => {
         WHERE (
           ($2::int IS NOT NULL AND (
             s.farm_id = $2 
-            OR s.user_id = $1 
-            OR s.user_id IN (SELECT id FROM users WHERE farm_id = $2)
-            OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $2 OR plant_id = $3)
+            OR (s.user_id = $1 AND s.farm_id IS NULL AND $1 != 1)
+            OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)
           ))
-          OR ($2::int IS NULL AND (s.user_id = $1 OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)))
+          OR ($2::int IS NULL AND (
+            (s.user_id = $1 AND ($1 != 1 OR $3 IS NOT NULL))
+            OR s.id IN (SELECT supply_id FROM supply_usages WHERE plant_id = $3)
+          ))
         )
         ORDER BY s.category ASC, s.name ASC
       `, [row.farm_owner_user_id || row.created_by, row.farm_id, row.id]);

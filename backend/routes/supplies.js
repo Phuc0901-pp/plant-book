@@ -122,7 +122,7 @@ router.get('/', auth, async (req, res) => {
     if (req.user.role === 'admin') {
 
       if (farm_id) {
-        query += ` AND (s.user_id = (SELECT user_id FROM farms WHERE id = $${idx}) OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $${idx}))`;
+        query += ` AND (s.farm_id = $${idx} OR s.user_id = (SELECT user_id FROM farms WHERE id = $${idx}) OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $${idx}))`;
         params.push(parseInt(farm_id));
         idx++;
       } else if (user_id) {
@@ -342,10 +342,28 @@ router.post('/', auth, async (req, res) => {
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     const phiDaysInt = parseInt(phi_days) || 0;
 
-    // Kiểm tra nếu sản phẩm cùng loại & cùng tên đã tồn tại -> Cộng dồn số lượng tồn kho
+    let targetFarmId = req.body.farm_id ? parseInt(req.body.farm_id) : null;
+    if (!targetFarmId) {
+      const uRes = await pool.query('SELECT farm_id FROM users WHERE id = $1', [targetUserId]);
+      if (uRes.rows.length > 0 && uRes.rows[0].farm_id) {
+        targetFarmId = uRes.rows[0].farm_id;
+      } else {
+        const fRes = await pool.query('SELECT id FROM farms WHERE user_id = $1 ORDER BY id ASC LIMIT 1', [targetUserId]);
+        if (fRes.rows.length > 0) {
+          targetFarmId = fRes.rows[0].id;
+        }
+      }
+    }
+
+    // Kiểm tra nếu sản phẩm cùng loại & cùng tên đã tồn tại trong cùng trang trại / user -> Cộng dồn số lượng tồn kho
     const existingCheck = await pool.query(
-      `SELECT * FROM supplies WHERE user_id = $1 AND category = $2 AND LOWER(name) = LOWER($3)`,
-      [targetUserId, category.trim(), name.trim()]
+      `SELECT * FROM supplies 
+       WHERE (
+         ($1::int IS NOT NULL AND (farm_id = $1 OR user_id = $2))
+         OR ($1::int IS NULL AND user_id = $2)
+       ) 
+       AND category = $3 AND LOWER(name) = LOWER($4)`,
+      [targetFarmId, targetUserId, category.trim(), name.trim()]
     );
 
     if (existingCheck.rows.length > 0) {
@@ -358,8 +376,9 @@ router.post('/', auth, async (req, res) => {
              image_url = COALESCE($8, image_url), note = COALESCE($9, note), fertilizer_type = COALESCE($10, fertilizer_type),
              phi_days = COALESCE($11, phi_days), active_ingredient = COALESCE($12, active_ingredient),
              target_pests = COALESCE($13, target_pests), safety_interval_note = COALESCE($14, safety_interval_note),
+             farm_id = COALESCE(farm_id, $15),
              updated_at = NOW()
-         WHERE id = $15
+         WHERE id = $16
          RETURNING *`,
         [
           updatedStock,
@@ -376,6 +395,7 @@ router.post('/', auth, async (req, res) => {
           active_ingredient || null,
           target_pests || null,
           safety_interval_note || null,
+          targetFarmId,
           existing.id
         ]
       );
@@ -384,14 +404,15 @@ router.post('/', auth, async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO supplies (
-        user_id, category, name, unit, package_size, package_qty, package_unit, 
+        user_id, farm_id, category, name, unit, package_size, package_qty, package_unit, 
         package_price, unit_price, unit_price_small, stock_quantity, note, 
         image_url, fertilizer_type, phi_days, active_ingredient, target_pests, safety_interval_note
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
        RETURNING *`,
       [
         targetUserId,
+        targetFarmId,
         category.trim(),
         name.trim(),
         unit.trim(),
