@@ -3673,29 +3673,29 @@ async function renderPlant(plant, isEditable) {
           </a>
         </div>
 
-        <!-- Corporate Metadata & Trust Verification Bar -->
+        <!-- Corporate Metadata & Trust Verification Bar (Centered for Laptop & Mobile) -->
         <div class="footer-bottom-bar">
-          <div class="footer-brand-info">
-            <div class="footer-logo-row">
+          <div class="footer-brand-centered">
+            <div class="footer-logo-box">
               <img src="/assets/logo.png" alt="TANBAO AgTech" class="footer-logo-img">
-              <div>
-                <div class="footer-company-name">CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN - TBSG AGTECH</div>
-                <div class="footer-company-sub">SỔ NÔNG NHÀN - TBSG AGTECH</div>
-              </div>
+            </div>
+            <div class="footer-company-info">
+              <div class="footer-company-name">CÔNG TY TNHH CÔNG NGHỆ NÔNG NGHIỆP TÂN BẢO SÀI GÒN – TBSG AGTECH</div>
+              <div class="footer-company-sub">SỔ NÔNG NHÀN – TBSG AGTECH</div>
             </div>
           </div>
 
           <div class="footer-trust-badges">
             <div class="footer-trust-item">
-              <i data-lucide="shield-check" class="lucide-xs" style="color:#059669;"></i>
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i>
               <span>Bảo chứng VietGAP TCVN 11892-1:2017</span>
             </div>
             <div class="footer-trust-item">
-              <i data-lucide="cpu" class="lucide-xs" style="color:#0284c7;"></i>
+              <i data-lucide="cpu" class="lucide-sm" style="color:#0284c7;"></i>
               <span>Thẻ định danh Cây trồng</span>
             </div>
             <div class="footer-trust-item">
-              <i data-lucide="clock" class="lucide-xs" style="color:#64748b;"></i>
+              <i data-lucide="clock" class="lucide-sm" style="color:#64748b;"></i>
               <span>Cập nhật: ${fmtDateTime(plant.updated_at || plant.created_at)}</span>
             </div>
           </div>
