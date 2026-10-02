@@ -2835,7 +2835,7 @@ function calculateTreeAge(plantingDate) {
   return `${years.toFixed(1)} năm tuổi`;
 }
 
-// Render dynamic plant data with Enterprise ERP Layout
+// Render dynamic plant data with 4-Section Enterprise Profile System
 async function renderPlant(plant, isEditable) {
   const extra = plant.data || {};
   const schemaFields = plant.schema_fields || [];
@@ -2897,6 +2897,8 @@ async function renderPlant(plant, isEditable) {
   const vietgapNumber = plant.vietgap_cert_number || 'VG-2024-8892';
   const vietgapOrg = plant.vietgap_cert_org || 'Trung tâm Giám định & Chứng nhận Nông nghiệp (AgriCert)';
   const certStandard = plant.vietgap_cert_number ? `VietGAP ${esc(plant.vietgap_cert_number)}` : 'VietGAP Trồng Trọt (TCVN 11892-1:2017)';
+  const seedOrigin = extra.seed_origin || 'Viện Cây Ăn Quả Miền Nam (SOFRI) - F1';
+  const batchCode = extra.batch_code || (pucCode + '-' + new Date().getFullYear() + '-LOT-' + (plant.plot_code || 'A1'));
   const farmerOwnerName = plant.owner_name || plant.farm_name || 'Nông hộ Tân Bảo Agtech';
   const farmerOwnerPhone = plant.owner_phone || '0908.048.895';
   const farmAddress = plant.farm_address || 'Vùng chuyên canh nông sản Tân Bảo';
@@ -2905,10 +2907,60 @@ async function renderPlant(plant, isEditable) {
   const gpsAccuracyText = plant.gps_accuracy ? `±${parseFloat(plant.gps_accuracy).toFixed(1)}m` : '±1.2m (RTK-GPS)';
   const securityHash = `SHA256-TBAG-${((Number(plant.id || 1) * 883 + 1307) % 65535).toString(16).toUpperCase()}-VERIFIED`;
 
+  // ── Media Categorization Engine ──
+  const allMediaList = [];
+  const mediaSeenUrls = new Set();
+
+  function addMediaItem(url, type, caption, category, date) {
+    if (!url || !url.trim() || mediaSeenUrls.has(url.trim())) return;
+    mediaSeenUrls.add(url.trim());
+    allMediaList.push({
+      url: url.trim(),
+      type: type || (url.match(/\.(mp4|webm|ogg|mov)$/i) ? 'video' : 'image'),
+      caption: caption || 'Minh chứng canh tác thực địa',
+      category: category || 'growth',
+      date: date || plant.created_at
+    });
+  }
+
+  // 1. Direct media array
+  (plant.media || []).forEach(m => {
+    let cat = m.category || (m.media_type === 'video' ? 'video' : 'growth');
+    if (m.caption && /bệnh|sâu|nấm|thối|rệp|chích/i.test(m.caption)) cat = 'disease';
+    addMediaItem(m.url, m.media_type, m.caption, cat, m.created_at);
+  });
+
+  // 2. Cover image (if real photo)
+  if (plant.cover_image && !plant.cover_image.includes('photo-1587293852726-70cdb56c2866')) {
+    addMediaItem(plant.cover_image, 'image', `Ảnh sinh trưởng Cây #${plant.tree_code || plant.id}`, 'growth', plant.created_at);
+  }
+
+  // 3. Media from logs
+  (plant.logs || []).forEach(l => {
+    const details = l.details || {};
+    const photoUrl = l.photo_url || details.photo_url || details.image_url;
+    const videoUrl = details.video_url || l.video_url;
+    const date = l.log_date || l.created_at;
+
+    if (photoUrl) {
+      const isDisease = l.log_type === 'Bệnh cây' || /bệnh|sâu|nấm/i.test(l.log_type || '');
+      addMediaItem(photoUrl, 'image', isDisease ? `[Bệnh cây] ${details.disease_name || l.note || 'Ảnh triệu chứng'}` : `[${l.log_type}] ${getCareLogSummary(l)}`, isDisease ? 'disease' : 'growth', date);
+    }
+    if (videoUrl) {
+      addMediaItem(videoUrl, 'video', `[Video thực địa] ${l.log_type || 'Nhật ký'}: ${esc(l.note || '')}`, 'video', date);
+    }
+  });
+
+  const growthPhotos = allMediaList.filter(m => m.category === 'growth' && m.type !== 'video');
+  const diseasePhotos = allMediaList.filter(m => m.category === 'disease' && m.type !== 'video');
+  const fieldVideos = allMediaList.filter(m => m.type === 'video' || m.category === 'video');
+
+  window._allPublicMedia = allMediaList;
+
   let authBarHtml = '';
   if (isEditable && user && user.id) {
     authBarHtml = `
-      <div class="auth-status-wrap" style="margin-bottom: 12px;">
+      <div class="auth-status-wrap" style="margin-bottom: 16px;">
         <div class="auth-status-pill auth-granted">
           <i data-lucide="check-circle-2" class="lucide-sm" style="color: #10b981;"></i>
           <span><strong>${esc(user.full_name || user.email)}</strong> &nbsp;•&nbsp; ${user.role === 'admin' ? 'Quản trị viên ERP' : (esc(plant.farm_name) || 'Nông hộ phụ trách')} (Toàn quyền ghi nhận &amp; hạch toán)</span>
@@ -2920,7 +2972,7 @@ async function renderPlant(plant, isEditable) {
     `;
   } else {
     authBarHtml = `
-      <div class="auth-status-wrap" style="margin-bottom: 12px;">
+      <div class="auth-status-wrap" style="margin-bottom: 16px;">
         <div class="auth-status-pill auth-readonly">
           <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i>
           <span>Cổng Thông Tin Truy Xuất Nguồn Gốc Công Khai (Chế độ xem minh bạch — Chuẩn VietGAP / ERP)</span>
@@ -2932,7 +2984,7 @@ async function renderPlant(plant, isEditable) {
     `;
   }
 
-  // Construct UI using Enterprise ERP Standards
+  // Construct UI using Enterprise 4-Section Layout Standards
   let html = `
     <!-- Top Cockpit Breadcrumb & Action Strip -->
     <div class="erp-top-cockpit">
@@ -2954,144 +3006,377 @@ async function renderPlant(plant, isEditable) {
       </div>
     </div>
 
-    <!-- Hero Header Card -->
-    <div class="hero-container">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
       ${authBarHtml}
-      <div class="glass-panel hero-card">
-        <div class="cover-image-container">
-          <!-- Top ERP Badges on Cover -->
-          <div class="cover-erp-badges">
-            <span class="cover-erp-pill puc"><i data-lucide="award" class="lucide-xs"></i> MÃ PUC: ${esc(pucCode)}</span>
-            <span class="cover-erp-pill vietgap"><i data-lucide="shield-check" class="lucide-xs"></i> ${esc(certStandard)}</span>
-          </div>
-
-          <img src="${getCropImageSrc(plant)}" alt="${esc(plant.plant_type)}" class="${plant.cover_image ? 'cover-image-photo' : 'cover-image-fallback'}" onerror="tryNextCropExt(this, '${esc(plant.plant_type || '')}')">
-          <div class="cover-overlay"></div>
-        </div>
-
-        <div class="hero-details">
-          <div class="plant-title-row">
-            <div>
-              <div style="font-size:12px; font-weight:700; color:#34d399; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                <i data-lucide="sprout" class="lucide-xs"></i> HỆ THỐNG QUẢN LÝ VÙNG TRỒNG SỐ HOÁ
-              </div>
-              <h1 class="plant-name">${esc(plant.plant_type)} — Cây #${esc(plant.tree_code || plant.id)}</h1>
-              <p class="plant-variety">
-                Giống: <strong>${esc(plant.plant_variety || 'Tiêu chuẩn')}</strong> &nbsp;•&nbsp; 
-                Trang trại: <strong>${esc(plant.farm_name || 'Trang trại Tân Bảo')}</strong>
-                ${plant.location ? ` &nbsp;•&nbsp; Vị trí: <strong>${esc(plant.location)}</strong>` : ''}
-              </p>
-            </div>
-          </div>
-          
-          <div class="badges-row">
-            <span class="badge ${phiStatus.badgeClass}">
-              <i data-lucide="${phiStatus.isSafe ? 'check-circle-2' : 'alert-triangle'}" class="lucide-xs"></i>
-              ${phiStatus.text}
-            </span>
-            ${isEditable
-              ? `<span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i data-lucide="activity" class="lucide-xs"></i> Tình trạng: ${esc(plant.health_status || 'Bình thường')}</span>`
-              : `<span class="badge ${healthClass}" style="cursor:default;" title="Chế độ chỉ xem — Không thể can thiệp"><i data-lucide="activity" class="lucide-xs"></i> Tình trạng: ${esc(plant.health_status || 'Bình thường')}</span>`}
-            
-            ${plant.nfc_uid ? `<span class="badge badge-info" style="font-family:var(--font-mono); font-size:11px;"><i data-lucide="radio" class="lucide-xs"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
-            
-            ${isEditable && plant.nfc_uid ? `
-              <span class="badge" onclick="writePlantUrlToNfcChip(currentPlantData)" style="background:#ecfdf5; border:1px solid #10b981; color:#047857; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="Chạm máy vào thẻ NFC để nạp link trực tiếp vào chip">
-                <i data-lucide="smartphone-nfc" class="lucide-xs"></i> Nạp link thẻ NFC (1 chạm)
-              </span>
-            ` : ''}
-
-            <span class="badge badge-info" style="font-size:11px;">
-              <i data-lucide="calendar" class="lucide-xs"></i> ${treeAgeFormatted}
-            </span>
-          </div>
-          
-          <!-- 5-Tile ERP Telemetry Grid -->
-          <div class="erp-telemetry-grid">
-            <!-- Tile 1: Hồ sơ cây & Giống -->
-            <div class="erp-kpi-tile">
-              <div class="erp-kpi-header">
-                <span class="erp-kpi-label"><i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> Giống &amp; Độ Tuổi</span>
-                <span style="font-size:10px; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 6px; border-radius:4px;">Hồ sơ gốc</span>
-              </div>
-              <div class="erp-kpi-value">${esc(plant.plant_variety || plant.plant_type)}</div>
-              <div class="erp-kpi-subtext">
-                <i data-lucide="clock" class="lucide-xs"></i> ${plantDateFormatted} (${treeAgeFormatted})
-              </div>
-            </div>
-
-            <!-- Tile 2: Định vị vệ tinh GIS -->
-            <div class="erp-kpi-tile">
-              <div class="erp-kpi-header">
-                <span class="erp-kpi-label"><i data-lucide="crosshair" class="lucide-xs" style="color:#0284c7;"></i> Tọa Độ GIS Vệ Tinh</span>
-                <span style="font-size:10px; color:#0284c7; font-weight:700; background:#f0f9ff; padding:2px 6px; border-radius:4px;">${hasRealCoords ? 'Đã khóa GPS' : 'Khu vực'}</span>
-              </div>
-              <div class="erp-kpi-value" style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:#0f172a;">
-                ${hasRealCoords ? `${plantLat.toFixed(5)}, ${plantLng.toFixed(5)}` : 'Vùng canh tác trang trại'}
-              </div>
-              <div class="erp-kpi-subtext">
-                <i data-lucide="map-pin" class="lucide-xs"></i> ${hasRealCoords ? 'Độ chính xác: ±3.2m thực địa' : 'Vị trí xác định theo ranh giới'}
-              </div>
-            </div>
-
-            <!-- Tile 3: Tiêu chuẩn canh tác -->
-            <div class="erp-kpi-tile">
-              <div class="erp-kpi-header">
-                <span class="erp-kpi-label"><i data-lucide="award" class="lucide-xs" style="color:#d97706;"></i> Tiêu Chuẩn &amp; Vùng Trồng</span>
-                <span style="font-size:10px; color:#d97706; font-weight:700; background:#fffbeb; padding:2px 6px; border-radius:4px;">PUC Code</span>
-              </div>
-              <div class="erp-kpi-value">${esc(certStandard)}</div>
-              <div class="erp-kpi-subtext">
-                <i data-lucide="shield-check" class="lucide-xs"></i> Mã PUC: <strong>${esc(pucCode)}</strong>
-              </div>
-            </div>
-
-            <!-- Tile 4: An toàn PHI & Thu hoạch -->
-            <div class="erp-kpi-tile">
-              <div class="erp-kpi-header">
-                <span class="erp-kpi-label"><i data-lucide="shield-alert" class="lucide-xs" style="color:#ea580c;"></i> An Toàn Cách Ly PHI</span>
-                <span style="font-size:10px; color:${phiStatus.isSafe ? '#059669' : '#b45309'}; font-weight:700; background:${phiStatus.isSafe ? '#ecfdf5' : '#fffbeb'}; padding:2px 6px; border-radius:4px;">${phiStatus.isSafe ? 'Đạt chuẩn' : 'Cảnh báo'}</span>
-              </div>
-              <div class="erp-kpi-value" style="font-size:14px; color:${phiStatus.isSafe ? '#047857' : '#b45309'};">${phiStatus.text}</div>
-              <div class="erp-kpi-subtext">
-                <i data-lucide="info" class="lucide-xs"></i> ${phiStatus.subtext}
-              </div>
-            </div>
-
-            <!-- Tile 5: Hạch toán đầu tư & vật tư -->
-            <div class="erp-kpi-tile">
-              <div class="erp-kpi-header">
-                <span class="erp-kpi-label"><i data-lucide="coins" class="lucide-xs" style="color:#059669;"></i> Tổng Đầu Tư Cây</span>
-                <span style="font-size:10px; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 6px; border-radius:4px;">ERP Ledger</span>
-              </div>
-              <div class="erp-kpi-value" style="color:#059669; font-family:var(--font-mono);">${formatVnd(plant.total_cost || 0)}</div>
-              <div class="erp-kpi-subtext">
-                <i data-lucide="receipt" class="lucide-xs"></i> ${(plant.supply_usages || []).length} đợt dùng &nbsp;•&nbsp; ${(plant.farm_supplies || []).length} mặt hàng kho
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
     </div>
 
-    <!-- Main Container Grid -->
-    <div class="main-layout">
-      <!-- Left Column (GIS Map, Financial & Supplies Ledger, Timeline Logs) -->
-      <div class="left-col">
+    <!-- =========================================================================
+         SECTION I: THÔNG TIN CHI TIẾT CỦA CÂY TRỒNG (Chi tiết & Hộ chiếu cây trồng)
+         ========================================================================= -->
+    <section class="profile-section-block" id="section-plant-core">
+      <div class="section-block-header">
+        <h2 class="section-block-title">
+          <i data-lucide="sprout"></i>
+          <span>I. Thông Tin Chi Tiết Cây Trồng &amp; Hộ Chiếu Số</span>
+        </h2>
+        <span class="section-block-badge">
+          <i data-lucide="shield-check"></i> Hồ sơ gốc &amp; Hộ chiếu số
+        </span>
+      </div>
+
+      <div class="core-profile-layout">
+        <!-- Left: Plant Core Overview & 5-Tile KPI Telemetry -->
+        <div class="glass-panel hero-card" style="margin-bottom:0;">
+          <div class="cover-image-container">
+            <div class="cover-erp-badges">
+              <span class="cover-erp-pill puc"><i data-lucide="award" class="lucide-xs"></i> MÃ PUC: ${esc(pucCode)}</span>
+              <span class="cover-erp-pill vietgap"><i data-lucide="shield-check" class="lucide-xs"></i> ${esc(certStandard)}</span>
+            </div>
+            <img src="${getCropImageSrc(plant)}" alt="${esc(plant.plant_type)}" class="${plant.cover_image ? 'cover-image-photo' : 'cover-image-fallback'}" onerror="tryNextCropExt(this, '${esc(plant.plant_type || '')}')">
+            <div class="cover-overlay"></div>
+          </div>
+
+          <div class="hero-details">
+            <div class="plant-title-row">
+              <div>
+                <div style="font-size:12px; font-weight:700; color:#34d399; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <i data-lucide="sprout" class="lucide-xs"></i> HỆ THỐNG QUẢN LÝ VÙNG TRỒNG SỐ HOÁ
+                </div>
+                <h1 class="plant-name">${esc(plant.plant_type)} — Cây #${esc(plant.tree_code || plant.id)}</h1>
+                <p class="plant-variety">
+                  Giống: <strong>${esc(plant.plant_variety || 'Tiêu chuẩn')}</strong> &nbsp;•&nbsp; 
+                  Trang trại: <strong>${esc(plant.farm_name || 'Trang trại Tân Bảo')}</strong>
+                  ${plant.location ? ` &nbsp;•&nbsp; Vị trí: <strong>${esc(plant.location)}</strong>` : ''}
+                </p>
+              </div>
+            </div>
+            
+            <div class="badges-row">
+              <span class="badge ${phiStatus.badgeClass}">
+                <i data-lucide="${phiStatus.isSafe ? 'check-circle-2' : 'alert-triangle'}" class="lucide-xs"></i>
+                ${phiStatus.text}
+              </span>
+              ${isEditable
+                ? `<span class="badge ${healthClass} badge-health-interactive" onclick="toggleHealthStatus()" style="cursor:pointer;" title="Bấm để chuyển trạng thái sức khỏe"><i data-lucide="activity" class="lucide-xs"></i> Tình trạng: ${esc(plant.health_status || 'Bình thường')}</span>`
+                : `<span class="badge ${healthClass}" style="cursor:default;" title="Chế độ chỉ xem — Không thể can thiệp"><i data-lucide="activity" class="lucide-xs"></i> Tình trạng: ${esc(plant.health_status || 'Bình thường')}</span>`}
+              
+              ${plant.nfc_uid ? `<span class="badge badge-info" style="font-family:var(--font-mono); font-size:11px;"><i data-lucide="radio" class="lucide-xs"></i> NFC: ${esc(plant.nfc_uid)}</span>` : ''}
+              
+              ${isEditable && plant.nfc_uid ? `
+                <span class="badge" onclick="writePlantUrlToNfcChip(currentPlantData)" style="background:#ecfdf5; border:1px solid #10b981; color:#047857; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="Chạm máy vào thẻ NFC để nạp link trực tiếp vào chip">
+                  <i data-lucide="smartphone-nfc" class="lucide-xs"></i> Nạp link thẻ NFC
+                </span>
+              ` : ''}
+
+              <span class="badge badge-info" style="font-size:11px;">
+                <i data-lucide="calendar" class="lucide-xs"></i> ${treeAgeFormatted}
+              </span>
+            </div>
+            
+            <!-- 5-Tile ERP Telemetry Grid -->
+            <div class="erp-telemetry-grid">
+              <!-- Tile 1: Hồ sơ cây & Giống -->
+              <div class="erp-kpi-tile">
+                <div class="erp-kpi-header">
+                  <span class="erp-kpi-label"><i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> Giống &amp; Độ Tuổi</span>
+                  <span style="font-size:10px; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 6px; border-radius:4px;">Hồ sơ gốc</span>
+                </div>
+                <div class="erp-kpi-value">${esc(plant.plant_variety || plant.plant_type)}</div>
+                <div class="erp-kpi-subtext">
+                  <i data-lucide="clock" class="lucide-xs"></i> ${plantDateFormatted} (${treeAgeFormatted})
+                </div>
+              </div>
+
+              <!-- Tile 2: Định vị vệ tinh GIS -->
+              <div class="erp-kpi-tile">
+                <div class="erp-kpi-header">
+                  <span class="erp-kpi-label"><i data-lucide="crosshair" class="lucide-xs" style="color:#0284c7;"></i> Tọa Độ GIS Vệ Tinh</span>
+                  <span style="font-size:10px; color:#0284c7; font-weight:700; background:#f0f9ff; padding:2px 6px; border-radius:4px;">${hasRealCoords ? 'Đã khóa GPS' : 'Khu vực'}</span>
+                </div>
+                <div class="erp-kpi-value" style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:#0f172a;">
+                  ${hasRealCoords ? `${plantLat.toFixed(5)}, ${plantLng.toFixed(5)}` : 'Vùng canh tác trang trại'}
+                </div>
+                <div class="erp-kpi-subtext">
+                  <i data-lucide="map-pin" class="lucide-xs"></i> ${hasRealCoords ? 'Độ chính xác: ±1.2m (RTK-GPS)' : 'Vị trí theo ranh giới'}
+                </div>
+              </div>
+
+              <!-- Tile 3: Tiêu chuẩn canh tác -->
+              <div class="erp-kpi-tile">
+                <div class="erp-kpi-header">
+                  <span class="erp-kpi-label"><i data-lucide="award" class="lucide-xs" style="color:#d97706;"></i> Tiêu Chuẩn &amp; Vùng Trồng</span>
+                  <span style="font-size:10px; color:#d97706; font-weight:700; background:#fffbeb; padding:2px 6px; border-radius:4px;">PUC Code</span>
+                </div>
+                <div class="erp-kpi-value">${esc(certStandard)}</div>
+                <div class="erp-kpi-subtext">
+                  <i data-lucide="shield-check" class="lucide-xs"></i> Mã PUC: <strong>${esc(pucCode)}</strong>
+                </div>
+              </div>
+
+              <!-- Tile 4: An toàn PHI & Thu hoạch -->
+              <div class="erp-kpi-tile">
+                <div class="erp-kpi-header">
+                  <span class="erp-kpi-label"><i data-lucide="shield-alert" class="lucide-xs" style="color:#ea580c;"></i> An Toàn Cách Ly PHI</span>
+                  <span style="font-size:10px; color:${phiStatus.isSafe ? '#059669' : '#b45309'}; font-weight:700; background:${phiStatus.isSafe ? '#ecfdf5' : '#fffbeb'}; padding:2px 6px; border-radius:4px;">${phiStatus.isSafe ? 'Đạt chuẩn' : 'Cảnh báo'}</span>
+                </div>
+                <div class="erp-kpi-value" style="font-size:14px; color:${phiStatus.isSafe ? '#047857' : '#b45309'};">${phiStatus.text}</div>
+                <div class="erp-kpi-subtext">
+                  <i data-lucide="info" class="lucide-xs"></i> ${phiStatus.subtext}
+                </div>
+              </div>
+
+              <!-- Tile 5: Hạch toán đầu tư & vật tư -->
+              <div class="erp-kpi-tile">
+                <div class="erp-kpi-header">
+                  <span class="erp-kpi-label"><i data-lucide="coins" class="lucide-xs" style="color:#059669;"></i> Tổng Đầu Tư Cây</span>
+                  <span style="font-size:10px; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 6px; border-radius:4px;">ERP Ledger</span>
+                </div>
+                <div class="erp-kpi-value" style="color:#059669; font-family:var(--font-mono);">${formatVnd(plant.total_cost || 0)}</div>
+                <div class="erp-kpi-subtext">
+                  <i data-lucide="receipt" class="lucide-xs"></i> ${(plant.supply_usages || []).length} đợt dùng &nbsp;•&nbsp; ${(plant.farm_supplies || []).length} mặt hàng kho
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right: Digital Plant Passport Card -->
+        <div class="erp-passport-card">
+          <div class="erp-passport-header">
+            <div class="erp-passport-title">
+              <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i>
+              <span>Hộ Chiếu Cây Trồng Số</span>
+            </div>
+            <div class="erp-passport-live-badge">
+              <span class="pulse-dot"></span> ĐÃ XÁC THỰC
+            </div>
+          </div>
+
+          <!-- Official Certification Badges Strip (PUC, VietGAP & NFC Chip) -->
+          <div class="erp-passport-badges-strip">
+            <!-- Badge 1: Mã Vùng Trồng (PUC) -->
+            <div class="erp-cert-badge puc" onclick="openCertificateModal('puc')" title="Bấm để xem chi tiết chứng thư Vùng Trồng">
+              <div class="erp-cert-badge-icon">
+                <i data-lucide="map-pinned" class="lucide-sm"></i>
+              </div>
+              <div class="erp-cert-badge-content">
+                <div class="erp-cert-badge-label">MÃ SỐ VÙNG TRỒNG (PUC)</div>
+                <div class="erp-cert-badge-code">${esc(pucCode)}</div>
+                <div class="erp-cert-badge-sub">Cục Trồng Trọt &amp; BVTV bảo chứng</div>
+              </div>
+              <div class="erp-cert-badge-view-hint">
+                <i data-lucide="eye" class="lucide-xs"></i> Xem
+              </div>
+            </div>
+
+            <!-- Badge 2: Tiêu chuẩn VietGAP -->
+            <div class="erp-cert-badge vietgap" onclick="openCertificateModal('vietgap')" title="Bấm để xem chứng nhận VietGAP">
+              <div class="erp-cert-badge-icon">
+                <i data-lucide="award" class="lucide-sm"></i>
+              </div>
+              <div class="erp-cert-badge-content">
+                <div class="erp-cert-badge-label">TIÊU CHUẨN VIETGAP</div>
+                <div class="erp-cert-badge-code">${esc(vietgapNumber)}</div>
+                <div class="erp-cert-badge-sub">${esc(vietgapOrg)}</div>
+              </div>
+              <div class="erp-cert-badge-view-hint">
+                <i data-lucide="eye" class="lucide-xs"></i> Xem
+              </div>
+            </div>
+
+            <!-- Badge 3: Chip NFC định danh -->
+            <div class="erp-cert-badge nfc" ${isEditable && plant.nfc_uid ? `onclick="writePlantUrlToNfcChip(currentPlantData)" title="Chạm máy vào thẻ NFC để nạp link trực tiếp"` : ''}>
+              <div class="erp-cert-badge-icon">
+                <i data-lucide="radio" class="lucide-sm"></i>
+              </div>
+              <div class="erp-cert-badge-content">
+                <div class="erp-cert-badge-label">ĐỊNH DANH PHẦN CỨNG NFC CHIP</div>
+                <div class="erp-cert-badge-code">${esc(plant.nfc_uid || 'NTAG213 CHƯA GÁN')}</div>
+                <div class="erp-cert-badge-sub">Mã băm vệ tinh RTK GIS · Khóa bảo mật 1 chạm</div>
+              </div>
+              ${isEditable && plant.nfc_uid ? `
+                <div class="erp-cert-badge-view-hint" style="color:#0284c7;">
+                  <i data-lucide="smartphone-nfc" class="lucide-xs"></i> Nạp thẻ
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Detailed Passport Specifications Grid -->
+          <div class="erp-passport-grid">
+            
+            <div class="erp-passport-section-title">
+              <i data-lucide="dna" class="lucide-xs"></i> I. THÔNG TIN ĐỊNH DANH &amp; SINH TRƯỞNG
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="qr-code" class="lucide-xs"></i> Mã định danh Trace ID:</span>
+              <span class="erp-passport-val" style="font-family:var(--font-mono); color:#059669;">
+                ${traceCode}
+                <button type="button" class="erp-copy-pill" onclick="copyPassportText('${traceCode}', this)" title="Sao chép mã định danh">
+                  <i data-lucide="copy" class="lucide-xs"></i> Copy
+                </button>
+              </span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="sprout" class="lucide-xs"></i> Giống &amp; Chủng loại:</span>
+              <span class="erp-passport-val">${esc(plant.plant_type)} (${esc(plant.plant_variety || 'Tiêu chuẩn')})</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="leaf" class="lucide-xs"></i> Nguồn gốc cây giống:</span>
+              <span class="erp-passport-val" style="color:#047857; font-weight:700;">${esc(seedOrigin)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="calendar" class="lucide-xs"></i> Thời gian gieo trồng:</span>
+              <span class="erp-passport-val">${plantDateFormatted}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="clock" class="lucide-xs"></i> Tuổi cây sinh trưởng:</span>
+              <span class="erp-passport-val" style="color:#047857;">${treeAgeFormatted}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="activity" class="lucide-xs"></i> Giai đoạn sinh trưởng:</span>
+              <span class="erp-passport-val">${esc(growthStage)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="heart-pulse" class="lucide-xs"></i> Tình trạng sức khỏe:</span>
+              <span class="erp-passport-val">
+                <span class="badge ${healthClass}" style="font-size:11px; padding:2px 8px;">${esc(plant.health_status || 'Bình thường')}</span>
+              </span>
+            </div>
+
+            <div class="erp-passport-section-title">
+              <i data-lucide="award" class="lucide-xs"></i> II. VÙNG TRỒNG &amp; NÔNG HỘ QUẢN LÝ
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="map-pin" class="lucide-xs"></i> Mã vùng trồng (PUC):</span>
+              <span class="erp-passport-val" style="font-weight:800; color:#0f172a;">
+                ${esc(pucCode)}
+                <button type="button" class="erp-copy-pill" onclick="copyPassportText('${pucCode}', this)" title="Sao chép mã PUC">
+                  <i data-lucide="copy" class="lucide-xs"></i> Copy
+                </button>
+              </span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="boxes" class="lucide-xs"></i> Mã lô VietGAP:</span>
+              <span class="erp-passport-val" style="font-family:var(--font-mono); font-weight:700; color:#0369a1;">${esc(batchCode)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="shield-alert" class="lucide-xs"></i> Chuẩn kiểm định:</span>
+              <span class="erp-passport-val" style="color:#047857; font-weight:800;">${esc(certStandard)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="building-2" class="lucide-xs"></i> Đơn vị cấp chứng chỉ:</span>
+              <span class="erp-passport-val" style="font-size:11.5px; color:#475569;">${esc(vietgapOrg)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="user" class="lucide-xs"></i> Nông hộ / Chủ sở hữu:</span>
+              <span class="erp-passport-val">${esc(farmerOwnerName)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="phone" class="lucide-xs"></i> SĐT liên hệ xác minh:</span>
+              <span class="erp-passport-val">
+                <a href="tel:${esc(farmerOwnerPhone)}" style="color:#059669; font-weight:700; text-decoration:none;">${esc(farmerOwnerPhone)}</a>
+              </span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="home" class="lucide-xs"></i> Địa chỉ vùng trồng:</span>
+              <span class="erp-passport-val" style="font-size:11.5px;">${esc(farmAddress)}</span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="grid" class="lucide-xs"></i> Phân lô canh tác:</span>
+              <span class="erp-passport-val">${esc(plotInfo)}</span>
+            </div>
+
+            <div class="erp-passport-section-title">
+              <i data-lucide="crosshair" class="lucide-xs"></i> III. TỌA ĐỘ GIS &amp; CHỮ KÝ BẢO MẬT
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="navigation" class="lucide-xs"></i> Tọa độ vệ tinh GIS:</span>
+              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:11.5px;">
+                ${hasRealCoords ? `${plantLat.toFixed(5)}, ${plantLng.toFixed(5)}` : 'Vùng trang trại'}
+                <span style="color:#64748b; font-size:10px; font-weight:600;">(${gpsAccuracyText})</span>
+              </span>
+            </div>
+
+            <div class="erp-passport-row">
+              <span class="erp-passport-lbl"><i data-lucide="shield-check" class="lucide-xs"></i> An toàn cách ly PHI:</span>
+              <span class="erp-passport-val" style="color:${phiStatus.isSafe ? '#059669' : '#d97706'}; font-weight:800;">
+                ${phiStatus.text}
+              </span>
+            </div>
+
+            <div class="erp-passport-row" style="border-bottom:none;">
+              <span class="erp-passport-lbl"><i data-lucide="key" class="lucide-xs"></i> Chữ ký toàn vẹn số:</span>
+              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:10px; color:#64748b;">
+                ${securityHash}
+              </span>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons & Verification Seal -->
+          <div style="margin-top:16px; padding-top:14px; border-top:1.5px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#047857; font-weight:700;">
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#10b981;"></i>
+              <span>Chuẩn Quốc Gia &amp; Xuất Khẩu</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" onclick="openCertificateModal('vietgap')" style="background:#ecfdf5; border:1px solid #86efac; color:#166534; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                <i data-lucide="file-check" class="lucide-xs"></i> Chứng thư số
+              </button>
+              <button type="button" onclick="openExportModal()" style="background:#059669; border:none; color:#ffffff; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                <i data-lucide="download" class="lucide-xs"></i> Xuất dữ liệu
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION II: THÔNG TIN MỞ RỘNG (GPS Map, Chi Phí Đầu Tư, Minh Chứng Thực Địa)
+         ========================================================================= -->
+    <section class="profile-section-block" id="section-plant-extended">
+      <div class="section-block-header">
+        <h2 class="section-block-title">
+          <i data-lucide="layers"></i>
+          <span>II. Thông Tin Mở Rộng</span>
+        </h2>
+        <span class="section-block-badge">
+          <i data-lucide="database"></i> GPS · Chi phí ERP · Minh chứng thực địa
+        </span>
+      </div>
+
+      <div class="extended-info-grid">
+        <!-- 1. Vị trí GPS của cây trên bản đồ -->
         ${hasMap ? `
-        <!-- Location Map Card -->
         <div class="glass-panel glass-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
             <h2 class="sec-title" style="margin: 0; font-size: 16px;">
               <i data-lucide="map" class="lucide-sm" style="color: var(--green-bright)"></i>
-              <span>Định Vị Vệ Tinh GIS Thực Địa &amp; Ranh Giới Lô Canh Tác</span>
+              <span>Vị Trí GPS Của Cây Trên Bản Đồ &amp; Ranh Giới Lô Canh Tác</span>
             </h2>
             <span class="badge badge-info" style="font-size: 11px;">
               <i data-lucide="layers" class="lucide-xs"></i> Mapbox Satellite Streets
             </span>
           </div>
-          <div class="plant-map-container" style="position:relative; width:100%; height:320px; border-radius:12px; overflow:hidden; border:1px solid #cbd5e1;">
+          <div class="plant-map-container" style="position:relative; width:100%; height:340px; border-radius:12px; overflow:hidden; border:1px solid #cbd5e1;">
             <div id="plant-location-map" style="width:100%;height:100%;"></div>
             ${plant.farm_name ? `<div class="map-farm-badge" style="position:absolute; bottom:12px; left:12px; z-index:5; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:11.5px; color:#fff; border:1px solid rgba(255,255,255,0.15);"><i data-lucide="sprout" class="lucide-xs" style="color:#34d399"></i> Trang trại: ${esc(plant.farm_name)}</div>` : ''}
             ${(!plant.latitude || !plant.longitude) ? `<div class="map-no-gps-badge" style="position:absolute; top:12px; left:12px; z-index:5; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); padding:6px 12px; border-radius:8px; font-size:11.5px; color:#fde047; border:1px solid rgba(253,224,71,0.3);"><i data-lucide="info" class="lucide-xs"></i> Vị trí trang trại · Cây chưa có định vị GPS</div>` : ''}
@@ -3099,12 +3384,12 @@ async function renderPlant(plant, isEditable) {
         </div>
         ` : ''}
 
-        <!-- Supplies & Cost Section (ERP Ledger) -->
+        <!-- 2. Chi phí đầu tư (Vật Tư & Hạch Toán Chi Phí Canh Tác) -->
         <div class="glass-panel glass-card">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
             <h2 class="sec-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px;">
               <i data-lucide="receipt" class="lucide-sm" style="color: var(--green-bright)"></i>
-              <span>Vật Tư &amp; Hạch Toán Chi Phí Canh Tác (ERP Ledger)</span>
+              <span>Chi Phí Đầu Tư (Vật Tư &amp; Hạch Toán Chi Phí Canh Tác)</span>
             </h2>
             <span class="badge" style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 12.5px; border: 1.5px solid #86efac; padding: 4px 12px; border-radius: 8px; font-family:var(--font-mono);">
               <i data-lucide="coins" class="lucide-xs" style="vertical-align: -1px;"></i> Tổng đầu tư: ${formatVnd(plant.total_cost || 0)}
@@ -3220,293 +3505,131 @@ async function renderPlant(plant, isEditable) {
           </div>
         </div>
 
-        <!-- Timeline Diary Card -->
+        <!-- 3. Minh chứng hình ảnh thực địa (Ảnh sinh trưởng, Ảnh bệnh cây, Video thực địa) -->
         <div class="glass-panel glass-card">
-          <h2 class="sec-title" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size: 16px;">
-            <span><i data-lucide="history" class="lucide-sm" style="color: var(--green-bright)"></i> Nhật Ký Canh Tác Chuẩn VietGAP (Traceability Timeline)</span>
-            <span style="font-size:11.5px; font-weight:700; color:#047857; background:#ecfdf5; padding:4px 10px; border-radius:8px; border:1px solid #a7f3d0;">
-              Tổng ${window._publicLogDates.length} ngày canh tác
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+            <h2 class="sec-title" style="margin: 0; font-size: 16px;">
+              <i data-lucide="camera" class="lucide-sm" style="color: var(--green-bright)"></i>
+              <span>Minh Chứng Hình Ảnh Thực Địa (Ảnh Sinh Trưởng, Bệnh Cây &amp; Video)</span>
+            </h2>
+            <span class="badge badge-info" style="font-size: 11.5px;">
+              <i data-lucide="images" class="lucide-xs"></i> Tổng ${allMediaList.length} tư liệu thực địa
             </span>
-          </h2>
-
-          <div id="public-timeline-container">
-            <!-- Rendered dynamically -->
           </div>
 
-          <div id="public-timeline-pagination">
-            <!-- Rendered dynamically -->
+          <!-- Category Filter Tabs -->
+          <div class="extended-media-filter-tabs">
+            <button class="media-filter-tab active" onclick="filterPublicMedia('all', this)">
+              <i data-lucide="layout-grid" class="lucide-xs"></i> Tất cả (${allMediaList.length})
+            </button>
+            <button class="media-filter-tab" onclick="filterPublicMedia('growth', this)">
+              <i data-lucide="sprout" class="lucide-xs"></i> Ảnh sinh trưởng (${growthPhotos.length})
+            </button>
+            <button class="media-filter-tab" onclick="filterPublicMedia('disease', this)">
+              <i data-lucide="shield-alert" class="lucide-xs"></i> Ảnh bệnh cây (${diseasePhotos.length})
+            </button>
+            <button class="media-filter-tab" onclick="filterPublicMedia('video', this)">
+              <i data-lucide="video" class="lucide-xs"></i> Video thực địa (${fieldVideos.length})
+            </button>
+          </div>
+
+          <!-- Media Cards Grid -->
+          <div class="media-card-grid" id="public-media-cards-container">
+            ${window.renderMediaItemsHtml ? window.renderMediaItemsHtml(allMediaList) : ''}
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Right Column (Plant Passport, Quick Care Buttons or Read-Only Notice, Media Gallery) -->
-      <div class="right-col">
-        
-        <!-- Digital Plant Passport & Traceability Certificate Card -->
-        <div class="erp-passport-card">
-          <div class="erp-passport-header">
-            <div class="erp-passport-title">
-              <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i>
-              <span>Hộ Chiếu Cây Trồng Số</span>
-            </div>
-            <div class="erp-passport-live-badge">
-              <span class="pulse-dot"></span> ĐÃ XÁC THỰC
-            </div>
-          </div>
+    <!-- =========================================================================
+         SECTION III: NHẬT KÝ CANH TÁC (Traceability Timeline Chuẩn VietGAP)
+         ========================================================================= -->
+    <section class="profile-section-block" id="section-plant-timeline">
+      <div class="section-block-header">
+        <h2 class="section-block-title">
+          <i data-lucide="history"></i>
+          <span>III. Nhật Ký Canh Tác</span>
+        </h2>
+        <span class="section-block-badge">
+          <i data-lucide="clock"></i> Chuẩn VietGAP · Tổng ${window._publicLogDates.length} ngày canh tác
+        </span>
+      </div>
 
-          <!-- Official Certification Badges Strip (PUC & VietGAP Standards) -->
-          <div class="erp-passport-badges-strip">
-            <!-- Badge 1: Mã Vùng Trồng (PUC) -->
-            <div class="erp-cert-badge puc" onclick="openCertificateModal('puc')" title="Bấm để xem chi tiết chứng thư Vùng Trồng">
-              <div class="erp-cert-badge-icon">
-                <i data-lucide="map-pinned" class="lucide-sm"></i>
-              </div>
-              <div class="erp-cert-badge-content">
-                <div class="erp-cert-badge-label">MÃ SỐ VÙNG TRỒNG (PUC)</div>
-                <div class="erp-cert-badge-code">${esc(pucCode)}</div>
-                <div class="erp-cert-badge-sub">Cục Trồng Trọt &amp; BVTV bảo chứng</div>
-              </div>
-              <div class="erp-cert-badge-view-hint">
-                <i data-lucide="eye" class="lucide-xs"></i> Xem
-              </div>
-            </div>
-
-            <!-- Badge 2: Tiêu chuẩn VietGAP -->
-            <div class="erp-cert-badge vietgap" onclick="openCertificateModal('vietgap')" title="Bấm để xem chứng nhận VietGAP">
-              <div class="erp-cert-badge-icon">
-                <i data-lucide="award" class="lucide-sm"></i>
-              </div>
-              <div class="erp-cert-badge-content">
-                <div class="erp-cert-badge-label">TIÊU CHUẨN VIETGAP</div>
-                <div class="erp-cert-badge-code">${esc(vietgapNumber)}</div>
-                <div class="erp-cert-badge-sub">${esc(vietgapOrg)}</div>
-              </div>
-              <div class="erp-cert-badge-view-hint">
-                <i data-lucide="eye" class="lucide-xs"></i> Xem
-              </div>
-            </div>
-
-            <!-- Badge 3: Chip NFC định danh -->
-            <div class="erp-cert-badge nfc" ${isEditable && plant.nfc_uid ? `onclick="writePlantUrlToNfcChip(currentPlantData)" title="Chạm máy vào thẻ NFC để nạp link trực tiếp"` : ''}>
-              <div class="erp-cert-badge-icon">
-                <i data-lucide="radio" class="lucide-sm"></i>
-              </div>
-              <div class="erp-cert-badge-content">
-                <div class="erp-cert-badge-label">ĐỊNH DANH PHẦN CỨNG NFC CHIP</div>
-                <div class="erp-cert-badge-code">${esc(plant.nfc_uid || 'NTAG213 CHƯA GÁN')}</div>
-                <div class="erp-cert-badge-sub">Mã băm vệ tinh RTK GIS · Khóa bảo mật 1 chạm</div>
-              </div>
-              ${isEditable && plant.nfc_uid ? `
-                <div class="erp-cert-badge-view-hint" style="color:#0284c7;">
-                  <i data-lucide="smartphone-nfc" class="lucide-xs"></i> Nạp thẻ
-                </div>
-              ` : ''}
-            </div>
-          </div>
-
-          <!-- Detailed Passport Specifications Grid -->
-          <div class="erp-passport-grid">
-            
-            <div class="erp-passport-section-title">
-              <i data-lucide="dna" class="lucide-xs"></i> I. THÔNG TIN ĐỊNH DANH &amp; SINH TRƯỞNG
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="qr-code" class="lucide-xs"></i> Mã định danh Trace ID:</span>
-              <span class="erp-passport-val" style="font-family:var(--font-mono); color:#059669;">
-                ${traceCode}
-                <button type="button" class="erp-copy-pill" onclick="copyPassportText('${traceCode}', this)" title="Sao chép mã định danh">
-                  <i data-lucide="copy" class="lucide-xs"></i> Copy
-                </button>
-              </span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="sprout" class="lucide-xs"></i> Giống &amp; Chủng loại:</span>
-              <span class="erp-passport-val">${esc(plant.plant_type)} (${esc(plant.plant_variety || 'Tiêu chuẩn')})</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="calendar" class="lucide-xs"></i> Thời gian gieo trồng:</span>
-              <span class="erp-passport-val">${plantDateFormatted}</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="clock" class="lucide-xs"></i> Tuổi cây sinh trưởng:</span>
-              <span class="erp-passport-val" style="color:#047857;">${treeAgeFormatted}</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="activity" class="lucide-xs"></i> Giai đoạn sinh trưởng:</span>
-              <span class="erp-passport-val">${esc(growthStage)}</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="heart-pulse" class="lucide-xs"></i> Tình trạng sức khỏe:</span>
-              <span class="erp-passport-val">
-                <span class="badge ${healthClass}" style="font-size:11px; padding:2px 8px;">${esc(plant.health_status || 'Bình thường')}</span>
-              </span>
-            </div>
-
-            <div class="erp-passport-section-title">
-              <i data-lucide="award" class="lucide-xs"></i> II. VÙNG TRỒNG &amp; NÔNG HỘ QUẢN LÝ
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="map-pin" class="lucide-xs"></i> Mã vùng trồng (PUC):</span>
-              <span class="erp-passport-val" style="font-weight:800; color:#0f172a;">
-                ${esc(pucCode)}
-                <button type="button" class="erp-copy-pill" onclick="copyPassportText('${pucCode}', this)" title="Sao chép mã PUC">
-                  <i data-lucide="copy" class="lucide-xs"></i> Copy
-                </button>
-              </span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="shield-alert" class="lucide-xs"></i> Chuẩn kiểm định:</span>
-              <span class="erp-passport-val" style="color:#047857; font-weight:800;">${esc(certStandard)}</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="building-2" class="lucide-xs"></i> Đơn vị cấp chứng chỉ:</span>
-              <span class="erp-passport-val" style="font-size:11.5px; color:#475569;">${esc(vietgapOrg)}</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="user" class="lucide-xs"></i> Nông hộ / Chủ sở hữu:</span>
-              <span class="erp-passport-val">${esc(farmerOwnerName)}</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="phone" class="lucide-xs"></i> SĐT liên hệ xác minh:</span>
-              <span class="erp-passport-val">
-                <a href="tel:${esc(farmerOwnerPhone)}" style="color:#059669; font-weight:700; text-decoration:none;">${esc(farmerOwnerPhone)}</a>
-              </span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="home" class="lucide-xs"></i> Địa chỉ vùng trồng:</span>
-              <span class="erp-passport-val" style="font-size:11.5px;">${esc(farmAddress)}</span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="grid" class="lucide-xs"></i> Phân lô canh tác:</span>
-              <span class="erp-passport-val">${esc(plotInfo)}</span>
-            </div>
-
-            <div class="erp-passport-section-title">
-              <i data-lucide="crosshair" class="lucide-xs"></i> III. TỌA ĐỘ GIS &amp; CHỮ KÝ BẢO MẬT
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="navigation" class="lucide-xs"></i> Tọa độ vệ tinh GIS:</span>
-              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:11.5px;">
-                ${hasRealCoords ? `${plantLat.toFixed(5)}, ${plantLng.toFixed(5)}` : 'Vùng trang trại'}
-                <span style="color:#64748b; font-size:10px; font-weight:600;">(${gpsAccuracyText})</span>
-              </span>
-            </div>
-
-            <div class="erp-passport-row">
-              <span class="erp-passport-lbl"><i data-lucide="shield-check" class="lucide-xs"></i> An toàn cách ly PHI:</span>
-              <span class="erp-passport-val" style="color:${phiStatus.isSafe ? '#059669' : '#d97706'}; font-weight:800;">
-                ${phiStatus.text}
-              </span>
-            </div>
-
-            <div class="erp-passport-row" style="border-bottom:none;">
-              <span class="erp-passport-lbl"><i data-lucide="key" class="lucide-xs"></i> Chữ ký toàn vẹn số:</span>
-              <span class="erp-passport-val" style="font-family:var(--font-mono); font-size:10px; color:#64748b;">
-                ${securityHash}
-              </span>
-            </div>
-          </div>
-
-          <!-- Bottom Action Buttons & Verification Seal -->
-          <div style="margin-top:16px; padding-top:14px; border-top:1.5px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#047857; font-weight:700;">
-              <i data-lucide="shield-check" class="lucide-sm" style="color:#10b981;"></i>
-              <span>Chuẩn Quốc Gia &amp; Xuất Khẩu</span>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button type="button" onclick="openCertificateModal('vietgap')" style="background:#ecfdf5; border:1px solid #86efac; color:#166534; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                <i data-lucide="file-check" class="lucide-xs"></i> Chứng thư số
-              </button>
-              <button type="button" onclick="openExportModal()" style="background:#059669; border:none; color:#ffffff; font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                <i data-lucide="download" class="lucide-xs"></i> Xuất dữ liệu
-              </button>
-            </div>
-          </div>
+      <div class="glass-panel glass-card">
+        <div id="public-timeline-container">
+          <!-- Rendered dynamically -->
         </div>
 
-        ${isEditable ? `
-        <!-- Care Actions (Quick Log Buttons) -->
-        <div class="glass-panel glass-card">
-          <h2 class="sec-title" style="font-size: 15px;"><i data-lucide="activity" class="lucide-sm" style="color: var(--green-bright)"></i> Thao tác canh tác nhanh</h2>
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4;">
-            Chọn quy trình chăm sóc để hạch toán vật tư và ghi nhật ký tức thời.
-          </p>
-          <div class="care-actions-grid">
-            <button class="care-btn care-btn-water" onclick="openModal('modal-water')">
-              <i data-lucide="droplet" class="lucide-sm" style="color: var(--color-water)"></i>
-              <span>Tưới nước</span>
-            </button>
-            <button class="care-btn care-btn-fertilize" onclick="openModal('modal-fertilize')">
-              <i data-lucide="leaf" class="lucide-sm" style="color: var(--color-fertilize)"></i>
-              <span>Bón phân</span>
-            </button>
-            <button class="care-btn care-btn-pesticide" onclick="openModal('modal-pesticide')">
-              <i data-lucide="flask-conical" class="lucide-sm" style="color: var(--color-pesticide)"></i>
-              <span>Phun thuốc</span>
-            </button>
-            <button class="care-btn care-btn-leaf" onclick="openModal('modal-leaf')">
-              <i data-lucide="scissors" class="lucide-sm" style="color: var(--color-leaf)"></i>
-              <span>Cắt cành/lá</span>
-            </button>
-            <button class="care-btn care-btn-flower" onclick="openModal('modal-flower')">
-              <i data-lucide="flower" class="lucide-sm" style="color: var(--color-flower)"></i>
-              <span>Tỉa hoa/quả</span>
-            </button>
-            <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
-              <i data-lucide="shield-alert" class="lucide-sm" style="color: var(--color-disease)"></i>
-              <span>Bệnh cây</span>
-            </button>
-            <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')">
-              <i data-lucide="wheat" class="lucide-sm" style="color: #d97706"></i>
-              <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
-            </button>
-          </div>
+        <div id="public-timeline-pagination">
+          <!-- Rendered dynamically -->
         </div>
-        ` : `
-        <!-- Read-Only Notice Card -->
-        <div class="glass-panel glass-card">
-          <h2 class="sec-title" style="font-size: 15px;"><i data-lucide="shield-check" class="lucide-sm" style="color: var(--green-bright)"></i> Cổng Minh Bạch Canh Tác</h2>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 12.5px; color: #475569; line-height: 1.5; margin-bottom: 14px;">
-            <i data-lucide="info" class="lucide-sm" style="color: #059669; margin-right: 4px;"></i>
-            Bạn đang truy cập ở <strong>Chế độ Xem Minh Bạch (Public Traceability)</strong>. Toàn bộ thông tin vùng trồng, vật tư tiêu hao, cách ly PHI và nhật ký thực địa được bảo chứng toàn vẹn.
-          </div>
-          <button onclick="showAuthGateView()" style="width: 100%; background: #ffffff; border: 1.5px dashed #059669; color: #059669; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='#ffffff';">
-            <i data-lucide="lock" class="lucide-sm"></i> Đăng nhập nông hộ để ghi nhận canh tác
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION IV: THAO TÁC CANH TÁC NHANH
+         ========================================================================= -->
+    <section class="profile-section-block" id="section-plant-quick-actions">
+      <div class="section-block-header">
+        <h2 class="section-block-title">
+          <i data-lucide="zap"></i>
+          <span>IV. Thao Tác Canh Tác Nhanh</span>
+        </h2>
+        <span class="section-block-badge">
+          ${isEditable 
+            ? '<i data-lucide="edit-3"></i> Quyền ghi nhận thực địa' 
+            : '<i data-lucide="shield-check"></i> Cổng minh bạch công khai'}
+        </span>
+      </div>
+
+      ${isEditable ? `
+      <div class="glass-panel glass-card">
+        <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4;">
+          Chọn quy trình chăm sóc bên dưới để hạch toán vật tư và ghi nhật ký tức thời vào hồ sơ cây:
+        </p>
+        <div class="care-actions-grid">
+          <button class="care-btn care-btn-water" onclick="openModal('modal-water')">
+            <i data-lucide="droplet" class="lucide-sm" style="color: var(--color-water)"></i>
+            <span>Tưới nước</span>
+          </button>
+          <button class="care-btn care-btn-fertilize" onclick="openModal('modal-fertilize')">
+            <i data-lucide="leaf" class="lucide-sm" style="color: var(--color-fertilize)"></i>
+            <span>Bón phân</span>
+          </button>
+          <button class="care-btn care-btn-pesticide" onclick="openModal('modal-pesticide')">
+            <i data-lucide="flask-conical" class="lucide-sm" style="color: var(--color-pesticide)"></i>
+            <span>Phun thuốc</span>
+          </button>
+          <button class="care-btn care-btn-leaf" onclick="openModal('modal-leaf')">
+            <i data-lucide="scissors" class="lucide-sm" style="color: var(--color-leaf)"></i>
+            <span>Cắt cành/lá</span>
+          </button>
+          <button class="care-btn care-btn-flower" onclick="openModal('modal-flower')">
+            <i data-lucide="flower" class="lucide-sm" style="color: var(--color-flower)"></i>
+            <span>Tỉa hoa/quả</span>
+          </button>
+          <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
+            <i data-lucide="shield-alert" class="lucide-sm" style="color: var(--color-disease)"></i>
+            <span>Bệnh cây</span>
+          </button>
+          <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')">
+            <i data-lucide="wheat" class="lucide-sm" style="color: #d97706"></i>
+            <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
           </button>
         </div>
-        `}
-
-        ${media.length ? `
-        <!-- Media Gallery Card -->
-        <div class="glass-panel glass-card">
-          <h2 class="sec-title" style="font-size: 15px;"><i data-lucide="images" class="lucide-sm" style="color: var(--green-bright)"></i> Minh chứng hình ảnh thực địa</h2>
-          <div class="gallery-grid">
-            ${media.map(m => `
-              <div class="gallery-thumb" onclick="openLightbox('${esc(m.url)}','${esc(m.media_type)}')">
-                ${m.media_type === 'video'
-                  ? `<video src="${esc(m.url)}" muted></video>`
-                  : `<img src="${esc(m.url)}" alt="${esc(m.caption || '')}">`}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        ` : ''}
       </div>
-    </div>
+      ` : `
+      <div class="glass-panel glass-card">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 12.5px; color: #475569; line-height: 1.5; margin-bottom: 14px;">
+          <i data-lucide="info" class="lucide-sm" style="color: #059669; margin-right: 4px;"></i>
+          Bạn đang truy cập ở <strong>Chế độ Xem Minh Bạch (Public Traceability)</strong>. Toàn bộ thông tin vùng trồng, vật tư tiêu hao, cách ly PHI và nhật ký thực địa được bảo chứng toàn vẹn.
+        </div>
+        <button onclick="showAuthGateView()" style="width: 100%; background: #ffffff; border: 1.5px dashed #059669; color: #059669; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='#ffffff';">
+          <i data-lucide="lock" class="lucide-sm"></i> Đăng nhập nông hộ để ghi nhận canh tác
+        </button>
+      </div>
+      `}
+    </section>
     
     <footer class="footer" style="max-width: 1200px; margin: 40px auto 0; padding: 24px 16px; text-align: center; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12.5px;">
       <div class="footer-logo-wrap" style="margin-bottom: 8px;">
@@ -3521,10 +3644,16 @@ async function renderPlant(plant, isEditable) {
   view.innerHTML = html;
   view.style.display = 'block';
 
+  // Render initial media cards
+  const mediaCardsContainer = document.getElementById('public-media-cards-container');
+  if (mediaCardsContainer && window.renderMediaItemsHtml) {
+    mediaCardsContainer.innerHTML = window.renderMediaItemsHtml(allMediaList);
+  }
+
   // Populate farm supplies into care modals
   populateCareSuppliesDropdowns(plant.farm_supplies || []);
 
-  // Render initial care timeline (3 days default)
+  // Render initial care timeline
   renderPublicLogTimeline(1, false);
 
   // Initialize Mapbox plant location map if coordinates or farm polygon exist
@@ -4608,6 +4737,81 @@ function closeCertificateModal() {
     document.body.style.overflow = '';
   }
 }
+
+// Render Media Items Helper for Extended Info Tab
+window.renderMediaItemsHtml = function(list) {
+  if (!list || list.length === 0) {
+    return `
+      <div style="grid-column: 1 / -1; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 32px 20px; text-align: center; color: #64748b; font-size: 13px;">
+        <i data-lucide="image-off" class="lucide-sm" style="color: #94a3b8; font-size: 24px; margin-bottom: 6px;"></i>
+        <div>Chưa có tư liệu hình ảnh hoặc video trong danh mục này.</div>
+      </div>
+    `;
+  }
+
+  return list.map(m => {
+    const isVideo = m.type === 'video' || (m.url && m.url.match(/\.(mp4|webm|ogg|mov)$/i));
+    let badgeClass = 'growth';
+    let badgeText = 'Ảnh sinh trưởng';
+    let badgeIcon = 'sprout';
+
+    if (m.category === 'disease' || /bệnh/i.test(m.caption || '')) {
+      badgeClass = 'disease';
+      badgeText = 'Ảnh bệnh cây';
+      badgeIcon = 'shield-alert';
+    } else if (isVideo) {
+      badgeClass = 'video';
+      badgeText = 'Video thực địa';
+      badgeIcon = 'video';
+    }
+
+    const dateStr = fmtDate(m.date);
+
+    return `
+      <div class="media-card-item" onclick="openLightbox('${esc(m.url)}', '${isVideo ? 'video' : 'image'}')">
+        <div class="media-card-thumb-wrap">
+          ${isVideo 
+            ? `<video src="${esc(m.url)}" muted preload="metadata"></video><div class="media-card-play-icon"><i data-lucide="play" class="lucide-sm" style="fill:currentColor; margin-left:2px;"></i></div>`
+            : `<img src="${esc(m.url)}" alt="${esc(m.caption || '')}" loading="lazy" onerror="this.src='/assets/logo.png'">`
+          }
+          <div class="media-card-badge ${badgeClass}">
+            <i data-lucide="${badgeIcon}" class="lucide-xs"></i>
+            <span>${badgeText}</span>
+          </div>
+        </div>
+        <div class="media-card-info">
+          <div class="media-card-caption" title="${esc(m.caption || '')}">${esc(m.caption || 'Minh chứng thực địa')}</div>
+          <div class="media-card-date">
+            <i data-lucide="calendar" class="lucide-xs"></i>
+            <span>${dateStr}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.filterPublicMedia = function(category, btnEl) {
+  document.querySelectorAll('.media-filter-tab').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  const container = document.getElementById('public-media-cards-container');
+  if (!container) return;
+
+  const all = window._allPublicMedia || [];
+  let filtered = all;
+
+  if (category === 'growth') {
+    filtered = all.filter(m => m.category === 'growth' && m.type !== 'video');
+  } else if (category === 'disease') {
+    filtered = all.filter(m => m.category === 'disease' && m.type !== 'video');
+  } else if (category === 'video') {
+    filtered = all.filter(m => m.type === 'video' || m.category === 'video');
+  }
+
+  container.innerHTML = window.renderMediaItemsHtml(filtered);
+  if (window.lucide) window.lucide.createIcons();
+};
 
 window.copyPassportText = copyPassportText;
 window.openCertificateModal = openCertificateModal;

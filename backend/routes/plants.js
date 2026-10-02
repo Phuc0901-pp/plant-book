@@ -3581,7 +3581,13 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       health_status,
       notes,
       past_diseases,
-      initial_growth_stage
+      initial_growth_stage,
+      puc_code,
+      passport_standard,
+      vietgap_cert_number,
+      vietgap_cert_org,
+      seed_origin,
+      batch_code
     } = req.body;
 
     const farmId = parseInt(farm_id || req.user.farm_id);
@@ -3656,7 +3662,13 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
       provision_source: 'sub_gateway',
       past_diseases: pastDiseasesList,
       initial_growth_stage: initial_growth_stage || null,
-      initial_yield: initial_yield ? parseFloat(initial_yield) : 0
+      initial_yield: initial_yield ? parseFloat(initial_yield) : 0,
+      puc_code: puc_code || null,
+      passport_standard: passport_standard || null,
+      vietgap_cert_number: vietgap_cert_number || null,
+      vietgap_cert_org: vietgap_cert_org || null,
+      seed_origin: seed_origin || null,
+      batch_code: batch_code || null
     };
 
     // BEGIN Transaction for core plant creation
@@ -3685,6 +3697,19 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
 
     // Auto-increment total_plants on farm
     await client.query('UPDATE farms SET total_plants = COALESCE(total_plants, 0) + 1 WHERE id = $1', [farmId]);
+
+    // Sync farm passport certificates if supplied
+    if (puc_code || vietgap_cert_number || vietgap_cert_org) {
+      try {
+        await client.query(`
+          UPDATE farms 
+          SET puc_code = COALESCE(puc_code, $1),
+              vietgap_cert_number = COALESCE(vietgap_cert_number, $2),
+              vietgap_cert_org = COALESCE(vietgap_cert_org, $3)
+          WHERE id = $4
+        `, [puc_code || null, vietgap_cert_number || null, vietgap_cert_org || null, farmId]);
+      } catch (_) {}
+    }
 
     await client.query('COMMIT');
 

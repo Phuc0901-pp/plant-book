@@ -821,6 +821,30 @@ class SubGatewayApp {
     const tagEl = document.getElementById('input-tag-uid');
     if (tagEl && this.state.tagUid) tagEl.value = this.state.tagUid;
     document.getElementById('plant-form-title').innerText = 'Khai Báo Cây Trồng Chi Tiết';
+
+    // Auto-fill Passport defaults from current farm
+    const currentFarm = (this.state.farms || []).find(f => f.id === this.state.selectedFarmId) || (this.state.farms && this.state.farms[0]);
+    if (currentFarm) {
+      const pucInput = document.getElementById('input-passport-puc');
+      if (pucInput) pucInput.value = currentFarm.puc_code || 'VN-TB-PUC-001';
+
+      const certNumInput = document.getElementById('input-passport-cert-number');
+      if (certNumInput) certNumInput.value = currentFarm.vietgap_cert_number || 'VG-2026-TB-8899';
+
+      const certOrgInput = document.getElementById('input-passport-cert-org');
+      if (certOrgInput) certOrgInput.value = currentFarm.vietgap_cert_org || 'Trung tâm Giám định & Chứng nhận Nông nghiệp (AgriCert)';
+
+      const seedInput = document.getElementById('input-passport-seed-origin');
+      if (seedInput && !seedInput.value) seedInput.value = 'Viện Cây Ăn Quả Miền Nam (SOFRI) - F1';
+
+      const batchInput = document.getElementById('input-passport-batch-code');
+      if (batchInput) {
+        const pucPrefix = currentFarm.puc_code || 'VN-TB';
+        const year = new Date().getFullYear();
+        batchInput.value = `${pucPrefix}-${year}-LOT-A1`;
+      }
+    }
+    this.renderIcons();
   }
 
   prepareExistingPlantBind(plant) {
@@ -901,6 +925,14 @@ class SubGatewayApp {
     const health = document.getElementById('input-health-status')?.value;
     const growthStage = document.getElementById('input-growth-stage')?.value;
 
+    // Passport inputs
+    const passportPuc = document.getElementById('input-passport-puc')?.value.trim();
+    const passportStandard = document.getElementById('input-passport-standard')?.value;
+    const passportCertNumber = document.getElementById('input-passport-cert-number')?.value.trim();
+    const passportCertOrg = document.getElementById('input-passport-cert-org')?.value.trim();
+    const passportSeedOrigin = document.getElementById('input-passport-seed-origin')?.value.trim();
+    const passportBatchCode = document.getElementById('input-passport-batch-code')?.value.trim();
+
     // Past diseases list
     const pastDiseases = Array.from(this.selectedDiseases);
     const otherDiseaseInput = document.getElementById('input-other-disease')?.value.trim();
@@ -942,7 +974,13 @@ class SubGatewayApp {
         health_status: health || 'Tốt',
         initial_growth_stage: growthStage || 'Nuôi trái / Phát triển trái',
         photo_url: this.capturedPhotoBase64 || null,
-        past_diseases: pastDiseases
+        past_diseases: pastDiseases,
+        puc_code: passportPuc || null,
+        passport_standard: passportStandard || null,
+        vietgap_cert_number: passportCertNumber || null,
+        vietgap_cert_org: passportCertOrg || null,
+        seed_origin: passportSeedOrigin || null,
+        batch_code: passportBatchCode || null
       };
 
       const res = await fetch('/api/plants/single-provision', {

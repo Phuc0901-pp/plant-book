@@ -9,8 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/sub.css">
-  <!-- Lucide Icons -->
+  <!-- Font Awesome & Lucide Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/assets/js/lucide-auto-hydrator.js"></script>
 </head>
 <body>
   <!-- Animated Background Orbs -->
@@ -314,6 +316,55 @@
             <div class="form-group">
               <label class="form-label"><i data-lucide="scale" class="lucide-xs"></i> Năng Suất Vụ Trước (kg)</label>
               <input type="number" id="input-initial-yield" class="form-input" placeholder="0" min="0">
+            </div>
+          </div>
+          <div class="passport-declaration-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1.5px solid #86efac; border-radius: 14px; padding: 16px; margin: 16px 0; box-shadow: 0 4px 12px rgba(16,185,129,0.06);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1.5px solid #bbf7d0; padding-bottom: 8px;">
+              <div style="font-size: 13px; font-weight: 800; color: #15803d; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="shield-check" class="lucide-sm" style="color: #059669;"></i> HỘ CHIẾU CÂY TRỒNG SỐ (DIGITAL PASSPORT)
+              </div>
+              <span style="font-size: 10.5px; background: #dcfce7; color: #166534; font-weight: 800; padding: 2px 8px; border-radius: 100px; border: 1px solid #86efac;">
+                Chuẩn VietGAP / PUC
+              </span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label"><i data-lucide="map-pinned" class="lucide-xs"></i> Mã Số Vùng Trồng (PUC)</label>
+                <input type="text" id="input-passport-puc" class="form-input" placeholder="VD: VN-DNI-PUC-009" style="font-weight: 700; color: #0f172a; font-family: var(--font-mono, monospace);">
+              </div>
+              <div class="form-group">
+                <label class="form-label"><i data-lucide="award" class="lucide-xs"></i> Tiêu Chuẩn Chứng Nhận</label>
+                <select id="input-passport-standard" class="form-select">
+                  <option value="VietGAP (TCVN 11892-1:2017)" selected>VietGAP (TCVN 11892-1:2017)</option>
+                  <option value="GlobalGAP (IFA V6)">GlobalGAP (IFA V6)</option>
+                  <option value="Hữu cơ Organic (TCVN 11041)">Hữu cơ Organic (TCVN 11041)</option>
+                  <option value="Vùng trồng Xuất khẩu PUC (Cục BVTV)">Vùng trồng Xuất khẩu PUC (Cục BVTV)</option>
+                  <option value="Tiêu chuẩn cơ sở TCCS">Tiêu chuẩn cơ sở TCCS</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label"><i data-lucide="file-badge" class="lucide-xs"></i> Số Giấy Chứng Nhận / Mã Chứng Thư</label>
+                <input type="text" id="input-passport-cert-number" class="form-input" placeholder="VD: VG-2026-TB-8899" style="font-family: var(--font-mono, monospace);">
+              </div>
+              <div class="form-group">
+                <label class="form-label"><i data-lucide="building-2" class="lucide-xs"></i> Tổ Chức / Cơ Quan Cấp Chứng Nhận</label>
+                <input type="text" id="input-passport-cert-org" class="form-input" placeholder="VD: Trung tâm Giám định AgriCert">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label"><i data-lucide="dna" class="lucide-xs"></i> Nguồn Gốc Cây Giống (F1 / Nhà Vườn)</label>
+                <input type="text" id="input-passport-seed-origin" class="form-input" placeholder="VD: Viện Cây Ăn Quả Miền Nam (SOFRI) - F1">
+              </div>
+              <div class="form-group">
+                <label class="form-label"><i data-lucide="scan" class="lucide-xs"></i> Mã Lô Nông Sản (Batch Code)</label>
+                <input type="text" id="input-passport-batch-code" class="form-input" placeholder="Tự sinh theo chuẩn VietGAP..." style="font-family: var(--font-mono, monospace);">
+              </div>
             </div>
           </div>
 
