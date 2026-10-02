@@ -3623,8 +3623,8 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
     // Ensure plot exists in farm_plots
     try {
       await client.query(
-        `INSERT INTO farm_plots (farm_id, plot_code, plot_name, total_rows)
-         VALUES ($1, $2, $3, 10)
+        `INSERT INTO farm_plots (farm_id, plot_code, plot_name)
+         VALUES ($1, $2, $3)
          ON CONFLICT (farm_id, plot_code) DO NOTHING`,
         [farmId, finalPlot, `Lô ${finalPlot}`]
       );

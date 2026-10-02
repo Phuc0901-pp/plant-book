@@ -354,6 +354,7 @@ async function initDB() {
         created_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE(farm_id, plot_code)
       );
+      ALTER TABLE farm_plots ADD COLUMN IF NOT EXISTS total_rows INTEGER DEFAULT 10;
       CREATE INDEX IF NOT EXISTS idx_farm_plots_farm ON farm_plots(farm_id);
     `);
 

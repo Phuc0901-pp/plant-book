@@ -290,19 +290,19 @@ router.post('/onboard-lead', async (req, res) => {
     if (farmCheck.rows.length === 0) {
       const generatedPuc = `PUC-${cleanPhone.slice(-4)}-${Math.floor(Math.random() * 899 + 100)}`;
       const farmRes = await client.query(
-        `INSERT INTO farms (name, description, polygon_coordinates, created_by, user_id, puc_code)
-         VALUES ($1, $2, $3, $4, $4, $5)
+        `INSERT INTO farms (name, description, polygon_coordinates, latitude, longitude, created_by, user_id, puc_code)
+         VALUES ($1, $2, $3, $4, $5, $6, $6, $7)
          RETURNING *`,
-        [cleanFarmName, 'Trang trại khởi tạo tự động từ cổng Smart NFC Gateway /sub', JSON.stringify(polygonCoords), user.id, generatedPuc]
+        [cleanFarmName, 'Trang trại khởi tạo tự động từ cổng Smart NFC Gateway /sub', JSON.stringify(polygonCoords), lat, lng, user.id, generatedPuc]
       );
       farm = farmRes.rows[0];
 
       // Create default plot A1
       try {
         await client.query(
-          `INSERT INTO farm_plots (farm_id, plot_code, plot_name, total_rows)
-           VALUES ($1, 'A1', 'Lô A1', 10)
-           ON CONFLICT DO NOTHING`,
+          `INSERT INTO farm_plots (farm_id, plot_code, plot_name)
+           VALUES ($1, 'A1', 'Lô A1')
+           ON CONFLICT (farm_id, plot_code) DO NOTHING`,
           [farm.id]
         );
       } catch (_) {}
