@@ -1291,7 +1291,7 @@ async function loadPlant() {
       if (tagData.assigned && tagData.plant) {
         const plant = tagData.plant;
         currentPlantData = plant;
-        document.title = `${plant.plant_type || 'Cây trồng'} #${plant.tree_code || plant.id} — Sổ Nông Tân Bảo Agtech`;
+        document.title = `Sổ Nông Nhàn - TBSG Agtech - Hồ sơ cây ${plant.tree_code || plant.id} - Vườn ${plant.farm_name || 'Tân Bảo'}`;
         populateGateInfo(plant);
 
         const { token, user } = getStoredAuth();
@@ -1365,7 +1365,7 @@ async function loadPlant() {
     }
 
     currentPlantData = plant;
-    document.title = `${plant.plant_type || 'Cây trồng'} — Sổ Nông Tân Bảo Agtech`;
+    document.title = `Sổ Nông Nhàn - TBSG Agtech - Hồ sơ cây ${plant.tree_code || plant.id} - Vườn ${plant.farm_name || 'Tân Bảo'}`;
 
     populateGateInfo(plant);
 
@@ -2837,6 +2837,7 @@ function calculateTreeAge(plantingDate) {
 
 // Render dynamic plant data with 4-Section Enterprise Profile System
 async function renderPlant(plant, isEditable) {
+  document.title = `Sổ Nông Nhàn - TBSG Agtech - Hồ sơ cây ${plant.tree_code || plant.id} - Vườn ${plant.farm_name || 'Tân Bảo'}`;
   const extra = plant.data || {};
   const schemaFields = plant.schema_fields || [];
   const media = plant.media || [];
@@ -3164,24 +3165,22 @@ async function renderPlant(plant, isEditable) {
               </div>
             </div>
 
-            <!-- Official Certification Badges Strip (PUC & VietGAP clickable) -->
+            <!-- Official Certification Badges Strip (PUC & VietGAP Standard Badges) -->
             <div class="passport-certs-row">
-              <div class="passport-cert-card puc" onclick="openCertificateModal('puc')" title="Bấm xem chi tiết Mã Vùng Trồng PUC">
+              <div class="passport-cert-card puc" title="Mã Vùng Trồng (PUC) Cấp Bởi Cục Bảo Vệ Thực Vật">
                 <div class="cert-card-icon"><i data-lucide="map-pinned" class="lucide-xs"></i></div>
                 <div class="cert-card-body">
                   <div class="cert-card-label">MÃ VÙNG TRỒNG (PUC)</div>
                   <div class="cert-card-val">${esc(pucCode)}</div>
                 </div>
-                <i data-lucide="arrow-up-right" class="cert-card-arrow"></i>
               </div>
 
-              <div class="passport-cert-card vietgap" onclick="openCertificateModal('vietgap')" title="Bấm xem chi tiết Chứng Nhận VietGAP">
+              <div class="passport-cert-card vietgap" title="Tiêu Chuẩn Canh Tác VietGAP Quốc Gia">
                 <div class="cert-card-icon"><i data-lucide="award" class="lucide-xs"></i></div>
                 <div class="cert-card-body">
                   <div class="cert-card-label">CHỨNG NHẬN VIETGAP</div>
                   <div class="cert-card-val">${esc(vietgapNumber)}</div>
                 </div>
-                <i data-lucide="arrow-up-right" class="cert-card-arrow"></i>
               </div>
             </div>
 
@@ -3240,16 +3239,11 @@ async function renderPlant(plant, isEditable) {
             </div>
           </div>
 
-          <!-- Bottom Action Buttons & Verification Seal -->
+          <!-- Bottom Verification Seal Strip -->
           <div class="passport-bottom-actions">
-            <div class="passport-seal-badge">
-              <i data-lucide="badge-check" class="lucide-xs"></i>
-              <span>Chuẩn Quốc Gia &amp; Xuất Khẩu</span>
-            </div>
-            <div class="passport-btn-group">
-              <button type="button" onclick="openCertificateModal('vietgap')" class="passport-action-btn pri" title="Xem chứng thư điện tử VietGAP">
-                <i data-lucide="file-check" class="lucide-xs"></i> <span>Xem Chứng Thư VietGAP</span>
-              </button>
+            <div class="passport-seal-badge full">
+              <i data-lucide="shield-check" class="lucide-xs" style="color:#059669;"></i>
+              <span>Chuẩn Quốc Gia VietGAP &amp; Cấp Mã Vùng Trồng PUC Xuất Khẩu</span>
             </div>
           </div>
         </div>
