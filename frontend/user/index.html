@@ -86,7 +86,7 @@
 
   <link rel="apple-touch-icon" href="/assets/favicon.png">
 
-  <!-- Fonts & Resource Preconnects -->
+  <!-- Google Fonts: Be Vietnam Pro (Enterprise Vietnamese Standard) & JetBrains Mono (Codes/UID) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://api.mapbox.com">
@@ -94,7 +94,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="dns-prefetch" href="https://api.mapbox.com">
   <link rel="dns-prefetch" href="https://events.mapbox.com">
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -638,30 +638,53 @@
           <div id="notif-overlay" onclick="closeNotificationDropdown()"></div>
 
           <!-- Notification Dropdown Panel / Mobile Centered Modal -->
-          <div id="notif-dropdown" class="notif-panel">
-            <div style="padding:14px 16px; background:#ffffff; border-bottom:1.5px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-              <strong style="font-size:14px; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                <i data-lucide="bell" class="lucide-sm" style="color:#059669;"></i> Thông Báo Hệ Thống Nông Hộ
+          <div id="notif-dropdown" class="notif-panel" style="display:none; width:380px; max-width:92vw; border-radius:18px; box-shadow:0 12px 36px rgba(0,0,0,0.15); border:1px solid #cbd5e1; overflow:hidden;">
+            <!-- Header -->
+            <div style="padding:14px 16px; background:#ffffff; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:14px; color:#0f172a; display:flex; align-items:center; gap:8px; font-weight:800;">
+                <span style="width:28px; height:28px; border-radius:8px; background:#ecfdf5; display:flex; align-items:center; justify-content:center; color:#059669;">
+                  <i data-lucide="bell" style="width:16px; height:16px;"></i>
+                </span>
+                Trung Tâm Thông Báo
               </strong>
-              <div style="display:flex; align-items:center; gap:10px;">
-                <button onclick="markAllNotificationsRead()" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; font-size:11px; font-weight:700; cursor:pointer; border-radius:6px; padding:3px 8px;">Đã đọc hết</button>
-                <button onclick="closeNotificationDropdown()" style="background:none; border:none; color:#64748b; font-size:20px; font-weight:800; cursor:pointer; line-height:1; padding:0 4px;">×</button>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button onclick="markAllNotificationsRead()" title="Đánh dấu tất cả là đã đọc" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; font-size:11.5px; font-weight:700; cursor:pointer; border-radius:8px; padding:4px 8px; display:inline-flex; align-items:center; gap:4px; transition:all 0.2s;" onmouseenter="this.style.background='#e2e8f0';" onmouseleave="this.style.background='#f1f5f9';">
+                  <i data-lucide="check-check" style="width:13px; height:13px; color:#059669;"></i> Đã đọc hết
+                </button>
+                <button onclick="closeNotificationDropdown()" style="background:none; border:none; color:#64748b; font-size:20px; font-weight:800; cursor:pointer; line-height:1; padding:2px 6px; border-radius:6px;" onmouseenter="this.style.color='#0f172a'; this.style.background='#f1f5f9';" onmouseleave="this.style.color='#64748b'; this.style.background='transparent';">×</button>
               </div>
             </div>
-            <div id="notif-list" style="overflow-y:auto; max-height:320px; padding:8px 12px; display:flex; flex-direction:column; gap:8px; background:#f8fafc;">
+
+            <!-- Filter Tabs Bar -->
+            <div style="display:flex; background:#ffffff; padding:6px 12px; border-bottom:1px solid #f1f5f9; gap:6px;">
+              <button onclick="filterNotifications('all')" class="notif-filter-tab active" data-filter="all" style="flex:1; padding:5px 8px; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #e2e8f0; background:#f8fafc; color:#475569; transition:all 0.2s;">
+                Tất cả
+              </button>
+              <button onclick="filterNotifications('unread')" class="notif-filter-tab" data-filter="unread" style="flex:1; padding:5px 8px; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #e2e8f0; background:#f8fafc; color:#475569; transition:all 0.2s;">
+                Chưa đọc
+              </button>
+              <button onclick="filterNotifications('danger')" class="notif-filter-tab" data-filter="danger" style="flex:1; padding:5px 8px; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #e2e8f0; background:#f8fafc; color:#dc2626; transition:all 0.2s;">
+                Cảnh báo
+              </button>
+            </div>
+
+            <!-- List of Notification Items -->
+            <div id="notif-list" style="overflow-y:auto; max-height:340px; padding:10px 12px; display:flex; flex-direction:column; gap:8px; background:#f8fafc;">
               <div style="text-align:center; padding:20px; color:#64748b; font-size:13px;"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải thông báo...</div>
             </div>
-            <div style="padding:10px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; flex-direction:column; gap:6px;">
-              <div style="display:flex; gap:6px;">
-                <button onclick="playCheerfulChime()" style="flex:1; background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; padding:6px 8px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
-                   Nhạc Khuyến cáo
+
+            <!-- Footer: Sound Tests & Web Push Button -->
+            <div style="padding:10px 14px; background:#ffffff; border-top:1px solid #e2e8f0; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; gap:8px;">
+                <button onclick="playCheerfulChime()" style="flex:1; background:#f0fdf4; border:1px solid #a7f3d0; color:#15803d; padding:6px 10px; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s;" onmouseenter="this.style.background='#dcfce7';" onmouseleave="this.style.background='#f0fdf4';">
+                  <i data-lucide="music" style="width:13px; height:13px;"></i> Âm Khuyến Nghị
                 </button>
-                <button onclick="playStrongAlert()" style="flex:1; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:6px 8px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
-                   Chuông Cảnh báo
+                <button onclick="playStrongAlert()" style="flex:1; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:6px 10px; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s;" onmouseenter="this.style.background='#fee2e2';" onmouseleave="this.style.background='#fef2f2';">
+                  <i data-lucide="volume-2" style="width:13px; height:13px;"></i> Còi Báo Động
                 </button>
               </div>
-              <button onclick="requestWebPushPermission()" class="royal-pill-btn royal-pill-btn-primary" style="width:100%;">
-                <i data-lucide="smartphone" class="lucide-sm"></i> Bật Thông báo Đẩy màn hình
+              <button onclick="requestWebPushPermission()" class="royal-pill-btn royal-pill-btn-primary" style="width:100%; padding:9px 14px; font-size:12.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <i data-lucide="smartphone" style="width:15px; height:15px;"></i> Bật Thông Báo Đẩy Màn Hình
               </button>
             </div>
           </div>
@@ -714,7 +737,7 @@
                   </div>
                   <div>
                     <div style="display:flex; align-items:baseline;">
-                      <span id="live-clock-time" style="font-size:18px; font-weight:900; font-family:'Segoe UI', monospace; letter-spacing:0.5px; color:#064e3b;">--:--</span>
+                      <span id="live-clock-time" style="font-size:18px; font-weight:900; font-family:var(--font-mono); letter-spacing:0.5px; color:#064e3b;">--:--</span>
                       <span id="live-clock-seconds" style="font-size:12px; font-weight:800; color:#059669; margin-left:1px;">:--</span>
                     </div>
                     <div id="live-clock-date" style="font-size:10.5px; font-weight:700; color:#64748b; white-space:nowrap;">
@@ -970,7 +993,7 @@
                 <i data-lucide="satellite" class="lucide-sm" style="color:#059669;"></i> Bản Đồ Vệ Tinh & Không Gian GIS
               </div>
               <h2 style="margin:4px 0 0 0; font-size:20px; color:#064e3b; font-weight:800; display:flex; align-items:center; gap:8px; letter-spacing:-0.2px;">
-                <i data-lucide="home" class="lucide-sm" style="color:#059669"></i> Danh Sách Trang Trại Nông Hộ
+                <i data-lucide="trees" class="lucide-sm" style="color:#059669"></i> Danh Sách Trang Trại Nông Hộ
               </h2>
               <p style="margin:3px 0 0 0; font-size:13px; color:#64748b; max-width:640px; line-height:1.4;">
                 Chọn trang trại dưới đây để mở buồng điều khiển không gian GIS, bản đồ vệ tinh độ nét cao và quản lý cây trồng.
@@ -978,13 +1001,13 @@
             </div>
             <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center;">
               <button onclick="openSelfInitFarmModal()" class="royal-pill-btn royal-pill-btn-primary">
-                <i data-lucide="crosshair" class="lucide-sm"></i> Khởi tạo Trang trại mới (GPS)
+                <i data-lucide="plus-circle" class="lucide-sm"></i> Khởi tạo Trang trại mới (GPS)
               </button>
             </div>
           </div>
 
           <!-- Khối Trang trại sở hữu & Khối Tạo mới -->
-          <div id="user-farms-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+          <div id="user-farms-grid" class="user-farms-grid-container">
             <!-- Rendered dynamically by JS -->
           </div>
         </div>
@@ -1366,8 +1389,8 @@
                 </span>
               </div>
 
-              <!-- 7 Days Weather Grid Cards -->
-              <div id="iot-weather-forecast-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px;">
+              <!-- 7 Days Weather Grid Cards (4 on top, 3 on bottom) -->
+              <div id="iot-weather-forecast-grid" class="weather-forecast-grid-4-3">
                 <!-- JS dynamic render 7 days weather -->
               </div>
 
@@ -5134,21 +5157,21 @@
             <input type="radio" name="rule_category" value="danger" checked onchange="onRuleCategoryChange('danger')" style="position:absolute; top:8px; right:8px; accent-color:#dc2626;" />
             <i data-lucide="alert-triangle" class="lucide-sm" style="font-size:22px; color:#dc2626; margin-top:2px;"></i>
             <span style="color:#991b1b; font-size:13px; font-weight:800;">Cảnh báo</span>
-            <span style="font-size:10px; color:#dc2626; font-weight:600;">Màu Đỏ + Icon Cảnh báo</span>
+            <span style="font-size:10.5px; color:#dc2626; font-weight:600;">Khẩn cấp &amp; Vượt ngưỡng</span>
           </label>
 
           <label style="position:relative; border:2px solid #fed7aa; background:#fff7ed; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
             <input type="radio" name="rule_category" value="warning" onchange="onRuleCategoryChange('warning')" style="position:absolute; top:8px; right:8px; accent-color:#d97706;" />
             <i data-lucide="megaphone" class="lucide-sm" style="font-size:22px; color:#d97706; margin-top:2px;"></i>
             <span style="color:#92400e; font-size:13px; font-weight:800;">Khuyến cáo</span>
-            <span style="font-size:10px; color:#d97706; font-weight:600;">Màu Cam + Icon Loa</span>
+            <span style="font-size:10.5px; color:#d97706; font-weight:600;">Kỹ thuật canh tác</span>
           </label>
 
           <label style="position:relative; border:2px solid #bbf7d0; background:#f0fdf4; padding:10px 8px; border-radius:14px; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all 0.2s ease;">
             <input type="radio" name="rule_category" value="info" onchange="onRuleCategoryChange('info')" style="position:absolute; top:8px; right:8px; accent-color:#16a34a;" />
             <i data-lucide="info" class="lucide-sm" style="font-size:22px; color:#16a34a; margin-top:2px;"></i>
             <span style="color:#166534; font-size:13px; font-weight:800;">Thông báo</span>
-            <span style="font-size:10px; color:#16a34a; font-weight:600;">Xanh lá + Icon Thông tin</span>
+            <span style="font-size:10.5px; color:#16a34a; font-weight:600;">Xác nhận hệ thống</span>
           </label>
         </div>
       </div>

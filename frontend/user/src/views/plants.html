@@ -8,7 +8,7 @@
                 <i data-lucide="satellite" class="lucide-sm" style="color:#059669;"></i> Bản Đồ Vệ Tinh & Không Gian GIS
               </div>
               <h2 style="margin:4px 0 0 0; font-size:20px; color:#064e3b; font-weight:800; display:flex; align-items:center; gap:8px; letter-spacing:-0.2px;">
-                <i data-lucide="home" class="lucide-sm" style="color:#059669"></i> Danh Sách Trang Trại Nông Hộ
+                <i data-lucide="trees" class="lucide-sm" style="color:#059669"></i> Danh Sách Trang Trại Nông Hộ
               </h2>
               <p style="margin:3px 0 0 0; font-size:13px; color:#64748b; max-width:640px; line-height:1.4;">
                 Chọn trang trại dưới đây để mở buồng điều khiển không gian GIS, bản đồ vệ tinh độ nét cao và quản lý cây trồng.
@@ -16,13 +16,13 @@
             </div>
             <div style="position:relative; z-index:1; display:flex; gap:10px; align-items:center;">
               <button onclick="openSelfInitFarmModal()" class="royal-pill-btn royal-pill-btn-primary">
-                <i data-lucide="crosshair" class="lucide-sm"></i> Khởi tạo Trang trại mới (GPS)
+                <i data-lucide="plus-circle" class="lucide-sm"></i> Khởi tạo Trang trại mới (GPS)
               </button>
             </div>
           </div>
 
           <!-- Khối Trang trại sở hữu & Khối Tạo mới -->
-          <div id="user-farms-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+          <div id="user-farms-grid" class="user-farms-grid-container">
             <!-- Rendered dynamically by JS -->
           </div>
         </div>
@@ -404,8 +404,8 @@
                 </span>
               </div>
 
-              <!-- 7 Days Weather Grid Cards -->
-              <div id="iot-weather-forecast-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px;">
+              <!-- 7 Days Weather Grid Cards (4 on top, 3 on bottom) -->
+              <div id="iot-weather-forecast-grid" class="weather-forecast-grid-4-3">
                 <!-- JS dynamic render 7 days weather -->
               </div>
 

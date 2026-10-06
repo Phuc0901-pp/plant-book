@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/settings.js — Account settings & Threshold Rules Engine
@@ -85,62 +85,62 @@ window.loadThresholdRules = loadThresholdRules;
 const DEVICE_GROUPS = {
   soil: {
     id: 'soil',
-    name: '🟤 Cảm biến Đất Đa tầng (Multilayer 7-in-1)',
+    name: 'Cảm biến Đất Đa tầng (Multilayer 7-in-1)',
     badge: 'Đất đa tầng',
     metrics: {
-      soil_moisture_10cm: { name: '🌱 Độ ẩm đất tầng 10cm', unit: '%' },
-      soil_moisture_20cm: { name: '🌱 Độ ẩm đất tầng 20cm', unit: '%' },
-      soil_moisture_30cm: { name: '🌱 Độ ẩm đất tầng 30cm', unit: '%' },
-      soil_moisture_50cm: { name: '🪴 Độ ẩm đất tầng 50cm', unit: '%' },
-      soil_temp_10cm:     { name: '🌡️ Nhiệt độ đất tầng 10cm', unit: '°C' },
-      soil_temp_20cm:     { name: '🌡️ Nhiệt độ đất tầng 20cm', unit: '°C' },
-      soil_ph:            { name: '🧪 Độ pH Đất', unit: 'pH' },
-      soil_ec:            { name: '⚡ Độ EC dẫn điện đất', unit: 'mS/cm' },
-      soil_salinity:      { name: '🧂 Độ mặn đất', unit: '‰' },
-      soil_nitrogen:      { name: '🧪 Dinh dưỡng Nitơ (N)', unit: 'mg/kg' },
-      soil_phosphorus:    { name: '🧪 Dinh dưỡng Phốt pho (P)', unit: 'mg/kg' },
-      soil_potassium:     { name: '🧪 Dinh dưỡng Kali (K)', unit: 'mg/kg' }
+      soil_moisture_10cm: { name: 'Độ ẩm đất tầng 10cm', unit: '%' },
+      soil_moisture_20cm: { name: 'Độ ẩm đất tầng 20cm', unit: '%' },
+      soil_moisture_30cm: { name: 'Độ ẩm đất tầng 30cm', unit: '%' },
+      soil_moisture_50cm: { name: 'Độ ẩm đất tầng 50cm', unit: '%' },
+      soil_temp_10cm:     { name: 'Nhiệt độ đất tầng 10cm', unit: '°C' },
+      soil_temp_20cm:     { name: 'Nhiệt độ đất tầng 20cm', unit: '°C' },
+      soil_ph:            { name: 'Độ pH Đất', unit: 'pH' },
+      soil_ec:            { name: 'Độ EC dẫn điện đất', unit: 'mS/cm' },
+      soil_salinity:      { name: 'Độ mặn đất', unit: '‰' },
+      soil_nitrogen:      { name: 'Dinh dưỡng Nitơ (N)', unit: 'mg/kg' },
+      soil_phosphorus:    { name: 'Dinh dưỡng Phốt pho (P)', unit: 'mg/kg' },
+      soil_potassium:     { name: 'Dinh dưỡng Kali (K)', unit: 'mg/kg' }
     }
   },
   air: {
     id: 'air',
-    name: '💨 Trạm Môi trường Không khí (Air Station #01)',
+    name: 'Trạm Môi trường Không khí (Air Station #01)',
     badge: 'Không khí',
     metrics: {
-      air_temp:           { name: '🌡️ Nhiệt độ không khí', unit: '°C' },
-      air_humidity:       { name: '💧 Độ ẩm không khí', unit: '%' },
-      wind_speed:         { name: '💨 Tốc độ gió', unit: 'km/h' },
-      rainfall:           { name: '🌧️ Lượng & Cường độ mưa', unit: 'mm' },
-      uv_index:           { name: '☀️ Chỉ số bức xạ UV', unit: 'Index' },
-      solar_radiation:    { name: '⚡ Cường độ nắng / Bức xạ', unit: 'W/m²' }
+      air_temp:           { name: 'Nhiệt độ không khí', unit: '°C' },
+      air_humidity:       { name: 'Độ ẩm không khí', unit: '%' },
+      wind_speed:         { name: 'Tốc độ gió', unit: 'km/h' },
+      rainfall:           { name: 'Lượng & Cường độ mưa', unit: 'mm' },
+      uv_index:           { name: 'Chỉ số bức xạ UV', unit: 'Index' },
+      solar_radiation:    { name: 'Cường độ nắng / Bức xạ', unit: 'W/m²' }
     }
   },
   water: {
     id: 'water',
-    name: '🚰 Môi trường Nước tưới (Bể tưới IoT)',
+    name: 'Môi trường Nước tưới (Bể tưới IoT)',
     badge: 'Nước tưới',
     metrics: {
-      water_ph:           { name: '🧪 pH Nước tưới', unit: 'pH' },
-      water_do:           { name: '🫧 Oxy hòa tan (DO)', unit: 'mg/L' },
-      water_turbidity:    { name: '💧 Độ đục nước', unit: 'NTU' },
-      water_level:        { name: '🚰 Mực nước bể lưu', unit: '%' }
+      water_ph:           { name: 'pH Nước tưới', unit: 'pH' },
+      water_do:           { name: 'Oxy hòa tan (DO)', unit: 'mg/L' },
+      water_turbidity:    { name: 'Độ đục nước', unit: 'NTU' },
+      water_level:        { name: 'Mực nước bể lưu', unit: '%' }
     }
   },
   weather: {
     id: 'weather',
-    name: '🌦️ Dự báo Khí tượng & Thời tiết Nông nghiệp',
+    name: 'Dự báo Khí tượng & Thời tiết Nông nghiệp',
     badge: 'Khí tượng',
     metrics: {
-      rain_chance:        { name: '🌦️ Khả năng mưa ngày mai', unit: '%' },
-      forecast_temp_max:  { name: '🌡️ Dự báo Nhiệt độ cao nhất', unit: '°C' },
-      forecast_temp_min:  { name: '🌡️ Dự báo Nhiệt độ thấp nhất', unit: '°C' },
-      forecast_humidity:  { name: '💧 Dự báo Độ ẩm không khí', unit: '%' },
-      forecast_wind:      { name: '💨 Dự báo Tốc độ gió', unit: 'km/h' }
+      rain_chance:        { name: 'Khả năng mưa ngày mai', unit: '%' },
+      forecast_temp_max:  { name: 'Dự báo Nhiệt độ cao nhất', unit: '°C' },
+      forecast_temp_min:  { name: 'Dự báo Nhiệt độ thấp nhất', unit: '°C' },
+      forecast_humidity:  { name: 'Dự báo Độ ẩm không khí', unit: '%' },
+      forecast_wind:      { name: 'Dự báo Tốc độ gió', unit: 'km/h' }
     }
   },
   custom: {
     id: 'custom',
-    name: '✍️ Nguồn dữ liệu Khác (Tự nhập tay)',
+    name: 'Nguồn dữ liệu Khác (Tự nhập tay)',
     badge: 'Tự nhập',
     metrics: {}
   }
@@ -203,7 +203,7 @@ export function addConditionRow(data = null) {
     <!-- Step 1: Device Source Selector -->
     <div>
       <span style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">
-        📡 1. Chọn Thiết bị IoT / Nguồn dữ liệu:
+        1. Chọn Thiết bị IoT / Nguồn dữ liệu:
       </span>
       <select class="cond-device" onchange="onConditionDeviceChange('${rowId}')" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12.5px; font-weight:700; color:#0f172a; outline:none; background:#f8fafc;">
         ${Object.entries(DEVICE_GROUPS).map(([k, v]) => `
@@ -404,13 +404,13 @@ export function updateRuleConditionsSummary() {
   });
 
   const offIot = document.getElementById('rule-check-offline-iot')?.checked;
-  if (offIot) parts.push(`[📡 Quét IoT mất kết nối/0]`);
+  if (offIot) parts.push(`[Quét IoT mất kết nối/0]`);
 
   const weatherTom = document.getElementById('rule-check-weather-tomorrow')?.checked;
-  if (weatherTom) parts.push(`[🌦️ Sáng mai có mưa rào]`);
+  if (weatherTom) parts.push(`[Sáng mai có mưa rào]`);
 
   const disHist = document.getElementById('rule-check-disease-history')?.checked;
-  if (disHist) parts.push(`[🐛 Tra lịch sử bệnh cây]`);
+  if (disHist) parts.push(`[Tra lịch sử bệnh cây]`);
 
   if (parts.length === 0) {
     summaryEl.textContent = 'Chưa thiết lập điều kiện nào.';
@@ -448,7 +448,7 @@ export function renderThresholdRulesUI(rules) {
       badgeBg: '#fee2e2',
       badgeText: '#dc2626',
       icon: 'alert-triangle',
-      label: '🚨 Cảnh báo (Màu Đỏ - Icon ⚠️)'
+      label: 'Cảnh báo'
     },
     warning: {
       bg: '#fff7ed',
@@ -456,7 +456,7 @@ export function renderThresholdRulesUI(rules) {
       badgeBg: '#ffedd5',
       badgeText: '#d97706',
       icon: 'megaphone',
-      label: '📢 Khuyến cáo (Màu Cam - Icon 📢 Cái loa)'
+      label: 'Khuyến cáo'
     },
     info: {
       bg: '#f0fdf4',
@@ -464,7 +464,7 @@ export function renderThresholdRulesUI(rules) {
       badgeBg: '#dcfce7',
       badgeText: '#16a34a',
       icon: 'info',
-      label: 'ℹ️ Thông báo (Màu Xanh lá - Icon ℹ️)'
+      label: 'Thông báo'
     }
   };
 

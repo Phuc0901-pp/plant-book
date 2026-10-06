@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/logs.js — Care log rendering, grouping, search & filters
@@ -385,6 +385,8 @@ export function renderUserLogsTable(logs) {
     const dayLogs = daysMap.get(dateStr) || [];
     const dObj = new Date(dateStr);
     const dateFormatted = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}/${dObj.getFullYear()}`;
+    const dayOfWeekStr = !isNaN(dObj) ? dayOfWeekArr[dObj.getDay()] : '';
+    const dateHeaderTitle = dayOfWeekStr ? `${dayOfWeekStr}, Ngày ${dateFormatted}` : `Ngày ${dateFormatted}`;
     
     let dateTag = '';
     if (dateStr === todayStr) {
@@ -403,7 +405,7 @@ export function renderUserLogsTable(logs) {
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <i data-lucide="calendar-days" class="lucide-sm" style="color: #059669; font-size: 15px;"></i>
-              <span style="font-size: 13.5px; font-weight: 900; color: #0f172a;">Ngày ${dateFormatted}</span>
+              <span style="font-size: 13.5px; font-weight: 900; color: #0f172a;">${dateHeaderTitle}</span>
               ${dateTag}
             </div>
             <div style="font-size: 12px; color: #64748b; font-weight: 700;">
@@ -580,8 +582,23 @@ function _renderLogPage() {
   });
 
   let html = '';
+  const dayOfWeekArr = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+  const LOG_TYPE_ICONS = {
+    'Tưới nước': 'droplets',
+    'Bón phân': 'sprout',
+    'Phun thuốc': 'flask-conical',
+    'Cắt tỉa': 'scissors',
+    'Làm cỏ': 'scissors',
+    'Thu hoạch': 'package-check',
+    'Bệnh cây': 'shield-alert'
+  };
+
   Object.keys(groupedByDate).forEach(dateStr => {
     const dayItems = groupedByDate[dateStr];
+    const dObjFirst = dayItems[0] ? new Date(dayItems[0].log_date || dayItems[0].created_at) : null;
+    const dayOfWeekStr = (dObjFirst && !isNaN(dObjFirst)) ? dayOfWeekArr[dObjFirst.getDay()] : '';
+    const dateHeaderTitle = dayOfWeekStr ? `${dayOfWeekStr}, Ngày ${esc(dateStr)}` : `Ngày ${esc(dateStr)}`;
 
     html += `
       <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.03);">
@@ -589,7 +606,7 @@ function _renderLogPage() {
         <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px;">
             ${_batchSelectMode ? `<input type="checkbox" class="log-day-select-all" onchange="toggleSelectAllDay('${esc(dateStr)}', this.checked)" style="width:17px; height:17px; cursor:pointer; accent-color:#10b981; margin-right:4px;" title="Chọn tất cả mục trong ngày này">` : ''}
-            <i data-lucide="calendar-days" class="lucide-sm" style="color:#10b981;"></i> Ngày ${esc(dateStr)}
+            <i data-lucide="calendar-days" class="lucide-sm" style="color:#10b981;"></i> <span>${dateHeaderTitle}</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:700; padding:3px 12px; border-radius:20px;">
@@ -640,6 +657,7 @@ function _renderLogPage() {
 
       const targetDisplay = l.targetDisplay || (l.plant_id ? `Cây #${l.tree_code || l.plant_id}` : 'Toàn vườn');
       const isSelected = l.id && _selectedLogIds.has(l.id);
+      const iconKey = LOG_TYPE_ICONS[l.log_type] || 'clipboard';
 
       if (l.isDiseaseLog || l.log_type === 'Bệnh cây') {
         html += `
@@ -648,13 +666,16 @@ function _renderLogPage() {
               ${_batchSelectMode && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
               <div>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                  <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:800; font-size:11px;">🐛 Bệnh cây</span>
+                  <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:800; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
+                    <i data-lucide="shield-alert" class="lucide-xs"></i> Bệnh cây
+                  </span>
                   <strong style="color:#dc2626; font-size:14px;"><i data-lucide="alert-triangle" class="lucide-sm"></i> ${esc(targetDisplay)}</strong>
                 </div>
                 <div style="font-size:12.5px; color:#7f1d1d; margin-top:4px; font-weight:600;">${detailsStr}</div>
                 ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
-                <div style="font-size:11.5px; color:#991b1b; margin-top:4px;">
-                  👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+                <div style="font-size:11.5px; color:#991b1b; margin-top:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="user" class="lucide-xs"></i> Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong></span>
+                  ${l.farm_name ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="home" class="lucide-xs"></i> ${esc(l.farm_name)}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -676,13 +697,16 @@ function _renderLogPage() {
               ${_batchSelectMode && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
               <div>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                  <span class="badge badge-green" style="font-size:11px; font-weight:700;">${esc(l.log_type)}</span>
+                  <span class="badge badge-green" style="font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                    <i data-lucide="${iconKey}" class="lucide-xs"></i> ${esc(l.log_type)}
+                  </span>
                   <strong style="color:#0f172a; font-size:14px;">${esc(targetDisplay)}</strong>
                 </div>
                 ${detailsStr ? `<div style="font-size:12.5px; color:#475569; margin-top:4px;">${detailsStr}</div>` : ''}
                 ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
-                <div style="font-size:11.5px; color:#64748b; margin-top:4px;">
-                  👤 Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.farm_name ? `· 🏡 ${esc(l.farm_name)}` : ''}
+                <div style="font-size:11.5px; color:#64748b; margin-top:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="user" class="lucide-xs" style="color:#059669;"></i> Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong></span>
+                  ${l.farm_name ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="home" class="lucide-xs" style="color:#059669;"></i> ${esc(l.farm_name)}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -777,8 +801,8 @@ function _logRow(l) {
         </td>
         <td data-label="Hoạt động">
           <div>
-            <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:700; box-shadow:0 2px 8px rgba(220,38,38,0.35); text-transform:none; padding:4px 10px; border-radius:6px; font-size:12px;">
-              🐛 Bệnh cây
+            <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:700; box-shadow:0 2px 8px rgba(220,38,38,0.35); text-transform:none; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
+              <i data-lucide="shield-alert" class="lucide-xs"></i> Bệnh cây
             </span>
           </div>
         </td>

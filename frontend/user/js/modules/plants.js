@@ -766,15 +766,30 @@ window.closeFarmDetailView = closeFarmDetailView;
 export function renderUserFarmsGrid(farms) {
   const gridContainer = document.getElementById('user-farms-grid');
 
+  function formatSmartArea(val) {
+    const num = parseFloat(val);
+    if (!num || isNaN(num) || num <= 0) return '0 m²';
+    if (num >= 10000) {
+      const ha = num / 10000;
+      const haFormatted = ha.toLocaleString('vi-VN', {
+        minimumFractionDigits: (ha % 1 === 0) ? 0 : (ha < 10 ? 2 : 1),
+        maximumFractionDigits: 2
+      });
+      return `${haFormatted} ha`;
+    }
+    return `${Math.round(num).toLocaleString('vi-VN')} m²`;
+  }
+  window.formatSmartArea = formatSmartArea;
+
   if (!farms || !farms.length) {
     if (gridContainer) {
       gridContainer.innerHTML = `
-        <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:28px 20px; text-align:center; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
-          <div style="width:54px; height:54px; border-radius:50%; background:#dcfce7; color:#059669; font-size:24px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(5,150,105,0.15);">
-            <i data-lucide="plus" class="lucide-sm"></i>
+        <div onclick="openSelfInitFarmModal()" class="user-farm-card-create">
+          <div class="user-farm-create-icon">
+            <i data-lucide="plus" class="lucide-md"></i>
           </div>
-          <div style="font-size:16px; font-weight:800; color:#047857; margin-bottom:4px;">Khởi tạo Trang trại mới (GPS)</div>
-          <div style="font-size:13px; color:#166534;">Bấm vào đây để lấy tọa độ thực tế từ GPS thiết bị</div>
+          <div style="font-size:16px; font-weight:800; color:#047857; margin-bottom:4px;">+ Khởi tạo Trang trại mới (GPS)</div>
+          <div style="font-size:13px; color:#166534; font-weight:500;">Bấm vào đây để lấy tọa độ thực tế từ GPS thiết bị</div>
         </div>
       `;
       if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
@@ -783,53 +798,76 @@ export function renderUserFarmsGrid(farms) {
   }
 
   if (gridContainer) {
-function formatSmartArea(val) {
-  const num = parseFloat(val);
-  if (!num || isNaN(num) || num <= 0) return '0 m²';
-  if (num >= 10000) {
-    const ha = num / 10000;
-    const haFormatted = ha.toLocaleString('vi-VN', {
-      minimumFractionDigits: (ha % 1 === 0) ? 0 : (ha < 10 ? 2 : 1),
-      maximumFractionDigits: 2
-    });
-    return `${haFormatted} ha`;
-  }
-  return `${Math.round(num).toLocaleString('vi-VN')} m²`;
-}
-window.formatSmartArea = formatSmartArea;
-
     let html = farms.map(f => {
       const totalPlants = f.plant_count || f.total_plants || 0;
       const rawAreaFormatted = f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') + ' m²' : '0 m²';
       const smartArea = formatSmartArea(f.area);
+      const desc = f.description ? esc(f.description) : 'Chưa cập nhật địa chỉ thực địa';
+      const isCustomDesc = !!f.description;
+
       return `
-        <div onclick="openFarmDetailView(${f.id})" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:18px; position:relative; cursor:pointer; transition:all 0.2s ease; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-            <h4 style="margin:0; font-size:15px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              <i data-lucide="home" class="lucide-sm" style="color:#059669; font-size:16px;"></i> ${esc(f.name)}
-            </h4>
-            <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;">Trang trại của tôi</span>
+        <div class="user-farm-card" onclick="openFarmDetailView(${f.id})">
+          <div>
+            <!-- Header Row -->
+            <div class="user-farm-card-head">
+              <div class="user-farm-card-title-group">
+                <div class="user-farm-card-icon">
+                  <i data-lucide="home" class="lucide-md"></i>
+                </div>
+                <div class="user-farm-card-title-wrap">
+                  <h4 class="user-farm-card-name" title="${esc(f.name)}">${esc(f.name)}</h4>
+                  <div class="user-farm-card-type-tag">
+                    <i data-lucide="satellite" class="lucide-xs"></i>
+                    <span>Trang trại số GIS</span>
+                  </div>
+                </div>
+              </div>
+              <span class="user-farm-card-owner-badge">Trang trại của tôi</span>
+            </div>
+
+            <!-- Location / Address Row -->
+            <div class="user-farm-card-location" title="${desc}">
+              <i data-lucide="map-pin" class="lucide-xs" style="color:#10b981; flex-shrink:0;"></i>
+              <span style="${!isCustomDesc ? 'font-style:italic; opacity:0.8;' : ''}">${desc}</span>
+            </div>
+
+            <!-- Metrics 2-column Grid -->
+            <div class="user-farm-card-metrics">
+              <div class="user-farm-metric-item">
+                <div class="user-farm-metric-label">
+                  <i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> Tổng Cây
+                </div>
+                <div class="user-farm-metric-val plants">${totalPlants.toLocaleString('vi-VN')} <span style="font-size:12px; font-weight:600; color:#64748b;">cây</span></div>
+              </div>
+              <div class="user-farm-metric-item">
+                <div class="user-farm-metric-label">
+                  <i data-lucide="maximize" class="lucide-xs" style="color:#0284c7;"></i> Diện Tích
+                </div>
+                <div class="user-farm-metric-val area" title="Tổng diện tích: ${rawAreaFormatted}">${smartArea}</div>
+              </div>
+            </div>
+
+            <!-- Certifications & PUC Badges -->
+            <div class="user-farm-card-certs">
+              ${f.vietgap_cert_number 
+                ? `<span class="user-farm-cert-tag vietgap-active" title="Mã chứng nhận VietGAP"><i data-lucide="shield-check" class="lucide-xs"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` 
+                : `<span class="user-farm-cert-tag muted"><i data-lucide="shield" class="lucide-xs"></i> VietGAP: Chưa cấp</span>`}
+              ${f.puc_code 
+                ? `<span class="user-farm-cert-tag puc-active" title="Mã số vùng trồng PUC"><i data-lucide="globe" class="lucide-xs"></i> PUC: ${esc(f.puc_code)}</span>` 
+                : `<span class="user-farm-cert-tag muted"><i data-lucide="globe" class="lucide-xs"></i> PUC: Chưa cấp</span>`}
+            </div>
           </div>
-          <p style="margin:0 0 14px 0; font-size:12.5px; color:#64748b; font-style:italic; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical;">
-            ${esc(f.description || 'Chưa có mô tả địa chỉ')}
-          </p>
-          <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#334155; display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
-            <span><i data-lucide="sprout" class="lucide-sm" style="color:#059669;"></i> ${totalPlants} cây</span>
-            <span title="Tổng diện tích: ${rawAreaFormatted}"><i data-lucide="ruler" class="lucide-sm" style="color:#059669;"></i> ${smartArea}</span>
-          </div>
-          <div style="font-size:11.5px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:6px;">
-            ${f.vietgap_cert_number ? `<span style="background:#dcfce7; color:#065f46; border:1px solid #86efac; padding:2px 7px; border-radius:6px; font-weight:700;"><i data-lucide="shield-check" class="lucide-sm"></i> VietGAP: ${esc(f.vietgap_cert_number)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">VietGAP: Chưa cấp</span>`}
-            ${f.puc_code ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 7px; border-radius:6px; font-weight:700;"><i data-lucide="globe" class="lucide-sm"></i> PUC: ${esc(f.puc_code)}</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 7px; border-radius:6px; font-size:11px;">PUC: Chưa cấp</span>`}
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button onclick="openFarmDetailView(${f.id})" style="flex:1; background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
-              <i data-lucide="map" class="lucide-sm"></i> Xem Bản đồ & Chi tiết
+
+          <!-- Actions Bar (Fixed to bottom) -->
+          <div class="user-farm-card-actions">
+            <button type="button" onclick="openFarmDetailView(${f.id})" class="user-farm-btn-main" title="Mở buồng điều khiển bản đồ GIS và quản lý cây trồng">
+              <i data-lucide="map" class="lucide-sm"></i> <span>Xem Bản đồ & Chi tiết</span>
             </button>
-            <button onclick="event.stopPropagation(); openEditFarmModal(${f.id})" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; color:#334155; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Chỉnh sửa trang trại">
-              <i data-lucide="edit" class="lucide-sm" style="color:#059669;"></i> Sửa
+            <button type="button" onclick="event.stopPropagation(); openEditFarmModal(${f.id})" class="user-farm-btn-sub" title="Chỉnh sửa thông tin trang trại">
+              <i data-lucide="edit-3" class="lucide-sm" style="color:#059669;"></i> <span>Sửa</span>
             </button>
-            <button onclick="event.stopPropagation(); deleteUserFarm(${f.id}, '${esc(f.name)}')" style="background:#ffffff; border:1.5px solid #fca5a5; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Xóa đệm (ẩn) trang trại">
-              <i data-lucide="trash-2" class="lucide-sm" style="color:#dc2626;"></i> Xóa
+            <button type="button" onclick="event.stopPropagation(); deleteUserFarm(${f.id}, '${esc(f.name)}')" class="user-farm-btn-delete" title="Xóa hoặc ẩn trang trại này">
+              <i data-lucide="trash-2" class="lucide-sm"></i> <span>Xóa</span>
             </button>
           </div>
         </div>
@@ -841,12 +879,12 @@ window.formatSmartArea = formatSmartArea;
     const isNormal = user.role !== 'admin' && user.account_tier !== 'pro';
     if (!isNormal || farms.length === 0) {
       html += `
-        <div onclick="openSelfInitFarmModal()" style="background:#f0fdf4; border:2px dashed #10b981; border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:all 0.2s ease; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:150px; box-shadow:0 4px 14px rgba(16,185,129,0.06);">
-          <div style="width:42px; height:42px; border-radius:50%; background:#dcfce7; color:#059669; font-size:20px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px;">
-            <i data-lucide="plus" class="lucide-sm"></i>
+        <div onclick="openSelfInitFarmModal()" class="user-farm-card-create">
+          <div class="user-farm-create-icon">
+            <i data-lucide="plus" class="lucide-md"></i>
           </div>
-          <div style="font-size:14px; font-weight:800; color:#047857;">+ Khởi tạo Trang trại mới (GPS)</div>
-          <div style="font-size:12px; color:#166534; margin-top:2px;">Bấm để định vị GPS thêm trang trại</div>
+          <div style="font-size:15px; font-weight:800; color:#047857; margin-bottom:4px;">+ Khởi tạo Trang trại mới (GPS)</div>
+          <div style="font-size:12.5px; color:#166534; font-weight:500;">Bấm để định vị GPS thêm trang trại</div>
         </div>
       `;
     }
@@ -1121,24 +1159,24 @@ window.refreshIoTDemoData = refreshIoTDemoData;
 
 // ── Real Open-Meteo 6-Day Agricultural Weather Forecast ─────────────
 const WMO_FORECAST_CONFIG = {
-  0: { icon: 'sun', color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Trời nắng trong xanh', advice: '☀️ Nắng ấm: Rất thích hợp bón phân rễ & tưới nước buổi sáng sớm.' },
-  1: { icon: 'sun-medium', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Quang mây, ít mây', advice: '⛅ Mát mẻ: Thời điểm lý tưởng để tỉa cành, tạo tán và làm cỏ vườn.' },
-  2: { icon: 'cloud-sun', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', label: 'Mây rải rác', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng hấp thu nhanh.' },
-  3: { icon: 'cloud', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', label: 'Nhiều mây âm u', advice: '☁️ Trời nhiều mây: Thuận lợi thu hoạch trái và kiểm tra sâu bệnh hại.' },
-  45: { icon: 'cloud-fog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù sáng sớm', advice: '🌫️ Sương mù ẩm: Chú ý phòng ngừa nấm bệnh sương mai trên đọt non.' },
-  48: { icon: 'cloud-fog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù đọng sương', advice: '🌫️ Đọng sương ẩm: Tránh tưới quá ẩm làm tăng nguy cơ thối rễ.' },
-  51: { icon: 'cloud-drizzle', color: '#38bdf8', bg: '#f0fdfa', border: '#99f6e4', label: 'Mưa phùn nhẹ', advice: '🌦️ Mưa phùn nhẹ: Có thể giảm lượng tưới nước, theo dõi độ ẩm đất.' },
-  53: { icon: 'cloud-drizzle', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa phùn vừa', advice: '🌧️ Mưa phùn: Hoãn phun thuốc BVTV để tránh lãng phí và trôi thuốc.' },
-  55: { icon: 'cloud-rain', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa phùn nặng', advice: '🌧️ Mưa kéo dài: Cần đảm bảo hệ thống rãnh thoát nước vườn thông thoáng.' },
-  61: { icon: 'cloud-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào nhẹ', advice: '🌦️ Mưa rào rải rác: Tận dụng nguồn đạm tự nhiên, tạm hoãn bón phân đạm.' },
-  63: { icon: 'cloud-rain-wind', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào vừa', advice: '🌧️ Mưa rào vừa: Kiểm tra thoát nước gốc cây, tránh đọng nước cổ rễ.' },
-  65: { icon: 'cloud-rain-wind', color: '#1d4ed8', bg: '#eff6ff', border: '#60a5fa', label: 'Mưa to nặng hạt', advice: '⛈️ Mưa to nặng hạt: Khơi thông dòng chảy thoát lũ, không đi lại làm nén đất.' },
-  80: { icon: 'cloud-sun-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào thoáng qua', advice: '🌦️ Mưa rào ngắn: Thời tiết thuận lợi sau mưa để tiến hành thăm vườn.' },
-  81: { icon: 'cloud-rain-wind', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào từng cơn', advice: '🌧️ Mưa từng đợt: Cắt tỉa cành khô, cành sâu bệnh bị gãy đổ.' },
-  82: { icon: 'cloud-rain-wind', color: '#1e40af', bg: '#f1f5f9', border: '#94a3b8', label: 'Mưa rất to xối xả', advice: '⛈️ Mưa xối xả: Kê cao vật tư phân bón, kiểm tra an toàn điện trạm bơm.' },
-  95: { icon: 'cloud-lightning', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa', label: 'Mưa dông sét', advice: '⚡ Dông sét: Gia cố cọc chống cây trồng lớn, ngắt nguồn điện tưới ngoài trời.' },
-  96: { icon: 'cloud-lightning', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', label: 'Dông lốc, mưa đá nhẹ', advice: '⚠️ Cảnh báo dông lốc: Kiểm tra neo giàn và lưới che chắn nhà màng.' },
-  99: { icon: 'cloud-lightning', color: '#991b1b', bg: '#fef2f2', border: '#f87171', label: 'Dông lốc nguy hiểm', advice: '⛔ Dông bão mạnh: Tạm dừng toàn bộ hoạt động ngoài đồng ruộng để an toàn.' }
+  0: { icon: 'sun', color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Trời nắng trong xanh', advice: 'Nắng ấm: Rất thích hợp bón phân rễ & tưới nước buổi sáng sớm.' },
+  1: { icon: 'sun-medium', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Quang mây, ít mây', advice: 'Mát mẻ: Thời điểm lý tưởng để tỉa cành, tạo tán và làm cỏ vườn.' },
+  2: { icon: 'cloud-sun', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', label: 'Mây rải rác', advice: 'Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng hấp thu nhanh.' },
+  3: { icon: 'cloud', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', label: 'Nhiều mây âm u', advice: 'Trời nhiều mây: Thuận lợi thu hoạch trái và kiểm tra sâu bệnh hại.' },
+  45: { icon: 'cloud-fog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù sáng sớm', advice: 'Sương mù ẩm: Chú ý phòng ngừa nấm bệnh sương mai trên đọt non.' },
+  48: { icon: 'cloud-fog', color: '#64748b', bg: '#f8fafc', border: '#cbd5e1', label: 'Sương mù đọng sương', advice: 'Đọng sương ẩm: Tránh tưới quá ẩm làm tăng nguy cơ thối rễ.' },
+  51: { icon: 'cloud-drizzle', color: '#38bdf8', bg: '#f0fdfa', border: '#99f6e4', label: 'Mưa phùn nhẹ', advice: 'Mưa phùn nhẹ: Có thể giảm lượng tưới nước, theo dõi độ ẩm đất.' },
+  53: { icon: 'cloud-drizzle', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa phùn vừa', advice: 'Mưa phùn: Hoãn phun thuốc BVTV để tránh lãng phí và trôi thuốc.' },
+  55: { icon: 'cloud-rain', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa phùn nặng', advice: 'Mưa kéo dài: Cần đảm bảo hệ thống rãnh thoát nước vườn thông thoáng.' },
+  61: { icon: 'cloud-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào nhẹ', advice: 'Mưa rào rải rác: Tận dụng nguồn đạm tự nhiên, tạm hoãn bón phân đạm.' },
+  63: { icon: 'cloud-rain-wind', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào vừa', advice: 'Mưa rào vừa: Kiểm tra thoát nước gốc cây, tránh đọng nước cổ rễ.' },
+  65: { icon: 'cloud-rain-wind', color: '#1d4ed8', bg: '#eff6ff', border: '#60a5fa', label: 'Mưa to nặng hạt', advice: 'Mưa to nặng hạt: Khơi thông dòng chảy thoát lũ, không đi lại làm nén đất.' },
+  80: { icon: 'cloud-sun-rain', color: '#0284c7', bg: '#eff6ff', border: '#bfdbfe', label: 'Mưa rào thoáng qua', advice: 'Mưa rào ngắn: Thời tiết thuận lợi sau mưa để tiến hành thăm vườn.' },
+  81: { icon: 'cloud-rain-wind', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Mưa rào từng cơn', advice: 'Mưa từng đợt: Cắt tỉa cành khô, cành sâu bệnh bị gãy đổ.' },
+  82: { icon: 'cloud-rain-wind', color: '#1e40af', bg: '#f1f5f9', border: '#94a3b8', label: 'Mưa rất to xối xả', advice: 'Mưa xối xả: Kê cao vật tư phân bón, kiểm tra an toàn điện trạm bơm.' },
+  95: { icon: 'cloud-lightning', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa', label: 'Mưa dông sét', advice: 'Dông sét: Gia cố cọc chống cây trồng lớn, ngắt nguồn điện tưới ngoài trời.' },
+  96: { icon: 'cloud-lightning', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', label: 'Dông lốc, mưa đá nhẹ', advice: 'Cảnh báo dông lốc: Kiểm tra neo giàn và lưới che chắn nhà màng.' },
+  99: { icon: 'cloud-lightning', color: '#991b1b', bg: '#fef2f2', border: '#f87171', label: 'Dông lốc nguy hiểm', advice: 'Dông bão mạnh: Tạm dừng toàn bộ hoạt động ngoài đồng ruộng để an toàn.' }
 };
 
 let _userCachedForecastData = null;
@@ -1178,11 +1216,11 @@ export async function fetchLiveOpenMeteoForecast(lat, lng) {
       const cfg = WMO_FORECAST_CONFIG[code] || WMO_FORECAST_CONFIG[0];
       let advice = cfg.advice;
       if (rain >= 70 || rainSum >= 15) {
-        advice = '⚠️ Khả năng mưa rất cao: Tuyệt đối không bón phân hay phun xịt thuốc BVTV vì sẽ bị rửa trôi.';
+        advice = 'Khả năng mưa rất cao: Tuyệt đối không bón phân hay phun xịt thuốc BVTV vì sẽ bị rửa trôi.';
       } else if (et0 >= 5.0) {
-        advice = `☀️ Bốc thoát hơi nước cao (${et0}mm/ngày): Khuyến nghị tưới bù ~${Math.round(et0 * 30 * 0.85)}L/cây và che phủ gốc.`;
+        advice = `Bốc thoát hơi nước cao (${et0}mm/ngày): Khuyến nghị tưới bù ~${Math.round(et0 * 30 * 0.85)}L/cây và che phủ gốc.`;
       } else if (windGusts && windGusts >= 35) {
-        advice = `💨 Cảnh báo gió giật ${windGusts} km/h: Kiểm tra giàn chống cành mang trái non.`;
+        advice = `Cảnh báo gió giật ${windGusts} km/h: Kiểm tra giàn chống cành mang trái non.`;
       }
 
       forecastList.push({
@@ -1304,12 +1342,12 @@ export function renderUser24HourHourlySection(hourlyData, dailyData, selectedMod
       const gusts = sliceWindGusts[i] !== undefined ? Math.round(sliceWindGusts[i]) : null;
       const et0 = sliceEt0s[i] !== undefined ? (Math.round(sliceEt0s[i] * 10) / 10) : null;
 
-      // Spray Safety Assessment
-      let sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 5px; border-radius:6px; display:inline-block;">🟢 Phun tốt</span>';
+      // Spray Safety Assessment (Clean Lucide Icons)
+      let sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 6px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="check-circle-2" class="lucide-xs"></i> Phun tốt</span>';
       if (rainP >= 50 || wind >= 25 || (gusts && gusts >= 35)) {
-        sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; padding:2px 5px; border-radius:6px; display:inline-block;">🔴 Không phun</span>';
+        sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; padding:2px 6px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="x-circle" class="lucide-xs"></i> Không phun</span>';
       } else if (rainP >= 25 || wind >= 15) {
-        sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 5px; border-radius:6px; display:inline-block;">🟡 Thận trọng</span>';
+        sprayBadge = '<span style="font-size:9.5px; font-weight:800; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 6px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="alert-triangle" class="lucide-xs"></i> Thận trọng</span>';
       }
 
       cardsHtml += `
@@ -1484,9 +1522,10 @@ function _renderForecastGrid(forecast) {
     const dayLabelClean = _cleanUtf8Mojibake(w.day_label || 'Hôm nay');
     const adviceClean = _cleanUtf8Mojibake(w.advice || '');
     const windClean = _cleanUtf8Mojibake(w.wind || '12 km/h');
+    const gridCardClass = idx < 4 ? 'weather-card-top-4' : 'weather-card-bottom-3';
 
     return `
-      <div onclick="selectUserHourlyForecastDay('day_${idx}')" style="background:${isAct ? '#ecfdf5' : (w.bg || '#fff7ed')}; border:1.5px solid ${isAct ? '#059669' : (w.border || '#ffedd5')}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:${isAct ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(0,0,0,0.02)'}; cursor:pointer;" title="Nhấp để xem 24 khung giờ chi tiết của ${dayLabelClean}">
+      <div class="${gridCardClass}" onclick="selectUserHourlyForecastDay('day_${idx}')" style="background:${isAct ? '#ecfdf5' : (w.bg || '#fff7ed')}; border:1.5px solid ${isAct ? '#059669' : (w.border || '#ffedd5')}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:${isAct ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(0,0,0,0.02)'}; cursor:pointer; transition:transform 0.15s ease;" title="Nhấp để xem 24 khung giờ chi tiết của ${dayLabelClean}">
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <strong style="font-size:13.5px; color:#0f172a;">${dayLabelClean}</strong>
@@ -1511,7 +1550,8 @@ function _renderForecastGrid(forecast) {
             </div>
           </div>
         </div>
-        <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:11px; color:#334155; font-weight:700; line-height:1.4; border-top:1px dashed ${w.border || '#ffedd5'}; padding-top:8px; display:flex; align-items:flex-start; gap:5px;">
+          <i data-lucide="info" class="lucide-xs" style="color:${w.color || '#059669'}; margin-top:2px; flex-shrink:0;"></i>
           <span>${adviceClean}</span>
         </div>
       </div>
