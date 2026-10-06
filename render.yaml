@@ -3,7 +3,7 @@ services:
     name: plant-book
     env: node
     rootDir: backend
-    buildCommand: npm ci --omit=dev && npm run build:html
+    buildCommand: npm install --omit=dev --no-audit --no-fund && npm run build:html
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
