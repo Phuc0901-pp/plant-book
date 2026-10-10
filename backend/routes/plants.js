@@ -68,6 +68,8 @@ async function verifyPlantAccess(req, plantId) {
   } catch (err) {
     return { ok: false, status: 401, error: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.' };
   }
+}
+
 // Helper function chuẩn hóa liều lượng nhật ký về đơn vị cơ sở của vật tư (VD: gram -> kg, ml -> lít, lít -> m3)
 function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType) {
   const amt = parseFloat(rawAmount) || 0;
