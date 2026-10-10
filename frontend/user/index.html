@@ -346,7 +346,7 @@
       </div>
 
       <!-- Login Form -->
-      <form onsubmit="event.preventDefault(); doLogin();" style="display:contents;">
+      <form onsubmit="event.preventDefault(); if (typeof window.doLogin === 'function') { window.doLogin(); } else if (typeof doLogin === 'function') { doLogin(); }" style="display:contents;">
         <!-- Email or Phone -->
         <div class="form-group">
           <label for="login-email"><i data-lucide="user" class="lucide-sm"></i> Email hoặc Số điện thoại</label>
@@ -5590,7 +5590,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
               <button type="button" class="btn btn-sm" onclick="openErpUploadGrowthPhotoModal()" style="background: linear-gradient(135deg, #059669, #047857); color: #ffffff; border: none; font-weight: 800; font-size: 12px; border-radius: 8px; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(5,150,105,0.25);">
-                <i data-lucide="camera-plus" class="lucide-xs"></i> <span>+ Chụp / Tải ảnh mới</span>
+                <i data-lucide="camera" class="lucide-xs"></i> <span>+ Chụp / Tải ảnh mới</span>
               </button>
             </div>
           </div>
@@ -5774,7 +5774,7 @@
     <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); color: #ffffff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;">
-          <i data-lucide="camera-plus" class="lucide-xs"></i>
+          <i data-lucide="camera" class="lucide-xs"></i>
         </div>
         <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #ffffff;">
           Cập Nhật Ảnh Sinh Trưởng Hiện Trường
@@ -5861,6 +5861,45 @@
     }
   };
   // Inline fallbacks to ensure login buttons work immediately even before ES module evaluation
+  window.doLogin = window.doLogin || async function() {
+    const email = document.getElementById('login-email')?.value.trim();
+    const pass  = document.getElementById('login-pass')?.value;
+    const errEl = document.getElementById('login-error');
+    const btn   = document.getElementById('login-btn');
+    if (errEl) errEl.style.display = 'none';
+    if (btn)   { btn.innerHTML = '<span class="spinner"></span> Đang đăng nhập...'; btn.disabled = true; }
+    try {
+      const res  = await fetch('/api/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
+      if (data.user && data.user.role === 'admin') {
+        localStorage.setItem('pb_token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        if (btn) btn.innerHTML = '<span class="spinner"></span> Đang chuyển hướng Quản trị...';
+        window.location.href = '/admin';
+        return;
+      }
+      localStorage.setItem('pb_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.reload();
+    } catch (err) {
+      if (errEl) {
+        const errText = document.getElementById('login-error-text');
+        if (errText) errText.textContent = err.message;
+        else errEl.textContent = err.message;
+        errEl.style.display = 'flex';
+      }
+      if (btn) {
+        btn.innerHTML = '<span id="login-btn-text"><i data-lucide="log-in" class="lucide-sm"></i> Đăng nhập</span>';
+        btn.disabled = false;
+        if (window.refreshIcons) window.refreshIcons();
+      }
+    }
+  };
   window.togglePasswordVisibility = window.togglePasswordVisibility || function() {
     const passInput = document.getElementById('login-pass');
     const icon = document.getElementById('toggle-pass-icon');

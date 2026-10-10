@@ -7,6 +7,45 @@
     }
   };
   // Inline fallbacks to ensure login buttons work immediately even before ES module evaluation
+  window.doLogin = window.doLogin || async function() {
+    const email = document.getElementById('login-email')?.value.trim();
+    const pass  = document.getElementById('login-pass')?.value;
+    const errEl = document.getElementById('login-error');
+    const btn   = document.getElementById('login-btn');
+    if (errEl) errEl.style.display = 'none';
+    if (btn)   { btn.innerHTML = '<span class="spinner"></span> Đang đăng nhập...'; btn.disabled = true; }
+    try {
+      const res  = await fetch('/api/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
+      if (data.user && data.user.role === 'admin') {
+        localStorage.setItem('pb_token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        if (btn) btn.innerHTML = '<span class="spinner"></span> Đang chuyển hướng Quản trị...';
+        window.location.href = '/admin';
+        return;
+      }
+      localStorage.setItem('pb_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.reload();
+    } catch (err) {
+      if (errEl) {
+        const errText = document.getElementById('login-error-text');
+        if (errText) errText.textContent = err.message;
+        else errEl.textContent = err.message;
+        errEl.style.display = 'flex';
+      }
+      if (btn) {
+        btn.innerHTML = '<span id="login-btn-text"><i data-lucide="log-in" class="lucide-sm"></i> Đăng nhập</span>';
+        btn.disabled = false;
+        if (window.refreshIcons) window.refreshIcons();
+      }
+    }
+  };
   window.togglePasswordVisibility = window.togglePasswordVisibility || function() {
     const passInput = document.getElementById('login-pass');
     const icon = document.getElementById('toggle-pass-icon');

@@ -88,7 +88,7 @@
       </div>
 
       <!-- Login Form -->
-      <form onsubmit="event.preventDefault(); doLogin();" style="display:contents;">
+      <form onsubmit="event.preventDefault(); if (typeof window.doLogin === 'function') { window.doLogin(); } else if (typeof doLogin === 'function') { doLogin(); }" style="display:contents;">
         <!-- Email or Phone -->
         <div class="form-group">
           <label for="login-email"><i data-lucide="user" class="lucide-sm"></i> Email hoặc Số điện thoại</label>
