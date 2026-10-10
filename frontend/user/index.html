@@ -5734,34 +5734,93 @@
         </div>
       </div>
 
-      <!-- ════ TAB 3: HẠCH TOÁN CHI PHÍ & VẬT TƯ TIÊU HAO ════ -->
+      <!-- ════ TAB 3: HẠCH TOÁN TÀI CHÍNH, CHI PHÍ & THU HOẠCH ════ -->
       <div id="erp-tab-pane-cost" style="display: none;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        
+        <!-- Nhóm 1: Tổng Quan Tài Chính & Hiệu Quả Thu Hoạch -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
           
-          <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px; padding: 14px; text-align: center;">
-            <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase;">Tổng Chi Phí Chăm Sóc</div>
-            <div id="erp-cost-total-amount" style="font-size: 18px; font-weight: 900; color: #15803d; margin-top: 4px;">0 VNĐ</div>
+          <!-- Doanh thu thu hoạch -->
+          <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1.5px solid #86efac; border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <i data-lucide="banknote" class="lucide-xs"></i> Tổng Doanh Thu Thu Hoạch
+            </div>
+            <div id="erp-harvest-total-revenue" style="font-size: 20px; font-weight: 900; color: #15803d; margin-top: 4px;">0 VNĐ</div>
+            <div id="erp-harvest-total-kg-fruits" style="font-size: 11.5px; color: #166534; font-weight: 700; margin-top: 2px;">
+              0 kg · 0 trái
+            </div>
           </div>
 
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; text-align: center;">
-            <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Phân Bón Tiêu Hao</div>
-            <div id="erp-cost-fertilizer-amount" style="font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 4px;">0 VNĐ</div>
+          <!-- Lợi nhuận ròng (Doanh thu - Chi phí) -->
+          <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1.5px solid #93c5fd; border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="font-size: 11px; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <i data-lucide="trending-up" class="lucide-xs"></i> Lợi Nhuận Ròng (Lãi/Lỗ)
+            </div>
+            <div id="erp-harvest-net-profit" style="font-size: 20px; font-weight: 900; color: #1d4ed8; margin-top: 4px;">0 VNĐ</div>
+            <div style="margin-top: 2px;">
+              <span id="erp-harvest-roi-badge" style="font-size: 10.5px; font-weight: 800; background: #bfdbfe; color: #1e3a8a; padding: 2px 8px; border-radius: 6px; display: inline-block;">
+                ROI: 0%
+              </span>
+            </div>
           </div>
 
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; text-align: center;">
-            <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Thuốc BVTV Tiêu Hao</div>
-            <div id="erp-cost-pesticide-amount" style="font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 4px;">0 VNĐ</div>
-          </div>
-
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; text-align: center;">
-            <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Tiền Nước Tưới</div>
-            <div id="erp-cost-water-amount" style="font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 4px;">0 VNĐ</div>
+          <!-- Tổng chi phí đầu tư & chăm sóc -->
+          <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1.5px solid #fca5a5; border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="font-size: 11px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <i data-lucide="calculator" class="lucide-xs"></i> Tổng Chi Phí Chăm Sóc
+            </div>
+            <div id="erp-cost-total-amount" style="font-size: 20px; font-weight: 900; color: #b91c1c; margin-top: 4px;">0 VNĐ</div>
+            <div style="font-size: 11.5px; color: #991b1b; font-weight: 700; margin-top: 2px;">
+              Toàn bộ vật tư tiêu hao
+            </div>
           </div>
 
         </div>
 
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px;">
-          <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 800; color: #1e293b;">
+        <!-- Nhóm 2: Bóc Tách Chi Phí Vật Tư Từng Loại -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px;">
+          
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; text-align: center;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <i data-lucide="sprout" class="lucide-xs" style="color: #16a34a;"></i> Phân Bón
+            </div>
+            <div id="erp-cost-fertilizer-amount" style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 3px;">0 VNĐ</div>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; text-align: center;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <i data-lucide="shield-alert" class="lucide-xs" style="color: #d97706;"></i> Thuốc BVTV
+            </div>
+            <div id="erp-cost-pesticide-amount" style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 3px;">0 VNĐ</div>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; text-align: center;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <i data-lucide="droplet" class="lucide-xs" style="color: #0284c7;"></i> Nước Tưới
+            </div>
+            <div id="erp-cost-water-amount" style="font-size: 15px; font-weight: 800; color: #1e293b; margin-top: 3px;">0 VNĐ</div>
+          </div>
+
+        </div>
+
+        <!-- Nhóm 3: Bảng Lịch Sử Thu Hoạch Của Riêng Cây Này -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+            <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="package-check" class="lucide-sm" style="color: #9333ea;"></i> Lịch sử các đợt thu hoạch của cây
+            </h4>
+            <span id="erp-harvest-count-badge" style="font-size: 11px; font-weight: 700; color: #9333ea; background: #faf5ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #e9d5ff;">
+              0 đợt thu hoạch
+            </span>
+          </div>
+          <div id="erp-harvest-history-list" style="font-size: 12px; color: #475569;">
+            Chưa có đợt thu hoạch nào được ghi nhận cho cây này.
+          </div>
+        </div>
+
+        <!-- Nhóm 4: Bảng Bóc Tách Vật Tư Đã Dùng Cho Cây -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
             <i data-lucide="receipt" class="lucide-sm" style="color: #059669;"></i> Chi tiết bóc tách vật tư đã dùng cho cây
           </h4>
           <div id="erp-cost-materials-list" style="font-size: 12.5px; color: #475569;">

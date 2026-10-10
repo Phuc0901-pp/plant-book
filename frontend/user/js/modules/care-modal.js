@@ -1179,37 +1179,69 @@ export async function saveCareLog() {
 
   try {
     // ── Thu thập details theo loại ──────────────────────────
+    const suppliesCache = window._declaredSuppliesCache || [];
+
     if (logType === 'Tưới nước') {
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value);
       if (isNaN(amount) || amount <= 0) throw new Error('Vui lòng nhập lượng nước hợp lệ!');
       const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      const sup = suppliesCache.find(s => String(s.id) === String(supplyId));
+      const unitPrice = sup ? (parseFloat(sup.unit_price) || 0) : 0;
+      const singleVolM3 = amount / 1000;
+      const singleCost = Math.round(singleVolM3 * unitPrice);
       body.details = { 
         method: document.getElementById('c-detail-method')?.value, 
         amount, 
         unit: 'lít',
-        supply_id: supplyId ? parseInt(supplyId) : null
+        supply_id: supplyId ? parseInt(supplyId) : null,
+        supply_name: sup ? sup.name : 'Nước tưới',
+        material_name: sup ? sup.name : 'Nước tưới',
+        unit_price: unitPrice,
+        total_cost: singleCost
       };
 
     } else if (logType === 'Bón phân') {
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value);
       if (isNaN(amount) || amount <= 0) throw new Error('Vui lòng nhập liều lượng hợp lệ!');
       const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      const unit = document.getElementById('c-detail-unit')?.value || 'gam';
+      const sup = suppliesCache.find(s => String(s.id) === String(supplyId));
+      const supName = sup ? sup.name : (document.getElementById('c-detail-fertilizer')?.value || 'Phân bón');
+      let baseQty = amount;
+      if (sup && (sup.unit === 'kg' || sup.unit === 'kilogram') && (unit === 'gam' || unit === 'g')) baseQty = amount / 1000;
+      const unitPrice = sup ? (parseFloat(sup.unit_price) || 0) : 0;
+      const singleCost = Math.round(baseQty * unitPrice);
       body.details = { 
-        fertilizer_name: document.getElementById('c-detail-fertilizer')?.value, 
+        fertilizer_name: supName,
+        material_name: supName,
+        supply_name: supName,
         amount, 
-        unit: document.getElementById('c-detail-unit')?.value || 'gam',
-        supply_id: supplyId ? parseInt(supplyId) : null
+        unit,
+        supply_id: supplyId ? parseInt(supplyId) : null,
+        unit_price: unitPrice,
+        total_cost: singleCost
       };
 
     } else if (logType === 'Phun thuốc') {
       const amount = parseFloat(document.getElementById('c-detail-amount')?.value);
       if (isNaN(amount) || amount <= 0) throw new Error('Vui lòng nhập liều lượng hợp lệ!');
       const supplyId = document.getElementById('c-detail-supply-id')?.value;
+      const unit = document.getElementById('c-detail-unit')?.value || 'ml';
+      const sup = suppliesCache.find(s => String(s.id) === String(supplyId));
+      const supName = sup ? sup.name : (document.getElementById('c-detail-pesticide')?.value || 'Thuốc BVTV');
+      let baseQty = amount;
+      if (sup && (sup.unit === 'lít' || sup.unit === 'lit') && (unit === 'ml' || unit === 'cc')) baseQty = amount / 1000;
+      const unitPrice = sup ? (parseFloat(sup.unit_price) || 0) : 0;
+      const singleCost = Math.round(baseQty * unitPrice);
       body.details = { 
-        pesticide_name: document.getElementById('c-detail-pesticide')?.value, 
+        pesticide_name: supName,
+        material_name: supName,
+        supply_name: supName,
         amount, 
-        unit: document.getElementById('c-detail-unit')?.value || 'ml',
-        supply_id: supplyId ? parseInt(supplyId) : null
+        unit,
+        supply_id: supplyId ? parseInt(supplyId) : null,
+        unit_price: unitPrice,
+        total_cost: singleCost
       };
 
     } else if (logType === 'Cắt lá') {

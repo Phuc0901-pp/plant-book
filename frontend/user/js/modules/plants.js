@@ -3856,6 +3856,15 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
   const costWaterEl = document.getElementById('erp-cost-water-amount');
   const materialsListEl = document.getElementById('erp-cost-materials-list');
 
+  // Harvest Economics DOM Elements
+  const harvestRevEl = document.getElementById('erp-harvest-total-revenue');
+  const harvestKgFruitsEl = document.getElementById('erp-harvest-total-kg-fruits');
+  const harvestNetProfitEl = document.getElementById('erp-harvest-net-profit');
+  const harvestRoiEl = document.getElementById('erp-harvest-roi-badge');
+  const harvestHistoryListEl = document.getElementById('erp-harvest-history-list');
+  const harvestBadgeEl = document.getElementById('erp-harvest-count-badge');
+  const headerYieldEl = document.getElementById('erp-stat-initial-yield');
+
   let logs = (plant && Array.isArray(plant.logs)) ? plant.logs : [];
 
   if (!logs.length) {
@@ -3874,6 +3883,16 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
+  // Ensure supplies cache is loaded for client-side cost enrichment
+  if (!window._declaredSuppliesCache || !window._declaredSuppliesCache.length) {
+    try {
+      window._declaredSuppliesCache = await api('/supplies');
+    } catch (e) {
+      // ignore
+    }
+  }
+  const suppliesCache = window._declaredSuppliesCache || [];
+
   if (logsCountEl) logsCountEl.textContent = logs.length;
 
   // Render Timeline
@@ -3883,7 +3902,7 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
         <div style="text-align:center;padding:28px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;">
           <i data-lucide="calendar-off" class="lucide-md" style="color:#94a3b8;margin-bottom:6px;"></i>
           <div style="font-weight:700;font-size:13px;color:#334155;">Chưa có dữ liệu nhật ký canh tác</div>
-          <div style="font-size:12px;margin-top:2px;">Bấm nút "+ Thêm nhật ký mới" để ghi lại hoạt động tưới tiêu, bón phân hoặc phun thuốc.</div>
+          <div style="font-size:12px;margin-top:2px;">Bấm nút "+ Thêm nhật ký mới" để ghi lại hoạt động tưới tiêu, bón phân, phun thuốc hoặc thu hoạch.</div>
         </div>
       `;
     } else {
@@ -3937,27 +3956,96 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
-  // Calculate Costs & Supplies Breakdown
+  // Calculate Costs & Supplies Breakdown & Harvest Economics
   let totalCost = 0;
   let fertCost = 0;
   let pestCost = 0;
   let waterCost = 0;
   const materialsUsed = [];
 
+  let totalHarvestRev = 0;
+  let totalHarvestFruits = 0;
+  let totalHarvestKg = 0;
+  const harvestList = [];
+
   logs.forEach(log => {
     const typeStr = String(log.log_type || '').toLowerCase();
-    const details = log.details || {};
-    const cost = parseFloat(log.cost || details.cost || details.total_cost || 0) || 0;
-    const materialName = log.material_name || details.material_name || details.fertilizer_name || details.pesticide_name;
-    const quantity = log.quantity || details.quantity || details.amount;
-    const unit = log.unit || details.unit || 'đơn vị';
+    let details = log.details || {};
+    if (typeof details === 'string') {
+      try { details = JSON.parse(details); } catch(e) { details = {}; }
+    }
+
+    // A. NHẬT KÝ THU HOẠCH (HARVEST LOGS)
+    if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
+      const hKg = parseFloat(details.amount || log.quantity || 0) || 0;
+      const hUnit = details.unit || log.unit || 'kg';
+      const hFruits = parseFloat(details.fruit_count || 0) || 0;
+      const hRev = parseFloat(details.price_per_tree || details.total_revenue || log.cost || 0) || 0;
+      const hAvgPerFruit = hFruits > 0 ? (hRev > 0 ? Math.round(hRev / hFruits) : parseFloat(details.avg_price_per_fruit || 0) || 0) : 0;
+      const hQuality = details.quality || 'Loại 1';
+
+      totalHarvestRev += hRev;
+      totalHarvestFruits += hFruits;
+      totalHarvestKg += hKg;
+
+      harvestList.push({
+        date: log.log_date || log.created_at,
+        amount: hKg,
+        unit: hUnit,
+        fruit_count: hFruits,
+        revenue: hRev,
+        avg_price_per_fruit: hAvgPerFruit,
+        quality: hQuality,
+        note: log.note || ''
+      });
+      return; // Do not calculate as care cost
+    }
+
+    // B. NHẬT KÝ CANH TÁC CÓ TIÊU HAO VẬT TƯ (CARE LOGS)
+    let cost = parseFloat(log.cost || details.cost || details.total_cost || 0) || 0;
+    let materialName = log.material_name || details.material_name || details.supply_name || details.fertilizer_name || details.pesticide_name;
+    let quantity = log.quantity || details.quantity || details.amount;
+    let unit = log.unit || details.unit || '';
+
+    // Automatic Fallback Enrichment for Water & Supplies
+    if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
+      if (!materialName) materialName = 'Nước tưới tiêu';
+      if (!unit) unit = 'lít';
+      if (cost === 0 && quantity > 0) {
+        const waterSup = suppliesCache.find(s => s.name && s.name.toLowerCase().includes('nước'));
+        const waterPrice = waterSup ? (parseFloat(waterSup.unit_price) || 0) : 15;
+        cost = Math.round(quantity * waterPrice);
+      }
+    } else if (!materialName) {
+      if (typeStr.includes('phân') || typeStr.includes('phan')) materialName = 'Phân bón';
+      else if (typeStr.includes('thuốc') || typeStr.includes('thuoc')) materialName = 'Thuốc BVTV';
+    }
+
+    // If cost is 0, attempt fallback lookup by supply_id or supply name
+    if (cost === 0 && suppliesCache.length > 0) {
+      let matchedSup = null;
+      if (details.supply_id) {
+        matchedSup = suppliesCache.find(s => String(s.id) === String(details.supply_id));
+      }
+      if (!matchedSup && materialName) {
+        matchedSup = suppliesCache.find(s => s.name && s.name.toLowerCase() === materialName.toLowerCase());
+      }
+      if (matchedSup) {
+        const unitPrice = parseFloat(matchedSup.unit_price || matchedSup.price || 0) || 0;
+        let usageQty = parseFloat(quantity || 1) || 1;
+        if ((matchedSup.unit === 'kg' || matchedSup.unit === 'kilogram') && (unit === 'gam' || unit === 'g')) usageQty = usageQty / 1000;
+        if ((matchedSup.unit === 'lít' || matchedSup.unit === 'lit') && (unit === 'ml' || unit === 'cc')) usageQty = usageQty / 1000;
+        cost = Math.round(usageQty * unitPrice);
+        if (!materialName) materialName = matchedSup.name;
+      }
+    }
 
     if (materialName) {
       materialsUsed.push({
-        date: log.log_date,
+        date: log.log_date || log.created_at,
         type: log.log_type,
         name: materialName,
-        quantity: quantity ? `${quantity} ${unit}` : '',
+        quantity: quantity ? `${quantity} ${unit}`.trim() : '',
         cost: cost
       });
     }
@@ -3974,14 +4062,103 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   });
 
+  // Render Cost Breakdown
   if (costTotalEl) costTotalEl.textContent = `${totalCost.toLocaleString('vi-VN')} VNĐ`;
   if (costFertilizerEl) costFertilizerEl.textContent = `${fertCost.toLocaleString('vi-VN')} VNĐ`;
   if (costPesticideEl) costPesticideEl.textContent = `${pestCost.toLocaleString('vi-VN')} VNĐ`;
   if (costWaterEl) costWaterEl.textContent = `${waterCost.toLocaleString('vi-VN')} VNĐ`;
 
+  // Render Harvest Economics (Revenue, Net Profit, ROI)
+  const netProfit = totalHarvestRev - totalCost;
+  const roi = totalCost > 0 ? Math.round((netProfit / totalCost) * 100) : (totalHarvestRev > 0 ? 100 : 0);
+
+  if (harvestRevEl) harvestRevEl.textContent = `${totalHarvestRev.toLocaleString('vi-VN')} VNĐ`;
+  if (harvestKgFruitsEl) harvestKgFruitsEl.textContent = `${totalHarvestKg.toLocaleString('vi-VN')} kg · ${totalHarvestFruits.toLocaleString('vi-VN')} trái`;
+
+  if (harvestNetProfitEl) {
+    const profitSign = netProfit > 0 ? '+' : '';
+    harvestNetProfitEl.textContent = `${profitSign}${netProfit.toLocaleString('vi-VN')} VNĐ`;
+    harvestNetProfitEl.style.color = netProfit >= 0 ? '#15803d' : '#b91c1c';
+  }
+
+  if (harvestRoiEl) {
+    const roiSign = roi > 0 ? '+' : '';
+    harvestRoiEl.textContent = `ROI: ${roiSign}${roi}%`;
+    if (netProfit >= 0) {
+      harvestRoiEl.style.background = '#dcfce7';
+      harvestRoiEl.style.color = '#15803d';
+    } else {
+      harvestRoiEl.style.background = '#fee2e2';
+      harvestRoiEl.style.color = '#b91c1c';
+    }
+  }
+
+  if (harvestBadgeEl) {
+    harvestBadgeEl.textContent = `${harvestList.length} đợt thu hoạch`;
+  }
+
+  // Update Header Metric 3 (Initial Yield / Actual Harvest)
+  if (headerYieldEl) {
+    if (totalHarvestKg > 0 || totalHarvestRev > 0) {
+      headerYieldEl.textContent = `${totalHarvestKg.toLocaleString('vi-VN')} kg (${totalHarvestRev.toLocaleString('vi-VN')} đ)`;
+      headerYieldEl.title = `Tổng sản lượng: ${totalHarvestKg} kg, Tổng số trái: ${totalHarvestFruits} quả, Doanh thu: ${totalHarvestRev.toLocaleString('vi-VN')} VNĐ`;
+    } else if (plant && plant.initial_yield) {
+      headerYieldEl.textContent = `${plant.initial_yield} kg/năm`;
+    } else {
+      headerYieldEl.textContent = 'Chưa thu hoạch';
+    }
+  }
+
+  // Render Harvest History Table
+  if (harvestHistoryListEl) {
+    if (!harvestList.length) {
+      harvestHistoryListEl.innerHTML = `
+        <div style="text-align: center; padding: 16px; color: #64748b; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1;">
+          <i data-lucide="package-open" class="lucide-sm" style="color: #94a3b8; margin-bottom: 4px;"></i>
+          <div>Chưa có đợt thu hoạch nào được ghi nhận cho cây này.</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Vào tab 2 "Lịch Sử Canh Tác" bấm "+ Thêm nhật ký mới" &gt; chọn hạng mục <strong>Thu hoạch</strong> để lưu kết quả.</div>
+        </div>
+      `;
+    } else {
+      harvestHistoryListEl.innerHTML = `
+        <div style="overflow-x: auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+              <tr style="background:#f8fafc; color:#475569; text-align:left;">
+                <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">Ngày thu</th>
+                <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">Sản lượng</th>
+                <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">Số lượng trái</th>
+                <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">Doanh thu</th>
+                <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">Giá TB/Quả</th>
+                <th style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">Phẩm cấp</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${harvestList.map(h => `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:8px 10px; color:#64748b; font-weight:600;">${esc(h.date || '—')}</td>
+                  <td style="padding:8px 10px; font-weight:700; color:#0f172a;">${h.amount > 0 ? `${h.amount} ${esc(h.unit)}` : '—'}</td>
+                  <td style="padding:8px 10px; font-weight:700; color:#0284c7;">${h.fruit_count > 0 ? `${h.fruit_count} trái` : '—'}</td>
+                  <td style="padding:8px 10px; font-weight:800; color:#15803d;">${h.revenue > 0 ? `${h.revenue.toLocaleString('vi-VN')} VNĐ` : '—'}</td>
+                  <td style="padding:8px 10px; color:#475569; font-weight:600;">${h.avg_price_per_fruit > 0 ? `${h.avg_price_per_fruit.toLocaleString('vi-VN')} đ/trái` : '—'}</td>
+                  <td style="padding:8px 10px;">
+                    <span style="background:#ecfdf5; color:#047857; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px;">
+                      ${esc(h.quality)}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+  }
+
+  // Render Materials Used Table
   if (materialsListEl) {
     if (!materialsUsed.length) {
-      materialsListEl.innerHTML = '<span style="color:#64748b;">Chưa phát sinh vật tư phân bón / thuốc BVTV riêng biệt cho cây này.</span>';
+      materialsListEl.innerHTML = '<span style="color:#64748b;">Chưa phát sinh chi phí vật tư phân bón / thuốc BVTV riêng biệt cho cây này.</span>';
     } else {
       materialsListEl.innerHTML = `
         <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">

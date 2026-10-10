@@ -68,6 +68,70 @@ async function verifyPlantAccess(req, plantId) {
   } catch (err) {
     return { ok: false, status: 401, error: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.' };
   }
+// Helper function chuẩn hóa liều lượng nhật ký về đơn vị cơ sở của vật tư (VD: gram -> kg, ml -> lít, lít -> m3)
+function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType) {
+  const amt = parseFloat(rawAmount) || 0;
+  if (amt <= 0) return 0;
+
+  const rUnit = (rawUnit || '').toLowerCase().trim();
+  const sUnit = (supplyUnit || 'kg').toLowerCase().trim();
+
+  // 1. Base supply unit là kg / kilogram
+  if (sUnit === 'kg' || sUnit === 'kilogram' || sUnit === 'ký' || sUnit === 'ky') {
+    if (rUnit === 'gam' || rUnit === 'g' || rUnit === 'gram' || rUnit === 'gr') {
+      return amt / 1000;
+    }
+    if (rUnit === 'mg' || rUnit === 'miligam') {
+      return amt / 1000000;
+    }
+    if (rUnit === 'tạ' || rUnit === 'ta') {
+      return amt * 100;
+    }
+    if (rUnit === 'tấn' || rUnit === 'tan') {
+      return amt * 1000;
+    }
+    return amt;
+  }
+
+  // 2. Base supply unit là lít / lit / l
+  if (sUnit === 'lít' || sUnit === 'lit' || sUnit === 'l') {
+    if (rUnit === 'ml' || rUnit === 'cc' || rUnit === 'mililit') {
+      return amt / 1000;
+    }
+    if (rUnit === 'm3' || rUnit === 'm³' || rUnit === 'khối') {
+      return amt * 1000;
+    }
+    return amt;
+  }
+
+  // 3. Base supply unit là m³ / m3 / khối
+  if (sUnit === 'm3' || sUnit === 'm³' || sUnit === 'khối') {
+    if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l' || logType === 'Tưới nước') {
+      return amt / 1000;
+    }
+    if (rUnit === 'ml' || rUnit === 'cc') {
+      return amt / 1000000;
+    }
+    return amt;
+  }
+
+  // 4. Base supply unit là gam / g
+  if (sUnit === 'gam' || sUnit === 'g' || sUnit === 'gram') {
+    if (rUnit === 'kg' || rUnit === 'kilogram' || rUnit === 'ký') {
+      return amt * 1000;
+    }
+    return amt;
+  }
+
+  // 5. Base supply unit là ml
+  if (sUnit === 'ml') {
+    if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l') {
+      return amt * 1000;
+    }
+    return amt;
+  }
+
+  return amt;
 }
 
 const multer = require('multer');
@@ -526,9 +590,57 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
       }
     }
 
-    logsQuery += ' ORDER BY pl.log_date DESC';
-    const logs = await pool.query(logsQuery, logsParams);
-    res.json(logs.rows);
+    logsQuery += ' ORDER BY pl.log_date DESC, pl.id DESC';
+    const logsRes = await pool.query(logsQuery, logsParams);
+
+    // Truy vấn các khoản tiêu hao vật tư liên kết với cây này từ supply_usages
+    let usagesRows = [];
+    try {
+      const usagesRes = await pool.query(
+        `SELECT su.*, s.name as supply_name, s.category as supply_category, s.unit as supply_unit
+         FROM supply_usages su
+         JOIN supplies s ON su.supply_id = s.id
+         WHERE su.plant_id = $1
+         ORDER BY su.usage_date DESC, su.id DESC`,
+        [req.params.id]
+      );
+      usagesRows = usagesRes.rows;
+    } catch (_) {
+      usagesRows = [];
+    }
+
+    // Đối soát chi phí và tên vật tư vào từng log nếu log chưa có cost
+    const enrichedLogs = logsRes.rows.map(log => {
+      let d = log.details || {};
+      if (typeof d === 'string') {
+        try { d = JSON.parse(d); } catch(_) { d = {}; }
+      }
+
+      if (!d.total_cost || parseFloat(d.total_cost) === 0) {
+        const matched = usagesRows.find(u => 
+          (d.supply_id && u.supply_id == d.supply_id) ||
+          (u.usage_date === log.log_date && (u.note || '').includes(log.log_type))
+        );
+        if (matched) {
+          d.total_cost = parseFloat(matched.total_cost) || 0;
+          d.material_name = d.material_name || matched.supply_name;
+          d.supply_name = d.supply_name || matched.supply_name;
+          d.unit_price = d.unit_price || parseFloat(matched.unit_price) || 0;
+        }
+      }
+
+      const costVal = parseFloat(d.total_cost || log.cost || 0) || 0;
+      const matName = d.material_name || d.supply_name || d.fertilizer_name || d.pesticide_name || null;
+
+      return {
+        ...log,
+        details: d,
+        cost: costVal,
+        material_name: matName
+      };
+    });
+
+    res.json(enrichedLogs);
   } catch (err) {
     console.error('Error fetching logs:', err);
     res.status(500).json({ error: 'Lỗi server.' });
@@ -2712,6 +2824,54 @@ router.post('/:id/logs', auth, async (req, res) => {
       }
     }
 
+    // ── 3. TỰ ĐỘNG TÍNH TOÁN & GHI NHẬN TIÊU HAO VẬT TƯ TRƯỚC KHI LƯU ──
+    let resolvedSupply = null;
+    let resolvedUsageQty = 0;
+    let resolvedUnitPrice = 0;
+    let resolvedTotCost = parseFloat(parsedDetails.total_cost) || 0;
+
+    try {
+      let resolvedSupplyId = parsedDetails.supply_id || null;
+      const rawAmount = parseFloat(parsedDetails.quantity || parsedDetails.volume || parsedDetails.amount || 0);
+      const rawUnit = (parsedDetails.unit || '').toLowerCase().trim();
+      const supplyName = parsedDetails.supply_name || parsedDetails.material_name || parsedDetails.fertilizer_name || parsedDetails.pesticide_name || null;
+
+      if (!resolvedSupplyId && supplyName) {
+        const foundSup = await pool.query(
+          `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE (user_id = $1 OR farm_id = $2) AND (name ILIKE $3 OR $3 ILIKE '%' || name || '%') LIMIT 1`,
+          [req.user.id, farmId || null, supplyName]
+        );
+        if (foundSup.rows.length > 0) {
+          resolvedSupplyId = foundSup.rows[0].id;
+          resolvedSupply = foundSup.rows[0];
+        }
+      } else if (resolvedSupplyId) {
+        const foundSup = await pool.query(
+          `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE id = $1`,
+          [resolvedSupplyId]
+        );
+        if (foundSup.rows.length > 0) {
+          resolvedSupply = foundSup.rows[0];
+        }
+      }
+
+      if (resolvedSupply && rawAmount > 0) {
+        const supUnit = (resolvedSupply.unit || 'kg').toLowerCase().trim();
+        resolvedUsageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, log_type);
+        resolvedUnitPrice = parseFloat(resolvedSupply.unit_price) || 0;
+        resolvedTotCost = resolvedTotCost > 0 ? resolvedTotCost : (resolvedUsageQty * resolvedUnitPrice);
+
+        parsedDetails.supply_id = resolvedSupply.id;
+        parsedDetails.supply_name = resolvedSupply.name;
+        parsedDetails.material_name = resolvedSupply.name;
+        parsedDetails.unit_price = resolvedUnitPrice;
+        parsedDetails.total_cost = resolvedTotCost;
+        parsedDetails.usage_quantity = resolvedUsageQty;
+      }
+    } catch (supErr) {
+      console.warn('Cảnh báo tính toán chi phí vật tư trước khi lưu:', supErr.message);
+    }
+
     const result = await pool.query(
       `INSERT INTO plant_logs (
         plant_id, log_date, log_type, note, media_urls, details, created_by,
@@ -2725,6 +2885,25 @@ router.post('/:id/logs', auth, async (req, res) => {
         equipment_used || null, isPhiViolation
       ]
     );
+
+    // Ghi nhận vào supply_usages nếu có vật tư
+    if (resolvedSupply && resolvedUsageQty > 0) {
+      try {
+        const rawAmount = parseFloat(parsedDetails.quantity || parsedDetails.volume || parsedDetails.amount || 0);
+        const rawUnit = (parsedDetails.unit || '').toLowerCase().trim();
+        await pool.query(
+          `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [req.user.id, resolvedSupply.id, farmId || null, targetPlantId || null, effectiveDate, resolvedUsageQty, resolvedUnitPrice, resolvedTotCost, `Tự động từ nhật ký [${log_type}] (${rawAmount} ${rawUnit || resolvedSupply.unit}${targetPlantId ? ' cho cây ' + treeCode : ' toàn vườn'})`]
+        );
+
+        if (resolvedSupply.category !== 'Tiền nước' && resolvedSupply.category !== 'Nhân công' && resolvedSupply.stock_quantity > 0) {
+          await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1), updated_at = NOW() WHERE id = $2', [resolvedUsageQty, resolvedSupply.id]);
+        }
+      } catch (usageInsertErr) {
+        console.warn('Lỗi ghi nhận supply_usages:', usageInsertErr.message);
+      }
+    }
 
     // Tự động chuyển trạng thái cây thành Bệnh nếu ghi nhật ký Bệnh cây
     if (log_type === 'Bệnh cây' && targetPlantId) {
@@ -2740,115 +2919,6 @@ router.post('/:id/logs', auth, async (req, res) => {
        VALUES ($1, 'Ghi nhật ký', $2)`,
       [req.user.id, `Ghi nhận nhật ký [${log_type}] cho ${targetPlantId ? 'cây ' + treeCode : 'Toàn vườn'}${generatedBatchCode ? ' (Lô: ' + generatedBatchCode + ')' : ''}`]
     );
-
-// Helper function chuẩn hóa liều lượng nhật ký về đơn vị cơ sở của vật tư (VD: gram -> kg, ml -> lít, lít -> m3)
-function convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supplyUnit, logType) {
-  const amt = parseFloat(rawAmount) || 0;
-  if (amt <= 0) return 0;
-
-  const rUnit = (rawUnit || '').toLowerCase().trim();
-  const sUnit = (supplyUnit || 'kg').toLowerCase().trim();
-
-  // 1. Base supply unit là kg / kilogram
-  if (sUnit === 'kg' || sUnit === 'kilogram' || sUnit === 'ký' || sUnit === 'ky') {
-    if (rUnit === 'gam' || rUnit === 'g' || rUnit === 'gram' || rUnit === 'gr') {
-      return amt / 1000;
-    }
-    if (rUnit === 'mg' || rUnit === 'miligam') {
-      return amt / 1000000;
-    }
-    if (rUnit === 'tạ' || rUnit === 'ta') {
-      return amt * 100;
-    }
-    if (rUnit === 'tấn' || rUnit === 'tan') {
-      return amt * 1000;
-    }
-    return amt;
-  }
-
-  // 2. Base supply unit là lít / lit / l
-  if (sUnit === 'lít' || sUnit === 'lit' || sUnit === 'l') {
-    if (rUnit === 'ml' || rUnit === 'cc' || rUnit === 'mililit') {
-      return amt / 1000;
-    }
-    if (rUnit === 'm3' || rUnit === 'm³' || rUnit === 'khối') {
-      return amt * 1000;
-    }
-    return amt;
-  }
-
-  // 3. Base supply unit là m³ / m3 / khối
-  if (sUnit === 'm3' || sUnit === 'm³' || sUnit === 'khối') {
-    if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l' || logType === 'Tưới nước') {
-      return amt / 1000;
-    }
-    if (rUnit === 'ml' || rUnit === 'cc') {
-      return amt / 1000000;
-    }
-    return amt;
-  }
-
-  // 4. Base supply unit là gam / g
-  if (sUnit === 'gam' || sUnit === 'g' || sUnit === 'gram') {
-    if (rUnit === 'kg' || rUnit === 'kilogram' || rUnit === 'ký') {
-      return amt * 1000;
-    }
-    return amt;
-  }
-
-  // 5. Base supply unit là ml
-  if (sUnit === 'ml') {
-    if (rUnit === 'lít' || rUnit === 'lit' || rUnit === 'l') {
-      return amt * 1000;
-    }
-    return amt;
-  }
-
-  return amt;
-}
-
-    // Tự động ghi nhận tiêu hao vật tư nếu có supply_id hoặc thông tin vật tư trong details
-    try {
-      let resolvedSupplyId = parsedDetails.supply_id || null;
-      const rawAmount = parseFloat(parsedDetails.quantity || parsedDetails.volume || parsedDetails.amount || 0);
-      const rawUnit = (parsedDetails.unit || '').toLowerCase().trim();
-
-      // Nếu chưa có supply_id nhưng có tên vật tư, tự tìm supply_id
-      const supplyName = parsedDetails.supply_name || parsedDetails.fertilizer_name || parsedDetails.pesticide_name || null;
-      if (!resolvedSupplyId && supplyName) {
-        const foundSup = await pool.query(
-          `SELECT id, unit, unit_price FROM supplies WHERE (user_id = $1 OR farm_id = $2) AND (name ILIKE $3 OR $3 ILIKE '%' || name || '%') LIMIT 1`,
-          [req.user.id, farmId || null, supplyName]
-        );
-        if (foundSup.rows.length > 0) {
-          resolvedSupplyId = foundSup.rows[0].id;
-        }
-      }
-
-      if (resolvedSupplyId && rawAmount > 0) {
-        const supInfo = await pool.query('SELECT * FROM supplies WHERE id = $1', [resolvedSupplyId]);
-        if (supInfo.rows.length > 0) {
-          const sup = supInfo.rows[0];
-          const supUnit = (sup.unit || 'kg').toLowerCase().trim();
-          const usageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, log_type);
-          const uPrice = parseFloat(sup.unit_price) || 0;
-          const totCost = parseFloat(parsedDetails.total_cost) || (usageQty * uPrice);
-
-          await pool.query(
-            `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [req.user.id, sup.id, farmId || null, targetPlantId || null, effectiveDate, usageQty, uPrice, totCost, `Tự động từ nhật ký [${log_type}] (${rawAmount} ${rawUnit || sup.unit}${targetPlantId ? ' cho cây ' + treeCode : ' toàn vườn'})`]
-          );
-
-          // Trừ kho nếu là phân bón / thuốc
-          if (sup.category !== 'Tiền nước' && sup.category !== 'Nhân công' && sup.stock_quantity > 0) {
-            await pool.query('UPDATE supplies SET stock_quantity = GREATEST(0, stock_quantity - $1), updated_at = NOW() WHERE id = $2', [usageQty, sup.id]);
-          }
-        }
-      }
-    } catch (supErr) {
-      console.warn('Cảnh báo ghi nhận tiêu hao vật tư từ nhật ký:', supErr.message);
-    }
 
     // Broadcast WebSocket event
     const broadcast = req.app.get('broadcast');
