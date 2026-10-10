@@ -3981,20 +3981,32 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
 
   // Enriched logs container
   const enrichedLogs = logs.map(log => {
-    const typeStr = String(log.log_type || '').toLowerCase();
+    let typeStr = String(log.log_type || '').toLowerCase();
     let details = log.details || {};
     if (typeof details === 'string') {
       try { details = JSON.parse(details); } catch(e) { details = {}; }
     }
 
+    // Smart Dual-Defense: Tự động phát hiện log thu hoạch dù log_type có bị lưu nhầm
+    const isExplicitHarvest = typeStr.includes('thu hoạch') || typeStr.includes('harvest');
+    const isHarvestByDetails = parseFloat(details.fruit_count) > 0 || 
+                               parseFloat(details.price_per_tree) > 0 || 
+                               parseFloat(details.total_revenue) > 0 ||
+                               parseFloat(details.avg_price_per_fruit) > 0 ||
+                               (details.quality && !details.pesticide_name && !details.fertilizer_name) ||
+                               (parseFloat(details.amount) >= 50 && (details.unit === 'kg' || details.unit === 'tấn' || details.unit === 'trái') && (log.equipment_used === 'Kéo' || !details.pesticide_name));
+
     // A. NHẬT KÝ THU HOẠCH (HARVEST LOGS)
-    if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
+    if (isExplicitHarvest || isHarvestByDetails) {
+      log.log_type = 'Thu hoạch';
+      typeStr = 'thu hoạch';
+
       const hKg = parseFloat(details.amount || log.quantity || 0) || 0;
       const hUnit = details.unit || log.unit || 'kg';
       const hFruits = parseFloat(details.fruit_count || 0) || 0;
       const hRev = parseFloat(details.price_per_tree || details.total_revenue || log.cost || 0) || 0;
       const hAvgPerFruit = hFruits > 0 ? (hRev > 0 ? Math.round(hRev / hFruits) : parseFloat(details.avg_price_per_fruit || 0) || 0) : 0;
-      const hQuality = details.quality || 'Loại 1';
+      const hQuality = details.quality || 'Loại A (Đạt chuẩn xuất khẩu)';
 
       totalHarvestRev += hRev;
       totalHarvestFruits += hFruits;
@@ -4014,6 +4026,7 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
 
       return {
         ...log,
+        log_type: 'Thu hoạch',
         _isHarvest: true,
         _harvestItem: harvestItem
       };
@@ -4147,14 +4160,33 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
               </div>
 
               ${log._isHarvest ? `
-                <div style="margin-top:8px;padding:8px 12px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                  <div style="font-size:12px;color:#7e22ce;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
-                    <i data-lucide="package-check" class="lucide-xs"></i>
-                    <span>Thu hoạch: <strong>${log._harvestItem.amount} kg</strong> (${log._harvestItem.fruit_count} trái)</span>
+                <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);border:1.5px solid #d8b4fe;border-radius:10px;box-shadow:0 2px 6px rgba(147,51,234,0.06);">
+                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                    <div style="font-size:13px;color:#6b21a8;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+                      <i data-lucide="package-check" class="lucide-sm" style="color:#9333ea;"></i>
+                      <span>Sản lượng: <strong style="color:#581c87;font-size:14px;">${log._harvestItem.amount} ${log._harvestItem.unit}</strong> ${log._harvestItem.fruit_count > 0 ? `(${log._harvestItem.fruit_count} quả)` : ''}</span>
+                    </div>
+                    <div style="font-size:13px;font-weight:900;color:#047857;background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+                      <i data-lucide="badge-dollar-sign" class="lucide-xs"></i>
+                      <span>+${log._harvestItem.revenue.toLocaleString('vi-VN')} VNĐ</span>
+                    </div>
                   </div>
-                  <div style="font-size:12.5px;font-weight:800;color:#9333ea;background:#f3e8ff;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
-                    <i data-lucide="banknote" class="lucide-xs"></i>
-                    <span>+${log._harvestItem.revenue.toLocaleString('vi-VN')} VNĐ</span>
+                  <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e9d5ff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11.5px;color:#7e22ce;">
+                    ${log._harvestItem.avg_price_per_fruit > 0 ? `
+                      <span style="display:inline-flex;align-items:center;gap:4px;font-weight:700;">
+                        <i data-lucide="calculator" class="lucide-xs"></i> Bình quân: <strong>${log._harvestItem.avg_price_per_fruit.toLocaleString('vi-VN')} VNĐ/quả</strong>
+                      </span>
+                    ` : ''}
+                    ${log._harvestItem.quality ? `
+                      <span style="display:inline-flex;align-items:center;gap:4px;color:#6b21a8;font-weight:600;">
+                        <i data-lucide="award" class="lucide-xs"></i> ${esc(log._harvestItem.quality)}
+                      </span>
+                    ` : ''}
+                    ${(log.batch_code || (log.details && log.details.batch_code)) ? `
+                      <span style="font-family:monospace;font-weight:700;color:#0369a1;background:#e0f2fe;padding:1px 6px;border-radius:4px;border:1px solid #bae6fd;">
+                        <i data-lucide="scan" class="lucide-xs"></i> Lô: ${esc(log.batch_code || log.details.batch_code)}
+                      </span>
+                    ` : ''}
                   </div>
                 </div>
               ` : (log._materialName && log._cost > 0) ? `

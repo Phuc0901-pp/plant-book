@@ -2770,11 +2770,24 @@ router.post('/:id/logs', auth, async (req, res) => {
 
     const effectiveDate = log_date || new Date().toISOString().slice(0, 10);
     const parsedDetails = typeof details === 'string' ? JSON.parse(details || '{}') : (details || {});
+    
+    // Tự động nhận diện và bảo vệ loại nhật ký Thu hoạch (Dual Defense)
+    let effectiveLogType = log_type || 'Nhật ký chăm sóc';
+    if (
+      String(effectiveLogType).toLowerCase().includes('thu hoạch') ||
+      String(effectiveLogType).toLowerCase().includes('harvest') ||
+      parseFloat(parsedDetails.fruit_count) > 0 ||
+      parseFloat(parsedDetails.price_per_tree) > 0 ||
+      parseFloat(parsedDetails.total_revenue) > 0
+    ) {
+      effectiveLogType = 'Thu hoạch';
+    }
+
     let generatedBatchCode = null;
     let isPhiViolation = false;
 
     // ── 1. VIETGAP PHUN THUỐC BVTV & TÍNH TOÁN CÁCH LY PHI ──
-    if (log_type === 'Phun thuốc' && targetPlantId) {
+    if (effectiveLogType === 'Phun thuốc' && targetPlantId) {
       let phiDays = parseInt(customPhiDays || parsedDetails.phi_days) || 0;
       const pesticideName = parsedDetails.name || parsedDetails.pesticide_name || note || 'Thuốc BVTV';
 
@@ -2807,7 +2820,7 @@ router.post('/:id/logs', auth, async (req, res) => {
     }
 
     // ── 2. VIETGAP THU HOẠCH & SINH MÃ LÔ TRUY XUẤT NGUỒN GỐC ──
-    if (log_type === 'Thu hoạch') {
+    if (effectiveLogType === 'Thu hoạch') {
       const dateClean = effectiveDate.replace(/-/g, '');
       const codeClean = (treeCode || 'TB').replace(/[^a-zA-Z0-9]/g, '');
       generatedBatchCode = `${farmPuc}-${dateClean}-${codeClean}`;
@@ -2832,46 +2845,49 @@ router.post('/:id/logs', auth, async (req, res) => {
     let resolvedUnitPrice = 0;
     let resolvedTotCost = parseFloat(parsedDetails.total_cost) || 0;
 
-    try {
-      let resolvedSupplyId = parsedDetails.supply_id || null;
-      const rawAmount = parseFloat(parsedDetails.quantity || parsedDetails.volume || parsedDetails.amount || 0);
-      const rawUnit = (parsedDetails.unit || '').toLowerCase().trim();
-      const supplyName = parsedDetails.supply_name || parsedDetails.material_name || parsedDetails.fertilizer_name || parsedDetails.pesticide_name || null;
+    // Chỉ tính toán trừ kho và vật tư tiêu hao nếu KHÔNG PHẢI là Thu hoạch
+    if (effectiveLogType !== 'Thu hoạch') {
+      try {
+        let resolvedSupplyId = parsedDetails.supply_id || null;
+        const rawAmount = parseFloat(parsedDetails.quantity || parsedDetails.volume || parsedDetails.amount || 0);
+        const rawUnit = (parsedDetails.unit || '').toLowerCase().trim();
+        const supplyName = parsedDetails.supply_name || parsedDetails.material_name || parsedDetails.fertilizer_name || parsedDetails.pesticide_name || null;
 
-      if (!resolvedSupplyId && supplyName) {
-        const foundSup = await pool.query(
-          `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE (user_id = $1 OR farm_id = $2) AND (name ILIKE $3 OR $3 ILIKE '%' || name || '%') LIMIT 1`,
-          [req.user.id, farmId || null, supplyName]
-        );
-        if (foundSup.rows.length > 0) {
-          resolvedSupplyId = foundSup.rows[0].id;
-          resolvedSupply = foundSup.rows[0];
+        if (!resolvedSupplyId && supplyName) {
+          const foundSup = await pool.query(
+            `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE (user_id = $1 OR farm_id = $2) AND (name ILIKE $3 OR $3 ILIKE '%' || name || '%') LIMIT 1`,
+            [req.user.id, farmId || null, supplyName]
+          );
+          if (foundSup.rows.length > 0) {
+            resolvedSupplyId = foundSup.rows[0].id;
+            resolvedSupply = foundSup.rows[0];
+          }
+        } else if (resolvedSupplyId) {
+          const foundSup = await pool.query(
+            `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE id = $1`,
+            [resolvedSupplyId]
+          );
+          if (foundSup.rows.length > 0) {
+            resolvedSupply = foundSup.rows[0];
+          }
         }
-      } else if (resolvedSupplyId) {
-        const foundSup = await pool.query(
-          `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE id = $1`,
-          [resolvedSupplyId]
-        );
-        if (foundSup.rows.length > 0) {
-          resolvedSupply = foundSup.rows[0];
+
+        if (resolvedSupply && rawAmount > 0) {
+          const supUnit = (resolvedSupply.unit || 'kg').toLowerCase().trim();
+          resolvedUsageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, effectiveLogType);
+          resolvedUnitPrice = parseFloat(resolvedSupply.unit_price) || 0;
+          resolvedTotCost = resolvedTotCost > 0 ? resolvedTotCost : (resolvedUsageQty * resolvedUnitPrice);
+
+          parsedDetails.supply_id = resolvedSupply.id;
+          parsedDetails.supply_name = resolvedSupply.name;
+          parsedDetails.material_name = resolvedSupply.name;
+          parsedDetails.unit_price = resolvedUnitPrice;
+          parsedDetails.total_cost = resolvedTotCost;
+          parsedDetails.usage_quantity = resolvedUsageQty;
         }
+      } catch (supErr) {
+        console.warn('Cảnh báo tính toán chi phí vật tư trước khi lưu:', supErr.message);
       }
-
-      if (resolvedSupply && rawAmount > 0) {
-        const supUnit = (resolvedSupply.unit || 'kg').toLowerCase().trim();
-        resolvedUsageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, log_type);
-        resolvedUnitPrice = parseFloat(resolvedSupply.unit_price) || 0;
-        resolvedTotCost = resolvedTotCost > 0 ? resolvedTotCost : (resolvedUsageQty * resolvedUnitPrice);
-
-        parsedDetails.supply_id = resolvedSupply.id;
-        parsedDetails.supply_name = resolvedSupply.name;
-        parsedDetails.material_name = resolvedSupply.name;
-        parsedDetails.unit_price = resolvedUnitPrice;
-        parsedDetails.total_cost = resolvedTotCost;
-        parsedDetails.usage_quantity = resolvedUsageQty;
-      }
-    } catch (supErr) {
-      console.warn('Cảnh báo tính toán chi phí vật tư trước khi lưu:', supErr.message);
     }
 
     const result = await pool.query(
@@ -2881,7 +2897,7 @@ router.post('/:id/logs', auth, async (req, res) => {
        )
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
       [
-        targetPlantId, effectiveDate, log_type, note,
+        targetPlantId, effectiveDate, effectiveLogType, note,
         JSON.stringify(media_urls || []), JSON.stringify(parsedDetails), req.user.id,
         generatedBatchCode, farmPuc, operator_name || req.user.full_name || req.user.name,
         equipment_used || null, isPhiViolation
@@ -2896,7 +2912,7 @@ router.post('/:id/logs', auth, async (req, res) => {
         await pool.query(
           `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [req.user.id, resolvedSupply.id, farmId || null, targetPlantId || null, effectiveDate, resolvedUsageQty, resolvedUnitPrice, resolvedTotCost, `Tự động từ nhật ký [${log_type}] (${rawAmount} ${rawUnit || resolvedSupply.unit}${targetPlantId ? ' cho cây ' + treeCode : ' toàn vườn'})`]
+          [req.user.id, resolvedSupply.id, farmId || null, targetPlantId || null, effectiveDate, resolvedUsageQty, resolvedUnitPrice, resolvedTotCost, `Tự động từ nhật ký [${effectiveLogType}] (${rawAmount} ${rawUnit || resolvedSupply.unit}${targetPlantId ? ' cho cây ' + treeCode : ' toàn vườn'})`]
         );
 
         if (resolvedSupply.category !== 'Tiền nước' && resolvedSupply.category !== 'Nhân công' && resolvedSupply.stock_quantity > 0) {
@@ -2908,7 +2924,7 @@ router.post('/:id/logs', auth, async (req, res) => {
     }
 
     // Tự động chuyển trạng thái cây thành Bệnh nếu ghi nhật ký Bệnh cây
-    if (log_type === 'Bệnh cây' && targetPlantId) {
+    if (effectiveLogType === 'Bệnh cây' && targetPlantId) {
       await pool.query(
         `UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = $1`,
         [targetPlantId]
@@ -2987,6 +3003,19 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
 
     const editHistory = [...(currentLog.edit_history || []), historyItem];
 
+    // Tự động nhận diện và bảo vệ loại nhật ký Thu hoạch
+    const parsedPutDetails = details || currentLog.details || {};
+    let targetLogType = log_type || currentLog.log_type;
+    if (
+      String(targetLogType).toLowerCase().includes('thu hoạch') ||
+      String(targetLogType).toLowerCase().includes('harvest') ||
+      parseFloat(parsedPutDetails.fruit_count) > 0 ||
+      parseFloat(parsedPutDetails.price_per_tree) > 0 ||
+      parseFloat(parsedPutDetails.total_revenue) > 0
+    ) {
+      targetLogType = 'Thu hoạch';
+    }
+
     // Update log
     const updated = await pool.query(
       `UPDATE plant_logs 
@@ -2994,9 +3023,9 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
        WHERE id = $7 AND plant_id = $8 RETURNING *`,
       [
         log_date || currentLog.log_date,
-        log_type || currentLog.log_type,
+        targetLogType,
         note !== undefined ? note : currentLog.note,
-        JSON.stringify(details || currentLog.details || {}),
+        JSON.stringify(parsedPutDetails),
         JSON.stringify(media_urls || currentLog.media_urls || []),
         JSON.stringify(editHistory),
         logId,
@@ -3008,7 +3037,7 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
     await pool.query(
       `INSERT INTO user_activities (user_id, activity_type, description)
        VALUES ($1, 'Sửa nhật ký', $2)`,
-      [req.user.id, `Chỉnh sửa nhật ký [${log_type || currentLog.log_type}] cho cây #${plantId} (ID nhật ký: ${logId})`]
+      [req.user.id, `Chỉnh sửa nhật ký [${targetLogType}] cho cây #${plantId} (ID nhật ký: ${logId})`]
     );
 
     logAuditAction(

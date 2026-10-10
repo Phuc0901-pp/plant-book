@@ -1157,7 +1157,11 @@ export async function saveCareLog() {
   }
 
 
-  const logType = document.getElementById('c-log-type')?.value;
+  const logTypeRaw = document.getElementById('c-log-type')?.value;
+  // Dual Defense: Nếu form đang chứa các input thu hoạch thì cưỡng chế log_type = 'Thu hoạch'
+  const isHarvestDom = !!document.getElementById('c-detail-harvest-fruit-count') || !!document.getElementById('c-detail-harvest-amount');
+  const logType = isHarvestDom ? 'Thu hoạch' : logTypeRaw;
+
   const note    = document.getElementById('c-note')?.value.trim() || '';
   const logDate = document.getElementById('c-log-date')?.value || new Date().toISOString().slice(0, 10);
   const operatorName = document.getElementById('c-operator-name')?.value.trim() || '';

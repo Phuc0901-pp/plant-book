@@ -751,14 +751,32 @@ async function initDB() {
             )
         WHERE id = 2683740 OR log_type LIKE '%B%n%ph%n%' OR log_type LIKE '%\uFFFD%';
 
-        UPDATE plant_logs SET log_type = 'Bón phân' WHERE (log_type ILIKE '%ph%n%' AND log_type ILIKE '%B%') AND log_type != 'Bón phân';
-        UPDATE plant_logs SET log_type = 'Phun thuốc' WHERE (log_type ILIKE '%phun%thu%c%' OR log_type ILIKE '%thu%c%') AND log_type != 'Phun thuốc';
+        -- Chuẩn hóa Thu hoạch TRƯỚC HẾT để không bị các từ khóa khác bắt nhầm
+        UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE (log_type ILIKE '%thu%ho%ch%' OR log_type ILIKE '%harvest%' OR details::text ILIKE '%fruit_count%' OR details::text ILIKE '%price_per_tree%') AND log_type != 'Thu hoạch';
+        UPDATE plant_logs SET log_type = 'Bón phân' WHERE (log_type ILIKE '%ph%n%' AND log_type ILIKE '%B%') AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type != 'Bón phân';
+        UPDATE plant_logs SET log_type = 'Phun thuốc' WHERE (log_type ILIKE '%phun%' OR (log_type ILIKE '%thu%c%' AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type NOT ILIKE '%harvest%')) AND log_type != 'Phun thuốc';
         UPDATE plant_logs SET log_type = 'Tưới nước' WHERE (log_type ILIKE '%t%i%n%c%' OR log_type ILIKE '%t%i%') AND log_type != 'Tưới nước';
         UPDATE plant_logs SET log_type = 'Cắt lá' WHERE log_type ILIKE '%c%t%l%' AND log_type != 'Cắt lá';
         UPDATE plant_logs SET log_type = 'Tỉa hoa' WHERE (log_type ILIKE '%t%a%hoa%' OR log_type ILIKE '%t%a%') AND log_type != 'Tỉa hoa';
         UPDATE plant_logs SET log_type = 'Thụ phấn' WHERE log_type ILIKE '%th%ph%n%' AND log_type != 'Thụ phấn';
-        UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE log_type ILIKE '%thu%ho%ch%' AND log_type != 'Thu hoạch';
         UPDATE plant_logs SET log_type = 'Bệnh cây' WHERE (log_type ILIKE '%b%nh%c%y%' OR log_type ILIKE '%b%nh%') AND log_type != 'Bệnh cây';
+
+        -- Phục hồi dứt điểm mọi bản ghi thu hoạch từng bị gán nhãn sai thành Phun thuốc
+        UPDATE plant_logs 
+        SET log_type = 'Thu hoạch' 
+        WHERE (
+          details::text ILIKE '%fruit_count%' 
+          OR details::text ILIKE '%price_per_tree%' 
+          OR details::text ILIKE '%total_revenue%' 
+          OR details::text ILIKE '%avg_price_per_fruit%'
+          OR (details::text ILIKE '%"quality"%' AND details::text ILIKE '%Loại%')
+          OR (equipment_used ILIKE '%kéo%' AND details::text ILIKE '%"kg"%' AND log_type = 'Phun thuốc')
+        ) AND log_type != 'Thu hoạch';
+
+        -- Dọn dẹp chi phí vật tư bị ghi nhận nhầm từ các log thu hoạch
+        DELETE FROM supply_usages 
+        WHERE (note ILIKE '%[Phun thuốc]%' OR note ILIKE '%Thuốc BVTV%') 
+          AND (note ILIKE '%600 kg%' OR note ILIKE '%kg cho cây%' OR note ILIKE '%kg toàn vườn%');
 
         UPDATE supply_usages SET note = 'Tự động từ nhật ký [Bón phân] tại vườn' WHERE note LIKE '%T%đ%ng t%nh%t k%[B%' OR note LIKE '%[B%n%ph%n]%';
         UPDATE supply_usages SET note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ' WHERE note LIKE '%B%n%ph%n%h%u%';
