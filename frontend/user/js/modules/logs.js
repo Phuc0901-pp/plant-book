@@ -22,6 +22,10 @@ let _currentFilteredLogs = [];
 let _batchSelectMode = false;
 const _selectedLogIds = new Set();
 
+// ── Ngày trong tuần Tiếng Việt ────────────────────────────────
+const dayOfWeekArr = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+const DAY_OF_WEEK_ARR = dayOfWeekArr;
+
 
 /**
  * Cập nhật cache nhật ký (30 ngày).
