@@ -3956,7 +3956,7 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
-  // Calculate Costs & Supplies Breakdown & Harvest Economics
+  // Calculate Costs & Supplies Breakdown & Harvest Economics FIRST
   let totalCost = 0;
   let fertCost = 0;
   let pestCost = 0;
@@ -3968,7 +3968,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
   let totalHarvestKg = 0;
   const harvestList = [];
 
-  logs.forEach(log => {
+  // Enriched logs container
+  const enrichedLogs = logs.map(log => {
     const typeStr = String(log.log_type || '').toLowerCase();
     let details = log.details || {};
     if (typeof details === 'string') {
@@ -3988,7 +3989,7 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
       totalHarvestFruits += hFruits;
       totalHarvestKg += hKg;
 
-      harvestList.push({
+      const harvestItem = {
         date: log.log_date || log.created_at,
         amount: hKg,
         unit: hUnit,
@@ -3997,8 +3998,14 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
         avg_price_per_fruit: hAvgPerFruit,
         quality: hQuality,
         note: log.note || ''
-      });
-      return; // Do not calculate as care cost
+      };
+      harvestList.push(harvestItem);
+
+      return {
+        ...log,
+        _isHarvest: true,
+        _harvestItem: harvestItem
+      };
     }
 
     // B. NHẬT KÝ CANH TÁC CÓ TIÊU HAO VẬT TƯ (CARE LOGS)
@@ -4007,62 +4014,167 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     let quantity = log.quantity || details.quantity || details.amount;
     let unit = log.unit || details.unit || '';
 
-    // Automatic Fallback Enrichment for Water & Supplies
+    // Sanity check: nếu chi phí tưới nước > 50.000 VNĐ cho 1 cây, chuẩn hóa về giá thực tế (~30L x 15đ = 450đ - 1.500đ)
     if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
-      if (!materialName) materialName = 'Nước tưới tiêu';
+      if (!materialName) materialName = 'Nước tưới gốc';
       if (!unit) unit = 'lít';
-      if (cost === 0 && quantity > 0) {
-        const waterSup = suppliesCache.find(s => s.name && s.name.toLowerCase().includes('nước'));
-        const waterPrice = waterSup ? (parseFloat(waterSup.unit_price) || 0) : 15;
-        cost = Math.round(quantity * waterPrice);
+      const numLiters = parseFloat(quantity) || 30;
+      if (cost === 0 || cost > 50000) {
+        cost = Math.round(numLiters * 15);
       }
-    } else if (!materialName) {
-      if (typeStr.includes('phân') || typeStr.includes('phan')) materialName = 'Phân bón';
-      else if (typeStr.includes('thuốc') || typeStr.includes('thuoc')) materialName = 'Thuốc BVTV';
+      if (!quantity) quantity = 30;
+    } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
+      // Phun thuốc: nếu chưa có tên thuốc hoặc cost = 0, gán thuốc BVTV tiêu chuẩn
+      if (!materialName || cost === 0) {
+        const pestSup = suppliesCache.find(s => 
+          (s.category && (s.category.includes('thuốc') || s.category.includes('Thuốc'))) ||
+          (s.name && (s.name.toLowerCase().includes('thuốc') || s.name.toLowerCase().includes('sâu') || s.name.toLowerCase().includes('bệnh')))
+        );
+        if (pestSup) {
+          materialName = materialName || pestSup.name;
+          const uP = parseFloat(pestSup.unit_price || pestSup.price) || 35000;
+          cost = cost > 0 ? cost : Math.round(uP * (parseFloat(quantity) ? parseFloat(quantity)/1000 : 0.05));
+          if (cost <= 0) cost = 35000;
+        } else {
+          materialName = materialName || 'Thuốc BVTV sinh học';
+          if (cost <= 0) cost = 35000;
+        }
+      }
+      if (!quantity) { quantity = 1; unit = 'bình 20L'; }
+    } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
+      // Bón phân: nếu chưa có tên phân hoặc cost = 0, gán phân bón tiêu chuẩn
+      if (!materialName || cost === 0) {
+        const fertSup = suppliesCache.find(s => 
+          (s.category && (s.category.includes('phân') || s.category.includes('Phân'))) ||
+          (s.name && (s.name.toLowerCase().includes('phân') || s.name.toLowerCase().includes('npk') || s.name.toLowerCase().includes('hữu cơ')))
+        );
+        if (fertSup) {
+          materialName = materialName || fertSup.name;
+          const uP = parseFloat(fertSup.unit_price || fertSup.price) || 25000;
+          cost = cost > 0 ? cost : Math.round(uP * (parseFloat(quantity) ? parseFloat(quantity)/1000 : 0.2));
+          if (cost <= 0) cost = 25000;
+        } else {
+          materialName = materialName || 'Phân bón NPK vi lượng';
+          if (cost <= 0) cost = 25000;
+        }
+      }
+      if (!quantity) { quantity = 200; unit = 'gam'; }
     }
 
-    // If cost is 0, attempt fallback lookup by supply_id or supply name
-    if (cost === 0 && suppliesCache.length > 0) {
-      let matchedSup = null;
-      if (details.supply_id) {
-        matchedSup = suppliesCache.find(s => String(s.id) === String(details.supply_id));
-      }
-      if (!matchedSup && materialName) {
-        matchedSup = suppliesCache.find(s => s.name && s.name.toLowerCase() === materialName.toLowerCase());
-      }
-      if (matchedSup) {
-        const unitPrice = parseFloat(matchedSup.unit_price || matchedSup.price || 0) || 0;
-        let usageQty = parseFloat(quantity || 1) || 1;
-        if ((matchedSup.unit === 'kg' || matchedSup.unit === 'kilogram') && (unit === 'gam' || unit === 'g')) usageQty = usageQty / 1000;
-        if ((matchedSup.unit === 'lít' || matchedSup.unit === 'lit') && (unit === 'ml' || unit === 'cc')) usageQty = usageQty / 1000;
-        cost = Math.round(usageQty * unitPrice);
-        if (!materialName) materialName = matchedSup.name;
-      }
-    }
-
-    if (materialName) {
+    if (materialName && cost > 0) {
       materialsUsed.push({
         date: log.log_date || log.created_at,
         type: log.log_type,
         name: materialName,
-        quantity: quantity ? `${quantity} ${unit}`.trim() : '',
+        quantity: quantity ? `${quantity} ${unit}`.trim() : 'Định mức tiêu chuẩn',
         cost: cost
       });
-    }
 
-    if (cost > 0) {
       totalCost += cost;
       if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
         fertCost += cost;
-      } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest')) {
+      } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
         pestCost += cost;
       } else if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
         waterCost += cost;
       }
     }
+
+    return {
+      ...log,
+      _materialName: materialName,
+      _materialQty: quantity ? `${quantity} ${unit}`.trim() : '',
+      _cost: cost
+    };
   });
 
-  // Render Cost Breakdown
+  // Render Timeline (Tab 2) WITH INLINE COST & SUPPLY BADGES
+  if (timelineContainer) {
+    if (!enrichedLogs.length) {
+      timelineContainer.innerHTML = `
+        <div style="text-align:center;padding:28px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;">
+          <i data-lucide="calendar-off" class="lucide-md" style="color:#94a3b8;margin-bottom:6px;"></i>
+          <div style="font-weight:700;font-size:13px;color:#334155;">Chưa có dữ liệu nhật ký canh tác</div>
+          <div style="font-size:12px;margin-top:2px;">Bấm nút "+ Thêm nhật ký mới" để ghi lại hoạt động tưới tiêu, bón phân, phun thuốc hoặc thu hoạch.</div>
+        </div>
+      `;
+    } else {
+      timelineContainer.innerHTML = enrichedLogs.map((log) => {
+        let typeColor = '#059669';
+        let typeBg = '#ecfdf5';
+        let iconName = 'clipboard-check';
+        const typeStr = String(log.log_type || '').toLowerCase();
+        if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
+          typeColor = '#0284c7'; typeBg = '#f0f9ff'; iconName = 'droplet';
+        } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
+          typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
+        } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
+          typeColor = '#d97706'; typeBg = '#fffbeb'; iconName = 'shield-alert';
+        } else if (typeStr.includes('thu hoạch') || typeStr.includes('harvest')) {
+          typeColor = '#9333ea'; typeBg = '#faf5ff'; iconName = 'package-check';
+        } else if (typeStr.includes('tỉa') || typeStr.includes('pruning')) {
+          typeColor = '#475569'; typeBg = '#f8fafc'; iconName = 'scissors';
+        }
+
+        const photos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
+
+        return `
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid ${typeColor};border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+            <div style="width:36px;height:36px;border-radius:10px;background:${typeBg};color:${typeColor};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;">
+              <i data-lucide="${iconName}" class="lucide-sm"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+                <span style="font-size:13.5px;font-weight:800;color:#0f172a;">${esc(log.log_type || 'Nhật ký chăm sóc')}</span>
+                <span style="font-size:11.5px;color:#64748b;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                  <i data-lucide="clock" class="lucide-xs"></i> ${esc(log.log_date || log.created_at || '—')}
+                </span>
+              </div>
+              
+              <div style="font-size:12px;color:#334155;line-height:1.5;">
+                ${esc(log.note || log.action || 'Không có ghi chú chi tiết.')}
+              </div>
+
+              ${log._isHarvest ? `
+                <div style="margin-top:8px;padding:8px 12px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                  <div style="font-size:12px;color:#7e22ce;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+                    <i data-lucide="package-check" class="lucide-xs"></i>
+                    <span>Thu hoạch: <strong>${log._harvestItem.amount} kg</strong> (${log._harvestItem.fruit_count} trái)</span>
+                  </div>
+                  <div style="font-size:12.5px;font-weight:800;color:#9333ea;background:#f3e8ff;padding:2px 8px;border-radius:6px;">
+                    Doanh thu: +${log._harvestItem.revenue.toLocaleString('vi-VN')} VNĐ
+                  </div>
+                </div>
+              ` : (log._materialName && log._cost > 0) ? `
+                <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                  <div style="font-size:12px;color:#166534;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+                    <i data-lucide="package" class="lucide-xs" style="color:#16a34a;"></i>
+                    <span>Vật tư: <strong>${esc(log._materialName)}</strong> ${log._materialQty ? `(${esc(log._materialQty)})` : ''}</span>
+                  </div>
+                  <div style="font-size:12.5px;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:6px;">
+                    Tiêu hao: ${log._cost.toLocaleString('vi-VN')} VNĐ
+                  </div>
+                </div>
+              ` : ''}
+
+              ${(log.operator_name || log.equipment_used) ? `
+                <div style="font-size:11px;color:#64748b;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
+                  ${log.operator_name ? `<span><i data-lucide="user" class="lucide-xs"></i> Nhân sự: <strong>${esc(log.operator_name)}</strong></span>` : ''}
+                  ${log.equipment_used ? `<span><i data-lucide="wrench" class="lucide-xs"></i> Thiết bị: <strong>${esc(log.equipment_used)}</strong></span>` : ''}
+                </div>` : ''}
+              
+              ${photos.length ? `
+                <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
+                  ${photos.map(pUrl => `<img src="${esc(pUrl)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;" onclick="if(window.openLightbox) openLightbox('${esc(pUrl)}')">`).join('')}
+                </div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Render Cost Breakdown in Tab 3
   if (costTotalEl) costTotalEl.textContent = `${totalCost.toLocaleString('vi-VN')} VNĐ`;
   if (costFertilizerEl) costFertilizerEl.textContent = `${fertCost.toLocaleString('vi-VN')} VNĐ`;
   if (costPesticideEl) costPesticideEl.textContent = `${pestCost.toLocaleString('vi-VN')} VNĐ`;
@@ -4155,32 +4267,49 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
-  // Render Materials Used Table
+  // Render Materials Used Table (Tab 3) WITH TOTAL SUMMARY FOOTER
   if (materialsListEl) {
     if (!materialsUsed.length) {
       materialsListEl.innerHTML = '<span style="color:#64748b;">Chưa phát sinh chi phí vật tư phân bón / thuốc BVTV riêng biệt cho cây này.</span>';
     } else {
       materialsListEl.innerHTML = `
-        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">
-          <thead>
-            <tr style="background:#f1f5f9;color:#475569;text-align:left;">
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Ngày</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Vật tư / Phân thuốc</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Định lượng</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;">Chi phí</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${materialsUsed.map(m => `
-              <tr>
-                <td style="padding:6px 8px;border:1px solid #e2e8f0;color:#64748b;">${esc(m.date || '—')}</td>
-                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#0f172a;">${esc(m.name)}</td>
-                <td style="padding:6px 8px;border:1px solid #e2e8f0;color:#334155;">${esc(m.quantity || 'Theo liều lượng chuẩn')}</td>
-                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#059669;">${m.cost > 0 ? `${m.cost.toLocaleString('vi-VN')} VNĐ` : 'Định mức chung'}</td>
+        <div style="overflow-x: auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">
+            <thead>
+              <tr style="background:#f1f5f9;color:#475569;text-align:left;">
+                <th style="padding:8px 10px;border:1px solid #e2e8f0;">Ngày dùng</th>
+                <th style="padding:8px 10px;border:1px solid #e2e8f0;">Hoạt động & Vật tư</th>
+                <th style="padding:8px 10px;border:1px solid #e2e8f0;">Định lượng</th>
+                <th style="padding:8px 10px;border:1px solid #e2e8f0;text-align:right;">Chi phí tiêu hao</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${materialsUsed.map(m => `
+                <tr>
+                  <td style="padding:8px 10px;border:1px solid #e2e8f0;color:#64748b;font-weight:600;">${esc(m.date || '—')}</td>
+                  <td style="padding:8px 10px;border:1px solid #e2e8f0;">
+                    <div style="font-weight:700;color:#0f172a;">${esc(m.name)}</div>
+                    <div style="font-size:11px;color:#64748b;">${esc(m.type)}</div>
+                  </td>
+                  <td style="padding:8px 10px;border:1px solid #e2e8f0;color:#334155;font-weight:600;">${esc(m.quantity || 'Định mức chuẩn')}</td>
+                  <td style="padding:8px 10px;border:1px solid #e2e8f0;font-weight:800;color:#15803d;text-align:right;">
+                    ${m.cost.toLocaleString('vi-VN')} VNĐ
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr style="background:#f8fafc;font-weight:800;">
+                <td colspan="3" style="padding:10px;border:1px solid #e2e8f0;text-align:right;color:#0f172a;">
+                  TỔNG CỘNG CHI PHÍ VẬT TƯ:
+                </td>
+                <td style="padding:10px;border:1px solid #e2e8f0;text-align:right;color:#b91c1c;font-size:13.5px;">
+                  ${totalCost.toLocaleString('vi-VN')} VNĐ
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       `;
     }
   }
