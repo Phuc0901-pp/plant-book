@@ -929,5 +929,114 @@ router.post('/recalculate-stock', auth, async (req, res) => {
   }
 });
 
+// GET /api/supplies/profit-overview — Thống kê tổng doanh thu thu hoạch, tổng chi phí vật tư và lợi nhuận thuần
+router.get('/profit-overview', auth, async (req, res) => {
+  try {
+    const { farm_id, user_id } = req.query;
+    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
+
+    // 1. Tính tổng doanh thu thu hoạch từ plant_logs
+    let harvestQuery = `
+      SELECT pl.details, pl.log_date, pl.plant_id
+      FROM plant_logs pl
+      LEFT JOIN plants p ON pl.plant_id = p.id
+      WHERE pl.log_type = 'Thu hoạch'
+        AND (pl.is_deleted IS NOT TRUE)
+    `;
+    const harvestParams = [];
+    let hIdx = 1;
+
+    if (req.user.role === 'admin' && user_id && user_id !== 'all') {
+      harvestQuery += ` AND (pl.created_by = $${hIdx} OR p.user_id = $${hIdx})`;
+      harvestParams.push(parseInt(user_id));
+      hIdx++;
+    } else if (req.user.role !== 'admin') {
+      harvestQuery += ` AND (
+        pl.created_by = $${hIdx} 
+        OR p.user_id = $${hIdx}
+        OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx} OR id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
+      )`;
+      harvestParams.push(req.user.id);
+      hIdx++;
+    }
+
+    if (farm_id && farm_id !== 'all') {
+      harvestQuery += ` AND (p.farm_id = $${hIdx} OR pl.plant_id IN (SELECT id FROM plants WHERE farm_id = $${hIdx}))`;
+      harvestParams.push(parseInt(farm_id));
+      hIdx++;
+    }
+
+    const harvestRes = await pool.query(harvestQuery, harvestParams);
+
+    let totalHarvestRevenue = 0;
+    let totalFruitCount = 0;
+    let totalHarvestWeight = 0;
+    const harvestLogsCount = harvestRes.rows.length;
+
+    harvestRes.rows.forEach(row => {
+      let d = row.details;
+      if (typeof d === 'string') {
+        try { d = JSON.parse(d); } catch (_) { d = {}; }
+      }
+      if (d) {
+        const rev = parseFloat(d.total_revenue) || (parseFloat(d.price_per_tree) || 0);
+        const fruits = parseFloat(d.fruit_count) || 0;
+        const amt = parseFloat(d.amount) || parseFloat(d.yield_kg) || 0;
+        totalHarvestRevenue += rev;
+        totalFruitCount += fruits;
+        totalHarvestWeight += amt;
+      }
+    });
+
+    // 2. Tính tổng chi phí vật tư đã tiêu hao từ supply_usages
+    let usageQuery = `
+      SELECT COALESCE(SUM(su.total_cost), 0) as total_spent,
+             COUNT(*) as usage_count
+      FROM supply_usages su
+      WHERE 1=1
+    `;
+    const usageParams = [];
+    let uIdx = 1;
+
+    if (req.user.role === 'admin' && user_id && user_id !== 'all') {
+      usageQuery += ` AND su.user_id = $${uIdx}`;
+      usageParams.push(parseInt(user_id));
+      uIdx++;
+    } else if (req.user.role !== 'admin') {
+      usageQuery += ` AND su.user_id = $${uIdx}`;
+      usageParams.push(req.user.id);
+      uIdx++;
+    }
+
+    if (farm_id && farm_id !== 'all') {
+      usageQuery += ` AND su.farm_id = $${uIdx}`;
+      usageParams.push(parseInt(farm_id));
+      uIdx++;
+    }
+
+    const usageRes = await pool.query(usageQuery, usageParams);
+    const totalSpent = parseFloat(usageRes.rows[0]?.total_spent) || 0;
+    const usageCount = parseInt(usageRes.rows[0]?.usage_count) || 0;
+
+    // 3. Tính Lợi nhuận và ROI
+    const netProfit = totalHarvestRevenue - totalSpent;
+    const roiPercentage = totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalHarvestRevenue > 0 ? 100 : 0);
+
+    res.json({
+      total_revenue: totalHarvestRevenue,
+      total_spent: totalSpent,
+      net_profit: netProfit,
+      roi_percentage: roiPercentage,
+      harvest_count: harvestLogsCount,
+      fruit_count: totalFruitCount,
+      harvest_weight: totalHarvestWeight,
+      usage_count: usageCount
+    });
+  } catch (err) {
+    console.error('Error fetching profit overview:', err);
+    res.status(500).json({ error: 'Lỗi server khi thống kê lợi nhuận: ' + err.message });
+  }
+});
+
 module.exports = router;
 

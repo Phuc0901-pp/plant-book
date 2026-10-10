@@ -4003,6 +4003,12 @@ async function submitCareLog(event, type, modalId, formId) {
     details.yield_kg = details.amount;
     const harvestUnitInput = document.getElementById('harvest-unit');
     details.unit = harvestUnitInput ? harvestUnitInput.value : 'kg';
+    const harvestFruitCountInput = document.getElementById('harvest-fruit-count');
+    details.fruit_count = harvestFruitCountInput ? parseFloat(harvestFruitCountInput.value) : 0;
+    const harvestTreeRevInput = document.getElementById('harvest-tree-revenue');
+    details.price_per_tree = harvestTreeRevInput ? parseFloat(harvestTreeRevInput.value) : 0;
+    details.total_revenue = details.price_per_tree;
+    details.avg_price_per_fruit = details.fruit_count > 0 ? Math.round(details.price_per_tree / details.fruit_count) : 0;
     const harvestQualityInput = document.getElementById('harvest-quality');
     details.quality = harvestQualityInput ? harvestQualityInput.value.trim() : '';
     details.operator_name = document.getElementById('harvest-operator-name')?.value.trim() || '';
@@ -4083,6 +4089,17 @@ async function submitCareLog(event, type, modalId, formId) {
     submitBtn.disabled = false;
   }
 }
+
+function calculatePublicHarvestEconomics() {
+  const fruitCount = parseFloat(document.getElementById('harvest-fruit-count')?.value) || 0;
+  const treeRev = parseFloat(document.getElementById('harvest-tree-revenue')?.value) || 0;
+  const avgEl = document.getElementById('public-harvest-avg-fruit');
+  if (avgEl) {
+    const avg = fruitCount > 0 ? Math.round(treeRev / fruitCount) : 0;
+    avgEl.textContent = `${new Intl.NumberFormat('vi-VN').format(avg)} VNĐ / quả`;
+  }
+}
+window.calculatePublicHarvestEconomics = calculatePublicHarvestEconomics;
 
 // ── Bệnh cây Feature ─────────────────────────────────────────────
 let diseaseImageFiles = [];

@@ -50,7 +50,7 @@ import {
 import { viewInternalPlantProfile, updateUserMapMarkers } from './modules/map.js';
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
-import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, startVoiceInput, stopVoiceInput } from './modules/care-modal.js?v=2.8.5';
+import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, calculateHarvestEconomicsPreview, startVoiceInput, stopVoiceInput } from './modules/care-modal.js?v=2.8.5';
 import { onCareMediaSelected, openLightbox } from './modules/media.js?v=2.8.5';
 import { 
   loadUserSettings, saveUserProfile, changeUserPassword, uploadUserAvatar, 
@@ -351,6 +351,7 @@ window.openCareModal        = openCareModal;
 window.closeCareModal       = closeCareModal;
 window.saveCareLog          = saveCareLog;
 window.onCareLogTypeChange  = onCareLogTypeChange;
+window.calculateHarvestEconomicsPreview = calculateHarvestEconomicsPreview;
 window.startVoiceInput      = startVoiceInput;
 window.stopVoiceInput       = stopVoiceInput;
 

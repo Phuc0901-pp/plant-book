@@ -476,6 +476,7 @@ export function renderUserLogsTable(logs) {
         if (l.details.fruit_count) parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
         if (l.details.total_cost) parts.push(`Chi phí: <strong style="color:#dc2626;">${Number(l.details.total_cost).toLocaleString('vi-VN')} đ</strong>`);
         if (l.details.total_revenue) parts.push(`Doanh thu: <strong style="color:#059669;">${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ</strong>`);
+        if (l.details.avg_price_per_fruit) parts.push(`TB/quả: <strong style="color:#d97706;">${Number(l.details.avg_price_per_fruit).toLocaleString('vi-VN')} đ</strong>`);
         if (l.details.method) parts.push(`Cách thức: ${esc(l.details.method)}`);
         if (l.details.disease_name) parts.push(`Bệnh: <strong style="color:#dc2626;">${esc(l.details.disease_name)}</strong>`);
         if (l.details.severity) parts.push(`Mức độ: ${esc(l.details.severity)}`);
@@ -1367,6 +1368,8 @@ function formatLogDetailsText(log) {
   } else if (log.log_type === 'Thu hoạch') {
     if (d.amount || d.yield_kg) parts.push(`Sản lượng: ${d.amount || d.yield_kg} ${d.unit || 'kg'}`);
     if (d.fruit_count) parts.push(`Số lượng trái: ${d.fruit_count} trái`);
+    if (d.total_revenue) parts.push(`Doanh thu: ${Number(d.total_revenue).toLocaleString('vi-VN')} đ`);
+    if (d.avg_price_per_fruit) parts.push(`TB/quả: ${Number(d.avg_price_per_fruit).toLocaleString('vi-VN')} đ`);
     if (d.quality) parts.push(`Chất lượng: ${d.quality}`);
   } else if (log.log_type === 'Bệnh cây') {
     if (d.disease_name) parts.push(`Tên bệnh/sâu hại: ${d.disease_name}`);

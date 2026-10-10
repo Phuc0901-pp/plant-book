@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/care-modal.js — Care log modal: open, close, form fields, save
@@ -360,6 +360,8 @@ export async function onCareLogTypeChange() {
     calculateWaterCostPreview();
   } else if (logType === 'Bón phân' || logType === 'Phun thuốc') {
     calculateCareSupplyCostPreview();
+  } else if (logType === 'Thu hoạch') {
+    calculateHarvestEconomicsPreview();
   }
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
@@ -598,6 +600,68 @@ export function calculateCareSupplyCostPreview() {
 }
 window.calculateCareSupplyCostPreview = calculateCareSupplyCostPreview;
 
+export function calculateHarvestEconomicsPreview() {
+  const fruitCount = parseFloat(document.getElementById('c-detail-harvest-fruit-count')?.value) || 0;
+  const singleTreeRev = parseFloat(document.getElementById('c-detail-harvest-tree-revenue')?.value) || 0;
+  const harvestKg = parseFloat(document.getElementById('c-detail-harvest-amount')?.value) || 0;
+  const harvestUnit = document.getElementById('c-detail-harvest-unit')?.value || 'kg';
+
+  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
+  let treeCount = 1;
+  if (isMulti) {
+    const checked = document.querySelectorAll('.c-plant-checkbox:checked');
+    if (checked.length > 0) treeCount = checked.length;
+  }
+
+  const avgFruitEl = document.getElementById('harvest-calc-avg-fruit');
+  const weightFruitEl = document.getElementById('harvest-calc-weight-fruit');
+  const totalRevEl = document.getElementById('harvest-calc-total-rev');
+  const treeNoteEl = document.getElementById('harvest-calc-tree-note');
+  const multiHintEl = document.getElementById('harvest-multi-tree-hint');
+
+  const totalRev = singleTreeRev * treeCount;
+  const avgPerFruit = (fruitCount > 0) ? Math.round(singleTreeRev / fruitCount) : 0;
+
+  const fmtVND = v => new Intl.NumberFormat('vi-VN').format(Math.round(v)) + ' VNĐ';
+
+  if (avgFruitEl) {
+    avgFruitEl.textContent = fruitCount > 0 ? `${fmtVND(avgPerFruit)} / quả` : '0 VNĐ / quả';
+  }
+
+  if (weightFruitEl) {
+    if (fruitCount > 0 && harvestKg > 0) {
+      if (harvestUnit === 'kg') {
+        const gramsPerFruit = Math.round((harvestKg * 1000) / fruitCount);
+        weightFruitEl.textContent = `~ ${gramsPerFruit >= 1000 ? (gramsPerFruit / 1000).toFixed(2) + ' kg' : gramsPerFruit + ' g'} / quả`;
+      } else {
+        weightFruitEl.textContent = `~ ${(harvestKg / fruitCount).toFixed(2)} ${harvestUnit} / quả`;
+      }
+      weightFruitEl.style.display = 'block';
+    } else {
+      weightFruitEl.style.display = 'none';
+    }
+  }
+
+  if (totalRevEl) {
+    totalRevEl.textContent = fmtVND(totalRev);
+  }
+
+  if (treeNoteEl) {
+    treeNoteEl.textContent = treeCount > 1 ? `${treeCount} cây (x ${fmtVND(singleTreeRev)})` : '1 cây thu hoạch';
+  }
+
+  if (multiHintEl) {
+    if (treeCount > 1) {
+      multiHintEl.style.display = 'block';
+      multiHintEl.innerHTML = `<i data-lucide="info" class="lucide-xs"></i> Đang chọn <strong>${treeCount} cây</strong>: Tổng doanh thu toàn đợt là <strong>${fmtVND(totalRev)}</strong>.`;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    } else {
+      multiHintEl.style.display = 'none';
+    }
+  }
+}
+window.calculateHarvestEconomicsPreview = calculateHarvestEconomicsPreview;
+
 /**
  * Trả về HTML form fields theo loại hoạt động.
  * @private
@@ -810,18 +874,66 @@ function _buildDetailFields(logType, configs, supplies = []) {
           </div>
         </div>
 
-        <div class="field">
-          <label><i data-lucide="wheat" class="lucide-sm" style="color:#d97706"></i> Sản lượng thu hoạch *</label>
-          <div style="display:flex; gap:8px;">
-            <input type="number" step="any" id="c-detail-harvest-amount" value="50" placeholder="Số lượng (VD: 50)" style="flex:2;">
-            <select id="c-detail-harvest-unit" style="flex:1;">
-              <option value="kg">kg (Kilogram)</option>
-              <option value="tấn">tấn (Tấn)</option>
-              <option value="trái">trái / quả</option>
-              <option value="thùng">thùng / sọt</option>
-            </select>
+        <!-- 1. Số lượng trái & Tổng sản lượng -->
+        <div class="field" style="display:flex; gap:10px; margin-bottom:12px;">
+          <div style="flex:1;">
+            <label><i data-lucide="apple" class="lucide-sm" style="color:#ef4444;"></i> Số lượng trái (quả) *</label>
+            <input type="number" id="c-detail-harvest-fruit-count" min="1" step="1" value="100" placeholder="VD: 100 quả" oninput="calculateHarvestEconomicsPreview()" onchange="calculateHarvestEconomicsPreview()" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
+          </div>
+          <div style="flex:1;">
+            <label><i data-lucide="scale" class="lucide-sm" style="color:#d97706;"></i> Tổng sản lượng</label>
+            <div style="display:flex; gap:6px;">
+              <input type="number" step="any" id="c-detail-harvest-amount" value="50" placeholder="VD: 50" oninput="calculateHarvestEconomicsPreview()" onchange="calculateHarvestEconomicsPreview()" style="flex:2; padding:9px 8px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+              <select id="c-detail-harvest-unit" onchange="calculateHarvestEconomicsPreview()" style="flex:1.2; padding:9px 4px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:12px;">
+                <option value="kg" selected>kg</option>
+                <option value="tấn">tấn</option>
+                <option value="trái">trái</option>
+                <option value="thùng">thùng</option>
+              </select>
+            </div>
           </div>
         </div>
+
+        <!-- 2. Tổng số tiền thu hoạch của 1 cây (nhập vào) -->
+        <div class="field" style="margin-bottom:12px;">
+          <label><i data-lucide="badge-dollar-sign" class="lucide-sm" style="color:#059669;"></i> Tổng tiền thu hoạch của 1 cây (VNĐ) *</label>
+          <div style="position:relative;">
+            <input type="number" id="c-detail-harvest-tree-revenue" min="0" step="1000" value="3500000" placeholder="Nhập số tiền thu của 1 cây (VD: 3500000)" oninput="calculateHarvestEconomicsPreview()" onchange="calculateHarvestEconomicsPreview()" style="width:100%; padding:10px 48px 10px 12px; border:1.5px solid #a7f3d0; border-radius:8px; font-weight:700; font-size:14px; color:#065f46; background:#f0fdf4;">
+            <span style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:700; color:#047857;">VNĐ</span>
+          </div>
+          <div id="harvest-multi-tree-hint" style="display:none; font-size:12px; color:#047857; margin-top:4px; font-weight:600;"></div>
+        </div>
+
+        <!-- 3. Khối tự động tính trung bình quân 1 quả & tổng doanh thu -->
+        <div id="harvest-economics-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1.5px solid #fde68a; border-radius:12px; box-shadow:0 2px 6px rgba(217,119,6,0.08);">
+          <div style="font-size:11px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="calculator" class="lucide-sm" style="color:#d97706;"></i> TÍNH BÌNH QUÂN HIỆU QUẢ KINH TẾ / QUẢ
+            </span>
+            <span style="background:#fef9c3; color:#854d0e; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; border:1px solid #fef08a;">Tự động tính</span>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px; padding-top:8px; border-top:1px dashed #fcd34d;">
+            <div>
+              <div style="font-size:11px; color:#92400e; font-weight:700;">Trung bình quân 1 quả:</div>
+              <div id="harvest-calc-avg-fruit" style="font-size:18px; font-weight:900; color:#b45309; margin-top:2px;">
+                35.000 VNĐ / quả
+              </div>
+              <div id="harvest-calc-weight-fruit" style="font-size:11px; color:#78350f; margin-top:2px;">
+                ~ 500 g / quả
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:#92400e; font-weight:700;">Tổng doanh thu đợt thu:</div>
+              <div id="harvest-calc-total-rev" style="font-size:18px; font-weight:900; color:#047857; margin-top:2px;">
+                3.500.000 VNĐ
+              </div>
+              <div id="harvest-calc-tree-note" style="font-size:11px; color:#065f46; margin-top:2px;">
+                1 cây thu hoạch
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="field">
           <label>Chất lượng nông sản / Độ đường (Brix)</label>
           <input type="text" id="c-detail-harvest-quality" placeholder="Ví dụ: Loại A (Brix 18%), Hàng xuất khẩu..." value="Loại A (Đạt chuẩn xuất khẩu)">
@@ -881,6 +993,13 @@ function _populateDetailFields(log) {
   } else if (t === 'Cắt lá' || t === 'Tỉa hoa') {
     _setVal('c-detail-reason',     d.reason);
     _setVal('c-detail-amount',     d.amount);
+  } else if (t === 'Thu hoạch') {
+    _setVal('c-detail-harvest-fruit-count', d.fruit_count);
+    _setVal('c-detail-harvest-amount',      d.amount);
+    _setVal('c-detail-harvest-unit',        d.unit);
+    _setVal('c-detail-harvest-tree-revenue',d.price_per_tree || d.total_revenue);
+    _setVal('c-detail-harvest-quality',     d.quality);
+    if (typeof calculateHarvestEconomicsPreview === 'function') calculateHarvestEconomicsPreview();
   } else if (t === 'Bệnh cây') {
     _setVal('c-detail-disease-name', d.disease_name);
     _setVal('c-detail-severity',     d.severity);
@@ -912,6 +1031,12 @@ function _buildDetailsString(logType, details) {
   } else if (logType === 'Tỉa hoa') {
     if (d.reason) parts.push(`Lý do: ${d.reason}`);
     if (d.amount) parts.push(`Lượng: ${d.amount}`);
+  } else if (logType === 'Thu hoạch') {
+    if (d.amount) parts.push(`Sản lượng: ${d.amount} ${d.unit || 'kg'}`);
+    if (d.fruit_count) parts.push(`Số trái: ${d.fruit_count} quả`);
+    if (d.total_revenue) parts.push(`Thu: ${new Intl.NumberFormat('vi-VN').format(d.total_revenue)} VNĐ`);
+    if (d.avg_price_per_fruit) parts.push(`TB: ${new Intl.NumberFormat('vi-VN').format(d.avg_price_per_fruit)} VNĐ/quả`);
+    if (d.quality) parts.push(`Chất lượng: ${d.quality}`);
   } else if (logType === 'Bệnh cây') {
     if (d.disease_name) parts.push(`Bệnh: ${d.disease_name}`);
     if (d.severity) parts.push(`Mức độ: ${d.severity}`);
@@ -1095,10 +1220,21 @@ export async function saveCareLog() {
 
     } else if (logType === 'Thu hoạch') {
       const amount = parseFloat(document.getElementById('c-detail-harvest-amount')?.value) || 0;
-      if (amount <= 0) throw new Error('Vui lòng nhập sản lượng thu hoạch hợp lệ!');
+      const fruitCount = parseFloat(document.getElementById('c-detail-harvest-fruit-count')?.value) || 0;
+      const treeRevenue = parseFloat(document.getElementById('c-detail-harvest-tree-revenue')?.value) || 0;
+      if (amount <= 0 && fruitCount <= 0) throw new Error('Vui lòng nhập sản lượng hoặc số lượng trái thu hoạch!');
+
+      const treeCount = selectedPlants.length || 1;
+      const totalRevenue = treeRevenue * treeCount;
+      const avgPricePerFruit = fruitCount > 0 ? Math.round(treeRevenue / fruitCount) : 0;
+
       body.details = {
         amount,
         unit: document.getElementById('c-detail-harvest-unit')?.value || 'kg',
+        fruit_count: fruitCount,
+        price_per_tree: treeRevenue,
+        total_revenue: totalRevenue,
+        avg_price_per_fruit: avgPricePerFruit,
         quality: document.getElementById('c-detail-harvest-quality')?.value || ''
       };
     } else if (logType === 'Bệnh cây') {
@@ -1218,6 +1354,7 @@ export async function saveCareLog() {
     if (typeof window.loadUserDashboard === 'function') window.loadUserDashboard();
     if (typeof window.loadSupplies === 'function') window.loadSupplies();
     if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
+    if (typeof window.updateSuppliesProfitCockpit === 'function') window.updateSuppliesProfitCockpit();
 
   } catch (err) {
     const isNetworkErr = !navigator.onLine || 

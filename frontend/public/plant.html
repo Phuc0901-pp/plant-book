@@ -906,18 +906,34 @@
         </div>
 
         <div class="form-row">
-          <div class="field" style="flex:2;">
-            <label>Sản lượng thu hoạch *</label>
-            <input type="number" step="any" id="harvest-amount" placeholder="Nhập sản lượng (VD: 50)..." required>
+          <div class="field" style="flex:1;">
+            <label><i data-lucide="apple" class="lucide-sm" style="color:#ef4444;"></i> Số lượng trái (quả) *</label>
+            <input type="number" id="harvest-fruit-count" min="1" step="1" value="100" placeholder="VD: 100 quả" oninput="calculatePublicHarvestEconomics()" required>
           </div>
           <div class="field" style="flex:1;">
-            <label>Đơn vị</label>
-            <select id="harvest-unit">
-              <option value="kg">kg (Kilogram)</option>
-              <option value="tấn">tấn (Tấn)</option>
-              <option value="trái">trái / quả</option>
-              <option value="thùng">thùng / sọt</option>
-            </select>
+            <label>Tổng sản lượng</label>
+            <div style="display:flex; gap:6px;">
+              <input type="number" step="any" id="harvest-amount" value="50" placeholder="VD: 50" oninput="calculatePublicHarvestEconomics()" style="flex:2;">
+              <select id="harvest-unit" onchange="calculatePublicHarvestEconomics()" style="flex:1;">
+                <option value="kg" selected>kg</option>
+                <option value="tấn">tấn</option>
+                <option value="trái">trái</option>
+                <option value="thùng">thùng</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label><i data-lucide="badge-dollar-sign" class="lucide-sm" style="color:#059669;"></i> Tổng tiền thu hoạch của cây (VNĐ) *</label>
+          <input type="number" id="harvest-tree-revenue" min="0" step="1000" value="3500000" placeholder="VD: 3500000" oninput="calculatePublicHarvestEconomics()" style="width:100%; font-weight:700; color:#065f46; background:#f0fdf4;">
+        </div>
+
+        <!-- Khối tự động tính trung bình quân 1 quả -->
+        <div id="public-harvest-calc-box" style="margin-bottom:12px; padding:10px 14px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px;">
+          <div style="font-size:11.5px; font-weight:700; color:#b45309; display:flex; justify-content:space-between; align-items:center;">
+            <span><i data-lucide="calculator" class="lucide-sm"></i> TÍNH BÌNH QUÂN / QUẢ:</span>
+            <span id="public-harvest-avg-fruit" style="font-size:15px; font-weight:800; color:#b45309;">35.000 VNĐ / quả</span>
           </div>
         </div>
 

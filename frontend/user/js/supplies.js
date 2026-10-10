@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    supplies.js — Quản lý & Giám sát Vật tư (Bón phân, Tiền nước, Phun thuốc, Nhân công)
@@ -374,10 +374,58 @@ export function renderSuppliesCockpitKpi(supplies) {
   if (phiActiveEl) {
     phiActiveEl.innerHTML = `100% Đạt Chuẩn`;
   }
+
+  // Cập nhật Khối Lợi Nhuận Nông Vụ (So sánh Doanh thu Thu hoạch & Chi phí Vật tư)
+  updateSuppliesProfitCockpit(totalConsumed);
+
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
   }
 }
+
+export async function updateSuppliesProfitCockpit(totalConsumed = 0) {
+  const netProfitEl = document.getElementById('erp-kpi-net-profit');
+  const harvestRevEl = document.getElementById('erp-kpi-harvest-rev');
+  const investCostEl = document.getElementById('erp-kpi-invest-cost');
+  const roiBadgeEl = document.getElementById('erp-kpi-roi-badge');
+  if (!netProfitEl) return;
+
+  try {
+    const data = await api('/supplies/profit-overview');
+    const totalRev = parseFloat(data.total_revenue) || 0;
+    const spent = (parseFloat(data.total_spent) || 0) || totalConsumed;
+    const netProfit = totalRev - spent;
+    const roi = spent > 0 ? Math.round(((netProfit / spent) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0);
+
+    netProfitEl.textContent = `${netProfit >= 0 ? '+' : ''}${formatVND(netProfit)}`;
+    netProfitEl.style.color = netProfit >= 0 ? '#ffffff' : '#fca5a5';
+
+    if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
+    if (investCostEl) investCostEl.textContent = formatVND(spent);
+    if (roiBadgeEl) {
+      roiBadgeEl.textContent = `${roi >= 0 ? '+' : ''}${roi}%`;
+      roiBadgeEl.style.color = roi >= 0 ? '#fef08a' : '#fca5a5';
+    }
+  } catch (err) {
+    // Client-side fallback if offline
+    let totalRev = 0;
+    if (window._logsCache && Array.isArray(window._logsCache)) {
+      window._logsCache.forEach(l => {
+        if (l.log_type === 'Thu hoạch' && l.details) {
+          const rev = parseFloat(l.details.total_revenue) || parseFloat(l.details.price_per_tree) || 0;
+          totalRev += rev;
+        }
+      });
+    }
+    const netProfit = totalRev - totalConsumed;
+    const roi = totalConsumed > 0 ? Math.round(((netProfit / totalConsumed) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0);
+    netProfitEl.textContent = `${netProfit >= 0 ? '+' : ''}${formatVND(netProfit)}`;
+    if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
+    if (investCostEl) investCostEl.textContent = formatVND(totalConsumed);
+    if (roiBadgeEl) roiBadgeEl.textContent = `${roi >= 0 ? '+' : ''}${roi}%`;
+  }
+}
+window.updateSuppliesProfitCockpit = updateSuppliesProfitCockpit;
 
 export function renderSuppliesTable(supplies) {
   const tbody = document.getElementById('supplies-table-body');
