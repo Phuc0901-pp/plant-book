@@ -3795,10 +3795,13 @@ export async function openPlantProfileModal(plantId) {
   }
 
   // 7. Load Tab 2 (VietGAP Timeline) & Tab 3 (Cost Analysis)
-  _loadErpPlantLogsAndCosts(plant.id, plant);
+  await _loadErpPlantLogsAndCosts(plant.id, plant);
 
   // 8. Display modal
   modal.style.display = 'flex';
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
   if (window.refreshIcons) window.refreshIcons();
 }
 
@@ -3828,7 +3831,15 @@ export function switchErpProfileTab(tab) {
       pane.style.display = (t === tab) ? 'block' : 'none';
     }
   });
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
   if (window.refreshIcons) window.refreshIcons();
+  setTimeout(() => {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }, 40);
 }
 
 export function onErpProfileCareClick() {
@@ -4141,8 +4152,9 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
                     <i data-lucide="package-check" class="lucide-xs"></i>
                     <span>Thu hoạch: <strong>${log._harvestItem.amount} kg</strong> (${log._harvestItem.fruit_count} trái)</span>
                   </div>
-                  <div style="font-size:12.5px;font-weight:800;color:#9333ea;background:#f3e8ff;padding:2px 8px;border-radius:6px;">
-                    Doanh thu: +${log._harvestItem.revenue.toLocaleString('vi-VN')} VNĐ
+                  <div style="font-size:12.5px;font-weight:800;color:#9333ea;background:#f3e8ff;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+                    <i data-lucide="banknote" class="lucide-xs"></i>
+                    <span>+${log._harvestItem.revenue.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
               ` : (log._materialName && log._cost > 0) ? `
@@ -4151,8 +4163,9 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
                     <i data-lucide="package" class="lucide-xs" style="color:#16a34a;"></i>
                     <span>Vật tư: <strong>${esc(log._materialName)}</strong> ${log._materialQty ? `(${esc(log._materialQty)})` : ''}</span>
                   </div>
-                  <div style="font-size:12.5px;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:6px;">
-                    Tiêu hao: ${log._cost.toLocaleString('vi-VN')} VNĐ
+                  <div style="font-size:12.5px;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+                    <i data-lucide="receipt" class="lucide-xs"></i>
+                    <span>Tiêu hao: ${log._cost.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
               ` : ''}
@@ -4301,7 +4314,7 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
             <tfoot>
               <tr style="background:#f8fafc;font-weight:800;">
                 <td colspan="3" style="padding:10px;border:1px solid #e2e8f0;text-align:right;color:#0f172a;">
-                  TỔNG CỘNG CHI PHÍ VẬT TƯ:
+                  <i data-lucide="calculator" class="lucide-xs" style="color:#059669;margin-right:4px;"></i> TỔNG CỘNG CHI PHÍ VẬT TƯ:
                 </td>
                 <td style="padding:10px;border:1px solid #e2e8f0;text-align:right;color:#b91c1c;font-size:13.5px;">
                   ${totalCost.toLocaleString('vi-VN')} VNĐ
@@ -4314,7 +4327,15 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
   }
 
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
   if (window.refreshIcons) window.refreshIcons();
+  setTimeout(() => {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }, 50);
 }
 
 window.openPlantProfileModal = openPlantProfileModal;
