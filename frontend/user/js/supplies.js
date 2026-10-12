@@ -1041,14 +1041,40 @@ export async function deleteSupply(id) {
   }
 }
 
-// ─── MODAL NHẬP THÊM KHO (RESTOCK) ──────────────────────────────
+// ─── MODAL NHẬP THÊM KHO (RESTOCK / NHẬP KHO VẬT TƯ) ──────────────────
 
-export function openRestockModal(id) {
+export function openRestockModal(id = null) {
   const modal = document.getElementById('modal-restock-supply');
   if (!modal) return;
 
-  const sp = cachedSupplies.find(item => item.id == id);
-  if (!sp) return;
+  if (id === '__NEW__') {
+    closeRestockModal();
+    openSupplyModal();
+    return;
+  }
+
+  if (!cachedSupplies || cachedSupplies.length === 0) {
+    toast('Chưa có vật tư nào trong kho. Đang mở form khai báo mặt hàng mới...', 'info');
+    openSupplyModal();
+    return;
+  }
+
+  const targetId = id || cachedSupplies[0]?.id;
+  const sp = cachedSupplies.find(item => item.id == targetId);
+  if (!sp) {
+    openSupplyModal();
+    return;
+  }
+
+  // Cập nhật danh sách vật tư vào select trong modal nhập kho
+  const supplySelect = document.getElementById('restock-supply-select');
+  if (supplySelect) {
+    supplySelect.innerHTML = cachedSupplies.map(item => `
+      <option value="${item.id}" ${item.id == targetId ? 'selected' : ''}>
+        ${esc(item.name)} (${esc(item.category)}) — Tồn: ${item.stock_quantity || 0} ${esc(item.unit)}
+      </option>
+    `).join('') + `<option value="__NEW__">+ Khai báo mặt hàng mới...</option>`;
+  }
 
   // Load danh sách trang trại vào dropdown chọn trang trại tiếp nhận lô hàng
   const farmSelect = document.getElementById('restock-farm-id');
@@ -1062,10 +1088,13 @@ export function openRestockModal(id) {
     }
   }
 
-  document.getElementById('restock-supply-id').value = id;
-  document.getElementById('restock-supply-name').textContent = sp.name;
-  document.getElementById('restock-supply-spec').textContent = `Hạng mục: ${sp.category} • Quy cách: ${sp.package_qty} ${sp.package_unit || sp.unit}`;
-  document.getElementById('restock-current-stock').textContent = `${sp.stock_quantity || 0} ${sp.unit}`;
+  document.getElementById('restock-supply-id').value = targetId;
+  const nameEl = document.getElementById('restock-supply-name');
+  if (nameEl) nameEl.textContent = sp.name;
+  const specEl = document.getElementById('restock-supply-spec');
+  if (specEl) specEl.textContent = `Hạng mục: ${sp.category} • Quy cách: ${sp.package_qty} ${sp.package_unit || sp.unit}`;
+  const stockEl = document.getElementById('restock-current-stock');
+  if (stockEl) stockEl.textContent = `${sp.stock_quantity || 0} ${sp.unit}`;
   
   const unitLabel = document.getElementById('restock-unit-label');
   if (unitLabel) unitLabel.textContent = `${sp.package_unit || sp.unit}`;
@@ -1077,7 +1106,18 @@ export function openRestockModal(id) {
 
   calculateRestockPreview();
   modal.style.display = 'flex';
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
+
+export function openStockInModal(id = null) {
+  openRestockModal(id);
+}
+window.openStockInModal = openStockInModal;
+
+export function openAddSupplyModal() {
+  openSupplyModal();
+}
+window.openAddSupplyModal = openAddSupplyModal;
 
 export function closeRestockModal() {
   const modal = document.getElementById('modal-restock-supply');
@@ -2237,6 +2277,8 @@ window.parseAgriculturalProductText = parseAgriculturalProductText;
 window.filterSupplyStockStatus = filterSupplyStockStatus;
 window.onSupplySearchInput = onSupplySearchInput;
 window.openRestockModal = openRestockModal;
+window.openStockInModal = openStockInModal;
+window.openAddSupplyModal = openAddSupplyModal;
 window.closeRestockModal = closeRestockModal;
 window.calculateRestockPreview = calculateRestockPreview;
 window.submitRestockSupply = submitRestockSupply;

@@ -261,6 +261,16 @@
     <div class="modal-body" style="padding:20px;">
       <input type="hidden" id="restock-supply-id">
 
+      <!-- Supply Selection Row for Restock -->
+      <div class="field" id="wrap-restock-supply-select" style="margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+          <i data-lucide="package" class="lucide-sm" style="color:#059669;"></i> Chọn mặt hàng cần nhập kho <span style="color:#ef4444;">*</span>
+        </label>
+        <select id="restock-supply-select" onchange="openRestockModal(this.value)" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; background:#fff; color:#0f172a;">
+          <!-- Loaded dynamically -->
+        </select>
+      </div>
+
       <!-- Selected Supply Summary Card -->
       <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
