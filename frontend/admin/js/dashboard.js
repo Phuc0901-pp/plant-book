@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 // ── Dashboard (SAP Fiori Horizon Enterprise Operations Cockpit) ───────
 
 let dashboardClockInterval = null;
@@ -15,6 +15,41 @@ function updateDashboardClock() {
   const seconds = String(now.getSeconds()).padStart(2, '0');
   el.innerHTML = `<span>${hours}:${minutes}</span><span style="color:#34d399; margin-left:1px; font-weight:800;">:${seconds}</span> <span style="font-size:11px; color:#a7f3d0; font-weight:700; margin-left:6px;">· ${dayName}, ${dateStr}</span>`;
 }
+
+async function updateDashboardMetricsOnly() {
+  try {
+    const [plants, devices] = await Promise.all([
+      api('/plants'),
+      api('/devices')
+    ]);
+    const sickPlants = (plants || []).filter(p => ['Bệnh', 'Cần chú ý'].includes(p.health_status));
+    const brokenDevices = (devices || []).filter(d => {
+      const st = (d.status || '').toLowerCase();
+      return st === 'hỏng' || st === 'mất kết nối' || st === 'offline' || st === 'lỗi';
+    });
+    const maintenanceDevices = (devices || []).filter(d => {
+      const st = (d.status || '').toLowerCase();
+      const battery = parseInt(d.battery_level);
+      return st === 'bảo trì' || st === 'cần bảo trì' || st === 'pin yếu' || (!isNaN(battery) && battery <= 20);
+    });
+    const calibrationDevices = (devices || []).filter(d => {
+      const st = (d.status || '').toLowerCase();
+      return st === 'hiệu chỉnh' || st === 'cần hiệu chỉnh' || st === 'chưa hiệu chuẩn';
+    });
+    const totalIncidents = sickPlants.length + brokenDevices.length + maintenanceDevices.length + calibrationDevices.length;
+    const elSick = document.getElementById('stat-sick-plants');
+    const elBroken = document.getElementById('stat-broken-devices');
+    const elMaint = document.getElementById('stat-maintenance-devices');
+    const elCalib = document.getElementById('stat-calibration-devices');
+    const elTotalInc = document.getElementById('stat-total-incidents');
+    if (elSick) elSick.textContent = `${sickPlants.length} cây`;
+    if (elBroken) elBroken.textContent = `${brokenDevices.length} thiết bị`;
+    if (elMaint) elMaint.textContent = `${maintenanceDevices.length} thiết bị`;
+    if (elCalib) elCalib.textContent = `${calibrationDevices.length} cảm biến`;
+    if (elTotalInc) elTotalInc.textContent = `${totalIncidents} sự cố cần theo dõi`;
+  } catch (_) {}
+}
+window.updateDashboardMetricsOnly = updateDashboardMetricsOnly;
 
 async function loadDashboard() {
   try {

@@ -586,6 +586,14 @@ function renderFarmsList(farms) {
 function initGisMap(farms, plants) {
   const container = document.getElementById('gis-map');
   if (!container) return;
+
+  // Nếu bản đồ gMap đã được khởi tạo, tái sử dụng để không bị reload / chớp trắng bản đồ
+  if (gMap) {
+    drawFarmsAndPlantsLayers(farms, plants);
+    try { gMap.resize(); } catch(_) {}
+    return;
+  }
+  
   container.innerHTML = '';
   
   gMap = new mapboxgl.Map({

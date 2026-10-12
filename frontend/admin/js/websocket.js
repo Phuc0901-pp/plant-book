@@ -191,7 +191,15 @@ function handleRealtimeEvent(msg) {
     if (activeSection && activeSection.id === 'page-plants') {
       loadPlants();
     } else if (activeSection && activeSection.id === 'page-dashboard') {
-      loadDashboard();
+      // Nếu sự kiện là cập nhật GPS hoặc vừa kéo thả thì không reload lại toàn bộ dashboard/map
+      if (data && (data.action === 'gps_updated' || data.action === 'update')) {
+        // Chỉ cập nhật các con số thống kê metric nếu có, không gọi loadDashboard() làm giật bản đồ
+        if (typeof updateDashboardMetricsOnly === 'function') {
+          updateDashboardMetricsOnly();
+        }
+      } else {
+        loadDashboard();
+      }
     }
   }
 
