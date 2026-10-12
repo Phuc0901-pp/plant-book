@@ -680,13 +680,13 @@ function initGisMap(farms, plants) {
         });
       }
 
-      // Add raster layers (ẩn mặc định nếu dùng mapbox, hoặc hiển thị layer đầu tiên)
+      // Add raster layers (Google Satellite mặc định hiển thị vì độ nét cao và cập nhật thực tế)
       if (!gMap.getLayer('esri-satellite-layer')) {
         gMap.addLayer({
           id: 'esri-satellite-layer',
           type: 'raster',
           source: 'esri-satellite-src',
-          layout: { visibility: 'visible' },
+          layout: { visibility: 'none' },
           paint: { 'raster-opacity': 1 }
         });
       }
@@ -696,7 +696,7 @@ function initGisMap(farms, plants) {
           id: 'google-satellite-layer',
           type: 'raster',
           source: 'google-satellite-src',
-          layout: { visibility: 'none' },
+          layout: { visibility: 'visible' },
           paint: { 'raster-opacity': 1 }
         });
       }
@@ -712,8 +712,8 @@ function initGisMap(farms, plants) {
   }, 300);
 }
 
-// ── Chuyển đổi Nguồn Ảnh Vệ Tinh (Phương án A: ESRI Clarity / Google / Mapbox) ──
-let currentSatelliteSource = 'esri';
+// ── Chuyển đổi Nguồn Ảnh Vệ Tinh (Google mặc định / ESRI Clarity / Mapbox) ──
+let currentSatelliteSource = 'google';
 
 function switchSatelliteSource(source) {
   if (!gMap) return;
