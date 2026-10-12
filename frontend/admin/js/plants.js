@@ -723,14 +723,11 @@ async function savePlant() {
         }
       });
     }
-    if (typeof window.activeFarmId !== 'undefined' && window.activeFarmId && typeof window.selectFarm === 'function') {
-      window.selectFarm(window.activeFarmId);
-    } else if (typeof window.drawFarmsAndPlantsLayers === 'function') {
-      window.drawFarmsAndPlantsLayers(window.currentFarms || [], window.currentPlants || []);
-    }
-
+    // Gọi hook cập nhật marker mượt mà tại chỗ trên bản đồ GIS
     if (typeof window.onPlantSavedHook === 'function') {
       try { window.onPlantSavedHook(plant); } catch(he) { console.warn('Plant saved hook error:', he); }
+    } else if (typeof window.drawFarmsAndPlantsLayers === 'function') {
+      window.drawFarmsAndPlantsLayers(window.currentFarms || [], window.currentPlants || []);
     }
     closePlantModal();
     if (typeof loadPlants === 'function') loadPlants();

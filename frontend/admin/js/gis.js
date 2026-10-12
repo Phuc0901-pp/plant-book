@@ -761,14 +761,38 @@ window.onPlantSavedHook = function(plant) {
         }
       });
     }
+
+    // 2. MƯỢT MÀ: Cập nhật marker tại chỗ (In-place update) KHÔNG làm giật / nhảy zoom bản đồ
+    const existingMarker = (gisPlantMarkers || []).find(m => m._plantId === plant.id || m._plantId == plant.id);
+    const newLat = parseFloat(plant.latitude);
+    const newLng = parseFloat(plant.longitude);
+
+    if (existingMarker && !isNaN(newLat) && !isNaN(newLng)) {
+      // Di chuyển marker nhẹ nhàng tới tọa độ mới mà không reset map
+      existingMarker.setLngLat([newLng, newLat]);
+
+      // Cập nhật lại danh sách cây bên sidebar nếu đang mở trang trại này
+      if (activeFarmId && typeof currentFarms !== 'undefined') {
+        const farm = currentFarms.find(f => f.id === activeFarmId || f.id == activeFarmId);
+        if (farm && typeof renderFarmDetailsUI === 'function') {
+          renderFarmDetailsUI(farm);
+        }
+      }
+      return;
+    }
   }
 
-  // 2. Tái nạp trang trại để làm mới marker trên bản đồ và danh sách cây
-  if (activeFarmId) {
-    selectFarm(activeFarmId);
+  // Nếu cây mới hoàn toàn chưa có marker trên bản đồ thì vẽ lại danh sách lớp mà không ép zoom
+  if (activeFarmId && typeof currentFarms !== 'undefined') {
+    const farm = currentFarms.find(f => f.id === activeFarmId || f.id == activeFarmId);
+    if (farm) {
+      drawFarmsAndPlantsLayers(currentFarms, farm.plants || []);
+      if (typeof renderFarmDetailsUI === 'function') renderFarmDetailsUI(farm);
+    }
   } else {
     drawFarmsAndPlantsLayers(currentFarms || [], currentPlants || []);
   }
+
   if (isGisImportMode) {
     toast('✅ Đã lưu cây mới vào hệ thống GIS! Tiếp tục click bản đồ để nhập cây tiếp theo.', 'info');
   }
@@ -1004,6 +1028,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         });
 
         marker.setPopup(popup).addTo(gMap);
+        marker._plantId = plant.id;
 
         gisPlantMarkers.push(marker);
 
