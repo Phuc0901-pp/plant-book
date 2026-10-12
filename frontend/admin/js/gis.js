@@ -654,6 +654,56 @@ function initGisMap(farms, plants) {
   });
 
   gMap.on('load', () => {
+    // ── Cấu hình các nguồn ảnh vệ tinh độ nét cao (Phương án A) ──
+    try {
+      if (!gMap.getSource('esri-satellite-src')) {
+        gMap.addSource('esri-satellite-src', {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+          ],
+          tileSize: 256,
+          maxzoom: 20,
+          attribution: '&copy; Esri World Imagery'
+        });
+      }
+
+      if (!gMap.getSource('google-satellite-src')) {
+        gMap.addSource('google-satellite-src', {
+          type: 'raster',
+          tiles: [
+            'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+          ],
+          tileSize: 256,
+          maxzoom: 20,
+          attribution: '&copy; Google Satellite'
+        });
+      }
+
+      // Add raster layers (ẩn mặc định nếu dùng mapbox, hoặc hiển thị layer đầu tiên)
+      if (!gMap.getLayer('esri-satellite-layer')) {
+        gMap.addLayer({
+          id: 'esri-satellite-layer',
+          type: 'raster',
+          source: 'esri-satellite-src',
+          layout: { visibility: 'visible' },
+          paint: { 'raster-opacity': 1 }
+        });
+      }
+
+      if (!gMap.getLayer('google-satellite-layer')) {
+        gMap.addLayer({
+          id: 'google-satellite-layer',
+          type: 'raster',
+          source: 'google-satellite-src',
+          layout: { visibility: 'none' },
+          paint: { 'raster-opacity': 1 }
+        });
+      }
+    } catch(layerErr) {
+      console.warn('Satellite source init warning:', layerErr);
+    }
+
     drawFarmsAndPlantsLayers(farms, plants);
   });
 
@@ -661,6 +711,45 @@ function initGisMap(farms, plants) {
     try { if (gMap) gMap.resize(); } catch(_) {}
   }, 300);
 }
+
+// ── Chuyển đổi Nguồn Ảnh Vệ Tinh (Phương án A: ESRI Clarity / Google / Mapbox) ──
+let currentSatelliteSource = 'esri';
+
+function switchSatelliteSource(source) {
+  if (!gMap) return;
+  currentSatelliteSource = source;
+
+  // Cập nhật trạng thái active của nút bấm UI
+  const btnEsri = document.getElementById('btn-sat-esri');
+  const btnGoogle = document.getElementById('btn-sat-google');
+  const btnMapbox = document.getElementById('btn-sat-mapbox');
+
+  if (btnEsri) btnEsri.classList.toggle('active', source === 'esri');
+  if (btnGoogle) btnGoogle.classList.toggle('active', source === 'google');
+  if (btnMapbox) btnMapbox.classList.toggle('active', source === 'mapbox');
+
+  try {
+    const esriLayer = gMap.getLayer('esri-satellite-layer');
+    const googleLayer = gMap.getLayer('google-satellite-layer');
+
+    if (source === 'esri') {
+      if (esriLayer) gMap.setLayoutProperty('esri-satellite-layer', 'visibility', 'visible');
+      if (googleLayer) gMap.setLayoutProperty('google-satellite-layer', 'visibility', 'none');
+      toast('🌿 Đã chuyển sang Ảnh Vệ Tinh ESRI Clarity (Siêu nét, tối ưu vùng trồng)', 'info');
+    } else if (source === 'google') {
+      if (esriLayer) gMap.setLayoutProperty('esri-satellite-layer', 'visibility', 'none');
+      if (googleLayer) gMap.setLayoutProperty('google-satellite-layer', 'visibility', 'visible');
+      toast('🛰️ Đã chuyển sang Ảnh Vệ Tinh Google Satellite', 'info');
+    } else if (source === 'mapbox') {
+      if (esriLayer) gMap.setLayoutProperty('esri-satellite-layer', 'visibility', 'none');
+      if (googleLayer) gMap.setLayoutProperty('google-satellite-layer', 'visibility', 'none');
+      toast('🌐 Đã chuyển sang Ảnh Vệ Tinh Mapbox', 'info');
+    }
+  } catch (err) {
+    console.warn('Error toggling satellite source:', err);
+  }
+}
+window.switchSatelliteSource = switchSatelliteSource;
 
 // Chuyển đổi Bật/Tắt chế độ Import GIS (Click chọn vị trí cây trên bản đồ)
 let isGisImportMode = false;
