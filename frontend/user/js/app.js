@@ -64,7 +64,7 @@ import { openNfcModal, closeNfcModal, startNfcScan, saveNfcUidManually, deactiva
 import { initWeatherClockWidget, refreshDeviceWeather } from './modules/weather-clock.js?v=v1.2.4';
 import { animateValue, triggerPageCountUpAnimations } from './modules/countup.js';
 import { initChibiMascot, onMascotClick, setMascotState } from './modules/mascot-chibi.js';
-import './supplies.js?v=2.8.0';
+import './supplies.js?v=2.9.0';
 
 window.refreshIcons = function() {
   if (window.lucide && typeof window.lucide.createIcons === 'function') {

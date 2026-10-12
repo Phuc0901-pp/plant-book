@@ -436,36 +436,151 @@ export async function updateSuppliesProfitCockpit() {
       };
     }
 
-    // Client-side fallback bổ trợ cho Khối 2 nếu API trả về 0 nhưng cachedUsageLogs có dữ liệu
-    if ((!data.total_spent || data.total_spent === 0) && Array.isArray(cachedUsageLogs) && cachedUsageLogs.length > 0) {
-      let fbSpent = 0;
-      let fbCount = 0;
-      const fbCats = { 'Bón phân': 0, 'Phun thuốc': 0, 'Tiền nước': 0, 'Nhân công': 0 };
-      cachedUsageLogs.forEach(u => {
-        const uDate = String(u.usage_date || u.created_at || '');
-        const matchYear = (!currentCockpitYear || currentCockpitYear === 'all' || uDate.startsWith(currentCockpitYear));
-        const matchFarm = (!currentCockpitFarmId || currentCockpitFarmId === 'all' || String(u.farm_id) === String(currentCockpitFarmId) || !u.farm_id);
-        if (matchYear && matchFarm) {
-          const c = parseFloat(u.total_cost || (u.quantity * u.unit_price)) || 0;
-          fbSpent += c;
-          fbCount++;
-          let cat = u.category || u.supply_category;
-          if (!cat) {
-            const n = (u.note || '').toLowerCase();
-            if (n.includes('tưới') || n.includes('nuoc') || n.includes('nước')) cat = 'Tiền nước';
-            else if (n.includes('phân') || n.includes('phan')) cat = 'Bón phân';
-            else if (n.includes('thuốc') || n.includes('thuoc')) cat = 'Phun thuốc';
-            else if (n.includes('công') || n.includes('nhân công')) cat = 'Nhân công';
-            else cat = 'Tiền nước';
+    // Client-side fallback bổ trợ cho Khối 2 nếu API trả về 0 hoặc chưa có
+    if (!data.total_spent || data.total_spent === 0) {
+      if (!Array.isArray(cachedUsageLogs) || cachedUsageLogs.length === 0) {
+        try {
+          const uLogs = await api('/supplies/usages');
+          if (Array.isArray(uLogs)) cachedUsageLogs = uLogs;
+        } catch (_) {}
+      }
+      if (Array.isArray(cachedUsageLogs) && cachedUsageLogs.length > 0) {
+        let fbSpent = 0;
+        let fbCount = 0;
+        const fbCats = { 'Bón phân': 0, 'Phun thuốc': 0, 'Tiền nước': 0, 'Nhân công': 0 };
+        cachedUsageLogs.forEach(u => {
+          const uDate = String(u.usage_date || u.created_at || '');
+          const matchYear = (!currentCockpitYear || currentCockpitYear === 'all' || uDate.startsWith(currentCockpitYear));
+          const matchFarm = (!currentCockpitFarmId || currentCockpitFarmId === 'all' || String(u.farm_id) === String(currentCockpitFarmId) || !u.farm_id);
+          if (matchYear && matchFarm) {
+            const c = parseFloat(u.total_cost || (u.quantity * u.unit_price)) || 0;
+            fbSpent += c;
+            fbCount++;
+            let cat = u.category || u.supply_category;
+            if (!cat) {
+              const n = (u.note || '').toLowerCase();
+              if (n.includes('tưới') || n.includes('nuoc') || n.includes('nước')) cat = 'Tiền nước';
+              else if (n.includes('phân') || n.includes('phan')) cat = 'Bón phân';
+              else if (n.includes('thuốc') || n.includes('thuoc')) cat = 'Phun thuốc';
+              else if (n.includes('công') || n.includes('nhân công')) cat = 'Nhân công';
+              else cat = 'Tiền nước';
+            }
+            if (fbCats[cat] !== undefined) fbCats[cat] += c;
+            else fbCats[cat] = (fbCats[cat] || 0) + c;
           }
-          if (fbCats[cat] !== undefined) fbCats[cat] += c;
-          else fbCats[cat] = (fbCats[cat] || 0) + c;
+        });
+        if (fbSpent > 0) {
+          data.total_spent = fbSpent;
+          data.usage_count = fbCount;
+          data.category_spent = fbCats;
         }
-      });
-      if (fbSpent > 0) {
-        data.total_spent = fbSpent;
-        data.usage_count = fbCount;
-        data.category_spent = fbCats;
+      }
+    }
+
+    // ── Client-side Fallback bổ trợ cho Khối 3: Doanh thu thu hoạch theo từng cây trồng ──
+    if (!data.total_revenue || data.total_revenue === 0) {
+      let logsToScan = (Array.isArray(window._allLogsCache) && window._allLogsCache.length > 0)
+        ? window._allLogsCache
+        : (typeof window.getLogsCache === 'function' ? window.getLogsCache() : []);
+
+      // Nếu cache rỗng, tự động tải danh sách nhật ký gần nhất để tổng hợp số liệu thu hoạch
+      if (!logsToScan || logsToScan.length === 0) {
+        try {
+          logsToScan = await api('/plants/logs/recent?days=365');
+          if (Array.isArray(logsToScan) && logsToScan.length > 0) {
+            window._allLogsCache = logsToScan;
+          }
+        } catch (lErr) {
+          console.warn('Could not fetch logs for harvest fallback:', lErr);
+          logsToScan = [];
+        }
+      }
+
+      const allPlants = window._allPlantsCache || (typeof window.getPlantsCache === 'function' ? window.getPlantsCache() : []);
+
+      if (Array.isArray(logsToScan) && logsToScan.length > 0) {
+        let fbHarvestRev = 0;
+        let fbHarvestFruits = 0;
+        let fbHarvestWeight = 0;
+        let fbHarvestCount = 0;
+        const fbTreeBreakdown = {};
+
+        logsToScan.forEach(log => {
+          let d = log.details;
+          if (typeof d === 'string') {
+            try { d = JSON.parse(d); } catch (_) { d = {}; }
+          }
+          d = d || {};
+
+          const lType = (log.log_type || '').toLowerCase();
+          const isHarvest = lType.includes('thu') || 
+                            lType.includes('harvest') || 
+                            parseFloat(d.total_revenue) > 0 || 
+                            parseFloat(d.price_per_tree) > 0 || 
+                            parseFloat(d.fruit_count) > 0;
+
+          if (!isHarvest) return;
+
+          // Bộ lọc Năm
+          const logDateStr = String(log.log_date || log.created_at || '');
+          const matchYear = (!currentCockpitYear || currentCockpitYear === 'all' || logDateStr.startsWith(currentCockpitYear));
+          if (!matchYear) return;
+
+          // Bộ lọc Trang trại: kiểm tra log.farm_id hoặc đối chiếu từ danh sách cây trồng
+          let logFarmId = log.farm_id;
+          if (!logFarmId && allPlants && allPlants.length > 0) {
+            const p = allPlants.find(x => String(x.id) === String(log.plant_id));
+            if (p) logFarmId = p.farm_id;
+          }
+          const matchFarm = (!currentCockpitFarmId || currentCockpitFarmId === 'all' || String(logFarmId) === String(currentCockpitFarmId));
+          if (!matchFarm) return;
+
+          const rev = parseFloat(d.total_revenue) || parseFloat(d.price_per_tree) || parseFloat(d.revenue) || parseFloat(log.cost) || 0;
+          const fruits = parseFloat(d.fruit_count) || 0;
+          const amt = parseFloat(d.amount) || parseFloat(d.yield_kg) || parseFloat(d.quantity) || 0;
+
+          fbHarvestRev += rev;
+          fbHarvestFruits += fruits;
+          fbHarvestWeight += amt;
+          fbHarvestCount++;
+
+          const pId = log.plant_id || 0;
+          let tCode = log.tree_code;
+          let pType = log.plant_type;
+          if ((!tCode || !pType) && allPlants && allPlants.length > 0) {
+            const p = allPlants.find(x => String(x.id) === String(pId));
+            if (p) {
+              tCode = tCode || p.tree_code;
+              pType = pType || p.plant_type;
+            }
+          }
+          tCode = tCode || (pId ? `#${pId}` : 'Toàn vườn');
+          pType = pType || 'Cây trồng';
+
+          if (!fbTreeBreakdown[pId]) {
+            fbTreeBreakdown[pId] = {
+              plant_id: pId,
+              tree_code: tCode,
+              plant_type: pType,
+              revenue: 0,
+              fruits: 0,
+              weight: 0,
+              harvest_times: 0
+            };
+          }
+          fbTreeBreakdown[pId].revenue += rev;
+          fbTreeBreakdown[pId].fruits += fruits;
+          fbTreeBreakdown[pId].weight += amt;
+          fbTreeBreakdown[pId].harvest_times += 1;
+        });
+
+        if (fbHarvestRev > 0 || fbHarvestWeight > 0 || fbHarvestFruits > 0) {
+          data.total_revenue = fbHarvestRev;
+          data.fruit_count = fbHarvestFruits;
+          data.harvest_weight = fbHarvestWeight;
+          data.harvest_count = fbHarvestCount;
+          data.tree_breakdown = Object.values(fbTreeBreakdown).sort((a, b) => b.revenue - a.revenue);
+        }
       }
     }
 
@@ -497,8 +612,14 @@ export async function updateSuppliesProfitCockpit() {
     const totalRev = parseFloat(data.total_revenue) || 0;
     const totalWeight = parseFloat(data.harvest_weight) || 0;
     const totalFruits = parseFloat(data.fruit_count) || 0;
-    const netProfit = parseFloat(data.net_profit) !== undefined ? parseFloat(data.net_profit) : (totalRev - totalSpent);
-    const roi = parseFloat(data.roi_percentage) || (totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0));
+
+    // Tính Lợi Nhuận Ròng & ROI chuẩn xác 100%, chống triệt để NaN
+    const netProfit = (data && data.net_profit !== undefined && !isNaN(Number(data.net_profit))) 
+      ? Number(data.net_profit) 
+      : (totalRev - totalSpent);
+    const roi = (data && data.roi_percentage !== undefined && !isNaN(Number(data.roi_percentage)))
+      ? Number(data.roi_percentage)
+      : (totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0));
 
     if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
     if (harvestYieldEl) {
@@ -516,7 +637,7 @@ export async function updateSuppliesProfitCockpit() {
       netProfitEl.style.color = netProfit >= 0 ? '#ffffff' : '#fca5a5';
     }
 
-    // Render Tree-level breakdown
+    // Render Chi tiết Đóng góp theo từng cây (Tree-level breakdown)
     if (treesBreakdownEl) {
       const trees = data.tree_breakdown || [];
       if (trees.length === 0) {

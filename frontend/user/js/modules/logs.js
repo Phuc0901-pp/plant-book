@@ -32,13 +32,15 @@ const DAY_OF_WEEK_ARR = dayOfWeekArr;
  * @param {Array} logs
  */
 export function setLogsCache(logs) {
-  _logsCache = logs;
+  _logsCache = logs || [];
+  window._allLogsCache = _logsCache;
 }
 
 /** Lấy cache nhật ký hiện tại */
 export function getLogsCache() {
   return _logsCache;
 }
+window.getLogsCache = getLogsCache;
 
 /**
  * Nạp danh sách trang trại vào dropdown #user-log-filter-farm

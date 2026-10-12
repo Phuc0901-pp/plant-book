@@ -1082,11 +1082,11 @@ router.get('/profit-overview', auth, async (req, res) => {
       FROM plant_logs pl
       LEFT JOIN plants p ON pl.plant_id = p.id
       WHERE (
-        pl.log_type = 'Thu hoạch' 
+        pl.log_type ILIKE '%thu%' 
+        OR pl.log_type ILIKE '%harvest%'
         OR pl.details::text ILIKE '%fruit_count%' 
         OR pl.details::text ILIKE '%price_per_tree%'
         OR pl.details::text ILIKE '%total_revenue%'
-        OR pl.details::text ILIKE '%harvest%'
       )
         AND (pl.is_deleted IS NOT TRUE)
     `;
