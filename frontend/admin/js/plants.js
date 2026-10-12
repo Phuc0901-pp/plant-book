@@ -730,7 +730,10 @@ async function savePlant() {
       window.drawFarmsAndPlantsLayers(window.currentFarms || [], window.currentPlants || []);
     }
     closePlantModal();
-    if (typeof loadPlants === 'function') loadPlants();
+    const activeSec = document.querySelector('.page-section.active');
+    if (activeSec && (activeSec.id === 'page-plants' || activeSec.id === 'page-database')) {
+      if (typeof loadPlants === 'function') loadPlants();
+    }
   } catch (err) {
     toast('Lỗi lưu cây: ' + err.message, 'error');
   } finally {

@@ -663,7 +663,7 @@ function initGisMap(farms, plants) {
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
           ],
           tileSize: 256,
-          maxzoom: 20,
+          maxzoom: 18,
           attribution: '&copy; Esri World Imagery'
         });
       }
@@ -1032,6 +1032,50 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         const marker = new mapboxgl.Marker({ element: wrapper, draggable: true })
           .setLngLat([lng, lat]);
 
+        function getPopupContent(p, pLat, pLng) {
+          const pColor = getCustomerColor(p.user_id || (p.farm_id ? (currentFarms.find(f => f.id === p.farm_id)?.user_id) : null));
+          return `
+            <div class="map-tooltip" style="min-width:230px; padding:6px 4px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; border-bottom:1.5px solid #f1f5f9; padding-bottom:5px;">
+                <h4 style="margin:0; font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:5px;">
+                  <i data-lucide="trees" class="lucide-sm" style="color:#10b981"></i> Cây #${esc(p.tree_code || p.id)}
+                </h4>
+                <span class="badge" style="font-size:10px; padding:2px 7px; border-radius:10px; background:${pColor}22; color:${pColor}; font-weight:700;">
+                  ${esc(p.health_status || 'Tốt')}
+                </span>
+              </div>
+              <p style="margin:3px 0; font-size:12px; color:#334155;">Loại cây: <strong>${esc(p.plant_type || '—')}</strong></p>
+              ${p.plant_variety ? `<p style="margin:3px 0; font-size:12px; color:#475569;">Giống: <strong>${esc(p.plant_variety)}</strong></p>` : ''}
+              <div style="margin:6px 0; padding:6px 8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:11px; color:#475569;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                  <span style="color:#64748b;">Vĩ độ (Lat):</span>
+                  <strong style="font-family:monospace; color:#0f172a;">${pLat.toFixed(6)}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:#64748b;">Kinh độ (Lng):</span>
+                  <strong style="font-family:monospace; color:#0f172a;">${pLng.toFixed(6)}</strong>
+                </div>
+                ${p.location ? `<div style="margin-top:3px; font-size:10.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${esc(p.location)}</div>` : ''}
+              </div>
+              <div style="margin-top:8px; display:flex; gap:6px;">
+                <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center; padding:6px 10px; font-size:11.5px; font-weight:700;" onclick="event.stopPropagation(); openPlantModal(${p.id});">
+                  <i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa &amp; GPS
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        // Tạo popup ổn định: closeOnClick: false để người dùng click hoặc di chuột không bị out mất popup
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false,
+          closeOnMove: false,
+          maxWidth: '320px',
+          className: 'gis-plant-popup'
+        }).setHTML(getPopupContent(plant, lat, lng));
+
         marker.on('dragend', async () => {
           const newLngLat = marker.getLngLat();
           const newLng = parseFloat(newLngLat.lng.toFixed(7));
@@ -1056,51 +1100,33 @@ function drawFarmsAndPlantsLayers(farms, plants) {
             plant.latitude = newLat;
             plant.longitude = newLng;
             plant.location = updated.location || ('GPS: ' + newLat.toFixed(6) + ', ' + newLng.toFixed(6));
+            
+            // Cập nhật nội dung popup với tọa độ mới
+            popup.setHTML(getPopupContent(plant, newLat, newLng));
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+            }
+
+            // Đồng bộ dữ liệu trong bộ nhớ đệm
+            if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
+              const pIdx = currentPlants.findIndex(p => p.id === plant.id || p.id == plant.id);
+              if (pIdx !== -1) currentPlants[pIdx] = { ...currentPlants[pIdx], ...plant };
+            }
+            if (typeof currentFarms !== 'undefined' && Array.isArray(currentFarms)) {
+              currentFarms.forEach(f => {
+                if (f.plants && Array.isArray(f.plants)) {
+                  const pIdx = f.plants.findIndex(p => p.id === plant.id || p.id == plant.id);
+                  if (pIdx !== -1) f.plants[pIdx] = { ...f.plants[pIdx], ...plant };
+                }
+              });
+            }
+
             toast('📍 Đã cập nhật GPS mới: ' + newLat + ', ' + newLng, 'success');
-            if (window.onPlantSavedHook) window.onPlantSavedHook(plant);
           } catch(err) {
             toast('Lỗi cập nhật GPS: ' + err.message, 'error');
             marker.setLngLat([lng, lat]);
           }
         });
-        // Tạo popup ổn định: closeOnClick: false để người dùng click hoặc di chuột không bị out mất popup
-        const popup = new mapboxgl.Popup({
-          offset: 25,
-          closeButton: true,
-          closeOnClick: false,
-          closeOnMove: false,
-          maxWidth: '320px',
-          className: 'gis-plant-popup'
-        }).setHTML(`
-          <div class="map-tooltip" style="min-width:230px; padding:6px 4px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; border-bottom:1.5px solid #f1f5f9; padding-bottom:5px;">
-              <h4 style="margin:0; font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:5px;">
-                <i data-lucide="trees" class="lucide-sm" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}
-              </h4>
-              <span class="badge" style="font-size:10px; padding:2px 7px; border-radius:10px; background:${color}22; color:${color}; font-weight:700;">
-                ${esc(plant.health_status || 'Tốt')}
-              </span>
-            </div>
-            <p style="margin:3px 0; font-size:12px; color:#334155;">Loại cây: <strong>${esc(plant.plant_type || '—')}</strong></p>
-            ${plant.plant_variety ? `<p style="margin:3px 0; font-size:12px; color:#475569;">Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
-            <div style="margin:6px 0; padding:6px 8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:11px; color:#475569;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#64748b;">Vĩ độ (Lat):</span>
-                <strong style="font-family:monospace; color:#0f172a;">${lat.toFixed(6)}</strong>
-              </div>
-              <div style="display:flex; justify-content:space-between;">
-                <span style="color:#64748b;">Kinh độ (Lng):</span>
-                <strong style="font-family:monospace; color:#0f172a;">${lng.toFixed(6)}</strong>
-              </div>
-              ${plant.location ? `<div style="margin-top:3px; font-size:10.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${esc(plant.location)}</div>` : ''}
-            </div>
-            <div style="margin-top:8px; display:flex; gap:6px;">
-              <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center; padding:6px 10px; font-size:11.5px; font-weight:700;" onclick="event.stopPropagation(); openPlantModal(${plant.id});">
-                <i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa &amp; GPS
-              </button>
-            </div>
-          </div>
-        `);
 
         popup.on('open', () => {
           if (window.lucide && typeof window.lucide.createIcons === 'function') {
