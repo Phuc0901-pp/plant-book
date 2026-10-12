@@ -27,108 +27,165 @@
         </div>
 
         <!-- ════════════════════════════════════════════════════════════════
-             TẦNG 1: EXECUTIVE INVENTORY COCKPIT (4 THẺ CHỈ SỐ KPI VỐN & KHO)
+             BỘ LỌC ĐIỀU HÀNH ERP: THEO TRANG TRẠI SỞ HỮU & THEO NĂM
              ════════════════════════════════════════════════════════════════ -->
-        <div class="inventory-cockpit-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="supplies-cockpit-toolbar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; padding:12px 18px; box-shadow:0 2px 10px rgba(0,0,0,0.02);">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:34px; height:34px; border-radius:8px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center;">
+              <i data-lucide="filter" class="lucide-sm"></i>
+            </div>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#0f172a;">BỘ LỌC HẠCH TOÁN CHI PHÍ &amp; DOANH THU</div>
+              <div style="font-size:11.5px; color:#64748b;">Hạch toán theo trang trại sở hữu và niên vụ canh tác</div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <!-- Chọn Trang trại sở hữu -->
+            <div style="display:flex; align-items:center; gap:6px;">
+              <label for="supplies-cockpit-farm" style="font-size:12px; font-weight:700; color:#475569; display:flex; align-items:center; gap:4px; margin:0;">
+                <i data-lucide="trees" class="lucide-xs" style="color:#10b981;"></i> Trang trại:
+              </label>
+              <select id="supplies-cockpit-farm" onchange="onSuppliesCockpitFilterChange()" style="padding:7px 12px; font-size:13px; font-weight:700; color:#0f172a; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; outline:none; cursor:pointer;">
+                <option value="all">Tất cả trang trại</option>
+              </select>
+            </div>
+
+            <!-- Chọn Năm -->
+            <div style="display:flex; align-items:center; gap:6px;">
+              <label for="supplies-cockpit-year" style="font-size:12px; font-weight:700; color:#475569; display:flex; align-items:center; gap:4px; margin:0;">
+                <i data-lucide="calendar" class="lucide-xs" style="color:#0284c7;"></i> Năm:
+              </label>
+              <select id="supplies-cockpit-year" onchange="onSuppliesCockpitFilterChange()" style="padding:7px 12px; font-size:13px; font-weight:700; color:#0f172a; background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; outline:none; cursor:pointer;">
+                <option value="all">Tất cả các năm</option>
+                <option value="2026" selected>Năm 2026</option>
+                <option value="2025">Năm 2025</option>
+                <option value="2024">Năm 2024</option>
+                <option value="2023">Năm 2023</option>
+              </select>
+            </div>
+
+            <!-- Nút làm mới / cập nhật -->
+            <button type="button" onclick="onSuppliesCockpitFilterChange()" class="btn btn-secondary btn-sm" style="padding:7px 14px; font-size:12px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+              <i data-lucide="refresh-cw" class="lucide-xs"></i> Lọc dữ liệu
+            </button>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             TẦNG 1: 3 KHỐI THÔNG TIN CHỦ ĐẠO CHUẨN AGTECH ERP
+             1. Giá trị nhập kho (Vốn hàng nhập vào)
+             2. Tiêu hao lũy kế (Dung tích & giá trị đã chiết sử dụng)
+             3. Doanh thu thu hoạch (Mỗi lần thu hoạch theo từng cây trồng)
+             ════════════════════════════════════════════════════════════════ -->
+        <div class="inventory-cockpit-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px;">
           
-          <!-- KPI 1: Tổng Giá Trị Kho Lưu Trữ -->
-          <div class="stat-card stat-card--erp-valuation" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 18px 20px; border-radius: 16px; border: 1.5px solid #334155; box-shadow: 0 4px 15px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                  <i data-lucide="lock" class="lucide-sm" style="color: #38bdf8;"></i> Giá Trị Tài Sản Kho
+          <!-- KHỐI 1: GIÁ TRỊ NHẬP KHO & TỒN KHO VẬT TƯ -->
+          <div class="stat-card stat-card--erp-valuation" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 20px 22px; border-radius: 18px; border: 1.5px solid #334155; box-shadow: 0 4px 18px rgba(0,0,0,0.1); position: relative; overflow: hidden; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; display:flex; align-items:center; gap:6px;">
+                    <i data-lucide="warehouse" class="lucide-sm" style="color: #38bdf8;"></i> GIÁ TRỊ NHẬP KHO VẬT TƯ
+                  </div>
+                  <div id="erp-kpi-total-valuation" style="font-size: 24px; font-weight: 900; color: #38bdf8; letter-spacing: -0.3px; margin: 4px 0;">
+                    0 VNĐ
+                  </div>
+                  <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">
+                    Tổng vốn mua hàng nhập vào trang trại
+                  </div>
                 </div>
-                <div id="erp-kpi-total-valuation" style="font-size: 22px; font-weight: 900; color: #38bdf8; letter-spacing: -0.3px;">
-                  0 VNĐ
-                </div>
-                <div id="erp-kpi-sku-count" style="font-size: 12px; color: #cbd5e1; margin-top: 4px; font-weight: 600;">
-                  Tổng số: <strong>0</strong> mặt hàng lưu kho
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">
+                  <i data-lucide="package-plus" class="lucide-sm"></i>
                 </div>
               </div>
-              <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                <i data-lucide="coins" class="lucide-sm"></i>
+
+              <!-- Chi tiết vốn nhập & tồn kho hiện tại -->
+              <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.15); display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                <div style="color: #cbd5e1;">
+                  Tồn kho thực tế: <strong id="erp-kpi-current-stock-val" style="color:#ffffff;">0 VNĐ</strong>
+                </div>
+                <div id="erp-kpi-sku-count" style="color: #38bdf8; font-weight: 700; background:rgba(56,189,248,0.1); padding:2px 8px; border-radius:6px;">
+                  0 mặt hàng lưu kho
+                </div>
               </div>
+            </div>
+
+            <div id="erp-scope-badge-stock" style="margin-top:10px; font-size:11px; color:#64748b; display:flex; align-items:center; gap:4px;">
+              <i data-lucide="map-pin" class="lucide-xs"></i> <span id="erp-scope-text-stock">Phân bổ: Tất cả trang trại · Năm 2026</span>
             </div>
           </div>
 
-          <!-- KPI 2: Tổng Chi Phí Tiêu Hao Trong Kỳ -->
-          <div class="stat-card" style="background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                  <i data-lucide="pie-chart" class="lucide-sm" style="color: #059669;"></i> Đã Tiêu Hao Lũy Kế
+          <!-- KHỐI 2: TIÊU HAO VẬT TƯ LŨY KẾ (DUNG TÍCH & GIÁ TRỊ ĐÃ CHIẾT SỬ DỤNG) -->
+          <div class="stat-card" style="background: #ffffff; border: 1.5px solid #a7f3d0; padding: 20px 22px; border-radius: 18px; box-shadow: 0 4px 18px rgba(5,150,105,0.04); display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; display:flex; align-items:center; gap:6px;">
+                    <i data-lucide="flask-conical" class="lucide-sm" style="color: #059669;"></i> TIÊU HAO VẬT TƯ LŨY KẾ
+                  </div>
+                  <div id="erp-kpi-total-consumed" style="font-size: 24px; font-weight: 900; color: #059669; letter-spacing: -0.3px; margin: 4px 0;">
+                    0 VNĐ
+                  </div>
+                  <div id="erp-kpi-usage-count" style="font-size: 12px; color: #64748b; font-weight: 600;">
+                    Đã chiết xuất sử dụng: <strong>0</strong> đợt canh tác
+                  </div>
                 </div>
-                <div id="erp-kpi-total-consumed" style="font-size: 22px; font-weight: 900; color: #059669; letter-spacing: -0.3px;">
-                  0 VNĐ
-                </div>
-                <div id="erp-kpi-usage-count" style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
-                  Đã xuất <strong>0</strong> đợt canh tác
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">
+                  <i data-lucide="receipt" class="lucide-sm"></i>
                 </div>
               </div>
-              <div style="width: 44px; height: 44px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                <i data-lucide="receipt" class="lucide-sm"></i>
+
+              <!-- Phân rã chi tiết 4 danh mục tiêu hao -->
+              <div id="erp-kpi-consumed-breakdown" style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 11.5px;">
+                <div style="color:#475569;">🌱 Bón phân: <strong id="erp-spent-fert" style="color:#166534;">0đ</strong></div>
+                <div style="color:#475569;">🛡️ Phun thuốc: <strong id="erp-spent-pest" style="color:#d97706;">0đ</strong></div>
+                <div style="color:#475569;">💧 Tiền nước: <strong id="erp-spent-water" style="color:#0284c7;">0đ</strong></div>
+                <div style="color:#475569;">🧑‍🌾 Nhân công: <strong id="erp-spent-labor" style="color:#4b5563;">0đ</strong></div>
               </div>
+            </div>
+
+            <div id="erp-scope-badge-usage" style="margin-top:10px; font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;">
+              <i data-lucide="check-check" class="lucide-xs"></i> <span id="erp-scope-text-usage">Hạch toán thực tế trên cây</span>
             </div>
           </div>
 
-          <!-- KPI 3: Cảnh Báo Tồn Kho Định Mức An Toàn -->
-          <div class="stat-card" style="background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                  <i data-lucide="alert-triangle" class="lucide-sm" style="color: #ea580c;"></i> Tồn Kho Định Mức
+          <!-- KHỐI 3: DOANH THU THU HOẠCH THEO TỪNG CÂY TRỒNG (CHIA THEO TRANG TRẠI & NĂM) -->
+          <div class="stat-card stat-card--erp-profit" style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); color: #ffffff; padding: 20px 22px; border-radius: 18px; border: 1.5px solid #10b981; box-shadow: 0 4px 18px rgba(6,78,59,0.22); position: relative; overflow: hidden; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1;">
+                <div style="flex: 1;">
+                  <div style="font-size: 11px; font-weight: 800; color: #a7f3d0; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="badge-dollar-sign" class="lucide-sm" style="color: #6ee7b7;"></i> DOANH THU THU HOẠCH CÂY TRỒNG
+                  </div>
+                  <div id="erp-kpi-harvest-rev" style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.3px; margin: 4px 0;">
+                    0 VNĐ
+                  </div>
+                  <div id="erp-kpi-harvest-yield" style="font-size: 12px; color: #d1fae5; font-weight: 600;">
+                    Sản lượng: <strong>0 kg</strong> (0 quả)
+                  </div>
                 </div>
-                <div id="erp-kpi-low-stock-count" style="font-size: 22px; font-weight: 900; color: #ea580c; letter-spacing: -0.3px;">
-                  0 mặt hàng
-                </div>
-                <div id="erp-kpi-low-stock-desc" style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
-                  Cần nhập thêm trước mùa bón
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(255, 255, 255, 0.2); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; margin-left: 10px;">
+                  <i data-lucide="circle-dollar-sign" class="lucide-sm"></i>
                 </div>
               </div>
-              <div style="width: 44px; height: 44px; border-radius: 12px; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                <i data-lucide="package" class="lucide-sm"></i>
+
+              <!-- Chi tiết doanh thu theo từng cây trồng (Tree Breakdown list) -->
+              <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.25);">
+                <div style="font-size: 11px; font-weight: 800; color: #a7f3d0; text-transform: uppercase; margin-bottom: 5px; display:flex; justify-content:space-between; align-items:center;">
+                  <span>ĐÓNG GÓP THEO TỪNG CÂY:</span>
+                  <span id="erp-kpi-roi-badge" style="background:#fef08a; color:#854d0e; padding:1px 6px; border-radius:4px; font-size:10.5px; font-weight:800;">ROI: 0%</span>
+                </div>
+                <div id="erp-kpi-trees-breakdown" style="max-height: 52px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: #ecfdf5;">
+                  <div style="color:rgba(255,255,255,0.7); font-style:italic;">Chưa có dữ liệu thu hoạch trong kỳ</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- KPI 4: Tuân Thủ Tiêu Chuẩn VietGAP -->
-          <div class="stat-card" style="background: #ffffff; border: 1.5px solid #e2e8f0; padding: 18px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                  <i data-lucide="shield-check" class="lucide-sm" style="color: #0284c7;"></i> Kiểm Soát VietGAP
-                </div>
-                <div id="erp-kpi-phi-active-count" style="font-size: 22px; font-weight: 900; color: #0284c7; letter-spacing: -0.3px;">
-                  100% Đạt Chuẩn
-                </div>
-                <div style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">
-                  Minh bạch nhật ký truy xuất
-                </div>
-              </div>
-              <div style="width: 44px; height: 44px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                <i data-lucide="award" class="lucide-sm"></i>
-              </div>
-            </div>
-          </div>
-
-          <!-- KPI 5: Lợi Nhuận Nông Vụ & So Sánh Doanh Thu / Chi Phí Đầu Tư -->
-          <div class="stat-card stat-card--erp-profit" style="background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%); color: #ffffff; padding: 18px 20px; border-radius: 16px; border: 1.5px solid #10b981; box-shadow: 0 4px 18px rgba(6,78,59,0.22); position: relative; overflow: hidden;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1;">
-              <div style="flex: 1;">
-                <div style="font-size: 11px; font-weight: 800; color: #a7f3d0; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
-                  <i data-lucide="trending-up" class="lucide-sm" style="color: #6ee7b7;"></i> Lợi Nhuận Nông Vụ (ROI)
-                </div>
-                <div id="erp-kpi-net-profit" style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.3px;">
-                  0 VNĐ
-                </div>
-                <div id="erp-kpi-profit-compare" style="font-size: 12px; color: #d1fae5; margin-top: 4px; font-weight: 600; line-height: 1.4;">
-                  Doanh thu: <strong id="erp-kpi-harvest-rev">0 VNĐ</strong> <br>
-                  Chi phí VT: <span id="erp-kpi-invest-cost">0 VNĐ</span> · ROI: <strong id="erp-kpi-roi-badge" style="color:#fef08a;">0%</strong>
-                </div>
-              </div>
-              <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 255, 255, 0.2); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; margin-left: 10px;">
-                <i data-lucide="circle-dollar-sign" class="lucide-sm"></i>
-              </div>
+            <!-- Footer so sánh Lợi Nhuận thuần -->
+            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
+              <span style="color: #a7f3d0;">Lợi nhuận ròng (Net Profit):</span>
+              <strong id="erp-kpi-net-profit" style="font-size: 13px; color: #ffffff;">0 VNĐ</strong>
             </div>
           </div>
 

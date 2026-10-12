@@ -31,6 +31,17 @@
         </div>
       </div>
 
+      <!-- Row 0: Trang trại sở hữu vật tư -->
+      <div class="field" style="margin-bottom:14px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:10px; padding:10px 12px;">
+        <label class="form-label" style="color:#166534; font-weight:800; font-size:12px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="trees" class="lucide-sm" style="color:#15803d;"></i> Trang trại sở hữu vật tư <span class="req-star">*</span>
+        </label>
+        <select id="sp-farm-id" class="form-control-custom" style="background:#ffffff; font-weight:700; color:#0f172a;">
+          <!-- Loaded dynamically -->
+        </select>
+        <small style="color:#166534; font-size:11px; margin-top:3px; display:block;">Xác định vật tư thuộc quyền sở hữu &amp; hạch toán của trang trại nào</small>
+      </div>
+
       <!-- Row 1: Hạng mục & Đơn vị gói -->
       <div class="form-row-2">
 
@@ -263,6 +274,16 @@
             <div id="restock-current-stock" style="font-size:15px; font-weight:900; color:#059669; margin-top:2px;">0</div>
           </div>
         </div>
+      </div>
+
+      <!-- Farm Selection for Restock -->
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+          <i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i> Trang trại tiếp nhận lô hàng này <span style="color:#ef4444;">*</span>
+        </label>
+        <select id="restock-farm-id" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; outline:none; background:#fff; color:#0f172a;">
+          <!-- Loaded dynamically -->
+        </select>
       </div>
 
       <!-- Input: Added Quantity -->

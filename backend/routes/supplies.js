@@ -470,13 +470,15 @@ router.put('/:id', auth, async (req, res) => {
 
     const phiDaysInt = phi_days !== undefined ? (parseInt(phi_days) || 0) : check.rows[0].phi_days;
 
+    const farmIdVal = req.body.farm_id !== undefined ? (req.body.farm_id ? parseInt(req.body.farm_id) : null) : check.rows[0].farm_id;
+
     const result = await pool.query(
       `UPDATE supplies 
        SET category = $1, name = $2, unit = $3, package_size = $4, package_qty = $5, package_unit = $6, 
            package_price = $7, unit_price = $8, unit_price_small = $9, stock_quantity = $10, note = $11, 
            image_url = $12, fertilizer_type = $13, phi_days = $14, active_ingredient = $15, target_pests = $16,
-           safety_interval_note = $17, updated_at = NOW()
-       WHERE id = $18
+           safety_interval_note = $17, farm_id = $18, updated_at = NOW()
+       WHERE id = $19
        RETURNING *`,
       [
         category || check.rows[0].category,
@@ -496,6 +498,7 @@ router.put('/:id', auth, async (req, res) => {
         active_ingredient !== undefined ? active_ingredient : check.rows[0].active_ingredient,
         target_pests !== undefined ? target_pests : check.rows[0].target_pests,
         safety_interval_note !== undefined ? safety_interval_note : check.rows[0].safety_interval_note,
+        farmIdVal,
         id
       ]
     );
@@ -569,12 +572,14 @@ router.post('/:id/restock', auth, async (req, res) => {
     const newStock = (parseFloat(supply.stock_quantity) || 0) + addedBaseQty;
     const restockNote = note ? `${supply.note ? supply.note + ' | ' : ''}Nhập kho +${qty} ${supply.package_unit || 'gói'} (+${addedBaseQty} ${supply.unit}) (${new Date().toLocaleDateString('vi-VN')}): ${note}${batch_no ? ' [Lô: ' + batch_no + ']' : ''}` : supply.note;
 
+    const restockFarmId = req.body.farm_id ? parseInt(req.body.farm_id) : supply.farm_id;
+
     const updatedRes = await pool.query(
       `UPDATE supplies 
-       SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4, note = $5, updated_at = NOW()
-       WHERE id = $6
+       SET stock_quantity = $1, package_price = $2, unit_price = $3, unit_price_small = $4, note = $5, farm_id = $6, updated_at = NOW()
+       WHERE id = $7
        RETURNING *`,
-      [newStock, updatedPkgPrice, updatedUnitPrice, updatedUnitPriceSmall, restockNote, id]
+      [newStock, updatedPkgPrice, updatedUnitPrice, updatedUnitPriceSmall, restockNote, restockFarmId, id]
     );
 
     const updatedSupply = updatedRes.rows[0];
@@ -929,18 +934,129 @@ router.post('/recalculate-stock', auth, async (req, res) => {
   }
 });
 
-// GET /api/supplies/profit-overview — Thống kê tổng doanh thu thu hoạch, tổng chi phí vật tư và lợi nhuận thuần
+// GET /api/supplies/profit-overview — Thống kê chuẩn ERP: Giá trị nhập kho, Tiêu hao lũy kế, Doanh thu thu hoạch theo từng cây trồng (Lọc theo Trang trại & Năm)
 router.get('/profit-overview', auth, async (req, res) => {
   try {
-    const { farm_id, user_id } = req.query;
+    const { farm_id, year, user_id } = req.query;
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
+    const filterYear = (year && year !== 'all') ? parseInt(year) : null;
+    const filterFarmId = (farm_id && farm_id !== 'all') ? parseInt(farm_id) : null;
 
-    // 1. Tính tổng doanh thu thu hoạch từ plant_logs
+    // ── 1. KHỐI 1: GIÁ TRỊ NHẬP KHO & TỒN KHO VẬT TƯ (Vốn nhập hàng vào) ──
+    let stockQuery = `
+      SELECT s.id, s.name, s.category, s.unit, s.package_qty, s.package_price, s.unit_price, s.stock_quantity, s.created_at, s.farm_id,
+             COALESCE(SUM(su.total_cost), 0) as total_used_cost,
+             COALESCE(SUM(su.quantity), 0) as total_used_qty
+      FROM supplies s
+      LEFT JOIN supply_usages su ON su.supply_id = s.id
+      WHERE s.category NOT IN ('Tiền nước', 'Nhân công')
+    `;
+    const stockParams = [];
+    let sIdx = 1;
+
+    if (req.user.role === 'admin' && user_id && user_id !== 'all') {
+      stockQuery += ` AND s.user_id = $${sIdx}`;
+      stockParams.push(parseInt(user_id));
+      sIdx++;
+    } else if (req.user.role !== 'admin') {
+      stockQuery += ` AND (
+        s.user_id = $${sIdx}
+        OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx} OR id = (SELECT farm_id FROM users WHERE id = $${sIdx}))
+      )`;
+      stockParams.push(req.user.id);
+      sIdx++;
+    }
+
+    if (filterFarmId) {
+      stockQuery += ` AND (s.farm_id = $${sIdx} OR s.farm_id IS NULL)`;
+      stockParams.push(filterFarmId);
+      sIdx++;
+    }
+
+    if (filterYear) {
+      stockQuery += ` AND EXTRACT(YEAR FROM s.created_at) = $${sIdx}`;
+      stockParams.push(filterYear);
+      sIdx++;
+    }
+
+    stockQuery += ` GROUP BY s.id`;
+    const stockRes = await pool.query(stockQuery, stockParams);
+
+    let totalStockInflowValuation = 0; // Giá trị vốn nhập hàng vào
+    let currentStockValuation = 0;      // Giá trị tồn kho thực tế hiện tại
+    const skuCount = stockRes.rows.length;
+
+    stockRes.rows.forEach(s => {
+      const uPrice = parseFloat(s.unit_price) || 0;
+      const curStock = parseFloat(s.stock_quantity) || 0;
+      const usedCost = parseFloat(s.total_used_cost) || 0;
+      const curVal = curStock * uPrice;
+      currentStockValuation += curVal;
+      // Tổng vốn hàng nhập vào = Giá trị tồn hiện tại + Giá trị đã tiêu hao
+      totalStockInflowValuation += (curVal + usedCost);
+    });
+
+    // ── 2. KHỐI 2: TIÊU HAO VẬT TƯ LŨY KẾ (Dung tích & giá trị đã chiết sử dụng) ──
+    let usageQuery = `
+      SELECT su.id, su.supply_id, su.farm_id, su.plant_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
+             s.name as supply_name, s.category as supply_category, s.unit as supply_unit
+      FROM supply_usages su
+      JOIN supplies s ON su.supply_id = s.id
+      WHERE 1=1
+    `;
+    const usageParams = [];
+    let uIdx = 1;
+
+    if (req.user.role === 'admin' && user_id && user_id !== 'all') {
+      usageQuery += ` AND su.user_id = $${uIdx}`;
+      usageParams.push(parseInt(user_id));
+      uIdx++;
+    } else if (req.user.role !== 'admin') {
+      usageQuery += ` AND su.user_id = $${uIdx}`;
+      usageParams.push(req.user.id);
+      uIdx++;
+    }
+
+    if (filterFarmId) {
+      usageQuery += ` AND (su.farm_id = $${uIdx} OR su.farm_id IS NULL)`;
+      usageParams.push(filterFarmId);
+      uIdx++;
+    }
+
+    if (filterYear) {
+      usageQuery += ` AND EXTRACT(YEAR FROM su.usage_date) = $${uIdx}`;
+      usageParams.push(filterYear);
+      uIdx++;
+    }
+
+    const usageRes = await pool.query(usageQuery, usageParams);
+    let totalSpent = 0;
+    const usageCount = usageRes.rows.length;
+    const categorySpent = {
+      'Bón phân': 0,
+      'Phun thuốc': 0,
+      'Tiền nước': 0,
+      'Nhân công': 0
+    };
+
+    usageRes.rows.forEach(u => {
+      const cost = parseFloat(u.total_cost) || 0;
+      totalSpent += cost;
+      const cat = u.supply_category || 'Khác';
+      if (categorySpent[cat] !== undefined) {
+        categorySpent[cat] += cost;
+      } else {
+        categorySpent[cat] = (categorySpent[cat] || 0) + cost;
+      }
+    });
+
+    // ── 3. KHỐI 3: DOANH THU THU HOẠCH THEO TỪNG CÂY TRỒNG (Phân bổ theo trang trại & năm) ──
     let harvestQuery = `
-      SELECT pl.details, pl.log_date, pl.plant_id
+      SELECT pl.id, pl.details, pl.log_date, pl.plant_id, pl.batch_code,
+             p.tree_code, p.plant_type, p.farm_id
       FROM plant_logs pl
       LEFT JOIN plants p ON pl.plant_id = p.id
-      WHERE pl.log_type = 'Thu hoạch'
+      WHERE (pl.log_type = 'Thu hoạch' OR pl.details::text ILIKE '%fruit_count%' OR pl.details::text ILIKE '%price_per_tree%')
         AND (pl.is_deleted IS NOT TRUE)
     `;
     const harvestParams = [];
@@ -960,9 +1076,15 @@ router.get('/profit-overview', auth, async (req, res) => {
       hIdx++;
     }
 
-    if (farm_id && farm_id !== 'all') {
+    if (filterFarmId) {
       harvestQuery += ` AND (p.farm_id = $${hIdx} OR pl.plant_id IN (SELECT id FROM plants WHERE farm_id = $${hIdx}))`;
-      harvestParams.push(parseInt(farm_id));
+      harvestParams.push(filterFarmId);
+      hIdx++;
+    }
+
+    if (filterYear) {
+      harvestQuery += ` AND EXTRACT(YEAR FROM pl.log_date) = $${hIdx}`;
+      harvestParams.push(filterYear);
       hIdx++;
     }
 
@@ -973,6 +1095,9 @@ router.get('/profit-overview', auth, async (req, res) => {
     let totalHarvestWeight = 0;
     const harvestLogsCount = harvestRes.rows.length;
 
+    // Chi tiết doanh thu theo từng cây trồng (Tree-level breakdown)
+    const treeBreakdownMap = {};
+
     harvestRes.rows.forEach(row => {
       let d = row.details;
       if (typeof d === 'string') {
@@ -982,55 +1107,64 @@ router.get('/profit-overview', auth, async (req, res) => {
         const rev = parseFloat(d.total_revenue) || (parseFloat(d.price_per_tree) || 0);
         const fruits = parseFloat(d.fruit_count) || 0;
         const amt = parseFloat(d.amount) || parseFloat(d.yield_kg) || 0;
+
         totalHarvestRevenue += rev;
         totalFruitCount += fruits;
         totalHarvestWeight += amt;
+
+        const pId = row.plant_id || 0;
+        const tCode = row.tree_code || (pId ? `#${pId}` : 'Toàn vườn');
+        const pType = row.plant_type || 'Cây trồng';
+
+        if (!treeBreakdownMap[pId]) {
+          treeBreakdownMap[pId] = {
+            plant_id: pId,
+            tree_code: tCode,
+            plant_type: pType,
+            revenue: 0,
+            fruits: 0,
+            weight: 0,
+            harvest_times: 0
+          };
+        }
+        treeBreakdownMap[pId].revenue += rev;
+        treeBreakdownMap[pId].fruits += fruits;
+        treeBreakdownMap[pId].weight += amt;
+        treeBreakdownMap[pId].harvest_times += 1;
       }
     });
 
-    // 2. Tính tổng chi phí vật tư đã tiêu hao từ supply_usages
-    let usageQuery = `
-      SELECT COALESCE(SUM(su.total_cost), 0) as total_spent,
-             COUNT(*) as usage_count
-      FROM supply_usages su
-      WHERE 1=1
-    `;
-    const usageParams = [];
-    let uIdx = 1;
+    const treeBreakdown = Object.values(treeBreakdownMap).sort((a, b) => b.revenue - a.revenue);
 
-    if (req.user.role === 'admin' && user_id && user_id !== 'all') {
-      usageQuery += ` AND su.user_id = $${uIdx}`;
-      usageParams.push(parseInt(user_id));
-      uIdx++;
-    } else if (req.user.role !== 'admin') {
-      usageQuery += ` AND su.user_id = $${uIdx}`;
-      usageParams.push(req.user.id);
-      uIdx++;
-    }
-
-    if (farm_id && farm_id !== 'all') {
-      usageQuery += ` AND su.farm_id = $${uIdx}`;
-      usageParams.push(parseInt(farm_id));
-      uIdx++;
-    }
-
-    const usageRes = await pool.query(usageQuery, usageParams);
-    const totalSpent = parseFloat(usageRes.rows[0]?.total_spent) || 0;
-    const usageCount = parseInt(usageRes.rows[0]?.usage_count) || 0;
-
-    // 3. Tính Lợi nhuận và ROI
+    // ── 4. LỢI NHUẬN & HIỆU QUẢ ĐẦU TƯ (ROI) ──
     const netProfit = totalHarvestRevenue - totalSpent;
     const roiPercentage = totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalHarvestRevenue > 0 ? 100 : 0);
 
     res.json({
-      total_revenue: totalHarvestRevenue,
+      // Khối 1: Nhập kho & Tồn kho
+      total_stock_inflow: totalStockInflowValuation > 0 ? totalStockInflowValuation : currentStockValuation,
+      current_stock_valuation: currentStockValuation,
+      sku_count: skuCount,
+
+      // Khối 2: Tiêu hao lũy kế
       total_spent: totalSpent,
-      net_profit: netProfit,
-      roi_percentage: roiPercentage,
-      harvest_count: harvestLogsCount,
+      usage_count: usageCount,
+      category_spent: categorySpent,
+
+      // Khối 3: Doanh thu thu hoạch theo từng cây
+      total_revenue: totalHarvestRevenue,
       fruit_count: totalFruitCount,
       harvest_weight: totalHarvestWeight,
-      usage_count: usageCount
+      harvest_count: harvestLogsCount,
+      tree_breakdown: treeBreakdown,
+
+      // Lợi nhuận & ROI
+      net_profit: netProfit,
+      roi_percentage: roiPercentage,
+
+      // Metadata bộ lọc
+      filtered_farm_id: filterFarmId,
+      filtered_year: filterYear
     });
   } catch (err) {
     console.error('Error fetching profit overview:', err);

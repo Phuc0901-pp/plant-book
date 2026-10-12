@@ -13,9 +13,41 @@ let currentSearchQuery = '';
 let currentPeriodFilter = 'day';
 let cachedSupplies = [];
 
+// ── State Bộ Lọc ERP Cockpit (Trang trại & Năm) ──
+let currentCockpitFarmId = 'all';
+let currentCockpitYear = 'all';
+
+export function populateCockpitFarms() {
+  const farmSelect = document.getElementById('supplies-cockpit-farm');
+  if (!farmSelect) return;
+  const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
+  if (farms.length > 0 && farmSelect.options.length <= 1) {
+    const curVal = farmSelect.value || currentCockpitFarmId;
+    farmSelect.innerHTML = `<option value="all">Tất cả trang trại</option>` +
+      farms.map(f => `<option value="${f.id}" ${String(f.id) === String(curVal) ? 'selected' : ''}>${esc(f.name)}</option>`).join('');
+  }
+}
+window.populateCockpitFarms = populateCockpitFarms;
+
+export function onSuppliesCockpitFilterChange() {
+  const farmSelect = document.getElementById('supplies-cockpit-farm');
+  const yearSelect = document.getElementById('supplies-cockpit-year');
+  if (farmSelect) currentCockpitFarmId = farmSelect.value;
+  if (yearSelect) currentCockpitYear = yearSelect.value;
+
+  // Cập nhật scope text
+  const farmName = farmSelect && farmSelect.selectedIndex > 0 ? farmSelect.options[farmSelect.selectedIndex].text : 'Tất cả trang trại';
+  const yearText = yearSelect && yearSelect.value !== 'all' ? `Năm ${yearSelect.value}` : 'Tất cả các năm';
+  const scopeStock = document.getElementById('erp-scope-text-stock');
+  if (scopeStock) scopeStock.textContent = `Phân bổ: ${farmName} · ${yearText}`;
+
+  loadSupplies();
+}
+window.onSuppliesCockpitFilterChange = onSuppliesCockpitFilterChange;
+
 // ── State Phân trang Lịch sử Tiêu hao Vật tư (20 đợt / trang) ──
 let currentUsageLogPage = 1;
-const usageLogPageSize = 20;
+let usageLogPageSize = 20;
 let cachedUsageLogs = [];
 
 
@@ -240,22 +272,28 @@ export async function loadSupplies() {
   const tbody = document.getElementById('supplies-table-body');
   if (!tbody) return;
 
+  // Tự động load danh sách farm vào select bộ lọc nếu chưa có
+  populateCockpitFarms();
+
   try {
     const params = new URLSearchParams();
     if (currentCategoryFilter !== 'all') {
       params.append('category', currentCategoryFilter);
     }
+    if (currentCockpitFarmId && currentCockpitFarmId !== 'all') {
+      params.append('farm_id', currentCockpitFarmId);
+    }
 
     cachedSupplies = await api(`/supplies?${params.toString()}`);
 
-    // 1. Tính toán và cập nhật Executive Inventory Cockpit KPI
-    renderSuppliesCockpitKpi(cachedSupplies);
-
-    // 2. Lọc theo Stock Status và Search Query
+    // 1. Lọc theo Stock Status và Search Query
     const filtered = applySuppliesFilters(cachedSupplies);
 
-    // 3. Render Enterprise Data Grid Table
+    // 2. Render Enterprise Data Grid Table
     renderSuppliesTable(filtered);
+
+    // 3. Tính toán và cập nhật Executive ERP Cockpit KPI theo Trang trại & Năm đã chọn
+    await updateSuppliesProfitCockpit();
 
   } catch (err) {
     console.error('Error loading supplies:', err);
@@ -320,112 +358,104 @@ export function onSupplySearchInput(query) {
   renderSuppliesTable(filtered);
 }
 
-export function renderSuppliesCockpitKpi(supplies) {
+export async function updateSuppliesProfitCockpit() {
   const totalValuationEl = document.getElementById('erp-kpi-total-valuation');
+  const curStockValEl = document.getElementById('erp-kpi-current-stock-val');
   const skuCountEl = document.getElementById('erp-kpi-sku-count');
+
   const totalConsumedEl = document.getElementById('erp-kpi-total-consumed');
   const usageCountEl = document.getElementById('erp-kpi-usage-count');
-  const lowStockCountEl = document.getElementById('erp-kpi-low-stock-count');
-  const lowStockDescEl = document.getElementById('erp-kpi-low-stock-desc');
-  const phiActiveEl = document.getElementById('erp-kpi-phi-active-count');
+  const spentFertEl = document.getElementById('erp-spent-fert');
+  const spentPestEl = document.getElementById('erp-spent-pest');
+  const spentWaterEl = document.getElementById('erp-spent-water');
+  const spentLaborEl = document.getElementById('erp-spent-labor');
 
-  if (!supplies || !Array.isArray(supplies)) return;
+  const harvestRevEl = document.getElementById('erp-kpi-harvest-rev');
+  const harvestYieldEl = document.getElementById('erp-kpi-harvest-yield');
+  const treesBreakdownEl = document.getElementById('erp-kpi-trees-breakdown');
+  const roiBadgeEl = document.getElementById('erp-kpi-roi-badge');
+  const netProfitEl = document.getElementById('erp-kpi-net-profit');
 
-  let totalValuation = 0;
-  let totalConsumed = 0;
-  let lowStockCount = 0;
-  let outOfStockCount = 0;
+  try {
+    const params = new URLSearchParams();
+    if (currentCockpitFarmId && currentCockpitFarmId !== 'all') {
+      params.append('farm_id', currentCockpitFarmId);
+    }
+    if (currentCockpitYear && currentCockpitYear !== 'all') {
+      params.append('year', currentCockpitYear);
+    }
 
-  supplies.forEach(sp => {
-    const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
-    const stock = parseFloat(sp.stock_quantity) || 0;
-    const unitPrice = parseFloat(sp.unit_price) || 0;
-    const pkgQty = parseFloat(sp.package_qty) || 1;
-    const spent = parseFloat(sp.total_spent) || 0;
+    const data = await api(`/supplies/profit-overview?${params.toString()}`);
 
-    totalConsumed += spent;
+    // KHỐI 1: GIÁ TRỊ NHẬP KHO & TỒN KHO VẬT TƯ
+    const totalInflow = parseFloat(data.total_stock_inflow) || 0;
+    const curStockVal = parseFloat(data.current_stock_valuation) || 0;
+    const skuCount = parseInt(data.sku_count) || (cachedSupplies ? cachedSupplies.length : 0);
 
-    if (!isPermanent) {
-      totalValuation += stock * unitPrice;
-      if (stock <= 0) {
-        outOfStockCount++;
-        lowStockCount++;
-      } else if (stock < 0.2 * pkgQty) {
-        lowStockCount++;
+    if (totalValuationEl) totalValuationEl.textContent = formatVND(totalInflow);
+    if (curStockValEl) curStockValEl.textContent = formatVND(curStockVal);
+    if (skuCountEl) skuCountEl.textContent = `${skuCount} mặt hàng lưu kho`;
+
+    // KHỐI 2: TIÊU HAO VẬT TƯ LŨY KẾ
+    const totalSpent = parseFloat(data.total_spent) || 0;
+    const usageCount = parseInt(data.usage_count) || 0;
+    const catSpent = data.category_spent || {};
+
+    if (totalConsumedEl) totalConsumedEl.textContent = formatVND(totalSpent);
+    if (usageCountEl) usageCountEl.innerHTML = `Đã chiết xuất sử dụng: <strong>${usageCount}</strong> đợt canh tác`;
+    if (spentFertEl) spentFertEl.textContent = formatVND(catSpent['Bón phân'] || 0);
+    if (spentPestEl) spentPestEl.textContent = formatVND(catSpent['Phun thuốc'] || 0);
+    if (spentWaterEl) spentWaterEl.textContent = formatVND(catSpent['Tiền nước'] || 0);
+    if (spentLaborEl) spentLaborEl.textContent = formatVND(catSpent['Nhân công'] || 0);
+
+    // KHỐI 3: DOANH THU THU HOẠCH CÂY TRỒNG
+    const totalRev = parseFloat(data.total_revenue) || 0;
+    const totalWeight = parseFloat(data.harvest_weight) || 0;
+    const totalFruits = parseFloat(data.fruit_count) || 0;
+    const netProfit = parseFloat(data.net_profit) !== undefined ? parseFloat(data.net_profit) : (totalRev - totalSpent);
+    const roi = parseFloat(data.roi_percentage) || (totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0));
+
+    if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
+    if (harvestYieldEl) {
+      harvestYieldEl.innerHTML = `Sản lượng: <strong>${Number(totalWeight.toFixed(1))} kg</strong> (${totalFruits.toLocaleString('vi-VN')} quả)`;
+    }
+
+    if (roiBadgeEl) {
+      roiBadgeEl.textContent = `ROI: ${roi >= 0 ? '+' : ''}${roi}%`;
+      roiBadgeEl.style.background = roi >= 0 ? '#fef08a' : '#fee2e2';
+      roiBadgeEl.style.color = roi >= 0 ? '#854d0e' : '#b91c1c';
+    }
+
+    if (netProfitEl) {
+      netProfitEl.textContent = `${netProfit >= 0 ? '+' : ''}${formatVND(netProfit)}`;
+      netProfitEl.style.color = netProfit >= 0 ? '#ffffff' : '#fca5a5';
+    }
+
+    // Render Tree-level breakdown
+    if (treesBreakdownEl) {
+      const trees = data.tree_breakdown || [];
+      if (trees.length === 0) {
+        treesBreakdownEl.innerHTML = `<div style="color:rgba(255,255,255,0.7); font-style:italic;">Chưa có dữ liệu thu hoạch trong kỳ</div>`;
+      } else {
+        treesBreakdownEl.innerHTML = trees.slice(0, 5).map(t => `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🌲 ${esc(t.tree_code)} <small style="opacity:0.8;">(${esc(t.plant_type)})</small></span>
+            <strong style="color:#ffffff;">${formatVND(t.revenue)}</strong>
+          </div>
+        `).join('');
       }
     }
-  });
 
-  if (totalValuationEl) totalValuationEl.textContent = formatVND(totalValuation);
-  if (skuCountEl) skuCountEl.innerHTML = `Tổng số: <strong>${supplies.length}</strong> mặt hàng lưu kho`;
-  if (totalConsumedEl) totalConsumedEl.textContent = formatVND(totalConsumed);
-  if (usageCountEl) usageCountEl.innerHTML = `Đã xuất tiêu hao lũy kế`;
-  
-  if (lowStockCountEl) {
-    if (lowStockCount > 0) {
-      lowStockCountEl.innerHTML = `${lowStockCount} mặt hàng <i data-lucide="alert-triangle" class="lucide-xs" style="color:#ea580c;"></i>`;
-      if (lowStockDescEl) lowStockDescEl.innerHTML = outOfStockCount > 0 ? `Có <strong>${outOfStockCount}</strong> mặt hàng đã hết kho` : `Có <strong>${lowStockCount}</strong> mặt hàng sắp hết`;
-    } else {
-      lowStockCountEl.innerHTML = `0 mặt hàng <i data-lucide="check-circle-2" class="lucide-xs" style="color:#10b981;"></i>`;
-      if (lowStockDescEl) lowStockDescEl.innerHTML = `Đầy đủ tồn kho an toàn`;
-    }
+  } catch (err) {
+    console.warn('Lỗi cập nhật ERP Cockpit:', err);
   }
-
-  if (phiActiveEl) {
-    phiActiveEl.innerHTML = `100% Đạt Chuẩn`;
-  }
-
-  // Cập nhật Khối Lợi Nhuận Nông Vụ (So sánh Doanh thu Thu hoạch & Chi phí Vật tư)
-  updateSuppliesProfitCockpit(totalConsumed);
 
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
   }
 }
-
-export async function updateSuppliesProfitCockpit(totalConsumed = 0) {
-  const netProfitEl = document.getElementById('erp-kpi-net-profit');
-  const harvestRevEl = document.getElementById('erp-kpi-harvest-rev');
-  const investCostEl = document.getElementById('erp-kpi-invest-cost');
-  const roiBadgeEl = document.getElementById('erp-kpi-roi-badge');
-  if (!netProfitEl) return;
-
-  try {
-    const data = await api('/supplies/profit-overview');
-    const totalRev = parseFloat(data.total_revenue) || 0;
-    const spent = (parseFloat(data.total_spent) || 0) || totalConsumed;
-    const netProfit = totalRev - spent;
-    const roi = spent > 0 ? Math.round(((netProfit / spent) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0);
-
-    netProfitEl.textContent = `${netProfit >= 0 ? '+' : ''}${formatVND(netProfit)}`;
-    netProfitEl.style.color = netProfit >= 0 ? '#ffffff' : '#fca5a5';
-
-    if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
-    if (investCostEl) investCostEl.textContent = formatVND(spent);
-    if (roiBadgeEl) {
-      roiBadgeEl.textContent = `${roi >= 0 ? '+' : ''}${roi}%`;
-      roiBadgeEl.style.color = roi >= 0 ? '#fef08a' : '#fca5a5';
-    }
-  } catch (err) {
-    // Client-side fallback if offline
-    let totalRev = 0;
-    if (window._logsCache && Array.isArray(window._logsCache)) {
-      window._logsCache.forEach(l => {
-        if (l.log_type === 'Thu hoạch' && l.details) {
-          const rev = parseFloat(l.details.total_revenue) || parseFloat(l.details.price_per_tree) || 0;
-          totalRev += rev;
-        }
-      });
-    }
-    const netProfit = totalRev - totalConsumed;
-    const roi = totalConsumed > 0 ? Math.round(((netProfit / totalConsumed) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0);
-    netProfitEl.textContent = `${netProfit >= 0 ? '+' : ''}${formatVND(netProfit)}`;
-    if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
-    if (investCostEl) investCostEl.textContent = formatVND(totalConsumed);
-    if (roiBadgeEl) roiBadgeEl.textContent = `${roi >= 0 ? '+' : ''}${roi}%`;
-  }
-}
 window.updateSuppliesProfitCockpit = updateSuppliesProfitCockpit;
+window.renderSuppliesCockpitKpi = updateSuppliesProfitCockpit;
 
 export function renderSuppliesTable(supplies) {
   const tbody = document.getElementById('supplies-table-body');
@@ -626,6 +656,16 @@ export function openSupplyModal(id = null) {
   const title = document.getElementById('modal-supply-title');
   if (!modal) return;
 
+  // Load danh sách trang trại vào dropdown chọn trang trại sở hữu
+  const farmSelect = document.getElementById('sp-farm-id');
+  if (farmSelect) {
+    const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
+    farmSelect.innerHTML = farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+    if (currentCockpitFarmId && currentCockpitFarmId !== 'all') {
+      farmSelect.value = currentCockpitFarmId;
+    }
+  }
+
   document.getElementById('sp-id').value = id || '';
   document.getElementById('sp-category').value = 'Bón phân';
   document.getElementById('sp-name').value = '';
@@ -643,6 +683,9 @@ export function openSupplyModal(id = null) {
     const sp = cachedSupplies.find(item => item.id == id);
     if (sp) {
       if (title) title.innerHTML = '<i data-lucide="edit-3" class="lucide-sm" style="color:var(--green)"></i> Chỉnh sửa vật tư';
+      if (farmSelect && sp.farm_id) {
+        farmSelect.value = sp.farm_id;
+      }
       document.getElementById('sp-category').value = sp.category;
       document.getElementById('sp-name').value = sp.name;
       document.getElementById('sp-package-qty').value = sp.package_qty || 1;
@@ -685,6 +728,7 @@ export async function saveSupply() {
   autoCalculateSupplyUnits();
 
   const id = document.getElementById('sp-id').value;
+  const farm_id = document.getElementById('sp-farm-id')?.value || null;
   const category = document.getElementById('sp-category').value;
   const name = document.getElementById('sp-name').value.trim();
   const package_qty = parseFloat(document.getElementById('sp-package-qty').value) || 1;
@@ -726,6 +770,7 @@ export async function saveSupply() {
   if (btn) btn.disabled = true;
 
   const payload = {
+    farm_id: farm_id ? parseInt(farm_id) : null,
     category,
     name,
     package_qty,
@@ -796,6 +841,18 @@ export function openRestockModal(id) {
   const sp = cachedSupplies.find(item => item.id == id);
   if (!sp) return;
 
+  // Load danh sách trang trại vào dropdown chọn trang trại tiếp nhận lô hàng
+  const farmSelect = document.getElementById('restock-farm-id');
+  if (farmSelect) {
+    const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
+    farmSelect.innerHTML = farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+    if (sp.farm_id) {
+      farmSelect.value = sp.farm_id;
+    } else if (currentCockpitFarmId && currentCockpitFarmId !== 'all') {
+      farmSelect.value = currentCockpitFarmId;
+    }
+  }
+
   document.getElementById('restock-supply-id').value = id;
   document.getElementById('restock-supply-name').textContent = sp.name;
   document.getElementById('restock-supply-spec').textContent = `Hạng mục: ${sp.category} • Quy cách: ${sp.package_qty} ${sp.package_unit || sp.unit}`;
@@ -840,6 +897,7 @@ export function calculateRestockPreview() {
 
 export async function submitRestockSupply() {
   const id = document.getElementById('restock-supply-id')?.value;
+  const farm_id = document.getElementById('restock-farm-id')?.value;
   const addedQty = parseFloat(document.getElementById('restock-added-qty')?.value);
   const newPackagePrice = document.getElementById('restock-package-price')?.value;
   const batchNo = document.getElementById('restock-batch-no')?.value.trim();
@@ -858,6 +916,7 @@ export async function submitRestockSupply() {
       method: 'POST',
       body: JSON.stringify({
         added_qty: addedQty,
+        farm_id: farm_id ? parseInt(farm_id) : null,
         new_package_price: newPackagePrice ? parseFloat(newPackagePrice) : null,
         batch_no: batchNo || null,
         note: note || null
