@@ -955,20 +955,23 @@ router.get('/profit-overview', auth, async (req, res) => {
     let sIdx = 1;
 
     if (req.user.role === 'admin' && user_id && user_id !== 'all') {
-      stockQuery += ` AND s.user_id = $${sIdx}`;
+      stockQuery += ` AND (s.user_id = $${sIdx} OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx}))`;
       stockParams.push(parseInt(user_id));
       sIdx++;
     } else if (req.user.role !== 'admin') {
       stockQuery += ` AND (
         s.user_id = $${sIdx}
+        OR s.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${sIdx}))
+        OR s.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx}))
         OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx} OR id = (SELECT farm_id FROM users WHERE id = $${sIdx}))
+        OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx} OR id = (SELECT farm_id FROM users WHERE id = $${sIdx})))
       )`;
       stockParams.push(req.user.id);
       sIdx++;
     }
 
     if (filterFarmId) {
-      stockQuery += ` AND (s.farm_id = $${sIdx} OR s.farm_id IS NULL)`;
+      stockQuery += ` AND (s.farm_id = $${sIdx} OR s.user_id = (SELECT user_id FROM farms WHERE id = $${sIdx}) OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $${sIdx}) OR s.farm_id IS NULL)`;
       stockParams.push(filterFarmId);
       sIdx++;
     }
@@ -1008,17 +1011,23 @@ router.get('/profit-overview', auth, async (req, res) => {
     let uIdx = 1;
 
     if (req.user.role === 'admin' && user_id && user_id !== 'all') {
-      usageQuery += ` AND su.user_id = $${uIdx}`;
+      usageQuery += ` AND (su.user_id = $${uIdx} OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx}))`;
       usageParams.push(parseInt(user_id));
       uIdx++;
     } else if (req.user.role !== 'admin') {
-      usageQuery += ` AND su.user_id = $${uIdx}`;
+      usageQuery += ` AND (
+        su.user_id = $${uIdx}
+        OR su.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
+        OR su.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx}))
+        OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
+        OR su.plant_id IN (SELECT id FROM plants WHERE user_id = $${uIdx} OR farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx})))
+      )`;
       usageParams.push(req.user.id);
       uIdx++;
     }
 
     if (filterFarmId) {
-      usageQuery += ` AND (su.farm_id = $${uIdx} OR su.farm_id IS NULL)`;
+      usageQuery += ` AND (su.farm_id = $${uIdx} OR su.plant_id IN (SELECT id FROM plants WHERE farm_id = $${uIdx}) OR su.farm_id IS NULL)`;
       usageParams.push(filterFarmId);
       uIdx++;
     }
@@ -1053,17 +1062,22 @@ router.get('/profit-overview', auth, async (req, res) => {
     // ── 3. KHỐI 3: DOANH THU THU HOẠCH THEO TỪNG CÂY TRỒNG (Phân bổ theo trang trại & năm) ──
     let harvestQuery = `
       SELECT pl.id, pl.details, pl.log_date, pl.plant_id, pl.batch_code,
-             p.tree_code, p.plant_type, p.farm_id
+             p.tree_code, p.plant_type, COALESCE(p.farm_id, (SELECT farm_id FROM users WHERE id = pl.created_by)) as farm_id
       FROM plant_logs pl
       LEFT JOIN plants p ON pl.plant_id = p.id
-      WHERE (pl.log_type = 'Thu hoạch' OR pl.details::text ILIKE '%fruit_count%' OR pl.details::text ILIKE '%price_per_tree%')
+      WHERE (
+        pl.log_type = 'Thu hoạch' 
+        OR pl.details::text ILIKE '%fruit_count%' 
+        OR pl.details::text ILIKE '%price_per_tree%'
+        OR pl.details::text ILIKE '%total_revenue%'
+      )
         AND (pl.is_deleted IS NOT TRUE)
     `;
     const harvestParams = [];
     let hIdx = 1;
 
     if (req.user.role === 'admin' && user_id && user_id !== 'all') {
-      harvestQuery += ` AND (pl.created_by = $${hIdx} OR p.user_id = $${hIdx})`;
+      harvestQuery += ` AND (pl.created_by = $${hIdx} OR p.user_id = $${hIdx} OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))`;
       harvestParams.push(parseInt(user_id));
       hIdx++;
     } else if (req.user.role !== 'admin') {
@@ -1071,13 +1085,15 @@ router.get('/profit-overview', auth, async (req, res) => {
         pl.created_by = $${hIdx} 
         OR p.user_id = $${hIdx}
         OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx} OR id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
+        OR pl.created_by IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))
+        OR pl.created_by IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
       )`;
       harvestParams.push(req.user.id);
       hIdx++;
     }
 
     if (filterFarmId) {
-      harvestQuery += ` AND (p.farm_id = $${hIdx} OR pl.plant_id IN (SELECT id FROM plants WHERE farm_id = $${hIdx}))`;
+      harvestQuery += ` AND (p.farm_id = $${hIdx} OR pl.plant_id IN (SELECT id FROM plants WHERE farm_id = $${hIdx}) OR pl.created_by IN (SELECT user_id FROM farms WHERE id = $${hIdx}) OR pl.created_by IN (SELECT id FROM users WHERE farm_id = $${hIdx}))`;
       harvestParams.push(filterFarmId);
       hIdx++;
     }

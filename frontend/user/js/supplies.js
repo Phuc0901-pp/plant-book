@@ -17,15 +17,36 @@ let cachedSupplies = [];
 let currentCockpitFarmId = 'all';
 let currentCockpitYear = 'all';
 
-export function populateCockpitFarms() {
+export async function populateCockpitFarms() {
   const farmSelect = document.getElementById('supplies-cockpit-farm');
+  const yearSelect = document.getElementById('supplies-cockpit-year');
+  if (yearSelect && yearSelect.value) {
+    currentCockpitYear = yearSelect.value;
+  }
   if (!farmSelect) return;
-  const farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
-  if (farms.length > 0 && farmSelect.options.length <= 1) {
+
+  let farms = (typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : window._allFarmsCache) || [];
+  if (farms.length === 0) {
+    try {
+      farms = await api('/farms');
+      window._allFarmsCache = farms;
+    } catch (_) {}
+  }
+
+  if (farms && farms.length > 0 && farmSelect.options.length <= 1) {
     const curVal = farmSelect.value || currentCockpitFarmId;
     farmSelect.innerHTML = `<option value="all">Tất cả trang trại</option>` +
       farms.map(f => `<option value="${f.id}" ${String(f.id) === String(curVal) ? 'selected' : ''}>${esc(f.name)}</option>`).join('');
+    if (curVal && curVal !== 'all') {
+      farmSelect.value = curVal;
+    }
   }
+
+  // Cập nhật scope text
+  const farmName = farmSelect && farmSelect.selectedIndex > 0 ? farmSelect.options[farmSelect.selectedIndex].text : 'Tất cả trang trại';
+  const yearText = yearSelect && yearSelect.value !== 'all' ? `Năm ${yearSelect.value}` : 'Tất cả các năm';
+  const scopeStock = document.getElementById('erp-scope-text-stock');
+  if (scopeStock) scopeStock.textContent = `Phân bổ: ${farmName} · ${yearText}`;
 }
 window.populateCockpitFarms = populateCockpitFarms;
 
@@ -273,7 +294,7 @@ export async function loadSupplies() {
   if (!tbody) return;
 
   // Tự động load danh sách farm vào select bộ lọc nếu chưa có
-  populateCockpitFarms();
+  await populateCockpitFarms();
 
   try {
     const params = new URLSearchParams();
@@ -439,7 +460,7 @@ export async function updateSuppliesProfitCockpit() {
       } else {
         treesBreakdownEl.innerHTML = trees.slice(0, 5).map(t => `
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span>🌲 ${esc(t.tree_code)} <small style="opacity:0.8;">(${esc(t.plant_type)})</small></span>
+            <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-xs" style="color:#a7f3d0;"></i> ${esc(t.tree_code)} <small style="opacity:0.8;">(${esc(t.plant_type)})</small></span>
             <strong style="color:#ffffff;">${formatVND(t.revenue)}</strong>
           </div>
         `).join('');
