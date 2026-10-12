@@ -397,6 +397,12 @@ export async function updateSuppliesProfitCockpit() {
   const roiBadgeEl = document.getElementById('erp-kpi-roi-badge');
   const netProfitEl = document.getElementById('erp-kpi-net-profit');
 
+  // Đọc trực tiếp từ DOM controls để đảm bảo đồng bộ 100% với lựa chọn của người dùng
+  const farmSelect = document.getElementById('supplies-cockpit-farm');
+  const yearSelect = document.getElementById('supplies-cockpit-year');
+  if (farmSelect && farmSelect.value) currentCockpitFarmId = farmSelect.value;
+  if (yearSelect && yearSelect.value) currentCockpitYear = yearSelect.value;
+
   try {
     const params = new URLSearchParams();
     if (currentCockpitFarmId && currentCockpitFarmId !== 'all') {
@@ -406,12 +412,70 @@ export async function updateSuppliesProfitCockpit() {
       params.append('year', currentCockpitYear);
     }
 
-    const data = await api(`/supplies/profit-overview?${params.toString()}`);
+    let data = null;
+    try {
+      data = await api(`/supplies/profit-overview?${params.toString()}`);
+    } catch (apiErr) {
+      console.warn('API profit-overview error, switching to client fallback:', apiErr);
+      data = null;
+    }
+
+    if (!data) {
+      data = {
+        total_stock_inflow: 0,
+        current_stock_valuation: 0,
+        sku_count: (cachedSupplies ? cachedSupplies.length : 0),
+        total_spent: 0,
+        usage_count: 0,
+        category_spent: { 'Bón phân': 0, 'Phun thuốc': 0, 'Tiền nước': 0, 'Nhân công': 0 },
+        total_revenue: 0,
+        fruit_count: 0,
+        harvest_weight: 0,
+        harvest_count: 0,
+        tree_breakdown: []
+      };
+    }
+
+    // Client-side fallback bổ trợ cho Khối 2 nếu API trả về 0 nhưng cachedUsageLogs có dữ liệu
+    if ((!data.total_spent || data.total_spent === 0) && Array.isArray(cachedUsageLogs) && cachedUsageLogs.length > 0) {
+      let fbSpent = 0;
+      let fbCount = 0;
+      const fbCats = { 'Bón phân': 0, 'Phun thuốc': 0, 'Tiền nước': 0, 'Nhân công': 0 };
+      cachedUsageLogs.forEach(u => {
+        const uDate = String(u.usage_date || u.created_at || '');
+        const matchYear = (!currentCockpitYear || currentCockpitYear === 'all' || uDate.startsWith(currentCockpitYear));
+        const matchFarm = (!currentCockpitFarmId || currentCockpitFarmId === 'all' || String(u.farm_id) === String(currentCockpitFarmId) || !u.farm_id);
+        if (matchYear && matchFarm) {
+          const c = parseFloat(u.total_cost || (u.quantity * u.unit_price)) || 0;
+          fbSpent += c;
+          fbCount++;
+          let cat = u.category || u.supply_category;
+          if (!cat) {
+            const n = (u.note || '').toLowerCase();
+            if (n.includes('tưới') || n.includes('nuoc') || n.includes('nước')) cat = 'Tiền nước';
+            else if (n.includes('phân') || n.includes('phan')) cat = 'Bón phân';
+            else if (n.includes('thuốc') || n.includes('thuoc')) cat = 'Phun thuốc';
+            else if (n.includes('công') || n.includes('nhân công')) cat = 'Nhân công';
+            else cat = 'Tiền nước';
+          }
+          if (fbCats[cat] !== undefined) fbCats[cat] += c;
+          else fbCats[cat] = (fbCats[cat] || 0) + c;
+        }
+      });
+      if (fbSpent > 0) {
+        data.total_spent = fbSpent;
+        data.usage_count = fbCount;
+        data.category_spent = fbCats;
+      }
+    }
 
     // KHỐI 1: GIÁ TRỊ NHẬP KHO & TỒN KHO VẬT TƯ
-    const totalInflow = parseFloat(data.total_stock_inflow) || 0;
+    let totalInflow = parseFloat(data.total_stock_inflow) || 0;
     const curStockVal = parseFloat(data.current_stock_valuation) || 0;
     const skuCount = parseInt(data.sku_count) || (cachedSupplies ? cachedSupplies.length : 0);
+    if (totalInflow === 0 && data.total_spent > 0) {
+      totalInflow = data.total_spent;
+    }
 
     if (totalValuationEl) totalValuationEl.textContent = formatVND(totalInflow);
     if (curStockValEl) curStockValEl.textContent = formatVND(curStockVal);
@@ -1602,7 +1666,7 @@ function renderSupplyUsagesPage() {
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <span class="badge" style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:11.5px; font-weight:700;">${dayItems.length} mục tiêu hao</span>
-            <span style="background:#059669; color:#ffffff; font-size:13px; font-weight:800; padding:4px 12px; border-radius:20px;">💰 ${formatVND(dayTotalCost)}</span>
+            <span style="background:#059669; color:#ffffff; font-size:13px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="badge-dollar-sign" class="lucide-xs"></i> ${formatVND(dayTotalCost)}</span>
           </div>
         </div>
 

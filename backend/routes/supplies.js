@@ -949,7 +949,7 @@ router.get('/profit-overview', auth, async (req, res) => {
              COALESCE(SUM(su.quantity), 0) as total_used_qty
       FROM supplies s
       LEFT JOIN supply_usages su ON su.supply_id = s.id
-      WHERE s.category NOT IN ('Tiền nước', 'Nhân công')
+      WHERE 1=1
     `;
     const stockParams = [];
     let sIdx = 1;
@@ -977,9 +977,9 @@ router.get('/profit-overview', auth, async (req, res) => {
     }
 
     if (filterYear) {
-      stockQuery += ` AND EXTRACT(YEAR FROM s.created_at) = $${sIdx}`;
-      stockParams.push(filterYear);
-      sIdx++;
+      stockQuery += ` AND (EXTRACT(YEAR FROM s.created_at::timestamp) = $${sIdx} OR s.created_at::text LIKE $${sIdx+1} || '%' OR s.created_at IS NULL OR EXISTS (SELECT 1 FROM supply_usages su2 WHERE su2.supply_id = s.id AND (EXTRACT(YEAR FROM su2.usage_date::timestamp) = $${sIdx} OR su2.usage_date::text LIKE $${sIdx+1} || '%')))`;
+      stockParams.push(filterYear, String(filterYear));
+      sIdx += 2;
     }
 
     stockQuery += ` GROUP BY s.id`;
@@ -993,18 +993,24 @@ router.get('/profit-overview', auth, async (req, res) => {
       const uPrice = parseFloat(s.unit_price) || 0;
       const curStock = parseFloat(s.stock_quantity) || 0;
       const usedCost = parseFloat(s.total_used_cost) || 0;
+      const pkgQty = parseFloat(s.package_qty) || 1;
+      const pkgPrice = parseFloat(s.package_price) || (uPrice * pkgQty);
       const curVal = curStock * uPrice;
       currentStockValuation += curVal;
-      // Tổng vốn hàng nhập vào = Giá trị tồn hiện tại + Giá trị đã tiêu hao
-      totalStockInflowValuation += (curVal + usedCost);
+      // Tổng vốn hàng nhập vào = Giá trị tồn hiện tại + Giá trị đã tiêu hao (hoặc giá trị quy cách gói nhập)
+      const calculatedInflow = Math.max(curVal + usedCost, pkgPrice);
+      totalStockInflowValuation += calculatedInflow;
     });
 
     // ── 2. KHỐI 2: TIÊU HAO VẬT TƯ LŨY KẾ (Dung tích & giá trị đã chiết sử dụng) ──
     let usageQuery = `
       SELECT su.id, su.supply_id, su.farm_id, su.plant_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
-             s.name as supply_name, s.category as supply_category, s.unit as supply_unit
+             COALESCE(s.name, 'Vật tư') as supply_name,
+             COALESCE(s.category, 'Khác') as supply_category,
+             COALESCE(s.unit, 'đơn vị') as supply_unit
       FROM supply_usages su
-      JOIN supplies s ON su.supply_id = s.id
+      LEFT JOIN supplies s ON su.supply_id = s.id
+      LEFT JOIN plants p ON su.plant_id = p.id
       WHERE 1=1
     `;
     const usageParams = [];
@@ -1020,22 +1026,24 @@ router.get('/profit-overview', auth, async (req, res) => {
         OR su.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
         OR su.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx}))
         OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
-        OR su.plant_id IN (SELECT id FROM plants WHERE user_id = $${uIdx} OR farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx})))
+        OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
+        OR p.created_by = $${uIdx}
+        OR su.plant_id IN (SELECT id FROM plants WHERE created_by = $${uIdx} OR farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx})))
       )`;
       usageParams.push(req.user.id);
       uIdx++;
     }
 
     if (filterFarmId) {
-      usageQuery += ` AND (su.farm_id = $${uIdx} OR su.plant_id IN (SELECT id FROM plants WHERE farm_id = $${uIdx}) OR su.farm_id IS NULL)`;
+      usageQuery += ` AND (su.farm_id = $${uIdx} OR p.farm_id = $${uIdx} OR su.plant_id IN (SELECT id FROM plants WHERE farm_id = $${uIdx}) OR su.farm_id IS NULL)`;
       usageParams.push(filterFarmId);
       uIdx++;
     }
 
     if (filterYear) {
-      usageQuery += ` AND EXTRACT(YEAR FROM su.usage_date) = $${uIdx}`;
-      usageParams.push(filterYear);
-      uIdx++;
+      usageQuery += ` AND (EXTRACT(YEAR FROM su.usage_date::timestamp) = $${uIdx} OR su.usage_date::text LIKE $${uIdx+1} || '%')`;
+      usageParams.push(filterYear, String(filterYear));
+      uIdx += 2;
     }
 
     const usageRes = await pool.query(usageQuery, usageParams);
@@ -1051,7 +1059,15 @@ router.get('/profit-overview', auth, async (req, res) => {
     usageRes.rows.forEach(u => {
       const cost = parseFloat(u.total_cost) || 0;
       totalSpent += cost;
-      const cat = u.supply_category || 'Khác';
+      let cat = u.supply_category;
+      if (!cat || cat === 'Khác' || cat === 'Vật tư khác') {
+        const n = (u.note || '').toLowerCase();
+        if (n.includes('tưới') || n.includes('nuoc') || n.includes('nước')) cat = 'Tiền nước';
+        else if (n.includes('phân') || n.includes('phan')) cat = 'Bón phân';
+        else if (n.includes('thuốc') || n.includes('thuoc') || n.includes('sâu') || n.includes('bệnh')) cat = 'Phun thuốc';
+        else if (n.includes('công') || n.includes('cong') || n.includes('nhân công')) cat = 'Nhân công';
+        else cat = 'Khác';
+      }
       if (categorySpent[cat] !== undefined) {
         categorySpent[cat] += cost;
       } else {
@@ -1061,7 +1077,7 @@ router.get('/profit-overview', auth, async (req, res) => {
 
     // ── 3. KHỐI 3: DOANH THU THU HOẠCH THEO TỪNG CÂY TRỒNG (Phân bổ theo trang trại & năm) ──
     let harvestQuery = `
-      SELECT pl.id, pl.details, pl.log_date, pl.plant_id, pl.batch_code,
+      SELECT pl.id, pl.cost, pl.details, pl.log_date, pl.log_type, pl.plant_id, pl.batch_code,
              p.tree_code, p.plant_type, COALESCE(p.farm_id, (SELECT farm_id FROM users WHERE id = pl.created_by)) as farm_id
       FROM plant_logs pl
       LEFT JOIN plants p ON pl.plant_id = p.id
@@ -1070,6 +1086,7 @@ router.get('/profit-overview', auth, async (req, res) => {
         OR pl.details::text ILIKE '%fruit_count%' 
         OR pl.details::text ILIKE '%price_per_tree%'
         OR pl.details::text ILIKE '%total_revenue%'
+        OR pl.details::text ILIKE '%harvest%'
       )
         AND (pl.is_deleted IS NOT TRUE)
     `;
@@ -1077,13 +1094,13 @@ router.get('/profit-overview', auth, async (req, res) => {
     let hIdx = 1;
 
     if (req.user.role === 'admin' && user_id && user_id !== 'all') {
-      harvestQuery += ` AND (pl.created_by = $${hIdx} OR p.user_id = $${hIdx} OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))`;
+      harvestQuery += ` AND (pl.created_by = $${hIdx} OR p.created_by = $${hIdx} OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))`;
       harvestParams.push(parseInt(user_id));
       hIdx++;
     } else if (req.user.role !== 'admin') {
       harvestQuery += ` AND (
         pl.created_by = $${hIdx} 
-        OR p.user_id = $${hIdx}
+        OR p.created_by = $${hIdx}
         OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx} OR id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
         OR pl.created_by IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))
         OR pl.created_by IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
@@ -1099,9 +1116,9 @@ router.get('/profit-overview', auth, async (req, res) => {
     }
 
     if (filterYear) {
-      harvestQuery += ` AND EXTRACT(YEAR FROM pl.log_date) = $${hIdx}`;
-      harvestParams.push(filterYear);
-      hIdx++;
+      harvestQuery += ` AND (EXTRACT(YEAR FROM pl.log_date::timestamp) = $${hIdx} OR pl.log_date::text LIKE $${hIdx+1} || '%')`;
+      harvestParams.push(filterYear, String(filterYear));
+      hIdx += 2;
     }
 
     const harvestRes = await pool.query(harvestQuery, harvestParams);
@@ -1119,35 +1136,34 @@ router.get('/profit-overview', auth, async (req, res) => {
       if (typeof d === 'string') {
         try { d = JSON.parse(d); } catch (_) { d = {}; }
       }
-      if (d) {
-        const rev = parseFloat(d.total_revenue) || (parseFloat(d.price_per_tree) || 0);
-        const fruits = parseFloat(d.fruit_count) || 0;
-        const amt = parseFloat(d.amount) || parseFloat(d.yield_kg) || 0;
+      d = d || {};
+      const rev = parseFloat(d.total_revenue) || parseFloat(d.price_per_tree) || parseFloat(d.revenue) || parseFloat(row.cost) || 0;
+      const fruits = parseFloat(d.fruit_count) || 0;
+      const amt = parseFloat(d.amount) || parseFloat(d.yield_kg) || parseFloat(d.quantity) || 0;
 
-        totalHarvestRevenue += rev;
-        totalFruitCount += fruits;
-        totalHarvestWeight += amt;
+      totalHarvestRevenue += rev;
+      totalFruitCount += fruits;
+      totalHarvestWeight += amt;
 
-        const pId = row.plant_id || 0;
-        const tCode = row.tree_code || (pId ? `#${pId}` : 'Toàn vườn');
-        const pType = row.plant_type || 'Cây trồng';
+      const pId = row.plant_id || 0;
+      const tCode = row.tree_code || (pId ? `#${pId}` : 'Toàn vườn');
+      const pType = row.plant_type || 'Cây trồng';
 
-        if (!treeBreakdownMap[pId]) {
-          treeBreakdownMap[pId] = {
-            plant_id: pId,
-            tree_code: tCode,
-            plant_type: pType,
-            revenue: 0,
-            fruits: 0,
-            weight: 0,
-            harvest_times: 0
-          };
-        }
-        treeBreakdownMap[pId].revenue += rev;
-        treeBreakdownMap[pId].fruits += fruits;
-        treeBreakdownMap[pId].weight += amt;
-        treeBreakdownMap[pId].harvest_times += 1;
+      if (!treeBreakdownMap[pId]) {
+        treeBreakdownMap[pId] = {
+          plant_id: pId,
+          tree_code: tCode,
+          plant_type: pType,
+          revenue: 0,
+          fruits: 0,
+          weight: 0,
+          harvest_times: 0
+        };
       }
+      treeBreakdownMap[pId].revenue += rev;
+      treeBreakdownMap[pId].fruits += fruits;
+      treeBreakdownMap[pId].weight += amt;
+      treeBreakdownMap[pId].harvest_times += 1;
     });
 
     const treeBreakdown = Object.values(treeBreakdownMap).sort((a, b) => b.revenue - a.revenue);
