@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /**
  * ══════════════════════════════════════════════════════════════════════
  * PLANT BOOK AGTECH — ENTERPRISE FRONTEND SECURITY GUARD & ANTI-INSPECT
@@ -15,15 +15,18 @@
 (function (global) {
   'use strict';
 
+  // Tự động vô hiệu hóa chặn chuột phải & F12 khi đang ở Admin portal để lập trình viên/quản trị viên kiểm tra lỗi
+  const isAdminPortal = typeof location !== 'undefined' && (location.pathname.startsWith('/admin') || location.pathname.includes('admin'));
+
   // Configuration settings
   const SECURITY_CONFIG = {
-    enabled: true,
-    blockContextMenu: true,
-    blockShortcuts: true,
-    blockTextDrag: true,
-    antiDebugging: true,
-    showWarningOverlay: true,
-    sanitizeConsole: true,
+    enabled: !isAdminPortal,
+    blockContextMenu: !isAdminPortal,
+    blockShortcuts: !isAdminPortal,
+    blockTextDrag: !isAdminPortal,
+    antiDebugging: false, // Tắt vòng lặp debugger trap để F12 hoạt động bình thường
+    showWarningOverlay: false, // Tắt overlay cảnh báo khi F12
+    sanitizeConsole: !isAdminPortal,
     enableWatermark: false // Enabled when user is authenticated
   };
 

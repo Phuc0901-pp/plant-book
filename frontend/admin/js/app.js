@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — app.js (Core Application Router & Globals)
    ════════════════════════════════════════════════════════ */
@@ -53,7 +53,22 @@ async function api(path, opts = {}) {
       ...(opts.headers || {})
     }
   });
-  const data = await res.json();
+let data;
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    data = await res.json();
+  } else {
+    const textData = await res.text();
+    try {
+      data = JSON.parse(textData);
+    } catch (_) {
+      if (!res.ok) {
+        if (res.status === 401 && typeof logout === 'function') logout();
+        throw new Error(`Máy chủ phản hồi lỗi (${res.status}). Vui lòng thử lại.`);
+      }
+      return textData;
+    }
+  }
   if (!res.ok) {
     if (res.status === 401) {
       if (typeof logout === 'function') logout();

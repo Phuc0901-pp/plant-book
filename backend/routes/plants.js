@@ -1123,7 +1123,14 @@ router.put('/:id', auth, admin, async (req, res) => {
     const oldPlant = existingRes.rows[0];
 
     const { plant_type, plant_variety, planting_date, plant_age, health_status, location, data, is_public, schema_id, farm_id, latitude, longitude, tree_code } = req.body;
-    const slug = tree_code ? `${req.user.id}_${farm_id || 0}_${tree_code}` : generateSlug(plant_type);
+    
+    // Nếu cây đã có public_slug thì giữ nguyên để tránh xung đột UNIQUE constraint
+    // Chỉ tạo mới slug nếu cây chưa có slug
+    const finalSlug = oldPlant.public_slug || (tree_code ? `${req.user.id}_${farm_id || 0}_${tree_code}` : generateSlug(plant_type));
+    const parsedFarmId = farm_id !== undefined && farm_id !== null && farm_id !== '' ? parseInt(farm_id, 10) : null;
+    const parsedSchemaId = schema_id !== undefined && schema_id !== null && schema_id !== '' ? parseInt(schema_id, 10) : null;
+    const parsedLat = (latitude !== undefined && latitude !== null && latitude !== '') ? parseFloat(latitude) : null;
+    const parsedLng = (longitude !== undefined && longitude !== null && longitude !== '') ? parseFloat(longitude) : null;
 
     const result = await pool.query(
       `UPDATE plants 
@@ -1132,11 +1139,11 @@ router.put('/:id', auth, admin, async (req, res) => {
            public_slug=$14, updated_at=NOW()
        WHERE id=$15 RETURNING *`,
       [plant_type, plant_variety, planting_date || null, plant_age, health_status, location,
-       JSON.stringify(data || {}), is_public !== false, schema_id || null, farm_id || null,
-       latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
-       longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
+       JSON.stringify(data || {}), is_public !== false, parsedSchemaId, parsedFarmId,
+       (parsedLat !== null && !isNaN(parsedLat)) ? parsedLat : null,
+       (parsedLng !== null && !isNaN(parsedLng)) ? parsedLng : null,
        tree_code || null,
-       slug,
+       finalSlug,
        plantId]
     );
 
@@ -1146,27 +1153,36 @@ router.put('/:id', auth, admin, async (req, res) => {
     updatedPlant.public_url = publicUrl;
 
     // Ghi nhận Audit Log
-    await logAudit({
-      actionType: 'UPDATE_PLANT',
-      tableName: 'plants',
-      recordId: plantId,
-      userId: req.user.id,
-      oldData: oldPlant,
-      newData: updatedPlant,
-      ipAddress: req.ip,
-      notes: `Cập nhật thông tin cây #${updatedPlant.tree_code || plantId}`
-    });
+    try {
+      await logAudit({
+        actionType: 'UPDATE_PLANT',
+        tableName: 'plants',
+        recordId: plantId,
+        userId: req.user.id,
+        oldData: oldPlant,
+        newData: updatedPlant,
+        ipAddress: req.ip,
+        notes: `Cập nhật thông tin cây #${updatedPlant.tree_code || plantId}`
+      });
+    } catch(auditErr) {
+      console.warn('Audit log warning:', auditErr.message);
+    }
 
     // Invalidate Cache & Broadcast WebSocket event
-    await invalidateAndBroadcast('plants_updated', {
-      plant_id: updatedPlant.id,
-      farm_id: updatedPlant.farm_id,
-      action: 'update'
-    }, ['farms_', 'plants_']);
+    try {
+      await invalidateAndBroadcast('plants_updated', {
+        plant_id: updatedPlant.id,
+        farm_id: updatedPlant.farm_id,
+        action: 'update'
+      }, ['farms_', 'plants_']);
+    } catch(wsErr) {
+      console.warn('Broadcast warning:', wsErr.message);
+    }
 
     res.json(updatedPlant);
   } catch (err) {
-    res.status(500).json({ error: 'Lỗi server.' });
+    console.error('Error updating plant:', err);
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });
 

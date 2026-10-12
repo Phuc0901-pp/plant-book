@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 // ── Plants ─────────────────────────────────────────────────
 
 async function loadPlants() {
@@ -321,6 +321,50 @@ function getCurrentDeviceGpsForPlant() {
 }
 window.getCurrentDeviceGpsForPlant = getCurrentDeviceGpsForPlant;
 
+function syncGpsInputsToLocation() {
+  const latVal = (document.getElementById('f-latitude')?.value || '').trim();
+  const lngVal = (document.getElementById('f-longitude')?.value || '').trim();
+  const locEl = document.getElementById('f-location');
+  if (locEl && latVal && lngVal && !isNaN(parseFloat(latVal)) && !isNaN(parseFloat(lngVal))) {
+    locEl.value = `GPS: ${parseFloat(latVal).toFixed(6)}, ${parseFloat(lngVal).toFixed(6)}`;
+  }
+}
+window.syncGpsInputsToLocation = syncGpsInputsToLocation;
+
+function syncLocationInputToGps() {
+  const locVal = (document.getElementById('f-location')?.value || '').trim();
+  if (!locVal) return;
+  const m = locVal.match(/(-?\d+\.\d+)\s*[,;\s]\s*(-?\d+\.\d+)/);
+  if (m) {
+    let lat = parseFloat(m[1]);
+    let lng = parseFloat(m[2]);
+    if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
+      const tmp = lat; lat = lng; lng = tmp;
+    }
+    const latEl = document.getElementById('f-latitude');
+    const lngEl = document.getElementById('f-longitude');
+    if (latEl && (!latEl.value || Math.abs(parseFloat(latEl.value) - lat) > 0.000001)) {
+      latEl.value = lat;
+    }
+    if (lngEl && (!lngEl.value || Math.abs(parseFloat(lngEl.value) - lng) > 0.000001)) {
+      lngEl.value = lng;
+    }
+  }
+}
+window.syncLocationInputToGps = syncLocationInputToGps;
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const latEl = document.getElementById('f-latitude');
+    const lngEl = document.getElementById('f-longitude');
+    const locEl = document.getElementById('f-location');
+    if (latEl) latEl.addEventListener('input', syncGpsInputsToLocation);
+    if (lngEl) lngEl.addEventListener('input', syncGpsInputsToLocation);
+    if (locEl) locEl.addEventListener('change', syncLocationInputToGps);
+  });
+}
+
+
 async function openPlantModal(id = null, syncUrl = true) {
   editingPlantId = id;
   resetPlantForm();
@@ -576,18 +620,44 @@ async function savePlant() {
   }
 
   // Single tree mode
+  let finalLat = (document.getElementById('f-latitude')?.value || '').trim();
+  let finalLng = (document.getElementById('f-longitude')?.value || '').trim();
+  let finalLoc = (document.getElementById('f-location')?.value || '').trim();
+  if ((!finalLat || !finalLng) && finalLoc) {
+    const m = finalLoc.match(/(-?\d+\.\d+)\s*[,;\s]\s*(-?\d+\.\d+)/);
+    if (m) {
+      let parsedLat = parseFloat(m[1]);
+      let parsedLng = parseFloat(m[2]);
+      if ((parsedLat < -90 || parsedLat > 90) && (parsedLng >= -90 && parsedLng <= 90)) {
+        const tmp = parsedLat; parsedLat = parsedLng; parsedLng = tmp;
+      }
+      if (!finalLat) finalLat = parsedLat;
+      if (!finalLng) finalLng = parsedLng;
+      const latEl = document.getElementById('f-latitude');
+      const lngEl = document.getElementById('f-longitude');
+      if (latEl && !latEl.value) latEl.value = parsedLat;
+      if (lngEl && !lngEl.value) lngEl.value = parsedLng;
+    }
+  }
+  if (finalLat && finalLng && !isNaN(parseFloat(finalLat)) && !isNaN(parseFloat(finalLng))) {
+    if (!finalLoc || finalLoc.startsWith('GPS:') || /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(finalLoc)) {
+      finalLoc = `GPS: ${parseFloat(finalLat).toFixed(6)}, ${parseFloat(finalLng).toFixed(6)}`;
+      const locEl = document.getElementById('f-location');
+      if (locEl) locEl.value = finalLoc;
+    }
+  }
   const body = {
     tree_code: document.getElementById('f-tree-code').value.trim(),
     plant_type,
     plant_variety: document.getElementById('f-plant-variety').value.trim(),
     plant_age: document.getElementById('f-plant-age').value.trim(),
     health_status: document.getElementById('f-health-status').value,
-    location: document.getElementById('f-location').value.trim(),
+    location: finalLoc,
     schema_id: schema_id || null,
     is_public: document.getElementById('f-is-public').value === 'true',
-    farm_id: document.getElementById('f-farm-id').value || null,
-    latitude: document.getElementById('f-latitude').value,
-    longitude: document.getElementById('f-longitude').value,
+    farm_id: document.getElementById('f-farm-id').value ? parseInt(document.getElementById('f-farm-id').value, 10) : null,
+    latitude: finalLat,
+    longitude: finalLng,
     data: extraData
   };
 
@@ -638,9 +708,32 @@ async function savePlant() {
     if (subVariety) {
       subVariety.textContent = `${plant.plant_type || 'Cây trồng'}${plant.plant_variety ? ' · Giống: ' + plant.plant_variety : ''}${plant.location ? ' · Vị trí: ' + plant.location : ''}`;
     }
-    if (typeof window.onPlantSavedHook === 'function') {
-      window.onPlantSavedHook(plant);
+    // Cập nhật ngay bộ nhớ đệm cây trồng trên bản đồ GIS
+    if (typeof window.currentPlants !== 'undefined' && Array.isArray(window.currentPlants)) {
+      const idx = window.currentPlants.findIndex(p => p.id === plant.id || p.id == plant.id);
+      if (idx !== -1) window.currentPlants[idx] = { ...window.currentPlants[idx], ...plant };
+      else window.currentPlants.push(plant);
     }
+    if (typeof window.currentFarms !== 'undefined' && Array.isArray(window.currentFarms)) {
+      window.currentFarms.forEach(f => {
+        if (f.plants && Array.isArray(f.plants)) {
+          const pIdx = f.plants.findIndex(p => p.id === plant.id || p.id == plant.id);
+          if (pIdx !== -1) f.plants[pIdx] = { ...f.plants[pIdx], ...plant };
+          else if (f.id === plant.farm_id || f.id == plant.farm_id) f.plants.push(plant);
+        }
+      });
+    }
+    if (typeof window.activeFarmId !== 'undefined' && window.activeFarmId && typeof window.selectFarm === 'function') {
+      window.selectFarm(window.activeFarmId);
+    } else if (typeof window.drawFarmsAndPlantsLayers === 'function') {
+      window.drawFarmsAndPlantsLayers(window.currentFarms || [], window.currentPlants || []);
+    }
+
+    if (typeof window.onPlantSavedHook === 'function') {
+      try { window.onPlantSavedHook(plant); } catch(he) { console.warn('Plant saved hook error:', he); }
+    }
+    closePlantModal();
+    if (typeof loadPlants === 'function') loadPlants();
   } catch (err) {
     toast('Lỗi lưu cây: ' + err.message, 'error');
   } finally {

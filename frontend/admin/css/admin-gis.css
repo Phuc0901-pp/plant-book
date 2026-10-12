@@ -455,9 +455,29 @@
     height: 100%;
   }
 
-  /* ── Map Tooltip ── */
+  /* ── Map Tooltip & GIS Popup ── */
+  .gis-plant-popup {
+    z-index: 9999 !important;
+  }
+  .gis-plant-popup .mapboxgl-popup-content {
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+  }
+  .gis-plant-popup .mapboxgl-popup-close-button {
+    font-size: 16px;
+    color: #94a3b8;
+    padding: 4px 8px;
+    top: 6px;
+    right: 6px;
+  }
+  .gis-plant-popup .mapboxgl-popup-close-button:hover {
+    color: #0f172a;
+    background: transparent;
+  }
   .map-tooltip {
-    padding: 4px 6px;
+    padding: 2px;
   }
   .map-tooltip h4 {
     margin-bottom: 6px;

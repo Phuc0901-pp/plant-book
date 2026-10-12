@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 // Universal Helper to extract Exact GPS Center [lng, lat] of ANY Farm
 function getFarmExactGpsCenter(farm, plants) {
   if (!farm) return null;
@@ -744,8 +744,30 @@ window.onPlantSavedHook = function(plant) {
     gisImportTempMarker.remove();
     gisImportTempMarker = null;
   }
+
+  // 1. Cập nhật tức thời dữ liệu cây trồng vào các bộ nhớ đệm GIS
+  if (plant && plant.id) {
+    if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
+      const idx = currentPlants.findIndex(p => p.id === plant.id || p.id == plant.id);
+      if (idx !== -1) currentPlants[idx] = { ...currentPlants[idx], ...plant };
+      else currentPlants.push(plant);
+    }
+    if (typeof currentFarms !== 'undefined' && Array.isArray(currentFarms)) {
+      currentFarms.forEach(f => {
+        if (f.plants && Array.isArray(f.plants)) {
+          const pIdx = f.plants.findIndex(p => p.id === plant.id || p.id == plant.id);
+          if (pIdx !== -1) f.plants[pIdx] = { ...f.plants[pIdx], ...plant };
+          else if (f.id === plant.farm_id || f.id == plant.farm_id) f.plants.push(plant);
+        }
+      });
+    }
+  }
+
+  // 2. Tái nạp trang trại để làm mới marker trên bản đồ và danh sách cây
   if (activeFarmId) {
     selectFarm(activeFarmId);
+  } else {
+    drawFarmsAndPlantsLayers(currentFarms || [], currentPlants || []);
   }
   if (isGisImportMode) {
     toast('✅ Đã lưu cây mới vào hệ thống GIS! Tiếp tục click bản đồ để nhập cây tiếp theo.', 'info');
@@ -894,22 +916,94 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
         wrapper.appendChild(el);
 
-        const marker = new mapboxgl.Marker(wrapper)
-          .setLngLat([lng, lat])
-          .setPopup(new mapboxgl.Popup({ offset: 25 })
-            .setHTML(`
-              <div class="map-tooltip">
-                <h4><i data-lucide="trees" class="lucide-sm" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}: ${esc(plant.plant_type)}</h4>
-                ${plant.plant_variety ? `<p>Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
-                <p>Sức khỏe: <strong>${esc(plant.health_status)}</strong></p>
-                <p>Vị trí: ${esc(plant.location || 'Chưa ghi nhận')}</p>
-                <div style="margin-top:8px">
-                  <button class="btn btn-primary btn-sm" onclick="openPlantModal(${plant.id})">Chi tiết</button>
-                </div>
+        const marker = new mapboxgl.Marker({ element: wrapper, draggable: true })
+          .setLngLat([lng, lat]);
+
+        marker.on('dragend', async () => {
+          const newLngLat = marker.getLngLat();
+          const newLng = parseFloat(newLngLat.lng.toFixed(7));
+          const newLat = parseFloat(newLngLat.lat.toFixed(7));
+          try {
+            toast('Đang cập nhật tọa độ cây #' + (plant.tree_code || plant.id) + '...');
+            const updated = await api('/plants/' + plant.id, {
+              method: 'PUT',
+              body: JSON.stringify({
+                plant_type: plant.plant_type,
+                plant_variety: plant.plant_variety,
+                plant_age: plant.plant_age,
+                health_status: plant.health_status,
+                tree_code: plant.tree_code,
+                farm_id: plant.farm_id,
+                latitude: newLat,
+                longitude: newLng,
+                location: 'GPS: ' + newLat.toFixed(6) + ', ' + newLng.toFixed(6),
+                is_public: plant.is_public !== false
+              })
+            });
+            plant.latitude = newLat;
+            plant.longitude = newLng;
+            plant.location = updated.location || ('GPS: ' + newLat.toFixed(6) + ', ' + newLng.toFixed(6));
+            toast('📍 Đã cập nhật GPS mới: ' + newLat + ', ' + newLng, 'success');
+            if (window.onPlantSavedHook) window.onPlantSavedHook(plant);
+          } catch(err) {
+            toast('Lỗi cập nhật GPS: ' + err.message, 'error');
+            marker.setLngLat([lng, lat]);
+          }
+        });
+        // Tạo popup ổn định: closeOnClick: false để người dùng click hoặc di chuột không bị out mất popup
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false,
+          closeOnMove: false,
+          maxWidth: '320px',
+          className: 'gis-plant-popup'
+        }).setHTML(`
+          <div class="map-tooltip" style="min-width:230px; padding:6px 4px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; border-bottom:1.5px solid #f1f5f9; padding-bottom:5px;">
+              <h4 style="margin:0; font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:5px;">
+                <i data-lucide="trees" class="lucide-sm" style="color:#10b981"></i> Cây #${esc(plant.tree_code || plant.id)}
+              </h4>
+              <span class="badge" style="font-size:10px; padding:2px 7px; border-radius:10px; background:${color}22; color:${color}; font-weight:700;">
+                ${esc(plant.health_status || 'Tốt')}
+              </span>
+            </div>
+            <p style="margin:3px 0; font-size:12px; color:#334155;">Loại cây: <strong>${esc(plant.plant_type || '—')}</strong></p>
+            ${plant.plant_variety ? `<p style="margin:3px 0; font-size:12px; color:#475569;">Giống: <strong>${esc(plant.plant_variety)}</strong></p>` : ''}
+            <div style="margin:6px 0; padding:6px 8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:11px; color:#475569;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                <span style="color:#64748b;">Vĩ độ (Lat):</span>
+                <strong style="font-family:monospace; color:#0f172a;">${lat.toFixed(6)}</strong>
               </div>
-            `)
-          )
-          .addTo(gMap);
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:#64748b;">Kinh độ (Lng):</span>
+                <strong style="font-family:monospace; color:#0f172a;">${lng.toFixed(6)}</strong>
+              </div>
+              ${plant.location ? `<div style="margin-top:3px; font-size:10.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${esc(plant.location)}</div>` : ''}
+            </div>
+            <div style="margin-top:8px; display:flex; gap:6px;">
+              <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center; padding:6px 10px; font-size:11.5px; font-weight:700;" onclick="event.stopPropagation(); openPlantModal(${plant.id});">
+                <i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa &amp; GPS
+              </button>
+            </div>
+          </div>
+        `);
+
+        popup.on('open', () => {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        });
+
+        // Bắt sự kiện click lên wrapper marker để mở popup ổn định và ngăn sự kiện nổi bọt tắt popup
+        wrapper.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!popup.isOpen()) {
+            popup.addTo(gMap);
+          }
+        });
+
+        marker.setPopup(popup).addTo(gMap);
 
         gisPlantMarkers.push(marker);
 
