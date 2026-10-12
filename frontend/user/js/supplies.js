@@ -641,7 +641,7 @@ export async function updateSuppliesProfitCockpit() {
     if (treesBreakdownEl) {
       const trees = data.tree_breakdown || [];
       if (trees.length === 0) {
-        treesBreakdownEl.innerHTML = `<div style="color:rgba(255,255,255,0.7); font-style:italic;">Chưa có dữ liệu thu hoạch trong kỳ</div>`;
+        treesBreakdownEl.innerHTML = `<div style="color:rgba(255,255,255,0.7); font-style:italic; display:flex; align-items:center; gap:5px;"><i data-lucide="inbox" class="lucide-xs" style="opacity:0.7;"></i> Chưa có dữ liệu thu hoạch trong kỳ</div>`;
       } else {
         treesBreakdownEl.innerHTML = trees.slice(0, 5).map(t => `
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -656,8 +656,11 @@ export async function updateSuppliesProfitCockpit() {
     console.warn('Lỗi cập nhật ERP Cockpit:', err);
   }
 
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
-    window.lucide.createIcons();
+    try { window.lucide.createIcons(); } catch (_) {}
   }
 }
 window.updateSuppliesProfitCockpit = updateSuppliesProfitCockpit;
