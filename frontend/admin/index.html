@@ -1091,18 +1091,18 @@
             </div>
             <div id="gis-map" class="gis-map"></div>
             <!-- Satellite Provider Switcher Floating Controls -->
-            <div id="gis-satellite-switcher" class="gis-satellite-switcher" style="position:absolute; bottom:28px; left:16px; z-index:15; display:flex; gap:6px; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); padding:4px 6px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+            <div id="gis-satellite-switcher" class="gis-satellite-switcher" style="position:absolute; bottom:28px; left:16px; z-index:15; display:flex; gap:6px; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); padding:4px 6px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); box-shadow:0 8px 24px rgba(0,0,0,0.35);">
               <span style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:800; color:#94a3b8; padding:0 6px;">
                 <i data-lucide="layers" class="lucide-xs" style="color:#34d399;"></i> Vệ tinh:
               </span>
               <button type="button" class="sat-switch-btn active" id="btn-sat-esri" onclick="switchSatelliteSource('esri')" title="Ảnh vệ tinh ESRI Clarity siêu nét (Khuyên dùng cho vùng nông thôn / trang trại)">
-                🌿 ESRI Clarity (Siêu nét)
+                <i data-lucide="sparkles" class="lucide-xs" style="color:#34d399;"></i> ESRI Clarity (Siêu nét)
               </button>
               <button type="button" class="sat-switch-btn" id="btn-sat-google" onclick="switchSatelliteSource('google')" title="Ảnh vệ tinh Google Satellite mới nhất">
-                🛰️ Google Satellite
+                <i data-lucide="satellite" class="lucide-xs" style="color:#60a5fa;"></i> Google Satellite
               </button>
               <button type="button" class="sat-switch-btn" id="btn-sat-mapbox" onclick="switchSatelliteSource('mapbox')" title="Ảnh vệ tinh Mapbox gốc">
-                🌐 Mapbox
+                <i data-lucide="globe-2" class="lucide-xs" style="color:#a78bfa;"></i> Mapbox
               </button>
             </div>
           </div>

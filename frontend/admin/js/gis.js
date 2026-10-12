@@ -735,15 +735,15 @@ function switchSatelliteSource(source) {
     if (source === 'esri') {
       if (esriLayer) gMap.setLayoutProperty('esri-satellite-layer', 'visibility', 'visible');
       if (googleLayer) gMap.setLayoutProperty('google-satellite-layer', 'visibility', 'none');
-      toast('🌿 Đã chuyển sang Ảnh Vệ Tinh ESRI Clarity (Siêu nét, tối ưu vùng trồng)', 'info');
+      toast('Đã chuyển sang Ảnh Vệ Tinh ESRI Clarity (Siêu nét, tối ưu vùng trồng)', 'info');
     } else if (source === 'google') {
       if (esriLayer) gMap.setLayoutProperty('esri-satellite-layer', 'visibility', 'none');
       if (googleLayer) gMap.setLayoutProperty('google-satellite-layer', 'visibility', 'visible');
-      toast('🛰️ Đã chuyển sang Ảnh Vệ Tinh Google Satellite', 'info');
+      toast('Đã chuyển sang Ảnh Vệ Tinh Google Satellite', 'info');
     } else if (source === 'mapbox') {
       if (esriLayer) gMap.setLayoutProperty('esri-satellite-layer', 'visibility', 'none');
       if (googleLayer) gMap.setLayoutProperty('google-satellite-layer', 'visibility', 'none');
-      toast('🌐 Đã chuyển sang Ảnh Vệ Tinh Mapbox', 'info');
+      toast('Đã chuyển sang Ảnh Vệ Tinh Mapbox', 'info');
     }
   } catch (err) {
     console.warn('Error toggling satellite source:', err);
