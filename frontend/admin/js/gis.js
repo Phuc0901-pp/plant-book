@@ -5086,3 +5086,35 @@ async function confirmClearFarmPlantsGps(farmId) {
 }
 window.confirmClearFarmPlantsGps = confirmClearFarmPlantsGps;
 
+async function copyFarmLiveDatasetApiLink(farmId) {
+  const targetId = farmId || activeFarmId;
+  if (!targetId) {
+    toast('Vui lòng chọn một trang trại để lấy Link API Dữ Liệu!', 'warning');
+    return;
+  }
+  try {
+    const res = await api(`/farms/${targetId}/api-link`);
+    if (res && res.live_dataset_url) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(res.live_dataset_url);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = res.live_dataset_url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      toast(`Đã copy Link Live API của "${res.farm_name}" vào bộ nhớ tạm!`, 'success');
+      window.prompt(
+        `🔗 LINK API DỮ LIỆU THỜI GIAN THỰC (LIVE JSON DATASET) — ${res.farm_name}:\n(Đã tự động copy! Bạn chỉ cần gửi link này cho khách hàng, mỗi khi dữ liệu trang trại cập nhật thì API sẽ tự động trả về dữ liệu mới nhất):`,
+        res.live_dataset_url
+      );
+    }
+  } catch (err) {
+    toast('Lỗi khi lấy Link API trang trại: ' + err.message, 'error');
+  }
+}
+window.copyFarmLiveDatasetApiLink = copyFarmLiveDatasetApiLink;
+
+

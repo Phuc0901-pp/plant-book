@@ -83,12 +83,85 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// GET /api/farms/:id/full-dataset (Alias: /:id/export-json) — Xuất toàn bộ tập dữ liệu JSON chuẩn Quốc tế (ISO/IEC, GlobalGAP, VietGAP, GeoJSON RFC 7946) của Trang trại
-router.get(['/:id/full-dataset', '/:id/export-json'], auth, async (req, res) => {
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+function generateFarmLiveApiKey(farmId) {
+  const secret = process.env.JWT_SECRET || 'tanbao-agtech-erp-secret';
+  const hmac = crypto.createHmac('sha256', secret).update(`farm_live_dataset_v1_${farmId}`).digest('hex').slice(0, 32);
+  return `tb_live_${farmId}_${hmac}`;
+}
+
+// GET /api/farms/:id/api-link — Lấy đường dẫn Live API & API Key riêng của Trang trại để cấp cho Khách hàng / Đối tác ERP
+router.get('/:id/api-link', auth, async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.id, 10);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+
+    const farmRes = await pool.query('SELECT id, name, user_id FROM farms WHERE id = $1 LIMIT 1', [farmId]);
+    if (farmRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
+    const farm = farmRes.rows[0];
+
+    const isAssigned = req.user.farm_id && Number(farm.id) === Number(req.user.farm_id);
+    if (req.user.role !== 'admin' && Number(farm.user_id) !== Number(req.user.id) && !isAssigned) {
+      return res.status(403).json({ error: 'Bạn không có quyền lấy API Key của trang trại này.' });
+    }
+
+    const apiKey = generateFarmLiveApiKey(farmId);
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.get('host');
+    const liveUrl = `${protocol}://${host}/api/farms/${farmId}/full-dataset?api_key=${apiKey}`;
+
+    res.json({
+      success: true,
+      farm_id: farmId,
+      farm_name: farm.name,
+      api_key: apiKey,
+      live_dataset_url: liveUrl,
+      usage_note: 'URL này trả về dữ liệu JSON thời gian thực (Real-time Live Data) chuẩn Quốc tế của toàn bộ trang trại. Khi có dữ liệu mới phát sinh, gọi lại API này sẽ tự động nhận dữ liệu mới nhất.'
+    });
+  } catch (err) {
+    console.error('Error generating farm API link:', err);
+    res.status(500).json({ error: 'Lỗi server khi tạo API Link.' });
+  }
+});
+
+// GET /api/farms/:id/full-dataset (Alias: /:id/export-json) — Xuất toàn bộ tập dữ liệu JSON chuẩn Quốc tế (Live Real-time API)
+router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
   try {
     const farmId = parseInt(req.params.id, 10);
     if (isNaN(farmId)) {
       return res.status(400).json({ error: 'Mã trang trại (farm_id) không hợp lệ.' });
+    }
+
+    // Hỗ trợ xác thực linh hoạt:
+    // Cách 1: Dùng Live API Key của trang trại (?api_key=tb_live_... hoặc Header x-api-key) -> Tiện cấp trực tiếp cho khách hàng tích hợp ERP/BI tự động cập nhật
+    // Cách 2: Dùng JWT Bearer Token (Header Authorization hoặc ?token=...)
+    const providedApiKey = req.query.api_key || req.headers['x-api-key'];
+    const expectedApiKey = generateFarmLiveApiKey(farmId);
+    let authorizedViaApiKey = false;
+    let authUser = null;
+
+    if (providedApiKey && providedApiKey === expectedApiKey) {
+      authorizedViaApiKey = true;
+    } else {
+      const authHeader = req.headers['authorization'];
+      const rawToken = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.split(' ')[1] : req.query.token;
+      if (!rawToken) {
+        return res.status(401).json({
+          error: 'Chưa xác thực. Vui lòng truyền ?api_key=<FARM_API_KEY> hoặc Header Authorization: Bearer <TOKEN>.'
+        });
+      }
+      try {
+        const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
+        const uRes = await pool.query('SELECT id, role, farm_id FROM users WHERE id = $1 LIMIT 1', [decoded.id]);
+        if (uRes.rows.length === 0) {
+          return res.status(401).json({ error: 'Tài khoản không tồn tại.' });
+        }
+        authUser = uRes.rows[0];
+      } catch (_) {
+        return res.status(401).json({ error: 'Token hoặc API Key không hợp lệ.' });
+      }
     }
 
     // 1. Thông tin trang trại & Chủ sở hữu (Farm Master Profile & Owner)
@@ -111,10 +184,17 @@ router.get(['/:id/full-dataset', '/:id/export-json'], auth, async (req, res) => 
     }
     const farm = farmRes.rows[0];
 
-    const isAssigned = req.user.farm_id && Number(farm.id) === Number(req.user.farm_id);
-    if (req.user.role !== 'admin' && Number(farm.user_id) !== Number(req.user.id) && !isAssigned) {
-      return res.status(403).json({ error: 'Bạn không có quyền truy cập dữ liệu trang trại này.' });
+    if (!authorizedViaApiKey && authUser) {
+      const isAssigned = authUser.farm_id && Number(farm.id) === Number(authUser.farm_id);
+      if (authUser.role !== 'admin' && Number(farm.user_id) !== Number(authUser.id) && !isAssigned) {
+        return res.status(403).json({ error: 'Bạn không có quyền truy cập dữ liệu trang trại này.' });
+      }
     }
+
+    // Đảm bảo luôn trả dữ liệu tươi mới nhất (No-Cache), tự động cập nhật mỗi khi có dữ liệu mới
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     // 2. Truy vấn song song toàn bộ dữ liệu liên quan đến Trang trại
     const [
