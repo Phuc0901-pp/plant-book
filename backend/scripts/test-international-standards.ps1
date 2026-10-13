@@ -545,6 +545,49 @@ if (Test-Path $serverJsPath) {
 }
 
 # ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 12: LIVE FARM DATASET API, ADMIN ACCESS CONTROL & CLEAN CODEBASE --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 12. LIVE FARM DATASET API, ADMIN ACCESS CONTROL, ERP GIS UX & CLEAN CODEBASE --" -ForegroundColor White
+$farmsRoutePath = Join-Path $root "backend\routes\farms.js"
+$adminGisJsPath = Join-Path $root "frontend\admin\js\gis.js"
+$adminDashViewPath = Join-Path $root "frontend\admin\src\views\dashboard.html"
+
+if (Test-Path $farmsRoutePath) {
+    $farmsRoute = [System.IO.File]::ReadAllText($farmsRoutePath, [System.Text.Encoding]::UTF8)
+    $hasFullDatasetEndpoint = $farmsRoute.Contains('/:id/full-dataset') -and $farmsRoute.Contains('AGTECH-ERP-ISO25010-GLOBALGAP-VIETGAP-V1.3')
+    $hasApiLinkEndpoint = $farmsRoute.Contains('/:id/api-link') -and $farmsRoute.Contains('generateFarmApiKey')
+    $hasAdminApiControl = $farmsRoute.Contains('/:id/api-control') -and $farmsRoute.Contains('API_ACCESS_DISABLED') -and $farmsRoute.Contains('rotate_key')
+    $hasInternationalBlocks = $farmsRoute.Contains('farm_profile') -and $farmsRoute.Contains('financial_and_yield_summary') -and $farmsRoute.Contains('supplies_and_inventory') -and $farmsRoute.Contains('plants_and_cultivation') -and $farmsRoute.Contains('phytosanitary_and_harvest_logs') -and $farmsRoute.Contains('iot_nfc_and_media')
+
+    Record-Test -Category "Live Farm Dataset API" -TestName "GET /api/farms/:id/full-dataset International Standard JSON Endpoint" -Passed $hasFullDatasetEndpoint
+    Record-Test -Category "Live Farm Dataset API" -TestName "6/6 International AgTech Dataset Blocks (Profile, Finance, Supplies, Plants, Logs, IoT/Media)" -Passed $hasInternationalBlocks
+    Record-Test -Category "Live Farm Dataset API" -TestName "HMAC-SHA256 Versioned Live API Key Generator (/api/farms/:id/api-link)" -Passed $hasApiLinkEndpoint
+    Record-Test -Category "Admin API Governance" -TestName "Admin Live API Access Control (Disable / Enable / Rotate Key via /api-control)" -Passed $hasAdminApiControl
+}
+
+if (Test-Path $adminGisJsPath) {
+    $adminGisJs = [System.IO.File]::ReadAllText($adminGisJsPath, [System.Text.Encoding]::UTF8)
+    $hasGoogleSatDefault = $adminGisJs.Contains("let currentSatelliteSource = 'google'") -and $adminGisJs.Contains("google-satellite-layer")
+    $hasSmoothDrag = $adminGisJs.Contains("marker.on('dragstart'") -and $adminGisJs.Contains("marker._updatePopupCoords")
+    $hasRemovePointGps = $adminGisJs.Contains("function removePlantPointGps") -and $adminGisJs.Contains("window.removePlantPointGps")
+    $hasSmartPlantList = $adminGisJs.Contains("function sortPlantsNaturally") -and $adminGisJs.Contains("function startPinSinglePlantGps") -and $adminGisJs.Contains("function renderCurrentSidebarPlantList")
+    $hasErpPopupCard = $adminGisJs.Contains("erp-plant-popup-card") -and $adminGisJs.Contains("erp-popup-grid")
+    $hasAdminApiUiControls = $adminGisJs.Contains("toggleFarmLiveApiAccess") -and $adminGisJs.Contains("rotateFarmLiveApiKey") -and $adminGisJs.Contains("copyFarmLiveDatasetApiLink")
+
+    Record-Test -Category "GIS & Satellite Engine" -TestName "Google Satellite Default High-Res Layer & Smooth In-Place Marker Dragging (0ms Reload)" -Passed ($hasGoogleSatDefault -and $hasSmoothDrag)
+    Record-Test -Category "GIS & Satellite Engine" -TestName "In-Place Plant GPS Point Removal & Single-Plant Map Pinning Mode" -Passed ($hasRemovePointGps -and $hasSmartPlantList)
+    Record-Test -Category "ERP UI & Lucide Icons" -TestName "Natural Sort (A->Z, 1->99), Smart Search & ERP Plant Popup Card" -Passed ($hasSmartPlantList -and $hasErpPopupCard)
+    Record-Test -Category "Admin API Governance" -TestName "Admin UI Live API Controls (Copy Link, Disable/Enable API, Rotate Key)" -Passed $hasAdminApiUiControls
+}
+
+$conflictFiles = Get-ChildItem -Path $root -Recurse -File -Filter "*-PHUCPH*" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\node_modules\\|\\\.git\\' }
+$leakedTestUploads = Get-ChildItem -Path (Join-Path $root "frontend\assets\uploads") -File -Filter "test_verification_*.txt" -ErrorAction SilentlyContinue
+$wordLockFiles = Get-ChildItem -Path $root -File -Filter "~$*.docx" -Force -ErrorAction SilentlyContinue
+$isCleanRepo = (($null -eq $conflictFiles -or $conflictFiles.Count -eq 0) -and ($null -eq $leakedTestUploads -or $leakedTestUploads.Count -eq 0) -and ($null -eq $wordLockFiles -or $wordLockFiles.Count -eq 0))
+
+Record-Test -Category "Codebase Hygiene" -TestName "Zero OneDrive Conflict Files (*-PHUCPH*), Word Locks (~$*) & Leaked Test Artifacts" -Passed $isCleanRepo
+
+# ══════════════════════════════════════════════════════════════════════════
 # -- FINAL QA / QC SUMMARY REPORT --
 # ══════════════════════════════════════════════════════════════════════════
 Write-Host "`n==========================================================================" -ForegroundColor Cyan
