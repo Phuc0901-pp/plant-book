@@ -555,7 +555,7 @@ $adminDashViewPath = Join-Path $root "frontend\admin\src\views\dashboard.html"
 if (Test-Path $farmsRoutePath) {
     $farmsRoute = [System.IO.File]::ReadAllText($farmsRoutePath, [System.Text.Encoding]::UTF8)
     $hasFullDatasetEndpoint = $farmsRoute.Contains('/:id/full-dataset') -and $farmsRoute.Contains('AGTECH-ERP-ISO25010-GLOBALGAP-VIETGAP-V1.3')
-    $hasApiLinkEndpoint = $farmsRoute.Contains('/:id/api-link') -and $farmsRoute.Contains('generateFarmApiKey')
+    $hasApiLinkEndpoint = $farmsRoute.Contains('/:id/api-link') -and $farmsRoute.Contains('generateFarmLiveApiKey')
     $hasAdminApiControl = $farmsRoute.Contains('/:id/api-control') -and $farmsRoute.Contains('API_ACCESS_DISABLED') -and $farmsRoute.Contains('rotate_key')
     $hasInternationalBlocks = $farmsRoute.Contains('farm_profile') -and $farmsRoute.Contains('financial_and_yield_summary') -and $farmsRoute.Contains('supplies_and_inventory') -and $farmsRoute.Contains('plants_and_cultivation') -and $farmsRoute.Contains('phytosanitary_and_harvest_logs') -and $farmsRoute.Contains('iot_nfc_and_media')
 
@@ -571,7 +571,7 @@ if (Test-Path $adminGisJsPath) {
     $hasSmoothDrag = $adminGisJs.Contains("marker.on('dragstart'") -and $adminGisJs.Contains("marker._updatePopupCoords")
     $hasRemovePointGps = $adminGisJs.Contains("function removePlantPointGps") -and $adminGisJs.Contains("window.removePlantPointGps")
     $hasSmartPlantList = $adminGisJs.Contains("function sortPlantsNaturally") -and $adminGisJs.Contains("function startPinSinglePlantGps") -and $adminGisJs.Contains("function renderCurrentSidebarPlantList")
-    $hasErpPopupCard = $adminGisJs.Contains("erp-plant-popup-card") -and $adminGisJs.Contains("erp-popup-grid")
+    $hasErpPopupCard = $adminGisJs.Contains("erp-plant-popup-card") -and $adminGisJs.Contains("erp-popup-header")
     $hasAdminApiUiControls = $adminGisJs.Contains("toggleFarmLiveApiAccess") -and $adminGisJs.Contains("rotateFarmLiveApiKey") -and $adminGisJs.Contains("copyFarmLiveDatasetApiLink")
 
     Record-Test -Category "GIS & Satellite Engine" -TestName "Google Satellite Default High-Res Layer & Smooth In-Place Marker Dragging (0ms Reload)" -Passed ($hasGoogleSatDefault -and $hasSmoothDrag)
