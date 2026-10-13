@@ -134,19 +134,16 @@ class StorageService {
     if (this.driver === 'supabase' && typeof this._supabaseDelete === 'function') {
       try {
         await this._supabaseDelete(objectName);
-        return;
       } catch (_) {}
     }
 
-    if (this.driver === 'local') {
-      try {
-        const sanitizedName = objectName.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const targetPath = path.join(this.localUploadDir, sanitizedName);
-        if (fs.existsSync(targetPath)) {
-          fs.unlinkSync(targetPath);
-        }
-      } catch (_) {}
-    }
+    try {
+      const sanitizedName = objectName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const targetPath = path.join(this.localUploadDir, sanitizedName);
+      if (fs.existsSync(targetPath)) {
+        fs.unlinkSync(targetPath);
+      }
+    } catch (_) {}
   }
 }
 
