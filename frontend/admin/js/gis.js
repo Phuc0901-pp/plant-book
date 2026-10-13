@@ -898,6 +898,61 @@ window.onPlantSavedHook = function(plant) {
 let gisPlantMarkers = [];
 let gisFarmMarkers = [];
 
+// ── Xóa Point (Gỡ ghim GPS) của cây trên bản đồ mượt mà không reload ──
+async function removePlantPointGps(plantId, treeCode) {
+  if (!confirm(`Xóa vị trí điểm ghim (Point GPS) của cây #${treeCode || plantId} khỏi bản đồ?\n\nLưu ý: Hồ sơ và dữ liệu nhật ký của cây vẫn được giữ nguyên, chỉ gỡ ghim tọa độ khỏi bản đồ để bạn định vị lại.`)) {
+    return;
+  }
+
+  try {
+    await api(`/plants/${plantId}/gps`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        latitude: null,
+        longitude: null
+      })
+    });
+
+    // 1. Gỡ marker và đóng popup ngay tại chỗ (In-place removal, không giật màn hình)
+    const mIdx = (gisPlantMarkers || []).findIndex(m => m._plantId === plantId || m._plantId == plantId);
+    if (mIdx !== -1) {
+      const markerObj = gisPlantMarkers[mIdx];
+      try {
+        if (markerObj.getPopup && markerObj.getPopup()) {
+          markerObj.getPopup().remove();
+        }
+        markerObj.remove();
+      } catch (_) {}
+      gisPlantMarkers.splice(mIdx, 1);
+    }
+
+    // 2. Cập nhật bộ nhớ đệm
+    if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
+      const pIdx = currentPlants.findIndex(p => p.id === plantId || p.id == plantId);
+      if (pIdx !== -1) {
+        currentPlants[pIdx].latitude = null;
+        currentPlants[pIdx].longitude = null;
+      }
+    }
+    if (typeof currentFarms !== 'undefined' && Array.isArray(currentFarms)) {
+      currentFarms.forEach(f => {
+        if (f.plants && Array.isArray(f.plants)) {
+          const pIdx = f.plants.findIndex(p => p.id === plantId || p.id == plantId);
+          if (pIdx !== -1) {
+            f.plants[pIdx].latitude = null;
+            f.plants[pIdx].longitude = null;
+          }
+        }
+      });
+    }
+
+    toast(`Đã xóa point GPS của cây #${treeCode || plantId} khỏi bản đồ.`, 'success');
+  } catch (err) {
+    toast('Lỗi khi xóa point GPS: ' + err.message, 'error');
+  }
+}
+window.removePlantPointGps = removePlantPointGps;
+
 function drawFarmsAndPlantsLayers(farms, plants) {
   if (!gMap) return;
 
@@ -1043,7 +1098,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
         function getPopupContent(p, pLat, pLng) {
           const pColor = getCustomerColor(p.user_id || (p.farm_id ? (currentFarms.find(f => f.id === p.farm_id)?.user_id) : null));
           return `
-            <div class="map-tooltip" style="min-width:230px; padding:6px 4px;">
+            <div class="map-tooltip" style="min-width:240px; padding:6px 4px;">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; border-bottom:1.5px solid #f1f5f9; padding-bottom:5px;">
                 <h4 style="margin:0; font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:5px;">
                   <i data-lucide="trees" class="lucide-sm" style="color:#10b981"></i> Cây #${esc(p.tree_code || p.id)}
@@ -1063,11 +1118,14 @@ function drawFarmsAndPlantsLayers(farms, plants) {
                   <span style="color:#64748b;">Kinh độ (Lng):</span>
                   <strong style="font-family:monospace; color:#0f172a;">${pLng.toFixed(6)}</strong>
                 </div>
-                ${p.location ? `<div style="margin-top:3px; font-size:10.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${esc(p.location)}</div>` : ''}
+                ${p.location ? `<div style="margin-top:3px; font-size:10.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;"><i data-lucide="map-pin" class="lucide-xs" style="color:#ef4444; flex-shrink:0;"></i> <span>${esc(p.location)}</span></div>` : ''}
               </div>
               <div style="margin-top:8px; display:flex; gap:6px;">
                 <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center; padding:6px 10px; font-size:11.5px; font-weight:700;" onclick="event.stopPropagation(); openPlantModal(${p.id});">
                   <i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa &amp; GPS
+                </button>
+                <button class="btn btn-danger btn-sm" style="padding:6px 10px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px; background:#fef2f2; color:#dc2626; border:1px solid #fecaca;" title="Xóa điểm ghim GPS của cây này khỏi bản đồ" onclick="event.stopPropagation(); removePlantPointGps(${p.id}, '${esc(p.tree_code || p.id)}');">
+                  <i data-lucide="trash-2" class="lucide-sm"></i> Xóa point
                 </button>
               </div>
             </div>
