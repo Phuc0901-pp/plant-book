@@ -105,12 +105,20 @@ router.post('/login', async (req, res) => {
 
     // Query all farm IDs owned by or assigned to this user (or parent owner)
     let ownedFarmIds = [];
+    let assignedPlantIds = [];
     try {
-      const farmsRes = await pool.query(
-        `SELECT id FROM farms WHERE (user_id = $1 OR user_id = COALESCE($3, 0) OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
-        [user.id, user.farm_id || null, user.parent_user_id || null]
-      );
+      const [farmsRes, assignedRes] = await Promise.all([
+        pool.query(
+          `SELECT id FROM farms WHERE (user_id = $1 OR user_id = COALESCE($3, 0) OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
+          [user.id, user.farm_id || null, user.parent_user_id || null]
+        ),
+        pool.query(
+          `SELECT id FROM plants WHERE assigned_to_user_id = $1 AND (is_deleted IS NOT TRUE)`,
+          [user.id]
+        )
+      ]);
       ownedFarmIds = farmsRes.rows.map(r => r.id);
+      assignedPlantIds = assignedRes.rows.map(r => r.id);
     } catch (_) {}
 
     const primaryFarmId = user.farm_id || (ownedFarmIds.length > 0 ? ownedFarmIds[0] : null);
@@ -131,6 +139,7 @@ router.post('/login', async (req, res) => {
         view_plants_scope: user.view_plants_scope || 'all',
         allow_view_supplies: user.allow_view_supplies !== false,
         allow_shared_history: user.allow_shared_history !== false,
+        assigned_plant_ids: assignedPlantIds,
         farm_id: primaryFarmId,
         owned_farm_ids: ownedFarmIds,
         name: user.full_name,
@@ -493,16 +502,24 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
       u.allow_view_supplies = u.allow_view_supplies !== false;
       u.allow_shared_history = u.allow_shared_history !== false;
       try {
-        const farmsRes = await pool.query(
-          `SELECT id FROM farms WHERE (user_id = $1 OR user_id = COALESCE($3, 0) OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
-          [u.id, u.farm_id || null, u.parent_user_id || null]
-        );
+        const [farmsRes, assignedRes] = await Promise.all([
+          pool.query(
+            `SELECT id FROM farms WHERE (user_id = $1 OR user_id = COALESCE($3, 0) OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
+            [u.id, u.farm_id || null, u.parent_user_id || null]
+          ),
+          pool.query(
+            `SELECT id FROM plants WHERE assigned_to_user_id = $1 AND (is_deleted IS NOT TRUE)`,
+            [u.id]
+          )
+        ]);
         u.owned_farm_ids = farmsRes.rows.map(r => r.id);
+        u.assigned_plant_ids = assignedRes.rows.map(r => r.id);
         if (!u.farm_id && u.owned_farm_ids.length > 0) {
           u.farm_id = u.owned_farm_ids[0];
         }
       } catch (_) {
         u.owned_farm_ids = u.farm_id ? [u.farm_id] : [];
+        u.assigned_plant_ids = [];
       }
     }
     res.json(u);

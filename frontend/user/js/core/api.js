@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    core/api.js — Token management & API fetch helper
@@ -43,10 +43,59 @@ export function setCurrentUser(u) {
  * @returns {boolean}
  */
 export function isProUser() {
-  const user = currentUser || JSON.parse(localStorage.getItem('user') || '{}');
+  const user = currentUser || JSON.parse(localStorage.getItem('user') || localStorage.getItem('pb_user') || '{}');
   return user && user.account_tier === 'pro';
 }
 window.isProUser = isProUser;
+
+/**
+ * Standard Role-Based Access Control (RBAC) resolver
+ */
+export function getCurrentUserRbac() {
+  let u = window._currentUserProfile || currentUser;
+  if (!u || !u.id) {
+    try {
+      u = JSON.parse(localStorage.getItem('user') || localStorage.getItem('pb_user') || '{}');
+    } catch (_) {
+      u = {};
+    }
+  }
+  const role = u.role || 'user';
+  const subRole = u.sub_role || 'farm_owner';
+  const isOwner = role === 'admin' || (!u.parent_user_id && subRole === 'farm_owner');
+  const isSubAccount = Boolean(u.parent_user_id) || ['manager', 'care_worker', 'auditor_readonly'].includes(subRole);
+  
+  const isFinanceRestrictedRole = ['care_worker', 'auditor_readonly'].includes(subRole);
+  const isFinanceRedacted = role !== 'admin' && (
+    u.allow_view_finance === false ||
+    (isFinanceRestrictedRole && u.allow_view_finance !== true)
+  );
+
+  const isReadonlyAuditor = subRole === 'auditor_readonly';
+  const isCareWorker = subRole === 'care_worker';
+  const isManager = subRole === 'manager';
+  const viewPlantsScope = u.view_plants_scope || (isCareWorker ? 'assigned' : 'all');
+  const allowViewSupplies = u.allow_view_supplies !== false;
+  const allowSharedHistory = u.allow_shared_history !== false;
+  const assignedPlantIds = Array.isArray(u.assigned_plant_ids) ? u.assigned_plant_ids : [];
+
+  return {
+    user: u,
+    role,
+    subRole,
+    isOwner,
+    isSubAccount,
+    isFinanceRedacted,
+    isReadonlyAuditor,
+    isCareWorker,
+    isManager,
+    viewPlantsScope,
+    allowViewSupplies,
+    allowSharedHistory,
+    assignedPlantIds
+  };
+}
+window.getCurrentUserRbac = getCurrentUserRbac;
 
 /**
  * Gọi REST API với Bearer token tự động và cơ chế tự động thử lại nếu gặp 429.

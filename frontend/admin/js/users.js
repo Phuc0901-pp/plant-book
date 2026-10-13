@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — users.js (User/Farmer Management)
    ════════════════════════════════════════════════════════ */
@@ -98,10 +98,11 @@ function setUserFilterGroup(group) {
 function filterUsers() {
   const q = (document.getElementById('user-search')?.value || '').toLowerCase().trim();
   const farmFilter = document.getElementById('user-filter-farm')?.value || 'all';
+  const roleFilter = document.getElementById('user-filter-role')?.value || 'all';
 
   let filtered = allUsers;
 
-  // 1. Group Filter
+  // 1. Group / Tier Filter
   if (currentFilterGroup === 'admin') {
     filtered = filtered.filter(u => u.role === 'admin');
   } else if (currentFilterGroup === 'pro') {
@@ -110,18 +111,30 @@ function filterUsers() {
     filtered = filtered.filter(u => u.role !== 'admin' && u.account_tier !== 'pro');
   }
 
-  // 2. Farm Filter
+  // 2. Role / Hierarchy Filter (Enterprise IAM RBAC)
+  if (roleFilter !== 'all') {
+    if (roleFilter === 'admin') {
+      filtered = filtered.filter(u => u.role === 'admin');
+    } else if (roleFilter === 'farm_owner') {
+      filtered = filtered.filter(u => u.role !== 'admin' && !u.parent_user_id && (u.sub_role === 'farm_owner' || !u.sub_role));
+    } else {
+      filtered = filtered.filter(u => u.sub_role === roleFilter);
+    }
+  }
+
+  // 3. Farm Filter
   if (farmFilter !== 'all') {
     filtered = filtered.filter(u => u.farm_id == farmFilter);
   }
 
-  // 3. Search Filter
+  // 4. Search Filter
   if (q) {
     filtered = filtered.filter(u =>
       (u.full_name || '').toLowerCase().includes(q) ||
       (u.email || '').toLowerCase().includes(q) ||
       (u.phone || '').toLowerCase().includes(q) ||
       (u.farm_name || '').toLowerCase().includes(q) ||
+      (u.parent_user_name || '').toLowerCase().includes(q) ||
       (u.public_id || '').toLowerCase().includes(q) ||
       (`adm-${u.id}`).includes(q) ||
       (`usr-${u.id}`).includes(q)
@@ -131,6 +144,60 @@ function filterUsers() {
   renderUsersTable(filtered);
 }
 
+// Sắp xếp danh sách người dùng theo cấu trúc cây phân cấp (Enterprise IAM Hierarchy Tree)
+// Super Admin -> Chủ Nông Hộ (Roots) -> Nhân Sự Dưới Quyền (Children) -> Tài khoản độc lập
+function buildUserHierarchyTree(users) {
+  // Tạo bản đồ tra cứu nhanh
+  const userMap = new Map();
+  users.forEach(u => userMap.set(u.id, { ...u, _children: [] }));
+
+  const rootNodes = [];
+  const processedIds = new Set();
+
+  // Nhận diện Root Nodes (Admins hoặc Nông Hộ Chủ Quản không có parent)
+  users.forEach(u => {
+    if (!u.parent_user_id || !userMap.has(u.parent_user_id)) {
+      rootNodes.push(userMap.get(u.id));
+      processedIds.add(u.id);
+    }
+  });
+
+  // Gắn con vào node cha
+  users.forEach(u => {
+    if (u.parent_user_id && userMap.has(u.parent_user_id)) {
+      const parent = userMap.get(u.parent_user_id);
+      parent._children.push(userMap.get(u.id));
+      processedIds.add(u.id);
+    }
+  });
+
+  // Làm phẳng (flatten) cây để phục vụ phân trang nhưng giữ trật tự phả hệ cha đứng trước con
+  const flattened = [];
+  function traverse(node, depth = 0, parentObj = null) {
+    flattened.push({
+      ...node,
+      _depth: depth,
+      _parentObj: parentObj,
+      _hasChildren: (node._children && node._children.length > 0)
+    });
+    if (node._children && node._children.length > 0) {
+      node._children.forEach(child => traverse(child, depth + 1, node));
+    }
+  }
+
+  // Sắp xếp Roots: Admin trước -> Chủ nông hộ có nhân sự -> Chủ nông hộ đơn lẻ
+  rootNodes.sort((a, b) => {
+    if (a.role === 'admin' && b.role !== 'admin') return -1;
+    if (a.role !== 'admin' && b.role === 'admin') return 1;
+    const aChildren = a._children ? a._children.length : 0;
+    const bChildren = b._children ? b._children.length : 0;
+    return bChildren - aChildren || a.id - b.id;
+  });
+
+  rootNodes.forEach(root => traverse(root, 0, null));
+  return flattened;
+}
+
 function renderUsersTable(users) {
   const tbody = document.getElementById('users-table');
   const pagInfo = document.getElementById('users-pagination-info');
@@ -138,21 +205,24 @@ function renderUsersTable(users) {
   if (!tbody) return;
 
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Không tìm thấy tài khoản người dùng nào phù hợp.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Không tìm thấy tài khoản người dùng nào phù hợp với bộ lọc.</td></tr>';
     if (pagInfo) pagInfo.textContent = 'Hiển thị 0 người dùng';
     if (pagBtns) pagBtns.innerHTML = '';
     return;
   }
 
+  // Tổ chức lại danh sách theo cấu trúc cây IAM
+  const hierarchicalUsers = buildUserHierarchyTree(users);
+
   // Pagination Logic (10 items / page)
-  const totalItems = users.length;
+  const totalItems = hierarchicalUsers.length;
   const totalPages = Math.ceil(totalItems / USERS_PAGE_SIZE);
   if (currentPage > totalPages) currentPage = totalPages;
   if (currentPage < 1) currentPage = 1;
 
   const startIdx = (currentPage - 1) * USERS_PAGE_SIZE;
   const endIdx = Math.min(startIdx + USERS_PAGE_SIZE, totalItems);
-  const pageUsers = users.slice(startIdx, endIdx);
+  const pageUsers = hierarchicalUsers.slice(startIdx, endIdx);
 
   tbody.innerHTML = pageUsers.map(u => {
     const isSelf = currentUser && currentUser.id === u.id;
@@ -160,9 +230,59 @@ function renderUsersTable(users) {
     
     const publicId = u.public_id || (typeof generateIsoPublicId === 'function' ? generateIsoPublicId(u.role, u.id) : (u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`));
 
-    const roleBadge = u.role === 'admin' 
-      ? '<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="shield-check" class="lucide-sm"></i> Admin</span>'
-      : '<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="sprout" class="lucide-sm"></i> Nông hộ</span>';
+    // Badge Phân cấp Vai trò Doanh nghiệp Quốc tế (Enterprise IAM Sub-role Badges)
+    let roleBadge = '';
+    const subRole = u.sub_role || 'farm_owner';
+    const isSubAccount = Boolean(u.parent_user_id);
+    const assignedPlantsCount = u.assigned_plants_count || (Array.isArray(u.assigned_plant_ids) ? u.assigned_plant_ids.length : 0);
+
+    if (u.role === 'admin') {
+      roleBadge = `
+        <span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+          <i data-lucide="shield-check" class="lucide-sm"></i> Quản Trị Hệ Thống (Admin)
+        </span>
+      `;
+    } else if (subRole === 'manager') {
+      roleBadge = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
+            <i data-lucide="briefcase" class="lucide-sm"></i> Quản Đốc Vườn (Manager)
+          </span>
+          <span style="font-size:10.5px; color:#475569;">Điều hành kho, vật tư & kỹ thuật</span>
+        </div>
+      `;
+    } else if (subRole === 'care_worker') {
+      roleBadge = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
+            <i data-lucide="wrench" class="lucide-sm"></i> Công Nhân Ở Vườn (Worker)
+          </span>
+          <span style="font-size:10.5px; color:#059669; font-weight:700;">
+            ${assignedPlantsCount > 0 ? `Được giao: ${assignedPlantsCount} cây` : 'Toàn quyền cây trong trại'}
+          </span>
+        </div>
+      `;
+    } else if (subRole === 'auditor_readonly') {
+      roleBadge = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <span class="badge" style="background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
+            <i data-lucide="file-check" class="lucide-sm"></i> Kiểm Định Viên (Auditor)
+          </span>
+          <span style="font-size:10.5px; color:#6d28d9; font-weight:600;">VietGAP / Chỉ xem</span>
+        </div>
+      `;
+    } else {
+      // Chủ nông hộ (Farm Owner / Account Master)
+      const childCount = (hierarchicalUsers.filter(x => x.parent_user_id === u.id)).length;
+      roleBadge = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
+            <i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> Chủ Nông Hộ (Farm Owner)
+          </span>
+          ${childCount > 0 ? `<span style="font-size:10.5px; color:#0284c7; font-weight:700;">↳ Quản lý ${childCount} nhân sự</span>` : ''}
+        </div>
+      `;
+    }
 
     let tierBadge = '';
     if (u.account_tier === 'pro') {
@@ -195,24 +315,40 @@ function renderUsersTable(users) {
 
     const initialLetter = (u.full_name || 'U').charAt(0).toUpperCase();
 
+    // Hiển thị cây phân cấp (Lineage Tree visualization)
+    const isChild = Boolean(u._depth && u._depth > 0);
+    const parentName = u.parent_user_name || (u._parentObj ? u._parentObj.full_name : '');
+    const treeConnectorHtml = isChild ? `
+      <div style="display:inline-flex; align-items:center; gap:5px; margin-top:4px; background:#f1f5f9; padding:2px 7px; border-radius:6px; font-size:11px; color:#475569; border-left:3px solid #059669;">
+        <i data-lucide="corner-down-right" class="lucide-sm" style="color:#059669;"></i>
+        <span>Trực thuộc: <strong style="color:#0f172a;">${escapeHtml(parentName || `Nông hộ #${u.parent_user_id}`)}</strong></span>
+      </div>
+    ` : '';
+
+    const avatarBg = isChild ? '#f8fafc' : (u.role === 'admin' ? '#fef2f2' : '#ecfdf5');
+    const avatarColor = isChild ? '#475569' : (u.role === 'admin' ? '#b91c1c' : '#059669');
+    const avatarBorder = isChild ? '1.5px solid #cbd5e1' : (u.role === 'admin' ? '1.5px solid #fca5a5' : '1.5px solid #a7f3d0');
+
     const deleteBtn = isSelf 
       ? `<button class="btn btn-secondary btn-sm" disabled style="opacity:0.4; cursor:not-allowed; padding:4px 8px; font-size:11px;" title="Bạn không thể tự xóa tài khoản của mình"><i data-lucide="trash-2" class="lucide-sm"></i></button>`
       : `<button class="btn btn-sm" onclick="deleteUser(${u.id})" style="background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#dc2626; padding:4px 8px; font-size:11px; cursor:pointer;" title="Xóa tài khoản"><i data-lucide="trash-2" class="lucide-sm"></i></button>`;
 
     return `
-      <tr data-user-id="${u.id}" style="border-bottom:1px solid #f1f5f9; font-size:13px;">
-        <td style="padding:12px 16px;">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:34px; height:34px; border-radius:50%; background:#ecfdf5; color:#059669; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; border:1.5px solid #a7f3d0;">
+      <tr data-user-id="${u.id}" style="border-bottom:1px solid #f1f5f9; font-size:13px; ${isChild ? 'background:#fafcff;' : ''}">
+        <td style="padding:12px 16px; ${isChild ? 'padding-left:36px;' : ''}">
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <div style="width:34px; height:34px; border-radius:50%; background:${avatarBg}; color:${avatarColor}; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; border:${avatarBorder}; margin-top:2px;">
               ${initialLetter}
             </div>
             <div>
               <div style="font-weight:800; color:#0f172a; font-size:13.5px;">${escapeHtml(u.full_name)}${selfBadge}</div>
-              <div style="margin-top:2px;">
+              <div style="margin-top:2px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-size:10px; font-weight:700; font-family:monospace; padding:1px 6px; border-radius:6px;" title="Mã ID chuẩn ISO">
                   ID: ${publicId}
                 </span>
+                ${isChild ? `<span style="font-size:10px; background:#e0e7ff; color:#3730a3; padding:1px 6px; border-radius:4px; font-weight:700;">Nhân sự cấp dưới</span>` : ''}
               </div>
+              ${treeConnectorHtml}
             </div>
           </div>
         </td>

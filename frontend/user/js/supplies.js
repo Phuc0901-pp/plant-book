@@ -4,7 +4,7 @@
    supplies.js — Quản lý & Giám sát Vật tư (Bón phân, Tiền nước, Phun thuốc, Nhân công)
    ═══════════════════════════════════════════════════════════════ */
 
-import { api } from './core/api.js';
+import { api, getCurrentUserRbac } from './core/api.js';
 import { toast, esc } from './core/utils.js';
 
 let currentCategoryFilter = 'all';
@@ -75,14 +75,165 @@ let cachedUsageLogs = [];
 // ─── Formatting helpers ──────────────────────────────────────────
 function formatVND(amount) {
   try {
-    const u = window._currentUserProfile || JSON.parse(localStorage.getItem('user') || '{}');
-    if (window._isFinanceRedactedForCurrentUser || (u && u.role !== 'admin' && (u.allow_view_finance === false || ['care_worker', 'auditor_readonly'].includes(u.sub_role)))) {
-      return 'Đã ẩn (Redacted)';
+    const rbac = getCurrentUserRbac();
+    if (window._isFinanceRedactedForCurrentUser || (rbac && rbac.isFinanceRedacted)) {
+      return 'Đã bảo mật (Redacted)';
     }
   } catch (_) {}
   const val = parseFloat(amount) || 0;
   return new Intl.NumberFormat('vi-VN').format(Math.round(val)) + ' VNĐ';
 }
+
+export function applySuppliesRoleArchitecture() {
+  const rbac = getCurrentUserRbac();
+  if (!rbac) return;
+
+  const { isFinanceRedacted, isReadonlyAuditor, isCareWorker, isManager, isOwner, viewPlantsScope } = rbac;
+
+  const banner = document.getElementById('supplies-role-architecture-banner');
+  const bannerIcon = document.getElementById('supplies-role-banner-icon');
+  const bannerTitle = document.getElementById('supplies-role-banner-title');
+  const bannerDesc = document.getElementById('supplies-role-banner-desc');
+  const bannerTags = document.getElementById('supplies-role-banner-tags');
+
+  const roleBadge = document.getElementById('supplies-page-role-badge');
+  const pageTitle = document.getElementById('supplies-page-title');
+  const pageSubtitle = document.getElementById('supplies-page-subtitle');
+  const headerStockinBtn = document.getElementById('supplies-header-stockin-btn');
+  const headerAddBtn = document.getElementById('supplies-header-add-btn');
+
+  const filterTitle = document.getElementById('supplies-cockpit-filter-title');
+  const filterDesc = document.getElementById('supplies-cockpit-filter-desc');
+  const manageDesc = document.getElementById('supplies-manage-desc');
+  const btnAddNew = document.getElementById('btn-supplies-add-new');
+  const btnRecordUsage = document.getElementById('btn-supplies-record-usage');
+
+  const thUnitPrice = document.getElementById('th-supply-unit-price');
+  const thValuation = document.getElementById('th-supply-valuation');
+
+  const tabMonitor = document.getElementById('supplies-tab-monitor');
+  const paneMonitor = document.getElementById('pane-supplies-monitor');
+
+  if (isCareWorker) {
+    if (banner) {
+      banner.style.display = 'block';
+      banner.style.background = '#f0fdf4';
+      banner.style.borderColor = '#86efac';
+      if (bannerIcon) { bannerIcon.style.background = '#dcfce7'; bannerIcon.style.color = '#16a34a'; bannerIcon.innerHTML = '<i data-lucide="wrench" class="lucide-sm"></i>'; }
+      if (bannerTitle) bannerTitle.textContent = 'Kiến Trúc Giao Diện Kỹ Thuật Thực Địa — Nhân Công Chăm Sóc';
+      if (bannerDesc) bannerDesc.textContent = 'Đã ẩn hoàn toàn đơn giá mua, vốn lưu kho và doanh thu tài chính. Chỉ hiển thị định mức vật tư kỹ thuật, thời gian cách ly PHI và sản lượng thu hoạch (kg/quả).';
+      if (bannerTags) bannerTags.innerHTML = `
+        <span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;"><i data-lucide="check-circle-2" class="lucide-xs"></i> ${viewPlantsScope === 'assigned' ? 'Cây được giao phụ trách' : 'Kỹ thuật trang trại'}</span>
+        <span class="badge" style="background:#fee2e2; color:#dc2626; font-weight:700;"><i data-lucide="eye-off" class="lucide-xs"></i> Bảo mật Doanh thu &amp; Giá vốn</span>
+      `;
+    }
+    if (roleBadge) roleBadge.innerHTML = '<i data-lucide="wrench" class="lucide-sm" style="color:#16a34a;"></i> Vật Tư Kỹ Thuật Thực Địa';
+    if (pageTitle) pageTitle.innerHTML = '<i data-lucide="package" class="lucide-sm" style="color:#16a34a;"></i> Danh Mục Vật Tư Kỹ Thuật &amp; Định Mức Canh Tác';
+    if (pageSubtitle) pageSubtitle.textContent = 'Tra cứu tồn kho phân bón, thuốc BVTV, hướng dẫn an toàn cách ly PHI và ghi nhận tiêu hao chăm sóc cây trồng.';
+    if (manageDesc) manageDesc.textContent = 'Tra cứu quy cách đóng gói, mức dự trữ kỹ thuật và thời gian cách ly an toàn VietGAP.';
+
+    if (headerStockinBtn) headerStockinBtn.style.display = 'none';
+    if (headerAddBtn) headerAddBtn.style.display = 'none';
+    if (btnAddNew) btnAddNew.style.display = 'none';
+    if (btnRecordUsage) btnRecordUsage.style.display = 'inline-flex';
+
+    if (filterTitle) filterTitle.textContent = 'BỘ LỌC ĐỊNH LƯỢNG KỸ THUẬT & SẢN LƯỢNG CANH TÁC';
+    if (filterDesc) filterDesc.textContent = 'Thống kê số đợt bón phân/phun thuốc và sản lượng thu hoạch (kg/trái)';
+
+    if (thUnitPrice) thUnitPrice.style.display = 'none';
+    if (thValuation) thValuation.style.display = 'none';
+
+    if (tabMonitor) tabMonitor.style.display = 'none';
+    if (paneMonitor) paneMonitor.style.display = 'none';
+
+  } else if (isReadonlyAuditor) {
+    if (banner) {
+      banner.style.display = 'block';
+      banner.style.background = '#f8fafc';
+      banner.style.borderColor = '#94a3b8';
+      if (bannerIcon) { bannerIcon.style.background = '#e2e8f0'; bannerIcon.style.color = '#475569'; bannerIcon.innerHTML = '<i data-lucide="clipboard-check" class="lucide-sm"></i>'; }
+      if (bannerTitle) bannerTitle.textContent = 'Kiến Trúc Kiểm Toán Chuẩn VietGAP — Chế Độ Chỉ Đọc (Read-Only)';
+      if (bannerDesc) bannerDesc.textContent = 'Tra cứu danh mục hoạt chất, thời gian cách ly PHI và sổ thẻ kho phục vụ thanh tra VietGAP. Toàn bộ dữ liệu tài chính và thao tác chỉnh sửa đã được khóa.';
+      if (bannerTags) bannerTags.innerHTML = `
+        <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;"><i data-lucide="shield-check" class="lucide-xs"></i> Kiểm định viên VietGAP</span>
+        <span class="badge" style="background:#f1f5f9; color:#475569; font-weight:700;"><i data-lucide="lock" class="lucide-xs"></i> Chỉ Đọc &amp; Bảo Mật Tài Chính</span>
+      `;
+    }
+    if (roleBadge) roleBadge.innerHTML = '<i data-lucide="clipboard-check" class="lucide-sm" style="color:#0284c7;"></i> Kiểm Toán Vật Tư VietGAP (Chỉ Đọc)';
+    if (pageTitle) pageTitle.innerHTML = '<i data-lucide="package-search" class="lucide-sm" style="color:#0284c7;"></i> Hồ Sơ Vật Tư &amp; Truy Xuất Nguồn Gốc VietGAP';
+    if (pageSubtitle) pageSubtitle.textContent = 'Kiểm tra danh mục phân bón, hoạt chất thuốc BVTV, thời gian cách ly thu hoạch (PHI) và nhật ký xuất dùng.';
+    if (manageDesc) manageDesc.textContent = 'Hồ sơ kỹ thuật vật tư lưu kho và chứng nhận an toàn VietGAP (Chế độ kiểm định chỉ đọc).';
+
+    if (headerStockinBtn) headerStockinBtn.style.display = 'none';
+    if (headerAddBtn) headerAddBtn.style.display = 'none';
+    if (btnAddNew) btnAddNew.style.display = 'none';
+    if (btnRecordUsage) btnRecordUsage.style.display = 'none';
+
+    if (filterTitle) filterTitle.textContent = 'BỘ LỌC KIỂM TOÁN ĐỊNH MỨC & SẢN LƯỢNG VIETGAP';
+    if (filterDesc) filterDesc.textContent = 'Truy xuất lịch sử sử dụng vật tư và sản lượng theo niên vụ';
+
+    if (thUnitPrice) thUnitPrice.style.display = 'none';
+    if (thValuation) thValuation.style.display = 'none';
+
+    if (tabMonitor) tabMonitor.style.display = 'none';
+    if (paneMonitor) paneMonitor.style.display = 'none';
+
+  } else if (isManager) {
+    if (banner) {
+      banner.style.display = 'block';
+      banner.style.background = '#f8fafc';
+      banner.style.borderColor = '#cbd5e1';
+      if (bannerIcon) { bannerIcon.style.background = '#e0f2fe'; bannerIcon.style.color = '#0284c7'; bannerIcon.innerHTML = '<i data-lucide="user-cog" class="lucide-sm"></i>'; }
+      if (bannerTitle) bannerTitle.textContent = 'Kiến Trúc Điều Hành Kỹ Thuật — Quản Đốc & Kỹ Sư Vườn';
+      if (bannerDesc) bannerDesc.textContent = isFinanceRedacted
+        ? 'Điều phối tồn kho vật tư kỹ thuật toàn trang trại (Đã ẩn số liệu doanh thu và chi phí tài chính theo phân quyền của Chủ vườn).'
+        : 'Điều phối tồn kho vật tư, phê duyệt xuất dùng và giám sát chi phí canh tác toàn trang trại.';
+      if (bannerTags) bannerTags.innerHTML = `
+        <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;"><i data-lucide="user-check" class="lucide-xs"></i> Quản đốc / Kỹ sư</span>
+        ${isFinanceRedacted
+          ? '<span class="badge" style="background:#fee2e2; color:#dc2626; font-weight:700;"><i data-lucide="eye-off" class="lucide-xs"></i> Ẩn Doanh Thu</span>'
+          : '<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:700;"><i data-lucide="check" class="lucide-xs"></i> Xem Hạch Toán</span>'}
+      `;
+    }
+    if (headerStockinBtn) headerStockinBtn.style.display = 'inline-flex';
+    if (headerAddBtn) headerAddBtn.style.display = 'inline-flex';
+    if (btnAddNew) btnAddNew.style.display = 'inline-flex';
+    if (btnRecordUsage) btnRecordUsage.style.display = 'inline-flex';
+
+    if (isFinanceRedacted) {
+      if (filterTitle) filterTitle.textContent = 'BỘ LỌC ĐỊNH LƯỢNG KỸ THUẬT & SẢN LƯỢNG CANH TÁC';
+      if (thUnitPrice) thUnitPrice.style.display = 'none';
+      if (thValuation) thValuation.style.display = 'none';
+      if (tabMonitor) tabMonitor.style.display = 'none';
+      if (paneMonitor) paneMonitor.style.display = 'none';
+    } else {
+      if (filterTitle) filterTitle.textContent = 'BỘ LỌC HẠCH TOÁN CHI PHÍ & DOANH THU';
+      if (thUnitPrice) thUnitPrice.style.display = '';
+      if (thValuation) thValuation.style.display = '';
+      if (tabMonitor) tabMonitor.style.display = '';
+    }
+
+  } else {
+    if (banner) banner.style.display = 'none';
+    if (roleBadge) roleBadge.innerHTML = '<i data-lucide="package" class="lucide-sm" style="color:#059669;"></i> Quản Trị Tồn Kho &amp; Chuỗi Cung Ứng';
+    if (pageTitle) pageTitle.innerHTML = '<i data-lucide="package" class="lucide-sm" style="color:#059669;"></i> Quản Trị Tồn Kho &amp; Chi Phí Vật Tư AgTech ERP';
+    if (pageSubtitle) pageSubtitle.textContent = 'Hệ thống định lượng tồn kho thời gian thực, định giá tài sản lưu kho, thẻ kho minh bạch và kiểm soát chi phí VietGAP.';
+    if (manageDesc) manageDesc.textContent = 'Giám sát số lượng tồn, vốn hàng tồn và quy cách đóng gói chuẩn ERP.';
+
+    if (headerStockinBtn) headerStockinBtn.style.display = 'inline-flex';
+    if (headerAddBtn) headerAddBtn.style.display = 'inline-flex';
+    if (btnAddNew) btnAddNew.style.display = 'inline-flex';
+    if (btnRecordUsage) btnRecordUsage.style.display = 'inline-flex';
+
+    if (filterTitle) filterTitle.textContent = 'BỘ LỌC HẠCH TOÁN CHI PHÍ & DOANH THU';
+    if (filterDesc) filterDesc.textContent = 'Hạch toán theo trang trại sở hữu và niên vụ canh tác';
+
+    if (thUnitPrice) thUnitPrice.style.display = '';
+    if (thValuation) thValuation.style.display = '';
+    if (tabMonitor) tabMonitor.style.display = '';
+  }
+}
+window.applySuppliesRoleArchitecture = applySuppliesRoleArchitecture;
 
 function getCategoryBadge(category) {
   switch (category) {
@@ -299,6 +450,8 @@ export async function loadSupplies() {
   const tbody = document.getElementById('supplies-table-body');
   if (!tbody) return;
 
+  applySuppliesRoleArchitecture();
+
   // Tự động load danh sách farm vào select bộ lọc nếu chưa có
   await populateCockpitFarms();
 
@@ -386,24 +539,34 @@ export function onSupplySearchInput(query) {
 }
 
 export async function updateSuppliesProfitCockpit() {
+  const rbac = getCurrentUserRbac();
+  const isFinanceRedacted = Boolean(window._isFinanceRedactedForCurrentUser || (rbac && rbac.isFinanceRedacted));
+
+  const card1TitleEl = document.getElementById('erp-card1-title');
+  const card1SubEl = document.getElementById('erp-card1-sub');
+  const card1FooterLeftEl = document.getElementById('erp-card1-footer-left');
   const totalValuationEl = document.getElementById('erp-kpi-total-valuation');
   const curStockValEl = document.getElementById('erp-kpi-current-stock-val');
   const skuCountEl = document.getElementById('erp-kpi-sku-count');
 
+  const card2TitleEl = document.getElementById('erp-card2-title');
   const totalConsumedEl = document.getElementById('erp-kpi-total-consumed');
   const usageCountEl = document.getElementById('erp-kpi-usage-count');
   const spentFertEl = document.getElementById('erp-spent-fert');
   const spentPestEl = document.getElementById('erp-spent-pest');
   const spentWaterEl = document.getElementById('erp-spent-water');
   const spentLaborEl = document.getElementById('erp-spent-labor');
+  const scopeTextUsageEl = document.getElementById('erp-scope-text-usage');
 
+  const card3TitleEl = document.getElementById('erp-card3-title');
+  const card3BreakdownLabelEl = document.getElementById('erp-card3-breakdown-label');
+  const card3NetLabelEl = document.getElementById('erp-card3-net-label');
   const harvestRevEl = document.getElementById('erp-kpi-harvest-rev');
   const harvestYieldEl = document.getElementById('erp-kpi-harvest-yield');
   const treesBreakdownEl = document.getElementById('erp-kpi-trees-breakdown');
   const roiBadgeEl = document.getElementById('erp-kpi-roi-badge');
   const netProfitEl = document.getElementById('erp-kpi-net-profit');
 
-  // Đọc trực tiếp từ DOM controls để đảm bảo đồng bộ 100% với lựa chọn của người dùng
   const farmSelect = document.getElementById('supplies-cockpit-farm');
   const yearSelect = document.getElementById('supplies-cockpit-year');
   if (farmSelect && farmSelect.value) currentCockpitFarmId = farmSelect.value;
@@ -428,12 +591,16 @@ export async function updateSuppliesProfitCockpit() {
 
     if (!data) {
       data = {
+        finance_redacted: isFinanceRedacted,
         total_stock_inflow: 0,
         current_stock_valuation: 0,
         sku_count: (cachedSupplies ? cachedSupplies.length : 0),
+        fertilizer_sku_count: 0,
+        pesticide_sku_count: 0,
         total_spent: 0,
         usage_count: 0,
         category_spent: { 'Bón phân': 0, 'Phun thuốc': 0, 'Tiền nước': 0, 'Nhân công': 0 },
+        category_usage_count: { 'Bón phân': 0, 'Phun thuốc': 0, 'Tiền nước': 0, 'Nhân công': 0 },
         total_revenue: 0,
         fruit_count: 0,
         harvest_weight: 0,
@@ -442,8 +609,8 @@ export async function updateSuppliesProfitCockpit() {
       };
     }
 
-    // Client-side fallback bổ trợ cho Khối 2 nếu API trả về 0 hoặc chưa có
-    if (!data.total_spent || data.total_spent === 0) {
+    // Client-side fallback bổ trợ cho Khối 2 & 3 CHỈ khi tài khoản được phép xem tài chính
+    if (!isFinanceRedacted && (!data.total_spent || data.total_spent === 0)) {
       if (!Array.isArray(cachedUsageLogs) || cachedUsageLogs.length === 0) {
         try {
           const uLogs = await api('/supplies/usages');
@@ -462,15 +629,7 @@ export async function updateSuppliesProfitCockpit() {
             const c = parseFloat(u.total_cost || (u.quantity * u.unit_price)) || 0;
             fbSpent += c;
             fbCount++;
-            let cat = u.category || u.supply_category;
-            if (!cat) {
-              const n = (u.note || '').toLowerCase();
-              if (n.includes('tưới') || n.includes('nuoc') || n.includes('nước')) cat = 'Tiền nước';
-              else if (n.includes('phân') || n.includes('phan')) cat = 'Bón phân';
-              else if (n.includes('thuốc') || n.includes('thuoc')) cat = 'Phun thuốc';
-              else if (n.includes('công') || n.includes('nhân công')) cat = 'Nhân công';
-              else cat = 'Tiền nước';
-            }
+            let cat = u.category || u.supply_category || 'Tiền nước';
             if (fbCats[cat] !== undefined) fbCats[cat] += c;
             else fbCats[cat] = (fbCats[cat] || 0) + c;
           }
@@ -483,178 +642,141 @@ export async function updateSuppliesProfitCockpit() {
       }
     }
 
-    // ── Client-side Fallback bổ trợ cho Khối 3: Doanh thu thu hoạch theo từng cây trồng ──
-    if (!data.total_revenue || data.total_revenue === 0) {
-      let logsToScan = (Array.isArray(window._allLogsCache) && window._allLogsCache.length > 0)
-        ? window._allLogsCache
-        : (typeof window.getLogsCache === 'function' ? window.getLogsCache() : []);
-
-      // Nếu cache rỗng, tự động tải danh sách nhật ký gần nhất để tổng hợp số liệu thu hoạch
-      if (!logsToScan || logsToScan.length === 0) {
-        try {
-          logsToScan = await api('/plants/logs/recent?days=365');
-          if (Array.isArray(logsToScan) && logsToScan.length > 0) {
-            window._allLogsCache = logsToScan;
-          }
-        } catch (lErr) {
-          console.warn('Could not fetch logs for harvest fallback:', lErr);
-          logsToScan = [];
-        }
-      }
-
-      const allPlants = window._allPlantsCache || (typeof window.getPlantsCache === 'function' ? window.getPlantsCache() : []);
-
-      if (Array.isArray(logsToScan) && logsToScan.length > 0) {
-        let fbHarvestRev = 0;
-        let fbHarvestFruits = 0;
-        let fbHarvestWeight = 0;
-        let fbHarvestCount = 0;
-        const fbTreeBreakdown = {};
-
-        logsToScan.forEach(log => {
-          let d = log.details;
-          if (typeof d === 'string') {
-            try { d = JSON.parse(d); } catch (_) { d = {}; }
-          }
-          d = d || {};
-
-          const lType = (log.log_type || '').toLowerCase();
-          const isHarvest = lType.includes('thu') || 
-                            lType.includes('harvest') || 
-                            parseFloat(d.total_revenue) > 0 || 
-                            parseFloat(d.price_per_tree) > 0 || 
-                            parseFloat(d.fruit_count) > 0;
-
-          if (!isHarvest) return;
-
-          // Bộ lọc Năm
-          const logDateStr = String(log.log_date || log.created_at || '');
-          const matchYear = (!currentCockpitYear || currentCockpitYear === 'all' || logDateStr.startsWith(currentCockpitYear));
-          if (!matchYear) return;
-
-          // Bộ lọc Trang trại: kiểm tra log.farm_id hoặc đối chiếu từ danh sách cây trồng
-          let logFarmId = log.farm_id;
-          if (!logFarmId && allPlants && allPlants.length > 0) {
-            const p = allPlants.find(x => String(x.id) === String(log.plant_id));
-            if (p) logFarmId = p.farm_id;
-          }
-          const matchFarm = (!currentCockpitFarmId || currentCockpitFarmId === 'all' || String(logFarmId) === String(currentCockpitFarmId));
-          if (!matchFarm) return;
-
-          const rev = parseFloat(d.total_revenue) || parseFloat(d.price_per_tree) || parseFloat(d.revenue) || parseFloat(log.cost) || 0;
-          const fruits = parseFloat(d.fruit_count) || 0;
-          const amt = parseFloat(d.amount) || parseFloat(d.yield_kg) || parseFloat(d.quantity) || 0;
-
-          fbHarvestRev += rev;
-          fbHarvestFruits += fruits;
-          fbHarvestWeight += amt;
-          fbHarvestCount++;
-
-          const pId = log.plant_id || 0;
-          let tCode = log.tree_code;
-          let pType = log.plant_type;
-          if ((!tCode || !pType) && allPlants && allPlants.length > 0) {
-            const p = allPlants.find(x => String(x.id) === String(pId));
-            if (p) {
-              tCode = tCode || p.tree_code;
-              pType = pType || p.plant_type;
-            }
-          }
-          tCode = tCode || (pId ? `#${pId}` : 'Toàn vườn');
-          pType = pType || 'Cây trồng';
-
-          if (!fbTreeBreakdown[pId]) {
-            fbTreeBreakdown[pId] = {
-              plant_id: pId,
-              tree_code: tCode,
-              plant_type: pType,
-              revenue: 0,
-              fruits: 0,
-              weight: 0,
-              harvest_times: 0
-            };
-          }
-          fbTreeBreakdown[pId].revenue += rev;
-          fbTreeBreakdown[pId].fruits += fruits;
-          fbTreeBreakdown[pId].weight += amt;
-          fbTreeBreakdown[pId].harvest_times += 1;
-        });
-
-        if (fbHarvestRev > 0 || fbHarvestWeight > 0 || fbHarvestFruits > 0) {
-          data.total_revenue = fbHarvestRev;
-          data.fruit_count = fbHarvestFruits;
-          data.harvest_weight = fbHarvestWeight;
-          data.harvest_count = fbHarvestCount;
-          data.tree_breakdown = Object.values(fbTreeBreakdown).sort((a, b) => b.revenue - a.revenue);
-        }
-      }
-    }
-
-    // KHỐI 1: GIÁ TRỊ NHẬP KHO & TỒN KHO VẬT TƯ
-    let totalInflow = parseFloat(data.total_stock_inflow) || 0;
-    const curStockVal = parseFloat(data.current_stock_valuation) || 0;
     const skuCount = parseInt(data.sku_count) || (cachedSupplies ? cachedSupplies.length : 0);
-    if (totalInflow === 0 && data.total_spent > 0) {
-      totalInflow = data.total_spent;
-    }
-
-    if (totalValuationEl) totalValuationEl.textContent = formatVND(totalInflow);
-    if (curStockValEl) curStockValEl.textContent = formatVND(curStockVal);
-    if (skuCountEl) skuCountEl.textContent = `${skuCount} mặt hàng lưu kho`;
-
-    // KHỐI 2: TIÊU HAO VẬT TƯ LŨY KẾ
-    const totalSpent = parseFloat(data.total_spent) || 0;
     const usageCount = parseInt(data.usage_count) || 0;
-    const catSpent = data.category_spent || {};
-
-    if (totalConsumedEl) totalConsumedEl.textContent = formatVND(totalSpent);
-    if (usageCountEl) usageCountEl.innerHTML = `Đã chiết xuất sử dụng: <strong>${usageCount}</strong> đợt canh tác`;
-    if (spentFertEl) spentFertEl.textContent = formatVND(catSpent['Bón phân'] || 0);
-    if (spentPestEl) spentPestEl.textContent = formatVND(catSpent['Phun thuốc'] || 0);
-    if (spentWaterEl) spentWaterEl.textContent = formatVND(catSpent['Tiền nước'] || 0);
-    if (spentLaborEl) spentLaborEl.textContent = formatVND(catSpent['Nhân công'] || 0);
-
-    // KHỐI 3: DOANH THU THU HOẠCH CÂY TRỒNG
-    const totalRev = parseFloat(data.total_revenue) || 0;
     const totalWeight = parseFloat(data.harvest_weight) || 0;
     const totalFruits = parseFloat(data.fruit_count) || 0;
+    const harvestCount = parseInt(data.harvest_count) || 0;
 
-    // Tính Lợi Nhuận Ròng & ROI chuẩn xác 100%, chống triệt để NaN
-    const netProfit = (data && data.net_profit !== undefined && !isNaN(Number(data.net_profit))) 
-      ? Number(data.net_profit) 
-      : (totalRev - totalSpent);
-    const roi = (data && data.roi_percentage !== undefined && !isNaN(Number(data.roi_percentage)))
-      ? Number(data.roi_percentage)
-      : (totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0));
+    if (isFinanceRedacted || data.finance_redacted) {
+      // ── KIẾN TRÚC KỸ THUẬT THỰC ĐỊA (ẨN HOÀN TOÀN DOANH THU & GIÁ VỐN) ──
+      const fertSkus = data.fertilizer_sku_count !== undefined
+        ? data.fertilizer_sku_count
+        : (cachedSupplies || []).filter(s => s.category === 'Bón phân').length;
+      const pestSkus = data.pesticide_sku_count !== undefined
+        ? data.pesticide_sku_count
+        : (cachedSupplies || []).filter(s => s.category === 'Phun thuốc').length;
 
-    if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
-    if (harvestYieldEl) {
-      harvestYieldEl.innerHTML = `Sản lượng: <strong>${Number(totalWeight.toFixed(1))} kg</strong> (${totalFruits.toLocaleString('vi-VN')} quả)`;
-    }
+      // Khối 1: Danh mục vật tư kỹ thuật
+      if (card1TitleEl) card1TitleEl.innerHTML = `<i data-lucide="package-check" class="lucide-sm" style="color: #38bdf8;"></i> DANH MỤC VẬT TƯ KỸ THUẬT`;
+      if (totalValuationEl) totalValuationEl.textContent = `${skuCount} mặt hàng`;
+      if (card1SubEl) card1SubEl.textContent = 'Vật tư phân bón & BVTV khả dụng thực địa';
+      if (card1FooterLeftEl) {
+        card1FooterLeftEl.innerHTML = `Phân bón: <strong style="color:#ffffff;">${fertSkus}</strong> · Thuốc BVTV: <strong style="color:#ffffff;">${pestSkus}</strong>`;
+      }
+      if (skuCountEl) skuCountEl.textContent = 'Chuẩn VietGAP';
 
-    if (roiBadgeEl) {
-      roiBadgeEl.textContent = `ROI: ${roi >= 0 ? '+' : ''}${roi}%`;
-      roiBadgeEl.style.background = roi >= 0 ? '#fef08a' : '#fee2e2';
-      roiBadgeEl.style.color = roi >= 0 ? '#854d0e' : '#b91c1c';
-    }
+      // Khối 2: Định mức & Lượt sử dụng thực địa
+      const catCounts = data.category_usage_count || {};
+      if (card2TitleEl) card2TitleEl.innerHTML = `<i data-lucide="flask-conical" class="lucide-sm" style="color: #059669;"></i> ĐỊNH MỨC &amp; LƯỢT SỬ DỤNG VẬT TƯ`;
+      if (totalConsumedEl) totalConsumedEl.textContent = `${usageCount} đợt thực địa`;
+      if (usageCountEl) usageCountEl.innerHTML = `Đã ghi nhận chăm sóc: <strong>${usageCount}</strong> đợt canh tác`;
+      if (spentFertEl) spentFertEl.textContent = `${catCounts['Bón phân'] || 0} đợt`;
+      if (spentPestEl) spentPestEl.textContent = `${catCounts['Phun thuốc'] || 0} đợt`;
+      if (spentWaterEl) spentWaterEl.textContent = `${catCounts['Tiền nước'] || 0} đợt`;
+      if (spentLaborEl) spentLaborEl.textContent = `${catCounts['Nhân công'] || 0} đợt`;
+      if (scopeTextUsageEl) {
+        scopeTextUsageEl.textContent = rbac?.viewPlantsScope === 'assigned'
+          ? 'Thống kê trên các cây bạn phụ trách'
+          : 'Thống kê kỹ thuật tại trang trại';
+      }
 
-    if (netProfitEl) {
-      netProfitEl.textContent = `${netProfit >= 0 ? '+' : ''}${formatVND(netProfit)}`;
-      netProfitEl.style.color = netProfit >= 0 ? '#ffffff' : '#fca5a5';
-    }
+      // Khối 3: Sản lượng thu hoạch kỹ thuật (Ẩn doanh thu VNĐ, ROI, Lợi nhuận ròng)
+      if (card3TitleEl) card3TitleEl.innerHTML = `<i data-lucide="trees" class="lucide-sm" style="color: #6ee7b7;"></i> SẢN LƯỢNG THU HOẠCH PHỤ TRÁCH`;
+      if (harvestRevEl) harvestRevEl.textContent = `${Number(totalWeight.toFixed(1))} kg`;
+      if (harvestYieldEl) {
+        harvestYieldEl.innerHTML = `Số trái thu hoạch: <strong>${totalFruits.toLocaleString('vi-VN')} quả</strong> (${harvestCount} đợt hái)`;
+      }
+      if (card3BreakdownLabelEl) card3BreakdownLabelEl.textContent = 'SẢN LƯỢNG THEO TỪNG CÂY:';
+      if (roiBadgeEl) {
+        roiBadgeEl.innerHTML = `VietGAP Kỹ Thuật`;
+        roiBadgeEl.style.background = '#dcfce7';
+        roiBadgeEl.style.color = '#15803d';
+      }
+      if (card3NetLabelEl) card3NetLabelEl.textContent = 'Bảo mật Tài chính:';
+      if (netProfitEl) {
+        netProfitEl.innerHTML = `<span style="font-size:11.5px; background:rgba(255,255,255,0.18); padding:2px 8px; border-radius:6px; color:#fef08a;">Đã ẩn Doanh thu &amp; Chi phí</span>`;
+      }
 
-    // Render Chi tiết Đóng góp theo từng cây (Tree-level breakdown)
-    if (treesBreakdownEl) {
-      const trees = data.tree_breakdown || [];
-      if (trees.length === 0) {
-        treesBreakdownEl.innerHTML = `<div style="color:rgba(255,255,255,0.7); font-style:italic; display:flex; align-items:center; gap:5px;"><i data-lucide="inbox" class="lucide-xs" style="opacity:0.7;"></i> Chưa có dữ liệu thu hoạch trong kỳ</div>`;
-      } else {
-        treesBreakdownEl.innerHTML = trees.slice(0, 5).map(t => `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-xs" style="color:#a7f3d0;"></i> ${esc(t.tree_code)} <small style="opacity:0.8;">(${esc(t.plant_type)})</small></span>
-            <strong style="color:#ffffff;">${formatVND(t.revenue)}</strong>
-          </div>
-        `).join('');
+      if (treesBreakdownEl) {
+        const trees = data.tree_breakdown || [];
+        if (trees.length === 0) {
+          treesBreakdownEl.innerHTML = `<div style="color:rgba(255,255,255,0.7); font-style:italic; display:flex; align-items:center; gap:5px;"><i data-lucide="inbox" class="lucide-xs" style="opacity:0.7;"></i> Chưa có dữ liệu thu hoạch trên cây phụ trách</div>`;
+        } else {
+          treesBreakdownEl.innerHTML = trees.slice(0, 5).map(t => `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-xs" style="color:#a7f3d0;"></i> ${esc(t.tree_code)} <small style="opacity:0.8;">(${esc(t.plant_type)})</small></span>
+              <strong style="color:#ffffff;">${Number((parseFloat(t.weight) || 0).toFixed(1))} kg (${t.fruits || 0} quả)</strong>
+            </div>
+          `).join('');
+        }
+      }
+
+    } else {
+      // ── KIẾN TRÚC CHỦ VƯỜN / QUẢN ĐỐC CÓ QUYỀN TÀI CHÍNH (FULL ERP) ──
+      let totalInflow = parseFloat(data.total_stock_inflow) || 0;
+      const curStockVal = parseFloat(data.current_stock_valuation) || 0;
+      if (totalInflow === 0 && data.total_spent > 0) {
+        totalInflow = data.total_spent;
+      }
+
+      if (card1TitleEl) card1TitleEl.innerHTML = `<i data-lucide="warehouse" class="lucide-sm" style="color: #38bdf8;"></i> GIÁ TRỊ NHẬP KHO VẬT TƯ`;
+      if (totalValuationEl) totalValuationEl.textContent = formatVND(totalInflow);
+      if (card1SubEl) card1SubEl.textContent = 'Tổng vốn mua hàng nhập vào trang trại';
+      if (card1FooterLeftEl) {
+        card1FooterLeftEl.innerHTML = `Tồn kho thực tế: <strong id="erp-kpi-current-stock-val" style="color:#ffffff;">${formatVND(curStockVal)}</strong>`;
+      }
+      if (skuCountEl) skuCountEl.textContent = `${skuCount} mặt hàng lưu kho`;
+
+      const totalSpent = parseFloat(data.total_spent) || 0;
+      const catSpent = data.category_spent || {};
+
+      if (card2TitleEl) card2TitleEl.innerHTML = `<i data-lucide="flask-conical" class="lucide-sm" style="color: #059669;"></i> TIÊU HAO VẬT TƯ LŨY KẾ`;
+      if (totalConsumedEl) totalConsumedEl.textContent = formatVND(totalSpent);
+      if (usageCountEl) usageCountEl.innerHTML = `Đã chiết xuất sử dụng: <strong>${usageCount}</strong> đợt canh tác`;
+      if (spentFertEl) spentFertEl.textContent = formatVND(catSpent['Bón phân'] || 0);
+      if (spentPestEl) spentPestEl.textContent = formatVND(catSpent['Phun thuốc'] || 0);
+      if (spentWaterEl) spentWaterEl.textContent = formatVND(catSpent['Tiền nước'] || 0);
+      if (spentLaborEl) spentLaborEl.textContent = formatVND(catSpent['Nhân công'] || 0);
+      if (scopeTextUsageEl) scopeTextUsageEl.textContent = 'Hạch toán thực tế trên cây';
+
+      const totalRev = parseFloat(data.total_revenue) || 0;
+      const netProfit = (data && data.net_profit !== undefined && !isNaN(Number(data.net_profit))) 
+        ? Number(data.net_profit) 
+        : (totalRev - totalSpent);
+      const roi = (data && data.roi_percentage !== undefined && !isNaN(Number(data.roi_percentage)))
+        ? Number(data.roi_percentage)
+        : (totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalRev > 0 ? 100 : 0));
+
+      if (card3TitleEl) card3TitleEl.innerHTML = `<i data-lucide="badge-dollar-sign" class="lucide-sm" style="color: #6ee7b7;"></i> DOANH THU THU HOẠCH CÂY TRỒNG`;
+      if (harvestRevEl) harvestRevEl.textContent = formatVND(totalRev);
+      if (harvestYieldEl) {
+        harvestYieldEl.innerHTML = `Sản lượng: <strong>${Number(totalWeight.toFixed(1))} kg</strong> (${totalFruits.toLocaleString('vi-VN')} quả)`;
+      }
+      if (card3BreakdownLabelEl) card3BreakdownLabelEl.textContent = 'ĐÓNG GÓP THEO TỪNG CÂY:';
+      if (roiBadgeEl) {
+        roiBadgeEl.textContent = `ROI: ${roi >= 0 ? '+' : ''}${roi}%`;
+        roiBadgeEl.style.background = roi >= 0 ? '#fef08a' : '#fee2e2';
+        roiBadgeEl.style.color = roi >= 0 ? '#854d0e' : '#b91c1c';
+      }
+      if (card3NetLabelEl) card3NetLabelEl.textContent = 'Lợi nhuận ròng (Net Profit):';
+      if (netProfitEl) {
+        netProfitEl.textContent = `${netProfit >= 0 ? '+' : ''}${formatVND(netProfit)}`;
+        netProfitEl.style.color = netProfit >= 0 ? '#ffffff' : '#fca5a5';
+      }
+
+      if (treesBreakdownEl) {
+        const trees = data.tree_breakdown || [];
+        if (trees.length === 0) {
+          treesBreakdownEl.innerHTML = `<div style="color:rgba(255,255,255,0.7); font-style:italic; display:flex; align-items:center; gap:5px;"><i data-lucide="inbox" class="lucide-xs" style="opacity:0.7;"></i> Chưa có dữ liệu thu hoạch trong kỳ</div>`;
+        } else {
+          treesBreakdownEl.innerHTML = trees.slice(0, 5).map(t => `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-xs" style="color:#a7f3d0;"></i> ${esc(t.tree_code)} <small style="opacity:0.8;">(${esc(t.plant_type)})</small></span>
+              <strong style="color:#ffffff;">${formatVND(t.revenue)}</strong>
+            </div>
+          `).join('');
+        }
       }
     }
 
@@ -677,15 +799,30 @@ export function renderSuppliesTable(supplies) {
   const countLabel = document.getElementById('supplies-table-count-label');
   if (!tbody) return;
 
+  const rbac = getCurrentUserRbac();
+  const isFinanceRedacted = Boolean(window._isFinanceRedactedForCurrentUser || (rbac && rbac.isFinanceRedacted));
+  const isCareWorker = Boolean(rbac && rbac.isCareWorker);
+  const isReadonlyAuditor = Boolean(rbac && rbac.isReadonlyAuditor);
+  const canMutateMasterSupplies = !isCareWorker && !isReadonlyAuditor;
+
+  const thUnitPrice = document.getElementById('th-supply-unit-price');
+  const thValuation = document.getElementById('th-supply-valuation');
+  if (thUnitPrice) thUnitPrice.style.display = isFinanceRedacted ? 'none' : '';
+  if (thValuation) thValuation.style.display = isFinanceRedacted ? 'none' : '';
+
+  const colSpanCount = isFinanceRedacted ? 5 : 7;
+
   if (!supplies || supplies.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="empty-state" style="padding: 40px; text-align: center;">
+        <td colspan="${colSpanCount}" class="empty-state" style="padding: 40px; text-align: center;">
           <i data-lucide="package" class="lucide-sm" style="font-size:32px; color:var(--gray-300); margin-bottom:8px; display:block;"></i>
           Không tìm thấy vật tư nào phù hợp với bộ lọc hiện tại.<br>
-          <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="margin-top:10px;">
-            <i data-lucide="plus" class="lucide-sm"></i> Khai báo vật tư mới
-          </button>
+          ${canMutateMasterSupplies ? `
+            <button class="btn btn-primary btn-sm" onclick="openSupplyModal()" style="margin-top:10px;">
+              <i data-lucide="plus" class="lucide-sm"></i> Khai báo vật tư mới
+            </button>
+          ` : ''}
         </td>
       </tr>
     `;
@@ -741,6 +878,9 @@ export function renderSuppliesTable(supplies) {
     const activeIngDisplay = sp.active_ingredient 
       ? `<div style="font-size:11px; color:#047857; font-weight:600; margin-top:2px;"><i data-lucide="flask-round" class="lucide-sm"></i> Hoạt chất: ${esc(sp.active_ingredient)}</div>` 
       : (sp.fertilizer_type ? `<div style="font-size:11px; color:#64748b; font-weight:600; margin-top:2px;">${esc(sp.fertilizer_type)}</div>` : '');
+    const phiBadge = sp.phi_days && parseInt(sp.phi_days) > 0
+      ? `<div style="font-size:11px; color:#b45309; font-weight:700; margin-top:2px;"><i data-lucide="clock" class="lucide-xs"></i> Cách ly PHI: ${sp.phi_days} ngày</div>`
+      : '';
 
     const nameHtml = `
       <div style="display:flex; align-items:center; gap:10px;">
@@ -753,6 +893,7 @@ export function renderSuppliesTable(supplies) {
             Quy cách: <span style="color:#334155; font-weight:700;">${pkgQty} ${sp.package_unit || sp.unit}</span>
           </div>
           ${activeIngDisplay}
+          ${phiBadge}
         </div>
       </div>
     `;
@@ -816,46 +957,66 @@ export function renderSuppliesTable(supplies) {
       `;
     }
 
-    // 4. Prices
-    const priceHtml = `
-      <div>
-        <strong style="font-size:13px; color:#0f172a;">${formatVND(pkgPrice)}</strong>
-        <div style="font-size:11px; color:#059669; font-weight:700; margin-top:2px;">
-          ${formatVND(priceLarge)} / ${sp.unit}
+    // 4. Prices (Only rendered if finance is NOT redacted)
+    const priceTd = isFinanceRedacted ? '' : `
+      <td style="padding: 12px 14px;">
+        <div>
+          <strong style="font-size:13px; color:#0f172a;">${formatVND(pkgPrice)}</strong>
+          <div style="font-size:11px; color:#059669; font-weight:700; margin-top:2px;">
+            ${formatVND(priceLarge)} / ${sp.unit}
+          </div>
+          ${!isPermanent && priceSmall > 0 ? `<div style="font-size:10.5px; color:#64748b; font-weight:600;">(${priceSmall < 1 ? priceSmall.toFixed(2) + 'đ' : formatVND(priceSmall)} / ${smallUnit})</div>` : ''}
         </div>
-        ${!isPermanent && priceSmall > 0 ? `<div style="font-size:10.5px; color:#64748b; font-weight:600;">(${priceSmall < 1 ? priceSmall.toFixed(2) + 'đ' : formatVND(priceSmall)} / ${smallUnit})</div>` : ''}
-      </div>
+      </td>
     `;
 
-    // 5. Valuation
-    const valuationHtml = isPermanent 
-      ? `<span style="font-size:12px; color:#64748b; font-style:italic;">Theo thực tế</span>`
-      : `<strong style="font-size:13.5px; color:#0284c7;">${formatVND(valuation)}</strong>`;
+    // 5. Valuation (Only rendered if finance is NOT redacted)
+    const valuationTd = isFinanceRedacted ? '' : `
+      <td style="padding: 12px 14px;">
+        ${isPermanent 
+          ? `<span style="font-size:12px; color:#64748b; font-style:italic;">Theo thực tế</span>`
+          : `<strong style="font-size:13.5px; color:#0284c7;">${formatVND(valuation)}</strong>`}
+      </td>
+    `;
 
     // 6. VietGAP / Tiêu chuẩn
     const vietgapHtml = (sp.active_ingredient)
-      ? `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Hoạt chất: ${sp.active_ingredient}"><i data-lucide="check-circle-2" class="lucide-sm"></i> ${sp.active_ingredient}</span>`
+      ? `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;" title="Hoạt chất: ${sp.active_ingredient}"><i data-lucide="check-circle-2" class="lucide-sm"></i> ${esc(sp.active_ingredient)}</span>`
       : `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Đạt chuẩn</span>`;
 
-    // 7. Actions
-    const restockBtn = !isPermanent 
-      ? `<button type="button" class="btn btn-primary btn-xs" onclick="openRestockModal(${sp.id})" title="Nhập thêm hàng vào kho" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px; background:#059669; border-color:#059669;"><i data-lucide="truck" class="lucide-sm"></i> Nhập</button>`
-      : '';
+    // 7. Role-Adaptive Actions
+    let actionsHtml = '';
+    if (isReadonlyAuditor) {
+      actionsHtml = `
+        <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho kỹ thuật" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i data-lucide="bookmark" class="lucide-sm" style="color:#0284c7;"></i> Thẻ kho</button>
+      `;
+    } else if (isCareWorker) {
+      actionsHtml = `
+        <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho kỹ thuật" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i data-lucide="bookmark" class="lucide-sm" style="color:#0284c7;"></i> Thẻ kho</button>
+      `;
+    } else {
+      const restockBtn = !isPermanent 
+        ? `<button type="button" class="btn btn-primary btn-xs" onclick="openRestockModal(${sp.id})" title="Nhập thêm hàng vào kho" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px; background:#059669; border-color:#059669;"><i data-lucide="truck" class="lucide-sm"></i> Nhập</button>`
+        : '';
+      actionsHtml = `
+        ${restockBtn}
+        <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho chi tiết" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i data-lucide="bookmark" class="lucide-sm" style="color:#0284c7;"></i> Thẻ kho</button>
+        <button type="button" class="btn btn-secondary btn-xs" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i data-lucide="edit-3" class="lucide-sm"></i></button>
+        <button type="button" class="btn btn-danger btn-xs" onclick="deleteSupply(${sp.id})" title="Xóa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i data-lucide="trash-2" class="lucide-sm"></i></button>
+      `;
+    }
 
     return `
       <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: middle;">
         <td style="padding: 12px 14px;">${skuHtml}</td>
         <td style="padding: 12px 14px;">${nameHtml}</td>
         <td style="padding: 12px 14px;">${stockProgressHtml}</td>
-        <td style="padding: 12px 14px;">${priceHtml}</td>
-        <td style="padding: 12px 14px;">${valuationHtml}</td>
+        ${priceTd}
+        ${valuationTd}
         <td style="padding: 12px 14px;">${vietgapHtml}</td>
         <td style="padding: 12px 14px; text-align: right; white-space: nowrap;">
           <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
-            ${restockBtn}
-            <button type="button" class="btn btn-secondary btn-xs" onclick="openStockLedgerModal(${sp.id})" title="Xem sổ thẻ kho chi tiết" style="padding:4px 8px; font-size:11.5px; font-weight:700; border-radius:6px;"><i data-lucide="bookmark" class="lucide-sm" style="color:#0284c7;"></i> Thẻ kho</button>
-            <button type="button" class="btn btn-secondary btn-xs" onclick="openSupplyModal(${sp.id})" title="Chỉnh sửa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i data-lucide="edit-3" class="lucide-sm"></i></button>
-            <button type="button" class="btn btn-danger btn-xs" onclick="deleteSupply(${sp.id})" title="Xóa vật tư" style="padding:4px 8px; font-size:11.5px; border-radius:6px;"><i data-lucide="trash-2" class="lucide-sm"></i></button>
+            ${actionsHtml}
           </div>
         </td>
       </tr>
@@ -1212,9 +1373,24 @@ export async function openStockLedgerModal(id) {
   const unitPrice = parseFloat(sp.unit_price) || 0;
   const isPermanent = (sp.category === 'Tiền nước' || sp.category === 'Nhân công');
 
+  const rbac = getCurrentUserRbac();
+  const isFinanceRedacted = rbac.isFinanceRedacted;
+
   document.getElementById('ledger-stat-current-stock').textContent = isPermanent ? 'Vô tận' : `${currentStock} ${sp.unit}`;
-  document.getElementById('ledger-stat-total-used').textContent = `${totalUsed} ${sp.unit} (${formatVND(sp.total_spent || 0)})`;
-  document.getElementById('ledger-stat-valuation').textContent = isPermanent ? 'Theo thực tế' : formatVND(currentStock * unitPrice);
+  document.getElementById('ledger-stat-total-used').textContent = isFinanceRedacted
+    ? `${totalUsed} ${sp.unit}`
+    : `${totalUsed} ${sp.unit} (${formatVND(sp.total_spent || 0)})`;
+
+  const valEl = document.getElementById('ledger-stat-valuation');
+  const valCard = valEl ? valEl.closest('.stat-card') : null;
+  const valLabel = valCard ? valCard.querySelector('.stat-label') : null;
+  if (isFinanceRedacted) {
+    if (valLabel) valLabel.textContent = 'QUY CÁCH ĐÓNG GÓI';
+    if (valEl) valEl.textContent = sp.package_size ? `${sp.package_size} (${sp.package_qty} ${sp.package_unit || sp.unit})` : 'Chuẩn thực địa';
+  } else {
+    if (valLabel) valLabel.textContent = 'ƯỚC TÍNH VỐN TỒN';
+    if (valEl) valEl.textContent = isPermanent ? 'Theo thực tế' : formatVND(currentStock * unitPrice);
+  }
 
   modal.style.display = 'flex';
   if (container) {
@@ -1239,7 +1415,7 @@ export async function openStockLedgerModal(id) {
             <span style="font-size:11.5px; color:#64748b; font-weight:600;">${createdDate}</span>
           </div>
           <div style="font-size:12px; color:#334155; margin-top:4px;">
-            Số lượng: <strong style="color:#059669;">+${sp.package_qty} ${sp.package_unit || sp.unit}</strong> • Đơn giá: <strong>${formatVND(sp.package_price)}</strong>
+            Số lượng: <strong style="color:#059669;">+${sp.package_qty} ${sp.package_unit || sp.unit}</strong>${isFinanceRedacted ? '' : ` • Đơn giá: <strong>${formatVND(sp.package_price)}</strong>`}
           </div>
           ${sp.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;">Ghi chú: ${esc(sp.note)}</div>` : ''}
         </div>
@@ -1262,7 +1438,7 @@ export async function openStockLedgerModal(id) {
               </div>
               <div style="font-size:12.5px; color:#1e293b; margin-top:4px; display:flex; justify-content:space-between; align-items:center;">
                 <span>Đối tượng: <strong>${esc(targetTree)}</strong></span>
-                <span style="color:#dc2626; font-weight:800;">-${u.quantity} ${sp.unit} (${formatVND(u.total_cost || 0)})</span>
+                <span style="color:#dc2626; font-weight:800;">-${u.quantity} ${sp.unit}${isFinanceRedacted ? '' : ` (${formatVND(u.total_cost || 0)})`}</span>
               </div>
               ${u.note ? `<div style="font-size:11.5px; color:#64748b; margin-top:2px;">Ghi chú: ${esc(u.note)}</div>` : ''}
             </div>
@@ -1666,15 +1842,19 @@ export async function openRecordUsageModal() {
       return;
     }
 
+    const rbac = getCurrentUserRbac();
+    const isFinanceRedacted = rbac.isFinanceRedacted;
+
     if (select) {
       select.innerHTML = cachedSupplies.map(s => {
         const stock = parseFloat(s.stock_quantity) || 0;
         const isPermanent = s.category === 'Tiền nước' || s.category === 'Nhân công';
         const isOut = !isPermanent && stock <= 0;
         const stockText = isPermanent ? '' : (isOut ? ' [HẾT HÀNG]' : ` (Tồn: ${stock} ${s.unit})`);
+        const pricePart = isFinanceRedacted ? '' : ` — ${formatVND(s.unit_price)} / ${s.unit}`;
         return `
           <option value="${s.id}" data-price="${s.unit_price}" data-unit="${s.unit}" ${isOut ? 'disabled style="color:#dc2626;"' : ''}>
-            [${s.category}] ${esc(s.name)} ${s.package_size ? `(${esc(s.package_size)})` : ''} — ${formatVND(s.unit_price)} / ${s.unit}${stockText}
+            [${s.category}] ${esc(s.name)} ${s.package_size ? `(${esc(s.package_size)})` : ''}${pricePart}${stockText}
           </option>
         `;
       }).join('');
@@ -1720,6 +1900,17 @@ export function calculateUsageCostPreview() {
   const totalPreview = document.getElementById('su-total-preview');
 
   if (!select || !qtyInput) return;
+
+  const rbac = getCurrentUserRbac();
+  const previewContainer = pricePreview ? pricePreview.closest('div[style*="background"]') : null;
+  if (rbac.isFinanceRedacted) {
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (pricePreview) pricePreview.textContent = '—';
+    if (totalPreview) totalPreview.textContent = '—';
+    return;
+  } else if (previewContainer) {
+    previewContainer.style.display = '';
+  }
 
   const opt = select.options[select.selectedIndex];
   if (!opt) return;
@@ -1795,6 +1986,10 @@ function renderSupplyUsagesPage() {
     return;
   }
 
+  const rbac = getCurrentUserRbac();
+  const isFinanceRedacted = rbac.isFinanceRedacted;
+  const canDeleteUsage = rbac.isFarmOwner || rbac.isManager;
+
   const totalLogs = cachedUsageLogs.length;
   const totalPages = Math.ceil(totalLogs / usageLogPageSize) || 1;
 
@@ -1836,7 +2031,10 @@ function renderSupplyUsagesPage() {
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <span class="badge" style="background:rgba(255,255,255,0.15); color:#ffffff; font-size:11.5px; font-weight:700;">${dayItems.length} mục tiêu hao</span>
-            <span style="background:#059669; color:#ffffff; font-size:13px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="badge-dollar-sign" class="lucide-xs"></i> ${formatVND(dayTotalCost)}</span>
+            ${isFinanceRedacted
+              ? `<span style="background:rgba(56,189,248,0.2); color:#7dd3fc; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clipboard-list" class="lucide-xs"></i> Nhật ký kỹ thuật</span>`
+              : `<span style="background:#059669; color:#ffffff; font-size:13px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="badge-dollar-sign" class="lucide-xs"></i> ${formatVND(dayTotalCost)}</span>`
+            }
           </div>
         </div>
 
@@ -1852,7 +2050,7 @@ function renderSupplyUsagesPage() {
           <!-- Category Header -->
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:6px; border-bottom:1px dashed #cbd5e1; flex-wrap:wrap; gap:8px;">
             <div>${getCategoryBadge(catName)}</div>
-            <span style="font-size:12.5px; font-weight:800; color:#047857;">Tổng loại: ${formatVND(catTotalCost)}</span>
+            <span style="font-size:12.5px; font-weight:800; color:#047857;">${isFinanceRedacted ? `Tổng: ${catItems.length} lượt áp dụng` : `Tổng loại: ${formatVND(catTotalCost)}`}</span>
           </div>
 
           <!-- Items Rows -->
@@ -1913,7 +2111,7 @@ function renderSupplyUsagesPage() {
                 ${grp.ids.length > 1 ? `<span style="background:#eff6ff; color:#2563eb; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">Gom ${grp.ids.length} đợt</span>` : ''}
               </div>
               <div style="font-size:12px; color:#475569; margin-top:3px;">
-                Tổng số lượng dùng: <strong style="color:#047857;">${formattedQty} ${esc(grp.unit)}</strong> · Đơn giá: <strong>${formatVND(grp.unit_price)}</strong>
+                Tổng số lượng dùng: <strong style="color:#047857;">${formattedQty} ${esc(grp.unit)}</strong>${isFinanceRedacted ? '' : ` · Đơn giá: <strong>${formatVND(grp.unit_price)}</strong>`}
               </div>
               <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <span><i data-lucide="home" class="lucide-sm" style="color:#059669;"></i> ${esc(targetsStr)}</span>
@@ -1922,15 +2120,17 @@ function renderSupplyUsagesPage() {
             </div>
 
             <div style="display:flex; align-items:center; gap:12px;">
-              <div style="font-size:15px; font-weight:900; color:#047857; background:#ecfdf5; padding:6px 14px; border-radius:10px; border:1px solid #a7f3d0; box-shadow:0 2px 6px rgba(4,120,87,0.06);">
-                ${formatVND(grp.total_cost)}
-              </div>
-              <button class="btn btn-danger btn-xs" onclick='deleteSupplyUsagesGroup(${idsJson})' title="Xóa đợt tiêu hao" style="padding:6px 10px;">
-                <i data-lucide="trash-2" class="lucide-sm"></i>
-              </button>
+              ${isFinanceRedacted
+                ? `<div style="font-size:13px; font-weight:800; color:#0284c7; background:#f0f9ff; padding:6px 14px; border-radius:10px; border:1px solid #bae6fd;">${formattedQty} ${esc(grp.unit)}</div>`
+                : `<div style="font-size:15px; font-weight:900; color:#047857; background:#ecfdf5; padding:6px 14px; border-radius:10px; border:1px solid #a7f3d0; box-shadow:0 2px 6px rgba(4,120,87,0.06);">${formatVND(grp.total_cost)}</div>`
+              }
+              ${canDeleteUsage ? `
+                <button class="btn btn-danger btn-xs" onclick='deleteSupplyUsagesGroup(${idsJson})' title="Xóa đợt tiêu hao" style="padding:6px 10px;">
+                  <i data-lucide="trash-2" class="lucide-sm"></i>
+                </button>
+              ` : ''}
             </div>
           </div>
-
         `;
       });
 

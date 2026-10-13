@@ -251,38 +251,97 @@ window.closeFeatureDetailModal = function() {
 };
 
 window.switchWikiSubtab = function(tabName) {
+  const btnRoles = document.getElementById('btn-wiki-sub-roles');
   const btnAdv = document.getElementById('btn-wiki-sub-advanced');
   const btnGuide = document.getElementById('btn-wiki-sub-guide');
   const btnVietgap = document.getElementById('btn-wiki-sub-vietgap');
 
+  const paneRoles = document.getElementById('wiki-subtab-roles');
   const paneAdv = document.getElementById('wiki-subtab-advanced');
   const paneGuide = document.getElementById('wiki-subtab-guide');
   const paneVietgap = document.getElementById('wiki-subtab-vietgap');
 
   // Reset all panes
+  if (paneRoles) paneRoles.style.display = 'none';
   if (paneAdv) paneAdv.style.display = 'none';
   if (paneGuide) paneGuide.style.display = 'none';
   if (paneVietgap) paneVietgap.style.display = 'none';
 
   // Reset all buttons
-  [btnAdv, btnGuide, btnVietgap].forEach(btn => {
+  [btnRoles, btnAdv, btnGuide, btnVietgap].forEach(btn => {
     if (btn) btn.classList.remove('active');
   });
 
-  if (tabName === 'guide') {
+  if (tabName === 'advanced') {
+    if (paneAdv) paneAdv.style.display = 'block';
+    if (btnAdv) btnAdv.classList.add('active');
+  } else if (tabName === 'guide') {
     if (paneGuide) paneGuide.style.display = 'block';
     if (btnGuide) btnGuide.classList.add('active');
   } else if (tabName === 'vietgap') {
     if (paneVietgap) paneVietgap.style.display = 'block';
     if (btnVietgap) btnVietgap.classList.add('active');
   } else {
-    if (paneAdv) paneAdv.style.display = 'block';
-    if (btnAdv) btnAdv.classList.add('active');
+    // Default: 'roles'
+    if (paneRoles) paneRoles.style.display = 'block';
+    if (btnRoles) btnRoles.classList.add('active');
+    initGuideRoleView();
   }
 
   if (typeof window.refreshIcons === 'function') {
     window.refreshIcons();
   }
+};
+
+window.selectGuideRole = function(role) {
+  const panes = {
+    farm_owner: document.getElementById('guide-role-pane-owner'),
+    manager: document.getElementById('guide-role-pane-manager'),
+    care_worker: document.getElementById('guide-role-pane-worker'),
+    auditor_readonly: document.getElementById('guide-role-pane-auditor')
+  };
+
+  const btns = {
+    farm_owner: document.getElementById('btn-guide-role-owner'),
+    manager: document.getElementById('btn-guide-role-manager'),
+    care_worker: document.getElementById('btn-guide-role-worker'),
+    auditor_readonly: document.getElementById('btn-guide-role-auditor')
+  };
+
+  Object.values(panes).forEach(p => { if (p) p.style.display = 'none'; });
+  Object.values(btns).forEach(b => {
+    if (b) {
+      b.style.background = 'rgba(255,255,255,0.1)';
+      b.style.borderColor = 'rgba(255,255,255,0.3)';
+      b.style.fontWeight = '700';
+    }
+  });
+
+  const targetPane = panes[role] || panes.farm_owner;
+  const targetBtn = btns[role] || btns.farm_owner;
+
+  if (targetPane) targetPane.style.display = 'block';
+  if (targetBtn) {
+    targetBtn.style.background = '#059669';
+    targetBtn.style.borderColor = '#10b981';
+    targetBtn.style.fontWeight = '800';
+  }
+
+  if (typeof window.refreshIcons === 'function') {
+    window.refreshIcons();
+  }
+};
+
+window.initGuideRoleView = function() {
+  const rbac = (typeof window.getCurrentUserRbac === 'function') ? window.getCurrentUserRbac() : null;
+  const subRole = rbac?.subRole || 'farm_owner';
+
+  const badgeEl = document.getElementById('guide-current-role-badge');
+  if (badgeEl && rbac) {
+    badgeEl.innerHTML = `<i data-lucide="shield-check" class="lucide-xs"></i> Vai trò đăng nhập của bạn: <strong>${rbac.roleName || subRole}</strong>`;
+  }
+
+  window.selectGuideRole(subRole);
 };
 
 window.searchGuideContent = function(query) {

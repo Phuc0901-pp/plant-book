@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    core/router.js — RESTful Hash Router with Obfuscated Security Hashing
@@ -179,6 +179,16 @@ export function showPage(page, updateHash = true) {
   if (targetPage === 'supplies') {
     if (typeof window.loadSupplies === 'function') window.loadSupplies();
     if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
+  }
+
+  if (targetPage === 'logs') {
+    if (typeof window.applyLogsRoleArchitecture === 'function') window.applyLogsRoleArchitecture();
+    if (typeof window.filterUserLogs === 'function') window.filterUserLogs();
+  }
+
+  if (targetPage === 'wiki') {
+    if (typeof window.switchWikiSubtab === 'function') window.switchWikiSubtab('roles');
+    if (typeof window.initGuideRoleView === 'function') window.initGuideRoleView();
   }
 
   if (targetPage === 'settings') {

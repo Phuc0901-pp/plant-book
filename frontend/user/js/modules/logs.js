@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { esc, formatDate, toast } from '../core/utils.js';
-import { api } from '../core/api.js';
+import { api, getCurrentUserRbac } from '../core/api.js';
 import { buildMediaThumbnailsHtml } from './media.js';
 import { getPlantsCache } from './plants.js';
 
@@ -569,6 +569,11 @@ function _renderLogPage() {
     return;
   }
 
+  const rbac = getCurrentUserRbac();
+  const isFinanceRedacted = rbac.isFinanceRedacted;
+  const canDelete = rbac.isFarmOwner || rbac.isManager;
+  const canEdit = !rbac.isAuditor;
+
   const totalLogs = _currentFilteredLogs.length;
   const totalPages = Math.ceil(totalLogs / _logPageSize) || 1;
 
@@ -612,16 +617,18 @@ function _renderLogPage() {
         <!-- Date Header Bar -->
         <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div style="font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px;">
-            ${_batchSelectMode ? `<input type="checkbox" class="log-day-select-all" onchange="toggleSelectAllDay('${esc(dateStr)}', this.checked)" style="width:17px; height:17px; cursor:pointer; accent-color:#10b981; margin-right:4px;" title="Chọn tất cả mục trong ngày này">` : ''}
+            ${_batchSelectMode && canDelete ? `<input type="checkbox" class="log-day-select-all" onchange="toggleSelectAllDay('${esc(dateStr)}', this.checked)" style="width:17px; height:17px; cursor:pointer; accent-color:#10b981; margin-right:4px;" title="Chọn tất cả mục trong ngày này">` : ''}
             <i data-lucide="calendar-days" class="lucide-sm" style="color:#10b981;"></i> <span>${dateHeaderTitle}</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <span style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); font-size:11.5px; font-weight:700; padding:3px 12px; border-radius:20px;">
               ${dayItems.length} nhật ký hoạt động
             </span>
+            ${canDelete ? `
             <button type="button" class="btn btn-xs" onclick="deleteDayLogs('${esc(dateStr)}')" style="background:rgba(220,38,38,0.25); color:#fca5a5; border:1px solid rgba(220,38,38,0.4); border-radius:8px; padding:4px 10px; font-size:11.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Xóa mềm toàn bộ hoạt động trong ngày ${esc(dateStr)}">
               <i data-lucide="trash-2" class="lucide-sm"></i> Xóa ngày này
             </button>
+            ` : ''}
           </div>
         </div>
 
@@ -639,8 +646,8 @@ function _renderLogPage() {
         if (supName) parts.push(`Vật tư: ${supName}`);
         if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: ${qtyVal} ${unitVal}`);
         if (l.details.fruit_count)     parts.push(`Số trái: ${l.details.fruit_count}`);
-        if (l.details.total_revenue)   parts.push(`Doanh thu: ${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ`);
-        if (l.details.total_cost)      parts.push(`Chi phí: ${Number(l.details.total_cost).toLocaleString('vi-VN')} đ`);
+        if (l.details.total_revenue && !isFinanceRedacted)   parts.push(`Doanh thu: ${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ`);
+        if (l.details.total_cost && !isFinanceRedacted)      parts.push(`Chi phí: ${Number(l.details.total_cost).toLocaleString('vi-VN')} đ`);
         if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
         if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
         if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
@@ -648,6 +655,10 @@ function _renderLogPage() {
         if (parts.length > 0) {
           detailsStr = `[${parts.join(', ')}]` + (l.note ? ` - ${esc(l.note)}` : '');
         }
+      }
+
+      if (isFinanceRedacted && detailsStr) {
+        detailsStr = detailsStr.replace(/,?\s*(?:Doanh thu|Chi phí|Đơn giá):\s*[\d\.,\s]+(?:đ|VNĐ|vnd)/gi, '');
       }
 
       let mediaList = [];
@@ -670,7 +681,7 @@ function _renderLogPage() {
         html += `
           <div style="background:linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border:1px solid #fca5a5; border-left:5px solid #ef4444; border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:240px;">
-              ${_batchSelectMode && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
+              ${_batchSelectMode && canDelete && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
               <div>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <span class="badge" style="background:#dc2626; color:#ffffff; font-weight:800; font-size:11px; display:inline-flex; align-items:center; gap:4px;">
@@ -688,12 +699,16 @@ function _renderLogPage() {
             </div>
 
             <div style="display:flex; gap:6px;">
+              ${canEdit ? `
               <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})" style="border-color:#fca5a5; color:#dc2626;">
                 <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
               </button>
+              ` : ''}
+              ${canDelete ? `
               <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id}, ${l.plant_id || 'null'})" title="Xóa mềm nhật ký này">
                 <i data-lucide="trash-2" class="lucide-sm"></i>
               </button>
+              ` : ''}
             </div>
           </div>
         `;
@@ -701,7 +716,7 @@ function _renderLogPage() {
         html += `
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:240px;">
-              ${_batchSelectMode && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
+              ${_batchSelectMode && canDelete && l.id ? `<input type="checkbox" class="log-item-checkbox log-cb-day-${esc(dateStr)}" value="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleLogSelection(${l.id}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#059669; flex-shrink:0;">` : ''}
               <div>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <span class="badge badge-green" style="font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
@@ -719,12 +734,16 @@ function _renderLogPage() {
             </div>
 
             <div style="display:flex; gap:6px;">
+              ${canEdit ? `
               <button class="btn btn-secondary btn-sm" onclick="openCareModal(${l.plant_id}, '${esc(l.tree_code || l.plant_id)}', '${esc(l.plant_type)}', ${l.id})">
                 <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
               </button>
+              ` : ''}
+              ${canDelete ? `
               <button class="btn btn-danger btn-sm" onclick="deleteCareLog(${l.id}, ${l.plant_id || 'null'})" title="Xóa mềm nhật ký này">
                 <i data-lucide="trash-2" class="lucide-sm"></i>
               </button>
+              ` : ''}
             </div>
           </div>
         `;
@@ -859,15 +878,57 @@ function _logRow(l) {
 // ── Search / Filter / Sort ────────────────────────────────────
 
 /**
+ * Điều chỉnh kiến trúc giao diện trang Lịch sử theo Role
+ */
+export function applyLogsRoleArchitecture() {
+  const rbac = getCurrentUserRbac();
+  const btnSelectiveDelete = document.getElementById('btn-open-selective-log-delete');
+  const btnBatchSelect = document.getElementById('btn-toggle-batch-log-mode');
+  const bannerEl = document.getElementById('logs-role-scope-banner');
+
+  const canManage = rbac.isFarmOwner || rbac.isManager;
+  if (btnSelectiveDelete) btnSelectiveDelete.style.display = canManage ? 'inline-flex' : 'none';
+  if (btnBatchSelect) btnBatchSelect.style.display = canManage ? 'inline-flex' : 'none';
+
+  if (bannerEl) {
+    if (rbac.viewPlantsScope === 'assigned') {
+      const plantCount = (rbac.assignedPlantIds || []).length;
+      bannerEl.style.display = 'flex';
+      bannerEl.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <i data-lucide="shield-check" class="lucide-sm" style="color:#0284c7;"></i>
+          <span><strong>Phạm vi phụ trách:</strong> Hiển thị nhật ký canh tác của <strong>${plantCount} cây trồng</strong> được giao cho bạn (${esc(rbac.roleName || 'Nhân sự phụ trách')}).</span>
+        </div>
+      `;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    } else {
+      bannerEl.style.display = 'none';
+    }
+  }
+}
+window.applyLogsRoleArchitecture = applyLogsRoleArchitecture;
+
+/**
  * Lọc và sắp xếp nhật ký canh tác ở tab Lịch sử.
  */
 export function filterUserLogs() {
+  applyLogsRoleArchitecture();
+
+  const rbac = getCurrentUserRbac();
   const query       = (document.getElementById('user-log-search')?.value || '').trim().toLowerCase();
   const farmId      = document.getElementById('user-log-filter-farm')?.value || 'all';
   const filterType  = document.getElementById('user-log-filter-type')?.value || 'all';
   const sortBy      = document.getElementById('user-log-sort-by')?.value || 'date_desc';
 
   let filtered = [..._logsCache];
+
+  // 0. Lọc theo cây phụ trách nếu view_plants_scope === 'assigned'
+  if (rbac.viewPlantsScope === 'assigned') {
+    const assignedIds = new Set((rbac.assignedPlantIds || []).map(String));
+    if (assignedIds.size > 0) {
+      filtered = filtered.filter(l => !l.plant_id || assignedIds.has(String(l.plant_id)) || (l.assigned_to_user_id && String(l.assigned_to_user_id) === String(rbac.userId)));
+    }
+  }
 
   // 1. Lọc theo Trang trại
   if (farmId !== 'all') {

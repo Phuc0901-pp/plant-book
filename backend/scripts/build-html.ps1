@@ -1,109 +1,78 @@
-$scriptDir = $PSScriptRoot
-if (-not $scriptDir) { $scriptDir = Get-Location }
-$root = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($scriptDir, "..", ".."))
-if (-not (Test-Path (Join-Path $root "frontend"))) {
-    $root = Get-Location
+# Plant Book AgTech (c) 2026 TBSG Agtech - PowerShell HTML Builder
+$rootDir = (Get-Item $PSScriptRoot).Parent.Parent.FullName
+$frontendDir = Join-Path $rootDir "frontend"
+$configPath = Join-Path $rootDir "config\app.config.json"
+
+Write-Host "[build-html.ps1] Reading configuration from: $configPath" -ForegroundColor Cyan
+$configJson = Get-Content -Raw -Path $configPath -Encoding UTF8 | ConvertFrom-Json
+
+$versionTag  = $configJson.app.versionTag
+$appName     = $configJson.app.name
+$copyright   = $configJson.brand.copyright
+$owner       = $configJson.brand.owner
+$company     = $configJson.brand.company
+$userTitle   = $configJson.brand.userPortalTitle
+$adminTitle  = $configJson.brand.adminPortalTitle
+$swCache     = $configJson.cache.swCacheName
+
+function Apply-Placeholders($content) {
+    return $content `
+        -replace '\{\{APP_VERSION\}\}', $versionTag `
+        -replace '\{\{APP_NAME\}\}', $appName `
+        -replace '\{\{APP_COPYRIGHT\}\}', $copyright `
+        -replace '\{\{APP_OWNER\}\}', $owner `
+        -replace '\{\{COMPANY_NAME\}\}', $company `
+        -replace '\{\{USER_PORTAL_TITLE\}\}', $userTitle `
+        -replace '\{\{ADMIN_PORTAL_TITLE\}\}', $adminTitle `
+        -replace '\{\{SW_CACHE_NAME\}\}', $swCache
 }
 
-function Resolve-Includes {
-    param(
-        [string]$FilePath,
-        [System.Collections.Generic.HashSet[string]]$Seen
-    )
-    if ($Seen.Contains($FilePath)) {
-        Write-Warning "Circular include detected: $FilePath"
-        return "<!-- Circular include: $FilePath -->"
+function Resolve-Includes($filePath, [System.Collections.Generic.HashSet[string]]$seen) {
+    if ($seen.Contains($filePath)) {
+        return "<!-- Circular include: $filePath -->"
     }
-    [void]$Seen.Add($FilePath)
+    $seen.Add($filePath) | Out-Null
 
-    if (-not (Test-Path $FilePath)) {
-        Write-Error "File not found: $FilePath"
-        return "<!-- Missing include: $FilePath -->"
+    if (-not (Test-Path $filePath)) {
+        Write-Warning "File not found: $filePath"
+        return "<!-- Missing include: $filePath -->"
     }
 
-    $content = [System.IO.File]::ReadAllText($FilePath, [System.Text.Encoding]::UTF8)
-    $baseDir = Split-Path $FilePath
+    $content = Get-Content -Raw -Path $filePath -Encoding UTF8
+    $baseDir = Split-Path $filePath -Parent
 
-    $regex = [regex]'<!--\s*@include\s+[''"]([^''"]+)[''"]\s*-->'
-    $evaluator = [System.Text.RegularExpressions.MatchEvaluator]{
+    # Match <!-- @include '...' -->
+    $regex = '<!--\s*@include\s+[''"]([^''"]+)[''"]\s*-->'
+    $result = [System.Text.RegularExpressions.Regex]::Replace($content, $regex, {
         param($match)
-        $incPath = $match.Groups[1].Value
-        $targetPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($baseDir, $incPath))
-        return Resolve-Includes -FilePath $targetPath -Seen (New-Object 'System.Collections.Generic.HashSet[string]' (,$Seen))
-    }
+        $relPath = $match.Groups[1].Value
+        $targetPath = [System.IO.Path]::GetFullPath((Join-Path $baseDir $relPath))
+        return Resolve-Includes $targetPath (New-Object 'System.Collections.Generic.HashSet[string]' -ArgumentList @(,$seen))
+    })
 
-    return $regex.Replace($content, $evaluator)
+    return $result
 }
 
-function Apply-Placeholders {
-    param(
-        [string]$Content,
-        $Config
-    )
-    $versionTag = if ($Config.app.versionTag) { $Config.app.versionTag } else { "v" + $Config.app.version }
-    $appName = if ($Config.app.name) { $Config.app.name } else { "Sổ Nông Tân Bảo Agtech" }
-    $copyright = if ($Config.brand.copyright) { $Config.brand.copyright } else { "Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech" }
-    $owner = if ($Config.brand.owner) { $Config.brand.owner } else { "TBSG Agtech © 2026" }
-    $company = if ($Config.brand.company) { $Config.brand.company } else { "TBSG Agtech" }
-    $userTitle = if ($Config.brand.userPortalTitle) { $Config.brand.userPortalTitle } else { "$appName $versionTag" }
-    $adminTitle = if ($Config.brand.adminPortalTitle) { $Config.brand.adminPortalTitle } else { "$appName $versionTag - Admin" }
-    $swCache = if ($Config.cache.swCacheName) { $Config.cache.swCacheName } else { "pb-farmer-cache-$versionTag" }
-
-    $res = $Content.Replace("{{APP_VERSION}}", $versionTag)
-    $res = $res.Replace("{{APP_NAME}}", $appName)
-    $res = $res.Replace("{{APP_COPYRIGHT}}", $copyright)
-    $res = $res.Replace("{{APP_OWNER}}", $owner)
-    $res = $res.Replace("{{COMPANY_NAME}}", $company)
-    $res = $res.Replace("{{USER_PORTAL_TITLE}}", $userTitle)
-    $res = $res.Replace("{{ADMIN_PORTAL_TITLE}}", $adminTitle)
-    $res = $res.Replace("{{SW_CACHE_NAME}}", $swCache)
-    return $res
-}
-
-$scriptDir = $PSScriptRoot
-if (-not $scriptDir) { $scriptDir = Get-Location }
-$root = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($scriptDir, "..", ".."))
-if (-not (Test-Path (Join-Path $root "frontend"))) {
-    $root = Get-Location
-}
-
-$configPath = Join-Path $root "config\app.config.json"
-$config = $null
-if (Test-Path $configPath) {
-    $config = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
-} else {
-    $config = @{
-        app = @{ name = "Plant Book Agtech"; version = "1.2.4"; versionTag = "v1.2.4" };
-        brand = @{
-            copyright = "Plant Book (c) 2026 TBSG Agtech";
-            company = "TBSG Agtech";
-            userPortalTitle = "Plant Book Agtech v1.2.4";
-            adminPortalTitle = "Plant Book Agtech v1.2.4 - Admin"
-        };
-        cache = @{ swCacheName = "pb-farmer-cache-v1.2.4" }
-    }
-}
-
-# Build Admin
-$adminTpl = Join-Path $root "frontend\admin\src\index.template.html"
-$adminOut = Join-Path $root "frontend\admin\index.html"
-if (Test-Path $adminTpl) {
+# 1. Build User Portal
+$userTemplate = Join-Path $frontendDir "user\src\index.template.html"
+$userOutput   = Join-Path $frontendDir "user\index.html"
+if (Test-Path $userTemplate) {
     $seen = New-Object 'System.Collections.Generic.HashSet[string]'
-    $assembled = Resolve-Includes -FilePath $adminTpl -Seen $seen
-    $assembled = Apply-Placeholders -Content $assembled -Config $config
-    [System.IO.File]::WriteAllText($adminOut, $assembled, [System.Text.Encoding]::UTF8)
-    Write-Host "[build-html] Built admin/index.html ($($assembled.Length) bytes, $(($assembled -split "`n").Count) lines)"
+    $assembledUser = Resolve-Includes $userTemplate $seen
+    $assembledUser = Apply-Placeholders $assembledUser
+    [System.IO.File]::WriteAllText($userOutput, $assembledUser, [System.Text.Encoding]::UTF8)
+    Write-Host "[build-html.ps1] Successfully built user/index.html ($($assembledUser.Length) bytes)" -ForegroundColor Green
 }
 
-# Build User
-$userTpl = Join-Path $root "frontend\user\src\index.template.html"
-$userOut = Join-Path $root "frontend\user\index.html"
-if (Test-Path $userTpl) {
-    $seen = New-Object 'System.Collections.Generic.HashSet[string]'
-    $assembled = Resolve-Includes -FilePath $userTpl -Seen $seen
-    $assembled = Apply-Placeholders -Content $assembled -Config $config
-    [System.IO.File]::WriteAllText($userOut, $assembled, [System.Text.Encoding]::UTF8)
-    Write-Host "[build-html] Built user/index.html ($($assembled.Length) bytes, $(($assembled -split "`n").Count) lines)"
+# 2. Build Admin Portal
+$adminTemplate = Join-Path $frontendDir "admin\src\index.template.html"
+$adminOutput   = Join-Path $frontendDir "admin\index.html"
+if (Test-Path $adminTemplate) {
+    $seenAdmin = New-Object 'System.Collections.Generic.HashSet[string]'
+    $assembledAdmin = Resolve-Includes $adminTemplate $seenAdmin
+    $assembledAdmin = Apply-Placeholders $assembledAdmin
+    [System.IO.File]::WriteAllText($adminOutput, $assembledAdmin, [System.Text.Encoding]::UTF8)
+    Write-Host "[build-html.ps1] Successfully built admin/index.html ($($assembledAdmin.Length) bytes)" -ForegroundColor Green
 }
 
-Write-Host "[build-html] All HTML portals assembled successfully."
+Write-Host "[build-html.ps1] All HTML portals assembled and verified." -ForegroundColor Cyan

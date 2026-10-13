@@ -14,11 +14,18 @@ export async function loadUserSettings() {
   try {
     const user = await api('/auth/me');
     window._currentUserProfile = user;
+    const isSubAccount = user.role !== 'admin' && (user.parent_user_id != null || (user.sub_role && user.sub_role !== 'farm_owner'));
     applySubRoleUiRestrictions(user);
     _populateProfileForm(user);
     _renderAvatar(user.avatar_url, user.full_name);
     _bindEvents();
-    loadThresholdRules();
+
+    if (isSubAccount) {
+      switchSettingsSubtab('profile');
+    } else {
+      switchSettingsSubtab('thresholds');
+      loadThresholdRules();
+    }
   } catch (err) {
     toast('Không thể tải thông tin tài khoản.', 'error');
   }
@@ -26,6 +33,14 @@ export async function loadUserSettings() {
 
 // ── Sub-Tab Switching ──────────────────────────────────────────
 export function switchSettingsSubtab(subtab) {
+  const user = window._currentUserProfile;
+  const isSubAccount = user && user.role !== 'admin' && (user.parent_user_id != null || (user.sub_role && user.sub_role !== 'farm_owner'));
+
+  // Nếu là tài khoản dưới quyền, chặn xem Cài đặt ngưỡng & Phân quyền nhân sự
+  if (isSubAccount && (subtab === 'thresholds' || subtab === 'team')) {
+    subtab = 'profile';
+  }
+
   const paneThresholds = document.getElementById('subtab-pane-thresholds');
   const paneTeam = document.getElementById('subtab-pane-team');
   const paneProfile = document.getElementById('subtab-pane-profile');
@@ -57,7 +72,7 @@ export function switchSettingsSubtab(subtab) {
     setBtnState(btnThresholds, false);
     setBtnState(btnTeam, false);
     setBtnState(btnProfile, true);
-  } else if (subtab === 'team') {
+  } else if (subtab === 'team' && !isSubAccount) {
     paneThresholds.style.display = 'none';
     if (paneTeam) paneTeam.style.display = 'block';
     paneProfile.style.display = 'none';
@@ -65,7 +80,7 @@ export function switchSettingsSubtab(subtab) {
     setBtnState(btnTeam, true);
     setBtnState(btnProfile, false);
     loadFarmerTeamRbac();
-  } else {
+  } else if (!isSubAccount) {
     paneThresholds.style.display = 'block';
     if (paneTeam) paneTeam.style.display = 'none';
     paneProfile.style.display = 'none';
@@ -1182,15 +1197,80 @@ function _getPlantsForSelectedFarm(farmId) {
 export function applySubRoleUiRestrictions(user) {
   if (!user) return;
   const subRole = user.sub_role || 'farm_owner';
+  const isSubAccount = user.role !== 'admin' && (user.parent_user_id != null || subRole !== 'farm_owner');
   const hideFinance = user.role !== 'admin' && (
     user.allow_view_finance === false ||
     ['care_worker', 'auditor_readonly'].includes(subRole)
   );
   window._isFinanceRedactedForCurrentUser = hideFinance;
 
+  // 1. Ẩn 2 mục "Cài đặt ngưỡng giá trị" và "Phân quyền Nhân sự vườn" cho tài khoản dưới quyền
+  const btnThresholds = document.getElementById('subtab-btn-thresholds');
+  const btnTeamRbac = document.getElementById('subtab-btn-team-rbac');
+  const paneThresholds = document.getElementById('subtab-pane-thresholds');
+  const paneTeam = document.getElementById('subtab-pane-team');
+
+  if (isSubAccount) {
+    if (btnThresholds) btnThresholds.style.display = 'none';
+    if (btnTeamRbac) btnTeamRbac.style.display = 'none';
+    if (paneThresholds) paneThresholds.style.display = 'none';
+    if (paneTeam) paneTeam.style.display = 'none';
+  } else {
+    if (btnThresholds) btnThresholds.style.display = 'inline-flex';
+    if (btnTeamRbac) btnTeamRbac.style.display = 'inline-flex';
+  }
+
+  // 2. Render Thẻ Thông Tin Phân Quyền cho tài khoản dưới quyền
+  const subAccountCard = document.getElementById('settings-subaccount-privilege-card');
+  if (subAccountCard) {
+    if (isSubAccount) {
+      const roleMap = {
+        manager: { name: 'Quản đốc / Kỹ sư Nông nghiệp', icon: 'user-check', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+        care_worker: { name: 'Nhân công chăm sóc thực địa', icon: 'sprout', color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
+        auditor_readonly: { name: 'Kiểm định viên / Thanh tra VietGAP', icon: 'shield-check', color: '#d97706', bg: '#fffbeb', border: '#fde68a' }
+      };
+      const rInfo = roleMap[subRole] || { name: subRole, icon: 'user', color: '#475569', bg: '#f8fafc', border: '#e2e8f0' };
+      const plantCount = Array.isArray(user.assigned_plant_ids) ? user.assigned_plant_ids.length : 0;
+      const scopeText = user.view_plants_scope === 'assigned'
+        ? `Được phân quyền phụ trách cụ thể <strong>${plantCount} cây trồng</strong>`
+        : 'Được phân quyền theo dõi toàn bộ trang trại';
+      const financeText = hideFinance
+        ? '<span style="color:#d97706; font-weight:700;"><i data-lucide="eye-off" class="lucide-xs"></i> Bảo mật tài chính (Không hiển thị đơn giá & doanh thu)</span>'
+        : '<span style="color:#059669; font-weight:700;"><i data-lucide="check" class="lucide-xs"></i> Được cấp quyền xem số liệu tài chính</span>';
+
+      subAccountCard.style.display = 'block';
+      subAccountCard.innerHTML = `
+        <div style="background:${rInfo.bg}; border:1.5px solid ${rInfo.border}; border-radius:16px; padding:18px 20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+            <div>
+              <span style="background:${rInfo.color}; color:#fff; font-size:11px; font-weight:800; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px; text-transform:uppercase;">
+                <i data-lucide="${rInfo.icon}" class="lucide-xs"></i> ${rInfo.name}
+              </span>
+              <h4 style="margin:8px 0 4px 0; font-size:16px; font-weight:800; color:#0f172a;">Thông Tin Phân Quyền Tài Khoản Của Bạn</h4>
+              <p style="margin:0; font-size:13px; color:#475569; line-height:1.5;">Tài khoản này được cấp quyền và bảo mật theo chính sách của Chủ Nông Trại. Các tính năng cấu hình cấp cao (Ngưỡng cảnh báo tự động & Phân quyền nhân sự) được quản lý tập trung bởi Chủ Vườn.</p>
+            </div>
+          </div>
+          <div style="margin-top:14px; padding-top:12px; border-top:1px dashed ${rInfo.border}; display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; font-size:12.5px; color:#334155;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="trees" class="lucide-sm" style="color:${rInfo.color};"></i>
+              <span><strong>Phạm vi cây trồng:</strong> ${scopeText}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="shield" class="lucide-sm" style="color:${rInfo.color};"></i>
+              <span><strong>Dữ liệu tài chính:</strong> ${financeText}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    } else {
+      subAccountCard.style.display = 'none';
+    }
+  }
+
   const ownerActions = document.getElementById('farmer-team-owner-actions');
   if (ownerActions) {
-    ownerActions.style.display = (user.parent_user_id || ['care_worker', 'auditor_readonly'].includes(subRole)) ? 'none' : 'flex';
+    ownerActions.style.display = isSubAccount ? 'none' : 'flex';
   }
 
   if (hideFinance) {

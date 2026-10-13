@@ -42,22 +42,42 @@ function convertSupplyQtyToBaseUnit(rawAmount, rawUnit, supplyUnit) {
   return amt;
 }
 
-// Function tự động kiểm tra và hiệu chỉnh dữ liệu tồn kho & tiêu hao bị lỗi đơn vị trước đây
-async function autoReconcileSuppliesData(userId) {
+const lastReconcileByUserMap = new Map();
+
+function isSupplyFinanceRedacted(user, queryRole) {
+  if (!user || user.role === 'admin') return false;
+  if (user.allow_view_finance === false) return true;
+  if (queryRole === 'care_worker' || queryRole === 'auditor_readonly') return true;
+  if (['care_worker', 'auditor_readonly'].includes(user.sub_role) && user.allow_view_finance !== true) return true;
+  return false;
+}
+
+// Function tự động kiểm tra và hiệu chỉnh dữ liệu tồn kho & tiêu hao bị lỗi đơn vị trước đây (Có bộ đệm chống nghẽn hiệu năng)
+async function autoReconcileSuppliesData(userId, force = false) {
   try {
+    const uidKey = userId || 0;
+    const now = Date.now();
+    if (!force && lastReconcileByUserMap.has(uidKey)) {
+      const lastRun = lastReconcileByUserMap.get(uidKey);
+      if (now - lastRun < 5 * 60 * 1000) {
+        return;
+      }
+    }
+    lastReconcileByUserMap.set(uidKey, now);
+
     // 1. Tìm các bản ghi supply_usages có liều lượng bất thường do chưa quy đổi gram -> kg
     const corruptedUsages = await pool.query(`
       SELECT su.id, su.supply_id, su.quantity, su.unit_price, su.note, s.unit, s.package_qty, s.package_price
       FROM supply_usages su
       JOIN supplies s ON su.supply_id = s.id
-      WHERE (su.user_id = $1 OR 1=1)
+      WHERE (su.user_id = $1 OR s.user_id = $1)
         AND s.unit IN ('kg', 'lít', 'm3', 'm³')
         AND su.quantity >= 10
         AND (
           su.note ILIKE '%gam%' OR su.note ILIKE '% g %' OR su.note ILIKE '% g)' OR su.note ILIKE '%ml%' OR su.note ILIKE '%gram%'
           OR su.total_cost > (s.package_price * 1.5)
         )
-    `, [userId || 0]);
+    `, [uidKey]);
 
     for (const row of corruptedUsages.rows) {
       const realQty = row.quantity / 1000;
@@ -77,8 +97,9 @@ async function autoReconcileSuppliesData(userId) {
       FROM supplies s
       LEFT JOIN supply_usages su ON su.supply_id = s.id
       WHERE s.category NOT IN ('Tiền nước', 'Nhân công')
+        AND (s.user_id = $1 OR $1 = 0)
       GROUP BY s.id
-    `);
+    `, [uidKey]);
 
     for (const sup of suppliesToFix.rows) {
       const pkgQty = parseFloat(sup.package_qty) || 50;
@@ -103,8 +124,12 @@ router.get('/', auth, async (req, res) => {
   try {
     const { category, search, user_id, farm_id } = req.query;
 
+    if (req.user.role !== 'admin' && req.user.allow_view_supplies === false) {
+      return res.status(403).json({ error: 'Tài khoản của bạn không được cấp quyền truy cập Kho Vật tư.' });
+    }
+
     // Tự động kiểm tra và cân đối số liệu kho nếu có sai sót đơn vị
-    await autoReconcileSuppliesData(req.user.id);
+    await autoReconcileSuppliesData(req.user.parent_user_id || req.user.id);
     
     let query = `
       SELECT s.*, 
@@ -159,11 +184,7 @@ router.get('/', auth, async (req, res) => {
     query += ` GROUP BY s.id, u.id ORDER BY s.category ASC, s.name ASC`;
     const result = await pool.query(query, params);
 
-    const hideFinance = req.user.role !== 'admin' && (
-      req.user.allow_view_finance === false ||
-      req.query.role === 'care_worker' ||
-      req.query.role === 'auditor_readonly'
-    );
+    const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
 
     const rows = hideFinance
       ? result.rows.map(r => ({
@@ -333,7 +354,9 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
 // POST /api/supplies — Khai báo vật tư mới (kèm chuẩn VietGAP: PHI, hoạt chất, đối tượng phòng trừ)
 router.post('/', auth, async (req, res) => {
   try {
-    console.log('POST /api/supplies body:', req.body);
+    if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
+      return res.status(403).json({ error: 'Vai trò của bạn không được cấp quyền khai báo hoặc nhập kho vật tư mới.' });
+    }
     const { 
       category, name, unit, package_size, package_qty, package_unit, 
       package_price, unit_price, unit_price_small, stock_quantity, note, 
@@ -640,15 +663,23 @@ router.get('/usages', auth, async (req, res) => {
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     let query = `
       SELECT su.*, s.name as supply_name, s.category, s.unit,
-             f.name as farm_name, p.plant_type, p.tree_code
+             f.name as farm_name, p.plant_type, p.tree_code, p.assigned_to_user_id
       FROM supply_usages su
       JOIN supplies s ON su.supply_id = s.id
       LEFT JOIN farms f ON su.farm_id = f.id
       LEFT JOIN plants p ON su.plant_id = p.id
-      WHERE (su.user_id = $1 OR su.user_id = COALESCE($2::int, 0))
+      WHERE (
+        su.user_id = $1
+        OR su.user_id = COALESCE($2::int, 0)
+        OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $1 OR user_id = COALESCE($2::int, 0) OR id = (SELECT farm_id FROM users WHERE id = $1))
+      )
     `;
     const params = [targetUserId, req.user.parent_user_id || null];
     let idx = 3;
+
+    if (req.user.role !== 'admin' && req.user.view_plants_scope === 'assigned') {
+      query += ` AND (f.user_id = $1 OR p.assigned_to_user_id = $1 OR (su.plant_id IS NULL AND su.user_id = $1))`;
+    }
 
     if (farm_id) {
       query += ` AND su.farm_id = $${idx}`;
@@ -669,11 +700,7 @@ router.get('/usages', auth, async (req, res) => {
     }
 
     const result = await pool.query(query, params);
-    const hideFinance = req.user.role !== 'admin' && (
-      req.user.allow_view_finance === false ||
-      req.query.role === 'care_worker' ||
-      req.query.role === 'auditor_readonly'
-    );
+    const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
     const rows = hideFinance
       ? result.rows.map(r => ({
           ...r,
@@ -692,6 +719,9 @@ router.get('/usages', auth, async (req, res) => {
 // POST /api/supplies/usages — Ghi nhận tiêu hao vật tư
 router.post('/usages', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && req.user.sub_role === 'auditor_readonly') {
+      return res.status(403).json({ error: 'Tài khoản Kiểm định viên (Chỉ đọc) không được phép ghi nhận tiêu hao vật tư.' });
+    }
     const { supply_id, farm_id, plant_id, usage_date, quantity, unit, note } = req.body;
     if (!supply_id || !quantity) {
       return res.status(400).json({ error: 'Vui lòng chọn vật tư và nhập số lượng tiêu hao.' });
@@ -741,7 +771,10 @@ router.post('/usages', auth, async (req, res) => {
       broadcast('supplies_updated', { userId: req.user.id, usage: result.rows[0] });
     }
 
-    res.status(201).json(result.rows[0]);
+    const rowOut = isSupplyFinanceRedacted(req.user)
+      ? { ...result.rows[0], unit_price: 0, total_cost: 0, finance_redacted: true }
+      : result.rows[0];
+    res.status(201).json(rowOut);
   } catch (err) {
     console.error('Error recording supply usage:', err);
     res.status(500).json({ error: 'Lỗi server khi ghi nhận tiêu hao vật tư.' });
@@ -751,13 +784,16 @@ router.post('/usages', auth, async (req, res) => {
 // DELETE /api/supplies/usages/:id — Xóa nhật ký tiêu hao
 router.delete('/usages/:id', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && ['care_worker', 'auditor_readonly'].includes(req.user.sub_role)) {
+      return res.status(403).json({ error: 'Vai trò của bạn không có quyền xóa bản ghi tiêu hao vật tư.' });
+    }
     const { id } = req.params;
     const check = await pool.query('SELECT * FROM supply_usages WHERE id = $1', [id]);
     if (check.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy nhật ký tiêu hao.' });
     }
     const usage = check.rows[0];
-    if (req.user.role !== 'admin' && usage.user_id !== req.user.id) {
+    if (req.user.role !== 'admin' && usage.user_id !== req.user.id && usage.user_id !== req.user.parent_user_id) {
       return res.status(403).json({ error: 'Bạn không có quyền xóa bản ghi này.' });
     }
 
@@ -806,10 +842,15 @@ router.get('/analytics', auth, async (req, res) => {
     } = req.query;
 
     const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
+    const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
     
-    let baseWhere = `WHERE su.user_id = $1`;
-    const params = [targetUserId];
-    let idx = 2;
+    let baseWhere = `WHERE (su.user_id = $1 OR su.user_id = COALESCE($2::int, 0) OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $1 OR user_id = COALESCE($2::int, 0) OR id = (SELECT farm_id FROM users WHERE id = $1)))`;
+    const params = [targetUserId, req.user.parent_user_id || null];
+    let idx = 3;
+
+    if (req.user.role !== 'admin' && req.user.view_plants_scope === 'assigned') {
+      baseWhere += ` AND (su.plant_id IN (SELECT id FROM plants WHERE assigned_to_user_id = $1) OR (su.plant_id IS NULL AND su.user_id = $1))`;
+    }
 
     if (farm_id && farm_id !== 'all') {
       baseWhere += ` AND su.farm_id = $${idx}`;
@@ -913,13 +954,24 @@ router.get('/analytics', auth, async (req, res) => {
       'Phun thuốc': 0,
       'Nhân công': 0,
     };
+    const categoryCounts = {
+      'Bón phân': 0,
+      'Tiền nước': 0,
+      'Phun thuốc': 0,
+      'Nhân công': 0,
+    };
     let totalExpenditure = 0;
 
     catTotalsRes.rows.forEach(r => {
-      if (categorySummary.hasOwnProperty(r.category)) {
-        categorySummary[r.category] = parseFloat(r.total_cost) || 0;
+      if (categoryCounts.hasOwnProperty(r.category)) {
+        categoryCounts[r.category] = parseInt(r.transaction_count) || 0;
       }
-      totalExpenditure += parseFloat(r.total_cost) || 0;
+      if (!hideFinance) {
+        if (categorySummary.hasOwnProperty(r.category)) {
+          categorySummary[r.category] = parseFloat(r.total_cost) || 0;
+        }
+        totalExpenditure += parseFloat(r.total_cost) || 0;
+      }
     });
 
     // 2. Time Grouping Breakdown
@@ -936,14 +988,19 @@ router.get('/analytics', auth, async (req, res) => {
     `;
 
     const breakdownRes = await pool.query(breakdownQuery, params);
+    const timeBreakdown = hideFinance
+      ? breakdownRes.rows.map(r => ({ ...r, total_cost: 0, finance_redacted: true }))
+      : breakdownRes.rows;
 
     res.json({
       period,
+      finance_redacted: hideFinance,
       summary: {
-        total_expenditure: totalExpenditure,
+        total_expenditure: hideFinance ? 0 : totalExpenditure,
         categories: categorySummary,
+        category_counts: categoryCounts
       },
-      time_breakdown: breakdownRes.rows,
+      time_breakdown: timeBreakdown,
     });
   } catch (err) {
     console.error('Error fetching supplies analytics:', err);
@@ -954,7 +1011,7 @@ router.get('/analytics', auth, async (req, res) => {
 // POST /api/supplies/recalculate-stock — Thủ công kích hoạt cân đối & tính lại tồn kho
 router.post('/recalculate-stock', auth, async (req, res) => {
   try {
-    await autoReconcileSuppliesData(req.user.id);
+    await autoReconcileSuppliesData(req.user.parent_user_id || req.user.id, true);
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
       broadcast('supplies_updated', { userId: req.user.id });
@@ -966,17 +1023,18 @@ router.post('/recalculate-stock', auth, async (req, res) => {
   }
 });
 
-// GET /api/supplies/profit-overview — Thống kê chuẩn ERP: Giá trị nhập kho, Tiêu hao lũy kế, Doanh thu thu hoạch theo từng cây trồng (Lọc theo Trang trại & Năm)
+// GET /api/supplies/profit-overview — Thống kê chuẩn ERP: Giá trị nhập kho, Tiêu hao lũy kế, Doanh thu thu hoạch theo từng cây trồng (Lọc theo Trang trại & Năm + Role-Adaptive Redaction)
 router.get('/profit-overview', auth, async (req, res) => {
   try {
     const { farm_id, year, user_id } = req.query;
-    const targetUserId = (user_id && req.user.role === 'admin') ? parseInt(user_id) : req.user.id;
     const filterYear = (year && year !== 'all') ? parseInt(year) : null;
     const filterFarmId = (farm_id && farm_id !== 'all') ? parseInt(farm_id) : null;
+    const hideFinance = isSupplyFinanceRedacted(req.user, req.query.role);
+    const isAssignedScope = req.user.role !== 'admin' && req.user.view_plants_scope === 'assigned';
 
     // ── 1. KHỐI 1: GIÁ TRỊ NHẬP KHO & TỒN KHO VẬT TƯ (Vốn nhập hàng vào) ──
     let stockQuery = `
-      SELECT s.id, s.name, s.category, s.unit, s.package_qty, s.package_price, s.unit_price, s.stock_quantity, s.created_at, s.farm_id,
+      SELECT s.id, s.name, s.category, s.unit, s.package_qty, s.package_price, s.unit_price, s.stock_quantity, s.created_at, s.farm_id, s.phi_days,
              COALESCE(SUM(su.total_cost), 0) as total_used_cost,
              COALESCE(SUM(su.quantity), 0) as total_used_qty
       FROM supplies s
@@ -993,13 +1051,14 @@ router.get('/profit-overview', auth, async (req, res) => {
     } else if (req.user.role !== 'admin') {
       stockQuery += ` AND (
         s.user_id = $${sIdx}
+        OR s.user_id = COALESCE($${sIdx + 1}::int, 0)
         OR s.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${sIdx}))
         OR s.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx}))
-        OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx} OR id = (SELECT farm_id FROM users WHERE id = $${sIdx}))
+        OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx} OR user_id = COALESCE($${sIdx + 1}::int, 0) OR id = (SELECT farm_id FROM users WHERE id = $${sIdx}))
         OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${sIdx} OR id = (SELECT farm_id FROM users WHERE id = $${sIdx})))
       )`;
-      stockParams.push(req.user.id);
-      sIdx++;
+      stockParams.push(req.user.id, req.user.parent_user_id || null);
+      sIdx += 2;
     }
 
     if (filterFarmId) {
@@ -1020,8 +1079,13 @@ router.get('/profit-overview', auth, async (req, res) => {
     let totalStockInflowValuation = 0; // Giá trị vốn nhập hàng vào
     let currentStockValuation = 0;      // Giá trị tồn kho thực tế hiện tại
     const skuCount = stockRes.rows.length;
+    let fertilizerSkuCount = 0;
+    let pesticideSkuCount = 0;
 
     stockRes.rows.forEach(s => {
+      if (s.category === 'Bón phân') fertilizerSkuCount++;
+      else if (s.category === 'Phun thuốc') pesticideSkuCount++;
+
       const uPrice = parseFloat(s.unit_price) || 0;
       const curStock = parseFloat(s.stock_quantity) || 0;
       const usedCost = parseFloat(s.total_used_cost) || 0;
@@ -1029,7 +1093,6 @@ router.get('/profit-overview', auth, async (req, res) => {
       const pkgPrice = parseFloat(s.package_price) || (uPrice * pkgQty);
       const curVal = curStock * uPrice;
       currentStockValuation += curVal;
-      // Tổng vốn hàng nhập vào = Giá trị tồn hiện tại + Giá trị đã tiêu hao (hoặc giá trị quy cách gói nhập)
       const calculatedInflow = Math.max(curVal + usedCost, pkgPrice);
       totalStockInflowValuation += calculatedInflow;
     });
@@ -1039,7 +1102,8 @@ router.get('/profit-overview', auth, async (req, res) => {
       SELECT su.id, su.supply_id, su.farm_id, su.plant_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
              COALESCE(s.name, 'Vật tư') as supply_name,
              COALESCE(s.category, 'Khác') as supply_category,
-             COALESCE(s.unit, 'đơn vị') as supply_unit
+             COALESCE(s.unit, 'đơn vị') as supply_unit,
+             p.assigned_to_user_id
       FROM supply_usages su
       LEFT JOIN supplies s ON su.supply_id = s.id
       LEFT JOIN plants p ON su.plant_id = p.id
@@ -1053,17 +1117,24 @@ router.get('/profit-overview', auth, async (req, res) => {
       usageParams.push(parseInt(user_id));
       uIdx++;
     } else if (req.user.role !== 'admin') {
-      usageQuery += ` AND (
-        su.user_id = $${uIdx}
-        OR su.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
-        OR su.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx}))
-        OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
-        OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
-        OR p.created_by = $${uIdx}
-        OR su.plant_id IN (SELECT id FROM plants WHERE created_by = $${uIdx} OR farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx})))
-      )`;
-      usageParams.push(req.user.id);
-      uIdx++;
+      if (isAssignedScope) {
+        usageQuery += ` AND (p.assigned_to_user_id = $${uIdx} OR (su.plant_id IS NULL AND su.user_id = $${uIdx}) OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx}))`;
+        usageParams.push(req.user.id);
+        uIdx++;
+      } else {
+        usageQuery += ` AND (
+          su.user_id = $${uIdx}
+          OR su.user_id = COALESCE($${uIdx + 1}::int, 0)
+          OR su.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
+          OR su.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx}))
+          OR su.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR user_id = COALESCE($${uIdx + 1}::int, 0) OR id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
+          OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx}))
+          OR p.created_by = $${uIdx}
+          OR su.plant_id IN (SELECT id FROM plants WHERE created_by = $${uIdx} OR farm_id IN (SELECT id FROM farms WHERE user_id = $${uIdx} OR id = (SELECT farm_id FROM users WHERE id = $${uIdx})))
+        )`;
+        usageParams.push(req.user.id, req.user.parent_user_id || null);
+        uIdx += 2;
+      }
     }
 
     if (filterFarmId) {
@@ -1087,6 +1158,12 @@ router.get('/profit-overview', auth, async (req, res) => {
       'Tiền nước': 0,
       'Nhân công': 0
     };
+    const categoryUsageCount = {
+      'Bón phân': 0,
+      'Phun thuốc': 0,
+      'Tiền nước': 0,
+      'Nhân công': 0
+    };
 
     usageRes.rows.forEach(u => {
       const cost = parseFloat(u.total_cost) || 0;
@@ -1105,12 +1182,17 @@ router.get('/profit-overview', auth, async (req, res) => {
       } else {
         categorySpent[cat] = (categorySpent[cat] || 0) + cost;
       }
+      if (categoryUsageCount[cat] !== undefined) {
+        categoryUsageCount[cat] += 1;
+      } else {
+        categoryUsageCount[cat] = (categoryUsageCount[cat] || 0) + 1;
+      }
     });
 
-    // ── 3. KHỐI 3: DOANH THU THU HOẠCH THEO TỪNG CÂY TRỒNG (Phân bổ theo trang trại & năm) ──
+    // ── 3. KHỐI 3: DOANH THU & SẢN LƯỢNG THU HOẠCH THEO TỪNG CÂY TRỒNG ──
     let harvestQuery = `
       SELECT pl.id, pl.cost, pl.details, pl.log_date, pl.log_type, pl.plant_id, pl.batch_code,
-             p.tree_code, p.plant_type, COALESCE(p.farm_id, (SELECT farm_id FROM users WHERE id = pl.created_by)) as farm_id
+             p.tree_code, p.plant_type, p.assigned_to_user_id, COALESCE(p.farm_id, (SELECT farm_id FROM users WHERE id = pl.created_by)) as farm_id
       FROM plant_logs pl
       LEFT JOIN plants p ON pl.plant_id = p.id
       WHERE (
@@ -1130,15 +1212,21 @@ router.get('/profit-overview', auth, async (req, res) => {
       harvestParams.push(parseInt(user_id));
       hIdx++;
     } else if (req.user.role !== 'admin') {
-      harvestQuery += ` AND (
-        pl.created_by = $${hIdx} 
-        OR p.created_by = $${hIdx}
-        OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx} OR id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
-        OR pl.created_by IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))
-        OR pl.created_by IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
-      )`;
-      harvestParams.push(req.user.id);
-      hIdx++;
+      if (isAssignedScope) {
+        harvestQuery += ` AND (p.assigned_to_user_id = $${hIdx} OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))`;
+        harvestParams.push(req.user.id);
+        hIdx++;
+      } else {
+        harvestQuery += ` AND (
+          pl.created_by = $${hIdx} 
+          OR p.created_by = $${hIdx}
+          OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx} OR id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
+          OR pl.created_by IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${hIdx}))
+          OR pl.created_by IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${hIdx}))
+        )`;
+        harvestParams.push(req.user.id);
+        hIdx++;
+      }
     }
 
     if (filterFarmId) {
@@ -1160,7 +1248,6 @@ router.get('/profit-overview', auth, async (req, res) => {
     let totalHarvestWeight = 0;
     const harvestLogsCount = harvestRes.rows.length;
 
-    // Chi tiết doanh thu theo từng cây trồng (Tree-level breakdown)
     const treeBreakdownMap = {};
 
     harvestRes.rows.forEach(row => {
@@ -1189,34 +1276,47 @@ router.get('/profit-overview', auth, async (req, res) => {
           revenue: 0,
           fruits: 0,
           weight: 0,
-          harvest_times: 0
+          harvest_times: 0,
+          finance_redacted: hideFinance
         };
       }
-      treeBreakdownMap[pId].revenue += rev;
+      treeBreakdownMap[pId].revenue += hideFinance ? 0 : rev;
       treeBreakdownMap[pId].fruits += fruits;
       treeBreakdownMap[pId].weight += amt;
       treeBreakdownMap[pId].harvest_times += 1;
     });
 
-    const treeBreakdown = Object.values(treeBreakdownMap).sort((a, b) => b.revenue - a.revenue);
+    const treeBreakdown = Object.values(treeBreakdownMap).sort((a, b) =>
+      hideFinance ? (b.weight - a.weight || b.fruits - a.fruits) : (b.revenue - a.revenue)
+    );
 
     // ── 4. LỢI NHUẬN & HIỆU QUẢ ĐẦU TƯ (ROI) ──
-    const netProfit = totalHarvestRevenue - totalSpent;
-    const roiPercentage = totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalHarvestRevenue > 0 ? 100 : 0);
+    const netProfit = hideFinance ? 0 : (totalHarvestRevenue - totalSpent);
+    const roiPercentage = hideFinance
+      ? 0
+      : (totalSpent > 0 ? Math.round(((netProfit / totalSpent) * 100) * 10) / 10 : (totalHarvestRevenue > 0 ? 100 : 0));
 
     res.json({
+      finance_redacted: hideFinance,
+      view_plants_scope: isAssignedScope ? 'assigned' : 'all',
+
       // Khối 1: Nhập kho & Tồn kho
-      total_stock_inflow: totalStockInflowValuation > 0 ? totalStockInflowValuation : currentStockValuation,
-      current_stock_valuation: currentStockValuation,
+      total_stock_inflow: hideFinance ? 0 : (totalStockInflowValuation > 0 ? totalStockInflowValuation : currentStockValuation),
+      current_stock_valuation: hideFinance ? 0 : currentStockValuation,
       sku_count: skuCount,
+      fertilizer_sku_count: fertilizerSkuCount,
+      pesticide_sku_count: pesticideSkuCount,
 
       // Khối 2: Tiêu hao lũy kế
-      total_spent: totalSpent,
+      total_spent: hideFinance ? 0 : totalSpent,
       usage_count: usageCount,
-      category_spent: categorySpent,
+      category_spent: hideFinance
+        ? { 'Bón phân': 0, 'Phun thuốc': 0, 'Tiền nước': 0, 'Nhân công': 0 }
+        : categorySpent,
+      category_usage_count: categoryUsageCount,
 
-      // Khối 3: Doanh thu thu hoạch theo từng cây
-      total_revenue: totalHarvestRevenue,
+      // Khối 3: Doanh thu & Sản lượng thu hoạch theo từng cây
+      total_revenue: hideFinance ? 0 : totalHarvestRevenue,
       fruit_count: totalFruitCount,
       harvest_weight: totalHarvestWeight,
       harvest_count: harvestLogsCount,

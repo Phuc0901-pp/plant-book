@@ -446,11 +446,43 @@ router.get('/logs/recent', auth, async (req, res) => {
       daysLimit = parseInt(rawDays, 10);
     }
 
+function isUserFinanceRedacted(user) {
+  if (!user || user.role === 'admin') return false;
+  if (user.allow_view_finance === false) return true;
+  if (['care_worker', 'auditor_readonly'].includes(user.sub_role) && user.allow_view_finance !== true) return true;
+  return false;
+}
+
+function sanitizeLogRowForUser(log, user) {
+  if (!log || !isUserFinanceRedacted(user)) return log;
+  let d = log.details || {};
+  if (typeof d === 'string') {
+    try { d = JSON.parse(d); } catch (_) { d = {}; }
+  } else {
+    d = { ...d };
+  }
+  delete d.total_revenue;
+  delete d.revenue;
+  delete d.price_per_tree;
+  delete d.avg_price_per_fruit;
+  delete d.total_cost;
+  delete d.unit_price;
+  delete d.package_price;
+  d.finance_redacted = true;
+  return {
+    ...log,
+    cost: 0,
+    finance_redacted: true,
+    details: d
+  };
+}
+
     let query = `
       SELECT pl.*, 
              COALESCE(p.plant_type, 'Toàn vườn') as plant_type, 
              COALESCE(p.plant_variety, '') as plant_variety, 
              COALESCE(p.tree_code, 'Toàn vườn') as tree_code, 
+             p.assigned_to_user_id,
              COALESCE(p.farm_id, (SELECT id FROM farms WHERE user_id = pl.created_by LIMIT 1)) as farm_id, 
              COALESCE(f.name, (SELECT name FROM farms WHERE user_id = pl.created_by LIMIT 1), 'Trang trại Nông hộ') as farm_name, 
              COALESCE(p.location, 'Toàn vườn') as plant_location, 
@@ -471,14 +503,36 @@ router.get('/logs/recent', auth, async (req, res) => {
     }
 
     if (req.user.role !== 'admin') {
-      query += ` AND (pl.created_by = $${idx} OR f.user_id = $${idx} OR f.id = (SELECT farm_id FROM users WHERE id = $${idx})) `;
-      params.push(req.user.id);
-      idx++;
+      if (req.user.view_plants_scope === 'assigned') {
+        // Chỉ hiển thị lịch sử chăm sóc của các cây mà tài khoản được phân quyền phụ trách (hoặc chủ vườn)
+        query += ` AND (f.user_id = $${idx} OR p.assigned_to_user_id = $${idx}) `;
+        params.push(req.user.id);
+        idx++;
+      } else {
+        query += ` AND (pl.created_by = $${idx} OR f.user_id = $${idx} OR f.id = (SELECT farm_id FROM users WHERE id = $${idx}) OR p.assigned_to_user_id = $${idx}) `;
+        params.push(req.user.id);
+        idx++;
+      }
+
+      if (req.user.allow_shared_history === false) {
+        query += ` AND (f.user_id = $${idx} OR pl.created_by = $${idx}) `;
+        params.push(req.user.id);
+        idx++;
+      }
+
+      if (req.user.view_history_from_date) {
+        query += ` AND (f.user_id = $${idx} OR pl.log_date >= $${idx + 1}) `;
+        params.push(req.user.id, req.user.view_history_from_date);
+        idx += 2;
+      }
     }
     query += ` ORDER BY pl.log_date DESC, pl.id DESC `;
     query += ` LIMIT 300 `;
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    const rows = isUserFinanceRedacted(req.user)
+      ? result.rows.map(r => sanitizeLogRowForUser(r, req.user))
+      : result.rows;
+    res.json(rows);
   } catch (err) {
     console.error('Error fetching recent logs:', err);
     res.status(500).json({ error: 'Lỗi server khi tải nhật ký canh tác.' });
@@ -489,7 +543,7 @@ router.get('/logs/recent', auth, async (req, res) => {
 router.get('/media/all', auth, async (req, res) => {
   try {
     let query = `
-      SELECT pm.*, p.plant_type, p.tree_code, p.farm_id, f.name as farm_name, f.user_id as farm_owner_id, u.full_name as owner_name
+      SELECT pm.*, p.plant_type, p.tree_code, p.farm_id, p.assigned_to_user_id, f.name as farm_name, f.user_id as farm_owner_id, u.full_name as owner_name
       FROM plant_media pm
       JOIN plants p ON pm.plant_id = p.id
       LEFT JOIN farms f ON f.id = p.farm_id
@@ -499,9 +553,13 @@ router.get('/media/all', auth, async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // Security: Non-admin users can only view their own farm media!
+    // Security: Non-admin users can only view their own farm media (or assigned plants if scope === 'assigned')!
     if (req.user.role !== 'admin') {
-      query += ` AND (f.user_id = $${paramIndex} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${paramIndex}) OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${paramIndex}) OR p.assigned_to_user_id = $${paramIndex} OR p.created_by = $${paramIndex}) `;
+      if (req.user.view_plants_scope === 'assigned') {
+        query += ` AND (f.user_id = $${paramIndex} OR p.assigned_to_user_id = $${paramIndex}) `;
+      } else {
+        query += ` AND (f.user_id = $${paramIndex} OR p.farm_id = (SELECT farm_id FROM users WHERE id = $${paramIndex}) OR p.farm_id IN (SELECT id FROM farms WHERE user_id = $${paramIndex}) OR p.assigned_to_user_id = $${paramIndex} OR p.created_by = $${paramIndex}) `;
+      }
       params.push(req.user.id);
       paramIndex++;
       query += ` AND pm.delete_pending = false `;
@@ -554,11 +612,19 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
 
     const row = plant.rows[0];
-    const isAssigned = (req.user.farm_id && row.farm_id && req.user.farm_id === row.farm_id)
-      || (row.assigned_to_user_id && row.assigned_to_user_id === req.user.id)
-      || (row.created_by && row.created_by === req.user.id);
-    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id && !isAssigned) {
-      return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
+    const isOwner = Number(row.farm_owner_id) === Number(req.user.id);
+    const isDirectlyAssigned = Number(row.assigned_to_user_id) === Number(req.user.id);
+    const isSameFarmOrCreator = (req.user.farm_id && row.farm_id && Number(req.user.farm_id) === Number(row.farm_id))
+      || (row.created_by && Number(row.created_by) === Number(req.user.id));
+
+    if (req.user.role !== 'admin' && !isOwner) {
+      if (req.user.view_plants_scope === 'assigned') {
+        if (!isDirectlyAssigned) {
+          return res.status(403).json({ error: 'Cây này không nằm trong danh sách cây bạn được giao phụ trách.' });
+        }
+      } else if (!isDirectlyAssigned && !isSameFarmOrCreator) {
+        return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
+      }
     }
 
     const media = await pool.query('SELECT * FROM plant_media WHERE plant_id=$1 ORDER BY uploaded_at DESC', [req.params.id]);
@@ -570,7 +636,11 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
        ORDER BY pl.log_date DESC, pl.created_at DESC`, [req.params.id]
     );
 
-    res.json({ ...row, media: media.rows, logs: logs.rows });
+    const safeLogs = isUserFinanceRedacted(req.user)
+      ? logs.rows.map(l => sanitizeLogRowForUser(l, req.user))
+      : logs.rows;
+
+    res.json({ ...row, media: media.rows, logs: safeLogs });
   } catch (err) {
     console.error('Get plant details error:', err);
     res.status(500).json({ error: 'Lỗi server.' });
@@ -589,19 +659,26 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     if (plant.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy.' });
 
     const row = plant.rows[0];
-    const isAssignedFarmer = (req.user.farm_id && row.farm_id && req.user.farm_id === row.farm_id)
-      || (row.assigned_to_user_id && row.assigned_to_user_id === req.user.id)
-      || (row.created_by && row.created_by === req.user.id);
-    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id && !isAssignedFarmer) {
-      return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
-    }
+    const isOwner = Number(row.farm_owner_id) === Number(req.user.id);
+    const isDirectlyAssigned = Number(row.assigned_to_user_id) === Number(req.user.id);
+    const isSameFarmOrCreator = (req.user.farm_id && row.farm_id && Number(req.user.farm_id) === Number(row.farm_id))
+      || (row.created_by && Number(row.created_by) === Number(req.user.id));
 
+    if (req.user.role !== 'admin' && !isOwner) {
+      if (req.user.view_plants_scope === 'assigned') {
+        if (!isDirectlyAssigned) {
+          return res.status(403).json({ error: 'Cây này không nằm trong danh sách cây bạn được giao phụ trách.' });
+        }
+      } else if (!isDirectlyAssigned && !isSameFarmOrCreator) {
+        return res.status(403).json({ error: 'Bạn không có quyền truy cập thông tin cây này.' });
+      }
+    }
 
     let logsQuery = 'SELECT pl.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email FROM plant_logs pl LEFT JOIN users u ON u.id = pl.created_by WHERE pl.plant_id = $1 AND (pl.is_deleted IS NOT TRUE)';
     const logsParams = [req.params.id];
     let idx = 2;
 
-    if (req.user.role !== 'admin' && row.farm_owner_id !== req.user.id) {
+    if (req.user.role !== 'admin' && !isOwner) {
       const farmRes = await pool.query('SELECT allow_shared_history FROM farms WHERE id=$1', [row.farm_id]);
       const farmAllowShared = farmRes.rows.length > 0 && farmRes.rows[0].allow_shared_history !== false;
       const userAllowShared = req.user.allow_shared_history !== false;
@@ -638,6 +715,8 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
       usagesRows = [];
     }
 
+    const redactFinance = isUserFinanceRedacted(req.user);
+
     // Đối soát chi phí và tên vật tư vào từng log nếu log chưa có cost
     const enrichedLogs = logsRes.rows.map(log => {
       let d = log.details || {};
@@ -661,12 +740,13 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
       const costVal = parseFloat(d.total_cost || log.cost || 0) || 0;
       const matName = d.material_name || d.supply_name || d.fertilizer_name || d.pesticide_name || null;
 
-      return {
+      const enriched = {
         ...log,
         details: d,
         cost: costVal,
         material_name: matName
       };
+      return redactFinance ? sanitizeLogRowForUser(enriched, req.user) : enriched;
     });
 
     res.json(enrichedLogs);

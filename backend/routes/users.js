@@ -367,12 +367,13 @@ router.delete('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
 // Apply admin check to all remaining routes in this file
 router.use(admin);
 
-// GET /api/users - List all users (with assigned farm info & permissions & assigned plants)
+// GET /api/users - List all users (with assigned farm info & permissions & assigned plants & parent lineage)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT u.id, u.email, u.phone, u.address, u.city, u.country, u.full_name, u.role,
               COALESCE(u.sub_role, 'farm_owner') as sub_role, u.parent_user_id, u.allow_view_finance,
+              pu.full_name as parent_user_name, pu.email as parent_user_email, pu.phone as parent_user_phone,
               u.is_online, u.last_active_at, u.created_at,
               u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies,
               u.account_tier, u.tier_expires_at, u.tier_admin_note,
@@ -380,8 +381,12 @@ router.get('/', async (req, res) => {
               COALESCE(f.name, f_legacy.name) as farm_name,
               COALESCE((
                 SELECT json_agg(p.id) FROM plants p WHERE p.assigned_to_user_id = u.id
-              ), '[]'::json) as assigned_plant_ids
+              ), '[]'::json) as assigned_plant_ids,
+              COALESCE((
+                SELECT COUNT(*)::int FROM plants p WHERE p.assigned_to_user_id = u.id AND p.deleted_at IS NULL
+              ), 0) as assigned_plants_count
        FROM users u
+       LEFT JOIN users pu ON pu.id = u.parent_user_id
        LEFT JOIN farms f ON f.id = u.farm_id
        LEFT JOIN farms f_legacy ON f_legacy.user_id = u.id
        ORDER BY u.id ASC`

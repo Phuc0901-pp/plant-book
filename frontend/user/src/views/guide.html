@@ -68,46 +68,267 @@
 
         <!-- TẦNG 2: ERP SEGMENTED SUB-TABS NAVIGATION -->
         <div class="wiki-subtabs-nav">
-          <button class="wiki-subtab active" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')">
-            <span class="wiki-subtab-badge">01 · TECH</span>
+          <button class="wiki-subtab active" id="btn-wiki-sub-roles" onclick="switchWikiSubtab('roles')">
+            <span class="wiki-subtab-badge" style="background:#059669; color:#fff;">01 · THEO VAI TRÒ</span>
+            <div class="wiki-subtab-icon" style="background:#ecfdf5; color:#059669;">
+              <i data-lucide="shield-check" class="lucide-sm"></i>
+            </div>
+            <div class="wiki-subtab-content">
+              <div class="wiki-subtab-title">1. Cẩm Nang Vận Hành Theo Vai Trò</div>
+              <div class="wiki-subtab-desc">Chủ Vườn · Quản Đốc · Nhân Công · Kiểm Toán</div>
+            </div>
+            <div class="wiki-subtab-indicator"><i data-lucide="check-circle-2" class="lucide-sm"></i></div>
+          </button>
+
+          <button class="wiki-subtab" id="btn-wiki-sub-advanced" onclick="switchWikiSubtab('advanced')">
+            <span class="wiki-subtab-badge">02 · TECH</span>
             <div class="wiki-subtab-icon">
               <i data-lucide="cpu" class="lucide-sm"></i>
             </div>
             <div class="wiki-subtab-content">
-              <div class="wiki-subtab-title">1. Module Công Nghệ Cao</div>
+              <div class="wiki-subtab-title">2. Module Công Nghệ Cao</div>
               <div class="wiki-subtab-desc">GIS 3D, GPS, IOT, NFC &amp; AI Voice</div>
             </div>
             <div class="wiki-subtab-indicator"><i data-lucide="check-circle-2" class="lucide-sm"></i></div>
           </button>
 
           <button class="wiki-subtab" id="btn-wiki-sub-guide" onclick="switchWikiSubtab('guide')">
-            <span class="wiki-subtab-badge">02 · SOP</span>
+            <span class="wiki-subtab-badge">03 · SOP</span>
             <div class="wiki-subtab-icon">
               <i data-lucide="bookmark" class="lucide-sm"></i>
             </div>
             <div class="wiki-subtab-content">
-              <div class="wiki-subtab-title">2. Sổ Tay 10 Quy Trình SOP</div>
+              <div class="wiki-subtab-title">3. Sổ Tay 10 Quy Trình SOP</div>
               <div class="wiki-subtab-desc">10 Hướng dẫn thực địa &amp; Thao tác chuẩn</div>
             </div>
             <div class="wiki-subtab-indicator"><i data-lucide="check-circle-2" class="lucide-sm"></i></div>
           </button>
 
           <button class="wiki-subtab" id="btn-wiki-sub-vietgap" onclick="switchWikiSubtab('vietgap')">
-            <span class="wiki-subtab-badge">03 · LƯU Ý VI SINH</span>
+            <span class="wiki-subtab-badge">04 · VI SINH</span>
             <div class="wiki-subtab-icon">
               <i data-lucide="flask-round" class="lucide-sm"></i>
             </div>
             <div class="wiki-subtab-content">
-              <div class="wiki-subtab-title">3. Lưu Ý Thuốc BVTV &amp; Chế Phẩm Vi Sinh</div>
-              <div class="wiki-subtab-desc">Khoảng cách 10 ~ 15 ngày &amp; Bảo vệ vi sinh vật</div>
+              <div class="wiki-subtab-title">4. Lưu Ý Thuốc BVTV &amp; Vi Sinh</div>
+              <div class="wiki-subtab-desc">Khoảng cách 10 ~ 15 ngày &amp; An toàn sinh học</div>
             </div>
             <div class="wiki-subtab-indicator"><i data-lucide="check-circle-2" class="lucide-sm"></i></div>
           </button>
         </div>
 
+        <!-- ════════════════ SUB-TAB 0: HƯỚNG DẪN THEO VAI TRÒ (ROLE-ADAPTIVE SOP) ════════════════ -->
+        <div id="wiki-subtab-roles" style="display:block;">
+          
+          <!-- Banner chuyển đổi Role nhanh -->
+          <div style="background:linear-gradient(135deg, #091e15 0%, #164e3f 100%); color:#ffffff; border-radius:18px; padding:22px 24px; margin-bottom:24px; box-shadow:0 6px 22px rgba(6,78,59,0.18); position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+              <div style="max-width:650px;">
+                <div id="guide-current-role-badge" style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.25); border:1px solid #10b981; color:#a7f3d0; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:20px; text-transform:uppercase; margin-bottom:8px;">
+                  <i data-lucide="user-check" class="lucide-xs"></i> Đang tải vai trò của bạn...
+                </div>
+                <h3 style="font-size:20px; font-weight:900; color:#ffffff; margin:0 0 6px 0; letter-spacing:-0.2px;">
+                  Cẩm Nang Vận Hành Chuẩn Hóa Phân Quyền Theo Từng Vai Trò
+                </h3>
+                <p style="margin:0; font-size:13px; color:#d1fae5; line-height:1.55;">
+                  Mỗi vai trò trong hệ thống Plant Book AgTech được thiết kế chuyên biệt hóa giao diện, quyền hạn và quy trình nghiệp vụ. Hãy chọn vai trò bên dưới để xem chi tiết hướng dẫn tương ứng.
+                </p>
+              </div>
+
+              <!-- Nút chọn Role -->
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="guide-role-btn" id="btn-guide-role-owner" onclick="selectGuideRole('farm_owner')" style="padding:8px 14px; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; border:1.5px solid #10b981; background:#059669; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                  <i data-lucide="crown" class="lucide-xs"></i> Chủ Vườn
+                </button>
+                <button type="button" class="guide-role-btn" id="btn-guide-role-manager" onclick="selectGuideRole('manager')" style="padding:8px 14px; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1); color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                  <i data-lucide="user-cog" class="lucide-xs"></i> Quản Đốc
+                </button>
+                <button type="button" class="guide-role-btn" id="btn-guide-role-worker" onclick="selectGuideRole('care_worker')" style="padding:8px 14px; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1); color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                  <i data-lucide="sprout" class="lucide-xs"></i> Nhân Công
+                </button>
+                <button type="button" class="guide-role-btn" id="btn-guide-role-auditor" onclick="selectGuideRole('auditor_readonly')" style="padding:8px 14px; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1); color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                  <i data-lucide="shield-check" class="lucide-xs"></i> Kiểm Toán
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE CHI TIẾT 1: CHỦ NÔNG TRẠI (FARM OWNER) -->
+          <div id="guide-role-pane-owner" class="guide-role-pane" style="display:block;">
+            <div style="background:#ffffff; border:1.5px solid #a7f3d0; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+                <h3 style="margin:0; font-size:18px; font-weight:800; color:#064e3b; display:flex; align-items:center; gap:10px;">
+                  <span style="width:32px; height:32px; border-radius:10px; background:#ecfdf5; color:#059669; display:inline-flex; align-items:center; justify-content:center; font-size:16px;"><i data-lucide="crown" class="lucide-sm"></i></span>
+                  Lộ Trình Tác Nghiệp: Chủ Trang Trại (Farm Owner)
+                </h3>
+                <span class="badge badge-green" style="font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px;">Toàn Quyền Quản Trị Hệ Thống</span>
+              </div>
+              <p style="font-size:13.5px; color:#334155; line-height:1.6; margin:0 0 18px 0;">
+                Với tư cách là người chủ sở hữu trang trại, bạn nắm giữ quyền kiểm soát cao nhất đối với tài sản đất đai, nguồn lực nhân sự, dòng tiền mùa vụ và dữ liệu an toàn thực phẩm. Dưới đây là 5 bước vận hành trọng tâm:
+              </p>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    <span style="background:#059669; color:#fff; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px;">1</span> KHỞI TẠO GIS &amp; GPS THỬA ĐẤT
+                  </div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Vào tab <strong>Trang trại</strong>, mở GPS lấy tọa độ thực địa, khai báo diện tích, mã số vùng trồng PUC và dựng đường đồng mức 3D Contour để thoát nước mùa lũ.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    <span style="background:#0284c7; color:#fff; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px;">2</span> PHÂN QUYỀN NHÂN SỰ VƯỜN (RBAC)
+                  </div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Vào <strong>Cài đặt &gt; Phân quyền Nhân sự Vườn</strong>. Tạo tài khoản cho Quản đốc, Nhân công, Kiểm toán. Giao cụ thể các cây trồng được phụ trách và chủ động khóa quyền xem tài chính.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    <span style="background:#d97706; color:#fff; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px;">3</span> QUẢN LÝ VẬT TƯ &amp; VỐN TỒN KHO
+                  </div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Theo dõi Ma trận Quản trị Tồn kho, định giá vốn lưu kho phân/thuốc, giám sát số tiền thực tế đã chiết khấu và tiêu hao trên từng mét vuông đất canh tác.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#7c3aed; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    <span style="background:#7c3aed; color:#fff; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px;">4</span> HẠCH TOÁN DOANH THU &amp; ROI CÂY
+                  </div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Ghi nhận sản lượng thu hoạch (kg, số trái), tính toán Doanh thu, Lợi nhuận ròng (Net Profit) và tỷ lệ ROI trên từng cây trồng cụ thể để loại thải cây kém năng suất.</div>
+                </div>
+              </div>
+
+              <!-- Task checklist for Owner -->
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:14px 18px;">
+                <div style="font-size:13px; font-weight:800; color:#065f46; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                  <i data-lucide="check-square" class="lucide-xs"></i> CHECKLIST NHIỆM VỤ QUẢN TRỊ ĐỊNH KỲ:
+                </div>
+                <ul style="margin:0; padding-left:20px; font-size:12.5px; color:#166534; line-height:1.7;">
+                  <li><strong>Đầu mùa vụ:</strong> Thiết lập quy chuẩn giá mua vật tư, tạo tài khoản cho nhân công mới và phân chia lô cây phụ trách.</li>
+                  <li><strong>Hàng tuần:</strong> Rà soát bảng cảnh báo sâu bệnh đỏ trên Trang chủ; phê duyệt các đợt nhập kho vật tư số lượng lớn.</li>
+                  <li><strong>Cuối vụ thu hoạch:</strong> Xuất báo cáo chứng nhận VietGAP có đóng dấu mã băm SHA-256 đối soát minh bạch với thương lái và nhà máy thu mua.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE CHI TIẾT 2: QUẢN ĐỐC / KỸ SƯ NÔNG NGHIỆP (MANAGER) -->
+          <div id="guide-role-pane-manager" class="guide-role-pane" style="display:none;">
+            <div style="background:#ffffff; border:1.5px solid #bfdbfe; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+                <h3 style="margin:0; font-size:18px; font-weight:800; color:#1e40af; display:flex; align-items:center; gap:10px;">
+                  <span style="width:32px; height:32px; border-radius:10px; background:#eff6ff; color:#2563eb; display:inline-flex; align-items:center; justify-content:center; font-size:16px;"><i data-lucide="user-cog" class="lucide-sm"></i></span>
+                  Lộ Trình Tác Nghiệp: Quản Đốc &amp; Kỹ Sư Nông Nghiệp (Manager)
+                </h3>
+                <span class="badge" style="background:#2563eb; color:#fff; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px;">Điều Hành Kỹ Thuật Thực Địa</span>
+              </div>
+              <p style="font-size:13.5px; color:#334155; line-height:1.6; margin:0 0 18px 0;">
+                Quản đốc là cầu nối then chốt giữa chiến lược canh tác của chủ vườn và thao tác hàng ngày ngoài thực địa của nhân công. Dưới đây là các trọng tâm tác nghiệp:
+              </p>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#2563eb; margin-bottom:6px;"><i data-lucide="sliders" class="lucide-xs"></i> 1. CÀI ĐẶT NGƯỠNG CẢNH BÁO IOT</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Cấu hình ngưỡng cảm biến đất đa tầng (độ ẩm &lt; 40% tự cảnh báo tưới, pH &lt; 5.5 cảnh báo bón vôi khử chua, EC dinh dưỡng).</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:6px;"><i data-lucide="clipboard-list" class="lucide-xs"></i> 2. ĐIỀU PHỐI THẺ KHO &amp; TIÊU HAO</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Nhập kho các lô vật tư nông nghiệp mới, quy định định mức xuất kho và kiểm soát ghi nhận tiêu hao theo từng ngày trên toàn vườn.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#dc2626; margin-bottom:6px;"><i data-lucide="shield-alert" class="lucide-xs"></i> 3. CHẨN ĐOÁN &amp; ĐIỀU TRỊ BỆNH CÂY</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Tiếp nhận báo cáo bệnh từ nhân công, thẩm định hình ảnh thực địa, phê duyệt đơn thuốc điều trị và thiết lập vùng cách ly dịch tễ.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:6px;"><i data-lucide="clock" class="lucide-xs"></i> 4. DUYỆT THỜI GIAN CÁCH LY (PHI)</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Kiểm tra nghiêm ngặt thời gian cách ly thuốc BVTV (7-14 ngày) trước khi phê duyệt lịch thu hoạch cho từng gốc cây.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE CHI TIẾT 3: NHÂN CÔNG CHĂM SÓC THỰC ĐỊA (CARE WORKER) -->
+          <div id="guide-role-pane-worker" class="guide-role-pane" style="display:none;">
+            <div style="background:#ffffff; border:1.5px solid #bae6fd; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+                <h3 style="margin:0; font-size:18px; font-weight:800; color:#0369a1; display:flex; align-items:center; gap:10px;">
+                  <span style="width:32px; height:32px; border-radius:10px; background:#f0f9ff; color:#0284c7; display:inline-flex; align-items:center; justify-content:center; font-size:16px;"><i data-lucide="sprout" class="lucide-sm"></i></span>
+                  Lộ Trình Tác Nghiệp: Nhân Công Chăm Sóc Thực Địa (Care Worker)
+                </h3>
+                <span class="badge" style="background:#0284c7; color:#fff; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px;">Tối Ưu Thao Tác Ngoài Vườn</span>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px 16px; margin-bottom:18px; color:#1e40af; font-size:13px; line-height:1.55;">
+                <i data-lucide="shield-check" class="lucide-xs" style="color:#2563eb;"></i> <strong>Giao diện thân thiện &amp; Kỹ thuật thuần túy:</strong> Hệ thống tự động ẩn toàn bộ thông tin giá tiền, đơn giá và doanh thu để bạn tập trung 100% vào liều lượng kỹ thuật và chăm sóc cây trồng tốt nhất.
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:6px;"><i data-lucide="radio" class="lucide-xs"></i> 1. QUÉT CHIP NFC HOẶC MÃ QR GỐC CÂY</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Chạm nhẹ điện thoại vào thẻ NFC gắn trên thân cây hoặc quét mã QR để mở tức thì hồ sơ cây trồng mà không cần tìm kiếm thủ công.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:6px;"><i data-lucide="mic" class="lucide-xs"></i> 2. ĐỌC NHẬT KÝ BẰNG GIỌNG NÓI AI</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Bấm giữ nút Micro và nói tự nhiên (Ví dụ: <em>"Đã tưới 25 lít nước và bón 200 gam phân NPK cho cây 12"</em>). AI sẽ tự động điền form và lưu vào sổ tay.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#dc2626; margin-bottom:6px;"><i data-lucide="camera" class="lucide-xs"></i> 3. CHỤP ẢNH BÁO CÁO CÂY BỆNH</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Khi thấy lá bị đốm vàng, thối rễ hay sâu ăn búp non, hãy chụp ảnh gửi ngay vào nhật ký Bệnh cây để Quản đốc hướng dẫn thuốc trị kịp thời.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#7c3aed; margin-bottom:6px;"><i data-lucide="check-circle" class="lucide-xs"></i> 4. THEO DÕI CÁC CÂY PHỤ TRÁCH</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Xem danh sách cây được giao trong mục Trang trại và kiểm tra lịch sử chăm sóc cây phụ trách trong mục Lịch Sử.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE CHI TIẾT 4: KIỂM ĐỊNH VIÊN / THANH TRA VIETGAP (AUDITOR READONLY) -->
+          <div id="guide-role-pane-auditor" class="guide-role-pane" style="display:none;">
+            <div style="background:#ffffff; border:1.5px solid #fde68a; border-radius:18px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+                <h3 style="margin:0; font-size:18px; font-weight:800; color:#92400e; display:flex; align-items:center; gap:10px;">
+                  <span style="width:32px; height:32px; border-radius:10px; background:#fffbeb; color:#d97706; display:inline-flex; align-items:center; justify-content:center; font-size:16px;"><i data-lucide="shield-check" class="lucide-sm"></i></span>
+                  Lộ Trình Tác Nghiệp: Kiểm Định Viên / Thanh Tra VietGAP (Auditor)
+                </h3>
+                <span class="badge" style="background:#d97706; color:#fff; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px;">Thanh Tra Độc Lập (Read-Only)</span>
+              </div>
+              <p style="font-size:13.5px; color:#334155; line-height:1.6; margin:0 0 18px 0;">
+                Kiểm định viên sử dụng hệ thống để thẩm định tính minh bạch và tuân thủ các chỉ tiêu của chứng nhận VietGAP / GlobalGAP:
+              </p>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:6px;"><i data-lucide="book-open" class="lucide-xs"></i> 1. TRA CỨU SỔ NHẬT KÝ ĐIỆN TỬ</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Xem đầy đủ tiến trình chăm sóc theo từng mốc thời gian, loại phân bón, loại thuốc BVTV và người trực tiếp thực hiện.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:6px;"><i data-lucide="calendar" class="lucide-xs"></i> 2. ĐỐI SOÁT CÁCH LY PHI</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Kiểm tra mốc phun thuốc lần cuối và ngày thu hoạch thực tế, đảm bảo dư lượng thuốc trừ sâu đã phân hủy an toàn theo khuyến nghị.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#2563eb; margin-bottom:6px;"><i data-lucide="download" class="lucide-xs"></i> 3. XUẤT BÁO CÁO VIETGAP CHUẨN</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Bấm nút <strong>Xuất Báo Cáo / Excel</strong> tại tab Lịch Sử để lấy file tổng hợp đã gắn mã băm chứng thực phục vụ hồ sơ cấp phép.</div>
+                </div>
+
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:16px;">
+                  <div style="font-size:12px; font-weight:800; color:#7c3aed; margin-bottom:6px;"><i data-lucide="lock" class="lucide-xs"></i> 4. TOÀN VẸN DỮ LIỆU SHA-256</div>
+                  <div style="font-size:12.5px; color:#475569; line-height:1.5;">Tất cả các bản ghi đã khóa sổ không thể bị sửa chữa gian lận hồi tố, bảo đảm 100% tính nguyên vẹn cho thanh tra quốc tế.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
 
         <!-- ════════════════ SUB-TAB 1: MODULE CÔNG NGHỆ NÂNG CAO ════════════════ -->
-        <div id="wiki-subtab-advanced" style="display:block;">
+        <div id="wiki-subtab-advanced" style="display:none;">
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:22px;">
             
             <!-- Module 1: Bản đồ GIS Vệ tinh & 3D Contour -->
