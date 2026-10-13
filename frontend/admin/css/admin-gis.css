@@ -411,22 +411,75 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 7px 10px;
+    padding: 7px 9px;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
+    border-radius: 9px;
+    background: #ffffff;
     font-size: 11.5px;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition: all 0.15s ease;
+    gap: 6px;
   }
   .gis-plant-item:hover {
     background: #f8fafc;
-    border-color: #cbd5e1;
+    border-color: #10b981;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+  }
+  .gis-plant-item.pinning-active {
+    background: #ecfdf5;
+    border-color: #059669;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
   }
   .gis-plant-health-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+  .gis-plant-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 7px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+  }
+  .gis-plant-action-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+  .gis-plant-action-btn.pin-btn-needs-gps {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+  }
+  .gis-plant-action-btn.pin-btn-needs-gps:hover {
+    background: #059669;
+    color: #ffffff;
+    border-color: #059669;
+  }
+  .gis-plant-action-btn.pin-btn-has-gps {
+    background: #f0f9ff;
+    color: #0284c7;
+    border-color: #bae6fd;
+  }
+  .gis-plant-action-btn.pin-btn-has-gps:hover {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+  }
+  .gis-plant-action-btn.pin-btn-active {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border-color: #047857 !important;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.35);
   }
 
   /* ── Footer action buttons (Sửa / Xóa) ── */
@@ -455,40 +508,63 @@
     height: 100%;
   }
 
-  /* ── Map Tooltip & GIS Popup ── */
+  /* ── Map Tooltip & GIS Enterprise ERP Popup ── */
   .gis-plant-popup {
     z-index: 9999 !important;
   }
   .gis-plant-popup .mapboxgl-popup-content {
-    border-radius: 12px;
-    padding: 12px 14px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e2e8f0;
+    border-radius: 14px !important;
+    padding: 0 !important;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 18px 36px -8px rgba(15, 23, 42, 0.26), 0 6px 14px -4px rgba(15, 23, 42, 0.12) !important;
+    border: 1px solid #cbd5e1 !important;
+    min-width: 286px;
   }
   .gis-plant-popup .mapboxgl-popup-close-button {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
-    color: #94a3b8;
-    padding: 4px 8px;
-    top: 6px;
-    right: 6px;
+    font-weight: 700;
+    line-height: 1;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 0;
+    top: 11px;
+    right: 11px;
+    transition: all 0.15s ease;
+    z-index: 5;
   }
   .gis-plant-popup .mapboxgl-popup-close-button:hover {
+    color: #dc2626;
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+  .erp-plant-popup-card {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: #0f172a;
-    background: transparent;
   }
-  .map-tooltip {
-    padding: 2px;
+  .erp-popup-header {
+    padding: 11px 42px 10px 14px;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
-  .map-tooltip h4 {
-    margin-bottom: 6px;
-    font-size: 13px;
-    border-bottom: 1.5px solid #f1f5f9;
-    padding-bottom: 4px;
+  .erp-popup-body {
+    padding: 12px 14px 10px 14px;
   }
-  .map-tooltip p {
-    font-size: 11.5px;
-    margin-bottom: 3px;
-    color: #64748b;
+  .erp-popup-footer {
+    padding: 0 14px 12px 14px;
+    display: flex;
+    gap: 7px;
   }
 
 /* ── Plant Item Hover Tooltip (Sidebar) ── */

@@ -634,16 +634,22 @@ function initGisMap(farms, plants) {
   gMap.on('draw.update', updateAreaDisplay);
   gMap.on('draw.delete', updateAreaDisplay);
 
-  // Click map handler cho Chế độ Import GIS Cây Trồng
+  // Click map handler cho Chế độ Gắn Point Cây cụ thể hoặc Chế độ Import GIS Cây Trồng
   gMap.on('click', (e) => {
-    if (!isGisImportMode) return;
+    if (!isGisImportMode && !pinningPlantTargetId) return;
 
     // Ngăn chặn trigger click nếu đang trong chế độ vẽ polygon
     if (drawControl && drawControl.getMode && drawControl.getMode() !== 'simple_select') return;
 
     const { lng, lat } = e.lngLat;
 
-    // Gắn ghim tạm thời khi click chọn vị trí cây
+    // Trường hợp 1: Đang gắn điểm Point GPS cho 1 cây cụ thể từ danh sách Sidebar
+    if (pinningPlantTargetId) {
+      assignGpsToExistingPlant(pinningPlantTargetId, lat, lng);
+      return;
+    }
+
+    // Trường hợp 2: Chế độ Import GIS tạo cây mới
     if (gisImportTempMarker) {
       gisImportTempMarker.remove();
       gisImportTempMarker = null;
@@ -759,11 +765,48 @@ function switchSatelliteSource(source) {
 }
 window.switchSatelliteSource = switchSatelliteSource;
 
-// Chuyển đổi Bật/Tắt chế độ Import GIS (Click chọn vị trí cây trên bản đồ)
+// Chuyển đổi Bật/Tắt chế độ Import GIS (Click chọn vị trí cây trên bản đồ) & Gắn Point cho cây cụ thể
 let isGisImportMode = false;
 let gisImportTempMarker = null;
+let pinningPlantTargetId = null;
+let pinningPlantTargetCode = null;
+
+function cancelAllGisPinModes() {
+  isGisImportMode = false;
+  pinningPlantTargetId = null;
+  pinningPlantTargetCode = null;
+
+  const btn = document.getElementById('btn-gis-import-mode');
+  const banner = document.getElementById('gis-import-active-banner');
+  const bannerText = document.getElementById('gis-import-banner-text');
+
+  if (btn) {
+    btn.innerHTML = '<i data-lucide="map-pin" class="lucide-sm"></i> Import GIS (Click chọn vị trí cây trên bản đồ)';
+    btn.style.background = '#10b981';
+    btn.style.borderColor = '#059669';
+  }
+  if (banner) banner.style.display = 'none';
+  if (bannerText) {
+    bannerText.innerHTML = '<i data-lucide="crosshair" class="lucide-sm"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!';
+  }
+  if (gMap) gMap.getCanvas().style.cursor = '';
+  if (gisImportTempMarker) {
+    gisImportTempMarker.remove();
+    gisImportTempMarker = null;
+  }
+  if (typeof refreshCurrentSidebarPlantListUI === 'function') {
+    refreshCurrentSidebarPlantListUI();
+  }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+window.cancelAllGisPinModes = cancelAllGisPinModes;
 
 function toggleGisImportMode(forceState) {
+  pinningPlantTargetId = null;
+  pinningPlantTargetCode = null;
+
   if (typeof forceState === 'boolean') {
     isGisImportMode = forceState;
   } else {
@@ -772,6 +815,7 @@ function toggleGisImportMode(forceState) {
 
   const btn = document.getElementById('btn-gis-import-mode');
   const banner = document.getElementById('gis-import-active-banner');
+  const bannerText = document.getElementById('gis-import-banner-text');
 
   if (isGisImportMode) {
     if (btn) {
@@ -779,23 +823,150 @@ function toggleGisImportMode(forceState) {
       btn.style.background = '#059669';
       btn.style.borderColor = '#047857';
     }
+    if (bannerText) {
+      bannerText.innerHTML = '<i data-lucide="crosshair" class="lucide-sm"></i> Đang bật Chế độ Import GIS: Click chọn vị trí cây trên bản đồ để nhập GPS &amp; Thông tin!';
+    }
     if (banner) banner.style.display = 'flex';
     if (gMap) gMap.getCanvas().style.cursor = 'crosshair';
     toast('Đã bật chế độ Import GIS: Click vào vị trí cây trên bản đồ để lấy tọa độ GPS!', 'info');
   } else {
-    if (btn) {
-      btn.innerHTML = '<i data-lucide="map-pin" class="lucide-sm"></i> Import GIS (Click chọn vị trí cây trên bản đồ)';
-      btn.style.background = '#10b981';
-      btn.style.borderColor = '#059669';
-    }
-    if (banner) banner.style.display = 'none';
-    if (gMap) gMap.getCanvas().style.cursor = '';
-    if (gisImportTempMarker) {
-      gisImportTempMarker.remove();
-      gisImportTempMarker = null;
-    }
+    cancelAllGisPinModes();
+    return;
+  }
+  if (typeof refreshCurrentSidebarPlantListUI === 'function') {
+    refreshCurrentSidebarPlantListUI();
+  }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
   }
 }
+
+// Bật chế độ gắn điểm Point GPS trên bản đồ cho một cây cụ thể từ danh sách Sidebar
+function startPinSinglePlantGps(plantId, treeCode) {
+  if (String(pinningPlantTargetId) === String(plantId)) {
+    cancelAllGisPinModes();
+    toast(`Đã tắt chế độ gắn điểm cho Cây #${treeCode || plantId}`, 'info');
+    return;
+  }
+
+  isGisImportMode = false;
+  pinningPlantTargetId = plantId;
+  pinningPlantTargetCode = treeCode || plantId;
+
+  const btn = document.getElementById('btn-gis-import-mode');
+  if (btn) {
+    btn.innerHTML = '<i data-lucide="map-pin" class="lucide-sm"></i> Import GIS (Click chọn vị trí cây trên bản đồ)';
+    btn.style.background = '#10b981';
+    btn.style.borderColor = '#059669';
+  }
+
+  const banner = document.getElementById('gis-import-active-banner');
+  const bannerText = document.getElementById('gis-import-banner-text');
+  if (bannerText) {
+    bannerText.innerHTML = `<i data-lucide="map-pin" class="lucide-sm"></i> Đang gắn Point cho <strong>Cây #${esc(pinningPlantTargetCode)}</strong>: Hãy click vào vị trí thực tế trên bản đồ!`;
+  }
+  if (banner) banner.style.display = 'flex';
+  if (gMap) gMap.getCanvas().style.cursor = 'crosshair';
+
+  if (typeof refreshCurrentSidebarPlantListUI === 'function') {
+    refreshCurrentSidebarPlantListUI();
+  }
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+
+  toast(`Hãy click lên bản đồ để gắn tọa độ Point cho Cây #${pinningPlantTargetCode}!`, 'info');
+}
+window.startPinSinglePlantGps = startPinSinglePlantGps;
+
+// Thực thi lưu tọa độ GPS khi click bản đồ cho cây đang chọn từ danh sách
+async function assignGpsToExistingPlant(plantId, lat, lng) {
+  const newLat = parseFloat(lat.toFixed(7));
+  const newLng = parseFloat(lng.toFixed(7));
+  const codeLabel = pinningPlantTargetCode || plantId;
+
+  try {
+    toast(`Đang gắn tọa độ GPS cho Cây #${codeLabel}...`, 'info');
+    await api(`/plants/${plantId}/gps`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        latitude: newLat,
+        longitude: newLng
+      })
+    });
+
+    let targetPlantObj = null;
+    if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
+      const pIdx = currentPlants.findIndex(p => String(p.id) === String(plantId));
+      if (pIdx !== -1) {
+        currentPlants[pIdx].latitude = newLat;
+        currentPlants[pIdx].longitude = newLng;
+        currentPlants[pIdx].location = `GPS: ${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+        targetPlantObj = currentPlants[pIdx];
+      }
+    }
+    if (typeof currentFarms !== 'undefined' && Array.isArray(currentFarms)) {
+      currentFarms.forEach(f => {
+        if (f.plants && Array.isArray(f.plants)) {
+          const pIdx = f.plants.findIndex(p => String(p.id) === String(plantId));
+          if (pIdx !== -1) {
+            f.plants[pIdx].latitude = newLat;
+            f.plants[pIdx].longitude = newLng;
+            f.plants[pIdx].location = `GPS: ${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+            if (!targetPlantObj) targetPlantObj = f.plants[pIdx];
+          }
+        }
+      });
+    }
+
+    cancelAllGisPinModes();
+
+    // Cập nhật marker tại chỗ hoặc vẽ bổ sung mà không giật zoom bản đồ
+    const existingMarker = (gisPlantMarkers || []).find(m => String(m._plantId) === String(plantId));
+    if (existingMarker) {
+      existingMarker.setLngLat([newLng, newLat]);
+      if (existingMarker._updatePopupCoords) {
+        existingMarker._updatePopupCoords(newLat, newLng);
+      }
+    } else {
+      const activeFarm = activeFarmId ? (currentFarms || []).find(f => String(f.id) === String(activeFarmId)) : null;
+      drawFarmsAndPlantsLayers(currentFarms || [], activeFarm ? (activeFarm.plants || []) : (currentPlants || []));
+    }
+
+    if (typeof refreshCurrentSidebarPlantListUI === 'function') {
+      refreshCurrentSidebarPlantListUI();
+    }
+
+    toast(`Đã gắn Point GPS (${newLat.toFixed(6)}, ${newLng.toFixed(6)}) cho Cây #${codeLabel}!`, 'success');
+  } catch (err) {
+    toast('Lỗi gắn tọa độ GPS: ' + err.message, 'error');
+  }
+}
+window.assignGpsToExistingPlant = assignGpsToExistingPlant;
+
+// Bay tới vị trí cây trên bản đồ và mở thẻ thông tin ERP
+function focusPlantOnGisMap(plantId) {
+  const marker = (gisPlantMarkers || []).find(m => String(m._plantId) === String(plantId));
+  if (marker && gMap) {
+    const lngLat = marker.getLngLat();
+    gMap.flyTo({
+      center: lngLat,
+      zoom: Math.max(gMap.getZoom(), 19),
+      duration: 650
+    });
+    (gisPlantMarkers || []).forEach(m => {
+      if (m !== marker && m._popup && m._popup.isOpen()) {
+        m._popup.remove();
+      }
+    });
+    if (marker._popup && !marker._popup.isOpen()) {
+      marker._popup.setLngLat(lngLat).addTo(gMap);
+    }
+  } else {
+    openPlantModal(plantId);
+  }
+}
+window.focusPlantOnGisMap = focusPlantOnGisMap;
 
 function openAddPlantsManual() {
   openPlantModal(null);
@@ -867,13 +1038,12 @@ window.onPlantSavedHook = function(plant) {
     if (existingMarker && !isNaN(newLat) && !isNaN(newLng)) {
       // Di chuyển marker nhẹ nhàng tới tọa độ mới mà không reset map
       existingMarker.setLngLat([newLng, newLat]);
+      if (existingMarker._updatePopupCoords) {
+        existingMarker._updatePopupCoords(newLat, newLng);
+      }
 
-      // Cập nhật lại danh sách cây bên sidebar nếu đang mở trang trại này
-      if (activeFarmId && typeof currentFarms !== 'undefined') {
-        const farm = currentFarms.find(f => f.id === activeFarmId || f.id == activeFarmId);
-        if (farm && typeof renderFarmDetailsUI === 'function') {
-          renderFarmDetailsUI(farm);
-        }
+      if (typeof refreshCurrentSidebarPlantListUI === 'function') {
+        refreshCurrentSidebarPlantListUI();
       }
       return;
     }
@@ -884,7 +1054,7 @@ window.onPlantSavedHook = function(plant) {
     const farm = currentFarms.find(f => f.id === activeFarmId || f.id == activeFarmId);
     if (farm) {
       drawFarmsAndPlantsLayers(currentFarms, farm.plants || []);
-      if (typeof renderFarmDetailsUI === 'function') renderFarmDetailsUI(farm);
+      if (typeof refreshCurrentSidebarPlantListUI === 'function') refreshCurrentSidebarPlantListUI();
     }
   } else {
     drawFarmsAndPlantsLayers(currentFarms || [], currentPlants || []);
@@ -918,7 +1088,9 @@ async function removePlantPointGps(plantId, treeCode) {
     if (mIdx !== -1) {
       const markerObj = gisPlantMarkers[mIdx];
       try {
-        if (markerObj.getPopup && markerObj.getPopup()) {
+        if (markerObj._popup && markerObj._popup.isOpen()) {
+          markerObj._popup.remove();
+        } else if (markerObj.getPopup && markerObj.getPopup()) {
           markerObj.getPopup().remove();
         }
         markerObj.remove();
@@ -944,6 +1116,10 @@ async function removePlantPointGps(plantId, treeCode) {
           }
         }
       });
+    }
+
+    if (typeof refreshCurrentSidebarPlantListUI === 'function') {
+      refreshCurrentSidebarPlantListUI();
     }
 
     toast(`Đã xóa point GPS của cây #${treeCode || plantId} khỏi bản đồ.`, 'success');
@@ -1096,45 +1272,94 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           .setLngLat([lng, lat]);
 
         function getPopupContent(p, pLat, pLng) {
-          const pColor = getCustomerColor(p.user_id || (p.farm_id ? (currentFarms.find(f => f.id === p.farm_id)?.user_id) : null));
+          const statusStr = p.health_status || 'Tốt';
+          let statusBg = '#ecfdf5', statusColor = '#047857', statusBorder = '#a7f3d0', statusDot = '#10b981';
+          if (statusStr === 'Cần chú ý' || statusStr === 'Bình thường') {
+            statusBg = '#fffbeb'; statusColor = '#b45309'; statusBorder = '#fde68a'; statusDot = '#f59e0b';
+          } else if (statusStr === 'Bệnh') {
+            statusBg = '#fef2f2'; statusColor = '#dc2626'; statusBorder = '#fecaca'; statusDot = '#ef4444';
+          }
+
           return `
-            <div class="map-tooltip" style="min-width:240px; padding:6px 4px;">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; border-bottom:1.5px solid #f1f5f9; padding-bottom:5px;">
-                <h4 style="margin:0; font-size:13.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:5px;">
-                  <i data-lucide="trees" class="lucide-sm" style="color:#10b981"></i> Cây #${esc(p.tree_code || p.id)}
-                </h4>
-                <span class="badge" style="font-size:10px; padding:2px 7px; border-radius:10px; background:${pColor}22; color:${pColor}; font-weight:700;">
-                  ${esc(p.health_status || 'Tốt')}
+            <div class="erp-plant-popup-card">
+              <!-- ERP Header -->
+              <div class="erp-popup-header">
+                <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+                  <div style="width:30px; height:30px; border-radius:8px; background:#ecfdf5; border:1px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669; flex-shrink:0;">
+                    <i data-lucide="trees" class="lucide-sm"></i>
+                  </div>
+                  <div style="min-width:0;">
+                    <div style="font-size:13.5px; font-weight:800; color:#0f172a; letter-spacing:-0.01em; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      Cây #${esc(p.tree_code || p.id)}
+                    </div>
+                    <div style="font-size:10px; font-weight:600; color:#64748b; margin-top:1px;">
+                      Mã định danh GIS · ID #${p.id}
+                    </div>
+                  </div>
+                </div>
+                <span style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px; background:${statusBg}; color:${statusColor}; border:1px solid ${statusBorder}; flex-shrink:0;">
+                  <span style="width:6px; height:6px; border-radius:50%; background:${statusDot};"></span>
+                  ${esc(statusStr)}
                 </span>
               </div>
-              <p style="margin:3px 0; font-size:12px; color:#334155;">Loại cây: <strong>${esc(p.plant_type || '—')}</strong></p>
-              ${p.plant_variety ? `<p style="margin:3px 0; font-size:12px; color:#475569;">Giống: <strong>${esc(p.plant_variety)}</strong></p>` : ''}
-              <div style="margin:6px 0; padding:6px 8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:11px; color:#475569;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                  <span style="color:#64748b;">Vĩ độ (Lat):</span>
-                  <strong style="font-family:monospace; color:#0f172a;">${pLat.toFixed(6)}</strong>
+
+              <!-- ERP Body -->
+              <div class="erp-popup-body">
+                <!-- 2-Column Metadata Grid -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 9px; min-width:0;">
+                    <div style="font-size:9.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Chủng loại</div>
+                    <div style="font-size:12px; font-weight:800; color:#0f172a; margin-top:2px; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      <i data-lucide="sprout" class="lucide-xs" style="color:#10b981; flex-shrink:0;"></i>
+                      <span style="overflow:hidden; text-overflow:ellipsis;">${esc(p.plant_type || '—')}</span>
+                    </div>
+                  </div>
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 9px; min-width:0;">
+                    <div style="font-size:9.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Giống cây</div>
+                    <div style="font-size:12px; font-weight:800; color:#334155; margin-top:2px; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      <i data-lucide="tag" class="lucide-xs" style="color:#0284c7; flex-shrink:0;"></i>
+                      <span style="overflow:hidden; text-overflow:ellipsis;">${esc(p.plant_variety || 'Tiêu chuẩn')}</span>
+                    </div>
+                  </div>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                  <span style="color:#64748b;">Kinh độ (Lng):</span>
-                  <strong style="font-family:monospace; color:#0f172a;">${pLng.toFixed(6)}</strong>
+
+                <!-- WGS84 GPS Telemetry Box -->
+                <div style="padding:8px 10px; background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border:1px solid #cbd5e1; border-radius:9px; font-size:11px; color:#475569;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; padding-bottom:4px; border-bottom:1px dashed #cbd5e1;">
+                    <span style="font-size:10px; font-weight:700; color:#334155; display:inline-flex; align-items:center; gap:4px;">
+                      <i data-lucide="compass" class="lucide-xs" style="color:#059669;"></i> Tọa độ thực địa WGS84
+                    </span>
+                    <span style="font-size:9.5px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:4px;">Đã định vị</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div>
+                      <span style="font-size:9.5px; color:#64748b; display:block;">Vĩ độ (Lat)</span>
+                      <strong style="font-family:'JetBrains Mono', monospace; font-size:11.5px; color:#0f172a;">${pLat.toFixed(6)}°</strong>
+                    </div>
+                    <div>
+                      <span style="font-size:9.5px; color:#64748b; display:block;">Kinh độ (Lng)</span>
+                      <strong style="font-family:'JetBrains Mono', monospace; font-size:11.5px; color:#0f172a;">${pLng.toFixed(6)}°</strong>
+                    </div>
+                  </div>
                 </div>
-                ${p.location ? `<div style="margin-top:3px; font-size:10.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;"><i data-lucide="map-pin" class="lucide-xs" style="color:#ef4444; flex-shrink:0;"></i> <span>${esc(p.location)}</span></div>` : ''}
               </div>
-              <div style="margin-top:8px; display:flex; gap:6px;">
-                <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center; padding:6px 10px; font-size:11.5px; font-weight:700;" onclick="event.stopPropagation(); openPlantModal(${p.id});">
-                  <i data-lucide="edit-3" class="lucide-sm"></i> Chỉnh sửa &amp; GPS
+
+              <!-- ERP Footer Actions -->
+              <div class="erp-popup-footer">
+                <button type="button" style="flex:1; background:#0f172a; color:#ffffff; border:1px solid #0f172a; border-radius:8px; padding:7px 10px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:5px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'" onclick="event.stopPropagation(); openPlantModal(${p.id});">
+                  <i data-lucide="sliders-horizontal" class="lucide-xs"></i> Chỉnh sửa &amp; GPS
                 </button>
-                <button class="btn btn-danger btn-sm" style="padding:6px 10px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px; background:#fef2f2; color:#dc2626; border:1px solid #fecaca;" title="Xóa điểm ghim GPS của cây này khỏi bản đồ" onclick="event.stopPropagation(); removePlantPointGps(${p.id}, '${esc(p.tree_code || p.id)}');">
-                  <i data-lucide="trash-2" class="lucide-sm"></i> Xóa point
+                <button type="button" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; border-radius:8px; padding:7px 10px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff1f2'" title="Gỡ điểm ghim GPS của cây này khỏi bản đồ" onclick="event.stopPropagation(); removePlantPointGps(${p.id}, '${esc(p.tree_code || p.id)}');">
+                  <i data-lucide="trash-2" class="lucide-xs"></i> Xóa point
                 </button>
               </div>
             </div>
           `;
         }
 
-        // Tạo popup ổn định: closeOnClick: false để người dùng click hoặc di chuột không bị out mất popup
+        // Tạo popup ổn định nhưng KHÔNG tự động bật khi kéo thả marker (chỉ bật khi click)
         const popup = new mapboxgl.Popup({
-          offset: 25,
+          offset: 22,
           closeButton: true,
           closeOnClick: false,
           closeOnMove: false,
@@ -1142,7 +1367,38 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           className: 'gis-plant-popup'
         }).setHTML(getPopupContent(plant, lat, lng));
 
+        let isDraggingMarker = false;
+        let dragEndTimestamp = 0;
+
+        marker.on('dragstart', () => {
+          isDraggingMarker = true;
+          // Khi bắt đầu kéo point: đóng ngay mọi thông tin popup/tooltip đang mở
+          if (popup.isOpen()) {
+            popup.remove();
+          }
+          if (typeof window.hidePlantTooltip === 'function') {
+            window.hidePlantTooltip();
+          }
+        });
+
+        marker.on('drag', () => {
+          isDraggingMarker = true;
+          if (popup.isOpen()) {
+            popup.remove();
+          }
+        });
+
         marker.on('dragend', async () => {
+          dragEndTimestamp = Date.now();
+          setTimeout(() => {
+            isDraggingMarker = false;
+          }, 300);
+
+          // Tuyệt đối không hiển thị popup khi vừa kéo xong
+          if (popup.isOpen()) {
+            popup.remove();
+          }
+
           const newLngLat = marker.getLngLat();
           const newLng = parseFloat(newLngLat.lng.toFixed(7));
           const newLat = parseFloat(newLngLat.lat.toFixed(7));
@@ -1167,11 +1423,9 @@ function drawFarmsAndPlantsLayers(farms, plants) {
             plant.longitude = newLng;
             plant.location = updated.location || ('GPS: ' + newLat.toFixed(6) + ', ' + newLng.toFixed(6));
             
-            // Cập nhật nội dung popup với tọa độ mới
+            // Cập nhật nội dung popup ngầm để lần sau người dùng click vào sẽ thấy tọa độ mới
             popup.setHTML(getPopupContent(plant, newLat, newLng));
-            if (window.lucide && typeof window.lucide.createIcons === 'function') {
-              window.lucide.createIcons();
-            }
+            popup.setLngLat([newLng, newLat]);
 
             // Đồng bộ dữ liệu trong bộ nhớ đệm
             if (typeof currentPlants !== 'undefined' && Array.isArray(currentPlants)) {
@@ -1187,7 +1441,7 @@ function drawFarmsAndPlantsLayers(farms, plants) {
               });
             }
 
-            toast('📍 Đã cập nhật GPS mới: ' + newLat + ', ' + newLng, 'success');
+            toast('Đã cập nhật GPS mới: ' + newLat + ', ' + newLng, 'success');
           } catch(err) {
             toast('Lỗi cập nhật GPS: ' + err.message, 'error');
             marker.setLngLat([lng, lat]);
@@ -1200,16 +1454,36 @@ function drawFarmsAndPlantsLayers(farms, plants) {
           }
         });
 
-        // Bắt sự kiện click lên wrapper marker để mở popup ổn định và ngăn sự kiện nổi bọt tắt popup
+        // Chỉ khi người dùng CLICK thực sự (không phải kéo thả) vào điểm point thì mới mở thẻ thông tin
         wrapper.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (!popup.isOpen()) {
-            popup.addTo(gMap);
+          if (isDraggingMarker || (Date.now() - dragEndTimestamp < 300)) {
+            return;
+          }
+          // Đóng popup của các cây khác để giao diện gọn gàng
+          (gisPlantMarkers || []).forEach(m => {
+            if (m !== marker && m._popup && m._popup.isOpen()) {
+              m._popup.remove();
+            }
+          });
+          if (popup.isOpen()) {
+            popup.remove();
+          } else {
+            const curPos = marker.getLngLat();
+            popup.setLngLat(curPos).addTo(gMap);
           }
         });
 
-        marker.setPopup(popup).addTo(gMap);
+        marker.addTo(gMap);
         marker._plantId = plant.id;
+        marker._popup = popup;
+        marker.getPopup = () => popup;
+        marker._updatePopupCoords = (nLat, nLng) => {
+          plant.latitude = nLat;
+          plant.longitude = nLng;
+          popup.setHTML(getPopupContent(plant, nLat, nLng));
+          popup.setLngLat([nLng, nLat]);
+        };
 
         gisPlantMarkers.push(marker);
 
@@ -1883,32 +2157,9 @@ async function selectFarm(farmId, syncUrl = true) {
     const areaEl = document.getElementById('farm-details-area');
     if (areaEl) areaEl.innerHTML = `<i data-lucide="trending-up" class="lucide-sm"></i> ${areaVal}`;
     
-    const plantCountEl = document.getElementById('farm-details-plant-count');
-    if (plantCountEl) plantCountEl.textContent = farm.plants ? farm.plants.length : (farm.plant_count || farm.total_plants || 0);
-
-    const listEl = document.getElementById('farm-details-plants-list');
-    if (listEl) {
-      if (!farm.plants || farm.plants.length === 0) {
-        listEl.innerHTML = '<p style="font-size:12px;color:#94a3b8;text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
-      } else {
-        const healthColors = { 'Tốt': '#10b981', 'Bình thường': '#f59e0b', 'Cần chú ý': '#f97316', 'Bệnh': '#ef4444' };
-        listEl.innerHTML = farm.plants.map(p => `
-          <div class="gis-plant-item" onclick="openPlantModal(${p.id})">
-            <div style="flex:1; min-width:0;">
-              <strong style="font-size:11.5px; color:#0f172a; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Cây ${esc(p.tree_code || p.id)}: ${esc(p.plant_type)}</strong>
-              ${p.plant_variety ? `<small style="color:#64748b">${esc(p.plant_variety)}</small>` : ''}
-            </div>
-            <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-              <span class="gis-plant-health-dot" style="background:${healthColors[p.health_status] || '#3b82f6'};"></span>
-              <button class="btn btn-secondary btn-sm" style="padding:2px 6px; font-size:10px;" onclick="event.stopPropagation(); openPlantModal(${p.id})">
-                <i data-lucide="edit-3" class="lucide-sm"></i>
-              </button>
-            </div>
-          </div>
-        `).join('');
-        bindPlantTooltips(farm.plants);
-      }
-    }
+    // Lưu danh sách cây của nông trại đang mở để phục vụ tìm kiếm thông minh & sắp xếp tự nhiên
+    window._currentSidebarFarmPlants = Array.isArray(farm.plants) ? farm.plants : [];
+    renderCurrentSidebarPlantList();
     if (window.lucide && typeof window.lucide.createIcons === 'function') lucide.createIcons();
   }
 
@@ -1979,8 +2230,155 @@ async function selectFarm(farmId, syncUrl = true) {
   }
 }
 
+// ── Sắp xếp tự nhiên (A->Z, 1->99) & Tìm kiếm thông minh danh sách cây ở Sidebar ──
+let currentSidebarPlantSearchQuery = '';
+
+function sortPlantsNaturally(plants) {
+  if (!Array.isArray(plants)) return [];
+  return [...plants].sort((a, b) => {
+    const codeA = String(a.tree_code || a.id || '').trim();
+    const codeB = String(b.tree_code || b.id || '').trim();
+    const cmp = codeA.localeCompare(codeB, 'vi', { numeric: true, sensitivity: 'base' });
+    if (cmp !== 0) return cmp;
+    return (Number(a.id) || 0) - (Number(b.id) || 0);
+  });
+}
+
+function renderCurrentSidebarPlantList() {
+  const listEl = document.getElementById('farm-details-plants-list');
+  const plantCountEl = document.getElementById('farm-details-plant-count');
+  if (!listEl) return;
+
+  // Đồng bộ nguồn dữ liệu cây mới nhất của nông trại hiện tại
+  let rawPlants = window._currentSidebarFarmPlants || [];
+  if (activeFarmId && typeof currentFarms !== 'undefined' && Array.isArray(currentFarms)) {
+    const activeFarmObj = currentFarms.find(f => String(f.id) === String(activeFarmId));
+    if (activeFarmObj && Array.isArray(activeFarmObj.plants)) {
+      rawPlants = activeFarmObj.plants;
+      window._currentSidebarFarmPlants = rawPlants;
+    }
+  }
+
+  if (plantCountEl) {
+    plantCountEl.textContent = rawPlants.length;
+  }
+
+  if (!rawPlants || rawPlants.length === 0) {
+    listEl.innerHTML = '<p style="font-size:12px;color:#94a3b8;text-align:center;padding:12px">Chưa có cây nào trong trang trại này.</p>';
+    return;
+  }
+
+  // 1. Sắp xếp tự nhiên A -> Z, 1 -> 99
+  const sortedPlants = sortPlantsNaturally(rawPlants);
+
+  // 2. Lọc thông minh theo từ khóa (VD: gõ "1" ra 1, 10, 11, 12, 21...)
+  const q = String(currentSidebarPlantSearchQuery || '').trim().toLowerCase();
+  const filteredPlants = q
+    ? sortedPlants.filter(p => {
+        const codeStr = String(p.tree_code || p.id || '').toLowerCase();
+        const shortNum = String(getShortTreeCode(p.tree_code, p.id) || '').toLowerCase();
+        const typeStr = String(p.plant_type || '').toLowerCase();
+        const varStr = String(p.plant_variety || '').toLowerCase();
+        const healthStr = String(p.health_status || '').toLowerCase();
+        return (
+          codeStr.includes(q) ||
+          shortNum.includes(q) ||
+          (`cây ${codeStr}`).includes(q) ||
+          typeStr.includes(q) ||
+          varStr.includes(q) ||
+          healthStr.includes(q)
+        );
+      })
+    : sortedPlants;
+
+  if (filteredPlants.length === 0) {
+    listEl.innerHTML = `
+      <div style="text-align:center; padding:14px 8px; color:#64748b; font-size:11.5px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+        <i data-lucide="search-x" class="lucide-sm" style="color:#94a3b8; display:block; margin:0 auto 4px auto;"></i>
+        Không tìm thấy cây khớp với <strong>"${esc(currentSidebarPlantSearchQuery)}"</strong>
+      </div>
+    `;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    return;
+  }
+
+  const healthColors = { 'Tốt': '#10b981', 'Bình thường': '#f59e0b', 'Cần chú ý': '#f97316', 'Bệnh': '#ef4444' };
+
+  listEl.innerHTML = filteredPlants.map(p => {
+    const hasGps = !!(p.latitude && p.longitude && !isNaN(parseFloat(p.latitude)) && !isNaN(parseFloat(p.longitude)));
+    const isPinningThis = String(pinningPlantTargetId) === String(p.id);
+    const shortCode = getShortTreeCode(p.tree_code, p.id);
+
+    return `
+      <div class="gis-plant-item ${isPinningThis ? 'pinning-active' : ''}" onclick="focusPlantOnGisMap(${p.id})">
+        <div style="display:flex; align-items:center; gap:7px; flex:1; min-width:0;">
+          <span style="min-width:22px; height:22px; padding:0 5px; border-radius:6px; background:${hasGps ? '#ecfdf5' : '#f1f5f9'}; color:${hasGps ? '#047857' : '#64748b'}; border:1px solid ${hasGps ? '#a7f3d0' : '#cbd5e1'}; font-size:10.5px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">
+            ${esc(shortCode)}
+          </span>
+          <div style="flex:1; min-width:0;">
+            <strong style="font-size:11.5px; color:#0f172a; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              Cây ${esc(p.tree_code || p.id)}: ${esc(p.plant_type || '—')}
+            </strong>
+            <div style="display:flex; align-items:center; gap:5px; font-size:10px; color:#64748b; margin-top:1px;">
+              ${p.plant_variety ? `<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:85px;">${esc(p.plant_variety)}</span><span>·</span>` : ''}
+              <span style="color:${hasGps ? '#059669' : '#94a3b8'}; font-weight:600; display:inline-flex; align-items:center; gap:2px; white-space:nowrap;">
+                <i data-lucide="${hasGps ? 'map-pin' : 'circle-dashed'}" class="lucide-xs" style="width:10px!important;height:10px!important;"></i>
+                ${hasGps ? 'Đã định vị' : 'Chưa có GPS'}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+          <span class="gis-plant-health-dot" title="Trạng thái: ${esc(p.health_status || 'Tốt')}" style="background:${healthColors[p.health_status] || '#10b981'}; margin-right:2px;"></span>
+          <button type="button" class="gis-plant-action-btn ${isPinningThis ? 'pin-btn-active' : (hasGps ? 'pin-btn-has-gps' : 'pin-btn-needs-gps')}" title="${isPinningThis ? 'Đang chọn vị trí trên bản đồ (Click để hủy)' : (hasGps ? 'Gắn lại / Dời điểm Point GPS trên bản đồ' : 'Import gắn điểm Point GPS cho cây này trên bản đồ')}" onclick="event.stopPropagation(); startPinSinglePlantGps(${p.id}, '${esc(p.tree_code || p.id)}')">
+            <i data-lucide="${isPinningThis ? 'crosshair' : 'map-pin'}" class="lucide-xs"></i>
+            <span>${isPinningThis ? 'Hủy' : (hasGps ? 'Đổi point' : 'Gắn point')}</span>
+          </button>
+          <button type="button" class="gis-plant-action-btn" title="Chỉnh sửa hồ sơ & tọa độ cây" onclick="event.stopPropagation(); openPlantModal(${p.id})">
+            <i data-lucide="edit-3" class="lucide-xs"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  bindPlantTooltips(filteredPlants);
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function refreshCurrentSidebarPlantListUI() {
+  renderCurrentSidebarPlantList();
+}
+window.refreshCurrentSidebarPlantListUI = refreshCurrentSidebarPlantListUI;
+
+function filterGisSidebarPlantsList(val) {
+  currentSidebarPlantSearchQuery = val || '';
+  const clearBtn = document.getElementById('gis-sidebar-plant-search-clear');
+  if (clearBtn) {
+    clearBtn.style.display = currentSidebarPlantSearchQuery.trim().length > 0 ? 'inline-flex' : 'none';
+  }
+  renderCurrentSidebarPlantList();
+}
+window.filterGisSidebarPlantsList = filterGisSidebarPlantsList;
+
+function clearGisSidebarPlantSearch() {
+  currentSidebarPlantSearchQuery = '';
+  const inputEl = document.getElementById('gis-sidebar-plant-search');
+  if (inputEl) {
+    inputEl.value = '';
+    inputEl.focus();
+  }
+  const clearBtn = document.getElementById('gis-sidebar-plant-search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderCurrentSidebarPlantList();
+}
+window.clearGisSidebarPlantSearch = clearGisSidebarPlantSearch;
+
 function backToFarmsList() {
   activeFarmId = null;
+  cancelAllGisPinModes();
   gisEdgeMarkers.forEach(m => { try { m.remove(); } catch(_) {} });
   gisEdgeMarkers = [];
   if (gMap) removeContourLinesFromMap(gMap);
@@ -2115,7 +2513,7 @@ function renderFarmDimensions(farm) {
         color: #38bdf8;
         font-size: 11px;
         font-weight: 800;
-        padding: 3px 8px;
+        padding: 3px 9px;
         border-radius: 12px;
         border: 1.5px solid #0284c7;
         box-shadow: 0 4px 12px rgba(0,0,0,0.4);
@@ -2123,8 +2521,11 @@ function renderFarmDimensions(farm) {
         pointer-events: none;
         user-select: none;
         transform: translate(-50%, -50%);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
       `;
-      edgeBadgeEl.innerHTML = `📏 <strong>${segName}</strong>: ${formattedLength}`;
+      edgeBadgeEl.innerHTML = `<i data-lucide="ruler" class="lucide-xs" style="color:#38bdf8;"></i> <strong>${segName}</strong>: ${formattedLength}`;
 
       const edgeMarker = new mapboxgl.Marker({ element: edgeBadgeEl, anchor: 'center' })
         .setLngLat([midLng, midLat])
@@ -2165,9 +2566,11 @@ function renderFarmDimensions(farm) {
     pointer-events: auto;
   `;
   summaryBadgeEl.innerHTML = `
-    <div style="font-size:13px; color:#fff; font-weight:900;"><i data-lucide="wheat" class="lucide-sm"></i> ${esc(farm.name)}</div>
-    <div style="font-size:11px; opacity:0.95; margin-top:2px;">
-      📐 Diện tích: <strong>${Math.round(farmAreaM2).toLocaleString('vi-VN')} m² (${farmAreaHa} ha)</strong> | ⭕ Chu vi: <strong>${formattedPerimeter}</strong>
+    <div style="font-size:13px; color:#fff; font-weight:900; display:flex; align-items:center; justify-content:center; gap:5px;"><i data-lucide="wheat" class="lucide-sm"></i> ${esc(farm.name)}</div>
+    <div style="font-size:11px; opacity:0.95; margin-top:3px; display:flex; align-items:center; justify-content:center; gap:6px;">
+      <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="scaling" class="lucide-xs"></i> Diện tích: <strong>${Math.round(farmAreaM2).toLocaleString('vi-VN')} m² (${farmAreaHa} ha)</strong></span>
+      <span style="opacity:0.5;">|</span>
+      <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="compass" class="lucide-xs"></i> Chu vi: <strong>${formattedPerimeter}</strong></span>
     </div>
   `;
 
@@ -2176,6 +2579,10 @@ function renderFarmDimensions(farm) {
     .addTo(gMap);
 
   gisEdgeMarkers.push(summaryMarker);
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 // ── Import Bản Vẽ Thiết Kế (CAD / GeoJSON / Image Overlay) ───────────────
@@ -3905,9 +4312,15 @@ async function openAdminFarmA4ExportModal(map) {
             pointer-events: none;
             user-select: none;
             transform: translate(-50%, -50%);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
           `;
-          edgeEl.innerHTML = `📏 <strong>${v1}${v2}</strong>: ${len.toLocaleString('vi-VN')} m`;
+          edgeEl.innerHTML = `<i data-lucide="ruler" class="lucide-xs" style="color:#38bdf8;"></i> <strong>${v1}${v2}</strong>: ${len.toLocaleString('vi-VN')} m`;
           new mapboxgl.Marker({ element: edgeEl, anchor: 'center' }).setLngLat([midLng, midLat]).addTo(a4Map);
+        }
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
         }
       });
     } catch (e) {
@@ -4531,7 +4944,9 @@ async function openAdminFarmA4ExportModal(map) {
 
   function healthIcon(status) {
     const c = healthClass(status);
-    return { 'tot': '🟢', 'binh': '🟡', 'chu-y': '🟠', 'benh': '🔴' }[c] || '⚪';
+    const colorMap = { 'tot': '#10b981', 'binh': '#f59e0b', 'chu-y': '#f97316', 'benh': '#ef4444' };
+    const col = colorMap[c] || '#94a3b8';
+    return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + col + ';margin-right:4px;"></span>';
   }
 
   window.showPlantTooltip = function(el, plant, event) {
@@ -4544,8 +4959,10 @@ async function openAdminFarmA4ExportModal(map) {
     const icon = healthIcon(plant.health_status);
 
     let gpsText = '—';
-    if (plant.gps_lat && plant.gps_lng) {
-      gpsText = parseFloat(plant.gps_lat).toFixed(5) + ', ' + parseFloat(plant.gps_lng).toFixed(5);
+    const latVal = plant.latitude || plant.gps_lat;
+    const lngVal = plant.longitude || plant.gps_lng;
+    if (latVal && lngVal && !isNaN(parseFloat(latVal)) && !isNaN(parseFloat(lngVal))) {
+      gpsText = parseFloat(latVal).toFixed(5) + ', ' + parseFloat(lngVal).toFixed(5);
     }
 
     const age = plant.plant_age || plant.age || '—';
@@ -4559,10 +4976,14 @@ async function openAdminFarmA4ExportModal(map) {
       '<div class="pht-row"><span class="pht-label">Giống cây</span><span class="pht-value">' + esc(plant.plant_variety || '—') + '</span></div>' +
       '<div class="pht-row"><span class="pht-label">Tuổi cây</span><span class="pht-value">' + esc(age) + '</span></div>' +
       '<div class="pht-row"><span class="pht-label">Trạng thái</span>' +
-        '<span class="pht-health ' + hc + '">' + icon + ' ' + esc(plant.health_status || 'Bình thường') + '</span>' +
+        '<span class="pht-health ' + hc + '">' + icon + esc(plant.health_status || 'Tốt') + '</span>' +
       '</div>' +
-      (gpsText !== '—' ? '<div class="pht-row"><span class="pht-label">GPS</span><span class="pht-value" style="font-size:10px;color:#64748b;">' + gpsText + '</span></div>' : '') +
-      '<div style="margin-top:8px; padding-top:7px; border-top:1px solid rgba(255,255,255,0.06); font-size:10px; color:#475569; text-align:center;">Click để xem chi tiết</div>';
+      (gpsText !== '—' ? '<div class="pht-row"><span class="pht-label">GPS</span><span class="pht-value" style="font-size:10px;color:#38bdf8;font-family:monospace;">' + gpsText + '</span></div>' : '') +
+      '<div style="margin-top:8px; padding-top:7px; border-top:1px solid rgba(255,255,255,0.06); font-size:10px; color:#94a3b8; text-align:center;">Click dòng để bay tới · Bấm Gắn point để ghim GPS</div>';
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
 
     positionTooltip(tip, event);
 
