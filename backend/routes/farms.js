@@ -83,6 +83,460 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// GET /api/farms/:id/full-dataset (Alias: /:id/export-json) — Xuất toàn bộ tập dữ liệu JSON chuẩn Quốc tế (ISO/IEC, GlobalGAP, VietGAP, GeoJSON RFC 7946) của Trang trại
+router.get(['/:id/full-dataset', '/:id/export-json'], auth, async (req, res) => {
+  try {
+    const farmId = parseInt(req.params.id, 10);
+    if (isNaN(farmId)) {
+      return res.status(400).json({ error: 'Mã trang trại (farm_id) không hợp lệ.' });
+    }
+
+    // 1. Thông tin trang trại & Chủ sở hữu (Farm Master Profile & Owner)
+    const farmRes = await pool.query(`
+      SELECT f.*,
+             COALESCE(u.id, u_assigned.id) as owner_id,
+             COALESCE(u.full_name, u_assigned.full_name) as owner_name,
+             COALESCE(u.email, u_assigned.email) as owner_email,
+             COALESCE(u.phone, u_assigned.phone) as owner_phone,
+             COALESCE(u.account_tier, u_assigned.account_tier, 'normal') as owner_account_tier
+      FROM farms f
+      LEFT JOIN users u ON u.id = f.user_id
+      LEFT JOIN users u_assigned ON u_assigned.farm_id = f.id AND u_assigned.role != 'admin'
+      WHERE f.id = $1
+      LIMIT 1
+    `, [farmId]);
+
+    if (farmRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
+    }
+    const farm = farmRes.rows[0];
+
+    const isAssigned = req.user.farm_id && Number(farm.id) === Number(req.user.farm_id);
+    if (req.user.role !== 'admin' && Number(farm.user_id) !== Number(req.user.id) && !isAssigned) {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập dữ liệu trang trại này.' });
+    }
+
+    // 2. Truy vấn song song toàn bộ dữ liệu liên quan đến Trang trại
+    const [
+      plotsRes,
+      plantsRes,
+      logsRes,
+      mediaRes,
+      suppliesRes,
+      supplyUsagesRes,
+      nfcRes,
+      devicesRes,
+      iotRes
+    ] = await Promise.all([
+      pool.query('SELECT * FROM farm_plots WHERE farm_id = $1 ORDER BY plot_code ASC', [farmId]).catch(() => ({ rows: [] })),
+      pool.query('SELECT * FROM plants WHERE farm_id = $1 AND deleted_at IS NULL ORDER BY id ASC', [farmId]),
+      pool.query(`
+        SELECT pl.*, u.full_name as actor_name
+        FROM plant_logs pl
+        JOIN plants p ON pl.plant_id = p.id
+        LEFT JOIN users u ON u.id = pl.created_by
+        WHERE p.farm_id = $1 AND (pl.is_deleted IS NOT TRUE)
+        ORDER BY pl.log_date DESC, pl.created_at DESC
+      `, [farmId]),
+      pool.query(`
+        SELECT pm.*
+        FROM plant_media pm
+        JOIN plants p ON pm.plant_id = p.id
+        WHERE p.farm_id = $1
+        ORDER BY pm.created_at DESC
+      `, [farmId]).catch(() => ({ rows: [] })),
+      pool.query(`
+        SELECT s.*,
+               COALESCE(SUM(su.quantity), 0) as total_consumed_qty,
+               COALESCE(SUM(su.total_cost), 0) as total_consumed_cost
+        FROM supplies s
+        LEFT JOIN supply_usages su ON su.supply_id = s.id AND (su.farm_id = $1 OR su.plant_id IN (SELECT id FROM plants WHERE farm_id = $1))
+        WHERE s.farm_id = $1
+           OR s.user_id = $2
+           OR s.id IN (SELECT supply_id FROM supply_usages WHERE farm_id = $1 OR plant_id IN (SELECT id FROM plants WHERE farm_id = $1))
+        GROUP BY s.id
+        ORDER BY s.category ASC, s.name ASC
+      `, [farmId, farm.owner_id || 0]),
+      pool.query(`
+        SELECT su.*, s.name as supply_name, s.category as supply_category, s.unit as supply_unit,
+               p.tree_code, p.plant_type
+        FROM supply_usages su
+        LEFT JOIN supplies s ON su.supply_id = s.id
+        LEFT JOIN plants p ON su.plant_id = p.id
+        WHERE su.farm_id = $1 OR p.farm_id = $1
+        ORDER BY su.usage_date DESC, su.id DESC
+      `, [farmId]),
+      pool.query(`
+        SELECT * FROM nfc_tags_inventory
+        WHERE farm_id = $1 OR plant_id IN (SELECT id FROM plants WHERE farm_id = $1)
+        ORDER BY id ASC
+      `, [farmId]).catch(() => ({ rows: [] })),
+      pool.query('SELECT * FROM devices WHERE farm_id = $1 ORDER BY id ASC', [farmId]).catch(() => ({ rows: [] })),
+      pool.query('SELECT * FROM farm_iot_sensors WHERE farm_id = $1 LIMIT 1', [farmId]).catch(() => ({ rows: [] }))
+    ]);
+
+    const plants = plantsRes.rows;
+    const allLogs = logsRes.rows;
+    const allMedia = mediaRes.rows;
+    const supplies = suppliesRes.rows;
+    const supplyUsages = supplyUsagesRes.rows;
+
+    // 3. Phân nhóm Nhật ký canh tác, Bệnh cây, Thu hoạch & Media theo từng cây
+    const logsByPlant = {};
+    const mediaByPlant = {};
+    const diseaseRecords = [];
+    const harvestRecords = [];
+
+    let totalRevenue = 0;
+    let totalHarvestWeightKg = 0;
+    let totalHarvestFruits = 0;
+
+    allMedia.forEach(m => {
+      if (!mediaByPlant[m.plant_id]) mediaByPlant[m.plant_id] = [];
+      mediaByPlant[m.plant_id].push({
+        media_id: m.id,
+        plant_id: m.plant_id,
+        media_type: m.media_type || (String(m.file_url || m.url || '').match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image'),
+        url: m.file_url || m.url || m.image_url,
+        caption: m.caption || m.description || null,
+        created_at: m.created_at
+      });
+    });
+
+    allLogs.forEach(log => {
+      let details = log.details;
+      if (typeof details === 'string') {
+        try { details = JSON.parse(details); } catch (_) { details = {}; }
+      }
+      details = details || {};
+
+      // Thu thập media đính kèm trong nhật ký canh tác
+      const logMedia = [];
+      if (log.image_url) logMedia.push({ type: 'image', url: log.image_url });
+      if (log.video_url) logMedia.push({ type: 'video', url: log.video_url });
+      if (Array.isArray(details.images)) {
+        details.images.forEach(u => logMedia.push({ type: 'image', url: u }));
+      }
+      if (Array.isArray(details.videos)) {
+        details.videos.forEach(u => logMedia.push({ type: 'video', url: u }));
+      }
+
+      const normalizedLog = {
+        log_id: log.id,
+        plant_id: log.plant_id,
+        log_type: log.log_type,
+        log_date: log.log_date,
+        batch_code: log.batch_code || null,
+        description: log.description || details.note || '',
+        cost_vnd: parseFloat(log.cost) || 0,
+        phi_days: log.phi_days || details.phi_days || null,
+        quarantine_until: log.quarantine_until || null,
+        technical_details: details,
+        media_attachments: logMedia,
+        recorded_by: log.actor_name || null,
+        created_at: log.created_at
+      };
+
+      if (!logsByPlant[log.plant_id]) logsByPlant[log.plant_id] = [];
+      logsByPlant[log.plant_id].push(normalizedLog);
+
+      // Bóc tách hồ sơ Bệnh cây & Dịch hại (Phytosanitary / Disease Logs)
+      const lTypeLower = String(log.log_type || '').toLowerCase();
+      if (lTypeLower.includes('bệnh') || lTypeLower.includes('sâu') || lTypeLower.includes('disease') || details.disease_name) {
+        diseaseRecords.push({
+          log_id: log.id,
+          plant_id: log.plant_id,
+          detected_date: log.log_date,
+          disease_name: details.disease_name || log.description || log.log_type,
+          severity: details.severity || details.level || 'Cần theo dõi',
+          treatment_measure: details.treatment || details.medicine || log.description || null,
+          media: logMedia
+        });
+      }
+
+      // Bóc tách hồ sơ Doanh thu & Sản lượng Thu hoạch (Harvest & Revenue Logs)
+      if (
+        lTypeLower.includes('thu hoạch') ||
+        lTypeLower.includes('thu') ||
+        lTypeLower.includes('harvest') ||
+        details.total_revenue ||
+        details.price_per_tree ||
+        details.fruit_count
+      ) {
+        const rev = parseFloat(details.total_revenue) || parseFloat(details.price_per_tree) || parseFloat(details.revenue) || parseFloat(log.cost) || 0;
+        const weightKg = parseFloat(details.amount) || parseFloat(details.yield_kg) || parseFloat(details.quantity) || 0;
+        const fruits = parseFloat(details.fruit_count) || 0;
+
+        totalRevenue += rev;
+        totalHarvestWeightKg += weightKg;
+        totalHarvestFruits += fruits;
+
+        harvestRecords.push({
+          log_id: log.id,
+          plant_id: log.plant_id,
+          batch_code: log.batch_code || null,
+          harvest_date: log.log_date,
+          yield_weight_kg: weightKg,
+          fruit_count: fruits,
+          revenue_vnd: rev,
+          buyer_or_note: details.buyer || log.description || null,
+          media: logMedia
+        });
+      }
+    });
+
+    // 4. Tính toán Vật tư, Tồn kho & Giá trị tiêu hao lũy kế chuẩn ERP
+    let totalInventoryInflowVnd = 0;
+    let currentStockValueVnd = 0;
+    let totalCumulativeConsumptionVnd = 0;
+    const consumptionByCategory = {
+      'Bón phân': 0,
+      'Phun thuốc': 0,
+      'Tiền nước': 0,
+      'Nhân công': 0,
+      'Khác': 0
+    };
+
+    const formattedSupplies = supplies.map(s => {
+      const unitPrice = parseFloat(s.unit_price) || 0;
+      const stockQty = parseFloat(s.stock_quantity) || 0;
+      const pkgQty = parseFloat(s.package_qty) || 1;
+      const pkgPrice = parseFloat(s.package_price) || (unitPrice * pkgQty);
+      const consumedQty = parseFloat(s.total_consumed_qty) || 0;
+      const consumedCost = parseFloat(s.total_consumed_cost) || 0;
+      const stockVal = stockQty * unitPrice;
+      const inflowVal = Math.max(stockVal + consumedCost, pkgPrice);
+
+      currentStockValueVnd += stockVal;
+      totalInventoryInflowVnd += inflowVal;
+
+      return {
+        supply_id: s.id,
+        sku_code: `SUP-${String(s.id).padStart(4, '0')}`,
+        name: s.name,
+        category: s.category,
+        base_unit: s.unit,
+        package_specification: {
+          package_quantity: pkgQty,
+          package_price_vnd: pkgPrice,
+          unit_price_vnd: unitPrice
+        },
+        inventory_status: {
+          current_stock_quantity: stockQty,
+          current_stock_valuation_vnd: Math.round(stockVal),
+          cumulative_consumed_quantity: consumedQty,
+          cumulative_consumed_valuation_vnd: Math.round(consumedCost)
+        },
+        manufacturer: s.manufacturer || null,
+        active_ingredient: s.active_ingredient || null,
+        image_url: s.image_url || null,
+        note: s.note || null,
+        updated_at: s.updated_at || s.created_at
+      };
+    });
+
+    supplyUsages.forEach(su => {
+      const cost = parseFloat(su.total_cost) || 0;
+      totalCumulativeConsumptionVnd += cost;
+      const cat = su.supply_category && consumptionByCategory[su.supply_category] !== undefined
+        ? su.supply_category
+        : 'Khác';
+      consumptionByCategory[cat] += cost;
+    });
+
+    // 5. Chuẩn hóa Đa giác ranh giới GeoJSON (RFC 7946)
+    let rawCoords = [];
+    try {
+      rawCoords = typeof farm.polygon_coordinates === 'string'
+        ? JSON.parse(farm.polygon_coordinates)
+        : (farm.polygon_coordinates || []);
+    } catch (_) {}
+
+    // 6. Chuẩn hóa danh sách Cây trồng (kèm lịch sử canh tác, bệnh cây & media của từng cây)
+    const formattedPlants = plants.map(p => {
+      const pLogs = logsByPlant[p.id] || [];
+      const pMedia = [...(mediaByPlant[p.id] || [])];
+      if (p.image_url) {
+        pMedia.unshift({
+          media_id: `avatar_${p.id}`,
+          plant_id: p.id,
+          media_type: 'image',
+          url: p.image_url,
+          caption: 'Ảnh đại diện cây trồng',
+          created_at: p.created_at
+        });
+      }
+
+      return {
+        plant_id: p.id,
+        tree_code: p.tree_code || String(p.id),
+        nfc_uid: p.nfc_uid || p.nfc_tag_id || null,
+        taxonomy: {
+          plant_type: p.plant_type,
+          plant_variety: p.plant_variety || null,
+          plant_age: p.plant_age || null,
+          planting_date: p.planting_date || null
+        },
+        spatial_location: {
+          plot_code: p.plot_code || null,
+          row_number: p.row_number || null,
+          latitude: p.latitude !== null && p.latitude !== undefined ? parseFloat(p.latitude) : null,
+          longitude: p.longitude !== null && p.longitude !== undefined ? parseFloat(p.longitude) : null,
+          location_label: p.location || null
+        },
+        health_and_phytosanitary: {
+          current_health_status: p.health_status || 'Tốt',
+          past_diseases: p.past_diseases || null,
+          is_quarantined: !!(p.quarantine_until && new Date(p.quarantine_until) > new Date()),
+          quarantine_until: p.quarantine_until || null
+        },
+        yield_and_baseline: {
+          initial_yield_kg: parseFloat(p.initial_yield) || 0,
+          cumulative_logs_count: pLogs.length
+        },
+        cultivation_logs: pLogs,
+        media_gallery: pMedia,
+        created_at: p.created_at,
+        updated_at: p.updated_at
+      };
+    });
+
+    // 7. Tổng hợp toàn bộ thư viện Ảnh & Video của Trang trại
+    const farmMediaGallery = [];
+    formattedPlants.forEach(fp => {
+      fp.media_gallery.forEach(m => farmMediaGallery.push(m));
+      fp.cultivation_logs.forEach(l => {
+        (l.media_attachments || []).forEach(att => {
+          farmMediaGallery.push({
+            plant_id: fp.plant_id,
+            tree_code: fp.tree_code,
+            log_id: l.log_id,
+            log_type: l.log_type,
+            media_type: att.type,
+            url: att.url,
+            created_at: l.log_date
+          });
+        });
+      });
+    });
+
+    const netProfitVnd = totalRevenue - totalCumulativeConsumptionVnd;
+    const roiPercent = totalCumulativeConsumptionVnd > 0
+      ? Math.round(((netProfitVnd / totalCumulativeConsumptionVnd) * 100) * 100) / 100
+      : (totalRevenue > 0 ? 100 : 0);
+
+    // 8. Đóng gói JSON chuẩn Quốc tế (ISO/IEC 25010, GlobalGAP, VietGAP, GeoJSON RFC 7946)
+    const datasetPayload = {
+      schema_standard: 'AGTECH-ERP-ISO25010-GLOBALGAP-VIETGAP-V1.3',
+      exported_at: new Date().toISOString(),
+      currency: 'VND',
+      coordinate_reference_system: 'EPSG:4326 (WGS84)',
+
+      // KHỐI 1: THÔNG TIN ĐỊNH DANH TRANG TRẠI & ĐA GIÁC GIS
+      farm_profile: {
+        farm_id: farm.id,
+        farm_name: farm.name,
+        description: farm.description || '',
+        certifications: {
+          puc_code: farm.puc_code || null,
+          vietgap_cert_number: farm.vietgap_cert_number || null,
+          vietgap_cert_date: farm.vietgap_cert_date || null,
+          vietgap_cert_org: farm.vietgap_cert_org || null
+        },
+        owner: {
+          user_id: farm.owner_id,
+          full_name: farm.owner_name,
+          email: farm.owner_email,
+          phone: farm.owner_phone,
+          account_tier: farm.owner_account_tier
+        },
+        spatial_geometry: {
+          area_m2: parseFloat(farm.area) || 0,
+          area_hectares: parseFloat(((parseFloat(farm.area) || 0) / 10000).toFixed(4)),
+          geojson_polygon: {
+            type: 'Polygon',
+            coordinates: [rawCoords]
+          },
+          plots: plotsRes.rows
+        },
+        created_at: farm.created_at,
+        updated_at: farm.updated_at
+      },
+
+      // KHỐI 2: TÀI CHÍNH, DOANH THU, GIÁ THÀNH & LŨY KẾ TIÊU HAO (ERP FINANCIAL LEDGER)
+      financial_and_yield_summary: {
+        total_inventory_inflow_valuation_vnd: Math.round(totalInventoryInflowVnd),
+        current_inventory_stock_valuation_vnd: Math.round(currentStockValueVnd),
+        cumulative_supply_consumption_cost_vnd: Math.round(totalCumulativeConsumptionVnd),
+        consumption_breakdown_by_category_vnd: consumptionByCategory,
+        total_harvest_revenue_vnd: Math.round(totalRevenue),
+        net_profit_vnd: Math.round(netProfitVnd),
+        roi_percentage: roiPercent,
+        harvest_metrics: {
+          total_harvest_batches: harvestRecords.length,
+          total_yield_weight_kg: totalHarvestWeightKg,
+          total_fruit_count: totalHarvestFruits
+        }
+      },
+
+      // KHỐI 3: KHO VẬT TƯ, GIÁ THÀNH, TỒN KHO & LỊCH SỬ TIÊU HAO
+      supplies_and_inventory: {
+        total_sku_count: formattedSupplies.length,
+        total_usage_transactions: supplyUsages.length,
+        inventory_catalog: formattedSupplies,
+        cumulative_usage_ledger: supplyUsages.map(su => ({
+          usage_id: su.id,
+          supply_id: su.supply_id,
+          supply_name: su.supply_name,
+          category: su.supply_category,
+          plant_id: su.plant_id,
+          tree_code: su.tree_code || null,
+          usage_date: su.usage_date,
+          quantity_consumed: parseFloat(su.quantity) || 0,
+          unit: su.supply_unit,
+          unit_price_vnd: parseFloat(su.unit_price) || 0,
+          total_cost_vnd: parseFloat(su.total_cost) || 0,
+          note: su.note || null
+        }))
+      },
+
+      // KHỐI 4: DANH SÁCH CÂY TRỒNG & LỊCH SỬ CANH TÁC CHI TIẾT TỪNG CÂY
+      plants_and_cultivation: {
+        total_plants: formattedPlants.length,
+        plants_with_gps_count: formattedPlants.filter(p => p.spatial_location.latitude !== null && p.spatial_location.longitude !== null).length,
+        health_distribution: {
+          good: formattedPlants.filter(p => p.health_and_phytosanitary.current_health_status === 'Tốt').length,
+          watch: formattedPlants.filter(p => p.health_and_phytosanitary.current_health_status === 'Cần chú ý' || p.health_and_phytosanitary.current_health_status === 'Bình thường').length,
+          diseased: formattedPlants.filter(p => p.health_and_phytosanitary.current_health_status === 'Bệnh').length
+        },
+        plants: formattedPlants
+      },
+
+      // KHỐI 5: HỒ SƠ BỆNH CÂY, DỊCH HẠI & THU HOẠCH TOÀN TRANG TRẠI
+      phytosanitary_and_harvest_logs: {
+        disease_and_pest_incidents: diseaseRecords,
+        harvest_and_revenue_records: harvestRecords
+      },
+
+      // KHỐI 6: CẢM BIẾN IOT, ĐỊNH DANH NFC & THƯ VIỆN ẢNH/VIDEO
+      iot_nfc_and_media: {
+        iot_telemetry: iotRes.rows[0] || null,
+        iot_devices: devicesRes.rows,
+        nfc_tags: nfcRes.rows,
+        media_gallery: {
+          total_files: farmMediaGallery.length,
+          items: farmMediaGallery
+        }
+      }
+    };
+
+    res.json(datasetPayload);
+  } catch (err) {
+    console.error('Error exporting full farm dataset:', err);
+    res.status(500).json({ error: 'Lỗi server khi xuất toàn bộ dữ liệu trang trại: ' + err.message });
+  }
+});
+
 // POST /api/farms/self-init — Self-initialize farm via GPS by a farmer (requires auth)
 router.post('/self-init', auth, async (req, res) => {
   const client = await pool.connect();
