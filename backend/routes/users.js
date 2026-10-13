@@ -74,6 +74,22 @@ router.get('/my-team', async (req, res) => {
       [ownerId, farmIds.length > 0 ? farmIds : [0]]
     );
 
+    // Lấy danh sách cây trồng trong các trang trại của chủ vườn để phục vụ giao cây phụ trách
+    const plantsRes = await pool.query(
+      `SELECT p.id, p.farm_id, p.tree_code, p.plant_type, p.plant_variety,
+              p.location, p.plot_code, p.row_number, p.health_status,
+              p.assigned_to_user_id, u.full_name as assigned_to_name
+       FROM plants p
+       LEFT JOIN users u ON u.id = p.assigned_to_user_id
+       WHERE p.deleted_at IS NULL
+         AND (
+           (p.farm_id IS NOT NULL AND p.farm_id = ANY($1::int[]))
+           OR p.created_by = $2
+         )
+       ORDER BY p.farm_id ASC, COALESCE(p.plot_code, '') ASC, COALESCE(p.row_number, 0) ASC, p.id ASC`,
+      [farmIds.length > 0 ? farmIds : [0], ownerId]
+    );
+
     const members = teamRes.rows.map(u => {
       const sRole = u.sub_role || 'care_worker';
       const isRestricted = ['care_worker', 'auditor_readonly'].includes(sRole);
@@ -90,6 +106,7 @@ router.get('/my-team', async (req, res) => {
       my_sub_role: req.user.sub_role || 'farm_owner',
       can_manage_team: !req.user.parent_user_id && !['care_worker', 'auditor_readonly'].includes(req.user.sub_role || 'farm_owner'),
       farms: farmsRes.rows,
+      plants: plantsRes.rows,
       members
     });
   } catch (err) {

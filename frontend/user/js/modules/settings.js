@@ -1126,7 +1126,8 @@ function _getVal(id) {
 // Chuẩn Gallagher 8.30 Field Privilege · 100% Lucide Icons
 // ═══════════════════════════════════════════════════════════════════════════
 
-let _cachedTeamData = { farms: [], members: [], can_manage_team: true };
+let _cachedTeamData = { farms: [], plants: [], members: [], can_manage_team: true };
+let _selectedPlantIdsForMember = new Set();
 
 const SUB_ROLE_META = {
   farm_owner: {
@@ -1159,6 +1160,25 @@ const SUB_ROLE_META = {
   }
 };
 
+function _extractPlotLabel(plant) {
+  if (!plant) return 'Chưa phân lô';
+  if (plant.plot_code && String(plant.plot_code).trim()) {
+    const pc = String(plant.plot_code).trim();
+    return /^lô\s+/i.test(pc) ? pc : `Lô ${pc}`;
+  }
+  if (plant.location && String(plant.location).trim()) {
+    const firstPart = String(plant.location).split(',')[0].trim();
+    if (firstPart) return firstPart;
+  }
+  return 'Chưa phân lô';
+}
+
+function _getPlantsForSelectedFarm(farmId) {
+  const allPlants = Array.isArray(_cachedTeamData.plants) ? _cachedTeamData.plants : [];
+  if (!farmId) return allPlants;
+  return allPlants.filter(p => String(p.farm_id) === String(farmId));
+}
+
 export function applySubRoleUiRestrictions(user) {
   if (!user) return;
   const subRole = user.sub_role || 'farm_owner';
@@ -1168,13 +1188,11 @@ export function applySubRoleUiRestrictions(user) {
   );
   window._isFinanceRedactedForCurrentUser = hideFinance;
 
-  // Якщо là tài khoản cấp dưới, ẩn nút thêm nhân sự
   const ownerActions = document.getElementById('farmer-team-owner-actions');
   if (ownerActions) {
     ownerActions.style.display = (user.parent_user_id || ['care_worker', 'auditor_readonly'].includes(subRole)) ? 'none' : 'flex';
   }
 
-  // Nếu bị ẩn tài chính (care_worker / auditor_readonly), tự động che các khối doanh thu / lợi nhuận / đơn giá trên giao diện
   if (hideFinance) {
     const finIds = [
       'erp-harvest-total-revenue',
@@ -1194,28 +1212,35 @@ window.applySubRoleUiRestrictions = applySubRoleUiRestrictions;
 
 export async function loadFarmerTeamRbac() {
   const container = document.getElementById('farmer-team-members-list');
-  if (!container) return;
-
-  container.innerHTML = `
-    <div style="text-align:center; padding:28px; color:#64748b; font-size:13px;">
-      <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách tài khoản nhân sự dưới quyền...
-    </div>
-  `;
-  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  if (container) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:28px; color:#64748b; font-size:13px;">
+        <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách tài khoản nhân sự &amp; cây trồng trang trại...
+      </div>
+    `;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  }
 
   try {
     const data = await api('/users/my-team');
     if (data && data.success) {
-      _cachedTeamData = data;
-      renderFarmerTeamListUI(data);
+      _cachedTeamData = {
+        ...data,
+        farms: data.farms || [],
+        plants: data.plants || [],
+        members: data.members || []
+      };
+      renderFarmerTeamListUI(_cachedTeamData);
     }
   } catch (err) {
-    container.innerHTML = `
-      <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:18px; color:#b91c1c; font-size:13px; text-align:center;">
-        <i data-lucide="alert-triangle" class="lucide-sm"></i> Không thể tải danh sách nhân sự: ${esc(err.message)}
-      </div>
-    `;
-    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    if (container) {
+      container.innerHTML = `
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:18px; color:#b91c1c; font-size:13px; text-align:center;">
+          <i data-lucide="alert-triangle" class="lucide-sm"></i> Không thể tải danh sách nhân sự: ${esc(err.message)}
+        </div>
+      `;
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    }
   }
 }
 window.loadFarmerTeamRbac = loadFarmerTeamRbac;
@@ -1225,21 +1250,23 @@ function renderFarmerTeamListUI(data) {
   if (!container) return;
 
   const members = data.members || [];
+  const allPlants = data.plants || [];
+  const plantMap = new Map(allPlants.map(p => [Number(p.id), p]));
   const canManage = data.can_manage_team !== false;
   const primaryFarmId = (data.farms && data.farms[0]) ? data.farms[0].id : '';
 
   if (members.length === 0) {
     container.innerHTML = `
-      <div style="background:#ffffff; border:1.5px dashed #cbd5e1; border-radius:16px; padding:32px 20px; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:14px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto;">
+      <div style="background:#ffffff; border:1.5px dashed #cbd5e1; border-radius:18px; padding:34px 22px; text-align:center;">
+        <div style="width:54px; height:54px; border-radius:15px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; border:1px solid #a7f3d0;">
           <i data-lucide="users" class="lucide-md"></i>
         </div>
-        <h4 style="margin:0 0 6px 0; font-size:15.5px; font-weight:800; color:#0f172a;">Chưa có tài khoản nhân sự dưới quyền nào</h4>
-        <p style="margin:0 auto 16px auto; max-width:520px; font-size:13px; color:#64748b; line-height:1.5;">
-          Hãy tạo tài khoản riêng cho <strong>Nhân công chăm sóc (<code>care_worker</code>)</strong> hoặc <strong>Kiểm định viên (<code>auditor_readonly</code>)</strong> để họ ghi nhật ký thực địa mà không nhìn thấy đơn giá vật tư, chi phí đầu tư và doanh thu của trang trại.
+        <h4 style="margin:0 0 6px 0; font-size:16px; font-weight:800; color:#0f172a;">Chưa có tài khoản nhân sự dưới quyền nào</h4>
+        <p style="margin:0 auto 18px auto; max-width:540px; font-size:13px; color:#64748b; line-height:1.55;">
+          Hãy tạo tài khoản riêng cho <strong>Nhân công chăm sóc (<code>care_worker</code>)</strong> hoặc <strong>Kiểm định viên (<code>auditor_readonly</code>)</strong>, giao phụ trách từng lô/cây cụ thể để họ ghi nhật ký thực địa mà không nhìn thấy đơn giá vật tư, chi phí đầu tư và doanh thu của trang trại.
         </p>
         ${canManage ? `
-          <button type="button" onclick="openFarmerTeamMemberModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 20px; font-size:13px; font-weight:800; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+          <button type="button" onclick="openFarmerTeamMemberModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:11px 22px; font-size:13px; font-weight:800; border-radius:11px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(5,150,105,0.28);">
             <i data-lucide="user-plus" class="lucide-sm"></i> Tạo Tài Khoản Nhân Công Đầu Tiên
           </button>
         ` : ''}
@@ -1252,20 +1279,50 @@ function renderFarmerTeamListUI(data) {
   container.innerHTML = members.map(m => {
     const roleMeta = SUB_ROLE_META[m.sub_role] || SUB_ROLE_META.care_worker;
     const isFinanceHidden = !m.allow_view_finance;
+    const assignedIds = Array.isArray(m.assigned_plant_ids) ? m.assigned_plant_ids.map(Number).filter(Boolean) : [];
+    const assignedPlants = assignedIds.map(id => plantMap.get(id)).filter(Boolean);
+
     const scopeLabel = m.view_plants_scope === 'assigned'
-      ? `Chỉ cây được giao (${Array.isArray(m.assigned_plant_ids) ? m.assigned_plant_ids.length : 0} cây)`
+      ? `Giao phụ trách riêng (${assignedIds.length} cây)`
       : 'Toàn bộ cây trong vườn';
     const farmIdForLink = m.farm_id || primaryFarmId || 1;
 
+    let assignedBadgesHtml = '';
+    if (m.view_plants_scope === 'assigned') {
+      if (assignedPlants.length > 0) {
+        const previewPlants = assignedPlants.slice(0, 8);
+        const remainingCount = assignedPlants.length - previewPlants.length;
+        assignedBadgesHtml = `
+          <div style="margin-top:8px; padding:8px 10px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="font-size:11px; font-weight:800; color:#065f46; display:inline-flex; align-items:center; gap:4px;">
+              <i data-lucide="trees" class="lucide-xs" style="color:#059669;"></i> Cây phụ trách:
+            </span>
+            ${previewPlants.map(p => {
+              const code = p.tree_code ? `#${p.tree_code}` : `#ID-${p.id}`;
+              const plot = _extractPlotLabel(p);
+              return `<span style="font-size:11px; font-weight:700; background:#ffffff; color:#047857; border:1px solid #86efac; padding:2px 8px; border-radius:6px;">${esc(code)} · ${esc(plot)}</span>`;
+            }).join('')}
+            ${remainingCount > 0 ? `<span style="font-size:11px; font-weight:800; color:#047857; background:#dcfce7; padding:2px 8px; border-radius:6px;">+${remainingCount} cây khác</span>` : ''}
+          </div>
+        `;
+      } else {
+        assignedBadgesHtml = `
+          <div style="margin-top:8px; padding:6px 10px; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; font-size:11.5px; color:#c2410c; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+            <i data-lucide="alert-circle" class="lucide-xs"></i> Chưa chọn cây phụ trách cụ thể — Bấm "Sửa quyền" để giao cây
+          </div>
+        `;
+      }
+    }
+
     return `
-      <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:18px 20px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; box-shadow:0 4px 12px rgba(15,23,42,0.03); transition:all 0.15s;">
         <div style="display:flex; align-items:flex-start; gap:14px; min-width:260px; flex:1;">
-          <div style="width:44px; height:44px; border-radius:12px; background:${roleMeta.bg}; border:1.5px solid ${roleMeta.border}; color:${roleMeta.color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <div style="width:46px; height:46px; border-radius:13px; background:${roleMeta.bg}; border:1.5px solid ${roleMeta.border}; color:${roleMeta.color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
             <i data-lucide="${roleMeta.icon}" class="lucide-sm"></i>
           </div>
           <div style="min-width:0; flex:1;">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <strong style="font-size:15px; font-weight:800; color:#0f172a;">${esc(m.full_name)}</strong>
+              <strong style="font-size:15.5px; font-weight:800; color:#0f172a;">${esc(m.full_name)}</strong>
               <span style="font-size:11px; font-weight:800; background:${roleMeta.bg}; color:${roleMeta.color}; border:1px solid ${roleMeta.border}; padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;">
                 <i data-lucide="${roleMeta.icon}" class="lucide-xs"></i> ${esc(roleMeta.label)}
               </span>
@@ -1283,11 +1340,13 @@ function renderFarmerTeamListUI(data) {
                 <i data-lucide="map-pin" class="lucide-xs" style="color:#0284c7;"></i>
                 ${esc(m.farm_name || 'Trang trại nông hộ')}
               </span>
-              <span style="display:inline-flex; align-items:center; gap:5px;">
+              <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; color:${m.view_plants_scope === 'assigned' ? '#047857' : '#334155'};">
                 <i data-lucide="sprout" class="lucide-xs" style="color:#16a34a;"></i>
                 ${esc(scopeLabel)}
               </span>
             </div>
+
+            ${assignedBadgesHtml}
 
             <!-- Privilege Badges -->
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px;">
@@ -1316,8 +1375,8 @@ function renderFarmerTeamListUI(data) {
             <button type="button" onclick="toggleTeamMemberFinance(${m.id}, ${!m.allow_view_finance})" title="Bật/Tắt nhanh quyền xem giá & doanh thu" style="background:${isFinanceHidden ? '#fffbeb' : '#f0fdf4'}; color:${isFinanceHidden ? '#b45309' : '#047857'}; border:1px solid ${isFinanceHidden ? '#fde68a' : '#a7f3d0'}; padding:7px 12px; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
               <i data-lucide="${isFinanceHidden ? 'eye-off' : 'eye'}" class="lucide-xs"></i> ${isFinanceHidden ? 'Đang ẩn giá' : 'Đang hiện giá'}
             </button>
-            <button type="button" onclick="openFarmerTeamMemberModal(${m.id})" style="background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; padding:7px 12px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-              <i data-lucide="edit-3" class="lucide-xs"></i> Sửa quyền
+            <button type="button" onclick="openFarmerTeamMemberModal(${m.id})" style="background:#ecfdf5; color:#065f46; border:1px solid #6ee7b7; padding:7px 12px; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+              <i data-lucide="edit-3" class="lucide-xs"></i> Sửa quyền / Giao cây
             </button>
             <button type="button" onclick="deleteFarmerTeamMember(${m.id}, '${esc(m.full_name)}')" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:7px 10px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
               <i data-lucide="trash-2" class="lucide-xs"></i>
@@ -1331,13 +1390,43 @@ function renderFarmerTeamListUI(data) {
   if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
 
+export function selectTeamMemberRoleCard(roleVal) {
+  const roleSel = document.getElementById('team-member-subrole');
+  if (roleSel) {
+    roleSel.value = roleVal;
+  }
+  onTeamMemberSubRoleChange();
+}
+window.selectTeamMemberRoleCard = selectTeamMemberRoleCard;
+
 export function onTeamMemberSubRoleChange() {
   const roleSel = document.getElementById('team-member-subrole');
   const finChk = document.getElementById('team-member-allow-finance');
   const descBox = document.getElementById('team-member-role-desc');
   if (!roleSel) return;
 
-  const val = roleSel.value;
+  const val = roleSel.value || 'care_worker';
+
+  // Highlight active visual role card
+  const cardConfigs = {
+    care_worker: { activeBorder: '#f59e0b', activeBg: '#fffbeb' },
+    manager: { activeBorder: '#10b981', activeBg: '#ecfdf5' },
+    auditor_readonly: { activeBorder: '#3b82f6', activeBg: '#eff6ff' }
+  };
+  ['care_worker', 'manager', 'auditor_readonly'].forEach(r => {
+    const card = document.getElementById(`role-card-${r}`);
+    if (!card) return;
+    if (r === val) {
+      card.style.border = `2px solid ${cardConfigs[r].activeBorder}`;
+      card.style.background = cardConfigs[r].activeBg;
+      card.style.boxShadow = '0 4px 12px rgba(15,23,42,0.06)';
+    } else {
+      card.style.border = '1.5px solid #e2e8f0';
+      card.style.background = '#f8fafc';
+      card.style.boxShadow = 'none';
+    }
+  });
+
   if (val === 'care_worker') {
     if (finChk) finChk.checked = false;
     if (descBox) {
@@ -1367,9 +1456,287 @@ export function onTeamMemberSubRoleChange() {
 }
 window.onTeamMemberSubRoleChange = onTeamMemberSubRoleChange;
 
-export function openFarmerTeamMemberModal(memberId = null) {
+export function setTeamMemberPlantScope(scopeVal) {
+  const scopeSel = document.getElementById('team-member-plant-scope');
+  if (scopeSel) {
+    scopeSel.value = scopeVal === 'assigned' ? 'assigned' : 'all';
+  }
+  onTeamMemberFarmOrScopeChange();
+}
+window.setTeamMemberPlantScope = setTeamMemberPlantScope;
+
+export async function onTeamMemberFarmOrScopeChange() {
+  const scopeSel = document.getElementById('team-member-plant-scope');
+  const farmSel = document.getElementById('team-member-farm-id');
+  const pickerBox = document.getElementById('team-member-plant-picker-box');
+  const btnAll = document.getElementById('btn-scope-all');
+  const btnAssigned = document.getElementById('btn-scope-assigned');
+
+  const scope = scopeSel ? scopeSel.value : 'all';
+  const farmId = farmSel ? farmSel.value : '';
+
+  if (btnAll && btnAssigned) {
+    if (scope === 'assigned') {
+      btnAssigned.style.background = '#059669';
+      btnAssigned.style.color = '#ffffff';
+      btnAssigned.style.boxShadow = '0 2px 8px rgba(5,150,105,0.28)';
+      btnAll.style.background = 'transparent';
+      btnAll.style.color = '#475569';
+      btnAll.style.boxShadow = 'none';
+    } else {
+      btnAll.style.background = '#ffffff';
+      btnAll.style.color = '#065f46';
+      btnAll.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+      btnAssigned.style.background = 'transparent';
+      btnAssigned.style.color = '#475569';
+      btnAssigned.style.boxShadow = 'none';
+    }
+  }
+
+  if (!pickerBox) return;
+
+  if (scope !== 'assigned') {
+    pickerBox.style.display = 'none';
+    return;
+  }
+
+  pickerBox.style.display = 'block';
+
+  // Ensure we have plants loaded for this farm
+  let farmPlants = _getPlantsForSelectedFarm(farmId);
+  if (farmPlants.length === 0 && farmId) {
+    try {
+      const fetched = await api(`/plants?farm_id=${encodeURIComponent(farmId)}`);
+      if (Array.isArray(fetched) && fetched.length > 0) {
+        const existingIds = new Set((_cachedTeamData.plants || []).map(p => Number(p.id)));
+        fetched.forEach(p => {
+          if (!existingIds.has(Number(p.id))) {
+            if (!Array.isArray(_cachedTeamData.plants)) _cachedTeamData.plants = [];
+            _cachedTeamData.plants.push(p);
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  renderTeamMemberPlantGrid();
+}
+window.onTeamMemberFarmOrScopeChange = onTeamMemberFarmOrScopeChange;
+
+export function renderTeamMemberPlantGrid() {
+  const farmSel = document.getElementById('team-member-farm-id');
+  const gridEl = document.getElementById('team-member-plants-grid');
+  const countEl = document.getElementById('team-member-selected-plants-count');
+  const plotWrap = document.getElementById('team-member-plot-chips-wrap');
+  const plotChipsEl = document.getElementById('team-member-plot-chips');
+  const searchInput = document.getElementById('team-member-plant-search');
+  const editMemberId = Number(document.getElementById('team-member-edit-id')?.value || 0);
+
+  if (!gridEl) return;
+
+  const farmId = farmSel ? farmSel.value : '';
+  const farmPlants = _getPlantsForSelectedFarm(farmId);
+
+  // Filter selected IDs that belong to this farm for accurate counter
+  const selectedInFarmCount = farmPlants.filter(p => _selectedPlantIdsForMember.has(Number(p.id))).length;
+  if (countEl) {
+    countEl.textContent = `Đã chọn ${selectedInFarmCount} / ${farmPlants.length} cây`;
+  }
+
+  if (farmPlants.length === 0) {
+    if (plotWrap) plotWrap.style.display = 'none';
+    gridEl.innerHTML = `
+      <div style="grid-column:1 / -1; text-align:center; padding:22px 14px; background:#ffffff; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b; font-size:12.5px;">
+        <i data-lucide="sprout" class="lucide-sm" style="color:#94a3b8; margin-bottom:4px;"></i>
+        <div>Trang trại này hiện chưa có cây trồng nào được khởi tạo.</div>
+      </div>
+    `;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    return;
+  }
+
+  // Group by Plot for Plot Quick-Select Chips
+  const plotGroups = new Map();
+  farmPlants.forEach(p => {
+    const plotName = _extractPlotLabel(p);
+    if (!plotGroups.has(plotName)) plotGroups.set(plotName, []);
+    plotGroups.get(plotName).push(p);
+  });
+
+  if (plotWrap && plotChipsEl) {
+    if (plotGroups.size > 0) {
+      plotWrap.style.display = 'block';
+      plotChipsEl.innerHTML = Array.from(plotGroups.entries()).map(([plotName, pList]) => {
+        const selCount = pList.filter(p => _selectedPlantIdsForMember.has(Number(p.id))).length;
+        const allSelected = selCount === pList.length && pList.length > 0;
+        const someSelected = selCount > 0 && !allSelected;
+        const safePlot = esc(plotName).replace(/'/g, "\\'");
+        return `
+          <button type="button" onclick="togglePlotPlantsForMember('${safePlot}')" style="padding:5px 11px; border-radius:999px; font-size:11.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s; border:1.5px solid ${allSelected ? '#059669' : (someSelected ? '#0284c7' : '#cbd5e1')}; background:${allSelected ? '#059669' : (someSelected ? '#e0f2fe' : '#ffffff')}; color:${allSelected ? '#ffffff' : (someSelected ? '#0369a1' : '#334155')};">
+            <i data-lucide="${allSelected ? 'check-circle-2' : 'layers'}" class="lucide-xs"></i>
+            <span>${esc(plotName)}</span>
+            <span style="font-size:10.5px; opacity:0.88;">(${selCount}/${pList.length})</span>
+          </button>
+        `;
+      }).join('');
+    } else {
+      plotWrap.style.display = 'none';
+    }
+  }
+
+  // Filter by search keyword
+  const kw = (searchInput ? searchInput.value : '').trim().toLowerCase();
+  const filteredPlants = kw
+    ? farmPlants.filter(p => {
+        const code = String(p.tree_code || p.id || '').toLowerCase();
+        const type = String(p.plant_type || '').toLowerCase();
+        const variety = String(p.plant_variety || '').toLowerCase();
+        const loc = String(p.location || '').toLowerCase();
+        const plot = _extractPlotLabel(p).toLowerCase();
+        return code.includes(kw) || type.includes(kw) || variety.includes(kw) || loc.includes(kw) || plot.includes(kw);
+      })
+    : farmPlants;
+
+  if (filteredPlants.length === 0) {
+    gridEl.innerHTML = `
+      <div style="grid-column:1 / -1; text-align:center; padding:18px; color:#64748b; font-size:12px;">
+        Không tìm thấy cây trồng nào khớp với từ khóa "${esc(kw)}".
+      </div>
+    `;
+    return;
+  }
+
+  gridEl.innerHTML = filteredPlants.map((p, idx) => {
+    const pid = Number(p.id);
+    const isChecked = _selectedPlantIdsForMember.has(pid);
+    const codeLabel = p.tree_code ? `#${p.tree_code}` : `#Cây-${idx + 1}`;
+    const plotLabel = _extractPlotLabel(p);
+    const rowLabel = p.row_number ? ` · Hàng ${p.row_number}` : '';
+    const typeVariety = [p.plant_type || 'Cây trồng', p.plant_variety || ''].filter(Boolean).join(' · ');
+    const health = p.health_status || 'Tốt';
+    const healthColor = health === 'Tốt' ? '#10b981' : (health.includes('Bệnh') ? '#ef4444' : '#f59e0b');
+    const assignedOther = p.assigned_to_user_id && Number(p.assigned_to_user_id) !== editMemberId
+      ? (p.assigned_to_name || `NV #${p.assigned_to_user_id}`)
+      : null;
+
+    return `
+      <div onclick="toggleSinglePlantForMember(${pid})" style="cursor:pointer; user-select:none; border-radius:11px; padding:9px 11px; border:${isChecked ? '2px solid #059669' : '1.5px solid #e2e8f0'}; background:${isChecked ? '#ecfdf5' : '#ffffff'}; display:flex; align-items:flex-start; gap:9px; transition:all 0.12s; box-shadow:${isChecked ? '0 3px 10px rgba(5,150,105,0.12)' : 'none'};">
+        <div style="width:20px; height:20px; border-radius:6px; border:1.5px solid ${isChecked ? '#059669' : '#cbd5e1'}; background:${isChecked ? '#059669' : '#f8fafc'}; color:#ffffff; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;">
+          ${isChecked ? '<i data-lucide="check" class="lucide-xs"></i>' : ''}
+        </div>
+        <div style="min-width:0; flex:1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:4px;">
+            <strong style="font-size:12.5px; font-weight:800; color:${isChecked ? '#064e3b' : '#0f172a'}; font-family:monospace;">${esc(codeLabel)}</strong>
+            <span style="width:7px; height:7px; border-radius:50%; background:${healthColor}; flex-shrink:0;" title="Sức khỏe: ${esc(health)}"></span>
+          </div>
+          <div style="font-size:11.5px; font-weight:700; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;">
+            ${esc(typeVariety)}
+          </div>
+          <div style="font-size:10.5px; font-weight:700; color:#0284c7; margin-top:2px;">
+            ${esc(plotLabel)}${esc(rowLabel)}
+          </div>
+          ${assignedOther ? `
+            <div style="font-size:10px; color:#b45309; background:#fef3c7; padding:1px 5px; border-radius:4px; margin-top:3px; display:inline-block;">
+              Đang giao: ${esc(assignedOther)}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
+window.renderTeamMemberPlantGrid = renderTeamMemberPlantGrid;
+
+export function toggleSinglePlantForMember(plantId) {
+  const pid = Number(plantId);
+  if (_selectedPlantIdsForMember.has(pid)) {
+    _selectedPlantIdsForMember.delete(pid);
+  } else {
+    _selectedPlantIdsForMember.add(pid);
+  }
+  renderTeamMemberPlantGrid();
+}
+window.toggleSinglePlantForMember = toggleSinglePlantForMember;
+
+export function togglePlotPlantsForMember(plotName) {
+  const farmId = document.getElementById('team-member-farm-id')?.value || '';
+  const farmPlants = _getPlantsForSelectedFarm(farmId);
+  const plotPlants = farmPlants.filter(p => _extractPlotLabel(p) === plotName);
+  if (plotPlants.length === 0) return;
+
+  const allSelected = plotPlants.every(p => _selectedPlantIdsForMember.has(Number(p.id)));
+  plotPlants.forEach(p => {
+    const pid = Number(p.id);
+    if (allSelected) {
+      _selectedPlantIdsForMember.delete(pid);
+    } else {
+      _selectedPlantIdsForMember.add(pid);
+    }
+  });
+  renderTeamMemberPlantGrid();
+}
+window.togglePlotPlantsForMember = togglePlotPlantsForMember;
+
+export function selectAllFarmPlantsForMember(selectAll = true) {
+  const farmId = document.getElementById('team-member-farm-id')?.value || '';
+  const farmPlants = _getPlantsForSelectedFarm(farmId);
+  farmPlants.forEach(p => {
+    const pid = Number(p.id);
+    if (selectAll) {
+      _selectedPlantIdsForMember.add(pid);
+    } else {
+      _selectedPlantIdsForMember.delete(pid);
+    }
+  });
+  renderTeamMemberPlantGrid();
+}
+window.selectAllFarmPlantsForMember = selectAllFarmPlantsForMember;
+
+export function selectFarmPlantRangeForMember() {
+  const fromVal = parseInt(document.getElementById('team-member-range-from')?.value || '', 10);
+  const toVal = parseInt(document.getElementById('team-member-range-to')?.value || '', 10);
+  if (isNaN(fromVal) || isNaN(toVal) || fromVal > toVal) {
+    toast('Vui lòng nhập dải STT hợp lệ (VD: Từ 1 đến 20).', 'error');
+    return;
+  }
+  const farmId = document.getElementById('team-member-farm-id')?.value || '';
+  const farmPlants = _getPlantsForSelectedFarm(farmId);
+  let matched = 0;
+
+  farmPlants.forEach((p, index) => {
+    const stt = index + 1;
+    const codeNum = p.tree_code && /^\d+$/.test(String(p.tree_code).trim()) ? parseInt(String(p.tree_code).trim(), 10) : null;
+    if ((stt >= fromVal && stt <= toVal) || (codeNum !== null && codeNum >= fromVal && codeNum <= toVal)) {
+      _selectedPlantIdsForMember.add(Number(p.id));
+      matched++;
+    }
+  });
+
+  renderTeamMemberPlantGrid();
+  toast(`Đã tích chọn ${matched} cây trong dải [${fromVal} - ${toVal}].`, 'success');
+}
+window.selectFarmPlantRangeForMember = selectFarmPlantRangeForMember;
+
+export async function openFarmerTeamMemberModal(memberId = null) {
   const modal = document.getElementById('farmer-team-member-modal');
   if (!modal) return;
+
+  // Ensure team & farm plants data is loaded
+  if (!_cachedTeamData.farms || _cachedTeamData.farms.length === 0 || !_cachedTeamData.plants || _cachedTeamData.plants.length === 0) {
+    try {
+      const data = await api('/users/my-team');
+      if (data && data.success) {
+        _cachedTeamData = {
+          ...data,
+          farms: data.farms || [],
+          plants: data.plants || [],
+          members: data.members || []
+        };
+      }
+    } catch (_) {}
+  }
 
   const farmSel = document.getElementById('team-member-farm-id');
   const farms = (_cachedTeamData && _cachedTeamData.farms && _cachedTeamData.farms.length > 0)
@@ -1391,6 +1758,10 @@ export function openFarmerTeamMemberModal(memberId = null) {
   const scopeSel = document.getElementById('team-member-plant-scope');
   const supChk = document.getElementById('team-member-allow-supplies');
   const finChk = document.getElementById('team-member-allow-finance');
+  const searchInput = document.getElementById('team-member-plant-search');
+  if (searchInput) searchInput.value = '';
+
+  _selectedPlantIdsForMember = new Set();
 
   if (memberId) {
     const member = (_cachedTeamData.members || []).find(m => Number(m.id) === Number(memberId));
@@ -1410,6 +1781,11 @@ export function openFarmerTeamMemberModal(memberId = null) {
     if (farmSel && member.farm_id) farmSel.value = String(member.farm_id);
     if (scopeSel) scopeSel.value = member.view_plants_scope || 'all';
     if (supChk) supChk.checked = member.allow_view_supplies !== false;
+    if (Array.isArray(member.assigned_plant_ids)) {
+      member.assigned_plant_ids.forEach(id => {
+        if (id) _selectedPlantIdsForMember.add(Number(id));
+      });
+    }
     onTeamMemberSubRoleChange();
     if (finChk) finChk.checked = Boolean(member.allow_view_finance);
   } else {
@@ -1423,7 +1799,7 @@ export function openFarmerTeamMemberModal(memberId = null) {
       passInput.required = true;
       passInput.placeholder = 'Nhập mật khẩu cấp cho nhân sự';
     }
-    if (passLabel) passLabel.innerHTML = `<i data-lucide="key-round" class="lucide-xs" style="color:#059669;"></i> Mật khẩu đăng nhập *`;
+    if (passLabel) passLabel.innerHTML = `<i data-lucide="key-round" class="lucide-xs" style="color:#059669;"></i> Mật khẩu đăng nhập <span style="color:#ef4444">*</span>`;
     if (subRoleSel) subRoleSel.value = 'care_worker';
     if (scopeSel) scopeSel.value = 'all';
     if (supChk) supChk.checked = true;
@@ -1431,6 +1807,7 @@ export function openFarmerTeamMemberModal(memberId = null) {
   }
 
   modal.style.display = 'flex';
+  await onTeamMemberFarmOrScopeChange();
   if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
 window.openFarmerTeamMemberModal = openFarmerTeamMemberModal;
@@ -1462,6 +1839,15 @@ export async function submitFarmerTeamMemberForm() {
     return;
   }
 
+  const assigned_plant_ids = view_plants_scope === 'assigned'
+    ? Array.from(_selectedPlantIdsForMember)
+    : [];
+
+  if (view_plants_scope === 'assigned' && assigned_plant_ids.length === 0) {
+    toast('Bạn đang chọn "Giao cây cụ thể" — Vui lòng tích chọn ít nhất 1 cây trồng hoặc chọn nhanh theo Lô bên dưới!', 'error');
+    return;
+  }
+
   const btn = document.getElementById('btn-submit-team-member');
   const origHtml = btn ? btn.innerHTML : '';
   if (btn) {
@@ -1483,7 +1869,8 @@ export async function submitFarmerTeamMemberForm() {
         farm_id,
         view_plants_scope,
         allow_view_supplies,
-        allow_view_finance
+        allow_view_finance,
+        assigned_plant_ids
       })
     });
 
@@ -1552,4 +1939,5 @@ export async function deleteFarmerTeamMember(memberId, memberName) {
   }
 }
 window.deleteFarmerTeamMember = deleteFarmerTeamMember;
+
 
