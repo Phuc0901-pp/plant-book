@@ -2538,7 +2538,7 @@ async function loadVersionManagerData() {
           </td>
           <td style="padding:12px 14px; font-size:11.5px; color:#64748b; white-space:nowrap;">${esc(createdDate)}</td>
           <td style="padding:12px 14px; text-align:center;">
-            ${isActive ? '<span style="color:#16a34a; font-weight:800; font-size:12px; background:#dcfce7; padding:3px 10px; border-radius:100px; border:1px solid #86efac;">🟢 Đang kích hoạt</span>' : '<span style="color:#94a3b8; font-size:12px;">⚪ Đã lưu</span>'}
+            ${isActive ? '<span style="color:#16a34a; font-weight:800; font-size:12px; background:#dcfce7; padding:3px 10px; border-radius:100px; border:1px solid #86efac;">ON</span>' : '<span style="color:#94a3b8; font-size:12px;">SAVE</span>'}
           </td>
           <td style="padding:12px 14px; text-align:center; white-space:nowrap;">
             ${!isActive ? `<button onclick="activateVersionInDB(${r.id})" class="btn btn-secondary btn-sm" style="font-size:11.5px; padding:4px 10px; border-radius:6px; font-weight:700; background:#f8fafc; border:1.5px solid #cbd5e1; cursor:pointer;">Kích hoạt</button>` : '<span style="font-size:11px; color:#16a34a; font-weight:700;">Hiện hành</span>'}

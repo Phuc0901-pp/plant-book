@@ -2160,6 +2160,7 @@ async function selectFarm(farmId, syncUrl = true) {
     // Lưu danh sách cây của nông trại đang mở để phục vụ tìm kiếm thông minh & sắp xếp tự nhiên
     window._currentSidebarFarmPlants = Array.isArray(farm.plants) ? farm.plants : [];
     renderCurrentSidebarPlantList();
+    if (typeof syncFarmApiStatusUI === 'function') syncFarmApiStatusUI(farm);
     if (window.lucide && typeof window.lucide.createIcons === 'function') lucide.createIcons();
   }
 
@@ -5086,6 +5087,49 @@ async function confirmClearFarmPlantsGps(farmId) {
 }
 window.confirmClearFarmPlantsGps = confirmClearFarmPlantsGps;
 
+function syncFarmApiStatusUI(farm) {
+  if (!farm) return;
+  const isEnabled = farm.api_enabled !== false;
+  const badgeEl = document.getElementById('farm-api-status-badge');
+  const toggleBtn = document.getElementById('btn-toggle-farm-api-status');
+  const copyBtn = document.getElementById('btn-copy-farm-api-link');
+
+  if (badgeEl) {
+    if (isEnabled) {
+      badgeEl.style.background = '#ecfdf5';
+      badgeEl.style.color = '#059669';
+      badgeEl.style.borderColor = '#a7f3d0';
+      badgeEl.innerHTML = `<i data-lucide="radio" class="lucide-xs"></i> API: Đang Bật`;
+    } else {
+      badgeEl.style.background = '#fef2f2';
+      badgeEl.style.color = '#dc2626';
+      badgeEl.style.borderColor = '#fecaca';
+      badgeEl.innerHTML = `<i data-lucide="shield-ban" class="lucide-xs"></i> API: Đã Ngắt`;
+    }
+  }
+
+  if (toggleBtn) {
+    if (isEnabled) {
+      toggleBtn.style.color = '#dc2626';
+      toggleBtn.style.borderColor = '#fecaca';
+      toggleBtn.style.background = '#fef2f2';
+      toggleBtn.innerHTML = `<i data-lucide="unplug" class="lucide-sm"></i> Ngắt Đường Dẫn API`;
+    } else {
+      toggleBtn.style.color = '#059669';
+      toggleBtn.style.borderColor = '#a7f3d0';
+      toggleBtn.style.background = '#ecfdf5';
+      toggleBtn.innerHTML = `<i data-lucide="plug-zap" class="lucide-sm"></i> Mở Lại Đường Dẫn API`;
+    }
+  }
+
+  if (copyBtn) {
+    copyBtn.style.opacity = isEnabled ? '1' : '0.65';
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') lucide.createIcons();
+}
+window.syncFarmApiStatusUI = syncFarmApiStatusUI;
+
 async function copyFarmLiveDatasetApiLink(farmId) {
   const targetId = farmId || activeFarmId;
   if (!targetId) {
@@ -5095,6 +5139,12 @@ async function copyFarmLiveDatasetApiLink(farmId) {
   try {
     const res = await api(`/farms/${targetId}/api-link`);
     if (res && res.live_dataset_url) {
+      syncFarmApiStatusUI({ api_enabled: res.api_enabled });
+      if (res.api_enabled === false) {
+        toast(`⚠️ Đường dẫn API của "${res.farm_name}" hiện ĐANG BỊ NGẮT. Hãy bấm "Mở Lại Đường Dẫn API" nếu muốn khách hàng truy cập được!`, 'warning');
+      } else {
+        toast(`Đã copy Link Live API của "${res.farm_name}" vào bộ nhớ tạm!`, 'success');
+      }
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(res.live_dataset_url);
       } else {
@@ -5105,9 +5155,9 @@ async function copyFarmLiveDatasetApiLink(farmId) {
         document.execCommand('copy');
         document.body.removeChild(ta);
       }
-      toast(`Đã copy Link Live API của "${res.farm_name}" vào bộ nhớ tạm!`, 'success');
+      const statusText = res.api_enabled === false ? '⛔ TRẠNG THÁI: ĐANG BỊ ADMIN NGẮT KẾT NỐI' : '✅ TRẠNG THÁI: ĐANG HOẠT ĐỘNG (LIVE SYNC)';
       window.prompt(
-        `🔗 LINK API DỮ LIỆU THỜI GIAN THỰC (LIVE JSON DATASET) — ${res.farm_name}:\n(Đã tự động copy! Bạn chỉ cần gửi link này cho khách hàng, mỗi khi dữ liệu trang trại cập nhật thì API sẽ tự động trả về dữ liệu mới nhất):`,
+        `🔗 LINK API DỮ LIỆU THỜI GIAN THỰC (LIVE JSON DATASET) — ${res.farm_name}\n${statusText}\n(Đã tự động copy! Dữ liệu tự động cập nhật mỗi khi trang trại có thay đổi):`,
         res.live_dataset_url
       );
     }
@@ -5117,4 +5167,71 @@ async function copyFarmLiveDatasetApiLink(farmId) {
 }
 window.copyFarmLiveDatasetApiLink = copyFarmLiveDatasetApiLink;
 
+async function toggleFarmLiveApiAccess(farmId) {
+  const targetId = farmId || activeFarmId;
+  if (!targetId) {
+    toast('Vui lòng chọn một trang trại!', 'warning');
+    return;
+  }
+  const cachedFarm = (currentFarms || []).find(f => String(f.id) === String(targetId));
+  const currentlyEnabled = cachedFarm ? (cachedFarm.api_enabled !== false) : true;
+  const confirmMsg = currentlyEnabled
+    ? `Bạn có chắc chắn muốn NGẮT ĐƯỜNG DẪN API của trang trại này?\n\nKhi ngắt, khách hàng hoặc hệ thống bên ngoài gọi vào Link API sẽ bị chặn ngay lập tức (403 Forbidden).`
+    : `Bạn có muốn MỞ LẠI ĐƯỜNG DẪN API cho trang trại này để khách hàng tiếp tục truy cập dữ liệu thời gian thực?`;
 
+  if (!window.confirm(confirmMsg)) return;
+
+  try {
+    const res = await api(`/farms/${targetId}/api-control`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'toggle' })
+    });
+    if (res) {
+      if (cachedFarm) {
+        cachedFarm.api_enabled = res.api_enabled;
+        cachedFarm.api_key_version = res.api_key_version;
+      }
+      syncFarmApiStatusUI({ api_enabled: res.api_enabled });
+      toast(res.message || (res.api_enabled ? 'Đã mở lại đường dẫn API!' : 'Đã ngắt đường dẫn API!'), res.api_enabled ? 'success' : 'warning');
+    }
+  } catch (err) {
+    toast('Lỗi khi điều khiển trạng thái API: ' + err.message, 'error');
+  }
+}
+window.toggleFarmLiveApiAccess = toggleFarmLiveApiAccess;
+
+async function rotateFarmLiveApiKey(farmId) {
+  const targetId = farmId || activeFarmId;
+  if (!targetId) {
+    toast('Vui lòng chọn một trang trại!', 'warning');
+    return;
+  }
+  const confirmMsg = `🔑 ĐỔI MÃ KHÓA API MỚI (THU HỒI LINK CŨ)?\n\nHành động này sẽ:\n1. Vô hiệu hóa VĨNH VIỄN đường dẫn API cũ đã gửi cho khách hàng trước đây.\n2. Tạo một đường dẫn API mới với mã khóa (api_key) hoàn toàn mới.\n\nBạn có chắc chắn muốn thực hiện?`;
+  if (!window.confirm(confirmMsg)) return;
+
+  try {
+    const res = await api(`/farms/${targetId}/api-control`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'rotate_key' })
+    });
+    if (res && res.live_dataset_url) {
+      const cachedFarm = (currentFarms || []).find(f => String(f.id) === String(targetId));
+      if (cachedFarm) {
+        cachedFarm.api_enabled = res.api_enabled;
+        cachedFarm.api_key_version = res.api_key_version;
+      }
+      syncFarmApiStatusUI({ api_enabled: res.api_enabled });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(res.live_dataset_url);
+      }
+      toast(res.message || 'Đã cấp mã khóa API mới và vô hiệu hóa link cũ!', 'success');
+      window.prompt(
+        `🔑 ĐÃ CẤP LINK API MỚI (Version v${res.api_key_version}) — ${res.farm_name}\n(Link cũ đã bị vô hiệu hóa hoàn toàn. Link mới dưới đây đã được tự động copy):`,
+        res.live_dataset_url
+      );
+    }
+  } catch (err) {
+    toast('Lỗi khi đổi mã khóa API: ' + err.message, 'error');
+  }
+}
+window.rotateFarmLiveApiKey = rotateFarmLiveApiKey;

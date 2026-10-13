@@ -328,15 +328,28 @@
 
                 <!-- Hồ sơ bản vẽ CAD & API Dữ liệu -->
                 <div class="gis-section-card" style="animation-delay:0.15s;">
-                  <div class="gis-section-label" style="color:#1d4ed8;">
-                    <i data-lucide="compass" class="lucide-sm" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ (CAD) &amp; Live API
+                  <div class="gis-section-label" style="color:#1d4ed8; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="display:inline-flex; align-items:center; gap:5px;">
+                      <i data-lucide="compass" class="lucide-sm" style="color:#3b82f6;"></i> Hồ sơ Bản vẽ &amp; Live API
+                    </span>
+                    <span id="farm-api-status-badge" style="font-size:9.5px; font-weight:700; background:#ecfdf5; color:#059669; padding:2px 6px; border-radius:6px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:3px; text-transform:none; letter-spacing:0;">
+                      <i data-lucide="radio" class="lucide-xs"></i> API: Đang Bật
+                    </span>
                   </div>
                   <button class="gis-action-btn gis-btn-blue" onclick="openDesignDrawingModal()">
                     <i data-lucide="upload" class="lucide-sm"></i> Import Bản Vẽ Thiết Kế (CAD / Overlay)
                   </button>
-                  <button class="gis-action-btn gis-btn-ghost" style="margin-top:4px; color:#0f172a; border-color:#cbd5e1; background:#f8fafc;" onclick="copyFarmLiveDatasetApiLink()">
+                  <button id="btn-copy-farm-api-link" class="gis-action-btn gis-btn-ghost" style="margin-top:5px; color:#0f172a; border-color:#cbd5e1; background:#f8fafc;" onclick="copyFarmLiveDatasetApiLink()">
                     <i data-lucide="webhook" class="lucide-sm" style="color:#059669;"></i> Copy Link API Dữ Liệu (Live JSON)
                   </button>
+                  <div class="gis-btn-row" style="margin-top:5px;">
+                    <button id="btn-toggle-farm-api-status" class="gis-action-btn gis-btn-ghost" style="color:#dc2626; border-color:#fecaca; background:#fef2f2; font-size:11px;" onclick="toggleFarmLiveApiAccess()" title="Ngắt hoặc Mở lại quyền truy cập đường dẫn API của trang trại này">
+                      <i data-lucide="unplug" class="lucide-sm"></i> Ngắt Đường Dẫn API
+                    </button>
+                    <button id="btn-rotate-farm-api-key" class="gis-action-btn gis-btn-ghost" style="color:#b45309; border-color:#fde68a; background:#fffbeb; font-size:11px;" onclick="rotateFarmLiveApiKey()" title="Đổi mã khóa API mới (Vô hiệu hóa ngay lập tức các đường link API cũ đã gửi)">
+                      <i data-lucide="key-round" class="lucide-sm"></i> Đổi Key Mới
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Danh sách cây -->

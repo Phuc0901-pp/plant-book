@@ -86,19 +86,35 @@ router.get('/:id', auth, async (req, res) => {
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
-function generateFarmLiveApiKey(farmId) {
-  const secret = process.env.JWT_SECRET || 'tanbao-agtech-erp-secret';
-  const hmac = crypto.createHmac('sha256', secret).update(`farm_live_dataset_v1_${farmId}`).digest('hex').slice(0, 32);
-  return `tb_live_${farmId}_${hmac}`;
+let _farmApiColumnsEnsured = false;
+async function ensureFarmApiColumns() {
+  if (_farmApiColumnsEnsured) return;
+  try {
+    await pool.query(`
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS api_enabled BOOLEAN DEFAULT true;
+      ALTER TABLE farms ADD COLUMN IF NOT EXISTS api_key_version INTEGER DEFAULT 1;
+    `);
+    _farmApiColumnsEnsured = true;
+  } catch (e) {
+    console.warn('Warning ensuring farm API columns:', e.message);
+  }
 }
 
-// GET /api/farms/:id/api-link — Lấy đường dẫn Live API & API Key riêng của Trang trại để cấp cho Khách hàng / Đối tác ERP
+function generateFarmLiveApiKey(farmId, keyVersion = 1) {
+  const secret = process.env.JWT_SECRET || 'tanbao-agtech-erp-secret';
+  const ver = parseInt(keyVersion, 10) || 1;
+  const hmac = crypto.createHmac('sha256', secret).update(`farm_live_dataset_v${ver}_${farmId}`).digest('hex').slice(0, 32);
+  return `tb_live_${farmId}_v${ver}_${hmac}`;
+}
+
+// GET /api/farms/:id/api-link — Lấy đường dẫn Live API, trạng thái Bật/Ngắt & API Key riêng của Trang trại
 router.get('/:id/api-link', auth, async (req, res) => {
   try {
+    await ensureFarmApiColumns();
     const farmId = parseInt(req.params.id, 10);
     if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
 
-    const farmRes = await pool.query('SELECT id, name, user_id FROM farms WHERE id = $1 LIMIT 1', [farmId]);
+    const farmRes = await pool.query('SELECT id, name, user_id, COALESCE(api_enabled, true) as api_enabled, COALESCE(api_key_version, 1) as api_key_version FROM farms WHERE id = $1 LIMIT 1', [farmId]);
     if (farmRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     const farm = farmRes.rows[0];
 
@@ -107,7 +123,7 @@ router.get('/:id/api-link', auth, async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền lấy API Key của trang trại này.' });
     }
 
-    const apiKey = generateFarmLiveApiKey(farmId);
+    const apiKey = generateFarmLiveApiKey(farmId, farm.api_key_version);
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.get('host');
     const liveUrl = `${protocol}://${host}/api/farms/${farmId}/full-dataset?api_key=${apiKey}`;
@@ -116,9 +132,11 @@ router.get('/:id/api-link', auth, async (req, res) => {
       success: true,
       farm_id: farmId,
       farm_name: farm.name,
+      api_enabled: farm.api_enabled !== false,
+      api_key_version: farm.api_key_version || 1,
       api_key: apiKey,
       live_dataset_url: liveUrl,
-      usage_note: 'URL này trả về dữ liệu JSON thời gian thực (Real-time Live Data) chuẩn Quốc tế của toàn bộ trang trại. Khi có dữ liệu mới phát sinh, gọi lại API này sẽ tự động nhận dữ liệu mới nhất.'
+      usage_note: 'URL này trả về dữ liệu JSON thời gian thực (Real-time Live Data) chuẩn Quốc tế của toàn bộ trang trại. Admin có thể ngắt kết nối hoặc thu hồi mã API Key bất cứ lúc nào.'
     });
   } catch (err) {
     console.error('Error generating farm API link:', err);
@@ -126,47 +144,80 @@ router.get('/:id/api-link', auth, async (req, res) => {
   }
 });
 
+// POST /api/farms/:id/api-control — Admin chủ động Ngắt / Bật lại đường dẫn API hoặc Đổi API Key mới (Thu hồi link cũ)
+router.post('/:id/api-control', auth, admin, async (req, res) => {
+  try {
+    await ensureFarmApiColumns();
+    const farmId = parseInt(req.params.id, 10);
+    if (isNaN(farmId)) return res.status(400).json({ error: 'Mã trang trại không hợp lệ.' });
+
+    const { action } = req.body; // 'disable' | 'enable' | 'toggle' | 'rotate_key'
+    const farmRes = await pool.query('SELECT id, name, COALESCE(api_enabled, true) as api_enabled, COALESCE(api_key_version, 1) as api_key_version FROM farms WHERE id = $1 LIMIT 1', [farmId]);
+    if (farmRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
+    const farm = farmRes.rows[0];
+
+    let newEnabled = farm.api_enabled !== false;
+    let newVersion = parseInt(farm.api_key_version, 10) || 1;
+    let msg = '';
+
+    if (action === 'disable') {
+      newEnabled = false;
+      msg = `Đã NGẮT đường dẫn API dữ liệu của trang trại "${farm.name}"! Mọi truy cập qua link API sẽ bị chặn ngay lập tức.`;
+    } else if (action === 'enable') {
+      newEnabled = true;
+      msg = `Đã MỞ LẠI đường dẫn API dữ liệu của trang trại "${farm.name}"!`;
+    } else if (action === 'rotate_key') {
+      newVersion += 1;
+      newEnabled = true;
+      msg = `Đã HỦY link API cũ và tạo mã API Key mới (v${newVersion}) cho trang trại "${farm.name}"!`;
+    } else {
+      newEnabled = !newEnabled;
+      msg = newEnabled
+        ? `Đã MỞ LẠI đường dẫn API dữ liệu của trang trại "${farm.name}"!`
+        : `Đã NGẮT đường dẫn API dữ liệu của trang trại "${farm.name}"! Mọi truy cập qua link API sẽ bị chặn ngay lập tức.`;
+    }
+
+    await pool.query(
+      'UPDATE farms SET api_enabled = $1, api_key_version = $2, updated_at = NOW() WHERE id = $3',
+      [newEnabled, newVersion, farmId]
+    );
+    await delCacheByPattern('farms_');
+
+    const apiKey = generateFarmLiveApiKey(farmId, newVersion);
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.get('host');
+    const liveUrl = `${protocol}://${host}/api/farms/${farmId}/full-dataset?api_key=${apiKey}`;
+
+    res.json({
+      success: true,
+      message: msg,
+      farm_id: farmId,
+      farm_name: farm.name,
+      api_enabled: newEnabled,
+      api_key_version: newVersion,
+      api_key: apiKey,
+      live_dataset_url: liveUrl
+    });
+  } catch (err) {
+    console.error('Error controlling farm API access:', err);
+    res.status(500).json({ error: 'Lỗi server khi điều khiển trạng thái API: ' + err.message });
+  }
+});
+
 // GET /api/farms/:id/full-dataset (Alias: /:id/export-json) — Xuất toàn bộ tập dữ liệu JSON chuẩn Quốc tế (Live Real-time API)
 router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
   try {
+    await ensureFarmApiColumns();
     const farmId = parseInt(req.params.id, 10);
     if (isNaN(farmId)) {
       return res.status(400).json({ error: 'Mã trang trại (farm_id) không hợp lệ.' });
     }
 
-    // Hỗ trợ xác thực linh hoạt:
-    // Cách 1: Dùng Live API Key của trang trại (?api_key=tb_live_... hoặc Header x-api-key) -> Tiện cấp trực tiếp cho khách hàng tích hợp ERP/BI tự động cập nhật
-    // Cách 2: Dùng JWT Bearer Token (Header Authorization hoặc ?token=...)
-    const providedApiKey = req.query.api_key || req.headers['x-api-key'];
-    const expectedApiKey = generateFarmLiveApiKey(farmId);
-    let authorizedViaApiKey = false;
-    let authUser = null;
-
-    if (providedApiKey && providedApiKey === expectedApiKey) {
-      authorizedViaApiKey = true;
-    } else {
-      const authHeader = req.headers['authorization'];
-      const rawToken = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.split(' ')[1] : req.query.token;
-      if (!rawToken) {
-        return res.status(401).json({
-          error: 'Chưa xác thực. Vui lòng truyền ?api_key=<FARM_API_KEY> hoặc Header Authorization: Bearer <TOKEN>.'
-        });
-      }
-      try {
-        const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
-        const uRes = await pool.query('SELECT id, role, farm_id FROM users WHERE id = $1 LIMIT 1', [decoded.id]);
-        if (uRes.rows.length === 0) {
-          return res.status(401).json({ error: 'Tài khoản không tồn tại.' });
-        }
-        authUser = uRes.rows[0];
-      } catch (_) {
-        return res.status(401).json({ error: 'Token hoặc API Key không hợp lệ.' });
-      }
-    }
-
-    // 1. Thông tin trang trại & Chủ sở hữu (Farm Master Profile & Owner)
+    // 1. Lấy thông tin trang trại & trạng thái đóng/mở API (api_enabled, api_key_version)
     const farmRes = await pool.query(`
       SELECT f.*,
+             COALESCE(f.api_enabled, true) as is_api_enabled,
+             COALESCE(f.api_key_version, 1) as current_api_key_version,
              COALESCE(u.id, u_assigned.id) as owner_id,
              COALESCE(u.full_name, u_assigned.full_name) as owner_name,
              COALESCE(u.email, u_assigned.email) as owner_email,
@@ -183,6 +234,50 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy trang trại.' });
     }
     const farm = farmRes.rows[0];
+
+    // 2. Kiểm tra nếu Admin đã NGẮT đường dẫn API của trang trại này
+    if (farm.is_api_enabled === false) {
+      return res.status(403).json({
+        error: 'Đường dẫn API dữ liệu của trang trại này đã bị Quản trị viên (Admin) ngắt kết nối hoặc tạm khóa.',
+        code: 'API_ACCESS_DISABLED',
+        farm_id: farmId
+      });
+    }
+
+    // 3. Xác thực qua Live API Key (theo đúng phiên bản api_key_version hiện hành) hoặc JWT Bearer Token
+    const providedApiKey = req.query.api_key || req.headers['x-api-key'];
+    const expectedApiKey = generateFarmLiveApiKey(farmId, farm.current_api_key_version);
+    const legacyApiKeyV1 = `tb_live_${farmId}_` + crypto.createHmac('sha256', process.env.JWT_SECRET || 'tanbao-agtech-erp-secret').update(`farm_live_dataset_v1_${farmId}`).digest('hex').slice(0, 32);
+
+    let authorizedViaApiKey = false;
+    let authUser = null;
+
+    if (providedApiKey && (providedApiKey === expectedApiKey || (Number(farm.current_api_key_version) === 1 && providedApiKey === legacyApiKeyV1))) {
+      authorizedViaApiKey = true;
+    } else if (providedApiKey) {
+      return res.status(401).json({
+        error: 'Mã API Key không hợp lệ hoặc đã bị Quản trị viên thu hồi / thay đổi.',
+        code: 'INVALID_OR_REVOKED_API_KEY'
+      });
+    } else {
+      const authHeader = req.headers['authorization'];
+      const rawToken = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.split(' ')[1] : req.query.token;
+      if (!rawToken) {
+        return res.status(401).json({
+          error: 'Chưa xác thực. Vui lòng truyền ?api_key=<FARM_API_KEY> hoặc Header Authorization: Bearer <TOKEN>.'
+        });
+      }
+      try {
+        const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
+        const uRes = await pool.query('SELECT id, role, farm_id FROM users WHERE id = $1 LIMIT 1', [decoded.id]);
+        if (uRes.rows.length === 0) {
+          return res.status(401).json({ error: 'Tài khoản không tồn tại.' });
+        }
+        authUser = uRes.rows[0];
+      } catch (_) {
+        return res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn.' });
+      }
+    }
 
     if (!authorizedViaApiKey && authUser) {
       const isAssigned = authUser.farm_id && Number(farm.id) === Number(authUser.farm_id);
