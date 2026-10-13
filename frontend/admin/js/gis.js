@@ -545,16 +545,25 @@ function renderFarmsList(farms) {
           <span>${ownerName}</span>
         </div>
 
-        <!-- 3. Key Agronomic Metrics Chips (Area & Plants) -->
-        <div class="farm-item-chips">
-          <div class="farm-chip" title="Tổng diện tích: ${rawAreaFormatted}">
-            <i data-lucide="ruler" class="lucide-xs" style="color:#059669;"></i>
-            <span>${smartArea}</span>
+        <!-- 3. Key Agronomic Metrics Chips (Area, Plants & Live API Quick Action) -->
+        <div class="farm-item-chips" style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <div class="farm-chip" title="Tổng diện tích: ${rawAreaFormatted}">
+              <i data-lucide="ruler" class="lucide-xs" style="color:#059669;"></i>
+              <span>${smartArea}</span>
+            </div>
+            <div class="farm-chip" title="Số lượng cây trồng thực tế">
+              <i data-lucide="sprout" class="lucide-xs" style="color:#10b981;"></i>
+              <span>${plantCountStr} cây</span>
+            </div>
           </div>
-          <div class="farm-chip" title="Số lượng cây trồng thực tế">
-            <i data-lucide="sprout" class="lucide-xs" style="color:#10b981;"></i>
-            <span>${plantCountStr} cây</span>
-          </div>
+          <button type="button"
+            onclick="event.stopPropagation(); copyFarmLiveDatasetApiLink(${f.id})"
+            style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:10.5px; font-weight:700; cursor:pointer; border:1px solid ${f.api_enabled === false ? '#fecaca' : '#a7f3d0'}; background:${f.api_enabled === false ? '#fef2f2' : '#ecfdf5'}; color:${f.api_enabled === false ? '#dc2626' : '#047857'}; transition:all 0.15s;"
+            title="${f.api_enabled === false ? 'API đang bị ngắt - Bấm để xem link' : 'Bấm để lấy Link Live API dữ liệu của trang trại này'}">
+            <i data-lucide="${f.api_enabled === false ? 'unplug' : 'webhook'}" class="lucide-xs"></i>
+            <span>${f.api_enabled === false ? 'API: Đã Ngắt' : 'Lấy API'}</span>
+          </button>
         </div>
 
         <!-- 4. Compliance & Traceability Badges (VietGAP, PUC) -->
@@ -5190,6 +5199,9 @@ async function toggleFarmLiveApiAccess(farmId) {
       if (cachedFarm) {
         cachedFarm.api_enabled = res.api_enabled;
         cachedFarm.api_key_version = res.api_key_version;
+      }
+      if (typeof renderFarmsList === 'function' && Array.isArray(currentFarms)) {
+        renderFarmsList(currentFarms);
       }
       syncFarmApiStatusUI({ api_enabled: res.api_enabled });
       toast(res.message || (res.api_enabled ? 'Đã mở lại đường dẫn API!' : 'Đã ngắt đường dẫn API!'), res.api_enabled ? 'success' : 'warning');
