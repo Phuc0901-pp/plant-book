@@ -5149,11 +5149,6 @@ async function copyFarmLiveDatasetApiLink(farmId) {
     const res = await api(`/farms/${targetId}/api-link`);
     if (res && res.live_dataset_url) {
       syncFarmApiStatusUI({ api_enabled: res.api_enabled });
-      if (res.api_enabled === false) {
-        toast(`⚠️ Đường dẫn API của "${res.farm_name}" hiện ĐANG BỊ NGẮT. Hãy bấm "Mở Lại Đường Dẫn API" nếu muốn khách hàng truy cập được!`, 'warning');
-      } else {
-        toast(`Đã copy Link Live API của "${res.farm_name}" vào bộ nhớ tạm!`, 'success');
-      }
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(res.live_dataset_url);
       } else {
@@ -5164,11 +5159,12 @@ async function copyFarmLiveDatasetApiLink(farmId) {
         document.execCommand('copy');
         document.body.removeChild(ta);
       }
-      const statusText = res.api_enabled === false ? '⛔ TRẠNG THÁI: ĐANG BỊ ADMIN NGẮT KẾT NỐI' : '✅ TRẠNG THÁI: ĐANG HOẠT ĐỘNG (LIVE SYNC)';
-      window.prompt(
-        `🔗 LINK API DỮ LIỆU THỜI GIAN THỰC (LIVE JSON DATASET) — ${res.farm_name}\n${statusText}\n(Đã tự động copy! Dữ liệu tự động cập nhật mỗi khi trang trại có thay đổi):`,
-        res.live_dataset_url
-      );
+      if (res.api_enabled === false) {
+        toast(`Đường dẫn API của "${res.farm_name}" hiện đang bị ngắt. Hãy bấm "Mở Lại Đường Dẫn API" nếu muốn kích hoạt!`, 'warning');
+      } else {
+        toast(`Đã sao chép Link Live API của "${res.farm_name}" vào bộ nhớ tạm!`, 'success');
+      }
+      openLiveApiGuidelineModal(targetId, res);
     }
   } catch (err) {
     toast('Lỗi khi lấy Link API trang trại: ' + err.message, 'error');
@@ -5218,7 +5214,7 @@ async function rotateFarmLiveApiKey(farmId) {
     toast('Vui lòng chọn một trang trại!', 'warning');
     return;
   }
-  const confirmMsg = `🔑 ĐỔI MÃ KHÓA API MỚI (THU HỒI LINK CŨ)?\n\nHành động này sẽ:\n1. Vô hiệu hóa VĨNH VIỄN đường dẫn API cũ đã gửi cho khách hàng trước đây.\n2. Tạo một đường dẫn API mới với mã khóa (api_key) hoàn toàn mới.\n\nBạn có chắc chắn muốn thực hiện?`;
+  const confirmMsg = `ĐỔI MÃ KHÓA API MỚI (THU HỒI LINK CŨ)?\n\nHành động này sẽ:\n1. Vô hiệu hóa VĨNH VIỄN đường dẫn API cũ đã gửi cho khách hàng trước đây.\n2. Tạo một đường dẫn API mới với mã khóa (api_key) hoàn toàn mới.\n\nBạn có chắc chắn muốn thực hiện?`;
   if (!window.confirm(confirmMsg)) return;
 
   try {
@@ -5237,13 +5233,211 @@ async function rotateFarmLiveApiKey(farmId) {
         await navigator.clipboard.writeText(res.live_dataset_url);
       }
       toast(res.message || 'Đã cấp mã khóa API mới và vô hiệu hóa link cũ!', 'success');
-      window.prompt(
-        `🔑 ĐÃ CẤP LINK API MỚI (Version v${res.api_key_version}) — ${res.farm_name}\n(Link cũ đã bị vô hiệu hóa hoàn toàn. Link mới dưới đây đã được tự động copy):`,
-        res.live_dataset_url
-      );
+      openLiveApiGuidelineModal(targetId, res);
     }
   } catch (err) {
     toast('Lỗi khi đổi mã khóa API: ' + err.message, 'error');
   }
 }
 window.rotateFarmLiveApiKey = rotateFarmLiveApiKey;
+
+async function openLiveApiGuidelineModal(farmId, preloadedRes) {
+  const targetId = farmId || activeFarmId || ((currentFarms && currentFarms[0]) ? currentFarms[0].id : 1);
+  let apiData = preloadedRes || null;
+  if (!apiData && targetId) {
+    try {
+      apiData = await api(`/farms/${targetId}/api-link`);
+    } catch (_) {}
+  }
+
+  const baseUrl = window.location.origin;
+  const liveUrl = (apiData && apiData.live_dataset_url)
+    ? apiData.live_dataset_url
+    : `${baseUrl}/api/farms/${targetId}/full-dataset?api_key=tb_live_${targetId}_v1_...`;
+  const farmName = (apiData && apiData.farm_name) ? apiData.farm_name : `Trang trại #${targetId}`;
+  const isEnabled = apiData ? (apiData.api_enabled !== false) : true;
+  const keyVer = (apiData && apiData.api_key_version) ? apiData.api_key_version : 1;
+
+  let modal = document.getElementById('live-api-guideline-modal');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'live-api-guideline-modal';
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.68); backdrop-filter:blur(4px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px;';
+
+  modal.innerHTML = `
+    <div style="background:#ffffff; width:100%; max-width:860px; max-height:90vh; border-radius:16px; border:1px solid #cbd5e1; box-shadow:0 24px 48px rgba(15,23,42,0.28); display:flex; flex-direction:column; overflow:hidden; font-family:Inter,system-ui,sans-serif;">
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color:#ffffff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:42px; height:42px; border-radius:10px; background:rgba(16,185,129,0.2); border:1px solid rgba(52,211,153,0.4); display:flex; align-items:center; justify-content:center; color:#34d399;">
+            <i data-lucide="webhook" style="width:22px; height:22px;"></i>
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h3 style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff;">Cổng Live API &amp; Hướng Dẫn Tích Hợp Chuẩn Quốc Tế</h3>
+              <span style="background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(52,211,153,0.35); font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="shield-check" style="width:12px; height:12px;"></i> Gallagher 8.30 / ISO 27001 / Carbon MRV
+              </span>
+            </div>
+            <div style="font-size:12px; color:#cbd5e1; margin-top:3px; display:flex; align-items:center; gap:8px;">
+              <span><i data-lucide="map-pin" style="width:12px; height:12px; vertical-align:-2px;"></i> ${esc(farmName)}</span>
+              <span>•</span>
+              <span>Phiên bản khóa: <strong>v${keyVer}</strong></span>
+              <span>•</span>
+              <span style="color:${isEnabled ? '#34d399' : '#f87171'}; font-weight:700;">
+                <i data-lucide="${isEnabled ? 'radio' : 'shield-ban'}" style="width:12px; height:12px; vertical-align:-2px;"></i>
+                ${isEnabled ? 'Đang hoạt động (Live Sync)' : 'Đang bị Admin ngắt kết nối'}
+              </span>
+            </div>
+          </div>
+        </div>
+        <button type="button" onclick="document.getElementById('live-api-guideline-modal').remove()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18); color:#ffffff; width:34px; height:34px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="x" style="width:18px; height:18px;"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:20px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:18px; color:#1e293b;">
+        <!-- 1. Đường dẫn Live API chính -->
+        <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:14px 16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <span style="font-size:12.5px; font-weight:800; color:#065f46; display:inline-flex; align-items:center; gap:6px;">
+              <i data-lucide="link" style="width:15px; height:15px; color:#059669;"></i> ĐƯỜNG DẪN LIVE API DỮ LIỆU THỜI GIAN THỰC (FULL DATASET V2.0)
+            </span>
+            <div style="display:flex; gap:6px;">
+              <button type="button" onclick="navigator.clipboard.writeText('${liveUrl}'); toast('Đã sao chép đường dẫn Live API!', 'success');" style="background:#059669; color:#ffffff; border:none; padding:5px 11px; border-radius:7px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="copy" style="width:13px; height:13px;"></i> Sao chép URL
+              </button>
+              <a href="${liveUrl}" target="_blank" rel="noopener" style="background:#ffffff; color:#047857; border:1px solid #059669; padding:5px 11px; border-radius:7px; font-size:11.5px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="external-link" style="width:13px; height:13px;"></i> Mở JSON trực tiếp
+              </a>
+            </div>
+          </div>
+          <input type="text" readonly value="${liveUrl}" onclick="this.select()" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; font-family:monospace; font-size:12px; color:#0f172a; font-weight:600;">
+        </div>
+
+        <!-- 2. Quy trình 3 bước quản trị trên giao diện -->
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:7px;">
+            <i data-lucide="sliders" style="width:16px; height:16px; color:#0284c7;"></i> 1. HƯỚNG DẪN ĐIỀU KHIỂN &amp; PHÂN QUYỀN TRUY CẬP API
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+              <div style="font-size:12px; font-weight:800; color:#059669; display:flex; align-items:center; gap:6px; margin-bottom:5px;">
+                <i data-lucide="copy" style="width:14px; height:14px;"></i> Cấp Link API cho Đối tác
+              </div>
+              <div style="font-size:12px; color:#475569; line-height:1.5;">
+                Bấm <strong>Lấy / Copy Link API</strong> để gửi cho đối tác ERP, PowerBI hoặc hệ thống truy xuất. Dữ liệu luôn tự động cập nhật tức thì (Real-time No-Cache).
+              </div>
+            </div>
+            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px;">
+              <div style="font-size:12px; font-weight:800; color:#dc2626; display:flex; align-items:center; gap:6px; margin-bottom:5px;">
+                <i data-lucide="unplug" style="width:14px; height:14px;"></i> Ngắt / Mở Lại Đường Dẫn API
+              </div>
+              <div style="font-size:12px; color:#475569; line-height:1.5;">
+                Bấm <strong>Ngắt Đường Dẫn API</strong> khi cần tạm dừng kết nối. Mọi truy cập từ bên ngoài sẽ bị chặn ngay lập tức với mã <code>403 API_ACCESS_DISABLED</code>.
+              </div>
+            </div>
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px;">
+              <div style="font-size:12px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:6px; margin-bottom:5px;">
+                <i data-lucide="key-round" style="width:14px; height:14px;"></i> Đổi Key Mới (Thu Hồi Link Cũ)
+              </div>
+              <div style="font-size:12px; color:#475569; line-height:1.5;">
+                Bấm <strong>Đổi Key Mới</strong> để tăng phiên bản khóa (<code>v1 &rarr; v2</code>). Đường dẫn cũ bị hủy vĩnh viễn (<code>401 INVALID_OR_REVOKED_API_KEY</code>).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Các tham số truy vấn thông minh chuẩn Gallagher 8.30 -->
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:7px;">
+            <i data-lucide="terminal" style="width:16px; height:16px; color:#7c3aed;"></i> 2. CÁC THAM SỐ TRUY VẤN NÂNG CAO (GALLAGHER 8.30 REST STANDARD)
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; display:flex; align-items:flex-start; gap:10px;">
+              <i data-lucide="compass" style="width:16px; height:16px; color:#0284c7; flex-shrink:0; margin-top:2px;"></i>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:800; color:#0f172a;">Khám phá gốc hệ thống HATEOAS (Root Discovery)</div>
+                <code style="display:block; font-size:11.5px; color:#0369a1; margin-top:3px; word-break:break-all;">GET ${baseUrl}/api</code>
+              </div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; display:flex; align-items:flex-start; gap:10px;">
+              <i data-lucide="refresh-cw" style="width:16px; height:16px; color:#059669; flex-shrink:0; margin-top:2px;"></i>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:800; color:#0f172a;">Đồng bộ gia tăng (Delta Sync — chỉ tải dữ liệu mới thay đổi sau mốc thời gian)</div>
+                <code style="display:block; font-size:11.5px; color:#047857; margin-top:3px; word-break:break-all;">${liveUrl}&amp;updated_after=2026-10-13T00:00:00Z</code>
+              </div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; display:flex; align-items:flex-start; gap:10px;">
+              <i data-lucide="filter" style="width:16px; height:16px; color:#7c3aed; flex-shrink:0; margin-top:2px;"></i>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:800; color:#0f172a;">Chọn lọc khối dữ liệu cần lấy (Field Specifiers — tiết kiệm băng thông)</div>
+                <code style="display:block; font-size:11.5px; color:#6d28d9; margin-top:3px; word-break:break-all;">${liveUrl}&amp;fields=farm_profile,iso27001_governance_and_carbon_mrv</code>
+              </div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; display:flex; align-items:flex-start; gap:10px;">
+              <i data-lucide="eye-off" style="width:16px; height:16px; color:#d97706; flex-shrink:0; margin-top:2px;"></i>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:800; color:#0f172a;">Chế độ ẩn dữ liệu tài chính nhạy cảm (Role-based Field Privilege cho nhân công / kiểm toán kỹ thuật)</div>
+                <code style="display:block; font-size:11.5px; color:#b45309; margin-top:3px; word-break:break-all;">${liveUrl}&amp;role=care_worker</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Cấu trúc 7 khối dữ liệu chuẩn Quốc tế -->
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:7px;">
+            <i data-lucide="layers" style="width:16px; height:16px; color:#059669;"></i> 3. CẤU TRÚC 7 KHỐI DỮ LIỆU TRẢ VỀ TRONG JSON
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px; font-size:11.5px;">
+            <div style="padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; gap:8px;">
+              <i data-lucide="globe" style="width:15px; height:15px; color:#059669; flex-shrink:0;"></i>
+              <span><strong>1. farm_profile</strong>: Global DID, PUC, VietGAP, đa giác GeoJSON</span>
+            </div>
+            <div style="padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; gap:8px;">
+              <i data-lucide="landmark" style="width:15px; height:15px; color:#0284c7; flex-shrink:0;"></i>
+              <span><strong>2. financial_and_yield_summary</strong>: Chi phí vật tư, Doanh thu, ROI%</span>
+            </div>
+            <div style="padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; gap:8px;">
+              <i data-lucide="package" style="width:15px; height:15px; color:#d97706; flex-shrink:0;"></i>
+              <span><strong>3. supplies_and_inventory</strong>: Tồn kho SKU &amp; Sổ cái tiêu hao</span>
+            </div>
+            <div style="padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; gap:8px;">
+              <i data-lucide="sprout" style="width:15px; height:15px; color:#10b981; flex-shrink:0;"></i>
+              <span><strong>4. plants_and_cultivation</strong>: Hồ sơ từng cây, NFC IssueLevel, Sinh khối</span>
+            </div>
+            <div style="padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; gap:8px;">
+              <i data-lucide="shield-alert" style="width:15px; height:15px; color:#dc2626; flex-shrink:0;"></i>
+              <span><strong>5. phytosanitary_and_harvest_logs</strong>: Dịch hại &amp; Lô thu hoạch</span>
+            </div>
+            <div style="padding:9px 11px; border:1px solid #e2e8f0; border-radius:8px; display:flex; align-items:center; gap:8px;">
+              <i data-lucide="cpu" style="width:15px; height:15px; color:#6366f1; flex-shrink:0;"></i>
+              <span><strong>6. iot_nfc_and_media</strong>: Cảm biến IoT, Thẻ PIV CHUID &amp; Media</span>
+            </div>
+            <div style="padding:9px 11px; border:1.5px solid #a7f3d0; background:#ecfdf5; border-radius:8px; display:flex; align-items:center; gap:8px; grid-column:1 / -1;">
+              <i data-lucide="leaf" style="width:16px; height:16px; color:#047857; flex-shrink:0;"></i>
+              <span><strong>7. iso27001_governance_and_carbon_mrv</strong>: Chuỗi băm bất biến <code>SHA-256 (VERIFIED_IMMUTABLE)</code> &amp; Tín chỉ Carbon ròng (<code>net_carbon_credit_tco2e</code> theo chuẩn IPCC AFOLU Tier-2)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:12px 22px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+        <button type="button" onclick="document.getElementById('live-api-guideline-modal').remove()" style="background:#0f172a; color:#ffffff; border:none; padding:8px 18px; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+          <i data-lucide="check" style="width:15px; height:15px;"></i> Đã hiểu &amp; Đóng
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+window.openLiveApiGuidelineModal = openLiveApiGuidelineModal;
+

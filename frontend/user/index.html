@@ -1,4 +1,4 @@
-﻿<!-- ====================================================================
+<!-- ====================================================================
      PLANT BOOK — FARMER USER PORTAL
      Auto-assembled via backend/scripts/build-html.js
      DO NOT edit index.html directly; edit modular files in src/
@@ -2602,13 +2602,13 @@
         </div>
 
 
-        <!-- ════════════════ SUB-TAB 2: 10 QUY TRÌNH THAO TÁC CHUẨN (SOP) ════════════════ -->
+        <!-- ════════════════ SUB-TAB 2: 11 QUY TRÌNH THAO TÁC CHUẨN (SOP & LIVE API GUIDELINE) ════════════════ -->
         <div id="wiki-subtab-guide" style="display:none;">
           
           <!-- Topic Filter Bar -->
           <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; -webkit-overflow-scrolling:touch;">
             <button class="guide-filter-btn active" onclick="filterGuideTopics('all', this)" style="background:#059669; color:white; border:none; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(5,150,105,0.2);">
-              <i data-lucide="layers" class="lucide-sm"></i> Tất cả (10 quy trình)
+              <i data-lucide="layers" class="lucide-sm"></i> Tất cả (11 quy trình)
             </button>
             <button class="guide-filter-btn" onclick="filterGuideTopics('setup', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
               <i data-lucide="rocket" class="lucide-sm"></i> Khởi tạo &amp; Thiết lập ban đầu
@@ -2620,7 +2620,7 @@
               <i data-lucide="shield-check" class="lucide-sm"></i> Tiêu chuẩn VietGAP &amp; Thu hoạch
             </button>
             <button class="guide-filter-btn" onclick="filterGuideTopics('iot', this)" style="background:#ffffff; color:#334155; border:1px solid #cbd5e1; padding:8px 18px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap;">
-              <i data-lucide="radio" class="lucide-sm"></i> IoT &amp; Cảnh báo Tự động
+              <i data-lucide="webhook" class="lucide-sm"></i> IoT, Live API &amp; Tín chỉ Carbon
             </button>
           </div>
 
@@ -2644,31 +2644,31 @@
                   <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> BẮT ĐẦU</div>
+                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="play-circle" class="lucide-sm"></i> BẮT ĐẦU</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="map-pin" class="lucide-sm"></i> Bật GPS thiết bị</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;"> Tọa độ hợp lệ?</div>
+                  <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="help-circle" class="lucide-sm"></i> Tọa độ hợp lệ?</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="edit-3" class="lucide-sm"></i> Nhập Tên, Diện tích (ha), Mã PUC</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="save" class="lucide-sm"></i> Lưu CSDL PostgreSQL</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> KÍCH HOẠT GIS</div>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="check-circle-2" class="lucide-sm"></i> KÍCH HOẠT GIS</div>
                 </div>
               </div>
 
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: ĐỊNH VỊ GPS</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Trang trại</strong>  Bấm nút <strong>Khởi tạo Trang trại mới (GPS)</strong>  Bấm <strong>Bật GPS</strong>.</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="compass" class="lucide-xs"></i> BƯỚC 1: ĐỊNH VỊ GPS</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Trang trại</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Bấm nút <strong>Khởi tạo Trang trại mới (GPS)</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Bấm <strong>Bật GPS</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KHAI BÁO VƯỜN</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="file-Spreadsheet" class="lucide-xs"></i> BƯỚC 2: KHAI BÁO VƯỜN</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Điền <strong>Tên trang trại</strong> (VD: Vườn Bưởi An Phú), <strong>Diện tích (ha)</strong>, <strong>Mã số Vùng trồng (PUC Code)</strong> và <strong>Tổng số cây</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: KÍCH HOẠT VƯỜN</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="check-circle-2" class="lucide-xs"></i> BƯỚC 3: KÍCH HOẠT VƯỜN</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Lưu khởi tạo</strong>. Trang trại được kích hoạt đưa lên Bản đồ Vệ tinh GIS ngay lập tức!</div>
                 </div>
               </div>
@@ -2701,32 +2701,32 @@
                   <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> BẮT ĐẦU</div>
+                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="play-circle" class="lucide-sm"></i> BẮT ĐẦU</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="mic" class="lucide-sm"></i> Đọc giọng nói / Bấm nút (+)</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"> AI trích xuất (Tưới/Bón/Thuốc)</div>
+                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="sparkles" class="lucide-sm"></i> AI trích xuất (Tưới/Bón/Thuốc)</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #d97706; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="camera" class="lucide-sm"></i> Đính kèm ảnh thực địa</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #059669; color:#047857; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="package" class="lucide-sm"></i> Tự động trừ tồn kho</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> GHI SỔ VIETGAP</div>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="lock" class="lucide-sm"></i> KHÓA SỔ SHA-256</div>
                 </div>
               </div>
 
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: BẤM NÚT (+) HOẶC MIC</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="plus-circle" class="lucide-xs"></i> BƯỚC 1: BẤM NÚT (+) HOẶC MIC</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>(+) Tròn xanh</strong> nổi ở góc dưới, hoặc bấm biểu tượng <strong>Microphone</strong> để đọc bằng giọng nói.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN HOẠT ĐỘNG &amp; ẢNH</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="clipboard-list" class="lucide-xs"></i> BƯỚC 2: CHỌN HOẠT ĐỘNG &amp; ẢNH</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn Tưới nước, Bón phân, Phun thuốc... Nhập Người thực hiện, Dụng cụ và chọn vật tư trong kho.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: LƯU &amp; TỰ TRỪ TỒN KHO</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Lưu nhật ký</strong>. Dữ liệu ghi vào sổ điện tử VietGAP và tự động trừ số lượng phân/thuốc trong kho!</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="shield-check" class="lucide-xs"></i> BƯỚC 3: LƯU &amp; NIÊM PHONG SHA-256</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Lưu nhật ký</strong>. Dữ liệu được niêm phong chuỗi băm <strong>ISO/IEC 27001 SHA-256</strong> và tự động trừ số lượng phân/thuốc trong kho!</div>
                 </div>
               </div>
 
@@ -2757,29 +2757,29 @@
                   <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> BẮT ĐẦU</div>
+                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="play-circle" class="lucide-sm"></i> BẮT ĐẦU</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="layers" class="lucide-sm"></i> Chọn nhóm (Bón phân/Thuốc/Nước/Công)</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"> Khai báo Quy cách &amp; Hoạt chất</div>
+                  <div style="background:#eff6ff; border:1.5px solid #2563eb; color:#1e40af; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="flask-conical" class="lucide-sm"></i> Khai báo Quy cách &amp; Hoạt chất</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #d97706; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="coins" class="lucide-sm"></i> Nhập giá mua &amp; Tồn kho</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> NHẬP KHO ERP</div>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="check-circle-2" class="lucide-sm"></i> NHẬP KHO ERP</div>
                 </div>
               </div>
 
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: VÀO TAB VẬT TƯ</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Vật tư</strong>  Bấm nút <strong>+ Khai báo vật tư mới</strong>.</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="package-plus" class="lucide-xs"></i> BƯỚC 1: VÀO TAB VẬT TƯ</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Vật tư</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Bấm nút <strong>+ Khai báo vật tư mới</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KHAI BÁO VIETGAP</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="shield-check" class="lucide-xs"></i> BƯỚC 2: KHAI BÁO VIETGAP</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn phân loại (Bón phân, Phun thuốc, Tiền nước, Nhân công). Nhập <strong>Quy cách đóng gói</strong> và <strong>Hoạt chất chính</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: QUY ĐỔI ĐƠN GIÁ</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="calculator" class="lucide-xs"></i> BƯỚC 3: QUY ĐỔI ĐƠN GIÁ</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Hệ thống tự động quy đổi giá mua theo bao sang đơn giá gram/ml/lít giúp tự động tính toán chi phí chính xác trong từng lần sử dụng!</div>
                 </div>
               </div>
@@ -2811,29 +2811,29 @@
                   <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> BẮT ĐẦU</div>
+                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="play-circle" class="lucide-sm"></i> BẮT ĐẦU</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="filter" class="lucide-sm"></i> Lọc thời gian / Cây bệnh</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;"> Kiểm tra lịch sử canh tác</div>
+                  <div style="background:#fffbeb; border:1.5px solid #f59e0b; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="search-check" class="lucide-sm"></i> Kiểm tra lịch sử canh tác</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="file-text" class="lucide-sm"></i> Kết xuất Báo cáo VietGAP chuẩn</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> GỬI KIỂM ĐỊNH</div>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="award" class="lucide-sm"></i> GỬI KIỂM ĐỊNH</div>
                 </div>
               </div>
 
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: VÀO TAB LỊCH SỬ</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="history" class="lucide-xs"></i> BƯỚC 1: VÀO TAB LỊCH SỬ</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Lịch sử</strong> để theo dõi dòng thời gian toàn bộ các công việc canh tác đã thực hiện.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: LỌC HOẠT ĐỘNG</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="filter" class="lucide-xs"></i> BƯỚC 2: LỌC HOẠT ĐỘNG</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Lọc nhanh theo loại công việc (Tưới, Bón, Phun thuốc, Thu hoạch) hoặc bấm nút <strong>Chỉ Cây bệnh</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: XUẤT NHẬT KÝ VIETGAP</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="file-down" class="lucide-xs"></i> BƯỚC 3: XUẤT NHẬT KÝ VIETGAP</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>Xuất báo cáo VietGAP</strong> để tải file nhật ký minh bạch, sẵn sàng cho đoàn kiểm định!</div>
                 </div>
               </div>
@@ -2865,30 +2865,30 @@
                   <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ LƯU ĐỒ GIẢI THUẬT &amp; QUY TRÌNH THỰC HIỆN:
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
-                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> BẮT ĐẦU</div>
+                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="play-circle" class="lucide-sm"></i> BẮT ĐẦU</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
                   <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="cpu" class="lucide-sm"></i> Chọn trạm (Đất/Không khí/Nước)</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"> Ghép logic (VÀ / HOẶC)</div>
+                  <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="git-merge" class="lucide-sm"></i> Ghép logic (VÀ / HOẶC)</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#fee2e2; border:1.5px solid #dc2626; color:#b91c1c; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"> Chọn loại (Cảnh báo/Khuyến cáo)</div>
+                  <div style="background:#fee2e2; border:1.5px solid #dc2626; color:#b91c1c; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="bell-ring" class="lucide-sm"></i> Chọn loại (Cảnh báo/Khuyến cáo)</div>
                   <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
-                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"> KÍCH HOẠT 24/7</div>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="check-circle-2" class="lucide-sm"></i> KÍCH HOẠT 24/7</div>
                 </div>
               </div>
 
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: VÀO CÀI ĐẶT NGƯỠNG</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Cài đặt</strong>  Chọn tab con <strong>Cài đặt Ngưỡng &amp; Cảnh báo</strong>  Bấm <strong>+ Thêm quy tắc mới</strong>.</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="sliders" class="lucide-xs"></i> BƯỚC 1: VÀO CÀI ĐẶT NGƯỠNG</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Cài đặt</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Chọn tab con <strong>Cài đặt Ngưỡng &amp; Cảnh báo</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Bấm <strong>+ Thêm quy tắc mới</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN THIẾT BỊ &amp; GHÉP ĐIỀU KIỆN</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="cpu" class="lucide-xs"></i> BƯỚC 2: CHỌN THIẾT BỊ &amp; GHÉP ĐIỀU KIỆN</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn trạm (Đất, Không khí, Nước), chọn chỉ số, phép so sánh và bấm <strong>+ Thêm điều kiện</strong> ghép logic (VÀ / HOẶC).</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: CÀI GIỜ &amp; LƯU QUY TẮC</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn thể loại ( Cảnh báo,  Khuyến cáo, ℹ Thông báo), chọn giờ gửi và bấm <strong>Lưu quy tắc</strong>.</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="bell" class="lucide-xs"></i> BƯỚC 3: CÀI GIỜ &amp; LƯU QUY TẮC</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn thể loại (<i data-lucide="alert-triangle" class="lucide-xs"></i> Cảnh báo, <i data-lucide="lightbulb" class="lucide-xs"></i> Khuyến cáo, <i data-lucide="info" class="lucide-xs"></i> Thông báo), chọn giờ gửi và bấm <strong>Lưu quy tắc</strong>.</div>
                 </div>
               </div>
 
@@ -2916,15 +2916,15 @@
 
               <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: CHỌN TRANG TRẠI</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Trang trại</strong>  Bấm vào thẻ trang trại để mở màn hình chi tiết lô vườn.</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="map" class="lucide-xs"></i> BƯỚC 1: CHỌN TRANG TRẠI</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào tab <strong>Trang trại</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Bấm vào thẻ trang trại để mở màn hình chi tiết lô vườn.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: THÊM CÂY TRỒNG MỚI</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="sprout" class="lucide-xs"></i> BƯỚC 2: THÊM CÂY TRỒNG MỚI</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm nút <strong>+ Thêm cây mới</strong>. Chọn giống cây (Sầu riêng Ri6, Monthong, Bưởi da xanh...), năm trồng và định vị tọa độ.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: CẬP NHẬT GIAI ĐOẠN</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="trending-up" class="lucide-xs"></i> BƯỚC 3: CẬP NHẬT GIAI ĐOẠN</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Theo dõi tuổi thọ cây, chuyển đổi giai đoạn sinh trưởng (Kiến thiết, Ra hoa, Nuôi trái, Phục hồi sau thu hoạch).</div>
                 </div>
               </div>
@@ -2944,15 +2944,15 @@
 
               <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: BẬT NFC TRÊN ĐIỆN THOẠI</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="smartphone-nfc" class="lucide-xs"></i> BƯỚC 1: BẬT NFC TRÊN ĐIỆN THOẠI</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Vào cài đặt điện thoại bật tính năng <strong>NFC</strong> (hoặc mở camera quét mã QR trên thẻ).</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHẠM LƯNG MÁY VÀO THẺ</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="radio" class="lucide-xs"></i> BƯỚC 2: CHẠM LƯNG MÁY VÀO THẺ</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Chạm lưng điện thoại vào thẻ chip NFC gắn trên thân cây. Ứng dụng tự động kêu tiếng bip và mở ngay hồ sơ cây!</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: GHI NHANH NHẬT KÝ TẠI GỐC</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="file-plus-2" class="lucide-xs"></i> BƯỚC 3: GHI NHANH NHẬT KÝ TẠI GỐC</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Xem ngay lịch sử bón phân gần nhất của cây và bấm ghi nhật ký chăm sóc trực tiếp tại gốc cây đó!</div>
                 </div>
               </div>
@@ -2972,15 +2972,15 @@
 
               <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: KIỂM TRA THÔNG TIN CÂY</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="clipboard-check" class="lucide-xs"></i> BƯỚC 1: KIỂM TRA THÔNG TIN CÂY</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Hệ thống kiểm tra mã số cây, giống cây và lịch sử chăm sóc trước khi ghi nhận sản lượng thu hoạch.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: NHẬP SẢN LƯỢNG &amp; PHẨM CẤP</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="scale" class="lucide-xs"></i> BƯỚC 2: NHẬP SẢN LƯỢNG &amp; PHẨM CẤP</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Điền sản lượng cắt (kg/tấn), chia theo phẩm cấp (Loại 1, Loại 2) và giá bán tại vườn.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: SINH MÃ LÔ TỰ ĐỘNG</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="qr-code" class="lucide-xs"></i> BƯỚC 3: SINH MÃ LÔ TỰ ĐỘNG</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Hệ thống tự động sinh <strong>Mã Lô VietGAP ([PUC]-[YYYYMMDD]-[Mã Cây])</strong> sẵn sàng dán tem truy xuất nguồn gốc!</div>
                 </div>
               </div>
@@ -2991,7 +2991,7 @@
               <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
                 <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
                   <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">9</span>
-                  Hướng dẫn Tự động Sắp xếp &amp; Đánh số Cây theo Tọa độ GPS (1  N Thẳng Hàng)
+                  Hướng dẫn Tự động Sắp xếp &amp; Đánh số Cây theo Tọa độ GPS (1 &rarr; N Thẳng Hàng)
                 </h3>
                 <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
                   <i data-lucide="arrow-down" class="lucide-sm"></i> Tự động hóa bản đồ số GIS
@@ -3000,16 +3000,16 @@
 
               <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: MỞ CÔNG CỤ SẮP XẾP</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào menu <strong>Sổ Cây Trồng / Trang trại</strong>  Bấm nút <strong>"Sắp xếp mã cây theo GPS (1  N)"</strong>.</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="list-ordered" class="lucide-xs"></i> BƯỚC 1: MỞ CÔNG CỤ SẮP XẾP</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào menu <strong>Sổ Cây Trồng / Trang trại</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Bấm nút <strong>"Sắp xếp mã cây theo GPS (1 &rarr; N)"</strong>.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: CHỌN QUY LUẬT &amp; ĐỊNH DẠNG</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="grid" class="lucide-xs"></i> BƯỚC 2: CHỌN QUY LUẬT &amp; ĐỊNH DẠNG</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Chọn <strong>Bắc xuống Nam (Trên xuống dưới, Trái qua phải)</strong> hoặc theo Luống / Zíc-zắc tùy theo cách canh tác.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: ÁP DỤNG &amp; ĐỒNG BỘ CSDL</div>
-                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Áp dụng &amp; Đánh số lại ngay</strong>. Bản đồ và danh sách cây sẽ được sắp xếp thẳng hàng, tăng dần từ 1  N đẹp mắt!</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="refresh-cw" class="lucide-xs"></i> BƯỚC 3: ÁP DỤNG &amp; ĐỒNG BỘ CSDL</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Bấm <strong>Áp dụng &amp; Đánh số lại ngay</strong>. Bản đồ và danh sách cây sẽ được sắp xếp thẳng hàng, tăng dần từ 1 &rarr; N đẹp mắt!</div>
                 </div>
               </div>
             </div>
@@ -3028,16 +3028,61 @@
 
               <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;">BƯỚC 1: ĐỌC ĐỘ ẨM ĐẤT ĐA TẦNG</div>
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="droplets" class="lucide-xs"></i> BƯỚC 1: ĐỌC ĐỘ ẨM ĐẤT ĐA TẦNG</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Xem độ ẩm tầng 10cm, 20cm (rễ tơ hút nước) và 50cm. Giữ độ ẩm rễ 20cm từ <strong>65% - 75%</strong> là lý tưởng.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;">BƯỚC 2: KIỂM TRA ĐỘ PH &amp; EC</div>
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="gauge" class="lucide-xs"></i> BƯỚC 2: KIỂM TRA ĐỘ PH &amp; EC</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">pH đất chuẩn từ <strong>5.5 - 6.8</strong>. Độ dẫn điện EC từ <strong>1.0 - 1.8 mS/cm</strong> thể hiện mức độ dinh dưỡng đất.</div>
                 </div>
                 <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
-                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;">BƯỚC 3: KẾT HỢP DỰ BÁO MƯA 6 NGÀY</div>
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="cloud-rain" class="lucide-xs"></i> BƯỚC 3: KẾT HỢP DỰ BÁO MƯA 6 NGÀY</div>
                   <div style="font-size:13px; color:#334155; line-height:1.5;">Xem bảng dự báo 6 ngày: Nếu ngày mai có <strong>mưa dông &gt; 70%</strong>, tuyệt đối hoãn phun thuốc sâu và hoãn bón phân để tránh bị mưa rửa trôi lãng phí!</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HƯỚNG DẪN 11: LIVE API CHUẨN QUỐC TẾ (GALLAGHER 8.30, ISO/IEC 27001 & TÍN CHỈ CARBON MRV) -->
+            <div class="guide-card guide-searchable-card" data-guide-topic="iot" style="background:#ffffff; border:1.5px solid #a7f3d0; border-radius:18px; padding:24px; box-shadow:0 4px 16px rgba(5,150,105,0.06);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+                <h3 style="font-size:17px; color:#047857; margin:0; font-weight:800; display:flex; align-items:center; gap:10px;">
+                  <span style="background:#059669; color:white; width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">11</span>
+                  Hướng dẫn Sử dụng &amp; Tích hợp Live API Chuẩn Quốc tế (Gallagher 8.30, ISO/IEC 27001 &amp; Tín chỉ Carbon MRV)
+                </h3>
+                <span style="background:#ecfdf5; color:#047857; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0;">
+                  <i data-lucide="webhook" class="lucide-sm"></i> Live Real-time JSON API V2.0
+                </span>
+              </div>
+
+              <div style="background:#f0fdf4; border:1.5px dashed #059669; border-radius:14px; padding:16px; margin-bottom:20px;">
+                <div style="font-size:12.5px; font-weight:800; color:#065f46; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+                  <i data-lucide="network" class="lucide-sm"></i> SƠ ĐỒ KIẾN TRÚC ĐỒNG BỘ DỮ LIỆU THỜI GIAN THỰC CHUẨN QUỐC TẾ:
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px; -webkit-overflow-scrolling:touch;">
+                  <div style="background:#10b981; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="webhook" class="lucide-sm"></i> LẤY LINK LIVE API</div>
+                  <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#ffffff; border:1.5px solid #0284c7; color:#0369a1; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="refresh-cw" class="lucide-sm"></i> Delta Sync (?updated_after)</div>
+                  <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#ffffff; border:1.5px solid #7c3aed; color:#6d28d9; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="filter" class="lucide-sm"></i> Chọn khối (?fields=...)</div>
+                  <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#ffffff; border:1.5px solid #d97706; color:#b45309; padding:8px 12px; border-radius:10px; font-size:11.5px; font-weight:700; white-space:nowrap;"><i data-lucide="lock" class="lucide-sm"></i> Chuỗi băm ISO 27001 SHA-256</div>
+                  <i data-lucide="arrow-right" class="lucide-sm" style="color:#059669; font-size:12px;"></i>
+                  <div style="background:#059669; color:white; padding:8px 12px; border-radius:20px; font-size:11.5px; font-weight:800; white-space:nowrap;"><i data-lucide="leaf" class="lucide-sm"></i> TÍN CHỈ CARBON (tCO2e)</div>
+                </div>
+              </div>
+
+              <div style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px; display:grid;">
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#059669; margin-bottom:4px;"><i data-lucide="copy" class="lucide-xs"></i> BƯỚC 1: LẤY ĐƯỜNG DẪN LIVE API</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Vào <strong>Bản đồ Vườn</strong> <i data-lucide="chevron-right" class="lucide-xs"></i> Bấm nút <strong>Live API JSON (Quốc tế)</strong> để sao chép đường dẫn kèm khóa <code>api_key</code> bảo mật.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#0284c7; margin-bottom:4px;"><i data-lucide="sliders" class="lucide-xs"></i> BƯỚC 2: TRUY VẤN THÔNG MINH</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Hỗ trợ đồng bộ gia tăng <code>?updated_after=ISO_TIME</code>, chọn khối <code>?fields=...</code> và ẩn chi phí nhạy cảm với <code>?role=care_worker</code>.</div>
+                </div>
+                <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px;">
+                  <div style="font-size:12px; font-weight:800; color:#d97706; margin-bottom:4px;"><i data-lucide="shield-check" class="lucide-xs"></i> BƯỚC 3: KIỂM TOÁN &amp; CARBON MRV</div>
+                  <div style="font-size:13px; color:#334155; line-height:1.5;">Khối thứ 7 trả về chứng thực chuỗi băm bất biến <code>VERIFIED_IMMUTABLE</code> và sản lượng <strong>Tín chỉ Carbon ròng (tCO2e)</strong> theo chuẩn IPCC.</div>
                 </div>
               </div>
             </div>
@@ -3060,14 +3105,14 @@
                   <i data-lucide="history" class="lucide-sm"></i>
                 </div>
                 <div style="flex:1;">
-                  <div style="display:inline-block; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
-                     NGUYÊN TẮC VÀNG TRONG CANH TÁC THỰC ĐỊA
+                  <div style="display:inline-flex; align-items:center; gap:5px; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+                    <i data-lucide="award" class="lucide-xs"></i> NGUYÊN TẮC VÀNG TRONG CANH TÁC THỰC ĐỊA
                   </div>
                   <h3 style="font-size:18px; font-weight:900; margin:0 0 6px 0; color:#ffffff;">
                     KHOẢNG CÁCH 10 ~ 15 NGÀY GIỮA THUỐC BVTV &amp; CHẾ PHẨM VI SINH
                   </h3>
                   <p style="margin:0; font-size:13.5px; color:#cbd5e1; line-height:1.6;">
-                    Khi sử dụng <strong>Thuốc Bảo Vệ Thực Vật (Hóa học)</strong>  <strong>BẮT BUỘC cách 10 đến 15 ngày sau</strong> mới được sử dụng <strong>Chế Phẩm Vi Sinh</strong> (và ngược lại) để đảm bảo vi sinh vật có lợi không bị tiêu diệt.
+                    Khi sử dụng <strong>Thuốc Bảo Vệ Thực Vật (Hóa học)</strong> <i data-lucide="arrow-right" class="lucide-xs"></i> <strong>BẮT BUỘC cách 10 đến 15 ngày sau</strong> mới được sử dụng <strong>Chế Phẩm Vi Sinh</strong> (và ngược lại) để đảm bảo vi sinh vật có lợi không bị tiêu diệt.
                   </p>
                 </div>
               </div>
