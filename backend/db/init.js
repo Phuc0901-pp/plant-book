@@ -789,6 +789,8 @@ async function initDB() {
     try {
       await client.query(`
         ALTER TABLE users ADD COLUMN IF NOT EXISTS sub_role VARCHAR(50) DEFAULT 'farm_owner';
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS parent_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_view_finance BOOLEAN DEFAULT true;
         ALTER TABLE farms ADD COLUMN IF NOT EXISTS global_did VARCHAR(140);
         ALTER TABLE farms ADD COLUMN IF NOT EXISTS api_enabled BOOLEAN DEFAULT true;
         ALTER TABLE farms ADD COLUMN IF NOT EXISTS api_key_version INTEGER DEFAULT 1;

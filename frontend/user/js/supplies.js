@@ -74,6 +74,12 @@ let cachedUsageLogs = [];
 
 // ─── Formatting helpers ──────────────────────────────────────────
 function formatVND(amount) {
+  try {
+    const u = window._currentUserProfile || JSON.parse(localStorage.getItem('user') || '{}');
+    if (window._isFinanceRedactedForCurrentUser || (u && u.role !== 'admin' && (u.allow_view_finance === false || ['care_worker', 'auditor_readonly'].includes(u.sub_role)))) {
+      return 'Đã ẩn (Redacted)';
+    }
+  } catch (_) {}
   const val = parseFloat(amount) || 0;
   return new Intl.NumberFormat('vi-VN').format(Math.round(val)) + ' VNĐ';
 }

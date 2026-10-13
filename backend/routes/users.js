@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
@@ -6,9 +6,8 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { delCacheByPattern } = require('../config/redis');
 
-// Apply auth and admin check to all routes in this file
+// Apply auth to all routes in this file
 router.use(auth);
-router.use(admin);
 
 /**
  * ISO/IEC 11558 & ISO 3309 Standard 8-Digit Obfuscation Hash Generator
@@ -20,11 +19,344 @@ function generateIsoPublicId(role, numId) {
   return `${prefix}-${val}`;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FARMER SUB-ACCOUNT RBAC API (QUẢN LÝ & PHÂN QUYỀN TÀI KHOẢN DƯỚI QUYỀN CHỦ VƯỜN)
+// Cho phép Chủ trang trại (farm_owner) tạo & phân quyền:
+// - manager (Quản đốc / Kỹ sư trưởng)
+// - care_worker (Nhân công chăm sóc - Tự động ẩn giá vật tư, chi phí & doanh thu)
+// - auditor_readonly (Kiểm định viên VietGAP/GlobalGAP - Chỉ xem kỹ thuật, ẩn tài chính)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function ensureFarmOwnerPrivilege(req, res, next) {
+  const subRole = req.user.sub_role || 'farm_owner';
+  if (req.user.role !== 'admin' && (req.user.parent_user_id || ['care_worker', 'auditor_readonly'].includes(subRole))) {
+    return res.status(403).json({
+      error: 'Chỉ Chủ trang trại (Owner) mới có quyền quản lý và phân quyền tài khoản nhân sự dưới quyền.'
+    });
+  }
+  next();
+}
+
+// GET /api/users/my-team - Lấy danh sách tài khoản nhân sự dưới quyền của Chủ vườn
+router.get('/my-team', async (req, res) => {
+  try {
+    const ownerId = req.user.parent_user_id || req.user.id;
+
+    // Lấy danh sách trang trại của chủ vườn
+    const farmsRes = await pool.query(
+      `SELECT id, name, puc_code, global_did
+       FROM farms
+       WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)
+       ORDER BY id ASC`,
+      [ownerId, req.user.farm_id || null]
+    );
+    const farmIds = farmsRes.rows.map(f => f.id);
+
+    // Lấy danh sách tài khoản cấp dưới
+    const teamRes = await pool.query(
+      `SELECT u.id, u.email, u.phone, u.full_name, u.role,
+              COALESCE(u.sub_role, 'care_worker') as sub_role,
+              u.parent_user_id, u.farm_id, f.name as farm_name,
+              u.view_plants_scope, u.allow_view_supplies, u.allow_shared_history,
+              u.allow_view_finance, u.approved, u.is_online, u.last_active_at, u.created_at,
+              COALESCE((
+                SELECT json_agg(p.id) FROM plants p WHERE p.assigned_to_user_id = u.id
+              ), '[]'::json) as assigned_plant_ids
+       FROM users u
+       LEFT JOIN farms f ON f.id = u.farm_id
+       WHERE u.id <> $1
+         AND u.role <> 'admin'
+         AND (
+           u.parent_user_id = $1
+           OR (u.farm_id IS NOT NULL AND u.farm_id = ANY($2::int[]))
+         )
+       ORDER BY u.created_at DESC, u.id DESC`,
+      [ownerId, farmIds.length > 0 ? farmIds : [0]]
+    );
+
+    const members = teamRes.rows.map(u => {
+      const sRole = u.sub_role || 'care_worker';
+      const isRestricted = ['care_worker', 'auditor_readonly'].includes(sRole);
+      return {
+        ...u,
+        public_id: generateIsoPublicId(u.role, u.id),
+        allow_view_finance: isRestricted ? (u.allow_view_finance === true) : (u.allow_view_finance !== false)
+      };
+    });
+
+    res.json({
+      success: true,
+      owner_id: ownerId,
+      my_sub_role: req.user.sub_role || 'farm_owner',
+      can_manage_team: !req.user.parent_user_id && !['care_worker', 'auditor_readonly'].includes(req.user.sub_role || 'farm_owner'),
+      farms: farmsRes.rows,
+      members
+    });
+  } catch (err) {
+    console.error('Error fetching farmer team:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải danh sách nhân sự dưới quyền.' });
+  }
+});
+
+// POST /api/users/my-team - Chủ vườn tạo tài khoản nhân sự dưới quyền
+router.post('/my-team', ensureFarmOwnerPrivilege, async (req, res) => {
+  try {
+    const {
+      full_name, phone, email, password,
+      sub_role = 'care_worker',
+      farm_id,
+      view_plants_scope = 'all',
+      allow_view_supplies = true,
+      allow_view_finance,
+      assigned_plant_ids = []
+    } = req.body;
+
+    if (!full_name || !full_name.trim() || !password || !password.trim()) {
+      return res.status(400).json({ error: 'Vui lòng nhập đầy đủ Họ tên nhân sự và Mật khẩu đăng nhập.' });
+    }
+
+    const validSubRoles = ['manager', 'care_worker', 'auditor_readonly'];
+    const cleanSubRole = validSubRoles.includes(sub_role) ? sub_role : 'care_worker';
+
+    const trimmedPhone = phone && phone.trim() ? phone.trim() : null;
+    let trimmedEmail = email && email.trim() ? email.trim().toLowerCase() : null;
+    if (!trimmedPhone && !trimmedEmail) {
+      return res.status(400).json({ error: 'Vui lòng nhập Số điện thoại hoặc Email để nhân sự dùng đăng nhập.' });
+    }
+    if (!trimmedEmail && trimmedPhone) {
+      trimmedEmail = `${trimmedPhone.replace(/[^0-9a-zA-Z]/g, '')}@staff.tanbaocorp.vn`;
+    }
+
+    // Kiểm tra trùng Email / SĐT
+    if (trimmedEmail) {
+      const exEmail = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [trimmedEmail]);
+      if (exEmail.rows.length > 0) {
+        return res.status(400).json({ error: 'Email đăng nhập này đã tồn tại trên hệ thống.' });
+      }
+    }
+    if (trimmedPhone) {
+      const exPhone = await pool.query('SELECT id FROM users WHERE phone = $1', [trimmedPhone]);
+      if (exPhone.rows.length > 0) {
+        return res.status(400).json({ error: 'Số điện thoại này đã được đăng ký bởi tài khoản khác.' });
+      }
+    }
+
+    // Xác định farm_id hợp lệ của chủ vườn
+    const farmsRes = await pool.query(
+      `SELECT id FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE) ORDER BY id ASC`,
+      [req.user.id, req.user.farm_id || null]
+    );
+    const ownedFarmIds = farmsRes.rows.map(f => f.id);
+    let targetFarmId = farm_id ? parseInt(farm_id) : (req.user.farm_id || ownedFarmIds[0] || null);
+    if (targetFarmId && req.user.role !== 'admin' && !ownedFarmIds.includes(targetFarmId)) {
+      targetFarmId = req.user.farm_id || ownedFarmIds[0] || null;
+    }
+
+    // Tự động ẩn tài chính đối với care_worker và auditor_readonly nếu không bật rõ ràng
+    const financeAllowed = allow_view_finance !== undefined
+      ? Boolean(allow_view_finance)
+      : (cleanSubRole === 'manager');
+
+    const hash = await bcrypt.hash(password.trim(), 12);
+    const insertRes = await pool.query(
+      `INSERT INTO users (
+        email, phone, password_hash, full_name, role, sub_role, parent_user_id,
+        farm_id, approved, view_plants_scope, allow_shared_history, allow_view_supplies, allow_view_finance
+      )
+      VALUES ($1, $2, $3, $4, 'user', $5, $6, $7, true, $8, true, $9, $10)
+      RETURNING id, email, phone, full_name, role, sub_role, parent_user_id, farm_id,
+                view_plants_scope, allow_view_supplies, allow_view_finance, approved, created_at`,
+      [
+        trimmedEmail,
+        trimmedPhone,
+        hash,
+        full_name.trim(),
+        cleanSubRole,
+        req.user.id,
+        targetFarmId,
+        view_plants_scope === 'assigned' ? 'assigned' : 'all',
+        allow_view_supplies !== false,
+        financeAllowed
+      ]
+    );
+
+    const newMember = insertRes.rows[0];
+
+    // Giao cây cụ thể nếu có
+    if (Array.isArray(assigned_plant_ids) && assigned_plant_ids.length > 0) {
+      const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
+      if (validIds.length > 0) {
+        await pool.query(
+          `UPDATE plants SET assigned_to_user_id = $1 WHERE id = ANY($2::int[]) AND farm_id = ANY($3::int[])`,
+          [newMember.id, validIds, ownedFarmIds.length > 0 ? ownedFarmIds : [targetFarmId || 0]]
+        );
+      }
+    }
+
+    try { await delCacheByPattern('users_'); } catch (_) {}
+
+    res.status(201).json({
+      success: true,
+      message: `Đã tạo tài khoản nhân sự "${newMember.full_name}" (${cleanSubRole}) thành công!`,
+      member: {
+        ...newMember,
+        public_id: generateIsoPublicId('user', newMember.id),
+        assigned_plant_ids: Array.isArray(assigned_plant_ids) ? assigned_plant_ids.map(Number).filter(Boolean) : []
+      }
+    });
+  } catch (err) {
+    console.error('Error creating sub-account:', err);
+    res.status(500).json({ error: 'Lỗi server khi tạo tài khoản nhân sự: ' + err.message });
+  }
+});
+
+// PUT /api/users/my-team/:id - Chủ vườn cập nhật phân quyền / mật khẩu tài khoản cấp dưới
+router.put('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id);
+    const {
+      full_name, phone, email, password,
+      sub_role, farm_id,
+      view_plants_scope, allow_view_supplies, allow_view_finance,
+      approved, assigned_plant_ids
+    } = req.body;
+
+    // Kiểm tra tài khoản cấp dưới có thuộc quyền quản lý của Chủ vườn này không
+    const checkRes = await pool.query(
+      `SELECT * FROM users WHERE id = $1 AND role <> 'admin' AND (
+         parent_user_id = $2
+         OR farm_id IN (SELECT id FROM farms WHERE user_id = $2 OR id = COALESCE($3, 0))
+       )`,
+      [memberId, req.user.id, req.user.farm_id || null]
+    );
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản nhân sự hoặc bạn không có quyền chỉnh sửa.' });
+    }
+    const existing = checkRes.rows[0];
+
+    const validSubRoles = ['manager', 'care_worker', 'auditor_readonly'];
+    const nextSubRole = (sub_role && validSubRoles.includes(sub_role)) ? sub_role : (existing.sub_role || 'care_worker');
+    const nextFinance = allow_view_finance !== undefined
+      ? Boolean(allow_view_finance)
+      : (['care_worker', 'auditor_readonly'].includes(nextSubRole) ? false : Boolean(existing.allow_view_finance));
+
+    const nextName = full_name && full_name.trim() ? full_name.trim() : existing.full_name;
+    const nextPhone = phone !== undefined ? (phone && phone.trim() ? phone.trim() : null) : existing.phone;
+    const nextEmail = email !== undefined ? (email && email.trim() ? email.trim().toLowerCase() : existing.email) : existing.email;
+    const nextScope = view_plants_scope ? (view_plants_scope === 'assigned' ? 'assigned' : 'all') : (existing.view_plants_scope || 'all');
+    const nextSupplies = allow_view_supplies !== undefined ? Boolean(allow_view_supplies) : (existing.allow_view_supplies !== false);
+    const nextApproved = approved !== undefined ? Boolean(approved) : (existing.approved !== false);
+    const nextFarmId = farm_id ? parseInt(farm_id) : existing.farm_id;
+
+    if (nextPhone) {
+      const dupPhone = await pool.query('SELECT id FROM users WHERE phone = $1 AND id <> $2', [nextPhone, memberId]);
+      if (dupPhone.rows.length > 0) {
+        return res.status(400).json({ error: 'Số điện thoại đã được sử dụng bởi tài khoản khác.' });
+      }
+    }
+
+    let updateQuery = `
+      UPDATE users
+      SET full_name = $1, phone = $2, email = $3, sub_role = $4, farm_id = $5,
+          view_plants_scope = $6, allow_view_supplies = $7, allow_view_finance = $8,
+          approved = $9, parent_user_id = COALESCE(parent_user_id, $10), updated_at = NOW()
+    `;
+    const params = [
+      nextName, nextPhone, nextEmail, nextSubRole, nextFarmId,
+      nextScope, nextSupplies, nextFinance, nextApproved, req.user.id
+    ];
+
+    if (password && password.trim().length > 0) {
+      const hash = await bcrypt.hash(password.trim(), 12);
+      updateQuery += `, password_hash = $11 WHERE id = $12 RETURNING *`;
+      params.push(hash, memberId);
+    } else {
+      updateQuery += ` WHERE id = $11 RETURNING *`;
+      params.push(memberId);
+    }
+
+    const updatedRes = await pool.query(updateQuery, params);
+    const updatedUser = updatedRes.rows[0];
+
+    if (Array.isArray(assigned_plant_ids)) {
+      await pool.query('UPDATE plants SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1', [memberId]);
+      const validIds = assigned_plant_ids.map(x => parseInt(x)).filter(x => !isNaN(x));
+      if (validIds.length > 0) {
+        await pool.query('UPDATE plants SET assigned_to_user_id = $1 WHERE id = ANY($2::int[])', [memberId, validIds]);
+      }
+    }
+
+    try { await delCacheByPattern('users_'); } catch (_) {}
+
+    res.json({
+      success: true,
+      message: `Đã cập nhật phân quyền cho "${updatedUser.full_name}" thành công!`,
+      member: {
+        id: updatedUser.id,
+        public_id: generateIsoPublicId('user', updatedUser.id),
+        full_name: updatedUser.full_name,
+        phone: updatedUser.phone,
+        email: updatedUser.email,
+        sub_role: updatedUser.sub_role,
+        farm_id: updatedUser.farm_id,
+        view_plants_scope: updatedUser.view_plants_scope,
+        allow_view_supplies: updatedUser.allow_view_supplies,
+        allow_view_finance: updatedUser.allow_view_finance,
+        approved: updatedUser.approved
+      }
+    });
+  } catch (err) {
+    console.error('Error updating sub-account:', err);
+    res.status(500).json({ error: 'Lỗi server khi cập nhật nhân sự: ' + err.message });
+  }
+});
+
+// DELETE /api/users/my-team/:id - Chủ vườn xóa tài khoản nhân sự cấp dưới
+router.delete('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id);
+    if (memberId === req.user.id) {
+      return res.status(400).json({ error: 'Không thể tự xóa tài khoản Chủ vườn.' });
+    }
+
+    const checkRes = await pool.query(
+      `SELECT * FROM users WHERE id = $1 AND role <> 'admin' AND (
+         parent_user_id = $2
+         OR farm_id IN (SELECT id FROM farms WHERE user_id = $2 OR id = COALESCE($3, 0))
+       )`,
+      [memberId, req.user.id, req.user.farm_id || null]
+    );
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản nhân sự thuộc quyền quản lý của bạn.' });
+    }
+    const target = checkRes.rows[0];
+
+    await pool.query('UPDATE plants SET assigned_to_user_id = NULL WHERE assigned_to_user_id = $1', [memberId]);
+    await pool.query('UPDATE plant_logs SET created_by = NULL WHERE created_by = $1', [memberId]);
+    await pool.query('DELETE FROM users WHERE id = $1', [memberId]);
+
+    try { await delCacheByPattern('users_'); } catch (_) {}
+
+    res.json({
+      success: true,
+      message: `Đã xóa tài khoản nhân sự "${target.full_name}" khỏi trang trại.`
+    });
+  } catch (err) {
+    console.error('Error deleting sub-account:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa tài khoản nhân sự: ' + err.message });
+  }
+});
+
+// Apply admin check to all remaining routes in this file
+router.use(admin);
+
 // GET /api/users - List all users (with assigned farm info & permissions & assigned plants)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.phone, u.address, u.city, u.country, u.full_name, u.role, u.is_online, u.last_active_at, u.created_at,
+      `SELECT u.id, u.email, u.phone, u.address, u.city, u.country, u.full_name, u.role,
+              COALESCE(u.sub_role, 'farm_owner') as sub_role, u.parent_user_id, u.allow_view_finance,
+              u.is_online, u.last_active_at, u.created_at,
               u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies,
               u.account_tier, u.tier_expires_at, u.tier_admin_note,
               COALESCE(u.farm_id, f_legacy.id) as farm_id,

@@ -132,15 +132,16 @@ router.get('/', auth, async (req, res) => {
       }
     } else {
 
-      // Non-admin farmer
+      // Non-admin farmer or sub-account (care_worker / manager / auditor_readonly)
       query += ` AND (
         s.user_id = $${idx}
+        OR s.user_id = COALESCE($${idx + 1}::int, 0)
         OR s.user_id IN (SELECT user_id FROM farms WHERE id = (SELECT farm_id FROM users WHERE id = $${idx}))
         OR s.user_id IN (SELECT id FROM users WHERE farm_id IN (SELECT id FROM farms WHERE user_id = $${idx}))
-        OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${idx} OR id = (SELECT farm_id FROM users WHERE id = $${idx}))
+        OR s.farm_id IN (SELECT id FROM farms WHERE user_id = $${idx} OR user_id = COALESCE($${idx + 1}::int, 0) OR id = (SELECT farm_id FROM users WHERE id = $${idx}))
       )`;
-      params.push(req.user.id);
-      idx++;
+      params.push(req.user.id, req.user.parent_user_id || null);
+      idx += 2;
     }
 
     if (category) {
@@ -157,7 +158,25 @@ router.get('/', auth, async (req, res) => {
 
     query += ` GROUP BY s.id, u.id ORDER BY s.category ASC, s.name ASC`;
     const result = await pool.query(query, params);
-    res.json(result.rows);
+
+    const hideFinance = req.user.role !== 'admin' && (
+      req.user.allow_view_finance === false ||
+      req.query.role === 'care_worker' ||
+      req.query.role === 'auditor_readonly'
+    );
+
+    const rows = hideFinance
+      ? result.rows.map(r => ({
+          ...r,
+          package_price: 0,
+          unit_price: 0,
+          unit_price_small: 0,
+          total_spent: 0,
+          finance_redacted: true
+        }))
+      : result.rows;
+
+    res.json(rows);
   } catch (err) {
     console.error('Error fetching supplies:', err);
     res.status(500).json({ error: 'Lỗi server khi tải danh sách vật tư.' });
@@ -626,10 +645,10 @@ router.get('/usages', auth, async (req, res) => {
       JOIN supplies s ON su.supply_id = s.id
       LEFT JOIN farms f ON su.farm_id = f.id
       LEFT JOIN plants p ON su.plant_id = p.id
-      WHERE su.user_id = $1
+      WHERE (su.user_id = $1 OR su.user_id = COALESCE($2::int, 0))
     `;
-    const params = [targetUserId];
-    let idx = 2;
+    const params = [targetUserId, req.user.parent_user_id || null];
+    let idx = 3;
 
     if (farm_id) {
       query += ` AND su.farm_id = $${idx}`;
@@ -650,7 +669,20 @@ router.get('/usages', auth, async (req, res) => {
     }
 
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    const hideFinance = req.user.role !== 'admin' && (
+      req.user.allow_view_finance === false ||
+      req.query.role === 'care_worker' ||
+      req.query.role === 'auditor_readonly'
+    );
+    const rows = hideFinance
+      ? result.rows.map(r => ({
+          ...r,
+          unit_price: 0,
+          total_cost: 0,
+          finance_redacted: true
+        }))
+      : result.rows;
+    res.json(rows);
   } catch (err) {
     console.error('Error fetching supply usages:', err);
     res.status(500).json({ error: 'Lỗi server khi tải nhật ký tiêu hao.' });

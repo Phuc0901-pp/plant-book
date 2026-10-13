@@ -65,11 +65,17 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    const effectiveSubRole = user.sub_role || 'farm_owner';
+    const isRestrictedFinance = ['care_worker', 'auditor_readonly'].includes(effectiveSubRole);
+    const allowViewFinance = isRestrictedFinance ? (user.allow_view_finance === true) : (user.allow_view_finance !== false);
+
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
         role: user.role,
+        sub_role: effectiveSubRole,
+        parent_user_id: user.parent_user_id || null,
         farm_id: user.farm_id,
         account_tier: user.account_tier || 'normal',
         tier_expires_at: user.tier_expires_at
@@ -97,12 +103,12 @@ router.post('/login', async (req, res) => {
       broadcast('user_status_changed', { id: user.id, is_online: true, last_active_at: new Date() });
     }
 
-    // Query all farm IDs owned by or assigned to this user
+    // Query all farm IDs owned by or assigned to this user (or parent owner)
     let ownedFarmIds = [];
     try {
       const farmsRes = await pool.query(
-        `SELECT id FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
-        [user.id, user.farm_id || null]
+        `SELECT id FROM farms WHERE (user_id = $1 OR user_id = COALESCE($3, 0) OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
+        [user.id, user.farm_id || null, user.parent_user_id || null]
       );
       ownedFarmIds = farmsRes.rows.map(r => r.id);
     } catch (_) {}
@@ -119,6 +125,12 @@ router.post('/login', async (req, res) => {
         encrypted_user_id: encUserId,
         email: user.email,
         role: user.role,
+        sub_role: effectiveSubRole,
+        parent_user_id: user.parent_user_id || null,
+        allow_view_finance: allowViewFinance,
+        view_plants_scope: user.view_plants_scope || 'all',
+        allow_view_supplies: user.allow_view_supplies !== false,
+        allow_shared_history: user.allow_shared_history !== false,
         farm_id: primaryFarmId,
         owned_farm_ids: ownedFarmIds,
         name: user.full_name,
@@ -463,17 +475,27 @@ router.post('/logout', require('../middleware/auth'), async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, full_name, role, avatar_url, phone, address, city, country, gender, created_at, account_tier, tier_expires_at, tier_admin_note, farm_id FROM users WHERE id=$1',
+      `SELECT id, email, full_name, role, sub_role, parent_user_id, allow_view_finance,
+              view_plants_scope, allow_view_supplies, allow_shared_history,
+              avatar_url, phone, address, city, country, gender, created_at,
+              account_tier, tier_expires_at, tier_admin_note, farm_id
+       FROM users WHERE id=$1`,
       [req.user.id]
     );
     const u = result.rows[0];
     if (u) {
       u.public_id = generateIsoPublicId(u.role, u.id);
       u.encrypted_user_id = encodeUserId(u.id);
+      u.sub_role = u.sub_role || 'farm_owner';
+      const isRestrictedFinance = ['care_worker', 'auditor_readonly'].includes(u.sub_role);
+      u.allow_view_finance = isRestrictedFinance ? (u.allow_view_finance === true) : (u.allow_view_finance !== false);
+      u.view_plants_scope = u.view_plants_scope || 'all';
+      u.allow_view_supplies = u.allow_view_supplies !== false;
+      u.allow_shared_history = u.allow_shared_history !== false;
       try {
         const farmsRes = await pool.query(
-          `SELECT id FROM farms WHERE (user_id = $1 OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
-          [u.id, u.farm_id || null]
+          `SELECT id FROM farms WHERE (user_id = $1 OR user_id = COALESCE($3, 0) OR id = COALESCE($2, 0)) AND (is_deleted IS NOT TRUE)`,
+          [u.id, u.farm_id || null, u.parent_user_id || null]
         );
         u.owned_farm_ids = farmsRes.rows.map(r => r.id);
         if (!u.farm_id && u.owned_farm_ids.length > 0) {

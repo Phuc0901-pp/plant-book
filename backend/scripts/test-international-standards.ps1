@@ -637,6 +637,20 @@ if (Test-Path $plantsJsPath) {
     Record-Test -Category "ISO/IEC 27001 & NFC" -TestName "Real-time Log SHA-256 Hash-Chain Sealer & POST /api/plants/:id/nfc-reissue Endpoint" -Passed $hasSealChain
 }
 
+$usersRoutePath = Join-Path $root "backend\routes\users.js"
+$userSettingsJsPath = Join-Path $root "frontend\user\js\modules\settings.js"
+if ((Test-Path $usersRoutePath) -and (Test-Path $userSettingsJsPath) -and (Test-Path $userHtmlPath)) {
+    $usersRouteContent = [System.IO.File]::ReadAllText($usersRoutePath, [System.Text.Encoding]::UTF8)
+    $userSettingsContent = [System.IO.File]::ReadAllText($userSettingsJsPath, [System.Text.Encoding]::UTF8)
+    $userHtmlContent = [System.IO.File]::ReadAllText($userHtmlPath, [System.Text.Encoding]::UTF8)
+
+    $hasMyTeamApi = $usersRouteContent.Contains("router.get('/my-team'") -and $usersRouteContent.Contains("router.post('/my-team'") -and $usersRouteContent.Contains("ensureFarmOwnerPrivilege")
+    $hasFarmerTeamUi = $userHtmlContent.Contains("subtab-pane-team") -and $userHtmlContent.Contains("farmer-team-member-modal") -and $userSettingsContent.Contains("loadFarmerTeamRbac") -and $userSettingsContent.Contains("submitFarmerTeamMemberForm")
+
+    Record-Test -Category "Farmer Sub-Account RBAC" -TestName "Farmer Team API (/api/users/my-team CRUD & Sub-Role Finance Redaction)" -Passed $hasMyTeamApi
+    Record-Test -Category "Farmer Sub-Account RBAC" -TestName "Farmer Portal UI Team RBAC Management (manager, care_worker, auditor_readonly)" -Passed $hasFarmerTeamUi
+}
+
 # ══════════════════════════════════════════════════════════════════════════
 # -- FINAL QA / QC SUMMARY REPORT --
 # ══════════════════════════════════════════════════════════════════════════

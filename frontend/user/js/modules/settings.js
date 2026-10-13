@@ -13,6 +13,8 @@ let _currentRules = [];
 export async function loadUserSettings() {
   try {
     const user = await api('/auth/me');
+    window._currentUserProfile = user;
+    applySubRoleUiRestrictions(user);
     _populateProfileForm(user);
     _renderAvatar(user.avatar_url, user.full_name);
     _bindEvents();
@@ -25,37 +27,54 @@ export async function loadUserSettings() {
 // ── Sub-Tab Switching ──────────────────────────────────────────
 export function switchSettingsSubtab(subtab) {
   const paneThresholds = document.getElementById('subtab-pane-thresholds');
+  const paneTeam = document.getElementById('subtab-pane-team');
   const paneProfile = document.getElementById('subtab-pane-profile');
   const btnThresholds = document.getElementById('subtab-btn-thresholds');
+  const btnTeam = document.getElementById('subtab-btn-team-rbac');
   const btnProfile = document.getElementById('subtab-btn-profile');
 
   if (!paneThresholds || !paneProfile || !btnThresholds || !btnProfile) return;
 
+  const setBtnState = (btn, active) => {
+    if (!btn) return;
+    if (active) {
+      btn.classList.add('active');
+      btn.style.color = '#059669';
+      btn.style.borderBottomColor = '#059669';
+      btn.style.fontWeight = '800';
+    } else {
+      btn.classList.remove('active');
+      btn.style.color = '#64748b';
+      btn.style.borderBottomColor = 'transparent';
+      btn.style.fontWeight = '700';
+    }
+  };
+
   if (subtab === 'profile') {
     paneThresholds.style.display = 'none';
+    if (paneTeam) paneTeam.style.display = 'none';
     paneProfile.style.display = 'block';
-
-    btnThresholds.classList.remove('active');
-    btnThresholds.style.color = '#64748b';
-    btnThresholds.style.borderBottomColor = 'transparent';
-
-    btnProfile.classList.add('active');
-    btnProfile.style.color = '#059669';
-    btnProfile.style.borderBottomColor = '#059669';
+    setBtnState(btnThresholds, false);
+    setBtnState(btnTeam, false);
+    setBtnState(btnProfile, true);
+  } else if (subtab === 'team') {
+    paneThresholds.style.display = 'none';
+    if (paneTeam) paneTeam.style.display = 'block';
+    paneProfile.style.display = 'none';
+    setBtnState(btnThresholds, false);
+    setBtnState(btnTeam, true);
+    setBtnState(btnProfile, false);
+    loadFarmerTeamRbac();
   } else {
     paneThresholds.style.display = 'block';
+    if (paneTeam) paneTeam.style.display = 'none';
     paneProfile.style.display = 'none';
-
-    btnProfile.classList.remove('active');
-    btnProfile.style.color = '#64748b';
-    btnProfile.style.borderBottomColor = 'transparent';
-
-    btnThresholds.classList.add('active');
-    btnThresholds.style.color = '#059669';
-    btnThresholds.style.borderBottomColor = '#059669';
-
+    setBtnState(btnThresholds, true);
+    setBtnState(btnTeam, false);
+    setBtnState(btnProfile, false);
     loadThresholdRules();
   }
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
 window.switchSettingsSubtab = switchSettingsSubtab;
 
@@ -1101,3 +1120,436 @@ function _getVal(id) {
   const el = document.getElementById(id);
   return el ? el.value.trim() : '';
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FARMER SUB-ACCOUNT RBAC ENGINE (QUẢN LÝ & PHÂN QUYỀN TÀI KHOẢN DƯỚI QUYỀN NÔNG HỘ)
+// Chuẩn Gallagher 8.30 Field Privilege · 100% Lucide Icons
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _cachedTeamData = { farms: [], members: [], can_manage_team: true };
+
+const SUB_ROLE_META = {
+  farm_owner: {
+    label: 'Chủ Trang Trại (Owner)',
+    icon: 'crown',
+    bg: '#ecfdf5',
+    border: '#6ee7b7',
+    color: '#065f46'
+  },
+  manager: {
+    label: 'Quản Đốc / Kỹ Sư (manager)',
+    icon: 'user-check',
+    bg: '#f0fdf4',
+    border: '#86efac',
+    color: '#166534'
+  },
+  care_worker: {
+    label: 'Nhân Công Chăm Sóc (care_worker)',
+    icon: 'eye-off',
+    bg: '#fffbeb',
+    border: '#fcd34d',
+    color: '#b45309'
+  },
+  auditor_readonly: {
+    label: 'Kiểm Định Viên VietGAP (auditor_readonly)',
+    icon: 'shield',
+    bg: '#eff6ff',
+    border: '#93c5fd',
+    color: '#1e40af'
+  }
+};
+
+export function applySubRoleUiRestrictions(user) {
+  if (!user) return;
+  const subRole = user.sub_role || 'farm_owner';
+  const hideFinance = user.role !== 'admin' && (
+    user.allow_view_finance === false ||
+    ['care_worker', 'auditor_readonly'].includes(subRole)
+  );
+  window._isFinanceRedactedForCurrentUser = hideFinance;
+
+  // Якщо là tài khoản cấp dưới, ẩn nút thêm nhân sự
+  const ownerActions = document.getElementById('farmer-team-owner-actions');
+  if (ownerActions) {
+    ownerActions.style.display = (user.parent_user_id || ['care_worker', 'auditor_readonly'].includes(subRole)) ? 'none' : 'flex';
+  }
+
+  // Nếu bị ẩn tài chính (care_worker / auditor_readonly), tự động che các khối doanh thu / lợi nhuận / đơn giá trên giao diện
+  if (hideFinance) {
+    const finIds = [
+      'erp-harvest-total-revenue',
+      'erp-harvest-net-profit',
+      'erp-cost-total-amount',
+      'erp-cost-fertilizer-amount',
+      'erp-cost-pesticide-amount',
+      'erp-cost-water-amount'
+    ];
+    finIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<span style="font-size:12px; color:#b45309;"><i data-lucide="eye-off" class="lucide-xs"></i> Đã ẩn (Redacted)</span>';
+    });
+  }
+}
+window.applySubRoleUiRestrictions = applySubRoleUiRestrictions;
+
+export async function loadFarmerTeamRbac() {
+  const container = document.getElementById('farmer-team-members-list');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="text-align:center; padding:28px; color:#64748b; font-size:13px;">
+      <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách tài khoản nhân sự dưới quyền...
+    </div>
+  `;
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+
+  try {
+    const data = await api('/users/my-team');
+    if (data && data.success) {
+      _cachedTeamData = data;
+      renderFarmerTeamListUI(data);
+    }
+  } catch (err) {
+    container.innerHTML = `
+      <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:18px; color:#b91c1c; font-size:13px; text-align:center;">
+        <i data-lucide="alert-triangle" class="lucide-sm"></i> Không thể tải danh sách nhân sự: ${esc(err.message)}
+      </div>
+    `;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  }
+}
+window.loadFarmerTeamRbac = loadFarmerTeamRbac;
+
+function renderFarmerTeamListUI(data) {
+  const container = document.getElementById('farmer-team-members-list');
+  if (!container) return;
+
+  const members = data.members || [];
+  const canManage = data.can_manage_team !== false;
+  const primaryFarmId = (data.farms && data.farms[0]) ? data.farms[0].id : '';
+
+  if (members.length === 0) {
+    container.innerHTML = `
+      <div style="background:#ffffff; border:1.5px dashed #cbd5e1; border-radius:16px; padding:32px 20px; text-align:center;">
+        <div style="width:52px; height:52px; border-radius:14px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto;">
+          <i data-lucide="users" class="lucide-md"></i>
+        </div>
+        <h4 style="margin:0 0 6px 0; font-size:15.5px; font-weight:800; color:#0f172a;">Chưa có tài khoản nhân sự dưới quyền nào</h4>
+        <p style="margin:0 auto 16px auto; max-width:520px; font-size:13px; color:#64748b; line-height:1.5;">
+          Hãy tạo tài khoản riêng cho <strong>Nhân công chăm sóc (<code>care_worker</code>)</strong> hoặc <strong>Kiểm định viên (<code>auditor_readonly</code>)</strong> để họ ghi nhật ký thực địa mà không nhìn thấy đơn giá vật tư, chi phí đầu tư và doanh thu của trang trại.
+        </p>
+        ${canManage ? `
+          <button type="button" onclick="openFarmerTeamMemberModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 20px; font-size:13px; font-weight:800; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <i data-lucide="user-plus" class="lucide-sm"></i> Tạo Tài Khoản Nhân Công Đầu Tiên
+          </button>
+        ` : ''}
+      </div>
+    `;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    return;
+  }
+
+  container.innerHTML = members.map(m => {
+    const roleMeta = SUB_ROLE_META[m.sub_role] || SUB_ROLE_META.care_worker;
+    const isFinanceHidden = !m.allow_view_finance;
+    const scopeLabel = m.view_plants_scope === 'assigned'
+      ? `Chỉ cây được giao (${Array.isArray(m.assigned_plant_ids) ? m.assigned_plant_ids.length : 0} cây)`
+      : 'Toàn bộ cây trong vườn';
+    const farmIdForLink = m.farm_id || primaryFarmId || 1;
+
+    return `
+      <div style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+        <div style="display:flex; align-items:flex-start; gap:14px; min-width:260px; flex:1;">
+          <div style="width:44px; height:44px; border-radius:12px; background:${roleMeta.bg}; border:1.5px solid ${roleMeta.border}; color:${roleMeta.color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i data-lucide="${roleMeta.icon}" class="lucide-sm"></i>
+          </div>
+          <div style="min-width:0; flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <strong style="font-size:15px; font-weight:800; color:#0f172a;">${esc(m.full_name)}</strong>
+              <span style="font-size:11px; font-weight:800; background:${roleMeta.bg}; color:${roleMeta.color}; border:1px solid ${roleMeta.border}; padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="${roleMeta.icon}" class="lucide-xs"></i> ${esc(roleMeta.label)}
+              </span>
+              <span style="font-size:11px; font-family:monospace; color:#64748b; background:#f1f5f9; padding:2px 7px; border-radius:6px;">
+                ${esc(m.public_id || ('usr-' + m.id))}
+              </span>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:6px; font-size:12.5px; color:#475569;">
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="phone" class="lucide-xs" style="color:#059669;"></i>
+                <strong>${esc(m.phone || m.email || '—')}</strong>
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="map-pin" class="lucide-xs" style="color:#0284c7;"></i>
+                ${esc(m.farm_name || 'Trang trại nông hộ')}
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="sprout" class="lucide-xs" style="color:#16a34a;"></i>
+                ${esc(scopeLabel)}
+              </span>
+            </div>
+
+            <!-- Privilege Badges -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px;">
+              ${isFinanceHidden ? `
+                <span style="font-size:11.5px; font-weight:800; background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                  <i data-lucide="eye-off" class="lucide-xs"></i> Tự động ẩn Đơn giá, Chi phí &amp; Doanh thu (redacted: true)
+                </span>
+              ` : `
+                <span style="font-size:11.5px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                  <i data-lucide="eye" class="lucide-xs"></i> Được phép xem Chi phí &amp; Doanh thu
+                </span>
+              `}
+              <span style="font-size:11.5px; font-weight:700; background:#f8fafc; color:#334155; border:1px solid #cbd5e1; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="package" class="lucide-xs"></i> Kho vật tư kỹ thuật: ${m.allow_view_supplies !== false ? 'Cho phép' : 'Hạn chế'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button type="button" onclick="copyTeamMemberRoleApiLink('${esc(m.sub_role)}', '${esc(String(farmIdForLink))}')" title="Sao chép Link Live API phân quyền theo vai trò của nhân sự này" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:7px 12px; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+            <i data-lucide="webhook" class="lucide-xs"></i> Link API (?role=${esc(m.sub_role)})
+          </button>
+          ${canManage ? `
+            <button type="button" onclick="toggleTeamMemberFinance(${m.id}, ${!m.allow_view_finance})" title="Bật/Tắt nhanh quyền xem giá & doanh thu" style="background:${isFinanceHidden ? '#fffbeb' : '#f0fdf4'}; color:${isFinanceHidden ? '#b45309' : '#047857'}; border:1px solid ${isFinanceHidden ? '#fde68a' : '#a7f3d0'}; padding:7px 12px; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+              <i data-lucide="${isFinanceHidden ? 'eye-off' : 'eye'}" class="lucide-xs"></i> ${isFinanceHidden ? 'Đang ẩn giá' : 'Đang hiện giá'}
+            </button>
+            <button type="button" onclick="openFarmerTeamMemberModal(${m.id})" style="background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; padding:7px 12px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+              <i data-lucide="edit-3" class="lucide-xs"></i> Sửa quyền
+            </button>
+            <button type="button" onclick="deleteFarmerTeamMember(${m.id}, '${esc(m.full_name)}')" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:7px 10px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+              <i data-lucide="trash-2" class="lucide-xs"></i>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
+
+export function onTeamMemberSubRoleChange() {
+  const roleSel = document.getElementById('team-member-subrole');
+  const finChk = document.getElementById('team-member-allow-finance');
+  const descBox = document.getElementById('team-member-role-desc');
+  if (!roleSel) return;
+
+  const val = roleSel.value;
+  if (val === 'care_worker') {
+    if (finChk) finChk.checked = false;
+    if (descBox) {
+      descBox.style.background = '#fffbeb';
+      descBox.style.borderColor = '#fde68a';
+      descBox.style.color = '#b45309';
+      descBox.innerHTML = `<i data-lucide="eye-off" class="lucide-sm" style="flex-shrink:0;"></i><span><strong>Nhân công chăm sóc (care_worker):</strong> Chỉ xem thông số kỹ thuật &amp; ghi nhật ký thực địa. Tự động ẩn (<code>redacted: true</code>) đơn giá vật tư, tổng chi phí đầu tư và doanh thu thu hoạch.</span>`;
+    }
+  } else if (val === 'auditor_readonly') {
+    if (finChk) finChk.checked = false;
+    if (descBox) {
+      descBox.style.background = '#eff6ff';
+      descBox.style.borderColor = '#bfdbfe';
+      descBox.style.color = '#1e40af';
+      descBox.innerHTML = `<i data-lucide="shield" class="lucide-sm" style="flex-shrink:0;"></i><span><strong>Kiểm định viên VietGAP (auditor_readonly):</strong> Chỉ xem hồ sơ kỹ thuật, lịch sử canh tác, chuỗi băm SHA-256 và tín chỉ Carbon MRV. Tự động ẩn toàn bộ chi phí &amp; doanh thu nhạy cảm.</span>`;
+    }
+  } else {
+    if (finChk) finChk.checked = true;
+    if (descBox) {
+      descBox.style.background = '#f0fdf4';
+      descBox.style.borderColor = '#86efac';
+      descBox.style.color = '#065f46';
+      descBox.innerHTML = `<i data-lucide="user-check" class="lucide-sm" style="flex-shrink:0;"></i><span><strong>Quản đốc / Kỹ sư trưởng (manager):</strong> Hỗ trợ chủ vườn quản lý kỹ thuật, kho vật tư và theo dõi chi phí vận hành trang trại.</span>`;
+    }
+  }
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
+window.onTeamMemberSubRoleChange = onTeamMemberSubRoleChange;
+
+export function openFarmerTeamMemberModal(memberId = null) {
+  const modal = document.getElementById('farmer-team-member-modal');
+  if (!modal) return;
+
+  const farmSel = document.getElementById('team-member-farm-id');
+  const farms = (_cachedTeamData && _cachedTeamData.farms && _cachedTeamData.farms.length > 0)
+    ? _cachedTeamData.farms
+    : ((typeof window.getFarmsCache === 'function' ? window.getFarmsCache() : []) || []);
+
+  if (farmSel) {
+    farmSel.innerHTML = farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('') || `<option value="">Trang trại mặc định</option>`;
+  }
+
+  const editIdInput = document.getElementById('team-member-edit-id');
+  const titleEl = document.getElementById('farmer-team-modal-title');
+  const nameInput = document.getElementById('team-member-fullname');
+  const phoneInput = document.getElementById('team-member-phone');
+  const emailInput = document.getElementById('team-member-email');
+  const passInput = document.getElementById('team-member-password');
+  const passLabel = document.getElementById('team-member-pass-label');
+  const subRoleSel = document.getElementById('team-member-subrole');
+  const scopeSel = document.getElementById('team-member-plant-scope');
+  const supChk = document.getElementById('team-member-allow-supplies');
+  const finChk = document.getElementById('team-member-allow-finance');
+
+  if (memberId) {
+    const member = (_cachedTeamData.members || []).find(m => Number(m.id) === Number(memberId));
+    if (!member) return;
+    if (editIdInput) editIdInput.value = String(member.id);
+    if (titleEl) titleEl.textContent = `Cập Nhật Phân Quyền: ${member.full_name}`;
+    if (nameInput) nameInput.value = member.full_name || '';
+    if (phoneInput) phoneInput.value = member.phone || '';
+    if (emailInput) emailInput.value = member.email || '';
+    if (passInput) {
+      passInput.value = '';
+      passInput.required = false;
+      passInput.placeholder = 'Để trống nếu giữ nguyên mật khẩu cũ';
+    }
+    if (passLabel) passLabel.innerHTML = `<i data-lucide="key-round" class="lucide-xs" style="color:#059669;"></i> Đổi mật khẩu (Tùy chọn)`;
+    if (subRoleSel) subRoleSel.value = member.sub_role || 'care_worker';
+    if (farmSel && member.farm_id) farmSel.value = String(member.farm_id);
+    if (scopeSel) scopeSel.value = member.view_plants_scope || 'all';
+    if (supChk) supChk.checked = member.allow_view_supplies !== false;
+    onTeamMemberSubRoleChange();
+    if (finChk) finChk.checked = Boolean(member.allow_view_finance);
+  } else {
+    if (editIdInput) editIdInput.value = '';
+    if (titleEl) titleEl.textContent = 'Thêm Tài Khoản Nhân Sự Dưới Quyền';
+    if (nameInput) nameInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (passInput) {
+      passInput.value = '';
+      passInput.required = true;
+      passInput.placeholder = 'Nhập mật khẩu cấp cho nhân sự';
+    }
+    if (passLabel) passLabel.innerHTML = `<i data-lucide="key-round" class="lucide-xs" style="color:#059669;"></i> Mật khẩu đăng nhập *`;
+    if (subRoleSel) subRoleSel.value = 'care_worker';
+    if (scopeSel) scopeSel.value = 'all';
+    if (supChk) supChk.checked = true;
+    onTeamMemberSubRoleChange();
+  }
+
+  modal.style.display = 'flex';
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
+window.openFarmerTeamMemberModal = openFarmerTeamMemberModal;
+
+export function closeFarmerTeamMemberModal() {
+  const modal = document.getElementById('farmer-team-member-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeFarmerTeamMemberModal = closeFarmerTeamMemberModal;
+
+export async function submitFarmerTeamMemberForm() {
+  const editId = document.getElementById('team-member-edit-id')?.value;
+  const full_name = document.getElementById('team-member-fullname')?.value.trim();
+  const phone = document.getElementById('team-member-phone')?.value.trim();
+  const email = document.getElementById('team-member-email')?.value.trim();
+  const password = document.getElementById('team-member-password')?.value;
+  const sub_role = document.getElementById('team-member-subrole')?.value || 'care_worker';
+  const farm_id = document.getElementById('team-member-farm-id')?.value || null;
+  const view_plants_scope = document.getElementById('team-member-plant-scope')?.value || 'all';
+  const allow_view_supplies = document.getElementById('team-member-allow-supplies')?.checked !== false;
+  const allow_view_finance = Boolean(document.getElementById('team-member-allow-finance')?.checked);
+
+  if (!full_name) {
+    toast('Vui lòng nhập họ và tên nhân sự.', 'error');
+    return;
+  }
+  if (!editId && (!password || !password.trim())) {
+    toast('Vui lòng nhập mật khẩu cấp cho tài khoản nhân sự.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit-team-member');
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...`;
+  }
+
+  try {
+    const endpoint = editId ? `/users/my-team/${editId}` : '/users/my-team';
+    const method = editId ? 'PUT' : 'POST';
+    const res = await api(endpoint, {
+      method,
+      body: JSON.stringify({
+        full_name,
+        phone,
+        email,
+        password,
+        sub_role,
+        farm_id,
+        view_plants_scope,
+        allow_view_supplies,
+        allow_view_finance
+      })
+    });
+
+    if (res && res.success) {
+      toast(res.message || 'Đã lưu phân quyền nhân sự thành công!', 'success');
+      closeFarmerTeamMemberModal();
+      loadFarmerTeamRbac();
+    }
+  } catch (err) {
+    toast(err.message || 'Lỗi khi lưu tài khoản nhân sự.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    }
+  }
+}
+window.submitFarmerTeamMemberForm = submitFarmerTeamMemberForm;
+
+export async function toggleTeamMemberFinance(memberId, nextVal) {
+  try {
+    const res = await api(`/users/my-team/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ allow_view_finance: Boolean(nextVal) })
+    });
+    if (res && res.success) {
+      toast(
+        nextVal
+          ? 'Đã CHO PHÉP tài khoản này xem đơn giá vật tư & doanh thu.'
+          : 'Đã ẨN TỰ ĐỘNG (redacted: true) đơn giá vật tư, chi phí & doanh thu đối với tài khoản này.',
+        'success'
+      );
+      loadFarmerTeamRbac();
+    }
+  } catch (err) {
+    toast('Lỗi cập nhật quyền tài chính: ' + err.message, 'error');
+  }
+}
+window.toggleTeamMemberFinance = toggleTeamMemberFinance;
+
+export async function copyTeamMemberRoleApiLink(subRole, farmId) {
+  try {
+    const targetFarmId = farmId || ((_cachedTeamData.farms && _cachedTeamData.farms[0]) ? _cachedTeamData.farms[0].id : 1);
+    const keyRes = await api(`/farms/${targetFarmId}/live-api-key`);
+    const baseUrl = keyRes.live_api_url || `${window.location.origin}/api/farms/${targetFarmId}/live-stream?api_key=${keyRes.api_key}`;
+    const roleUrl = `${baseUrl}&role=${encodeURIComponent(subRole || 'care_worker')}`;
+    await navigator.clipboard.writeText(roleUrl);
+    toast(`Đã sao chép Link Live API phân quyền (?role=${subRole}) — Tự động ẩn tài chính (redacted: true)!`, 'success');
+  } catch (err) {
+    toast('Không thể sao chép Link API: ' + err.message, 'error');
+  }
+}
+window.copyTeamMemberRoleApiLink = copyTeamMemberRoleApiLink;
+
+export async function deleteFarmerTeamMember(memberId, memberName) {
+  if (!window.confirm(`Bạn có chắc chắn muốn xóa tài khoản nhân sự "${memberName}" khỏi trang trại không?`)) return;
+  try {
+    const res = await api(`/users/my-team/${memberId}`, { method: 'DELETE' });
+    if (res && res.success) {
+      toast(res.message || 'Đã xóa tài khoản nhân sự.', 'success');
+      loadFarmerTeamRbac();
+    }
+  } catch (err) {
+    toast('Lỗi khi xóa nhân sự: ' + err.message, 'error');
+  }
+}
+window.deleteFarmerTeamMember = deleteFarmerTeamMember;
+

@@ -6,7 +6,9 @@
 
 -- 1. Phân tách Quyền & Vai trò người dùng theo chức năng (Người chăm sóc, Quản lý kho, Quản trại, Kiểm toán)
 ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS sub_role VARCHAR(50) DEFAULT 'farm_owner';
+  ADD COLUMN IF NOT EXISTS sub_role VARCHAR(50) DEFAULT 'farm_owner',
+  ADD COLUMN IF NOT EXISTS parent_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS allow_view_finance BOOLEAN DEFAULT true;
 
 -- 2. Định danh Global Digital ID (DID/GS1) & Thực thể Đa hình (Cây / Con) + Sinh khối Carbon
 ALTER TABLE farms

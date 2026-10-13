@@ -1020,9 +1020,12 @@
               <button onclick="closeFarmDetailView()" class="royal-pill-btn farm-btn-back">
                 <i data-lucide="arrow-left" class="lucide-sm"></i> Quay lại
               </button>
-              <div style="display:flex; gap:8px; align-items:center;">
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <button class="royal-pill-btn royal-pill-btn-primary" onclick="openUserCreatePlantModal()" style="font-weight:800; background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
                   <i data-lucide="plus-circle" class="lucide-sm"></i> Thêm Cây Mới
+                </button>
+                <button class="royal-pill-btn farm-btn-edit" onclick="showPage('settings'); setTimeout(function(){ if(window.switchSettingsSubtab) window.switchSettingsSubtab('team'); }, 80);" title="Quản lý & Phân quyền Tài khoản Nhân công / Kỹ sư / Kiểm định dưới quyền">
+                  <i data-lucide="users" class="lucide-sm" style="color:#0284c7;"></i> Phân quyền Nhân sự (RBAC)
                 </button>
                 <button class="royal-pill-btn farm-btn-edit" id="btn-edit-active-farm" onclick="openEditFarmModal()">
                   <i data-lucide="edit" class="lucide-sm" style="color:#059669;"></i> Chỉnh sửa Trang trại
@@ -3318,6 +3321,9 @@
           <button id="subtab-btn-thresholds" class="user-subtab-btn active" onclick="switchSettingsSubtab('thresholds')" style="padding:10px 20px; border:none; background:transparent; border-bottom:3px solid #059669; font-weight:800; color:#059669; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
             <i data-lucide="sliders" class="lucide-sm"></i> Cài đặt ngưỡng giá trị
           </button>
+          <button id="subtab-btn-team-rbac" class="user-subtab-btn" onclick="switchSettingsSubtab('team')" style="padding:10px 20px; border:none; background:transparent; border-bottom:3px solid transparent; font-weight:700; color:#64748b; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <i data-lucide="users" class="lucide-sm"></i> Phân quyền Nhân sự Vườn (RBAC)
+          </button>
           <button id="subtab-btn-profile" class="user-subtab-btn" onclick="switchSettingsSubtab('profile')" style="padding:10px 20px; border:none; background:transparent; border-bottom:3px solid transparent; font-weight:700; color:#64748b; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
             <i data-lucide="user-cog" class="lucide-sm"></i> Thông tin cá nhân
           </button>
@@ -3345,7 +3351,72 @@
           </div>
         </div>
 
-        <!-- SUB-TAB 2: THÔNG TIN CÁ NHÂN & BẢO MẬT -->
+        <!-- SUB-TAB 2: PHÂN QUYỀN TÀI KHOẢN NHÂN SỰ DƯỚI QUYỀN CHỦ VƯỜN (FARMER SUB-ACCOUNT RBAC) -->
+        <div id="subtab-pane-team" class="subtab-pane" style="display:none;">
+          <!-- Banner & Action Bar -->
+          <div style="background:#ffffff; border:1.5px solid #a7f3d0; border-radius:16px; padding:20px; margin-bottom:18px; box-shadow:0 4px 16px rgba(5,150,105,0.05);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:16px;">
+              <div style="max-width:700px;">
+                <div style="display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:11px; font-weight:800; padding:3px 10px; border-radius:999px; text-transform:uppercase; margin-bottom:6px;">
+                  <i data-lucide="shield-check" class="lucide-xs"></i> Phân Quyền Trường Dữ Liệu (Gallagher 8.30 Field Privilege)
+                </div>
+                <h3 style="margin:0; font-size:17.5px; font-weight:800; color:#064e3b; display:flex; align-items:center; gap:8px;">
+                  <i data-lucide="users" class="lucide-sm" style="color:#059669;"></i> Quản Lý &amp; Phân Quyền Tài Khoản Dưới Quyền Nông Hộ
+                </h3>
+                <p style="margin:5px 0 0 0; font-size:13px; color:#475569; line-height:1.55;">
+                  Chủ trang trại chủ động tạo tài khoản cho <strong>Quản đốc kỹ thuật (<code>manager</code>)</strong>, <strong>Nhân công chăm sóc (<code>care_worker</code>)</strong> hoặc <strong>Kiểm định viên VietGAP (<code>auditor_readonly</code>)</strong>. Khi đăng nhập hoặc gọi API với vai trò <code>care_worker</code> / <code>auditor_readonly</code>, hệ thống tự động ẩn (<code>redacted: true</code>) đơn giá vật tư, tổng chi phí và doanh thu, chỉ giữ lại thông số kỹ thuật canh tác.
+                </p>
+              </div>
+              <div id="farmer-team-owner-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" onclick="openFarmerTeamMemberModal()" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 18px; font-size:13px; font-weight:800; border-radius:12px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:8px;">
+                  <i data-lucide="user-plus" class="lucide-sm"></i> Thêm Tài Khoản Dưới Quyền
+                </button>
+              </div>
+            </div>
+
+            <!-- 3 Role Cards Matrix -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px; padding-top:14px; border-top:1px solid #f1f5f9;">
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px 14px;">
+                <div style="font-size:12.5px; font-weight:800; color:#065f46; display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><i data-lucide="user-check" class="lucide-xs"></i> Quản đốc / Kỹ sư (manager)</span>
+                  <span style="font-size:10.5px; background:#dcfce7; color:#166534; padding:2px 7px; border-radius:6px;">Toàn diện kỹ thuật</span>
+                </div>
+                <div style="font-size:12px; color:#047857; line-height:1.45;">
+                  Quản lý sơ đồ cây, kho vật tư, ghi nhật ký canh tác và xem báo cáo kỹ thuật. Có thể cấu hình bật/tắt quyền xem tài chính.
+                </div>
+              </div>
+
+              <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:12px 14px;">
+                <div style="font-size:12.5px; font-weight:800; color:#92400e; display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><i data-lucide="eye-off" class="lucide-xs"></i> Nhân công (care_worker)</span>
+                  <span style="font-size:10.5px; background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:6px;">Ẩn giá &amp; doanh thu</span>
+                </div>
+                <div style="font-size:12px; color:#78350f; line-height:1.45;">
+                  Chỉ ghi nhật ký chăm sóc &amp; xem liều lượng kỹ thuật. <strong>Tự động ẩn (redacted)</strong> đơn giá vật tư, chi phí đầu tư và doanh thu thu hoạch.
+                </div>
+              </div>
+
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px 14px;">
+                <div style="font-size:12.5px; font-weight:800; color:#1e40af; display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <span style="display:inline-flex; align-items:center; gap:6px;"><i data-lucide="shield" class="lucide-xs"></i> Kiểm định (auditor_readonly)</span>
+                  <span style="font-size:10.5px; background:#dbeafe; color:#1d4ed8; padding:2px 7px; border-radius:6px;">Chỉ đọc VietGAP</span>
+                </div>
+                <div style="font-size:12px; color:#1e3a8a; line-height:1.45;">
+                  Dành cho đoàn đánh giá VietGAP / GlobalGAP / Carbon MRV: Chỉ xem kỹ thuật &amp; chuỗi băm SHA-256, <strong>ẩn toàn bộ số liệu tài chính</strong>.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Team Members List -->
+          <div id="farmer-team-members-list" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="text-align:center; padding:30px; color:#64748b; font-size:13px;">
+              <i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải danh sách tài khoản nhân sự dưới quyền...
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 3: THÔNG TIN CÁ NHÂN & BẢO MẬT -->
         <div id="subtab-pane-profile" class="subtab-pane" style="display:none;">
           <div class="settings-grid">
 
@@ -5458,6 +5529,116 @@
         <button type="button" onclick="closeThresholdRuleModal()" style="background:#f1f5f9; color:#475569; border:none; padding:11px 20px; border-radius:12px; font-size:13.5px; font-weight:700; cursor:pointer;">Hủy</button>
         <button type="submit" style="background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; padding:11px 24px; border-radius:12px; font-size:13.5px; font-weight:800; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
           <i data-lucide="check-circle-2" class="lucide-sm"></i> Lưu Quy tắc Cài đặt
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════ MODAL TẠO / PHÂN QUYỀN TÀI KHOẢN NHÂN SỰ DƯỚI QUYỀN (FARMER SUB-ACCOUNT RBAC) ════════════ -->
+<div id="farmer-team-member-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeFarmerTeamMemberModal()">
+  <div class="modal" style="max-width:620px; width:95%; max-height:92vh; display:flex; flex-direction:column; border-radius:18px; overflow:hidden; background:#ffffff; box-shadow:0 25px 60px rgba(0,0,0,0.35); border:1px solid #cbd5e1;">
+    <div style="background:linear-gradient(135deg, #064e3b, #047857); padding:16px 22px; color:#ffffff; display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:42px; height:42px; border-radius:12px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; color:#a7f3d0;">
+          <i data-lucide="shield-check" class="lucide-sm"></i>
+        </div>
+        <div>
+          <h3 id="farmer-team-modal-title" style="margin:0; font-size:16.5px; font-weight:800; color:#ffffff;">Thêm Tài Khoản Nhân Sự Dưới Quyền</h3>
+          <div style="font-size:12px; color:#a7f3d0; margin-top:2px;">Phân quyền theo vai trò Gallagher 8.30 · Bảo mật đơn giá, chi phí &amp; doanh thu</div>
+        </div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeFarmerTeamMemberModal()" aria-label="Đóng" title="Đóng">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <form id="farmer-team-member-form" onsubmit="event.preventDefault(); submitFarmerTeamMemberForm();" style="padding:20px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="team-member-edit-id" value="">
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#1e293b; display:block; margin-bottom:5px;">
+            <i data-lucide="user" class="lucide-xs" style="color:#059669;"></i> Họ và tên nhân sự *
+          </label>
+          <input type="text" id="team-member-fullname" placeholder="VD: Nguyễn Văn Công (Tổ chăm sóc)" required style="width:100%; box-sizing:border-box; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#1e293b; display:block; margin-bottom:5px;">
+            <i data-lucide="phone" class="lucide-xs" style="color:#059669;"></i> Số điện thoại đăng nhập *
+          </label>
+          <input type="tel" id="team-member-phone" placeholder="VD: 0912345678" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#1e293b; display:block; margin-bottom:5px;">
+            <i data-lucide="mail" class="lucide-xs" style="color:#059669;"></i> Email (Tùy chọn)
+          </label>
+          <input type="email" id="team-member-email" placeholder="Để trống hệ thống tự tạo từ SĐT" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+        </div>
+        <div>
+          <label id="team-member-pass-label" style="font-size:12px; font-weight:800; color:#1e293b; display:block; margin-bottom:5px;">
+            <i data-lucide="key-round" class="lucide-xs" style="color:#059669;"></i> Mật khẩu đăng nhập *
+          </label>
+          <input type="password" id="team-member-password" placeholder="Nhập mật khẩu cấp cho nhân sự" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; outline:none;">
+        </div>
+      </div>
+
+      <!-- Chọn Vai Trò (sub_role) -->
+      <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:14px;">
+        <label style="font-size:12.5px; font-weight:800; color:#064e3b; display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+          <i data-lucide="shield" class="lucide-sm" style="color:#059669;"></i> Vai trò Phân quyền (Role-Based Field Privilege):
+        </label>
+        <select id="team-member-subrole" onchange="onTeamMemberSubRoleChange()" style="width:100%; padding:10px 12px; border:1.5px solid #059669; border-radius:10px; font-size:13px; font-weight:800; color:#064e3b; background:#ffffff; outline:none; cursor:pointer;">
+          <option value="care_worker">Nhân công chăm sóc (care_worker) — Tự động ẩn giá vật tư, chi phí &amp; doanh thu</option>
+          <option value="manager">Quản đốc / Kỹ sư trưởng (manager) — Quản lý kỹ thuật &amp; kho vật tư</option>
+          <option value="auditor_readonly">Kiểm định viên VietGAP / GlobalGAP (auditor_readonly) — Chỉ xem kỹ thuật, ẩn tài chính</option>
+        </select>
+        <div id="team-member-role-desc" style="margin-top:8px; font-size:12px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 10px; display:flex; align-items:center; gap:8px;">
+          <i data-lucide="eye-off" class="lucide-sm" style="flex-shrink:0;"></i>
+          <span><strong>Chế độ Bảo mật Tài chính (Redacted):</strong> Tài khoản này chỉ thấy liều lượng kỹ thuật (kg, lít, ngày cách ly PHI). Đơn giá vật tư, tổng chi phí và doanh thu thu hoạch sẽ tự động bị ẩn (<code>redacted: true</code>).</span>
+        </div>
+      </div>
+
+      <!-- Trang trại & Phạm vi xem cây -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#1e293b; display:block; margin-bottom:5px;">
+            <i data-lucide="map-pin" class="lucide-xs" style="color:#059669;"></i> Thuộc Trang trại
+          </label>
+          <select id="team-member-farm-id" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; background:#ffffff; outline:none;">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#1e293b; display:block; margin-bottom:5px;">
+            <i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> Phạm vi Cây trồng được phép truy cập
+          </label>
+          <select id="team-member-plant-scope" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; font-weight:600; background:#ffffff; outline:none;">
+            <option value="all">Toàn bộ cây trong vườn (All Plants)</option>
+            <option value="assigned">Chỉ các cây được giao phụ trách</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tùy chọn Quyền chi tiết -->
+      <div style="background:#f0fdf4; border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:10px;">
+        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:12.5px; color:#064e3b; font-weight:700;">
+          <input type="checkbox" id="team-member-allow-supplies" checked style="margin-top:3px; accent-color:#059669;">
+          <span>Cho phép xem Kho vật tư kỹ thuật (Tên phân/thuốc, số lượng tồn kho, hoạt chất &amp; ngày cách ly PHI)</span>
+        </label>
+        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:12.5px; color:#92400e; font-weight:700;">
+          <input type="checkbox" id="team-member-allow-finance" style="margin-top:3px; accent-color:#d97706;">
+          <span>Cho phép xem Đơn giá vật tư, Tổng chi phí đầu tư &amp; Doanh thu thu hoạch (Bỏ chọn để <strong>Ẩn tự động / Redacted</strong>)</span>
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:8px; border-top:1px solid #e2e8f0;">
+        <button type="button" onclick="closeFarmerTeamMemberModal()" style="background:#f1f5f9; color:#475569; border:none; padding:10px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer;">Hủy bỏ</button>
+        <button type="submit" id="btn-submit-team-member" style="background:linear-gradient(135deg, #10b981, #047857); color:#ffffff; border:none; padding:10px 22px; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+          <i data-lucide="check-circle-2" class="lucide-sm"></i> Lưu Phân Quyền Nhân Sự
         </button>
       </div>
     </form>
