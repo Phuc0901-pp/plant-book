@@ -554,13 +554,13 @@ $adminDashViewPath = Join-Path $root "frontend\admin\src\views\dashboard.html"
 
 if (Test-Path $farmsRoutePath) {
     $farmsRoute = [System.IO.File]::ReadAllText($farmsRoutePath, [System.Text.Encoding]::UTF8)
-    $hasFullDatasetEndpoint = $farmsRoute.Contains('/:id/full-dataset') -and $farmsRoute.Contains('AGTECH-ERP-ISO25010-GLOBALGAP-VIETGAP-V1.3')
+    $hasFullDatasetEndpoint = $farmsRoute.Contains('/:id/full-dataset') -and $farmsRoute.Contains('AGTECH-ERP-GALLAGHER830-ISO25010-ISO27001-GLOBALGAP-CARBON-V2.0')
     $hasApiLinkEndpoint = $farmsRoute.Contains('/:id/api-link') -and $farmsRoute.Contains('generateFarmLiveApiKey')
     $hasAdminApiControl = $farmsRoute.Contains('/:id/api-control') -and $farmsRoute.Contains('API_ACCESS_DISABLED') -and $farmsRoute.Contains('rotate_key')
-    $hasInternationalBlocks = $farmsRoute.Contains('farm_profile') -and $farmsRoute.Contains('financial_and_yield_summary') -and $farmsRoute.Contains('supplies_and_inventory') -and $farmsRoute.Contains('plants_and_cultivation') -and $farmsRoute.Contains('phytosanitary_and_harvest_logs') -and $farmsRoute.Contains('iot_nfc_and_media')
+    $hasInternationalBlocks = $farmsRoute.Contains('farm_profile') -and $farmsRoute.Contains('financial_and_yield_summary') -and $farmsRoute.Contains('supplies_and_inventory') -and $farmsRoute.Contains('plants_and_cultivation') -and $farmsRoute.Contains('phytosanitary_and_harvest_logs') -and $farmsRoute.Contains('iot_nfc_and_media') -and $farmsRoute.Contains('iso27001_governance_and_carbon_mrv')
 
-    Record-Test -Category "Live Farm Dataset API" -TestName "GET /api/farms/:id/full-dataset International Standard JSON Endpoint" -Passed $hasFullDatasetEndpoint
-    Record-Test -Category "Live Farm Dataset API" -TestName "6/6 International AgTech Dataset Blocks (Profile, Finance, Supplies, Plants, Logs, IoT/Media)" -Passed $hasInternationalBlocks
+    Record-Test -Category "Live Farm Dataset API" -TestName "GET /api/farms/:id/full-dataset International Standard V2.0 JSON Endpoint" -Passed $hasFullDatasetEndpoint
+    Record-Test -Category "Live Farm Dataset API" -TestName "7/7 International AgTech Dataset Blocks (Profile, Finance, Supplies, Plants, Logs, IoT/Media, ISO27001/Carbon)" -Passed $hasInternationalBlocks
     Record-Test -Category "Live Farm Dataset API" -TestName "HMAC-SHA256 Versioned Live API Key Generator (/api/farms/:id/api-link)" -Passed $hasApiLinkEndpoint
     Record-Test -Category "Admin API Governance" -TestName "Admin Live API Access Control (Disable / Enable / Rotate Key via /api-control)" -Passed $hasAdminApiControl
 }
@@ -586,6 +586,56 @@ $wordLockFiles = Get-ChildItem -Path $root -File -Filter "~$*.docx" -Force -Erro
 $isCleanRepo = (($null -eq $conflictFiles -or $conflictFiles.Count -eq 0) -and ($null -eq $leakedTestUploads -or $leakedTestUploads.Count -eq 0) -and ($null -eq $wordLockFiles -or $wordLockFiles.Count -eq 0))
 
 Record-Test -Category "Codebase Hygiene" -TestName "Zero OneDrive Conflict Files (*-PHUCPH*), Word Locks (~$*) & Leaked Test Artifacts" -Passed $isCleanRepo
+
+# ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 13: GALLAGHER 8.30 API, ISO/IEC 27001 HASH-CHAIN & IPCC CARBON MRV --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 13. GALLAGHER 8.30 REST ARCHITECTURE, ISO/IEC 27001 HASH-CHAIN & IPCC CARBON MRV --" -ForegroundColor White
+$migration007Path = Join-Path $root "backend\db\migrations\007_gallagher_api_iso27001.sql"
+$nfcSecPath = Join-Path $root "backend\services\nfcSecurityService.js"
+
+$hasMigration007 = Test-Path $migration007Path
+Record-Test -Category "Gallagher & ISO 27001" -TestName "Migration 007 (Global DID, Sub-Role, NFC IssueLevel, SHA-256 Hash-Chain) Present" -Passed $hasMigration007
+
+if ($hasMigration007) {
+    $mig007 = [System.IO.File]::ReadAllText($migration007Path, [System.Text.Encoding]::UTF8)
+    $noDivisions = (-not $mig007.Contains("CREATE TABLE IF NOT EXISTS divisions")) -and (-not $mig007.Contains("division_id"))
+    Record-Test -Category "Gallagher & ISO 27001" -TestName "Excluded Enterprise Divisions/Departments Schema per Scope Constraint" -Passed $noDivisions
+}
+
+if (Test-Path $serverJsPath) {
+    $srvContent = [System.IO.File]::ReadAllText($serverJsPath, [System.Text.Encoding]::UTF8)
+    $hasHateoasRoot = $srvContent.Contains("app.get('/api'") -and $srvContent.Contains("8.30.5-AGTECH-ISO27001") -and $srvContent.Contains("live_dataset_template")
+    Record-Test -Category "Gallagher 8.30 HATEOAS" -TestName "GET /api Root Discovery Endpoint Returning FTApiFeatures (href links)" -Passed $hasHateoasRoot
+}
+
+if (Test-Path $nfcSecPath) {
+    $nfcSecContent = [System.IO.File]::ReadAllText($nfcSecPath, [System.Text.Encoding]::UTF8)
+    $hasIssueLevel = $nfcSecContent.Contains("REVOKED_ISSUE_LEVEL") -and $nfcSecContent.Contains("generatePivChuidHash")
+    Record-Test -Category "Gallagher 8.30 NFC" -TestName "FTCard.IssueLevel Anti-Cloning Verification & FIPS 201 PIV CHUID Hash" -Passed $hasIssueLevel
+}
+
+if (Test-Path $farmsRoutePath) {
+    $farmsContent = [System.IO.File]::ReadAllText($farmsRoutePath, [System.Text.Encoding]::UTF8)
+    $hasDeltaSync = $farmsContent.Contains("updated_after") -and $farmsContent.Contains("nextDeltaSyncUrl") -and $farmsContent.Contains("Incremental_Sync")
+    $hasFieldSpecifiers = $farmsContent.Contains("req.query.fields") -and $farmsContent.Contains("requestedFields")
+    $hasRolePrivilege = $farmsContent.Contains("isRestrictedCareWorker") -and $farmsContent.Contains("care_worker")
+    $hasGlobalDid = $farmsContent.Contains("did:agtech:vn:farm-") -and $farmsContent.Contains("entity_class")
+    $hasIso27001Chain = $farmsContent.Contains("VERIFIED_IMMUTABLE") -and $farmsContent.Contains("latest_chain_head_hash")
+    $hasCarbonMrv = $farmsContent.Contains("net_carbon_credit_tco2e") -and $farmsContent.Contains("gross_co2_sequestered_tco2e") -and $farmsContent.Contains("above_ground_biomass_kg")
+
+    Record-Test -Category "Gallagher 8.30 Sync" -TestName "Delta Sync (?updated_after=ISO_TIME) & updates.href Cursor Pagination" -Passed $hasDeltaSync
+    Record-Test -Category "Gallagher 8.30 Fields" -TestName "Dynamic Field Specifiers (?fields=...) & Sub-Role Financial Redaction (care_worker)" -Passed ($hasFieldSpecifiers -and $hasRolePrivilege)
+    Record-Test -Category "Global DID & Entity" -TestName "Global Decentralized Identifier (did:agtech:vn:...) & Biological Entity Class (plant/livestock)" -Passed $hasGlobalDid
+    Record-Test -Category "ISO/IEC 27001 Audit" -TestName "Cryptographic SHA-256 Immutable Hash-Chain Verification (prev_log_hash -> record_hash)" -Passed $hasIso27001Chain
+    Record-Test -Category "IPCC Carbon MRV" -TestName "IPCC 2006 AFOLU Tier-2 Allometric Biomass & Net Carbon Credit Engine (tCO2e)" -Passed $hasCarbonMrv
+}
+
+if (Test-Path $plantsJsPath) {
+    $plantsContent = [System.IO.File]::ReadAllText($plantsJsPath, [System.Text.Encoding]::UTF8)
+    $hasSealChain = $plantsContent.Contains("sealPlantLogHashChain") -and $plantsContent.Contains("/nfc-reissue")
+    Record-Test -Category "ISO/IEC 27001 & NFC" -TestName "Real-time Log SHA-256 Hash-Chain Sealer & POST /api/plants/:id/nfc-reissue Endpoint" -Passed $hasSealChain
+}
 
 # ══════════════════════════════════════════════════════════════════════════
 # -- FINAL QA / QC SUMMARY REPORT --

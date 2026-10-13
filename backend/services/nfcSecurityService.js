@@ -97,6 +97,8 @@ function verifyNtag213Scan({
   plantId,
   counter,
   lastCounter = 0,
+  issueLevel,
+  expectedIssueLevel = 1,
   token,
   currentLat,
   currentLng,
@@ -106,6 +108,23 @@ function verifyNtag213Scan({
 }) {
   const normUid = normalizeNfcUid(uid);
   const maxRadius = parseFloat(geofenceRadius) || DEFAULT_GEOFENCE_RADIUS_METERS;
+
+  // 0. IssueLevel Verification (Gallagher FTCard.IssueLevel standard: blocks old/replaced cards)
+  if (issueLevel !== undefined && issueLevel !== null && expectedIssueLevel !== undefined && expectedIssueLevel !== null) {
+    const scannedIssue = parseInt(issueLevel, 10);
+    const activeIssue = parseInt(expectedIssueLevel, 10) || 1;
+    if (!isNaN(scannedIssue) && scannedIssue < activeIssue) {
+      return {
+        isValid: false,
+        status: 'REVOKED_ISSUE_LEVEL',
+        severity: 'CRITICAL',
+        distanceMeters: null,
+        issueLevel: scannedIssue,
+        expectedIssueLevel: activeIssue,
+        message: `Thẻ RFID/NFC này thuộc cấp phát hành cũ (IssueLevel ${scannedIssue} < ${activeIssue}) và đã bị thu hồi!`
+      };
+    }
+  }
 
   // 1. Signature Verification (if token is provided)
   if (token) {
@@ -162,6 +181,7 @@ function verifyNtag213Scan({
     severity: 'INFO',
     distanceMeters: distance,
     scannedCounter: scannedCounter !== null ? scannedCounter : recordedLastCounter + 1,
+    issueLevel: parseInt(expectedIssueLevel, 10) || 1,
     maxRadius,
     message: distance !== null 
       ? `Xác thực an toàn thành công! (Vị trí cách gốc cây ${distance}m ≤ ${maxRadius}m)`
@@ -170,21 +190,33 @@ function verifyNtag213Scan({
 }
 
 /**
+ * Generates a PIV CHUID (Card Holder Unique Identifier) Hash per Gallagher PIV standard
+ */
+function generatePivChuidHash(uid, plantId, issueLevel = 1) {
+  const normUid = normalizeNfcUid(uid);
+  const payload = `PIV_CHUID:${normUid}:PLANT:${plantId}:ISSUE:${issueLevel}`;
+  return crypto.createHmac('sha256', NFC_HMAC_SECRET).update(payload).digest('hex');
+}
+
+/**
  * Builds recommended NTAG213 NDEF Mirror Configuration
  */
-function buildNtag213MirrorConfig({ farmId, plantId, uid, baseUrl = 'https://plant-book.onrender.com' }) {
+function buildNtag213MirrorConfig({ farmId, plantId, uid, issueLevel = 1, baseUrl = 'https://plant-book.onrender.com' }) {
   const normUid = normalizeNfcUid(uid);
   const token = generateHmacSignature(normUid, plantId);
+  const chuidHash = generatePivChuidHash(normUid, plantId, issueLevel);
   const hexUid = normUid.replaceAll(':', '').toUpperCase();
   
   // NTAG213 NDEF Mirror URL template
   // xxxxxxxx = 14 hex UID placeholder, 000000 = 6 hex counter placeholder
-  const mirrorUrlTemplate = `${baseUrl}/${farmId || 0}/${plantId}/${hexUid}?ctr=000000&sig=${token}`;
+  const mirrorUrlTemplate = `${baseUrl}/${farmId || 0}/${plantId}/${hexUid}?ctr=000000&il=${issueLevel}&sig=${token}`;
   
   return {
     plantId,
     farmId,
     nfcUid: normUid,
+    issueLevel,
+    chuidHash,
     hmacSignature: token,
     mirrorUrlTemplate,
     suggestedPasswordHex: 'A1B2C3D4', // Default 32-bit hardware password
@@ -210,8 +242,10 @@ module.exports = {
   sanitizeUid,
   generateHmacSignature,
   verifyHmacSignature,
+  generatePivChuidHash,
   calculateHaversineDistance,
   verifyNtag213Scan,
   buildNtag213MirrorConfig,
   DEFAULT_GEOFENCE_RADIUS_METERS
 };
+

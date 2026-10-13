@@ -786,6 +786,38 @@ async function initDB() {
       console.warn('Cảnh báo chuẩn hóa UTF-8 DB:', utfErr.message);
     }
 
+    try {
+      await client.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS sub_role VARCHAR(50) DEFAULT 'farm_owner';
+        ALTER TABLE farms ADD COLUMN IF NOT EXISTS global_did VARCHAR(140);
+        ALTER TABLE farms ADD COLUMN IF NOT EXISTS api_enabled BOOLEAN DEFAULT true;
+        ALTER TABLE farms ADD COLUMN IF NOT EXISTS api_key_version INTEGER DEFAULT 1;
+        ALTER TABLE plants ADD COLUMN IF NOT EXISTS global_did VARCHAR(140);
+        ALTER TABLE plants ADD COLUMN IF NOT EXISTS entity_class VARCHAR(30) DEFAULT 'plant';
+        ALTER TABLE plants ADD COLUMN IF NOT EXISTS biomass_dbh_cm NUMERIC(8,2);
+        ALTER TABLE plants ADD COLUMN IF NOT EXISTS canopy_height_m NUMERIC(8,2);
+        ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS issue_level INTEGER DEFAULT 1;
+        ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS card_type VARCHAR(50) DEFAULT 'NTAG213_HMAC_GEOFENCE';
+        ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS trace_flag BOOLEAN DEFAULT false;
+        ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS valid_from TIMESTAMPTZ DEFAULT NOW();
+        ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS valid_until TIMESTAMPTZ;
+        ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS chuid_hash VARCHAR(128);
+        ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS prev_log_hash VARCHAR(64);
+        ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS record_hash VARCHAR(64);
+        ALTER TABLE plant_logs ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT true;
+
+        UPDATE farms
+        SET global_did = 'did:agtech:vn:' || COALESCE(NULLIF(REGEXP_REPLACE(puc_code, '[^a-zA-Z0-9_-]', '', 'g'), ''), 'farm-' || id::text)
+        WHERE global_did IS NULL;
+
+        UPDATE plants
+        SET global_did = 'did:agtech:vn:farm-' || COALESCE(farm_id::text, '0') || ':' || COALESCE(entity_class, 'plant') || ':' || COALESCE(public_slug::text, id::text)
+        WHERE global_did IS NULL;
+      `);
+    } catch (migErr) {
+      console.warn('Cảnh báo khởi tạo cột Gallagher 8.30 / ISO 27001:', migErr.message);
+    }
+
     await client.query('COMMIT');
     console.log('✅ Database schema initialized');
 

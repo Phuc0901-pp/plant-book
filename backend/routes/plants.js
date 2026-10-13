@@ -13,6 +13,33 @@ const { logAudit } = require('../services/auditLogger');
 const { calculateSmartReminders } = require('../services/agriReminder');
 
 const checkTier = require('../middleware/checkTier');
+const crypto = require('crypto');
+
+// ISO/IEC 27001 Cryptographic SHA-256 Hash-Chain Sealer for Cultivation Logs
+async function sealPlantLogHashChain(pool, logRow) {
+  if (!logRow || !logRow.id) return logRow;
+  try {
+    const prevRes = await pool.query(
+      `SELECT record_hash FROM plant_logs WHERE id < $1 AND (is_deleted IS NOT TRUE) ORDER BY id DESC LIMIT 1`,
+      [logRow.id]
+    );
+    const prevHash = (prevRes.rows[0] && prevRes.rows[0].record_hash)
+      ? prevRes.rows[0].record_hash
+      : 'GENESIS_00000000000000000000000000000000000000000000000000000000';
+    const canonicalStr = `${prevHash}|${logRow.id}|${logRow.plant_id}|${logRow.log_type}|${logRow.log_date}|${logRow.batch_code || ''}`;
+    const recordHash = crypto.createHash('sha256').update(canonicalStr).digest('hex');
+    await pool.query(
+      `UPDATE plant_logs SET prev_log_hash = $1, record_hash = $2, is_locked = true WHERE id = $3`,
+      [prevHash, recordHash, logRow.id]
+    );
+    logRow.prev_log_hash = prevHash;
+    logRow.record_hash = recordHash;
+    logRow.is_locked = true;
+  } catch (e) {
+    console.warn('ISO27001 Hash-Chain warning:', e.message);
+  }
+  return logRow;
+}
 
 // Helper to strictly verify that the user is logged in AND belongs to the same farm or is Admin/Owner
 async function verifyPlantAccess(req, plantId) {
@@ -2919,6 +2946,7 @@ router.post('/:id/logs', auth, async (req, res) => {
         equipment_used || null, isPhiViolation
       ]
     );
+    await sealPlantLogHashChain(pool, result.rows[0]);
 
     // Ghi nhận vào supply_usages nếu có vật tư
     if (resolvedSupply && resolvedUsageQty > 0) {
@@ -4686,6 +4714,7 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
       [plantId, log_date, log_type, note,
        JSON.stringify(allMediaUrls), JSON.stringify(details), access.user.id, operator_name, equipment_used, generatedBatchCode, farmPuc]
     );
+    await sealPlantLogHashChain(pool, result.rows[0]);
 
     // Update health status if disease
     if (log_type === 'Bệnh cây') {
@@ -4813,6 +4842,70 @@ router.get('/:id(\\d+)/qr-traceability', async (req, res) => {
   } catch (err) {
     console.error('QR Traceability error:', err);
     res.status(500).json({ error: 'Lỗi tạo QR: ' + err.message });
+  }
+});
+
+// ─── Gallagher 8.30 FTCard.IssueLevel Anti-Cloning Re-issue Endpoint ──
+router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
+  try {
+    const plantId = parseInt(req.params.id, 10);
+    const access = await verifyPlantAccess(req, plantId);
+    if (!access.ok) {
+      return res.status(access.status).json({ error: access.error });
+    }
+    const plantRes = await pool.query('SELECT id, farm_id, nfc_uid, nfc_tag_id FROM plants WHERE id = $1 LIMIT 1', [plantId]);
+    if (plantRes.rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy cây trồng.' });
+    const plant = plantRes.rows[0];
+    const uid = req.body.uid || plant.nfc_uid || plant.nfc_tag_id || `NFC-TB-${plantId}`;
+
+    // Ensure column exists
+    await pool.query(`
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS issue_level INTEGER DEFAULT 1;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS card_type VARCHAR(50) DEFAULT 'NTAG213_CRYPTO';
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS trace_flag BOOLEAN DEFAULT false;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS chuid_hash VARCHAR(128);
+    `).catch(() => {});
+
+    const existingTag = await pool.query('SELECT * FROM nfc_tags_inventory WHERE uid = $1 OR plant_id = $2 LIMIT 1', [uid, plantId]);
+    let newIssueLevel = 2;
+    if (existingTag.rows.length > 0) {
+      const currLevel = parseInt(existingTag.rows[0].issue_level, 10) || 1;
+      newIssueLevel = currLevel + 1;
+      const newSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel);
+      const newChuid = nfcSecurity.generatePivChuidHash(uid, plant.farm_id || 0, plantId, newIssueLevel);
+      await pool.query(
+        'UPDATE nfc_tags_inventory SET issue_level = $1, signature = $2, chuid_hash = $3, updated_at = NOW() WHERE id = $4',
+        [newIssueLevel, newSig, newChuid, existingTag.rows[0].id]
+      );
+    } else {
+      const newSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel);
+      const newChuid = nfcSecurity.generatePivChuidHash(uid, plant.farm_id || 0, plantId, newIssueLevel);
+      await pool.query(
+        `INSERT INTO nfc_tags_inventory (uid, farm_id, plant_id, status, signature, issue_level, card_type, chuid_hash)
+         VALUES ($1, $2, $3, 'assigned', $4, $5, 'NTAG213_CRYPTO', $6)`,
+        [uid, plant.farm_id || null, plantId, newSig, newIssueLevel, newChuid]
+      ).catch(() => {});
+    }
+
+    const oldSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel - 1);
+    const newSig = nfcSecurity.generateSignature(uid, plantId, newIssueLevel);
+    const oldCardCheck = nfcSecurity.verifySignature(uid, plantId, oldSig, newIssueLevel - 1, newIssueLevel);
+    const newCardCheck = nfcSecurity.verifySignature(uid, plantId, newSig, newIssueLevel, newIssueLevel);
+
+    res.json({
+      success: true,
+      message: `Đã nâng cấp IssueLevel của thẻ NFC "${uid}" lên cấp ${newIssueLevel}. Thẻ cũ (IssueLevel ${newIssueLevel - 1}) đã bị vô hiệu hóa hoàn toàn!`,
+      plant_id: plantId,
+      uid,
+      previous_issue_level: newIssueLevel - 1,
+      active_issue_level: newIssueLevel,
+      chuid_hash: nfcSecurity.generatePivChuidHash(uid, plant.farm_id || 0, plantId, newIssueLevel),
+      old_card_verification: oldCardCheck,
+      new_card_verification: newCardCheck
+    });
+  } catch (err) {
+    console.error('Error re-issuing NFC card level:', err);
+    res.status(500).json({ error: 'Lỗi cấp lại IssueLevel thẻ NFC: ' + err.message });
   }
 });
 

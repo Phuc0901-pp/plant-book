@@ -82,6 +82,47 @@ app.use('/api', antiScraper);
 app.use('/api', apiLimiter);
 app.use('/api', userRateLimiter);
 
+// ─── Gallagher 8.30 HATEOAS Root Discovery Endpoint (GET /api) ──
+app.get('/api', (req, res) => {
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.get('host');
+  const base = `${protocol}://${host}/api`;
+  res.json({
+    version: '8.30.5-AGTECH-ISO27001',
+    standard: 'Gallagher-REST-HATEOAS-8.30 / ISO-25010 / ISO-27001 / GlobalGAP-v6 / IPCC-Carbon-MRV',
+    server_time: new Date().toISOString(),
+    features: {
+      farms: {
+        farms: { href: `${base}/farms` },
+        live_dataset_template: { href: `${base}/farms/{id}/full-dataset?api_key={api_key}` },
+        delta_sync_template: { href: `${base}/farms/{id}/full-dataset?api_key={api_key}&updated_after={iso_timestamp}` },
+        field_filter_template: { href: `${base}/farms/{id}/full-dataset?api_key={api_key}&fields=farm_profile,plants_and_cultivation,iso27001_governance_and_carbon_mrv` }
+      },
+      biological_entities: {
+        items: { href: `${base}/plants` },
+        schemas: { href: `${base}/schemas` }
+      },
+      nfc_cards: {
+        cards: { href: `${base}/nfc` },
+        card_types: ['NTAG213_CRYPTO', 'NTAG216_PIV', 'MIFARE_DESFIRE_EV3']
+      },
+      supplies_and_inventory: {
+        supplies: { href: `${base}/supplies` },
+        costs: { href: `${base}/costs` }
+      },
+      iot_and_devices: {
+        devices: { href: `${base}/devices` },
+        diagnostics: { href: `${base}/diagnostics` }
+      },
+      audit_and_events: {
+        events: { href: `${base}/history` },
+        iso27001_hash_chain: { enabled: true, algorithm: 'SHA-256' },
+        carbon_mrv_engine: { enabled: true, methodology: 'IPCC-2006-AFOLU-Tier2 / Chave-et-al-2014' }
+      }
+    }
+  });
+});
+
 app.use('/api/version', require('./routes/version'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
