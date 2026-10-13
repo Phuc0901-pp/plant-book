@@ -639,16 +639,22 @@ if (Test-Path $plantsJsPath) {
 
 $usersRoutePath = Join-Path $root "backend\routes\users.js"
 $userSettingsJsPath = Join-Path $root "frontend\user\js\modules\settings.js"
-if ((Test-Path $usersRoutePath) -and (Test-Path $userSettingsJsPath) -and (Test-Path $userHtmlPath)) {
+$userProfileSrcPath = Join-Path $root "frontend\user\src\views\profile.html"
+$userDashSrcPath = Join-Path $root "frontend\user\src\views\dashboard.html"
+if ((Test-Path $usersRoutePath) -and (Test-Path $userSettingsJsPath) -and (Test-Path $userHtmlPath) -and (Test-Path $userProfileSrcPath) -and (Test-Path $userDashSrcPath)) {
     $usersRouteContent = [System.IO.File]::ReadAllText($usersRoutePath, [System.Text.Encoding]::UTF8)
     $userSettingsContent = [System.IO.File]::ReadAllText($userSettingsJsPath, [System.Text.Encoding]::UTF8)
     $userHtmlContent = [System.IO.File]::ReadAllText($userHtmlPath, [System.Text.Encoding]::UTF8)
+    $userProfileSrc = [System.IO.File]::ReadAllText($userProfileSrcPath, [System.Text.Encoding]::UTF8)
+    $userDashSrc = [System.IO.File]::ReadAllText($userDashSrcPath, [System.Text.Encoding]::UTF8)
 
     $hasMyTeamApi = $usersRouteContent.Contains("router.get('/my-team'") -and $usersRouteContent.Contains("router.post('/my-team'") -and $usersRouteContent.Contains("ensureFarmOwnerPrivilege")
     $hasFarmerTeamUi = $userHtmlContent.Contains("subtab-pane-team") -and $userHtmlContent.Contains("farmer-team-member-modal") -and $userSettingsContent.Contains("loadFarmerTeamRbac") -and $userSettingsContent.Contains("submitFarmerTeamMemberForm")
+    $hasSrcTemplateSync = $userProfileSrc.Contains("subtab-pane-team") -and $userProfileSrc.Contains("subtab-btn-team-rbac") -and $userDashSrc.Contains("switchSettingsSubtab('team')")
 
     Record-Test -Category "Farmer Sub-Account RBAC" -TestName "Farmer Team API (/api/users/my-team CRUD & Sub-Role Finance Redaction)" -Passed $hasMyTeamApi
     Record-Test -Category "Farmer Sub-Account RBAC" -TestName "Farmer Portal UI Team RBAC Management (manager, care_worker, auditor_readonly)" -Passed $hasFarmerTeamUi
+    Record-Test -Category "Farmer Sub-Account RBAC" -TestName "Modular Source Templates (src/views/profile.html & dashboard.html) Synced with build-html.js" -Passed $hasSrcTemplateSync
 }
 
 # ══════════════════════════════════════════════════════════════════════════

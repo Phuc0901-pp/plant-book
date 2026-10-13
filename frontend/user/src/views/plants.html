@@ -35,9 +35,12 @@
               <button onclick="closeFarmDetailView()" class="royal-pill-btn farm-btn-back">
                 <i data-lucide="arrow-left" class="lucide-sm"></i> Quay lại
               </button>
-              <div style="display:flex; gap:8px; align-items:center;">
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <button class="royal-pill-btn royal-pill-btn-primary" onclick="openUserCreatePlantModal()" style="font-weight:800; background:linear-gradient(135deg, #10b981, #047857); color:white; border:none; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
                   <i data-lucide="plus-circle" class="lucide-sm"></i> Thêm Cây Mới
+                </button>
+                <button class="royal-pill-btn farm-btn-edit" onclick="showPage('settings'); setTimeout(function(){ if(window.switchSettingsSubtab) window.switchSettingsSubtab('team'); }, 80);" title="Quản lý & Phân quyền Tài khoản Nhân công / Kỹ sư / Kiểm định dưới quyền">
+                  <i data-lucide="users" class="lucide-sm" style="color:#0284c7;"></i> Phân quyền Nhân sự (RBAC)
                 </button>
                 <button class="royal-pill-btn farm-btn-edit" id="btn-edit-active-farm" onclick="openEditFarmModal()">
                   <i data-lucide="edit" class="lucide-sm" style="color:#059669;"></i> Chỉnh sửa Trang trại
