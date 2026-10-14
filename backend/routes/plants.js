@@ -707,7 +707,7 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
       const usagesRes = await pool.query(
         `SELECT su.*, su.usage_date as used_date, su.usage_date as log_date,
                 s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url,
-                COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), NULLIF(TRIM(usr.name), ''), 'Chủ trang trại') as operator_name,
+                COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), 'Chủ trang trại') as operator_name,
                 pl.equipment_used
          FROM supply_usages su
          LEFT JOIN supplies s ON su.supply_id = s.id
@@ -725,8 +725,22 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
         [req.params.id]
       );
       usagesRows = usagesRes.rows;
-    } catch (_) {
-      usagesRows = [];
+    } catch (err) {
+      console.warn('Lỗi query supply_usages LATERAL (sẽ thử fallback):', err.message);
+      try {
+        const fbRes = await pool.query(
+          `SELECT su.*, su.usage_date as used_date, su.usage_date as log_date,
+                  s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url
+           FROM supply_usages su
+           LEFT JOIN supplies s ON su.supply_id = s.id
+           WHERE su.plant_id = $1
+           ORDER BY su.usage_date DESC, su.id DESC`,
+          [req.params.id]
+        );
+        usagesRows = fbRes.rows;
+      } catch (_) {
+        usagesRows = [];
+      }
     }
 
     const redactFinance = isUserFinanceRedacted(req.user);
@@ -4333,7 +4347,7 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
           SELECT su.id, su.supply_id, su.usage_date, su.usage_date as used_date, su.usage_date as log_date,
                  su.quantity, su.unit_price, su.total_cost, su.note, su.created_at,
                  s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url,
-                 COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), NULLIF(TRIM(usr.name), ''), 'Chủ trang trại') as operator_name,
+                 COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), 'Chủ trang trại') as operator_name,
                  pl.equipment_used
           FROM supply_usages su
           LEFT JOIN supplies s ON s.id = su.supply_id
@@ -4351,7 +4365,40 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
         `, [row.id]);
         supplyUsages = usagesRes.rows;
         totalCareCost = supplyUsages.reduce((sum, u) => sum + parseFloat(u.total_cost || 0), 0);
+      } catch (usageErr) {
+        console.warn('Lỗi query supply_usages LATERAL (NFC), dùng fallback:', usageErr.message);
+        try {
+          const fbRes = await pool.query(`
+            SELECT su.*, su.usage_date as used_date, su.usage_date as log_date,
+                   s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url
+            FROM supply_usages su
+            LEFT JOIN supplies s ON s.id = su.supply_id
+            WHERE su.plant_id = $1
+            ORDER BY su.usage_date DESC, su.id DESC
+          `, [row.id]);
+          supplyUsages = fbRes.rows;
+          totalCareCost = supplyUsages.reduce((sum, u) => sum + parseFloat(u.total_cost || 0), 0);
+        } catch (_) {}
+      }
 
+      // Enrich operator_name & equipment_used from logs if needed
+      if (logs && logs.rows) {
+        supplyUsages.forEach(u => {
+          if (!u.operator_name || u.operator_name === 'Chủ trang trại') {
+            const uDateStr = u.usage_date ? new Date(u.usage_date).toISOString().slice(0, 10) : '';
+            const matched = logs.rows.find(l => {
+              const lDateStr = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+              return lDateStr === uDateStr;
+            });
+            if (matched) {
+              if (matched.operator_name) u.operator_name = matched.operator_name;
+              if (matched.equipment_used && !u.equipment_used) u.equipment_used = matched.equipment_used;
+            }
+          }
+        });
+      }
+
+      try {
         const farmSuppliesRes = await pool.query(`
           SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
                  s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
@@ -4371,8 +4418,8 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
           ORDER BY s.category ASC, s.name ASC
         `, [row.farm_owner_user_id || farm.user_id, farmId || row.farm_id, row.id]);
         farmSupplies = farmSuppliesRes.rows;
-      } catch (supErr) {
-        console.warn('Error fetching supply usages for plant:', supErr.message);
+      } catch (farmErr) {
+        console.warn('Lỗi tải danh mục vật tư kho (NFC):', farmErr.message);
       }
 
       return res.json({
@@ -4591,7 +4638,7 @@ router.get('/public/:slug', async (req, res) => {
         SELECT su.id, su.supply_id, su.usage_date, su.usage_date as used_date, su.usage_date as log_date,
                su.quantity, su.unit_price, su.total_cost, su.note, su.created_at,
                s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url,
-               COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), NULLIF(TRIM(usr.name), ''), 'Chủ trang trại') as operator_name,
+               COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), 'Chủ trang trại') as operator_name,
                pl.equipment_used
         FROM supply_usages su
         LEFT JOIN supplies s ON s.id = su.supply_id
@@ -4609,7 +4656,40 @@ router.get('/public/:slug', async (req, res) => {
       `, [row.id]);
       supplyUsages = usagesRes.rows;
       totalCareCost = supplyUsages.reduce((sum, u) => sum + parseFloat(u.total_cost || 0), 0);
+    } catch (usageErr) {
+      console.warn('Lỗi query supply_usages LATERAL (Public), dùng fallback:', usageErr.message);
+      try {
+        const fbRes = await pool.query(`
+          SELECT su.*, su.usage_date as used_date, su.usage_date as log_date,
+                 s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url
+          FROM supply_usages su
+          LEFT JOIN supplies s ON s.id = su.supply_id
+          WHERE su.plant_id = $1
+          ORDER BY su.usage_date DESC, su.id DESC
+        `, [row.id]);
+        supplyUsages = fbRes.rows;
+        totalCareCost = supplyUsages.reduce((sum, u) => sum + parseFloat(u.total_cost || 0), 0);
+      } catch (_) {}
+    }
 
+    // Enrich operator_name & equipment_used from logs if needed
+    if (logs && logs.rows) {
+      supplyUsages.forEach(u => {
+        if (!u.operator_name || u.operator_name === 'Chủ trang trại') {
+          const uDateStr = u.usage_date ? new Date(u.usage_date).toISOString().slice(0, 10) : '';
+          const matched = logs.rows.find(l => {
+            const lDateStr = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+            return lDateStr === uDateStr;
+          });
+          if (matched) {
+            if (matched.operator_name) u.operator_name = matched.operator_name;
+            if (matched.equipment_used && !u.equipment_used) u.equipment_used = matched.equipment_used;
+          }
+        }
+      });
+    }
+
+    try {
       const farmSuppliesRes = await pool.query(`
         SELECT s.id, s.name, s.category, s.package_size, s.package_qty, s.package_price, 
                s.unit_price, s.unit, s.stock_quantity, s.image_url, s.active_ingredient, 
@@ -4629,8 +4709,8 @@ router.get('/public/:slug', async (req, res) => {
         ORDER BY s.category ASC, s.name ASC
       `, [row.farm_owner_user_id || row.created_by, row.farm_id, row.id]);
       farmSupplies = farmSuppliesRes.rows;
-    } catch (supErr) {
-      console.warn('Error fetching supply usages for plant:', supErr.message);
+    } catch (farmErr) {
+      console.warn('Lỗi tải danh mục vật tư kho (Public):', farmErr.message);
     }
 
     res.json({ 
