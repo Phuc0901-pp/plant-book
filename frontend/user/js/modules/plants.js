@@ -4382,6 +4382,29 @@ window.onErpProfileCareClick = onErpProfileCareClick;
 window.onErpProfileNfcClick = onErpProfileNfcClick;
 
 // ── Growth Stage Photo Timeline & Gallery Controller (Append-Only) ──
+function _getGrowthStageLucideIcon(stageStr) {
+  const s = (stageStr || '').toLowerCase();
+  if (s.includes('hoa') || s.includes('flower') || s.includes('mầm')) {
+    return { icon: 'flower-2', color: '#db2777' };
+  }
+  if (s.includes('trái non') || s.includes('đậu trái')) {
+    return { icon: 'circle-dot', color: '#16a34a' };
+  }
+  if (s.includes('nuôi trái') || s.includes('phát triển quả') || s.includes('quả') || s.includes('trái')) {
+    return { icon: 'apple', color: '#ea580c' };
+  }
+  if (s.includes('thu hoạch') || s.includes('harvest')) {
+    return { icon: 'shopping-bag', color: '#d97706' };
+  }
+  if (s.includes('phục hồi') || s.includes('recovery')) {
+    return { icon: 'rotate-ccw', color: '#0284c7' };
+  }
+  if (s.includes('cơi đọt') || s.includes('dinh dưỡng') || s.includes('lá')) {
+    return { icon: 'leaf', color: '#059669' };
+  }
+  return { icon: 'sprout', color: '#059669' };
+}
+
 export function _renderGrowthPhotoGallery(mediaList, plant) {
   const container = document.getElementById('erp-plant-growth-gallery-container');
   const countBadge = document.getElementById('erp-plant-media-count-badge');
@@ -4402,18 +4425,22 @@ export function _renderGrowthPhotoGallery(mediaList, plant) {
         </div>
       </div>
     `;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     if (window.refreshIcons) window.refreshIcons();
     return;
   }
 
   container.innerHTML = items.map((m, idx) => {
-    const stage = m.caption || m.growth_stage || 'Cập nhật sinh trưởng';
+    const rawStage = m.caption || m.growth_stage || 'Cập nhật sinh trưởng';
+    // Remove any unicode emojis that might have been saved in DB
+    const stage = rawStage.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+    const stageIcon = _getGrowthStageLucideIcon(stage);
     const dateStr = m.uploaded_at ? formatDate(m.uploaded_at) : (m.created_at ? formatDate(m.created_at) : 'Mới đây');
     const isLatest = idx === 0;
 
     return `
       <div style="background: #ffffff; border: 1.5px solid ${isLatest ? '#10b981' : '#e2e8f0'}; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; flex-direction: column; position: relative;">
-        ${isLatest ? `<span style="position: absolute; top: 6px; left: 6px; z-index: 2; background: #059669; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.2);">Mới nhất</span>` : ''}
+        ${isLatest ? `<span style="position: absolute; top: 6px; left: 6px; z-index: 2; background: #059669; color: #fff; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 3px;"><i data-lucide="sparkles" class="lucide-xs"></i> Mới nhất</span>` : ''}
         
         <div style="height: 105px; width: 100%; overflow: hidden; position: relative; background: #f1f5f9; cursor: pointer;" onclick="if(window.openLightbox) openLightbox('${esc(m.url)}', 'image')">
           <img src="${esc(m.url)}" alt="${esc(stage)}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.25s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
@@ -4423,8 +4450,9 @@ export function _renderGrowthPhotoGallery(mediaList, plant) {
         </div>
 
         <div style="padding: 8px 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; background: #ffffff;">
-          <div style="font-size: 11.5px; font-weight: 800; color: #064e3b; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(stage)}">
-            🌱 ${esc(stage)}
+          <div style="font-size: 11.5px; font-weight: 800; color: #064e3b; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 5px;" title="${esc(stage)}">
+            <i data-lucide="${stageIcon.icon}" class="lucide-xs" style="color: ${stageIcon.color}; flex-shrink: 0;"></i>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(stage)}</span>
           </div>
           <div style="font-size: 10.5px; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 3px;">
             <i data-lucide="calendar" class="lucide-xs"></i> <span>${esc(dateStr)}</span>
@@ -4434,6 +4462,9 @@ export function _renderGrowthPhotoGallery(mediaList, plant) {
     `;
   }).join('');
 
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
   if (window.refreshIcons) window.refreshIcons();
 }
 window._renderGrowthPhotoGallery = _renderGrowthPhotoGallery;
@@ -4458,6 +4489,7 @@ export function openErpUploadGrowthPhotoModal() {
   if (captionInp) captionInp.value = '';
 
   if (modal) modal.style.display = 'flex';
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   if (window.refreshIcons) window.refreshIcons();
 }
 window.openErpUploadGrowthPhotoModal = openErpUploadGrowthPhotoModal;
@@ -4483,6 +4515,7 @@ export function onErpGrowthModalFileChange(input) {
     if (imgPreview) imgPreview.src = e.target.result;
     if (previewWrap) previewWrap.style.display = 'block';
     if (placeholder) placeholder.style.display = 'none';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     if (window.refreshIcons) window.refreshIcons();
   };
   reader.readAsDataURL(file);
