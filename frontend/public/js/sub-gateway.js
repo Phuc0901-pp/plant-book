@@ -117,18 +117,16 @@ class SubGatewayApp {
 
     // Check if initial tag_uid passed in URL
     if (this.state.tagUid) {
-      const tagEl = document.getElementById('input-tag-uid');
-      if (tagEl) tagEl.value = this.state.tagUid;
+      this.updateActiveTagUid(this.state.tagUid);
     }
 
     // Auto-start NFC listening if supported
     if (this.nfcBridge.isSupported()) {
       this.nfcBridge.scanTag(
         (data) => {
-          this.state.tagUid = data.cleanUid || data.serialNumber;
-          const tagEl = document.getElementById('input-tag-uid');
-          if (tagEl) tagEl.value = this.state.tagUid;
-          this.showToast(`Đã nhận diện Thẻ NFC: [${this.state.tagUid}]`, 'success');
+          const uid = data.cleanUid || data.serialNumber;
+          this.updateActiveTagUid(uid);
+          this.showToast(`Đã nhận diện Thẻ NFC: [${uid}]`, 'success');
         },
         () => {}
       );
@@ -143,6 +141,59 @@ class SubGatewayApp {
     } else {
       // Default: always show landing page so user can choose action
       this.showView('view-landing');
+    }
+
+    this.renderIcons();
+  }
+
+  updateActiveTagUid(uid) {
+    const cleanUid = uid && String(uid).trim() ? String(uid).replace(/:/g, '').trim().toUpperCase() : '';
+    this.state.tagUid = cleanUid;
+
+    // 1. Step 3 input
+    const tagEl = document.getElementById('input-tag-uid');
+    if (tagEl && tagEl.value !== cleanUid) {
+      tagEl.value = cleanUid;
+    }
+
+    // 2. Step 4 input
+    const writeTagEl = document.getElementById('input-write-tag-uid');
+    if (writeTagEl && writeTagEl.value !== cleanUid) {
+      writeTagEl.value = cleanUid;
+    }
+
+    // 3. Step 4 badge
+    const badge = document.getElementById('badge-write-uid-status');
+    if (badge) {
+      if (cleanUid) {
+        badge.innerHTML = `<i data-lucide="check" style="width:11px; height:11px;"></i> Sẵn sàng: ${cleanUid}`;
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#15803d';
+      } else {
+        badge.innerHTML = 'Chưa nhận diện';
+        badge.style.background = '#e2e8f0';
+        badge.style.color = '#475569';
+      }
+    }
+
+    // 4. Update Public Plant URL if a plant is selected or created
+    const plantObj = this.state.createdPlant?.plant || this.state.createdPlant || this.state.selectedPlant;
+    if (plantObj && plantObj.id) {
+      const plantId = plantObj.id;
+      const farmId = plantObj.farm_id || this.state.selectedFarmId;
+      const origin = window.location.origin;
+      const updatedUrl = `${origin}/${farmId}/${plantId}${cleanUid ? `/${encodeURIComponent(cleanUid)}` : ''}`;
+
+      const textUrl = document.getElementById('text-public-plant-url');
+      if (textUrl) textUrl.value = updatedUrl;
+
+      const linkPublic = document.getElementById('link-view-public-profile');
+      if (linkPublic) linkPublic.href = updatedUrl;
+
+      if (this.state.createdPlant) {
+        this.state.createdPlant.public_url = updatedUrl;
+        this.state.createdPlant.nfc_uid = cleanUid;
+      }
     }
 
     this.renderIcons();
@@ -501,7 +552,38 @@ class SubGatewayApp {
       await this.handleSavePlant();
     });
 
-    // 10. NFC Write Action
+    // 10. NFC Tag Input & Scan Actions
+    document.getElementById('input-tag-uid')?.addEventListener('input', (e) => {
+      this.updateActiveTagUid(e.target.value);
+    });
+
+    document.getElementById('input-write-tag-uid')?.addEventListener('input', (e) => {
+      this.updateActiveTagUid(e.target.value);
+    });
+
+    document.getElementById('btn-scan-write-tag')?.addEventListener('click', async () => {
+      if (!this.nfcBridge.isSupported()) {
+        this.showToast('Trình duyệt không hỗ trợ Web NFC. Vui lòng nhập mã UID thủ công.', 'warning');
+        return;
+      }
+      const btn = document.getElementById('btn-scan-write-tag');
+      try {
+        if (btn) btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-xs"></i> Đang chạm...';
+        this.renderIcons();
+        this.showToast('Áp lưng điện thoại vào thẻ NFC để đọc UID...', 'info');
+        const res = await this.nfcBridge.scanTagOnce(12000);
+        if (res && res.cleanUid) {
+          this.updateActiveTagUid(res.cleanUid);
+          this.showToast(`Đã nhận diện UID thẻ: ${res.cleanUid}`, 'success');
+        }
+      } catch (err) {
+        this.showToast(err.message, 'error');
+      } finally {
+        if (btn) btn.innerHTML = '<i data-lucide="radio"></i> Quét Thẻ';
+        this.renderIcons();
+      }
+    });
+
     document.getElementById('btn-write-nfc-tag')?.addEventListener('click', async () => {
       await this.handleWriteNfc();
     });
@@ -850,7 +932,7 @@ class SubGatewayApp {
   prepareExistingPlantBind(plant) {
     this.state.selectedPlant = plant;
     const origin = window.location.origin;
-    const nfcUid = this.state.tagUid || plant.nfc_uid || '';
+    const nfcUid = plant.nfc_uid || this.state.tagUid || '';
     const publicUrl = `${origin}/${plant.farm_id}/${plant.id}${nfcUid ? `/${encodeURIComponent(nfcUid)}` : ''}`;
 
     this.state.createdPlant = {
@@ -862,6 +944,11 @@ class SubGatewayApp {
     document.getElementById('text-public-plant-url').value = publicUrl;
     document.getElementById('link-view-public-profile').href = publicUrl;
     document.getElementById('write-tree-info-text').innerText = `Cây #${plant.tree_code || plant.id} (${plant.plant_variety || 'Cây trồng'})`;
+
+    const successCard = document.getElementById('nfc-write-success-card');
+    if (successCard) successCard.style.display = 'none';
+
+    this.updateActiveTagUid(nfcUid);
     this.showView('view-nfc-write');
   }
 
@@ -995,12 +1082,17 @@ class SubGatewayApp {
       if (!res.ok) throw new Error(data.error || 'Lưu cây thất bại.');
 
       this.state.createdPlant = data;
-      this.state.tagUid = data.nfc_uid || tagUid;
+      this.updateActiveTagUid(data.nfc_uid || tagUid);
 
       const finalUrl = data.hierarchical_url || data.public_url;
       document.getElementById('text-public-plant-url').value = finalUrl;
       document.getElementById('link-view-public-profile').href = finalUrl;
-      document.getElementById('write-tree-info-text').innerText = `Cây #${data.plant.tree_code || data.plant.id} (${data.plant.plant_variety || 'Cây'})`;
+      const displayCode = data.plant?.tree_code || data.plant?.id || data.id;
+      const displayVariety = data.plant?.plant_variety || data.plant_variety || 'Cây trồng';
+      document.getElementById('write-tree-info-text').innerText = `Cây #${displayCode} (${displayVariety})`;
+
+      const successCard = document.getElementById('nfc-write-success-card');
+      if (successCard) successCard.style.display = 'none';
 
       this.showToast('Đã lưu cây! Hãy chạm thẻ để nạp hồ sơ.', 'success');
       this.showView('view-nfc-write');
@@ -1013,7 +1105,7 @@ class SubGatewayApp {
   }
 
   async handleWriteNfc() {
-    const url = document.getElementById('text-public-plant-url')?.value;
+    let url = document.getElementById('text-public-plant-url')?.value;
     if (!url) {
       this.showToast('Không tìm thấy đường dẫn hồ sơ!', 'error');
       return;
@@ -1029,23 +1121,67 @@ class SubGatewayApp {
       if (btn) btn.innerText = 'Đang chờ chạm thẻ...';
       this.showToast('Áp lưng điện thoại vào thẻ NFC để ghi dữ liệu...', 'info');
 
+      // Get target UID
+      let finalUid = document.getElementById('input-write-tag-uid')?.value.trim() 
+        || this.state.tagUid 
+        || this.nfcBridge.getLastScannedUid() 
+        || '';
+      finalUid = finalUid ? finalUid.replace(/:/g, '').toUpperCase() : '';
+
+      const targetPlant = this.state.createdPlant?.plant || this.state.createdPlant || this.state.selectedPlant;
+      if (finalUid && targetPlant) {
+        const plantId = targetPlant.id;
+        const farmId = targetPlant.farm_id || this.state.selectedFarmId;
+        url = `${window.location.origin}/${farmId}/${plantId}/${encodeURIComponent(finalUid)}`;
+        const textUrl = document.getElementById('text-public-plant-url');
+        if (textUrl) textUrl.value = url;
+      }
+
       await this.nfcBridge.writeTagUrl(url);
 
-      // Verify write to backend
-      if (this.state.createdPlant && this.state.token) {
-        const plantId = this.state.createdPlant.plant ? this.state.createdPlant.plant.id : this.state.createdPlant.id;
-        fetch('/api/nfc/verify-write', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.state.token}`
-          },
-          body: JSON.stringify({
-            plant_id: plantId,
-            nfc_uid: this.state.tagUid,
-            written_url: url
-          })
-        }).catch(() => {});
+      // In case tag was tapped and UID was captured during the touch
+      if (!finalUid && this.nfcBridge.getLastScannedUid()) {
+        finalUid = this.nfcBridge.getLastScannedUid();
+        this.updateActiveTagUid(finalUid);
+      }
+
+      // Verify and persist write to backend
+      if (targetPlant && targetPlant.id && this.state.token) {
+        const plantId = targetPlant.id;
+        try {
+          const verifyRes = await fetch('/api/nfc/verify-write', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.state.token}`
+            },
+            body: JSON.stringify({
+              plant_id: plantId,
+              nfc_uid: finalUid || null,
+              written_url: url
+            })
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyRes.ok && verifyData.message) {
+            console.log('NFC write verified:', verifyData);
+          }
+        } catch (e) {
+          console.warn('Verify-write error:', e);
+        }
+
+        // Secondary guarantee: also call PUT /api/plants/:id/nfc
+        if (finalUid) {
+          try {
+            await fetch(`/api/plants/${plantId}/nfc`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.state.token}`
+              },
+              body: JSON.stringify({ nfc_uid: finalUid })
+            });
+          } catch (_) {}
+        }
       }
 
       this.showToast('ĐÃ NẠP HỒ SƠ VÀO THẺ THÀNH CÔNG 100%!', 'success');
@@ -1054,7 +1190,11 @@ class SubGatewayApp {
         this.renderIcons();
       }
 
-      document.getElementById('nfc-write-success-card').style.display = 'block';
+      const successCard = document.getElementById('nfc-write-success-card');
+      if (successCard) {
+        successCard.style.display = 'block';
+        successCard.scrollIntoView({ behavior: 'smooth' });
+      }
       this.renderIcons();
     } catch (err) {
       this.showToast('Lỗi khi ghi thẻ: ' + err.message, 'error');

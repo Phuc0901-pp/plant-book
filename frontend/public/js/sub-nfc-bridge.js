@@ -7,10 +7,15 @@ export class SubNfcBridge {
     this.hasNfc = 'NDEFReader' in window;
     this.reader = null;
     this.isScanning = false;
+    this.lastScannedUid = null;
   }
 
   isSupported() {
     return this.hasNfc;
+  }
+
+  getLastScannedUid() {
+    return this.lastScannedUid;
   }
 
   /**
@@ -57,7 +62,7 @@ export class SubNfcBridge {
   }
 
   /**
-   * Listen for an NFC tag to read its UID
+   * Listen continuously for an NFC tag to read its UID
    */
   async scanTag(onReadCallback, onErrorCallback) {
     if (!this.hasNfc) {
@@ -66,12 +71,15 @@ export class SubNfcBridge {
     }
 
     try {
-      this.reader = new NDEFReader();
+      if (!this.reader) {
+        this.reader = new NDEFReader();
+      }
       await this.reader.scan();
       this.isScanning = true;
 
       this.reader.addEventListener('reading', ({ serialNumber, message }) => {
         let cleanUid = serialNumber ? serialNumber.replace(/:/g, '').toUpperCase() : '';
+        this.lastScannedUid = cleanUid;
         this.triggerHaptic('tap');
         if (onReadCallback) onReadCallback({ serialNumber, cleanUid, message });
       });
@@ -83,6 +91,46 @@ export class SubNfcBridge {
     } catch (err) {
       if (onErrorCallback) onErrorCallback(err);
     }
+  }
+
+  /**
+   * Scan once with a Promise resolution or timeout
+   */
+  async scanTagOnce(timeoutMs = 12000) {
+    if (!this.hasNfc) {
+      throw new Error('Trình duyệt không hỗ trợ Web NFC API.');
+    }
+
+    return new Promise(async (resolve, reject) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => {
+        controller.abort();
+        reject(new Error('Hết thời gian chờ quét thẻ (Timeout).'));
+      }, timeoutMs);
+
+      try {
+        const reader = new NDEFReader();
+        await reader.scan({ signal: controller.signal });
+        reader.addEventListener('reading', ({ serialNumber, message }) => {
+          clearTimeout(timer);
+          controller.abort();
+          let cleanUid = serialNumber ? serialNumber.replace(/:/g, '').toUpperCase() : '';
+          this.lastScannedUid = cleanUid;
+          this.triggerHaptic('tap');
+          resolve({ serialNumber, cleanUid, message });
+        }, { once: true });
+
+        reader.addEventListener('readingerror', (err) => {
+          clearTimeout(timer);
+          controller.abort();
+          this.triggerHaptic('error');
+          reject(err);
+        }, { once: true });
+      } catch (err) {
+        clearTimeout(timer);
+        reject(err);
+      }
+    });
   }
 
   /**

@@ -523,8 +523,30 @@
           Áp lưng điện thoại vào thẻ NFC gắn trên cây để truyền đường dẫn hồ sơ số công khai vào bộ nhớ thẻ.
         </p>
 
+        <!-- NFC UID Status & Input -->
+        <div class="form-group" style="text-align:left; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label class="form-label" style="margin:0; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="cpu" class="lucide-xs" style="color:#059669;"></i> Mã Định Danh Thẻ NFC (UID)
+            </label>
+            <span id="badge-write-uid-status" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; background:#e2e8f0; color:#475569; display:inline-flex; align-items:center; gap:4px;">
+              Chưa nhận diện
+            </span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="input-write-tag-uid" class="form-input" placeholder="Chạm thẻ vào lưng máy hoặc nhập UID..." style="font-family:monospace; font-weight:700; color:#059669; text-transform:uppercase; font-size:14px;">
+            <button type="button" id="btn-scan-write-tag" class="btn btn-secondary btn-sm" style="flex-shrink:0; white-space:nowrap;" title="Quét thẻ để lấy UID">
+              <i data-lucide="radio"></i> Quét Thẻ
+            </button>
+          </div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:5px;">
+            <i data-lucide="info" style="width:12px; height:12px; display:inline-block; vertical-align:middle;"></i>
+            Mã thẻ (UID) sẽ được tự động liên kết vĩnh viễn vào cây trồng này trong cơ sở dữ liệu.
+          </div>
+        </div>
+
         <div class="form-group" style="text-align:left;">
-          <label class="form-label"><i data-lucide="link" class="lucide-xs"></i> Đường Dẫn Hồ Sơ Nông Sản Công Khai</label>
+          <label class="form-label"><i data-lucide="link" class="lucide-xs"></i> Đường Dẫn Hồ Sơ Nông Sản Công Khai (3 Đoạn Chuẩn)</label>
           <div style="display:flex; gap:8px;">
             <input type="text" id="text-public-plant-url" class="form-input" readonly style="font-size:12px; font-family:monospace; color:#0f172a; background:#f8fafc;">
             <button type="button" id="btn-copy-public-url" class="btn btn-secondary btn-sm" style="flex-shrink:0;">

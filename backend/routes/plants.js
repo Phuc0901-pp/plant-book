@@ -1649,10 +1649,12 @@ router.put('/:id/nfc', auth, async (req, res) => {
         [cleanUid, plant.farm_id]
       );
       if (invCheck.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({
-          error: `Mã thẻ ${cleanUid} chưa được khai báo nhập kho cho trang trại này. Vui lòng liên hệ Quản trị viên để nhập kho thẻ trước.`
-        });
+        // Tự động thêm thẻ vào kho của nông trại nếu chưa khai báo trước
+        await client.query(
+          `INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, status, assigned_at)
+           VALUES ($1, $2, 'unassigned', NOW())`,
+          [cleanUid, plant.farm_id]
+        );
       }
 
       // 2b. Check if this UID is already assigned to ANOTHER plant
@@ -4007,27 +4009,97 @@ router.post(['/single-provision', '/plants/single-provision'], auth, async (req,
   }
 });
 
-// ─── Verify NFC Physical Tag Write Success ───
+// ─── Verify NFC Physical Tag Write Success & Auto-Sync UID to Plant ───
 router.post(['/nfc/verify-write', '/plants/nfc/verify-write'], auth, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { plant_id, nfc_uid, written_url } = req.body;
     if (!plant_id) {
       return res.status(400).json({ error: 'Mã cây trồng là bắt buộc.' });
     }
 
-    await pool.query(`
+    const cleanPlantId = parseInt(plant_id);
+    const cleanUid = nfc_uid && String(nfc_uid).trim() ? String(nfc_uid).replace(/:/g, '').trim().toUpperCase() : null;
+
+    await client.query('BEGIN');
+
+    let updatedPlant = null;
+    if (cleanUid) {
+      // 1. Kiểm tra cây trồng
+      const plantRes = await client.query(
+        `SELECT id, farm_id, tree_code, nfc_uid FROM plants WHERE id = $1`,
+        [cleanPlantId]
+      );
+
+      if (plantRes.rows.length > 0) {
+        const p = plantRes.rows[0];
+        const newPublicUrl = written_url || generatePublicPlantUrl(p.farm_id, p.id, cleanUid);
+
+        // 2. Cập nhật cây với UID mới và public URL
+        const upRes = await client.query(
+          `UPDATE plants 
+           SET nfc_uid = $1, public_url = $2, updated_at = NOW() 
+           WHERE id = $3 
+           RETURNING id, farm_id, tree_code, nfc_uid, public_url`,
+          [cleanUid, newPublicUrl, cleanPlantId]
+        );
+        updatedPlant = upRes.rows[0];
+
+        // 3. Cập nhật / gán thẻ vào nfc_tags_inventory nếu tồn tại
+        try {
+          const invCheck = await client.query(
+            `SELECT id FROM nfc_tags_inventory WHERE UPPER(nfc_uid) = UPPER($1)`,
+            [cleanUid]
+          );
+          if (invCheck.rows.length > 0) {
+            const hmacSig = nfcSecurity.generateHmacSignature ? nfcSecurity.generateHmacSignature(cleanUid, cleanPlantId) : null;
+            await client.query(
+              `UPDATE nfc_tags_inventory 
+               SET farm_id = $1, status = 'assigned', plant_id = $2, hmac_signature = COALESCE($3, hmac_signature), tagged_at = NOW(), last_scanned_at = NOW() 
+               WHERE UPPER(nfc_uid) = UPPER($4)`,
+              [p.farm_id, cleanPlantId, hmacSig, cleanUid]
+            );
+          } else {
+            const hmacSig = nfcSecurity.generateHmacSignature ? nfcSecurity.generateHmacSignature(cleanUid, cleanPlantId) : null;
+            await client.query(
+              `INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, hmac_signature, assigned_at, tagged_at, last_scanned_at)
+               VALUES ($1, $2, $3, 'assigned', $4, NOW(), NOW(), NOW())`,
+              [cleanUid, p.farm_id, cleanPlantId, hmacSig]
+            );
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 4. Ghi log hoạt động
+    await client.query(`
       INSERT INTO user_activities (user_id, activity_type, description)
       VALUES ($1, 'Ghi Thẻ NFC Thành Công', $2)
-    `, [req.user.id, `Đã ghi thành công URL [${written_url || 'N/A'}] vào thẻ NFC [${nfc_uid || 'N/A'}] cho Cây #${plant_id}`]);
+    `, [req.user.id, `Đã ghi thành công URL [${written_url || 'N/A'}] vào thẻ NFC [${cleanUid || 'N/A'}] cho Cây #${cleanPlantId}`]);
+
+    await client.query('COMMIT');
+
+    // 5. Broadcast cập nhật cây qua WebSocket
+    try {
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) broadcast('plants_updated', { plant_id: cleanPlantId, nfc_uid: cleanUid });
+    } catch (_) {}
 
     res.json({
       success: true,
-      message: 'Đã xác nhận ghi thẻ NFC thành công!',
+      message: cleanUid 
+        ? `Đã cập nhật mã thẻ NFC ${cleanUid} vào Cây #${cleanPlantId} thành công!`
+        : 'Đã xác nhận ghi thẻ NFC thành công!',
+      plant: updatedPlant,
+      nfc_uid: cleanUid,
       verified_at: new Date()
     });
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Error verifying NFC write:', err);
     res.status(500).json({ error: 'Lỗi server khi xác thực ghi thẻ: ' + err.message });
+  } finally {
+    client.release();
   }
 });
 
