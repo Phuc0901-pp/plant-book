@@ -508,54 +508,91 @@ async function selectTreeForDetail(plantId) {
       if (summaryBox) {
         const pucCode = plant.farm_puc_code || 'VN-TB';
 
+        let plantDisplayName = esc(plant.plant_type || 'Cây trồng');
+        if (plant.plant_variety) {
+          const cleanVar = esc(plant.plant_variety).replace(/^\((.*)\)$/, '$1');
+          if (!plantDisplayName.toLowerCase().includes(cleanVar.toLowerCase())) {
+            plantDisplayName += ` (${cleanVar})`;
+          }
+        }
+
         summaryBox.style.display = 'block';
         summaryBox.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <div>
-              <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; opacity:0.85;">
-                <i data-lucide="trees" class="lucide-sm"></i> HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)} · ${esc(plant.farm_name || 'Trang trại')}
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+            <!-- Left Info Block -->
+            <div style="flex:1; min-width:280px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:2px 8px; font-size:11px; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; color:#d1fae5; display:inline-flex; align-items:center; gap:5px;">
+                  <i data-lucide="trees" class="lucide-xs"></i> HỒ SƠ CÂY #${esc(plant.tree_code || plant.id)}
+                </span>
+                <span style="font-size:12px; color:#a7f3d0; font-weight:600;">
+                  · ${esc(plant.farm_name || 'Trang trại')}
+                </span>
               </div>
-              <div style="font-size:20px; font-weight:800; margin-top:2px;">
-                ${esc(plant.plant_type)} ${plant.plant_variety ? `(${esc(plant.plant_variety)})` : ''}
-              </div>
-              <div style="font-size:12.5px; opacity:0.9; margin-top:2px;">
-                Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong> · Sức khỏe: <strong>${esc(plant.health_status || 'Tốt')}</strong> · Tuổi: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong> · Mã PUC: <span style="font-family:monospace; font-weight:800;">${esc(pucCode)}</span>
+              <h1 style="font-size:22px; font-weight:900; margin:0 0 8px 0; color:#ffffff; letter-spacing:-0.3px; line-height:1.25;">
+                ${plantDisplayName}
+              </h1>
+              <!-- Meta Pills -->
+              <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px;">
+                <span style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.15); padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:5px; color:#ffffff;">
+                  <i data-lucide="map-pin" class="lucide-xs" style="color:#34d399;"></i> Vị trí: <strong>${esc(plant.location || 'Chưa gán')}</strong>
+                </span>
+                <span style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.15); padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:5px; color:#ffffff;">
+                  <i data-lucide="activity" class="lucide-xs" style="color:#6ee7b7;"></i> Sức khỏe: <strong style="color:#86efac;">${esc(plant.health_status || 'Tốt')}</strong>
+                </span>
+                <span style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.15); padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:5px; color:#ffffff;">
+                  <i data-lucide="calendar" class="lucide-xs" style="color:#fde047;"></i> Tuổi: <strong>${esc(plant.plant_age || 'Chưa rõ')}</strong>
+                </span>
+                <span style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.15); padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:5px; color:#ffffff;">
+                  <i data-lucide="qr-code" class="lucide-xs" style="color:#93c5fd;"></i> PUC: <strong style="font-family:monospace; color:#bfdbfe;">${esc(pucCode)}</strong>
+                </span>
               </div>
             </div>
 
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-              <button onclick="openQrModal(${plant.id})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="In mã QR">
-                <i data-lucide="qr-code" class="lucide-sm"></i> In QR
-              </button>
-              <button onclick="openPlantModal(${plant.id}, ${currentDbSelectedFarmId})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="Chỉnh sửa cây">
-                <i data-lucide="edit-3" class="lucide-sm"></i> Sửa cây
-              </button>
-              <button onclick="deletePlantFromDb(${plant.id}, '${esc(plant.plant_type)}')" class="btn" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; font-weight:700; font-size:12px; padding:7px 12px; cursor:pointer;" title="Xóa cây">
-                <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
-              </button>
-              <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
-                <div style="font-size:10px; text-transform:uppercase; opacity:0.85; font-weight:700; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
-                  <i data-lucide="coins" class="lucide-xs"></i> TỔNG ĐẦU TƯ
-                </div>
-                <div style="font-size:16px; font-weight:800; color:#fde047; margin-top:2px;">
-                  ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
+            <!-- Right Actions & Cost KPI Block -->
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button onclick="openQrModal(${plant.id})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.08); transition:all 0.15s ease;" title="In mã QR">
+                  <i data-lucide="qr-code" class="lucide-sm" style="color:#059669;"></i> In QR
+                </button>
+                <button onclick="openPlantModal(${plant.id}, ${currentDbSelectedFarmId})" class="btn" style="background:#ffffff; color:#064e3b; border:none; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.08); transition:all 0.15s ease;" title="Chỉnh sửa cây">
+                  <i data-lucide="edit-3" class="lucide-sm" style="color:#059669;"></i> Sửa cây
+                </button>
+                <button onclick="deletePlantFromDb(${plant.id}, '${esc(plant.plant_type)}')" class="btn" style="background:#fee2e2; color:#dc2626; border:1px solid #fecdd3; border-radius:8px; font-weight:800; font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.15s ease;" title="Xóa cây">
+                  <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
+                </button>
+                <!-- Luxury Total Cost Pill -->
+                <div style="background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.3); border-radius:10px; padding:6px 14px; text-align:right; display:flex; align-items:center; gap:8px; backdrop-filter:blur(6px);">
+                  <div style="width:28px; height:28px; border-radius:6px; background:rgba(253,224,71,0.25); color:#fde047; display:flex; align-items:center; justify-content:center; font-size:14px;">
+                    <i data-lucide="coins" class="lucide-xs"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:9.5px; text-transform:uppercase; color:#d1fae5; font-weight:800; letter-spacing:0.5px;">TỔNG ĐẦU TƯ</div>
+                    <div style="font-size:15px; font-weight:900; color:#fef08a; line-height:1.1;">
+                      ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- VietGAP Compliance Status Bar -->
-          <div style="margin-top:12px; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-            <div style="background:rgba(16,185,129,0.3); border:1px solid rgba(167,243,208,0.6); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:800; color:#ffffff; display:inline-flex; align-items:center; gap:8px;">
-              <i data-lucide="shield-check" class="lucide-sm" style="color:#86efac; font-size:14px;"></i> 
+          <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,0.15); padding-top:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div style="background:rgba(16,185,129,0.25); border:1px solid rgba(110,231,183,0.4); padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; color:#ffffff; display:inline-flex; align-items:center; gap:7px;">
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#6ee7b7;"></i> 
               TIÊU CHUẨN VIETGAP 100% · NHẬT KÝ TRUY XUẤT MINH BẠCH
             </div>
 
-            <div style="font-size:12px; opacity:0.9;">
-              <i data-lucide="scan" class="lucide-sm"></i> Mã Lô VietGAP khi thu hoạch: <strong style="font-family:monospace; color:#fde047;">${pucCode}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${(plant.tree_code || plant.id).toString().replace(/[^a-zA-Z0-9]/g,'')}</strong>
+            <div style="font-size:12px; color:#d1fae5; display:inline-flex; align-items:center; gap:6px;">
+              <i data-lucide="scan" class="lucide-xs" style="color:#34d399;"></i> Mã Lô VietGAP thu hoạch: 
+              <strong style="font-family:monospace; background:rgba(0,0,0,0.25); padding:2px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.12); color:#fde047; font-size:12px;">
+                ${pucCode}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${(plant.tree_code || plant.id).toString().replace(/[^a-zA-Z0-9]/g,'')}
+              </strong>
             </div>
           </div>
         `;
+      }
       }
     }
 
@@ -682,27 +719,34 @@ function renderActivityFilterChips(logs) {
   const chipTypes = ['all', 'Tưới nước', 'Bón phân', 'Phun thuốc', 'Cắt lá', 'Tỉa hoa', 'Bệnh cây', 'Thu hoạch'];
   const availableTypes = chipTypes.filter(t => t === 'all' || counts[t] > 0);
 
-  const typeIcons = {
-    all: 'list',
-    'Tưới nước': 'droplets',
-    'Bón phân': 'sprout',
-    'Phun thuốc': 'spray-can',
-    'Cắt lá': 'scissors',
-    'Tỉa hoa': 'scissors',
-    'Bệnh cây': 'bug',
-    'Thu hoạch': 'shopping-bag'
+  const chipStyles = {
+    all: { icon: 'list', inactBorder: '#cbd5e1', inactBg: '#f8fafc', inactColor: '#334155' },
+    'Tưới nước': { icon: 'droplets', inactBorder: '#bfdbfe', inactBg: '#eff6ff', inactColor: '#1d4ed8' },
+    'Bón phân': { icon: 'sprout', inactBorder: '#fde68a', inactBg: '#fef3c7', inactColor: '#92400e' },
+    'Phun thuốc': { icon: 'spray-can', inactBorder: '#ddd6fe', inactBg: '#f3e8ff', inactColor: '#6b21a8' },
+    'Cắt lá': { icon: 'scissors', inactBorder: '#a7f3d0', inactBg: '#ecfdf5', inactColor: '#047857' },
+    'Tỉa hoa': { icon: 'scissors', inactBorder: '#ffedd5', inactBg: '#fff7ed', inactColor: '#c2410c' },
+    'Bệnh cây': { icon: 'bug', inactBorder: '#fca5a5', inactBg: '#fef2f2', inactColor: '#b91c1c' },
+    'Thu hoạch': { icon: 'shopping-bag', inactBorder: '#fef08a', inactBg: '#fefce8', inactColor: '#a16207' }
   };
 
   container.innerHTML = availableTypes.map(t => {
     const isActive = (currentDbActiveActivityFilter === t);
     const label = t === 'all' ? 'Tất cả hoạt động' : t;
     const count = counts[t] || 0;
-    const icon = typeIcons[t] || 'tag';
+    const st = chipStyles[t] || { icon: 'tag', inactBorder: '#cbd5e1', inactBg: '#f8fafc', inactColor: '#475569' };
 
     return `
       <button type="button" onclick="filterTimelineByActivity('${esc(t)}')"
-              style="padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s ease; border:${isActive ? '1.5px solid #059669' : '1.5px solid #cbd5e1'}; background:${isActive ? '#059669' : '#ffffff'}; color:${isActive ? '#ffffff' : '#475569'}; display:inline-flex; align-items:center; gap:6px;">
-        <i data-lucide="${icon}" class="lucide-sm"></i> ${esc(label)} <span style="opacity:0.85; font-size:11px;">(${count})</span>
+              style="padding:6px 14px; border-radius:20px; font-size:12px; font-weight:${isActive ? '800' : '700'}; cursor:pointer; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); 
+                     border:1.5px solid ${isActive ? '#059669' : st.inactBorder}; 
+                     background:${isActive ? '#059669' : st.inactBg}; 
+                     color:${isActive ? '#ffffff' : st.inactColor}; 
+                     box-shadow:${isActive ? '0 2px 8px rgba(5,150,105,0.3)' : 'none'}; 
+                     transform:${isActive ? 'scale(1.03)' : 'scale(1)'};
+                     display:inline-flex; align-items:center; gap:6px;">
+        <i data-lucide="${st.icon}" class="lucide-xs"></i> <span>${esc(label)}</span>
+        <span style="opacity:${isActive ? '0.9' : '0.8'}; font-size:11px; font-weight:800; background:${isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)'}; padding:1px 6px; border-radius:10px;">${count}</span>
       </button>
     `;
   }).join('');

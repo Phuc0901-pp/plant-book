@@ -252,10 +252,42 @@ function getCategoryBadge(category) {
 
 // ─── TAB 1: QUẢN LÝ VẬT TƯ (CRUD) ───────────────────────────────
 
-// ─── Live Unit Auto-Calculation ──────────────────────────────────
+export function normalizeSupplyCategory(cat, name = '') {
+  const text = `${cat || ''} ${name || ''}`.toLowerCase();
+  if (/thuốc|bvtv|trừ\s*sâu|trừ\s*bệnh|trị\s*nấm|diệt|anvil|score|amistar|ridomil|tilt|antracol|mancozeb|nativo|pes|fungi|hoạt chất|phun|kháng\s*sinh|rầy|sâu/i.test(text)) {
+    return 'Phun thuốc';
+  }
+  if (/nước|tưới|thủy lợi/i.test(text) && !/phân|thuốc/i.test(text)) {
+    return 'Tiền nước';
+  }
+  if (/nhân\s*công|tiền\s*công|lao\s*động|công\s*nhân/i.test(text)) {
+    return 'Nhân công';
+  }
+  return 'Bón phân';
+}
+
+export function normalizePackageUnit(rawUnit) {
+  if (!rawUnit) return 'kg';
+  const u = rawUnit.toString().toLowerCase().trim();
+  if (['chai', 'lọ', 'bình', 'ống'].includes(u)) return 'chai';
+  if (['gói', 'bịch', 'túi'].includes(u)) return 'gói';
+  if (['can', 'thùng'].includes(u)) return 'can';
+  if (['lít', 'lit', 'l'].includes(u)) return 'lít';
+  if (['ml', 'mililit', 'cc'].includes(u)) return 'ml';
+  if (['g', 'gam', 'gram'].includes(u)) return 'g';
+  if (['kg', 'kí', 'ký', 'bao'].includes(u)) return 'kg';
+  if (['m3', 'm³', 'khối'].includes(u)) return 'm3';
+  if (['ngày công', 'công'].includes(u)) return 'ngày công';
+  return 'khác';
+}
+
 // ─── Live Unit Auto-Calculation ──────────────────────────────────
 export function autoCalculateSupplyUnits() {
-  const category = document.getElementById('sp-category')?.value || 'Bón phân';
+  const rawCategory = document.getElementById('sp-category')?.value || 'Bón phân';
+  const category = ['Bón phân', 'Tiền nước', 'Phun thuốc', 'Nhân công'].includes(rawCategory) ? rawCategory : normalizeSupplyCategory(rawCategory);
+  if (document.getElementById('sp-category') && document.getElementById('sp-category').value !== category) {
+    document.getElementById('sp-category').value = category;
+  }
   const isWaterOrLabor = (category === 'Tiền nước' || category === 'Nhân công');
 
   // Toggle DOM visibility based on Category
@@ -269,9 +301,13 @@ export function autoCalculateSupplyUnits() {
 
   const fieldStockCount = document.getElementById('field-stock-count');
   const fieldFertType = document.getElementById('field-fertilizer-type');
+  const fieldVietgap = document.getElementById('field-vietgap-box');
 
   if (fieldFertType) {
     fieldFertType.style.display = (category === 'Bón phân') ? 'block' : 'none';
+  }
+  if (fieldVietgap) {
+    fieldVietgap.style.display = (category === 'Phun thuốc') ? 'block' : 'none';
   }
 
   if (isWaterOrLabor) {
@@ -322,7 +358,11 @@ export function autoCalculateSupplyUnits() {
     }
 
     const pkgQty = parseFloat(document.getElementById('sp-package-qty')?.value) || 1;
-    const pkgUnit = document.getElementById('sp-package-unit')?.value || 'kg';
+    const rawPkgUnit = document.getElementById('sp-package-unit')?.value || (category === 'Phun thuốc' ? 'chai' : 'kg');
+    const pkgUnit = normalizePackageUnit(rawPkgUnit);
+    if (document.getElementById('sp-package-unit') && document.getElementById('sp-package-unit').value !== pkgUnit) {
+      document.getElementById('sp-package-unit').value = pkgUnit;
+    }
     const pkgPrice = parseFloat(document.getElementById('sp-package-price')?.value) || 0;
 
     let unitLarge = 'kg';
@@ -340,6 +380,21 @@ export function autoCalculateSupplyUnits() {
       unitSmall = 'g';
       priceSmall = pkgPrice / pkgQty;
       priceLarge = priceSmall * 1000;
+    } else if (pkgUnit === 'chai') {
+      unitLarge = 'chai';
+      unitSmall = 'ml';
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge;
+    } else if (pkgUnit === 'gói') {
+      unitLarge = 'gói';
+      unitSmall = 'g';
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge;
+    } else if (pkgUnit === 'can') {
+      unitLarge = 'can';
+      unitSmall = 'lít';
+      priceLarge = pkgPrice / pkgQty;
+      priceSmall = priceLarge / 5;
     } else if (pkgUnit === 'lít') {
       unitLarge = 'lít';
       unitSmall = 'ml';
@@ -1045,14 +1100,16 @@ export function openSupplyModal(id = null) {
   document.getElementById('sp-id').value = id || '';
   document.getElementById('sp-category').value = 'Bón phân';
   document.getElementById('sp-name').value = '';
-  document.getElementById('sp-package-qty').value = '50';
+  document.getElementById('sp-package-qty').value = '1';
   if (document.getElementById('sp-stock-count')) document.getElementById('sp-stock-count').value = '1';
   document.getElementById('sp-package-unit').value = 'kg';
-  document.getElementById('sp-package-price').value = '1530000';
+  document.getElementById('sp-package-price').value = '';
   document.getElementById('sp-note').value = '';
   if (document.getElementById('sp-phi-days')) document.getElementById('sp-phi-days').value = '';
   if (document.getElementById('sp-active-ingredient')) document.getElementById('sp-active-ingredient').value = '';
   if (document.getElementById('sp-target-pests')) document.getElementById('sp-target-pests').value = '';
+  const scanFileInput = document.getElementById('sp-ai-scan-file');
+  if (scanFileInput) scanFileInput.value = '';
   setSupplyImagePreview('');
 
   if (id) {
@@ -2231,24 +2288,34 @@ export function parseAgriculturalProductText(rawText) {
   let name = '';
   let category = 'Bón phân';
   let fertilizer_type = 'Phân vô cơ (NPK / Hóa học)';
-  let package_qty = 50;
+  let package_qty = 1;
   let package_unit = 'kg';
+  let active_ingredient = '';
+  let target_pests = '';
+  let phi_days = 0;
 
   // 1. Detect Category
-  if (/thuốc|phun|trừ sâu|trừ bệnh|trị nấm|diệt|5sc|250ec|750wg|sl|wp|ec|sc|kháng sinh|bảo vệ thực vật/i.test(lowerText) && !/phân bón|npk|hữu cơ/i.test(lowerText)) {
+  if (/thuốc|phun|trừ\s*sâu|trừ\s*bệnh|trị\s*nấm|diệt|5sc|250ec|750wg|sl|wp|ec|sc|kháng\s*sinh|bảo vệ thực vật|anvil|score|amistar|ridomil|tilt|antracol|mancozeb|nativo|rầy|sâu/i.test(lowerText) && !/phân bón|npk|hữu cơ|đầu trâu|đạm/i.test(lowerText)) {
     category = 'Phun thuốc';
+    package_qty = 1;
+    package_unit = 'chai';
   } else {
     category = 'Bón phân';
+    package_qty = 50;
+    package_unit = 'kg';
   }
 
   // 2. Detect Package Quantity & Unit
-  const qtyMatch = lowerText.match(/(\d+(\.\d+)?)\s*(kg|kí|ký|g|gam|lít|lit|l|ml|m3)/i);
+  const qtyMatch = lowerText.match(/(\d+(\.\d+)?)\s*(kg|kí|ký|g|gam|lít|lit|l|ml|chai|gói|can|m3)/i);
   if (qtyMatch) {
-    package_qty = parseFloat(qtyMatch[1]) || 50;
+    package_qty = parseFloat(qtyMatch[1]) || (category === 'Phun thuốc' ? 1 : 50);
     const rawUnit = qtyMatch[3].toLowerCase();
     if (rawUnit === 'kí' || rawUnit === 'ký') package_unit = 'kg';
     else if (rawUnit === 'lit' || rawUnit === 'l') package_unit = 'lít';
     else if (rawUnit === 'gam') package_unit = 'g';
+    else if (rawUnit === 'chai') package_unit = 'chai';
+    else if (rawUnit === 'gói') package_unit = 'gói';
+    else if (rawUnit === 'can') package_unit = 'can';
     else package_unit = rawUnit;
   }
 
@@ -2265,9 +2332,33 @@ export function parseAgriculturalProductText(rawText) {
     } else if (/chuồng|bò|gà|hoai/i.test(lowerText)) {
       fertilizer_type = 'Phân chuồng / Hoai mục';
     }
+  } else {
+    fertilizer_type = null;
+    // Common VietGAP Pesticide Specs
+    if (/anvil/i.test(lowerText)) {
+      active_ingredient = 'Hexaconazole 50g/l';
+      target_pests = 'Nấm rỉ sắt, đốm vằn, thán thư';
+      phi_days = 7;
+    } else if (/ridomil/i.test(lowerText)) {
+      active_ingredient = 'Metalaxyl-M 40g/kg + Mancozeb 640g/kg';
+      target_pests = 'Sương mai, thán thư, thối nõn';
+      phi_days = 7;
+    } else if (/tilt/i.test(lowerText)) {
+      active_ingredient = 'Propiconazole 150g/l + Difenoconazole 150g/l';
+      target_pests = 'Đốm lá, lem lép hạt, rỉ sắt';
+      phi_days = 7;
+    } else if (/antracol/i.test(lowerText)) {
+      active_ingredient = 'Propineb 700g/kg';
+      target_pests = 'Thán thư, mốc sương, đốm lá';
+      phi_days = 7;
+    } else if (/amistar/i.test(lowerText)) {
+      active_ingredient = 'Azoxystrobin 200g/l + Difenoconazole 125g/l';
+      target_pests = 'Thán thư, phấn trắng, đốm lá';
+      phi_days = 7;
+    }
   }
 
-  // 4. Detect Product Name from text lines (Filter out noise like WENA, ISO, TEL, FAX, ADDRESS)
+  // 4. Detect Product Name from text lines
   const noiseKeywords = [
     'iso 9001', 'iso 14001', 'tel:', 'fax:', 'website:', 'email:', 'đ/c:', 'lô a', 
     'sản xuất:', 'công ty cổ phần', 'bình điền - mekong', 'bạn đồng hành', 'bảo vệ bộ rễ',
@@ -2275,9 +2366,9 @@ export function parseAgriculturalProductText(rawText) {
   ];
 
   const brandKeywords = [
-    'đầu trâu', 'bio power', 'trichoderma', 'yaravila', 'yara', 'anvil', 'til super', 'ridomil', 
+    'đầu trâu', 'bio power', 'trichoderma', 'yaravila', 'yara', 'anvil', 'til super', 'tilt super', 'ridomil', 
     'mancozeb', 'antracol', 'score', 'amistar', 'filia', 'bình điền', 'đạm cà mau', 'đạm phú mỹ',
-    'humic', 'bimat', 'nativo', 'physan', 'coc 85', 'trùn quế', 'npk', 'super', 'hữu cơ'
+    'humic', 'bimat', 'nativo', 'physan', 'coc 85', 'trùn quế', 'npk', 'super', 'hữu cơ', 'aliette', 'regent', 'confidor'
   ];
 
   const lines = text.split('\n')
@@ -2295,13 +2386,14 @@ export function parseAgriculturalProductText(rawText) {
   if (foundMatches.length > 0) {
     name = foundMatches.join(' ');
   } else {
-    // If OCR text is mostly noise (e.g. "WENA"), do NOT output garbage! Construct a clean default.
-    if (lowerText.includes('hữu cơ') || lowerText.includes('trichoderma') || lowerText.includes('bio power')) {
+    if (category === 'Phun thuốc') {
+      name = 'Thuốc BVTV Anvil 5SC';
+    } else if (lowerText.includes('hữu cơ') || lowerText.includes('trichoderma') || lowerText.includes('bio power')) {
       name = 'Phân hữu cơ Bio Power Trichoderma (Đầu Trâu)';
     } else if (lowerText.includes('npk')) {
       name = 'Phân bón NPK Đầu Trâu';
     } else {
-      name = category === 'Phun thuốc' ? 'Thuốc bảo vệ thực vật' : 'Phân bón nông nghiệp';
+      name = 'Phân bón nông nghiệp';
     }
   }
 
@@ -2314,8 +2406,11 @@ export function parseAgriculturalProductText(rawText) {
     category,
     fertilizer_type,
     package_qty,
-    package_unit,
+    package_unit: normalizePackageUnit(package_unit),
     package_size: `${package_qty} ${package_unit}`,
+    active_ingredient,
+    target_pests,
+    phi_days,
     is_fallback_ocr: true
   };
 }
@@ -2375,7 +2470,7 @@ export async function handleAiScanImageUpload(event) {
     // Compress image client-side to reduce payload & token consumption by 80%
     const compressedFile = await compressImageForAi(file);
 
-    // 1. Try Backend Cloud Vision API (Google Gemini 3.6 Flash) first
+    // 1. Try Backend Cloud Vision API first
     try {
       const formData = new FormData();
       formData.append('file', compressedFile);
@@ -2419,20 +2514,32 @@ export async function handleAiScanImageUpload(event) {
     }
 
     if (d) {
-      if (d.category && document.getElementById('sp-category')) {
-        document.getElementById('sp-category').value = d.category;
+      const cat = normalizeSupplyCategory(d.category, d.name);
+      const unit = normalizePackageUnit(d.package_unit);
+
+      if (document.getElementById('sp-category')) {
+        document.getElementById('sp-category').value = cat;
       }
-      if (d.package_unit && document.getElementById('sp-package-unit')) {
-        document.getElementById('sp-package-unit').value = d.package_unit;
+      if (document.getElementById('sp-package-unit')) {
+        document.getElementById('sp-package-unit').value = unit;
       }
-      if (d.fertilizer_type && document.getElementById('sp-fertilizer-type')) {
+      if (cat === 'Bón phân' && d.fertilizer_type && document.getElementById('sp-fertilizer-type')) {
         document.getElementById('sp-fertilizer-type').value = d.fertilizer_type;
       }
       if (d.name && document.getElementById('sp-name')) {
         document.getElementById('sp-name').value = d.name;
       }
-      if (d.package_qty && document.getElementById('sp-package-qty')) {
-        document.getElementById('sp-package-qty').value = d.package_qty;
+      if (document.getElementById('sp-package-qty')) {
+        document.getElementById('sp-package-qty').value = d.package_qty || (cat === 'Phun thuốc' ? 1 : 50);
+      }
+      if (d.active_ingredient && document.getElementById('sp-active-ingredient')) {
+        document.getElementById('sp-active-ingredient').value = d.active_ingredient;
+      }
+      if (d.target_pests && document.getElementById('sp-target-pests')) {
+        document.getElementById('sp-target-pests').value = d.target_pests;
+      }
+      if (d.phi_days && document.getElementById('sp-phi-days')) {
+        document.getElementById('sp-phi-days').value = d.phi_days;
       }
 
       if (typeof autoCalculateSupplyUnits === 'function') {
@@ -2442,7 +2549,7 @@ export async function handleAiScanImageUpload(event) {
       if (isCached) {
         toast('Đã bóc tách & tự đính kèm ảnh bao bì từ bộ nhớ đệm!', 'success');
       } else if (isGeminiUsed) {
-        toast('AI Gemini 3.6 Flash đã bóc tách & tự đính kèm ảnh bao bì thành công!', 'success');
+        toast('AI đã bóc tách & tự đính kèm ảnh bao bì thành công!', 'success');
       } else {
         toast('Đã quét OCR & tự đính kèm ảnh bao bì! Vui lòng kiểm tra lại thông tin.', 'warning');
       }
@@ -2455,7 +2562,12 @@ export async function handleAiScanImageUpload(event) {
   } finally {
     if (btn) btn.disabled = false;
     if (textEl) textEl.innerHTML = '<i data-lucide="camera" class="lucide-sm"></i> Chụp / Chọn ảnh bao bì';
-    event.target.value = '';
+    if (event.target) event.target.value = '';
+    const fileInp = document.getElementById('sp-ai-scan-file');
+    if (fileInp) fileInp.value = '';
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   }
 }
 

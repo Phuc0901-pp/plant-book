@@ -233,6 +233,35 @@ router.post('/upload-image', auth, upload.single('file'), async (req, res) => {
 const crypto = require('crypto');
 const scanResultCache = new Map(); // Cache max 150 scanned image results in memory to save API tokens
 
+function normalizeSupplyCategory(cat, name = '') {
+  const text = `${cat || ''} ${name || ''}`.toLowerCase();
+  if (/thuốc|bvtv|trừ\s*sâu|trừ\s*bệnh|trị\s*nấm|diệt|anvil|score|amistar|ridomil|tilt|antracol|mancozeb|nativo|pes|fungi|hoạt chất|phun|kháng\s*sinh|rầy|sâu/i.test(text)) {
+    return 'Phun thuốc';
+  }
+  if (/nước|tưới|thủy lợi/i.test(text) && !/phân|thuốc/i.test(text)) {
+    return 'Tiền nước';
+  }
+  if (/nhân\s*công|tiền\s*công|lao\s*động|công\s*nhân/i.test(text)) {
+    return 'Nhân công';
+  }
+  return 'Bón phân';
+}
+
+function normalizeSupplyUnit(rawUnit) {
+  if (!rawUnit) return 'kg';
+  const u = rawUnit.toString().toLowerCase().trim();
+  if (['chai', 'lọ', 'bình', 'ống'].includes(u)) return 'chai';
+  if (['gói', 'bịch', 'túi'].includes(u)) return 'gói';
+  if (['can', 'thùng'].includes(u)) return 'can';
+  if (['lít', 'lit', 'l'].includes(u)) return 'lít';
+  if (['ml', 'mililit', 'cc'].includes(u)) return 'ml';
+  if (['g', 'gam', 'gram'].includes(u)) return 'g';
+  if (['kg', 'kí', 'ký', 'bao'].includes(u)) return 'kg';
+  if (['m3', 'm³', 'khối'].includes(u)) return 'm3';
+  if (['ngày công', 'công'].includes(u)) return 'ngày công';
+  return 'khác';
+}
+
 router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
   try {
     let base64Image = '';
@@ -264,16 +293,19 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
     let scannedData = null;
 
     if (apiKeys.length > 0) {
-      const modelCandidates = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'];
+      const modelCandidates = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-8b'];
       const promptText = `Bạn là chuyên gia bóc tách thông tin bao bì phân bón và thuốc bảo vệ thực vật tại Việt Nam. Hãy đọc kỹ ảnh chụp bao bì/chai thuốc và trả về duy nhất 1 chuỗi JSON thuần tuý (không thêm văn bản ngoài JSON):
 {
-  "name": "Tên đầy đủ và chuẩn xác của sản phẩm (ví dụ: Phân hữu cơ Bio Power MK 7 Trichoderma +TE Đầu Trâu)",
+  "name": "Tên đầy đủ và chuẩn xác của sản phẩm (ví dụ: Phân bón NPK Đầu Trâu 20-20-15 hoặc Thuốc trừ bệnh Anvil 5SC)",
   "category": "Bón phân" hoặc "Phun thuốc",
-  "fertilizer_type": "Phân vô cơ (NPK / Hóa học)" hoặc "Phân hữu cơ" hoặc "Phân bón lá" hoặc "Phân vi lượng / Trung lượng" hoặc "Phân chuồng / Hoai mục" hoặc "Khác",
+  "fertilizer_type": "Phân vô cơ (NPK / Hóa học)" hoặc "Phân hữu cơ" hoặc "Phân bón lá" hoặc "Phân vi lượng / Trung lượng" hoặc "Phân chuồng / Hoai mục" hoặc "Khác" hoặc null,
   "package_qty": 50,
-  "package_unit": "kg" hoặc "lít" hoặc "g" hoặc "ml" hoặc "m3",
+  "package_unit": "kg" hoặc "lít" hoặc "chai" hoặc "gói" hoặc "can" hoặc "g" hoặc "ml",
   "package_size": "50 kg",
-  "manufacturer": "Tên nhà sản xuất"
+  "active_ingredient": "Tên hoạt chất chính nếu là thuốc BVTV (ví dụ: Hexaconazole 50g/l hoặc Mancozeb)",
+  "target_pests": "Đối tượng phòng trừ (ví dụ: Bệnh thán thư, đốm lá, rỉ sắt)",
+  "phi_days": 7,
+  "manufacturer": "Tên nhà sản xuất nếu có"
 }`;
 
       // Iterate through keys (Key Rotation if Rate Limited / 429 / 403)
@@ -306,6 +338,16 @@ router.post('/scan-image', auth, upload.single('file'), async (req, res) => {
               scannedData = JSON.parse(cleanJson);
               if (scannedData && scannedData.name) {
                 console.log(`Gemini Vision AI succeeded using model ${modelName}`);
+
+                // Normalize category & unit for safe database & UI mapping
+                scannedData.category = normalizeSupplyCategory(scannedData.category, scannedData.name);
+                scannedData.package_unit = normalizeSupplyUnit(scannedData.package_unit);
+                if (scannedData.category === 'Phun thuốc' && (!scannedData.package_qty || scannedData.package_qty > 100)) {
+                  if (scannedData.package_unit === 'chai' || scannedData.package_unit === 'can' || scannedData.package_unit === 'gói') {
+                    scannedData.package_qty = 1;
+                  }
+                }
+
                 // Save to cache (limit cache size to 150 items)
                 if (scanResultCache.size > 150) {
                   const firstKey = scanResultCache.keys().next().value;
@@ -364,13 +406,14 @@ router.post('/', auth, async (req, res) => {
       phi_days, active_ingredient, target_pests, safety_interval_note
     } = req.body;
     
-    if (!category || !name || !unit) {
-      return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });
-    }
-
+    // Auto-normalize category and units to protect against UI mismatches
     const validCategories = ['Bón phân', 'Tiền nước', 'Phun thuốc', 'Nhân công'];
-    if (!validCategories.includes(category)) {
-      return res.status(400).json({ error: 'Hạng mục gốc không hợp lệ. Chọn một trong: Bón phân, Tiền nước, Phun thuốc, Nhân công.' });
+    const safeCategory = validCategories.includes(category) ? category : normalizeSupplyCategory(category, name);
+    const safeUnit = unit || package_unit || (safeCategory === 'Phun thuốc' ? 'chai' : 'kg');
+    const safePkgUnit = normalizeSupplyUnit(package_unit || safeUnit);
+
+    if (!safeCategory || !name || !safeUnit) {
+      return res.status(400).json({ error: 'Vui lòng điền đầy đủ Hạng mục, Tên vật tư và Đơn vị tính.' });
     }
 
     const price = parseFloat(unit_price) || 0;
@@ -404,8 +447,8 @@ router.post('/', auth, async (req, res) => {
          ($1::int IS NOT NULL AND (farm_id = $1 OR user_id = $2))
          OR ($1::int IS NULL AND user_id = $2)
        ) 
-       AND category = $3 AND LOWER(name) = LOWER($4)`,
-      [targetFarmId, targetUserId, category.trim(), name.trim()]
+        AND category = $3 AND LOWER(name) = LOWER($4)`,
+      [targetFarmId, targetUserId, safeCategory, name.trim()]
     );
 
     if (existingCheck.rows.length > 0) {
@@ -428,7 +471,7 @@ router.post('/', auth, async (req, res) => {
           price || existing.unit_price,
           unitPriceSmall || existing.unit_price_small,
           pkgQty || existing.package_qty,
-          package_unit ? package_unit.trim() : existing.package_unit,
+          safePkgUnit || existing.package_unit,
           package_size ? package_size.trim() : existing.package_size,
           image_url || null,
           note || null,
@@ -455,12 +498,12 @@ router.post('/', auth, async (req, res) => {
       [
         targetUserId,
         targetFarmId,
-        category.trim(),
+        safeCategory,
         name.trim(),
-        unit.trim(),
-        package_size ? package_size.trim() : null,
+        safeUnit,
+        package_size ? package_size.trim() : `${pkgQty} ${safePkgUnit}`,
         pkgQty,
-        package_unit ? package_unit.trim() : unit.trim(),
+        safePkgUnit,
         pkgPrice,
         price,
         unitPriceSmall,
