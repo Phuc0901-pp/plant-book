@@ -684,29 +684,48 @@ function renderSuppliesTableHtml(supplies = [], currentPage = 1, pageSize = 10, 
     </div>
 
     <!-- Pagination / Footer Bar (10 records per page) -->
-    ${totalItems > pageSize ? `
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding: 8px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
-        <div style="font-size: 12px; color: #64748b; font-weight: 600;">
-          Hiển thị <strong>${startIdx + 1} - ${Math.min(startIdx + pageSize, totalItems)}</strong> trên <strong>${totalItems}</strong> vật tư (10 bản ghi / trang)
+    ${(() => {
+      if (totalItems <= pageSize) {
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: #64748b; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <span>Tổng số: <strong>${totalItems}</strong> mặt hàng vật tư trong kho</span>
+            <span style="font-weight: 700; color: #059669;">Trang 1 / 1 (10 bản ghi / trang)</span>
+          </div>
+        `;
+      }
+
+      let pageButtonsHtml = '';
+      for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1)) {
+          const isActive = p === page;
+          pageButtonsHtml += `
+            <button type="button" class="btn btn-xs ${isActive ? 'btn-primary' : 'btn-secondary'}" onclick="${onPageChangeFnName}(${p})" 
+              style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${isActive ? '#059669' : '#cbd5e1'}; background: ${isActive ? '#059669' : '#ffffff'}; color: ${isActive ? '#ffffff' : '#334155'}; cursor: ${isActive ? 'default' : 'pointer'}; min-width: 30px; height: 28px;">
+              ${p}
+            </button>
+          `;
+        } else if (p === page - 2 || p === page + 2) {
+          pageButtonsHtml += `<span style="padding: 2px 4px; color: #94a3b8; font-size: 12px; font-weight: 700;">…</span>`;
+        }
+      }
+
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding: 10px 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+          <div style="font-size: 12px; color: #64748b; font-weight: 600;">
+            Hiển thị <strong>${startIdx + 1} - ${Math.min(startIdx + pageSize, totalItems)}</strong> trên <strong>${totalItems}</strong> vật tư (10 bản ghi / trang)
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <button type="button" class="btn btn-secondary btn-xs" ${page <= 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="${onPageChangeFnName}(${page - 1})"`} style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; border-radius: 6px; height: 28px; display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="chevron-left" class="lucide-xs"></i> Trước
+            </button>
+            ${pageButtonsHtml}
+            <button type="button" class="btn btn-secondary btn-xs" ${page >= totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="${onPageChangeFnName}(${page + 1})"`} style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; border-radius: 6px; height: 28px; display: flex; align-items: center; gap: 4px;">
+              Tiếp <i data-lucide="chevron-right" class="lucide-xs"></i>
+            </button>
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button type="button" class="btn btn-secondary btn-xs" ${page <= 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="${onPageChangeFnName}(${page - 1})"`} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer; border-radius: 6px;">
-            <i data-lucide="chevron-left" class="lucide-xs"></i> Trang trước
-          </button>
-          <span style="font-size: 12px; font-weight: 700; color: #0f172a; padding: 4px 10px; background: #ffffff; border-radius: 6px; border: 1px solid #cbd5e1;">
-            Trang ${page} / ${totalPages}
-          </span>
-          <button type="button" class="btn btn-secondary btn-xs" ${page >= totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : `onclick="${onPageChangeFnName}(${page + 1})"`} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer; border-radius: 6px;">
-            Trang tiếp <i data-lucide="chevron-right" class="lucide-xs"></i>
-          </button>
-        </div>
-      </div>
-    ` : `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 11.5px; color: #64748b; padding: 0 4px;">
-        <span>Tổng số: <strong>${totalItems}</strong> mặt hàng vật tư trong kho</span>
-        <span>Trang 1 / 1 (10 bản ghi / trang)</span>
-      </div>
-    `}
+      `;
+    })()}
   `;
 }
 
@@ -3315,9 +3334,14 @@ async function renderPlant(plant, isEditable) {
                 <i data-lucide="map" class="lucide-sm" style="color: var(--green-bright)"></i>
                 <span>Vị Trí GPS Của Cây Trên Bản Đồ &amp; Ranh Giới Lô Canh Tác</span>
               </h2>
-              <span class="badge badge-info" style="font-size: 11px;">
-                <i data-lucide="layers" class="lucide-xs"></i> Mapbox Satellite Streets
-              </span>
+              <div style="display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <button type="button" id="btn-plant-sat-google" class="btn btn-xs active" onclick="switchPlantSatelliteSource('google')" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; border: none; background: #059669; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                  <i data-lucide="globe" class="lucide-xs"></i> Google Satellite
+                </button>
+                <button type="button" id="btn-plant-sat-mapbox" class="btn btn-xs" onclick="switchPlantSatelliteSource('mapbox')" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; border: none; background: transparent; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                  <i data-lucide="layers" class="lucide-xs"></i> Mapbox
+                </button>
+              </div>
             </div>
             <div class="plant-map-container" style="position:relative; width:100%; height:340px; border-radius:12px; overflow:hidden; border:1px solid #cbd5e1;">
               <div id="plant-location-map" style="width:100%;height:100%;"></div>
@@ -3402,11 +3426,16 @@ async function renderPlant(plant, isEditable) {
                       </tr>
                     </thead>
                     <tbody>
-                      ${plant.supply_usages.map(u => `
+                      ${plant.supply_usages.map(u => {
+                        const dateStr = fmtDate(u.usage_date || u.used_date || u.log_date || u.created_at);
+                        const isWater = (u.supply_category === 'Tiền nước') || (u.supply_name && u.supply_name.toLowerCase().includes('nước'));
+                        const opName = u.operator_name || (plant.farm_name ? `Kỹ thuật viên (${plant.farm_name})` : 'Chủ trang trại');
+                        const equip = u.equipment_used || (isWater ? 'Hệ thống tưới tự động bù áp' : '');
+                        return `
                         <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                          <td style="padding: 9px 12px; white-space: nowrap; font-weight: 600; color: #334155;">${fmtDate(u.used_date || u.log_date)}</td>
+                          <td style="padding: 9px 12px; white-space: nowrap; font-weight: 600; color: #334155;">${dateStr}</td>
                           <td style="padding: 9px 12px; white-space: nowrap;">
-                            <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 10.5px; font-weight: 700;">${esc(u.log_type || u.supply_category || 'Chăm sóc')}</span>
+                            <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 10.5px; font-weight: 700;">${esc(u.log_type || u.supply_category || (isWater ? 'Tưới nước' : 'Chăm sóc'))}</span>
                           </td>
                           <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">
                             ${esc(u.supply_name || 'Vật tư')}
@@ -3422,10 +3451,12 @@ async function renderPlant(plant, isEditable) {
                             ${formatVnd(u.total_cost)}
                           </td>
                           <td style="padding: 9px 12px; color: #475569; font-size: 11.5px;">
-                            ${esc(u.operator_name || '—')}${u.equipment_used ? ` <span style="color:#94a3b8;">(${esc(u.equipment_used)})</span>` : ''}
+                            <span style="font-weight: 700; color: #1e293b;">${esc(opName)}</span>
+                            ${equip ? `<div style="color: #64748b; font-size: 10.5px; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><i data-lucide="wrench" class="lucide-xs" style="vertical-align:-1px;"></i> <span>${esc(equip)}</span></div>` : ''}
                           </td>
                         </tr>
-                      `).join('')}
+                        `;
+                      }).join('')}
                     </tbody>
                   </table>
                 </div>
@@ -3720,6 +3751,34 @@ async function renderPlant(plant, isEditable) {
   // Render initial care timeline
   renderPublicLogTimeline(1, false);
 
+  // Satellite Layer Switcher for Public Plant Map
+  window._currentPlantSatSource = 'google';
+  window.switchPlantSatelliteSource = function(source) {
+    window._currentPlantSatSource = source;
+    const map = window._publicPlantMap;
+    const btnGoogle = document.getElementById('btn-plant-sat-google');
+    const btnMapbox = document.getElementById('btn-plant-sat-mapbox');
+
+    if (btnGoogle) {
+      btnGoogle.style.background = source === 'google' ? '#059669' : 'transparent';
+      btnGoogle.style.color = source === 'google' ? '#ffffff' : '#475569';
+    }
+    if (btnMapbox) {
+      btnMapbox.style.background = source === 'mapbox' ? '#059669' : 'transparent';
+      btnMapbox.style.color = source === 'mapbox' ? '#ffffff' : '#475569';
+    }
+
+    if (!map) return;
+    try {
+      const googleLayer = map.getLayer('google-satellite-layer');
+      if (googleLayer) {
+        map.setLayoutProperty('google-satellite-layer', 'visibility', source === 'google' ? 'visible' : 'none');
+      }
+    } catch (err) {
+      console.warn('Lỗi chuyển nguồn ảnh vệ tinh:', err);
+    }
+  };
+
   // Initialize Mapbox plant location map if coordinates or farm polygon exist
   if (hasMap) {
     const mapContainerEl = document.getElementById('plant-location-map');
@@ -3845,9 +3904,36 @@ async function renderPlant(plant, isEditable) {
         window._publicPlantMarker = null;
       }
 
-      // Draw farm polygon if available
-      if (plant.farm_boundary && plant.farm_boundary.coordinates) {
-        plantMap.on('load', () => {
+      // Map on load: Setup satellite raster layers & farm boundaries
+      plantMap.on('load', () => {
+        try {
+          if (!plantMap.getSource('google-satellite-src')) {
+            plantMap.addSource('google-satellite-src', {
+              type: 'raster',
+              tiles: [
+                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+              ],
+              tileSize: 256,
+              maxzoom: 20,
+              attribution: '&copy; Google Satellite'
+            });
+          }
+
+          if (!plantMap.getLayer('google-satellite-layer')) {
+            plantMap.addLayer({
+              id: 'google-satellite-layer',
+              type: 'raster',
+              source: 'google-satellite-src',
+              layout: { visibility: (window._currentPlantSatSource || 'google') === 'google' ? 'visible' : 'none' },
+              paint: { 'raster-opacity': 1 }
+            });
+          }
+        } catch (layerErr) {
+          console.warn('Google satellite source init warning:', layerErr);
+        }
+
+        // Draw farm polygon if available
+        if (plant.farm_boundary && plant.farm_boundary.coordinates) {
           try {
             plantMap.addSource('farm-poly', {
               type: 'geojson',
@@ -3895,10 +3981,8 @@ async function renderPlant(plant, isEditable) {
           } catch(e) {
             console.warn('Lỗi vẽ ranh giới trang trại:', e);
           }
-        });
-      }
+        }
 
-      plantMap.on('load', () => {
         plantMap.resize();
       });
 

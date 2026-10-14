@@ -705,9 +705,21 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     let usagesRows = [];
     try {
       const usagesRes = await pool.query(
-        `SELECT su.*, s.name as supply_name, s.category as supply_category, s.unit as supply_unit
+        `SELECT su.*, su.usage_date as used_date, su.usage_date as log_date,
+                s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url,
+                COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), NULLIF(TRIM(usr.name), ''), 'Chủ trang trại') as operator_name,
+                pl.equipment_used
          FROM supply_usages su
-         JOIN supplies s ON su.supply_id = s.id
+         LEFT JOIN supplies s ON su.supply_id = s.id
+         LEFT JOIN users usr ON usr.id = su.user_id
+         LEFT JOIN LATERAL (
+           SELECT pl_inner.operator_name, pl_inner.equipment_used
+           FROM plant_logs pl_inner
+           WHERE pl_inner.plant_id = su.plant_id
+             AND (pl_inner.log_date = su.usage_date OR pl_inner.created_at::date = su.usage_date)
+           ORDER BY pl_inner.id DESC
+           LIMIT 1
+         ) pl ON true
          WHERE su.plant_id = $1
          ORDER BY su.usage_date DESC, su.id DESC`,
         [req.params.id]
@@ -4318,10 +4330,22 @@ router.get('/public-by-farm-uid/:farmId/:nfcUid', async (req, res) => {
 
       try {
         const usagesRes = await pool.query(`
-          SELECT su.id, su.supply_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
-                 s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url
+          SELECT su.id, su.supply_id, su.usage_date, su.usage_date as used_date, su.usage_date as log_date,
+                 su.quantity, su.unit_price, su.total_cost, su.note, su.created_at,
+                 s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url,
+                 COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), NULLIF(TRIM(usr.name), ''), 'Chủ trang trại') as operator_name,
+                 pl.equipment_used
           FROM supply_usages su
           LEFT JOIN supplies s ON s.id = su.supply_id
+          LEFT JOIN users usr ON usr.id = su.user_id
+          LEFT JOIN LATERAL (
+            SELECT pl_inner.operator_name, pl_inner.equipment_used
+            FROM plant_logs pl_inner
+            WHERE pl_inner.plant_id = su.plant_id
+              AND (pl_inner.log_date = su.usage_date OR pl_inner.created_at::date = su.usage_date)
+            ORDER BY pl_inner.id DESC
+            LIMIT 1
+          ) pl ON true
           WHERE su.plant_id = $1
           ORDER BY su.usage_date DESC, su.id DESC
         `, [row.id]);
@@ -4564,10 +4588,22 @@ router.get('/public/:slug', async (req, res) => {
 
     try {
       const usagesRes = await pool.query(`
-        SELECT su.id, su.supply_id, su.usage_date, su.quantity, su.unit_price, su.total_cost, su.note,
-               s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url
+        SELECT su.id, su.supply_id, su.usage_date, su.usage_date as used_date, su.usage_date as log_date,
+               su.quantity, su.unit_price, su.total_cost, su.note, su.created_at,
+               s.name as supply_name, s.category as supply_category, s.unit as supply_unit, s.image_url as supply_image_url,
+               COALESCE(NULLIF(TRIM(pl.operator_name), ''), NULLIF(TRIM(usr.full_name), ''), NULLIF(TRIM(usr.name), ''), 'Chủ trang trại') as operator_name,
+               pl.equipment_used
         FROM supply_usages su
         LEFT JOIN supplies s ON s.id = su.supply_id
+        LEFT JOIN users usr ON usr.id = su.user_id
+        LEFT JOIN LATERAL (
+          SELECT pl_inner.operator_name, pl_inner.equipment_used
+          FROM plant_logs pl_inner
+          WHERE pl_inner.plant_id = su.plant_id
+            AND (pl_inner.log_date = su.usage_date OR pl_inner.created_at::date = su.usage_date)
+          ORDER BY pl_inner.id DESC
+          LIMIT 1
+        ) pl ON true
         WHERE su.plant_id = $1
         ORDER BY su.usage_date DESC, su.id DESC
       `, [row.id]);
