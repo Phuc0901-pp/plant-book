@@ -594,7 +594,6 @@ async function selectTreeForDetail(plantId) {
         `;
       }
     }
-  }
 
     // Render Activity Filter Chips
     if (filterBar) {
