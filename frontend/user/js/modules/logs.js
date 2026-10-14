@@ -528,12 +528,14 @@ export function renderUserLogsTable(logs) {
             </div>
           </td>
           <td data-label="Thao tác" style="vertical-align: middle; padding: 12px 14px; text-align: right; white-space: nowrap;">
-            <button type="button" class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id || 'null'}, '${esc(l.tree_code || '')}', '${esc(l.plant_type || '')}', ${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
-              <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
-            </button>
-            <button type="button" class="btn btn-danger btn-xs" onclick="deleteCareLog(${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
-              <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
-            </button>
+            <div class="log-action-btns" style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+              <button type="button" class="btn btn-secondary btn-xs" onclick="openCareModal(${l.plant_id || 'null'}, '${esc(l.tree_code || '')}', '${esc(l.plant_type || '')}', ${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
+                <i data-lucide="edit-3" class="lucide-sm"></i> Sửa
+              </button>
+              <button type="button" class="btn btn-danger btn-xs" onclick="deleteCareLog(${l.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px;">
+                <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
+              </button>
+            </div>
           </td>
         </tr>
       `;

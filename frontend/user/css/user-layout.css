@@ -1966,10 +1966,10 @@ tr:hover td {
     width: 100% !important;
     background: var(--white);
     border: 1px solid var(--gray-200);
-    border-radius: 12px;
-    padding: 10px 12px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     box-sizing: border-box;
   }
   
@@ -1977,7 +1977,7 @@ tr:hover td {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0 !important;
+    padding: 7px 0 !important;
     border: none !important;
     border-bottom: 1px dashed var(--gray-100) !important;
     width: 100% !important;
@@ -1993,8 +1993,8 @@ tr:hover td {
 
   #user-plants-table td::before, #user-logs-table td::before {
     content: attr(data-label);
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 11.5px;
+    font-weight: 700;
     color: var(--gray-500);
   }
   
@@ -2002,7 +2002,7 @@ tr:hover td {
     display: none !important;
   }
 
-  /* Optimize Action Button in Card */
+  /* Optimize Action Button in Plant Cards */
   #user-plants-table td[data-label="Thao tác"] {
     display: block !important;
     text-align: center !important;
@@ -2021,12 +2021,97 @@ tr:hover td {
   }
   #user-plants-table td[data-label="Thao tác"] .btn-erp-plant-action {
     width: 100% !important;
-    padding: 9px 10px !important;
-    font-size: 12.5px !important;
+    padding: 9px 8px !important;
+    font-size: 12px !important;
     border-radius: 8px !important;
     justify-content: center !important;
   }
+  #user-plants-table td[data-label="Thao tác"] .btn-erp-plant-nfc {
+    grid-column: span 2 !important;
+    padding: 10px 12px !important;
+    font-weight: 800 !important;
+  }
+
+  /* Optimize Action Buttons in Care Logs Card */
+  #user-logs-table td[data-label="Thao tác"] {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: none !important;
+    padding-top: 8px !important;
+    width: 100% !important;
+  }
+  #user-logs-table td[data-label="Thao tác"] .log-action-btns {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    justify-content: flex-end !important;
+  }
+  #user-logs-table td[data-label="Thao tác"] .log-action-btns .btn {
+    margin: 0 !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Optimize Farm Detail Header Card on Mobile */
+  .farm-detail-header-card {
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
+  .farm-detail-header-top {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .farm-btn-back {
+    align-self: flex-start !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+  .farm-detail-header-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .farm-btn-add-tree {
+    grid-column: span 2 !important;
+    justify-content: center !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+  .farm-btn-edit {
+    justify-content: center !important;
+    padding: 8px 6px !important;
+    font-size: 11.5px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Optimize Supplies Navigation Tabs on Mobile */
+  .supplies-tabs {
+    gap: 6px !important;
+    padding: 4px !important;
+    margin-bottom: 16px !important;
+    border-radius: 10px !important;
+  }
+  .supplies-tabs .tab {
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
+    padding: 8px 6px !important;
+    font-size: 11.5px !important;
+    gap: 4px !important;
+    border-radius: 8px !important;
+    text-align: center !important;
+  }
+  .supplies-tabs .tab i,
+  .supplies-tabs .tab svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
 }
+
 
 /* ── Floating Action Button (FAB) ── */
 .fab-btn {
@@ -4230,6 +4315,18 @@ td[data-label="Thao tác"] {
   color: #1e40af !important;
 }
 
+.btn-erp-plant-nfc-active {
+  background: #ecfdf5 !important;
+  border-color: #6ee7b7 !important;
+  color: #047857 !important;
+}
+
+.btn-erp-plant-nfc-active:hover {
+  background: #d1fae5 !important;
+  border-color: #34d399 !important;
+  color: #065f46 !important;
+}
+
 /* ── Supplies Navigation Tabs (Executive AgTech ERP Theme) ── */
 .supplies-tabs {
   margin-bottom: 24px !important;
@@ -4243,6 +4340,14 @@ td[data-label="Thao tác"] {
   overflow-x: auto !important;
   white-space: nowrap !important;
   -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.supplies-tabs::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .supplies-tabs .tab {

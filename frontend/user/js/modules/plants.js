@@ -372,11 +372,12 @@ export function renderUserPlantsTablePage() {
  */
 function _plantRow(p) {
   const nfcBadge = p.nfc_uid
-    ? `<span title="Thẻ: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#22c55e;"><i data-lucide="tag" class="lucide-sm"></i></span>`
-    : `<span title="Chưa gắn thẻ NFC" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#d1d5db;"><i data-lucide="unlink" class="lucide-sm"></i></span>`;
+    ? `<span class="badge-nfc-tag" title="Mã thẻ NFC: ${esc(p.nfc_uid)}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;font-weight:700;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:2px 7px;border-radius:6px;"><i data-lucide="tag" class="lucide-xs"></i> ${esc(p.nfc_uid)}</span>`
+    : `<span title="Chưa gắn thẻ NFC" style="display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:#94a3b8;background:#f8fafc;border:1px dashed #cbd5e1;padding:2px 6px;border-radius:6px;"><i data-lucide="unlink" class="lucide-xs"></i> Chưa thẻ</span>`;
 
   const treeCodeSafe = esc(p.tree_code || String(p.id));
   const plantTypeSafe = esc(p.plant_type || '');
+  const plantTypeFormatted = plantTypeSafe.replace(/([^\s])\(/g, '$1 (');
   const slugSafe = esc(p.public_slug || '');
   const uidVal = p.nfc_uid ? `'${esc(p.nfc_uid)}'` : 'null';
 
@@ -395,21 +396,25 @@ function _plantRow(p) {
       </button>
     </div>` : `<span style="font-size:11px;color:#94a3b8;">Chưa gán</span>`;
 
+  const nfcBtnText = p.nfc_uid ? 'Đổi thẻ NFC' : 'Gán thẻ NFC';
+  const nfcBtnClass = p.nfc_uid ? 'btn-erp-plant-action btn-erp-plant-nfc btn-erp-plant-nfc-active' : 'btn-erp-plant-action btn-erp-plant-nfc';
+  const nfcBtnTitle = p.nfc_uid ? `Thẻ hiện tại: ${esc(p.nfc_uid)} (Bấm để đổi thẻ hoặc cập nhật GPS)` : 'Gán hoặc định danh thẻ NFC cho cây';
+
   return `
     <tr id="plant-row-${p.id}" style="transition:all 0.3s ease;">
       <td data-label="Mã cây">
-        <div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
           <strong>${treeCodeSafe}</strong>
           ${nfcBadge}
         </div>
       </td>
-      <td data-label="Loáº¡i & Giá»‘ng">
+      <td data-label="Loại & Giống">
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="width:36px;height:36px;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;background:#f8fafc;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-            <img src="${getCropImageSrc(p)}" alt="${esc(p.plant_type || 'CÃ¢y')}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='/assets/crop/durian.png';">
+            <img src="${getCropImageSrc(p)}" alt="${esc(p.plant_type || 'Cây')}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='/assets/crop/durian.png';">
           </div>
           <div style="min-width:0;">
-            <strong>${esc(p.plant_type || '')}</strong>
+            <strong>${plantTypeFormatted}</strong>
             ${p.plant_variety ? `<br><small style="color:var(--gray-400)">${esc(p.plant_variety)}</small>` : ''}
           </div>
         </div>
@@ -433,15 +438,15 @@ function _plantRow(p) {
       <td data-label="Vị trí"><div>${esc(p.location || '—')}</div></td>
       <td data-label="URL Công khai"><div>${publicUrlCell}</div></td>
       <td data-label="Thao tác" class="plant-actions-cell">
-                                <div class="erp-plant-action-btns">
+        <div class="erp-plant-action-btns">
           <button type="button" class="btn-erp-plant-action btn-erp-plant-profile" onclick="openPlantProfileModal(${p.id})" title="Xem hồ sơ nội bộ cây trồng (Bảo toàn GPS)">
             <i data-lucide="file-text" class="lucide-sm"></i> <span>Hồ sơ ERP</span>
           </button>
           <button type="button" class="btn-erp-plant-action btn-erp-plant-care" onclick="openCareModal(${p.id}, '${treeCodeSafe}', '${plantTypeSafe}')" title="Ghi chép hoạt động chăm sóc & canh tác">
             <i data-lucide="file-check" class="lucide-sm"></i> <span>Ghi nhật ký</span>
           </button>
-          <button type="button" class="btn-erp-plant-action btn-erp-plant-nfc" onclick="openNfcModal(${p.id}, '${treeCodeSafe}', '${slugSafe}', ${uidVal})" title="Gán hoặc định danh thẻ NFC cho cây">
-            <i data-lucide="tag" class="lucide-sm"></i> <span>Gán thẻ NFC</span>
+          <button type="button" class="${nfcBtnClass}" onclick="openNfcModal(${p.id}, '${treeCodeSafe}', '${slugSafe}', ${uidVal})" title="${nfcBtnTitle}">
+            <i data-lucide="tag" class="lucide-sm"></i> <span>${nfcBtnText}</span>
           </button>
         </div>
       </td>
