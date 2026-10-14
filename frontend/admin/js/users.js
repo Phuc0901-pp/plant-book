@@ -5,6 +5,7 @@
 let allUsers = [];
 let currentFilterGroup = 'all'; // 'all', 'admin', 'pro', 'normal'
 let currentPage = 1;
+let currentUsersWindowStart = 1;
 const USERS_PAGE_SIZE = 10;
 
 async function loadUsers(silent = false) {
@@ -72,6 +73,7 @@ function updateUserCounters() {
 function setUserFilterGroup(group) {
   currentFilterGroup = group;
   currentPage = 1;
+  currentUsersWindowStart = 1;
 
   document.querySelectorAll('.user-filter-btn').forEach(btn => {
     const isAct = btn.dataset.filter === group;
@@ -415,14 +417,20 @@ function renderUsersTable(users) {
 
   if (pagBtns) {
     let btnsHtml = '';
-    btnsHtml += `<button onclick="changeUsersPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">◄ Trang trước</button>`;
+    btnsHtml += `<button onclick="changeUsersPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; pointer-events:none;"' : 'style="cursor:pointer;"'} class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; height:34px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s ease;"><i data-lucide="chevron-left" class="lucide-xs"></i> Trước</button>`;
 
-    for (let p = 1; p <= totalPages; p++) {
-      const isAct = p === currentPage;
-      btnsHtml += `<button onclick="changeUsersPage(${p})" style="padding:6px 12px; font-size:12px; font-weight:800; border-radius:8px; border:1px solid ${isAct ? '#059669' : '#cbd5e1'}; background:${isAct ? '#059669' : '#ffffff'}; color:${isAct ? '#ffffff' : '#334155'}; cursor:pointer;">${p}</button>`;
+    let windowPages = [];
+    for (let i = 0; i < 3; i++) {
+      const p = currentUsersWindowStart + i;
+      if (p <= totalPages) windowPages.push(p);
     }
 
-    btnsHtml += `<button onclick="changeUsersPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">Trang sau ►</button>`;
+    btnsHtml += windowPages.map(p => {
+      const isAct = p === currentPage;
+      return `<button onclick="changeUsersPage(${p})" style="min-width:34px; height:34px; padding:0 8px; font-size:12.5px; font-weight:800; border-radius:8px; border:${isAct ? '2px solid #059669' : '1px solid #cbd5e1'}; background:${isAct ? '#059669' : '#ffffff'}; color:${isAct ? '#ffffff' : '#334155'}; box-shadow:${isAct ? '0 2px 6px rgba(5,150,105,0.3)' : 'none'}; transform:${isAct ? 'scale(1.04)' : 'scale(1)'}; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); cursor:pointer;">${p}</button>`;
+    }).join('');
+
+    btnsHtml += `<button onclick="changeUsersPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; pointer-events:none;"' : 'style="cursor:pointer;"'} class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; height:34px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s ease;">Sau <i data-lucide="chevron-right" class="lucide-xs"></i></button>`;
 
     pagBtns.innerHTML = btnsHtml;
   }
@@ -433,8 +441,35 @@ function renderUsersTable(users) {
 }
 
 function changeUsersPage(page) {
+  const hierarchicalUsers = buildUserHierarchyTree(allUsers);
+  const totalPages = Math.ceil(hierarchicalUsers.length / USERS_PAGE_SIZE) || 1;
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  if (page === currentPage) return;
+
+  // Scale up window logic: Trước 1 2 3 Sau -> Bấm 3 tăng dần Trước 3 4 5 Sau
+  if (page >= currentUsersWindowStart + 2 && page < totalPages) {
+    currentUsersWindowStart = page;
+  } else if (page < currentUsersWindowStart) {
+    currentUsersWindowStart = Math.max(1, page - 1);
+  }
+  if (currentUsersWindowStart + 2 > totalPages && totalPages > 3) {
+    currentUsersWindowStart = Math.max(1, totalPages - 2);
+  }
+
   currentPage = page;
-  filterUsers();
+
+  const tbody = document.getElementById('users-table');
+  if (tbody) {
+    tbody.style.transition = 'opacity 0.12s ease';
+    tbody.style.opacity = '0.1';
+    setTimeout(() => {
+      filterUsers();
+      tbody.style.opacity = '1';
+    }, 120);
+  } else {
+    filterUsers();
+  }
 }
 
 

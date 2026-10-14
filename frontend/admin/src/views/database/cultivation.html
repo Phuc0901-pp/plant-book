@@ -1,4 +1,4 @@
-﻿<div class="tab-pane active" id="db-pane-cultivation">
+<div class="tab-pane active" id="db-pane-cultivation">
           <!-- TOP BAR: FARM SELECTOR & HERO BANNER -->
           <div class="card" style="margin-bottom:20px; border-radius:16px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 6px 20px rgba(0,0,0,0.03);">
             <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%); padding:20px 24px; color:#ffffff; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -51,7 +51,7 @@
           </div>
 
           <!-- MASTER-DETAIL SPLIT-VIEW CONTAINER -->
-          <div id="db-cultivation-split-view" style="display:none; grid-template-columns: 340px 1fr; gap: 20px; align-items: start;">
+          <div id="db-cultivation-split-view" style="display:none; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; max-width: 100%; box-sizing: border-box;">
             
             <!-- LEFT COLUMN: MASTER LIST (Danh mục Cây trồng & Tìm kiếm nhanh) -->
             <div class="card" style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; max-height: calc(100vh - 180px); position:sticky; top:20px;">
@@ -82,7 +82,7 @@
             </div>
 
             <!-- RIGHT COLUMN: DETAIL VIEW (Hồ sơ cây, Chi phí đầu tư & Dòng thời gian canh tác) -->
-            <div id="db-detail-view-container" style="display:flex; flex-direction:column; gap:16px;">
+            <div id="db-detail-view-container" style="display:flex; flex-direction:column; gap:16px; min-width:0; max-width:100%; box-sizing:border-box;">
               <!-- Cost & Profile Header Box -->
               <div id="db-plant-cost-summary" style="display:none; background:linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius:16px; padding:20px; color:#ffffff; box-shadow:0 8px 24px rgba(4,120,87,0.25);">
                 <!-- Populated dynamically with tree profile, cost stats & Print button -->
@@ -99,7 +99,7 @@
               </div>
 
               <!-- Timeline Feed Container -->
-              <div id="db-cultivation-timeline-container">
+              <div id="db-cultivation-timeline-container" style="min-width:0; max-width:100%; box-sizing:border-box;">
                 <!-- Populated dynamically by database.js -->
               </div>
             </div>

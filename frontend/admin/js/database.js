@@ -161,6 +161,7 @@ let currentDbActiveActivityFilter = 'all';
 let currentDbFarmPlantsCache = [];
 let currentDbPlantProfileCache = null;
 let currentDbTimelinePage = 1;
+let currentDbTimelineWindowStart = 1;
 const DB_TIMELINE_PAGE_SIZE = 5;
 
 async function onDbFarmChange() {
@@ -566,6 +567,7 @@ async function selectTreeForDetail(plantId) {
 
     // Render Timeline Feed (Reset to page 1)
     currentDbTimelinePage = 1;
+    currentDbTimelineWindowStart = 1;
     renderDetailTimeline();
 
   } catch (err) {
@@ -710,17 +712,47 @@ function renderActivityFilterChips(logs) {
 function filterTimelineByActivity(type) {
   currentDbActiveActivityFilter = type;
   currentDbTimelinePage = 1;
+  currentDbTimelineWindowStart = 1;
   renderActivityFilterChips(currentDbPlantLogsCache);
   renderDetailTimeline();
 }
 window.filterTimelineByActivity = filterTimelineByActivity;
 
 function changeDbTimelinePage(page) {
+  let logs = currentDbPlantLogsCache || [];
+  if (currentDbActiveActivityFilter !== 'all') {
+    logs = logs.filter(l => l.log_type === currentDbActiveActivityFilter);
+  }
+  const totalLogs = logs.length;
+  const totalPages = Math.ceil(totalLogs / DB_TIMELINE_PAGE_SIZE) || 1;
+
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  if (page === currentDbTimelinePage) return;
+
+  // Scale up window logic: Trước 1 2 3 Sau -> Bấm 3 tăng dần Trước 3 4 5 Sau
+  if (page >= currentDbTimelineWindowStart + 2 && page < totalPages) {
+    currentDbTimelineWindowStart = page;
+  } else if (page < currentDbTimelineWindowStart) {
+    currentDbTimelineWindowStart = Math.max(1, page - 1);
+  }
+
+  if (currentDbTimelineWindowStart + 2 > totalPages && totalPages > 3) {
+    currentDbTimelineWindowStart = Math.max(1, totalPages - 2);
+  }
+
   currentDbTimelinePage = page;
-  renderDetailTimeline();
-  const container = document.getElementById('db-cultivation-timeline-container');
-  if (container) {
-    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const feedPage = document.getElementById('db-timeline-feed-page');
+  if (feedPage) {
+    feedPage.style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+    feedPage.style.opacity = '0.05';
+    feedPage.style.transform = 'translateY(4px)';
+    setTimeout(() => {
+      renderDetailTimeline();
+    }, 120);
+  } else {
+    renderDetailTimeline();
   }
 }
 window.changeDbTimelinePage = changeDbTimelinePage;
@@ -789,6 +821,9 @@ function renderDetailTimeline() {
         <div style="font-size:13.5px; font-weight:800; color:#064e3b; margin-top:2px;">Cây #${esc(plant.tree_code || plant.id)} (${esc(plant.plant_type)}) · Ngày tạo: ${fmtDate(plant.created_at)}</div>
       </div>
     </div>
+
+    <!-- Paged Feed Wrapper (Smooth transition & anti-jitter) -->
+    <div id="db-timeline-feed-page" style="display:flex; flex-direction:column; gap:20px; min-height:300px; opacity:0; transform:translateY(5px); transition:opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
   `;
 
   Object.keys(groupedByDate).forEach(dateStr => {
@@ -896,18 +931,34 @@ function renderDetailTimeline() {
     `;
   });
 
-  // ── Pagination Control Strip ──
+  timelineHtml += `</div>`; // Close db-timeline-feed-page
+
+  // ── Scale Up Modern Pagination Strip ──
   if (totalPages > 1) {
-    let pagesButtonsHtml = '';
-    for (let p = 1; p <= totalPages; p++) {
+    let windowPages = [];
+    for (let i = 0; i < 3; i++) {
+      const p = currentDbTimelineWindowStart + i;
+      if (p <= totalPages) {
+        windowPages.push(p);
+      }
+    }
+
+    let pagesButtonsHtml = windowPages.map(p => {
       const isCur = p === currentDbTimelinePage;
-      pagesButtonsHtml += `
+      return `
         <button type="button" onclick="changeDbTimelinePage(${p})" 
-                style="min-width:32px; height:32px; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer; border:${isCur ? '1.5px solid #059669' : '1px solid #cbd5e1'}; background:${isCur ? '#059669' : '#ffffff'}; color:${isCur ? '#ffffff' : '#334155'}; transition:all 0.15s ease; display:inline-flex; align-items:center; justify-content:center; padding:0 8px;">
+                style="min-width:34px; height:34px; border-radius:8px; font-size:12.5px; font-weight:800; cursor:pointer; 
+                       border:${isCur ? '2px solid #059669' : '1px solid #cbd5e1'}; 
+                       background:${isCur ? '#059669' : '#ffffff'}; 
+                       color:${isCur ? '#ffffff' : '#334155'}; 
+                       box-shadow:${isCur ? '0 2px 6px rgba(5,150,105,0.3)' : 'none'}; 
+                       transform:${isCur ? 'scale(1.04)' : 'scale(1)'}; 
+                       transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); 
+                       display:inline-flex; align-items:center; justify-content:center; padding:0 8px;">
           ${p}
         </button>
       `;
-    }
+    }).join('');
 
     timelineHtml += `
       <div style="margin-top:20px; padding:12px 16px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
@@ -917,14 +968,14 @@ function renderDetailTimeline() {
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
           <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage - 1})" 
-                  ${currentDbTimelinePage === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : 'style="cursor:pointer;"'}
-                  class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700;">
+                  ${currentDbTimelinePage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed; pointer-events:none;"' : 'style="cursor:pointer;"'}
+                  class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; height:34px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s ease;">
             <i data-lucide="chevron-left" class="lucide-xs"></i> Trước
           </button>
           ${pagesButtonsHtml}
           <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage + 1})" 
-                  ${currentDbTimelinePage === totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : 'style="cursor:pointer;"'}
-                  class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700;">
+                  ${currentDbTimelinePage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed; pointer-events:none;"' : 'style="cursor:pointer;"'}
+                  class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; height:34px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.15s ease;">
             Sau <i data-lucide="chevron-right" class="lucide-xs"></i>
           </button>
         </div>
@@ -933,6 +984,13 @@ function renderDetailTimeline() {
   }
 
   container.innerHTML = timelineHtml;
+  requestAnimationFrame(() => {
+    const fPage = document.getElementById('db-timeline-feed-page');
+    if (fPage) {
+      fPage.style.opacity = '1';
+      fPage.style.transform = 'translateY(0)';
+    }
+  });
   if (window.lucide) lucide.createIcons();
 }
 
