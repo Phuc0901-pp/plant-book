@@ -2745,6 +2745,9 @@
           <div class="tab" id="user-tab-resets" onclick="switchUserTab('resets')">
             <i data-lucide="key" class="lucide-sm"></i>  Yêu cầu cấp mật khẩu <span class="badge" id="reset-badge" style="display:none; background:#ef4444; color:#fff; border-radius:10px; padding:2px 7px; font-size:11px; margin-left:4px;">0</span>
           </div>
+          <div class="tab" id="user-tab-admin-profile" onclick="switchUserTab('admin-profile')">
+            <i data-lucide="user-check" class="lucide-sm"></i> Thông tin tài khoản (Admin)
+          </div>
         </div>
 
         <!-- Pane: Pending Farmer Registrations -->
@@ -2926,6 +2929,115 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        <!-- Pane: Admin Profile -->
+        <div class="tab-pane" id="pane-user-admin-profile" style="display:none;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; align-items:start;">
+            <!-- Left Column: Admin Identity Badge & Overview -->
+            <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; padding:24px; text-align:center;">
+              <div style="position:relative; width:90px; height:90px; margin:0 auto 16px; border-radius:50%; background:linear-gradient(135deg, #7c3aed, #4f46e5); display:flex; align-items:center; justify-content:center; color:#fff; font-size:36px; font-weight:800; box-shadow:0 4px 14px rgba(124, 58, 237, 0.3);">
+                <span id="adm-profile-avatar-char">A</span>
+              </div>
+              <h3 style="font-size:18px; font-weight:800; color:#0f172a; margin:0 0 4px;" id="adm-profile-fullname">Quản Trị Viên</h3>
+              <div style="font-size:13px; color:#64748b; margin-bottom:12px;" id="adm-profile-email">admin@plantbook.vn</div>
+
+              <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:18px;">
+                <span style="background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; border-radius:6px; padding:3px 10px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+                  <i data-lucide="shield-check" class="lucide-xs"></i> QUẢN TRỊ TỔNG (ADMIN)
+                </span>
+                <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; border-radius:6px; padding:3px 10px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+                  <i data-lucide="infinity" class="lucide-xs"></i> Gói cước: Bất tử (Vĩnh viễn)
+                </span>
+              </div>
+
+              <div style="border-top:1px solid #f1f5f9; padding-top:16px; text-align:left; font-size:12.5px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                  <span style="color:#64748b;">Mã định danh (ISO):</span>
+                  <span style="font-family:monospace; font-weight:700; color:#475569;" id="adm-profile-public-id">adm-...</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                  <span style="color:#64748b;">Trang trại quản lý:</span>
+                  <span style="font-weight:800; color:#059669; background:#ecfdf5; padding:1px 8px; border-radius:4px;">ALL (Tất cả)</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                  <span style="color:#64748b;">Quyền hạn ERP:</span>
+                  <span style="font-weight:700; color:#0f172a;">Toàn quyền hệ thống</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:#64748b;">Ngày khởi tạo:</span>
+                  <span style="font-weight:600; color:#334155;" id="adm-profile-created-at">--/--/----</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Edit Profile & Change Password -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+              <!-- Form 1: Cập nhật thông tin tài khoản -->
+              <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; overflow:hidden;">
+                <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
+                  <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="user-pen" class="lucide-sm" style="color:#059669"></i> Cập Nhật Thông Tin Cá Nhân
+                  </h3>
+                </div>
+                <form id="adm-profile-form" onsubmit="saveAdminProfileInfo(event)" style="padding:20px;">
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div>
+                      <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">Họ và tên <span style="color:#dc2626;">*</span></label>
+                      <input type="text" id="adm-input-fullname" class="form-control" required style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                    </div>
+                    <div>
+                      <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">Số điện thoại</label>
+                      <input type="tel" id="adm-input-phone" class="form-control" placeholder="09xxxxxxxx" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                    </div>
+                  </div>
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
+                    <div>
+                      <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">Email (Cố định danh tính)</label>
+                      <input type="email" id="adm-input-email" class="form-control" readonly disabled style="width:100%; padding:9px 12px; border:1px solid #e2e8f0; background:#f8fafc; color:#64748b; border-radius:8px; font-size:13px;">
+                    </div>
+                    <div>
+                      <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">Tỉnh / Thành phố</label>
+                      <input type="text" id="adm-input-city" class="form-control" placeholder="TP. Hồ Chí Minh" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                    </div>
+                  </div>
+                  <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="submit" class="btn btn-primary" id="btn-save-adm-profile" style="background:#059669; border:none; border-radius:8px; padding:9px 18px; font-size:13px; font-weight:800; cursor:pointer; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                      <i data-lucide="check" class="lucide-sm"></i> Lưu Thay Đổi
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Form 2: Đổi mật khẩu Admin -->
+              <div class="card" style="border-radius:12px; border:1px solid #e2e8f0; background:#ffffff; overflow:hidden;">
+                <div class="card-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:16px 20px;">
+                  <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="lock" class="lucide-sm" style="color:#d97706"></i> Đổi Mật Khẩu Quản Trị Viên
+                  </h3>
+                </div>
+                <form id="adm-pwd-form" onsubmit="changeAdminPassword(event)" style="padding:20px;">
+                  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
+                    <div>
+                      <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">Mật khẩu hiện tại <span style="color:#dc2626;">*</span></label>
+                      <input type="password" id="adm-pwd-old" class="form-control" required placeholder="••••••••" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                    </div>
+                    <div>
+                      <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">Mật khẩu mới <span style="color:#dc2626;">*</span></label>
+                      <input type="password" id="adm-pwd-new" class="form-control" required placeholder="Tối thiểu 6 ký tự" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                    </div>
+                    <div>
+                      <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">Nhập lại mật khẩu mới <span style="color:#dc2626;">*</span></label>
+                      <input type="password" id="adm-pwd-confirm" class="form-control" required placeholder="Xác nhận mật khẩu" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                    </div>
+                  </div>
+                  <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="submit" class="btn btn-primary" id="btn-change-adm-pwd" style="background:#d97706; border:none; border-radius:8px; padding:9px 18px; font-size:13px; font-weight:800; cursor:pointer; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                      <i data-lucide="key" class="lucide-sm"></i> Cập Nhật Mật Khẩu
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>

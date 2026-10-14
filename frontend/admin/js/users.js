@@ -147,27 +147,35 @@ function filterUsers() {
 // Sắp xếp danh sách người dùng theo cấu trúc cây phân cấp (Enterprise IAM Hierarchy Tree)
 // Super Admin -> Chủ Nông Hộ (Roots) -> Nhân Sự Dưới Quyền (Children) -> Tài khoản độc lập
 function buildUserHierarchyTree(users) {
-  // Tạo bản đồ tra cứu nhanh
+  // Tạo bản đồ tra cứu nhanh & khử trùng lặp người dùng
   const userMap = new Map();
-  users.forEach(u => userMap.set(u.id, { ...u, _children: [] }));
+  users.forEach(u => {
+    if (!userMap.has(u.id)) {
+      userMap.set(u.id, { ...u, _children: [] });
+    }
+  });
 
   const rootNodes = [];
   const processedIds = new Set();
 
   // Nhận diện Root Nodes (Admins hoặc Nông Hộ Chủ Quản không có parent)
-  users.forEach(u => {
+  userMap.forEach(u => {
     if (!u.parent_user_id || !userMap.has(u.parent_user_id)) {
-      rootNodes.push(userMap.get(u.id));
-      processedIds.add(u.id);
+      if (!processedIds.has(u.id)) {
+        rootNodes.push(u);
+        processedIds.add(u.id);
+      }
     }
   });
 
-  // Gắn con vào node cha
-  users.forEach(u => {
+  // Gắn con vào node cha (tránh gắn trùng lặp)
+  userMap.forEach(u => {
     if (u.parent_user_id && userMap.has(u.parent_user_id)) {
       const parent = userMap.get(u.parent_user_id);
-      parent._children.push(userMap.get(u.id));
-      processedIds.add(u.id);
+      if (!parent._children.some(c => c.id === u.id)) {
+        parent._children.push(u);
+        processedIds.add(u.id);
+      }
     }
   });
 
@@ -211,7 +219,7 @@ function renderUsersTable(users) {
     return;
   }
 
-  // Tổ chức lại danh sách theo cấu trúc cây IAM
+  // Tổ chức lại danh sách theo cấu trúc cây IAM (đã khử trùng lặp)
   const hierarchicalUsers = buildUserHierarchyTree(users);
 
   // Pagination Logic (10 items / page)
@@ -230,23 +238,22 @@ function renderUsersTable(users) {
     
     const publicId = u.public_id || (typeof generateIsoPublicId === 'function' ? generateIsoPublicId(u.role, u.id) : (u.role === 'admin' ? `adm-${u.id}` : `usr-${u.id}`));
 
-    // Badge Phân cấp Vai trò Doanh nghiệp Quốc tế (Enterprise IAM Sub-role Badges)
+    // Badge Phân cấp Vai trò Doanh nghiệp Quốc tế (Enterprise IAM Sub-role Badges với màu sắc đặc trưng)
     let roleBadge = '';
     const subRole = u.sub_role || 'farm_owner';
-    const isSubAccount = Boolean(u.parent_user_id);
     const assignedPlantsCount = u.assigned_plants_count || (Array.isArray(u.assigned_plant_ids) ? u.assigned_plant_ids.length : 0);
 
     if (u.role === 'admin') {
       roleBadge = `
-        <span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
-          <i data-lucide="shield-check" class="lucide-sm"></i> Quản Trị Hệ Thống (Admin)
+        <span class="badge" style="background:#f5f3ff; color:#6d28d9; border:1.5px solid #ddd6fe; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
+          <i data-lucide="shield-alert" class="lucide-xs" style="color:#7c3aed;"></i> Quản Trị Hệ Thống (Admin)
         </span>
       `;
     } else if (subRole === 'manager') {
       roleBadge = `
         <div style="display:flex; flex-direction:column; gap:3px;">
-          <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
-            <i data-lucide="briefcase" class="lucide-sm"></i> Quản Đốc Vườn (Manager)
+          <span class="badge" style="background:#eff6ff; color:#1d4ed8; border:1.5px solid #bfdbfe; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px; width:fit-content;">
+            <i data-lucide="briefcase" class="lucide-xs" style="color:#2563eb;"></i> Quản Đốc Vườn (Manager)
           </span>
           <span style="font-size:10.5px; color:#475569;">Điều hành kho, vật tư & kỹ thuật</span>
         </div>
@@ -254,10 +261,10 @@ function renderUsersTable(users) {
     } else if (subRole === 'care_worker') {
       roleBadge = `
         <div style="display:flex; flex-direction:column; gap:3px;">
-          <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
-            <i data-lucide="wrench" class="lucide-sm"></i> Công Nhân Ở Vườn (Worker)
+          <span class="badge" style="background:#fffbeb; color:#b45309; border:1.5px solid #fde68a; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px; width:fit-content;">
+            <i data-lucide="wrench" class="lucide-xs" style="color:#d97706;"></i> Công Nhân Ở Vườn (Worker)
           </span>
-          <span style="font-size:10.5px; color:#059669; font-weight:700;">
+          <span style="font-size:10.5px; color:#b45309; font-weight:700;">
             ${assignedPlantsCount > 0 ? `Được giao: ${assignedPlantsCount} cây` : 'Toàn quyền cây trong trại'}
           </span>
         </div>
@@ -265,10 +272,10 @@ function renderUsersTable(users) {
     } else if (subRole === 'auditor_readonly') {
       roleBadge = `
         <div style="display:flex; flex-direction:column; gap:3px;">
-          <span class="badge" style="background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
-            <i data-lucide="file-check" class="lucide-sm"></i> Kiểm Định Viên (Auditor)
+          <span class="badge" style="background:#f8fafc; color:#334155; border:1.5px solid #cbd5e1; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px; width:fit-content;">
+            <i data-lucide="file-check-2" class="lucide-xs" style="color:#475569;"></i> Kiểm Định Viên (Auditor)
           </span>
-          <span style="font-size:10.5px; color:#6d28d9; font-weight:600;">VietGAP / Chỉ xem</span>
+          <span style="font-size:10.5px; color:#475569; font-weight:600;">VietGAP / Chỉ xem</span>
         </div>
       `;
     } else {
@@ -276,16 +283,19 @@ function renderUsersTable(users) {
       const childCount = (hierarchicalUsers.filter(x => x.parent_user_id === u.id)).length;
       roleBadge = `
         <div style="display:flex; flex-direction:column; gap:3px;">
-          <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; width:fit-content;">
-            <i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> Chủ Nông Hộ (Farm Owner)
+          <span class="badge" style="background:#ecfdf5; color:#047857; border:1.5px solid #a7f3d0; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px; width:fit-content;">
+            <i data-lucide="crown" class="lucide-xs" style="color:#059669;"></i> Chủ Nông Hộ (Farm Owner)
           </span>
           ${childCount > 0 ? `<span style="font-size:10.5px; color:#0284c7; font-weight:700;">↳ Quản lý ${childCount} nhân sự</span>` : ''}
         </div>
       `;
     }
 
+    // Gói cước: Admin là Bất tử / Vĩnh viễn
     let tierBadge = '';
-    if (u.account_tier === 'pro') {
+    if (u.role === 'admin') {
+      tierBadge = `<span class="badge" style="background:#f5f3ff; color:#6d28d9; border:1.5px solid #ddd6fe; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="infinity" class="lucide-xs" style="color:#7c3aed;"></i> Bất tử (Vĩnh viễn)</span>`;
+    } else if (u.account_tier === 'pro') {
       if (u.tier_expires_at) {
         const diffMs = new Date(u.tier_expires_at) - new Date();
         const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -294,20 +304,42 @@ function renderUsersTable(users) {
           const bg = isWarning ? '#fffbeb' : '#ecfdf5';
           const color = isWarning ? '#b45309' : '#047857';
           const border = isWarning ? '#fde68a' : '#a7f3d0';
-          tierBadge = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> PRO (${diffDays}d)</span>`;
+          tierBadge = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="crown" class="lucide-xs" style="color:#059669;"></i> PRO (${diffDays}d)</span>`;
         } else {
-          tierBadge = `<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-sm"></i> PRO (Hết hạn)</span>`;
+          tierBadge = `<span class="badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-xs"></i> PRO (Hết hạn)</span>`;
         }
       } else {
-        tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="crown" class="lucide-sm" style="color:#059669"></i> PRO (Vĩnh viễn)</span>`;
+        tierBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800;"><i data-lucide="crown" class="lucide-xs" style="color:#059669;"></i> PRO (Vĩnh viễn)</span>`;
       }
     } else {
-      tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="shield" class="lucide-sm"></i> Standard</span>`;
+      tierBadge = `<span class="badge" style="background:#f8fafc; color:#64748b; border:1px solid #cbd5e1; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i data-lucide="shield" class="lucide-xs"></i> Standard</span>`;
     }
 
-    const farmBadge = u.farm_name
-      ? `<span style="font-weight:700; color:#059669; font-size:12.5px;"><i data-lucide="home" class="lucide-sm" style="font-size:11px;"></i> ${escapeHtml(u.farm_name)}</span>`
-      : '<span style="color:#94a3b8; font-size:12px;">— Chưa gán —</span>';
+    // Trang trại: Admin gắn ALL, người dùng quản lý nhiều trang trại hiển thị danh sách tinh gọn không lặp hàng
+    let farmBadge = '';
+    if (u.role === 'admin') {
+      farmBadge = `<span class="badge" style="background:#f1f5f9; color:#475569; border:1.5px solid #cbd5e1; padding:4px 12px; border-radius:12px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="globe" class="lucide-xs" style="color:#059669;"></i> ALL</span>`;
+    } else {
+      const farmsList = (u.managed_farms && Array.isArray(u.managed_farms) && u.managed_farms.length > 0)
+        ? u.managed_farms
+        : (u.farm_name ? [{ name: u.farm_name }] : []);
+
+      if (farmsList.length === 0) {
+        farmBadge = '<span style="color:#94a3b8; font-size:12px;">— Chưa gán —</span>';
+      } else if (farmsList.length === 1) {
+        farmBadge = `<span style="font-weight:700; color:#059669; font-size:12.5px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="home" class="lucide-xs"></i> ${escapeHtml(farmsList[0].name)}</span>`;
+      } else {
+        farmBadge = `
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${farmsList.map(f => `
+              <span style="font-weight:700; color:#059669; font-size:11.5px; display:inline-flex; align-items:center; gap:4px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px; width:fit-content;">
+                <i data-lucide="home" style="width:11px; height:11px;"></i> ${escapeHtml(f.name)}
+              </span>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
 
     const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN', {
       year: 'numeric', month: '2-digit', day: '2-digit'
@@ -1109,7 +1141,7 @@ async function submitUserTierUpdate() {
 
 
 function switchUserTab(tab) {
-  const tabs = ['manage', 'pending', 'status', 'resets'];
+  const tabs = ['manage', 'pending', 'status', 'resets', 'admin-profile'];
   tabs.forEach(t => {
     const tabEl = document.getElementById(`user-tab-${t}`);
     const paneEl = document.getElementById(`pane-user-${t}`);
@@ -1119,8 +1151,131 @@ function switchUserTab(tab) {
 
   if (tab === 'pending') loadPendingFarmerUsers();
   if (tab === 'resets') loadResetRequests();
+  if (tab === 'admin-profile') loadAdminProfileData();
+  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 }
+
+async function loadAdminProfileData() {
+  try {
+    const me = await api('/auth/me');
+    if (me) {
+      if (typeof currentUser !== 'undefined') {
+        currentUser = Object.assign(currentUser || {}, me);
+      }
+      const avatarChar = (me.full_name || me.name || 'Admin').charAt(0).toUpperCase();
+      const elChar = document.getElementById('adm-profile-avatar-char');
+      if (elChar) elChar.textContent = avatarChar;
+
+      const elName = document.getElementById('adm-profile-fullname');
+      if (elName) elName.textContent = me.full_name || me.name || 'Quản Trị Viên';
+
+      const elEmail = document.getElementById('adm-profile-email');
+      if (elEmail) elEmail.textContent = me.email || 'admin@plantbook.vn';
+
+      const elPubId = document.getElementById('adm-profile-public-id');
+      if (elPubId) elPubId.textContent = me.public_id || ('adm-' + me.id);
+
+      const elCreated = document.getElementById('adm-profile-created-at');
+      if (elCreated) {
+        elCreated.textContent = me.created_at ? new Date(me.created_at).toLocaleDateString('vi-VN') : 'Mặc định hệ thống';
+      }
+
+      // Populate form
+      const inpName = document.getElementById('adm-input-fullname');
+      if (inpName) inpName.value = me.full_name || me.name || '';
+
+      const inpPhone = document.getElementById('adm-input-phone');
+      if (inpPhone) inpPhone.value = me.phone || '';
+
+      const inpEmail = document.getElementById('adm-input-email');
+      if (inpEmail) inpEmail.value = me.email || '';
+
+      const inpCity = document.getElementById('adm-input-city');
+      if (inpCity) inpCity.value = me.city || '';
+    }
+  } catch (err) {
+    console.error('Lỗi tải thông tin admin:', err);
+    toast('Không thể tải thông tin tài khoản: ' + err.message, 'error');
+  }
+}
+
+async function saveAdminProfileInfo(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const btn = document.getElementById('btn-save-adm-profile');
+  const full_name = (document.getElementById('adm-input-fullname')?.value || '').trim();
+  const phone = (document.getElementById('adm-input-phone')?.value || '').trim();
+  const city = (document.getElementById('adm-input-city')?.value || '').trim();
+
+  if (!full_name) {
+    toast('Họ và tên không được để trống.', 'warning');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang lưu...'; }
+
+  try {
+    const res = await api('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify({ full_name, phone, city })
+    });
+    toast('Cập nhật thông tin cá nhân thành công!', 'success');
+    if (res && res.user) {
+      if (typeof currentUser !== 'undefined') {
+        currentUser = Object.assign(currentUser || {}, res.user);
+      }
+      const sbName = document.getElementById('sb-user-name');
+      if (sbName) sbName.textContent = res.user.full_name || res.user.name;
+    }
+    await loadAdminProfileData();
+  } catch (err) {
+    toast('Lỗi khi cập nhật thông tin: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Lưu Thay Đổi'; }
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+  }
+}
+
+async function changeAdminPassword(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const btn = document.getElementById('btn-change-adm-pwd');
+  const oldPassword = document.getElementById('adm-pwd-old')?.value || '';
+  const newPassword = document.getElementById('adm-pwd-new')?.value || '';
+  const confirmPassword = document.getElementById('adm-pwd-confirm')?.value || '';
+
+  if (!oldPassword || !newPassword) {
+    toast('Vui lòng nhập đầy đủ mật khẩu cũ và mới.', 'warning');
+    return;
+  }
+  if (newPassword.length < 6) {
+    toast('Mật khẩu mới phải có tối thiểu 6 ký tự.', 'warning');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    toast('Mật khẩu xác nhận không khớp.', 'warning');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang đổi...'; }
+
+  try {
+    await api('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword })
+    });
+    toast('Đổi mật khẩu thành công!', 'success');
+    document.getElementById('adm-pwd-form')?.reset();
+  } catch (err) {
+    toast('Lỗi đổi mật khẩu: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="key" class="lucide-sm"></i> Cập Nhật Mật Khẩu'; }
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+  }
+}
+
 window.switchUserTab = switchUserTab;
+window.loadAdminProfileData = loadAdminProfileData;
+window.saveAdminProfileInfo = saveAdminProfileInfo;
+window.changeAdminPassword = changeAdminPassword;
 window.loadUsers = loadUsers;
 window.loadPendingUsers = loadPendingFarmerUsers;
 window.loadPendingFarmerUsers = loadPendingFarmerUsers;

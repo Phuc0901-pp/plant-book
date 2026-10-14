@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ════════════════════════════════════════════════════════
    Plant Book Admin — database.js (Cơ sở dữ liệu & Nhật ký Canh tác)
    Sub-tabs: 1. Dữ liệu canh tác, 2. Vật tư & Kho, 3. Thư viện media
@@ -160,6 +160,8 @@ let currentDbPlantLogsCache = [];
 let currentDbActiveActivityFilter = 'all';
 let currentDbFarmPlantsCache = [];
 let currentDbPlantProfileCache = null;
+let currentDbTimelinePage = 1;
+const DB_TIMELINE_PAGE_SIZE = 5;
 
 async function onDbFarmChange() {
   const farmId = document.getElementById('db-filter-farm')?.value;
@@ -531,7 +533,9 @@ async function selectTreeForDetail(plantId) {
                 <i data-lucide="trash-2" class="lucide-sm"></i> Xóa
               </button>
               <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.25); text-align:right;">
-                <div style="font-size:10px; text-transform:uppercase; opacity:0.85; font-weight:700;">💰 TỔNG ĐẦU TƯ</div>
+                <div style="font-size:10px; text-transform:uppercase; opacity:0.85; font-weight:700; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+                  <i data-lucide="coins" class="lucide-xs"></i> TỔNG ĐẦU TƯ
+                </div>
                 <div style="font-size:16px; font-weight:800; color:#fde047; margin-top:2px;">
                   ${totalInvestmentCost > 0 ? totalInvestmentCost.toLocaleString('vi-VN') + ' đ' : '0 đ'}
                 </div>
@@ -560,7 +564,8 @@ async function selectTreeForDetail(plantId) {
       renderActivityFilterChips(currentDbPlantLogsCache || []);
     }
 
-    // Render Timeline Feed
+    // Render Timeline Feed (Reset to page 1)
+    currentDbTimelinePage = 1;
     renderDetailTimeline();
 
   } catch (err) {
@@ -704,17 +709,28 @@ function renderActivityFilterChips(logs) {
 
 function filterTimelineByActivity(type) {
   currentDbActiveActivityFilter = type;
+  currentDbTimelinePage = 1;
   renderActivityFilterChips(currentDbPlantLogsCache);
   renderDetailTimeline();
 }
 window.filterTimelineByActivity = filterTimelineByActivity;
+
+function changeDbTimelinePage(page) {
+  currentDbTimelinePage = page;
+  renderDetailTimeline();
+  const container = document.getElementById('db-cultivation-timeline-container');
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+window.changeDbTimelinePage = changeDbTimelinePage;
 
 function renderDetailTimeline() {
   const container = document.getElementById('db-cultivation-timeline-container');
   if (!container) return;
 
   const plant = currentDbPlantProfileCache;
-  let logs = currentDbPlantLogsCache;
+  let logs = currentDbPlantLogsCache || [];
 
   if (currentDbActiveActivityFilter !== 'all') {
     logs = logs.filter(l => l.log_type === currentDbActiveActivityFilter);
@@ -728,8 +744,19 @@ function renderDetailTimeline() {
           ${currentDbActiveActivityFilter === 'all' ? 'Cây này chưa có nhật ký canh tác nào.' : `Không có hoạt động "${currentDbActiveActivityFilter}" nào được ghi nhận.`}
         </p>
       </div>`;
+    if (window.lucide) lucide.createIcons();
     return;
   }
+
+  // ── 5 records per page pagination ──
+  const totalLogs = logs.length;
+  const totalPages = Math.ceil(totalLogs / DB_TIMELINE_PAGE_SIZE) || 1;
+  if (currentDbTimelinePage > totalPages) currentDbTimelinePage = totalPages;
+  if (currentDbTimelinePage < 1) currentDbTimelinePage = 1;
+
+  const startIdx = (currentDbTimelinePage - 1) * DB_TIMELINE_PAGE_SIZE;
+  const endIdx = Math.min(startIdx + DB_TIMELINE_PAGE_SIZE, totalLogs);
+  const pagedLogs = logs.slice(startIdx, endIdx);
 
   const typeConfigs = {
     'Tưới nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'droplets', iconColor: '#3b82f6' },
@@ -742,7 +769,7 @@ function renderDetailTimeline() {
   };
 
   const groupedByDate = {};
-  logs.forEach(l => {
+  pagedLogs.forEach(l => {
     const dObj = new Date(l.log_date || l.created_at);
     const dateKey = !isNaN(dObj) ? dObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Không rõ ngày';
     if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
@@ -753,10 +780,12 @@ function renderDetailTimeline() {
     <!-- Initiation Node -->
     <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:14px; padding:14px 16px; color:#064e3b; margin-bottom:20px; box-shadow:0 4px 12px rgba(16,185,129,0.06); display:flex; align-items:center; gap:12px;">
       <div style="width:38px; height:38px; border-radius:10px; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 10px rgba(5,150,105,0.25);">
-        <i data-lucide="flag" class="lucide-sm"></i>
+        <i data-lucide="sprout" class="lucide-sm"></i>
       </div>
       <div>
-        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#047857;">🌱 THÔNG TIN KHỞI TẠO VĨNH VIỄN CÂY TRỒNG</div>
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#047857; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="shield-check" class="lucide-xs"></i> THÔNG TIN KHỞI TẠO VĨNH VIỄN CÂY TRỒNG
+        </div>
         <div style="font-size:13.5px; font-weight:800; color:#064e3b; margin-top:2px;">Cây #${esc(plant.tree_code || plant.id)} (${esc(plant.plant_type)}) · Ngày tạo: ${fmtDate(plant.created_at)}</div>
       </div>
     </div>
@@ -767,11 +796,11 @@ function renderDetailTimeline() {
     dayLogs.sort((a, b) => new Date(a.log_date || a.created_at) - new Date(b.log_date || b.created_at));
 
     timelineHtml += `
-      <div style="margin-bottom:24px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.02);">
+      <div style="margin-bottom:20px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.02);">
         <!-- Date Header -->
         <div style="background:linear-gradient(135deg, #f8fafc, #f1f5f9); padding:10px 16px; border-bottom:1.5px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
           <div style="font-size:13px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-            <i data-lucide="calendar-check" class="lucide-sm" style="color:#059669;"></i> Ngày ${esc(dateStr)}
+            <i data-lucide="calendar" class="lucide-sm" style="color:#059669;"></i> Ngày ${esc(dateStr)}
           </div>
           <span class="badge" style="background:#059669; color:#ffffff; font-weight:800; font-size:11px; padding:2px 10px; border-radius:20px;">
             ${dayLogs.length} hoạt động
@@ -822,7 +851,7 @@ function renderDetailTimeline() {
                 ${reason ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mục đích: <strong>${esc(reason)}</strong></div>` : ''}
               </div>
             </div>
-            ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0;"><i data-lucide="coins" class="lucide-sm"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
+            ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="coins" class="lucide-xs"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}
           </div>
         `;
       }
@@ -843,11 +872,13 @@ function renderDetailTimeline() {
               <span class="badge" style="background:${cfg.bg}; color:${cfg.color}; border:1px solid ${cfg.border}; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
                 <i data-lucide="${cfg.icon}" class="lucide-sm" style="color:${cfg.iconColor}"></i> ${esc(l.log_type)}
               </span>
-              ${timeStr ? `<span style="font-size:11.5px; font-weight:700; color:#64748b;"><i data-lucide="clock" class="lucide-sm"></i> ${timeStr}</span>` : ''}
+              ${timeStr ? `<span style="font-size:11.5px; font-weight:700; color:#64748b; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="clock" class="lucide-xs"></i> ${timeStr}</span>` : ''}
             </div>
             ${(l.creator_name || l.creator_phone) ? `
               <div style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; color:#064e3b; padding:3px 10px; border-radius:8px; font-size:11.5px; font-weight:700;">
-                <i data-lucide="user-check" class="lucide-sm" style="color:#059669;"></i> 👤 Thực hiện bởi: <strong>${esc(l.creator_name || 'Nông hộ')}</strong> ${l.creator_phone ? `· 📞 <strong>${esc(l.creator_phone)}</strong>` : ''}
+                <i data-lucide="user-check" class="lucide-xs" style="color:#059669;"></i>
+                <span>Thực hiện bởi: <strong>${esc(l.creator_name || 'Nông hộ')}</strong></span>
+                ${l.creator_phone ? `· <i data-lucide="phone" class="lucide-xs" style="color:#059669;"></i> <strong>${esc(l.creator_phone)}</strong>` : ''}
               </div>` : ''}
           </div>
 
@@ -864,6 +895,42 @@ function renderDetailTimeline() {
       </div>
     `;
   });
+
+  // ── Pagination Control Strip ──
+  if (totalPages > 1) {
+    let pagesButtonsHtml = '';
+    for (let p = 1; p <= totalPages; p++) {
+      const isCur = p === currentDbTimelinePage;
+      pagesButtonsHtml += `
+        <button type="button" onclick="changeDbTimelinePage(${p})" 
+                style="min-width:32px; height:32px; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer; border:${isCur ? '1.5px solid #059669' : '1px solid #cbd5e1'}; background:${isCur ? '#059669' : '#ffffff'}; color:${isCur ? '#ffffff' : '#334155'}; transition:all 0.15s ease; display:inline-flex; align-items:center; justify-content:center; padding:0 8px;">
+          ${p}
+        </button>
+      `;
+    }
+
+    timelineHtml += `
+      <div style="margin-top:20px; padding:12px 16px; background:#ffffff; border:1.5px solid #e2e8f0; border-radius:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+        <div style="font-size:12px; font-weight:700; color:#64748b; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="layers" class="lucide-xs" style="color:#059669;"></i>
+          Hiển thị <strong>${startIdx + 1} - ${endIdx}</strong> / <strong>${totalLogs}</strong> hoạt động (Trang ${currentDbTimelinePage}/${totalPages})
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage - 1})" 
+                  ${currentDbTimelinePage === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : 'style="cursor:pointer;"'}
+                  class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700;">
+            <i data-lucide="chevron-left" class="lucide-xs"></i> Trước
+          </button>
+          ${pagesButtonsHtml}
+          <button type="button" onclick="changeDbTimelinePage(${currentDbTimelinePage + 1})" 
+                  ${currentDbTimelinePage === totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : 'style="cursor:pointer;"'}
+                  class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700;">
+            Sau <i data-lucide="chevron-right" class="lucide-xs"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }
 
   container.innerHTML = timelineHtml;
   if (window.lucide) lucide.createIcons();

@@ -367,7 +367,7 @@ router.delete('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
 // Apply admin check to all remaining routes in this file
 router.use(admin);
 
-// GET /api/users - List all users (with assigned farm info & permissions & assigned plants & parent lineage)
+// GET /api/users - List all users (with aggregated managed farms & permissions & assigned plants & parent lineage)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
@@ -377,8 +377,18 @@ router.get('/', async (req, res) => {
               u.is_online, u.last_active_at, u.created_at,
               u.view_plants_scope, u.view_history_from_date, u.allow_shared_history, u.allow_view_supplies,
               u.account_tier, u.tier_expires_at, u.tier_admin_note,
-              COALESCE(u.farm_id, f_legacy.id) as farm_id,
-              COALESCE(f.name, f_legacy.name) as farm_name,
+              u.farm_id,
+              f.name as farm_name,
+              COALESCE((
+                SELECT json_agg(json_build_object('id', fa.id, 'name', fa.name, 'puc_code', fa.puc_code))
+                FROM (
+                  SELECT DISTINCT id, name, puc_code 
+                  FROM farms 
+                  WHERE (id = u.farm_id OR user_id = u.id OR created_by = u.id OR (u.parent_user_id IS NOT NULL AND user_id = u.parent_user_id)) 
+                    AND (is_deleted IS NOT TRUE)
+                  ORDER BY name ASC
+                ) fa
+              ), '[]'::json) as managed_farms,
               COALESCE((
                 SELECT json_agg(p.id) FROM plants p WHERE p.assigned_to_user_id = u.id
               ), '[]'::json) as assigned_plant_ids,
@@ -388,14 +398,22 @@ router.get('/', async (req, res) => {
        FROM users u
        LEFT JOIN users pu ON pu.id = u.parent_user_id
        LEFT JOIN farms f ON f.id = u.farm_id
-       LEFT JOIN farms f_legacy ON f_legacy.user_id = u.id
        ORDER BY u.id ASC`
     );
 
-    const rows = result.rows.map(u => ({
-      ...u,
-      public_id: generateIsoPublicId(u.role, u.id)
-    }));
+    const rows = result.rows.map(u => {
+      const farmsList = Array.isArray(u.managed_farms) ? u.managed_farms : [];
+      let primaryFarmName = u.farm_name;
+      if (!primaryFarmName && farmsList.length > 0) {
+        primaryFarmName = farmsList.map(item => item.name).join(', ');
+      }
+      return {
+        ...u,
+        farm_name: primaryFarmName,
+        managed_farms: farmsList,
+        public_id: generateIsoPublicId(u.role, u.id)
+      };
+    });
 
     res.json(rows);
   } catch (err) {
