@@ -477,6 +477,7 @@ async function initDB() {
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS active_ingredient VARCHAR(255);
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS target_pests VARCHAR(255);
       ALTER TABLE supplies ADD COLUMN IF NOT EXISTS safety_interval_note TEXT;
+      ALTER TABLE supplies ADD COLUMN IF NOT EXISTS fertilizer_composition TEXT;
 
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS puc_code VARCHAR(100);
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS vietgap_cert_number VARCHAR(100);

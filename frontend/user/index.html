@@ -4970,8 +4970,68 @@
 </div>
 
 <!-- ════════════ MODAL KHAI BÁO VẬT TƯ ════════════ -->
-<div class="modal-overlay" id="modal-supply" style="display:none" onclick="if(event.target===this)closeSupplyModal()">
-  <div class="modal supply-modal-custom">
+<style>
+/* ── Guaranteed Stable Modal Architecture for Supplies (No Auto-Dismissal) ── */
+#modal-supply {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#modal-supply .supply-modal-custom {
+  max-width: 620px !important;
+  width: 95vw !important;
+  height: auto !important;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid #cbd5e1 !important;
+  margin: auto !important;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#modal-supply .supply-modal-header {
+  flex-shrink: 0 !important;
+  padding: 16px 22px !important;
+}
+#modal-supply .supply-modal-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  padding: 18px 22px !important;
+}
+#modal-supply .supply-modal-footer {
+  flex-shrink: 0 !important;
+  padding: 14px 22px !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+@media (max-width: 768px) {
+  #modal-supply {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+  #modal-supply .supply-modal-custom {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 96vh !important;
+    height: 96dvh !important;
+    max-height: 96dvh !important;
+    border-radius: 22px 22px 0 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+}
+</style>
+
+<div class="modal-overlay" id="modal-supply" style="display:none">
+  <div class="modal supply-modal-custom" onclick="event.stopPropagation()">
     <div class="modal-header supply-modal-header">
       <div style="display:flex; align-items:center; gap:12px;">
         <div class="supply-modal-icon-wrap"><i data-lucide="package" class="lucide-sm"></i></div>
@@ -5044,17 +5104,29 @@
         </div>
       </div>
 
-      <!-- Fertilizer Type dropdown (when category = 'Bón phân') -->
-      <div class="field" id="field-fertilizer-type" style="margin-top:12px; margin-bottom:16px;">
-        <label class="form-label"><i data-lucide="tags" class="lucide-sm"></i> Loại phân bón <span class="req-star">*</span></label>
-        <select id="sp-fertilizer-type" class="form-control-custom">
-          <option value="Phân vô cơ (NPK / Hóa học)"> Phân vô cơ / Hóa học (NPK, Ure, DAP, Kali...)</option>
-          <option value="Phân hữu cơ"> Phân hữu cơ (Trùn quế, Vi sinh, Đạm cá...)</option>
-          <option value="Phân bón lá"> Phân bón lá / Kích thích ra hoa, đậu trái</option>
-          <option value="Phân vi lượng / Trung lượng"> Phân vi lượng / Trung lượng (Bo, Canxi, Magie...)</option>
-          <option value="Phân chuồng / Hoai mục"> Phân chuồng hoai mục / Vi sinh</option>
-          <option value="Khác"> Khác / Phân loại riêng</option>
-        </select>
+      <!-- ════ Khối Tiêu Chuẩn Nông Nghiệp: Phân Bón & Thành Phần Định Lượng ════ -->
+      <div id="field-fertilizer-box" style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:12px 14px; margin-top:12px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:#15803d; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="sprout" class="lucide-sm" style="color:#16a34a;"></i> Tiêu Chuẩn Phân Bón: Chủng Loại &amp; Thành Phần Định Lượng
+        </div>
+        <div class="form-row-2" style="margin-bottom:0; gap:10px;">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-weight:700; font-size:11px; color:#166534; margin-bottom:4px; display:block;">Loại phân bón <span class="req-star">*</span></label>
+            <select id="sp-fertilizer-type" class="form-control-custom" style="background:#fff;">
+              <option value="Phân vô cơ (NPK / Hóa học)"> Phân vô cơ / Hóa học (NPK, Ure, DAP, Kali...)</option>
+              <option value="Phân hữu cơ"> Phân hữu cơ (Trùn quế, Vi sinh, Đạm cá...)</option>
+              <option value="Phân bón lá"> Phân bón lá / Kích thích ra hoa, đậu trái</option>
+              <option value="Phân vi lượng / Trung lượng"> Phân vi lượng / Trung lượng (Bo, Canxi, Magie...)</option>
+              <option value="Phân chuồng / Hoai mục"> Phân chuồng hoai mục / Vi sinh</option>
+              <option value="Khác"> Khác / Phân loại riêng</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-weight:700; font-size:11px; color:#166534; margin-bottom:4px; display:block;">Thành phần định lượng (N-P-K, Hữu cơ, TE...)</label>
+            <input type="text" id="sp-fertilizer-composition" placeholder="VD: N: 20%, P2O5: 20%, K2O: 15% + TE" class="form-control-custom" style="background:#fff;">
+          </div>
+        </div>
+        <small style="color:#15803d; font-size:10.5px; margin-top:5px; display:block;">Hàm lượng các nguyên tố dinh dưỡng theo nhãn bao bì (Nghị định 84/2019/NĐ-CP)</small>
       </div>
 
       <!-- Row 2: Tên vật tư -->
