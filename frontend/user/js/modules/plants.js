@@ -243,7 +243,7 @@ export function renderUserPlantsSummaryTable(plants) {
   const tbody = document.getElementById('user-plants-summary-table');
   if (!tbody) return;
   if (!plants.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i data-lucide="sprout" class="lucide-sm"></i><p>Không có cây trồng nào được giao</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i data-lucide="sprout" class="lucide-sm"></i><p>Không có cây trồng nào được giao</p></td></tr>';
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
@@ -403,8 +403,8 @@ function _plantRow(p) {
   return `
     <tr id="plant-row-${p.id}" style="transition:all 0.3s ease;">
       <td data-label="Mã cây">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
-          <strong>${treeCodeSafe}</strong>
+        <div class="plant-code-cell-wrap" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <strong style="font-family:var(--font-mono); font-size:13px; color:#0f172a; font-weight:800;">${treeCodeSafe}</strong>
           ${nfcBadge}
         </div>
       </td>

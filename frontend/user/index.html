@@ -913,48 +913,78 @@
                TẦNG 2: TRUNG TÂM GIÁM SÁT CẢNH BÁO & RỦI RO PHÂN CẤP
                Sắp xếp ưu tiên từ NẶNG (Đỏ) -> TRUNG BÌNH (Vàng) -> NHẸ (Xanh)
                ════════════════════════════════════════════════════════════════ -->
-          <div class="card" id="user-priority-alerts-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
-            <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-              <h3 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="alert-triangle" class="lucide-sm" style="color: #eab308; font-size: 17px;"></i>
-                <span>Trung Tâm Giám Sát Cảnh Báo &amp; Sức Khỏe Vườn Cây</span>
-              </h3>
-              <div id="alerts-count-badge" style="font-size: 12px; font-weight: 700; color: #64748b;">
+          <div class="card smart-farm-monitoring-card" id="user-priority-alerts-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
+            <div class="card-header smart-farm-monitoring-header" style="background: #ffffff; border-bottom: 1.5px solid #f1f5f9; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="smart-farm-radar-pulse">
+                  <span class="pulse-ring"></span>
+                  <i data-lucide="activity" class="lucide-sm" style="color: #059669;"></i>
+                </div>
+                <div>
+                  <h3 style="font-size: 15.5px; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; letter-spacing: -0.2px;">
+                    <span>Trung Tâm Giám Sát Cảnh Báo &amp; Sức Khỏe Vườn Cây</span>
+                    <span class="smart-farm-live-chip"><i data-lucide="radio" class="lucide-xs"></i> SMART FARM IOT</span>
+                  </h3>
+                  <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 2px;">
+                    Hệ thống quan trắc dịch hại, sức khỏe sinh lý &amp; khuyến nghị kỹ thuật VietGAP thời gian thực
+                  </div>
+                </div>
+              </div>
+              <div id="alerts-count-badge" style="display: flex; align-items: center; gap: 8px;">
                 <!-- Filled dynamically -->
               </div>
             </div>
 
-            <div id="alerts-list-container" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div id="alerts-list-container" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 12px;">
               <!-- Filled dynamically by renderPriorityAlertsCenter -->
             </div>
           </div>
           
-          <!-- Tóm tắt Danh sách Cây trồng -->
-          <div class="card" id="user-plants-summary-card">
-            <div class="card-header">
-              <h3><i data-lucide="sprout" class="lucide-sm" style="color:var(--green)"></i> Danh sách Cây trồng</h3>
-              <span style="font-size:11px; color:var(--gray-400)">Tổng số: <strong id="user-plant-count">0</strong> cây</span>
+          <!-- Tóm tắt Danh sách Cây trồng (Executive Enterprise ERP Table) -->
+          <div class="card" id="user-plants-summary-card" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
+            <div class="card-header" style="background: #ffffff; border-bottom: 1.5px solid #f1f5f9; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #ecfdf5; border: 1px solid #a7f3d0; display: flex; align-items: center; justify-content: center; color: #059669;">
+                  <i data-lucide="trees" class="lucide-sm"></i>
+                </div>
+                <div>
+                  <h3 style="font-size: 15.5px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.2px;">
+                    Danh Sách Cây Trồng Tiêu Biểu
+                  </h3>
+                  <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 1px;">
+                    Hồ sơ định danh số, thẻ NFC &amp; quản trị canh tác VietGAP
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge" style="font-size: 11.5px; font-weight: 800; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 20px;">
+                  Tổng số: <strong id="user-plant-count" style="margin-left: 2px;">0</strong> cây
+                </span>
+              </div>
             </div>
             <div style="overflow-x: auto;">
-              <table>
+              <table class="erp-enterprise-table">
                 <thead>
                   <tr>
-                    <th>Mã cây</th>
-                    <th>Loại & Giống</th>
-                    <th>Tuổi cây</th>
-                    <th>Sức khỏe</th>
-                    <th>Vị trí</th>
-                    <th style="width:110px">Thao tác</th>
+                    <th style="min-width: 170px;">Mã Cây &amp; Thẻ NFC</th>
+                    <th style="min-width: 190px;">Loại &amp; Giống Cây</th>
+                    <th style="min-width: 90px;">Tuổi Cây</th>
+                    <th style="min-width: 130px;">Sức Khỏe</th>
+                    <th style="min-width: 180px;">Tọa Độ &amp; Vị Trí</th>
+                    <th style="min-width: 130px;">Cổng Công Khai</th>
+                    <th style="min-width: 300px; text-align: right;">Thao Tác Quản Trị</th>
                   </tr>
                 </thead>
                 <tbody id="user-plants-summary-table">
-                  <tr><td colspan="6" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải...</td></tr>
+                  <tr><td colspan="7" class="empty-state"><i data-lucide="loader-2" class="lucide-spin lucide-sm"></i> Đang tải...</td></tr>
                 </tbody>
               </table>
             </div>
-            <div style="padding: 12px 16px; border-top: 1px solid var(--gray-100);">
-              <button class="btn btn-secondary btn-sm" onclick="showPage('myplants')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
-                Xem tất cả cây trồng <i data-lucide="arrow-right" class="lucide-sm"></i>
+            <div style="padding: 12px 18px; border-top: 1px solid #f1f5f9; background: #f8fafc;">
+              <button class="btn btn-secondary btn-sm" onclick="showPage('myplants')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:800; font-size:12.5px; padding:9px 16px; border-radius:10px; background:#ffffff; border:1.5px solid #cbd5e1; color:#334155;">
+                <i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i>
+                <span>Mở Toàn Bộ Danh Sách Cây &amp; Không Gian GIS</span>
+                <i data-lucide="arrow-right" class="lucide-sm"></i>
               </button>
             </div>
           </div>
@@ -1188,16 +1218,16 @@
                 </span>
               </div>
               <div style="overflow-x: auto;">
-                <table>
+                <table class="erp-enterprise-table">
                   <thead>
                     <tr>
-                      <th>Mã cây</th>
-                      <th>Loại &amp; Giống</th>
-                      <th>Tuổi cây</th>
-                      <th>Sức khỏe</th>
-                      <th>Vị trí</th>
-                      <th>URL Công khai</th>
-                      <th style="width:110px">Thao tác</th>
+                      <th style="min-width: 170px;">Mã Cây &amp; Thẻ NFC</th>
+                      <th style="min-width: 190px;">Loại &amp; Giống Cây</th>
+                      <th style="min-width: 90px;">Tuổi Cây</th>
+                      <th style="min-width: 130px;">Sức Khỏe</th>
+                      <th style="min-width: 180px;">Tọa Độ &amp; Vị Trí</th>
+                      <th style="min-width: 130px;">Cổng Công Khai</th>
+                      <th style="min-width: 300px; text-align: right;">Thao Tác Quản Trị</th>
                     </tr>
                   </thead>
                   <tbody id="user-plants-table">

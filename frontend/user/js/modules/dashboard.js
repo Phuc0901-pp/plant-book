@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/dashboard.js — Main data loader & state orchestrator
@@ -324,58 +324,76 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
   // 1. Quét Cây bị Sâu Bệnh (MỨC ĐỎ - Khẩn cấp)
   plants.forEach(p => {
     const status = (p.health_status || '').toLowerCase();
+    const typeClean = esc(p.plant_type || 'Cây').replace(/([^\s])\(/g, '$1 (');
+    const varietyClean = esc(p.plant_variety || 'Giống chuẩn');
+    const treeCodeStr = esc(p.tree_code || String(p.id));
+
     if (status.includes('bệnh') || status.includes('sick') || status.includes('nguy kịch')) {
       alerts.push({
         severity: 'CRITICAL',
         level: 1,
         borderLeft: '#ef4444',
-        bgGradient: 'linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%)',
-        badgeBg: '#dc2626',
-        badgeText: '🔴 KHẨN CẤP · SÂU BỆNH NẶNG',
-        title: `Cây #${p.tree_code || p.id} (${p.plant_type || 'Cây'} - ${p.plant_variety || 'Giống chuẩn'})`,
+        badgeType: 'critical',
+        badgeIcon: 'alert-octagon',
+        badgeLabel: 'KHẨN CẤP · SÂU BỆNH NẶNG',
+        targetLabel: `Cây #${treeCodeStr}`,
+        targetMeta: `${typeClean} - ${varietyClean}`,
+        protocolLabel: 'VietGAP Protocol P-01',
         desc: `Phát hiện dấu hiệu suy yếu / nấm bệnh. Cần cách ly xới gốc và phun chế phẩm sinh học dập dịch ngay.`,
         actionText: 'Xử lý ngay',
+        actionIcon: 'stethoscope',
+        actionBtnType: 'critical',
         plantId: p.id,
-        treeCode: p.tree_code || p.id,
+        treeCode: treeCodeStr,
         plantType: p.plant_type || 'Cây trồng'
       });
     }
   });
 
-
-
-  // 3. Quét Cây Cần Chú Ý (MỨC VÀNG)
+  // 2. Quét Cây Cần Chú Ý (MỨC VÀNG)
   plants.forEach(p => {
     const status = (p.health_status || '').toLowerCase();
+    const typeClean = esc(p.plant_type || 'Cây').replace(/([^\s])\(/g, '$1 (');
+    const varietyClean = esc(p.plant_variety || 'Giống chuẩn');
+    const treeCodeStr = esc(p.tree_code || String(p.id));
+
     if (status.includes('chú ý') || status.includes('watch') || status.includes('kém')) {
       alerts.push({
         severity: 'WARNING',
         level: 4,
         borderLeft: '#f59e0b',
-        bgGradient: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-        badgeBg: '#b45309',
-        badgeText: '🟡 CẦN CHÚ Ý · SINH TRƯỞNG CHẬM',
-        title: `Cây #${p.tree_code || p.id} (${p.plant_type || 'Cây'} - ${p.plant_variety || 'Giống chuẩn'})`,
+        badgeType: 'warning',
+        badgeIcon: 'alert-triangle',
+        badgeLabel: 'CẦN CHÚ Ý · SINH TRƯỞNG CHẬM',
+        targetLabel: `Cây #${treeCodeStr}`,
+        targetMeta: `${typeClean} - ${varietyClean}`,
+        protocolLabel: 'Dinh Dưỡng Vi Lượng',
         desc: `Cây có biểu hiện thiếu vi lượng hoặc đọt non chậm ra. Cần bổ sung phân bón lá hữu cơ Chelate vi lượng.`,
         actionText: 'Bón phân ngay',
+        actionIcon: 'sprout',
+        actionBtnType: 'warning',
         plantId: p.id,
-        treeCode: p.tree_code || p.id,
+        treeCode: treeCodeStr,
         plantType: p.plant_type || 'Cây trồng'
       });
     }
   });
 
-  // 4. Lịch Nhắc Việc Canh Tác Mùa Vụ (MỨC XANH - Nhẹ / Nhắc nhở)
+  // 3. Lịch Nhắc Việc Canh Tác Mùa Vụ (MỨC XANH - Nhẹ / Nhắc nhở)
   alerts.push({
     severity: 'INFO',
     level: 5,
     borderLeft: '#10b981',
-    bgGradient: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-    badgeBg: '#059669',
-    badgeText: '🟢 LỊCH CANH TÁC MÙA VỤ',
-    title: 'Kiểm tra hệ thống tưới bù áp tự động & Đo độ ẩm tầng rễ',
+    badgeType: 'routine',
+    badgeIcon: 'calendar-check',
+    badgeLabel: 'LỊCH CANH TÁC MÙA VỤ',
+    targetLabel: 'Kiểm tra hệ thống tưới bù áp tự động & Đo độ ẩm tầng rễ',
+    targetMeta: '',
+    protocolLabel: 'Thủy Lợi Tiết Kiệm',
     desc: 'Định kỳ quan trắc ẩm độ tầng rễ tơ và kiểm tra đầu béc bù áp 120L/h để duy trì độ ẩm đất tối ưu 60% - 75%.',
     actionText: 'Ghi nhận',
+    actionIcon: 'clipboard-check',
+    actionBtnType: 'routine',
     plantId: plants.length > 0 ? plants[0].id : null,
     treeCode: plants.length > 0 ? (plants[0].tree_code || '1') : '1',
     plantType: plants.length > 0 ? plants[0].plant_type : 'Sầu riêng'
@@ -388,39 +406,42 @@ export function renderPriorityAlertsCenter(plants = [], recentLogs = []) {
     const critCount = alerts.filter(a => a.severity === 'CRITICAL').length;
     const warnCount = alerts.filter(a => a.severity === 'WARNING').length;
     if (critCount > 0) {
-      badgeEl.innerHTML = `<span style="color:#dc2626; font-weight:800;"><i data-lucide="alert-circle" class="lucide-sm"></i> ${critCount} cảnh báo khẩn cấp</span>`;
+      badgeEl.innerHTML = `<span class="smart-farm-stat-badge critical"><i data-lucide="alert-octagon" class="lucide-xs"></i> <strong>${critCount}</strong> cảnh báo khẩn cấp</span>`;
     } else if (warnCount > 0) {
-      badgeEl.innerHTML = `<span style="color:#d97706; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-sm"></i> ${warnCount} cảnh báo cần chú ý</span>`;
+      badgeEl.innerHTML = `<span class="smart-farm-stat-badge warning"><i data-lucide="alert-triangle" class="lucide-xs"></i> <strong>${warnCount}</strong> cảnh báo cần chú ý</span>`;
     } else {
-      badgeEl.innerHTML = `<span style="color:#059669; font-weight:800;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Toàn bộ ${plants.length || 6} cây trồng đạt thể trạng TỐT</span>`;
+      badgeEl.innerHTML = `<span class="smart-farm-stat-badge healthy"><i data-lucide="shield-check" class="lucide-xs"></i> Toàn bộ ${plants.length || 0} cây trồng đạt thể trạng TỐT</span>`;
     }
   }
 
   let html = '';
   alerts.slice(0, 4).forEach(al => {
     html += `
-      <div style="background: ${al.bgGradient}; border: 1px solid rgba(0,0,0,0.06); border-left: 5px solid ${al.borderLeft}; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-        <div style="flex: 1; min-width: 240px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
-            <span style="background: ${al.badgeBg}; color: #ffffff; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px; letter-spacing: 0.3px;">
-              ${al.badgeText}
+      <div class="smart-alert-card ${al.badgeType}" style="border-left: 5px solid ${al.borderLeft};">
+        <div class="smart-alert-content">
+          <div class="smart-alert-header-row">
+            <span class="smart-alert-badge ${al.badgeType}">
+              <i data-lucide="${al.badgeIcon}" class="lucide-xs"></i> ${al.badgeLabel}
             </span>
-            <strong style="font-size: 14px; color: #0f172a;">${esc(al.title)}</strong>
+            <span class="smart-alert-target-pill">
+              <i data-lucide="${al.badgeType === 'routine' ? 'droplets' : 'trees'}" class="lucide-xs"></i> <strong>${al.targetLabel}</strong> ${al.targetMeta ? `<span class="target-meta">(${al.targetMeta})</span>` : ''}
+            </span>
+            ${al.protocolLabel ? `
+              <span class="smart-alert-protocol-tag">
+                <i data-lucide="scan-line" class="lucide-xs"></i> ${al.protocolLabel}
+              </span>
+            ` : ''}
           </div>
-          <div style="font-size: 12.5px; color: #475569; line-height: 1.45;">
+          <div class="smart-alert-desc">
             ${esc(al.desc)}
           </div>
         </div>
-        <div>
-          ${al.plantId ? `
-            <button type="button" class="btn btn-secondary btn-sm" onclick="openCareModal(${al.plantId}, '${esc(al.treeCode)}', '${esc(al.plantType)}')" style="font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 8px; background: #ffffff; border-color: #cbd5e1; color: #0f172a; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-              <i data-lucide="zap" class="lucide-sm" style="color: #059669;"></i> <span>${al.actionText}</span>
-            </button>
-          ` : `
-            <button type="button" class="btn btn-secondary btn-sm" onclick="openCareModal()" style="font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 8px; background: #ffffff; border-color: #cbd5e1; color: #0f172a; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-              <i data-lucide="zap" class="lucide-sm" style="color: #059669;"></i> <span>${al.actionText}</span>
-            </button>
-          `}
+        <div class="smart-alert-action-wrap">
+          <button type="button" class="btn-smart-alert-action ${al.actionBtnType}" onclick="openCareModal(${al.plantId || 'null'}, '${esc(al.treeCode)}', '${esc(al.plantType)}')">
+            <i data-lucide="${al.actionIcon}" class="lucide-sm"></i>
+            <span>${al.actionText}</span>
+            <i data-lucide="chevron-right" class="lucide-xs"></i>
+          </button>
         </div>
       </div>
     `;
