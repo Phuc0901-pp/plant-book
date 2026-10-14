@@ -41,6 +41,37 @@ async function sealPlantLogHashChain(pool, logRow) {
   return logRow;
 }
 
+function isUserFinanceRedacted(user) {
+  if (!user || user.role === 'admin') return false;
+  if (user.allow_view_finance === false) return true;
+  if (['care_worker', 'auditor_readonly'].includes(user.sub_role) && user.allow_view_finance !== true) return true;
+  return false;
+}
+
+function sanitizeLogRowForUser(log, user) {
+  if (!log || !isUserFinanceRedacted(user)) return log;
+  let d = log.details || {};
+  if (typeof d === 'string') {
+    try { d = JSON.parse(d); } catch (_) { d = {}; }
+  } else {
+    d = { ...d };
+  }
+  delete d.total_revenue;
+  delete d.revenue;
+  delete d.price_per_tree;
+  delete d.avg_price_per_fruit;
+  delete d.total_cost;
+  delete d.unit_price;
+  delete d.package_price;
+  d.finance_redacted = true;
+  return {
+    ...log,
+    cost: 0,
+    finance_redacted: true,
+    details: d
+  };
+}
+
 // Helper to strictly verify that the user is logged in AND belongs to the same farm or is Admin/Owner
 async function verifyPlantAccess(req, plantId) {
   const authHeader = req.headers['authorization'];
@@ -446,36 +477,7 @@ router.get('/logs/recent', auth, async (req, res) => {
       daysLimit = parseInt(rawDays, 10);
     }
 
-function isUserFinanceRedacted(user) {
-  if (!user || user.role === 'admin') return false;
-  if (user.allow_view_finance === false) return true;
-  if (['care_worker', 'auditor_readonly'].includes(user.sub_role) && user.allow_view_finance !== true) return true;
-  return false;
-}
 
-function sanitizeLogRowForUser(log, user) {
-  if (!log || !isUserFinanceRedacted(user)) return log;
-  let d = log.details || {};
-  if (typeof d === 'string') {
-    try { d = JSON.parse(d); } catch (_) { d = {}; }
-  } else {
-    d = { ...d };
-  }
-  delete d.total_revenue;
-  delete d.revenue;
-  delete d.price_per_tree;
-  delete d.avg_price_per_fruit;
-  delete d.total_cost;
-  delete d.unit_price;
-  delete d.package_price;
-  d.finance_redacted = true;
-  return {
-    ...log,
-    cost: 0,
-    finance_redacted: true,
-    details: d
-  };
-}
 
     let query = `
       SELECT pl.*, 
@@ -643,7 +645,7 @@ router.get('/:id(\\d+)', auth, async (req, res) => {
     res.json({ ...row, media: media.rows, logs: safeLogs });
   } catch (err) {
     console.error('Get plant details error:', err);
-    res.status(500).json({ error: 'Lỗi server.' });
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });
 
@@ -752,7 +754,7 @@ router.get('/:id(\\d+)/logs', auth, async (req, res) => {
     res.json(enrichedLogs);
   } catch (err) {
     console.error('Error fetching logs:', err);
-    res.status(500).json({ error: 'Lỗi server.' });
+    res.status(500).json({ error: 'Lỗi server: ' + err.message });
   }
 });
 
