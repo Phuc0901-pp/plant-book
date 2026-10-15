@@ -9,10 +9,9 @@
 
 ## I. MỤC TIÊU & PHẠM VI KIỂM ĐỊNH (SCOPE & OBJECTIVES)
 
-Kế hoạch kiểm định bao quát 100% các thành phần của hệ sinh thái Sổ Nông Nhàn từ gốc đến ngọn:
+> **Database** ➔ **Backend API & Security** ➔ **Frontend Cache & Offline** ➔ **AgTech UI/UX & Hardware NFC**
 
-Database → Backend API & Security → Frontend Cache & Offline → AgTech UI/UX & Hardware NFC
-
+```mermaid
 flowchart LR
     subgraph P1["GIAI ĐOẠN 1: TESTING"]
         T1["Unit Test Modules"]
@@ -53,7 +52,7 @@ flowchart LR
 - **Tính toàn vẹn giao dịch (ACID):**
   - Mọi thao tác xuất/nhập kho và ghi nhật ký phân bón/thuốc BVTV được gói trọn vẹn trong một Transaction. Tự động rollback khi phát sinh lỗi kết nối.
 - **Nhật ký bất biến (Immutable Audit Trail):**
-  - Chuỗi Hash-Chain SHA-256 (`prev_log_hash` $\rightarrow$ `record_hash`) đảm bảo dữ liệu nhật ký canh tác không thể bị sửa đổi lén sau khi kiểm toán viên phê duyệt.
+  - Chuỗi Hash-Chain SHA-256 (`prev_log_hash` → `record_hash`) đảm bảo dữ liệu nhật ký canh tác không thể bị sửa đổi lén sau khi kiểm toán viên phê duyệt.
 
 ---
 
@@ -69,8 +68,8 @@ flowchart LR
 - **Cơ chế bóc tách dữ liệu tài chính (Finance Redaction):**
   - Tự động xóa trường đơn giá (`unit_price`) và tổng chi phí (`total_cost`, `spending`) khi người dùng cấp bậc `FARMER` hoặc `AGRONOMIST` truy vấn API, bảo vệ bí mật kinh doanh nông trại.
 - **Khấu trừ kho tự động (Automated Inventory Balancing):**
-  - Ghi nhật ký tưới/bón/phun $\rightarrow$ Trừ tồn kho tức thời.
-  - Xóa/hủy nhật ký $\rightarrow$ Tự động hoàn trả vật tư vào kho kèm log giải trình.
+  - Ghi nhật ký tưới/bón/phun → Trừ tồn kho tức thời.
+  - Xóa/hủy nhật ký → Tự động hoàn trả vật tư vào kho kèm log giải trình.
 
 ---
 
@@ -109,24 +108,24 @@ flowchart LR
 
 | Mã kiểm thử | Tầng kiến trúc | Hạng mục kiểm tra | Tiêu chuẩn / Kỳ vọng | Kết quả |
 | :--- | :---: | :--- | :--- | :---: |
-| **TC-DB-01** | Database | Ràng buộc khóa ngoại Cascade | Xóa farm $\rightarrow$ Cây chuyển unassigned hoặc xóa sạch log liên quan | **PASS** |
+| **TC-DB-01** | Database | Ràng buộc khóa ngoại Cascade | Xóa farm → Cây chuyển unassigned hoặc xóa sạch log liên quan | **PASS** |
 | **TC-DB-02** | Database | Ràng buộc duy nhất tree_code | Báo lỗi duplicate key khi tạo 2 cây cùng mã trong 1 farm | **PASS** |
-| **TC-DB-03** | Database | Tính toàn vẹn giao dịch kho ACID | Gián đoạn mạng khi ghi log $\rightarrow$ Không bị trừ kho âm | **PASS** |
+| **TC-DB-03** | Database | Tính toàn vẹn giao dịch kho ACID | Gián đoạn mạng khi ghi log → Không bị trừ kho âm | **PASS** |
 | **TC-DB-04** | Database | SHA-256 Log Hash-Chain | Bản ghi log mới tính toán đúng hash từ bản ghi liền trước | **PASS** |
-| **TC-API-01** | Backend | 160 REST Endpoints Authentication | Token hết hạn / sai chữ ký $\rightarrow$ Trả về HTTP 401 Unauthorized | **PASS** |
+| **TC-API-01** | Backend | 160 REST Endpoints Authentication | Token hết hạn / sai chữ ký → Trả về HTTP 401 Unauthorized | **PASS** |
 | **TC-API-02** | Backend | Phân quyền SUPER_ADMIN / ADMIN | Chỉ admin được sửa danh mục vật tư và cấp thẻ NFC | **PASS** |
 | **TC-API-03** | Backend | Phân quyền AGRONOMIST | Được lập kế hoạch phân thuốc, không xem đơn giá nhập kho | **PASS** |
 | **TC-API-04** | Backend | Phân quyền FARMER | Nhập nhật ký canh tác thành công, bị giấu hoàn toàn trường chi phí | **PASS** |
-| **TC-API-05** | Backend | Tự động cân đối kho vật tư | Thêm 5kg NPK $\rightarrow$ Kho trừ 5kg; Hủy log $\rightarrow$ Kho cộng lại 5kg | **PASS** |
-| **TC-API-06** | Backend | Thời gian cách ly PHI Quarantine | Thuốc BVTV có PHI 14 ngày $\rightarrow$ Cây vào trạng thái cách ly thu hoạch | **PASS** |
-| **TC-FE-01** | Frontend | In-Memory Cache Invalidation | Thêm cây mới $\rightarrow$ Cache bị hủy, bảng cập nhật ngay lập tức | **PASS** |
+| **TC-API-05** | Backend | Tự động cân đối kho vật tư | Thêm 5kg NPK → Kho trừ 5kg; Hủy log → Kho cộng lại 5kg | **PASS** |
+| **TC-API-06** | Backend | Thời gian cách ly PHI Quarantine | Thuốc BVTV có PHI 14 ngày → Cây vào trạng thái cách ly thu hoạch | **PASS** |
+| **TC-FE-01** | Frontend | In-Memory Cache Invalidation | Thêm cây mới → Cache bị hủy, bảng cập nhật ngay lập tức | **PASS** |
 | **TC-FE-02** | Frontend | Dual Satellite Switcher | Nút bấm chuyển đổi mượt mà giữa Google Satellite và Mapbox | **PASS** |
-| **TC-FE-03** | Frontend | Offline PWA Sync | Mất mạng vẫn ghi được nhật ký $\rightarrow$ Có mạng tự động sync | **PASS** |
+| **TC-FE-03** | Frontend | Offline PWA Sync | Mất mạng vẫn ghi được nhật ký → Có mạng tự động sync | **PASS** |
 | **TC-UI-01** | UI / Device | Bảng Cây trồng ERP 7 Cột | Đủ 7 cột, mã cây canh trái thẳng hàng, badge sức khỏe đồng nhất | **PASS** |
 | **TC-UI-02** | UI / Device | Radar IoT Giám Sát Cảnh Báo | Hiệu ứng xung radar động mượt mà, dùng 100% Lucide icons | **PASS** |
 | **TC-UI-03** | UI / Device | Fallback Ảnh Cây Public | Ảnh đại diện cây sầu riêng tự động fallback không bị vỡ alt-text | **PASS** |
 | **TC-SEC-01**| Bảo mật | Chặn F12 & Chuột phải | Nhấn F12 hoặc click phải hiện thông báo toast, không bung menu | **PASS** |
-| **TC-SEC-02**| Bảo mật | Khóa Elements & Debugger Trap | Mở DevTools qua menu trình duyệt $\rightarrow$ Trình duyệt ngắt luồng tại debugger | **PASS** |
+| **TC-SEC-02**| Bảo mật | Khóa Elements & Debugger Trap | Mở DevTools qua menu trình duyệt → Trình duyệt ngắt luồng tại debugger | **PASS** |
 | **TC-SEC-03**| Bảo mật | Cảnh báo Bản quyền Console | Console xuất hiện Logo Sổ Nông Nhàn & cảnh báo Tân Bảo Sài Gòn / Anti-bot | **PASS** |
 | **TC-HW-01** | Phần cứng | Web NFC Tag Scanner | Đọc thẻ NTAG213, trích xuất UID, gán cây thành công | **PASS** |
 
@@ -169,11 +168,11 @@ powershell -ExecutionPolicy Bypass -File "backend/scripts/test-international-sta
 
 | Đại diện thẩm định | Vai trò nghiệm thu | Tiêu chí đánh giá | Trạng thái |
 | :--- | :--- | :--- | :---: |
-| **Architect Lead** | Trưởng nhóm Kiến trúc | Toàn vẹn 4 tầng Database $\rightarrow$ UI | **CHẤP THUẬN (PASS)** |
+| **Architect Lead** | Trưởng nhóm Kiến trúc | Toàn vẹn 4 tầng Database → UI | **CHẤP THUẬN (PASS)** |
 | **Security Officer** | Chuyên viên An ninh | OWASP Top 10, Anti-DevTools Guard | **CHẤP THUẬN (PASS)** |
 | **QA/QC Manager** | Trưởng phòng Đảm bảo Chất lượng | 141 Test Suites, Giao diện chuẩn AgTech ERP | **CHẤP THUẬN (PASS)** |
 | **Agronomy Specialist**| Chuyên gia Nông học | Nhật ký VietGAP, PHI, Phân bổ kho | **CHẤP THUẬN (PASS)** |
 
 > [!IMPORTANT]
 > **KẾT LUẬN NGHIỆM THU CHÍNH THỨC:**  
-> Toàn bộ 4 giai đoạn **Testing $\rightarrow$ QC $\rightarrow$ QA $\rightarrow$ Nghiệm Thu** đã hoàn thành đạt mức tối đa **100% Đạt Chuẩn**. Hệ thống đã sẵn sàng cho công tác chuyển giao vận hành sản xuất thực tế (**Production Go-Live**).
+> Toàn bộ 4 giai đoạn **Testing → QC → QA → Nghiệm Thu** đã hoàn thành đạt mức tối đa **100% Đạt Chuẩn**. Hệ thống đã sẵn sàng cho công tác chuyển giao vận hành sản xuất thực tế (**Production Go-Live**).

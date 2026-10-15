@@ -939,20 +939,20 @@ Hệ thống cung cấp hơn **149 RESTful API Endpoints** được bảo vệ �
 
 ### 👑 9.1 Dành cho Quản Trị Viên Doanh Nghiệp (Admin)
 1. **Đăng nhập Hệ thống:** Truy cập `/login`, đăng nhập tài khoản quản trị. Hệ thống tự chuyển đến `/admin`.
-2. **Quản trị Tài khoản & Phân quyền:** Vào menu **"Người Dùng"** $\rightarrow$ Tạo tài khoản cho nông hộ $\rightarrow$ Cấp quyền `User Pro` (Chủ trang trại) hoặc `User Normal` (Nhân công).
-3. **Cấu hình Kho Danh Mục Chuẩn:** Vào menu **"Vật Tư"** $\rightarrow$ Nhập danh mục phân bón, thuốc bảo vệ thực vật được cấp phép và đơn giá nước chuẩn.
+2. **Quản trị Tài khoản & Phân quyền:** Vào menu **"Người Dùng"** → Tạo tài khoản cho nông hộ → Cấp quyền `User Pro` (Chủ trang trại) hoặc `User Normal` (Nhân công).
+3. **Cấu hình Kho Danh Mục Chuẩn:** Vào menu **"Vật Tư"** → Nhập danh mục phân bón, thuốc bảo vệ thực vật được cấp phép và đơn giá nước chuẩn.
 4. **Giám sát Không Gian & Cảnh Báo Sâu Bệnh:** Theo dõi bản đồ GIS tổng quan để phát hiện các cụm cây bị nhiễm bệnh (chấm đỏ) để điều động kỹ thuật viên xử lý kịp thời.
 
 ### ⭐ 9.2 Dành cho Chủ Nông Trại / Quản Đốc (User Pro)
-1. **Khởi tạo Nông Trại & Vẽ Ranh Giới:** Mở tab **"Bản Đồ"** $\rightarrow$ Dùng công cụ Polygon khoanh vùng đất $\rightarrow$ Nhập Mã số vùng trồng (PUC Code).
-2. **Khai báo Cây Ma Trận:** Bấm **"+ Thêm Cây Trồng"** $\rightarrow$ Chọn chế độ Ma Trận $\rightarrow$ Nhập số lượng cây (ví dụ 50 cây), nhập Mã Lô (ví dụ Lô A1) và bật tự tăng số Hàng $\rightarrow$ Chụp 1 ảnh chung cho cả lô hoặc tùy chỉnh từng cây $\rightarrow$ Bấm lưu.
-3. **Quản lý Album Sinh Trưởng:** Định kỳ mở hồ sơ cây $\rightarrow$ Bấm **"+ Chụp / Tải ảnh mới"** $\rightarrow$ Chọn giai đoạn sinh trưởng (Ra hoa, Đậu trái, Nuôi trái...) để hệ thống lưu lịch sử bất biến qua các năm.
+1. **Khởi tạo Nông Trại & Vẽ Ranh Giới:** Mở tab **"Bản Đồ"** → Dùng công cụ Polygon khoanh vùng đất → Nhập Mã số vùng trồng (PUC Code).
+2. **Khai báo Cây Ma Trận:** Bấm **"+ Thêm Cây Trồng"** → Chọn chế độ Ma Trận → Nhập số lượng cây (ví dụ 50 cây), nhập Mã Lô (ví dụ Lô A1) và bật tự tăng số Hàng → Chụp 1 ảnh chung cho cả lô hoặc tùy chỉnh từng cây → Bấm lưu.
+3. **Quản lý Album Sinh Trưởng:** Định kỳ mở hồ sơ cây → Bấm **"+ Chụp / Tải ảnh mới"** → Chọn giai đoạn sinh trưởng (Ra hoa, Đậu trái, Nuôi trái...) để hệ thống lưu lịch sử bất biến qua các năm.
 4. **Theo dõi Báo Cáo Tài Chính:** Mở tab **"Chi Phí & Vật Tư"** để xem biểu đồ chi phí phân bón, tiền nước và thuốc BVTV chi tiết đến từng gốc cây.
 
 ### 👨‍🌾 9.3 Dành cho Công Nhân Nông Trường (User Normal)
-1. **Kiểm tra Nhắc việc:** Mở ứng dụng trên điện thoại $\rightarrow$ Xem danh sách cây cần tưới nước hoặc kiểm tra sâu bệnh trong ngày.
-2. **Ghi Nhật Ký 1 Chạm:** Quét mã QR hoặc áp lưng điện thoại vào thẻ NFC trên thân cây $\rightarrow$ Chọn hoạt động (Tưới nước, Bón phân...) $\rightarrow$ Điền số lượng $\rightarrow$ Bấm **"Lưu nhật ký"**.
-3. **Chụp Ảnh Báo Bệnh:** Nếu cây có dấu hiệu sâu bệnh lạ, chọn mục **"Bệnh cây"** $\rightarrow$ Chụp ảnh $\rightarrow$ Hệ thống tự động đóng dấu Watermark GPS và thời gian $\rightarrow$ Ảnh tự động lưu vào mục cảnh báo bệnh dịch riêng biệt.
+1. **Kiểm tra Nhắc việc:** Mở ứng dụng trên điện thoại → Xem danh sách cây cần tưới nước hoặc kiểm tra sâu bệnh trong ngày.
+2. **Ghi Nhật Ký 1 Chạm:** Quét mã QR hoặc áp lưng điện thoại vào thẻ NFC trên thân cây → Chọn hoạt động (Tưới nước, Bón phân...) → Điền số lượng → Bấm **"Lưu nhật ký"**.
+3. **Chụp Ảnh Báo Bệnh:** Nếu cây có dấu hiệu sâu bệnh lạ, chọn mục **"Bệnh cây"** → Chụp ảnh → Hệ thống tự động đóng dấu Watermark GPS và thời gian → Ảnh tự động lưu vào mục cảnh báo bệnh dịch riêng biệt.
 4. **Tác nghiệp khi mất sóng:** Yên tâm ghi chép bình thường. Khi điện thoại có sóng Wifi/4G trở lại, hệ thống sẽ tự động đồng bộ 100% dữ liệu lên máy chủ mà không làm mất thông tin.
 
 ### 🌐 9.4 Dành cho Khách Hàng & Cơ Quan Kiểm Định (Public / Inspector)
