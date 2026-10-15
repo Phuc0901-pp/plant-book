@@ -5228,6 +5228,37 @@ td[data-label="Thao tác"] {
   gap: 6px !important;
 }
 
+/* ── Satellite Provider Switcher Floating & Header Controls (User Portal) ── */
+.sat-switch-btn {
+  background: transparent;
+  color: #cbd5e1;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 7px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.sat-switch-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.3);
+}
+
+.sat-switch-btn.active {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #ffffff !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.45);
+}
+
+
 
 
 

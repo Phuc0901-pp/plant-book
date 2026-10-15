@@ -1157,13 +1157,24 @@
 
             <!-- Bản đồ Trang trại -->
             <div class="card" style="margin-bottom: 24px;">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <h3><i data-lucide="map" class="lucide-sm" style="color:var(--green)"></i> Bản đồ Vệ tinh & Ranh giới đất</h3>
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <h3 style="margin: 0;"><i data-lucide="map" class="lucide-sm" style="color:var(--green)"></i> Bản đồ Vệ tinh &amp; Ranh giới đất</h3>
+                  <!-- Satellite Switcher Controls (Google Satellite & Mapbox) -->
+                  <div class="gis-satellite-switcher" style="display: inline-flex; gap: 4px; background: rgba(15,23,42,0.88); backdrop-filter: blur(8px); padding: 3px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                    <button type="button" class="sat-switch-btn active" id="btn-user-sat-google" onclick="switchUserSatelliteSource('google')" title="Ảnh vệ tinh Google Satellite thực tế, độ nét cao (Mặc định)">
+                      <i data-lucide="satellite" class="lucide-xs" style="color: #60a5fa;"></i> Google Satellite
+                    </button>
+                    <button type="button" class="sat-switch-btn" id="btn-user-sat-mapbox" onclick="switchUserSatelliteSource('mapbox')" title="Ảnh vệ tinh Mapbox gốc">
+                      <i data-lucide="globe-2" class="lucide-xs" style="color: #a78bfa;"></i> Mapbox
+                    </button>
+                  </div>
+                </div>
                 <button type="button" class="btn btn-sm" onclick="openReorderGpsModal()" title="Sắp xếp lại mã số cây 1 -> N theo tọa độ GPS" style="font-size: 12px; font-weight: 700; background: #ecfdf5; color: #047857; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                  <i data-lucide="arrow-down" class="lucide-sm" style="color: #059669;"></i> Sắp xếp mã cây theo GPS (1  N)
+                  <i data-lucide="arrow-down" class="lucide-sm" style="color: #059669;"></i> Sắp xếp mã cây theo GPS (1 &rarr; N)
                 </button>
               </div>
-              <div style="padding: 12px;">
+              <div style="padding: 12px; position: relative;">
                 <div id="user-map" style="width: 100%; height: 380px; border-radius: 8px; background: #e5e7eb; overflow: hidden;"></div>
               </div>
             </div>

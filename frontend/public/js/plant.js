@@ -261,6 +261,20 @@ function populateGateInfo(plant) {
   const farmEl = document.getElementById('gate-plant-farm');
 
   if (imgEl) {
+    const cropType = plant.plant_type || 'durian';
+    const eng = resolveCropEnglishName(cropType);
+    imgEl.onerror = function() {
+      if (this.src.endsWith('/assets/crop/' + eng + '.png')) {
+        this.src = '/assets/' + eng + '.png';
+      } else if (this.src.endsWith('/assets/' + eng + '.png')) {
+        this.src = '/assets/crop/durian.png';
+      } else if (this.src.endsWith('/assets/crop/durian.png')) {
+        this.src = '/assets/durian.png';
+      } else {
+        this.onerror = null;
+        this.src = '/assets/crop/durian.png';
+      }
+    };
     imgEl.src = getCropImageSrc(plant);
     imgEl.alt = plant.plant_type || 'Cây trồng';
   }

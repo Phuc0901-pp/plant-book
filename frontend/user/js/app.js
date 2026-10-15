@@ -47,7 +47,7 @@ import {
   updateMatrixPastDiseases, getSelectedBatchPastDiseases, resetBatchPastDiseaseChips,
   openPlantProfileModal, closePlantProfileModal, switchErpProfileTab, onErpProfileCareClick, onErpProfileNfcClick
 } from './modules/plants.js';
-import { viewInternalPlantProfile, updateUserMapMarkers } from './modules/map.js';
+import { viewInternalPlantProfile, updateUserMapMarkers, switchUserSatelliteSource } from './modules/map.js';
 import { filterUserLogs }             from './modules/logs.js';
 import { renderUserReminders, quickCare, quickCareAll } from './modules/reminders.js';
 import { openCareModal, closeCareModal, saveCareLog, onCareLogTypeChange, calculateHarvestEconomicsPreview, startVoiceInput, stopVoiceInput } from './modules/care-modal.js?v=2.8.5';
@@ -490,6 +490,7 @@ window.onErpProfileNfcClick = onErpProfileNfcClick;
 
 window.viewInternalPlantProfile = viewInternalPlantProfile;
 window.updateUserMapMarkers = updateUserMapMarkers;
+window.switchUserSatelliteSource = switchUserSatelliteSource;
 
 window.refreshDeviceWeather = refreshDeviceWeather;
 window.initWeatherClockWidget = initWeatherClockWidget;

@@ -16,6 +16,41 @@ export let userMarkers = [];
 /** Cờ đánh dấu đã tải token Mapbox */
 let mapboxTokenFetched = false;
 
+/** Nguồn ảnh vệ tinh hiện tại (google mặc định / mapbox) */
+export let currentUserSatelliteSource = 'google';
+
+/**
+ * Chuyển đổi linh hoạt giữa ảnh vệ tinh Google Satellite và Mapbox
+ * @param {string} source - 'google' | 'mapbox'
+ */
+export function switchUserSatelliteSource(source) {
+  currentUserSatelliteSource = source;
+
+  const btnGoogle = document.getElementById('btn-user-sat-google');
+  const btnMapbox = document.getElementById('btn-user-sat-mapbox');
+
+  if (btnGoogle) btnGoogle.classList.toggle('active', source === 'google');
+  if (btnMapbox) btnMapbox.classList.toggle('active', source === 'mapbox');
+
+  const mapInstance = userMap || window.userMap;
+  if (!mapInstance) return;
+
+  try {
+    const googleLayer = mapInstance.getLayer('google-satellite-layer');
+
+    if (source === 'google') {
+      if (googleLayer) mapInstance.setLayoutProperty('google-satellite-layer', 'visibility', 'visible');
+      if (typeof window.toast === 'function') window.toast('Đã chuyển sang Ảnh Vệ Tinh Google Satellite', 'info');
+    } else if (source === 'mapbox') {
+      if (googleLayer) mapInstance.setLayoutProperty('google-satellite-layer', 'visibility', 'none');
+      if (typeof window.toast === 'function') window.toast('Đã chuyển sang Ảnh Vệ Tinh Mapbox', 'info');
+    }
+  } catch (err) {
+    console.warn('Error toggling user satellite source:', err);
+  }
+}
+window.switchUserSatelliteSource = switchUserSatelliteSource;
+
 // Helper cắt gọn mã cây trồng hiển thị trên icon marker bản đồ (VD: KH001-001 -> 1, KH001-058 -> 58)
 export function getShortTreeCode(treeCode, plantId) {
   const code = String(treeCode || plantId || '').trim();
@@ -113,6 +148,33 @@ export function initUserMap(farms, plants) {
   map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
   map.on('load', () => {
+    // ── Khởi tạo nguồn ảnh vệ tinh Google Satellite (Độ nét cao & cập nhật thực tế) ──
+    try {
+      if (!map.getSource('google-satellite-src')) {
+        map.addSource('google-satellite-src', {
+          type: 'raster',
+          tiles: [
+            'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+          ],
+          tileSize: 256,
+          maxzoom: 20,
+          attribution: '&copy; Google Satellite'
+        });
+      }
+
+      if (!map.getLayer('google-satellite-layer')) {
+        map.addLayer({
+          id: 'google-satellite-layer',
+          type: 'raster',
+          source: 'google-satellite-src',
+          layout: { visibility: currentUserSatelliteSource === 'google' ? 'visible' : 'none' },
+          paint: { 'raster-opacity': 1 }
+        });
+      }
+    } catch (layerErr) {
+      console.warn('User satellite source init warning:', layerErr);
+    }
+
     const bounds    = new mapboxgl.LngLatBounds();
     let   hasBounds = false;
 
