@@ -551,7 +551,7 @@ SỔ NÔNG TÂN BẢO AGTECH (ENTERPRISE SUITE)
 
 ### 5.4 Ma trận Phân quyền 4 Cấp bậc (RBAC Matrix)
 
-| Phân hệ / Nghiệp vụ | 👑 Quản trị viên (`Admin`) | ⭐ Chủ Trang Trại (`User Pro`) | 👨‍🌾 Nhân Công Vườn (`User Normal`) | 🌐 Khách Hàng / Đối Tác (`Public`) |
+| Phân hệ / Nghiệp vụ | Quản trị viên (`Admin`) | Chủ Trang Trại (`User Pro`) | Nhân Công Vườn (`User Normal`) | Khách Hàng / Đối Tác (`Public`) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Xem hồ sơ cây trồng & nhật ký công khai** | ✅ Toàn hệ thống | ✅ Toàn hệ thống | ✅ Cây thuộc vườn | ✅ Xem bản rút gọn |
 | **Khai báo cây ma trận & Gán ảnh thực địa** | ✅ | ✅ | ❌ | ❌ |
