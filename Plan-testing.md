@@ -10,6 +10,9 @@
 ## I. MỤC TIÊU & PHẠM VI KIỂM ĐỊNH (SCOPE & OBJECTIVES)
 
 Kế hoạch kiểm định bao quát 100% các thành phần của hệ sinh thái Sổ Nông Nhàn từ gốc đến ngọn:
+
+Database → Backend API & Security → Frontend Cache & Offline → AgTech UI/UX & Hardware NFC
+
 flowchart LR
     subgraph P1["GIAI ĐOẠN 1: TESTING"]
         T1["Unit Test Modules"]
