@@ -244,7 +244,71 @@ export function initUserMap(farms, plants) {
 }
 
 /**
+ * Tạo nội dung HTML cho thẻ thông tin cây trồng trên bản đồ GIS
+ */
+export function buildPlantPopupHtml(plant, lat, lng) {
+  const pLat = parseFloat(lat) || 0;
+  const pLng = parseFloat(lng) || 0;
+  const lucideCheckSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
+  const lucideClockSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  const lucideCrosshairSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></svg>`;
+  const lucideFileCheckSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>`;
+  const lucideExternalLinkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`;
+  const lucideCalendarSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`;
+  const lucideHourglassSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>`;
+  const lucideTrendingSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`;
+  const lucideShieldAlertSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
+
+  const careCheckHtml = plant.last_care_date
+    ? `<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:5px;">${lucideCheckSvg} Đã chăm sóc: ${esc(plant.last_care_date)}${plant.last_care_type ? ` (${esc(plant.last_care_type)})` : ''}</span>`
+    : `<span style="color:#e11d48; font-weight:700; display:inline-flex; align-items:center; gap:5px;">${lucideClockSvg} Chưa có nhật ký</span>`;
+
+  return `
+    <div class="map-plant-card" style="font-family:inherit;font-size:12px;min-width:225px;padding:4px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;border:1.5px solid #10b981;background:#f0fdf4;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+            <img src="${typeof getCropImageSrc === 'function' ? getCropImageSrc(plant) : '/assets/crop/durian.png'}" alt="${esc(plant.plant_type || 'Cây')}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='/assets/crop/durian.png';">
+          </div>
+          <div style="font-weight:800;font-size:13.5px;color:#064e3b;">
+            Cây #${esc(plant.tree_code || plant.id)}
+          </div>
+        </div>
+        ${healthBadge(plant.health_status)}
+      </div>
+      <div style="margin-bottom:6px;line-height:1.5;color:#334155;font-size:12px;">
+        <p style="margin:0 0 3px 0;"><strong>Loại cây:</strong> ${esc(plant.plant_type || 'Cây trồng')}${plant.plant_variety ? ` (${esc(plant.plant_variety)})` : ''}</p>
+        ${plant.planting_date ? `<p style="margin:0 0 3px 0; display:flex; align-items:center; gap:4px;">${lucideCalendarSvg} <span><strong>Ngày trồng:</strong> ${esc(plant.planting_date)}</span></p>` : ''}
+        ${plant.plant_age ? `<p style="margin:0 0 3px 0; display:flex; align-items:center; gap:4px;">${lucideHourglassSvg} <span><strong>Tuổi cây:</strong> ${esc(plant.plant_age)}</span></p>` : ''}
+        ${(plant.data?.initial_yield || plant.initial_yield) ? `<p style="margin:0 0 3px 0; color:#047857; font-weight:700; display:flex; align-items:center; gap:4px;">${lucideTrendingSvg} <span><strong>Năng suất vụ trước:</strong> ${esc(plant.data?.initial_yield || plant.initial_yield)}</span></p>` : ''}
+        ${((plant.data?.past_diseases && (Array.isArray(plant.data.past_diseases) ? plant.data.past_diseases.length : plant.data.past_diseases)) || (plant.past_diseases && plant.past_diseases.length)) ? `
+          <p style="margin:0 0 3px 0; color:#b45309; font-size:11.5px; display:flex; align-items:center; gap:4px;" title="Tiền sử bệnh: ${esc(Array.isArray(plant.data?.past_diseases) ? plant.data.past_diseases.join(', ') : (plant.data?.past_diseases || plant.past_diseases))}">
+            ${lucideShieldAlertSvg} <span><strong>Tiền sử bệnh:</strong> ${esc(Array.isArray(plant.data?.past_diseases) ? plant.data.past_diseases.slice(0, 2).join(', ') + (plant.data.past_diseases.length > 2 ? '...' : '') : String(plant.data?.past_diseases || plant.past_diseases))}</span>
+          </p>` : ''}
+        <p style="margin:0 0 3px 0;"><strong>Lô trồng:</strong> ${esc(plant.location || 'Chưa phân lô')}</p>
+        <p style="margin:3px 0 0 0;color:#0284c7;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;">
+          ${lucideCrosshairSvg} <span>GPS: ${pLat.toFixed(6)}, ${pLng.toFixed(6)}</span>
+        </p>
+      </div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;margin-bottom:8px;font-size:11.5px;">
+        ${careCheckHtml}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <button type="button" class="btn btn-secondary btn-xs" style="flex:1;padding:6px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="if(window.openCareModal) openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type || '')}')">
+          ${lucideFileCheckSvg} <span>Nhật ký</span>
+        </button>
+        <button type="button" class="btn btn-primary btn-xs" style="flex:1;padding:6px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#059669;border:none;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="viewInternalPlantProfile(${plant.id})">
+          ${lucideExternalLinkSvg} <span>Xem chi tiết</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+/**
  * Cập nhật động toàn bộ marker cây trồng trên bản đồ GIS người dùng
+ * Hỗ trợ Dual-Engine:
+ * - < 250 cây: Render DOM Marker số cây trực quan
+ * - >= 250 cây: Tự động kích hoạt GPU Vector Cluster Layer (chuẩn Mapbox GL WebGL 60fps)
  * @param {Array} plants — Danh sách cây trồng
  * @param {boolean} flyToBounds — Có tự động fit/fly tới các marker hay không
  */
@@ -254,12 +318,10 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
 
   const targetPlants = Array.isArray(plants) ? plants : (window._allPlantsCache || []);
 
-  // Xóa toàn bộ marker cây trồng cũ trên bản đồ
+  // Xóa toàn bộ marker DOM cũ
   if (Array.isArray(userMarkers)) {
     userMarkers.forEach(m => {
-      try {
-        if (m && m.marker) m.marker.remove();
-      } catch (_) {}
+      try { if (m && m.marker) m.marker.remove(); } catch (_) {}
     });
   }
   userMarkers = [];
@@ -267,135 +329,226 @@ export function updateUserMapMarkers(plants, flyToBounds = false) {
   const bounds = new mapboxgl.LngLatBounds();
   let hasBounds = false;
 
+  const validPlants = [];
   targetPlants.forEach(plant => {
     if (!plant || plant.latitude === undefined || plant.longitude === undefined || plant.latitude === null || plant.longitude === null) return;
     let lat = parseFloat(plant.latitude);
     let lng = parseFloat(plant.longitude);
     if (isNaN(lat) || isNaN(lng)) return;
 
-    // Tự động hoán đổi nếu bị đảo ngược kinh độ/vĩ độ (Chuẩn Việt Nam: Vĩ độ 8-24, Kinh độ 102-110)
-    if (lat > 50 && lng < 50) {
-      const tmp = lat;
-      lat = lng;
-      lng = tmp;
-    }
-    if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) {
-      const tmp = lat;
-      lat = lng;
-      lng = tmp;
-    }
+    // Chuẩn hóa hoán đổi tọa độ nếu bị đảo ngược
+    if (lat > 50 && lng < 50) { const tmp = lat; lat = lng; lng = tmp; }
+    if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) { const tmp = lat; lat = lng; lng = tmp; }
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
-    const wrapper = Object.assign(document.createElement('div'), { className: 'plant-marker-wrap' });
-    wrapper.style.cursor = 'pointer';
-    wrapper.addEventListener('click', (e) => {
-      if (e && e.stopPropagation) e.stopPropagation();
-    });
-
-    const el = Object.assign(document.createElement('div'), { className: 'plant-id-marker' });
-    const colorMap = { 'Tốt': '#22c55e', 'Bình thường': '#0d9488', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
-    const color = colorMap[plant.health_status] || '#10b981';
-    Object.assign(el.style, {
-      width: '28px', height: '28px', borderRadius: '50%',
-      border: '2px solid white', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-      fontSize: '9.5px', fontWeight: '800', color: '#fff',
-      background: color, boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-      transition: 'transform 0.15s ease'
-    });
-    el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
-    wrapper.appendChild(el);
-
-    const lucideCheckSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
-    const lucideClockSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-    const lucideCrosshairSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></svg>`;
-    const lucideFileCheckSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>`;
-    const lucideExternalLinkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`;
-    const lucideSproutSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>`;
-    const lucideCalendarSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`;
-    const lucideHourglassSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>`;
-    const lucideTrendingSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`;
-    const lucideShieldAlertSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
-
-    const careCheckHtml = plant.last_care_date
-      ? `<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:5px;">${lucideCheckSvg} Đã chăm sóc: ${esc(plant.last_care_date)}${plant.last_care_type ? ` (${esc(plant.last_care_type)})` : ''}</span>`
-      : `<span style="color:#e11d48; font-weight:700; display:inline-flex; align-items:center; gap:5px;">${lucideClockSvg} Chưa có nhật ký</span>`;
-
-    const popup = new mapboxgl.Popup({ offset: 25, maxWidth: '310px' })
-      .setHTML(`
-        <div class="map-plant-card" style="font-family:inherit;font-size:12px;min-width:225px;padding:4px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;border:1.5px solid #10b981;background:#f0fdf4;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                <img src="${typeof getCropImageSrc === 'function' ? getCropImageSrc(plant) : '/assets/crop/durian.png'}" alt="${esc(plant.plant_type || 'Cây')}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='/assets/crop/durian.png';">
-              </div>
-              <div style="font-weight:800;font-size:13.5px;color:#064e3b;">
-                Cây #${esc(plant.tree_code || plant.id)}
-              </div>
-            </div>
-            ${healthBadge(plant.health_status)}
-          </div>
-          <div style="margin-bottom:6px;line-height:1.5;color:#334155;font-size:12px;">
-            <p style="margin:0 0 3px 0;"><strong>Loại cây:</strong> ${esc(plant.plant_type || 'Cây trồng')}${plant.plant_variety ? ` (${esc(plant.plant_variety)})` : ''}</p>
-            ${plant.planting_date ? `<p style="margin:0 0 3px 0; display:flex; align-items:center; gap:4px;">${lucideCalendarSvg} <span><strong>Ngày trồng:</strong> ${esc(plant.planting_date)}</span></p>` : ''}
-            ${plant.plant_age ? `<p style="margin:0 0 3px 0; display:flex; align-items:center; gap:4px;">${lucideHourglassSvg} <span><strong>Tuổi cây:</strong> ${esc(plant.plant_age)}</span></p>` : ''}
-            ${(plant.data?.initial_yield || plant.initial_yield) ? `<p style="margin:0 0 3px 0; color:#047857; font-weight:700; display:flex; align-items:center; gap:4px;">${lucideTrendingSvg} <span><strong>Năng suất vụ trước:</strong> ${esc(plant.data?.initial_yield || plant.initial_yield)}</span></p>` : ''}
-            ${((plant.data?.past_diseases && (Array.isArray(plant.data.past_diseases) ? plant.data.past_diseases.length : plant.data.past_diseases)) || (plant.past_diseases && plant.past_diseases.length)) ? `
-              <p style="margin:0 0 3px 0; color:#b45309; font-size:11.5px; display:flex; align-items:center; gap:4px;" title="Tiền sử bệnh: ${esc(Array.isArray(plant.data?.past_diseases) ? plant.data.past_diseases.join(', ') : (plant.data?.past_diseases || plant.past_diseases))}">
-                ${lucideShieldAlertSvg} <span><strong>Tiền sử bệnh:</strong> ${esc(Array.isArray(plant.data?.past_diseases) ? plant.data.past_diseases.slice(0, 2).join(', ') + (plant.data.past_diseases.length > 2 ? '...' : '') : String(plant.data?.past_diseases || plant.past_diseases))}</span>
-              </p>` : ''}
-            <p style="margin:0 0 3px 0;"><strong>Lô trồng:</strong> ${esc(plant.location || 'Chưa phân lô')}</p>
-            <p style="margin:3px 0 0 0;color:#0284c7;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;">
-              ${lucideCrosshairSvg} <span>GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
-            </p>
-          </div>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;margin-bottom:8px;font-size:11.5px;">
-            ${careCheckHtml}
-          </div>
-          <div style="display:flex;gap:6px;margin-top:6px;">
-            <button type="button" class="btn btn-secondary btn-xs" style="flex:1;padding:6px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="if(window.openCareModal) openCareModal(${plant.id},'${esc(plant.tree_code || plant.id)}','${esc(plant.plant_type || '')}')">
-              ${lucideFileCheckSvg} <span>Nhật ký</span>
-            </button>
-            <button type="button" class="btn btn-primary btn-xs" style="flex:1;padding:6px 8px;font-size:11px;font-weight:700;border-radius:6px;background:#059669;border:none;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;" onclick="viewInternalPlantProfile(${plant.id})">
-              ${lucideExternalLinkSvg} <span>Xem chi tiết</span>
-            </button>
-          </div>
-        </div>`);
-
-    popup.on('open', () => {
-      if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        try { window.lucide.createIcons(); } catch (_) {}
-      }
-      if (targetMap && typeof targetMap.easeTo === 'function') {
-        targetMap.easeTo({
-          center: [lng, lat],
-          offset: [0, -110],
-          duration: 350
-        });
-      }
-    });
-
-    const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'center' })
-      .setLngLat([lng, lat])
-      .setPopup(popup)
-      .addTo(targetMap);
-
-    wrapper.addEventListener('click', (e) => {
-      if (e && e.stopPropagation) e.stopPropagation();
-      marker.togglePopup();
-      if (targetMap && typeof targetMap.easeTo === 'function') {
-        targetMap.easeTo({
-          center: [lng, lat],
-          offset: [0, -110],
-          duration: 350
-        });
-      }
-    });
-
-    userMarkers.push({ marker, plant });
+    validPlants.push({ plant, lat, lng });
     bounds.extend([lng, lat]);
     hasBounds = true;
   });
+
+  const srcId = 'user-plants-gpu-src';
+  const clusterLayerId = 'user-plants-gpu-clusters';
+  const countLayerId = 'user-plants-gpu-cluster-count';
+  const unclusteredLayerId = 'user-plants-gpu-unclustered';
+
+  // ── CHẾ ĐỘ 1: DỮ LIỆU LỚN (>= 250 CÂY) -> GPU CLUSTER VECTOR LAYER (60 FPS) ──
+  if (validPlants.length >= 250) {
+    const geojsonData = {
+      type: 'FeatureCollection',
+      features: validPlants.map(({ plant, lat, lng }) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [lng, lat] },
+        properties: {
+          id: plant.id,
+          tree_code: plant.tree_code || plant.id,
+          health_status: plant.health_status || 'Tốt',
+          plant_type: plant.plant_type || '',
+          plant_variety: plant.plant_variety || '',
+          planting_date: plant.planting_date || '',
+          plant_age: plant.plant_age || '',
+          location: plant.location || '',
+          last_care_date: plant.last_care_date || '',
+          last_care_type: plant.last_care_type || '',
+          initial_yield: plant.data?.initial_yield || plant.initial_yield || '',
+          data: JSON.stringify(plant.data || {})
+        }
+      }))
+    };
+
+    if (targetMap.getSource(srcId)) {
+      targetMap.getSource(srcId).setData(geojsonData);
+    } else {
+      targetMap.addSource(srcId, {
+        type: 'geojson',
+        data: geojsonData,
+        cluster: true,
+        clusterMaxZoom: 16,
+        clusterRadius: 45
+      });
+
+      targetMap.addLayer({
+        id: clusterLayerId,
+        type: 'circle',
+        source: srcId,
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#10b981',
+            25,
+            '#0284c7',
+            100,
+            '#f59e0b',
+            500,
+            '#ef4444'
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            18,
+            25,
+            22,
+            100,
+            27,
+            500,
+            33
+          ],
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      targetMap.addLayer({
+        id: countLayerId,
+        type: 'symbol',
+        source: srcId,
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12
+        },
+        paint: { 'text-color': '#ffffff' }
+      });
+
+      targetMap.addLayer({
+        id: unclusteredLayerId,
+        type: 'circle',
+        source: srcId,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': [
+            'match',
+            ['get', 'health_status'],
+            'Tốt', '#22c55e',
+            'Bình thường', '#0d9488',
+            'Cần chú ý', '#eab308',
+            'Bệnh', '#ef4444',
+            '#10b981'
+          ],
+          'circle-radius': 8.5,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      // Zoom mượt khi click vào cụm cây (Cluster)
+      targetMap.on('click', clusterLayerId, (e) => {
+        const features = targetMap.queryRenderedFeatures(e.point, { layers: [clusterLayerId] });
+        if (!features.length) return;
+        const clusterId = features[0].properties.cluster_id;
+        targetMap.getSource(srcId).getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err) return;
+          targetMap.easeTo({
+            center: features[0].geometry.coordinates,
+            zoom: zoom + 0.5,
+            duration: 500
+          });
+        });
+      });
+
+      // Mở Popup khi click vào từng cây đơn lẻ
+      targetMap.on('click', unclusteredLayerId, (e) => {
+        if (!e.features || !e.features.length) return;
+        const f = e.features[0];
+        const coords = f.geometry.coordinates.slice();
+        const p = f.properties;
+        let parsedData = {};
+        try { parsedData = typeof p.data === 'string' ? JSON.parse(p.data) : (p.data || {}); } catch (_) {}
+        const plantObj = { ...p, data: parsedData };
+
+        const popupHtml = buildPlantPopupHtml(plantObj, coords[1], coords[0]);
+        new mapboxgl.Popup({ offset: 15, maxWidth: '310px' })
+          .setLngLat(coords)
+          .setHTML(popupHtml)
+          .addTo(targetMap);
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          try { window.lucide.createIcons(); } catch (_) {}
+        }
+      });
+
+      targetMap.on('mouseenter', clusterLayerId, () => { targetMap.getCanvas().style.cursor = 'pointer'; });
+      targetMap.on('mouseleave', clusterLayerId, () => { targetMap.getCanvas().style.cursor = ''; });
+      targetMap.on('mouseenter', unclusteredLayerId, () => { targetMap.getCanvas().style.cursor = 'pointer'; });
+      targetMap.on('mouseleave', unclusteredLayerId, () => { targetMap.getCanvas().style.cursor = ''; });
+    }
+  } else {
+    // ── CHẾ ĐỘ 2: DỮ LIỆU GỌN (< 250 CÂY) -> RENDER DOM MARKER CÓ SỐ THỨ TỰ ──
+    if (targetMap.getSource(srcId)) {
+      targetMap.getSource(srcId).setData({ type: 'FeatureCollection', features: [] });
+    }
+
+    validPlants.forEach(({ plant, lat, lng }) => {
+      const wrapper = Object.assign(document.createElement('div'), { className: 'plant-marker-wrap' });
+      wrapper.style.cursor = 'pointer';
+      wrapper.addEventListener('click', (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+      });
+
+      const el = Object.assign(document.createElement('div'), { className: 'plant-id-marker' });
+      const colorMap = { 'Tốt': '#22c55e', 'Bình thường': '#0d9488', 'Cần chú ý': '#eab308', 'Bệnh': '#ef4444' };
+      const color = colorMap[plant.health_status] || '#10b981';
+      Object.assign(el.style, {
+        width: '28px', height: '28px', borderRadius: '50%',
+        border: '2px solid white', display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        fontSize: '9.5px', fontWeight: '800', color: '#fff',
+        background: color, boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+        transition: 'transform 0.15s ease'
+      });
+      el.innerHTML = `<span>${esc(getShortTreeCode(plant.tree_code, plant.id))}</span>`;
+      wrapper.appendChild(el);
+
+      const popupHtml = buildPlantPopupHtml(plant, lat, lng);
+      const popup = new mapboxgl.Popup({ offset: 25, maxWidth: '310px' }).setHTML(popupHtml);
+
+      popup.on('open', () => {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          try { window.lucide.createIcons(); } catch (_) {}
+        }
+        if (targetMap && typeof targetMap.easeTo === 'function') {
+          targetMap.easeTo({ center: [lng, lat], offset: [0, -110], duration: 350 });
+        }
+      });
+
+      const marker = new mapboxgl.Marker({ element: wrapper, anchor: 'center' })
+        .setLngLat([lng, lat])
+        .setPopup(popup)
+        .addTo(targetMap);
+
+      wrapper.addEventListener('click', (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        marker.togglePopup();
+        if (targetMap && typeof targetMap.easeTo === 'function') {
+          targetMap.easeTo({ center: [lng, lat], offset: [0, -110], duration: 350 });
+        }
+      });
+
+      userMarkers.push({ marker, plant });
+    });
+  }
 
   if (flyToBounds && hasBounds) {
     targetMap.fitBounds(bounds, { padding: 50, maxZoom: 19.5, duration: 800 });

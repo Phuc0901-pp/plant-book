@@ -114,6 +114,11 @@ app.get('/api', (req, res) => {
         devices: { href: `${base}/devices` },
         diagnostics: { href: `${base}/diagnostics` }
       },
+      gis_spatial_engine: {
+        vector_tiles: { href: `${base}/gis/tiles/{z}/{x}/{y}.pbf` },
+        clusters: { href: `${base}/gis/clusters?bbox={minLon,minLat,maxLon,maxLat}&zoom={zoom}&farm_id={farm_id}` },
+        metrics: { href: `${base}/gis/metrics` }
+      },
       audit_and_events: {
         events: { href: `${base}/history` },
         iso27001_hash_chain: { enabled: true, algorithm: 'SHA-256' },
@@ -128,6 +133,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schemas', require('./routes/schemas'));
 app.use('/api/plants', require('./routes/plants'));
 app.use('/api/nfc', require('./routes/plants'));
+app.use('/api/gis', require('./routes/gis'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/farms', require('./routes/farms'));
 app.use('/api/users', require('./routes/users'));
