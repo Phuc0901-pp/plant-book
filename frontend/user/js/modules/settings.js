@@ -398,7 +398,7 @@ export function getConditionsFromUI() {
         device_source: 'custom',
         is_custom: true,
         metric_key: 'custom_' + Date.now(),
-        metric_name: `✍️ ${customName}`,
+        metric_name: customName,
         operator: operator,
         threshold_value: thresholdVal,
         unit: customUnit
@@ -942,7 +942,7 @@ export async function deleteThresholdRule(id) {
   try {
     const res = await api(`/notifications/rules/${id}`, { method: 'DELETE' });
     if (res && res.success) {
-      toast('✅ Đã xóa quy tắc thành công.', 'success');
+      toast('Đã xóa quy tắc thành công.', 'success');
     } else {
       throw new Error(res?.error || 'Phản hồi không hợp lệ từ server.');
     }
@@ -952,7 +952,7 @@ export async function deleteThresholdRule(id) {
       _currentRules.splice(ruleIndex, 0, removedRule);
       renderThresholdRulesUI(_currentRules);
     }
-    toast('❌ Lỗi xóa quy tắc: ' + (err.message || 'Lỗi không xác định'), 'error');
+    toast('Lỗi xóa quy tắc: ' + (err.message || 'Lỗi không xác định'), 'error');
   }
 }
 window.deleteThresholdRule = deleteThresholdRule;
@@ -1046,7 +1046,7 @@ export async function uploadUserAvatar(file) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Lỗi tải ảnh');
-    toast('✅ Đã cập nhật ảnh đại diện!', 'success');
+    toast('Đã cập nhật ảnh đại diện!', 'success');
   } catch (err) {
     toast('Lỗi: ' + err.message, 'error');
   } finally {
@@ -1117,7 +1117,7 @@ export async function changeUserPassword() {
       body: JSON.stringify({ oldPassword: oldPw, newPassword: newPw })
     });
     if (data.success) {
-      toast('✅ Đổi mật khẩu thành công!', 'success');
+      toast('Đổi mật khẩu thành công!', 'success');
       ['settings-old-password','settings-new-password','settings-confirm-password'].forEach(id => _setVal(id,''));
       if (btn) {
         btn.innerHTML = '<i data-lucide="check" class="lucide-sm"></i> Thành công';

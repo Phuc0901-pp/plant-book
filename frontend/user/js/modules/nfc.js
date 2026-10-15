@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    modules/nfc.js — NFC Tag Definition & Reassignment
@@ -99,16 +99,17 @@ function _updateGpsDisplay(plant) {
 
   let statusHtml = '';
   if (hasGps && hasLoc) {
-    statusHtml = `<span style="color:#047857; font-weight:700;">📍 ${esc(plant.location)}</span> <span style="font-size:11px; color:#0284c7; font-weight:600; margin-left:4px;">(GPS: ${Number(plant.latitude).toFixed(6)}, ${Number(plant.longitude).toFixed(6)})</span>`;
+    statusHtml = `<span style="color:#047857; font-weight:700; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="map-pin" class="lucide-xs"></i> ${esc(plant.location)}</span> <span style="font-size:11px; color:#0284c7; font-weight:600; margin-left:4px;">(GPS: ${Number(plant.latitude).toFixed(6)}, ${Number(plant.longitude).toFixed(6)})</span>`;
   } else if (hasGps) {
-    statusHtml = `<span style="color:#0284c7; font-weight:700;">📍 GPS: ${Number(plant.latitude).toFixed(6)}, ${Number(plant.longitude).toFixed(6)}</span>`;
+    statusHtml = `<span style="color:#0284c7; font-weight:700; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="map-pin" class="lucide-xs"></i> GPS: ${Number(plant.latitude).toFixed(6)}, ${Number(plant.longitude).toFixed(6)}</span>`;
   } else if (hasLoc) {
-    statusHtml = `<span style="color:#047857; font-weight:700;">📍 Vị trí: <strong>${esc(plant.location)}</strong></span> <span style="font-size:10px; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:1px 6px; border-radius:4px; margin-left:4px; font-weight:700;">Chưa có GPS vệ tinh</span>`;
+    statusHtml = `<span style="color:#047857; font-weight:700; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="map-pin" class="lucide-xs"></i> Vị trí: <strong>${esc(plant.location)}</strong></span> <span style="font-size:10px; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:1px 6px; border-radius:4px; margin-left:4px; font-weight:700;">Chưa có GPS vệ tinh</span>`;
   } else {
     statusHtml = `<span style="color:#64748b; font-weight:500;">Chưa có vị trí / tọa độ</span>`;
   }
 
   _setEl('nfc-modal-gps-text', statusHtml, true);
+  if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
 
   const clearGpsBtn = document.getElementById('btn-nfc-clear-gps');
   if (clearGpsBtn) {
@@ -313,7 +314,8 @@ export function getNfcCurrentGps() {
       const lng = pos.coords.longitude;
       _capturedGps = { latitude: lat, longitude: lng };
       
-      _setEl('nfc-modal-gps-text', `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)} (Đang lưu...)`);
+      _setEl('nfc-modal-gps-text', `<span style="display:inline-flex; align-items:center; gap:3px;"><i data-lucide="map-pin" class="lucide-xs"></i> ${lat.toFixed(6)}, ${lng.toFixed(6)} (Đang lưu...)</span>`, true);
+      if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
       
       try {
         const res = await api(`/plants/${_currentPlant.id}/gps`, {

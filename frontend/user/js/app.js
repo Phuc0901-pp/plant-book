@@ -138,7 +138,7 @@ window.openFeatureDetailModal = function(type) {
         <li><strong>Định vị GPS thời gian thực:</strong> Định vị chính xác tọa độ lô vườn, liên kết trực tiếp với dữ liệu bản đồ vệ tinh Mapbox.</li>
       </ul>
       <div style="background:#f0fdf4; border-left:4px solid #059669; padding:10px 14px; font-size:13px; color:#166534; border-radius:0 8px 8px 0; font-weight:600;">
-        💡 Tính năng dành cho các trang trại cần vẽ ranh giới chính xác và thiết kế bản đồ địa hình 3D.
+        <i data-lucide="lightbulb" class="lucide-xs" style="vertical-align:middle; margin-right:4px;"></i> Tính năng dành cho các trang trại cần vẽ ranh giới chính xác và thiết kế bản đồ địa hình 3D.
       </div>
     `;
   } else if (type === 'nfc') {
@@ -159,7 +159,7 @@ window.openFeatureDetailModal = function(type) {
         <li><strong>Truy xuất nguồn gốc VietGAP:</strong> Khách hàng scan mã QR để xem toàn bộ lịch sử canh tác minh bạch của trái cây.</li>
       </ul>
       <div style="background:#eff6ff; border-left:4px solid #2563eb; padding:10px 14px; font-size:13px; color:#1e40af; border-radius:0 8px 8px 0; font-weight:600;">
-        💡 Thẻ chip NFC cao cấp Tân Bảo AgTech sẵn sàng cung cấp và cài đặt tận nơi cho nông hộ.
+        <i data-lucide="lightbulb" class="lucide-xs" style="vertical-align:middle; margin-right:4px;"></i> Thẻ chip NFC cao cấp Tân Bảo AgTech sẵn sàng cung cấp và cài đặt tận nơi cho nông hộ.
       </div>
     `;
   } else if (type === 'iot') {
@@ -178,7 +178,7 @@ window.openFeatureDetailModal = function(type) {
         <li><strong>Nền sinh thái đa dạng tự động:</strong> Tự động kích hoạt hệ thống tưới tiêu và điều khiển thiết bị theo thời gian thực, tiết kiệm 40% chi phí.</li>
       </ul>
       <div style="background:#fffbeb; border-left:4px solid #d97706; padding:10px 14px; font-size:13px; color:#92400e; border-radius:0 8px 8px 0; font-weight:600;">
-        💡 Tích hợp trọn gói phần cứng cảm biến và van điều khiển thông minh tận vườn.
+        <i data-lucide="lightbulb" class="lucide-xs" style="vertical-align:middle; margin-right:4px;"></i> Tích hợp trọn gói phần cứng cảm biến và van điều khiển thông minh tận vườn.
       </div>
     `;
   } else if (type === 'vietgap') {
@@ -198,7 +198,7 @@ window.openFeatureDetailModal = function(type) {
         <li><strong>Ghi nhận Người & Dụng cụ:</strong> Đầy đủ thông tin người thực hiện và thiết bị phục vụ kiểm tra chứng nhận.</li>
       </ul>
       <div style="background:#ecfdf5; border-left:4px solid #059669; padding:10px 14px; font-size:13px; color:#065f46; border-radius:0 8px 8px 0; font-weight:600;">
-        💡 Hỗ trợ hồ sơ số hóa 100% chuẩn bị cho các đợt đánh giá chứng nhận VietGAP / GlobalGAP.
+        <i data-lucide="lightbulb" class="lucide-xs" style="vertical-align:middle; margin-right:4px;"></i> Hỗ trợ hồ sơ số hóa 100% chuẩn bị cho các đợt đánh giá chứng nhận VietGAP / GlobalGAP.
       </div>
     `;
   } else if (type === 'voice') {
@@ -217,7 +217,7 @@ window.openFeatureDetailModal = function(type) {
         <li><strong>Tự động điền biểu mẫu:</strong> Khớp nối tên vật tư có sẵn trong kho nông hộ.</li>
       </ul>
       <div style="background:#eff6ff; border-left:4px solid #2563eb; padding:10px 14px; font-size:13px; color:#1e40af; border-radius:0 8px 8px 0; font-weight:600;">
-        💡 Bấm nút Microphone ở thanh tiêu đề hoặc trong modal nhật ký để trải nghiệm ngay.
+        <i data-lucide="lightbulb" class="lucide-xs" style="vertical-align:middle; margin-right:4px;"></i> Bấm nút Microphone ở thanh tiêu đề hoặc trong modal nhật ký để trải nghiệm ngay.
       </div>
     `;
   } else if (type === 'cost') {
@@ -236,7 +236,7 @@ window.openFeatureDetailModal = function(type) {
         <li><strong>Báo cáo Lợi nhuận Ròng:</strong> Tự động so sánh Doanh thu thu hoạch với Tổng chi phí vật tư đã chi.</li>
       </ul>
       <div style="background:#fff7ed; border-left:4px solid #ea580c; padding:10px 14px; font-size:13px; color:#9a3412; border-radius:0 8px 8px 0; font-weight:600;">
-        💡 Quản lý tài chính rõ ràng, minh bạch giúp tối ưu hóa lợi nhuận mùa vụ.
+        <i data-lucide="lightbulb" class="lucide-xs" style="vertical-align:middle; margin-right:4px;"></i> Quản lý tài chính rõ ràng, minh bạch giúp tối ưu hóa lợi nhuận mùa vụ.
       </div>
     `;
   }

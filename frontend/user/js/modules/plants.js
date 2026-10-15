@@ -90,7 +90,7 @@ export function renderUserFarmsList(farms) {
   if (container) {
     container.innerHTML = farms.map(f => `
       <div style="padding:12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">
-        <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;">🏡 ${esc(f.name)}</h4>
+        <h4 style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:4px;display:flex;align-items:center;gap:6px;"><i data-lucide="home" class="lucide-xs"></i> ${esc(f.name)}</h4>
         <div style="font-size:11px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;">
           <span><i data-lucide="ruler" class="lucide-sm"></i> ${f.area ? Math.round(parseFloat(f.area)).toLocaleString('vi-VN') : 0} m²</span>
           <span><i data-lucide="sprout" class="lucide-sm"></i> ${f.plant_count || 0} cây</span>
@@ -1470,6 +1470,70 @@ window.renderIoTDemoData = renderIoTDemoData;
 function _cleanUtf8Mojibake(str) {
   if (!str || typeof str !== 'string') return str || '';
   return str
+    // Strip broken emoji mojibake artifacts
+    .replace(/ã˜Ë¡|ðŸŒ¦ï¸|ã€\.\.\.|ðŸŒ¤ï¸|ðŸ[^\s]*|ã[^\s]*/gu, '')
+    // Fix degrees
+    .replace(/Â°/g, '°')
+    // Fix days
+    .replace(/Thá»©\s*Hai/g, 'Thứ Hai')
+    .replace(/Thá»©\s*Ba/g, 'Thứ Ba')
+    .replace(/Thá»©\s*TÆ°/g, 'Thứ Tư')
+    .replace(/Thá»©\s*NÄƒm/g, 'Thứ Năm')
+    .replace(/Thá»©\s*Sáu|Thá»©\s*Su/g, 'Thứ Sáu')
+    .replace(/Thá»©\s*Bảy|Thá»©\s*By/g, 'Thứ Bảy')
+    .replace(/Chá»§\s*Nháº­t|Chá»§\s*Nháºt/g, 'Chủ Nhật')
+    .replace(/HÃ´m\s*nay|Hm\s*nay/g, 'Hôm nay')
+    // Fix common words in advisory
+    .replace(/Náº¯ng/g, 'Nắng')
+    .replace(/áº¥m/g, 'ấm')
+    .replace(/Thích\s*há»£p/g, 'Thích hợp')
+    .replace(/phân\s*rá»\.\.\.|phân\s*rá»/g, 'phân rễ')
+    .replace(/tÆ°á»›i/g, 'tưới')
+    .replace(/nÆ°á»›c/g, 'nước')
+    .replace(/buá»•i/g, 'buổi')
+    .replace(/MÆ°a/g, 'Mưa')
+    .replace(/Hạn\s*cháº¿/g, 'Hạn chế')
+    .replace(/thuá»‘c/g, 'thuốc')
+    .replace(/dá»\.\.\.|dá»/g, 'dễ')
+    .replace(/bá»‹/g, 'bị')
+    .replace(/rá»a/g, 'rửa')
+    .replace(/Nhiá»\s*u/g, 'Nhiều')
+    .replace(/Thá»\s*i/g, 'Thời')
+    .replace(/Ä'iá»ƒm|Ä'iểm/g, 'điểm')
+    .replace(/tá»'t|tốt/g, 'tốt')
+    .replace(/nháº¥t/g, 'nhất')
+    .replace(/Ä'á»ƒ/g, 'để')
+    .replace(/gián\s*Ä'oạn/g, 'gián đoạn')
+    .replace(/vi\s*lÆ°á»£ng/g, 'vi lượng')
+    .replace(/dông\s*chiá»\s*u|giông\s*chiá»\s*u/g, 'dông chiều')
+    .replace(/KhÆ¡i/g, 'Khơi')
+    .replace(/ngáºp/g, 'ngập')
+    .replace(/rá»±c/g, 'rực')
+    .replace(/rá»¡/g, 'rỡ')
+    .replace(/há»‡\s*thá»‘ng/g, 'hệ thống')
+    .replace(/tá»±\s*Ä'á»™ng/g, 'tự động')
+    // General vowels
+    .replace(/Thá»©/g, 'Thứ')
+    .replace(/TÆ°/g, 'Tư')
+    .replace(/NÄƒm/g, 'Năm')
+    .replace(/Æ°/g, 'ư')
+    .replace(/Æ¡/g, 'ơ')
+    .replace(/Äƒ/g, 'ă')
+    .replace(/Ä'/g, 'đ')
+    .replace(/á»©/g, 'ứ')
+    .replace(/á»±/g, 'ự')
+    .replace(/á»›/g, 'ớ')
+    .replace(/á»£/g, 'ợ')
+    .replace(/áº¯/g, 'ắ')
+    .replace(/áº¥/g, 'ấ')
+    .replace(/áº¿/g, 'ế')
+    .replace(/á»‘/g, 'ố')
+    .replace(/á»•/g, 'ổ')
+    .replace(/á»‡/g, 'ệ')
+    .replace(/á»‹/g, 'ị')
+    .replace(/áº¡/g, 'ạ')
+    .replace(/áº£/g, 'ả')
+    .replace(/á»/g, 'ộ')
     .replace(/TÃ¢y/g, 'Tây')
     .replace(/Ã¢/g, 'â')
     .replace(/Ã´/g, 'ô')
@@ -1477,7 +1541,7 @@ function _cleanUtf8Mojibake(str) {
     .replace(/Ä\x90Ã´ng/g, 'Đông')
     .replace(/Ä\x90/g, 'Đ')
     .replace(/Ã¡/g, 'á')
-    .replace(/Ã /g, 'à')
+    .replace(/Ã\xa0/g, 'à')
     .replace(/áº£/g, 'ả')
     .replace(/Ã£/g, 'ã')
     .replace(/áº¡/g, 'ạ')
@@ -1485,7 +1549,7 @@ function _cleanUtf8Mojibake(str) {
     .replace(/Ã¨/g, 'è')
     .replace(/áº½/g, 'ẽ')
     .replace(/áº¹/g, 'ẹ')
-    .replace(/Ã­/g, 'í')
+    .replace(/Ã\xad/g, 'í')
     .replace(/Ã¬/g, 'ì')
     .replace(/á»\x89/g, 'ỉ')
     .replace(/Ä©/g, 'ĩ')
@@ -1505,7 +1569,8 @@ function _cleanUtf8Mojibake(str) {
     .replace(/á»·/g, 'ỷ')
     .replace(/á»¹/g, 'ỹ')
     .replace(/á»µ/g, 'ỵ')
-    .replace(/Ä\x91/g, 'đ');
+    .replace(/Ä\x91/g, 'đ')
+    .trim();
 }
 
 function _renderForecastGrid(forecast) {
@@ -1513,8 +1578,14 @@ function _renderForecastGrid(forecast) {
   if (!grid || !forecast || !forecast.length) return;
 
   grid.innerHTML = forecast.map((w, idx) => {
-    let iconName = w.icon || 'sun';
-    if (iconName.startsWith('fa-')) {
+    let iconName = (w.icon || 'sun').trim();
+    if (iconName.includes('⚡') || iconName.includes('⛈') || iconName.includes('🌩')) iconName = 'cloud-lightning';
+    else if (iconName.includes('🌦')) iconName = 'cloud-sun-rain';
+    else if (iconName.includes('🌧')) iconName = 'cloud-rain';
+    else if (iconName.includes('⛅') || iconName.includes('🌤')) iconName = 'cloud-sun';
+    else if (iconName.includes('☁')) iconName = 'cloud';
+    else if (iconName.includes('☀️') || iconName.includes('☀')) iconName = 'sun';
+    else if (iconName.startsWith('fa-')) {
       if (iconName.includes('sun-rain')) iconName = 'cloud-sun-rain';
       else if (iconName.includes('cloud-sun')) iconName = 'cloud-sun';
       else if (iconName.includes('sun')) iconName = 'sun';
@@ -1522,11 +1593,14 @@ function _renderForecastGrid(forecast) {
       else if (iconName.includes('bolt') || iconName.includes('lightning')) iconName = 'cloud-lightning';
       else if (iconName.includes('cloud')) iconName = 'cloud';
       else iconName = 'sun';
+    } else if (!/^[a-z0-9-]+$/.test(iconName)) {
+      iconName = 'sun';
     }
     const isAct = _userSelectedHourlyDayMode === `day_${idx}`;
     const dayLabelClean = _cleanUtf8Mojibake(w.day_label || 'Hôm nay');
     const adviceClean = _cleanUtf8Mojibake(w.advice || '');
     const windClean = _cleanUtf8Mojibake(w.wind || '12 km/h');
+    const tempClean = _cleanUtf8Mojibake(w.temp || '25°C - 33°C');
     const gridCardClass = idx < 4 ? 'weather-card-top-4' : 'weather-card-bottom-3';
 
     return `
@@ -1538,7 +1612,7 @@ function _renderForecastGrid(forecast) {
           </div>
           <div style="text-align:center; padding:8px 0;">
             <i data-lucide="${iconName}" style="width:34px; height:34px; stroke-width:2.2; color:${w.color || '#f59e0b'}; margin-bottom:4px; display:inline-block;"></i>
-            <div style="font-size:16px; font-weight:900; color:#0f172a;">${w.temp || '25°C - 33°C'}</div>
+            <div style="font-size:16px; font-weight:900; color:#0f172a;">${tempClean}</div>
           </div>
           <div style="font-size:11px; color:#475569; display:flex; flex-direction:column; gap:5px; margin-bottom:10px; background:rgba(255,255,255,0.75); padding:8px 10px; border-radius:8px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -1788,7 +1862,7 @@ function renderUserNfcInventoryTable(tags) {
       plantInfo = `
         <div style="display:flex; flex-direction:column; gap:2px;">
           <div>
-            <strong style="color:#0f172a; font-size:13px;">🌳 ${esc(treeCodeText)}</strong> 
+            <strong style="color:#0f172a; font-size:13px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="sprout" class="lucide-xs" style="color:#059669;"></i> ${esc(treeCodeText)}</strong> 
             <span style="font-size:11.5px; color:#64748b; font-weight:600;">${esc(plantTypeDesc)}</span>
           </div>
           ${hasGps ? `
@@ -2019,17 +2093,21 @@ function renderUserCurrentFieldTree() {
   }
 
   if (statusPillEl) {
+    statusPillEl.style.display = 'inline-flex';
+    statusPillEl.style.alignItems = 'center';
+    statusPillEl.style.gap = '4px';
     if (p.nfc_uid) {
-      statusPillEl.textContent = '✅ ĐÃ GÁN THẺ';
+      statusPillEl.innerHTML = '<i data-lucide="check-circle-2" class="lucide-xs"></i> ĐÃ GÁN THẺ';
       statusPillEl.style.background = '#ecfdf5';
       statusPillEl.style.color = '#047857';
       statusPillEl.style.border = '1px solid #a7f3d0';
     } else {
-      statusPillEl.textContent = '⚪ CHƯA GÁN';
+      statusPillEl.innerHTML = '<i data-lucide="circle-dashed" class="lucide-xs"></i> CHƯA GÁN';
       statusPillEl.style.background = '#f1f5f9';
       statusPillEl.style.color = '#64748b';
       statusPillEl.style.border = '1px solid #e2e8f0';
     }
+    if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
   }
 
   const pubUrl = p.public_url || `https://plant-book.onrender.com/${p.farm_id || _userFieldTagFarmId}/${p.id}${p.nfc_uid ? '/' + encodeURIComponent(p.nfc_uid) : ''}`;
@@ -2660,20 +2738,29 @@ export function updateUserRangePreview() {
   const end = parseInt(rawEnd, 10);
 
   if (isNaN(start) || isNaN(end)) {
-    if (previewEl) previewEl.innerHTML = '🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây.';
+    if (previewEl) {
+      previewEl.innerHTML = '<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="info" class="lucide-xs"></i> Nhập số bắt đầu và số kết thúc để xem trước danh sách cây.</span>';
+      if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
+    }
     if (btnText) btnText.textContent = 'Tạo Cây Hàng Loạt';
     return;
   }
 
   if (start > end) {
-    if (previewEl) previewEl.innerHTML = '<span style="color:#dc2626; font-weight:800;">⚠️ Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!</span>';
+    if (previewEl) {
+      previewEl.innerHTML = '<span style="color:#dc2626; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="alert-circle" class="lucide-xs"></i> Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!</span>';
+      if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
+    }
     if (btnText) btnText.textContent = 'Tạo Cây Hàng Loạt';
     return;
   }
 
   const count = end - start + 1;
   if (count > 500) {
-    if (previewEl) previewEl.innerHTML = `<span style="color:#dc2626; font-weight:800;">⚠️ Số lượng ${count} cây vượt quá giới hạn 500 cây mỗi lần!</span>`;
+    if (previewEl) {
+      previewEl.innerHTML = `<span style="color:#dc2626; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="alert-triangle" class="lucide-xs"></i> Số lượng ${count} cây vượt quá giới hạn 500 cây mỗi lần!</span>`;
+      if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
+    }
     return;
   }
 
@@ -2684,12 +2771,15 @@ export function updateUserRangePreview() {
   const lastCode = `${prefix}${formatNum(end)}`;
   const secondCode = count > 2 ? `${prefix}${formatNum(start + 1)}` : '';
 
-  let previewStr = `✨ Sẽ tạo <strong>${count} cây</strong>: <code>${esc(firstCode)}</code>`;
+  let previewStr = `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-xs" style="color:#059669;"></i> Sẽ tạo <strong>${count} cây</strong>: <code>${esc(firstCode)}</code></span>`;
   if (secondCode) previewStr += `, <code>${esc(secondCode)}</code>`;
   if (count > 3) previewStr += `, ...`;
   if (count > 1) previewStr += `, <code>${esc(lastCode)}</code>`;
 
-  if (previewEl) previewEl.innerHTML = previewStr;
+  if (previewEl) {
+    previewEl.innerHTML = previewStr;
+    if (window.lucide) { try { lucide.createIcons(); } catch (_) {} }
+  }
   if (btnText) btnText.textContent = `Tạo ${count} Cây Hàng Loạt`;
 }
 window.updateUserRangePreview = updateUserRangePreview;

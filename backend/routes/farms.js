@@ -1150,6 +1150,70 @@ router.post('/:id/clear-gps', auth, async (req, res) => {
 function fixMojibakeString(str) {
   if (typeof str !== 'string') return str;
   return str
+    // Strip broken emoji mojibake
+    .replace(/ã˜Ë¡|ðŸŒ¦ï¸|ã€\.\.\.|ðŸŒ¤ï¸|ðŸ[^\s]*|ã[^\s]*/gu, '')
+    // Fix degrees
+    .replace(/Â°/g, '°')
+    // Fix days
+    .replace(/Thá»©\s*Hai/g, 'Thứ Hai')
+    .replace(/Thá»©\s*Ba/g, 'Thứ Ba')
+    .replace(/Thá»©\s*TÆ°/g, 'Thứ Tư')
+    .replace(/Thá»©\s*NÄƒm/g, 'Thứ Năm')
+    .replace(/Thá»©\s*Sáu|Thá»©\s*Su/g, 'Thứ Sáu')
+    .replace(/Thá»©\s*Bảy|Thá»©\s*By/g, 'Thứ Bảy')
+    .replace(/Chá»§\s*Nháº­t|Chá»§\s*Nháºt/g, 'Chủ Nhật')
+    .replace(/HÃ´m\s*nay|Hm\s*nay/g, 'Hôm nay')
+    // Fix common words in advisory
+    .replace(/Náº¯ng/g, 'Nắng')
+    .replace(/áº¥m/g, 'ấm')
+    .replace(/Thích\s*há»£p/g, 'Thích hợp')
+    .replace(/phân\s*rá»\.\.\.|phân\s*rá»/g, 'phân rễ')
+    .replace(/tÆ°á»›i/g, 'tưới')
+    .replace(/nÆ°á»›c/g, 'nước')
+    .replace(/buá»•i/g, 'buổi')
+    .replace(/MÆ°a/g, 'Mưa')
+    .replace(/Hạn\s*cháº¿/g, 'Hạn chế')
+    .replace(/thuá»‘c/g, 'thuốc')
+    .replace(/dá»\.\.\.|dá»/g, 'dễ')
+    .replace(/bá»‹/g, 'bị')
+    .replace(/rá»a/g, 'rửa')
+    .replace(/Nhiá»\s*u/g, 'Nhiều')
+    .replace(/Thá»\s*i/g, 'Thời')
+    .replace(/Ä'iá»ƒm|Ä'iểm/g, 'điểm')
+    .replace(/tá»'t|tốt/g, 'tốt')
+    .replace(/nháº¥t/g, 'nhất')
+    .replace(/Ä'á»ƒ/g, 'để')
+    .replace(/gián\s*Ä'oạn/g, 'gián đoạn')
+    .replace(/vi\s*lÆ°á»£ng/g, 'vi lượng')
+    .replace(/dông\s*chiá»\s*u|giông\s*chiá»\s*u/g, 'dông chiều')
+    .replace(/KhÆ¡i/g, 'Khơi')
+    .replace(/ngáºp/g, 'ngập')
+    .replace(/rá»±c/g, 'rực')
+    .replace(/rá»¡/g, 'rỡ')
+    .replace(/há»‡\s*thá»‘ng/g, 'hệ thống')
+    .replace(/tá»±\s*Ä'á»™ng/g, 'tự động')
+    // General vowels
+    .replace(/Thá»©/g, 'Thứ')
+    .replace(/TÆ°/g, 'Tư')
+    .replace(/NÄƒm/g, 'Năm')
+    .replace(/Æ°/g, 'ư')
+    .replace(/Æ¡/g, 'ơ')
+    .replace(/Äƒ/g, 'ă')
+    .replace(/Ä'/g, 'đ')
+    .replace(/á»©/g, 'ứ')
+    .replace(/á»±/g, 'ự')
+    .replace(/á»›/g, 'ớ')
+    .replace(/á»£/g, 'ợ')
+    .replace(/áº¯/g, 'ắ')
+    .replace(/áº¥/g, 'ấ')
+    .replace(/áº¿/g, 'ế')
+    .replace(/á»‘/g, 'ố')
+    .replace(/á»•/g, 'ổ')
+    .replace(/á»‡/g, 'ệ')
+    .replace(/á»‹/g, 'ị')
+    .replace(/áº¡/g, 'ạ')
+    .replace(/áº£/g, 'ả')
+    .replace(/á»/g, 'ộ')
     .replace(/TÃ¢y/g, 'Tây')
     .replace(/Ã¢/g, 'â')
     .replace(/Ã´/g, 'ô')
@@ -1157,7 +1221,7 @@ function fixMojibakeString(str) {
     .replace(/Ä\x90Ã´ng/g, 'Đông')
     .replace(/Ä\x90/g, 'Đ')
     .replace(/Ã¡/g, 'á')
-    .replace(/Ã /g, 'à')
+    .replace(/Ã\xa0/g, 'à')
     .replace(/áº£/g, 'ả')
     .replace(/Ã£/g, 'ã')
     .replace(/áº¡/g, 'ạ')
@@ -1165,7 +1229,7 @@ function fixMojibakeString(str) {
     .replace(/Ã¨/g, 'è')
     .replace(/áº½/g, 'ẽ')
     .replace(/áº¹/g, 'ẹ')
-    .replace(/Ã­/g, 'í')
+    .replace(/Ã\xad/g, 'í')
     .replace(/Ã¬/g, 'ì')
     .replace(/á»\x89/g, 'ỉ')
     .replace(/Ä©/g, 'ĩ')
@@ -1185,7 +1249,8 @@ function fixMojibakeString(str) {
     .replace(/á»·/g, 'ỷ')
     .replace(/á»¹/g, 'ỹ')
     .replace(/á»µ/g, 'ỵ')
-    .replace(/Ä\x91/g, 'đ');
+    .replace(/Ä\x91/g, 'đ')
+    .trim();
 }
 
 function deepCleanMojibake(val) {
@@ -1266,12 +1331,12 @@ function generateDefaultFarmIoTData(farmId) {
   const today = new Date();
   const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
   const weatherTemplates = [
-    { icon: 'sun', color: '#f59e0b', temp: '25°C - 33°C', rain: '10%', humidity: `${airHumidity}%`, wind: `${windSpeed} km/h`, advice: '☀️ Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.' },
-    { icon: 'cloud-sun-rain', color: '#0284c7', temp: '24°C - 31°C', rain: '65%', humidity: '82%', wind: '15 km/h', advice: '🌦️ Mưa rào rải rác: Hạn chế phun thuốc sâu vì dễ bị rửa trôi.' },
-    { icon: 'cloud-sun', color: '#059669', temp: '23°C - 30°C', rain: '20%', humidity: '75%', wind: '10 km/h', advice: '⛅ Nhiều mây mát: Thời điểm tốt nhất để làm cỏ & tạo tán cây.' },
-    { icon: 'sun-medium', color: '#eab308', temp: '25°C - 32°C', rain: '15%', humidity: '68%', wind: '14 km/h', advice: '🌤️ Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng.' },
-    { icon: 'cloud-lightning', color: '#7c3aed', temp: '23°C - 29°C', rain: '85%', humidity: '88%', wind: '22 km/h', advice: '⛈️ Mưa dông chiều: Khơi thông rãnh tháo nước tránh ngập úng.' },
-    { icon: 'sun', color: '#ea580c', temp: '26°C - 34°C', rain: '5%', humidity: '62%', wind: '11 km/h', advice: '☀️ Nắng rực rỡ: Duy trì hệ thống tưới nhỏ giọt tự động.' }
+    { icon: 'sun', color: '#f59e0b', temp: '25°C - 33°C', rain: '10%', humidity: `${airHumidity}%`, wind: `${windSpeed} km/h`, advice: 'Nắng ấm: Thích hợp bón phân rễ & tưới nước buổi sáng.' },
+    { icon: 'cloud-sun-rain', color: '#0284c7', temp: '24°C - 31°C', rain: '65%', humidity: '82%', wind: '15 km/h', advice: 'Mưa rào rải rác: Hạn chế phun thuốc sâu vì dễ bị rửa trôi.' },
+    { icon: 'cloud-sun', color: '#059669', temp: '23°C - 30°C', rain: '20%', humidity: '75%', wind: '10 km/h', advice: 'Nhiều mây mát: Thời điểm tốt nhất để làm cỏ & tạo tán cây.' },
+    { icon: 'sun-medium', color: '#eab308', temp: '25°C - 32°C', rain: '15%', humidity: '68%', wind: '14 km/h', advice: 'Nắng gián đoạn: Thích hợp phun phân bón lá & vi lượng.' },
+    { icon: 'cloud-lightning', color: '#7c3aed', temp: '23°C - 29°C', rain: '85%', humidity: '88%', wind: '22 km/h', advice: 'Mưa dông chiều: Khơi thông rãnh tháo nước tránh ngập úng.' },
+    { icon: 'sun', color: '#ea580c', temp: '26°C - 34°C', rain: '5%', humidity: '62%', wind: '11 km/h', advice: 'Nắng rực rỡ: Duy trì hệ thống tưới nhỏ giọt tự động.' }
   ];
 
   const weather_forecast = weatherTemplates.map((w, i) => {
@@ -1316,13 +1381,23 @@ router.get('/:id/iot-data', auth, async (req, res) => {
     const rawWater = typeof row.water_data === 'string' ? JSON.parse(row.water_data) : row.water_data;
     const rawForecast = typeof row.weather_forecast === 'string' ? JSON.parse(row.weather_forecast) : row.weather_forecast;
 
+    const cleanedForecast = deepCleanMojibake(rawForecast);
+    const cleanedAir = deepCleanMojibake(rawAir);
+    const cleanedSoil = deepCleanMojibake(rawSoil);
+    const cleanedWater = deepCleanMojibake(rawWater);
+
+    // Auto-heal database record in background if it contained mojibake or emojis
+    if (JSON.stringify(rawForecast) !== JSON.stringify(cleanedForecast)) {
+      pool.query('UPDATE farm_iot_sensors SET weather_forecast = $1, updated_at = NOW() WHERE farm_id = $2', [JSON.stringify(cleanedForecast), farmId]).catch(() => {});
+    }
+
     const payload = {
       success: true,
       farm_id: farmId,
-      air_data: deepCleanMojibake(rawAir),
-      soil_data: deepCleanMojibake(rawSoil),
-      water_data: deepCleanMojibake(rawWater),
-      weather_forecast: deepCleanMojibake(rawForecast),
+      air_data: cleanedAir,
+      soil_data: cleanedSoil,
+      water_data: cleanedWater,
+      weather_forecast: cleanedForecast,
       updated_at: row.updated_at
     };
 

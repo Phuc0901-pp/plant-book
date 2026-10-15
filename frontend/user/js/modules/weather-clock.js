@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /**
  * modules/weather-clock.js - Live Digital Clock & Real-Time GPS Weather Widget (Open-Meteo API)
  * Enhanced with Local Storage Caching, Fault-Tolerant Climatology Fallback & 503 Error Resilience
@@ -573,13 +573,13 @@ export async function refreshDeviceWeather(forcePrompt = false) {
     const irrigLiters = Math.round(et0 * 30 * 0.85);
     let agriTip = `Bốc thoát hơi nước hôm nay ~${et0} mm/ngày (tưới bù ~${irrigLiters}L/gốc). Thời tiết thuận lợi cho các hoạt động chăm sóc cây trồng.`;
     if (rainProb >= 60 || rainSum >= 10) {
-      agriTip = `⚠️ Khả năng mưa cao (${rainProb}%, ~${rainSum}mm): Tuyệt đối hoãn phun thuốc BVTV và bón phân để tránh bị rửa trôi.`;
+      agriTip = `Khả năng mưa cao (${rainProb}%, ~${rainSum}mm): Tuyệt đối hoãn phun thuốc BVTV và bón phân để tránh bị rửa trôi.`;
     } else if (temp >= 34 || et0 >= 5.5) {
-      agriTip = `☀️ Nắng gắt & bốc thoát hơi nước mạnh (${et0}mm/ngày): Khuyến nghị tưới bù ~${irrigLiters}L/cây vào sáng sớm và tủ gốc giữ ẩm.`;
+      agriTip = `Nắng gắt & bốc thoát hơi nước mạnh (${et0}mm/ngày): Khuyến nghị tưới bù ~${irrigLiters}L/cây vào sáng sớm và tủ gốc giữ ẩm.`;
     } else if (windGusts && windGusts >= 35) {
-      agriTip = `💨 Cảnh báo gió giật mạnh (${windGusts} km/h): Kiểm tra chằng chống cành sầu riêng mang quả và hạn chế phun thuốc trừ sâu.`;
+      agriTip = `Cảnh báo gió giật mạnh (${windGusts} km/h): Kiểm tra chằng chống cành sầu riêng mang quả và hạn chế phun thuốc trừ sâu.`;
     } else if (humidity >= 85) {
-      agriTip = `💧 Độ ẩm không khí cao (${humidity}%): Cần kiểm tra kỹ nấm lá thán thư và xì mủ Phytophthora trên cơi đọt.`;
+      agriTip = `Độ ẩm không khí cao (${humidity}%): Cần kiểm tra kỹ nấm lá thán thư và xì mủ Phytophthora trên cơi đọt.`;
     }
 
     const weatherPayload = {
@@ -610,7 +610,7 @@ export async function refreshDeviceWeather(forcePrompt = false) {
     const cached = _getCachedWeather();
     if (cached && cached.data) {
       const timeStr = new Date(cached.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-      _renderWeatherUI(cached.data, cached.locationName || 'Vườn mẫu Tân Bảo', cached.isRealGps, `🕒 Lưu lúc ${timeStr}`);
+      _renderWeatherUI(cached.data, cached.locationName || 'Vườn mẫu Tân Bảo', cached.isRealGps, `Lưu lúc ${timeStr}`);
     } else {
       // Climatology fallback
       const now = new Date();
@@ -635,7 +635,7 @@ export async function refreshDeviceWeather(forcePrompt = false) {
         agriTip: 'Thời tiết ổn định, thuận lợi cho các hoạt động canh tác nông nghiệp.'
       };
 
-      _renderWeatherUI(fallbackPayload, isRealGps ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` : (farmDisplayName || 'Vùng canh tác nông nghiệp'), isRealGps, '🌤️ Dữ liệu dự phòng');
+      _renderWeatherUI(fallbackPayload, isRealGps ? `GPS: ${lat.toFixed(3)}°, ${lng.toFixed(3)}°` : (farmDisplayName || 'Vùng canh tác nông nghiệp'), isRealGps, 'Dữ liệu dự phòng');
     }
   } finally {
     if (refreshBtn) refreshBtn.classList.remove('lucide-spin');
