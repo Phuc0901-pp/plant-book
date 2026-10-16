@@ -1165,10 +1165,55 @@ async function syncPlantNfcToInventory(dbClient, { nfcUid, farmId, plantId, user
   }
 }
 
+let _nfcColumnsEnsured = false;
+async function ensureNfcInventoryColumns(dbClient) {
+  if (_nfcColumnsEnsured) return;
+  try {
+    await dbClient.query(`
+      CREATE TABLE IF NOT EXISTS nfc_tags_inventory (
+        id SERIAL PRIMARY KEY,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE,
+        nfc_uid VARCHAR(100) UNIQUE NOT NULL,
+        status VARCHAR(50) DEFAULT 'unassigned',
+        plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL,
+        last_counter INT DEFAULT 0,
+        hmac_signature VARCHAR(128) NULL,
+        signature VARCHAR(128) NULL,
+        lock_password_hash VARCHAR(128) NULL,
+        last_scanned_lat NUMERIC NULL,
+        last_scanned_lng NUMERIC NULL,
+        last_scanned_at TIMESTAMPTZ NULL,
+        scanned_at TIMESTAMPTZ DEFAULT NOW(),
+        assigned_at TIMESTAMPTZ DEFAULT NOW(),
+        tagged_at TIMESTAMPTZ NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        created_by INTEGER REFERENCES users(id)
+      );
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'unassigned';
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS scanned_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS tagged_at TIMESTAMPTZ NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS signature VARCHAR(128) NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lat NUMERIC NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lng NUMERIC NULL;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_nfc_tags_inventory_uid_uniq ON nfc_tags_inventory(nfc_uid);
+    `);
+    _nfcColumnsEnsured = true;
+  } catch (err) {
+    console.warn('ensureNfcInventoryColumns notice:', err.message);
+  }
+}
+
 async function reconcileFarmNfcInventory(dbClient, farmId) {
   if (!farmId || isNaN(parseInt(farmId, 10))) return;
   const fId = parseInt(farmId, 10);
   try {
+    await ensureNfcInventoryColumns(dbClient);
     // 1. Đồng bộ các thẻ đã có trong kho nhưng lệch plant_id / farm_id / status so với bảng plants
     await dbClient.query(
       `UPDATE nfc_tags_inventory n
@@ -2204,15 +2249,21 @@ router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
       }
     }
 
+    await ensureNfcInventoryColumns(pool);
+
     // Two-way reconciliation: ensure any NFC tag attached to a plant in this farm is synced to nfc_tags_inventory
-    await reconcileFarmNfcInventory(pool, farmId);
+    try {
+      await reconcileFarmNfcInventory(pool, farmId);
+    } catch (reconcileErr) {
+      console.warn('reconcileFarmNfcInventory non-fatal warning:', reconcileErr.message);
+    }
 
     const items = await pool.query(
       `SELECT n.*, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.location, p.latitude, p.longitude, p.public_url, p.data as plant_data
        FROM nfc_tags_inventory n
        LEFT JOIN plants p ON (n.plant_id = p.id AND p.deleted_at IS NULL)
        WHERE n.farm_id = $1 OR p.farm_id = $1
-       ORDER BY CASE WHEN n.status = 'assigned' THEN 0 ELSE 1 END, COALESCE(n.tagged_at, n.assigned_at, n.created_at) DESC, n.id DESC`,
+       ORDER BY CASE WHEN n.status = 'assigned' THEN 0 ELSE 1 END, n.id DESC`,
       [farmId]
     );
 
@@ -2225,7 +2276,7 @@ router.get('/farms/:farmId/nfc-inventory', auth, async (req, res) => {
     res.json({ success: true, stats, items: items.rows, tags: items.rows });
   } catch (err) {
     console.error('Error fetching NFC inventory:', err);
-    res.status(500).json({ error: 'Lỗi server khi tải danh sách kho thẻ.' });
+    res.status(500).json({ error: 'Lỗi server khi tải danh sách kho thẻ: ' + (err.message || 'Lỗi không xác định') });
   }
 });
 
@@ -2242,6 +2293,7 @@ router.post('/farms/:farmId/nfc-inventory/sync', auth, async (req, res) => {
       }
     }
 
+    await ensureNfcInventoryColumns(pool);
     await reconcileFarmNfcInventory(pool, farmId);
 
     const items = await pool.query(
@@ -2249,7 +2301,7 @@ router.post('/farms/:farmId/nfc-inventory/sync', auth, async (req, res) => {
        FROM nfc_tags_inventory n
        LEFT JOIN plants p ON (n.plant_id = p.id AND p.deleted_at IS NULL)
        WHERE n.farm_id = $1 OR p.farm_id = $1
-       ORDER BY CASE WHEN n.status = 'assigned' THEN 0 ELSE 1 END, COALESCE(n.tagged_at, n.assigned_at, n.created_at) DESC, n.id DESC`,
+       ORDER BY CASE WHEN n.status = 'assigned' THEN 0 ELSE 1 END, n.id DESC`,
       [farmId]
     );
 
@@ -2271,7 +2323,7 @@ router.post('/farms/:farmId/nfc-inventory/sync', auth, async (req, res) => {
     });
   } catch (err) {
     console.error('Error syncing NFC inventory:', err);
-    res.status(500).json({ error: 'Lỗi server khi đồng bộ kho thẻ NFC: ' + err.message });
+    res.status(500).json({ error: 'Lỗi server khi đồng bộ kho thẻ NFC: ' + (err.message || 'Lỗi không xác định') });
   }
 });
 

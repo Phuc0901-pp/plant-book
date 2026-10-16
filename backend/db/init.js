@@ -561,10 +561,14 @@ async function initDB() {
         scanned_at TIMESTAMPTZ DEFAULT NOW(),
         assigned_at TIMESTAMPTZ DEFAULT NOW(),
         tagged_at TIMESTAMPTZ NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW(),
         created_by INTEGER REFERENCES users(id)
       );
 
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'unassigned';
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_counter INT DEFAULT 0;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS hmac_signature VARCHAR(128) NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS signature VARCHAR(128) NULL;
@@ -572,8 +576,13 @@ async function initDB() {
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lat NUMERIC NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lng NUMERIC NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_at TIMESTAMPTZ NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS scanned_at TIMESTAMPTZ DEFAULT NOW();
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS tagged_at TIMESTAMPTZ NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_nfc_tags_inventory_uid_uniq ON nfc_tags_inventory(nfc_uid);
 
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS geofence_radius_meters NUMERIC DEFAULT 8.0;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS geofence_radius_meters NUMERIC DEFAULT 8.0;
