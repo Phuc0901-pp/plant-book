@@ -3,50 +3,57 @@
         
         <!-- ── HEADER: EXECUTIVE ENTERPRISE ERP COMMAND CENTER ── -->
         <div class="admin-executive-banner">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; width:100%;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; width:100%;">
             
             <!-- Left Column: Command Center Identity & Subtext -->
-            <div style="max-width:680px; flex:1; min-width:260px;">
+            <div style="max-width:720px; flex:1; min-width:280px;">
               <!-- System Health Badge & Live Telemetry Ping -->
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-                <span style="background:#ecfdf5; color:#059669; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:6px;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <span style="background:#ecfdf5; color:#065f46; font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 2px rgba(16,185,129,0.06);">
                   <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 6px #10b981;"></span>
-                  Hệ thống hoạt động bình thường
+                  Hệ thống vận hành tối ưu
                 </span>
-                <span style="background:#f8fafc; color:#064e3b; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; border:1px solid #cbd5e1; display:inline-flex; align-items:center; gap:5px;">
-                  <i data-lucide="satellite" class="lucide-sm" style="color:#059669;"></i> GIS Hub Enterprise <span class="app-version-badge">{{APP_VERSION}}</span>
+                <span style="background:#f8fafc; color:#0f766e; font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:20px; border:1px solid #cbd5e1; display:inline-flex; align-items:center; gap:6px;">
+                  <i data-lucide="satellite" class="lucide-sm" style="color:#0d9488;"></i> GIS Hub Enterprise <span class="app-version-badge" style="background:#ccfbf1; color:#0f766e; padding:1px 6px; border-radius:6px; font-size:10.5px;">{{APP_VERSION}}</span>
                 </span>
               </div>
 
-              <!-- Main Heading -->
-              <h2 class="royal-page-header-title" style="margin:0; font-size:18.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px; letter-spacing:-0.2px;">
-                <i data-lucide="layers" class="lucide-sm" style="color:#059669;"></i> Trung Tâm Điều Hành Chuỗi Trang Trại
-              </h2>
-              <p class="royal-page-header-desc" style="margin:4px 0 0 0; font-size:12.5px; color:#64748b; line-height:1.5;">
-                Giám sát không gian GIS đa giác, định danh tài sản nông hộ, truy xuất nguồn gốc NFC và phân tích rủi ro vận hành thời gian thực.
-              </p>
+              <!-- Main Heading with Icon Box -->
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+                <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, #ecfdf5, #d1fae5); border:1px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669; flex-shrink:0; box-shadow:0 2px 6px rgba(5,150,105,0.12);">
+                  <i data-lucide="layers" class="lucide-md"></i>
+                </div>
+                <div>
+                  <h2 class="royal-page-header-title" style="margin:0; font-size:20px; font-weight:800; color:#0f172a; letter-spacing:-0.02em; line-height:1.25;">
+                    Trung Tâm Điều Hành Chuỗi Trang Trại
+                  </h2>
+                  <p class="royal-page-header-desc" style="margin:3px 0 0 0; font-size:13px; color:#475569; font-weight:500; line-height:1.5;">
+                    Giám sát không gian GIS đa giác · Định danh cây trồng NFC · Phân tích rủi ro &amp; khí hậu vận hành thời gian thực.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <!-- Right Column: Live Digital Clock & Control Actions -->
-            <div class="dashboard-header-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="dashboard-header-controls" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
               
               <!-- Live Telemetry Digital Clock Card -->
-              <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:10px; padding:6px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
-                <div style="color:#059669; font-size:16px;">
+              <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:8px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                <div style="width:34px; height:34px; border-radius:8px; background:#f0fdf4; border:1px solid #bbf7d0; display:flex; align-items:center; justify-content:center; color:#16a34a;">
                   <i data-lucide="clock" class="lucide-sm"></i>
                 </div>
                 <div>
-                  <div id="dashboard-live-clock" style="font-size:12.5px; font-weight:800; color:#0f172a; font-family:'Segoe UI', Inter, sans-serif; white-space:nowrap;">
+                  <div id="dashboard-live-clock" style="font-size:13px; font-weight:800; color:#0f172a; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; white-space:nowrap;">
                     Thời gian thực
                   </div>
-                  <div style="font-size:10px; font-weight:700; color:#059669;">
-                    Trạm Vệ Tinh Trực Tuyến 24/7
+                  <div style="font-size:11px; font-weight:700; color:#059669; display:flex; align-items:center; gap:4px;">
+                    <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span> Trực tuyến vệ tinh 24/7
                   </div>
                 </div>
               </div>
 
               <!-- Refresh Data Button -->
-              <button onclick="loadDashboard()" class="btn btn-primary" style="background:linear-gradient(135deg, #064e3b, #047857); color:#ffffff; border:none; padding:8px 16px; border-radius:10px; font-weight:700; font-size:12.5px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(4,120,87,0.25); cursor:pointer; height:38px;">
+              <button onclick="loadDashboard()" class="btn btn-primary" style="background:linear-gradient(135deg, #059669, #047857); color:#ffffff; border:none; padding:10px 18px; border-radius:12px; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:7px; box-shadow:0 3px 10px rgba(4,120,87,0.22); cursor:pointer; height:42px; transition:all 0.2s ease;">
                 <i data-lucide="refresh-cw" class="lucide-sm"></i> Làm mới dữ liệu
               </button>
 
@@ -58,50 +65,110 @@
         <!-- TẦNG 1: 4 THẺ METRIC TILES TỐI GIẢN CHUẨN STRIPE / LINEAR -->
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
           <!-- 1. Số Nông Hộ -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Nông Hộ Liên Kết</span>
-              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Hồ sơ</span>
+          <div class="enterprise-stat-tile">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:#eff6ff; border:1px solid #dbeafe; display:flex; align-items:center; justify-content:center; color:#2563eb;">
+                  <i data-lucide="users" class="lucide-sm"></i>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Nông Hộ Liên Kết</div>
+                  <div style="font-size:11px; color:#64748b; font-weight:600;">Hồ sơ thành viên chuỗi</div>
+                </div>
+              </div>
+              <span style="background:#eff6ff; color:#1d4ed8; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #bfdbfe; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="check-check" class="lucide-xs"></i> Đã duyệt
+              </span>
             </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farmers">—</div>
-            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i data-lucide="check-circle-2" class="lucide-sm" style="font-size:11px;"></i> 100% hồ sơ đã duyệt &amp; kích hoạt
+
+            <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 12px 0;">
+              <span id="stat-farmers" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
+              <span style="font-size:13px; font-weight:700; color:#64748b;">chủ hộ</span>
+            </div>
+
+            <div style="border-top:1px solid #f1f5f9; padding-top:10px; font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="shield-check" class="lucide-sm" style="color:#059669;"></i> 100% hồ sơ đã kích hoạt &amp; liên kết
             </div>
           </div>
 
           <!-- 2. Tổng Số Trang Trại -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Tổng Số Trang Trại</span>
-              <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #a7f3d0;">GIS Hub</span>
+          <div class="enterprise-stat-tile">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669;">
+                  <i data-lucide="map-pin" class="lucide-sm"></i>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Trang Trại Trực Tuyến</div>
+                  <div style="font-size:11px; color:#64748b; font-weight:600;">Hạ tầng GIS &amp; Vùng trồng</div>
+                </div>
+              </div>
+              <span style="background:#ecfdf5; color:#047857; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="shapes" class="lucide-xs"></i> GIS Hub
+              </span>
             </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-farms">—</div>
-            <div style="font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:5px;">
-              <i data-lucide="shapes" class="lucide-sm" style="font-size:11px;"></i> 100% ranh giới đa giác CAD
+
+            <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 12px 0;">
+              <span id="stat-farms" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
+              <span style="font-size:13px; font-weight:700; color:#64748b;">trang trại</span>
+            </div>
+
+            <div style="border-top:1px solid #f1f5f9; padding-top:10px; font-size:12px; color:#059669; font-weight:600; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="layers" class="lucide-sm" style="color:#059669;"></i> 100% ranh giới đa giác &amp; định vị CAD
             </div>
           </div>
 
           <!-- 3. Loại Cây & Giống -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Chủng Loại Cây</span>
-              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Quy chuẩn</span>
+          <div class="enterprise-stat-tile">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:#fef3c7; border:1px solid #fde68a; display:flex; align-items:center; justify-content:center; color:#d97706;">
+                  <i data-lucide="sprout" class="lucide-sm"></i>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Chủng Loại Cây Trồng</div>
+                  <div style="font-size:11px; color:#64748b; font-weight:600;">Cây ăn trái &amp; Công nghiệp</div>
+                </div>
+              </div>
+              <span style="background:#fef3c7; color:#b45309; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="sparkles" class="lucide-xs"></i> Quy chuẩn
+              </span>
             </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-schemas">—</div>
-            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-schemas-sub">
-              Sầu riêng, Cà phê, Bơ...
+
+            <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 12px 0;">
+              <span id="stat-schemas" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
+              <span style="font-size:13px; font-weight:700; color:#64748b;">nhóm cây</span>
+            </div>
+
+            <div style="border-top:1px solid #f1f5f9; padding-top:10px; font-size:12px; color:#475569; font-weight:600; display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <i data-lucide="tag" class="lucide-sm" style="color:#d97706; flex-shrink:0;"></i> <span id="stat-schemas-sub" style="color:#334155; font-weight:700;">Sầu riêng, Cà phê, Bơ...</span>
             </div>
           </div>
 
           <!-- 4. Địa Bàn Chính -->
-          <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">Địa Bàn Trọng Điểm</span>
-              <span style="background:#f8fafc; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid #e2e8f0;">Khu vực</span>
+          <div class="enterprise-stat-tile">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:#f5f3ff; border:1px solid #ddd6fe; display:flex; align-items:center; justify-content:center; color:#7c3aed;">
+                  <i data-lucide="globe-2" class="lucide-sm"></i>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Địa Bàn Trọng Điểm</div>
+                  <div style="font-size:11px; color:#64748b; font-weight:600;">Khu vực phủ sóng mạng lưới</div>
+                </div>
+              </div>
+              <span style="background:#f5f3ff; color:#6d28d9; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #ddd6fe; display:inline-flex; align-items:center; gap:4px;">
+                <i data-lucide="compass" class="lucide-xs"></i> Khu vực
+              </span>
             </div>
-            <div style="font-size:30px; font-weight:800; color:#0f172a; letter-spacing:-0.03em; margin:2px 0 6px 0;" id="stat-regions">—</div>
-            <div style="font-size:12px; color:#475569; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="stat-regions-sub">
-              Bình Phước, Đắk Lắk, Lâm Đồng...
+
+            <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 12px 0;">
+              <span id="stat-regions" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
+              <span style="font-size:13px; font-weight:700; color:#64748b;">tỉnh thành</span>
+            </div>
+
+            <div style="border-top:1px solid #f1f5f9; padding-top:10px; font-size:12px; color:#475569; font-weight:600; display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <i data-lucide="navigation" class="lucide-sm" style="color:#7c3aed; flex-shrink:0;"></i> <span id="stat-regions-sub" style="color:#334155; font-weight:700;">Bình Phước, Đắk Lắk, Lâm Đồng...</span>
             </div>
           </div>
         </div>
