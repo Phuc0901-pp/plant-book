@@ -66,22 +66,17 @@
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
           <!-- 1. Số Nông Hộ -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:#eff6ff; border:1px solid #dbeafe; display:flex; align-items:center; justify-content:center; color:#2563eb;">
-                  <i data-lucide="users" class="lucide-sm"></i>
-                </div>
-                <div>
-                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Nông Hộ Liên Kết</div>
-                  <div style="font-size:11px; color:#64748b; font-weight:600;">Hồ sơ thành viên chuỗi</div>
-                </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#eff6ff; border:1px solid #dbeafe; display:flex; align-items:center; justify-content:center; color:#2563eb;">
+                <i data-lucide="users" class="lucide-sm"></i>
               </div>
               <span style="background:#eff6ff; color:#1d4ed8; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #bfdbfe; display:inline-flex; align-items:center; gap:4px;">
                 <i data-lucide="check-check" class="lucide-xs"></i> Đã duyệt
               </span>
             </div>
-
-            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+            <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Nông Hộ Liên Kết</div>
+            <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:12px;">Hồ sơ thành viên chuỗi</div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
               <span id="stat-farmers" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
               <span style="font-size:13px; font-weight:700; color:#64748b;">chủ hộ</span>
             </div>
@@ -89,22 +84,17 @@
 
           <!-- 2. Tổng Số Trang Trại -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669;">
-                  <i data-lucide="map-pin" class="lucide-sm"></i>
-                </div>
-                <div>
-                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Trang Trại Trực Tuyến</div>
-                  <div style="font-size:11px; color:#64748b; font-weight:600;">Hạ tầng GIS &amp; Vùng trồng</div>
-                </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#ecfdf5; border:1px solid #a7f3d0; display:flex; align-items:center; justify-content:center; color:#059669;">
+                <i data-lucide="map-pin" class="lucide-sm"></i>
               </div>
               <span style="background:#ecfdf5; color:#047857; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:4px;">
                 <i data-lucide="shapes" class="lucide-xs"></i> GIS Hub
               </span>
             </div>
-
-            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+            <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Trang Trại Trực Tuyến</div>
+            <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:12px;">Hạ tầng GIS &amp; Vùng trồng</div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
               <span id="stat-farms" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
               <span style="font-size:13px; font-weight:700; color:#64748b;">trang trại</span>
             </div>
@@ -112,22 +102,17 @@
 
           <!-- 3. Loại Cây & Giống -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:#fef3c7; border:1px solid #fde68a; display:flex; align-items:center; justify-content:center; color:#d97706;">
-                  <i data-lucide="sprout" class="lucide-sm"></i>
-                </div>
-                <div>
-                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Chủng Loại Cây Trồng</div>
-                  <div style="font-size:11px; color:#64748b; font-weight:600;">Cây ăn trái &amp; Công nghiệp</div>
-                </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#fef3c7; border:1px solid #fde68a; display:flex; align-items:center; justify-content:center; color:#d97706;">
+                <i data-lucide="sprout" class="lucide-sm"></i>
               </div>
               <span style="background:#fef3c7; color:#b45309; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:4px;">
                 <i data-lucide="sparkles" class="lucide-xs"></i> Quy chuẩn
               </span>
             </div>
-
-            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+            <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Chủng Loại Cây Trồng</div>
+            <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:12px;">Cây ăn trái &amp; Công nghiệp</div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
               <span id="stat-schemas" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
               <span style="font-size:13px; font-weight:700; color:#64748b;">nhóm cây</span>
             </div>
@@ -135,22 +120,17 @@
 
           <!-- 4. Địa Bàn Chính -->
           <div class="enterprise-stat-tile" style="padding:18px 20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:#f5f3ff; border:1px solid #ddd6fe; display:flex; align-items:center; justify-content:center; color:#7c3aed;">
-                  <i data-lucide="globe-2" class="lucide-sm"></i>
-                </div>
-                <div>
-                  <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Địa Bàn Trọng Điểm</div>
-                  <div style="font-size:11px; color:#64748b; font-weight:600;">Khu vực phủ sóng mạng lưới</div>
-                </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="width:38px; height:38px; border-radius:10px; background:#f5f3ff; border:1px solid #ddd6fe; display:flex; align-items:center; justify-content:center; color:#7c3aed;">
+                <i data-lucide="globe-2" class="lucide-sm"></i>
               </div>
               <span style="background:#f5f3ff; color:#6d28d9; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid #ddd6fe; display:inline-flex; align-items:center; gap:4px;">
                 <i data-lucide="compass" class="lucide-xs"></i> Khu vực
               </span>
             </div>
-
-            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+            <div style="font-size:13.5px; font-weight:800; color:#1e293b; letter-spacing:-0.01em; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Địa Bàn Trọng Điểm</div>
+            <div style="font-size:11px; color:#64748b; font-weight:600; margin-bottom:12px;">Khu vực phủ sóng mạng lưới</div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
               <span id="stat-regions" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
               <span style="font-size:13px; font-weight:700; color:#64748b;">tỉnh thành</span>
             </div>
