@@ -59,7 +59,7 @@ async function loadPlants() {
               <div>
                 <div style="font-size:15px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
                   ${esc(group.farm_name)}
-                  ${group.owner_name !== '—' ? `<span style="background:rgba(255,255,255,0.15); color:#e2e8f0; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">👤 ${esc(group.owner_name)}</span>` : ''}
+                  ${group.owner_name !== '—' ? `<span style="background:rgba(255,255,255,0.15); color:#e2e8f0; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="user" class="lucide-sm"></i> ${esc(group.owner_name)}</span>` : ''}
                 </div>
                 <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Tổng quy mô: <strong>${group.plants.length} cây trồng</strong></div>
               </div>
@@ -67,9 +67,9 @@ async function loadPlants() {
 
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
               <div style="display:flex; gap:6px; font-size:11px; font-weight:700;">
-                <span style="background:#ecfdf5; color:#047857; padding:3px 10px; border-radius:12px;">🟢 Tốt: ${totHealthy}</span>
-                ${totWatch > 0 ? `<span style="background:#fffbeb; color:#b45309; padding:3px 10px; border-radius:12px;">🟡 Cần chú ý: ${totWatch}</span>` : ''}
-                ${totSick > 0 ? `<span style="background:#fef2f2; color:#b91c1c; padding:3px 10px; border-radius:12px;">🔴 Bệnh: ${totSick}</span>` : ''}
+                <span style="background:#ecfdf5; color:#047857; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle-2" class="lucide-sm"></i> Tốt: ${totHealthy}</span>
+                ${totWatch > 0 ? `<span style="background:#fffbeb; color:#b45309; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Cần chú ý: ${totWatch}</span>` : ''}
+                ${totSick > 0 ? `<span style="background:#fef2f2; color:#b91c1c; padding:3px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="shield-alert" class="lucide-sm"></i> Bệnh: ${totSick}</span>` : ''}
               </div>
               <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openPlantModal(null, ${group.farm_id || 'null'})" style="font-size:12px; padding:5px 12px;">
                 <i data-lucide="plus" class="lucide-sm"></i> Thêm cây
@@ -138,6 +138,7 @@ async function loadPlants() {
     });
 
     container.innerHTML = html;
+    if (window.lucide) window.lucide.createIcons();
   } catch (err) {
     toast('Lỗi tải danh sách cây: ' + err.message, 'error');
   }
@@ -247,6 +248,7 @@ function togglePlantCreateMode(mode) {
     if (labelRange) { labelRange.style.background = '#ffffff'; labelRange.style.borderColor = '#cbd5e1'; labelRange.style.color = '#334155'; }
     if (saveText) saveText.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu cây';
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 window.togglePlantCreateMode = togglePlantCreateMode;
 
@@ -263,20 +265,23 @@ function updateRangePreview() {
   const end = parseInt(rawEnd, 10);
 
   if (isNaN(start) || isNaN(end)) {
-    if (previewEl) previewEl.innerHTML = '🔢 Nhập số bắt đầu và số kết thúc để xem trước danh sách cây.';
+    if (previewEl) previewEl.innerHTML = '<i data-lucide="hash" class="lucide-sm"></i> Nhập số bắt đầu và số kết thúc để xem trước danh sách cây.';
     if (saveText) saveText.innerHTML = '<i data-lucide="layers" class="lucide-sm"></i> Tạo cây hàng loạt';
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
   if (start > end) {
-    if (previewEl) previewEl.innerHTML = '<span style="color:#dc2626; font-weight:800;">⚠️ Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!</span>';
+    if (previewEl) previewEl.innerHTML = '<span style="color:#dc2626; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc!</span>';
     if (saveText) saveText.innerHTML = '<i data-lucide="layers" class="lucide-sm"></i> Tạo cây hàng loạt';
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
   const count = end - start + 1;
   if (count > 500) {
-    if (previewEl) previewEl.innerHTML = `<span style="color:#dc2626; font-weight:800;">⚠️ Số lượng ${count} cây vượt quá giới hạn 500 cây mỗi lần!</span>`;
+    if (previewEl) previewEl.innerHTML = `<span style="color:#dc2626; font-weight:800;"><i data-lucide="alert-triangle" class="lucide-sm"></i> Số lượng ${count} cây vượt quá giới hạn 500 cây mỗi lần!</span>`;
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
@@ -287,13 +292,14 @@ function updateRangePreview() {
   const lastCode = `${prefix}${formatNum(end)}`;
   const secondCode = count > 2 ? `${prefix}${formatNum(start + 1)}` : '';
 
-  let previewStr = `✨ Sẽ tạo <strong>${count} cây</strong>: <code>${esc(firstCode)}</code>`;
+  let previewStr = `<i data-lucide="sparkles" class="lucide-sm" style="color:#059669;"></i> Sẽ tạo <strong>${count} cây</strong>: <code>${esc(firstCode)}</code>`;
   if (secondCode) previewStr += `, <code>${esc(secondCode)}</code>`;
   if (count > 3) previewStr += `, ...`;
   if (count > 1) previewStr += `, <code>${esc(lastCode)}</code>`;
 
   if (previewEl) previewEl.innerHTML = previewStr;
   if (saveText) saveText.innerHTML = `<i data-lucide="layers" class="lucide-sm"></i> Tạo ${count} cây hàng loạt`;
+  if (window.lucide) window.lucide.createIcons();
 }
 window.updateRangePreview = updateRangePreview;
 
@@ -421,14 +427,17 @@ async function openPlantModal(id = null, syncUrl = true) {
       }
       if (healthPill) {
         const hs = plant.health_status || 'Tốt';
-        let bg = '#ecfdf5', col = '#047857', dot = '🟢';
-        if (hs === 'Cần chú ý') { bg = '#fffbeb'; col = '#b45309'; dot = '🟡'; }
-        else if (hs === 'Bệnh') { bg = '#fef2f2'; col = '#b91c1c'; dot = '🔴'; }
-        else if (hs === 'Bình thường') { bg = '#f1f5f9'; col = '#475569'; dot = '⚪'; }
+        let bg = '#ecfdf5', col = '#047857', dot = '<i data-lucide="check-circle-2" class="lucide-sm"></i>';
+        if (hs === 'Cần chú ý') { bg = '#fffbeb'; col = '#b45309'; dot = '<i data-lucide="alert-triangle" class="lucide-sm"></i>'; }
+        else if (hs === 'Bệnh') { bg = '#fef2f2'; col = '#b91c1c'; dot = '<i data-lucide="shield-alert" class="lucide-sm"></i>'; }
+        else if (hs === 'Bình thường') { bg = '#f1f5f9'; col = '#475569'; dot = '<i data-lucide="circle-dot" class="lucide-sm"></i>'; }
         healthPill.style.background = bg;
         healthPill.style.color = col;
         healthPill.innerHTML = `${dot} ${hs}`;
-        healthPill.style.display = 'inline-block';
+        healthPill.style.display = 'inline-flex';
+        healthPill.style.alignItems = 'center';
+        healthPill.style.gap = '4px';
+        if (window.lucide) window.lucide.createIcons();
       }
       if (subVariety) {
         const typeStr = plant.plant_type || 'Cây trồng';
@@ -697,12 +706,16 @@ async function savePlant() {
     const healthPill = document.getElementById('plant-modal-health-pill');
     if (healthPill) {
       const hs = plant.health_status || 'Tốt';
-      let bg = '#ecfdf5', col = '#047857', dot = '🟢';
-      if (hs === 'Cần chú ý') { bg = '#fffbeb'; col = '#b45309'; dot = '🟡'; }
-      else if (hs === 'Bệnh') { bg = '#fef2f2'; col = '#b91c1c'; dot = '🔴'; }
-      else if (hs === 'Bình thường') { bg = '#f1f5f9'; col = '#475569'; dot = '⚪'; }
+      let bg = '#ecfdf5', col = '#047857', dot = '<i data-lucide="check-circle-2" class="lucide-sm"></i>';
+      if (hs === 'Cần chú ý') { bg = '#fffbeb'; col = '#b45309'; dot = '<i data-lucide="alert-triangle" class="lucide-sm"></i>'; }
+      else if (hs === 'Bệnh') { bg = '#fef2f2'; col = '#b91c1c'; dot = '<i data-lucide="shield-alert" class="lucide-sm"></i>'; }
+      else if (hs === 'Bình thường') { bg = '#f1f5f9'; col = '#475569'; dot = '<i data-lucide="circle-dot" class="lucide-sm"></i>'; }
       healthPill.style.background = bg; healthPill.style.color = col;
-      healthPill.innerHTML = `${dot} ${hs}`; healthPill.style.display = 'inline-block';
+      healthPill.innerHTML = `${dot} ${hs}`;
+      healthPill.style.display = 'inline-flex';
+      healthPill.style.alignItems = 'center';
+      healthPill.style.gap = '4px';
+      if (window.lucide) window.lucide.createIcons();
     }
     const subVariety = document.getElementById('plant-modal-sub-variety');
     if (subVariety) {
@@ -989,6 +1002,29 @@ async function refreshAdminNfcData() {
 }
 window.refreshAdminNfcData = refreshAdminNfcData;
 
+async function syncAdminNfcFromPlants(farmId = null) {
+  const targetFarmId = farmId || _currentInvFarmId || getActiveAdminFarmId();
+  if (!targetFarmId) {
+    toast('Vui lòng chọn Trang trại trước khi đồng bộ!', 'error');
+    return;
+  }
+  try {
+    const res = await api(`/plants/farms/${targetFarmId}/nfc-inventory/sync`, {
+      method: 'POST'
+    });
+    playAdminSuccessDing();
+    toast(res.message || 'Đã đồng bộ thẻ NFC từ danh sách cây trồng vào kho thẻ thành công!', 'success');
+    await loadAdminNfcPageData(targetFarmId);
+    const modal = document.getElementById('nfc-inventory-modal');
+    if (modal && modal.style.display !== 'none') {
+      await loadNfcInventoryData(targetFarmId);
+    }
+  } catch (err) {
+    toast('Lỗi đồng bộ kho thẻ NFC: ' + err.message, 'error');
+  }
+}
+window.syncAdminNfcFromPlants = syncAdminNfcFromPlants;
+
 let _currentAdminNfcPage = 1;
 const ADMIN_NFC_PAGE_SIZE = 10;
 let _filteredAdminNfcTags = [];
@@ -1010,8 +1046,8 @@ async function loadAdminNfcPageData(farmId) {
     _currentAdminNfcPage = 1;
 
     const total = res.stats?.total ?? _nfcInventoryCache.length;
-    const assigned = res.stats?.assigned ?? _nfcInventoryCache.filter(t => t.status === 'assigned').length;
-    const unassigned = res.stats?.unassigned ?? _nfcInventoryCache.filter(t => t.status !== 'assigned').length;
+    const assigned = res.stats?.assigned ?? _nfcInventoryCache.filter(t => t.status === 'assigned' || t.plant_id != null).length;
+    const unassigned = res.stats?.unassigned ?? _nfcInventoryCache.filter(t => t.status !== 'assigned' && t.plant_id == null).length;
 
     const totalEl = document.getElementById('db-nfc-total-count');
     const assignedEl = document.getElementById('db-nfc-assigned-count');
@@ -1096,11 +1132,12 @@ function renderAdminNfcPageTable(tags) {
         <td colspan="6" style="text-align:center; padding:46px 20px; color:#94a3b8;">
           <i data-lucide="package" class="lucide-sm" style="font-size:36px; margin-bottom:12px; display:inline-block; color:#cbd5e1;"></i>
           <p style="margin:0 0 6px 0; font-weight:800; font-size:14.5px; color:#475569;">Kho thẻ NFC của trang trại này đang trống (0 thẻ).</p>
-          <small style="color:#94a3b8;">Hãy bật "Quét thẻ liên tục" hoặc dùng đầu đọc USB / nhập mã UID ở trên để nạp thẻ vào kho.</small>
+          <small style="color:#94a3b8;">Hãy bật "Quét thẻ liên tục", bấm "Đồng bộ từ Cây" hoặc nhập mã UID ở trên để nạp thẻ vào kho.</small>
         </td>
       </tr>`;
     if (pagInfo) pagInfo.textContent = 'Hiển thị 0 thẻ';
     if (pagBtns) pagBtns.innerHTML = '';
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
@@ -1115,7 +1152,7 @@ function renderAdminNfcPageTable(tags) {
   const pageItems = _filteredAdminNfcTags.slice(startIdx, endIdx);
 
   tbody.innerHTML = pageItems.map((t, idx) => {
-    const isAssigned = t.status === 'assigned';
+    const isAssigned = t.status === 'assigned' || t.plant_id != null;
     const statusPill = isAssigned
       ? `<span style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="link" class="lucide-sm"></i> Đã gán cây</span>`
       : `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check" class="lucide-sm"></i> Còn trống (Sẵn sàng)</span>`;
@@ -1133,8 +1170,8 @@ function renderAdminNfcPageTable(tags) {
         <div style="display:flex; flex-direction:column; gap:4px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-              <span style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-weight:800; font-size:12.5px; padding:2px 8px; border-radius:6px;">
-                🌳 ${esc(treeCodeText)}
+              <span style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-weight:800; font-size:12.5px; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i> ${esc(treeCodeText)}
               </span>
               <span style="font-size:12px; color:#475569; font-weight:600;">${esc(plantTypeDesc)}</span>
             </div>
@@ -1166,7 +1203,8 @@ function renderAdminNfcPageTable(tags) {
       `;
     }
 
-    const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
+    const timeVal = t.tagged_at || t.assigned_at || t.scanned_at || t.created_at;
+    const timeStr = timeVal ? new Date(timeVal).toLocaleString('vi-VN') : '—';
     const rowStt = startIdx + idx + 1;
 
     return `
@@ -1199,7 +1237,7 @@ function renderAdminNfcPageTable(tags) {
 
   if (pagBtns) {
     let btnsHtml = '';
-    btnsHtml += `<button onclick="changeAdminNfcPage(${_currentAdminNfcPage - 1})" ${_currentAdminNfcPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">◄ Trang trước</button>`;
+    btnsHtml += `<button onclick="changeAdminNfcPage(${_currentAdminNfcPage - 1})" ${_currentAdminNfcPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="chevron-left" class="lucide-sm"></i> Trang trước</button>`;
 
     let startPage = Math.max(1, _currentAdminNfcPage - 2);
     let endPage = Math.min(totalPages, _currentAdminNfcPage + 2);
@@ -1219,10 +1257,11 @@ function renderAdminNfcPageTable(tags) {
       btnsHtml += `<button onclick="changeAdminNfcPage(${totalPages})" style="padding:6px 10px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">${totalPages}</button>`;
     }
 
-    btnsHtml += `<button onclick="changeAdminNfcPage(${_currentAdminNfcPage + 1})" ${_currentAdminNfcPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">Trang sau ►</button>`;
+    btnsHtml += `<button onclick="changeAdminNfcPage(${_currentAdminNfcPage + 1})" ${_currentAdminNfcPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">Trang sau <i data-lucide="chevron-right" class="lucide-sm"></i></button>`;
 
     pagBtns.innerHTML = btnsHtml;
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function changeAdminNfcPage(page) {
@@ -1287,6 +1326,7 @@ function updateAdminNfcSortIcons() {
       iconEl.innerHTML = '<i data-lucide="arrow-up-down" class="lucide-sm"></i>';
     }
   });
+  if (window.lucide) window.lucide.createIcons();
 }
 window.updateAdminNfcSortIcons = updateAdminNfcSortIcons;
 
@@ -1299,13 +1339,13 @@ function filterAdminNfcTable() {
 
   // 1. Lọc theo trạng thái & GPS
   if (statusFilter === 'unassigned') {
-    list = list.filter(t => t.status !== 'assigned');
+    list = list.filter(t => t.status !== 'assigned' && t.plant_id == null);
   } else if (statusFilter === 'assigned') {
-    list = list.filter(t => t.status === 'assigned');
+    list = list.filter(t => t.status === 'assigned' || t.plant_id != null);
   } else if (statusFilter === 'has_gps') {
-    list = list.filter(t => t.status === 'assigned' && t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0));
+    list = list.filter(t => (t.status === 'assigned' || t.plant_id != null) && t.latitude != null && t.longitude != null && !isNaN(Number(t.latitude)) && !isNaN(Number(t.longitude)) && (Number(t.latitude) !== 0 || Number(t.longitude) !== 0));
   } else if (statusFilter === 'no_gps') {
-    list = list.filter(t => t.status === 'assigned' && (t.latitude == null || t.longitude == null || isNaN(Number(t.latitude)) || isNaN(Number(t.longitude)) || (Number(t.latitude) === 0 && Number(t.longitude) === 0)));
+    list = list.filter(t => (t.status === 'assigned' || t.plant_id != null) && (t.latitude == null || t.longitude == null || isNaN(Number(t.latitude)) || isNaN(Number(t.longitude)) || (Number(t.latitude) === 0 && Number(t.longitude) === 0)));
   }
 
   // 2. Lọc theo từ khóa tìm kiếm (UID, số cây, loại cây, giống cây, vị trí, GPS)
@@ -1330,8 +1370,8 @@ function filterAdminNfcTable() {
     } else if (_adminNfcSortField === 'uid') {
       cmp = String(a.nfc_uid || '').localeCompare(String(b.nfc_uid || ''));
     } else if (_adminNfcSortField === 'status') {
-      const aVal = a.status === 'assigned' ? 1 : 0;
-      const bVal = b.status === 'assigned' ? 1 : 0;
+      const aVal = (a.status === 'assigned' || a.plant_id != null) ? 1 : 0;
+      const bVal = (b.status === 'assigned' || b.plant_id != null) ? 1 : 0;
       cmp = aVal - bVal;
     } else if (_adminNfcSortField === 'tree') {
       const aTree = a.tree_code != null ? a.tree_code : (a.plant_id || '');
@@ -1344,8 +1384,10 @@ function filterAdminNfcTable() {
         cmp = String(aTree).localeCompare(String(bTree));
       }
     } else if (_adminNfcSortField === 'time') {
-      const aTime = a.scanned_at ? new Date(a.scanned_at).getTime() : (a.id || 0);
-      const bTime = b.scanned_at ? new Date(b.scanned_at).getTime() : (b.id || 0);
+      const aRaw = a.tagged_at || a.assigned_at || a.scanned_at || a.created_at;
+      const bRaw = b.tagged_at || b.assigned_at || b.scanned_at || b.created_at;
+      const aTime = aRaw ? new Date(aRaw).getTime() : (a.id || 0);
+      const bTime = bRaw ? new Date(bRaw).getTime() : (b.id || 0);
       cmp = aTime - bTime;
     }
     return _adminNfcSortOrder === 'asc' ? cmp : -cmp;
@@ -1666,8 +1708,8 @@ function renderNfcInventoryTable(tags) {
 
       plantInfo = `
         <div style="display:flex; flex-direction:column; gap:2px;">
-          <div>
-            <strong style="color:#0f172a; font-size:12.5px;">🌳 ${esc(treeCodeText)}</strong> 
+          <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+            <strong style="color:#0f172a; font-size:12.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-sm" style="color:#059669;"></i> ${esc(treeCodeText)}</strong> 
             <span style="font-size:11px; color:#64748b; font-weight:600;">${esc(plantTypeDesc)}</span>
           </div>
           ${hasGps ? `
@@ -1689,7 +1731,8 @@ function renderNfcInventoryTable(tags) {
       `;
     }
 
-    const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleString('vi-VN') : '—';
+    const rawTime = t.tagged_at || t.assigned_at || t.scanned_at || t.created_at;
+    const timeStr = rawTime ? new Date(rawTime).toLocaleString('vi-VN') : '—';
     const rowStt = startIdx + idx + 1;
 
     return `
@@ -1721,7 +1764,7 @@ function renderNfcInventoryTable(tags) {
 
   if (pagBtns) {
     let btnsHtml = '';
-    btnsHtml += `<button onclick="changeModalNfcPage(${_currentModalNfcPage - 1})" ${_currentModalNfcPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 10px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">◄</button>`;
+    btnsHtml += `<button onclick="changeModalNfcPage(${_currentModalNfcPage - 1})" ${_currentModalNfcPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 10px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;"><i data-lucide="chevron-left" class="lucide-sm"></i></button>`;
 
     let startPage = Math.max(1, _currentModalNfcPage - 2);
     let endPage = Math.min(totalPages, _currentModalNfcPage + 2);
@@ -1741,10 +1784,11 @@ function renderNfcInventoryTable(tags) {
       btnsHtml += `<button onclick="changeModalNfcPage(${totalPages})" style="padding:5px 8px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">${totalPages}</button>`;
     }
 
-    btnsHtml += `<button onclick="changeModalNfcPage(${_currentModalNfcPage + 1})" ${_currentModalNfcPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 10px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">►</button>`;
+    btnsHtml += `<button onclick="changeModalNfcPage(${_currentModalNfcPage + 1})" ${_currentModalNfcPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} style="padding:5px 10px; font-size:12px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;"><i data-lucide="chevron-right" class="lucide-sm"></i></button>`;
 
     pagBtns.innerHTML = btnsHtml;
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function changeModalNfcPage(page) {
@@ -2346,7 +2390,7 @@ function renderNfcImportPreview(parsed) {
     tbody.innerHTML = previewRows.map((it, idx) => {
       const hasGps = it.latitude && it.longitude;
       const gpsText = hasGps ? `${it.latitude}, ${it.longitude}` : '<span style="color:#94a3b8;">—</span>';
-      const treeText = it.tree_code ? `<span style="background:#ecfdf5; color:#065f46; font-weight:800; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0;">🌳 Cây #${esc(it.tree_code)}</span>` : '<span style="color:#94a3b8;">— Còn trống —</span>';
+      const treeText = it.tree_code ? `<span style="background:#ecfdf5; color:#065f46; font-weight:800; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trees" class="lucide-sm"></i> Cây #${esc(it.tree_code)}</span>` : '<span style="color:#94a3b8;">— Còn trống —</span>';
       const locText = it.location ? esc(it.location) : '<span style="color:#94a3b8;">—</span>';
 
       return `
@@ -2377,6 +2421,7 @@ function renderNfcImportPreview(parsed) {
   }
 
   previewSec.style.display = 'flex';
+  if (window.lucide) window.lucide.createIcons();
 }
 
 /**
@@ -2422,7 +2467,7 @@ async function submitAdminNfcImport() {
     playAdminSuccessDing();
     closeAdminNfcImportModal();
 
-    toast(res.message || `🎉 Import thành công ${res.added_count || 0} thẻ NFC vào kho!`, 'success');
+    toast(res.message || `Import thành công ${res.added_count || 0} thẻ NFC vào kho!`, 'success');
     
     // Refresh page data
     _currentInvFarmId = targetFarmId;
@@ -2483,6 +2528,9 @@ function closeFieldTaggingModal() {
   const modal = document.getElementById('field-tagging-modal');
   if (modal) modal.style.display = 'none';
   if (typeof loadPlants === 'function') loadPlants();
+  if (_fieldTagFarmId && typeof loadAdminNfcPageData === 'function') {
+    loadAdminNfcPageData(_fieldTagFarmId);
+  }
 }
 window.closeFieldTaggingModal = closeFieldTaggingModal;
 
@@ -2542,15 +2590,21 @@ function renderCurrentFieldTree() {
 
   if (statusPillEl) {
     if (p.nfc_uid) {
-      statusPillEl.textContent = '✅ ĐÃ GÁN THẺ';
+      statusPillEl.innerHTML = '<i data-lucide="check-circle-2" class="lucide-sm"></i> ĐÃ GÁN THẺ';
       statusPillEl.style.background = '#ecfdf5';
       statusPillEl.style.color = '#047857';
       statusPillEl.style.border = '1px solid #a7f3d0';
+      statusPillEl.style.display = 'inline-flex';
+      statusPillEl.style.alignItems = 'center';
+      statusPillEl.style.gap = '4px';
     } else {
-      statusPillEl.textContent = '⚪ CHƯA GÁN';
+      statusPillEl.innerHTML = '<i data-lucide="circle-dashed" class="lucide-sm"></i> CHƯA GÁN';
       statusPillEl.style.background = '#f1f5f9';
       statusPillEl.style.color = '#64748b';
       statusPillEl.style.border = '1px solid #e2e8f0';
+      statusPillEl.style.display = 'inline-flex';
+      statusPillEl.style.alignItems = 'center';
+      statusPillEl.style.gap = '4px';
     }
   }
 
@@ -2564,7 +2618,7 @@ function renderCurrentFieldTree() {
           </a>
           <button type="button" onclick="navigator.clipboard.writeText('${pubUrl}'); toast('Đã sao chép link công khai!');" style="background:#f8fafc; border:1px solid #cbd5e1; color:#475569; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" title="Sao chép link">
             <i data-lucide="copy" class="lucide-sm"></i>
-          </button>
+          </a>
         </div>
       `;
     } else {
@@ -2574,6 +2628,7 @@ function renderCurrentFieldTree() {
 
   const nextPlant = _fieldTagPlants[_fieldTagIndex + 1];
   if (nextCodeEl) nextCodeEl.textContent = nextPlant ? (nextPlant.tree_code || nextPlant.id) : 'Hết vườn';
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function prevFieldTree() {
@@ -2659,7 +2714,7 @@ async function startFieldNfcTouch() {
   if (!currentPlant) return;
 
   if (!('NDEFReader' in window)) {
-    alert('Trình duyệt này không hỗ trợ Web NFC trực tiếp.\n\n💡 Vui lòng nhập mã UID thủ công vào ô bên dưới!');
+    alert('Trình duyệt này không hỗ trợ Web NFC trực tiếp.\n\nVui lòng nhập mã UID thủ công vào ô bên dưới!');
     document.getElementById('field-tag-manual-uid')?.focus();
     return;
   }
@@ -2667,7 +2722,7 @@ async function startFieldNfcTouch() {
   try {
     const ndef = new NDEFReader();
     await ndef.scan();
-    toast('📡 Hãy chạm thẻ vào mặt sau điện thoại ngay...');
+    toast('Hãy chạm thẻ vào mặt sau điện thoại ngay...');
 
     ndef.addEventListener('reading', async ({ serialNumber }) => {
       if (!serialNumber) return;
@@ -2712,7 +2767,7 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
     });
 
     playAdminSuccessDing();
-    toast(`🎉 Đã gán thẻ ${uid} và lưu GPS cho Cây #${plant.tree_code || plant.id}!`, 'success');
+    toast(`Đã gán thẻ ${uid} và lưu GPS cho Cây #${plant.tree_code || plant.id}!`, 'success');
 
     // Attempt to write NDEF URL to NFC tag
     if (ndefInstance && res.plant?.public_url) {
@@ -2720,7 +2775,7 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
         await ndefInstance.write({
           records: [{ recordType: 'url', data: res.plant.public_url }]
         });
-        toast('📝 Đã ghi đường dẫn Public vào chip NFC thành công!', 'success');
+        toast('Đã ghi đường dẫn Public vào chip NFC thành công!', 'success');
       } catch (writeErr) {
         console.warn('NDEF write skipped/failed:', writeErr);
       }
@@ -2733,6 +2788,9 @@ async function executeFieldTagAssign(plant, uid, ndefInstance) {
     plant.public_url = res.plant?.public_url || generatePublicPlantUrl(_fieldTagFarmId, plant.id, uid);
 
     renderCurrentFieldTree();
+    if (_fieldTagFarmId && typeof loadAdminNfcPageData === 'function') {
+      loadAdminNfcPageData(_fieldTagFarmId);
+    }
 
     // Check auto advance
     const autoNext = document.getElementById('field-tag-auto-next')?.checked;

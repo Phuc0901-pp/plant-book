@@ -703,6 +703,28 @@ if ((Test-Path $plantsJsPath) -and (Test-Path $queueSvcPath)) {
 }
 
 # ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 15: TWO-WAY NFC INVENTORY SYNC & LUCIDE ICON STANDARDIZATION --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 15. TWO-WAY NFC INVENTORY RECONCILIATION & LUCIDE ICON STANDARD --" -ForegroundColor White
+$dbInitPath = Join-Path $root "backend\db\init.js"
+$adminPlantsJsPath = Join-Path $root "frontend\admin\js\plants.js"
+
+if ((Test-Path $dbInitPath) -and (Test-Path $plantsJsPath) -and (Test-Path $adminPlantsJsPath) -and (Test-Path $adminHtmlPath)) {
+    $dbInitContent = [System.IO.File]::ReadAllText($dbInitPath, [System.Text.Encoding]::UTF8)
+    $plantsRouteContent = [System.IO.File]::ReadAllText($plantsJsPath, [System.Text.Encoding]::UTF8)
+    $adminPlantsJsContent = [System.IO.File]::ReadAllText($adminPlantsJsPath, [System.Text.Encoding]::UTF8)
+    $adminHtmlContent = [System.IO.File]::ReadAllText($adminHtmlPath, [System.Text.Encoding]::UTF8)
+
+    $hasNfcInvColumns = $dbInitContent.Contains("assigned_at TIMESTAMPTZ") -and $dbInitContent.Contains("updated_at TIMESTAMPTZ") -and $dbInitContent.Contains("nfc_tags_inventory <-> plants")
+    $hasTwoWaySyncEngine = $plantsRouteContent.Contains("syncPlantNfcToInventory") -and $plantsRouteContent.Contains("reconcileFarmNfcInventory") -and $plantsRouteContent.Contains("/farms/:farmId/nfc-inventory/sync")
+    $hasAdminNfcSyncUi = $adminHtmlContent.Contains("syncAdminNfcFromPlants") -and $adminPlantsJsContent.Contains("window.syncAdminNfcFromPlants = syncAdminNfcFromPlants") -and $adminPlantsJsContent.Contains("lucide.createIcons")
+
+    Record-Test -Category "NFC Two-Way Sync" -TestName "Database Schema (assigned_at, updated_at) & Startup Two-Way NFC Inventory Backfill" -Passed $hasNfcInvColumns
+    Record-Test -Category "NFC Two-Way Sync" -TestName "Real-time Plant-to-Inventory Sync Helper & Manual Sync Endpoint (/nfc-inventory/sync)" -Passed $hasTwoWaySyncEngine
+    Record-Test -Category "NFC Two-Way Sync" -TestName "Admin NFC Warehouse UI Sync Button & Lucide Icon Standardization (data-lucide)" -Passed $hasAdminNfcSyncUi
+}
+
+# ══════════════════════════════════════════════════════════════════════════
 # -- FINAL QA / QC SUMMARY REPORT --
 # ══════════════════════════════════════════════════════════════════════════
 Write-Host "`n==========================================================================" -ForegroundColor Cyan

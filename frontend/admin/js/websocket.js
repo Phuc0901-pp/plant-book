@@ -200,6 +200,18 @@ function handleRealtimeEvent(msg) {
       } else {
         loadDashboard();
       }
+    } else if (activeSection && activeSection.id === 'page-database') {
+      const nfcPane = document.getElementById('db-pane-nfc');
+      if (nfcPane && nfcPane.style.display !== 'none' && typeof loadAdminNfcPageData === 'function') {
+        const currentFarm = document.getElementById('db-nfc-filter-farm')?.value;
+        if (currentFarm) loadAdminNfcPageData(parseInt(currentFarm));
+      }
+    }
+
+    const nfcModal = document.getElementById('nfc-inventory-modal');
+    if (nfcModal && nfcModal.style.display === 'flex' && typeof loadNfcInventoryData === 'function') {
+      const modalFarm = document.getElementById('nfc-inv-farm-select')?.value;
+      if (modalFarm) loadNfcInventoryData(parseInt(modalFarm));
     }
   }
 

@@ -553,21 +553,27 @@ async function initDB() {
         plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL,
         last_counter INT DEFAULT 0,
         hmac_signature VARCHAR(128) NULL,
+        signature VARCHAR(128) NULL,
         lock_password_hash VARCHAR(128) NULL,
         last_scanned_lat NUMERIC NULL,
         last_scanned_lng NUMERIC NULL,
         last_scanned_at TIMESTAMPTZ NULL,
         scanned_at TIMESTAMPTZ DEFAULT NOW(),
+        assigned_at TIMESTAMPTZ DEFAULT NOW(),
         tagged_at TIMESTAMPTZ NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
         created_by INTEGER REFERENCES users(id)
       );
 
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_counter INT DEFAULT 0;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS hmac_signature VARCHAR(128) NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS signature VARCHAR(128) NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS lock_password_hash VARCHAR(128) NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lat NUMERIC NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lng NUMERIC NULL;
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_at TIMESTAMPTZ NULL;
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS geofence_radius_meters NUMERIC DEFAULT 8.0;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS geofence_radius_meters NUMERIC DEFAULT 8.0;
@@ -819,6 +825,63 @@ async function initDB() {
       `);
     } catch (migErr) {
       console.warn('Cảnh báo khởi tạo cột Gallagher 8.30 / ISO 27001:', migErr.message);
+    }
+
+    // Đồng bộ 2 chiều tự động giữa bảng plants và kho nfc_tags_inventory khi khởi động
+    try {
+      await client.query(`
+        UPDATE nfc_tags_inventory n
+        SET farm_id = COALESCE(p.farm_id, n.farm_id),
+            plant_id = p.id,
+            status = 'assigned',
+            tagged_at = COALESCE(n.tagged_at, p.updated_at, NOW()),
+            assigned_at = COALESCE(n.assigned_at, p.updated_at, NOW()),
+            last_scanned_lat = COALESCE(p.latitude, n.last_scanned_lat),
+            last_scanned_lng = COALESCE(p.longitude, n.last_scanned_lng),
+            updated_at = NOW()
+        FROM plants p
+        WHERE p.deleted_at IS NULL
+          AND p.nfc_uid IS NOT NULL
+          AND TRIM(p.nfc_uid) != ''
+          AND (
+            UPPER(TRIM(n.nfc_uid)) = UPPER(TRIM(p.nfc_uid))
+            OR UPPER(regexp_replace(n.nfc_uid, '[^A-Za-z0-9]', '', 'g')) = UPPER(regexp_replace(p.nfc_uid, '[^A-Za-z0-9]', '', 'g'))
+          )
+          AND (n.plant_id IS DISTINCT FROM p.id OR n.farm_id IS DISTINCT FROM p.farm_id OR n.status != 'assigned');
+
+        INSERT INTO nfc_tags_inventory (nfc_uid, farm_id, plant_id, status, assigned_at, tagged_at, last_scanned_lat, last_scanned_lng, created_by)
+        SELECT DISTINCT ON (UPPER(TRIM(p.nfc_uid)))
+          UPPER(TRIM(p.nfc_uid)),
+          p.farm_id,
+          p.id,
+          'assigned',
+          COALESCE(p.updated_at, NOW()),
+          COALESCE(p.updated_at, NOW()),
+          p.latitude,
+          p.longitude,
+          p.created_by
+        FROM plants p
+        WHERE p.nfc_uid IS NOT NULL
+          AND TRIM(p.nfc_uid) != ''
+          AND p.deleted_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM nfc_tags_inventory n
+            WHERE UPPER(regexp_replace(n.nfc_uid, '[^A-Za-z0-9]', '', 'g')) = UPPER(regexp_replace(p.nfc_uid, '[^A-Za-z0-9]', '', 'g'))
+          )
+        ORDER BY UPPER(TRIM(p.nfc_uid)), p.id DESC
+        ON CONFLICT (nfc_uid) DO UPDATE
+        SET farm_id = COALESCE(EXCLUDED.farm_id, nfc_tags_inventory.farm_id),
+            plant_id = EXCLUDED.plant_id,
+            status = 'assigned',
+            assigned_at = COALESCE(nfc_tags_inventory.assigned_at, EXCLUDED.assigned_at),
+            tagged_at = COALESCE(nfc_tags_inventory.tagged_at, EXCLUDED.tagged_at),
+            last_scanned_lat = COALESCE(EXCLUDED.last_scanned_lat, nfc_tags_inventory.last_scanned_lat),
+            last_scanned_lng = COALESCE(EXCLUDED.last_scanned_lng, nfc_tags_inventory.last_scanned_lng),
+            updated_at = NOW();
+      `);
+      console.log('✅ Đã đối soát và đồng bộ 2 chiều Kho Thẻ NFC (nfc_tags_inventory <-> plants).');
+    } catch (nfcSyncErr) {
+      console.warn('Cảnh báo đồng bộ kho thẻ NFC khi khởi động:', nfcSyncErr.message);
     }
 
     await client.query('COMMIT');
