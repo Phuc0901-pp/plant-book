@@ -244,7 +244,8 @@ router.get('/clusters', async (req, res) => {
         COUNT(CASE WHEN p.health_status = 'Tốt' THEN 1 END)::int as good_count,
         COUNT(CASE WHEN p.health_status = 'Bình thường' THEN 1 END)::int as normal_count,
         COUNT(CASE WHEN p.health_status = 'Cần chú ý' THEN 1 END)::int as warning_count,
-        COUNT(CASE WHEN p.health_status = 'Bệnh' THEN 1 END)::int as sick_count
+        COUNT(CASE WHEN p.health_status = 'Bệnh' THEN 1 END)::int as sick_count,
+        COUNT(CASE WHEN p.phi_status = 'quarantine' THEN 1 END)::int as phi_quarantine_count
       FROM plants p
       WHERE p.deleted_at IS NULL
         AND p.latitude BETWEEN $2 AND $3
@@ -270,6 +271,7 @@ router.get('/clusters', async (req, res) => {
         normal_count: c.normal_count,
         warning_count: c.warning_count,
         sick_count: c.sick_count,
+        phi_quarantine_count: c.phi_quarantine_count || 0,
         dominant_health: c.sick_count > 0 ? 'Bệnh' : (c.warning_count > 0 ? 'Cần chú ý' : 'Tốt')
       }
     }));

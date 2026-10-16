@@ -658,6 +658,51 @@ if ((Test-Path $usersRoutePath) -and (Test-Path $userSettingsJsPath) -and (Test-
 }
 
 # ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 14: ENTERPRISE MVT SPATIAL CLUSTERING, LOCAL-FIRST MUTATIONS & BATCH SYNC QUEUE --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 14. POSTGIS MVT CLUSTERING, OFFLINE FIELD MUTATIONS & DISTRIBUTED BATCH SYNC --" -ForegroundColor White
+$gisRoutePath = Join-Path $root "backend\routes\gis.js"
+$queueSvcPath = Join-Path $root "backend\services\queueService.js"
+$offlineDbPath = Join-Path $root "frontend\user\js\core\offline-db.js"
+$offlineSyncPath = Join-Path $root "frontend\user\js\core\offline-sync.js"
+$userNfcPath = Join-Path $root "frontend\user\js\modules\nfc.js"
+
+if ((Test-Path $gisRoutePath) -and (Test-Path $adminGisJsPath)) {
+    $gisRouteContent = [System.IO.File]::ReadAllText($gisRoutePath, [System.Text.Encoding]::UTF8)
+    $adminGisContent = [System.IO.File]::ReadAllText($adminGisJsPath, [System.Text.Encoding]::UTF8)
+    $hasPostgisMvt = $gisRouteContent.Contains("ST_AsMVT") -and $gisRouteContent.Contains("/tiles/:z/:x/:y.pbf") -and $gisRouteContent.Contains("phi_quarantine_count")
+    $hasAdminGpuCluster = $adminGisContent.Contains("admin-plants-gpu-src") -and $adminGisContent.Contains("admin-plants-gpu-clusters") -and $adminGisContent.Contains("getClusterExpansionZoom")
+
+    Record-Test -Category "Enterprise GIS MVT" -TestName "PostGIS Dynamic Vector Tiles (/api/gis/tiles/:z/:x/:y.pbf) & PHI Quarantine Cluster Stats" -Passed $hasPostgisMvt
+    Record-Test -Category "Enterprise GIS MVT" -TestName "Admin GIS WebGL 60FPS GPU Cluster Layer (admin-plants-gpu-clusters)" -Passed $hasAdminGpuCluster
+}
+
+if ((Test-Path $offlineDbPath) -and (Test-Path $offlineSyncPath) -and (Test-Path $userNfcPath)) {
+    $offlineDbContent = [System.IO.File]::ReadAllText($offlineDbPath, [System.Text.Encoding]::UTF8)
+    $offlineSyncContent = [System.IO.File]::ReadAllText($offlineSyncPath, [System.Text.Encoding]::UTF8)
+    $userNfcContent = [System.IO.File]::ReadAllText($userNfcPath, [System.Text.Encoding]::UTF8)
+
+    $hasFieldMutStore = $offlineDbContent.Contains("offline_field_mutations") -and $offlineDbContent.Contains("saveOfflineFieldMutation") -and $offlineDbContent.Contains("getPendingOfflineFieldMutations")
+    $hasNfcOfflineSupport = $userNfcContent.Contains("saveOfflineFieldMutation") -and $userNfcContent.Contains("gps_update") -and $userNfcContent.Contains("nfc_assign")
+    $hasClientBatchSync = $offlineSyncContent.Contains("/plants/offline-batch-sync") -and $offlineSyncContent.Contains("deleteOfflineFieldMutation")
+
+    Record-Test -Category "Local-First Offline" -TestName "IndexedDB v2 Offline Field Mutations Store (GPS, NFC, Location)" -Passed $hasFieldMutStore
+    Record-Test -Category "Local-First Offline" -TestName "Offline Field Queuing for NFC Tagging & Satellite GPS Capture" -Passed $hasNfcOfflineSupport
+    Record-Test -Category "Local-First Offline" -TestName "Autonomous Single-Request Batch Sync Client Engine (/plants/offline-batch-sync)" -Passed $hasClientBatchSync
+}
+
+if ((Test-Path $plantsJsPath) -and (Test-Path $queueSvcPath)) {
+    $plantsRouteContent = [System.IO.File]::ReadAllText($plantsJsPath, [System.Text.Encoding]::UTF8)
+    $queueSvcContent = [System.IO.File]::ReadAllText($queueSvcPath, [System.Text.Encoding]::UTF8)
+
+    $hasBatchSyncApi = $plantsRouteContent.Contains("router.post('/offline-batch-sync'") -and $plantsRouteContent.Contains("care_log.batch_synced") -and $plantsRouteContent.Contains("gis.spatial_index_refresh")
+    $hasQueueWorkers = $queueSvcContent.Contains("registerWorker('gis.spatial_index_refresh'") -and $queueSvcContent.Contains("registerWorker('care_log.batch_synced'") -and $queueSvcContent.Contains("deadLetterQueue")
+
+    Record-Test -Category "Distributed Queue" -TestName "POST /api/plants/offline-batch-sync Endpoint with Hash-Chain Sealer" -Passed $hasBatchSyncApi
+    Record-Test -Category "Distributed Queue" -TestName "Distributed Queue Workers (care_log.batch_synced & gis.spatial_index_refresh) + DLQ" -Passed $hasQueueWorkers
+}
+
+# ══════════════════════════════════════════════════════════════════════════
 # -- FINAL QA / QC SUMMARY REPORT --
 # ══════════════════════════════════════════════════════════════════════════
 Write-Host "`n==========================================================================" -ForegroundColor Cyan

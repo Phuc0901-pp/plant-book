@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    core/offline-sync.js — Autonomous Offline Synchronization Engine
@@ -6,7 +6,13 @@
 
 import { api, token } from './api.js';
 import { toast } from './utils.js';
-import { getPendingOfflineCareLogs, deleteOfflineCareLog, countPendingOfflineLogs } from './offline-db.js';
+import {
+  getPendingOfflineCareLogs,
+  deleteOfflineCareLog,
+  getPendingOfflineFieldMutations,
+  deleteOfflineFieldMutation,
+  countPendingOfflineLogs
+} from './offline-db.js';
 
 let isSyncing = false;
 
@@ -60,7 +66,7 @@ export async function updateOfflineSyncBadge() {
 }
 
 /**
- * Trigger synchronization of all pending offline care logs
+ * Trigger synchronization of all pending offline care logs and field mutations
  * @param {boolean} isManual - Whether invoked manually by user click
  */
 export async function triggerOfflineSync(isManual = false) {
@@ -75,11 +81,15 @@ export async function triggerOfflineSync(isManual = false) {
     return;
   }
 
-  const pendingLogs = await getPendingOfflineCareLogs();
-  if (pendingLogs.length === 0) {
+  const [pendingLogs, pendingMutations] = await Promise.all([
+    getPendingOfflineCareLogs(),
+    getPendingOfflineFieldMutations()
+  ]);
+
+  if (pendingLogs.length === 0 && pendingMutations.length === 0) {
     updateOfflineSyncBadge();
     if (isManual) {
-      toast('Toàn bộ nhật ký đã được đồng bộ với máy chủ!', 'info');
+      toast('Toàn bộ dữ liệu thực địa đã được đồng bộ với máy chủ!', 'info');
     }
     return;
   }
@@ -90,51 +100,103 @@ export async function triggerOfflineSync(isManual = false) {
   let successCount = 0;
   let failCount = 0;
 
-  for (const item of pendingLogs) {
-    try {
-      // 1. If batch log with multi plants
-      if (Array.isArray(item.plant_ids) && item.plant_ids.length > 0) {
-        for (const pid of item.plant_ids) {
+  // 1. Try High-Speed Single-Request Batch Sync first
+  let batchSucceeded = false;
+  try {
+    const batchRes = await api('/plants/offline-batch-sync', {
+      method: 'POST',
+      body: JSON.stringify({
+        care_logs: pendingLogs,
+        field_mutations: pendingMutations
+      })
+    });
+    if (batchRes && batchRes.success) {
+      for (const item of pendingLogs) {
+        await deleteOfflineCareLog(item.client_uuid);
+        successCount++;
+      }
+      for (const mut of pendingMutations) {
+        await deleteOfflineFieldMutation(mut.client_uuid);
+        successCount++;
+      }
+      batchSucceeded = true;
+    }
+  } catch (batchErr) {
+    console.warn('[OfflineSync] Batch sync fallback to individual item sync:', batchErr.message);
+  }
+
+  // 2. Fallback: Individual item sync if batch endpoint was unavailable
+  if (!batchSucceeded) {
+    for (const item of pendingLogs) {
+      try {
+        if (Array.isArray(item.plant_ids) && item.plant_ids.length > 0) {
+          for (const pid of item.plant_ids) {
+            const singlePayload = {
+              plant_id: pid,
+              log_date: item.log_date,
+              log_type: item.log_type,
+              note: item.note ? `${item.note} (Đồng bộ từ thiết bị ngoại tuyến)` : '(Đồng bộ từ ngoại tuyến)',
+              media_urls: item.media_urls || [],
+              details: item.details || {},
+              operator_name: item.operator_name,
+              equipment_used: item.equipment_used,
+              created_at: item.created_at_offline ? new Date(item.created_at_offline).toISOString() : new Date().toISOString()
+            };
+            await api(`/plants/${pid}/care-log`, {
+              method: 'POST',
+              body: JSON.stringify(singlePayload)
+            });
+          }
+        } else if (item.plant_id) {
           const singlePayload = {
-            plant_id: pid,
+            plant_id: item.plant_id,
             log_date: item.log_date,
             log_type: item.log_type,
-            note: item.note ? `${item.note} (Đồng bộ từ thiết bị ngoại tuyến)` : '(Đồng bộ từ ngoại tuyến)',
+            note: item.note,
             media_urls: item.media_urls || [],
             details: item.details || {},
             operator_name: item.operator_name,
             equipment_used: item.equipment_used,
             created_at: item.created_at_offline ? new Date(item.created_at_offline).toISOString() : new Date().toISOString()
           };
-          await api(`/plants/${pid}/care-log`, {
+          await api(`/plants/${item.plant_id}/care-log`, {
             method: 'POST',
             body: JSON.stringify(singlePayload)
           });
         }
-      } else if (item.plant_id) {
-        // Single plant log
-        const singlePayload = {
-          plant_id: item.plant_id,
-          log_date: item.log_date,
-          log_type: item.log_type,
-          note: item.note,
-          media_urls: item.media_urls || [],
-          details: item.details || {},
-          operator_name: item.operator_name,
-          equipment_used: item.equipment_used,
-          created_at: item.created_at_offline ? new Date(item.created_at_offline).toISOString() : new Date().toISOString()
-        };
-        await api(`/plants/${item.plant_id}/care-log`, {
-          method: 'POST',
-          body: JSON.stringify(singlePayload)
-        });
-      }
 
-      await deleteOfflineCareLog(item.client_uuid);
-      successCount++;
-    } catch (err) {
-      console.error('❌ Error syncing offline log:', item.client_uuid, err.message);
-      failCount++;
+        await deleteOfflineCareLog(item.client_uuid);
+        successCount++;
+      } catch (err) {
+        console.error('Error syncing offline log:', item.client_uuid, err.message);
+        failCount++;
+      }
+    }
+
+    for (const mut of pendingMutations) {
+      try {
+        if (mut.mutation_type === 'gps_update' && mut.plant_id) {
+          await api(`/plants/${mut.plant_id}/gps`, {
+            method: 'PUT',
+            body: JSON.stringify({ latitude: mut.latitude, longitude: mut.longitude })
+          });
+        } else if (mut.mutation_type === 'nfc_assign' && mut.plant_id) {
+          await api(`/plants/${mut.plant_id}/nfc-assign`, {
+            method: 'POST',
+            body: JSON.stringify({ nfc_uid: mut.nfc_uid, latitude: mut.latitude, longitude: mut.longitude })
+          });
+        } else if (mut.mutation_type === 'location_update' && mut.plant_id) {
+          await api(`/plants/${mut.plant_id}/location`, {
+            method: 'PUT',
+            body: JSON.stringify({ location: mut.location, plot_code: mut.plot_code, row_number: mut.row_number })
+          });
+        }
+        await deleteOfflineFieldMutation(mut.client_uuid);
+        successCount++;
+      } catch (mutErr) {
+        console.error('Error syncing offline field mutation:', mut.client_uuid, mutErr.message);
+        failCount++;
+      }
     }
   }
 
@@ -142,25 +204,25 @@ export async function triggerOfflineSync(isManual = false) {
   await updateOfflineSyncBadge();
 
   if (successCount > 0) {
-    toast(`✅ Đã đồng bộ thành công ${successCount} nhật ký lên máy chủ!`, 'success');
+    toast(`Đã đồng bộ thành công ${successCount} tác vụ thực địa lên máy chủ!`, 'success');
     if (typeof window.loadUserDashboard === 'function') window.loadUserDashboard();
     if (typeof window.loadLogs === 'function') window.loadLogs();
   }
 
   if (failCount > 0) {
-    toast(`⚠️ Có ${failCount} nhật ký chưa đồng bộ được do lỗi định dạng. Sẽ thử lại sau.`, 'warning');
+    toast(`Có ${failCount} tác vụ chưa đồng bộ được. Sẽ tự động thử lại sau.`, 'warning');
   }
 }
 
 // ── Event Listeners for Autonomous Sync ──
 window.addEventListener('online', () => {
-  console.log('📶 [Network] Connection restored. Triggering offline sync...');
+  console.log('[Network] Connection restored. Triggering offline sync...');
   updateOfflineSyncBadge();
   triggerOfflineSync();
 });
 
 window.addEventListener('offline', () => {
-  console.log('📴 [Network] Device is now offline.');
+  console.log('[Network] Device is now offline.');
   updateOfflineSyncBadge();
 });
 

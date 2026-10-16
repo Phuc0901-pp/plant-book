@@ -350,10 +350,24 @@ export function getNfcCurrentGps() {
           } catch (_) {}
         }
 
-        toast(res.message || `✨ Đã lưu vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây!`, 'success');
+        toast(res.message || `Đã lưu vị trí GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) cho cây!`, 'success');
       } catch (saveErr) {
-        console.error('Save GPS error:', saveErr);
-        toast('Lỗi lưu GPS: ' + (saveErr.message || 'Không thể lưu lên máy chủ.'), 'error');
+        if (!navigator.onLine && typeof window.saveOfflineFieldMutation === 'function') {
+          await window.saveOfflineFieldMutation({
+            mutation_type: 'gps_update',
+            plant_id: _currentPlant.id,
+            latitude: lat,
+            longitude: lng
+          });
+          _currentPlant.latitude = lat;
+          _currentPlant.longitude = lng;
+          _updateGpsDisplay(_currentPlant);
+          if (typeof window.updateOfflineSyncBadge === 'function') window.updateOfflineSyncBadge();
+          toast(`Đã lưu GPS (${lat.toFixed(6)}, ${lng.toFixed(6)}) vào bộ nhớ ngoại tuyến!`, 'info');
+        } else {
+          console.error('Save GPS error:', saveErr);
+          toast('Lỗi lưu GPS: ' + (saveErr.message || 'Không thể lưu lên máy chủ.'), 'error');
+        }
       } finally {
         if (btn) {
           btn.innerHTML = '<i data-lucide="crosshair" class="lucide-sm" style="color:#059669;"></i> Lấy & Lưu GPS';
@@ -494,10 +508,28 @@ export async function saveNfcLocationManually() {
       } catch (_) {}
     }
 
-    toast(res.message || `✨ Đã cập nhật vị trí "${loc}" cho cây!`, 'success');
+    toast(res.message || `Đã cập nhật vị trí "${loc}" cho cây!`, 'success');
   } catch (err) {
-    console.error('Save location error:', err);
-    toast('Lỗi lưu vị trí: ' + (err.message || 'Không thể lưu lên máy chủ.'), 'error');
+    if (!navigator.onLine && typeof window.saveOfflineFieldMutation === 'function') {
+      await window.saveOfflineFieldMutation({
+        mutation_type: 'location_update',
+        plant_id: _currentPlant.id,
+        location: loc,
+        latitude: lat,
+        longitude: lng
+      });
+      _currentPlant.location = loc;
+      if (lat !== null && lng !== null) {
+        _currentPlant.latitude = lat;
+        _currentPlant.longitude = lng;
+      }
+      _updateGpsDisplay(_currentPlant);
+      if (typeof window.updateOfflineSyncBadge === 'function') window.updateOfflineSyncBadge();
+      toast(`Đã lưu vị trí "${loc}" vào bộ nhớ ngoại tuyến!`, 'info');
+    } else {
+      console.error('Save location error:', err);
+      toast('Lỗi lưu vị trí: ' + (err.message || 'Không thể lưu lên máy chủ.'), 'error');
+    }
   } finally {
     if (saveBtn) {
       saveBtn.innerHTML = '<i data-lucide="save" class="lucide-sm"></i> Lưu Vị Trí';
@@ -576,7 +608,20 @@ async function _saveUid(uid) {
       renderUserPlantsTable(cache);
     }
   } catch (err) {
-    toast(err.message || 'Lỗi cập nhật định danh thẻ.', 'error');
+    if (!navigator.onLine && typeof window.saveOfflineFieldMutation === 'function') {
+      await window.saveOfflineFieldMutation({
+        mutation_type: 'nfc_assign',
+        plant_id: _currentPlant.id,
+        nfc_uid: uid,
+        latitude: _capturedGps ? _capturedGps.latitude : _currentPlant.latitude,
+        longitude: _capturedGps ? _capturedGps.longitude : _currentPlant.longitude
+      });
+      _currentPlant.nfc_uid = uid;
+      if (typeof window.updateOfflineSyncBadge === 'function') window.updateOfflineSyncBadge();
+      toast(`Đã lưu thẻ NFC (${uid || 'Hủy'}) vào bộ nhớ ngoại tuyến!`, 'info');
+    } else {
+      toast(err.message || 'Lỗi cập nhật định danh thẻ.', 'error');
+    }
   }
 }
 

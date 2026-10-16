@@ -1246,6 +1246,89 @@ function drawFarmsAndPlantsLayers(farms, plants) {
       }
   });
 
+  // ── HYBRID GPU CLUSTER LAYER FOR LARGE PLANTATIONS (>= 250 TREES, 60 FPS) ──
+  try {
+    const adminClusterSrcId = 'admin-plants-gpu-src';
+    const adminClusterLayerId = 'admin-plants-gpu-clusters';
+    const adminClusterCountId = 'admin-plants-gpu-cluster-count';
+
+    if (displayPlants.length >= 250) {
+      const validClusterFeatures = [];
+      displayPlants.forEach(p => {
+        if (!p || !p.latitude || !p.longitude) return;
+        let lat = parseFloat(p.latitude);
+        let lng = parseFloat(p.longitude);
+        if (isNaN(lat) || isNaN(lng)) return;
+        if ((lat < -90 || lat > 90) && (lng >= -90 && lng <= 90)) { const t = lat; lat = lng; lng = t; }
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+        validClusterFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lng, lat] },
+          properties: {
+            id: p.id,
+            tree_code: p.tree_code || p.id,
+            health_status: p.health_status || 'Tốt'
+          }
+        });
+      });
+
+      const clusterGeoJson = { type: 'FeatureCollection', features: validClusterFeatures };
+      if (gMap.getSource(adminClusterSrcId)) {
+        gMap.getSource(adminClusterSrcId).setData(clusterGeoJson);
+      } else {
+        gMap.addSource(adminClusterSrcId, {
+          type: 'geojson',
+          data: clusterGeoJson,
+          cluster: true,
+          clusterMaxZoom: 16,
+          clusterRadius: 45
+        });
+
+        gMap.addLayer({
+          id: adminClusterLayerId,
+          type: 'circle',
+          source: adminClusterSrcId,
+          maxzoom: 16.2,
+          filter: ['has', 'point_count'],
+          paint: {
+            'circle-color': ['step', ['get', 'point_count'], '#10b981', 25, '#0284c7', 100, '#f59e0b', 500, '#ef4444'],
+            'circle-radius': ['step', ['get', 'point_count'], 18, 25, 22, 100, 27, 500, 33],
+            'circle-stroke-width': 2.5,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
+
+        gMap.addLayer({
+          id: adminClusterCountId,
+          type: 'symbol',
+          source: adminClusterSrcId,
+          maxzoom: 16.2,
+          filter: ['has', 'point_count'],
+          layout: {
+            'text-field': '{point_count_abbreviated}',
+            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+            'text-size': 12
+          },
+          paint: { 'text-color': '#ffffff' }
+        });
+
+        gMap.on('click', adminClusterLayerId, (e) => {
+          const features = gMap.queryRenderedFeatures(e.point, { layers: [adminClusterLayerId] });
+          if (!features.length) return;
+          const clusterId = features[0].properties.cluster_id;
+          gMap.getSource(adminClusterSrcId).getClusterExpansionZoom(clusterId, (err, zoom) => {
+            if (err) return;
+            gMap.easeTo({ center: features[0].geometry.coordinates, zoom: Math.min(zoom + 1, 18) });
+          });
+        });
+      }
+    } else if (gMap.getSource(adminClusterSrcId)) {
+      gMap.getSource(adminClusterSrcId).setData({ type: 'FeatureCollection', features: [] });
+    }
+  } catch (gpuClusterErr) {
+    console.warn('[AdminGIS] GPU cluster sync warning:', gpuClusterErr.message);
+  }
+
   displayPlants.forEach(plant => {
     if (plant.latitude && plant.longitude) {
       let lat = parseFloat(plant.latitude);

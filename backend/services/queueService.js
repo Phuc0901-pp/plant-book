@@ -171,4 +171,30 @@ class DistributedQueueService extends EventEmitter {
 // Khởi tạo Singleton
 const queueService = new DistributedQueueService();
 
+// ── Đăng ký các Enterprise Background Workers mặc định ──
+queueService.registerWorker('gis.spatial_index_refresh', async (payload) => {
+  if (redisModule && typeof redisModule.delCacheByPattern === 'function') {
+    await redisModule.delCacheByPattern('spatial_cluster_');
+    await redisModule.delCacheByPattern('mvt_tile_');
+  }
+  if (global.broadcastWS) {
+    global.broadcastWS('gis_clusters_updated', { farm_id: payload?.farm_id || null, timestamp: Date.now() });
+  }
+});
+
+queueService.registerWorker('care_log.batch_synced', async (payload) => {
+  if (redisModule && typeof redisModule.delCacheByPattern === 'function') {
+    await redisModule.delCacheByPattern('plants_');
+    await redisModule.delCacheByPattern('farms_');
+  }
+  if (global.broadcastWS) {
+    global.broadcastWS('offline_batch_synced', {
+      user_id: payload?.user_id || null,
+      synced_logs: payload?.synced_logs || 0,
+      synced_mutations: payload?.synced_mutations || 0,
+      timestamp: Date.now()
+    });
+  }
+});
+
 module.exports = queueService;

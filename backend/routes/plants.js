@@ -5179,5 +5179,119 @@ router.post('/:id(\\d+)/nfc-reissue', auth, async (req, res) => {
   }
 });
 
+// ─── Enterprise Local-First Offline Batch Synchronization Endpoint (Phase 3 & 4) ──
+const queueService = require('../services/queueService');
+
+router.post('/offline-batch-sync', auth, async (req, res) => {
+  try {
+    const careLogs = Array.isArray(req.body?.care_logs) ? req.body.care_logs : [];
+    const fieldMutations = Array.isArray(req.body?.field_mutations) ? req.body.field_mutations : [];
+
+    let syncedLogs = 0;
+    let syncedMutations = 0;
+
+    // 1. Process Offline Care Logs
+    for (const item of careLogs) {
+      const targetIds = Array.isArray(item.plant_ids) && item.plant_ids.length > 0
+        ? item.plant_ids
+        : (item.plant_id ? [item.plant_id] : []);
+
+      for (const rawPid of targetIds) {
+        const pid = parseInt(rawPid, 10);
+        if (isNaN(pid)) continue;
+        const access = await verifyPlantAccess(req, pid);
+        if (!access.ok) continue;
+
+        const logDate = item.log_date || new Date().toISOString().slice(0, 10);
+        const logType = item.log_type || 'Chăm sóc';
+        const noteText = item.note ? `${item.note} (Đồng bộ ngoại tuyến)` : '(Đồng bộ ngoại tuyến)';
+        const mediaJson = JSON.stringify(Array.isArray(item.media_urls) ? item.media_urls : []);
+        const detailsJson = JSON.stringify(item.details || {});
+
+        const insRes = await pool.query(
+          `INSERT INTO plant_logs (plant_id, user_id, log_date, log_type, note, media_urls, details, operator_name, equipment_used)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           RETURNING *`,
+          [
+            pid,
+            req.user.id,
+            logDate,
+            logType,
+            noteText,
+            mediaJson,
+            detailsJson,
+            item.operator_name || req.user.full_name || 'Nông hộ',
+            item.equipment_used || null
+          ]
+        );
+        if (insRes.rows[0]) {
+          await sealPlantLogHashChain(pool, insRes.rows[0]);
+          await pool.query(
+            `UPDATE plants SET last_care_date = $1, last_care_type = $2, updated_at = NOW() WHERE id = $3`,
+            [logDate, logType, pid]
+          );
+          syncedLogs++;
+        }
+      }
+    }
+
+    // 2. Process Offline Field Mutations (GPS, NFC, Location)
+    for (const mut of fieldMutations) {
+      const pid = parseInt(mut.plant_id, 10);
+      if (isNaN(pid)) continue;
+      const access = await verifyPlantAccess(req, pid);
+      if (!access.ok) continue;
+
+      const lat = mut.latitude !== undefined && mut.latitude !== null ? parseFloat(mut.latitude) : null;
+      const lng = mut.longitude !== undefined && mut.longitude !== null ? parseFloat(mut.longitude) : null;
+
+      if (mut.mutation_type === 'gps_update' && lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
+        await pool.query(
+          `UPDATE plants SET latitude = $1, longitude = $2, updated_at = NOW() WHERE id = $3`,
+          [lat, lng, pid]
+        );
+        syncedMutations++;
+      } else if (mut.mutation_type === 'location_update') {
+        await pool.query(
+          `UPDATE plants SET location = COALESCE($1, location), latitude = COALESCE($2, latitude), longitude = COALESCE($3, longitude), updated_at = NOW() WHERE id = $4`,
+          [mut.location || null, !isNaN(lat) ? lat : null, !isNaN(lng) ? lng : null, pid]
+        );
+        syncedMutations++;
+      } else if (mut.mutation_type === 'nfc_assign') {
+        const cleanUid = mut.nfc_uid ? String(mut.nfc_uid).trim().toUpperCase() : null;
+        await pool.query(
+          `UPDATE plants SET nfc_uid = $1, latitude = COALESCE($2, latitude), longitude = COALESCE($3, longitude), updated_at = NOW() WHERE id = $4`,
+          [cleanUid, !isNaN(lat) ? lat : null, !isNaN(lng) ? lng : null, pid]
+        );
+        syncedMutations++;
+      }
+    }
+
+    // 3. Enqueue Background Post-Processing & Spatial Cache Refresh Jobs
+    await queueService.publish('care_log.batch_synced', {
+      user_id: req.user.id,
+      synced_logs: syncedLogs,
+      synced_mutations: syncedMutations
+    });
+
+    if (syncedMutations > 0) {
+      await queueService.publish('gis.spatial_index_refresh', {
+        user_id: req.user.id
+      });
+    }
+
+    res.json({
+      success: true,
+      synced_logs: syncedLogs,
+      synced_mutations: syncedMutations,
+      message: `Đã đồng bộ hàng loạt ${syncedLogs} nhật ký và ${syncedMutations} thao tác thực địa thành công!`
+    });
+  } catch (err) {
+    console.error('Error in offline-batch-sync:', err);
+    res.status(500).json({ error: 'Lỗi đồng bộ hàng loạt: ' + err.message });
+  }
+});
+
 module.exports = router;
+
 

@@ -1,11 +1,11 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    core/offline-db.js — Client-Side IndexedDB Offline Storage Engine
    ═══════════════════════════════════════════════════════════════ */
 
 const DB_NAME = 'plantbook_offline_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance = null;
 
@@ -14,7 +14,7 @@ export function openOfflineDb() {
 
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) {
-      console.warn('⚠️ IndexedDB is not supported in this browser environment.');
+      console.warn('IndexedDB is not supported in this browser environment.');
       return resolve(null);
     }
 
@@ -33,6 +33,13 @@ export function openOfflineDb() {
       // 2. Store for cached app metadata (plants list, supplies list, configs)
       if (!db.objectStoreNames.contains('cached_meta')) {
         db.createObjectStore('cached_meta', { keyPath: 'key' });
+      }
+
+      // 3. Store for pending offline field mutations (GPS updates, NFC assignments, Location updates)
+      if (!db.objectStoreNames.contains('offline_field_mutations')) {
+        const mutStore = db.createObjectStore('offline_field_mutations', { keyPath: 'client_uuid' });
+        mutStore.createIndex('sync_status', 'sync_status', { unique: false });
+        mutStore.createIndex('mutation_type', 'mutation_type', { unique: false });
       }
     };
 
@@ -140,12 +147,102 @@ export async function deleteOfflineCareLog(clientUuid) {
 }
 
 /**
- * Count total pending offline logs
+ * Save a field mutation (GPS update, NFC tag assignment, location update) locally when offline
+ * @param {Object} mutationPayload - { mutation_type: 'gps_update'|'nfc_assign'|'location_update', plant_id, ... }
+ * @returns {Promise<string>} client_uuid
+ */
+export async function saveOfflineFieldMutation(mutationPayload) {
+  const db = await openOfflineDb();
+  const clientUuid = mutationPayload.client_uuid || `mut_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  const record = {
+    client_uuid: clientUuid,
+    ...mutationPayload,
+    sync_status: 'pending',
+    created_at_offline: Date.now(),
+    sync_attempts: 0
+  };
+
+  if (!db || !db.objectStoreNames.contains('offline_field_mutations')) {
+    try {
+      const existing = JSON.parse(localStorage.getItem('pb_offline_mutations') || '[]');
+      existing.push(record);
+      localStorage.setItem('pb_offline_mutations', JSON.stringify(existing));
+      return clientUuid;
+    } catch (_) {
+      return clientUuid;
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('offline_field_mutations', 'readwrite');
+    const store = tx.objectStore('offline_field_mutations');
+    const req = store.put(record);
+    req.onsuccess = () => resolve(clientUuid);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+/**
+ * Get all pending offline field mutations
+ * @returns {Promise<Array>}
+ */
+export async function getPendingOfflineFieldMutations() {
+  const db = await openOfflineDb();
+  if (!db || !db.objectStoreNames.contains('offline_field_mutations')) {
+    try {
+      return JSON.parse(localStorage.getItem('pb_offline_mutations') || '[]');
+    } catch (_) {
+      return [];
+    }
+  }
+
+  return new Promise((resolve) => {
+    const tx = db.transaction('offline_field_mutations', 'readonly');
+    const store = tx.objectStore('offline_field_mutations');
+    const req = store.getAll();
+    req.onsuccess = () => {
+      const items = (req.result || []).filter(m => m.sync_status === 'pending' || m.sync_status === 'failed');
+      resolve(items);
+    };
+    req.onerror = () => resolve([]);
+  });
+}
+
+/**
+ * Delete a synced offline field mutation by client_uuid
+ * @param {string} clientUuid
+ */
+export async function deleteOfflineFieldMutation(clientUuid) {
+  const db = await openOfflineDb();
+  if (!db || !db.objectStoreNames.contains('offline_field_mutations')) {
+    try {
+      const existing = JSON.parse(localStorage.getItem('pb_offline_mutations') || '[]');
+      const filtered = existing.filter(m => m.client_uuid !== clientUuid);
+      localStorage.setItem('pb_offline_mutations', JSON.stringify(filtered));
+    } catch (_) {}
+    return;
+  }
+
+  return new Promise((resolve) => {
+    const tx = db.transaction('offline_field_mutations', 'readwrite');
+    const store = tx.objectStore('offline_field_mutations');
+    const req = store.delete(clientUuid);
+    req.onsuccess = () => resolve();
+    req.onerror = () => resolve();
+  });
+}
+
+/**
+ * Count total pending offline logs and field mutations
  * @returns {Promise<number>}
  */
 export async function countPendingOfflineLogs() {
-  const logs = await getPendingOfflineCareLogs();
-  return logs.length;
+  const [logs, mutations] = await Promise.all([
+    getPendingOfflineCareLogs(),
+    getPendingOfflineFieldMutations()
+  ]);
+  return logs.length + mutations.length;
 }
 
 /**
@@ -201,6 +298,9 @@ window.openOfflineDb = openOfflineDb;
 window.saveOfflineCareLog = saveOfflineCareLog;
 window.getPendingOfflineCareLogs = getPendingOfflineCareLogs;
 window.deleteOfflineCareLog = deleteOfflineCareLog;
+window.saveOfflineFieldMutation = saveOfflineFieldMutation;
+window.getPendingOfflineFieldMutations = getPendingOfflineFieldMutations;
+window.deleteOfflineFieldMutation = deleteOfflineFieldMutation;
 window.countPendingOfflineLogs = countPendingOfflineLogs;
 window.cacheAppData = cacheAppData;
 window.getCachedAppData = getCachedAppData;
