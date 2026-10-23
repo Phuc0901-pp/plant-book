@@ -506,7 +506,6 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
     if (hasBounds) {
       map.fitBounds(bounds, { padding: [35, 35], maxZoom: 19 });
     }
-    }
 
     let userMarker = null;
     function locateUser() {

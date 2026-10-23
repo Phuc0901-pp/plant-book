@@ -142,7 +142,7 @@ export async function triggerOfflineSync(isManual = false) {
               equipment_used: item.equipment_used,
               created_at: item.created_at_offline ? new Date(item.created_at_offline).toISOString() : new Date().toISOString()
             };
-            await api(`/plants/${pid}/care-log`, {
+            await api(`/plants/${pid}/logs`, {
               method: 'POST',
               body: JSON.stringify(singlePayload)
             });
@@ -159,7 +159,7 @@ export async function triggerOfflineSync(isManual = false) {
             equipment_used: item.equipment_used,
             created_at: item.created_at_offline ? new Date(item.created_at_offline).toISOString() : new Date().toISOString()
           };
-          await api(`/plants/${item.plant_id}/care-log`, {
+          await api(`/plants/${item.plant_id}/logs`, {
             method: 'POST',
             body: JSON.stringify(singlePayload)
           });

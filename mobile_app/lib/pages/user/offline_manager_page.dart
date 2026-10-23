@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../utils/theme.dart';
 import '../../services/cache_service.dart';
@@ -58,7 +58,9 @@ class _OfflineManagerPageState extends State<OfflineManagerPage> {
 
   Future<void> _syncPendingQueue() async {
     final queue = _cache.getPendingLogs();
-    if (queue.isEmpty) {
+    final mutations = _cache.getPendingFieldMutations();
+    final totalCount = queue.length + mutations.length;
+    if (totalCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Không có thao tác nào đang chờ đồng bộ.'),
@@ -72,7 +74,7 @@ class _OfflineManagerPageState extends State<OfflineManagerPage> {
     setState(() {
       _isSyncing = true;
       _syncProgress = 0.0;
-      _syncProgressText = 'Bắt đầu đẩy ${queue.length} tác vụ...';
+      _syncProgressText = 'Bắt đầu đồng bộ nguyên tử 2 pha ($totalCount tác vụ)...';
     });
 
     final res = await _syncService.syncPendingQueue(
@@ -430,11 +432,11 @@ class _OfflineManagerPageState extends State<OfflineManagerPage> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
-                              const SizedBox(height: 3),
-                              Text(
-                                'Tạo lúc: $timeStr',
-                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
-                              ),
+                               const SizedBox(height: 3),
+                               Text(
+                                 'Tạo lúc: $timeStr · SHA-256: ${(log['record_hash']?.toString() ?? 'SEALED').substring(0, (log['record_hash']?.toString().length ?? 0) > 10 ? 10 : (log['record_hash']?.toString().length ?? 0))}...',
+                                 style: const TextStyle(fontSize: 10.5, fontFamily: 'monospace', color: Color(0xFF059669)),
+                               ),
                             ],
                           ),
                         ),

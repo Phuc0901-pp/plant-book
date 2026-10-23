@@ -233,19 +233,19 @@ function runEnterpriseQCAudit() {
 
   // ─── SUITE 6: PWA, OFFLINE ENGINE & SATELLITE IOT ───────────────────────
   console.log('\n\x1b[1m-- 6. PERFORMANCE, OFFLINE DB AND PWA ENGINE --\x1b[0m');
-  const swPath = path.join(ROOT_DIR, 'frontend/sw.js');
+  const swPath = path.join(ROOT_DIR, 'frontend/user/sw.js');
   if (fs.existsSync(swPath)) {
     const swContent = fs.readFileSync(swPath, 'utf8');
     recordTest('PWA Resilience', 'ServiceWorker Offline Caching & Cache Strategy', swContent.includes('caches.open'));
   }
 
-  const manifestPath = path.join(ROOT_DIR, 'frontend/manifest.json');
+  const manifestPath = path.join(ROOT_DIR, 'frontend/user/manifest.json');
   if (fs.existsSync(manifestPath)) {
     const mft = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     recordTest('PWA Compliance', 'PWA Manifest Valid JSON & Display Standalone', mft.display === 'standalone');
   }
 
-  const singleflightPath = path.join(ROOT_DIR, 'backend/utils/singleflight.js');
+  const singleflightPath = path.join(ROOT_DIR, 'backend/services/singleflight.js');
   recordTest('Performance', 'Singleflight Promise Deduplication Engine Present', fs.existsSync(singleflightPath));
 
   // ─── SUITE 7: UI/UX & MOBILE ERGONOMICS (WCAG 2.1 AA) ────────────────────

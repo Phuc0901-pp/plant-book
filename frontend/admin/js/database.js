@@ -2644,7 +2644,7 @@ async function loadVersionManagerData() {
       const build = activeData.buildNumber || activeData.build_number || 1;
       const platform = activeData.platform || 'all';
       const minVer = activeData.minSupportedVersion || activeData.min_supported_version || '1.0.0';
-      const apk = activeData.apkUrl || activeData.apk_url || '/PlantBook-Mobile-ERP-v1.2.4-universal.apk';
+      const apk = activeData.apkUrl || activeData.apk_url || '/PlantBook-Mobile-ERP-v1.3.5-universal.apk';
       const notes = activeData.releaseNotes || activeData.release_notes || '';
       const updateDate = activeData.updatedAt ? new Date(activeData.updatedAt).toLocaleString('vi-VN') : 'Mới';
 

@@ -68,6 +68,17 @@ app.use(express.static(path.join(__dirname, '../frontend/public'), {
   }
 }));
 
+// Serve Mobile App Deployment Artifacts (Android APK & iOS IPA bundles)
+app.use(['/build_output', '/'], express.static(path.join(__dirname, '../build_output'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.apk')) {
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    } else if (filePath.endsWith('.ipa')) {
+      res.setHeader('Content-Type', 'application/octet-stream');
+    }
+  }
+}));
+
 // ─── Health Check Endpoints (Exempt from Rate Limiting & Anti-Scraper) ──
 const { getAppVersion } = require('./config/appConfig');
 app.get(['/health', '/healthz', '/api/health'], (req, res) => {

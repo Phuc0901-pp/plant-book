@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mobile App</string>
+	<string>Sổ Nông Điện Tử TBSG</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,15 +13,15 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>mobile_app</string>
+	<string>PlantBookMobileERP</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+	<string>1.3.5</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>19</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -45,10 +45,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập Camera để quét mã QR định danh cây trồng GS1 và chụp ảnh nhật ký VietGAP.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập Thư viện ảnh để đính kèm hình ảnh thực địa vào nhật ký chăm sóc cây trồng.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập Vị trí GPS để xác thực hàng rào địa lý Geofence (&lt;= 8.0m) khi quét thẻ NFC NTAG213 và định vị bản đồ GIS.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập Vị trí GPS để xác thực hàng rào địa lý Geofence (&lt;= 8.0m) và vẽ ranh giới lô canh tác GIS.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>Ứng dụng cần quyền đọc thẻ NFC để xác thực chip định danh NTAG213 &amp; chữ ký mật mã Gallagher 8.30 HMAC-SHA256 trên cây trồng.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Ứng dụng cần quyền truy cập Micro để nông dân đọc nhật ký canh tác bằng giọng nói.</string>
+	<string>Ứng dụng cần quyền truy cập Micro để nông dân đọc nhật ký canh tác bằng giọng nói tiếng Việt.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Ứng dụng cần quyền Nhận diện Giọng nói để chuyển câu nói thành văn bản ghi chú.</string>
+	<string>Ứng dụng cần quyền Nhận diện Giọng nói để chuyển câu nói thành văn bản ghi chú nhật ký VietGAP.</string>
 </dict>
 </plist>
-

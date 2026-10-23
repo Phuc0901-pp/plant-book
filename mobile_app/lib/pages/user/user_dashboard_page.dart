@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../utils/theme.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/security/rbac_policy.dart';
 import '../../components/common/welcome_banner.dart';
 import '../../components/farm_card.dart';
 import '../../components/plant_card.dart';
@@ -191,8 +192,12 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                     iconColor: AppTheme.amber,
                     bgColor: AppTheme.amberLight,
                     title: 'Chi Phí Mùa Vụ',
-                    value: _currencyFormat.format(totalExpense),
-                    subtext: 'Khấu trừ kho tự động',
+                    value: RbacPolicy.isFinanceRedacted(_userProfile)
+                        ? '*** (RBAC)'
+                        : _currencyFormat.format(totalExpense),
+                    subtext: RbacPolicy.isFinanceRedacted(_userProfile)
+                        ? RbacPolicy.getRoleBadgeCode(_userProfile)
+                        : 'Khấu trừ kho tự động',
                     subtextColor: AppTheme.amber,
                     onTap: () => widget.onNavigateTab(3),
                   ),

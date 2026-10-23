@@ -17,7 +17,15 @@ class Supply {
   final double totalSpent;
   final double totalUsedQty;
 
-  bool get isOutOfStock => (category != 'Tiền nước' && category != 'Nhân công') && stockQuantity <= 0;
+  // Chuẩn mở rộng VietGAP / GlobalG.A.P. v1.3.5
+  final String? targetPests;
+  final int? phiDays;
+  final String? fertilizerType;
+  final String? registrationCode;
+
+  bool get isOutOfStock =>
+      (category != 'Tiền nước' && category != 'Nhân công') &&
+      stockQuantity <= 0;
 
   Supply({
     required this.id,
@@ -37,27 +45,42 @@ class Supply {
     this.activeIngredient,
     this.totalSpent = 0,
     this.totalUsedQty = 0,
+    this.targetPests,
+    this.phiDays,
+    this.fertilizerType,
+    this.registrationCode,
   });
 
   factory Supply.fromJson(Map<String, dynamic> json) {
     return Supply(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      userId: json['user_id'] is int ? json['user_id'] : int.parse(json['user_id'].toString()),
-      category: json['category'] ?? '',
-      name: json['name'] ?? '',
-      unit: json['unit'] ?? 'kg',
-      packageSize: json['package_size'],
+      id: json['id'] is int
+          ? json['id'] as int
+          : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
+      userId: json['user_id'] is int
+          ? json['user_id'] as int
+          : (int.tryParse(json['user_id']?.toString() ?? '0') ?? 0),
+      category: json['category']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      unit: json['unit']?.toString() ?? 'kg',
+      packageSize: json['package_size']?.toString(),
       packageQty: _parseDouble(json['package_qty']),
-      packageUnit: json['package_unit'] ?? json['unit'] ?? 'kg',
+      packageUnit:
+          (json['package_unit'] ?? json['unit'] ?? 'kg').toString(),
       packagePrice: _parseDouble(json['package_price']),
       unitPrice: _parseDouble(json['unit_price']),
       unitPriceSmall: _parseDouble(json['unit_price_small']),
       stockQuantity: _parseDouble(json['stock_quantity']),
-      note: json['note'],
-      imageUrl: json['image_url'],
-      activeIngredient: json['active_ingredient'],
+      note: json['note']?.toString(),
+      imageUrl: json['image_url']?.toString(),
+      activeIngredient: json['active_ingredient']?.toString(),
       totalSpent: _parseDouble(json['total_spent']),
       totalUsedQty: _parseDouble(json['total_used_qty']),
+      targetPests: json['target_pests']?.toString(),
+      phiDays: json['phi_days'] != null
+          ? int.tryParse(json['phi_days'].toString())
+          : null,
+      fertilizerType: json['fertilizer_type']?.toString(),
+      registrationCode: json['registration_code']?.toString(),
     );
   }
 
@@ -83,6 +106,11 @@ class Supply {
       'stock_quantity': stockQuantity,
       'note': note,
       'image_url': imageUrl,
+      'active_ingredient': activeIngredient,
+      'target_pests': targetPests,
+      'phi_days': phiDays,
+      'fertilizer_type': fertilizerType,
+      'registration_code': registrationCode,
     };
   }
 }

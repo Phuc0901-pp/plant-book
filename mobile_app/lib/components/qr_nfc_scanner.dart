@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import '../models/plant.dart';
+import '../core/security/crypto_security_service.dart';
 import '../services/api_service.dart';
+import '../services/cache_service.dart';
 import '../services/geo_fence_service.dart';
 import '../utils/theme.dart';
 import '../pages/plant_detail_page.dart';
@@ -603,15 +605,20 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   String pathSlug = '';
   String? scannedCounter;
   String? scannedToken;
+  int scannedIssueLevel = 1;
 
   if (cleanCode.startsWith('http://') || cleanCode.startsWith('https://') || cleanCode.contains('/')) {
     final uri = Uri.tryParse(cleanCode);
     final segments = uri?.pathSegments ?? cleanCode.split('/').where((s) => s.isNotEmpty).toList();
     
-    // Extract NTAG213 dynamic query parameters if present
+    // Extract NTAG213 & Gallagher 8.30 dynamic query parameters if present
     if (uri != null) {
       scannedCounter = uri.queryParameters['ctr'];
       scannedToken = uri.queryParameters['sig'] ?? uri.queryParameters['token'];
+      final ilParam = uri.queryParameters['il'] ?? uri.queryParameters['issue_level'];
+      if (ilParam != null) {
+        scannedIssueLevel = int.tryParse(ilParam.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+      }
     }
 
     if (segments.isNotEmpty) {
@@ -631,21 +638,27 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
   final searchUid = cleanScannedUid.isNotEmpty ? cleanScannedUid : pathNfcUid;
   final searchPlantId = pathPlantId;
 
-  // 1. Fetch user's plants list
+  // 1. Fetch user's plants list (with AES-256 Hive offline fallback)
   List<Plant> allPlants = [];
   try {
     allPlants = await apiService.fetchPlants();
-  } catch (_) {}
+  } catch (_) {
+    final cached = CacheService().getCachedPlants();
+    allPlants = cached
+        .whereType<Map>()
+        .map((e) => Plant.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
 
   Plant? matched;
 
   if (allPlants.isNotEmpty) {
     // Match by physical or URL NFC UID (colon & case insensitive)
     if (searchUid.isNotEmpty) {
-      final normalizedSearchUid = searchUid.replaceAll(':', '').toUpperCase();
+      final normalizedSearchUid = CryptoSecurityService.normalizeNfcUid(searchUid);
       try {
         matched = allPlants.firstWhere(
-          (p) => p.nfcUid != null && p.nfcUid!.replaceAll(':', '').toUpperCase() == normalizedSearchUid,
+          (p) => p.nfcUid != null && CryptoSecurityService.normalizeNfcUid(p.nfcUid!) == normalizedSearchUid,
         );
       } catch (_) {}
     }
@@ -665,7 +678,7 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
         matched = allPlants.firstWhere(
           (p) =>
               p.publicSlug == pathSlug ||
-              (p.nfcUid != null && p.nfcUid!.replaceAll(':', '').toUpperCase() == pathSlug.replaceAll(':', '').toUpperCase()) ||
+              (p.nfcUid != null && CryptoSecurityService.normalizeNfcUid(p.nfcUid!) == CryptoSecurityService.normalizeNfcUid(pathSlug)) ||
               p.id.toString() == pathSlug ||
               (p.treeCode != null && p.treeCode!.toLowerCase() == pathSlug.toLowerCase()),
         );
@@ -678,22 +691,41 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
         matched = allPlants.firstWhere(
           (p) =>
               (p.treeCode != null && p.treeCode!.toLowerCase() == cleanCode.toLowerCase()) ||
-              (p.nfcUid != null && p.nfcUid!.replaceAll(':', '').toUpperCase() == cleanCode.replaceAll(':', '').toUpperCase()) ||
+              (p.nfcUid != null && CryptoSecurityService.normalizeNfcUid(p.nfcUid!) == CryptoSecurityService.normalizeNfcUid(cleanCode)) ||
               p.id.toString() == cleanCode,
         );
       } catch (_) {}
     }
   }
 
-  // If found in allPlants -> Verify security and Open PlantDetailPage
+  // If found in allPlants -> Execute 5-Layer Physical-Digital Verification and Open PlantDetailPage
   if (matched != null) {
-    // Asynchronously report scan to server for 4-Tier Security audit
+    final pos = await GeoFenceService().getCurrentPositionSafe();
+    final effectiveUid = searchUid.isNotEmpty ? searchUid : (matched.nfcUid ?? 'NTAG213-${matched.id}');
+    final verification = CryptoSecurityService.verifyNtag213Scan5Layer(
+      scannedUid: effectiveUid,
+      expectedPlantUid: matched.nfcUid,
+      scannedIssueLevel: scannedIssueLevel,
+      expectedIssueLevel: matched.issueLevel,
+      scannedHmacSignature: scannedToken,
+      plantId: matched.id,
+      expectedChuidHash: matched.chuidHash,
+      userLat: pos?.latitude,
+      userLng: pos?.longitude,
+      plantLat: matched.latitude,
+      plantLng: matched.longitude,
+    );
+
+    // Asynchronously report scan + GPS coordinates to server for 5-Layer Security Audit
     if (searchUid.isNotEmpty || scannedCounter != null || scannedToken != null) {
       apiService.verifyNfcScan(
-        nfcUid: searchUid.isNotEmpty ? searchUid : (matched.nfcUid ?? ''),
+        nfcUid: effectiveUid,
         plantId: matched.id,
         counter: int.tryParse(scannedCounter ?? ''),
         token: scannedToken,
+        issueLevel: scannedIssueLevel,
+        latitude: pos?.latitude,
+        longitude: pos?.longitude,
       );
     }
 
@@ -702,18 +734,22 @@ void _routeToPlant(BuildContext context, String code, String scannedUid) async {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
+              Icon(
+                verification.isValid ? Icons.verified_user_rounded : Icons.gpp_maybe_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Đã xác thực thẻ định danh cho cây #${matched.treeCode ?? matched.id}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  'Cây #${matched.treeCode ?? matched.id} · Bảo mật ${verification.passedLayers}/5 lớp (IL${matched.issueLevel} · HMAC-SHA256)',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
                 ),
               ),
             ],
           ),
-          backgroundColor: AppTheme.green,
-          duration: const Duration(seconds: 2),
+          backgroundColor: verification.isValid ? AppTheme.green : AppTheme.amber,
+          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
         ),
       );

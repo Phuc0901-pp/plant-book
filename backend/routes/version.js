@@ -27,10 +27,10 @@ function getFallbackConfig() {
   }
   return {
     app: {
-      version: '1.2.8',
-      versionTag: 'v1.2.8',
-      buildNumber: 12,
-      releaseDate: '2026-09-20'
+      version: '1.3.5',
+      versionTag: 'v1.3.5',
+      buildNumber: 19,
+      releaseDate: '2026-10-16'
     }
   };
 }
@@ -58,7 +58,7 @@ async function getActiveVersionFromDB() {
         buildNumber: row.build_number,
         platform: row.platform || 'all',
         minSupportedVersion: row.min_supported_version || '1.0.0',
-        apkUrl: row.apk_url || '/PlantBook-Mobile-ERP-v1.2.4-universal.apk',
+        apkUrl: row.apk_url || '/PlantBook-Mobile-ERP-v1.3.5-universal.apk',
         releaseNotes: row.release_notes || '',
         forceUpdate: !!row.force_update,
         isActive: row.is_active,
@@ -75,12 +75,12 @@ async function getActiveVersionFromDB() {
   const fallback = getFallbackConfig();
   cachedVersion = {
     id: 0,
-    version: fallback.app.version || '1.2.8',
-    versionTag: fallback.app.versionTag || 'v1.2.8',
-    buildNumber: fallback.app.buildNumber || 12,
+    version: fallback.app.version || '1.3.5',
+    versionTag: fallback.app.versionTag || 'v1.3.5',
+    buildNumber: fallback.app.buildNumber || 19,
     platform: 'all',
     minSupportedVersion: '1.0.0',
-    apkUrl: '/PlantBook-Mobile-ERP-v1.2.4-universal.apk',
+    apkUrl: '/PlantBook-Mobile-ERP-v1.3.5-universal.apk',
     releaseNotes: 'Cập nhật hệ thống tối ưu hóa và quản lý phiên bản tập trung.',
     forceUpdate: false,
     isActive: true,
@@ -199,7 +199,7 @@ router.post('/', auth, admin, async (req, res) => {
     buildNumber = parseInt(buildNumber, 10) || 1;
     platform = platform || 'all';
     minSupportedVersion = minSupportedVersion || '1.0.0';
-    apkUrl = apkUrl || '/PlantBook-Mobile-ERP-v1.2.4-universal.apk';
+    apkUrl = apkUrl || '/PlantBook-Mobile-ERP-v1.3.5-universal.apk';
     releaseNotes = releaseNotes || '';
     forceUpdate = forceUpdate === true || forceUpdate === 'true';
     activateNow = activateNow !== false && activateNow !== 'false';

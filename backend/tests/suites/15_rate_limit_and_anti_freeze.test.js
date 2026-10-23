@@ -5,28 +5,28 @@ const jwt = require('jsonwebtoken');
 const { getRateLimitConfig } = require('../../config/appConfig');
 const { userRateLimiter } = require('../../middleware/userRateLimiter');
 
-describe('Suite 15: Per-User Rate Limiting & Anti-Freeze Architecture (10 req/s SSOT)', () => {
+describe('Suite 15: Per-User Rate Limiting & Anti-Freeze Architecture (50 req/s SSOT)', () => {
 
   const appConfigJsonPath = path.join(__dirname, '../../../config/app.config.json');
   const serverPath = path.join(__dirname, '../../server.js');
   const userRateLimiterPath = path.join(__dirname, '../../middleware/userRateLimiter.js');
 
-  it('15.1 Should verify SSOT app.config.json defines rateLimit configuration with 10 req / 1000ms', () => {
+  it('15.1 Should verify SSOT app.config.json defines rateLimit configuration with 50 req / 1000ms', () => {
     expect(fs.existsSync(appConfigJsonPath)).toBe(true);
     const raw = fs.readFileSync(appConfigJsonPath, 'utf8');
     const config = JSON.parse(raw);
 
     expect(config.rateLimit).toBeDefined();
     expect(config.rateLimit.windowMs).toBe(1000);
-    expect(config.rateLimit.maxRequestsPerWindow).toBe(10);
+    expect(config.rateLimit.maxRequestsPerWindow).toBe(50);
     expect(config.rateLimit.statusCode).toBe(429);
-    expect(config.rateLimit.message.includes('10 yêu cầu/giây')).toBe(true);
+    expect(config.rateLimit.message.includes('50 yêu cầu/giây')).toBe(true);
   });
 
   it('15.2 Should verify getRateLimitConfig() correctly parses configuration', () => {
     const cfg = getRateLimitConfig();
     expect(cfg.windowMs).toBe(1000);
-    expect(cfg.maxRequestsPerWindow).toBe(10);
+    expect(cfg.maxRequestsPerWindow).toBe(50);
     expect(cfg.statusCode).toBe(429);
     expect(typeof cfg.message).toBe('string');
   });

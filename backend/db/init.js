@@ -115,7 +115,7 @@ async function initDB() {
         build_number INTEGER DEFAULT 1,
         platform VARCHAR(50) DEFAULT 'all',
         min_supported_version VARCHAR(50) DEFAULT '1.0.0',
-        apk_url TEXT DEFAULT '/PlantBook-Mobile-ERP-v1.2.4-universal.apk',
+        apk_url TEXT DEFAULT '/PlantBook-Mobile-ERP-v1.3.5-universal.apk',
         release_notes TEXT,
         force_update BOOLEAN DEFAULT FALSE,
         is_active BOOLEAN DEFAULT TRUE,
@@ -364,27 +364,6 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_farm_plots_farm ON farm_plots(farm_id);
     `);
 
-    // NFC Tags Inventory table (Batch registration, continuous tap & tagging status)
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS nfc_tags_inventory (
-        id SERIAL PRIMARY KEY,
-        farm_id INTEGER REFERENCES farms(id) ON DELETE CASCADE,
-        nfc_uid VARCHAR(100) UNIQUE NOT NULL,
-        status VARCHAR(50) DEFAULT 'unassigned',
-        plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL,
-        last_scanned_lat NUMERIC,
-        last_scanned_lng NUMERIC,
-        scanned_at TIMESTAMPTZ DEFAULT NOW(),
-        tagged_at TIMESTAMPTZ NULL,
-        created_by INTEGER REFERENCES users(id)
-      );
-      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lat NUMERIC;
-      ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_scanned_lng NUMERIC;
-      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_farm ON nfc_tags_inventory(farm_id);
-      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_uid ON nfc_tags_inventory(nfc_uid);
-      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_status ON nfc_tags_inventory(status);
-    `);
-
     // Devices table
     await client.query(`
       CREATE TABLE IF NOT EXISTS devices (
@@ -583,6 +562,9 @@ async function initDB() {
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
       ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
       CREATE UNIQUE INDEX IF NOT EXISTS idx_nfc_tags_inventory_uid_uniq ON nfc_tags_inventory(nfc_uid);
+      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_farm ON nfc_tags_inventory(farm_id);
+      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_uid ON nfc_tags_inventory(nfc_uid);
+      CREATE INDEX IF NOT EXISTS idx_nfc_inventory_status ON nfc_tags_inventory(status);
 
       ALTER TABLE farms ADD COLUMN IF NOT EXISTS geofence_radius_meters NUMERIC DEFAULT 8.0;
       ALTER TABLE plants ADD COLUMN IF NOT EXISTS geofence_radius_meters NUMERIC DEFAULT 8.0;
@@ -654,17 +636,21 @@ async function initDB() {
         min_supported_version, apk_url, release_notes, force_update, is_active
       )
       VALUES (
-        'v1.2.8',
-        '1.2.8',
-        12,
+        'v1.3.5',
+        '1.3.5',
+        19,
         'all',
         '1.0.0',
-        '/PlantBook-Mobile-ERP-v1.2.4-universal.apk',
-        'Quản lý phiên bản tập trung từ CSDL, Thuật toán quét NFC thông minh 3 req/s & chống spam 3s, Chuẩn hóa giao diện ERP.',
+        '/PlantBook-Mobile-ERP-v1.3.5-universal.apk',
+        'Chuẩn hóa kiến trúc Gallagher 8.30, Bảo mật phần cứng NTAG213 4 lớp, Chuỗi băm bất biến ISO 27001 & Tín chỉ Carbon IPCC Tier-2.',
         FALSE,
         TRUE
       )
       ON CONFLICT (version_tag) DO UPDATE SET
+        apk_url = EXCLUDED.apk_url,
+        version_number = EXCLUDED.version_number,
+        build_number = EXCLUDED.build_number,
+        release_notes = EXCLUDED.release_notes,
         is_active = TRUE,
         updated_at = NOW();
     `);
@@ -672,8 +658,10 @@ async function initDB() {
     // Sync to system_configs
     await client.query(`
       INSERT INTO system_configs (key, value, updated_at)
-      VALUES ('app_version', '{"version": "1.2.8", "versionTag": "v1.2.8", "buildNumber": 12, "releaseDate": "2026-09-20"}'::jsonb, NOW())
-      ON CONFLICT (key) DO NOTHING;
+      VALUES ('app_version', '{"version": "1.3.5", "versionTag": "v1.3.5", "buildNumber": 19, "releaseDate": "2026-10-16"}'::jsonb, NOW())
+      ON CONFLICT (key) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW();
     `);
 
 
@@ -714,92 +702,109 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_plants_gps ON plants(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
       CREATE INDEX IF NOT EXISTS idx_audit_logs_table_record ON audit_logs(table_name, record_id);
       CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action_type);
+      CREATE INDEX IF NOT EXISTS idx_plant_logs_hashchain ON plant_logs(id DESC) WHERE is_deleted IS NOT TRUE AND record_hash IS NOT NULL;
     `);
 
-    // Tự động hoán đổi và sửa lỗi tọa độ nếu latitude > 90 (bị lưu ngược với longitude)
+    // Chỉ chạy chuẩn hóa dữ liệu lịch sử & UTF-8 đúng 1 lần duy nhất (tránh Full-Table Scan làm chậm khởi động server)
+    let shouldRunLegacyCleanup = true;
     try {
-      await client.query(`
-        UPDATE plants 
-        SET latitude = longitude, longitude = latitude 
-        WHERE latitude > 90 AND longitude <= 90;
-      `);
+      const flagRes = await client.query(`SELECT value FROM system_configs WHERE key = 'legacy_data_normalization_v135' LIMIT 1`);
+      if (flagRes.rows.length > 0 && flagRes.rows[0].value === 'done') {
+        shouldRunLegacyCleanup = false;
+      }
     } catch (_) {}
 
-    // Đồng bộ user_id giữa bảng farms và users (nếu có user được gán farm_id nhưng farms.user_id chưa cập nhật)
-    try {
-      await client.query(`
-        UPDATE farms f
-        SET user_id = u.id
-        FROM users u
-        WHERE u.farm_id = f.id AND u.role != 'admin' AND (f.user_id IS NULL OR f.user_id IN (SELECT id FROM users WHERE role = 'admin'));
-      `);
-    } catch (_) {}
+    if (shouldRunLegacyCleanup) {
+      // Tự động hoán đổi và sửa lỗi tọa độ nếu latitude > 90 (bị lưu ngược với longitude)
+      try {
+        await client.query(`
+          UPDATE plants 
+          SET latitude = longitude, longitude = latitude 
+          WHERE latitude > 90 AND longitude <= 90;
+        `);
+      } catch (_) {}
 
-    // Xóa định vị GPS của các cây trong vườn "Bùi Văn Dũng" theo yêu cầu
-    try {
-      await client.query(`
-        UPDATE plants
-        SET latitude = NULL, longitude = NULL, updated_at = NOW()
-        WHERE farm_id IN (
-          SELECT id FROM farms WHERE name ILIKE '%Bùi Văn Dũng%' OR name ILIKE '%Bui Van Dung%'
-        ) AND (latitude IS NOT NULL OR longitude IS NOT NULL);
-      `);
-    } catch (_) {}
+      // Đồng bộ user_id giữa bảng farms và users (nếu có user được gán farm_id nhưng farms.user_id chưa cập nhật)
+      try {
+        await client.query(`
+          UPDATE farms f
+          SET user_id = u.id
+          FROM users u
+          WHERE u.farm_id = f.id AND u.role != 'admin' AND (f.user_id IS NULL OR f.user_id IN (SELECT id FROM users WHERE role = 'admin'));
+        `);
+      } catch (_) {}
 
-    // Tự động quét và chuẩn hóa toàn bộ ký tự tiếng Việt UTF-8 (sửa triệt để lỗi font / mojibake trong plant_logs)
-    try {
-      await client.query(`
-        UPDATE plant_logs 
-        SET log_type = 'Bón phân', 
-            note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ',
-            details = jsonb_set(
-              jsonb_set(
+      // Xóa định vị GPS của các cây trong vườn "Bùi Văn Dũng" theo yêu cầu
+      try {
+        await client.query(`
+          UPDATE plants
+          SET latitude = NULL, longitude = NULL, updated_at = NOW()
+          WHERE farm_id IN (
+            SELECT id FROM farms WHERE name ILIKE '%Bùi Văn Dũng%' OR name ILIKE '%Bui Van Dung%'
+          ) AND (latitude IS NOT NULL OR longitude IS NOT NULL);
+        `);
+      } catch (_) {}
+
+      // Tự động quét và chuẩn hóa toàn bộ ký tự tiếng Việt UTF-8 (sửa triệt để lỗi font / mojibake trong plant_logs)
+      try {
+        await client.query(`
+          UPDATE plant_logs 
+          SET log_type = 'Bón phân', 
+              note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ',
+              details = jsonb_set(
                 jsonb_set(
                   jsonb_set(
-                    COALESCE(details, '{}'::jsonb), 
-                    '{method}', '"Bón gốc"'
+                    jsonb_set(
+                      COALESCE(details, '{}'::jsonb), 
+                      '{method}', '"Bón gốc"'
+                    ),
+                    '{operator_name}', '"Kỹ thuật viên Nguyễn Văn A"'
                   ),
-                  '{operator_name}', '"Kỹ thuật viên Nguyễn Văn A"'
+                  '{equipment_used}', '"Xẻng định lượng VietGAP"'
                 ),
-                '{equipment_used}', '"Xẻng định lượng VietGAP"'
-              ),
-              '{fertilizer_name}', '"Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)"'
-            )
-        WHERE id = 2683740 OR log_type LIKE '%B%n%ph%n%' OR log_type LIKE '%\uFFFD%';
+                '{fertilizer_name}', '"Phân hữu cơ vi sinh nở Bỉ (Belgo Organic)"'
+              )
+          WHERE id = 2683740 OR log_type LIKE '%B%n%ph%n%' OR log_type LIKE '%\uFFFD%';
 
-        -- Chuẩn hóa Thu hoạch TRƯỚC HẾT để không bị các từ khóa khác bắt nhầm
-        UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE (log_type ILIKE '%thu%ho%ch%' OR log_type ILIKE '%harvest%' OR details::text ILIKE '%fruit_count%' OR details::text ILIKE '%price_per_tree%') AND log_type != 'Thu hoạch';
-        UPDATE plant_logs SET log_type = 'Bón phân' WHERE (log_type ILIKE '%ph%n%' AND log_type ILIKE '%B%') AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type != 'Bón phân';
-        UPDATE plant_logs SET log_type = 'Phun thuốc' WHERE (log_type ILIKE '%phun%' OR (log_type ILIKE '%thu%c%' AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type NOT ILIKE '%harvest%')) AND log_type != 'Phun thuốc';
-        UPDATE plant_logs SET log_type = 'Tưới nước' WHERE (log_type ILIKE '%t%i%n%c%' OR log_type ILIKE '%t%i%') AND log_type != 'Tưới nước';
-        UPDATE plant_logs SET log_type = 'Cắt lá' WHERE log_type ILIKE '%c%t%l%' AND log_type != 'Cắt lá';
-        UPDATE plant_logs SET log_type = 'Tỉa hoa' WHERE (log_type ILIKE '%t%a%hoa%' OR log_type ILIKE '%t%a%') AND log_type != 'Tỉa hoa';
-        UPDATE plant_logs SET log_type = 'Thụ phấn' WHERE log_type ILIKE '%th%ph%n%' AND log_type != 'Thụ phấn';
-        UPDATE plant_logs SET log_type = 'Bệnh cây' WHERE (log_type ILIKE '%b%nh%c%y%' OR log_type ILIKE '%b%nh%') AND log_type != 'Bệnh cây';
+          -- Chuẩn hóa Thu hoạch TRƯỚC HẾT để không bị các từ khóa khác bắt nhầm
+          UPDATE plant_logs SET log_type = 'Thu hoạch' WHERE (log_type ILIKE '%thu%ho%ch%' OR log_type ILIKE '%harvest%' OR details::text ILIKE '%fruit_count%' OR details::text ILIKE '%price_per_tree%') AND log_type != 'Thu hoạch';
+          UPDATE plant_logs SET log_type = 'Bón phân' WHERE (log_type ILIKE '%ph%n%' AND log_type ILIKE '%B%') AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type != 'Bón phân';
+          UPDATE plant_logs SET log_type = 'Phun thuốc' WHERE (log_type ILIKE '%phun%' OR (log_type ILIKE '%thu%c%' AND log_type NOT ILIKE '%thu%ho%ch%' AND log_type NOT ILIKE '%harvest%')) AND log_type != 'Phun thuốc';
+          UPDATE plant_logs SET log_type = 'Tưới nước' WHERE (log_type ILIKE '%t%i%n%c%' OR log_type ILIKE '%t%i%') AND log_type != 'Tưới nước';
+          UPDATE plant_logs SET log_type = 'Cắt lá' WHERE log_type ILIKE '%c%t%l%' AND log_type != 'Cắt lá';
+          UPDATE plant_logs SET log_type = 'Tỉa hoa' WHERE (log_type ILIKE '%t%a%hoa%' OR log_type ILIKE '%t%a%') AND log_type != 'Tỉa hoa';
+          UPDATE plant_logs SET log_type = 'Thụ phấn' WHERE log_type ILIKE '%th%ph%n%' AND log_type != 'Thụ phấn';
+          UPDATE plant_logs SET log_type = 'Bệnh cây' WHERE (log_type ILIKE '%b%nh%c%y%' OR log_type ILIKE '%b%nh%') AND log_type != 'Bệnh cây';
 
-        -- Phục hồi dứt điểm mọi bản ghi thu hoạch từng bị gán nhãn sai thành Phun thuốc
-        UPDATE plant_logs 
-        SET log_type = 'Thu hoạch' 
-        WHERE (
-          details::text ILIKE '%fruit_count%' 
-          OR details::text ILIKE '%price_per_tree%' 
-          OR details::text ILIKE '%total_revenue%' 
-          OR details::text ILIKE '%avg_price_per_fruit%'
-          OR (details::text ILIKE '%"quality"%' AND details::text ILIKE '%Loại%')
-          OR (equipment_used ILIKE '%kéo%' AND details::text ILIKE '%"kg"%' AND log_type = 'Phun thuốc')
-        ) AND log_type != 'Thu hoạch';
+          -- Phục hồi dứt điểm mọi bản ghi thu hoạch từng bị gán nhãn sai thành Phun thuốc
+          UPDATE plant_logs 
+          SET log_type = 'Thu hoạch' 
+          WHERE (
+            details::text ILIKE '%fruit_count%' 
+            OR details::text ILIKE '%price_per_tree%' 
+            OR details::text ILIKE '%total_revenue%' 
+            OR details::text ILIKE '%avg_price_per_fruit%'
+            OR (details::text ILIKE '%"quality"%' AND details::text ILIKE '%Loại%')
+            OR (equipment_used ILIKE '%kéo%' AND details::text ILIKE '%"kg"%' AND log_type = 'Phun thuốc')
+          ) AND log_type != 'Thu hoạch';
 
-        -- Dọn dẹp chi phí vật tư bị ghi nhận nhầm từ các log thu hoạch
-        DELETE FROM supply_usages 
-        WHERE (note ILIKE '%[Phun thuốc]%' OR note ILIKE '%Thuốc BVTV%') 
-          AND (note ILIKE '%600 kg%' OR note ILIKE '%kg cho cây%' OR note ILIKE '%kg toàn vườn%');
+          -- Dọn dẹp chi phí vật tư bị ghi nhận nhầm từ các log thu hoạch
+          DELETE FROM supply_usages 
+          WHERE (note ILIKE '%[Phun thuốc]%' OR note ILIKE '%Thuốc BVTV%') 
+            AND (note ILIKE '%600 kg%' OR note ILIKE '%kg cho cây%' OR note ILIKE '%kg toàn vườn%');
 
-        UPDATE supply_usages SET note = 'Tự động từ nhật ký [Bón phân] tại vườn' WHERE note LIKE '%T%đ%ng t%nh%t k%[B%' OR note LIKE '%[B%n%ph%n]%';
-        UPDATE supply_usages SET note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ' WHERE note LIKE '%B%n%ph%n%h%u%';
-      `);
-      console.log('✅ Đã quét và chuẩn hóa toàn bộ font chữ tiếng Việt UTF-8 trong CSDL.');
-    } catch (utfErr) {
-      console.warn('Cảnh báo chuẩn hóa UTF-8 DB:', utfErr.message);
+          UPDATE supply_usages SET note = 'Tự động từ nhật ký [Bón phân] tại vườn' WHERE note LIKE '%T%đ%ng t%nh%t k%[B%' OR note LIKE '%[B%n%ph%n]%';
+          UPDATE supply_usages SET note = 'Bón phân hữu cơ vi sinh nở Bỉ phục hồi rễ' WHERE note LIKE '%B%n%ph%n%h%u%';
+        `);
+        await client.query(`
+          INSERT INTO system_configs (key, value)
+          VALUES ('legacy_data_normalization_v135', 'done')
+          ON CONFLICT (key) DO UPDATE SET value = 'done', updated_at = NOW();
+        `);
+        console.log('✅ Đã chạy 1 lần chuẩn hóa toàn bộ dữ liệu lịch sử & UTF-8 trong CSDL (Migration v1.3.5).');
+      } catch (utfErr) {
+        console.warn('Cảnh báo chuẩn hóa UTF-8 DB:', utfErr.message);
+      }
     }
 
     try {

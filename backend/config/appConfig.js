@@ -23,10 +23,10 @@ function loadRawConfig() {
     app: {
       name: 'Sổ Nông Tân Bảo Agtech',
       shortName: 'Sổ Nông Số',
-      version: '1.2.8',
-      versionTag: 'v1.2.8',
-      buildNumber: 12,
-      releaseDate: '2026-09-20',
+      version: '1.3.5',
+      versionTag: 'v1.3.5',
+      buildNumber: 19,
+      releaseDate: '2026-10-16',
       environment: process.env.NODE_ENV || 'production'
     },
     brand: {
@@ -42,8 +42,8 @@ function loadRawConfig() {
       productionWsUrl: 'wss://plant-book.onrender.com'
     },
     cache: {
-      swCacheName: 'pb-farmer-cache-v1.2.8',
-      assetVersion: '1.2.8'
+      swCacheName: 'pb-farmer-cache-v1.3.5',
+      assetVersion: '1.3.5'
     },
     defaults: {
       farmLatitude: 10.941520,
@@ -85,8 +85,8 @@ function getRateLimitConfig() {
   const cfg = APP_CONFIG.rateLimit || {};
   return {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || cfg.windowMs || 1000, 10),
-    maxRequestsPerWindow: parseInt(process.env.RATE_LIMIT_MAX_REQS || cfg.maxRequestsPerWindow || 10, 10),
-    message: cfg.message || 'Thao tác quá nhanh! Giới hạn tối đa 10 yêu cầu/giây để bảo vệ hệ thống.',
+    maxRequestsPerWindow: parseInt(process.env.RATE_LIMIT_MAX_REQS || cfg.maxRequestsPerWindow || 50, 10),
+    message: cfg.message || 'Thao tác quá nhanh! Giới hạn tối đa 50 yêu cầu/giây để bảo vệ hệ thống.',
     statusCode: cfg.statusCode || 429
   };
 }

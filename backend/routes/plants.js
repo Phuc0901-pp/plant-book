@@ -15,26 +15,57 @@ const { calculateSmartReminders } = require('../services/agriReminder');
 const checkTier = require('../middleware/checkTier');
 const crypto = require('crypto');
 
-// ISO/IEC 27001 Cryptographic SHA-256 Hash-Chain Sealer for Cultivation Logs
+// ISO/IEC 27001 Cryptographic SHA-256 Hash-Chain Sealer for Cultivation Logs (Per-Farm Serialized Lock)
+const _farmHashChainLocks = new Map();
+async function withFarmHashChainLock(farmKey, fn) {
+  const prevPromise = _farmHashChainLocks.get(farmKey) || Promise.resolve();
+  let release;
+  const nextPromise = new Promise((resolve) => { release = resolve; });
+  _farmHashChainLocks.set(farmKey, prevPromise.then(() => nextPromise));
+  await prevPromise;
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (_farmHashChainLocks.get(farmKey) === nextPromise) {
+      _farmHashChainLocks.delete(farmKey);
+    }
+  }
+}
+
 async function sealPlantLogHashChain(pool, logRow) {
   if (!logRow || !logRow.id) return logRow;
   try {
-    const prevRes = await pool.query(
-      `SELECT record_hash FROM plant_logs WHERE id < $1 AND (is_deleted IS NOT TRUE) ORDER BY id DESC LIMIT 1`,
-      [logRow.id]
-    );
-    const prevHash = (prevRes.rows[0] && prevRes.rows[0].record_hash)
-      ? prevRes.rows[0].record_hash
-      : 'GENESIS_00000000000000000000000000000000000000000000000000000000';
-    const canonicalStr = `${prevHash}|${logRow.id}|${logRow.plant_id}|${logRow.log_type}|${logRow.log_date}|${logRow.batch_code || ''}`;
-    const recordHash = crypto.createHash('sha256').update(canonicalStr).digest('hex');
-    await pool.query(
-      `UPDATE plant_logs SET prev_log_hash = $1, record_hash = $2, is_locked = true WHERE id = $3`,
-      [prevHash, recordHash, logRow.id]
-    );
-    logRow.prev_log_hash = prevHash;
-    logRow.record_hash = recordHash;
-    logRow.is_locked = true;
+    const farmRes = await pool.query(`SELECT farm_id FROM plants WHERE id = $1 LIMIT 1`, [logRow.plant_id]);
+    const farmId = (farmRes.rows[0] && farmRes.rows[0].farm_id) ? farmRes.rows[0].farm_id : 'GLOBAL';
+    const lockKey = `farm_${farmId}`;
+
+    await withFarmHashChainLock(lockKey, async () => {
+      const prevRes = await pool.query(
+        `SELECT pl.record_hash
+         FROM plant_logs pl
+         LEFT JOIN plants p ON p.id = pl.plant_id
+         WHERE pl.id < $1
+           AND (pl.is_deleted IS NOT TRUE)
+           AND pl.record_hash IS NOT NULL
+           AND (p.farm_id IS NOT DISTINCT FROM (SELECT farm_id FROM plants WHERE id = $2 LIMIT 1))
+         ORDER BY pl.id DESC
+         LIMIT 1`,
+        [logRow.id, logRow.plant_id]
+      );
+      const prevHash = (prevRes.rows[0] && prevRes.rows[0].record_hash)
+        ? prevRes.rows[0].record_hash
+        : 'GENESIS_00000000000000000000000000000000000000000000000000000000';
+      const canonicalStr = `${prevHash}|${logRow.id}|${logRow.plant_id}|${logRow.log_type}|${logRow.log_date}|${logRow.batch_code || ''}`;
+      const recordHash = crypto.createHash('sha256').update(canonicalStr).digest('hex');
+      await pool.query(
+        `UPDATE plant_logs SET prev_log_hash = $1, record_hash = $2, is_locked = true WHERE id = $3`,
+        [prevHash, recordHash, logRow.id]
+      );
+      logRow.prev_log_hash = prevHash;
+      logRow.record_hash = recordHash;
+      logRow.is_locked = true;
+    });
   } catch (e) {
     console.warn('ISO27001 Hash-Chain warning:', e.message);
   }
@@ -3164,7 +3195,7 @@ router.post('/:plantId/media/:mediaId/reject-delete', auth, admin, async (req, r
   }
 });
 
-router.post('/:id/logs', auth, async (req, res) => {
+router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
   try {
     const { 
       log_date, log_type, note, media_urls, details, 
@@ -5472,7 +5503,7 @@ router.post('/offline-batch-sync', auth, async (req, res) => {
         const detailsJson = JSON.stringify(item.details || {});
 
         const insRes = await pool.query(
-          `INSERT INTO plant_logs (plant_id, user_id, log_date, log_type, note, media_urls, details, operator_name, equipment_used)
+          `INSERT INTO plant_logs (plant_id, created_by, log_date, log_type, note, media_urls, details, operator_name, equipment_used)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            RETURNING *`,
           [
@@ -5490,8 +5521,8 @@ router.post('/offline-batch-sync', auth, async (req, res) => {
         if (insRes.rows[0]) {
           await sealPlantLogHashChain(pool, insRes.rows[0]);
           await pool.query(
-            `UPDATE plants SET last_care_date = $1, last_care_type = $2, updated_at = NOW() WHERE id = $3`,
-            [logDate, logType, pid]
+            `UPDATE plants SET updated_at = NOW() WHERE id = $1`,
+            [pid]
           );
           syncedLogs++;
         }

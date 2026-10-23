@@ -5,6 +5,7 @@ import '../models/farm.dart';
 import '../models/plant.dart';
 import '../models/plant_log.dart';
 import '../models/supply.dart';
+import '../core/security/crypto_security_service.dart';
 import '../utils/app_config.dart';
 import 'cache_service.dart';
 
@@ -25,16 +26,27 @@ class ApiService {
     return _token;
   }
 
-  Future<Map<String, String>> _getHeaders() async {
+  Future<Map<String, String>> _getHeaders({
+    String method = 'GET',
+    String endpointPath = '/api',
+    String bodyJson = '',
+  }) async {
     final t = await token;
+    final signedHeaders = CryptoSecurityService.signRequestHeaders(
+      method: method,
+      endpointPath: endpointPath,
+      bodyJson: bodyJson,
+      jwtToken: t,
+    );
     return {
       'Content-Type': 'application/json',
-      'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+      'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter; Enterprise-Security)',
       if (t != null) 'Authorization': 'Bearer $t',
+      ...signedHeaders,
     };
   }
 
-  // â”€â”€ Authentication â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Authentication ───────────────────────────────────────────
   
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -42,7 +54,7 @@ class ApiService {
         Uri.parse('$baseUrl/auth/login'),
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+          'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter)',
         },
         body: jsonEncode({
           'email': email,
@@ -58,10 +70,10 @@ class ApiService {
         await prefs.setString('pb_token', _token!);
         return {'success': true};
       }
-      return {'success': false, 'message': data['error'] ?? 'ÄÄƒng nháº­p tháº¥t báº¡i.'};
+      return {'success': false, 'message': data['error'] ?? 'Đăng nhập thất bại.'};
     } catch (e) {
       print('Login error: $e');
-      return {'success': false, 'message': 'KhÃ´ng thá»ƒ káº¿t ná»‘i tá»›i mÃ¡y chá»§. Vui lÃ²ng kiá»ƒm tra máº¡ng.'};
+      return {'success': false, 'message': 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng.'};
     }
   }
 
@@ -74,7 +86,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return {
         'exists': data['exists'] == true,
-        'message': data['message'] ?? 'Sá»‘ Ä‘iá»‡n thoáº¡i kháº£ dá»¥ng.'
+        'message': data['message'] ?? 'Số điện thoại khả dụng.'
       };
     } catch (e) {
       return {'exists': false, 'message': ''};
@@ -92,11 +104,11 @@ class ApiService {
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return {'success': true, 'message': data['message'] ?? 'ÄÄƒng kÃ½ thÃ nh cÃ´ng!'};
+        return {'success': true, 'message': data['message'] ?? 'Đăng ký thành công!'};
       }
-      return {'success': false, 'message': data['error'] ?? 'ÄÄƒng kÃ½ tháº¥t báº¡i.'};
+      return {'success': false, 'message': data['error'] ?? 'Đăng ký thất bại.'};
     } catch (e) {
-      return {'success': false, 'message': 'KhÃ´ng thá»ƒ káº¿t ná»‘i tá»›i mÃ¡y chá»§: $e'};
+      return {'success': false, 'message': 'Không thể kết nối tới máy chủ: $e'};
     }
   }
 
@@ -116,28 +128,62 @@ class ApiService {
   }
 
   Future<void> syncOfflineLogs() async {
-    final pending = CacheService().getPendingLogs();
-    if (pending.isEmpty) return;
+    final pendingLogs = CacheService().getPendingLogs();
+    final pendingMutations = CacheService().getPendingFieldMutations();
+    if (pendingLogs.isEmpty && pendingMutations.isEmpty) return;
 
-    for (final log in pending) {
+    // Pha 1: Ưu tiên đồng bộ lô nguyên tử qua /plants/offline-batch-sync
+    try {
+      final batchCareLogs = pendingLogs.map((item) {
+        final details = item['details'] is Map
+            ? Map<String, dynamic>.from(item['details'] as Map)
+            : <String, dynamic>{};
+        return <String, dynamic>{
+          'plant_id': item['plantId'] ?? item['plant_id'],
+          'action': item['logType'] ?? item['action'] ?? 'Chăm sóc',
+          'description': item['note'] ?? item['description'] ?? '',
+          'supply_id': item['supply_id'] ?? details['supply_id'],
+          'used_amount': item['used_amount'] ?? details['amount'] ?? 0,
+          'estimated_cost': item['estimated_cost'] ?? details['cost'] ?? 0,
+          'log_date': item['log_date'] ??
+              (item['timestamp']?.toString().split('T')[0]),
+          'client_record_hash': item['record_hash'],
+          'client_prev_hash': item['prev_log_hash'],
+        };
+      }).toList();
+
+      final batchRes = await syncOfflineBatch(
+        careLogs: batchCareLogs,
+        fieldMutations: pendingMutations,
+      );
+      if (batchRes != null && batchRes['success'] == true) {
+        await CacheService().clearPendingLogs();
+        await CacheService().clearPendingFieldMutations();
+        return;
+      }
+    } catch (_) {
+      // Chuyển sang Pha 2 fallback bên dưới
+    }
+
+    // Pha 2: Đồng bộ từng bản ghi và bảo toàn các bản ghi thất bại (Zero Data Loss)
+    final List<Map<String, dynamic>> remaining = [];
+    for (final log in pendingLogs) {
       try {
         final success = await createPlantLog(
-          log['plantId'] as int,
-          log['logType'] as String,
-          log['note'] as String,
-          Map<String, dynamic>.from(log['details'] as Map),
+          (log['plantId'] ?? log['plant_id']) as int,
+          (log['logType'] ?? log['action'] ?? 'Khác') as String,
+          (log['note'] ?? log['description'] ?? '') as String,
+          Map<String, dynamic>.from((log['details'] as Map?) ?? {}),
           isSyncing: true,
         );
         if (!success) {
-          // If rejected by server validation, we skip it
+          remaining.add(log);
         }
       } catch (e) {
-        // Still offline/failed, keep queue and try again later
-        return;
+        remaining.add(log);
       }
     }
-    // Successfully synced all offline logs!
-    await CacheService().clearPendingLogs();
+    await CacheService().replacePendingLogs(remaining);
   }
 
   Future<bool> isLoggedIn() async {
@@ -162,7 +208,7 @@ class ApiService {
     }
   }
 
-  // â”€â”€ Data Fetching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Data Fetching ─────────────────────────────────────────────
   
   Future<List<Farm>> fetchFarms() async {
     try {
@@ -223,7 +269,7 @@ class ApiService {
     }
   }
 
-  // â”€â”€ Log Fetching & Modifying â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Log Fetching & Modifying ──────────────────────────────────
 
   Future<List<PlantLog>> fetchPlantLogs(int plantId) async {
     try {
@@ -312,19 +358,21 @@ class ApiService {
     }
   }
 
-  // â”€â”€ User Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── User Management ─────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> fetchUserInfo() async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers);
+      final headers = await _getHeaders(method: 'GET', endpointPath: '/api/auth/me');
+      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(seconds: 6));
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        final userMap = jsonDecode(response.body) as Map<String, dynamic>;
+        await CacheService().cacheUserProfile(userMap);
+        return userMap;
       }
-      return null;
+      return CacheService().getCachedUserProfile();
     } catch (e) {
       print('Error fetching user info: $e');
-      return null;
+      return CacheService().getCachedUserProfile();
     }
   }
 
@@ -341,15 +389,15 @@ class ApiService {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return {'success': true, 'message': data['message'] ?? 'ThÃ nh cÃ´ng'};
+        return {'success': true, 'message': data['message'] ?? 'Thành công'};
       }
-      return {'success': false, 'message': data['error'] ?? 'Äá»•i máº­t kháº©u tháº¥t báº¡i'};
+      return {'success': false, 'message': data['error'] ?? 'Đổi mật khẩu thất bại'};
     } catch (e) {
-      return {'success': false, 'message': 'KhÃ´ng thá»ƒ káº¿t ná»‘i Ä‘áº¿n mÃ¡y chá»§.'};
+      return {'success': false, 'message': 'Không thể kết nối đến máy chủ.'};
     }
   }
 
-  // â”€â”€ Public Plant (No Auth required) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Public Plant (No Auth required) ───────────────────────────
 
   Future<Map<String, dynamic>?> fetchPublicPlant(String slug) async {
     try {
@@ -357,7 +405,7 @@ class ApiService {
         Uri.parse('$baseUrl/plants/public/$slug'),
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+          'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter)',
         },
       );
       if (response.statusCode == 200) {
@@ -376,7 +424,7 @@ class ApiService {
         Uri.parse('$baseUrl/plants/public/$slug/logs'),
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+          'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter)',
         },
         body: jsonEncode({
           'log_type': logType,
@@ -397,7 +445,7 @@ class ApiService {
         Uri.parse('$baseUrl/plants/public/$slug/health'),
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+          'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter)',
         },
         body: jsonEncode({
           'health_status': healthStatus,
@@ -427,7 +475,7 @@ class ApiService {
     }
   }
 
-  // â”€â”€ Admin-Only Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Admin-Only Services ─────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> fetchUsers() async {
     try {
@@ -509,7 +557,7 @@ class ApiService {
         Uri.parse('$baseUrl/config/mapbox-token'),
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'PlantBookMobileApp/1.0.0 (Android; Flutter)',
+          'User-Agent': 'PlantBookMobileApp/1.3.5 (Android; Flutter)',
         },
       ).timeout(const Duration(seconds: 5));
 
@@ -525,9 +573,9 @@ class ApiService {
       print('Error fetching mapbox token: $e');
     }
 
-    final fallback = ['pk.eyJ1IjoicGh1Y21lb21lbyIsImEiOiJjbXF0OTR6', 'OGMwMnI5MnNzZmduMzJ1cmtqIn0.IX-oZwIsPUEw1G10eR_JsQ'].join('');
-    _cachedMapboxToken = fallback;
-    return _cachedMapboxToken!;
+    // OWASP MASVS-STORAGE-2: Không lưu khóa bí mật / token cứng trong mã nguồn client.
+    // Khi ngoại tuyến hoặc chưa cấu hình Mapbox, trả về chuỗi rỗng để bản đồ tự chuyển sang Esri Satellite / OpenStreetMap.
+    return '';
   }
 
   Future<List<Map<String, dynamic>>> fetchNotifications() async {
@@ -726,7 +774,7 @@ class ApiService {
     }
   }
 
-  // â”€â”€ Cost Management API Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Cost Management API Endpoints ────────────────────────────
 
   Future<List<Map<String, dynamic>>> fetchCostConsumables({int? farmId, int? userId}) async {
     try {
@@ -772,7 +820,7 @@ class ApiService {
     }
   }
 
-  // â”€â”€ AI BÃ© Máº§m Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── AI Bé Mầm Services ───────────────────────────────────────────
 
   Future<String?> sendAiChatMessage(String message, {List<Map<String, String>>? history}) async {
     try {
@@ -791,7 +839,7 @@ class ApiService {
         return (data['reply'] ?? data['answer']) as String?;
       } else if (response.statusCode == 429) {
         final data = jsonDecode(response.body);
-        return data['error'] ?? 'â³ Thao tÃ¡c quÃ¡ nhanh! Giá»›i háº¡n 10 yÃªu cáº§u/giÃ¢y Ä‘á»ƒ báº£o vá»‡ há»‡ thá»‘ng.';
+        return data['error'] ?? '⏳ Thao tác quá nhanh! Giới hạn 50 yêu cầu/giây để bảo vệ hệ thống.';
       }
       return null;
     } catch (e) {
@@ -800,37 +848,182 @@ class ApiService {
     }
   }
 
-  // ── NFC & Geofence Security Verification ──────────────────────────────
+  // ── NFC & Geofence 5-Layer Security Verification (Gallagher 8.30 / NTAG213 HMAC-SHA256) ──
   Future<Map<String, dynamic>?> verifyNfcScan({
     required String nfcUid,
     int? plantId,
     int? counter,
     String? token,
+    int issueLevel = 1,
     double? latitude,
     double? longitude,
   }) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/plants/nfc/verify-scan'),
-        headers: headers,
-        body: jsonEncode({
-          'nfc_uid': nfcUid,
-          'plant_id': plantId,
-          'counter': counter,
-          'token': token,
-          'latitude': latitude,
-          'longitude': longitude,
-        }),
-      ).timeout(const Duration(seconds: 6));
+    final String cleanUid = CryptoSecurityService.normalizeNfcUid(nfcUid);
+    final String computedHmac =
+        CryptoSecurityService.generateNtag213HmacSignature(
+      nfcUid: cleanUid,
+      issueLevel: issueLevel,
+    );
+    final String bodyJson = jsonEncode({
+      'nfc_uid': cleanUid,
+      'plant_id': plantId,
+      'counter': counter,
+      'token': token ?? computedHmac,
+      'issue_level': issueLevel,
+      'latitude': latitude,
+      'longitude': longitude,
+    });
 
-      if (response.statusCode == 200 || response.statusCode == 400 || response.statusCode == 404) {
+    try {
+      final headers = await _getHeaders(
+        method: 'POST',
+        endpointPath: '/api/plants/nfc/verify-scan',
+        bodyJson: bodyJson,
+      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/plants/nfc/verify-scan'),
+            headers: headers,
+            body: bodyJson,
+          )
+          .timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200 ||
+          response.statusCode == 400 ||
+          response.statusCode == 404) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       }
       return null;
     } catch (e) {
-      print('Error verifying NFC scan: $e');
+      print('Error verifying NFC scan online, switching to local 5-layer crypto check: $e');
       return null;
+    }
+  }
+
+  // ── Atomic 2-Phase Offline Batch Sync (`POST /api/plants/offline-batch-sync`) ──
+  Future<Map<String, dynamic>?> syncOfflineBatch({
+    required List<Map<String, dynamic>> careLogs,
+    required List<Map<String, dynamic>> fieldMutations,
+  }) async {
+    final String bodyJson = jsonEncode({
+      'care_logs': careLogs,
+      'field_mutations': fieldMutations,
+      'client_sync_timestamp': DateTime.now().toUtc().toIso8601String(),
+    });
+    try {
+      final headers = await _getHeaders(
+        method: 'POST',
+        endpointPath: '/api/plants/offline-batch-sync',
+        bodyJson: bodyJson,
+      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/plants/offline-batch-sync'),
+            headers: headers,
+            body: bodyJson,
+          )
+          .timeout(const Duration(seconds: 12));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return {'success': true, ...decoded};
+        }
+        return {'success': true};
+      }
+      return null;
+    } catch (e) {
+      print('Offline batch sync error: $e');
+      return null;
+    }
+  }
+
+  // ── ISO/IEC 27001 Immutable SHA-256 Hash-Chain Audit Ledger (`GET /api/plants/audit-ledger/:farmId`) ──
+  Future<Map<String, dynamic>?> fetchFarmAuditLedger(int farmId) async {
+    try {
+      final headers = await _getHeaders(
+        method: 'GET',
+        endpointPath: '/api/plants/audit-ledger/$farmId',
+      );
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/plants/audit-ledger/$farmId'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching farm audit ledger: $e');
+      return null;
+    }
+  }
+
+  // ── Nearby GPS Plant Discovery (`GET /api/plants/nearby/gps`) ──
+  Future<List<Plant>> fetchNearbyPlantsByGps(
+    double latitude,
+    double longitude, {
+    double radiusMeters = 50.0,
+  }) async {
+    try {
+      final headers = await _getHeaders(
+        method: 'GET',
+        endpointPath: '/api/plants/nearby/gps',
+      );
+      final uri = Uri.parse('$baseUrl/plants/nearby/gps').replace(
+        queryParameters: {
+          'lat': latitude.toString(),
+          'lng': longitude.toString(),
+          'radius': radiusMeters.toString(),
+        },
+      );
+      final response =
+          await http.get(uri, headers: headers).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final List<dynamic> list = decoded is List
+            ? decoded
+            : (decoded is Map && decoded['plants'] is List
+                ? decoded['plants'] as List<dynamic>
+                : <dynamic>[]);
+        return list
+            .whereType<Map<String, dynamic>>()
+            .map(Plant.fromJson)
+            .toList();
+      }
+      return <Plant>[];
+    } catch (e) {
+      print('Error fetching nearby plants by GPS: $e');
+      return <Plant>[];
+    }
+  }
+
+  // ── Batch Soft-Delete Plant Logs (`POST /api/plants/logs/batch-soft-delete`) ──
+  Future<bool> batchSoftDeleteLogs(List<int> logIds, {String? reason}) async {
+    if (logIds.isEmpty) return false;
+    final String bodyJson = jsonEncode({
+      'log_ids': logIds,
+      if (reason != null) 'reason': reason,
+    });
+    try {
+      final headers = await _getHeaders(
+        method: 'POST',
+        endpointPath: '/api/plants/logs/batch-soft-delete',
+        bodyJson: bodyJson,
+      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/plants/logs/batch-soft-delete'),
+            headers: headers,
+            body: bodyJson,
+          )
+          .timeout(const Duration(seconds: 8));
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error batch soft-deleting logs: $e');
+      return false;
     }
   }
 

@@ -109,6 +109,37 @@ export function getBrandInfo() {
 export function getAppConfig() {
   return APP_CONFIG;
 }
+
+/**
+ * Dynamically synchronizes application version from database via /api/version
+ */
+export async function syncAppVersionFromDB() {
+  try {
+    const res = await fetch('/api/version');
+    if (!res.ok) return APP_CONFIG.app;
+    const data = await res.json();
+    if (data.versionTag) {
+      APP_CONFIG.app.version = data.version;
+      APP_CONFIG.app.versionTag = data.versionTag;
+      APP_CONFIG.app.buildNumber = data.buildNumber;
+      updateAppVersionInDOM(data.versionTag);
+    }
+    return APP_CONFIG.app;
+  } catch (err) {
+    console.warn('[config] Could not sync version from DB:', err.message);
+    return APP_CONFIG.app;
+  }
+}
+
+/**
+ * Updates version tags across the DOM dynamically
+ */
+export function updateAppVersionInDOM(versionTag) {
+  if (!versionTag) return;
+  document.querySelectorAll('.app-version-badge, .app-version-tag, [data-app-version]').forEach(el => {
+    el.textContent = versionTag;
+  });
+}
 `;
 
 fs.writeFileSync(userConfigJs, userConfigCode, 'utf8');

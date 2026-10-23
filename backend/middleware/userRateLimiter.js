@@ -15,7 +15,7 @@ const rateLimitConfig = getRateLimitConfig();
  */
 const userRateLimiter = rateLimit({
   windowMs: rateLimitConfig.windowMs || 1000, // 1 second
-  max: rateLimitConfig.maxRequestsPerWindow || 10, // 10 requests per 1s
+  max: rateLimitConfig.maxRequestsPerWindow || 50, // 50 requests per 1s
   standardHeaders: true,
   legacyHeaders: false,
   statusCode: rateLimitConfig.statusCode || 429,
@@ -52,7 +52,7 @@ const userRateLimiter = rateLimit({
     return false;
   },
   handler: (req, res) => {
-    const msg = rateLimitConfig.message || 'Thao tác quá nhanh! Giới hạn tối đa 10 yêu cầu/giây để bảo vệ hệ thống.';
+    const msg = rateLimitConfig.message || 'Thao tác quá nhanh! Giới hạn tối đa 50 yêu cầu/giây để bảo vệ hệ thống.';
     return res.status(429).json({
       error: msg,
       code: 'RATE_LIMIT_EXCEEDED',

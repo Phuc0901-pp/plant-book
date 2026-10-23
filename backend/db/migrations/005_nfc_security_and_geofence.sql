@@ -1,6 +1,7 @@
 -- Migration: 005_nfc_security_and_geofence.sql
 -- Description: NTAG213 security enhancements, counter tracking, HMAC signatures, Geofence radius (<= 8m), and audit logs
 
+-- +migrate Up
 -- 1. Upgrade nfc_tags_inventory table
 ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS last_counter INT DEFAULT 0;
 ALTER TABLE nfc_tags_inventory ADD COLUMN IF NOT EXISTS hmac_signature VARCHAR(128) NULL;
