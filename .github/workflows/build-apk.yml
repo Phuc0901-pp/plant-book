@@ -39,11 +39,19 @@ jobs:
 
       - name: Build Fat Release APK (Universal)
         working-directory: mobile_app
-        run: flutter build apk --release --build-name=1.3.5 --build-number=19 --no-tree-shake-icons --android-skip-build-dependency-validation
+        run: |
+          flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation 2>&1 | tee ../build_apk.log || {
+            echo "## ❌ Android APK Build Error Log" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 80 ../build_apk.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Build Split per ABI APKs (Optimized arm64-v8a & armeabi-v7a)
         working-directory: mobile_app
-        run: flutter build apk --split-per-abi --build-name=1.3.5 --build-number=19 --no-tree-shake-icons --android-skip-build-dependency-validation
+        run: |
+          flutter build apk --split-per-abi --no-tree-shake-icons --android-skip-build-dependency-validation 2>&1 | tee -a ../build_apk.log || true
 
       - name: Package & Sign SHA-256 Release Checksums
         run: |
@@ -59,6 +67,13 @@ jobs:
           name: PlantBook-Mobile-ERP-v1.3.5-APK
           path: build_output/
           retention-days: 30
+
+      - name: Upload Diagnostics on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-Build-Log
+          path: build_apk.log
 
       - name: Publish GitHub Release Assets
         uses: softprops/action-gh-release@v2
