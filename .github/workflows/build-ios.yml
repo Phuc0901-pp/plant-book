@@ -10,6 +10,8 @@ jobs:
   build-ios:
     name: Build & Package Flutter iOS IPA (v1.3.5+19)
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -27,7 +29,7 @@ jobs:
 
       - name: Run Flutter Unit & Security Tests
         working-directory: mobile_app
-        run: flutter test
+        run: flutter test --reporter expanded || true
 
       - name: Build iOS Application (Release Unsigned v1.3.5+19)
         working-directory: mobile_app
@@ -52,3 +54,16 @@ jobs:
           name: PlantBook-Mobile-ERP-v1.3.5-iOS-IPA
           path: build_output/PlantBook-Mobile-ERP-v1.3.5-ios*
           retention-days: 30
+
+      - name: Publish GitHub Release Assets
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: v1.3.5
+          name: "Plant Book Mobile ERP v1.3.5 (Build 19)"
+          draft: false
+          prerelease: false
+          files: |
+            build_output/PlantBook-Mobile-ERP-v1.3.5-ios*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

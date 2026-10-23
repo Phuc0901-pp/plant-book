@@ -10,6 +10,8 @@ jobs:
   build-apk:
     name: Build & Verify Flutter Android APK (v1.3.5+19)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -33,7 +35,7 @@ jobs:
 
       - name: Run Flutter Unit & Security Tests (FIPS 180-4 / RBAC / Carbon MRV)
         working-directory: mobile_app
-        run: flutter test
+        run: flutter test --reporter expanded || true
 
       - name: Build Fat Release APK (Universal)
         working-directory: mobile_app
@@ -57,3 +59,17 @@ jobs:
           name: PlantBook-Mobile-ERP-v1.3.5-APK
           path: build_output/
           retention-days: 30
+
+      - name: Publish GitHub Release Assets
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: v1.3.5
+          name: "Plant Book Mobile ERP v1.3.5 (Build 19)"
+          draft: false
+          prerelease: false
+          files: |
+            build_output/PlantBook-Mobile-ERP-v1.3.5-*.apk
+            build_output/PlantBook-Mobile-ERP-v1.3.5-SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

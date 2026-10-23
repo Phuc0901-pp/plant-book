@@ -158,7 +158,13 @@ void main() {
     testWidgets('Renders PlantBookApp with v1.3.5+19 constants', (WidgetTester tester) async {
       expect(AppConstants.appVersion, equals('v1.3.5'));
       expect(AppConstants.fullBuildTag, equals('v1.3.5+19'));
-      await tester.pumpWidget(const PlantBookApp(initialScreen: Scaffold(body: Text('TBSG v1.3.5+19'))));
+      await tester.pumpWidget(
+        PlantBookApp(
+          initialScreen: Container(
+            child: const Text('TBSG v1.3.5+19', textDirection: TextDirection.ltr),
+          ),
+        ),
+      );
       expect(find.text('TBSG v1.3.5+19'), findsOneWidget);
     });
   });
