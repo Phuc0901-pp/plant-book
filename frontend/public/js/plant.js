@@ -1090,7 +1090,7 @@ function startPublicVoiceInput(textareaId, btnEl) {
 
 // Escape HTML utility
 function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
 // Dynamic Crop image loading retry with multiple extensions

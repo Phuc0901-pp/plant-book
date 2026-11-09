@@ -29,7 +29,16 @@ app.use(compression()); // Gzip compression: giảm 70%-85% kích thước paylo
 app.use(cors({
   origin: '*',
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Api-Key',
+    'X-Client-Version',
+    'X-Client-Signature',
+    'X-Client-Nonce',
+    'X-Client-Timestamp',
+    'X-Requested-With'
+  ]
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -250,6 +259,26 @@ app.get(['/usr-*', '/usr-*/*', '/user', '/user/*'], (req, res, next) => {
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/admin/index.html'));
+});
+
+// ─── API 404 Handler & Global Error Middleware ──────────────────────
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: 'Endpoint API không tồn tại hoặc đã thay đổi.' });
+});
+
+app.use((err, req, res, next) => {
+  const isApi = req.originalUrl && req.originalUrl.startsWith('/api');
+  const statusCode = err.status || err.statusCode || 500;
+  console.error(`[Server Error] [${req.method}] ${req.originalUrl}:`, err.message || err);
+  
+  if (isApi) {
+    return res.status(statusCode).json({
+      success: false,
+      error: err.message || 'Lỗi xử lý yêu cầu hệ thống.',
+      code: err.code || 'INTERNAL_SERVER_ERROR'
+    });
+  }
+  return res.status(statusCode).send('<h3>500 - Lỗi hệ thống</h3><p>Vui lòng thử lại sau.</p>');
 });
 
 // ─── Start ────────────────────────────────────────────────────────

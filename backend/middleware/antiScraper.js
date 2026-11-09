@@ -32,8 +32,15 @@ const SUSPICIOUS_UA_PATTERNS = [
  */
 function antiScraper(req, res, next) {
   const reqPath = req.path || req.originalUrl || '';
-  // Exclude simple health check
+  // Exclude health checks, root endpoints
   if (reqPath.includes('/health') || reqPath === '/' || reqPath === '/healthz') {
+    return next();
+  }
+
+  // Exempt legitimate enterprise API integrations using API Key or B2B dataset routes
+  const hasApiKey = req.headers['x-api-key'] || (req.query && req.query.api_key);
+  const isB2BDataset = reqPath.includes('/full-dataset') || reqPath.includes('/api-link') || reqPath.includes('/offline-batch-sync');
+  if (hasApiKey || isB2BDataset) {
     return next();
   }
 
@@ -75,9 +82,12 @@ const apiLimiter = rateLimit({
     if (p.includes('/health') || p === '/' || p === '/healthz' || p.includes('/config/mapbox-token')) {
       return true;
     }
-    // Exempt authenticated sessions from rate limiting so admins & farmers never get blocked
+    // Exempt authenticated sessions and valid API Keys so enterprise integrations never get blocked
     const authHeader = req.headers['authorization'] || '';
     if (authHeader.startsWith('Bearer ') && authHeader.length > 20) {
+      return true;
+    }
+    if (req.headers['x-api-key'] || (req.query && req.query.api_key)) {
       return true;
     }
     return false;

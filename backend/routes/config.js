@@ -30,14 +30,20 @@ router.get('/mapbox-token', (req, res) => {
 router.put('/', auth, admin, async (req, res) => {
   try {
     const updates = req.body; // e.g. { fertilizers: [...], pesticides: [...] }
+    if (!updates || typeof updates !== 'object') {
+      return res.status(400).json({ error: 'Dữ liệu cấu hình không hợp lệ.' });
+    }
+    for (const [key, value] of Object.entries(updates)) {
+      if (!Array.isArray(value)) {
+        return res.status(400).json({ error: `Giá trị cho ${key} phải là một mảng.` });
+      }
+    }
+
     const client = await pool.connect();
     
     try {
       await client.query('BEGIN');
       for (const [key, value] of Object.entries(updates)) {
-        if (!Array.isArray(value)) {
-          return res.status(400).json({ error: `Giá trị cho ${key} phải là một mảng.` });
-        }
         await client.query(`
           INSERT INTO system_configs (key, value, updated_at)
           VALUES ($1, $2, NOW())
