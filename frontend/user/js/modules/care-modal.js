@@ -670,11 +670,23 @@ export function calculateLaborCostPreview() {
 }
 window.calculateLaborCostPreview = calculateLaborCostPreview;
 
-export function selectLaborWorkContent(val) {
+export function selectLaborWorkContent(val, btnEl) {
   const el = document.getElementById('c-detail-labor-content');
   if (el) {
     el.value = val;
     el.focus();
+  }
+  if (btnEl && btnEl.parentElement) {
+    btnEl.parentElement.querySelectorAll('button').forEach(b => {
+      b.style.borderColor = '#cbd5e1';
+      b.style.background = '#f8fafc';
+      b.style.color = '#1e293b';
+      b.style.fontWeight = '600';
+    });
+    btnEl.style.borderColor = '#2563eb';
+    btnEl.style.background = '#eff6ff';
+    btnEl.style.color = '#1d4ed8';
+    btnEl.style.fontWeight = '700';
   }
 }
 window.selectLaborWorkContent = selectLaborWorkContent;
@@ -932,13 +944,27 @@ function _buildDetailFields(logType, configs, supplies = []) {
           <label><i data-lucide="clipboard-list" class="lucide-sm" style="color:#2563eb;"></i> Nội dung thuê nhân công là gì *</label>
           <input type="text" id="c-detail-labor-content" value="" placeholder="Nhập hoặc bấm chọn gợi ý bên dưới (Cắt cành, tỉa hoa, làm cỏ...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
           <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; align-items:center;">
-            <span style="font-size:11px; color:#64748b; font-weight:700; margin-right:2px;">Gợi ý nhanh:</span>
-            <button type="button" onclick="selectLaborWorkContent('Cắt cành / tỉa lá')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">✂️ Cắt cành / tỉa lá</button>
-            <button type="button" onclick="selectLaborWorkContent('Tỉa hoa / tỉa nụ')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🌸 Tỉa hoa / nụ</button>
-            <button type="button" onclick="selectLaborWorkContent('Làm cỏ / xới gốc')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🌿 Làm cỏ / xới gốc</button>
-            <button type="button" onclick="selectLaborWorkContent('Bón phân gốc / rải phân')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🌱 Bón phân</button>
-            <button type="button" onclick="selectLaborWorkContent('Đào rãnh / thoát nước')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🚜 Đào rãnh</button>
-            <button type="button" onclick="selectLaborWorkContent('Bọc trái / bao buồng')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">📦 Bọc trái</button>
+            <span style="font-size:11px; color:#64748b; font-weight:700; margin-right:2px; display:inline-flex; align-items:center; gap:4px;">
+              <i data-lucide="sparkles" class="lucide-xs" style="color:#f59e0b;"></i> Gợi ý nhanh:
+            </span>
+            <button type="button" onclick="selectLaborWorkContent('Cắt cành / tỉa lá', this)" style="font-size:11.5px; padding:4px 9px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease;">
+              <i data-lucide="scissors" class="lucide-xs" style="color:#059669;"></i> Cắt cành / tỉa lá
+            </button>
+            <button type="button" onclick="selectLaborWorkContent('Tỉa hoa / tỉa nụ', this)" style="font-size:11.5px; padding:4px 9px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease;">
+              <i data-lucide="flower-2" class="lucide-xs" style="color:#ec4899;"></i> Tỉa hoa / nụ
+            </button>
+            <button type="button" onclick="selectLaborWorkContent('Làm cỏ / xới gốc', this)" style="font-size:11.5px; padding:4px 9px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease;">
+              <i data-lucide="sprout" class="lucide-xs" style="color:#16a34a;"></i> Làm cỏ / xới gốc
+            </button>
+            <button type="button" onclick="selectLaborWorkContent('Bón phân gốc / rải phân', this)" style="font-size:11.5px; padding:4px 9px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease;">
+              <i data-lucide="flask-conical" class="lucide-xs" style="color:#8b5cf6;"></i> Bón phân
+            </button>
+            <button type="button" onclick="selectLaborWorkContent('Đào rãnh / thoát nước', this)" style="font-size:11.5px; padding:4px 9px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease;">
+              <i data-lucide="shovel" class="lucide-xs" style="color:#d97706;"></i> Đào rãnh
+            </button>
+            <button type="button" onclick="selectLaborWorkContent('Bọc trái / bao buồng', this)" style="font-size:11.5px; padding:4px 9px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease;">
+              <i data-lucide="package" class="lucide-xs" style="color:#2563eb;"></i> Bọc trái
+            </button>
           </div>
         </div>
 
