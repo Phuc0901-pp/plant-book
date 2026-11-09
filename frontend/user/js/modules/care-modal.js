@@ -670,6 +670,15 @@ export function calculateLaborCostPreview() {
 }
 window.calculateLaborCostPreview = calculateLaborCostPreview;
 
+export function selectLaborWorkContent(val) {
+  const el = document.getElementById('c-detail-labor-content');
+  if (el) {
+    el.value = val;
+    el.focus();
+  }
+}
+window.selectLaborWorkContent = selectLaborWorkContent;
+
 export function calculateHarvestEconomicsPreview() {
   const fruitCount = parseFloat(document.getElementById('c-detail-harvest-fruit-count')?.value) || 0;
   const singleTreeRev = parseFloat(document.getElementById('c-detail-harvest-tree-revenue')?.value) || 0;
@@ -921,25 +930,38 @@ function _buildDetailFields(logType, configs, supplies = []) {
         <!-- 1. Nội dung thuê nhân công là gì -->
         <div class="field" style="margin-bottom:12px;">
           <label><i data-lucide="clipboard-list" class="lucide-sm" style="color:#2563eb;"></i> Nội dung thuê nhân công là gì *</label>
-          <input type="text" id="c-detail-labor-content" value="" placeholder="Nhập công việc thuê nhân công (VD: Làm cỏ, đào rãnh, tỉa cành, bón phân...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+          <input type="text" id="c-detail-labor-content" value="" placeholder="Nhập hoặc bấm chọn gợi ý bên dưới (Cắt cành, tỉa hoa, làm cỏ...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; align-items:center;">
+            <span style="font-size:11px; color:#64748b; font-weight:700; margin-right:2px;">Gợi ý nhanh:</span>
+            <button type="button" onclick="selectLaborWorkContent('Cắt cành / tỉa lá')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">✂️ Cắt cành / tỉa lá</button>
+            <button type="button" onclick="selectLaborWorkContent('Tỉa hoa / tỉa nụ')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🌸 Tỉa hoa / nụ</button>
+            <button type="button" onclick="selectLaborWorkContent('Làm cỏ / xới gốc')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🌿 Làm cỏ / xới gốc</button>
+            <button type="button" onclick="selectLaborWorkContent('Bón phân gốc / rải phân')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🌱 Bón phân</button>
+            <button type="button" onclick="selectLaborWorkContent('Đào rãnh / thoát nước')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">🚜 Đào rãnh</button>
+            <button type="button" onclick="selectLaborWorkContent('Bọc trái / bao buồng')" style="font-size:11.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#1e293b; cursor:pointer; font-weight:600;">📦 Bọc trái</button>
+          </div>
         </div>
 
-        <!-- 2. Bao nhiêu người & Bao tiền -->
-        <div class="field" style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:140px;">
-            <label><i data-lucide="users" class="lucide-sm" style="color:#0284c7;"></i> Số lượng người tham gia *</label>
+        <!-- 2. Bao nhiêu người & Bao tiền (Đồng hàng ngang, chiều cao nhãn chuẩn hóa) -->
+        <div style="display:grid; grid-template-columns: 1fr 1.35fr; gap:10px; margin-bottom:12px; align-items:start;">
+          <div>
+            <label style="height:20px; display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#1e293b; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <i data-lucide="users" class="lucide-sm" style="color:#0284c7; flex-shrink:0;"></i> Số người làm *
+            </label>
             <div style="position:relative;">
-              <input type="number" id="c-detail-labor-workers" min="1" step="1" value="" placeholder="Bao nhiêu người" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="width:100%; padding:10px 56px 10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
-              <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11.5px; font-weight:700; color:#475569;">người</span>
+              <input type="number" id="c-detail-labor-workers" min="1" step="1" value="" placeholder="Ví dụ: 3" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="width:100%; padding:10px 48px 10px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
+              <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11.5px; font-weight:700; color:#475569; pointer-events:none;">người</span>
             </div>
           </div>
-          <div style="flex:1.6; min-width:210px;">
-            <label><i data-lucide="banknote" class="lucide-sm" style="color:#059669;"></i> Chi phí thuê nhân công (VNĐ) *</label>
+          <div>
+            <label style="height:20px; display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#1e293b; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <i data-lucide="banknote" class="lucide-sm" style="color:#059669; flex-shrink:0;"></i> Chi phí thuê nhân công *
+            </label>
             <div style="display:flex; gap:6px;">
-              <input type="number" id="c-detail-labor-cost" min="0" step="1000" value="" placeholder="Bao nhiêu tiền (VNĐ)" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="flex:1.4; padding:10px 10px; border:1.5px solid #a7f3d0; border-radius:8px; font-weight:700; color:#065f46; background:#f0fdf4;">
-              <select id="c-detail-labor-cost-mode" onchange="calculateLaborCostPreview()" style="flex:1; padding:9px 6px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:12px; font-weight:600; color:#1e293b;">
+              <input type="number" id="c-detail-labor-cost" min="0" step="1000" value="" placeholder="Nhập số tiền" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="flex:1.2; min-width:0; padding:10px 8px; border:1.5px solid #a7f3d0; border-radius:8px; font-weight:700; color:#065f46; background:#f0fdf4;">
+              <select id="c-detail-labor-cost-mode" onchange="calculateLaborCostPreview()" style="flex:1; min-width:105px; padding:9px 4px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:11.5px; font-weight:700; color:#1e293b; text-align:center;">
                 <option value="total" selected>Tổng cả đoàn</option>
-                <option value="per_person">VNĐ / 1 người</option>
+                <option value="per_person">1 người</option>
               </select>
             </div>
           </div>
