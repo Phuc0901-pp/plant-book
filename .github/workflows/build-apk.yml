@@ -58,7 +58,9 @@ jobs:
 
       - name: Get Flutter dependencies
         working-directory: mobile_app
-        run: flutter pub get
+        run: |
+          flutter clean
+          flutter pub get
 
       - name: Run Flutter Unit & Security Tests (FIPS 180-4 / RBAC / Carbon MRV)
         working-directory: mobile_app
