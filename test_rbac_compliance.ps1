@@ -85,6 +85,20 @@ Assert-Contains $i18nEngineJs "switchExportLanguage" "Frontend i18n-engine.js im
 Assert-Contains $zhDictPath "GACC" "Chinese (zh.json) export traceability dictionary includes GACC compliance terms"
 Assert-Contains $userHtml "executive-bi-analytics-root" "Compiled user/index.html embeds Executive BI Analytics Dashboard"
 
+# --- REQUIREMENT 7: Labor (Nhan cong) Care Log Activity & Automatic BI Cost Sync ---
+$careModalJs = Join-Path $rootDir "frontend\user\js\modules\care-modal.js"
+$plantsJs = Join-Path $rootDir "frontend\user\js\modules\plants.js"
+Assert-Contains $userHtml "c-log-type[\s\S]*?Nh" "Compiled user/index.html has Labor (Nhan cong) option in Care Log modal"
+Assert-Contains $careModalJs 'id="c-detail-labor-content" value=""' "Care-modal.js renders blank work content field for Labor"
+Assert-Contains $careModalJs 'id="c-detail-labor-workers".*value=""' "Care-modal.js renders blank worker count field for Labor"
+Assert-Contains $careModalJs 'id="c-detail-labor-cost".*value=""' "Care-modal.js renders blank labor cost field for Labor"
+Assert-Contains $careModalJs 'id="c-detail-labor-start-time" value=""' "Care-modal.js renders blank start/end working hours fields for Labor"
+Assert-Contains $careModalJs "labor-economics-preview-box[\s\S]*?c-detail-media-capture" "Care-modal.js includes optional crew photo/video capture for Labor"
+Assert-Contains $careModalJs "calculateLaborCostPreview" "Care-modal.js implements real-time Labor cost & hours preview"
+Assert-Contains $logsJs "work_content" "Logs.js displays and exports Labor work_content, worker_count, and time_range"
+Assert-Contains $plantsJs "work_content" "Plants.js renders Labor logs in Plant ERP Profile timeline"
+Assert-Contains $backendPlants "createdLaborSup" "Backend plants.js auto-syncs Labor Care Logs to supplies & supply_usages"
+
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "   SUMMARY: $passed / $total TESTS PASSED ($([math]::Round(($passed/$total)*100, 1))%)" -ForegroundColor $(if ($passed -eq $total) { "Green" } else { "Yellow" })
 Write-Host "==========================================================" -ForegroundColor Cyan

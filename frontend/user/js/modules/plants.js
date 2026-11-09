@@ -4019,6 +4019,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
         const typeStr = String(log.log_type || '').toLowerCase();
         if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
           typeColor = '#0284c7'; typeBg = '#f0f9ff'; iconName = 'droplet';
+        } else if (typeStr.includes('nhân công') || typeStr.includes('nhan cong') || typeStr.includes('labor')) {
+          typeColor = '#2563eb'; typeBg = '#eff6ff'; iconName = 'users';
         } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
           typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
         } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
@@ -4029,7 +4031,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
           typeColor = '#475569'; typeBg = '#f8fafc'; iconName = 'scissors';
         }
 
-        const photos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
+        const rawPhotos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
+        const photos = rawPhotos.map(p => (typeof p === 'object' && p !== null) ? p.url : p).filter(Boolean);
 
         return `
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid ${typeColor};border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
@@ -4160,6 +4163,12 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
         }
       }
       if (!quantity) { quantity = 1; unit = 'bình 20L'; }
+    } else if (typeStr.includes('nhân công') || typeStr.includes('nhan cong') || typeStr.includes('labor')) {
+      materialName = details.work_content ? `Nhân công: ${details.work_content}` : (materialName || 'Nhân công canh tác');
+      if (details.worker_count) {
+        quantity = details.worker_count;
+        unit = `người${details.time_range ? ' · ' + details.time_range : ''}`;
+      }
     } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
       // Bón phân: nếu chưa có tên phân hoặc cost = 0, gán phân bón tiêu chuẩn
       if (!materialName || cost === 0) {
@@ -4225,6 +4234,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
         const typeStr = String(log.log_type || '').toLowerCase();
         if (typeStr.includes('tưới') || typeStr.includes('tuoi') || typeStr.includes('water')) {
           typeColor = '#0284c7'; typeBg = '#f0f9ff'; iconName = 'droplet';
+        } else if (typeStr.includes('nhân công') || typeStr.includes('nhan cong') || typeStr.includes('labor')) {
+          typeColor = '#2563eb'; typeBg = '#eff6ff'; iconName = 'users';
         } else if (typeStr.includes('phân') || typeStr.includes('phan') || typeStr.includes('fertil')) {
           typeColor = '#16a34a'; typeBg = '#f0fdf4'; iconName = 'sprout';
         } else if (typeStr.includes('thuốc') || typeStr.includes('thuoc') || typeStr.includes('pest') || typeStr.includes('sâu') || typeStr.includes('bệnh')) {
@@ -4235,7 +4246,8 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
           typeColor = '#475569'; typeBg = '#f8fafc'; iconName = 'scissors';
         }
 
-        const photos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
+        const rawPhotos = Array.isArray(log.media_urls) ? log.media_urls : (log.media_urls ? [log.media_urls] : []);
+        const photos = rawPhotos.map(p => (typeof p === 'object' && p !== null) ? p.url : p).filter(Boolean);
 
         return `
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:4px solid ${typeColor};border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.02);">

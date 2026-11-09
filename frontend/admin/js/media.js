@@ -1,4 +1,4 @@
-﻿/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
+/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 // ── Media ─────────────────────────────────────────────────
 
 function renderMediaSection(plantId) {
@@ -133,6 +133,8 @@ function getAgronomicLogTypeBadge(type) {
       return { label: '🌱 Bón phân', style: 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;' };
     case 'Phun thuốc':
       return { label: '🧪 Phun thuốc BVTV', style: 'background:#fffbeb; color:#b45309; border:1px solid #fde68a;' };
+    case 'Nhân công':
+      return { label: '👷 Nhân công (Thuê nhân công)', style: 'background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;' };
     case 'Cắt lá':
     case 'Cắt cành/lá':
       return { label: '✂️ Cắt cành / Tỉa lá', style: 'background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe;' };
@@ -165,6 +167,7 @@ function renderLogsSection(plantId) {
             <option value="Tưới nước">💧 Tưới nước</option>
             <option value="Bón phân">🌱 Bón phân</option>
             <option value="Phun thuốc">🧪 Phun thuốc BVTV</option>
+            <option value="Nhân công">👷 Nhân công (Thuê nhân công)</option>
             <option value="Cắt lá">✂️ Cắt cành / Tỉa lá</option>
             <option value="Tỉa hoa">🌸 Tỉa hoa / Nuôi quả</option>
             <option value="Bệnh cây">⚠️ Bệnh cây &amp; Xử lý sâu bệnh</option>

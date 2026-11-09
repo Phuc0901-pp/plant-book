@@ -411,8 +411,11 @@ function renderDashboardLogsTable(logs) {
               let detailsStr = esc(l.note || '');
               if (l.details && Object.keys(l.details).length > 0) {
                 const parts = [];
+                if (l.details.work_content)    parts.push(`Công việc: ${l.details.work_content}`);
+                if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
+                if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
                 if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
-                if (l.details.amount)          parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+                if (l.details.amount && !l.details.worker_count) parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
                 if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
                 if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
                 if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
@@ -427,6 +430,7 @@ function renderDashboardLogsTable(logs) {
                 'Tưới nước': 'badge-blue',
                 'Bón phân':  'badge-brown',
                 'Phun thuốc': 'badge-purple',
+                'Nhân công': 'badge-blue',
                 'Cắt lá':    'badge-green',
                 'Tỉa hoa':   'badge-amber'
               };

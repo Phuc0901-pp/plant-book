@@ -715,7 +715,7 @@ function renderActivityFilterChips(logs) {
     counts[t] = (counts[t] || 0) + 1;
   });
 
-  const chipTypes = ['all', 'Tưới nước', 'Bón phân', 'Phun thuốc', 'Cắt lá', 'Tỉa hoa', 'Bệnh cây', 'Thu hoạch'];
+  const chipTypes = ['all', 'Tưới nước', 'Bón phân', 'Phun thuốc', 'Nhân công', 'Cắt lá', 'Tỉa hoa', 'Bệnh cây', 'Thu hoạch'];
   const availableTypes = chipTypes.filter(t => t === 'all' || counts[t] > 0);
 
   const chipStyles = {
@@ -723,6 +723,7 @@ function renderActivityFilterChips(logs) {
     'Tưới nước': { icon: 'droplets', inactBorder: '#bfdbfe', inactBg: '#eff6ff', inactColor: '#1d4ed8' },
     'Bón phân': { icon: 'sprout', inactBorder: '#fde68a', inactBg: '#fef3c7', inactColor: '#92400e' },
     'Phun thuốc': { icon: 'spray-can', inactBorder: '#ddd6fe', inactBg: '#f3e8ff', inactColor: '#6b21a8' },
+    'Nhân công': { icon: 'users', inactBorder: '#bae6fd', inactBg: '#f0f9ff', inactColor: '#0369a1' },
     'Cắt lá': { icon: 'scissors', inactBorder: '#a7f3d0', inactBg: '#ecfdf5', inactColor: '#047857' },
     'Tỉa hoa': { icon: 'scissors', inactBorder: '#ffedd5', inactBg: '#fff7ed', inactColor: '#c2410c' },
     'Bệnh cây': { icon: 'bug', inactBorder: '#fca5a5', inactBg: '#fef2f2', inactColor: '#b91c1c' },
@@ -837,6 +838,7 @@ function renderDetailTimeline() {
     'Tưới nước': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'droplets', iconColor: '#3b82f6' },
     'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'sprout', iconColor: '#92400e' },
     'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'spray-can', iconColor: '#8b5cf6' },
+    'Nhân công': { bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd', icon: 'users', iconColor: '#0284c7' },
     'Cắt lá': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'scissors', iconColor: '#10b981' },
     'Tỉa hoa': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: 'scissors', iconColor: '#ea580c' },
     'Bệnh cây': { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5', icon: 'bug', iconColor: '#ef4444' },
