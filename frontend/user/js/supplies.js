@@ -533,6 +533,11 @@ export async function loadSupplies() {
     // 3. Tính toán và cập nhật Executive ERP Cockpit KPI theo Trang trại & Năm đã chọn
     await updateSuppliesProfitCockpit();
 
+    // 4. Đồng bộ Executive BI & ML Predictive Yield theo bộ lọc Trang trại & Năm
+    if (typeof window.loadExecutiveBiAnalytics === 'function') {
+      window.loadExecutiveBiAnalytics(currentCockpitFarmId, currentCockpitYear);
+    }
+
   } catch (err) {
     console.error('Error loading supplies:', err);
     tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:red;">Lỗi tải dữ liệu vật tư: ${err.message}</td></tr>`;
@@ -847,6 +852,9 @@ export async function updateSuppliesProfitCockpit() {
   }
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     try { window.lucide.createIcons(); } catch (_) {}
+  }
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
   }
 }
 window.updateSuppliesProfitCockpit = updateSuppliesProfitCockpit;
@@ -1582,7 +1590,15 @@ export function switchSuppliesTab(tab) {
 
   if (tab === 'manage') loadSupplies();
   if (tab === 'ledger') loadSupplyUsagesLog();
-  if (tab === 'monitor') loadSuppliesAnalytics();
+  if (tab === 'monitor') {
+    loadSuppliesAnalytics();
+    if (typeof window.loadExecutiveBiAnalytics === 'function') {
+      window.loadExecutiveBiAnalytics(currentCockpitFarmId, currentCockpitYear);
+    }
+  }
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
 }
 
 

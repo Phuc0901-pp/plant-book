@@ -87,6 +87,9 @@
             <button type="button" onclick="onSuppliesCockpitFilterChange()" class="btn btn-secondary btn-sm" style="padding:7px 14px; font-size:12px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
               <i data-lucide="refresh-cw" class="lucide-xs"></i> Lọc dữ liệu
             </button>
+            <button type="button" onclick="if(window.openBiApiDiagnosticsModal) window.openBiApiDiagnosticsModal()" class="btn btn-primary btn-sm" style="padding:7px 14px; font-size:12px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; background:#059669; border-color:#059669;">
+              <i data-lucide="activity" class="lucide-xs"></i> <span data-i18n="bi.btn_verify_api">Kiểm tra Live API BI &amp; ML</span>
+            </button>
           </div>
         </div>
 
@@ -345,10 +348,14 @@
         </div>
 
         <!-- ════════════════════════════════════════════════════════════════
-             TAB 3: PHÂN TÍCH & GIÁM SÁT CHI PHÍ MÙA VỤ (COST ANALYTICS)
+             TAB 3: PHÂN TÍCH & GIÁM SÁT CHI PHÍ MÙA VỤ (COST ANALYTICS & EXECUTIVE BI)
              ════════════════════════════════════════════════════════════════ -->
         <div class="tab-pane" id="pane-supplies-monitor" style="display:none;">
           
+          <!-- Executive BI Financial Analytics & ML Predictive Yield Cockpit (Gói 4) -->
+          <div class="card" id="supplies-bi-analytics-root" style="padding: 0; overflow: hidden; border: 1.5px solid #a7f3d0; border-radius: 18px; margin-bottom: 20px; box-shadow: 0 6px 24px rgba(5, 150, 105, 0.08);">
+          </div>
+
           <!-- Time Filter Controls -->
           <div class="card" style="margin-bottom: 20px; border-radius: 16px; border: 1.5px solid #e2e8f0;">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding: 16px 20px;">

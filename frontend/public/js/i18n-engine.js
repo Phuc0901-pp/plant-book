@@ -1,10 +1,11 @@
 /* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════════════════
    Universal Export Multi-Language (i18n) & Multi-Currency Engine (VI | EN | ZH)
-   Supports:
-   - Vietnamese (vi-VN / VND ₫)
-   - English (en-US / USD $) — GlobalG.A.P. Auditors & International Buyers
-   - Chinese Simplified (zh-CN / CNY ¥) — Durian & Dragon Fruit Export Traders (GACC)
+   Features:
+   - Full-DOM TextNode TreeWalker + Real-Time MutationObserver (0ms Instant Translation)
+   - Translates User Portal (Dashboard, Supplies & Cost ERP, Farms, Logs, Settings),
+     Admin Portal, and Public QR/NFC Traceability Portal
+   - Automatic Inline Currency Conversion (VNĐ / ₫ -> USD $ / CNY ¥)
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -79,6 +80,7 @@
         unit_ha: 'ha',
         unit_kg: 'kg',
         unit_ton_ha: 'tấn/ha',
+        btn_verify_api: 'Kiểm tra Live API BI & ML',
         redacted_notice: 'Chế độ bảo mật RBAC: Dữ liệu tài chính BI chỉ dành cho Chủ trang trại, Giám đốc HTX và Quản trị viên.'
       }
     },
@@ -145,6 +147,7 @@
         unit_ha: 'ha',
         unit_kg: 'kg',
         unit_ton_ha: 'tons/ha',
+        btn_verify_api: 'Verify Live BI & ML APIs',
         redacted_notice: 'RBAC Security Policy: Executive BI financial data is restricted to Farm Owners, Cooperative Directors, and Administrators.'
       }
     },
@@ -211,60 +214,187 @@
         unit_ha: '公顷',
         unit_kg: '公斤',
         unit_ton_ha: '吨/公顷',
+        btn_verify_api: '验证后端 BI 与机器学习 API',
         redacted_notice: 'RBAC 权限安全保护：企业财务 BI 数据仅对庄园主、合作社理事长及系统管理员开放。'
       }
     }
   };
 
-  // Dynamic Agronomic Term Translator for QR Traceability Cards (Durian, Dragon Fruit, Care Logs)
-  const AGRI_TERM_MAP = {
+  // Exact Phrase Map for Full-DOM Translation across Sidebar, Topbar, Supplies, Dashboard, Admin & QR Portal
+  const EXACT_PHRASE_MAP = {
+    'Hệ thống quản lý cây trồng': { en: 'Enterprise Crop Management ERP', zh: '数字化果园与作物管理系统' },
+    'Chức năng': { en: 'Navigation', zh: '系统功能导航' },
+    'Trang chủ': { en: 'Dashboard', zh: '首页看板' },
+    'Trang trại': { en: 'Farms & GIS', zh: '果园与 GIS' },
+    'Vật tư': { en: 'Supplies & Costs', zh: '农资与成本' },
+    'Vật tư & Tồn kho': { en: 'Supplies & Inventory', zh: '农资与库存管理' },
+    'Lịch sử': { en: 'Care Ledger', zh: '农事记录' },
+    'Tính năng nâng cao & HDSD': { en: 'Advanced Features & Guide', zh: '高级功能与操作指南' },
+    'Cài đặt': { en: 'Settings', zh: '系统设置' },
+    'Đăng xuất': { en: 'Sign Out', zh: '退出登录' },
+    'Trực tuyến': { en: 'Online', zh: '实时在线' },
+    'Làm mới': { en: 'Refresh', zh: '刷新' },
+    'Làm mới dữ liệu': { en: 'Refresh Data', zh: '刷新数据' },
+    'Xin chào,': { en: 'Welcome,', zh: '您好，' },
+    'Gói Nông Hộ PRO': { en: 'PRO Farm Enterprise', zh: 'PRO 庄园企业版' },
+    '· Cổng Nông Hộ': { en: '· Farmer Portal', zh: '· 庄园管理端' },
+    'HỒ SƠ NÔNG HỘ': { en: 'FARMER & ORCHARD DOSSIER', zh: '庄园主与果园档案' },
+    'Thông tin chủ hộ': { en: 'Farm Owner Profile', zh: '庄园主信息' },
+    'Phân quyền Nhân sự Vườn (RBAC)': { en: 'Orchard Team RBAC', zh: '果园团队权限管理 (RBAC)' },
+    'Phân quyền Tài khoản Dưới quyền': { en: 'Manage Sub-Accounts (RBAC)', zh: '管理下属账号权限 (RBAC)' },
+    'Trung Tâm Giám Sát Cảnh Báo & Sức Khỏe Vườn Cây': { en: 'Orchard Health & Risk Monitoring Center', zh: '果园健康与风险预警监控中心' },
+    'Hệ thống quan trắc dịch hại, sức khỏe sinh lý & khuyến nghị kỹ thuật VietGAP thời gian thực': { en: 'Real-time pest telemetry, physiological health & VietGAP agronomic recommendations', zh: '实时病虫害监测、果树生理健康与 VietGAP 农艺建议' },
+    'Danh Sách Cây Trồng Tiêu Biểu': { en: 'Featured Registered Trees', zh: '核心登记果树列表' },
+    'Hồ sơ định danh số, thẻ NFC & quản trị canh tác VietGAP': { en: 'Digital twin identity, NFC tags & VietGAP cultivation governance', zh: '数字孪生身份、NFC 芯片与 VietGAP 农事管控' },
+    'Mở Toàn Bộ Danh Sách Cây & Không Gian GIS': { en: 'Open Full Tree Registry & GIS Map', zh: '打开全部果树档案与 GIS 卫星地图' },
+    'Quản Trị Tồn Kho & Chuỗi Cung Ứng': { en: 'Inventory & Supply Chain Governance', zh: '农资库存与供应链管控' },
+    'Quản Trị Tồn Kho & Chi Phí Vật Tư AgTech ERP': { en: 'AgTech ERP Inventory & Supply Cost Management', zh: 'AgTech ERP 农资库存与成本管控系统' },
+    'Hệ thống định lượng tồn kho thời gian thực, định giá tài sản lưu kho, thẻ kho minh bạch và kiểm soát chi phí VietGAP.': { en: 'Real-time stock quantification, inventory valuation, transparent stock ledger & VietGAP cost accounting.', zh: '实时库存量化、库存资产估值、透明出入库台账与 VietGAP 成本精算。' },
+    '+ Nhập Kho Vật Tư': { en: '+ Stock In Supplies', zh: '+ 农资入库' },
+    'Thêm Mặt Hàng': { en: 'Add Supply Item', zh: '新增农资品项' },
+    '+ Thêm Mặt Hàng': { en: '+ Add Supply Item', zh: '+ 新增农资品项' },
+    'BỘ LỌC HẠCH TOÁN CHI PHÍ & DOANH THU': { en: 'COST & REVENUE ACCOUNTING FILTER', zh: '成本与营收核算筛选器' },
+    'Hạch toán theo trang trại sở hữu và niên vụ canh tác': { en: 'Accounting by owned farm and cultivation season', zh: '按所属庄园与产季年份进行财务核算' },
+    'Trang trại:': { en: 'Farm:', zh: '庄园：' },
+    'Tất cả trang trại': { en: 'All Farms', zh: '全部庄园' },
+    'Năm:': { en: 'Year:', zh: '年份：' },
+    'Tất cả các năm': { en: 'All Years', zh: '全部年份' },
+    'Năm 2026': { en: 'Year 2026', zh: '2026年' },
+    'Năm 2025': { en: 'Year 2025', zh: '2025年' },
+    'Năm 2024': { en: 'Year 2024', zh: '2024年' },
+    'Năm 2023': { en: 'Year 2023', zh: '2023年' },
+    'Lọc dữ liệu': { en: 'Apply Filter', zh: '筛选数据' },
+    'GIÁ TRỊ NHẬP KHO VẬT TƯ': { en: 'TOTAL STOCK-IN VALUATION', zh: '农资入库总价值' },
+    'Tổng vốn mua hàng nhập vào trang trại': { en: 'Total capital invested in farm supplies', zh: '采购农资入库总投入资金' },
+    'Tồn kho thực tế:': { en: 'Current Stock Value:', zh: '当前实际库存价值：' },
+    'TIÊU HAO VẬT TƯ LŨY KẾ': { en: 'CUMULATIVE SUPPLY CONSUMPTION', zh: '累计农资消耗总成本' },
+    'Bón phân:': { en: 'Fertilizer:', zh: '化肥 (NPK)：' },
+    'Phun thuốc:': { en: 'Pesticides:', zh: '植保农药：' },
+    'Tiền nước:': { en: 'Water/Energy:', zh: '灌溉水电：' },
+    'Nhân công:': { en: 'Labor:', zh: '人工成本：' },
+    'Bón phân': { en: 'Fertilizer', zh: '施肥 (NPK)' },
+    'Phun thuốc': { en: 'Pesticides', zh: '植保喷药' },
+    'Tiền nước': { en: 'Water & Energy', zh: '灌溉水电' },
+    'Nhân công': { en: 'Labor', zh: '人工成本' },
+    'Tất cả': { en: 'All Categories', zh: '全部类别' },
+    'Hạch toán thực tế trên cây': { en: 'Actual per-tree cost accounting', zh: '单株果树实际成本核算' },
+    'DOANH THU THU HOẠCH CÂY TRỒNG': { en: 'CROP HARVEST REVENUE', zh: '果树采收总营收' },
+    'ĐÓNG GÓP THEO TỪNG CÂY:': { en: 'CONTRIBUTION PER TREE:', zh: '单株果树营收贡献：' },
+    'Chưa có dữ liệu thu hoạch trong kỳ': { en: 'No harvest recorded in this period (See ML Forecast below)', zh: '本期暂无实际采收 (请查看下方机器学习产季预测)' },
+    'Lợi nhuận ròng (Net Profit):': { en: 'Net Profit:', zh: '净利润 (Net Profit)：' },
+    '1. Tồn kho Thực tế': { en: '1. Physical Inventory', zh: '1. 实时库存矩阵' },
+    '2. Sổ Thẻ Kho': { en: '2. Stock Ledger', zh: '2. 出入库台账' },
+    '3. Chi phí Mùa vụ': { en: '3. Seasonal Cost & Executive BI', zh: '3. 产季成本与 BI 预测' },
+    'Ma Trận Quản Trị Tồn Kho Thực Tế': { en: 'Real-Time Physical Inventory Matrix', zh: '实时农资库存管理矩阵' },
+    'Giám sát số lượng tồn, vốn hàng tồn và quy cách đóng gói chuẩn ERP.': { en: 'Monitor stock quantities, inventory capital & ERP packaging specs.', zh: '监控实时库存数量、库存资金占用与 ERP 包装规格。' },
+    'Ghi nhận tiêu hao': { en: 'Record Usage', zh: '登记农资消耗' },
+    'Khai báo vật tư mới': { en: 'Register New Supply', zh: '申报新农资' },
+    'Đã chiết xuất sử dụng:': { en: 'Extracted usage:', zh: '已出库使用：' },
+    'Đã ghi nhận chăm sóc:': { en: 'Recorded care:', zh: '已记录农事：' },
+    'đợt canh tác': { en: 'cultivation batches', zh: '次农事操作' },
+    'Sản lượng:': { en: 'Harvest Yield:', zh: '采收产量：' },
+    'Tất cả mức tồn kho': { en: 'All Stock Levels', zh: '全部库存状态' },
+    'Còn hàng dồi dào': { en: 'Abundant Stock (>=50%)', zh: '库存充足 (>=50%)' },
+    'Sắp hết hàng (< 20%)': { en: 'Low Stock (< 20%)', zh: '库存预警 (< 20%)' },
+    'Đã hết hàng trong kho': { en: 'Out of Stock', zh: '已缺货' },
+    'Vật tư vĩnh cửu (Nước/Công)': { en: 'Continuous Utility (Water/Labor)', zh: '持续性资源 (水电/人工)' },
+    'Mã SKU': { en: 'SKU Code', zh: 'SKU 编码' },
+    'Tên Vật Tư & Quy Cách': { en: 'Supply Name & Spec', zh: '农资名称与规格' },
+    'Tồn Kho & Mức Dự Trữ': { en: 'Physical Stock & Reserve', zh: '实际库存与储备' },
+    'Đơn Giá Mua': { en: 'Unit Price', zh: '采购单价' },
+    'Vốn Lưu Kho': { en: 'Stock Valuation', zh: '库存资金' },
+    'Chuẩn VietGAP': { en: 'VietGAP Status', zh: 'VietGAP 标准' },
+    'Thao Tác': { en: 'Actions', zh: '操作' },
+    'Mức tồn:': { en: 'Stock Level:', zh: '库存状态：' },
+    '≥ 50% (Dồi dào)': { en: '≥ 50% (Abundant)', zh: '≥ 50% (充足)' },
+    '20% - 49% (Trung bình)': { en: '20% - 49% (Moderate)', zh: '20% - 49% (适中)' },
+    '< 20% (Báo động)': { en: '< 20% (Low Alert)', zh: '< 20% (预警)' },
+    'Vô tận (Nước / Nhân công)': { en: 'Utility (Water / Labor)', zh: '持续供应 (水电/人工)' },
+    'Sổ Thẻ Kho & Lịch Sử Biến Động Nhập - Xuất': { en: 'Stock Ledger & In/Out Transaction History', zh: '出入库台账与农资变动历史' },
+    'Minh bạch dòng vật tư từ lúc nhập vào kho cho đến khi xuất bón từng cây trồng.': { en: 'Transparent supply chain tracking from stock-in to single-tree application.', zh: '从采购入库到单株果树施肥喷药的全流程透明追踪。' },
+    'Bộ Lọc Giám Sát Chi Phí Theo Mùa Vụ': { en: 'Seasonal Cost Monitoring Filter', zh: '产季成本监控筛选器' },
+    'Theo Ngày': { en: 'By Day', zh: '按日统计' },
+    'Theo Tháng': { en: 'By Month', zh: '按月统计' },
+    'Theo Quý': { en: 'By Quarter', zh: '按季度统计' },
+    'Theo Năm': { en: 'By Year', zh: '按年度统计' },
+    'Từ:': { en: 'From:', zh: '从：' },
+    'Đến:': { en: 'To:', zh: '至：' },
+    'Từ năm:': { en: 'From Year:', zh: '起始年份：' },
+    'Đến năm:': { en: 'To Year:', zh: '截止年份：' },
+    '7 ngày': { en: '7 Days', zh: '近7天' },
+    '30 ngày': { en: '30 Days', zh: '近30天' },
+    'Tháng này': { en: 'This Month', zh: '本月' },
+    'TỔNG CHI PHÍ TIÊU HAO': { en: 'TOTAL CONSUMPTION COST', zh: '累计消耗总成本' },
+    'CHI PHÍ BÓN PHÂN': { en: 'FERTILIZER COST (NPK)', zh: '化肥投入成本 (NPK)' },
+    'CHI PHÍ TIỀN NƯỚC': { en: 'IRRIGATION WATER COST', zh: '灌溉水电成本' },
+    'PHUN THUỐC & NHÂN CÔNG': { en: 'PESTICIDES & LABOR COST', zh: '农药与人工成本' },
+    'Biểu Đồ Nhiệt Chi Phí Tiêu Hao (Expenditure Heatmap)': { en: 'Expenditure Trajectory & Heatmap Chart', zh: '农资成本消耗趋势与热力图' },
+    'Ít:': { en: 'Low:', zh: '低：' },
+    'Vừa:': { en: 'Med:', zh: '中：' },
+    'Nhiều:': { en: 'High:', zh: '高：' },
+    'Chưa có dữ liệu tiêu hao chi phí trong khoảng thời gian này.': { en: 'No expenditure records found in this time range.', zh: '该时间段内暂无农资消耗成本记录。' },
+    'Không có dữ liệu tiêu hao vật tư trong khoảng thời gian này.': { en: 'No supply usage records found in this time range.', zh: '该时间段内暂无农资使用明细。' },
+    'Bảng Tổng Hợp Chi Tiết Tiêu Hao Theo Thời Gian': { en: 'Detailed Time-Series Cost Breakdown Table', zh: '按时间维度农资消耗明细汇总表' },
+    'Khoảng thời gian': { en: 'Time Period', zh: '时间周期' },
+    'Hạng mục vật tư': { en: 'Supply Category', zh: '农资类别' },
+    'Tổng số lượng dùng': { en: 'Total Quantity Used', zh: '消耗总数量' },
+    'Tổng thành tiền (VNĐ)': { en: 'Total Amount', zh: '总金额' },
+    'Tỷ lệ chi phí': { en: 'Cost Share (%)', zh: '成本占比 (%)' },
+    'Trung Tâm Điều Hành Chuỗi Trang Trại': { en: 'Enterprise Farm Chain Command Center', zh: '农业集团庄园链指挥中心' },
+    'Nông Hộ Liên Kết': { en: 'Affiliated Farmers', zh: '合作庄园主' },
+    'Trang Trại Trực Tuyến': { en: 'Online GIS Farms', zh: '在线 GIS 庄园' },
+    'Chủng Loại Cây Trồng': { en: 'Crop Species', zh: '作物品类' },
+    'Địa Bàn Trọng Điểm': { en: 'Key Growing Regions', zh: '核心种植产区' }
+  };
+
+  const LOWER_PHRASE_MAP = {};
+  Object.keys(EXACT_PHRASE_MAP).forEach(k => {
+    LOWER_PHRASE_MAP[k.toLowerCase()] = EXACT_PHRASE_MAP[k];
+  });
+
+  // Dynamic Pattern Replacers for strings with embedded numbers/variables
+  const DYNAMIC_PATTERNS = {
     en: [
+      [/^Đã chiết xuất sử dụng:\s*(\d+)\s*đợt canh tác$/i, 'Extracted usage: $1 cultivation batches'],
+      [/^(\d+)\s*mặt hàng lưu kho$/i, '$1 items in stock'],
+      [/^Hiển thị\s*(\d+)\s*mặt hàng$/i, 'Showing $1 items'],
+      [/^Sản lượng:\s*([\d.,]+)\s*kg\s*\(([\d.,]+)\s*quả\)$/i, 'Harvest Yield: $1 kg ($2 fruits)'],
+      [/^\(([\d.,]+)\s*quả\)$/i, '($1 fruits)'],
+      [/^Phân bổ:\s*Tất cả trang trại\s*·\s*Năm\s*(\d+)$/i, 'Scope: All Farms · Year $1'],
+      [/^Phân bổ:\s*Tất cả trang trại\s*·\s*Tất cả các năm$/i, 'Scope: All Farms · All Years'],
+      [/^Phân bổ:\s*(.+?)\s*·\s*Năm\s*(\d+)$/i, 'Scope: $1 · Year $2'],
+      [/^Tổng chi phí:\s*(.+)$/i, 'Total Cost: $1'],
+      [/^BIỂU ĐỒ ĐƯỜNG CHI PHÍ TIÊU HAO\s*\((\d+)\s*KỲ CHỌN\)$/i, 'EXPENDITURE TRAJECTORY CHART ($1 PERIODS)'],
+      [/^Bảng tổng hợp chi phí vật tư\s*\((.+)\)$/i, 'Detailed Supply Cost Breakdown ($1)'],
+      [/^Tổng số:\s*(\d+)\s*cây$/i, 'Total: $1 trees'],
       [/Sầu riêng Ri6/gi, 'Ri6 Premium Durian'],
       [/Sầu riêng Monthong/gi, 'Monthong Export Durian'],
-      [/Sầu riêng/gi, 'Durian (Durio zibethinus)'],
+      [/Sầu riêng/gi, 'Durian'],
       [/Thanh long ruột đỏ/gi, 'Red-Flesh Dragon Fruit'],
       [/Thanh long ruột trắng/gi, 'White-Flesh Dragon Fruit'],
-      [/Thanh long/gi, 'Dragon Fruit (Pitaya)'],
-      [/Bưởi da xanh/gi, 'Green-Skin Export Pomelo'],
-      [/Cà phê/gi, 'Specialty Coffee'],
-      [/Bón phân/gi, 'Fertilization (NPK / Organic)'],
-      [/Phun thuốc/gi, 'Crop Protection Spraying'],
-      [/Tưới nước/gi, 'Precision Irrigation'],
-      [/Thu hoạch/gi, 'Commercial Harvest'],
-      [/Cắt lá/gi, 'Canopy Pruning'],
-      [/Tỉa hoa/gi, 'Blossom Thinning'],
-      [/Thụ phấn/gi, 'Assisted Pollination'],
-      [/Bệnh cây/gi, 'Phytosanitary Inspection'],
-      [/An toàn thu hoạch/gi, 'Safe for Harvest (PHI Verified)'],
-      [/Đang cách ly/gi, 'Active PHI Quarantine'],
-      [/Tốt/g, 'Healthy (Grade A)'],
-      [/Cần chú ý/g, 'Monitor Required'],
-      [/năm tuổi/gi, 'years old'],
-      [/năm/g, 'yrs']
+      [/Thanh long/gi, 'Dragon Fruit'],
+      [/An toàn thu hoạch/gi, 'Safe for Harvest (PHI Verified)']
     ],
     zh: [
+      [/^Đã chiết xuất sử dụng:\s*(\d+)\s*đợt canh tác$/i, '已出库使用：$1 次农事操作'],
+      [/^(\d+)\s*mặt hàng lưu kho$/i, '$1 项库存农资'],
+      [/^Hiển thị\s*(\d+)\s*mặt hàng$/i, '显示 $1 项农资'],
+      [/^Sản lượng:\s*([\d.,]+)\s*kg\s*\(([\d.,]+)\s*quả\)$/i, '采收产量：$1 公斤 ($2 颗果)'],
+      [/^\(([\d.,]+)\s*quả\)$/i, '($1 颗果)'],
+      [/^Phân bổ:\s*Tất cả trang trại\s*·\s*Năm\s*(\d+)$/i, '核算范围：全部庄园 · $1年'],
+      [/^Phân bổ:\s*Tất cả trang trại\s*·\s*Tất cả các năm$/i, '核算范围：全部庄园 · 全部年份'],
+      [/^Phân bổ:\s*(.+?)\s*·\s*Năm\s*(\d+)$/i, '核算范围：$1 · $2年'],
+      [/^Tổng chi phí:\s*(.+)$/i, '总成本：$1'],
+      [/^BIỂU ĐỒ ĐƯỜNG CHI PHÍ TIÊU HAO\s*\((\d+)\s*KỲ CHỌN\)$/i, '农资消耗成本趋势图 ($1 个周期)'],
+      [/^Bảng tổng hợp chi phí vật tư\s*\((.+)\)$/i, '农资消耗成本汇总表 ($1)'],
+      [/^Tổng số:\s*(\d+)\s*cây$/i, '总计：$1 棵果树'],
       [/Sầu riêng Ri6/gi, '越南干尧榴莲 (Ri6 出口特级)'],
       [/Sầu riêng Monthong/gi, '越南金枕头榴莲 (Monthong)'],
       [/Sầu riêng/gi, '越南出口榴莲 (Durian)'],
-      [/Thanh long ruột đỏ/gi, '越南红心火龙果 (出口一级)'],
-      [/Thanh long ruột trắng/gi, '越南白心火龙果 (出口一级)'],
-      [/Thanh long/gi, '越南出口火龙果 (Dragon Fruit)'],
-      [/Bưởi da xanh/gi, '越南青皮蜜柚'],
-      [/Cà phê/gi, '越南精品咖啡'],
-      [/Bón phân/gi, '科学施肥 (有机肥/NPK)'],
-      [/Phun thuốc/gi, '绿色植保喷药'],
-      [/Tưới nước/gi, '精准滴灌浇水'],
-      [/Thu hoạch/gi, '成熟采收出园'],
-      [/Cắt lá/gi, '修剪枝叶整形'],
-      [/Tỉa hoa/gi, '疏花保果管理'],
-      [/Thụ phấn/gi, '人工辅助授粉'],
-      [/Bệnh cây/gi, '植保病虫害巡检'],
-      [/An toàn thu hoạch/gi, '符合采收安全标准 (已过安全间隔期 PHI)'],
-      [/Đang cách ly/gi, '处于农药安全间隔期 (PHI)'],
-      [/Tốt/g, '生长优良 (A级)'],
-      [/Cần chú ý/g, '重点关注'],
-      [/năm tuổi/gi, '年树龄'],
-      [/năm/g, '年']
+      [/Thanh long ruột đỏ/gi, '越南红心火龙果'],
+      [/Thanh long ruột trắng/gi, '越南白心火龙果'],
+      [/Thanh long/gi, '越南出口火龙果'],
+      [/An toàn thu hoạch/gi, '符合采收安全标准 (已过安全间隔期 PHI)']
     ]
   };
 
@@ -296,6 +426,7 @@
 
   let currentLang = detectInitialLanguage();
   let currentCurrency = detectInitialCurrency(currentLang);
+  let isApplyingDom = false;
 
   function t(keyPath, fallback) {
     const dict = CORE_DICTIONARIES[currentLang] || CORE_DICTIONARIES.vi;
@@ -313,74 +444,172 @@
     return fallback !== undefined ? fallback : keyPath;
   }
 
-  function translateDynamicTerm(rawText, langOverride) {
-    const lang = langOverride || currentLang;
-    if (!rawText || lang === 'vi') return rawText;
-    let out = String(rawText);
-    const rules = AGRI_TERM_MAP[lang] || [];
-    for (let i = 0; i < rules.length; i++) {
-      out = out.replace(rules[i][0], rules[i][1]);
-    }
-    return out;
-  }
-
   function formatCurrency(amountVnd, currencyOverride) {
     const curr = (currencyOverride || currentCurrency || 'VND').toUpperCase();
     const numVnd = Number(amountVnd) || 0;
+    const sign = numVnd < 0 ? '-' : '';
+    const absVnd = Math.abs(numVnd);
     if (curr === 'USD') {
-      const val = numVnd / CURRENCY_RATES.USD;
-      return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const val = absVnd / CURRENCY_RATES.USD;
+      return sign + '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     if (curr === 'CNY') {
-      const val = numVnd / CURRENCY_RATES.CNY;
-      return '¥' + val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const val = absVnd / CURRENCY_RATES.CNY;
+      return sign + '¥' + val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
-    return Math.round(numVnd).toLocaleString('vi-VN') + ' ₫';
+    return sign + Math.round(absVnd).toLocaleString('vi-VN') + ' ₫';
+  }
+
+  // Convert inline Vietnamese currency strings like "3.407.600 VNĐ" or "-3.407.600 VNĐ" or "0 VNĐ"
+  function convertInlineVndString(str) {
+    if (!str || currentCurrency === 'VND') return str;
+    return String(str).replace(/([+-]?\s*\d[\d.]*)\s*(?:VNĐ|VND|đ|₫)\b/g, function (match, numPart) {
+      const cleanDigits = numPart.replace(/\s+/g, '').replace(/\./g, '');
+      const parsed = parseFloat(cleanDigits);
+      if (isNaN(parsed)) return match;
+      const prefixPlus = numPart.trim().startsWith('+') ? '+' : '';
+      return prefixPlus + formatCurrency(parsed, currentCurrency);
+    });
+  }
+
+  function translateDynamicTerm(rawText, langOverride) {
+    const lang = langOverride || currentLang;
+    if (!rawText) return rawText;
+    const rawStr = String(rawText);
+    const trimmed = rawStr.trim();
+    if (!trimmed) return rawStr;
+
+    let translated = trimmed;
+
+    if (lang !== 'vi') {
+      // 1. Check exact or case-insensitive phrase dictionary
+      const lowerKey = trimmed.toLowerCase();
+      if (EXACT_PHRASE_MAP[trimmed] && EXACT_PHRASE_MAP[trimmed][lang]) {
+        translated = EXACT_PHRASE_MAP[trimmed][lang];
+      } else if (LOWER_PHRASE_MAP[lowerKey] && LOWER_PHRASE_MAP[lowerKey][lang]) {
+        translated = LOWER_PHRASE_MAP[lowerKey][lang];
+      } else {
+        // 2. Apply regex patterns
+        const rules = DYNAMIC_PATTERNS[lang] || [];
+        for (let i = 0; i < rules.length; i++) {
+          translated = translated.replace(rules[i][0], rules[i][1]);
+        }
+      }
+    }
+
+    // 3. Apply inline currency conversion if currency !== VND
+    if (currentCurrency !== 'VND' && /(?:VNĐ|VND|₫|\d+\s*đ\b)/.test(translated)) {
+      translated = convertInlineVndString(translated);
+    }
+
+    const leadingSpace = rawStr.match(/^\s*/)[0];
+    const trailingSpace = rawStr.match(/\s*$/)[0];
+    return leadingSpace + translated + trailingSpace;
+  }
+
+  function translateAllDomTextNodes() {
+    if (!document.body) return;
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: function (node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName;
+          if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'CODE' || tag === 'PRE') {
+            return NodeFilter.FILTER_REJECT;
+          }
+          if (parent.hasAttribute('data-lang-btn') || parent.hasAttribute('data-currency-btn')) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    let textNode;
+    while ((textNode = walker.nextNode())) {
+      const currentVal = textNode.nodeValue;
+      if (!currentVal || !currentVal.trim()) continue;
+
+      // If node was updated by application JS with a new Vietnamese string, capture new original
+      if (textNode._origVi === undefined || (currentVal !== textNode._lastApplied && currentLang !== 'vi')) {
+        // Only overwrite _origVi if currentVal looks like a fresh source update
+        if (textNode._origVi === undefined || currentVal !== textNode._lastApplied) {
+          textNode._origVi = currentVal;
+        }
+      }
+
+      const sourceVi = textNode._origVi;
+      const nextVal = (currentLang === 'vi' && currentCurrency === 'VND')
+        ? sourceVi
+        : translateDynamicTerm(sourceVi, currentLang);
+
+      if (textNode.nodeValue !== nextVal) {
+        textNode.nodeValue = nextVal;
+      }
+      textNode._lastApplied = nextVal;
+    }
+
+    // Translate input placeholders
+    document.querySelectorAll('input[placeholder]').forEach(inp => {
+      const curPh = inp.getAttribute('placeholder') || '';
+      if (!inp._origPhVi) inp._origPhVi = curPh;
+      if (currentLang === 'vi') {
+        inp.setAttribute('placeholder', inp._origPhVi);
+      } else if (inp._origPhVi.includes('Tìm kiếm SKU')) {
+        inp.setAttribute('placeholder', currentLang === 'zh' ? '搜索 SKU 编号、农资名称...' : 'Search SKU, supply name...');
+      }
+    });
   }
 
   function applyDomTranslations() {
-    document.documentElement.setAttribute('lang', currentLang);
-    // 1. Update all elements with [data-i18n]
-    const nodes = document.querySelectorAll('[data-i18n]');
-    nodes.forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      const translated = t(key, null);
-      if (translated) {
-        el.textContent = translated;
-      }
-    });
+    if (isApplyingDom) return;
+    isApplyingDom = true;
+    try {
+      document.documentElement.setAttribute('lang', currentLang);
 
-    // 2. Update active state on language switcher buttons
-    const langBtns = document.querySelectorAll('[data-lang-btn]');
-    langBtns.forEach(btn => {
-      const code = btn.getAttribute('data-lang-btn');
-      const isActive = code === currentLang;
-      btn.classList.toggle('active', isActive);
-      btn.style.background = isActive ? '#059669' : 'transparent';
-      btn.style.color = isActive ? '#ffffff' : '#334155';
-      btn.style.fontWeight = isActive ? '800' : '700';
-    });
+      // 1. Update all elements with [data-i18n]
+      const nodes = document.querySelectorAll('[data-i18n]');
+      nodes.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const translated = t(key, null);
+        if (translated) {
+          el.textContent = translated;
+          if (el.firstChild && el.firstChild.nodeType === 3) {
+            el.firstChild._lastApplied = translated;
+          }
+        }
+      });
 
-    // 3. Update active state on currency switcher buttons
-    const currBtns = document.querySelectorAll('[data-currency-btn]');
-    currBtns.forEach(btn => {
-      const code = btn.getAttribute('data-currency-btn');
-      const isActive = code === currentCurrency;
-      btn.classList.toggle('active', isActive);
-      btn.style.background = isActive ? '#0f172a' : 'transparent';
-      btn.style.color = isActive ? '#ffffff' : '#475569';
-      btn.style.fontWeight = isActive ? '800' : '700';
-    });
+      // 2. Update active state on language switcher buttons
+      const langBtns = document.querySelectorAll('[data-lang-btn]');
+      langBtns.forEach(btn => {
+        const code = btn.getAttribute('data-lang-btn');
+        const isActive = code === currentLang;
+        btn.classList.toggle('active', isActive);
+        btn.style.background = isActive ? '#059669' : 'transparent';
+        btn.style.color = isActive ? '#ffffff' : '#334155';
+        btn.style.fontWeight = isActive ? '800' : '700';
+      });
 
-    // 4. Translate dynamic elements with [data-i18n-dynamic]
-    const dynNodes = document.querySelectorAll('[data-i18n-dynamic]');
-    dynNodes.forEach(el => {
-      const orig = el.getAttribute('data-orig-vi') || el.textContent;
-      if (!el.getAttribute('data-orig-vi')) {
-        el.setAttribute('data-orig-vi', orig);
-      }
-      el.textContent = currentLang === 'vi' ? orig : translateDynamicTerm(orig, currentLang);
-    });
+      // 3. Update active state on currency switcher buttons
+      const currBtns = document.querySelectorAll('[data-currency-btn]');
+      currBtns.forEach(btn => {
+        const code = btn.getAttribute('data-currency-btn');
+        const isActive = code === currentCurrency;
+        btn.classList.toggle('active', isActive);
+        btn.style.background = isActive ? '#0f172a' : 'transparent';
+        btn.style.color = isActive ? '#ffffff' : '#475569';
+        btn.style.fontWeight = isActive ? '800' : '700';
+      });
+
+      // 4. Full-DOM TextNode & Currency Translation across all pages
+      translateAllDomTextNodes();
+    } finally {
+      isApplyingDom = false;
+    }
   }
 
   function setLanguage(lang, syncCurrency) {
@@ -417,7 +646,6 @@
     }));
   }
 
-  // Async dictionary hydration from /i18n/{lang}.json
   async function hydrateRemoteDictionary(lang) {
     try {
       const res = await fetch(`/i18n/${lang}.json`, { cache: 'no-store' });
@@ -427,6 +655,21 @@
         if (lang === currentLang) applyDomTranslations();
       }
     } catch (_) {}
+  }
+
+  // Real-time debounced MutationObserver so dynamically rendered pages (Supplies, Logs, Dashboard) auto-translate
+  let mutationTimer = null;
+  function setupMutationObserver() {
+    if (!document.body || typeof MutationObserver === 'undefined') return;
+    const obs = new MutationObserver(() => {
+      if (isApplyingDom) return;
+      if (currentLang === 'vi' && currentCurrency === 'VND') return;
+      if (mutationTimer) clearTimeout(mutationTimer);
+      mutationTimer = setTimeout(() => {
+        applyDomTranslations();
+      }, 30);
+    });
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
   window.PlantBookI18n = {
@@ -453,10 +696,12 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       applyDomTranslations();
+      setupMutationObserver();
       hydrateRemoteDictionary(currentLang);
     });
   } else {
     applyDomTranslations();
+    setupMutationObserver();
     hydrateRemoteDictionary(currentLang);
   }
 })();
