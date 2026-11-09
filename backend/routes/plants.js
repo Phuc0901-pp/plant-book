@@ -3337,18 +3337,55 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
           }
         }
 
-        if (resolvedSupply && rawAmount > 0) {
-          const supUnit = (resolvedSupply.unit || 'kg').toLowerCase().trim();
-          resolvedUsageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, effectiveLogType);
-          resolvedUnitPrice = parseFloat(resolvedSupply.unit_price) || 0;
-          resolvedTotCost = resolvedTotCost > 0 ? resolvedTotCost : (resolvedUsageQty * resolvedUnitPrice);
+        // Tự động gán hoặc khởi tạo hạng mục Nhân công trong bảng supplies nếu ghi nhật ký Nhân công
+        if (effectiveLogType === 'Nhân công' && !resolvedSupply) {
+          const laborSup = await pool.query(
+            `SELECT id, name, unit, unit_price, category, stock_quantity FROM supplies WHERE (user_id = $1 OR ($2::int IS NOT NULL AND farm_id = $2)) AND category = 'Nhân công' ORDER BY id ASC LIMIT 1`,
+            [req.user.id, farmId || null]
+          );
+          if (laborSup.rows.length > 0) {
+            resolvedSupply = laborSup.rows[0];
+            resolvedSupplyId = resolvedSupply.id;
+          } else if (resolvedTotCost > 0) {
+            const defaultWorkerPrice = parseFloat(parsedDetails.cost_per_worker || parsedDetails.unit_price || resolvedTotCost) || 300000;
+            const createdLaborSup = await pool.query(
+              `INSERT INTO supplies (user_id, farm_id, category, name, unit, package_size, package_qty, package_unit, package_price, unit_price, unit_price_small, stock_quantity, note)
+               VALUES ($1, $2, 'Nhân công', 'Nhân công canh tác', 'ngày công', '1 ngày công', 1, 'ngày công', $3, $3, $3, 999999, 'Tự động tạo từ Nhật ký thuê nhân công')
+               RETURNING id, name, unit, unit_price, category, stock_quantity`,
+              [req.user.id, farmId || null, defaultWorkerPrice]
+            );
+            if (createdLaborSup.rows.length > 0) {
+              resolvedSupply = createdLaborSup.rows[0];
+              resolvedSupplyId = resolvedSupply.id;
+            }
+          }
+        }
 
-          parsedDetails.supply_id = resolvedSupply.id;
-          parsedDetails.supply_name = resolvedSupply.name;
-          parsedDetails.material_name = resolvedSupply.name;
-          parsedDetails.unit_price = resolvedUnitPrice;
-          parsedDetails.total_cost = resolvedTotCost;
-          parsedDetails.usage_quantity = resolvedUsageQty;
+        if (resolvedSupply && (rawAmount > 0 || (effectiveLogType === 'Nhân công' && resolvedTotCost > 0))) {
+          if (effectiveLogType === 'Nhân công') {
+            resolvedUsageQty = parseFloat(parsedDetails.quantity || parsedDetails.worker_count || rawAmount || 1) || 1;
+            resolvedUnitPrice = parseFloat(parsedDetails.cost_per_worker || parsedDetails.unit_price || resolvedSupply.unit_price) || 0;
+            resolvedTotCost = resolvedTotCost > 0 ? resolvedTotCost : (resolvedUsageQty * resolvedUnitPrice);
+
+            parsedDetails.supply_id = resolvedSupply.id;
+            parsedDetails.supply_name = parsedDetails.work_content ? `Nhân công: ${parsedDetails.work_content}` : resolvedSupply.name;
+            parsedDetails.material_name = parsedDetails.supply_name;
+            parsedDetails.unit_price = resolvedUnitPrice;
+            parsedDetails.total_cost = resolvedTotCost;
+            parsedDetails.usage_quantity = resolvedUsageQty;
+          } else {
+            const supUnit = (resolvedSupply.unit || 'kg').toLowerCase().trim();
+            resolvedUsageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, effectiveLogType);
+            resolvedUnitPrice = parseFloat(resolvedSupply.unit_price) || 0;
+            resolvedTotCost = resolvedTotCost > 0 ? resolvedTotCost : (resolvedUsageQty * resolvedUnitPrice);
+
+            parsedDetails.supply_id = resolvedSupply.id;
+            parsedDetails.supply_name = resolvedSupply.name;
+            parsedDetails.material_name = resolvedSupply.name;
+            parsedDetails.unit_price = resolvedUnitPrice;
+            parsedDetails.total_cost = resolvedTotCost;
+            parsedDetails.usage_quantity = resolvedUsageQty;
+          }
         }
       } catch (supErr) {
         console.warn('Cảnh báo tính toán chi phí vật tư trước khi lưu:', supErr.message);

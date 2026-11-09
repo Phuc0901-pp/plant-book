@@ -241,6 +241,9 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     if (typeof calculateCareSupplyCostPreview === 'function') {
       calculateCareSupplyCostPreview();
     }
+    if (typeof calculateLaborCostPreview === 'function') {
+      calculateLaborCostPreview();
+    }
   };
 
   const totalPlantsCount = _plants().length;
@@ -360,6 +363,8 @@ export async function onCareLogTypeChange() {
     calculateWaterCostPreview();
   } else if (logType === 'Bón phân' || logType === 'Phun thuốc') {
     calculateCareSupplyCostPreview();
+  } else if (logType === 'Nhân công') {
+    calculateLaborCostPreview();
   } else if (logType === 'Thu hoạch') {
     calculateHarvestEconomicsPreview();
   }
@@ -599,6 +604,71 @@ export function calculateCareSupplyCostPreview() {
   }
 }
 window.calculateCareSupplyCostPreview = calculateCareSupplyCostPreview;
+
+export function calculateLaborCostPreview() {
+  const workerCount = parseInt(document.getElementById('c-detail-labor-workers')?.value, 10) || 0;
+  const rawCostInput = parseFloat(document.getElementById('c-detail-labor-cost')?.value);
+  const costVal = isNaN(rawCostInput) ? 0 : rawCostInput;
+  const costMode = document.getElementById('c-detail-labor-cost-mode')?.value || 'total';
+  const startTime = document.getElementById('c-detail-labor-start-time')?.value || '';
+  const endTime = document.getElementById('c-detail-labor-end-time')?.value || '';
+
+  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
+  let treeCount = 1;
+  if (isMulti) {
+    const checked = document.querySelectorAll('.c-plant-checkbox:checked');
+    if (checked.length > 0) treeCount = checked.length;
+  }
+
+  let workHours = 0;
+  if (startTime && endTime) {
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    if (!isNaN(sh) && !isNaN(eh)) {
+      let diffMin = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+      if (diffMin < 0) diffMin += 24 * 60;
+      workHours = Number((diffMin / 60).toFixed(1));
+    }
+  }
+
+  const totalBatchCost = costMode === 'per_person'
+    ? Math.round(costVal * (workerCount || 1))
+    : Math.round(costVal);
+  const avgPerWorker = workerCount > 0 ? Math.round(totalBatchCost / workerCount) : totalBatchCost;
+  const perTreeCost = treeCount > 0 ? Math.round(totalBatchCost / treeCount) : totalBatchCost;
+
+  const fmtVND = v => new Intl.NumberFormat('vi-VN').format(Math.round(v)) + ' VNĐ';
+
+  const workersTimeEl = document.getElementById('labor-calc-workers-time');
+  const avgWorkerEl = document.getElementById('labor-calc-avg-worker');
+  const totalCostEl = document.getElementById('labor-calc-total-cost');
+  const treeNoteEl = document.getElementById('labor-calc-tree-note');
+
+  if (workersTimeEl) {
+    const wText = workerCount > 0 ? `${workerCount} người` : 'Chưa nhập số người';
+    const tText = (startTime && endTime)
+      ? `${startTime} → ${endTime}${workHours > 0 ? ` (${workHours}h)` : ''}`
+      : (startTime ? `Từ ${startTime}` : (endTime ? `Đến ${endTime}` : 'Chưa chọn giờ'));
+    workersTimeEl.textContent = `${wText} · ${tText}`;
+  }
+
+  if (avgWorkerEl) {
+    avgWorkerEl.textContent = (workerCount > 0 && totalBatchCost > 0)
+      ? `Bình quân: ${fmtVND(avgPerWorker)} / người`
+      : 'Đơn giá: — VNĐ / người';
+  }
+
+  if (totalCostEl) {
+    totalCostEl.textContent = fmtVND(totalBatchCost);
+  }
+
+  if (treeNoteEl) {
+    treeNoteEl.textContent = treeCount > 1
+      ? `Phân bổ ${treeCount} cây: ${fmtVND(perTreeCost)}/cây`
+      : `1 cây (${fmtVND(perTreeCost)}/cây)`;
+  }
+}
+window.calculateLaborCostPreview = calculateLaborCostPreview;
 
 export function calculateHarvestEconomicsPreview() {
   const fruitCount = parseFloat(document.getElementById('c-detail-harvest-fruit-count')?.value) || 0;
@@ -846,6 +916,99 @@ function _buildDetailFields(logType, configs, supplies = []) {
           </div>`;
       }
     }
+    case 'Nhân công': {
+      return `
+        <!-- 1. Nội dung thuê nhân công là gì -->
+        <div class="field" style="margin-bottom:12px;">
+          <label><i data-lucide="clipboard-list" class="lucide-sm" style="color:#2563eb;"></i> Nội dung thuê nhân công là gì *</label>
+          <input type="text" id="c-detail-labor-content" value="" placeholder="Nhập công việc thuê nhân công (VD: Làm cỏ, đào rãnh, tỉa cành, bón phân...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+        </div>
+
+        <!-- 2. Bao nhiêu người & Bao tiền -->
+        <div class="field" style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:140px;">
+            <label><i data-lucide="users" class="lucide-sm" style="color:#0284c7;"></i> Số lượng người tham gia *</label>
+            <div style="position:relative;">
+              <input type="number" id="c-detail-labor-workers" min="1" step="1" value="" placeholder="Bao nhiêu người" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="width:100%; padding:10px 56px 10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
+              <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11.5px; font-weight:700; color:#475569;">người</span>
+            </div>
+          </div>
+          <div style="flex:1.6; min-width:210px;">
+            <label><i data-lucide="banknote" class="lucide-sm" style="color:#059669;"></i> Chi phí thuê nhân công (VNĐ) *</label>
+            <div style="display:flex; gap:6px;">
+              <input type="number" id="c-detail-labor-cost" min="0" step="1000" value="" placeholder="Bao nhiêu tiền (VNĐ)" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="flex:1.4; padding:10px 10px; border:1.5px solid #a7f3d0; border-radius:8px; font-weight:700; color:#065f46; background:#f0fdf4;">
+              <select id="c-detail-labor-cost-mode" onchange="calculateLaborCostPreview()" style="flex:1; padding:9px 6px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:12px; font-weight:600; color:#1e293b;">
+                <option value="total" selected>Tổng cả đoàn</option>
+                <option value="per_person">VNĐ / 1 người</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Làm từ mấy giờ đến mấy giờ -->
+        <div class="field" style="display:flex; gap:10px; margin-bottom:12px;">
+          <div style="flex:1;">
+            <label><i data-lucide="clock" class="lucide-sm" style="color:#d97706;"></i> Làm từ mấy giờ</label>
+            <input type="time" id="c-detail-labor-start-time" value="" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+          </div>
+          <div style="flex:1;">
+            <label><i data-lucide="clock-4" class="lucide-sm" style="color:#d97706;"></i> Đến mấy giờ</label>
+            <input type="time" id="c-detail-labor-end-time" value="" oninput="calculateLaborCostPreview()" onchange="calculateLaborCostPreview()" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+          </div>
+        </div>
+
+        <!-- 4. Khối tự động tổng hợp chi phí & thời gian nhân công -->
+        <div id="labor-economics-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border:1.5px solid #bfdbfe; border-radius:12px;">
+          <div style="font-size:11px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="calculator" class="lucide-sm" style="color:#2563eb;"></i> HẠCH TOÁN CHI PHÍ NHÂN CÔNG CANH TÁC
+            </span>
+            <span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; border:1px solid #93c5fd;">Tự động đồng bộ BI</span>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed #93c5fd;">
+            <div>
+              <div style="font-size:11px; color:#1e3a8a; font-weight:700;">Quy mô & Thời gian làm:</div>
+              <div id="labor-calc-workers-time" style="font-size:13px; font-weight:800; color:#1e40af; margin-top:2px;">
+                Chưa nhập số người / giờ làm
+              </div>
+              <div id="labor-calc-avg-worker" style="font-size:11px; color:#475569; margin-top:2px;">
+                Đơn giá: — VNĐ / người
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:#065f46; font-weight:700;">Tổng chi phí đợt thuê:</div>
+              <div id="labor-calc-total-cost" style="font-size:17px; font-weight:900; color:#047857; margin-top:2px;">
+                0 VNĐ
+              </div>
+              <div id="labor-calc-tree-note" style="font-size:11px; color:#065f46; margin-top:2px;">
+                Phân bổ: 0 VNĐ/cây
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Chụp ảnh đoàn người tham gia (Nếu có - Không bắt buộc) -->
+        <div class="field">
+          <label><i data-lucide="camera" class="lucide-sm" style="color:#0284c7;"></i> Chụp ảnh đoàn người tham gia (Nếu có)</label>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <input type="file" id="c-detail-media-capture" accept="image/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
+            <input type="file" id="c-detail-media-video" accept="video/*" capture="environment" style="display:none;" onchange="onCareMediaSelected('video')">
+            <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
+                <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
+              </button>
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-video').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">
+                <i data-lucide="video" class="lucide-sm"></i> Quay video
+              </button>
+              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;background:#fff;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
+                <i data-lucide="images" class="lucide-sm"></i> Thư viện
+              </button>
+            </div>
+            <div id="c-media-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
+          </div>
+        </div>`;
+    }
     case 'Cắt lá': {
       const reasons = configs.leaf_cut_reasons || [];
       return `
@@ -990,6 +1153,15 @@ function _populateDetailFields(log) {
     _setVal('c-detail-pesticide',  d.pesticide_name);
     _setVal('c-detail-amount',     d.amount);
     _setVal('c-detail-unit',       d.unit);
+  } else if (t === 'Nhân công') {
+    _setVal('c-detail-labor-content',    d.work_content || d.reason || '');
+    _setVal('c-detail-labor-workers',    d.worker_count !== undefined ? d.worker_count : (d.amount || ''));
+    _setVal('c-detail-labor-cost-mode',  d.cost_mode || 'total');
+    _setVal('c-detail-labor-cost',       d.raw_cost_input !== undefined ? d.raw_cost_input : (d.batch_total_cost || d.total_cost || ''));
+    _setVal('c-detail-labor-start-time', d.start_time || '');
+    _setVal('c-detail-labor-end-time',   d.end_time || '');
+    renderMediaPreviews();
+    if (typeof calculateLaborCostPreview === 'function') calculateLaborCostPreview();
   } else if (t === 'Cắt lá' || t === 'Tỉa hoa') {
     _setVal('c-detail-reason',     d.reason);
     _setVal('c-detail-amount',     d.amount);
@@ -1025,6 +1197,12 @@ function _buildDetailsString(logType, details) {
   } else if (logType === 'Phun thuốc') {
     if (d.pesticide_name) parts.push(`Thuốc: ${d.pesticide_name}`);
     if (d.amount) parts.push(`Lượng: ${d.amount} ${d.unit || ''}`);
+  } else if (logType === 'Nhân công') {
+    if (d.work_content) parts.push(`Nội dung: ${d.work_content}`);
+    if (d.worker_count) parts.push(`Số người: ${d.worker_count} người`);
+    if (d.time_range) parts.push(`Giờ làm: ${d.time_range}`);
+    const costDisplay = d.batch_total_cost || d.total_cost;
+    if (costDisplay) parts.push(`Chi phí: ${new Intl.NumberFormat('vi-VN').format(costDisplay)} VNĐ`);
   } else if (logType === 'Cắt lá') {
     if (d.reason) parts.push(`Lý do: ${d.reason}`);
     if (d.amount) parts.push(`Lượng: ${d.amount}`);
@@ -1248,6 +1426,89 @@ export async function saveCareLog() {
         total_cost: singleCost
       };
 
+    } else if (logType === 'Nhân công') {
+      const workContent = document.getElementById('c-detail-labor-content')?.value.trim() || '';
+      const workerCount = parseInt(document.getElementById('c-detail-labor-workers')?.value, 10);
+      const rawCostInput = parseFloat(document.getElementById('c-detail-labor-cost')?.value);
+      const costMode = document.getElementById('c-detail-labor-cost-mode')?.value || 'total';
+      const startTime = document.getElementById('c-detail-labor-start-time')?.value || '';
+      const endTime = document.getElementById('c-detail-labor-end-time')?.value || '';
+
+      if (!workContent) throw new Error('Vui lòng nhập nội dung thuê nhân công!');
+      if (isNaN(workerCount) || workerCount <= 0) throw new Error('Vui lòng nhập số lượng người tham gia hợp lệ!');
+      if (isNaN(rawCostInput) || rawCostInput < 0) throw new Error('Vui lòng nhập chi phí thuê nhân công hợp lệ!');
+
+      const treeCount = selectedPlants.length || 1;
+      const totalBatchCost = costMode === 'per_person'
+        ? Math.round(rawCostInput * workerCount)
+        : Math.round(rawCostInput);
+      const costPerWorker = workerCount > 0 ? Math.round(totalBatchCost / workerCount) : totalBatchCost;
+      const singleTreeCost = Math.round(totalBatchCost / treeCount);
+
+      let workHours = 0;
+      if (startTime && endTime) {
+        const [sh, sm] = startTime.split(':').map(Number);
+        const [eh, em] = endTime.split(':').map(Number);
+        if (!isNaN(sh) && !isNaN(eh)) {
+          let diffMin = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+          if (diffMin < 0) diffMin += 24 * 60;
+          workHours = Number((diffMin / 60).toFixed(1));
+        }
+      }
+      const timeRange = (startTime && endTime) ? `${startTime} - ${endTime}` : (startTime || endTime || '');
+
+      const laborSupply = suppliesCache.find(s => s.category === 'Nhân công');
+
+      body.details = {
+        work_content: workContent,
+        worker_count: workerCount,
+        cost_mode: costMode,
+        raw_cost_input: rawCostInput,
+        cost_per_worker: costPerWorker,
+        batch_total_cost: totalBatchCost,
+        total_cost: singleTreeCost,
+        unit_price: costPerWorker,
+        start_time: startTime,
+        end_time: endTime,
+        work_hours: workHours,
+        time_range: timeRange,
+        time: timeRange,
+        amount: workerCount,
+        quantity: Number((workerCount / treeCount).toFixed(4)),
+        unit: 'người',
+        supply_id: laborSupply ? laborSupply.id : null,
+        supply_name: `Nhân công: ${workContent}`,
+        material_name: `Nhân công: ${workContent}`
+      };
+
+      // Tải lên & đóng dấu ảnh đoàn người tham gia (nếu có chọn ảnh/video)
+      let mediaUrls = [...(window._existingMediaUrls || [])];
+      if (selectedCareFiles.length > 0) {
+        if (btn) btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
+        const formData = new FormData();
+        const primaryTreeCode = selectedPlants[0].treeCode;
+        for (const file of selectedCareFiles) {
+          const processed = file.type.startsWith('image/')
+            ? await watermarkImage(file, primaryTreeCode, `Nhân công: ${workContent}`)
+            : file;
+          formData.append('files', processed, file.name);
+        }
+        const uploadRes = await fetch(`${API}/plants/${selectedPlants[0].id}/media`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json();
+          throw new Error(errData.error || 'Lỗi tải ảnh/video lên máy chủ');
+        }
+        const uploaded = await uploadRes.json();
+        uploaded.forEach(f => {
+          mediaUrls.push({ url: f.url, type: f.media_type });
+        });
+      }
+      body.media_urls = mediaUrls;
+
     } else if (logType === 'Cắt lá') {
       body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
 
@@ -1368,13 +1629,24 @@ export async function saveCareLog() {
       if (btn) btn.innerHTML = '<span class="spinner"></span> Tạo nhật ký...';
 
       let lastSavedResult = null;
-      for (const plant of selectedPlants) {
+      const totalSelectedCount = selectedPlants.length;
+      for (let i = 0; i < totalSelectedCount; i++) {
+        const plant = selectedPlants[i];
+        const reqBody = { ...body, details: { ...(body.details || {}) } };
+        if (logType === 'Nhân công' && totalSelectedCount > 1 && reqBody.details.batch_total_cost > 0) {
+          const baseTreeCost = Math.floor(reqBody.details.batch_total_cost / totalSelectedCount);
+          reqBody.details.total_cost = (i === totalSelectedCount - 1)
+            ? (reqBody.details.batch_total_cost - baseTreeCost * (totalSelectedCount - 1))
+            : baseTreeCost;
+        }
         // Gửi POST tạo nhật ký cho cây này (Backend tự động chuẩn hóa liều lượng, hạch toán supply_usages & trừ kho)
-        lastSavedResult = await api(`/plants/${plant.id}/logs`, { method: 'POST', body: JSON.stringify(body) });
+        lastSavedResult = await api(`/plants/${plant.id}/logs`, { method: 'POST', body: JSON.stringify(reqBody) });
       }
 
       if (logType === 'Thu hoạch' && lastSavedResult && lastSavedResult.batch_code) {
         toast(`🌾 Thu hoạch thành công! Đã cấp Mã Lô VietGAP: ${lastSavedResult.batch_code}`, 'success');
+      } else if (logType === 'Nhân công') {
+        toast('👷 Đã ghi nhật ký Nhân công & tự động hạch toán chi phí lên bảng BI!', 'success');
       } else if (supplyId) {
         if (logType === 'Tưới nước') {
           toast(`💧 Đã ghi nhật ký, quy đổi m³ & tự động hạch toán tiền nước!`, 'success');
@@ -1391,6 +1663,7 @@ export async function saveCareLog() {
     if (typeof window.loadSupplies === 'function') window.loadSupplies();
     if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();
     if (typeof window.updateSuppliesProfitCockpit === 'function') window.updateSuppliesProfitCockpit();
+    if (typeof window.loadBiAnalyticsDashboard === 'function') window.loadBiAnalyticsDashboard();
 
   } catch (err) {
     const isNetworkErr = !navigator.onLine || 

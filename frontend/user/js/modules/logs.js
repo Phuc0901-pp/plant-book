@@ -292,8 +292,11 @@ export function groupCareLogsByDay(logs) {
       let detailsStr = esc(l.note || '');
       if (l.details && Object.keys(l.details).length > 0) {
         const parts = [];
+        if (l.details.work_content)    parts.push(`Công việc: ${l.details.work_content}`);
+        if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
+        if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
         if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
-        if (l.details.amount && l.details.unit) parts.push(`Lượng: ${l.details.amount} ${l.details.unit}`);
+        if (l.details.amount && l.details.unit && !l.details.worker_count) parts.push(`Lượng: ${l.details.amount} ${l.details.unit}`);
         if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
         if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
         if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
@@ -305,7 +308,7 @@ export function groupCareLogsByDay(logs) {
         }
       }
 
-      const mediaHtml = l.log_type === 'Bệnh cây'
+      const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công')
         ? buildMediaThumbnailsHtml(l.media_urls, 36)
         : '';
 
@@ -313,6 +316,7 @@ export function groupCareLogsByDay(logs) {
         'Tưới nước': 'badge-blue',
         'Bón phân':  'badge-brown',
         'Phun thuốc': 'badge-purple',
+        'Nhân công': 'badge-blue',
         'Cắt lá':    'badge-green',
         'Tỉa hoa':   'badge-amber',
         'Thu hoạch': 'badge-amber'
@@ -467,6 +471,9 @@ export function renderUserLogsTable(logs) {
       } else if (l.log_type === 'Cắt lá' || l.log_type === 'Cắt tỉa') {
         badgeClass = 'badge-gray';
         icon = 'scissors';
+      } else if (l.log_type === 'Nhân công') {
+        badgeClass = 'badge-blue';
+        icon = 'users';
       }
 
       // 4. Chi tiết, Vật tư, Khối lượng & Chú thích
@@ -477,8 +484,14 @@ export function renderUserLogsTable(logs) {
         const unitVal = l.details.unit || l.details.package_unit || '';
         const supName = l.details.supply_name || l.details.fertilizer_name || l.details.pesticide_name || l.details.foliar_nutrition || l.details.fertilizer || l.details.pesticide;
 
-        if (supName) parts.push(`Vật tư: <strong style="color:#0f172a;">${esc(supName)}</strong>`);
-        if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '' && qtyVal > 0) parts.push(`Tổng lượng: <strong style="color:#059669;">${qtyVal} ${unitVal}</strong>`);
+        if (l.log_type === 'Nhân công') {
+          if (l.details.work_content) parts.push(`Nội dung: <strong style="color:#0f172a;">${esc(l.details.work_content)}</strong>`);
+          if (l.details.worker_count) parts.push(`Số lượng: <strong style="color:#0284c7;">${l.details.worker_count} người</strong>`);
+          if (l.details.time_range) parts.push(`Giờ làm: <strong>${esc(l.details.time_range)}</strong>`);
+        } else {
+          if (supName) parts.push(`Vật tư: <strong style="color:#0f172a;">${esc(supName)}</strong>`);
+          if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '' && qtyVal > 0) parts.push(`Tổng lượng: <strong style="color:#059669;">${qtyVal} ${unitVal}</strong>`);
+        }
         if (l.details.fruit_count) parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
         if (l.details.total_cost) parts.push(`Chi phí: <strong style="color:#dc2626;">${Number(l.details.total_cost).toLocaleString('vi-VN')} đ</strong>`);
         if (l.details.total_revenue) parts.push(`Doanh thu: <strong style="color:#059669;">${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ</strong>`);
@@ -602,7 +615,9 @@ function _renderLogPage() {
     'Tưới nước': 'droplets',
     'Bón phân': 'sprout',
     'Phun thuốc': 'flask-conical',
+    'Nhân công': 'users',
     'Cắt tỉa': 'scissors',
+    'Cắt lá': 'scissors',
     'Làm cỏ': 'scissors',
     'Thu hoạch': 'package-check',
     'Bệnh cây': 'shield-alert'
@@ -645,8 +660,14 @@ function _renderLogPage() {
         const unitVal = l.details.unit || l.details.package_unit || '';
         const supName = l.details.supply_name || l.details.fertilizer_name || l.details.pesticide_name || l.details.foliar_nutrition || l.details.fertilizer || l.details.pesticide;
 
-        if (supName) parts.push(`Vật tư: ${supName}`);
-        if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: ${qtyVal} ${unitVal}`);
+        if (l.log_type === 'Nhân công') {
+          if (l.details.work_content) parts.push(`Nội dung: ${l.details.work_content}`);
+          if (l.details.worker_count) parts.push(`Số người: ${l.details.worker_count} người`);
+          if (l.details.time_range)   parts.push(`Giờ làm: ${l.details.time_range}`);
+        } else {
+          if (supName) parts.push(`Vật tư: ${supName}`);
+          if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: ${qtyVal} ${unitVal}`);
+        }
         if (l.details.fruit_count)     parts.push(`Số trái: ${l.details.fruit_count}`);
         if (l.details.total_revenue && !isFinanceRedacted)   parts.push(`Doanh thu: ${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ`);
         if (l.details.total_cost && !isFinanceRedacted)      parts.push(`Chi phí: ${Number(l.details.total_cost).toLocaleString('vi-VN')} đ`);
@@ -800,8 +821,11 @@ function _logRow(l) {
   let detailsStr = esc(l.note || '');
   if (l.details && Object.keys(l.details).length > 0) {
     const parts = [];
+    if (l.details.work_content)    parts.push(`Nội dung: ${l.details.work_content}`);
+    if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
+    if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
     if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
-    if (l.details.amount)          parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+    if (l.details.amount && !l.details.worker_count) parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
     if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
     if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
     if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
@@ -812,7 +836,7 @@ function _logRow(l) {
     }
   }
 
-  const mediaHtml = l.log_type === 'Bệnh cây'
+  const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công')
     ? buildMediaThumbnailsHtml(l.media_urls, 40)
     : '';
 
@@ -1360,7 +1384,7 @@ export function openUserExportLogsModal() {
   if (toDateInput) toDateInput.value = today;
 
   // Populate categories checkboxes
-  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Cắt lá", "Tỉa hoa", "Thu hoạch", "Bệnh cây", "Ghi chú khác"];
+  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Cắt lá", "Tỉa hoa", "Thu hoạch", "Bệnh cây", "Ghi chú khác"];
   if (catsContainer) {
     catsContainer.innerHTML = standardCats.map(cat => `
       <label style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:6px 10px; border-radius:8px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
@@ -1428,6 +1452,11 @@ function formatLogDetailsText(log) {
     if (d.type) parts.push(`Loại thuốc: ${d.type}`);
     if (d.amount || d.dosage) parts.push(`Liều lượng: ${d.amount || d.dosage} ${d.unit || ''}`);
     if (d.reason) parts.push(`Đối tượng phòng trừ: ${d.reason}`);
+  } else if (log.log_type === 'Nhân công') {
+    if (d.work_content) parts.push(`Nội dung: ${d.work_content}`);
+    if (d.worker_count) parts.push(`Số người: ${d.worker_count} người`);
+    if (d.time_range) parts.push(`Giờ làm: ${d.time_range}`);
+    if (d.batch_total_cost || d.total_cost) parts.push(`Chi phí: ${Number(d.batch_total_cost || d.total_cost).toLocaleString('vi-VN')} đ`);
   } else if (log.log_type === 'Cắt lá') {
     if (d.amount) parts.push(`Số lượng cành/lá: ${d.amount}`);
     if (d.reason) parts.push(`Mục đích: ${d.reason}`);
