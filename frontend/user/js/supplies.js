@@ -1601,6 +1601,40 @@ export function switchSuppliesTab(tab) {
   }
 }
 
+export function switchSuppliesMonitorSubTab(mode) {
+  const paneBi = document.getElementById('monitor-subpane-bi');
+  const panePeriod = document.getElementById('monitor-subpane-period');
+  const btnBi = document.getElementById('btn-monitor-sub-bi');
+  const btnPeriod = document.getElementById('btn-monitor-sub-period');
+  const btnBoth = document.getElementById('btn-monitor-sub-both');
+
+  if (paneBi) paneBi.style.display = (mode === 'bi' || mode === 'both') ? 'block' : 'none';
+  if (panePeriod) panePeriod.style.display = (mode === 'period' || mode === 'both') ? 'block' : 'none';
+
+  const setBtnStyle = (btn, isActive) => {
+    if (!btn) return;
+    btn.style.background = isActive ? '#059669' : '#f8fafc';
+    btn.style.color = isActive ? '#ffffff' : '#334155';
+    btn.style.border = isActive ? 'none' : '1px solid #cbd5e1';
+  };
+  setBtnStyle(btnBi, mode === 'bi');
+  setBtnStyle(btnPeriod, mode === 'period');
+  setBtnStyle(btnBoth, mode === 'both');
+
+  if (mode === 'period' || mode === 'both') {
+    loadSuppliesAnalytics();
+  }
+  if (mode === 'bi' || mode === 'both') {
+    if (typeof window.loadExecutiveBiAnalytics === 'function') {
+      window.loadExecutiveBiAnalytics(currentCockpitFarmId, currentCockpitYear);
+    }
+  }
+  if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+    window.PlantBookI18n.applyDomTranslations();
+  }
+}
+window.switchSuppliesMonitorSubTab = switchSuppliesMonitorSubTab;
+
 
 // ─── TAB 2: GIÁM SÁT VẬT TƯ & CHI PHÍ ────────────────────────────
 
