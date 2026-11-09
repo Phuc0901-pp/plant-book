@@ -29,18 +29,34 @@ android {
 
     val keystorePropertiesFile = rootProject.file("key.properties")
     val keystoreProperties = java.util.Properties()
-    val hasValidKeystore = keystorePropertiesFile.exists() && run {
-        keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
-        keystoreProperties.getProperty("keyAlias") != null && keystoreProperties.getProperty("storeFile") != null
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
     }
 
+    val keystorePath = keystoreProperties.getProperty("storeFile")
+    val resolvedKeystoreFile = if (!keystorePath.isNullOrBlank()) {
+        val fInApp = file(keystorePath)
+        val fInRoot = rootProject.file(keystorePath)
+        when {
+            fInApp.exists() -> fInApp.absoluteFile
+            fInRoot.exists() -> fInRoot.absoluteFile
+            else -> null
+        }
+    } else null
+
+    val hasValidKeystore = resolvedKeystoreFile != null &&
+        resolvedKeystoreFile.exists() &&
+        !keystoreProperties.getProperty("keyAlias").isNullOrBlank() &&
+        !keystoreProperties.getProperty("storePassword").isNullOrBlank() &&
+        !keystoreProperties.getProperty("keyPassword").isNullOrBlank()
+
     signingConfigs {
-        if (hasValidKeystore) {
+        if (hasValidKeystore && resolvedKeystoreFile != null) {
             create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String?
-                keyPassword = keystoreProperties["keyPassword"] as String?
-                storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-                storePassword = keystoreProperties["storePassword"] as String?
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = resolvedKeystoreFile
+                storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
     }
