@@ -8,6 +8,7 @@ import '../../models/plant.dart';
 import '../../models/farm.dart';
 import '../../components/loading_indicator.dart';
 import '../../components/log_edit_dialog.dart';
+import '../../core/theme/fluent_icons.dart';
 import '../plant_detail_page.dart';
 
 class UserLogsPage extends StatefulWidget {
@@ -31,14 +32,14 @@ class _UserLogsPageState extends State<UserLogsPage> {
   List<Plant> _cachedPlants = [];
   List<Farm> _farms = [];
 
-  final List<Map<String, String>> _categories = [
-    {'key': 'all', 'label': 'Tất cả'},
-    {'key': 'Tưới nước', 'label': '💧 Tưới nước'},
-    {'key': 'Bón phân', 'label': '🌿 Bón phân'},
-    {'key': 'Phun thuốc', 'label': '💊 Phun thuốc'},
-    {'key': 'Cắt tỉa', 'label': '✂️ Cắt tỉa'},
-    {'key': 'Bệnh cây', 'label': '🍂 Bệnh cây'},
-    {'key': 'Thu hoạch', 'label': '🌾 Thu hoạch'},
+  final List<Map<String, dynamic>> _categories = [
+    {'key': 'all', 'label': 'Tất cả', 'icon': LucideIconName.fileText},
+    {'key': 'Nhân công', 'label': 'Nhân công', 'icon': LucideIconName.users},
+    {'key': 'Tưới nước', 'label': 'Tưới nước', 'icon': LucideIconName.droplet},
+    {'key': 'Bón phân', 'label': 'Bón phân', 'icon': LucideIconName.beaker},
+    {'key': 'Phun thuốc', 'label': 'Phun thuốc', 'icon': LucideIconName.shield},
+    {'key': 'Bệnh cây', 'label': 'Bệnh cây', 'icon': LucideIconName.alertTriangle},
+    {'key': 'Thu hoạch', 'label': 'Thu hoạch', 'icon': LucideIconName.package},
   ];
 
   @override
@@ -90,12 +91,14 @@ class _UserLogsPageState extends State<UserLogsPage> {
           }
         }
 
-        // Category filter (Smart AgTech multi-keyword matching)
+        // Category filter
         if (_selectedCategory != 'all') {
           final target = _selectedCategory.toLowerCase();
           final type = log.logType.toLowerCase();
-          if (target == 'cắt tỉa') {
-            if (!type.contains('tỉa') && !type.contains('cắt')) return false;
+          if (target == 'nhân công') {
+            if (!type.contains('nhân công') && !type.contains('công') && !type.contains('cắt') && !type.contains('tỉa') && !type.contains('lao động')) {
+              return false;
+            }
           } else if (target == 'bệnh cây') {
             if (!type.contains('bệnh') && !type.contains('sâu')) return false;
           } else if (!type.contains(target)) {
@@ -109,7 +112,8 @@ class _UserLogsPageState extends State<UserLogsPage> {
           final typeMatch = log.logType.toLowerCase().contains(query);
           final operatorMatch = (log.operatorName ?? '').toLowerCase().contains(query);
           final treeMatch = (log.treeCode ?? '').toLowerCase().contains(query);
-          return noteMatch || typeMatch || operatorMatch || treeMatch;
+          final detailsStr = log.details.toString().toLowerCase();
+          return noteMatch || typeMatch || operatorMatch || treeMatch || detailsStr.contains(query);
         }
 
         return true;
@@ -152,75 +156,97 @@ class _UserLogsPageState extends State<UserLogsPage> {
 
   void _openAddLogDialog() {
     final defaultPlantId = _cachedPlants.isNotEmpty ? [_cachedPlants.first.id] : <int>[];
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => LogEditDialog(
         plantIds: defaultPlantId,
         farmName: _cachedPlants.isNotEmpty ? _cachedPlants.first.plantType : 'Trang trại Nông hộ',
+        initialType: 'Nhân công',
+        onLogSaved: _loadLogs,
       ),
-    ).then((_) => _loadLogs());
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppTheme.fluentSurface,
       appBar: AppBar(
-        backgroundColor: AppTheme.greenDark,
-        title: const Text('Nhật Ký Canh Tác Timeline', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          'Nhật Ký Canh Tác Timeline',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.fluentTextMain),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const LucideIcon(LucideIconName.refreshCw, size: 18, color: AppTheme.fluentTextMuted),
             tooltip: 'Tải lại nhật ký',
             onPressed: _loadLogs,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
           // 1. Search Bar with Voice Dictation
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            color: Colors.white,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (_) => _applyFilters(),
-                    style: const TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Tìm theo hoạt động, phân thuốc, ghi chú...',
-                      prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textMuted, size: 20),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                _applyFilters();
-                              },
-                            )
-                          : null,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.grayBorder)),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.fluentBorder, width: 0.8),
+                      boxShadow: AppTheme.fluentShadow,
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (_) => _applyFilters(),
+                      style: const TextStyle(fontSize: 13.5),
+                      decoration: InputDecoration(
+                        hintText: 'Tìm theo hoạt động, nhân công, vật tư...',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: LucideIcon(LucideIconName.search, size: 18, color: AppTheme.fluentTextMuted),
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const LucideIcon(LucideIconName.close, size: 16, color: AppTheme.fluentTextMuted),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _applyFilters();
+                                },
+                              )
+                            : null,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 InkWell(
                   onTap: _toggleVoiceSearch,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _isListeningVoice ? AppTheme.red : AppTheme.greenLight,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _isListeningVoice ? AppTheme.red : AppTheme.green.withOpacity(0.3)),
+                      color: _isListeningVoice ? AppTheme.rosePastel : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _isListeningVoice ? AppTheme.roseText : AppTheme.fluentBorder,
+                        width: 0.8,
+                      ),
+                      boxShadow: AppTheme.fluentShadow,
                     ),
-                    child: Icon(
-                      _isListeningVoice ? Icons.mic_rounded : Icons.mic_none_rounded,
-                      color: _isListeningVoice ? Colors.white : AppTheme.greenDark,
+                    child: LucideIcon(
+                      LucideIconName.mic,
+                      color: _isListeningVoice ? AppTheme.roseText : AppTheme.fluentEmerald,
                       size: 20,
                     ),
                   ),
@@ -229,92 +255,62 @@ class _UserLogsPageState extends State<UserLogsPage> {
             ),
           ),
 
-          // 2. Farm Selector Filter (if multiple farms exist)
-          if (_farms.isNotEmpty) ...[
-            Container(
-              height: 40,
-              color: Colors.white,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                scrollDirection: Axis.horizontal,
-                children: [
-                  ChoiceChip(
-                    label: const Text('🌿 Tất cả trang trại', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    selected: _selectedFarmId == 'all',
-                    selectedColor: const Color(0xFF0F172A),
-                    labelStyle: TextStyle(color: _selectedFarmId == 'all' ? Colors.white : AppTheme.textMain),
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    onSelected: (sel) {
-                      setState(() {
-                        _selectedFarmId = 'all';
-                        _applyFilters();
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ..._farms.map((f) {
-                    final isSel = _selectedFarmId == f.id.toString();
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text('🏡 ${f.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        selected: isSel,
-                        selectedColor: AppTheme.greenDark,
-                        labelStyle: TextStyle(color: isSel ? Colors.white : AppTheme.textMain),
-                        backgroundColor: const Color(0xFFF1F5F9),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        onSelected: (sel) {
-                          setState(() {
-                            _selectedFarmId = sel ? f.id.toString() : 'all';
-                            _applyFilters();
-                          });
-                        },
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: AppTheme.grayBorder),
-          ],
-
-          // 3. Category Filter Chips
-          Container(
-            height: 48,
-            color: Colors.white,
+          // 2. Category Filter Chips (Horizontal Fluent Pills)
+          SizedBox(
+            height: 44,
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
               itemBuilder: (context, idx) {
                 final cat = _categories[idx];
                 final isSelected = _selectedCategory == cat['key'];
-                return ChoiceChip(
-                  label: Text(
-                    cat['label']!,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isSelected ? Colors.white : AppTheme.textMain,
-                    ),
-                  ),
-                  selected: isSelected,
-                  selectedColor: AppTheme.greenDark,
-                  backgroundColor: const Color(0xFFF1F5F9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  onSelected: (selected) {
+                return InkWell(
+                  onTap: () {
                     setState(() {
-                      _selectedCategory = selected ? cat['key']! : 'all';
+                      _selectedCategory = cat['key'] as String;
                       _applyFilters();
                     });
                   },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.fluentEmerald : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected ? AppTheme.fluentEmerald : AppTheme.fluentBorder,
+                        width: 0.8,
+                      ),
+                      boxShadow: isSelected ? AppTheme.fluentShadow : null,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        LucideIcon(
+                          cat['icon'] as LucideIconName,
+                          size: 14,
+                          color: isSelected ? Colors.white : AppTheme.fluentTextMuted,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          cat['label'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected ? Colors.white : AppTheme.fluentTextMain,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),
           ),
-          const Divider(height: 1, color: AppTheme.grayBorder),
+
+          const SizedBox(height: 6),
 
           // 3. Logs List or Empty State
           Expanded(
@@ -324,9 +320,10 @@ class _UserLogsPageState extends State<UserLogsPage> {
                     ? _buildEmptyState()
                     : RefreshIndicator(
                         onRefresh: _loadLogs,
-                        color: AppTheme.greenDark,
+                        color: AppTheme.fluentEmerald,
+                        backgroundColor: Colors.white,
                         child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           itemCount: _filteredLogs.length,
                           itemBuilder: (context, idx) {
                             final log = _filteredLogs[idx];
@@ -339,10 +336,11 @@ class _UserLogsPageState extends State<UserLogsPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddLogDialog,
-        backgroundColor: AppTheme.greenDark,
+        backgroundColor: AppTheme.fluentEmerald,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Ghi nhật ký mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+        elevation: 3,
+        icon: const LucideIcon(LucideIconName.plus, size: 18, color: Colors.white),
+        label: const Text('Ghi nhật ký mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       ),
     );
   }
@@ -353,22 +351,18 @@ class _UserLogsPageState extends State<UserLogsPage> {
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: AppTheme.greenLight, shape: BoxShape.circle),
-              child: const Icon(Icons.history_edu_rounded, color: AppTheme.green, size: 48),
-            ),
-            const SizedBox(height: 16),
-            const Text(
+          children: const [
+            ChibiWeatherWidget(type: ChibiWeatherType.sun, size: 68),
+            SizedBox(height: 16),
+            Text(
               'Chưa có nhật ký canh tác phù hợp',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.fluentTextMain),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'Hãy bấm nút Ghi nhật ký mới để ghi nhận lần tưới nước, bón phân hoặc kiểm tra sâu bệnh đầu tiên!',
+            SizedBox(height: 6),
+            Text(
+              'Hãy bấm nút "Ghi nhật ký mới" để ghi nhận thuê nhân công, tưới nước hoặc bón phân đầu tiên!',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppTheme.textMuted, height: 1.4),
+              style: TextStyle(fontSize: 12.5, color: AppTheme.fluentTextMuted, height: 1.4),
             ),
           ],
         ),
@@ -377,55 +371,65 @@ class _UserLogsPageState extends State<UserLogsPage> {
   }
 
   Widget _buildLogCard(PlantLog log) {
-    Color typeColor = AppTheme.green;
-    IconData typeIcon = Icons.eco_rounded;
-    final lowerType = log.logType.toLowerCase();
+    Color typeColor = AppTheme.fluentEmerald;
+    Color typeBg = AppTheme.mintPastel;
+    LucideIconName typeIcon = LucideIconName.sprout;
 
-    if (lowerType.contains('tưới')) {
-      typeColor = AppTheme.blue;
-      typeIcon = Icons.water_drop_rounded;
+    final lowerType = log.logType.toLowerCase();
+    final isLabor = lowerType.contains('nhân công') || lowerType.contains('công') || lowerType.contains('tỉa') || lowerType.contains('cắt');
+
+    if (isLabor) {
+      typeColor = AppTheme.lavenderText;
+      typeBg = AppTheme.lavenderPastel;
+      typeIcon = LucideIconName.users;
+    } else if (lowerType.contains('tưới')) {
+      typeColor = AppTheme.skyText;
+      typeBg = AppTheme.skyPastel;
+      typeIcon = LucideIconName.droplet;
     } else if (lowerType.contains('bón') || lowerType.contains('phân')) {
-      typeColor = AppTheme.green;
-      typeIcon = Icons.grass_rounded;
+      typeColor = AppTheme.butterText;
+      typeBg = AppTheme.butterPastel;
+      typeIcon = LucideIconName.beaker;
     } else if (lowerType.contains('phun') || lowerType.contains('thuốc')) {
-      typeColor = AppTheme.amber;
-      typeIcon = Icons.medication_liquid_rounded;
-    } else if (lowerType.contains('cắt') || lowerType.contains('tỉa')) {
-      typeColor = const Color(0xFF8B5CF6);
-      typeIcon = Icons.content_cut_rounded;
+      typeColor = AppTheme.roseText;
+      typeBg = AppTheme.rosePastel;
+      typeIcon = LucideIconName.shield;
     } else if (lowerType.contains('bệnh') || lowerType.contains('sâu')) {
-      typeColor = AppTheme.red;
-      typeIcon = Icons.pest_control_rounded;
+      typeColor = AppTheme.roseText;
+      typeBg = AppTheme.rosePastel;
+      typeIcon = LucideIconName.alertTriangle;
     } else if (lowerType.contains('thu hoạch')) {
-      typeColor = const Color(0xFFD97706);
-      typeIcon = Icons.agriculture_rounded;
+      typeColor = const Color(0xFF059669);
+      typeBg = const Color(0xFFD1FAE5);
+      typeIcon = LucideIconName.package;
     }
 
     final parsedDate = DateTime.tryParse(log.logDate);
     final formattedDate = parsedDate != null ? DateFormat('dd/MM/yyyy').format(parsedDate) : log.logDate;
 
+    // Extract Labor specific fields if available
+    final details = log.details;
+    final workContent = details['work_content'] ?? details['reason'] ?? '';
+    final workerCount = details['worker_count'] ?? details['amount'];
+    final laborCost = details['cost'] ?? details['labor_cost'];
+    final startTime = details['start_time'];
+    final endTime = details['end_time'];
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: log.isPhiViolation ? AppTheme.red.withOpacity(0.5) : AppTheme.grayBorder,
-          width: log.isPhiViolation ? 1.5 : 1.2,
+          color: log.isPhiViolation ? AppTheme.roseText.withOpacity(0.4) : AppTheme.fluentBorder,
+          width: log.isPhiViolation ? 1.5 : 0.8,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppTheme.fluentShadow,
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           onTap: () {
             final matching = _cachedPlants.where((p) => p.id == log.plantId).toList();
             if (matching.isNotEmpty) {
@@ -436,39 +440,39 @@ class _UserLogsPageState extends State<UserLogsPage> {
             }
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Type badge, Date & PHI violation indicator
+                // Top Row: Activity Pill + Date
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
-                        color: typeColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
+                        color: typeBg,
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(typeIcon, color: typeColor, size: 16),
-                          const SizedBox(width: 6),
+                          LucideIcon(typeIcon, color: typeColor, size: 14),
+                          const SizedBox(width: 5),
                           Text(
-                            log.logType,
-                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: typeColor),
+                            isLabor ? 'Nhân công' : log.logType,
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: typeColor),
                           ),
                         ],
                       ),
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.textMuted),
-                        const SizedBox(width: 5),
+                        const LucideIcon(LucideIconName.calendar, size: 12, color: AppTheme.fluentTextMuted),
+                        const SizedBox(width: 4),
                         Text(
                           formattedDate,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textMuted),
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppTheme.fluentTextMuted),
                         ),
                       ],
                     ),
@@ -476,31 +480,74 @@ class _UserLogsPageState extends State<UserLogsPage> {
                 ),
                 const SizedBox(height: 10),
 
-                // Content Note
+                // Labor Specific Detail Row
+                if (isLabor && (workContent != '' || workerCount != null)) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAF5FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE9D5FF), width: 0.8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (workContent != '')
+                          Row(
+                            children: [
+                              const LucideIcon(LucideIconName.scissors, size: 12, color: AppTheme.lavenderText),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Nội dung: $workContent',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF6B21A8)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (workerCount != null)
+                              Text('👥 $workerCount người làm', style: const TextStyle(fontSize: 11.5, color: AppTheme.fluentTextMuted)),
+                            if (laborCost != null)
+                              Text('💰 Chi phí: $laborCost đ', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.butterText)),
+                            if (startTime != null && startTime != '')
+                              Text('⏰ $startTime - $endTime', style: const TextStyle(fontSize: 11, color: AppTheme.fluentTextMuted)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
+                // Note Content
                 if (log.note != null && log.note!.isNotEmpty)
                   Text(
                     log.note!,
-                    style: const TextStyle(fontSize: 14, color: AppTheme.textMain, height: 1.35, fontWeight: FontWeight.w500),
+                    style: const TextStyle(fontSize: 13, color: AppTheme.fluentTextMain, height: 1.35, fontWeight: FontWeight.w500),
                   ),
 
-                // PHI Warning Badge if violation
+                // PHI Warning Badge
                 if (log.isPhiViolation) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppTheme.redLight,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.red.withOpacity(0.3)),
+                      color: AppTheme.rosePastel,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.roseText.withOpacity(0.3), width: 0.8),
                     ),
                     child: Row(
                       children: const [
-                        Icon(Icons.warning_rounded, color: AppTheme.red, size: 16),
+                        LucideIcon(LucideIconName.alertTriangle, color: AppTheme.roseText, size: 14),
                         SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             'Cảnh báo: Thu hoạch trong thời gian chưa hết cách ly thuốc BVTV!',
-                            style: TextStyle(fontSize: 11.5, color: AppTheme.red, fontWeight: FontWeight.bold),
+                            style: TextStyle(fontSize: 11, color: AppTheme.roseText, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -508,15 +555,15 @@ class _UserLogsPageState extends State<UserLogsPage> {
                   ),
                 ],
 
-                // Tree Code & Operator Info
+                // Footer: Plant ID & Operator
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
-                        'Cây #${log.treeCode ?? log.plantId} · ${log.operatorName != null && log.operatorName!.isNotEmpty ? "Người làm: ${log.operatorName}" : "Ghi bởi Nông hộ"}',
-                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                        'Cây #${log.treeCode ?? log.plantId} · ${log.operatorName != null && log.operatorName!.isNotEmpty ? "Người làm: ${log.operatorName}" : "Nông hộ"}',
+                        style: const TextStyle(fontSize: 11, color: AppTheme.fluentTextMuted),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -524,9 +571,9 @@ class _UserLogsPageState extends State<UserLogsPage> {
                     if (log.mediaUrls.isNotEmpty)
                       Row(
                         children: [
-                          const Icon(Icons.photo_library_rounded, size: 15, color: AppTheme.textMuted),
+                          const LucideIcon(LucideIconName.camera, size: 12, color: AppTheme.fluentTextMuted),
                           const SizedBox(width: 4),
-                          Text('${log.mediaUrls.length} ảnh', style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted)),
+                          Text('${log.mediaUrls.length} ảnh', style: const TextStyle(fontSize: 11, color: AppTheme.fluentTextMuted)),
                         ],
                       ),
                   ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/fluent_icons.dart';
 import '../../utils/theme.dart';
 
 class UserBottomNav extends StatelessWidget {
@@ -15,27 +16,29 @@ class UserBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.grayBorder, width: 1.2)),
-        boxShadow: [
+        color: Colors.white.withOpacity(0.96),
+        border: const Border(
+          top: BorderSide(color: AppTheme.fluentBorder, width: 0.8),
+        ),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
+            color: Color(0x0C0F172A),
+            blurRadius: 16,
+            offset: Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.grid_view_rounded, 'Tổng quan'),
-              _buildNavItem(1, Icons.landscape_rounded, 'Vùng trồng'),
-              _buildNavItem(2, Icons.assignment_rounded, 'Nhật ký'),
-              _buildNavItem(3, Icons.inventory_2_rounded, 'Kho vật tư'),
-              _buildNavItem(4, Icons.manage_accounts_rounded, 'Cài đặt'),
+              _buildNavItem(0, LucideIconName.sprout, 'Tổng quan'),
+              _buildNavItem(1, LucideIconName.tree, 'Vùng trồng'),
+              _buildNavItem(2, LucideIconName.fileText, 'Nhật ký'),
+              _buildNavItem(3, LucideIconName.package, 'Kho vật tư'),
+              _buildNavItem(4, LucideIconName.settings, 'Cài đặt'),
             ],
           ),
         ),
@@ -43,31 +46,35 @@ class UserBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(int index, LucideIconName icon, String label) {
     final bool isSelected = currentIndex == index;
-    final Color activeColor = AppTheme.greenDark;
-    final Color inactiveColor = const Color(0xFF64748B);
+    final Color activeColor = AppTheme.fluentEmerald;
+    final Color inactiveColor = AppTheme.fluentTextMuted;
 
     return Expanded(
       child: InkWell(
         onTap: () => onTap(index),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        splashColor: AppTheme.mintPastel.withOpacity(0.5),
+        highlightColor: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.greenLight : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  color: isSelected ? AppTheme.mintPastel : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
+                child: LucideIcon(
                   icon,
+                  size: 20,
                   color: isSelected ? activeColor : inactiveColor,
-                  size: 22,
+                  strokeWidth: isSelected ? 2.2 : 1.8,
                 ),
               ),
               const SizedBox(height: 3),
@@ -76,10 +83,10 @@ class UserBottomNav extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected ? activeColor : inactiveColor,
-                  letterSpacing: isSelected ? 0.2 : 0,
+                  letterSpacing: -0.1,
                 ),
               ),
             ],

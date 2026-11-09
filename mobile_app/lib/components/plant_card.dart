@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/plant.dart';
 import '../utils/theme.dart';
+import '../core/theme/fluent_icons.dart';
 
 class PlantCard extends StatelessWidget {
   final Plant plant;
@@ -18,166 +19,218 @@ class PlantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Health status badge color config
+    // Health status badge color config (Fluent 2 Pastels)
     Color badgeBg;
     Color badgeText;
-    
-    switch (plant.healthStatus) {
-      case 'Tốt':
-        badgeBg = const Color(0xFFDCFCE7);
-        badgeText = const Color(0xFF15803D);
-        break;
-      case 'Cần chú ý':
-        badgeBg = const Color(0xFFFEF3C7);
-        badgeText = const Color(0xFFB45309);
-        break;
-      case 'Bệnh':
-        badgeBg = const Color(0xFFFEE2E2);
-        badgeText = const Color(0xFFB91C1C);
-        break;
-      default:
-        badgeBg = const Color(0xFFEFF6FF);
-        badgeText = const Color(0xFF1D4ED8);
+    String badgeLabel = plant.healthStatus;
+
+    if (plant.healthStatus.toLowerCase().contains('tốt') || plant.healthStatus.toLowerCase().contains('khỏe')) {
+      badgeBg = AppTheme.mintPastel;
+      badgeText = AppTheme.mintText;
+    } else if (plant.healthStatus.toLowerCase().contains('chú ý')) {
+      badgeBg = AppTheme.butterPastel;
+      badgeText = AppTheme.butterText;
+    } else if (plant.healthStatus.toLowerCase().contains('bệnh')) {
+      badgeBg = AppTheme.rosePastel;
+      badgeText = AppTheme.roseText;
+    } else {
+      badgeBg = AppTheme.skyPastel;
+      badgeText = AppTheme.skyText;
     }
 
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppTheme.grayBorder, width: 1),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.fluentBorder, width: 0.8),
+        boxShadow: AppTheme.fluentShadow,
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Cây #${plant.displayName}',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textMain,
-                      ),
-                    ),
-                    if (plant.nfcUid != null) ...[
-                      const SizedBox(width: 6),
-                      const Icon(Icons.tag_rounded, size: 16, color: AppTheme.green),
-                    ],
-                  ],
-                ),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: badgeBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: badgeText.withOpacity(0.2), width: 1),
-                      ),
-                      child: Text(
-                        plant.healthStatus,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: badgeText,
-                        ),
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textMuted),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onSelected: (value) {
-                        if (value == 'log' && onLogTap != null) {
-                          onLogTap!();
-                        } else if (value == 'nfc' && onNfcTap != null) {
-                          onNfcTap!();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'log',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit_note_rounded, size: 20, color: AppTheme.green),
-                              SizedBox(width: 8),
-                              Text('Ghi nhật ký'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'nfc',
-                          child: Row(
-                            children: [
-                              Icon(Icons.tag_rounded, size: 20, color: Colors.blue),
-                              SizedBox(width: 8),
-                              Text('Định danh NFC'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.eco_rounded, size: 14, color: AppTheme.textMuted),
-                const SizedBox(width: 6),
-                Text(
-                  plant.plantType,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-                if (plant.plantVariety != null && plant.plantVariety!.isNotEmpty) ...[
-                  const SizedBox(width: 4),
-                  Text(
-                    '(${plant.plantVariety})',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                // Left: Plant Squircle Avatar
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppTheme.mintPastel,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                ]
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.textMuted),
-                const SizedBox(width: 6),
-                Text(
-                  'Tuổi cây: ${plant.plantAge ?? '—'} năm',
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  alignment: Alignment.center,
+                  child: const LucideIcon(
+                    LucideIconName.sprout,
+                    size: 22,
+                    color: AppTheme.fluentEmerald,
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.location_on_rounded, size: 14, color: AppTheme.textMuted),
-                const SizedBox(width: 6),
+                const SizedBox(width: 12),
+
+                // Center: Plant Info
                 Expanded(
-                  child: Text(
-                    'Vị trí: ${plant.location ?? '—'}',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Cây #${plant.displayName}',
+                                style: const TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.fluentTextMain,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              if (plant.nfcUid != null) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.skyPastel,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      LucideIcon(LucideIconName.tag, size: 10, color: AppTheme.skyText),
+                                      SizedBox(width: 2),
+                                      Text(
+                                        'NFC',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppTheme.skyText,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          // Status Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: badgeBg,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              badgeLabel,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: badgeText,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+
+                      Text(
+                        '${plant.plantType}${plant.plantVariety != null && plant.plantVariety!.isNotEmpty ? " · ${plant.plantVariety}" : ""}',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.fluentTextSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+
+                      Row(
+                        children: [
+                          const LucideIcon(LucideIconName.mapPin, size: 12, color: AppTheme.fluentTextMuted),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              plant.location ?? 'Vườn Nông hộ',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppTheme.fluentTextMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (plant.plantAge != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '${plant.plantAge} năm tuổi',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppTheme.fluentTextMuted,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Bottom 1-Touch Action Bar
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (onNfcTap != null)
+                            InkWell(
+                              onTap: onNfcTap,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F2F1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: const [
+                                    LucideIcon(LucideIconName.scan, size: 12, color: AppTheme.fluentTextMuted),
+                                    SizedBox(width: 4),
+                                    Text('Ghi NFC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.fluentTextMain)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          if (onLogTap != null) ...[
+                            const SizedBox(width: 6),
+                            InkWell(
+                              onTap: onLogTap,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.mintPastel,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: const [
+                                    LucideIcon(LucideIconName.edit, size: 12, color: AppTheme.mintText),
+                                    SizedBox(width: 4),
+                                    Text('Ghi nhật ký', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.mintText)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }

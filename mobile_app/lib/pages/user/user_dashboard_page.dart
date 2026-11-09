@@ -3,10 +3,10 @@ import 'package:intl/intl.dart';
 import '../../utils/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/security/rbac_policy.dart';
+import '../../core/theme/fluent_icons.dart';
 import '../../components/common/welcome_banner.dart';
 import '../../components/farm_card.dart';
 import '../../components/plant_card.dart';
-import '../../components/common/pro_upgrade_modal.dart';
 import '../../components/loading_indicator.dart';
 import '../../components/qr_nfc_scanner.dart';
 import '../../components/log_edit_dialog.dart';
@@ -84,14 +84,17 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     );
   }
 
-  void _openQuickCareLog() {
+  void _openQuickCareLog({String initialType = 'Nhân công'}) {
     final defaultPlantId = _plants.isNotEmpty ? [_plants.first.id] : <int>[];
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => LogEditDialog(
         plantIds: defaultPlantId,
         farmName: _plants.isNotEmpty ? _plants.first.plantType : 'Trang trại Nông hộ',
+        initialType: initialType,
+        onLogSaved: _loadDashboardData,
       ),
     );
   }
@@ -102,7 +105,6 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
       return const LoadingIndicator(message: 'Đang tải bảng chỉ số ERP thực địa...');
     }
 
-    final bool isPro = _userProfile?['account_tier'] == 'pro' || _userProfile?['account_tier'] == 'normal';
     final userName = _userProfile?['full_name'] ?? _userProfile?['name'] ?? 'Nông hộ';
 
     // Calculate real KPI metrics
@@ -126,58 +128,72 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
 
     return RefreshIndicator(
       onRefresh: _loadDashboardData,
-      color: AppTheme.greenDark,
+      color: AppTheme.fluentEmerald,
+      backgroundColor: Colors.white,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Welcome Banner
-            WelcomeBanner(userName: userName, accountTier: _userProfile?['account_tier'] as String?),
-            const SizedBox(height: 16),
+            // 1. Microsoft Viva Welcome Banner with Chibi Weather & Mascot Bé Mầm
+            WelcomeBanner(
+              userName: userName,
+              accountTier: _userProfile?['account_tier'] as String?,
+            ),
+            const SizedBox(height: 14),
 
-            // 2. Offline / Online Sync Status Banner
+            // 2. Fluent Command / Search Bar
+            _buildFluentSearchBar(),
+            const SizedBox(height: 14),
+
+            // 3. Offline / Online Sync Status Pill
             _buildSyncStatusBanner(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
-            // 3. Section Header: Macro KPI Cards
-            const Text(
-              'CHỈ SỐ NÔNG TRẠI & TÀI CHÍNH ERP',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textMuted,
-                letterSpacing: 0.8,
-              ),
+            // 4. Section Header: Macro KPI Cards
+            Row(
+              children: const [
+                LucideIcon(LucideIconName.sprout, size: 16, color: AppTheme.fluentEmerald),
+                SizedBox(width: 6),
+                Text(
+                  'CHỈ SỐ NÔNG TRẠI & TÀI CHÍNH ERP',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.fluentTextMuted,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
 
-            // 4. 2x2 ERP KPI Metrics Grid (100% Real Data)
+            // 5. Bento Grid 2x2 (Microsoft Fluent 2 Squircle Cards)
             Row(
               children: [
                 Expanded(
-                  child: _buildKpiCard(
-                    icon: Icons.park_rounded,
-                    iconColor: AppTheme.green,
-                    bgColor: AppTheme.greenLight,
+                  child: _buildBentoKpiCard(
+                    icon: LucideIconName.sprout,
+                    iconColor: AppTheme.mintText,
+                    bgColor: AppTheme.mintPastel,
                     title: 'Tổng Cây Trồng',
                     value: '$totalPlants cây',
                     subtext: sickPlants > 0 ? '⚠️ $sickPlants cây cần chú ý' : '✓ 100% Khỏe mạnh',
-                    subtextColor: sickPlants > 0 ? AppTheme.amber : AppTheme.greenDark,
+                    subtextColor: sickPlants > 0 ? AppTheme.butterText : AppTheme.mintText,
                     onTap: () => widget.onNavigateTab(1),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildKpiCard(
-                    icon: Icons.landscape_rounded,
-                    iconColor: AppTheme.blue,
-                    bgColor: AppTheme.blueLight,
+                  child: _buildBentoKpiCard(
+                    icon: LucideIconName.mapPin,
+                    iconColor: AppTheme.skyText,
+                    bgColor: AppTheme.skyPastel,
                     title: 'Quy Mô Vùng Trồng',
                     value: areaDisplay,
-                    subtext: '${_farms.length} Trang trại hoạt động',
-                    subtextColor: const Color(0xFF1E40AF),
+                    subtext: '${_farms.length} Trang trại canh tác',
+                    subtextColor: AppTheme.skyText,
                     onTap: () => widget.onNavigateTab(1),
                   ),
                 ),
@@ -187,95 +203,101 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             Row(
               children: [
                 Expanded(
-                  child: _buildKpiCard(
-                    icon: Icons.payments_rounded,
-                    iconColor: AppTheme.amber,
-                    bgColor: AppTheme.amberLight,
+                  child: _buildBentoKpiCard(
+                    icon: LucideIconName.dollarSign,
+                    iconColor: AppTheme.butterText,
+                    bgColor: AppTheme.butterPastel,
                     title: 'Chi Phí Mùa Vụ',
                     value: RbacPolicy.isFinanceRedacted(_userProfile)
                         ? '*** (RBAC)'
                         : _currencyFormat.format(totalExpense),
                     subtext: RbacPolicy.isFinanceRedacted(_userProfile)
                         ? RbacPolicy.getRoleBadgeCode(_userProfile)
-                        : 'Khấu trừ kho tự động',
-                    subtextColor: AppTheme.amber,
+                        : 'Khấu trừ vật tư tự động',
+                    subtextColor: AppTheme.butterText,
                     onTap: () => widget.onNavigateTab(3),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildKpiCard(
-                    icon: Icons.verified_user_rounded,
-                    iconColor: quarantineCount > 0 ? AppTheme.red : AppTheme.green,
-                    bgColor: quarantineCount > 0 ? AppTheme.redLight : AppTheme.greenLight,
+                  child: _buildBentoKpiCard(
+                    icon: LucideIconName.shield,
+                    iconColor: quarantineCount > 0 ? AppTheme.roseText : AppTheme.mintText,
+                    bgColor: quarantineCount > 0 ? AppTheme.rosePastel : AppTheme.mintPastel,
                     title: 'VietGAP / PHI',
                     value: quarantineCount > 0 ? '$quarantineCount Cách ly' : 'An Toàn',
-                    subtext: quarantineCount > 0 ? 'Đang đếm ngược PHI' : 'Đạt chuẩn thu hoạch',
-                    subtextColor: quarantineCount > 0 ? AppTheme.red : AppTheme.greenDark,
+                    subtext: quarantineCount > 0 ? 'Đang đếm ngược PHI' : 'Đạt chuẩn xuất khẩu',
+                    subtextColor: quarantineCount > 0 ? AppTheme.roseText : AppTheme.mintText,
                     onTap: () => widget.onNavigateTab(2),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
-            // 5. Smart Agro-Advisory Weather Card (Real-time Meteorological Advice)
+            // 6. Cute Chibi Weather & Agro-Advisory Card
             _buildWeatherAdvisoryCard(),
             const SizedBox(height: 20),
 
-            // 6. Quick Operation Hub (4 Large Buttons)
-            const Text(
-              'THAO TÁC THỰC ĐỊA NHANH (1-CHẠM)',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textMuted,
-                letterSpacing: 0.8,
-              ),
+            // 7. Quick Operation Hub (4 Large Pastel Squircle Buttons)
+            Row(
+              children: const [
+                LucideIcon(LucideIconName.sparkles, size: 16, color: AppTheme.fluentEmerald),
+                SizedBox(width: 6),
+                Text(
+                  'THAO TÁC THỰC ĐỊA NHANH (1-CHẠM)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.fluentTextMuted,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: _buildQuickActionButton(
-                    icon: Icons.qr_code_scanner_rounded,
-                    color: AppTheme.green,
-                    bgColor: AppTheme.greenLight,
-                    title: 'Quét QR/NFC',
+                    icon: LucideIconName.scan,
+                    iconColor: AppTheme.mintText,
+                    bgColor: AppTheme.mintPastel,
+                    title: 'Quét NFC',
                     subtitle: 'Định danh cây',
                     onTap: _openScanner,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildQuickActionButton(
-                    icon: Icons.mic_rounded,
-                    color: AppTheme.amber,
-                    bgColor: AppTheme.amberLight,
-                    title: 'Ghi Nhật Ký',
-                    subtitle: 'Nói tiếng Việt',
-                    onTap: _openQuickCareLog,
+                    icon: LucideIconName.users,
+                    iconColor: AppTheme.lavenderText,
+                    bgColor: AppTheme.lavenderPastel,
+                    title: 'Nhân công',
+                    subtitle: 'Thuê lao động',
+                    onTap: () => _openQuickCareLog(initialType: 'Nhân công'),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildQuickActionButton(
-                    icon: Icons.inventory_2_rounded,
-                    color: AppTheme.blue,
-                    bgColor: AppTheme.blueLight,
-                    title: 'Kho Vật Tư',
-                    subtitle: 'Quét OCR AI',
-                    onTap: () => widget.onNavigateTab(3),
+                    icon: LucideIconName.beaker,
+                    iconColor: AppTheme.butterText,
+                    bgColor: AppTheme.butterPastel,
+                    title: 'Bón phân',
+                    subtitle: 'Kho vật tư',
+                    onTap: () => _openQuickCareLog(initialType: 'Bón phân'),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildQuickActionButton(
-                    icon: Icons.psychology_alt_rounded,
-                    color: const Color(0xFF10B981),
-                    bgColor: const Color(0xFFECFDF5),
+                    icon: LucideIconName.sparkles,
+                    iconColor: AppTheme.skyText,
+                    bgColor: AppTheme.skyPastel,
                     title: 'Bé Mầm AI',
-                    subtitle: 'Hỏi kỹ thuật',
+                    subtitle: 'Hỏi chuyên gia',
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const AiChatPage()));
                     },
@@ -285,17 +307,29 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             ),
             const SizedBox(height: 22),
 
-            // 7. Section: My Farms
+            // 8. Section: My Farms
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'TRANG TRẠI CANH TÁC',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.fluentTextMuted,
+                    letterSpacing: 0.6,
+                  ),
                 ),
                 TextButton(
                   onPressed: () => widget.onNavigateTab(1),
-                  child: const Text('Xem bản đồ GIS →', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+                  child: const Text(
+                    'Bản đồ GIS →',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.fluentEmerald,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -305,8 +339,16 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.grayBorder, width: 1.2)),
-                child: const Text('Chưa khởi tạo trang trại nào.', style: TextStyle(color: AppTheme.textMuted, fontSize: 13.5)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.fluentBorder, width: 0.8),
+                  boxShadow: AppTheme.fluentShadow,
+                ),
+                child: const Text(
+                  'Chưa khởi tạo trang trại nào.',
+                  style: TextStyle(color: AppTheme.fluentTextMuted, fontSize: 13),
+                ),
               )
             else
               ListView.builder(
@@ -327,19 +369,31 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                 },
               ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
-            // 8. Section: Plants
+            // 9. Section: Plants
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'DANH SÁCH CÂY GẦN ĐÂY',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.fluentTextMuted,
+                    letterSpacing: 0.6,
+                  ),
                 ),
                 TextButton(
                   onPressed: () => widget.onNavigateTab(1),
-                  child: Text('${_plants.length} cây →', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.greenDark)),
+                  child: Text(
+                    '${_plants.length} cây →',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.fluentEmerald,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -360,9 +414,10 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                     );
                   },
                   onLogTap: () {
-                    showDialog(
+                    showModalBottomSheet(
                       context: context,
-                      barrierDismissible: false,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
                       builder: (_) => LogEditDialog(
                         plantIds: [plant.id],
                         farmName: plant.plantType,
@@ -379,7 +434,59 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
               child: Text(
                 AppConstants.appFooter,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.fluentTextMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFluentSearchBar() {
+    return InkWell(
+      onTap: () => widget.onNavigateTab(1),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.fluentBorder, width: 0.8),
+          boxShadow: AppTheme.fluentShadow,
+        ),
+        child: Row(
+          children: [
+            const LucideIcon(LucideIconName.search, size: 18, color: AppTheme.fluentTextMuted),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Tìm mã cây (RI6-001), lô vườn, thẻ NFC...',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.fluentTextSubtle,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.mintPastel,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Lô A1',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.mintText,
+                ),
               ),
             ),
           ],
@@ -401,13 +508,17 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             MaterialPageRoute(builder: (_) => const OfflineManagerPage()),
           ).then((_) => _loadDashboardData());
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: hasPending ? const Color(0xFFFFFBEB) : const Color(0xFFF0FDF4),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: hasPending ? const Color(0xFFFDE68A) : const Color(0xFFBBF7D0), width: 1.2),
+            color: hasPending ? const Color(0xFFFFFBEB) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hasPending ? const Color(0xFFFDE68A) : AppTheme.fluentBorder,
+              width: 0.8,
+            ),
+            boxShadow: AppTheme.fluentShadow,
           ),
           child: Row(
             children: [
@@ -415,7 +526,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: hasPending ? const Color(0xFFD97706) : const Color(0xFF10B981),
+                  color: hasPending ? AppTheme.butterText : AppTheme.fluentEmerald,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -426,16 +537,16 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                       ? 'Có ${pendingLogs.length} tác vụ ngoại tuyến chờ đẩy · Bấm để đồng bộ ngay'
                       : 'Đang trực tuyến · Sẵn sàng ghi ngoại tuyến (Bấm mở Offline Hub)',
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: hasPending ? const Color(0xFFB45309) : const Color(0xFF166534),
                   ),
                 ),
               ),
-              Icon(
-                hasPending ? Icons.sync_problem_rounded : Icons.cloud_done_rounded,
-                color: hasPending ? const Color(0xFFD97706) : const Color(0xFF10B981),
-                size: 18,
+              LucideIcon(
+                hasPending ? LucideIconName.refreshCw : LucideIconName.check,
+                color: hasPending ? AppTheme.butterText : AppTheme.fluentEmerald,
+                size: 16,
               ),
             ],
           ),
@@ -444,8 +555,8 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     );
   }
 
-  Widget _buildKpiCard({
-    required IconData icon,
+  Widget _buildBentoKpiCard({
+    required LucideIconName icon,
     required Color iconColor,
     required Color bgColor,
     required String title,
@@ -456,20 +567,14 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.grayBorder, width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.fluentBorder, width: 0.8),
+          boxShadow: AppTheme.fluentShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,11 +583,16 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)),
-                  child: Icon(icon, color: iconColor, size: 20),
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: LucideIcon(icon, color: iconColor, size: 19),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1), size: 20),
+                const LucideIcon(LucideIconName.chevronRight, color: Color(0xFFD1D5DB), size: 16),
               ],
             ),
             const SizedBox(height: 12),
@@ -490,19 +600,32 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.fluentTextMain,
+                letterSpacing: -0.2,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               title,
-              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: AppTheme.fluentTextMuted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               subtext,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: subtextColor),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: subtextColor,
+              ),
             ),
           ],
         ),
@@ -511,12 +634,14 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   }
 
   Widget _buildWeatherAdvisoryCard() {
-    String weatherSummary = 'Trời nắng nhẹ · Độ ẩm: 68% · Khả năng mưa: 20% · Gió Đông';
+    String weatherSummary = 'Nắng ấm nhẹ · Độ ẩm: 68% · Khả năng mưa: 20% · Gió Đông Nam';
     String adviceText = 'Khuyến nghị: Thời tiết thuận lợi để tưới gốc và bón bổ sung phân hữu cơ vi sinh.';
 
     if (_notifications.isNotEmpty) {
       final weatherAlert = _notifications.firstWhere(
-        (n) => (n['title']?.toString() ?? '').toLowerCase().contains('khí tượng') || (n['title']?.toString() ?? '').toLowerCase().contains('thời tiết'),
+        (n) =>
+            (n['title']?.toString() ?? '').toLowerCase().contains('khí tượng') ||
+            (n['title']?.toString() ?? '').toLowerCase().contains('thời tiết'),
         orElse: () => _notifications.first,
       );
       if (weatherAlert['message'] != null) {
@@ -527,19 +652,10 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF064E3B), Color(0xFF047857)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF064E3B).withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppTheme.fluentBorder, width: 0.8),
+        boxShadow: AppTheme.fluentShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,49 +665,81 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             children: [
               Row(
                 children: const [
-                  Icon(Icons.wb_sunny_rounded, color: Color(0xFFFDE047), size: 22),
+                  ChibiWeatherWidget(type: ChibiWeatherType.sun, size: 28),
                   SizedBox(width: 8),
                   Text(
                     'Khí tượng Nông nghiệp (Open-Meteo)',
-                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.fluentTextMain,
+                    ),
                   ),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                child: const Text('Real-time', style: TextStyle(fontSize: 10.5, color: Colors.white, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(
+                  color: AppTheme.mintPastel,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Real-time',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.mintText,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text('29°C', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-              const SizedBox(width: 14),
+              const Text(
+                '29°C',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.fluentTextMain,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   weatherSummary,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFFD1FAE5), height: 1.3),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.fluentTextMuted,
+                    height: 1.35,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.butterPastel,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFDE68A), width: 0.8),
             ),
             child: Row(
               children: [
-                const Icon(Icons.tips_and_updates_rounded, color: Color(0xFFFDE047), size: 18),
+                const LucideIcon(LucideIconName.sparkles, color: AppTheme.butterText, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     adviceText,
-                    style: const TextStyle(fontSize: 11.5, color: Colors.white, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF78350F),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -603,8 +751,8 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   }
 
   Widget _buildQuickActionButton({
-    required IconData icon,
-    required Color color,
+    required LucideIconName icon,
+    required Color iconColor,
     required Color bgColor,
     required String title,
     required String subtitle,
@@ -612,25 +760,49 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.grayBorder, width: 1.2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.fluentBorder, width: 0.8),
+          boxShadow: AppTheme.fluentShadow,
         ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 20),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: LucideIcon(icon, color: iconColor, size: 20),
             ),
-            const SizedBox(height: 6),
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.textMain)),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.fluentTextMain,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9.5, color: AppTheme.textMuted)),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 9.5,
+                color: AppTheme.fluentTextMuted,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),

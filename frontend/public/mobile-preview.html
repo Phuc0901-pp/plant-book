@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plant Book Mobile — Microsoft Fluent 2 Interactive Preview</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .fluent-shadow {
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
+    }
+    .fluent-shadow-lg {
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+    .phone-bezel {
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.08), inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+    }
+    .mica-header {
+      background: rgba(250, 249, 248, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .mica-nav {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+    .mascot-float {
+      animation: floatSlow 3.2s ease-in-out infinite;
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.92); opacity: 0.8; }
+      70% { transform: scale(1.22); opacity: 0; }
+      100% { transform: scale(1.22); opacity: 0; }
+    }
+    .nfc-ring {
+      animation: pulseRing 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6 select-none">
+
+  <!-- TOP CONTROL HEADER -->
+  <div class="max-w-5xl mx-auto mb-5 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 fluent-shadow">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 font-bold text-base">
+          🌱
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base text-[var(--foreground)]">Plant Book Mobile · Microsoft Fluent 2 Design</h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/15 text-emerald-700 border border-emerald-500/30">
+              Interactive Prototype
+            </span>
+          </div>
+          <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+            Bấm trực tiếp vào các Tab, nút Quét NFC, Ghi nhật ký (có mục Nhân công mới) hoặc chuyển đổi So sánh Cũ / Mới bên dưới.
+          </p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher: Fluent 2 vs Legacy -->
+      <div class="flex items-center gap-1.5 bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
+        <button id="btn-mode-fluent" onclick="setDesignMode('fluent')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm">
+          ✨ Giao diện Mới (Microsoft Fluent 2)
+        </button>
+        <button id="btn-mode-compare" onclick="setDesignMode('compare')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+          ⚖️ Đặt Cạnh Nhau (Cũ vs Mới)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="max-w-5xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-6">
+
+    <!-- LEFT COLUMN: LEGACY PHONE (ONLY VISIBLE IN COMPARE MODE) -->
+    <div id="legacy-phone-col" class="hidden w-full lg:w-[360px] flex-shrink-0 mx-auto">
+      <div class="text-center mb-2.5">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-600 border border-rose-500/30">
+          ❌ Giao diện Hiện tại (Cũ · Nặng nề · Khung viền cứng)
+        </span>
+      </div>
+      <div class="w-[350px] h-[720px] mx-auto rounded-[40px] bg-slate-900 p-3 phone-bezel relative overflow-hidden">
+        <div class="w-full h-full rounded-[30px] bg-[#F8FAFC] overflow-hidden flex flex-col text-slate-900">
+          <!-- Heavy Dark Green AppBar -->
+          <div class="bg-[#064E3B] text-white px-4 py-3.5 flex items-center justify-between shadow">
+            <div class="font-bold text-sm">Sổ Nông Tân Bảo v1.2.8</div>
+            <div class="text-xs bg-white/20 px-2 py-0.5 rounded">PRO 👑</div>
+          </div>
+          <div class="p-3.5 space-y-3 flex-1 overflow-y-auto">
+            <!-- Heavy gradient box -->
+            <div class="bg-gradient-to-br from-[#064E3B] to-[#15803D] text-white p-4 rounded-xl shadow">
+              <div class="text-xs opacity-80">Plant Book · Cổng Nông Hộ</div>
+              <div class="font-bold text-base mt-1">Xin chào, Anh Phúc 👋</div>
+              <div class="text-xs opacity-80 mt-1">Hệ thống quản lý & chăm sóc cây trồng thông minh.</div>
+            </div>
+            <!-- Rigid bordered boxes -->
+            <div class="bg-white border-2 border-slate-200 rounded-xl p-3">
+              <div class="text-xs font-bold text-slate-500 uppercase">TỔNG SỐ CÂY TRỒNG</div>
+              <div class="text-xl font-bold text-slate-900 mt-1">1.250 cây</div>
+              <div class="text-xs text-slate-500 mt-1">Đang canh tác tại 2 trang trại</div>
+            </div>
+            <div class="bg-white border-2 border-slate-200 rounded-xl p-3">
+              <div class="text-xs font-bold text-slate-500 uppercase">CHI PHÍ VẬT TƯ THÁNG</div>
+              <div class="text-xl font-bold text-slate-900 mt-1">3.407.600 đ</div>
+              <div class="text-xs text-red-600 mt-1">ROI: -100% (Chưa có thu hoạch)</div>
+            </div>
+            <button class="w-full bg-[#064E3B] text-white font-bold text-xs py-3 rounded-lg">
+              + GHI NHẬT KÝ CHĂM SÓC
+            </button>
+            <button class="w-full bg-white border-2 border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-lg">
+              QUÉT MÃ QR / THẺ NFC
+            </button>
+          </div>
+          <!-- Old Bottom Bar -->
+          <div class="bg-white border-t-2 border-slate-200 py-2 px-3 flex justify-between text-xs font-semibold text-slate-500">
+            <div class="text-[#064E3B] font-bold">Tổng quan</div>
+            <div>Vùng trồng</div>
+            <div>Nhật ký</div>
+            <div>Vật tư</div>
+            <div>Cài đặt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER COLUMN: MICROSOFT FLUENT 2 MOBILE APP -->
+    <div class="w-full lg:w-[390px] flex-shrink-0 mx-auto">
+      <div id="fluent-badge-top" class="text-center mb-2.5 hidden">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+          ✨ Giao diện Mới (Microsoft Fluent 2 · Sạch sẽ · Dễ thương)
+        </span>
+      </div>
+
+      <!-- PHONE HARDWARE FRAME -->
+      <div class="w-[376px] h-[740px] mx-auto rounded-[46px] bg-[#1E293B] p-3 phone-bezel relative">
+        <!-- Dynamic Island -->
+        <div class="w-24 h-5 bg-black rounded-full mx-auto absolute top-5 left-1/2 -translate-x-1/2 z-30 flex items-center justify-end px-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500/80"></span>
+        </div>
+
+        <!-- PHONE SCREEN (MICROSOFT FLUENT 2 ALABASTER SURFACE #FAF9F8) -->
+        <div class="w-full h-full rounded-[36px] bg-[#FAF9F8] text-[#1F1F1F] overflow-hidden flex flex-col relative">
+
+          <!-- STATUS BAR + FLUENT MICA HEADER -->
+          <div class="mica-header pt-8 pb-2.5 px-5 border-b border-[#EDEBE9] z-20">
+            <div class="flex items-center justify-between">
+              <!-- User Avatar + Greeting -->
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#107C41] to-[#21A366] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                  TB
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs text-[#616161] font-medium" id="hdr-greeting">Chào buổi sáng</span>
+                    <span class="px-1.5 py-0.2 rounded-md text-xs font-semibold bg-[#E6F4EA] text-[#107C41]">PRO</span>
+                  </div>
+                  <div class="text-sm font-bold text-[#1F1F1F] leading-tight">Tân Bảo AgTech</div>
+                </div>
+              </div>
+
+              <!-- Right Quick Pills (Language + Notification) -->
+              <div class="flex items-center gap-1.5">
+                <button onclick="cycleLang()" id="btn-lang-pill" class="px-2.5 py-1 rounded-xl bg-white border border-[#E1DFDD] text-xs font-semibold text-[#242424] fluent-shadow hover:bg-[#F3F2F1] transition">
+                  🇻🇳 VI
+                </button>
+                <button onclick="openAiSheet()" title="Trợ lý Bé Mầm AI" class="w-8 h-8 rounded-xl bg-[#E8F0FE] border border-[#D2E3FC] flex items-center justify-center text-[#1967D2] fluent-shadow hover:scale-105 transition">
+                  ✨
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCROLLABLE SCREEN CONTENT AREA -->
+          <div id="phone-viewport" class="flex-1 overflow-y-auto no-scrollbar px-4 pt-3.5 pb-24 space-y-4">
+
+            <!-- ==================== TAB 0: HOME (TỔNG QUAN) ==================== -->
+            <div id="tab-view-0" class="space-y-4">
+
+              <!-- Cute Fluent Mascot Greeting Card (Microsoft Viva style) -->
+              <div class="bg-gradient-to-br from-[#E6F4EA] via-[#F0FDF4] to-[#FEF9C3] border border-[#CEEAD6] rounded-3xl p-4 fluent-shadow relative overflow-hidden">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="space-y-1.5 flex-1">
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/95 text-[#107C41] text-xs font-bold shadow-sm">
+                      <!-- Cute Chibi Sun with Rosy Cheeks -->
+                      <svg class="w-4 h-4 animate-spin-slow" viewBox="0 0 32 32" style="animation: spin 18s linear infinite;">
+                        <circle cx="16" cy="16" r="10" fill="#FBBF24"/>
+                        <ellipse cx="11.5" cy="18" rx="2" ry="1.2" fill="#FB7185" opacity="0.85"/>
+                        <ellipse cx="20.5" cy="18" rx="2" ry="1.2" fill="#FB7185" opacity="0.85"/>
+                        <circle cx="12.5" cy="14" r="1.3" fill="#78350F"/>
+                        <circle cx="19.5" cy="14" r="1.3" fill="#78350F"/>
+                        <circle cx="13" cy="13.5" r="0.5" fill="#FFF"/>
+                        <circle cx="20" cy="13.5" r="0.5" fill="#FFF"/>
+                        <path d="M13.5 18 Q16 21 18.5 18" fill="none" stroke="#78350F" stroke-width="1.2" stroke-linecap="round"/>
+                      </svg>
+                      <span>29°C · Nắng ấm · Ẩm 68%</span>
+                      <span class="px-1.5 py-0.2 rounded-md bg-[#E6F4EA] text-[10px] text-[#107C41] font-bold">Chibi Weather</span>
+                    </div>
+                    <h2 class="text-base font-bold text-[#0F3D23] leading-snug" id="hero-title">
+                      Vườn sầu riêng đang phát triển rất tốt!
+                    </h2>
+                    <p class="text-xs text-[#2E5A40] leading-relaxed">
+                      10/10 cây Lô A1 đã tưới nước & kiểm tra sáng nay. Không có cảnh báo sâu bệnh.
+                    </p>
+                  </div>
+
+                  <!-- Cute SVG Sprout Mascot "Bé Mầm" -->
+                  <div onclick="openAiSheet()" class="w-16 h-16 flex-shrink-0 cursor-pointer mascot-float" title="Bấm để trò chuyện với Bé Mầm AI">
+                    <svg viewBox="0 0 80 80" class="w-full h-full drop-shadow-sm">
+                      <!-- Soft glow circle -->
+                      <circle cx="40" cy="42" r="30" fill="#FFFFFF" fill-opacity="0.85"/>
+                      <!-- Cute Sprout Leaves -->
+                      <path d="M40 22 C40 12, 54 10, 56 18 C58 25, 45 26, 40 22 Z" fill="#10B981"/>
+                      <path d="M40 22 C40 13, 26 11, 24 19 C22 25, 35 26, 40 22 Z" fill="#34D399"/>
+                      <path d="M40 21 L40 28" stroke="#059669" stroke-width="3" stroke-linecap="round"/>
+                      <!-- Cute Chibi Body -->
+                      <circle cx="40" cy="46" r="19" fill="#A7F3D0" stroke="#10B981" stroke-width="2.2"/>
+                      <!-- Blush cheeks -->
+                      <ellipse cx="30" cy="49" rx="3.2" ry="1.8" fill="#FB7185" fill-opacity="0.55"/>
+                      <ellipse cx="50" cy="49" rx="3.2" ry="1.8" fill="#FB7185" fill-opacity="0.55"/>
+                      <!-- Eyes -->
+                      <circle cx="33.5" cy="44" r="2.3" fill="#064E3B"/>
+                      <circle cx="46.5" cy="44" r="2.3" fill="#064E3B"/>
+                      <circle cx="34.2" cy="43.2" r="0.8" fill="#FFFFFF"/>
+                      <circle cx="47.2" cy="43.2" r="0.8" fill="#FFFFFF"/>
+                      <!-- Happy smile -->
+                      <path d="M36 49.5 Q40 53 44 49.5" fill="none" stroke="#064E3B" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fluent Search / Command Bar -->
+              <div onclick="switchMobileTab(1)" class="bg-white border border-[#E1DFDD] rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5 fluent-shadow cursor-pointer hover:border-[#107C41] transition">
+                <svg class="w-4 h-4 text-[#616161]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
+                </svg>
+                <span class="text-xs text-[#707070] flex-1">Tìm mã cây (VD: RI6-001), lô vườn, thẻ NFC...</span>
+                <span class="text-xs px-2 py-0.5 rounded-lg bg-[#F3F2F1] text-[#424242] font-medium">Lô A1</span>
+              </div>
+
+              <!-- BENTO GRID 2x2 (MICROSOFT FLUENT CARDS) -->
+              <div class="grid grid-cols-2 gap-3">
+                <!-- Card 1: Total Trees -->
+                <div onclick="switchMobileTab(1)" class="bg-white border border-[#EDEBE9] rounded-3xl p-3.5 fluent-shadow cursor-pointer hover:border-[#107C41]/50 transition">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="w-9 h-9 rounded-2xl bg-[#E6F4EA] text-[#107C41] flex items-center justify-center">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 22v-7l-2-2"/><path d="M17 8v.8A6 6 0 0 1 13.8 20H10A6.5 6.5 0 0 1 7 8a5 5 0 0 1 10 0Z"/>
+                      </svg>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#E6F4EA] text-[#107C41]">100% Khỏe</span>
+                  </div>
+                  <div class="text-xs text-[#616161] font-medium">Cá thể định danh</div>
+                  <div class="text-lg font-bold text-[#1F1F1F] mt-0.5">10 cây</div>
+                  <div class="text-xs text-[#107C41] font-medium mt-0.5">1,42 ha · 9 lô canh tác</div>
+                </div>
+
+                <!-- Card 2: Executive BI & ROI -->
+                <div onclick="switchMobileTab(3)" class="bg-white border border-[#EDEBE9] rounded-3xl p-3.5 fluent-shadow cursor-pointer hover:border-[#1967D2]/50 transition">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="w-9 h-9 rounded-2xl bg-[#E8F0FE] text-[#1967D2] flex items-center justify-center">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                      </svg>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#FEF7E0] text-[#B06000]">ML 94,2%</span>
+                  </div>
+                  <div class="text-xs text-[#616161] font-medium">Dự báo mùa vụ BI</div>
+                  <div class="text-lg font-bold text-[#1F1F1F] mt-0.5">72,6 tr đ</div>
+                  <div class="text-xs text-[#1967D2] font-medium mt-0.5">Chi phí: 3,41 tr đ</div>
+                </div>
+              </div>
+
+              <!-- QUICK ACTIONS (PASTEL SQUIRCLE ICONS) -->
+              <div>
+                <div class="flex items-center justify-between mb-2 px-0.5">
+                  <span class="text-xs font-bold text-[#424242]">Thao tác nhanh ngoài vườn</span>
+                  <span class="text-xs text-[#107C41] font-semibold">Chạm 1 bước</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2">
+                  <button onclick="openNfcSheet()" class="bg-white border border-[#EDEBE9] rounded-2xl p-2.5 flex flex-col items-center gap-1.5 fluent-shadow hover:bg-[#F3F2F1] active:scale-95 transition">
+                    <div class="w-10 h-10 rounded-2xl bg-[#E8F0FE] text-[#1967D2] flex items-center justify-center">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+                      </svg>
+                    </div>
+                    <span class="text-xs font-semibold text-[#242424]">Quét NFC</span>
+                  </button>
+
+                  <button onclick="openCareSheet('Nhân công')" class="bg-white border border-[#EDEBE9] rounded-2xl p-2.5 flex flex-col items-center gap-1.5 fluent-shadow hover:bg-[#F3F2F1] active:scale-95 transition">
+                    <div class="w-10 h-10 rounded-2xl bg-[#E6F4EA] text-[#107C41] flex items-center justify-center">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                    </div>
+                    <span class="text-xs font-semibold text-[#242424]">Nhân công</span>
+                  </button>
+
+                  <button onclick="openCareSheet('Bón phân')" class="bg-white border border-[#EDEBE9] rounded-2xl p-2.5 flex flex-col items-center gap-1.5 fluent-shadow hover:bg-[#F3F2F1] active:scale-95 transition">
+                    <div class="w-10 h-10 rounded-2xl bg-[#FEF7E0] text-[#B06000] flex items-center justify-center">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/>
+                      </svg>
+                    </div>
+                    <span class="text-xs font-semibold text-[#242424]">Bón phân</span>
+                  </button>
+
+                  <button onclick="openAiSheet()" class="bg-white border border-[#EDEBE9] rounded-2xl p-2.5 flex flex-col items-center gap-1.5 fluent-shadow hover:bg-[#F3F2F1] active:scale-95 transition">
+                    <div class="w-10 h-10 rounded-2xl bg-[#F3E8FF] text-[#7C3AED] flex items-center justify-center">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>
+                      </svg>
+                    </div>
+                    <span class="text-xs font-semibold text-[#242424]">Bé Mầm AI</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- RECENT ACTIVITY FEED (MICROSOFT TO-DO / PLANNER STYLE) -->
+              <div>
+                <div class="flex items-center justify-between mb-2 px-0.5">
+                  <span class="text-xs font-bold text-[#424242]">Nhật ký canh tác gần đây</span>
+                  <button onclick="switchMobileTab(2)" class="text-xs text-[#107C41] font-semibold hover:underline">Xem tất cả →</button>
+                </div>
+                <div id="home-recent-logs" class="space-y-2.5">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ==================== TAB 1: PLANTS & PLOTS (VÙNG TRỒNG) ==================== -->
+            <div id="tab-view-1" class="hidden space-y-3.5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-base font-bold text-[#1F1F1F]">Danh mục Cá thể Cây trồng</h2>
+                  <p class="text-xs text-[#616161]">Định danh chuẩn quốc tế GS1 & Thẻ từ NFC</p>
+                </div>
+                <button onclick="openNfcSheet()" class="px-3 py-1.5 rounded-xl bg-[#107C41] text-white text-xs font-semibold shadow-sm">
+                  + Quét NFC
+                </button>
+              </div>
+
+              <!-- Plot Filter Pills -->
+              <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <button onclick="filterPlants('all', this)" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#107C41] text-white whitespace-nowrap">Tất cả (10 cây)</button>
+                <button onclick="filterPlants('Lô A1', this)" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap">Lô A1 · Ri6 (6)</button>
+                <button onclick="filterPlants('Lô B2', this)" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap">Lô B2 · Monthong (4)</button>
+              </div>
+
+              <div id="mobile-plants-list" class="space-y-2.5">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- ==================== TAB 2: CARE LOGS (NHẬT KÝ CANH TÁC) ==================== -->
+            <div id="tab-view-2" class="hidden space-y-3.5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-base font-bold text-[#1F1F1F]">Nhật ký Canh tác VietGAP</h2>
+                  <p class="text-xs text-[#616161]">Niêm phong chuỗi băm SHA-256 chống sửa đổi</p>
+                </div>
+                <button onclick="openCareSheet('Nhân công')" class="px-3 py-1.5 rounded-xl bg-[#107C41] text-white text-xs font-semibold shadow-sm">
+                  + Ghi mới
+                </button>
+              </div>
+
+              <!-- Filter Chips -->
+              <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <button onclick="filterLogs('all', this)" class="px-3 py-1 rounded-xl text-xs font-semibold bg-[#107C41] text-white whitespace-nowrap">Tất cả</button>
+                <button onclick="filterLogs('Nhân công', this)" class="px-3 py-1 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap">👥 Nhân công</button>
+                <button onclick="filterLogs('Bón phân', this)" class="px-3 py-1 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap">🧪 Bón phân</button>
+                <button onclick="filterLogs('Tưới nước', this)" class="px-3 py-1 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap">💧 Tưới nước</button>
+              </div>
+
+              <div id="mobile-logs-list" class="space-y-2.5">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- ==================== TAB 3: SUPPLIES & BI (VẬT TƯ & BI) ==================== -->
+            <div id="tab-view-3" class="hidden space-y-3.5">
+              <div>
+                <h2 class="text-base font-bold text-[#1F1F1F]">Tài chính BI & Kho Vật tư</h2>
+                <p class="text-xs text-[#616161]">Tự động hạch toán từ Nhật ký & Nhân công</p>
+              </div>
+
+              <!-- Executive BI Summary Card -->
+              <div class="bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white rounded-3xl p-4 fluent-shadow space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                    Executive BI · Năm 2026
+                  </span>
+                  <span class="text-xs text-slate-300">10 cây · 1,42 ha</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <div class="text-xs text-slate-300">Tổng chi phí đầu tư</div>
+                    <div id="bi-total-cost" class="text-lg font-bold text-white mt-0.5">3.407.600 đ</div>
+                    <div id="bi-per-tree" class="text-xs text-emerald-300 mt-0.5">340.760 đ / cây</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xs text-slate-300">Doanh thu dự báo (ML)</div>
+                    <div class="text-lg font-bold text-emerald-400 mt-0.5">72.683.500 đ</div>
+                    <div class="text-xs text-amber-300 mt-0.5">ROI dự kiến: +2033%</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4 Cost Pillars Breakdown -->
+              <div class="bg-white border border-[#EDEBE9] rounded-3xl p-4 fluent-shadow space-y-3">
+                <div class="text-xs font-bold text-[#242424]">Cơ cấu 4 Nhóm Chi phí Canh tác</div>
+
+                <div class="space-y-2.5">
+                  <div>
+                    <div class="flex justify-between text-xs font-semibold mb-1">
+                      <span class="text-[#107C41]">🌱 Phân bón (NPK & Hữu cơ)</span>
+                      <span>1.900.000 đ</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-[#F3F2F1] overflow-hidden">
+                      <div class="h-full bg-[#107C41] rounded-full" style="width: 55%"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="flex justify-between text-xs font-semibold mb-1">
+                      <span class="text-[#0284C7]">💧 Tiền nước & Điện tưới</span>
+                      <span>1.507.600 đ</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-[#F3F2F1] overflow-hidden">
+                      <div class="h-full bg-[#0284C7] rounded-full" style="width: 45%"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="flex justify-between text-xs font-semibold mb-1">
+                      <span class="text-[#2563EB]">👥 Nhân công canh tác</span>
+                      <span id="bi-labor-cost-val">0 đ</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-[#F3F2F1] overflow-hidden">
+                      <div id="bi-labor-bar" class="h-full bg-[#2563EB] rounded-full transition-all" style="width: 4%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== SLIDE-UP BOTTOM SHEET: CARE LOG (NHÂN CÔNG) ==================== -->
+          <div id="sheet-care-modal" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] z-30 flex flex-col justify-end">
+            <div class="bg-white rounded-t-[32px] p-4 pb-6 fluent-shadow-lg max-h-[86%] overflow-y-auto space-y-3.5 animate-slide-up">
+              <!-- Drag Handle -->
+              <div class="w-10 h-1 bg-[#D2D0CE] rounded-full mx-auto"></div>
+
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-xl bg-[#E6F4EA] text-[#107C41] flex items-center justify-center font-bold">
+                    ✍️
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-[#1F1F1F]">Ghi nhật ký chăm sóc</h3>
+                    <p class="text-xs text-[#616161]">Đã chọn: <strong class="text-[#107C41]">10 cây trồng (Lô A1)</strong></p>
+                  </div>
+                </div>
+                <button onclick="closeSheets()" class="w-7 h-7 rounded-full bg-[#F3F2F1] text-[#616161] flex items-center justify-center text-xs font-bold">✕</button>
+              </div>
+
+              <!-- Activity Type Pills (Pruned Cắt lá & Tỉa hoa into Nhân công!) -->
+              <div>
+                <label class="text-xs font-bold text-[#424242] block mb-1.5">Loại hoạt động *</label>
+                <div class="grid grid-cols-3 gap-1.5">
+                  <button type="button" onclick="selectSheetType('Nhân công')" id="type-btn-labor" class="py-2 px-2 rounded-xl text-xs font-semibold border border-[#107C41] bg-[#E6F4EA] text-[#107C41]">
+                    👥 Nhân công
+                  </button>
+                  <button type="button" onclick="selectSheetType('Bón phân')" id="type-btn-fert" class="py-2 px-2 rounded-xl text-xs font-semibold border border-[#E1DFDD] bg-white text-[#424242]">
+                    🧪 Bón phân
+                  </button>
+                  <button type="button" onclick="selectSheetType('Tưới nước')" id="type-btn-water" class="py-2 px-2 rounded-xl text-xs font-semibold border border-[#E1DFDD] bg-white text-[#424242]">
+                    💧 Tưới nước
+                  </button>
+                </div>
+              </div>
+
+              <!-- 1. Nội dung thuê nhân công + Quick Chips -->
+              <div>
+                <label class="text-xs font-bold text-[#424242] block mb-1">Nội dung thuê nhân công là gì *</label>
+                <input id="m-labor-content" type="text" value="" placeholder="Nhập hoặc bấm chọn gợi ý bên dưới..." class="w-full px-3 py-2 rounded-xl border border-[#E1DFDD] text-xs font-semibold focus:outline-none focus:border-[#107C41]" />
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                  <button type="button" onclick="setMobileLaborChip('Cắt cành / tỉa lá', this)" class="px-2.5 py-1 rounded-lg border border-[#E1DFDD] bg-[#FAF9F8] text-xs font-semibold text-[#242424] hover:border-[#107C41]">✂️ Cắt cành / tỉa lá</button>
+                  <button type="button" onclick="setMobileLaborChip('Tỉa hoa / tỉa nụ', this)" class="px-2.5 py-1 rounded-lg border border-[#E1DFDD] bg-[#FAF9F8] text-xs font-semibold text-[#242424] hover:border-[#107C41]">🌸 Tỉa hoa / nụ</button>
+                  <button type="button" onclick="setMobileLaborChip('Làm cỏ / xới gốc', this)" class="px-2.5 py-1 rounded-lg border border-[#E1DFDD] bg-[#FAF9F8] text-xs font-semibold text-[#242424] hover:border-[#107C41]">🌿 Làm cỏ</button>
+                  <button type="button" onclick="setMobileLaborChip('Bọc trái xuất khẩu', this)" class="px-2.5 py-1 rounded-lg border border-[#E1DFDD] bg-[#FAF9F8] text-xs font-semibold text-[#242424] hover:border-[#107C41]">📦 Bọc trái</button>
+                </div>
+              </div>
+
+              <!-- 2. Số người làm & Chi phí thuê (CÙNG 1 HÀNG NGANG THẲNG TẮP) -->
+              <div class="grid grid-cols-12 gap-2 items-start">
+                <div class="col-span-5">
+                  <label class="text-xs font-bold text-[#424242] block h-5 mb-1 truncate">Số người làm *</label>
+                  <div class="relative">
+                    <input id="m-labor-workers" type="number" min="1" value="" oninput="calcMobileLabor()" placeholder="VD: 4" class="w-full pl-3 pr-11 py-2 rounded-xl border border-[#E1DFDD] text-xs font-bold focus:outline-none focus:border-[#107C41]" />
+                    <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#616161] font-semibold">người</span>
+                  </div>
+                </div>
+                <div class="col-span-7">
+                  <label class="text-xs font-bold text-[#424242] block h-5 mb-1 truncate">Chi phí thuê (VNĐ) *</label>
+                  <div class="flex gap-1">
+                    <input id="m-labor-cost" type="number" step="10000" value="" oninput="calcMobileLabor()" placeholder="Số tiền" class="w-full px-2.5 py-2 rounded-xl border border-[#A7F3D0] bg-[#F0FDF4] text-xs font-bold text-[#065F46] focus:outline-none" />
+                    <select id="m-labor-mode" onchange="calcMobileLabor()" class="px-1.5 py-2 rounded-xl border border-[#E1DFDD] bg-white text-xs font-semibold text-[#242424]">
+                      <option value="total">Cả đoàn</option>
+                      <option value="per_person">1 người</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Làm từ mấy giờ đến mấy giờ -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs font-bold text-[#424242] block mb-1">Làm từ mấy giờ</label>
+                  <input id="m-labor-start" type="time" value="" onchange="calcMobileLabor()" class="w-full px-3 py-1.5 rounded-xl border border-[#E1DFDD] text-xs font-semibold" />
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-[#424242] block mb-1">Đến mấy giờ</label>
+                  <input id="m-labor-end" type="time" value="" onchange="calcMobileLabor()" class="w-full px-3 py-1.5 rounded-xl border border-[#E1DFDD] text-xs font-semibold" />
+                </div>
+              </div>
+
+              <!-- Live BI Cost Preview Box -->
+              <div class="bg-[#EFF6FF] border border-[#BFDBFE] rounded-2xl p-3 flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-[#1E40AF]">Tự động hạch toán BI</div>
+                  <div id="m-labor-summary" class="text-xs text-[#3B82F6] mt-0.5">Chưa nhập số người / chi phí</div>
+                </div>
+                <div class="text-right">
+                  <div id="m-labor-total" class="text-sm font-bold text-[#047857]">0 đ</div>
+                  <div id="m-labor-per-tree" class="text-xs text-[#065F46]">0 đ / cây</div>
+                </div>
+              </div>
+
+              <button type="button" onclick="saveMobileLaborLog()" class="w-full py-2.5 rounded-2xl bg-[#107C41] hover:bg-[#0C5E31] text-white font-bold text-xs shadow-md transition">
+                ✓ Lưu Nhật ký & Đồng bộ BI
+              </button>
+            </div>
+          </div>
+
+          <!-- ==================== SLIDE-UP BOTTOM SHEET: NFC SCANNER ==================== -->
+          <div id="sheet-nfc-modal" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] z-30 flex flex-col justify-end">
+            <div class="bg-white rounded-t-[32px] p-5 pb-7 text-center space-y-4 fluent-shadow-lg">
+              <div class="w-10 h-1 bg-[#D2D0CE] rounded-full mx-auto"></div>
+              <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full bg-[#107C41]/20 nfc-ring"></div>
+                <div class="w-16 h-16 rounded-3xl bg-[#E6F4EA] text-[#107C41] flex items-center justify-center relative z-10">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-[#1F1F1F]">Sẵn sàng Quét Thẻ Từ NFC</h3>
+                <p class="text-xs text-[#616161] mt-1 px-4">
+                  Đưa mặt lưng điện thoại lại gần thẻ NFC gắn trên thân cây sầu riêng (cách 1–3 cm).
+                </p>
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button onclick="simulateNfcSuccess()" class="flex-1 py-2.5 rounded-2xl bg-[#107C41] text-white text-xs font-bold">
+                  ⚡ Mô phỏng chạm thẻ RI6-001
+                </button>
+                <button onclick="closeSheets()" class="px-4 py-2.5 rounded-2xl bg-[#F3F2F1] text-[#424242] text-xs font-semibold">
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== SLIDE-UP BOTTOM SHEET: BÉ MẦM AI ==================== -->
+          <div id="sheet-ai-modal" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] z-30 flex flex-col justify-end">
+            <div class="bg-white rounded-t-[32px] p-4 pb-6 space-y-3.5 fluent-shadow-lg">
+              <div class="w-10 h-1 bg-[#D2D0CE] rounded-full mx-auto"></div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-2xl bg-[#E6F4EA] flex items-center justify-center text-base">🌱</div>
+                  <div>
+                    <div class="text-sm font-bold text-[#1F1F1F]">Trợ lý Nông học Bé Mầm AI</div>
+                    <div class="text-xs text-[#107C41] font-medium">● Trực tuyến · Chuyên gia VietGAP</div>
+                  </div>
+                </div>
+                <button onclick="closeSheets()" class="w-7 h-7 rounded-full bg-[#F3F2F1] text-xs font-bold">✕</button>
+              </div>
+              <div class="bg-[#FAF9F8] border border-[#EDEBE9] rounded-2xl p-3 text-xs text-[#242424] leading-relaxed space-y-2">
+                <p><strong>Bé Mầm chào anh Phúc! 👋</strong></p>
+                <p>Dựa trên độ ẩm đất sáng nay (68%) và lịch sử bón phân NPK cách đây 12 ngày, tuần này vườn mình chỉ cần <strong>tỉa cành vượt ở Lô A1</strong> để đón nắng nuôi trái nhé!</p>
+              </div>
+              <button onclick="closeSheets(); openCareSheet('Nhân công');" class="w-full py-2.5 rounded-2xl bg-[#107C41] text-white text-xs font-bold">
+                + Lên lịch thuê nhân công tỉa cành ngay
+              </button>
+            </div>
+          </div>
+
+          <!-- FLUENT FROSTED BOTTOM NAVIGATION BAR -->
+          <div class="mica-nav border-t border-[#EDEBE9] px-3 py-2 flex items-center justify-around absolute bottom-0 inset-x-0 z-20">
+            <button onclick="switchMobileTab(0)" id="nav-btn-0" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[#107C41]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <span class="text-xs font-bold">Trang chủ</span>
+            </button>
+
+            <button onclick="switchMobileTab(1)" id="nav-btn-1" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[#616161]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 22v-7l-2-2"/><path d="M17 8v.8A6 6 0 0 1 13.8 20H10A6.5 6.5 0 0 1 7 8a5 5 0 0 1 10 0Z"/>
+              </svg>
+              <span class="text-xs font-medium">Vùng trồng</span>
+            </button>
+
+            <!-- Center Floating Action Pill -->
+            <button onclick="openCareSheet('Nhân công')" class="w-11 h-11 -mt-4 rounded-2xl bg-gradient-to-br from-[#107C41] to-[#059669] text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+
+            <button onclick="switchMobileTab(2)" id="nav-btn-2" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[#616161]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <span class="text-xs font-medium">Nhật ký</span>
+            </button>
+
+            <button onclick="switchMobileTab(3)" id="nav-btn-3" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[#616161]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+              </svg>
+              <span class="text-xs font-medium">Vật tư & BI</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: MICROSOFT FLUENT 2 DESIGN HIGHLIGHTS -->
+    <div id="design-notes-col" class="flex-1 space-y-3.5 w-full">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 fluent-shadow space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600">
+            Chuẩn Microsoft Fluent 2
+          </span>
+          <h3 class="font-bold text-sm text-[var(--foreground)]">5 Điểm khác biệt giúp App Sạch sẽ & Dễ thương</h3>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+            <div class="font-bold text-[var(--foreground)]">1. Bỏ thanh AppBar xanh đen nặng nề → Thay bằng Mica Header sáng</div>
+            <p class="text-[var(--muted-foreground)] mt-0.5">
+              Sử dụng nền trắng kem ấm (<code>#FAF9F8</code>) kết hợp hiệu ứng kính mờ giống Microsoft Loop & Teams Mobile, giúp màn hình rộng rãi và thoáng mắt ngoài trời nắng.
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+            <div class="font-bold text-[var(--foreground)]">2. Linh vật "Bé Mầm" & Icon Pastel Squircle</div>
+            <p class="text-[var(--muted-foreground)] mt-0.5">
+              Mỗi nút chức năng có nền Pastel dịu nhẹ (Xanh Mint, Vàng Bơ, Xanh Mây, Tím Lavender). Linh vật Bé Mầm chuyển động nhẹ nhàng tạo cảm giác thân thiện, dễ thương nhưng vẫn chuẩn doanh nghiệp.
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+            <div class="font-bold text-[var(--foreground)]">3. Lưới Bento 2x2 & Bottom Sheet trượt mượt bằng 1 ngón cái</div>
+            <p class="text-[var(--muted-foreground)] mt-0.5">
+              Bấm nút <strong>"+"</strong> hoặc <strong>"Nhân công"</strong> trên màn hình điện thoại bên cạnh để trải nghiệm khung nhập liệu trượt từ dưới lên, có sẵn các nút gợi ý nhanh (<em>Cắt cành, Tỉa hoa, Làm cỏ</em>).
+            </p>
+          </div>
+        </div>
+
+        <!-- Quick Interactive Triggers -->
+        <div class="pt-1 flex flex-wrap gap-2">
+          <button onclick="openCareSheet('Nhân công')" class="px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
+            👉 Bấm thử Form Nhân công trên Mobile
+          </button>
+          <button onclick="openNfcSheet()" class="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] text-xs font-semibold hover:opacity-80 transition">
+            📡 Bấm thử Quét NFC
+          </button>
+          <button onclick="switchMobileTab(3)" class="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] text-xs font-semibold hover:opacity-80 transition">
+            📊 Xem Tab Tài chính BI
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const plantsData = [
+      { code: 'RI6-001', name: 'Sầu riêng Ri6 · Cây #01', plot: 'Lô A1', row: 'Hàng 1', age: '4 năm 2 tháng', status: 'Tốt', nfc: 'NFC-04A92B' },
+      { code: 'RI6-002', name: 'Sầu riêng Ri6 · Cây #02', plot: 'Lô A1', row: 'Hàng 1', age: '4 năm 2 tháng', status: 'Tốt', nfc: 'NFC-04A92C' },
+      { code: 'RI6-003', name: 'Sầu riêng Ri6 · Cây #03', plot: 'Lô A1', row: 'Hàng 2', age: '4 năm 2 tháng', status: 'Đang ra hoa', nfc: 'NFC-04A92D' },
+      { code: 'MTH-001', name: 'Sầu riêng Monthong · Cây #01', plot: 'Lô B2', row: 'Hàng 1', age: '3 năm 8 tháng', status: 'Tốt', nfc: 'NFC-08F11A' },
+      { code: 'MTH-002', name: 'Sầu riêng Monthong · Cây #02', plot: 'Lô B2', row: 'Hàng 2', age: '3 năm 8 tháng', status: 'Tốt', nfc: 'NFC-08F11B' }
+    ];
+
+    const logsData = [
+      { type: 'Nhân công', title: 'Cắt cành / tỉa lá tạo tán', sub: '4 người · 07:00 → 11:30 (4.5h)', cost: 1200000, date: 'Hôm nay, 11:35', badgeBg: '#E8F0FE', badgeColor: '#1967D2', icon: '👥' },
+      { type: 'Bón phân', title: 'Bón NPK Hữu cơ Vi sinh', sub: 'Lô A1 (10 cây) · 2,5 kg/cây', cost: 1900000, date: 'Hôm qua, 08:20', badgeBg: '#FEF7E0', badgeColor: '#B06000', icon: '🧪' },
+      { type: 'Tưới nước', title: 'Tưới nhỏ giọt tự động', sub: 'Toàn vườn · 45 lít/gốc', cost: 1507600, date: '07/11/2026', badgeBg: '#E6F4EA', badgeColor: '#107C41', icon: '💧' }
+    ];
+
+    let totalLaborExtra = 0;
+    const langs = ['🇻🇳 VI', '🇬🇧 EN', '🇨🇳 中文'];
+    let langIdx = 0;
+
+    function fmtVND(n) {
+      return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
+    }
+
+    function renderHomeLogs() {
+      const html = logsData.map(l => `
+        <div class="bg-white border border-[#EDEBE9] rounded-2xl p-3 flex items-center justify-between gap-2.5 fluent-shadow">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm flex-shrink-0" style="background:${l.badgeBg}; color:${l.badgeColor}">
+              ${l.icon}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.2 rounded-md text-xs font-semibold" style="background:${l.badgeBg}; color:${l.badgeColor}">${l.type}</span>
+                <span class="text-xs text-[#707070] truncate">${l.date}</span>
+              </div>
+              <div class="text-xs font-bold text-[#1F1F1F] truncate mt-0.5">${l.title}</div>
+              <div class="text-xs text-[#616161] truncate">${l.sub}</div>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="text-xs font-bold text-[#107C41]">${fmtVND(l.cost)}</div>
+            <div class="text-xs text-[#707070]">✓ SHA-256</div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('home-recent-logs').innerHTML = html;
+      document.getElementById('mobile-logs-list').innerHTML = html;
+    }
+
+    function renderPlants(filterPlot = 'all') {
+      const list = filterPlot === 'all' ? plantsData : plantsData.filter(p => p.plot === filterPlot);
+      document.getElementById('mobile-plants-list').innerHTML = list.map(p => `
+        <div class="bg-white border border-[#EDEBE9] rounded-2xl p-3 flex items-center justify-between gap-2.5 fluent-shadow">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-[#E6F4EA] text-[#107C41] flex items-center justify-center font-bold text-xs">
+              🌳
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-[#1F1F1F]">${p.code}</span>
+                <span class="px-2 py-0.2 rounded-md text-xs font-semibold bg-[#F3F2F1] text-[#424242]">${p.plot} · ${p.row}</span>
+              </div>
+              <div class="text-xs text-[#616161] mt-0.5">${p.name}</div>
+              <div class="text-xs text-[#107C41] font-medium mt-0.5">📡 ${p.nfc} · ${p.age}</div>
+            </div>
+          </div>
+          <button onclick="openCareSheet('Nhân công')" class="px-2.5 py-1.5 rounded-xl bg-[#FAF9F8] border border-[#E1DFDD] text-xs font-semibold text-[#107C41]">
+            Chăm sóc
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function filterPlants(plot, btn) {
+      renderPlants(plot);
+      btn.parentElement.querySelectorAll('button').forEach(b => {
+        b.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap';
+      });
+      btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#107C41] text-white whitespace-nowrap';
+    }
+
+    function filterLogs(type, btn) {
+      const filtered = type === 'all' ? logsData : logsData.filter(l => l.type === type);
+      document.getElementById('mobile-logs-list').innerHTML = filtered.map(l => `
+        <div class="bg-white border border-[#EDEBE9] rounded-2xl p-3 flex items-center justify-between gap-2.5 fluent-shadow">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm flex-shrink-0" style="background:${l.badgeBg}; color:${l.badgeColor}">${l.icon}</div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-[#1F1F1F] truncate">${l.title}</div>
+              <div class="text-xs text-[#616161] truncate">${l.sub}</div>
+            </div>
+          </div>
+          <div class="text-xs font-bold text-[#107C41] flex-shrink-0">${fmtVND(l.cost)}</div>
+        </div>
+      `).join('');
+      btn.parentElement.querySelectorAll('button').forEach(b => {
+        b.className = 'px-3 py-1 rounded-xl text-xs font-semibold bg-white border border-[#E1DFDD] text-[#424242] whitespace-nowrap';
+      });
+      btn.className = 'px-3 py-1 rounded-xl text-xs font-semibold bg-[#107C41] text-white whitespace-nowrap';
+    }
+
+    function switchMobileTab(idx) {
+      closeSheets();
+      for (let i = 0; i < 4; i++) {
+        document.getElementById('tab-view-' + i).classList.toggle('hidden', i !== idx);
+        const nav = document.getElementById('nav-btn-' + i);
+        if (i === idx) {
+          nav.className = 'flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[#107C41] bg-[#E6F4EA]/60';
+        } else {
+          nav.className = 'flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[#616161]';
+        }
+      }
+    }
+
+    function openCareSheet(defaultType) {
+      closeSheets();
+      document.getElementById('sheet-care-modal').classList.remove('hidden');
+      if (defaultType) selectSheetType(defaultType);
+    }
+
+    function openNfcSheet() {
+      closeSheets();
+      document.getElementById('sheet-nfc-modal').classList.remove('hidden');
+    }
+
+    function openAiSheet() {
+      closeSheets();
+      document.getElementById('sheet-ai-modal').classList.remove('hidden');
+    }
+
+    function closeSheets() {
+      document.getElementById('sheet-care-modal').classList.add('hidden');
+      document.getElementById('sheet-nfc-modal').classList.add('hidden');
+      document.getElementById('sheet-ai-modal').classList.add('hidden');
+    }
+
+    function selectSheetType(type) {
+      const map = { 'Nhân công': 'type-btn-labor', 'Bón phân': 'type-btn-fert', 'Tưới nước': 'type-btn-water' };
+      Object.entries(map).forEach(([k, id]) => {
+        const el = document.getElementById(id);
+        if (k === type) {
+          el.className = 'py-2 px-2 rounded-xl text-xs font-semibold border border-[#107C41] bg-[#E6F4EA] text-[#107C41]';
+        } else {
+          el.className = 'py-2 px-2 rounded-xl text-xs font-semibold border border-[#E1DFDD] bg-white text-[#424242]';
+        }
+      });
+    }
+
+    function setMobileLaborChip(text, btn) {
+      document.getElementById('m-labor-content').value = text;
+      btn.parentElement.querySelectorAll('button').forEach(b => {
+        b.className = 'px-2.5 py-1 rounded-lg border border-[#E1DFDD] bg-[#FAF9F8] text-xs font-semibold text-[#242424]';
+      });
+      btn.className = 'px-2.5 py-1 rounded-lg border border-[#1967D2] bg-[#E8F0FE] text-xs font-bold text-[#1967D2]';
+    }
+
+    function calcMobileLabor() {
+      const workers = parseFloat(document.getElementById('m-labor-workers').value) || 0;
+      const cost = parseFloat(document.getElementById('m-labor-cost').value) || 0;
+      const mode = document.getElementById('m-labor-mode').value;
+      const sTime = document.getElementById('m-labor-start').value;
+      const eTime = document.getElementById('m-labor-end').value;
+
+      const total = mode === 'per_person' ? cost * Math.max(1, workers) : cost;
+      const perTree = Math.round(total / 10);
+
+      document.getElementById('m-labor-total').textContent = fmtVND(total);
+      document.getElementById('m-labor-per-tree').textContent = fmtVND(perTree) + ' / cây (10 cây)';
+      document.getElementById('m-labor-summary').textContent =
+        (workers > 0 ? `${workers} người` : 'Chưa nhập số người') +
+        (sTime && eTime ? ` · ${sTime} → ${eTime}` : '');
+    }
+
+    function saveMobileLaborLog() {
+      const content = document.getElementById('m-labor-content').value.trim() || 'Thuê nhân công chăm sóc';
+      const workers = parseFloat(document.getElementById('m-labor-workers').value) || 3;
+      const costInput = parseFloat(document.getElementById('m-labor-cost').value) || 900000;
+      const mode = document.getElementById('m-labor-mode').value;
+      const total = mode === 'per_person' ? costInput * workers : costInput;
+      const sTime = document.getElementById('m-labor-start').value || '07:00';
+      const eTime = document.getElementById('m-labor-end').value || '11:30';
+
+      logsData.unshift({
+        type: 'Nhân công',
+        title: content,
+        sub: `${workers} người · ${sTime} → ${eTime}`,
+        cost: total,
+        date: 'Vừa xong',
+        badgeBg: '#E8F0FE',
+        badgeColor: '#1967D2',
+        icon: '👥'
+      });
+
+      totalLaborExtra += total;
+      const grandTotal = 3407600 + totalLaborExtra;
+      document.getElementById('bi-total-cost').textContent = fmtVND(grandTotal);
+      document.getElementById('bi-per-tree').textContent = fmtVND(grandTotal / 10) + ' / cây';
+      document.getElementById('bi-labor-cost-val').textContent = fmtVND(totalLaborExtra);
+      document.getElementById('bi-labor-bar').style.width = '32%';
+
+      renderHomeLogs();
+      closeSheets();
+      switchMobileTab(2);
+    }
+
+    function simulateNfcSuccess() {
+      closeSheets();
+      switchMobileTab(1);
+    }
+
+    function cycleLang() {
+      langIdx = (langIdx + 1) % langs.length;
+      document.getElementById('btn-lang-pill').textContent = langs[langIdx];
+      const greetings = ['Chào buổi sáng', 'Good morning', '早上好'];
+      const titles = [
+        'Vườn sầu riêng đang phát triển rất tốt!',
+        'Your durian orchard is thriving today!',
+        '您的榴莲果园今天长势非常好！'
+      ];
+      document.getElementById('hdr-greeting').textContent = greetings[langIdx];
+      document.getElementById('hero-title').textContent = titles[langIdx];
+    }
+
+    function setDesignMode(mode) {
+      const legacyCol = document.getElementById('legacy-phone-col');
+      const notesCol = document.getElementById('design-notes-col');
+      const badgeTop = document.getElementById('fluent-badge-top');
+      const btnFluent = document.getElementById('btn-mode-fluent');
+      const btnCompare = document.getElementById('btn-mode-compare');
+
+      if (mode === 'compare') {
+        legacyCol.classList.remove('hidden');
+        notesCol.classList.add('hidden');
+        badgeTop.classList.remove('hidden');
+        btnCompare.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm';
+        btnFluent.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-[var(--muted-foreground)]';
+      } else {
+        legacyCol.classList.add('hidden');
+        notesCol.classList.remove('hidden');
+        badgeTop.classList.add('hidden');
+        btnFluent.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm';
+        btnCompare.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-[var(--muted-foreground)]';
+      }
+    }
+
+    renderHomeLogs();
+    renderPlants('all');
+  </script>
+</body>
+</html>
