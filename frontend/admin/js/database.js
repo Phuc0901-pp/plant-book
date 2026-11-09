@@ -2452,6 +2452,59 @@ async function loadDbSchemaCheck() {
   const grid = document.getElementById('db-schema-tables-grid');
   if (!grid) return;
 
+  // Nạp thông tin hạ tầng CSDL & Máy chủ NAS
+  const banner = document.getElementById('db-infrastructure-banner');
+  if (banner) {
+    try {
+      const infra = await api('/database/infrastructure');
+      if (infra && infra.deployment) {
+        const d = infra.deployment;
+        banner.style.display = 'block';
+        banner.innerHTML = `
+          <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:18px 22px; border-radius:14px; border:1px solid #334155; box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px; border-bottom:1px solid #334155; padding-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="background:${d.is_nas ? '#059669' : '#0284c7'}; color:#ffffff; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
+                  <i data-lucide="${d.is_nas ? 'hard-drive' : 'cloud'}" class="lucide-xs"></i> ${esc(d.mode)}
+                </span>
+                <span style="font-size:12px; color:#94a3b8; font-weight:600;">
+                  Host: <strong style="color:#e2e8f0;">${esc(d.host_masked)}</strong>
+                </span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="background:${d.ssl_enabled ? '#065f46' : '#7c2d12'}; color:${d.ssl_enabled ? '#34d399' : '#fdba74'}; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                  <i data-lucide="${d.ssl_enabled ? 'shield-check' : 'shield-alert'}" class="lucide-xs"></i> SSL: ${d.ssl_enabled ? 'Bật (Cloud)' : 'Tắt (NAS LAN)'}
+                </span>
+                <span style="background:#1e3a8a; color:#93c5fd; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                  <i data-lucide="database" class="lucide-xs"></i> Dung lượng: ${esc(d.database_size)}
+                </span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:12px;">
+              <div>
+                <span style="color:#94a3b8;">Hệ quản trị CSDL:</span>
+                <div style="color:#f8fafc; font-weight:700; margin-top:2px;">${esc(d.pg_version)}</div>
+              </div>
+              <div>
+                <span style="color:#94a3b8;">Bản đồ & GIS:</span>
+                <div style="color:#f8fafc; font-weight:700; margin-top:2px;">${d.postgis_enabled ? `✅ PostGIS ${esc(d.postgis_version || 'Active')}` : '⚠️ Fallback Grid Cluster'}</div>
+              </div>
+              <div>
+                <span style="color:#94a3b8;">Kho lưu ảnh cây trồng:</span>
+                <div style="color:#f8fafc; font-weight:700; margin-top:2px;">${d.storage_driver === 'local' ? '📁 Ổ cứng NAS (Local)' : '☁️ Cloud Storage'}</div>
+              </div>
+              <div>
+                <span style="color:#94a3b8;">Gói Docker NAS v1.3.5:</span>
+                <div style="color:#10b981; font-weight:700; margin-top:2px;">✅ Sẵn sàng (docker-compose.nas.yml)</div>
+              </div>
+            </div>
+          </div>
+        `;
+        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+      }
+    } catch (_) {}
+  }
+
   grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#64748b;"><i data-lucide="loader-2" class="lucide-spin lucide-lg"></i><br><br>Đang thanh tra Schema & Telemetry CSDL PostgreSQL...</div>';
 
   try {

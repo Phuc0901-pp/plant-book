@@ -4,6 +4,7 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { delCacheByPattern } = require('../config/redis');
+const { resolveSslConfig, isPrivateHost, extractHost, maskConnectionString } = require('../config/dbSsl');
 
 // Allowed public tables to inspect and manage
 const ALLOWED_TABLES = [
@@ -18,6 +19,58 @@ function sanitizeTableName(name) {
   }
   return name;
 }
+
+/**
+ * GET /api/database/infrastructure — Telemetry giám sát hạ tầng CSDL & Máy chủ NAS
+ */
+router.get('/infrastructure', auth, admin, async (req, res) => {
+  try {
+    const rawUrl = process.env.DATABASE_URL || process.env.DATABASE_WRITE_URL || '';
+    const host = extractHost(rawUrl);
+    const isNas = isPrivateHost(host);
+    const ssl = Boolean(resolveSslConfig(rawUrl));
+
+    // Lấy phiên bản PostgreSQL & dung lượng DB
+    let pgVersion = 'Unknown';
+    let dbSize = 0;
+    let postgisVersion = null;
+
+    try {
+      const verRes = await pool.query('SELECT version()');
+      pgVersion = verRes.rows[0]?.version?.split(' on ')[0] || verRes.rows[0]?.version || 'PostgreSQL';
+    } catch (_) {}
+
+    try {
+      const sizeRes = await pool.query('SELECT pg_database_size(current_database())::bigint AS size, pg_size_pretty(pg_database_size(current_database())) AS pretty');
+      dbSize = sizeRes.rows[0]?.pretty || '0 MB';
+    } catch (_) {}
+
+    try {
+      const gisRes = await pool.query('SELECT PostGIS_Version() AS ver');
+      postgisVersion = gisRes.rows[0]?.ver || null;
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      deployment: {
+        mode: isNas ? 'Máy chủ NAS Công ty (Local / On-Premise)' : 'Cloud Database (Supabase / Render)',
+        is_nas: isNas,
+        host_masked: host ? (host.length > 8 ? host.substring(0, 4) + '***' + host.substring(host.length - 4) : '***') : 'Local Socket',
+        connection_masked: maskConnectionString(rawUrl),
+        ssl_enabled: ssl,
+        pg_version: pgVersion,
+        postgis_enabled: Boolean(postgisVersion),
+        postgis_version: postgisVersion,
+        database_size: dbSize,
+        storage_driver: process.env.STORAGE_DRIVER || 'supabase',
+        nas_docker_package_ready: true,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi kiểm tra hạ tầng CSDL: ' + err.message });
+  }
+});
 
 /**
  * GET /api/database/check — Admin Database Schema & Field Telemetry Inspector

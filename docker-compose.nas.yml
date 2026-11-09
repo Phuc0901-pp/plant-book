@@ -1,24 +1,29 @@
-﻿version: '3.8'
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════════════════════
+# TÂN BẢO AGTECH | SỔ NÔNG SỐ PLANT BOOK ERP v1.3.5
+# DOCKER COMPOSE CHO MÁY CHỦ NAS CÔNG TY (SYNOLOGY / QNAP / TRUENAS / LINUX)
+# Khởi chạy: docker compose -f docker-compose.nas.yml --env-file .env.nas up -d
+# ═══════════════════════════════════════════════════════════════════════
 
 services:
-  # ═══════════════════════════════════════════════════════════════════
-  # 1. POSTGRESQL 16 ENTERPRISE DATABASE FOR NAS
-  # ═══════════════════════════════════════════════════════════════════
+  # ───────────────────────────────────────────────────────────────────
+  # 1. POSTGRESQL 16 + EXTENSION POSTGIS & PG_TRGM
+  # ───────────────────────────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.4-alpine
     container_name: tanbao-postgres-nas
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: plant_book
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: tanbao_secure_password_2026
+      POSTGRES_DB: ${POSTGRES_DB:-plant_book}
+      POSTGRES_USER: ${POSTGRES_USER:-plantbook}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Vui lòng cấu hình POSTGRES_PASSWORD trong file .env.nas}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      # Mount trực tiếp vào thư mục lưu trữ của NAS (hoặc volume Docker)
       - ./nas_storage/postgres_data:/var/lib/postgresql/data
-      - ./backend/scripts/init_schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./database_init_nas.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
     command: >
       postgres -c max_connections=200
                -c shared_buffers=512MB
@@ -33,53 +38,119 @@ services:
                -c min_wal_size=1GB
                -c max_wal_size=4GB
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d plant_book"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-plantbook} -d ${POSTGRES_DB:-plant_book}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - tanbao-network
 
-  # ═══════════════════════════════════════════════════════════════════
-  # 2. REDIS 7 IN-MEMORY CACHE FOR NAS
-  # ═══════════════════════════════════════════════════════════════════
+  # ───────────────────────────────────────────────────────────────────
+  # 2. REDIS 7 IN-MEMORY CACHE
+  # ───────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: tanbao-redis-nas
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     command: >
-      redis-server --requirepass tanbao_redis_pass_2026
-                   --appendonly yes
-                   --maxmemory 256mb
-                   --maxmemory-policy allkeys-lru
+      sh -c 'redis-server --requirepass "$${REDIS_PASSWORD}"
+                          --appendonly yes
+                          --maxmemory 256mb
+                          --maxmemory-policy allkeys-lru'
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Vui lòng cấu hình REDIS_PASSWORD trong file .env.nas}
     volumes:
       - ./nas_storage/redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "tanbao_redis_pass_2026", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - tanbao-network
 
-  # ═══════════════════════════════════════════════════════════════════
-  # 3. PGADMIN 4 — GIAO DIỆN QUẢN TRỊ CSDL TRỰC QUAN TRÊN TRÌNH DUYỆT
-  # ═══════════════════════════════════════════════════════════════════
+  # ───────────────────────────────────────────────────────────────────
+  # 3. PLANT BOOK WEB SERVER (NODE.JS BACKEND + FRONTEND + LƯU ẢNH TRÊN NAS)
+  # ───────────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tanbao-plantbook-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-10000}:10000"
+    environment:
+      NODE_ENV: production
+      PORT: 10000
+      APP_URL: ${APP_URL:-http://localhost:10000}
+      DATABASE_URL: postgres://${POSTGRES_USER:-plantbook}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-plant_book}?sslmode=disable
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-}
+      JWT_SECRET: ${JWT_SECRET:?Vui lòng cấu hình JWT_SECRET trong file .env.nas}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tanbaocorp.vn}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Tanbao@123}
+      ENABLE_ZALO_ALERTS: ${ENABLE_ZALO_ALERTS:-false}
+    volumes:
+      # Lưu ảnh trực tiếp vào ổ đĩa của NAS (không mất khi update container)
+      - ./nas_storage/uploads:/app/frontend/assets/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:10000/api/health | grep -q 'ok' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tanbao-network
+
+  # ───────────────────────────────────────────────────────────────────
+  # 4. PGADMIN 4 — QUẢN TRỊ TRỰC QUAN CSDL TRÊN TRÌNH DUYỆT (PORT 5050)
+  # ───────────────────────────────────────────────────────────────────
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: tanbao-pgadmin-nas
     restart: unless-stopped
     ports:
-      - "5050:80"
+      - "${PGADMIN_PORT:-5050}:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@tanbaocorp.vn
-      PGADMIN_DEFAULT_PASSWORD: admin_nas_password_2026
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@tanbaocorp.vn}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Vui lòng cấu hình PGADMIN_PASSWORD trong file .env.nas}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - ./nas_storage/pgadmin_data:/var/lib/pgadmin
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - tanbao-network
 
-volumes:
-  postgres_data:
-  redis_data:
-  pgadmin_data:
+  # ───────────────────────────────────────────────────────────────────
+  # 5. CLOUDFLARE TUNNEL (TÙY CHỌN — ĐƯA RA INTERNET AN TOÀN KHÔNG CẦN MỞ PORT)
+  # Kích hoạt: docker compose -f docker-compose.nas.yml --profile tunnel up -d
+  # ───────────────────────────────────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: tanbao-cloudflared-nas
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    command: tunnel --no-autoupdate run
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - tanbao-network
+
+networks:
+  tanbao-network:
+    driver: bridge

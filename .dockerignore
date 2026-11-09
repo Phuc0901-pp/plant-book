@@ -1,0 +1,16 @@
+# Không đưa vào image Docker
+.git
+.github
+**/node_modules
+**/.env
+.env.nas
+*.log
+*.apk
+*.docx
+*.pdf
+mobile_app
+build_output
+nas_storage
+frontend/assets/uploads
+*-PHUCPH.*
+~$*
