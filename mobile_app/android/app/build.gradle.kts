@@ -21,10 +21,11 @@ android {
 
     defaultConfig {
         applicationId = "com.tanbaocorp.plantbook.mobile_app"
-        minSdk = flutter.minSdkVersion
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
     }
 
     val keystorePropertiesFile = rootProject.file("key.properties")
