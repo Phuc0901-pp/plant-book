@@ -533,6 +533,11 @@ export async function loadUserDashboard(isSilent = false) {
     // ── Render Tầng 1: Thẻ Hồ Sơ Nông Hộ & Cơ Cấu Trang Trại ──
     renderFarmerCockpitCard(activeUser, farms, plants);
 
+    // ── Render Tầng 1.5: Bảng Điều Khiển Tài Chính Doanh Nghiệp (BI) & Dự Báo Mùa Vụ ──
+    if (typeof window.loadExecutiveBiAnalytics === 'function') {
+      window.loadExecutiveBiAnalytics();
+    }
+
     // ── Render Tầng 2: Trung Tâm Cảnh Báo Phân Cấp (Đỏ -> Vàng -> Xanh) ──
     renderPriorityAlertsCenter(plants, recentLogs);
 

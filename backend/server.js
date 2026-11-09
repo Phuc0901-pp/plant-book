@@ -143,6 +143,13 @@ app.get('/api', (req, res) => {
         events: { href: `${base}/history` },
         iso27001_hash_chain: { enabled: true, algorithm: 'SHA-256' },
         carbon_mrv_engine: { enabled: true, methodology: 'IPCC-2006-AFOLU-Tier2 / Chave-et-al-2014' }
+      },
+      bi_analytics_and_i18n: {
+        bi_overview: { href: `${base}/analytics/bi-overview` },
+        cost_breakdown: { href: `${base}/analytics/cost-breakdown` },
+        plot_comparison: { href: `${base}/analytics/plot-comparison` },
+        predictive_yield: { href: `${base}/analytics/predictive-yield` },
+        i18n_dictionary: { href: `${base}/analytics/i18n/{lang}`, supported: ['vi', 'en', 'zh'] }
       }
     }
   });
@@ -161,6 +168,7 @@ app.use('/api/devices', require('./routes/devices'));
 app.use('/api/supplies', require('./routes/supplies'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/costs', require('./routes/costs'));
+app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/history', require('./routes/history'));
 app.use('/api/database', require('./routes/database'));
 app.use('/api/ai/training', require('./routes/ai_training'));

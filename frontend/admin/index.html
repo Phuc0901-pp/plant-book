@@ -1,4 +1,4 @@
-<!-- ====================================================================
+﻿<!-- ====================================================================
      PLANT BOOK ENTERPRISE ERP — ADMIN PORTAL
      Auto-assembled via backend/scripts/build-html.js
      DO NOT edit index.html directly; edit modular files in src/
@@ -719,7 +719,15 @@
         </button>
         <h1 id="page-title" style="margin:0;"><i data-lucide="layers" class="lucide-sm" style="color:#059669; font-size:16px;"></i> Dashboard</h1>
       </div>
-      <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:10px;"></div>
+      <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:10px;">
+        <!-- Export Multi-Language Switcher (VI | EN | ZH) -->
+        <div style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1.5px solid #cbd5e1; border-radius:10px; padding:2px;" title="Chuyển đổi ngôn ngữ (Tiếng Việt / English / 中文)">
+          <i data-lucide="globe" class="lucide-xs" style="color:#059669; margin:0 4px;"></i>
+          <button type="button" data-lang-btn="vi" onclick="if(window.switchExportLanguage)window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">VI</button>
+          <button type="button" data-lang-btn="en" onclick="if(window.switchExportLanguage)window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">EN</button>
+          <button type="button" data-lang-btn="zh" onclick="if(window.switchExportLanguage)window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">中文</button>
+        </div>
+      </div>
     </div>
 
 
@@ -861,6 +869,14 @@
               <span id="stat-regions" style="font-size:36px; font-weight:900; color:#0f172a; letter-spacing:-0.03em; line-height:1; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;">—</span>
               <span style="font-size:13px; font-weight:700; color:#64748b;">tỉnh thành</span>
             </div>
+          </div>
+        </div>
+
+        <!-- TẦNG 1.5: BẢNG ĐIỀU KHIỂN TÀI CHÍNH DOANH NGHIỆP (EXECUTIVE BI ANALYTICS) & DỰ BÁO MÙA VỤ HỌC MÁY -->
+        <div class="card" id="executive-bi-analytics-root" style="border-radius:18px; border:1.5px solid #e2e8f0; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.04); background:#ffffff; margin-bottom:20px;">
+          <div style="padding:18px 22px; display:flex; align-items:center; gap:10px; color:#64748b; font-size:13px; font-weight:700;">
+            <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#059669;"></i>
+            <span>Đang tải Bảng Điều Khiển Tài Chính Doanh Nghiệp (BI Analytics) &amp; Dự Báo Sản Lượng Học Máy...</span>
           </div>
         </div>
 
@@ -2548,7 +2564,7 @@
     <!-- Quick Telemetry Stats Bar -->
     <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:12px 22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; font-size:12.5px; font-weight:700; color:#334155;">
-        <span><i data-lucide="layers" class="lucide-sm" style="color:#059669; margin-right:4px;"></i> Mã Build: <strong id="ver-active-build" style="color:#0f172a;">19</strong></span>
+        <span><i data-lucide="layers" class="lucide-sm" style="color:#059669; margin-right:4px;"></i> Mã Build: <strong id="ver-active-build" style="color:#0f172a;">12</strong></span>
         <span><i data-lucide="smartphone" class="lucide-sm" style="color:#2563eb; margin-right:4px;"></i> Nền tảng: <strong id="ver-active-platform" style="color:#0f172a;">Web App &amp; Android</strong></span>
         <span><i data-lucide="shield-check" class="lucide-sm" style="color:#d97706; margin-right:4px;"></i> Min: <strong id="ver-active-min" style="color:#0f172a;">1.0.0</strong></span>
         <span><i data-lucide="upload-cloud" class="lucide-sm" style="color:#7c3aed; margin-right:4px;"></i> Cập nhật: <strong id="ver-active-date" style="color:#0f172a;">--</strong></span>
@@ -2586,7 +2602,7 @@
             <label style="font-size:11.5px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">
               MÃ BUILD *
             </label>
-            <input type="number" id="ver-input-build" placeholder="19" required min="1" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#0f172a; outline:none;">
+            <input type="number" id="ver-input-build" placeholder="12" required min="1" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#0f172a; outline:none;">
           </div>
         </div>
 
@@ -5097,6 +5113,8 @@
 <div id="plant-hover-tooltip"></div>
 
   <script src="/assets/js/lucide-auto-hydrator.js?v=v1.3.5"></script>
+  <script src="/js/i18n-engine.js?v=v1.3.5"></script>
+  <script src="/js/bi-analytics-widget.js?v=v1.3.5"></script>
   <script src="/admin/js/countup.js?v=v1.3.5"></script>
   <script src="/admin/js/mascot-chibi.js?v=v1.3.5"></script>
   <script src="/admin/js/app.js?v=v1.3.5"></script>

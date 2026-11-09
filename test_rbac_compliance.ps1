@@ -73,6 +73,18 @@ Assert-Contains $userHtml "settings-subaccount-privilege-card" "Compiled user/in
 Assert-Contains $appConfig '"version": "1.3.5"' "App config is bumped to version 1.3.5"
 Assert-Contains $userHtml "v1.3.5" "Compiled user/index.html reflects version 1.3.5"
 
+# --- REQUIREMENT 6: Executive BI Analytics & Export Multi-Language (i18n: vi/en/zh) ---
+$backendAnalytics = Join-Path $rootDir "backend\routes\analytics.js"
+$biWidgetJs = Join-Path $rootDir "frontend\public\js\bi-analytics-widget.js"
+$i18nEngineJs = Join-Path $rootDir "frontend\public\js\i18n-engine.js"
+$zhDictPath = Join-Path $rootDir "frontend\i18n\zh.json"
+Assert-Contains $backendAnalytics "FINANCE_REDACTED_ROLE" "Backend analytics.js enforces RBAC FINANCE_REDACTED_ROLE"
+Assert-Contains $backendAnalytics "cost_per_tree_vnd" "Backend analytics.js computes cost per tree and per hectare"
+Assert-Contains $biWidgetJs "isClientUserFinanceRedacted" "Frontend BI widget enforces client-side RBAC finance redaction"
+Assert-Contains $i18nEngineJs "switchExportLanguage" "Frontend i18n-engine.js implements instant VI/EN/ZH switching"
+Assert-Contains $zhDictPath "GACC" "Chinese (zh.json) export traceability dictionary includes GACC compliance terms"
+Assert-Contains $userHtml "executive-bi-analytics-root" "Compiled user/index.html embeds Executive BI Analytics Dashboard"
+
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "   SUMMARY: $passed / $total TESTS PASSED ($([math]::Round(($passed/$total)*100, 1))%)" -ForegroundColor $(if ($passed -eq $total) { "Green" } else { "Yellow" })
 Write-Host "==========================================================" -ForegroundColor Cyan

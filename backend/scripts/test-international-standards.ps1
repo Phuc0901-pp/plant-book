@@ -725,6 +725,52 @@ if ((Test-Path $dbInitPath) -and (Test-Path $plantsJsPath) -and (Test-Path $admi
 }
 
 # ══════════════════════════════════════════════════════════════════════════
+# -- SUITE 16: EXECUTIVE BI FINANCIAL ANALYTICS, ML YIELD FORECAST & EXPORT I18N (VI/EN/ZH) --
+# ══════════════════════════════════════════════════════════════════════════
+Write-Host "`n-- 16. EXECUTIVE BI FINANCIAL ANALYTICS, ML YIELD FORECAST & EXPORT I18N (VI/EN/ZH) --" -ForegroundColor White
+$analyticsRoutePath = Join-Path $root "backend\routes\analytics.js"
+$i18nViPath = Join-Path $root "frontend\i18n\vi.json"
+$i18nEnPath = Join-Path $root "frontend\i18n\en.json"
+$i18nZhPath = Join-Path $root "frontend\i18n\zh.json"
+$i18nEnginePath = Join-Path $root "frontend\public\js\i18n-engine.js"
+$biWidgetPath = Join-Path $root "frontend\public\js\bi-analytics-widget.js"
+$publicPlantHtmlPath = Join-Path $root "frontend\public\plant.html"
+$flutterI18nPath = Join-Path $root "mobile_app\lib\core\i18n\app_localizations.dart"
+
+if ((Test-Path $analyticsRoutePath) -and (Test-Path $serverJsPath)) {
+    $analyticsContent = [System.IO.File]::ReadAllText($analyticsRoutePath, [System.Text.Encoding]::UTF8)
+    $srvContent = [System.IO.File]::ReadAllText($serverJsPath, [System.Text.Encoding]::UTF8)
+
+    $hasBiEndpoints = $analyticsContent.Contains("router.get('/bi-overview'") -and $analyticsContent.Contains("router.get('/cost-breakdown'") -and $analyticsContent.Contains("router.get('/plot-comparison'") -and $analyticsContent.Contains("router.get('/predictive-yield'") -and $analyticsContent.Contains("router.get('/i18n/:lang'") -and $srvContent.Contains("app.use('/api/analytics'")
+    $hasFourCostPillars = $analyticsContent.Contains("npk_fertilizer") -and $analyticsContent.Contains("pesticide_bvtv") -and $analyticsContent.Contains("labor_nhan_cong") -and $analyticsContent.Contains("water_energy") -and $analyticsContent.Contains("cost_per_tree_vnd") -and $analyticsContent.Contains("cost_per_hectare_vnd")
+    $hasMlYieldEngine = $analyticsContent.Contains("predictTreeSeasonYieldKg") -and $analyticsContent.Contains("TBSG Agri-ML Allometric") -and $analyticsContent.Contains("roi_percent")
+    $hasRbacFinanceGuard = $analyticsContent.Contains("resolveUserFinanceContext") -and $analyticsContent.Contains("FINANCE_REDACTED_ROLE")
+
+    Record-Test -Category "Executive BI Analytics" -TestName "Backend BI Analytics & i18n Endpoints (/bi-overview, /cost-breakdown, /plot-comparison, /predictive-yield, /i18n/:lang)" -Passed $hasBiEndpoints
+    Record-Test -Category "Executive BI Analytics" -TestName "Granular Cost/Revenue per Tree & per Hectare across 4 Pillars (NPK, BVTV, Labor, Water)" -Passed $hasFourCostPillars
+    Record-Test -Category "ML Yield & ROI Engine" -TestName "Allometric & Phenology ML Next-Season Yield/Revenue Predictor & ROI (%) Engine" -Passed $hasMlYieldEngine
+    Record-Test -Category "BI Security & RBAC" -TestName "Strict Financial Redaction Guard (HTTP 403 FINANCE_REDACTED_ROLE for care_worker & auditor)" -Passed $hasRbacFinanceGuard
+}
+
+if ((Test-Path $i18nViPath) -and (Test-Path $i18nEnPath) -and (Test-Path $i18nZhPath) -and (Test-Path $i18nEnginePath) -and (Test-Path $biWidgetPath) -and (Test-Path $flutterI18nPath)) {
+    $zhContent = [System.IO.File]::ReadAllText($i18nZhPath, [System.Text.Encoding]::UTF8)
+    $i18nEngineContent = [System.IO.File]::ReadAllText($i18nEnginePath, [System.Text.Encoding]::UTF8)
+    $biWidgetContent = [System.IO.File]::ReadAllText($biWidgetPath, [System.Text.Encoding]::UTF8)
+    $plantHtmlContent = [System.IO.File]::ReadAllText($publicPlantHtmlPath, [System.Text.Encoding]::UTF8)
+    $userHtmlContent = [System.IO.File]::ReadAllText($userHtmlPath, [System.Text.Encoding]::UTF8)
+    $adminHtmlContent = [System.IO.File]::ReadAllText($adminHtmlPath, [System.Text.Encoding]::UTF8)
+    $flutterI18nContent = [System.IO.File]::ReadAllText($flutterI18nPath, [System.Text.Encoding]::UTF8)
+
+    $hasExportDictionaries = $zhContent.Contains("GACC") -and $zhContent.Contains("Ri6") -and $i18nEngineContent.Contains("switchExportLanguage") -and $i18nEngineContent.Contains("formatCurrency")
+    $hasPortalIntegration = $plantHtmlContent.Contains("export-lang-switcher") -and $userHtmlContent.Contains("executive-bi-analytics-root") -and $adminHtmlContent.Contains("executive-bi-analytics-root") -and $biWidgetContent.Contains("renderSvgDonutChart") -and $biWidgetContent.Contains("renderSvgCashflowChart")
+    $hasMobileBiI18n = $flutterI18nContent.Contains("computeExecutiveBiMetrics") -and $flutterI18nContent.Contains("'zh'")
+
+    Record-Test -Category "Export i18n (VI/EN/ZH)" -TestName "Trilingual Export Dictionaries (vi.json, en.json, zh.json) & Multi-Currency (VND/USD/CNY) Engine" -Passed $hasExportDictionaries
+    Record-Test -Category "Export i18n & BI UI" -TestName "Interactive SVG Donut/Cashflow BI Charts & Language Switchers in Public QR, Farmer & Admin Portals" -Passed $hasPortalIntegration
+    Record-Test -Category "Mobile BI & i18n" -TestName "Flutter Mobile AppLocalizations (VI/EN/ZH) & Offline BI ROI Calculator" -Passed $hasMobileBiI18n
+}
+
+# ══════════════════════════════════════════════════════════════════════════
 # -- FINAL QA / QC SUMMARY REPORT --
 # ══════════════════════════════════════════════════════════════════════════
 Write-Host "`n==========================================================================" -ForegroundColor Cyan

@@ -6,6 +6,13 @@
         <h1 id="page-title"><i data-lucide="leaf" class="lucide-sm" style="color:#059669; font-size:16px;"></i> Trang chủ</h1>
       </div>
       <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:12px;">
+        <!-- Export Multi-Language Switcher (VI | EN | ZH) -->
+        <div style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1.5px solid #cbd5e1; border-radius:10px; padding:2px;" title="Chuyển đổi ngôn ngữ (Tiếng Việt / English / 中文)">
+          <i data-lucide="globe" class="lucide-xs" style="color:#059669; margin:0 4px;"></i>
+          <button type="button" data-lang-btn="vi" onclick="if(window.switchExportLanguage)window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">VI</button>
+          <button type="button" data-lang-btn="en" onclick="if(window.switchExportLanguage)window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">EN</button>
+          <button type="button" data-lang-btn="zh" onclick="if(window.switchExportLanguage)window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">中文</button>
+        </div>
         
         <!-- Autonomous In-App Notification Center Bell Button -->
         <div style="position:relative;">

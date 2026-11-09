@@ -58,6 +58,10 @@ async function loadDashboard() {
       dashboardClockInterval = setInterval(updateDashboardClock, 1000);
     }
 
+    if (typeof window.loadExecutiveBiAnalytics === 'function') {
+      window.loadExecutiveBiAnalytics();
+    }
+
     const [plants, schemas, farms, recentLogs, users, devices] = await Promise.all([
       api('/plants'),
       api('/schemas'),

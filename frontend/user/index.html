@@ -626,6 +626,13 @@
         <h1 id="page-title"><i data-lucide="leaf" class="lucide-sm" style="color:#059669; font-size:16px;"></i> Trang chủ</h1>
       </div>
       <div class="topbar-actions" id="topbar-actions" style="display:flex; align-items:center; gap:12px;">
+        <!-- Export Multi-Language Switcher (VI | EN | ZH) -->
+        <div style="display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1.5px solid #cbd5e1; border-radius:10px; padding:2px;" title="Chuyển đổi ngôn ngữ (Tiếng Việt / English / 中文)">
+          <i data-lucide="globe" class="lucide-xs" style="color:#059669; margin:0 4px;"></i>
+          <button type="button" data-lang-btn="vi" onclick="if(window.switchExportLanguage)window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:800; cursor:pointer; background:#059669; color:#ffffff;">VI</button>
+          <button type="button" data-lang-btn="en" onclick="if(window.switchExportLanguage)window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">EN</button>
+          <button type="button" data-lang-btn="zh" onclick="if(window.switchExportLanguage)window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; cursor:pointer; background:transparent; color:#334155;">中文</button>
+        </div>
         
         <!-- Autonomous In-App Notification Center Bell Button -->
         <div style="position:relative;">
@@ -906,6 +913,17 @@
                 </div>
               </div>
 
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════════════════════════════
+               TẦNG 1.5: BẢNG ĐIỀU KHIỂN TÀI CHÍNH DOANH NGHIỆP (BI ANALYTICS) & DỰ BÁO HỌC MÁY
+               Phân tích Chi phí/Doanh thu theo Cây & Hecta (NPK, BVTV, Nhân công, Tiền nước), ROI & ML Forecast
+               ════════════════════════════════════════════════════════════════ -->
+          <div class="card" id="executive-bi-analytics-root" style="border-radius: 18px; border: 1.5px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #ffffff;">
+            <div style="padding: 18px 22px; display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 13px; font-weight: 700;">
+              <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color: #059669;"></i>
+              <span>Đang tải Bảng Điều Khiển Tài Chính Doanh Nghiệp (BI Analytics) &amp; Dự Báo Mùa Vụ Học Máy...</span>
             </div>
           </div>
 
@@ -6939,6 +6957,8 @@
 
 <!-- Scripts (ES Modules) -->
 <script src="/assets/js/lucide-auto-hydrator.js?v=v1.3.5"></script>
+<script src="/js/i18n-engine.js?v=v1.3.5"></script>
+<script src="/js/bi-analytics-widget.js?v=v1.3.5"></script>
 <script>
   window.refreshIcons = window.refreshIcons || function() {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {

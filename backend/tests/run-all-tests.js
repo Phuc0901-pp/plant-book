@@ -28,6 +28,7 @@ require('./suites/15_rate_limit_and_anti_freeze.test');
 require('./suites/16_smart_performance_and_sync.test');
 require('./suites/17_v135_hashchain_offline_migration.test');
 require('./suites/18_flutter_mobile_v135_security_sync.test');
+require('./suites/19_bi_analytics_and_i18n.test');
 
 async function main() {
   try {

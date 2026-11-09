@@ -6125,3 +6125,32 @@ function openPublicFarmA4ExportModal(map) {
   } catch (_) {}
 })();
 
+
+// ── Export Multi-Language (i18n: VI | EN | ZH) Live Dossier Adapter ──────────
+(function initPublicExportI18nAdapter() {
+  function ensureHeaderLanguageSwitcher() {
+    const slot = document.getElementById('erp-header-actions-slot');
+    if (!slot) return;
+    if (!document.getElementById('export-lang-switcher')) {
+      const curLang = (window.PlantBookI18n && window.PlantBookI18n.getLanguage()) || 'vi';
+      const wrap = document.createElement('div');
+      wrap.id = 'export-lang-switcher';
+      wrap.style.cssText = 'display:inline-flex; align-items:center; gap:2px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:9px; padding:2px; margin-right:4px;';
+      wrap.innerHTML = `
+        <button type="button" data-lang-btn="vi" onclick="window.switchExportLanguage('vi')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:${curLang === 'vi' ? '800' : '700'}; cursor:pointer; background:${curLang === 'vi' ? '#059669' : 'transparent'}; color:${curLang === 'vi' ? '#ffffff' : '#334155'};">🇻🇳 VI</button>
+        <button type="button" data-lang-btn="en" onclick="window.switchExportLanguage('en')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:${curLang === 'en' ? '800' : '700'}; cursor:pointer; background:${curLang === 'en' ? '#059669' : 'transparent'}; color:${curLang === 'en' ? '#ffffff' : '#334155'};">🇬🇧 EN</button>
+        <button type="button" data-lang-btn="zh" onclick="window.switchExportLanguage('zh')" style="border:none; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:${curLang === 'zh' ? '800' : '700'}; cursor:pointer; background:${curLang === 'zh' ? '#059669' : 'transparent'}; color:${curLang === 'zh' ? '#ffffff' : '#334155'};">🇨🇳 中文</button>
+      `;
+      slot.insertBefore(wrap, slot.firstChild);
+    }
+  }
+
+  window.addEventListener('pb:languageChanged', function() {
+    ensureHeaderLanguageSwitcher();
+    if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
+      window.PlantBookI18n.applyDomTranslations();
+    }
+  });
+
+  setInterval(ensureHeaderLanguageSwitcher, 1200);
+})();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/core/constants/app_constants.dart';
+import 'package:mobile_app/core/i18n/app_localizations.dart';
 import 'package:mobile_app/core/security/crypto_security_service.dart';
 import 'package:mobile_app/core/security/rbac_policy.dart';
 import 'package:mobile_app/models/farm.dart';
@@ -166,6 +167,31 @@ void main() {
         ),
       );
       expect(find.text('TBSG v1.3.5+19'), findsOneWidget);
+    });
+  });
+
+  group('Suite 5: Executive BI Financial Analytics & Export Multi-Language (vi/en/zh)', () {
+    test('Supports instant translation across Vietnamese (vi), English (en), and Chinese (zh)', () {
+      expect(AppLocalizations.translate('crop_durian_ri6', lang: 'vi'), contains('Sầu riêng Ri6'));
+      expect(AppLocalizations.translate('crop_durian_ri6', lang: 'en'), contains('Ri6 Premium Export Durian'));
+      expect(AppLocalizations.translate('crop_durian_ri6', lang: 'zh'), contains('越南干尧榴莲'));
+      expect(AppLocalizations.translate('crop_dragon_fruit', lang: 'zh'), contains('火龙果'));
+    });
+
+    test('Computes Cost per Tree, Cost per Hectare, and ROI (%) accurately', () {
+      final Map<String, double> bi = AppLocalizations.computeExecutiveBiMetrics(
+        npkCostVnd: 68000000,
+        pesticideCostVnd: 42000000,
+        laborCostVnd: 54000000,
+        waterCostVnd: 26000000,
+        totalTrees: 100,
+        totalAreaHa: 1.0,
+        projectedRevenueVnd: 570000000,
+      );
+      expect(bi['total_investment_vnd'], equals(190000000.0));
+      expect(bi['cost_per_tree_vnd'], equals(1900000.0));
+      expect(bi['cost_per_hectare_vnd'], equals(190000000.0));
+      expect(bi['roi_percent'], equals(200.0));
     });
   });
 }
