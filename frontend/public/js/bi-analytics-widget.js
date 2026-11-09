@@ -4,10 +4,10 @@
    Compact High-Density Bento Edition (Zero-Scroll Executive Cockpit)
    Features:
    - Cost/Revenue per Individual Tree (/Tree) and per Hectare (/Ha)
-   - 4 Core Agricultural Cost Pillars in Compact 2x2 Bento Grid + SVG Donut
+   - Full-Width 2x2 Cost Pillars Grid + Top Donut Summary Banner (Zero Clipping)
    - 6-Month Cashflow + ROI Trajectory SVG Chart + ML Prescriptions
    - Sub-Tab Switcher: [1. Biểu đồ BI & Dự báo ML] | [2. Ma trận ROI Theo Lô]
-   - Built-in Live Backend API Diagnostics Inspector Modal (Verify 5 Endpoints Live)
+   - Crystal-Clear Interactive Live Backend API Inspector Modal (Visual Summary + Full JSON)
    - Strict RBAC Finance Redaction for care_worker & auditor_readonly
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
@@ -29,6 +29,9 @@
     activePane: 'charts', // 'charts' | 'plots'
     lastLoadedAt: null
   };
+
+  let _diagResultsCache = [];
+  let _selectedDiagIdx = 0;
 
   function getAuthToken() {
     return localStorage.getItem('pb_token') || localStorage.getItem('token') || '';
@@ -83,8 +86,8 @@
   }
 
   function renderSvgDonutChart(pillars, totalVnd) {
-    const size = 148;
-    const stroke = 20;
+    const size = 108;
+    const stroke = 15;
     const radius = (size - stroke) / 2;
     const circumference = 2 * Math.PI * radius;
     let offset = 0;
@@ -98,15 +101,14 @@
     }).join('');
 
     return `
-      <div style="position:relative; width:${size}px; height:${size}px; flex-shrink:0; margin:0 auto;">
-        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg);">
-          <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="transparent" stroke="#f1f5f9" stroke-width="${stroke}"></circle>
+      <div style="position:relative; width:${size}px; height:${size}px; flex-shrink:0;">
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg); display:block;">
+          <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="transparent" stroke="#e2e8f0" stroke-width="${stroke}"></circle>
           ${segments}
         </svg>
-        <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:14px;">
-          <span style="font-size:9.5px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.3px;">${tr('bi.kpi_total_investment', 'Tổng Đ.Tư')}</span>
-          <strong style="font-size:12px; font-weight:900; color:#0f172a; margin-top:2px; line-height:1.15;">${fmtMoney(totalVnd)}</strong>
-          <span style="font-size:9px; font-weight:700; color:#059669; margin-top:2px;">100% OPEX</span>
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:10px;">
+          <span style="font-size:9px; font-weight:900; color:#059669; letter-spacing:0.3px;">100%</span>
+          <strong style="font-size:10px; font-weight:900; color:#0f172a; line-height:1.1;">OPEX</strong>
         </div>
       </div>
     `;
@@ -162,7 +164,7 @@
 
     return `
       <div style="width:100%; overflow-x:auto;">
-        <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; min-width:380px; display:block;">
+        <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; min-width:360px; display:block;">
           <line x1="${padLeft}" y1="${padTop + chartH}" x2="${width - padRight}" y2="${padTop + chartH}" stroke="#e2e8f0" stroke-width="1.5"></line>
           <line x1="${padLeft}" y1="${padTop + chartH / 2}" x2="${width - padRight}" y2="${padTop + chartH / 2}" stroke="#f1f5f9" stroke-dasharray="4 4" stroke-width="1"></line>
           ${barsHtml}
@@ -190,6 +192,7 @@
     const ov = _biCache.overview?.summary;
     const dataSource = _biCache.overview?.data_source || 'LIVE_DATABASE_ACCOUNTING';
     const apiVer = _biCache.overview?.api_version || 'v2.4-AGTECH-BI-ML';
+    const batchesCount = _biCache.overview?.usage_batches_count ?? ov?.usage_batches_count ?? 0;
     const pillars = _biCache.overview?.cost_pillars || [];
     const cashflow = _biCache.breakdown?.monthly_cashflow || [];
     const plots = _biCache.plots?.plots || [];
@@ -207,7 +210,7 @@
     const unitTonHa = tr('bi.unit_ton_ha', 'tấn/ha');
 
     const sourceBadgeText = dataSource === 'LIVE_DATABASE_ACCOUNTING'
-      ? (curLang === 'zh' ? `实时数据库核算 (${ov.usage_batches_count || 0} 批次)` : (curLang === 'en' ? `LIVE DB (${ov.usage_batches_count || 0} batches)` : `HẠCH TOÁN DB THỰC TẾ (${ov.usage_batches_count || 0} đợt)`))
+      ? (curLang === 'zh' ? `实时数据库核算 (${batchesCount} 批次)` : (curLang === 'en' ? `LIVE DB (${batchesCount} batches)` : `HẠCH TOÁN DB THỰC TẾ (${batchesCount} đợt)`))
       : (curLang === 'zh' ? 'VietGAP 标准农艺基线' : (curLang === 'en' ? 'AGRONOMIC BASELINE' : 'ĐỊNH MỨC CHUẨN VIETGAP'));
 
     const lblRevPerTree = curLang === 'zh' ? '单株营收' : (curLang === 'en' ? 'Rev/Tree' : 'DT/cây');
@@ -219,23 +222,30 @@
     const tabChartsLabel = curLang === 'zh' ? '1. 成本结构与机器学习预测' : (curLang === 'en' ? '1. Cost Structure & ML Forecast' : '1. Cơ Cấu Chi Phí & Dự Báo ML');
     const tabPlotsLabel = curLang === 'zh' ? `2. 分区 ROI 矩阵 (${plots.length})` : (curLang === 'en' ? `2. Plot ROI Matrix (${plots.length})` : `2. Ma Trận ROI Theo Lô (${plots.length} lô)`);
 
-    // Compact 2x2 Grid for 4 Cost Pillars (saves 50% vertical space)
+    // Stacked Horizontal Ratio Bar for the 4 Cost Pillars
+    const stackedBarSegments = pillars.map(p => {
+      const pct = Math.max(0, Number(p.share_percent) || 0);
+      if (pct <= 0) return '';
+      return `<div style="width:${pct}%; height:100%; background:${p.color};" title="${getPillarLocalizedLabel(p)}: ${pct}%"></div>`;
+    }).join('');
+
+    // Full-Width 2x2 Grid for 4 Cost Pillars (Zero Clipping, Spacious & Clear)
     const pillarsGridHtml = pillars.map(p => `
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:4px;">
-          <div style="display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            <span style="width:8px; height:8px; border-radius:50%; background:${p.color}; display:inline-block; flex-shrink:0;"></span>
-            <span style="overflow:hidden; text-overflow:ellipsis;">${getPillarLocalizedLabel(p)}</span>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:9px 12px; min-width:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:3px;">
+          <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:#0f172a; min-width:0;">
+            <span style="width:9px; height:9px; border-radius:50%; background:${p.color}; display:inline-block; flex-shrink:0;"></span>
+            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${getPillarLocalizedLabel(p)}</span>
           </div>
-          <span style="font-size:11px; font-weight:900; color:#0f172a; flex-shrink:0;">${p.share_percent}%</span>
+          <span style="font-size:11.5px; font-weight:900; color:#0f172a; background:#e2e8f0; padding:1px 6px; border-radius:6px; flex-shrink:0;">${p.share_percent}%</span>
         </div>
-        <div style="font-size:12.5px; font-weight:900; color:#0f172a; margin-bottom:4px;">${fmtMoney(p.amount_vnd)}</div>
-        <div style="width:100%; height:4px; background:#e2e8f0; border-radius:999px; overflow:hidden; margin-bottom:5px;">
+        <div style="font-size:14px; font-weight:900; color:#0f172a; margin-bottom:5px;">${fmtMoney(p.amount_vnd)}</div>
+        <div style="width:100%; height:4px; background:#e2e8f0; border-radius:999px; overflow:hidden; margin-bottom:6px;">
           <div style="width:${Math.min(100, p.share_percent)}%; height:100%; background:${p.color}; border-radius:999px;"></div>
         </div>
-        <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#475569; font-weight:700;">
-          <span>${fmtMoney(p.cost_per_tree_vnd)}/${unitTree}</span>
-          <span style="color:#059669;">${fmtMoney(p.cost_per_hectare_vnd)}/${unitHa}</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; font-size:11px; color:#475569; font-weight:700;">
+          <span><strong style="color:#0f172a;">${fmtMoney(p.cost_per_tree_vnd)}</strong>/${unitTree}</span>
+          <span style="color:#059669;"><strong>${fmtMoney(p.cost_per_hectare_vnd)}</strong>/${unitHa}</span>
         </div>
       </div>
     `).join('');
@@ -280,7 +290,7 @@
               <h3 style="margin:0; font-size:14.5px; font-weight:900; color:#ffffff; letter-spacing:-0.2px;" data-i18n="bi.panel_title">
                 ${tr('bi.panel_title')}
               </h3>
-              <span style="background:rgba(16,185,129,0.22); color:#6ee7b7; border:1px solid rgba(52,211,153,0.4); padding:1px 7px; border-radius:20px; font-size:10px; font-weight:800;">
+              <span style="background:rgba(16,185,129,0.22); color:#6ee7b7; border:1px solid rgba(52,211,153,0.4); padding:1px 8px; border-radius:20px; font-size:10px; font-weight:800;">
                 ${sourceBadgeText}
               </span>
             </div>
@@ -370,25 +380,45 @@
 
         </div>
 
-        <!-- Pane 1: Side-by-Side Cost Structure (Donut + 2x2 Grid) & Cashflow/ML Forecast -->
-        <div style="display:${activePane === 'charts' ? 'grid' : 'none'}; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px;">
+        <!-- Pane 1: Side-by-Side Cost Structure (Top Donut Banner + Full-Width 2x2 Grid) & Cashflow/ML Forecast -->
+        <div style="display:${activePane === 'charts' ? 'grid' : 'none'}; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:14px; align-items:stretch;">
           
-          <!-- Left: 4 Cost Pillars in Compact 2x2 Bento Grid -->
-          <div style="border:1px solid #e2e8f0; border-radius:14px; padding:12px 14px; background:#ffffff; display:flex; flex-direction:column; justify-content:space-between;">
-            <div style="font-size:12.5px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-              <i data-lucide="pie-chart" class="lucide-xs" style="color:#059669;"></i>
-              <span data-i18n="bi.chart_cost_structure_title">${tr('bi.chart_cost_structure_title')}</span>
+          <!-- Left Card: Top Donut Summary Banner + Full-Width 2x2 Cost Pillars Grid (No Clipping, No White Gap) -->
+          <div style="border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px; background:#ffffff; display:flex; flex-direction:column; gap:12px;">
+            <div style="font-size:12.5px; font-weight:800; color:#0f172a; display:flex; align-items:center; justify-content:space-between; gap:6px;">
+              <span style="display:inline-flex; align-items:center; gap:6px;">
+                <i data-lucide="pie-chart" class="lucide-xs" style="color:#059669;"></i>
+                <span data-i18n="bi.chart_cost_structure_title">${tr('bi.chart_cost_structure_title')}</span>
+              </span>
+              <span style="font-size:11px; font-weight:800; color:#059669; background:#ecfdf5; padding:2px 8px; border-radius:20px; border:1px solid #a7f3d0;">
+                ${batchesCount} đợt canh tác
+              </span>
             </div>
-            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+
+            <!-- Top Donut + Total Investment Summary Strip -->
+            <div style="display:flex; align-items:center; gap:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px;">
               ${renderSvgDonutChart(pillars, ov.total_investment_vnd)}
-              <div style="flex:1; min-width:210px; display:grid; grid-template-columns:1fr 1fr; gap:7px;">
-                ${pillarsGridHtml}
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;" data-i18n="bi.kpi_total_investment">${tr('bi.kpi_total_investment')}</div>
+                <div style="font-size:18px; font-weight:900; color:#0f172a; margin:2px 0 4px 0;">${fmtMoney(ov.total_investment_vnd)}</div>
+                <div style="width:100%; height:7px; background:#e2e8f0; border-radius:999px; overflow:hidden; display:flex; margin-bottom:6px;">
+                  ${stackedBarSegments}
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:11px; font-weight:800; color:#334155;">
+                  <span>TB/Cây: <strong style="color:#059669;">${fmtMoney(ov.cost_per_tree_vnd)}/${unitTree}</strong></span>
+                  <span>TB/Ha: <strong style="color:#0284c7;">${fmtMoney(ov.cost_per_hectare_vnd)}/${unitHa}</strong></span>
+                </div>
               </div>
+            </div>
+
+            <!-- Bottom Full-Width 2x2 Grid for 4 Cost Pillars (100% Width = Never Clipped) -->
+            <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px;">
+              ${pillarsGridHtml}
             </div>
           </div>
 
-          <!-- Right: Monthly Cashflow, Revenue & ROI Curve + ML Prescriptions -->
-          <div style="border:1px solid #e2e8f0; border-radius:14px; padding:12px 14px; background:#ffffff; display:flex; flex-direction:column; justify-content:space-between; gap:8px;">
+          <!-- Right Card: Monthly Cashflow, Revenue & ROI Curve + ML Prescriptions -->
+          <div style="border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px; background:#ffffff; display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
             <div>
               <div style="font-size:12.5px; font-weight:800; color:#0f172a; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
                 <span style="display:inline-flex; align-items:center; gap:6px;">
@@ -424,7 +454,7 @@
             </div>
             <span style="font-size:11px; font-weight:700; color:#64748b;">IPCC Tier-2 Allometric + VietGAP Cost Accounting</span>
           </div>
-          <div style="max-height:240px; overflow:auto;">
+          <div style="max-height:260px; overflow:auto;">
             <table class="erp-enterprise-table" style="width:100%; border-collapse:collapse; font-size:12px;">
               <thead>
                 <tr style="background:#f8fafc; text-align:left; position:sticky; top:0; z-index:1;">
@@ -527,28 +557,116 @@
     }
   }
 
+  function renderSelectedDiagEndpoint() {
+    const bodyEl = document.getElementById('bi-api-diag-body');
+    if (!bodyEl || !_diagResultsCache.length) return;
+
+    const r = _diagResultsCache[_selectedDiagIdx] || _diagResultsCache[0];
+    const jsonPreview = JSON.stringify(r.json, null, 2);
+
+    // Extract human-readable summary from the First Endpoint (bi-overview)
+    const ovJson = _diagResultsCache[0]?.json || {};
+    const ovSum = ovJson.summary || {};
+    const pillars = ovJson.cost_pillars || [];
+
+    const tabsHtml = _diagResultsCache.map((item, idx) => {
+      const isSelected = idx === _selectedDiagIdx;
+      const badgeColor = item.ok ? (isSelected ? '#a7f3d0' : '#15803d') : '#dc2626';
+      return `
+        <button type="button" onclick="window.selectBiDiagTab(${idx})" style="border:${isSelected ? '1.5px solid #059669' : '1px solid #cbd5e1'}; background:${isSelected ? '#064e3b' : '#ffffff'}; color:${isSelected ? '#ffffff' : '#0f172a'}; border-radius:10px; padding:8px 12px; font-size:12px; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; gap:3px; flex:1; min-width:145px; text-align:left;">
+          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.shortName}</span>
+          <span style="font-size:10.5px; font-weight:800; color:${badgeColor};">● HTTP ${item.status} OK · ${item.ms}ms</span>
+        </button>
+      `;
+    }).join('');
+
+    const pillarsSummaryStr = pillars.map(p => `${p.label_vi}: <strong>${fmtMoney(p.amount_vnd)}</strong> (${p.share_percent}%)`).join(' · ');
+
+    bodyEl.innerHTML = `
+      <!-- 1. Bảng Tóm Tắt Dữ Liệu Thực Tế Đã Đọc Từ Backend (Đọc Hiểu Ngay) -->
+      <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:12px 16px; flex-shrink:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+          <strong style="color:#065f46; font-size:13px;">✓ XÁC NHẬN DỮ LIỆU THỰC TẾ TRẢ VỀ TỪ BACKEND API (${ovJson.api_version || 'v2.4-AGTECH-BI-ML'})</strong>
+          <span style="background:#059669; color:#fff; font-size:11px; font-weight:800; padding:2px 10px; border-radius:20px;">
+            Nguồn: ${ovJson.data_source === 'LIVE_DATABASE_ACCOUNTING' ? `Hạch toán DB Thực tế (${ovJson.usage_batches_count || 0} đợt canh tác)` : 'Định mức Chuẩn'}
+          </span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px; font-size:12px; color:#0f172a;">
+          <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
+            <span style="color:#64748b; font-size:11px;">Tổng Vốn Đầu Tư:</span><br>
+            <strong style="font-size:14px; color:#0f172a;">${fmtMoney(ovSum.total_investment_vnd)}</strong> (${ovSum.total_trees || 0} cây · ${ovSum.total_area_ha || 0} ha)
+          </div>
+          <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
+            <span style="color:#64748b; font-size:11px;">Chi Phí Đơn Vị (/Cây & /Ha):</span><br>
+            <strong style="color:#059669;">${fmtMoney(ovSum.cost_per_tree_vnd)}/cây</strong> · <strong style="color:#0284c7;">${fmtMoney(ovSum.cost_per_hectare_vnd)}/ha</strong>
+          </div>
+          <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
+            <span style="color:#64748b; font-size:11px;">Dự Báo Học Máy (ML Vụ Tới):</span><br>
+            <strong style="color:#6d28d9;">${ovSum.predicted_yield_kg || 0} kg</strong> · DT: <strong>${fmtMoney(ovSum.projected_season_revenue_vnd)}</strong>
+          </div>
+          <div style="background:#fff; padding:7px 10px; border-radius:8px; border:1px solid #bbf7d0;">
+            <span style="color:#64748b; font-size:11px;">Tỷ Suất ROI & Lợi Nhuận Dự Báo:</span><br>
+            <strong style="color:#b45309;">ROI +${ovSum.roi_percent || 0}%</strong> · LN: <strong>${fmtMoney(ovSum.net_profit_vnd)}</strong>
+          </div>
+        </div>
+        <div style="margin-top:8px; font-size:11.5px; color:#1e293b; background:#ffffff; padding:6px 10px; border-radius:8px; border:1px solid #dcfce7;">
+          <strong>Chi tiết 4 nhóm chi phí:</strong> ${pillarsSummaryStr || 'Đang nạp...'}
+        </div>
+      </div>
+
+      <!-- 2. Thanh 5 Tab Chọn Cổng API Để Soi Chi Tiết JSON -->
+      <div style="display:flex; gap:6px; flex-wrap:wrap; flex-shrink:0;">
+        ${tabsHtml}
+      </div>
+
+      <!-- 3. Khung Hiển Thị Chi Tiết JSON Rõ Nét (Chiều Cao Cố Định 310px, Không Bị Ép Dẹp) -->
+      <div style="border:1.5px solid #334155; border-radius:12px; overflow:hidden; background:#0f172a; flex-shrink:0; display:flex; flex-direction:column;">
+        <div style="padding:9px 14px; background:#1e293b; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <strong style="color:#f8fafc; font-size:13px;">${r.name}</strong>
+            <span style="font-family:monospace; font-size:12px; color:#38bdf8; margin-left:10px;">GET ${r.url}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('bi-diag-json-pre').innerText); this.innerText='Đã sao chép ✓';" style="background:#334155; color:#e2e8f0; border:1px solid #475569; border-radius:6px; padding:4px 10px; font-size:11.5px; font-weight:700; cursor:pointer;">
+              Sao chép JSON
+            </button>
+            <span style="background:#dcfce7; color:#15803d; font-weight:900; font-size:11.5px; padding:3px 10px; border-radius:20px;">
+              HTTP ${r.status} ${r.ok ? 'OK' : 'ERR'} (${r.ms} ms)
+            </span>
+          </div>
+        </div>
+        <pre id="bi-diag-json-pre" style="margin:0; padding:14px 16px; height:300px; overflow:auto; font-size:12.5px; line-height:1.5; background:#0f172a; color:#a7f3d0; font-family:Consolas,Monaco,monospace;">${jsonPreview.replace(/</g, '&lt;')}</pre>
+      </div>
+    `;
+  }
+
+  window.selectBiDiagTab = function (idx) {
+    _selectedDiagIdx = idx;
+    renderSelectedDiagEndpoint();
+  };
+
   // Interactive Live Backend API Diagnostic Modal for User Verification
   async function openBiApiDiagnosticsModal() {
     let modal = document.getElementById('bi-api-diagnostics-modal');
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'bi-api-diagnostics-modal';
-      modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.72); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px);';
+      modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px);';
       document.body.appendChild(modal);
     }
 
     modal.style.display = 'flex';
     modal.innerHTML = `
-      <div style="background:#ffffff; width:100%; max-width:860px; max-height:90vh; border-radius:20px; border:1.5px solid #cbd5e1; box-shadow:0 24px 48px rgba(0,0,0,0.28); display:flex; flex-direction:column; overflow:hidden;">
-        <div style="background:linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color:#fff; padding:16px 22px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="background:#ffffff; width:100%; max-width:940px; max-height:92vh; border-radius:20px; border:1.5px solid #cbd5e1; box-shadow:0 24px 48px rgba(0,0,0,0.32); display:flex; flex-direction:column; overflow:hidden;">
+        <div style="background:linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
           <div>
             <div style="font-size:11px; font-weight:800; color:#34d399; text-transform:uppercase; letter-spacing:0.5px;">LIVE BACKEND API DIAGNOSTICS · GÓI 4</div>
             <h3 style="margin:2px 0 0 0; font-size:16px; font-weight:900; color:#fff;">Kiểm Tra Trực Tiếp 5 Backend API Quản Trị Tài Chính BI & Dự Báo Học Máy</h3>
           </div>
-          <button type="button" onclick="document.getElementById('bi-api-diagnostics-modal').style.display='none'" style="background:rgba(255,255,255,0.15); color:#fff; border:none; border-radius:8px; padding:6px 12px; font-weight:800; cursor:pointer;">Đóng ✕</button>
+          <button type="button" onclick="document.getElementById('bi-api-diagnostics-modal').style.display='none'" style="background:rgba(255,255,255,0.15); color:#fff; border:none; border-radius:8px; padding:6px 14px; font-weight:800; cursor:pointer;">Đóng ✕</button>
         </div>
-        <div id="bi-api-diag-body" style="padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; font-size:13px;">
-          <div style="padding:20px; text-align:center; color:#059669; font-weight:700;">Đang gửi request kiểm tra trực tiếp tới 5 cổng API Backend...</div>
+        <div id="bi-api-diag-body" style="padding:16px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; font-size:13px;">
+          <div style="padding:30px; text-align:center; color:#059669; font-weight:800;">Đang gửi request kiểm tra trực tiếp tới 5 cổng API Backend...</div>
         </div>
       </div>
     `;
@@ -561,11 +679,11 @@
     const qs = params.toString() ? `?${params.toString()}` : '';
 
     const endpoints = [
-      { name: '1. Tổng quan Tài chính BI (/Cây & /Ha & ROI)', url: `/api/analytics/bi-overview${qs}` },
-      { name: '2. Phân rã 4 Nhóm Chi phí & Dòng tiền 6 Tháng', url: `/api/analytics/cost-breakdown${qs}` },
-      { name: '3. Ma trận So sánh Hiệu quả ROI Theo Lô (Plot)', url: `/api/analytics/plot-comparison${qs}` },
-      { name: '4. Mô hình Học máy Dự báo Sản lượng & Doanh thu Vụ tới', url: `/api/analytics/predictive-yield${qs}` },
-      { name: '5. Từ điển Đa ngôn ngữ Xuất khẩu (i18n VI/EN/ZH)', url: `/api/analytics/i18n/zh` }
+      { shortName: '1. Tổng quan BI (/Cây & /Ha)', name: '1. Tổng quan Tài chính BI (/Cây & /Ha & ROI)', url: `/api/analytics/bi-overview${qs}` },
+      { shortName: '2. Cơ cấu 4 Nhóm & Dòng tiền', name: '2. Phân rã 4 Nhóm Chi phí & Dòng tiền 6 Tháng', url: `/api/analytics/cost-breakdown${qs}` },
+      { shortName: '3. Ma trận ROI Theo Lô', name: '3. Ma trận So sánh Hiệu quả ROI Theo Lô (Plot)', url: `/api/analytics/plot-comparison${qs}` },
+      { shortName: '4. Dự báo Học máy (ML)', name: '4. Mô hình Học máy Dự báo Sản lượng & Doanh thu Vụ tới', url: `/api/analytics/predictive-yield${qs}` },
+      { shortName: '5. Từ điển Xuất khẩu (i18n)', name: '5. Từ điển Đa ngôn ngữ Xuất khẩu (i18n VI/EN/ZH)', url: `/api/analytics/i18n/zh` }
     ];
 
     const results = [];
@@ -583,31 +701,9 @@
       }
     }
 
-    const bodyEl = document.getElementById('bi-api-diag-body');
-    if (!bodyEl) return;
-
-    bodyEl.innerHTML = results.map(r => {
-      const jsonPreview = JSON.stringify(r.json, null, 2);
-      const badgeBg = r.ok ? '#dcfce7' : '#fee2e2';
-      const badgeColor = r.ok ? '#15803d' : '#b91c1c';
-      return `
-        <div style="border:1.5px solid #e2e8f0; border-radius:12px; overflow:hidden; background:#f8fafc;">
-          <div style="padding:10px 14px; background:#ffffff; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <div>
-              <strong style="color:#0f172a; font-size:13px;">${r.name}</strong>
-              <div style="font-family:monospace; font-size:11.5px; color:#0284c7; margin-top:2px;">GET ${r.url}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:11.5px; font-weight:700; color:#64748b;">${r.ms} ms</span>
-              <span style="background:${badgeBg}; color:${badgeColor}; font-weight:900; font-size:11.5px; padding:3px 10px; border-radius:20px;">
-                HTTP ${r.status} ${r.ok ? 'OK' : 'ERR'}
-              </span>
-            </div>
-          </div>
-          <pre style="margin:0; padding:10px 14px; max-height:135px; overflow:auto; font-size:11px; background:#0f172a; color:#a7f3d0; font-family:Consolas,monospace;">${jsonPreview.replace(/</g, '&lt;')}</pre>
-        </div>
-      `;
-    }).join('');
+    _diagResultsCache = results;
+    _selectedDiagIdx = 0;
+    renderSelectedDiagEndpoint();
   }
 
   window.loadExecutiveBiAnalytics = loadExecutiveBiAnalytics;

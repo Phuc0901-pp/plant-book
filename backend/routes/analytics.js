@@ -555,6 +555,7 @@ router.get('/bi-overview', auth, async (req, res) => {
         total_trees: data.totalTrees,
         total_area_m2: Number(data.totalAreaM2.toFixed(1)),
         total_area_ha: data.totalAreaHa,
+        usage_batches_count: data.usageBatchesCount,
         total_investment_vnd: data.totalInvestmentVnd,
         cost_per_tree_vnd: data.costPerTreeVnd,
         cost_per_hectare_vnd: data.costPerHectareVnd,
