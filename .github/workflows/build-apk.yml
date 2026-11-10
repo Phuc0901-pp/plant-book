@@ -32,7 +32,7 @@ jobs:
       - name: Configure Official TBSG AgTech Digital Signature (Keystore)
         working-directory: mobile_app/android
         run: |
-          chmod +x gradlew
+          [ -f gradlew ] && chmod +x gradlew || true
           mkdir -p app
           keytool -genkeypair -v \
             -keystore app/upload-keystore.jks \
@@ -74,7 +74,9 @@ jobs:
           mkdir -p ../build_output
           if ! flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation; then
             echo "::error::Flutter build apk failed! Diagnosing with Gradle stacktrace..."
-            cd android && ./gradlew assembleRelease --stacktrace --info || true
+            if [ -f android/gradlew ]; then
+              cd android && ./gradlew assembleRelease --stacktrace --info || true
+            fi
             exit 1
           fi
           cp build/app/outputs/flutter-apk/app-release.apk ../build_output/PlantBook-Mobile-ERP-v1.3.5-universal.apk
