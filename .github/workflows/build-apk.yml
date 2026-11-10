@@ -72,11 +72,11 @@ jobs:
         working-directory: mobile_app
         run: |
           mkdir -p ../build_output
-          if ! flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation; then
-            echo "::error::Flutter build apk failed! Diagnosing with Gradle stacktrace..."
-            if [ -f android/gradlew ]; then
-              cd android && ./gradlew assembleRelease --stacktrace --info || true
-            fi
+          flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation 2>&1 | tee ../build_error.log
+          if [ ! -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            echo "::error::Flutter build apk did not produce app-release.apk!"
+            echo "=== LAST 150 LINES OF BUILD ERROR ==="
+            tail -n 150 ../build_error.log
             exit 1
           fi
           cp build/app/outputs/flutter-apk/app-release.apk ../build_output/PlantBook-Mobile-ERP-v1.3.5-universal.apk
@@ -122,6 +122,19 @@ jobs:
           name: PlantBook-Mobile-ERP-v1.3.5-Signed-TBSG-Agtech
           path: build_output/
           retention-days: 30
+
+      - name: Publish Diagnostics to Branch
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-diagnostics
+          mkdir -p diagnostics_log
+          cp build_error.log diagnostics_log/build_error.log 2>/dev/null || true
+          tail -n 300 build_error.log > diagnostics_log/last_300_lines.txt 2>/dev/null || true
+          git add -f diagnostics_log/
+          git commit -m "chore: upload build diagnostics [skip ci]" || true
+          git push origin ci-diagnostics --force || true
 
       - name: Upload Diagnostics on Failure
         if: failure()
