@@ -123,6 +123,137 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     setState(() => _selectedSoilDepth = depth);
   }
 
+  void _openQuickCareLog() {
+    final plantIds = _farmPlants.isNotEmpty ? [_farmPlants.first.id] : <int>[];
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => LogEditDialog(
+        plantIds: plantIds,
+        farmName: _currentFarm?.name ?? 'Trang trại Nông hộ',
+        onLogSaved: () {
+          _loadInitialData();
+        },
+      ),
+    );
+  }
+
+  String _formatArea(double? area) {
+    if (area == null || area == 0) return '0 ha';
+    if (area >= 10000) {
+      return '${(area / 10000).toStringAsFixed(2)} ha (${area.toStringAsFixed(0)} m²)';
+    }
+    return '${area.toStringAsFixed(0)} m²';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final farmName = _currentFarm?.name ?? widget.farm?.name ?? 'Vùng Trồng & Bản Đồ GIS';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: AppTheme.greenDark,
+        title: Text(farmName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppTheme.green,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          isScrollable: true,
+          tabs: const [
+            Tab(text: 'Bản đồ GIS Vệ Tinh'),
+            Tab(text: 'Cây Trồng & Nhật Ký'),
+            Tab(text: 'Cảm biến IoT'),
+            Tab(text: 'Thời tiết Nông nghiệp'),
+          ],
+        ),
+      ),
+      body: _isLoading
+          ? const LoadingIndicator(message: 'Đang đồng bộ dữ liệu GIS, Cây trồng và Nhật ký...')
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                // Subtab 1: Interactive GIS Satellite Map View
+                _buildGisMapTab(),
+
+                // Subtab 2: Plants & Care Logs in this farm
+                _buildPlantsAndLogsTab(),
+
+                // Subtab 3: IoT 3-Depth Soil Sensors
+                _buildIotSensorsTab(),
+
+                // Subtab 4: Weather Forecast & Agronomy Advice
+                _buildWeatherTab(),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildGisMapTab() {
+    final farm = _currentFarm;
+    final ownerName = _userProfile?['full_name'] ?? _userProfile?['name'] ?? 'Nông hộ';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Interactive Satellite Map View
+          InteractiveGisMapWidget(
+            farms: farm != null ? [farm] : _allFarms,
+            plants: _farmPlants,
+            height: 340,
+          ),
+          const SizedBox(height: 16),
+
+          // Farm GIS Metadata Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.grayBorder),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'HỒ SƠ VÙNG TRỒNG & QUY MÔ GIS',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: const Text('VietGAP Chuẩn', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _infoRow('Tên Trang Trại', farm?.name ?? 'Vườn Nông hộ'),
+                _infoRow('Chủ Vườn / Đại Diện', ownerName),
+                _infoRow('Quy Mô Diện Tích', _formatArea(farm?.area)),
+                _infoRow('Tổng Số Cây Quản Lý', '${_farmPlants.length} cây'),
+                _infoRow('Địa Điểm', farm?.description ?? 'Cư M\'gar, Đắk Lắk'),
+                _infoRow('Tọa Độ Vệ Tinh', farm?.latitude != null ? '${farm!.latitude!.toStringAsFixed(4)}, ${farm.longitude!.toStringAsFixed(4)}' : '12.6800, 108.0300'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildIotSensorsTab() {
     final soil = _iotData?['soil_data'] as Map<String, dynamic>? ?? {};
     final depthKey = 'depth_${_selectedSoilDepth}cm';
@@ -235,7 +366,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
                 children: [
                   Expanded(child: _buildFluentMetricTile('Tốc độ & Hướng gió', '$airWind', Icons.wind_power_rounded, const Color(0xFF3B82F6), 'Gió nhẹ dễ chịu')),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildFluentMetricTile('Lượng & Cường độ mưa', '$airRain', Icons.cloud_rain_rounded, const Color(0xFF0284C7), 'Mưa nhỏ không đáng kể')),
+                  Expanded(child: _buildFluentMetricTile('Lượng & Cường độ mưa', '$airRain', Icons.water_drop_rounded, const Color(0xFF0284C7), 'Mưa nhỏ không đáng kể')),
                 ],
               ),
               const SizedBox(height: 10),

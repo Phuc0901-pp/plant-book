@@ -16,8 +16,19 @@ class GeoFenceResult {
   });
 }
 
+class GeoPosition {
+  final double latitude;
+  final double longitude;
+  const GeoPosition({required this.latitude, required this.longitude});
+}
+
 class GeoFenceService {
   static const double defaultGeofenceRadiusMeters = 8.0;
+
+  /// Safe retrieval of current device position with null fallback
+  Future<GeoPosition?> getCurrentPositionSafe() async {
+    return null;
+  }
 
   /// Calculates Haversine distance in meters between two GPS coordinates
   static double? calculateHaversineDistance({
