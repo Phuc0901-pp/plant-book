@@ -1,8 +1,19 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use { stream ->
+        keystoreProperties.load(stream)
+    }
 }
 
 android {
@@ -21,50 +32,33 @@ android {
 
     defaultConfig {
         applicationId = "com.tanbaocorp.plantbook.mobile_app"
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        multiDexEnabled = true
     }
-
-    val keystorePropertiesFile = rootProject.file("key.properties")
-    val keystoreProperties = java.util.Properties()
-    if (keystorePropertiesFile.exists()) {
-        keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
-    }
-
-    val keystorePath = keystoreProperties.getProperty("storeFile")
-    val resolvedKeystoreFile = if (!keystorePath.isNullOrBlank()) {
-        val fInApp = file(keystorePath)
-        val fInRoot = rootProject.file(keystorePath)
-        when {
-            fInApp.exists() -> fInApp.absoluteFile
-            fInRoot.exists() -> fInRoot.absoluteFile
-            else -> null
-        }
-    } else null
-
-    val hasValidKeystore = resolvedKeystoreFile != null &&
-        resolvedKeystoreFile.exists() &&
-        !keystoreProperties.getProperty("keyAlias").isNullOrBlank() &&
-        !keystoreProperties.getProperty("storePassword").isNullOrBlank() &&
-        !keystoreProperties.getProperty("keyPassword").isNullOrBlank()
 
     signingConfigs {
-        if (hasValidKeystore && resolvedKeystoreFile != null) {
-            create("release") {
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = resolvedKeystoreFile
-                storePassword = keystoreProperties.getProperty("storePassword")
+        create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias") ?: ""
+            keyPassword = keystoreProperties.getProperty("keyPassword") ?: ""
+            storeFile = keystoreProperties.getProperty("storeFile")?.let { path ->
+                val fInApp = file(path)
+                val fInRoot = rootProject.file(path)
+                when {
+                    fInApp.exists() -> fInApp
+                    fInRoot.exists() -> fInRoot
+                    else -> file(path)
+                }
             }
+            storePassword = keystoreProperties.getProperty("storePassword") ?: ""
         }
     }
 
     buildTypes {
-        release {
-            if (hasValidKeystore && signingConfigs.findByName("release") != null) {
+        getByName("release") {
+            val keyStoreFile = signingConfigs.getByName("release").storeFile
+            if (keystorePropertiesFile.exists() && keyStoreFile != null && keyStoreFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
                 signingConfig = signingConfigs.getByName("debug")

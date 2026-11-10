@@ -32,6 +32,7 @@ jobs:
       - name: Configure Official TBSG AgTech Digital Signature (Keystore)
         working-directory: mobile_app/android
         run: |
+          chmod +x gradlew
           mkdir -p app
           keytool -genkeypair -v \
             -keystore app/upload-keystore.jks \
@@ -51,6 +52,7 @@ jobs:
           storePassword=TanBaoAgtech2026@Secure
           storeFile=upload-keystore.jks
           EOF
+          cp key.properties app/key.properties
           
           echo "=== Official TBSG AgTech Certificate Details ==="
           keytool -list -v -keystore app/upload-keystore.jks -storepass "TanBaoAgtech2026@Secure" -alias tbsg_agtech > certificate_fingerprint.txt
@@ -69,13 +71,10 @@ jobs:
       - name: Build Fat Release APK (Universal - Signed TBSG Agtech)
         working-directory: mobile_app
         run: |
-          set -o pipefail
           mkdir -p ../build_output
-          if ! flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation 2>&1 | tee ../build_error.log; then
-            echo "## ❌ Android APK Build Error Log" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 120 ../build_error.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+          if ! flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation; then
+            echo "::error::Flutter build apk failed! Diagnosing with Gradle stacktrace..."
+            cd android && ./gradlew assembleRelease --stacktrace --info || true
             exit 1
           fi
           cp build/app/outputs/flutter-apk/app-release.apk ../build_output/PlantBook-Mobile-ERP-v1.3.5-universal.apk
