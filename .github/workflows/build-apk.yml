@@ -91,7 +91,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk ../build_output/PlantBook-Mobile-ERP-v1.3.5-armv7.apk 2>/dev/null || true
           echo "✅ ABI Split APKs preserved in build_output"
 
-      - name: Build Official Android App Bundle (.aab / .adb - Signed TBSG Agtech)
+      - name: Build Official Android App Bundle (.aab - Google Play Store)
         working-directory: mobile_app
         run: |
           mkdir -p ../build_output
@@ -99,12 +99,7 @@ jobs:
           flutter build appbundle --release --no-tree-shake-icons 2>&1 | tee -a ../build_error.log || true
           if [ -f build/app/outputs/bundle/release/app-release.aab ]; then
             cp build/app/outputs/bundle/release/app-release.aab ../build_output/PlantBook-Mobile-ERP-v1.3.5-release.aab
-            cp build/app/outputs/bundle/release/app-release.aab ../build_output/PlantBook-Mobile-ERP-v1.3.5-release.adb
-            echo "✅ AAB/ADB bundle built: $(ls -lh ../build_output/PlantBook-Mobile-ERP-v1.3.5-release.aab)"
-          else
-            echo "ℹ️ AAB bundle not produced directly, copying universal APK as release bundle"
-            cp ../build_output/PlantBook-Mobile-ERP-v1.3.5-universal.apk ../build_output/PlantBook-Mobile-ERP-v1.3.5-release.aab
-            cp ../build_output/PlantBook-Mobile-ERP-v1.3.5-universal.apk ../build_output/PlantBook-Mobile-ERP-v1.3.5-release.adb
+            echo "✅ AAB bundle built: $(ls -lh ../build_output/PlantBook-Mobile-ERP-v1.3.5-release.aab)"
           fi
 
       - name: Package & Sign SHA-256 Release Checksums
