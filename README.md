@@ -41,6 +41,9 @@
     - [10.2 Triển Khai Máy Chủ Synology NAS On-Premise (Docker Compose)](#102-triển-khai-máy-chủ-synology-nas-on-premise-docker-compose)
     - [10.3 Vận Hành Ứng Dụng Di Động (Android APK, Google Play AAB & iOS IPA)](#103-vận-hành-ứng-dụng-di-động-android-apk-google-play-aab--ios-ipa)
     - [10.4 Triển Khai Multi-Cloud (PostgreSQL, Supabase, Cloudflare R2 / AWS S3)](#104-triển-khai-multi-cloud-postgresql-supabase-cloudflare-r2--aws-s3)
+11. [Định Hướng Kiến Trúc Mở Rộng: Hệ Thống Có Cần MCU và MCP Không?](#11-định-hướng-kiến-trúc-mở-rộng-hệ-thống-có-cần-mcu-và-mcp-không)
+    - [11.1 Phân Tích Nhu Cầu Phần Cứng Vi Điều Khiển MCU (Microcontroller Unit)](#111-phân-tích-nhu-cầu-phần-cứng-vi-điều-khiển-mcu-microcontroller-unit)
+    - [11.2 Phân Tích Nhu Cầu Chuẩn Giao Thức Trí Tuệ Nhân Tạo MCP (Model Context Protocol)](#112-phân-tích-nhu-cầu-chuẩn-giao-thức-trí-tuệ-nhân-tạo-mcp-model-context-protocol)
 
 ---
 
@@ -763,7 +766,39 @@ Hệ thống cung cấp hơn **149 RESTful API Endpoints** được bảo vệ b
 
 ## 9. Bộ Kiểm Thử Tự Động & Tiêu Chuẩn Nghiệm Thu QA/QC (141/141 PASS)
 
-Hệ thống tích hợp bộ kiểm thử tự động nội bộ toàn diện (**Zero-Dependency Testing Engine**) tuân thủ nghiêm ngặt các tiêu chuẩn kỹ thuật quốc tế:
+Hệ thống tích hợp quy trình kiểm định chất lượng 4 giai đoạn khép kín theo tiêu chuẩn quốc tế:
+
+```mermaid
+flowchart LR
+    subgraph P1["GIAI ĐOẠN 1: TESTING"]
+        T1["Unit Test Modules (16 Modules)"]
+        T2["API Contract Tests (149 Endpoints)"]
+        T3["Database Integrity & Constraints"]
+    end
+
+    subgraph P2["GIAI ĐOẠN 2: QC"]
+        Q1["Kiểm soát Chức năng Toàn diện"]
+        Q2["Đối soát Phân quyền RBAC 4 Cấp"]
+        Q3["Bóc tách Dữ liệu Giá Nhạy cảm"]
+    end
+
+    subgraph P3["GIAI ĐOẠN 3: QA"]
+        A1["Tiêu chuẩn ISO/IEC 25010"]
+        A2["Bảo mật OWASP Top 10 & Anti-Scraper"]
+        A3["VietGAP & Carbon MRV Verification"]
+    end
+
+    subgraph P4["GIAI ĐOẠN 4: NGHIỆM THU"]
+        S1["Audit Tự Động 141 Tests (100% Pass)"]
+        S2["Kiểm nghiệm Thực địa Web NFC & Mobile"]
+        S3["Ký duyệt Sẵn sàng Vận hành (Production)"]
+    end
+
+    P1 ==> P2 ==> P3 ==> P4
+```
+
+> [!TIP]
+> Tài liệu kiểm định kỹ thuật chuyên sâu và ma trận nghiệm thu từng trường hợp kiểm thử được lưu trữ chi tiết tại: 👉 **[Plan-testing.md](Plan-testing.md)**.
 
 ```powershell
 # Thực thi toàn bộ bộ kiểm thử QA/QC tự động
@@ -889,6 +924,91 @@ SUPABASE_SERVICE_KEY=your-supabase-service-role-key
 # Cấu hình Bản Đồ Vệ Tinh (Tùy chọn)
 MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoi...
 ```
+
+---
+
+## 11. Định Hướng Kiến Trúc Mở Rộng: Hệ Thống Có Cần MCU và MCP Không?
+
+Một trong những câu hỏi cốt lõi khi nâng cấp hệ thống **Plant Book (Sổ Nông Nhàn)** từ nền tảng quản trị Agri-ERP sang nông nghiệp thông minh công nghệ cao là: **Hệ thống có cần phần cứng MCU (Microcontroller Unit) và giao thức AI MCP (Model Context Protocol) không?**
+
+Dưới đây là phân tích kiến trúc chuyên sâu:
+
+```mermaid
+flowchart TD
+    subgraph SENSE["TẦNG 1: THU THẬP THỰC ĐỊA (FIELD SENSING)"]
+        Smartphone["📱 Điện Thoại Nông Dân\n(Camera, GPS, Web NFC)"]
+        MCU_Sensors["⚡ Vi Điều Khiển MCU (ESP32/LoRaWAN)\n(Độ ẩm đất 3 tầng, pH, EC, Trạm thời tiết)"]
+        MCU_Valves["🚰 Điều Khiển MCU Actuator\n(Van tưới điện từ Solenoid, Bơm châm phân)"]
+    end
+
+    subgraph CORE["TẦNG 2: PLANT BOOK BACKEND & DATABASE"]
+        API_Gateway["API Gateway / MQTT Broker"]
+        Postgres["PostgreSQL Enterprise (JSONB, GIS, Logs)"]
+        ERP_Engine["VietGAP, PHI & Agri-ERP Cost Engine"]
+    end
+
+    subgraph INTELLIGENCE["TẦNG 3: TRÍ TUỆ NHÂN TẠO & MCP (AI PROTOCOL)"]
+        MCP_Server["🔌 Plant Book MCP Server\n(Model Context Protocol Bridge)"]
+        AI_Agent["🌱 Trợ Lý Ảo Bé Mầm AI (Gemini / Claude)\n(Hỏi đáp giọng nói, Chẩn đoán bệnh, Gợi ý phân thuốc)"]
+    end
+
+    Smartphone -->|"HTTP / REST API"| API_Gateway
+    MCU_Sensors -->|"MQTT / LoRaWAN Gateway"| API_Gateway
+    API_Gateway <-->|"Lệnh đóng ngắt tưới"| MCU_Valves
+    API_Gateway --> Postgres
+    API_Gateway --> ERP_Engine
+    
+    Postgres <-->|"Context & Tool Calls"| MCP_Server
+    ERP_Engine <-->|"Nghiệp vụ VietGAP & PHI"| MCP_Server
+    MCP_Server <-->|"Truy vấn Ngôn Ngữ Tự Nhiên"| AI_Agent
+    AI_Agent -.->|"Tư vấn trực tiếp cho nông dân"| Smartphone
+```
+
+---
+
+### 11.1 Phân Tích Nhu Cầu Phần Cứng Vi Điều Khiển MCU (Microcontroller Unit)
+
+**MCU là gì trong nông nghiệp?**  
+Là các vi điều khiển nhúng như **ESP32, STM32, nRF52, Raspberry Pi Pico hoặc các trạm cảm biến LoRaWAN**.
+
+| Giai đoạn triển khai | Có cần MCU không? | Vai trò và kiến trúc hoạt động |
+| :--- | :---: | :--- |
+| **Giai đoạn Hiện Tại (v1.3.5 Core Release)** | **CHƯA BẮT BUỘC** | Hệ thống tập trung giải quyết bài toán: **Định danh số cây trồng, Quản lý sinh trưởng, Nhật ký VietGAP, Truy xuất nguồn gốc QR và Quản lý kho ERP**.<br/>Thiết bị thông minh của nông dân (điện thoại Android/iOS) đóng vai trò là một **Edge Device** hoàn chỉnh: chụp ảnh hiện trường, định vị GPS vệ tinh, quét thẻ phần cứng NFC RFID NTAG213. |
+| **Giai đoạn Mở Rộng (v2.x Smart Farm IoT)** | **RẤT CẦN THIẾT** | Cần thiết khi trang trại muốn **tự động hóa 100% không cần con người can thiệp thủ công**: |
+
+#### Ứng dụng thực tế của MCU trong Plant Book v2.x:
+1. **Quan trắc độ ẩm đất & tiểu khí hậu tự động (Telemetry Nodes)**:
+   - Các trạm MCU ESP32 gắn cảm biến đo độ ẩm đất 3 tầng độ sâu (10cm, 30cm, 60cm), độ mặn EC và độ pH của từng gốc cây sầu riêng.
+   - Định kỳ 15 phút, MCU tự đóng gói dữ liệu và đẩy về Backend Plant Book qua giao thức **MQTT** hoặc **LoRaWAN**.
+2. **Hệ thống tưới & châm phân chính xác tự động (Smart Fertigation)**:
+   - Thay vì nông dân phải vặn van tay và vào app bấm nút, MCU đóng vai trò **Bộ chấp hành (Actuator)** nhận lệnh từ máy chủ để đóng/ngắt các van điện từ Solenoid theo lô/hàng, tự động tính khối lượng nước và trừ kho phân bón chính xác từng mililit.
+3. **Trạm thời tiết tiểu khí hậu chuyên dụng (Micro-Weather Station)**:
+   - Đo tốc độ gió thực tế, hướng gió, bức xạ UV tại nông trường để cảnh báo an toàn phun thuốc BVTV tự động.
+
+---
+
+### 11.2 Phân Tích Nhu Cầu Chuẩn Giao Thức Trí Tuệ Nhân Tạo MCP (Model Context Protocol)
+
+**MCP là gì?**  
+**Model Context Protocol (MCP)** là chuẩn mở công nghệ do các tập đoàn AI hàng đầu thế giới (Anthropic, Google) ban hành, cho phép các mô hình Trí tuệ Nhân tạo (LLM như Google Gemini, Claude) kết nối an toàn, trực tiếp và thông minh vào kho dữ liệu và công cụ của ứng dụng doanh nghiệp.
+
+> [!IMPORTANT]
+> **Hệ thống Plant Book CÓ RẤT CẦN MCP KHÔNG?**  
+> **CỰC KỲ CẦN & ĐÂY LÀ BƯỚC ĐI ĐỘT PHÁ CỦA AGTECH TÂN BẢO SÀI GÒN!**
+
+#### Nếu tích hợp Plant Book MCP Server, hệ thống sẽ sở hữu năng lực vượt trội:
+1. **Trợ lý Nông Nghiệp Thông Minh "Bé Mầm AI" (Conversational AgTech Assistant)**:
+   - Bà con nông dân không cần phải bấm tìm kiếm phức tạp, chỉ cần **nói bằng giọng nói (Voice Command)** vào ứng dụng điện thoại:
+     - 🗣️ *"Bé Mầm ơi, tuần này lô A1 có bao nhiêu cây sầu riêng cần tưới nước?"*
+     - 🗣️ *"Cây S01-015 vừa phun thuốc trừ rầy hôm qua, đến ngày nào thì được thu hoạch an toàn?"*
+     - 🗣️ *"Tháng này vườn Ri6 đã chi hết bao nhiêu tiền phân bón NPK?"*
+   - Thông qua **MCP Protocol**, AI sẽ tự động kích hoạt các tool: `get_plant_status(tree_code)`, `check_phi_quarantine(plant_id)`, `query_farm_expenses(farm_id)` để lấy dữ liệu thực trong CSDL PostgreSQL và giải đáp bằng tiếng Việt chuẩn xác, gần gũi.
+2. **Chẩn đoán bệnh cây thông minh qua hình ảnh (Multimodal AI Vision Diagnostic)**:
+   - Nông dân chụp ảnh lá cây bị đốm vàng ngoài vườn $\rightarrow$ AI đối chiếu với thư viện bệnh học $\rightarrow$ Tự động phân tích triệu chứng $\rightarrow$ Gợi ý hoạt chất BVTV được phép trong danh mục VietGAP và tự động tạo bản ghi nhật ký chăm sóc nháp để kỹ sư xác nhận.
+3. **Phân tích số liệu và đề xuất canh tác tối ưu (Predictive Agronomy)**:
+   - AI Agent đọc dữ liệu lịch sử nhật ký 3 năm qua của vườn $\rightarrow$ So sánh năng suất thu hoạch $\rightarrow$ Đưa ra khuyến nghị điều chỉnh liều lượng phân bón giúp tiết kiệm 15-20% chi phí vật tư nông nghiệp.
+
+---
 
 ---
 
