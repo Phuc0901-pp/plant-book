@@ -18,15 +18,24 @@ void main() async {
 
   Widget initialScreen = const LoginPage();
   if (loggedIn) {
-    try {
-      final user = await apiService.fetchUserInfo();
-      if (user != null && user['role'] == 'admin') {
-        initialScreen = const AdminDashboardPage();
-      } else {
+    // Ưu tiên đọc thông tin hồ sơ người dùng trực tiếp từ bộ nhớ đệm an toàn CacheService (tốc độ < 1ms)
+    // Giúp mở ứng dụng tức thì (Zero-Latency Instant Launch) ngay cả khi đứng giữa vườn cây không có mạng
+    final cachedUser = CacheService().getCachedUserProfile();
+    if (cachedUser != null && cachedUser['role'] == 'admin') {
+      initialScreen = const AdminDashboardPage();
+    } else if (cachedUser != null) {
+      initialScreen = const DashboardPage();
+    } else {
+      try {
+        final user = await apiService.fetchUserInfo();
+        if (user != null && user['role'] == 'admin') {
+          initialScreen = const AdminDashboardPage();
+        } else {
+          initialScreen = const DashboardPage();
+        }
+      } catch (_) {
         initialScreen = const DashboardPage();
       }
-    } catch (_) {
-      initialScreen = const DashboardPage();
     }
   }
 

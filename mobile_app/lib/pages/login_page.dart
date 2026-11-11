@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/cache_service.dart';
 import '../utils/theme.dart';
 import 'dashboard_page.dart';
 import 'admin/admin_dashboard_page.dart';
@@ -20,6 +21,11 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _rememberMe = true;
   String? _errorMessage;
+
+  // Trạng thái đồng bộ dữ liệu ngoại tuyến lần đầu (Offline Warm-up)
+  bool _isWarmingCache = false;
+  String _warmStatus = 'Đang đồng bộ dữ liệu ngoại tuyến...';
+  double _warmProgress = 0.0;
 
   @override
   void dispose() {
@@ -48,22 +54,34 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (result['success'] == true) {
+      // Đăng nhập thành công -> Bắt đầu nạp toàn bộ dữ liệu nông trại vào bộ nhớ đệm ngoại tuyến
+      setState(() {
+        _isWarmingCache = true;
+        _warmStatus = 'Đang khởi tạo cơ sở dữ liệu ngoại tuyến...';
+        _warmProgress = 0.1;
+      });
+
       try {
-        final user = await ApiService().fetchUserInfo();
-        if (!mounted) return;
-        if (user != null && user['role'] == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardPage()),
-          );
-        }
-      } catch (_) {
-        if (!mounted) return;
+        await ApiService().warmUpOfflineCache(
+          onProgress: (status, progress) {
+            if (mounted) {
+              setState(() {
+                _warmStatus = status;
+                _warmProgress = progress;
+              });
+            }
+          },
+        );
+      } catch (_) {}
+
+      if (!mounted) return;
+      final user = CacheService().getCachedUserProfile();
+      if (user != null && user['role'] == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+        );
+      } else {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const DashboardPage()),
@@ -458,6 +476,71 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
+
+          // Lớp phủ hiển thị tiến trình nạp dữ liệu ngoại tuyến lần đầu
+          if (_isWarmingCache)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.8),
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFF10B981).withOpacity(0.5), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF10B981).withOpacity(0.25),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.cloud_download_rounded, color: Color(0xFF10B981), size: 36),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Khởi tạo Dữ liệu Ngoại tuyến',
+                          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _warmStatus,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
+                        ),
+                        const SizedBox(height: 18),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _warmProgress > 0 ? _warmProgress : null,
+                            minHeight: 8,
+                            backgroundColor: Colors.white.withOpacity(0.1),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Mã hóa AES-256 · Sẵn sàng dùng khi mất mạng',
+                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

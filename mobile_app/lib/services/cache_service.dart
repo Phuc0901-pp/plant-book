@@ -133,6 +133,16 @@ class CacheService {
   }
 
   // --- Offline Metadata ---
+  bool isCacheWarmed() {
+    if (!_isInitialized) return false;
+    return (_metaBox.get('is_cache_warmed') as bool?) ?? false;
+  }
+
+  Future<void> setCacheWarmed(bool warmed) async {
+    if (!_isInitialized) return;
+    await _metaBox.put('is_cache_warmed', warmed);
+  }
+
   DateTime? getLastSyncTime() {
     if (!_isInitialized) return null;
     final String? str = _metaBox.get('last_sync_time') as String?;

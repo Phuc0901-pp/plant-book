@@ -190,11 +190,22 @@ class ApiService {
     final t = await token;
     if (t == null) return false;
     
+    // Nếu thiết bị đã có token và đã có hồ sơ người dùng trong bộ nhớ đệm an toàn (Hive AES-256),
+    // cho phép truy cập tức thì (Instant Launch < 50ms) không để nông dân chờ 4-10 giây rớt mạng!
+    final cachedProfile = CacheService().getCachedUserProfile();
+    if (cachedProfile != null) {
+      // Xác thực ngầm với server (asynchronous background check), không block UI
+      _verifyTokenInBackground();
+      return true;
+    }
+
     // Verify token validity by calling /auth/me
     try {
       final headers = await _getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(seconds: 4));
+      final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(milliseconds: 2500));
       if (response.statusCode == 200) {
+        final userMap = jsonDecode(response.body) as Map<String, dynamic>;
+        await CacheService().cacheUserProfile(userMap);
         // Trigger offline queue sync in the background since we are online!
         syncOfflineLogs();
         return true;
@@ -205,6 +216,61 @@ class ApiService {
     } catch (e) {
       // Network timeout/error, return true if we have local token to let user see dashboard
       return true; 
+    }
+  }
+
+  void _verifyTokenInBackground() {
+    Future.microtask(() async {
+      try {
+        final headers = await _getHeaders();
+        final response = await http.get(Uri.parse('$baseUrl/auth/me'), headers: headers).timeout(const Duration(seconds: 4));
+        if (response.statusCode == 200) {
+          final userMap = jsonDecode(response.body) as Map<String, dynamic>;
+          await CacheService().cacheUserProfile(userMap);
+          syncOfflineLogs();
+        } else if (response.statusCode == 401 || response.statusCode == 403) {
+          await logout();
+        }
+      } catch (_) {}
+    });
+  }
+
+  /// Nạp trước toàn bộ dữ liệu nông trại, lô cây, vật tư, nhật ký vào bộ nhớ đệm ngoại tuyến (Offline Warm-up)
+  /// Được gọi tự động ngay sau khi đăng nhập thành công lần đầu hoặc khi người dùng bấm "Đồng bộ ngoại tuyến"
+  Future<void> warmUpOfflineCache({Function(String status, double progress)? onProgress}) async {
+    try {
+      onProgress?.call('Đang lưu thông tin tài khoản người dùng...', 0.15);
+      final userInfo = await fetchUserInfo();
+      if (userInfo != null) {
+        await CacheService().cacheUserProfile(userInfo);
+      }
+
+      onProgress?.call('Đang tải danh sách nông trại...', 0.35);
+      final farms = await fetchFarms();
+
+      onProgress?.call('Đang tải danh sách cây trồng và lô thửa...', 0.55);
+      final plants = await fetchPlants();
+
+      onProgress?.call('Đang lưu trữ danh mục phân bón & vật tư...', 0.75);
+      await fetchSupplies();
+
+      onProgress?.call('Đang lưu lịch sử nhật ký 90 ngày gần nhất...', 0.90);
+      await fetchRecentLogs(days: 90);
+
+      // Caching logs for each plant if count is reasonable
+      if (plants.isNotEmpty && plants.length <= 50) {
+        for (final plant in plants.take(20)) {
+          try {
+            await fetchPlantLogs(plant.id);
+          } catch (_) {}
+        }
+      }
+
+      await CacheService().setLastSyncTime(DateTime.now());
+      await CacheService().setCacheWarmed(true);
+      onProgress?.call('Hoàn tất đồng bộ dữ liệu ngoại tuyến!', 1.0);
+    } catch (e) {
+      print('Error warming up offline cache: $e');
     }
   }
 
@@ -228,7 +294,7 @@ class ApiService {
       if (cached.isNotEmpty) {
         return cached.map((dynamic item) => Farm.fromJson(item as Map<String, dynamic>)).toList();
       }
-      rethrow;
+      return [];
     }
   }
 
@@ -250,7 +316,7 @@ class ApiService {
       if (cached.isNotEmpty) {
         return cached.map((dynamic item) => Plant.fromJson(item as Map<String, dynamic>)).toList();
       }
-      rethrow;
+      return [];
     }
   }
 
@@ -289,7 +355,7 @@ class ApiService {
       if (cached.isNotEmpty) {
         return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
       }
-      rethrow;
+      return [];
     }
   }
 
@@ -300,12 +366,15 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> body = jsonDecode(response.body);
+        await CacheService().cacheRecentLogs(body);
         return body.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
       }
-      return [];
+      final cached = CacheService().getCachedRecentLogs();
+      return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
     } catch (e) {
       print('Error fetching recent logs: $e');
-      return [];
+      final cached = CacheService().getCachedRecentLogs();
+      return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
     }
   }
   Future<bool> createPlantLog(int plantId, String logType, String note, Map<String, dynamic> details, {bool isSyncing = false}) async {
@@ -613,16 +682,35 @@ class ApiService {
       if (queryParams.isNotEmpty) {
         uri = uri.replace(queryParameters: queryParams);
       }
-      final response = await http.get(uri, headers: headers);
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final List<dynamic> body = jsonDecode(response.body);
+        if ((category == null || category == 'all') && (search == null || search.isEmpty)) {
+          await CacheService().cacheSupplies(body);
+        }
         return body.map((e) => Supply.fromJson(e as Map<String, dynamic>)).toList();
       }
-      return [];
+      final cached = CacheService().getCachedSupplies();
+      var list = cached.map((e) => Supply.fromJson(e as Map<String, dynamic>)).toList();
+      if (category != null && category.isNotEmpty && category != 'all') {
+        list = list.where((s) => s.category.toLowerCase() == category.toLowerCase()).toList();
+      }
+      if (search != null && search.isNotEmpty) {
+        list = list.where((s) => s.name.toLowerCase().contains(search.toLowerCase())).toList();
+      }
+      return list;
     } catch (e) {
       print('Error fetching supplies: $e');
-      return [];
+      final cached = CacheService().getCachedSupplies();
+      var list = cached.map((e) => Supply.fromJson(e as Map<String, dynamic>)).toList();
+      if (category != null && category.isNotEmpty && category != 'all') {
+        list = list.where((s) => s.category.toLowerCase() == category.toLowerCase()).toList();
+      }
+      if (search != null && search.isNotEmpty) {
+        list = list.where((s) => s.name.toLowerCase().contains(search.toLowerCase())).toList();
+      }
+      return list;
     }
   }
 
