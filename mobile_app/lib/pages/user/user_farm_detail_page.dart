@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/fluent_icons.dart';
 import '../../models/farm.dart';
 import '../../models/plant.dart';
 import '../../models/plant_log.dart';
 import '../../services/api_service.dart';
+import '../../services/cache_service.dart';
 import '../../components/loading_indicator.dart';
 import '../../components/common/pro_upgrade_modal.dart';
 import '../../components/interactive_gis_map_widget.dart';
@@ -40,11 +42,82 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    // 1. Cache-First: Hiển thị tức thì trong 0ms từ bộ nhớ đệm an toàn
+    _loadFromCacheFirst();
+    // 2. Revalidation: Đồng bộ ngầm với máy chủ khi có mạng
     _loadInitialData();
   }
 
+  void _loadFromCacheFirst() {
+    final cachedFarms = CacheService().getCachedFarms();
+    final cachedPlants = CacheService().getCachedPlants();
+    final cachedUser = CacheService().getCachedUserProfile();
+    final cachedLogs = CacheService().getCachedRecentLogs();
+
+    if (cachedFarms.isNotEmpty) {
+      final farms = cachedFarms.map((i) => Farm.fromJson(i as Map<String, dynamic>)).toList();
+      final allPlants = cachedPlants.map((i) => Plant.fromJson(i as Map<String, dynamic>)).toList();
+      final allLogs = cachedLogs.map((i) => PlantLog.fromJson(i as Map<String, dynamic>)).toList();
+
+      final selected = widget.farm ?? farms.first;
+      final farmPlants = allPlants.where((p) => p.farmId == selected.id || (farms.length <= 1 && selected.id == 1)).toList();
+      final farmPlantIds = farmPlants.map((p) => p.id).toSet();
+      final farmLogs = allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == selected.id)).toList();
+
+      setState(() {
+        _userProfile = cachedUser;
+        _isPro = cachedUser != null && (cachedUser['account_tier'] == 'pro' || cachedUser['account_tier'] == 'normal');
+        _allFarms = farms;
+        _currentFarm = selected;
+        _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
+        _farmLogs = farmLogs.isNotEmpty ? farmLogs : allLogs;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _switchFarm(Farm farm) {
+    final cachedPlants = CacheService().getCachedPlants();
+    final cachedLogs = CacheService().getCachedRecentLogs();
+    final allPlants = cachedPlants.isNotEmpty
+        ? cachedPlants.map((i) => Plant.fromJson(i as Map<String, dynamic>)).toList()
+        : _farmPlants;
+    final allLogs = cachedLogs.isNotEmpty
+        ? cachedLogs.map((i) => PlantLog.fromJson(i as Map<String, dynamic>)).toList()
+        : _farmLogs;
+
+    final farmPlants = allPlants.where((p) => p.farmId == farm.id || (_allFarms.length <= 1 && farm.id == 1)).toList();
+    final farmPlantIds = farmPlants.map((p) => p.id).toSet();
+    final farmLogs = allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == farm.id)).toList();
+
+    setState(() {
+      _currentFarm = farm;
+      _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
+      _farmLogs = farmLogs.isNotEmpty ? farmLogs : allLogs;
+    });
+
+    _reloadFarmSpecificData(farm);
+  }
+
+  Future<void> _reloadFarmSpecificData(Farm farm) async {
+    try {
+      final iot = await _apiService.fetchFarmIoTData(farm.id);
+      final lat = farm.latitude ?? 12.68;
+      final lng = farm.longitude ?? 108.03;
+      final forecast = await _apiService.fetchRealWeatherForecast(lat, lng);
+      if (mounted && _currentFarm?.id == farm.id) {
+        setState(() {
+          _iotData = iot;
+          _realWeatherForecast = forecast;
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadInitialData() async {
-    setState(() => _isLoading = true);
+    if (_allFarms.isEmpty) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       final results = await Future.wait<dynamic>([
@@ -60,7 +133,10 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       final allLogs = results[3] as List<PlantLog>;
 
       Farm selected;
-      if (widget.farm != null) {
+      if (_currentFarm != null) {
+        final match = farms.where((f) => f.id == _currentFarm!.id).toList();
+        selected = match.isNotEmpty ? match.first : (farms.isNotEmpty ? farms.first : _currentFarm!);
+      } else if (widget.farm != null) {
         selected = widget.farm!;
       } else if (farms.isNotEmpty) {
         selected = farms.first;
@@ -199,7 +275,51 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Interactive Satellite Map View
+          // 1. Thanh chọn Nông trại / Vườn canh tác (Farm Selector Bar)
+          if (_allFarms.length > 1) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.grayBorder, width: 1),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const LucideIcon(LucideIconName.sprout, size: 18, color: AppTheme.fluentEmerald),
+                  const SizedBox(width: 8),
+                  const Text('Vườn canh tác:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppTheme.textMuted)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: farm?.id,
+                        isExpanded: true,
+                        icon: const LucideIcon(LucideIconName.chevronDown, size: 16, color: AppTheme.textMain),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMain),
+                        items: _allFarms.map((f) => DropdownMenuItem<int>(
+                          value: f.id,
+                          child: Text('${f.name} (${_formatArea(f.area)})', overflow: TextOverflow.ellipsis),
+                        )).toList(),
+                        onChanged: (farmId) {
+                          if (farmId != null) {
+                            final target = _allFarms.firstWhere((f) => f.id == farmId, orElse: () => _allFarms.first);
+                            _switchFarm(target);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // 2. Interactive Satellite Map View (Chỉ focus đúng vào vườn được chọn, zoom level chuẩn)
           InteractiveGisMapWidget(
             farms: farm != null ? [farm] : _allFarms,
             plants: _farmPlants,
@@ -207,7 +327,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           ),
           const SizedBox(height: 16),
 
-          // Farm GIS Metadata Card
+          // 3. Farm GIS Metadata Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -225,8 +345,8 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'HỒ SƠ VÙNG TRỒNG & QUY MÔ GIS',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
+                      'HỒ SƠ MÃ SỐ VÙNG TRỒNG · TIÊU CHUẨN VIETGAP',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.5),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -235,13 +355,13 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFA7F3D0)),
                       ),
-                      child: const Text('VietGAP Chuẩn', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                      child: const Text('Chuẩn VietGAP', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 _infoRow('Tên Trang Trại', farm?.name ?? 'Vườn Nông hộ'),
-                _infoRow('Chủ Vườn / Đại Diện', ownerName),
+                _infoRow('Đại diện nông hộ', ownerName),
                 _infoRow('Quy Mô Diện Tích', _formatArea(farm?.area)),
                 _infoRow('Tổng Số Cây Quản Lý', '${_farmPlants.length} cây'),
                 _infoRow('Địa Điểm', farm?.description ?? 'Cư M\'gar, Đắk Lắk'),
@@ -1035,7 +1155,15 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12.5)),
-          Text(val, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              val,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+            ),
+          ),
         ],
       ),
     );

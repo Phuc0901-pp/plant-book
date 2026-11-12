@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/supply.dart';
 import '../services/api_service.dart';
+import '../services/cache_service.dart';
 import '../utils/theme.dart';
 
 class SuppliesPage extends StatefulWidget {
@@ -32,15 +33,31 @@ class _SuppliesPageState extends State<SuppliesPage> {
   @override
   void initState() {
     super.initState();
+    // 1. Cache-First: Đọc tức thì trong 0ms từ Hive AES-256
+    _loadFromCacheFirst();
+    // 2. Revalidation: Đồng bộ ngầm với máy chủ khi có mạng
     _loadSupplies();
     _loadAnalyticsAndUsages();
   }
 
+  void _loadFromCacheFirst() {
+    final cached = CacheService().getCachedSupplies();
+    if (cached.isNotEmpty) {
+      final list = cached.map((e) => Supply.fromJson(e as Map<String, dynamic>)).toList();
+      setState(() {
+        _supplies = list;
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _loadSupplies() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (_supplies.isEmpty) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final supplies = await _apiService.fetchSupplies(category: _selectedCategory);
@@ -53,7 +70,9 @@ class _SuppliesPageState extends State<SuppliesPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Không thể tải danh sách vật tư. Vui lòng kiểm tra kết nối mạng.';
+          if (_supplies.isEmpty) {
+            _errorMessage = 'Không thể tải danh sách vật tư. Vui lòng kiểm tra kết nối mạng.';
+          }
           _isLoading = false;
         });
       }
@@ -171,10 +190,13 @@ class _SuppliesPageState extends State<SuppliesPage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openSupplyDialog(),
-        backgroundColor: AppTheme.green,
+        backgroundColor: AppTheme.fluentEmerald,
         elevation: 3,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Khai báo vật tư', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+        label: const Text(
+          'Khai báo vật tư',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -0.2),
+        ),
       ),
       body: Column(
         children: [
@@ -648,15 +670,15 @@ class _SuppliesPageState extends State<SuppliesPage> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.12),
+                                color: const Color(0xFF6366F1).withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                '♾️ Vĩnh cửu',
-                                style: TextStyle(
+                              child: Text(
+                                sp.category == 'Nhân công' ? '👷 Định mức theo công' : '💧 Nguồn cấp thủy lợi',
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
+                                  color: Color(0xFF4338CA),
                                 ),
                               ),
                             ),

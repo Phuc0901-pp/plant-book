@@ -250,7 +250,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.fluentTextMain, letterSpacing: -0.2),
                 ),
                 Text(
-                  'Hệ Thống ERP Canh Tác Chuẩn Microsoft Fluent',
+                  'Hệ Thống Nhật Ký Canh Tác Số · Chuẩn VietGAP',
                   style: TextStyle(fontSize: 10, color: AppTheme.fluentEmerald, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -336,58 +336,62 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (_isSpeedDialOpen) ...[
-            _buildSpeedDialItem(
-              icon: LucideIconName.sparkles,
-              color: const Color(0xFF10B981),
-              label: 'Hỏi Bé Mầm AI',
-              onTap: () {
-                setState(() => _isSpeedDialOpen = false);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AiChatPage()));
-              },
-            ),
-            const SizedBox(height: 10),
-            _buildSpeedDialItem(
-              icon: LucideIconName.scan,
-              color: const Color(0xFF2563EB),
-              label: 'Quét QR / Chạm NFC',
-              onTap: () {
-                setState(() => _isSpeedDialOpen = false);
-                _openQrNfcScanner();
-              },
-            ),
-            const SizedBox(height: 10),
-            _buildSpeedDialItem(
-              icon: LucideIconName.users,
-              color: AppTheme.lavenderText,
-              label: 'Nhân công & Nhật ký 1-chạm',
-              onTap: () {
-                setState(() => _isSpeedDialOpen = false);
-                _openQuickCareDialog();
-              },
-            ),
-            const SizedBox(height: 14),
-          ],
-          FloatingActionButton(
-            backgroundColor: AppTheme.fluentEmerald,
-            foregroundColor: Colors.white,
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            onPressed: () {
-              setState(() => _isSpeedDialOpen = !_isSpeedDialOpen);
-            },
-            child: AnimatedRotation(
-              turns: _isSpeedDialOpen ? 0.125 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: LucideIcon(_isSpeedDialOpen ? LucideIconName.close : LucideIconName.plus, size: 24, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+      // Chỉ hiển thị nút nổi SpeedDial tại Tab 0 (Tổng quan).
+      // Các Tab con (Nhật ký, Kho vật tư) tự quản lý nút bấm riêng biệt, tránh triệt để lỗi chồng chéo 2 nút.
+      floatingActionButton: _currentIndex == 0
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (_isSpeedDialOpen) ...[
+                  _buildSpeedDialItem(
+                    icon: LucideIconName.sparkles,
+                    color: const Color(0xFF10B981),
+                    label: 'Hỏi Bé Mầm AI',
+                    onTap: () {
+                      setState(() => _isSpeedDialOpen = false);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const AiChatPage()));
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSpeedDialItem(
+                    icon: LucideIconName.scan,
+                    color: const Color(0xFF2563EB),
+                    label: 'Quét QR / Chạm NFC',
+                    onTap: () {
+                      setState(() => _isSpeedDialOpen = false);
+                      _openQrNfcScanner();
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSpeedDialItem(
+                    icon: LucideIconName.users,
+                    color: AppTheme.lavenderText,
+                    label: 'Ghi nhanh nhật ký tác nghiệp',
+                    onTap: () {
+                      setState(() => _isSpeedDialOpen = false);
+                      _openQuickCareDialog();
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                ],
+                FloatingActionButton(
+                  backgroundColor: AppTheme.fluentEmerald,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  onPressed: () {
+                    setState(() => _isSpeedDialOpen = !_isSpeedDialOpen);
+                  },
+                  child: AnimatedRotation(
+                    turns: _isSpeedDialOpen ? 0.125 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: LucideIcon(_isSpeedDialOpen ? LucideIconName.close : LucideIconName.plus, size: 24, color: Colors.white),
+                  ),
+                ),
+              ],
+            )
+          : null,
       bottomNavigationBar: UserBottomNav(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,

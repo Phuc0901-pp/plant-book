@@ -46,11 +46,36 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   @override
   void initState() {
     super.initState();
+    // 1. Cache-First: Hiển thị ngay lập tức trong 0ms từ bộ nhớ đệm an toàn AES-256
+    _loadFromCacheFirst();
+    // 2. Revalidation: Kiểm tra và đồng bộ ngầm với máy chủ khi có mạng
     _loadDashboardData();
   }
 
+  void _loadFromCacheFirst() {
+    final cachedFarms = CacheService().getCachedFarms();
+    final cachedPlants = CacheService().getCachedPlants();
+    final cachedUser = CacheService().getCachedUserProfile();
+    if (cachedFarms.isNotEmpty || cachedPlants.isNotEmpty || cachedUser != null) {
+      setState(() {
+        if (cachedFarms.isNotEmpty) {
+          _farms = cachedFarms.map((i) => Farm.fromJson(i as Map<String, dynamic>)).toList();
+        }
+        if (cachedPlants.isNotEmpty) {
+          _plants = cachedPlants.map((i) => Plant.fromJson(i as Map<String, dynamic>)).toList();
+        }
+        if (cachedUser != null) {
+          _userProfile = cachedUser;
+        }
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _loadDashboardData() async {
-    setState(() => _isLoading = true);
+    if (_farms.isEmpty && _plants.isEmpty) {
+      setState(() => _isLoading = true);
+    }
     try {
       final results = await Future.wait<dynamic>([
         _apiService.fetchFarms(),

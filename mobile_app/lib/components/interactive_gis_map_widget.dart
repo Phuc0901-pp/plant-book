@@ -386,6 +386,21 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
 
+    .user-pos-marker {
+      width: 16px;
+      height: 16px;
+      background: #2563EB;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.4), 0 2px 8px rgba(0,0,0,0.5);
+      animation: pulseRadar 2s infinite ease-out;
+    }
+    @keyframes pulseRadar {
+      0% { box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.8), 0 2px 6px rgba(0,0,0,0.5); }
+      70% { box-shadow: 0 0 0 16px rgba(37, 99, 235, 0), 0 2px 6px rgba(0,0,0,0.5); }
+      100% { box-shadow: 0 0 0 2px rgba(37, 99, 235, 0), 0 2px 6px rgba(0,0,0,0.5); }
+    }
+
     .gps-btn {
       position: absolute;
       bottom: 20px;
@@ -524,6 +539,7 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
               iconAnchor: [7, 7]
             });
             userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
+            userMarker.bindPopup('<div style="font-size:12px;font-weight:bold;color:#064E3B;padding:2px;">📍 Vị trí thực địa của bạn</div><div style="font-size:10px;color:#64748B;">Tọa độ: ' + userLat.toFixed(5) + ', ' + userLng.toFixed(5) + '</div>').openPopup();
             map.flyTo([userLat, userLng], 19, { animate: true });
           },
           function(err) {

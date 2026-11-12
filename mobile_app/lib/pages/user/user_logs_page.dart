@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../utils/theme.dart';
 import '../../services/api_service.dart';
+import '../../services/cache_service.dart';
 import '../../models/plant_log.dart';
 import '../../models/plant.dart';
 import '../../models/farm.dart';
@@ -45,7 +46,28 @@ class _UserLogsPageState extends State<UserLogsPage> {
   @override
   void initState() {
     super.initState();
+    // 1. Cache-First: Hiển thị tức thì trong 0ms từ bộ nhớ đệm Hive AES-256
+    _loadFromCacheFirst();
+    // 2. Revalidation: Đồng bộ ngầm với máy chủ khi có mạng
     _loadLogs();
+  }
+
+  void _loadFromCacheFirst() {
+    final cachedLogs = CacheService().getCachedRecentLogs();
+    final cachedPlants = CacheService().getCachedPlants();
+    final cachedFarms = CacheService().getCachedFarms();
+    if (cachedLogs.isNotEmpty) {
+      final logs = cachedLogs.map((e) => PlantLog.fromJson(e as Map<String, dynamic>)).toList();
+      final plants = cachedPlants.map((e) => Plant.fromJson(e as Map<String, dynamic>)).toList();
+      final farms = cachedFarms.map((e) => Farm.fromJson(e as Map<String, dynamic>)).toList();
+      setState(() {
+        _allLogs = logs;
+        _cachedPlants = plants;
+        _farms = farms;
+        _applyFilters();
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -55,7 +77,9 @@ class _UserLogsPageState extends State<UserLogsPage> {
   }
 
   Future<void> _loadLogs() async {
-    setState(() => _isLoading = true);
+    if (_allLogs.isEmpty) {
+      setState(() => _isLoading = true);
+    }
     try {
       final results = await Future.wait<dynamic>([
         _apiService.fetchRecentLogs(days: 90),
@@ -175,7 +199,7 @@ class _UserLogsPageState extends State<UserLogsPage> {
       backgroundColor: AppTheme.fluentSurface,
       appBar: AppBar(
         title: const Text(
-          'Nhật Ký Canh Tác Timeline',
+          'Lịch Sử Tác Nghiệp Canh Tác',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.fluentTextMain),
         ),
         actions: [
@@ -323,7 +347,7 @@ class _UserLogsPageState extends State<UserLogsPage> {
                         color: AppTheme.fluentEmerald,
                         backgroundColor: Colors.white,
                         child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
                           itemCount: _filteredLogs.length,
                           itemBuilder: (context, idx) {
                             final log = _filteredLogs[idx];
@@ -340,7 +364,7 @@ class _UserLogsPageState extends State<UserLogsPage> {
         foregroundColor: Colors.white,
         elevation: 3,
         icon: const LucideIcon(LucideIconName.plus, size: 18, color: Colors.white),
-        label: const Text('Ghi nhật ký mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        label: const Text('Ghi nhật ký canh tác', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -0.2)),
       ),
     );
   }
