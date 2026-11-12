@@ -426,10 +426,7 @@ class ApiService {
       return cached.map((item) => PlantLog.fromJson(item)).toList();
     }
   }
-      final cached = CacheService().getCachedRecentLogs();
-      return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
-    }
-  }
+
   Future<bool> createPlantLog(int plantId, String logType, String note, Map<String, dynamic> details, {bool isSyncing = false}) async {
     try {
       final headers = await _getHeaders();
