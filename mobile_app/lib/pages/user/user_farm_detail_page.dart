@@ -53,6 +53,24 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     final cachedPlants = CacheService().getCachedPlants();
     final cachedUser = CacheService().getCachedUserProfile();
     final cachedLogs = CacheService().getCachedRecentLogs();
+    final pendingRaw = CacheService().getPendingLogs();
+
+    final pendingLogs = pendingRaw.map((p) {
+      final details = p['details'] is Map ? Map<String, dynamic>.from(p['details'] as Map) : <String, dynamic>{};
+      details['is_pending_sync'] = true;
+      return PlantLog(
+        id: -1,
+        plantId: (p['plant_id'] ?? p['plantId']) as int? ?? 0,
+        logDate: (p['log_date'] ?? DateTime.now().toIso8601String().split('T')[0]).toString(),
+        logType: (p['action'] ?? p['log_type'] ?? 'Chăm sóc').toString(),
+        note: (p['description'] ?? p['note'] ?? '').toString(),
+        mediaUrls: const <String>[],
+        details: details,
+        editHistory: const <EditHistory>[],
+        treeCode: p['tree_code'] as String?,
+        farmName: p['farm_name'] as String?,
+      );
+    }).toList();
 
     if (cachedFarms.isNotEmpty) {
       final farms = cachedFarms.map((i) => Farm.fromJson(i as Map<String, dynamic>)).toList();
@@ -62,7 +80,11 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       final selected = widget.farm ?? farms.first;
       final farmPlants = allPlants.where((p) => p.farmId == selected.id || (farms.length <= 1 && selected.id == 1)).toList();
       final farmPlantIds = farmPlants.map((p) => p.id).toSet();
-      final farmLogs = allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == selected.id)).toList();
+      final relevantPending = pendingLogs.where((l) => farmPlantIds.contains(l.plantId) || farmPlantIds.isEmpty).toList();
+      final farmLogs = [
+        ...relevantPending,
+        ...allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == selected.id)).toList()
+      ];
 
       setState(() {
         _userProfile = cachedUser;

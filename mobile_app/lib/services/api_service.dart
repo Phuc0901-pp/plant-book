@@ -68,6 +68,11 @@ class ApiService {
         
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('pb_token', _token!);
+
+        // Lưu tức thì hồ sơ người dùng vào bộ nhớ đệm an toàn AES-256 ngay khi nhận phản hồi đăng nhập
+        if (data['user'] != null && data['user'] is Map) {
+          await CacheService().cacheUserProfile(Map<String, dynamic>.from(data['user'] as Map));
+        }
         return {'success': true};
       }
       return {'success': false, 'message': data['error'] ?? 'Đăng nhập thất bại.'};
@@ -853,12 +858,14 @@ class ApiService {
 
       final response = await http.get(uri, headers: headers);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        await CacheService().cacheSupplyAnalytics(data);
+        return data;
       }
-      return null;
+      return CacheService().getCachedSupplyAnalytics();
     } catch (e) {
-      print('Error fetching supply analytics: $e');
-      return null;
+      print('Error fetching supply analytics (falling back to offline cache): $e');
+      return CacheService().getCachedSupplyAnalytics();
     }
   }
 

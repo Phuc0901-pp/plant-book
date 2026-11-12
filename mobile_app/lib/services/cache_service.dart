@@ -75,6 +75,21 @@ class CacheService {
     await _metaBox.put('user_profile', user);
   }
 
+  // --- Supply Analytics Cache ---
+  Map<String, dynamic>? getCachedSupplyAnalytics() {
+    if (!_isInitialized) return null;
+    final dynamic raw = _metaBox.get('supply_analytics');
+    if (raw is Map) {
+      return Map<String, dynamic>.from(raw);
+    }
+    return null;
+  }
+
+  Future<void> cacheSupplyAnalytics(Map<String, dynamic> analytics) async {
+    if (!_isInitialized) return;
+    await _metaBox.put('supply_analytics', analytics);
+  }
+
   // --- Farms Cache ---
   List<dynamic> getCachedFarms() {
     if (!_isInitialized) return <dynamic>[];

@@ -56,12 +56,31 @@ class _UserLogsPageState extends State<UserLogsPage> {
     final cachedLogs = CacheService().getCachedRecentLogs();
     final cachedPlants = CacheService().getCachedPlants();
     final cachedFarms = CacheService().getCachedFarms();
-    if (cachedLogs.isNotEmpty) {
+    final pendingRaw = CacheService().getPendingLogs();
+
+    final pendingLogs = pendingRaw.map((p) {
+      final details = p['details'] is Map ? Map<String, dynamic>.from(p['details'] as Map) : <String, dynamic>{};
+      details['is_pending_sync'] = true;
+      return PlantLog(
+        id: -1,
+        plantId: (p['plant_id'] ?? p['plantId']) as int? ?? 0,
+        logDate: (p['log_date'] ?? DateTime.now().toIso8601String().split('T')[0]).toString(),
+        logType: (p['action'] ?? p['log_type'] ?? 'Chăm sóc').toString(),
+        note: (p['description'] ?? p['note'] ?? '').toString(),
+        mediaUrls: const <String>[],
+        details: details,
+        editHistory: const <EditHistory>[],
+        treeCode: p['tree_code'] as String?,
+        farmName: p['farm_name'] as String?,
+      );
+    }).toList();
+
+    if (cachedLogs.isNotEmpty || pendingLogs.isNotEmpty) {
       final logs = cachedLogs.map((e) => PlantLog.fromJson(e as Map<String, dynamic>)).toList();
       final plants = cachedPlants.map((e) => Plant.fromJson(e as Map<String, dynamic>)).toList();
       final farms = cachedFarms.map((e) => Farm.fromJson(e as Map<String, dynamic>)).toList();
       setState(() {
-        _allLogs = logs;
+        _allLogs = [...pendingLogs, ...logs];
         _cachedPlants = plants;
         _farms = farms;
         _applyFilters();
@@ -88,8 +107,26 @@ class _UserLogsPageState extends State<UserLogsPage> {
       ]);
 
       if (mounted) {
+        final pendingRaw = CacheService().getPendingLogs();
+        final pendingLogs = pendingRaw.map((p) {
+          final details = p['details'] is Map ? Map<String, dynamic>.from(p['details'] as Map) : <String, dynamic>{};
+          details['is_pending_sync'] = true;
+          return PlantLog(
+            id: -1,
+            plantId: (p['plant_id'] ?? p['plantId']) as int? ?? 0,
+            logDate: (p['log_date'] ?? DateTime.now().toIso8601String().split('T')[0]).toString(),
+            logType: (p['action'] ?? p['log_type'] ?? 'Chăm sóc').toString(),
+            note: (p['description'] ?? p['note'] ?? '').toString(),
+            mediaUrls: const <String>[],
+            details: details,
+            editHistory: const <EditHistory>[],
+            treeCode: p['tree_code'] as String?,
+            farmName: p['farm_name'] as String?,
+          );
+        }).toList();
+
         setState(() {
-          _allLogs = results[0] as List<PlantLog>;
+          _allLogs = [...pendingLogs, ...(results[0] as List<PlantLog>)];
           _cachedPlants = results[1] as List<Plant>;
           _farms = results[2] as List<Farm>;
           _applyFilters();
@@ -492,6 +529,28 @@ class _UserLogsPageState extends State<UserLogsPage> {
                     ),
                     Row(
                       children: [
+                        if (log.details['is_pending_sync'] == true || log.id < 0) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.5)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                LucideIcon(LucideIconName.refreshCw, color: Color(0xFFD97706), size: 10),
+                                SizedBox(width: 3.5),
+                                Text(
+                                  'Chờ đồng bộ',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const LucideIcon(LucideIconName.calendar, size: 12, color: AppTheme.fluentTextMuted),
                         const SizedBox(width: 4),
                         Text(

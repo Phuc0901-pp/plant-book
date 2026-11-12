@@ -56,7 +56,8 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     final cachedFarms = CacheService().getCachedFarms();
     final cachedPlants = CacheService().getCachedPlants();
     final cachedUser = CacheService().getCachedUserProfile();
-    if (cachedFarms.isNotEmpty || cachedPlants.isNotEmpty || cachedUser != null) {
+    final cachedAnalytics = CacheService().getCachedSupplyAnalytics();
+    if (cachedFarms.isNotEmpty || cachedPlants.isNotEmpty || cachedUser != null || cachedAnalytics != null) {
       setState(() {
         if (cachedFarms.isNotEmpty) {
           _farms = cachedFarms.map((i) => Farm.fromJson(i as Map<String, dynamic>)).toList();
@@ -66,6 +67,9 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
         }
         if (cachedUser != null) {
           _userProfile = cachedUser;
+        }
+        if (cachedAnalytics != null) {
+          _supplyAnalytics = cachedAnalytics;
         }
         _isLoading = false;
       });
