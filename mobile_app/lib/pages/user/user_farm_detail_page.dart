@@ -88,15 +88,14 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         ...allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == selected.id)).toList()
       ];
 
-      setState(() {
-        _userProfile = cachedUser;
-        _isPro = cachedUser != null && (cachedUser['account_tier'] == 'pro' || cachedUser['account_tier'] == 'normal');
-        _allFarms = farms;
-        _currentFarm = selected;
-        _farmPlants = (farms.length <= 1 && farmPlants.isEmpty) ? allPlants : farmPlants;
-        _farmLogs = (farms.length <= 1 && farmLogs.isEmpty) ? allLogs : farmLogs;
-        _isLoading = false;
-      });
+      _userProfile = cachedUser;
+      _isPro = cachedUser != null && (cachedUser['account_tier'] == 'pro' || cachedUser['account_tier'] == 'normal');
+      _allFarms = farms;
+      _currentFarm = selected;
+      _farmPlants = (farms.length <= 1 && farmPlants.isEmpty) ? allPlants : farmPlants;
+      _farmLogs = (farms.length <= 1 && farmLogs.isEmpty) ? allLogs : farmLogs;
+      _isLoading = false;
+      if (mounted) setState(() {});
     }
   }
 

@@ -9,36 +9,36 @@ import 'utils/theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Hive Cache database
-  await CacheService().init();
+  // 1. Khởi tạo bộ nhớ đệm an toàn với cơ chế tự phục hồi chống treo ứng dụng
+  try {
+    await CacheService().init();
+  } catch (e) {
+    print('CacheService init error: $e');
+  }
   
-  // Check if session token is already stored and valid
-  final apiService = ApiService();
-  final loggedIn = await apiService.isLoggedIn();
-
+  // 2. Kiểm tra trạng thái phiên làm việc (timeout tối đa 1.5s để đảm bảo không bao giờ đơ máy khi mở app)
   Widget initialScreen = const LoginPage();
-  if (loggedIn) {
-    // Ưu tiên đọc thông tin hồ sơ người dùng trực tiếp từ bộ nhớ đệm an toàn CacheService (tốc độ < 1ms)
-    // Giúp mở ứng dụng tức thì (Zero-Latency Instant Launch) ngay cả khi đứng giữa vườn cây không có mạng
-    final cachedUser = CacheService().getCachedUserProfile();
-    if (cachedUser != null && cachedUser['role'] == 'admin') {
-      initialScreen = const AdminDashboardPage();
-    } else if (cachedUser != null) {
-      initialScreen = const DashboardPage();
-    } else {
-      try {
-        final user = await apiService.fetchUserInfo();
-        if (user != null && user['role'] == 'admin') {
-          initialScreen = const AdminDashboardPage();
-        } else {
-          initialScreen = const DashboardPage();
-        }
-      } catch (_) {
+  try {
+    final apiService = ApiService();
+    final loggedIn = await apiService.isLoggedIn().timeout(
+      const Duration(milliseconds: 1500),
+      onTimeout: () => false,
+    );
+
+    if (loggedIn) {
+      final cachedUser = CacheService().getCachedUserProfile();
+      if (cachedUser != null && cachedUser['role'] == 'admin') {
+        initialScreen = const AdminDashboardPage();
+      } else {
         initialScreen = const DashboardPage();
       }
     }
+  } catch (e) {
+    print('Startup auth check error: $e');
+    initialScreen = const LoginPage();
   }
 
+  // 3. runApp luôn luôn được gọi ngay lập tức để render giao diện
   runApp(PlantBookApp(initialScreen: initialScreen));
 }
 

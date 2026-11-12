@@ -39,25 +39,41 @@ class CacheService {
     return Uint8List.fromList(key);
   }
 
+  Future<Box> _openBoxSafe(String name, HiveAesCipher cipher) async {
+    try {
+      return await Hive.openBox(name, encryptionCipher: cipher);
+    } catch (e) {
+      print('Warning: Hive openBox failed for $name ($e). Recovering...');
+      try {
+        await Hive.deleteBoxFromDisk(name);
+      } catch (_) {}
+      try {
+        return await Hive.openBox(name, encryptionCipher: cipher);
+      } catch (_) {
+        return await Hive.openBox(name);
+      }
+    }
+  }
+
   Future<void> init() async {
     if (_isInitialized) return;
-    await Hive.initFlutter();
-    final Uint8List encKey = await _getOrCreateEncryptionKey();
-    final HiveAesCipher cipher = HiveAesCipher(encKey);
+    try {
+      await Hive.initFlutter();
+      final Uint8List encKey = await _getOrCreateEncryptionKey();
+      final HiveAesCipher cipher = HiveAesCipher(encKey);
 
-    _farmsBox = await Hive.openBox('farms_cache', encryptionCipher: cipher);
-    _plantsBox = await Hive.openBox('plants_cache', encryptionCipher: cipher);
-    _logsBox = await Hive.openBox('logs_cache', encryptionCipher: cipher);
-    _recentLogsBox =
-        await Hive.openBox('recent_logs_cache', encryptionCipher: cipher);
-    _suppliesBox =
-        await Hive.openBox('supplies_cache', encryptionCipher: cipher);
-    _pendingLogsBox =
-        await Hive.openBox('pending_logs', encryptionCipher: cipher);
-    _pendingMutationsBox =
-        await Hive.openBox('pending_field_mutations', encryptionCipher: cipher);
-    _metaBox = await Hive.openBox('offline_meta', encryptionCipher: cipher);
-    _isInitialized = true;
+      _farmsBox = await _openBoxSafe('farms_cache', cipher);
+      _plantsBox = await _openBoxSafe('plants_cache', cipher);
+      _logsBox = await _openBoxSafe('logs_cache', cipher);
+      _recentLogsBox = await _openBoxSafe('recent_logs_cache', cipher);
+      _suppliesBox = await _openBoxSafe('supplies_cache', cipher);
+      _pendingLogsBox = await _openBoxSafe('pending_logs', cipher);
+      _pendingMutationsBox = await _openBoxSafe('pending_field_mutations', cipher);
+      _metaBox = await _openBoxSafe('offline_meta', cipher);
+      _isInitialized = true;
+    } catch (e) {
+      print('Critical error initializing Hive cache: $e');
+    }
   }
 
   // --- User Profile & RBAC Cache (Hỗ trợ kiểm tra sub_role khi Offline) ---

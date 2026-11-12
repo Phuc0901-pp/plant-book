@@ -58,21 +58,20 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     final cachedUser = CacheService().getCachedUserProfile();
     final cachedAnalytics = CacheService().getCachedSupplyAnalytics();
     if (cachedFarms.isNotEmpty || cachedPlants.isNotEmpty || cachedUser != null || cachedAnalytics != null) {
-      setState(() {
-        if (cachedFarms.isNotEmpty) {
-          _farms = cachedFarms.map((i) => Farm.fromJson(i)).toList();
-        }
-        if (cachedPlants.isNotEmpty) {
-          _plants = cachedPlants.map((i) => Plant.fromJson(i)).toList();
-        }
-        if (cachedUser != null) {
-          _userProfile = cachedUser;
-        }
-        if (cachedAnalytics != null) {
-          _supplyAnalytics = cachedAnalytics;
-        }
-        _isLoading = false;
-      });
+      if (cachedFarms.isNotEmpty) {
+        _farms = cachedFarms.map((i) => Farm.fromJson(i)).toList();
+      }
+      if (cachedPlants.isNotEmpty) {
+        _plants = cachedPlants.map((i) => Plant.fromJson(i)).toList();
+      }
+      if (cachedUser != null) {
+        _userProfile = cachedUser;
+      }
+      if (cachedAnalytics != null) {
+        _supplyAnalytics = cachedAnalytics;
+      }
+      _isLoading = false;
+      if (mounted) setState(() {});
     }
   }
 

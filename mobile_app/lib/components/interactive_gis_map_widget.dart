@@ -57,7 +57,36 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
   @override
   void didUpdateWidget(covariant InteractiveGisMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.plants != widget.plants || oldWidget.farms != widget.farms) {
+    final farmsChanged = !_areFarmsEqual(oldWidget.farms, widget.farms);
+    final plantsChanged = !_arePlantsEqual(oldWidget.plants, widget.plants);
+    if (farmsChanged || plantsChanged) {
+      _reloadMap();
+    }
+  }
+
+  bool _areFarmsEqual(List<Farm> a, List<Farm> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
+  }
+
+  bool _arePlantsEqual(List<Plant> a, List<Plant> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id || a[i].healthStatus != b[i].healthStatus) return false;
+    }
+    return true;
+  }
+
+  void _reloadMap() {
+    if (_webViewController != null) {
+      final html = _generateMapHtml();
+      _webViewController!.loadHtmlString(html);
+    } else {
       _initMap();
     }
   }
