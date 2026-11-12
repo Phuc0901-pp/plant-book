@@ -80,7 +80,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       final allLogs = cachedLogs.map((i) => PlantLog.fromJson(i)).toList();
 
       final selected = widget.farm ?? farms.first;
-      final farmPlants = allPlants.where((p) => p.farmId == selected.id || (farms.length <= 1 && selected.id == 1)).toList();
+      final farmPlants = allPlants.where((p) => p.farmId == selected.id || (farms.length <= 1 && (selected.id == 1 || p.farmId == null))).toList();
       final farmPlantIds = farmPlants.map((p) => p.id).toSet();
       final relevantPending = pendingLogs.where((l) => farmPlantIds.contains(l.plantId) || farmPlantIds.isEmpty).toList();
       final farmLogs = [
@@ -93,8 +93,8 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         _isPro = cachedUser != null && (cachedUser['account_tier'] == 'pro' || cachedUser['account_tier'] == 'normal');
         _allFarms = farms;
         _currentFarm = selected;
-        _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
-        _farmLogs = farmLogs.isNotEmpty ? farmLogs : allLogs;
+        _farmPlants = (farms.length <= 1 && farmPlants.isEmpty) ? allPlants : farmPlants;
+        _farmLogs = (farms.length <= 1 && farmLogs.isEmpty) ? allLogs : farmLogs;
         _isLoading = false;
       });
     }
@@ -110,14 +110,14 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
         ? cachedLogs.map((i) => PlantLog.fromJson(i)).toList()
         : _farmLogs;
 
-    final farmPlants = allPlants.where((p) => p.farmId == farm.id || (_allFarms.length <= 1 && farm.id == 1)).toList();
+    final farmPlants = allPlants.where((p) => p.farmId == farm.id || (_allFarms.length <= 1 && (farm.id == 1 || p.farmId == null))).toList();
     final farmPlantIds = farmPlants.map((p) => p.id).toSet();
     final farmLogs = allLogs.where((l) => farmPlantIds.contains(l.plantId) || (l.farmId != null && l.farmId == farm.id)).toList();
 
     setState(() {
       _currentFarm = farm;
-      _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
-      _farmLogs = farmLogs.isNotEmpty ? farmLogs : allLogs;
+      _farmPlants = (_allFarms.length <= 1 && farmPlants.isEmpty) ? allPlants : farmPlants;
+      _farmLogs = (_allFarms.length <= 1 && farmLogs.isEmpty) ? allLogs : farmLogs;
     });
 
     _reloadFarmSpecificData(farm);
@@ -200,8 +200,8 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           _isPro = user != null && (user['account_tier'] == 'pro' || user['account_tier'] == 'normal');
           _allFarms = farms;
           _currentFarm = selected;
-          _farmPlants = farmPlants.isNotEmpty ? farmPlants : allPlants;
-          _farmLogs = farmLogs.isNotEmpty ? farmLogs : allLogs;
+          _farmPlants = (farms.length <= 1 && farmPlants.isEmpty) ? allPlants : farmPlants;
+          _farmLogs = (farms.length <= 1 && farmLogs.isEmpty) ? allLogs : farmLogs;
           _iotData = iot;
           _realWeatherForecast = forecast;
           _isLoading = false;
@@ -349,8 +349,12 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
           // 2. Interactive Satellite Map View (Chỉ focus đúng vào vườn được chọn, zoom level chuẩn)
           InteractiveGisMapWidget(
             farms: farm != null ? [farm] : _allFarms,
+            allFarms: _allFarms,
             plants: _farmPlants,
             height: 340,
+            onFarmChanged: (selectedFarm) {
+              _switchFarm(selectedFarm);
+            },
           ),
           const SizedBox(height: 16),
 

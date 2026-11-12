@@ -1,4 +1,4 @@
-name: Build iOS IPA (AgTech ERP v1.3.5+19)
+name: Build iOS IPA (AgTech ERP v1.3.6+20)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-ios:
-    name: Build & Package Flutter iOS IPA (v1.3.5+19)
+    name: Build & Package Flutter iOS IPA (v1.3.6+20)
     runs-on: macos-latest
     permissions:
       contents: write
@@ -31,7 +31,7 @@ jobs:
         working-directory: mobile_app
         run: flutter test --reporter expanded || true
 
-      - name: Build iOS Application (Release Unsigned v1.3.5+19)
+      - name: Build iOS Application (Release Unsigned v1.3.6+20)
         working-directory: mobile_app
         run: |
           flutter build ios --release --no-codesign 2>&1 | tee ../build_ios.log || {
@@ -53,24 +53,24 @@ jobs:
           if [ -n "$APP_PATH" ]; then
             cp -r "$APP_PATH" mobile_app/Payload/
             cd mobile_app
-            zip -r ../build_output/PlantBook-Mobile-ERP-v1.3.5-ios.ipa Payload
+            zip -r ../build_output/PlantBook-Mobile-ERP-v1.3.6-ios.ipa Payload
             cd ../build_output
-            shasum -a 256 PlantBook-Mobile-ERP-v1.3.5-ios.ipa > PlantBook-Mobile-ERP-v1.3.5-ios-SHA256.txt
+            shasum -a 256 PlantBook-Mobile-ERP-v1.3.6-ios.ipa > PlantBook-Mobile-ERP-v1.3.6-ios-SHA256.txt
             
             # Copy Apple Enterprise / In-House OTA Manifest (manifest.plist)
             cp ../mobile_app/ios/manifest.plist manifest.plist
-            echo "✅ iOS IPA packaged: $(ls -lh PlantBook-Mobile-ERP-v1.3.5-ios.ipa)"
+            echo "✅ iOS IPA packaged: $(ls -lh PlantBook-Mobile-ERP-v1.3.6-ios.ipa)"
           else
             echo "::error::Runner.app not found in mobile_app/build!"
             exit 1
           fi
 
-      - name: Upload iOS IPA Artifact (v1.3.5+19)
+      - name: Upload iOS IPA Artifact (v1.3.6+20)
         uses: actions/upload-artifact@v4
         with:
-          name: PlantBook-Mobile-ERP-v1.3.5-iOS-IPA
+          name: PlantBook-Mobile-ERP-v1.3.6-iOS-IPA
           path: |
-            build_output/PlantBook-Mobile-ERP-v1.3.5-ios*
+            build_output/PlantBook-Mobile-ERP-v1.3.6-ios*
             build_output/manifest.plist
           retention-days: 30
 
@@ -85,12 +85,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: success()
         with:
-          tag_name: v1.3.5
-          name: "Plant Book Mobile ERP v1.3.5 (Build 19) - Official TBSG AgTech Signed"
+          tag_name: v1.3.6
+          name: "Plant Book Mobile ERP v1.3.6 (Build 20) - Official TBSG AgTech Signed"
           draft: false
           prerelease: false
           files: |
-            build_output/PlantBook-Mobile-ERP-v1.3.5-ios*
+            build_output/PlantBook-Mobile-ERP-v1.3.6-ios*
             build_output/manifest.plist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
