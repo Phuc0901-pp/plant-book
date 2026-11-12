@@ -91,9 +91,17 @@ class CacheService {
   }
 
   // --- Farms Cache ---
-  List<dynamic> getCachedFarms() {
-    if (!_isInitialized) return <dynamic>[];
-    return _farmsBox.get('list', defaultValue: <dynamic>[]) as List<dynamic>;
+  List<Map<String, dynamic>> getCachedFarms() {
+    if (!_isInitialized) return <Map<String, dynamic>>[];
+    try {
+      final dynamic raw = _farmsBox.get('list', defaultValue: <dynamic>[]);
+      if (raw is List) {
+        return raw.map((dynamic e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (e) {
+      print('Error reading cached farms: $e');
+    }
+    return <Map<String, dynamic>>[];
   }
 
   Future<void> cacheFarms(List<dynamic> jsonFarms) async {
@@ -102,9 +110,17 @@ class CacheService {
   }
 
   // --- Plants Cache ---
-  List<dynamic> getCachedPlants() {
-    if (!_isInitialized) return <dynamic>[];
-    return _plantsBox.get('list', defaultValue: <dynamic>[]) as List<dynamic>;
+  List<Map<String, dynamic>> getCachedPlants() {
+    if (!_isInitialized) return <Map<String, dynamic>>[];
+    try {
+      final dynamic raw = _plantsBox.get('list', defaultValue: <dynamic>[]);
+      if (raw is List) {
+        return raw.map((dynamic e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (e) {
+      print('Error reading cached plants: $e');
+    }
+    return <Map<String, dynamic>>[];
   }
 
   Future<void> cachePlants(List<dynamic> jsonPlants) async {
@@ -113,10 +129,17 @@ class CacheService {
   }
 
   // --- Logs Cache (per plant) ---
-  List<dynamic> getCachedPlantLogs(int plantId) {
-    if (!_isInitialized) return <dynamic>[];
-    return _logsBox.get(plantId.toString(), defaultValue: <dynamic>[])
-        as List<dynamic>;
+  List<Map<String, dynamic>> getCachedPlantLogs(int plantId) {
+    if (!_isInitialized) return <Map<String, dynamic>>[];
+    try {
+      final dynamic raw = _logsBox.get(plantId.toString(), defaultValue: <dynamic>[]);
+      if (raw is List) {
+        return raw.map((dynamic e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (e) {
+      print('Error reading cached plant logs: $e');
+    }
+    return <Map<String, dynamic>>[];
   }
 
   Future<void> cachePlantLogs(int plantId, List<dynamic> jsonLogs) async {
@@ -125,10 +148,17 @@ class CacheService {
   }
 
   // --- Recent All Logs Cache ---
-  List<dynamic> getCachedRecentLogs() {
-    if (!_isInitialized) return <dynamic>[];
-    return _recentLogsBox.get('list', defaultValue: <dynamic>[])
-        as List<dynamic>;
+  List<Map<String, dynamic>> getCachedRecentLogs() {
+    if (!_isInitialized) return <Map<String, dynamic>>[];
+    try {
+      final dynamic raw = _recentLogsBox.get('list', defaultValue: <dynamic>[]);
+      if (raw is List) {
+        return raw.map((dynamic e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (e) {
+      print('Error reading cached recent logs: $e');
+    }
+    return <Map<String, dynamic>>[];
   }
 
   Future<void> cacheRecentLogs(List<dynamic> jsonLogs) async {
@@ -137,9 +167,17 @@ class CacheService {
   }
 
   // --- Supplies Cache ---
-  List<dynamic> getCachedSupplies() {
-    if (!_isInitialized) return <dynamic>[];
-    return _suppliesBox.get('list', defaultValue: <dynamic>[]) as List<dynamic>;
+  List<Map<String, dynamic>> getCachedSupplies() {
+    if (!_isInitialized) return <Map<String, dynamic>>[];
+    try {
+      final dynamic raw = _suppliesBox.get('list', defaultValue: <dynamic>[]);
+      if (raw is List) {
+        return raw.map((dynamic e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (e) {
+      print('Error reading cached supplies: $e');
+    }
+    return <Map<String, dynamic>>[];
   }
 
   Future<void> cacheSupplies(List<dynamic> jsonSupplies) async {

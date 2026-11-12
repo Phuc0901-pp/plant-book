@@ -60,10 +60,10 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     if (cachedFarms.isNotEmpty || cachedPlants.isNotEmpty || cachedUser != null || cachedAnalytics != null) {
       setState(() {
         if (cachedFarms.isNotEmpty) {
-          _farms = cachedFarms.map((i) => Farm.fromJson(i as Map<String, dynamic>)).toList();
+          _farms = cachedFarms.map((i) => Farm.fromJson(i)).toList();
         }
         if (cachedPlants.isNotEmpty) {
-          _plants = cachedPlants.map((i) => Plant.fromJson(i as Map<String, dynamic>)).toList();
+          _plants = cachedPlants.map((i) => Plant.fromJson(i)).toList();
         }
         if (cachedUser != null) {
           _userProfile = cachedUser;
@@ -77,6 +77,9 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   }
 
   Future<void> _loadDashboardData() async {
+    // 1. Tự động kích hoạt đồng bộ toàn bộ hàng đợi ngoại tuyến nếu máy có kết nối
+    _apiService.syncOfflineLogs();
+
     if (_farms.isEmpty && _plants.isEmpty) {
       setState(() => _isLoading = true);
     }

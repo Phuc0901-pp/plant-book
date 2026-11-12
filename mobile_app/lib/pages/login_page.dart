@@ -54,7 +54,24 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (result['success'] == true) {
-      // Đăng nhập thành công -> Bắt đầu nạp toàn bộ dữ liệu nông trại vào bộ nhớ đệm ngoại tuyến
+      // Nếu là đăng nhập ngoại tuyến bằng bộ nhớ đệm: Chuyển ngay vào Dashboard
+      if (result['is_offline_auth'] == true) {
+        final user = CacheService().getCachedUserProfile();
+        if (user != null && user['role'] == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardPage()),
+          );
+        }
+        return;
+      }
+
+      // Đăng nhập trực tuyến thành công -> Bắt đầu nạp toàn bộ dữ liệu nông trại vào bộ nhớ đệm ngoại tuyến
       setState(() {
         _isWarmingCache = true;
         _warmStatus = 'Đang khởi tạo cơ sở dữ liệu ngoại tuyến...';

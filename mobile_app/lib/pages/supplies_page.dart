@@ -43,7 +43,7 @@ class _SuppliesPageState extends State<SuppliesPage> {
   void _loadFromCacheFirst() {
     final cached = CacheService().getCachedSupplies();
     if (cached.isNotEmpty) {
-      final list = cached.map((e) => Supply.fromJson(e as Map<String, dynamic>)).toList();
+      final list = cached.map((e) => Supply.fromJson(e)).toList();
       setState(() {
         _supplies = list;
         _isLoading = false;
@@ -52,6 +52,7 @@ class _SuppliesPageState extends State<SuppliesPage> {
   }
 
   Future<void> _loadSupplies() async {
+    _apiService.syncOfflineLogs();
     if (_supplies.isEmpty) {
       setState(() {
         _isLoading = true;

@@ -78,6 +78,24 @@ class ApiService {
       return {'success': false, 'message': data['error'] ?? 'Đăng nhập thất bại.'};
     } catch (e) {
       print('Login error: $e');
+      // KIỂM TRA ĐĂNG NHẬP NGOẠI TUYẾN (Offline Authentication Fallback):
+      // Nếu thiết bị mất mạng nhưng trước đó tài khoản này đã đăng nhập và được mã hóa trong máy:
+      try {
+        final cachedProfile = CacheService().getCachedUserProfile();
+        final savedToken = await token;
+        if (cachedProfile != null && savedToken != null && savedToken.isNotEmpty) {
+          final cachedEmail = (cachedProfile['email'] ?? '').toString().toLowerCase().trim();
+          final cachedPhone = (cachedProfile['phone'] ?? '').toString().trim();
+          final input = email.toLowerCase().trim();
+          if (input == cachedEmail || (cachedPhone.isNotEmpty && input == cachedPhone)) {
+            return {
+              'success': true,
+              'is_offline_auth': true,
+              'message': 'Đã đăng nhập ngoại tuyến từ bộ nhớ đệm an toàn trên máy.',
+            };
+          }
+        }
+      } catch (_) {}
       return {'success': false, 'message': 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng.'};
     }
   }
@@ -143,15 +161,21 @@ class ApiService {
         final details = item['details'] is Map
             ? Map<String, dynamic>.from(item['details'] as Map)
             : <String, dynamic>{};
+        final logType = item['logType'] ?? item['action'] ?? item['log_type'] ?? 'Chăm sóc';
+        final note = item['note'] ?? item['description'] ?? '';
+        final date = item['log_date'] ?? (item['timestamp']?.toString().split('T')[0]) ?? DateTime.now().toIso8601String().split('T')[0];
+
         return <String, dynamic>{
           'plant_id': item['plantId'] ?? item['plant_id'],
-          'action': item['logType'] ?? item['action'] ?? 'Chăm sóc',
-          'description': item['note'] ?? item['description'] ?? '',
+          'log_type': logType,
+          'action': logType,
+          'note': note,
+          'description': note,
+          'details': details,
           'supply_id': item['supply_id'] ?? details['supply_id'],
           'used_amount': item['used_amount'] ?? details['amount'] ?? 0,
           'estimated_cost': item['estimated_cost'] ?? details['cost'] ?? 0,
-          'log_date': item['log_date'] ??
-              (item['timestamp']?.toString().split('T')[0]),
+          'log_date': date,
           'client_record_hash': item['record_hash'],
           'client_prev_hash': item['prev_log_hash'],
         };
@@ -164,21 +188,27 @@ class ApiService {
       if (batchRes != null && batchRes['success'] == true) {
         await CacheService().clearPendingLogs();
         await CacheService().clearPendingFieldMutations();
+        print('Offline batch sync succeeded: synced ${batchCareLogs.length} logs!');
         return;
       }
-    } catch (_) {
-      // Chuyển sang Pha 2 fallback bên dưới
+    } catch (e) {
+      print('Batch sync phase 1 failed, trying fallback: $e');
     }
 
     // Pha 2: Đồng bộ từng bản ghi và bảo toàn các bản ghi thất bại (Zero Data Loss)
     final List<Map<String, dynamic>> remaining = [];
     for (final log in pendingLogs) {
       try {
+        final plantId = int.tryParse((log['plantId'] ?? log['plant_id']).toString()) ?? 0;
+        final logType = (log['logType'] ?? log['action'] ?? log['log_type'] ?? 'Khác').toString();
+        final note = (log['note'] ?? log['description'] ?? '').toString();
+        final details = Map<String, dynamic>.from((log['details'] as Map?) ?? {});
+
         final success = await createPlantLog(
-          (log['plantId'] ?? log['plant_id']) as int,
-          (log['logType'] ?? log['action'] ?? 'Khác') as String,
-          (log['note'] ?? log['description'] ?? '') as String,
-          Map<String, dynamic>.from((log['details'] as Map?) ?? {}),
+          plantId,
+          logType,
+          note,
+          details,
           isSyncing: true,
         );
         if (!success) {
@@ -189,6 +219,16 @@ class ApiService {
       }
     }
     await CacheService().replacePendingLogs(remaining);
+  }
+
+  /// Tự động kiểm tra và đồng bộ các tác vụ ngoại tuyến ngay khi máy có kết nối mạng
+  void _triggerAutoSyncIfPending() {
+    try {
+      final pendingCount = CacheService().getPendingLogs().length + CacheService().getPendingFieldMutations().length;
+      if (pendingCount > 0) {
+        syncOfflineLogs();
+      }
+    } catch (_) {}
   }
 
   Future<bool> isLoggedIn() async {
@@ -287,9 +327,10 @@ class ApiService {
       final response = await http.get(Uri.parse('$baseUrl/farms'), headers: headers).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
+        _triggerAutoSyncIfPending();
         final List<dynamic> body = jsonDecode(response.body);
         await CacheService().cacheFarms(body);
-        return body.map((dynamic item) => Farm.fromJson(item as Map<String, dynamic>)).toList();
+        return body.map((dynamic item) => Farm.fromJson(Map<String, dynamic>.from(item as Map))).toList();
       } else {
         throw Exception('Failed to load farms');
       }
@@ -297,7 +338,7 @@ class ApiService {
       // Fallback to offline Hive cache
       final cached = CacheService().getCachedFarms();
       if (cached.isNotEmpty) {
-        return cached.map((dynamic item) => Farm.fromJson(item as Map<String, dynamic>)).toList();
+        return cached.map((item) => Farm.fromJson(item)).toList();
       }
       return [];
     }
@@ -309,9 +350,10 @@ class ApiService {
       final response = await http.get(Uri.parse('$baseUrl/plants'), headers: headers).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
+        _triggerAutoSyncIfPending();
         final List<dynamic> body = jsonDecode(response.body);
         await CacheService().cachePlants(body);
-        return body.map((dynamic item) => Plant.fromJson(item as Map<String, dynamic>)).toList();
+        return body.map((dynamic item) => Plant.fromJson(Map<String, dynamic>.from(item as Map))).toList();
       } else {
         throw Exception('Failed to load plants');
       }
@@ -319,7 +361,7 @@ class ApiService {
       // Fallback to offline Hive cache
       final cached = CacheService().getCachedPlants();
       if (cached.isNotEmpty) {
-        return cached.map((dynamic item) => Plant.fromJson(item as Map<String, dynamic>)).toList();
+        return cached.map((item) => Plant.fromJson(item)).toList();
       }
       return [];
     }
@@ -348,9 +390,10 @@ class ApiService {
       final response = await http.get(Uri.parse('$baseUrl/plants/$plantId/logs'), headers: headers).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
+        _triggerAutoSyncIfPending();
         final List<dynamic> body = jsonDecode(response.body);
         await CacheService().cachePlantLogs(plantId, body);
-        return body.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
+        return body.map((dynamic item) => PlantLog.fromJson(Map<String, dynamic>.from(item as Map))).toList();
       } else {
         throw Exception('Failed to load logs');
       }
@@ -358,7 +401,7 @@ class ApiService {
       // Fallback to offline Hive cache
       final cached = CacheService().getCachedPlantLogs(plantId);
       if (cached.isNotEmpty) {
-        return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
+        return cached.map((item) => PlantLog.fromJson(item)).toList();
       }
       return [];
     }
@@ -370,14 +413,19 @@ class ApiService {
       final response = await http.get(Uri.parse('$baseUrl/plants/logs/recent?days=$days'), headers: headers).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
+        _triggerAutoSyncIfPending();
         final List<dynamic> body = jsonDecode(response.body);
         await CacheService().cacheRecentLogs(body);
-        return body.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
+        return body.map((dynamic item) => PlantLog.fromJson(Map<String, dynamic>.from(item as Map))).toList();
       }
       final cached = CacheService().getCachedRecentLogs();
-      return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
+      return cached.map((item) => PlantLog.fromJson(item)).toList();
     } catch (e) {
       print('Error fetching recent logs: $e');
+      final cached = CacheService().getCachedRecentLogs();
+      return cached.map((item) => PlantLog.fromJson(item)).toList();
+    }
+  }
       final cached = CacheService().getCachedRecentLogs();
       return cached.map((dynamic item) => PlantLog.fromJson(item as Map<String, dynamic>)).toList();
     }

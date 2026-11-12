@@ -72,10 +72,12 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
       );
     }).toList();
 
-    if (cachedFarms.isNotEmpty) {
-      final farms = cachedFarms.map((i) => Farm.fromJson(i as Map<String, dynamic>)).toList();
-      final allPlants = cachedPlants.map((i) => Plant.fromJson(i as Map<String, dynamic>)).toList();
-      final allLogs = cachedLogs.map((i) => PlantLog.fromJson(i as Map<String, dynamic>)).toList();
+    if (cachedFarms.isNotEmpty || cachedPlants.isNotEmpty) {
+      final farms = cachedFarms.isNotEmpty
+          ? cachedFarms.map((i) => Farm.fromJson(i)).toList()
+          : <Farm>[Farm(id: 1, name: 'Vườn của tôi', location: 'Việt Nam', area: 1.0, totalPlants: cachedPlants.length, createdAt: '')];
+      final allPlants = cachedPlants.map((i) => Plant.fromJson(i)).toList();
+      final allLogs = cachedLogs.map((i) => PlantLog.fromJson(i)).toList();
 
       final selected = widget.farm ?? farms.first;
       final farmPlants = allPlants.where((p) => p.farmId == selected.id || (farms.length <= 1 && selected.id == 1)).toList();
@@ -102,10 +104,10 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     final cachedPlants = CacheService().getCachedPlants();
     final cachedLogs = CacheService().getCachedRecentLogs();
     final allPlants = cachedPlants.isNotEmpty
-        ? cachedPlants.map((i) => Plant.fromJson(i as Map<String, dynamic>)).toList()
+        ? cachedPlants.map((i) => Plant.fromJson(i)).toList()
         : _farmPlants;
     final allLogs = cachedLogs.isNotEmpty
-        ? cachedLogs.map((i) => PlantLog.fromJson(i as Map<String, dynamic>)).toList()
+        ? cachedLogs.map((i) => PlantLog.fromJson(i)).toList()
         : _farmLogs;
 
     final farmPlants = allPlants.where((p) => p.farmId == farm.id || (_allFarms.length <= 1 && farm.id == 1)).toList();
@@ -137,6 +139,9 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
   }
 
   Future<void> _loadInitialData() async {
+    // Tự động đồng bộ các bản ghi ngoại tuyến khi có kết nối mạng
+    _apiService.syncOfflineLogs();
+
     if (_allFarms.isEmpty) {
       setState(() => _isLoading = true);
     }

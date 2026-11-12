@@ -87,15 +87,23 @@ class OfflineSyncService {
             final Map<String, dynamic> details = item['details'] is Map
                 ? Map<String, dynamic>.from(item['details'] as Map)
                 : <String, dynamic>{};
+            final String logType = (item['logType'] ?? item['action'] ?? item['log_type'] ?? 'Chăm sóc').toString();
+            final String note = (item['note'] ?? item['description'] ?? '').toString();
+            final String date = (item['log_date'] ??
+                (item['timestamp']?.toString().split('T')[0]) ??
+                DateTime.now().toIso8601String().split('T')[0]).toString();
+
             return <String, dynamic>{
               'plant_id': item['plantId'] ?? item['plant_id'],
-              'action': item['logType'] ?? item['action'] ?? 'Chăm sóc',
-              'description': item['note'] ?? item['description'] ?? '',
+              'log_type': logType,
+              'action': logType,
+              'note': note,
+              'description': note,
+              'details': details,
               'supply_id': item['supply_id'] ?? details['supply_id'],
               'used_amount': item['used_amount'] ?? details['amount'] ?? 0,
               'estimated_cost': item['estimated_cost'] ?? details['cost'] ?? 0,
-              'log_date': item['log_date'] ??
-                  (item['timestamp']?.toString().split('T')[0]),
+              'log_date': date,
               'client_record_hash': item['record_hash'],
               'client_prev_hash': item['prev_log_hash'],
             };

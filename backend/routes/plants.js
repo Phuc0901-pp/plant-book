@@ -5534,8 +5534,9 @@ router.post('/offline-batch-sync', auth, async (req, res) => {
         if (!access.ok) continue;
 
         const logDate = item.log_date || new Date().toISOString().slice(0, 10);
-        const logType = item.log_type || 'Chăm sóc';
-        const noteText = item.note ? `${item.note} (Đồng bộ ngoại tuyến)` : '(Đồng bộ ngoại tuyến)';
+        const logType = item.log_type || item.action || 'Chăm sóc';
+        const rawNote = item.note || item.description || '';
+        const noteText = rawNote.trim() ? `${rawNote} (Đồng bộ ngoại tuyến)` : '(Đồng bộ ngoại tuyến)';
         const mediaJson = JSON.stringify(Array.isArray(item.media_urls) ? item.media_urls : []);
         const detailsJson = JSON.stringify(item.details || {});
 

@@ -76,9 +76,9 @@ class _UserLogsPageState extends State<UserLogsPage> {
     }).toList();
 
     if (cachedLogs.isNotEmpty || pendingLogs.isNotEmpty) {
-      final logs = cachedLogs.map((e) => PlantLog.fromJson(e as Map<String, dynamic>)).toList();
-      final plants = cachedPlants.map((e) => Plant.fromJson(e as Map<String, dynamic>)).toList();
-      final farms = cachedFarms.map((e) => Farm.fromJson(e as Map<String, dynamic>)).toList();
+      final logs = cachedLogs.map((e) => PlantLog.fromJson(e)).toList();
+      final plants = cachedPlants.map((e) => Plant.fromJson(e)).toList();
+      final farms = cachedFarms.map((e) => Farm.fromJson(e)).toList();
       setState(() {
         _allLogs = [...pendingLogs, ...logs];
         _cachedPlants = plants;
@@ -96,6 +96,11 @@ class _UserLogsPageState extends State<UserLogsPage> {
   }
 
   Future<void> _loadLogs() async {
+    // 1. Tự động đồng bộ ngay các bản ghi ngoại tuyến lên Server khi có mạng
+    try {
+      await _apiService.syncOfflineLogs();
+    } catch (_) {}
+
     if (_allLogs.isEmpty) {
       setState(() => _isLoading = true);
     }
