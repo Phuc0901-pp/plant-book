@@ -75,7 +75,7 @@ class _UserFarmDetailPageState extends State<UserFarmDetailPage> with SingleTick
     if (cachedFarms.isNotEmpty || cachedPlants.isNotEmpty) {
       final farms = cachedFarms.isNotEmpty
           ? cachedFarms.map((i) => Farm.fromJson(i)).toList()
-          : <Farm>[Farm(id: 1, name: 'Vườn của tôi', location: 'Việt Nam', area: 1.0, totalPlants: cachedPlants.length, createdAt: '')];
+          : <Farm>[Farm(id: 1, name: 'Vườn của tôi', description: 'Việt Nam', area: 1.0, plantCount: cachedPlants.length, createdAt: '')];
       final allPlants = cachedPlants.map((i) => Plant.fromJson(i)).toList();
       final allLogs = cachedLogs.map((i) => PlantLog.fromJson(i)).toList();
 

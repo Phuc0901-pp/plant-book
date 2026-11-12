@@ -325,8 +325,8 @@ class _InteractiveGisMapWidgetState extends State<InteractiveGisMapWidget> {
 
     for (int i = 0; i < widget.plants.length; i++) {
       final p = widget.plants[i];
-      double pLat;
-      double pLng;
+      double pLat = centerLat;
+      double pLng = centerLng;
 
       bool validPlantCoords = false;
       if (p.latitude != null && p.longitude != null && p.latitude != 0 && p.longitude != 0) {
