@@ -3626,27 +3626,27 @@ async function renderPlant(plant, isEditable) {
         </p>
         <div class="care-actions-grid">
           <button class="care-btn care-btn-water" onclick="openModal('modal-water')">
-            <i data-lucide="droplet" class="lucide-sm" style="color: var(--color-water)"></i>
+            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-water', 32) : '<i data-lucide="droplet" class="lucide-sm" style="color: var(--color-water)"></i>'}
             <span>Tưới nước</span>
           </button>
           <button class="care-btn care-btn-fertilize" onclick="openModal('modal-fertilize')">
-            <i data-lucide="leaf" class="lucide-sm" style="color: var(--color-fertilize)"></i>
+            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-fertilize', 32) : '<i data-lucide="leaf" class="lucide-sm" style="color: var(--color-fertilize)"></i>'}
             <span>Bón phân</span>
           </button>
           <button class="care-btn care-btn-pesticide" onclick="openModal('modal-pesticide')">
-            <i data-lucide="flask-conical" class="lucide-sm" style="color: var(--color-pesticide)"></i>
+            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-pesticide', 32) : '<i data-lucide="flask-conical" class="lucide-sm" style="color: var(--color-pesticide)"></i>'}
             <span>Phun thuốc</span>
           </button>
           <button class="care-btn care-btn-labor" onclick="openModal('modal-labor')" style="border-color:#bae6fd; background:#f0f9ff;">
-            <i data-lucide="users" class="lucide-sm" style="color: #0284c7"></i>
+            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-labor', 32) : '<i data-lucide="users" class="lucide-sm" style="color: #0284c7"></i>'}
             <span style="color: #0369a1; font-weight: 700;">Thuê nhân công</span>
           </button>
           <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
-            <i data-lucide="shield-alert" class="lucide-sm" style="color: var(--color-disease)"></i>
+            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-disease', 32) : '<i data-lucide="shield-alert" class="lucide-sm" style="color: var(--color-disease)"></i>'}
             <span>Bệnh cây</span>
           </button>
           <button class="care-btn care-btn-harvest" onclick="openModal('modal-harvest')">
-            <i data-lucide="wheat" class="lucide-sm" style="color: #d97706"></i>
+            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-harvest', 32) : '<i data-lucide="wheat" class="lucide-sm" style="color: #d97706"></i>'}
             <span style="color: #92400e; font-weight: 700;">Thu hoạch</span>
           </button>
         </div>
