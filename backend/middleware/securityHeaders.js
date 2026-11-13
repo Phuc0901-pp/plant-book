@@ -4,8 +4,13 @@
    ═══════════════════════════════════════════════════════════════ */
 
 const DEFAULT_ALLOWED_ORIGINS = [
+  'https://dev-plantbook.onrender.com',
   'https://plant-book.onrender.com',
   'https://plant-book-api.onrender.com',
+  'https://tanbaocorp-agritech.vn',
+  'https://www.tanbaocorp-agritech.vn',
+  'https://tanbaocorp.vn',
+  'https://www.tanbaocorp.vn',
   'capacitor://localhost',
   'ionic://localhost'
 ];
@@ -25,6 +30,16 @@ function isOriginAllowed(origin) {
 
   // Local development & LAN testing (localhost / 127.0.0.1 / 192.168.x.x / 10.x.x.x)
   if (/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/i.test(origin)) {
+    return true;
+  }
+
+  // All *.onrender.com subdomains (e.g. dev-plantbook.onrender.com, plant-book.onrender.com)
+  if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin)) {
+    return true;
+  }
+
+  // All Tanbao corporate domains & subdomains
+  if (/^https:\/\/([a-z0-9-]+\.)?tanbaocorp(-agritech)?\.vn$/i.test(origin)) {
     return true;
   }
 
