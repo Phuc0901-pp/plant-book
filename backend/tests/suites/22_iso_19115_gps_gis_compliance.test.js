@@ -87,7 +87,7 @@ describe('Suite 22: ISO 19111 / ISO 19115 / RFC 7946 GPS & GIS Compliance', () =
   });
 
   it('22.4 [BE-GPS-WIRE] Backend plants.js & farms.js integrate geoIsoValidator & Mobile api_service.dart sends ISO 19115 metadata', () => {
-    const plantsJs = fs.readFileSync(path.join(rootDir, 'backend/routes/plants.js'), 'utf8');
+    const plantsJs = [path.join(path.join(rootDir, 'backend/routes'), 'plants.js'), ...fs.readdirSync(path.join(path.join(rootDir, 'backend/routes'), 'plants')).map(f => path.join(path.join(rootDir, 'backend/routes'), 'plants', f))].map(p => fs.readFileSync(p, 'utf8')).join('\n');
     const farmsJs = fs.readFileSync(path.join(rootDir, 'backend/routes/farms.js'), 'utf8');
     const migrationSql = fs.readFileSync(path.join(rootDir, 'backend/db/migrations/011_iso_19115_gps_gis_hardening.sql'), 'utf8');
     const apiDart = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/services/api_service.dart'), 'utf8');

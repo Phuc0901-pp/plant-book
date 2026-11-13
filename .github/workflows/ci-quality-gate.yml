@@ -27,5 +27,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Syntax Check Modular Backend & Frontend JS
+        run: |
+          node --check routes/plants.js
+          for f in routes/plants/*.js; do node --check "$f"; done
+          for f in ../frontend/public/js/plant*.js; do node --check "$f"; done
+
       - name: Run 24 ISO Test Suites (160+ Cases)
         run: npm run test:iso

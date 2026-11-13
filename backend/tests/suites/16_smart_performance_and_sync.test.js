@@ -117,7 +117,7 @@ describe('Suite 16: Smart Performance, Range Querying, Deduplication & Live Sync
     const plantsRoutePath = path.join(__dirname, '../../routes/plants.js');
     const initPath = path.join(__dirname, '../../db/init.js');
 
-    const plantsRoute = fs.readFileSync(plantsRoutePath, 'utf8');
+    const plantsRoute = [path.join(path.join(__dirname, '../../routes'), 'plants.js'), ...fs.readdirSync(path.join(path.join(__dirname, '../../routes'), 'plants')).map(f => path.join(path.join(__dirname, '../../routes'), 'plants', f))].map(p => fs.readFileSync(p, 'utf8')).join('\n');
     const initDb = fs.readFileSync(initPath, 'utf8');
 
     expect(plantsRoute.includes('deleted_at = NOW()')).toBe(true);

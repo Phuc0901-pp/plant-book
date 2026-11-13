@@ -36,7 +36,7 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
   });
 
   it('17.2 Should verify Per-Farm Hash-Chain Mutex Lock (withFarmHashChainLock) prevents concurrent hash forks', async () => {
-    const plantsRoute = fs.readFileSync(plantsRoutePath, 'utf8');
+    const plantsRoute = [path.join(path.join(rootDir, 'backend/routes'), 'plants.js'), ...fs.readdirSync(path.join(path.join(rootDir, 'backend/routes'), 'plants')).map(f => path.join(path.join(rootDir, 'backend/routes'), 'plants', f))].map(p => fs.readFileSync(p, 'utf8')).join('\n');
     expect(plantsRoute.includes('withFarmHashChainLock')).toBe(true);
     expect(plantsRoute.includes('p.farm_id IS NOT DISTINCT FROM')).toBe(true);
 
@@ -84,7 +84,7 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
   });
 
   it('17.3 Should verify Offline Batch Sync uses created_by column and supports /:id/logs + /:id/care-log aliases', () => {
-    const plantsRoute = fs.readFileSync(plantsRoutePath, 'utf8');
+    const plantsRoute = [path.join(path.join(rootDir, 'backend/routes'), 'plants.js'), ...fs.readdirSync(path.join(path.join(rootDir, 'backend/routes'), 'plants')).map(f => path.join(path.join(rootDir, 'backend/routes'), 'plants', f))].map(p => fs.readFileSync(p, 'utf8')).join('\n');
     const offlineSyncJs = fs.readFileSync(offlineSyncJsPath, 'utf8');
 
     // Verify INSERT INTO plant_logs uses created_by instead of user_id

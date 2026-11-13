@@ -26,7 +26,7 @@ describe('Suite 12: Selective Soft-Delete for Farming Logs & Admin Audit Trail',
   });
 
   it('12.2 Should verify backend query endpoints filter out soft-deleted logs', () => {
-    const plantsRouteContent = fs.readFileSync(plantsRoutePath, 'utf8');
+    const plantsRouteContent = [path.join(path.join(__dirname, '../../routes'), 'plants.js'), ...fs.readdirSync(path.join(path.join(__dirname, '../../routes'), 'plants')).map(f => path.join(path.join(__dirname, '../../routes'), 'plants', f))].map(p => fs.readFileSync(p, 'utf8')).join('\n');
     expect(plantsRouteContent.includes('pl.is_deleted IS NOT TRUE')).toBe(true);
     expect(plantsRouteContent.includes('/logs/batch-delete/preview')).toBe(true);
     expect(plantsRouteContent.includes('/logs/batch-delete')).toBe(true);
