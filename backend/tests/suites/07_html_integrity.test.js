@@ -164,4 +164,38 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
     expect(content.includes('id="btn-toggle-continuous-nfc"')).toBe(false);
   });
 
+  it('7.8 Should verify Smart NFC Gateway (public/sub.html & sub-gateway.js) DOM integrity & click event binding', () => {
+    const subHtmlPath = path.join(__dirname, '../../../frontend/public/sub.html');
+    const subJsPath = path.join(__dirname, '../../../frontend/public/js/sub-gateway.js');
+
+    expect(fs.existsSync(subHtmlPath)).toBe(true);
+    expect(fs.existsSync(subJsPath)).toBe(true);
+
+    const subHtml = fs.readFileSync(subHtmlPath, 'utf8');
+    const subJs = fs.readFileSync(subJsPath, 'utf8');
+
+    // Required interactive elements
+    const requiredIds = [
+      'btn-opt-existing',
+      'btn-opt-new',
+      'view-landing',
+      'view-login',
+      'view-register',
+      'view-farm-hub',
+      'view-plant-form',
+      'view-nfc-write',
+      'nfc-detector-badge'
+    ];
+    requiredIds.forEach(id => {
+      expect(subHtml.includes(`id="${id}"`)).toBe(true);
+    });
+
+    // Verify click fallback and robust DOM ready lifecycle (no race condition)
+    expect(subHtml.includes('switchSubView')).toBe(true);
+    expect(subJs.includes("document.readyState === 'loading'")).toBe(true);
+    expect(subJs.includes('SubGatewayApp')).toBe(true);
+    expect(subJs.includes('btn-opt-existing')).toBe(true);
+    expect(subJs.includes('btn-opt-new')).toBe(true);
+  });
+
 });

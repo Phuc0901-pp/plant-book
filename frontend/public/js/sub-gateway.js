@@ -11,9 +11,16 @@ class SubGatewayApp {
     this.gpsEngine = null;
     this.selectedDiseases = new Set();
     this.capturedPhotoBase64 = null;
+
+    let savedUser = null;
+    try {
+      const rawUser = localStorage.getItem('user');
+      savedUser = rawUser ? JSON.parse(rawUser) : null;
+    } catch (_) {}
+
     this.state = {
       token: localStorage.getItem('token') || null,
-      user: JSON.parse(localStorage.getItem('user') || 'null'),
+      user: savedUser,
       encryptedUserId: null,
       currentStep: 1,
       farms: [],
@@ -1206,7 +1213,21 @@ class SubGatewayApp {
   }
 }
 
-// Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-  window.SubGateway = new SubGatewayApp();
-});
+// Robust Lifecycle Initialization (Handles cases where DOMContentLoaded already fired before module evaluation)
+function initSubGatewayInstance() {
+  if (!window.SubGateway) {
+    try {
+      window.SubGateway = new SubGatewayApp();
+    } catch (err) {
+      console.error('❌ [SubGateway] Failed to initialize:', err);
+    }
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSubGatewayInstance);
+} else {
+  initSubGatewayInstance();
+}
+
+window.addEventListener('load', initSubGatewayInstance);
