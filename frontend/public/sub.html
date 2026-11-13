@@ -33,11 +33,94 @@
       }
     };
 
-    // Native Form Submit Interceptors (Prevent GET /sub? reload loop)
-    window.handleSubLoginSubmit = function(e) {
+    // Native Form Submit Interceptors (Prevent GET /sub? reload loop & Standalone Resilient Login)
+    window.handleSubLoginSubmit = async function(e) {
       if (e && e.preventDefault) e.preventDefault();
-      if (window.SubGateway && typeof window.SubGateway.handleLogin === 'function') {
-        window.SubGateway.handleLogin();
+      
+      const emailEl = document.getElementById('login-email');
+      const passEl = document.getElementById('login-password');
+      const btn = document.getElementById('btn-submit-login');
+      const alertBox = document.getElementById('login-feedback-alert');
+
+      const email = emailEl ? emailEl.value.trim() : '';
+      const password = passEl ? passEl.value.trim() : '';
+
+      if (!email || !password) {
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#fee2e2';
+          alertBox.style.color = '#dc2626';
+          alertBox.style.border = '1px solid #f87171';
+          alertBox.innerText = 'Vui lòng nhập đầy đủ Số điện thoại / Email và Mật khẩu!';
+        }
+        return false;
+      }
+
+      if (alertBox) alertBox.style.display = 'none';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng nhập...';
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Đăng nhập không thành công.');
+        }
+
+        // Lưu thông tin đăng nhập
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#dcfce7';
+          alertBox.style.color = '#15803d';
+          alertBox.style.border = '1px solid #86efac';
+          alertBox.innerText = '✓ Đăng nhập thành công! Đang chuyển sang Bước 2...';
+        }
+
+        // Cập nhật URL nếu có token mã hóa
+        const encId = data.encrypted_user_id || (data.user && data.user.encrypted_user_id);
+        if (encId) {
+          window.history.replaceState({ encrypted_user_id: encId }, '', `/sub/${encId}/set_up`);
+        } else if (window.location.search) {
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+
+        // Đồng bộ dữ liệu vào SubGatewayApp nếu instance đã sẵn sàng
+        if (window.SubGateway) {
+          window.SubGateway.state.token = data.token;
+          window.SubGateway.state.user = data.user;
+          if (encId) window.SubGateway.state.encryptedUserId = encId;
+          await window.SubGateway.loadUserFarms().catch(function() {});
+          window.SubGateway.showView('view-farm-hub');
+        } else {
+          // Fallback điều hướng trực tiếp
+          window.switchSubView('view-farm-hub');
+        }
+      } catch (err) {
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#fee2e2';
+          alertBox.style.color = '#dc2626';
+          alertBox.style.border = '1px solid #f87171';
+          alertBox.innerText = '❌ ' + (err.message || 'Lỗi đăng nhập. Vui lòng thử lại!');
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="log-in"></i> Đăng Nhập';
+          if (window.lucide) window.lucide.createIcons();
+        }
       }
       return false;
     };
@@ -201,6 +284,7 @@
             <label class="form-label"><i data-lucide="lock" class="lucide-xs"></i> Mật khẩu</label>
             <input type="password" id="login-password" class="form-input" placeholder="Nhập mật khẩu..." required>
           </div>
+          <div id="login-feedback-alert" style="display:none; margin:10px 0; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600; text-align:center;"></div>
           <button type="button" id="btn-submit-login" class="btn btn-primary" onclick="window.handleSubLoginSubmit(event);" style="margin-top:10px;">
             <i data-lucide="log-in"></i> Đăng Nhập
           </button>
