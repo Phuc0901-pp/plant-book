@@ -91,8 +91,9 @@ async function runPortalsE2E() {
       if (!hasFarmerBindings) throw new Error('Modular Farmer ES exports missing on window');
     });
 
-    await assertStep('PORTAL-E2E-02: Admin Portal (/) loads modular GIS scripts (gis, gis-gps-tools, gis-export)', async () => {
-      const resp = await page.goto(`${targetUrl}/`, { waitUntil: 'networkidle', timeout: 30000 });
+    await assertStep('PORTAL-E2E-02: Admin Portal (/admin) loads modular GIS scripts (gis, gis-gps-tools, gis-export)', async () => {
+      await page.evaluate(() => localStorage.clear());
+      const resp = await page.goto(`${targetUrl}/admin/`, { waitUntil: 'networkidle', timeout: 30000 });
       if (!resp || resp.status() >= 400) throw new Error(`HTTP ${resp ? resp.status() : 'null'}`);
       const hasGisBindings = await page.evaluate(() => (
         typeof window.removeContourLinesFromMap === 'function' &&
