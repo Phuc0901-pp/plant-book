@@ -32,6 +32,7 @@ require('./suites/19_bi_analytics_and_i18n.test');
 require('./suites/20_iso_hardening_compliance.test');
 require('./suites/21_iso_29119_qc_qa_master.test');
 require('./suites/22_iso_19115_gps_gis_compliance.test');
+require('./suites/23_modular_architecture_and_schema_parity.test');
 
 async function main() {
   try {

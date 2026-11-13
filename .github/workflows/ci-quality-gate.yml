@@ -31,7 +31,11 @@ jobs:
         run: |
           node --check routes/plants.js
           for f in routes/plants/*.js; do node --check "$f"; done
-          for f in ../frontend/public/js/plant*.js; do node --check "$f"; done
+          for f in ../frontend/public/js/*.js; do node --check "$f"; done
+          for f in ../frontend/admin/js/*.js; do node --check "$f"; done
+          for f in ../frontend/assets/js/*.js; do node --check "$f"; done
+          for f in ../frontend/user/js/*.js ../frontend/user/js/*/*.js; do node --check "$f"; done
+          node scripts/build-html.js
 
-      - name: Run 24 ISO Test Suites (160+ Cases)
+      - name: Run 25 ISO Test Suites (164+ Cases)
         run: npm run test:iso

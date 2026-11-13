@@ -29,6 +29,8 @@ const STATIC_ASSETS = [
   '/user/js/core/offline-sync.js',
   '/user/js/modules/dashboard.js',
   '/user/js/modules/plants.js',
+  '/user/js/modules/plants-iot-weather.js',
+  '/user/js/modules/plants-profile-erp.js',
   '/user/js/modules/notifications.js',
   '/user/js/modules/logs.js',
   '/user/js/modules/reminders.js',
