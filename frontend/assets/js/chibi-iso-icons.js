@@ -9,14 +9,8 @@
   const CHIBI_REGISTRY = {
     'chibi-water': {
       label: 'Tưới nước',
-      svg: `<defs>
-        <linearGradient id="cw-g1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#38bdf8"/>
-          <stop offset="100%" stop-color="#0284c7"/>
-        </linearGradient>
-      </defs>
-      <circle cx="32" cy="32" r="30" fill="#e0f2fe"/>
-      <path d="M32 10 C32 10 16 28 16 39 C16 48 23.2 54 32 54 C40.8 54 48 48 48 39 C48 28 32 10 32 10 Z" fill="url(#cw-g1)" stroke="#0369a1" stroke-width="2.2" stroke-linejoin="round"/>
+      svg: `<circle cx="32" cy="32" r="30" fill="#e0f2fe"/>
+      <path d="M32 10 C32 10 16 28 16 39 C16 48 23.2 54 32 54 C40.8 54 48 48 48 39 C48 28 32 10 32 10 Z" fill="#0ea5e9" stroke="#0369a1" stroke-width="2.2" stroke-linejoin="round"/>
       <ellipse cx="25" cy="31" rx="3" ry="5" transform="rotate(-25 25 31)" fill="#bae6fd" opacity="0.7"/>
       <circle cx="26.5" cy="39" r="2.2" fill="#0f172a"/>
       <circle cx="37.5" cy="39" r="2.2" fill="#0f172a"/>
@@ -29,16 +23,10 @@
 
     'chibi-fertilize': {
       label: 'Bón phân',
-      svg: `<defs>
-        <linearGradient id="cf-g1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#4ade80"/>
-          <stop offset="100%" stop-color="#15803d"/>
-        </linearGradient>
-      </defs>
-      <circle cx="32" cy="32" r="30" fill="#dcfce7"/>
+      svg: `<circle cx="32" cy="32" r="30" fill="#dcfce7"/>
       <path d="M18 46 Q32 53 46 46 L43 52 Q32 56 21 52 Z" fill="#92400e" stroke="#78350f" stroke-width="1.8" stroke-linejoin="round"/>
       <path d="M32 47 L32 30" stroke="#15803d" stroke-width="3.2" stroke-linecap="round"/>
-      <path d="M32 32 C22 32 16 24 18 16 C26 16 32 22 32 32 Z" fill="url(#cf-g1)" stroke="#166534" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M32 32 C22 32 16 24 18 16 C26 16 32 22 32 32 Z" fill="#4ade80" stroke="#166534" stroke-width="2" stroke-linejoin="round"/>
       <path d="M32 28 C42 28 48 20 46 12 C38 12 32 18 32 28 Z" fill="#22c55e" stroke="#166534" stroke-width="2" stroke-linejoin="round"/>
       <circle cx="28" cy="40" r="2.1" fill="#0f172a"/>
       <circle cx="36" cy="40" r="2.1" fill="#0f172a"/>

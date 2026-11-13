@@ -2499,6 +2499,12 @@ function getCareLogSummary(log) {
     const waterStr = details.water_volume ? ` pha với <strong>${esc(details.water_volume)}L</strong> nước` : '';
     return `Đã phun thuốc <strong>${esc(pestName)}</strong>. Liều lượng: <strong>${esc(qtyStr)}</strong>${waterStr}.`;
   }
+  if (log.log_type === 'Nhân công') {
+    const work = details.work_content || details.activity || 'Thuê nhân công chăm sóc';
+    const workersStr = details.workers_count ? ` (${Number(details.workers_count)} người)` : '';
+    const costStr = details.cost ? ` · Chi phí: <strong>${Number(details.cost).toLocaleString('vi-VN')} đ</strong>` : '';
+    return `Thuê nhân công: <strong>${esc(work)}</strong>${workersStr}${costStr}.`;
+  }
   if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
     const actStr = details.activity || details.reason || 'Cắt tỉa cành/lá định kỳ';
     const qtyStr = qty ? `Số lượng: <strong>${qty} ${unit || 'cành'}</strong>. ` : '';
@@ -2583,39 +2589,53 @@ function _renderTimelineItemHtml(log) {
   let markerClass = '';
   let tagClass = 'tag-general';
   let icon = 'edit-3';
+  let chibiKey = '';
   
   if (log.log_type === 'Tưới nước') {
     markerClass = 'marker-water';
     tagClass = 'tag-water';
     icon = 'droplets';
+    chibiKey = 'chibi-water';
   } else if (log.log_type === 'Bón phân') {
     markerClass = 'marker-fertilize';
     tagClass = 'tag-fertilize';
     icon = 'leaf';
+    chibiKey = 'chibi-fertilize';
   } else if (log.log_type === 'Phun thuốc') {
     markerClass = 'marker-pesticide';
     tagClass = 'tag-pesticide';
     icon = 'flask-conical';
+    chibiKey = 'chibi-pesticide';
+  } else if (log.log_type === 'Nhân công') {
+    markerClass = 'marker-water';
+    tagClass = 'tag-water';
+    icon = 'users';
+    chibiKey = 'chibi-labor';
   } else if (log.log_type === 'Cắt lá' || log.log_type === 'Cắt tỉa') {
     markerClass = 'marker-leaf';
     tagClass = 'tag-leaf';
     icon = 'scissors';
+    chibiKey = 'chibi-labor';
   } else if (log.log_type === 'Tỉa hoa') {
     markerClass = 'marker-flower';
     tagClass = 'tag-flower';
     icon = 'flower';
+    chibiKey = 'chibi-labor';
   } else if (log.log_type === 'Thụ phấn') {
     markerClass = 'marker-flower';
     tagClass = 'tag-flower';
     icon = 'sparkles';
+    chibiKey = 'chibi-fertilize';
   } else if (log.log_type === 'Thu hoạch') {
     markerClass = 'marker-fertilize';
     tagClass = 'tag-fertilize';
     icon = 'wheat';
+    chibiKey = 'chibi-harvest';
   } else if (log.log_type === 'Bệnh cây') {
     markerClass = 'marker-disease';
     tagClass = 'tag-disease';
     icon = 'bug';
+    chibiKey = 'chibi-disease';
   }
   
   const timeVal = (log.details && log.details.performed_at) ? log.details.performed_at : log.created_at;
@@ -2680,7 +2700,7 @@ function _renderTimelineItemHtml(log) {
       <div class="timeline-content" onclick="toggleTimelineItem(event, this)">
         <div class="log-header">
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
-            <span class="log-tag ${tagClass}"><i data-lucide="${icon}" class="lucide-xs"></i> ${esc(log.log_type || 'Ghi chú')}</span>
+            <span class="log-tag ${tagClass}">${(chibiKey && window.ChibiIcons) ? window.ChibiIcons.get(chibiKey, 18) : `<i data-lucide="${icon}" class="lucide-xs"></i>`} ${esc(log.log_type || 'Ghi chú')}</span>
             ${mediaBadge}
           </div>
           <div class="log-header-right">
