@@ -41,28 +41,36 @@ app.get('/favicon.ico', (req, res) => {
 // Serve user portal images across all path prefixes (/user/img, /img, /usr-*/img)
 app.use(['/user/img', '/img', '/usr-*/img', '/usr-*/*/img'], express.static(path.join(__dirname, '../frontend/user/img')));
 
-// Serve frontend static files with robust no-cache headers across all browsers
+// Serve frontend static files with smart ETag revalidation (saves 3G/4G bandwidth while guaranteeing fresh updates)
 app.use(express.static(path.join(__dirname, '../frontend'), {
+  etag: true,
+  lastModified: true,
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('sw.js')) {
+    if (filePath.endsWith('sw.js') || filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.setHeader('Service-Worker-Allowed', '/');
-    } else if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html') || filePath.endsWith('.json')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
+      if (filePath.endsWith('sw.js')) res.setHeader('Service-Worker-Allowed', '/');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.json')) {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    } else if (/\.(png|jpg|jpeg|svg|webp|ico|woff2?)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
     }
   }
 }));
 
 app.use(express.static(path.join(__dirname, '../frontend/public'), {
+  etag: true,
+  lastModified: true,
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html') || filePath.endsWith('.json')) {
+    if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.json')) {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    } else if (/\.(png|jpg|jpeg|svg|webp|ico|woff2?)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
     }
   }
 }));

@@ -57,6 +57,25 @@ function loadRawConfig() {
 
 const APP_CONFIG = loadRawConfig();
 
+// Dynamic environment override for Staging / Dev / Production separation
+const envBaseUrl = process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL;
+if (envBaseUrl) {
+  const cleanBase = envBaseUrl.replace(/\/+$/, '');
+  APP_CONFIG.api = APP_CONFIG.api || {};
+  APP_CONFIG.api.productionBaseUrl = `${cleanBase}/api`;
+  APP_CONFIG.api.productionWsUrl = cleanBase.replace(/^http/, 'ws');
+}
+
+function getDynamicBaseUrl(req) {
+  if (req && typeof req.get === 'function') {
+    const host = req.get('host');
+    const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    if (host) return `${proto}://${host}`;
+  }
+  const fallback = process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || APP_CONFIG.api?.productionBaseUrl || 'https://plant-book.onrender.com';
+  return fallback.replace(/\/api\/?$/, '');
+}
+
 function getAppConfig() {
   return APP_CONFIG;
 }
@@ -99,5 +118,6 @@ module.exports = {
   getBrandInfo,
   getCacheConfig,
   getDefaults,
-  getRateLimitConfig
+  getRateLimitConfig,
+  getDynamicBaseUrl
 };

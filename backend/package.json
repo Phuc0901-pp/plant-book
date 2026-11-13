@@ -11,7 +11,9 @@
     "build:html": "node scripts/build-html.js",
     "sync:config": "node ../scripts/sync-config.js",
     "bump:version": "node ../scripts/sync-config.js",
-    "test": "node tests/run-all-tests.js"
+    "test": "node tests/run-all-tests.js",
+    "test:iso": "node tests/run-iso-qc-qa.js",
+    "test:e2e": "node tests/e2e/sub-gateway.e2e.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
@@ -32,6 +34,7 @@
   },
   "devDependencies": {
     "docx": "^9.7.1",
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "playwright-core": "^1.65.0"
   }
 }
