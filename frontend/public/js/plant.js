@@ -3637,13 +3637,9 @@ async function renderPlant(plant, isEditable) {
             <i data-lucide="flask-conical" class="lucide-sm" style="color: var(--color-pesticide)"></i>
             <span>Phun thuốc</span>
           </button>
-          <button class="care-btn care-btn-leaf" onclick="openModal('modal-leaf')">
-            <i data-lucide="scissors" class="lucide-sm" style="color: var(--color-leaf)"></i>
-            <span>Cắt cành/lá</span>
-          </button>
-          <button class="care-btn care-btn-flower" onclick="openModal('modal-flower')">
-            <i data-lucide="flower" class="lucide-sm" style="color: var(--color-flower)"></i>
-            <span>Tỉa hoa/quả</span>
+          <button class="care-btn care-btn-labor" onclick="openModal('modal-labor')" style="border-color:#bae6fd; background:#f0f9ff;">
+            <i data-lucide="users" class="lucide-sm" style="color: #0284c7"></i>
+            <span style="color: #0369a1; font-weight: 700;">Thuê nhân công</span>
           </button>
           <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">
             <i data-lucide="shield-alert" class="lucide-sm" style="color: var(--color-disease)"></i>
@@ -4079,6 +4075,20 @@ async function submitCareLog(event, type, modalId, formId) {
     details.equipment_used = document.getElementById('pesticide-equipment-used')?.value.trim() || '';
     note = document.getElementById('pesticide-note')?.value.trim() || '';
   } 
+  else if (type === 'Nhân công') {
+    const selectVal = document.getElementById('labor-work-select')?.value;
+    const workContent = selectVal === '__custom__' ? document.getElementById('labor-work-custom')?.value.trim() : selectVal;
+    const costVal = parseFloat(document.getElementById('labor-cost')?.value) || 0;
+    const workersCount = parseInt(document.getElementById('labor-workers-count')?.value) || 1;
+    details.work_content = workContent || 'Thuê nhân công chăm sóc';
+    details.activity = details.work_content;
+    details.cost = costVal;
+    details.labor_cost = costVal;
+    details.workers_count = workersCount;
+    details.operator_name = document.getElementById('labor-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('labor-equipment-used')?.value.trim() || '';
+    note = document.getElementById('labor-note')?.value.trim() || '';
+  }
   else if (type === 'Cắt lá') {
     details.amount = document.getElementById('leaf-amount')?.value.trim() || '';
     const selectVal = document.getElementById('leaf-reason-select')?.value;

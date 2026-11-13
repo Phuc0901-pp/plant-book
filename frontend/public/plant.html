@@ -982,6 +982,81 @@
   </div>
 </div>
 
+<!-- 👷 Labor / Thuê nhân công Modal -->
+<div class="modal-overlay" id="modal-labor" onclick="closeModalOnOuterClick(event, 'modal-labor')">
+  <div class="glass-panel modal">
+    <div class="modal-header">
+      <h3 class="modal-title" style="color: #0284c7;"><i data-lucide="users" class="lucide-sm"></i> Ghi nhận Thuê nhân công</h3>
+      <button class="modal-close" onclick="closeModal('modal-labor')">×</button>
+    </div>
+    <form id="form-labor" onsubmit="submitCareLog(event, 'Nhân công', 'modal-labor', 'form-labor')">
+      <div class="modal-body">
+        <div class="field">
+          <label>Công việc thuê nhân công *</label>
+          <div class="custom-select-wrap">
+            <select id="labor-work-select" onchange="toggleCustomInput('labor-work')">
+              <option value="Cắt cành / Tỉa lá tạo tán">✂️ Cắt cành / Tỉa lá tạo tán</option>
+              <option value="Tỉa hoa / Tỉa trái non">🌸 Tỉa hoa / Tỉa trái non</option>
+              <option value="Làm cỏ / Vệ sinh gốc">🌿 Làm cỏ / Vệ sinh gốc</option>
+              <option value="Bao trái / Chống cành">🛡️ Bao trái / Chống cành</option>
+              <option value="Bón phân / Phun thuốc thuê ngoài">🚜 Bón phân / Phun thuốc thuê ngoài</option>
+              <option value="__custom__">✏️ Công việc khác (Tự nhập)...</option>
+            </select>
+            <input type="text" id="labor-work-custom" placeholder="Nhập tên công việc..." style="display:none; width: 45%;">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <div class="field" style="flex:1.5;">
+            <label>Chi phí thuê nhân công (VNĐ) *</label>
+            <input type="number" id="labor-cost" placeholder="Ví dụ: 350000" min="0" step="1000" required>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Số công / Người</label>
+            <input type="number" id="labor-workers-count" value="1" min="1">
+          </div>
+        </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Thực Hiện &amp; Dụng Cụ
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người phụ trách / Tổ đội</label>
+              <input type="text" id="labor-operator-name" placeholder="VD: Tổ đội anh Ba" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Dụng cụ sử dụng</label>
+              <input type="text" id="labor-equipment-used" placeholder="VD: Kéo tỉa, máy cắt cỏ..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Thời gian thực hiện *</label>
+          <input type="datetime-local" id="labor-datetime" required>
+        </div>
+
+        <div class="field">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('labor-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="labor-note" rows="2" placeholder="Chi tiết khối lượng công việc, chất lượng thực hiện..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-labor')">Hủy</button>
+        <button type="submit" class="btn btn-submit" style="background:#0284c7; color:#fff;">Lưu nhật ký nhân công</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ✂️ Leaf Cut Modal -->
 <div class="modal-overlay" id="modal-leaf" onclick="closeModalOnOuterClick(event, 'modal-leaf')">
   <div class="glass-panel modal">

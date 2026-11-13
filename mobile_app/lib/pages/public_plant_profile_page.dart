@@ -272,7 +272,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     if (activityType == 'Tưới nước') detailLabel = 'Lượng nước (lít):';
     if (activityType == 'Bón phân') detailLabel = 'Tên phân bón:';
     if (activityType == 'Phun thuốc') detailLabel = 'Tên thuốc BVTV:';
-    if (activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') detailLabel = 'Lý do tỉa:';
+    if (activityType == 'Thuê nhân công' || activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') detailLabel = 'Công việc thuê nhân công (Tỉa cành/Tỉa hoa/Làm cỏ...):';
     if (activityType == 'Bệnh cây') detailLabel = 'Tên sâu bệnh phát hiện:';
 
     final bool? confirm = await showDialog<bool>(
@@ -341,12 +341,16 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       if (activityType == 'Tưới nước') details['method'] = value;
       if (activityType == 'Bón phân') details['fertilizer'] = value;
       if (activityType == 'Phun thuốc') details['pesticide'] = value;
-      if (activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') details['reason'] = value;
+      if (activityType == 'Thuê nhân công' || activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') {
+        details['work_content'] = value;
+        details['activity'] = value;
+      }
       if (activityType == 'Bệnh cây') details['disease'] = value;
 
+      final apiLogType = activityType == 'Thuê nhân công' ? 'Nhân công' : activityType;
       final success = await _apiService.createPublicLog(
         widget.slug,
-        activityType,
+        apiLogType,
         note,
         details,
       );
@@ -680,8 +684,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       {'label': 'Tưới nước', 'icon': Icons.water_drop_rounded, 'color': Colors.blue},
       {'label': 'Bón phân', 'icon': Icons.opacity_rounded, 'color': Colors.green},
       {'label': 'Phun thuốc', 'icon': Icons.science_rounded, 'color': Colors.orange},
-      {'label': 'Cắt cành/lá', 'icon': Icons.content_cut_rounded, 'color': Colors.teal},
-      {'label': 'Tỉa hoa/quả', 'icon': Icons.park_outlined, 'color': Colors.purple},
+      {'label': 'Thuê nhân công', 'icon': Icons.engineering_rounded, 'color': Colors.cyan},
       {'label': 'Bệnh cây', 'icon': Icons.error_outline_rounded, 'color': Colors.red},
     ];
 
