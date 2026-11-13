@@ -46,8 +46,9 @@ describe('Suite 12: NTAG213 Security Architecture & Geofence (<= 8.0m) Verificat
     // Verify valid signature
     expect(nfcSecurity.verifyHmacSignature(uid, plantId, sig1)).toBe(true);
 
-    // Verify tampered signature is rejected
-    const tamperedSig = sig1.substring(0, 31) + '0';
+    // Verify tampered signature is rejected (flip last hex char deterministically)
+    const tamperedChar = sig1[31] === '0' ? '1' : '0';
+    const tamperedSig = sig1.substring(0, 31) + tamperedChar;
     expect(nfcSecurity.verifyHmacSignature(uid, plantId, tamperedSig)).toBe(false);
 
     // Verify wrong plant ID is rejected

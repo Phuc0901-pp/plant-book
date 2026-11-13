@@ -29,6 +29,9 @@ require('./suites/16_smart_performance_and_sync.test');
 require('./suites/17_v135_hashchain_offline_migration.test');
 require('./suites/18_flutter_mobile_v135_security_sync.test');
 require('./suites/19_bi_analytics_and_i18n.test');
+require('./suites/20_iso_hardening_compliance.test');
+require('./suites/21_iso_29119_qc_qa_master.test');
+require('./suites/22_iso_19115_gps_gis_compliance.test');
 
 async function main() {
   try {

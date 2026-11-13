@@ -274,12 +274,16 @@ class TestFramework {
 // Global singleton runner instance
 const globalRunner = new TestFramework();
 
+const assert = require('assert');
+
 module.exports = {
   TestFramework,
+  assert,
   describe: (name, fn) => globalRunner.describe(name, fn),
   beforeAll: (fn) => globalRunner.beforeAll(fn),
   afterAll: (fn) => globalRunner.afterAll(fn),
   it: (name, fn) => globalRunner.it(name, fn),
+  test: (name, fn) => globalRunner.it(name, fn),
   expect: (val) => globalRunner.expect(val),
   run: (quiet) => globalRunner.run(quiet),
   getResults: () => globalRunner.results,

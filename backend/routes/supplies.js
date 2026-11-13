@@ -619,6 +619,11 @@ router.delete('/:id', auth, async (req, res) => {
     logAuditAction(req.user.id, req.user.full_name || req.user.email, 'DELETE', 'Vật tư', id, `Xóa vật tư "${check.rows[0].name}"`, check.rows[0], {});
     res.json({ success: true, message: 'Đã xóa vật tư thành công.' });
   } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({
+        error: 'Không thể xóa vật tư này vì đã có lịch sử xuất kho / sử dụng (bảo vệ toàn vẹn dữ liệu tài chính).'
+      });
+    }
     console.error('Error deleting supply:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa vật tư.' });
   }

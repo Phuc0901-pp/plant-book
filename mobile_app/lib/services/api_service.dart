@@ -997,6 +997,9 @@ class ApiService {
     int issueLevel = 1,
     double? latitude,
     double? longitude,
+    double? gpsAccuracy,
+    double? gpsAltitude,
+    DateTime? capturedAt,
   }) async {
     final String cleanUid = CryptoSecurityService.normalizeNfcUid(nfcUid);
     final String computedHmac =
@@ -1012,6 +1015,13 @@ class ApiService {
       'issue_level': issueLevel,
       'latitude': latitude,
       'longitude': longitude,
+      'gps_accuracy': gpsAccuracy,
+      'gps_altitude': gpsAltitude,
+      'gps_srid': 4326,
+      'gps_captured_at':
+          (latitude != null && longitude != null)
+              ? (capturedAt ?? DateTime.now()).toUtc().toIso8601String()
+              : null,
     });
 
     try {

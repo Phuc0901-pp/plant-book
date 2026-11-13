@@ -70,7 +70,12 @@ describe('Suite 16: Smart Performance, Range Querying, Deduplication & Live Sync
     const ok = await invalidateAndBroadcast('plants_updated', { plant_id: 1, action: 'update' }, ['plants_']);
     expect(ok).toBe(true);
 
-    const after = await getCache('plants_test_16');
+    // Wait up to 300ms for async queueService worker interval to finish cache invalidation
+    let after = await getCache('plants_test_16');
+    for (let i = 0; i < 15 && after !== null; i++) {
+      await new Promise(r => setTimeout(r, 20));
+      after = await getCache('plants_test_16');
+    }
     expect(after).toBe(null);
     expect(wsPacket !== null).toBe(true);
     expect(wsPacket.event).toBe('plants_updated');

@@ -359,6 +359,11 @@ router.delete('/my-team/:id', ensureFarmOwnerPrivilege, async (req, res) => {
       message: `Đã xóa tài khoản nhân sự "${target.full_name}" khỏi trang trại.`
     });
   } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({
+        error: 'Không thể xóa tài khoản nhân sự này vì đã phát sinh dữ liệu lịch sử xuất kho hoặc tài sản cố định.'
+      });
+    }
     console.error('Error deleting sub-account:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa tài khoản nhân sự: ' + err.message });
   }

@@ -25,21 +25,11 @@ try {
 }
 
 // ─── Middleware ───────────────────────────────────────────────────
+const { securityHeaders, buildCorsOptions } = require('./middleware/securityHeaders');
+app.disable('x-powered-by');
+app.use(securityHeaders);
 app.use(compression()); // Gzip compression: giảm 70%-85% kích thước payload truyền tải
-app.use(cors({
-  origin: '*',
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Api-Key',
-    'X-Client-Version',
-    'X-Client-Signature',
-    'X-Client-Nonce',
-    'X-Client-Timestamp',
-    'X-Requested-With'
-  ]
-}));
+app.use(cors(buildCorsOptions()));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

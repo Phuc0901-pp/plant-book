@@ -4,6 +4,7 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { getCache, setCache, delCache, delCacheByPattern } = require('../config/redis');
+const { normalizeGpsPayload, validateGeoJsonPolygon } = require('../utils/geoIsoValidator');
 
 // GET all farms with plant count (requires auth)
 router.get('/', auth, async (req, res) => {
@@ -995,6 +996,11 @@ router.post('/', auth, admin, async (req, res) => {
       return res.status(400).json({ error: 'Tên trang trại là bắt buộc.' });
     }
 
+    const polyCheck = validateGeoJsonPolygon(polygon_coordinates);
+    if (!polyCheck.valid) {
+      return res.status(400).json({ error: polyCheck.error });
+    }
+
     const result = await pool.query(`
       INSERT INTO farms (name, description, polygon_coordinates, area, created_by, user_id, puc_code, vietgap_cert_number, vietgap_cert_date, vietgap_cert_org)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -1051,11 +1057,20 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     let finalCoords = polygon_coordinates;
+    if (polygon_coordinates !== undefined) {
+      const polyCheck = validateGeoJsonPolygon(polygon_coordinates);
+      if (!polyCheck.valid) {
+        return res.status(400).json({ error: polyCheck.error });
+      }
+      finalCoords = polyCheck.value;
+    }
     if ((latitude && longitude) || (!polygon_coordinates && latitude && longitude)) {
-      const lat = parseFloat(latitude);
-      const lng = parseFloat(longitude);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        finalCoords = [[lng, lat]];
+      const gpsNorm = normalizeGpsPayload({ latitude, longitude });
+      if (!gpsNorm.valid) {
+        return res.status(400).json({ error: gpsNorm.error });
+      }
+      if (gpsNorm.hasCoordinates) {
+        finalCoords = [[gpsNorm.data.longitude, gpsNorm.data.latitude]];
       }
     }
 
@@ -1513,7 +1528,12 @@ router.delete('/:id', auth, async (req, res) => {
       await client.query('DELETE FROM plants WHERE farm_id = $1', [farmId]);
       await client.query('UPDATE users SET farm_id = NULL WHERE farm_id = $1', [farmId]);
       await client.query('DELETE FROM farms WHERE id = $1', [farmId]);
-      await client.query('DELETE FROM data_audit_logs WHERE target_type = $1 AND record_id = $2', ['Trang trại', farmId]);
+      // ISO Append-Only Audit: ghi nhận sự kiện xóa vĩnh viễn thay vì xóa dấu vết data_audit_logs
+      await client.query(
+        `INSERT INTO data_audit_logs (user_id, user_name, action_type, target_type, record_id, title, note)
+         VALUES ($1, $2, 'HARD_DELETE', 'Trang trại', $3, $4, 'Xóa vĩnh viễn trang trại (giữ nguyên nhật ký kiểm toán Append-Only)')`,
+        [req.user.id, req.user.full_name || req.user.email || 'Admin', farmId, `Xóa vĩnh viễn trang trại #${farmId}`]
+      );
 
       await client.query('COMMIT');
 

@@ -64,35 +64,18 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/history/:id — Xóa một dòng nhật ký biến động
+// DELETE /api/history/:id — Bảo vệ Append-Only theo chuẩn ISO (không cho phép xóa nhật ký kiểm toán)
 router.delete('/:id', auth, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (req.user.role !== 'admin') {
-      await pool.query('DELETE FROM data_audit_logs WHERE id = $1 AND user_id = $2', [id, req.user.id]);
-    } else {
-      await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
-    }
-    res.json({ success: true, message: 'Đã xóa bản ghi nhật ký biến động thành công.' });
-  } catch (err) {
-    console.error('Error deleting audit log:', err);
-    res.status(500).json({ error: 'Lỗi server khi xóa nhật ký biến động.' });
-  }
+  return res.status(403).json({
+    error: 'Nhật ký kiểm toán được bảo vệ bất biến (Append-Only) theo tiêu chuẩn ISO, không thể xóa dấu vết lịch sử.'
+  });
 });
 
-// DELETE /api/history — Dọn dẹp/Xóa toàn bộ nhật ký biến động
+// DELETE /api/history — Bảo vệ Append-Only theo chuẩn ISO
 router.delete('/', auth, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      await pool.query('DELETE FROM data_audit_logs WHERE user_id = $1', [req.user.id]);
-    } else {
-      await pool.query('DELETE FROM data_audit_logs');
-    }
-    res.json({ success: true, message: 'Đã dọn dẹp sạch toàn bộ nhật ký biến động.' });
-  } catch (err) {
-    console.error('Error clearing audit logs:', err);
-    res.status(500).json({ error: 'Lỗi server khi dọn dẹp nhật ký.' });
-  }
+  return res.status(403).json({
+    error: 'Nhật ký kiểm toán được bảo vệ bất biến (Append-Only) theo tiêu chuẩn ISO, không thể dọn dẹp hoặc xóa dấu vết lịch sử.'
+  });
 });
 
 // POST /api/history/:id/restore — Khôi phục bản ghi bị xóa mềm
@@ -178,19 +161,23 @@ router.delete('/:id/purge', auth, async (req, res) => {
       if (targetIds.length > 0) {
         await pool.query('DELETE FROM plant_logs WHERE id = ANY($1::int[])', [targetIds]);
       }
-      await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
-      return res.json({ success: true, message: `Đã xóa vĩnh viễn ${targetIds.length} bản ghi khỏi CSDL.` });
+      return res.json({ success: true, message: `Đã xóa vĩnh viễn ${targetIds.length} bản ghi khỏi CSDL (lịch sử kiểm toán được giữ nguyên theo chuẩn ISO).` });
     }
 
     if (auditItem.target_type === 'Trang trại' && auditItem.record_id) {
       await pool.query('DELETE FROM farms WHERE id = $1', [auditItem.record_id]);
-      await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
-      return res.json({ success: true, message: 'Đã xóa vĩnh viễn trang trại khỏi CSDL.' });
+      return res.json({ success: true, message: 'Đã xóa vĩnh viễn trang trại khỏi CSDL (lịch sử kiểm toán được giữ nguyên theo chuẩn ISO).' });
     }
 
-    await pool.query('DELETE FROM data_audit_logs WHERE id = $1', [id]);
-    res.json({ success: true, message: 'Đã dọn dẹp bản ghi kiểm toán.' });
+    return res.status(403).json({
+      error: 'Nhật ký kiểm toán được bảo vệ bất biến (Append-Only) theo tiêu chuẩn ISO, không thể xóa bản ghi kiểm toán.'
+    });
   } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({
+        error: 'Không thể xóa vĩnh viễn vì còn dữ liệu lịch sử liên kết (bảo vệ toàn vẹn dữ liệu chuẩn ISO).'
+      });
+    }
     console.error('Error purging data from audit log:', err);
     res.status(500).json({ error: 'Lỗi server khi xóa vĩnh viễn: ' + err.message });
   }

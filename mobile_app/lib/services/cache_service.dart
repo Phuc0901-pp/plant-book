@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/security/crypto_security_service.dart';
@@ -25,17 +26,51 @@ class CacheService {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
+  static const String _hiveKeyName = 'hive_sec_key_v1';
+
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
   Future<Uint8List> _getOrCreateEncryptionKey() async {
+    // 1. Ưu tiên đọc khóa AES-256 từ Hardware Keystore / iOS Keychain
+    try {
+      final String? secureKey = await _secureStorage.read(key: _hiveKeyName);
+      if (secureKey != null && secureKey.isNotEmpty) {
+        final decoded = base64Decode(secureKey);
+        if (decoded.length == 32) {
+          return decoded;
+        }
+      }
+    } catch (_) {
+      // Fallback sang SharedPreferences nếu môi trường test/platform không hỗ trợ Keystore
+    }
+
+    // 2. Zero-data-loss migration: Kiểm tra khóa cũ ở SharedPreferences
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? keyString = prefs.getString('hive_sec_key_v1');
-    if (keyString != null && keyString.isNotEmpty) {
+    final String? legacyKey = prefs.getString(_hiveKeyName);
+    if (legacyKey != null && legacyKey.isNotEmpty) {
       try {
-        return base64Decode(keyString);
+        final decoded = base64Decode(legacyKey);
+        if (decoded.length == 32) {
+          try {
+            await _secureStorage.write(key: _hiveKeyName, value: legacyKey);
+            await prefs.remove(_hiveKeyName);
+          } catch (_) {}
+          return decoded;
+        }
       } catch (_) {}
     }
-    // Khởi tạo khóa AES-256 (32 bytes = 256 bits) an toàn
+
+    // 3. Khởi tạo khóa AES-256 (32 bytes = 256 bits) an toàn và lưu vào SecureStorage
     final List<int> key = Hive.generateSecureKey();
-    await prefs.setString('hive_sec_key_v1', base64Encode(key));
+    final String encoded = base64Encode(key);
+    try {
+      await _secureStorage.write(key: _hiveKeyName, value: encoded);
+    } catch (_) {
+      await prefs.setString(_hiveKeyName, encoded);
+    }
     return Uint8List.fromList(key);
   }
 

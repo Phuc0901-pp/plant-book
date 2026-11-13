@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appVersion = 'v1.3.5';
+  static const String appVersion = 'v1.3.7';
   static const String buildNumber = '19';
   static const String fullBuildTag = 'v1.3.5+19';
   static const String appName = 'Sổ Nông Điện Tử';

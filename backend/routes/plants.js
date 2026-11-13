@@ -14,6 +14,7 @@ const { calculateSmartReminders } = require('../services/agriReminder');
 
 const checkTier = require('../middleware/checkTier');
 const crypto = require('crypto');
+const { normalizeGpsPayload } = require('../utils/geoIsoValidator');
 
 // ISO/IEC 27001 Cryptographic SHA-256 Hash-Chain Sealer for Cultivation Logs (Per-Farm Serialized Lock)
 const _farmHashChainLocks = new Map();
@@ -1587,24 +1588,38 @@ router.put('/:id/gps', auth, async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền cập nhật tọa độ cây này.' });
     }
 
-    const latVal = (latitude !== undefined && latitude !== null && latitude !== '') ? parseFloat(latitude) : null;
-    const lngVal = (longitude !== undefined && longitude !== null && longitude !== '') ? parseFloat(longitude) : null;
+    const gpsNorm = normalizeGpsPayload(req.body);
+    if (!gpsNorm.valid) {
+      return res.status(400).json({ error: gpsNorm.error });
+    }
+    const {
+      latitude: latVal,
+      longitude: lngVal,
+      gps_accuracy: accVal,
+      gps_altitude: altVal,
+      gps_captured_at: capturedAtVal,
+      gps_srid: sridVal
+    } = gpsNorm.data;
 
     let updateQuery;
     let updateParams;
     if (location !== undefined) {
       const locVal = (location !== null && location !== '') ? String(location).trim() : null;
       updateQuery = `UPDATE plants 
-                     SET latitude = $1, longitude = $2, location = $3, updated_at = NOW()
-                     WHERE id = $4
-                     RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude, location`;
-      updateParams = [latVal, lngVal, locVal, plantId];
+                     SET latitude = $1, longitude = $2, gps_accuracy = COALESCE($3, gps_accuracy),
+                         gps_altitude = COALESCE($4, gps_altitude), gps_captured_at = COALESCE($5::timestamptz, gps_captured_at),
+                         gps_srid = $6, location = $7, updated_at = NOW()
+                     WHERE id = $8
+                     RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude, gps_accuracy, gps_altitude, gps_captured_at, gps_srid, location`;
+      updateParams = [latVal, lngVal, accVal, altVal, capturedAtVal, sridVal, locVal, plantId];
     } else {
       updateQuery = `UPDATE plants 
-                     SET latitude = $1, longitude = $2, updated_at = NOW()
-                     WHERE id = $3
-                     RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude, location`;
-      updateParams = [latVal, lngVal, plantId];
+                     SET latitude = $1, longitude = $2, gps_accuracy = COALESCE($3, gps_accuracy),
+                         gps_altitude = COALESCE($4, gps_altitude), gps_captured_at = COALESCE($5::timestamptz, gps_captured_at),
+                         gps_srid = $6, updated_at = NOW()
+                     WHERE id = $7
+                     RETURNING id, tree_code, public_slug, nfc_uid, public_url, farm_id, latitude, longitude, gps_accuracy, gps_altitude, gps_captured_at, gps_srid, location`;
+      updateParams = [latVal, lngVal, accVal, altVal, capturedAtVal, sridVal, plantId];
     }
 
     const updated = await pool.query(updateQuery, updateParams);

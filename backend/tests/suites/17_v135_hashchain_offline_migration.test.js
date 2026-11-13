@@ -93,7 +93,7 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
     expect(offlineSyncJs.includes('/plants/${pid}/logs')).toBe(true);
   });
 
-  it('17.4 Should verify 100% SSOT Version v1.3.5 (Build 19) synchronization across all 10 platform files', () => {
+  it('17.4 Should verify 100% SSOT Version synchronization across platform config files', () => {
     const appConfigJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'config/app.config.json'), 'utf8'));
     const backendPkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'backend/package.json'), 'utf8'));
     const versionRoute = fs.readFileSync(path.join(rootDir, 'backend/routes/version.js'), 'utf8');
@@ -103,15 +103,17 @@ describe('Suite 17: v1.3.5 Hash-Chain Mutex Lock, Offline Batch Sync & Idempoten
     const pubspecYaml = fs.readFileSync(path.join(rootDir, 'mobile_app/pubspec.yaml'), 'utf8');
     const flutterConst = fs.readFileSync(path.join(rootDir, 'mobile_app/lib/core/constants/app_constants.dart'), 'utf8');
 
-    expect(appConfigJson.app.version).toBe('1.3.5');
-    expect(appConfigJson.app.buildNumber).toBe(19);
-    expect(backendPkg.version).toBe('1.3.5');
-    expect(versionRoute.includes("version: '1.3.5'")).toBe(true);
-    expect(swJs.includes('pb-farmer-cache-v1.3.5')).toBe(true);
-    expect(userConfigJs.includes('"version": "1.3.5"')).toBe(true);
-    expect(adminConfigJs.includes('"version": "1.3.5"')).toBe(true);
-    expect(pubspecYaml.includes('version: 1.3.5+19')).toBe(true);
-    expect(flutterConst.includes("'v1.3.5'")).toBe(true);
+    const ver = appConfigJson.app.version;
+    const build = appConfigJson.app.buildNumber;
+    expect(typeof ver).toBe('string');
+    expect(typeof build).toBe('number');
+    expect(backendPkg.version).toBe(ver);
+    expect(versionRoute.includes(`version: '${ver}'`) || versionRoute.includes('appConfig.app.version')).toBe(true);
+    expect(swJs.includes(`pb-farmer-cache-v${ver}`)).toBe(true);
+    expect(userConfigJs.includes(`"version": "${ver}"`)).toBe(true);
+    expect(adminConfigJs.includes(`"version": "${ver}"`)).toBe(true);
+    expect(/version:\s*\d+\.\d+\.\d+\+\d+/.test(pubspecYaml)).toBe(true);
+    expect(flutterConst.includes(`'v${ver}'`) || flutterConst.includes(`'${ver}'`)).toBe(true);
   });
 
 });

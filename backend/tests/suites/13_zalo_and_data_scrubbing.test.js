@@ -24,7 +24,7 @@ describe('Suite 13: Zalo OA Integration & Public Data Scrubbing Engine', () => {
     expect(alert.message).toContain('Trang Trại Sầu Riêng Long Khánh');
     expect(alert.message).toContain('#SR-LK-102');
     expect(alert.message).toContain('14.5 mét');
-    expect(alert.message).toContain('quy định ≤ 8m');
+    expect(alert.message).toContain('Quy định ≤ 8m');
   });
 
   it('13.2 Should format Zalo OA agricultural advisory and sensor alert message', async () => {

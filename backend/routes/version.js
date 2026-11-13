@@ -27,10 +27,10 @@ function getFallbackConfig() {
   }
   return {
     app: {
-      version: '1.3.5',
-      versionTag: 'v1.3.5',
-      buildNumber: 19,
-      releaseDate: '2026-10-16'
+      version: '1.3.7',
+      versionTag: 'v1.3.7',
+      buildNumber: 21,
+      releaseDate: '2026-11-13'
     }
   };
 }

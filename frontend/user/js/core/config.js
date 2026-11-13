@@ -1,4 +1,3 @@
-/* Plant Book Agtech (c) 2026 TBSG Agtech. All Rights Reserved. Enterprise Protected Asset */
 /* ═══════════════════════════════════════════════════════════════
    Plant Book – User Portal
    core/config.js — Centralized App Configuration (SSOT)
@@ -8,10 +7,10 @@ export const APP_CONFIG = {
   "app": {
     "name": "Sổ Nông Tân Bảo Agtech",
     "shortName": "Sổ Nông Số",
-    "version": "1.3.5",
-    "versionTag": "v1.3.5",
-    "buildNumber": 19,
-    "releaseDate": "2026-10-16",
+    "version": "1.3.7",
+    "versionTag": "v1.3.7",
+    "buildNumber": 21,
+    "releaseDate": "2026-11-13",
     "environment": "production"
   },
   "brand": {
@@ -21,8 +20,8 @@ export const APP_CONFIG = {
     "owner": "TBSG Agtech © 2026",
     "copyright": "Sổ Nông Tân Bảo · Bản quyền © 2026 TBSG Agtech",
     "loginFooter": "Bảo mật SSL/TLS · Phát triển & Sở hữu bởi TBSG Agtech © 2026",
-    "userPortalTitle": "Sổ Nông Tân Bảo Agtech v1.3.5 — Cổng nông hộ",
-    "adminPortalTitle": "Sổ Nông Tân Bảo Agtech v1.3.5 — Quản trị",
+    "userPortalTitle": "Sổ Nông Tân Bảo Agtech v1.3.7 — Cổng nông hộ",
+    "adminPortalTitle": "Sổ Nông Tân Bảo Agtech v1.3.7 — Quản trị",
     "plantProfileTitle": "Hồ sơ cây trồng — Sổ Nông Tân Bảo Agtech"
   },
   "api": {
@@ -33,17 +32,8 @@ export const APP_CONFIG = {
     "versionEndpoint": "/api/version"
   },
   "cache": {
-    "swCacheName": "pb-farmer-cache-v1.3.5",
-    "assetVersion": "1.3.5"
-  },
-  "rateLimit": {
-    "windowMs": 1000,
-    "maxRequestsPerWindow": 50,
-    "nfcCooldownMs": 3000,
-    "nfcMaxRequestsPerSecond": 3,
-    "uiThrottleMs": 350,
-    "statusCode": 429,
-    "message": "Thao tác quá nhanh! Giới hạn tối đa 50 yêu cầu/giây để bảo vệ hệ thống."
+    "swCacheName": "pb-farmer-cache-v1.3.7",
+    "assetVersion": "1.3.7"
   },
   "defaults": {
     "farmLatitude": 10.94152,
@@ -52,6 +42,12 @@ export const APP_CONFIG = {
     "logPageSize": 5,
     "healthStatus": "Tốt",
     "currency": "VND"
+  },
+  "rateLimit": {
+    "windowMs": 1000,
+    "maxRequestsPerWindow": 50,
+    "message": "Thao tác quá nhanh! Giới hạn tối đa 50 yêu cầu/giây để bảo vệ hệ thống.",
+    "statusCode": 429
   }
 };
 
