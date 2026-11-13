@@ -32,6 +32,31 @@
         }
       }
     };
+
+    // Native Form Submit Interceptors (Prevent GET /sub? reload loop)
+    window.handleSubLoginSubmit = function(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (window.SubGateway && typeof window.SubGateway.handleLogin === 'function') {
+        window.SubGateway.handleLogin();
+      }
+      return false;
+    };
+
+    window.handleSubRegisterSubmit = function(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (window.SubGateway && typeof window.SubGateway.handleRegisterAndFarmSetup === 'function') {
+        window.SubGateway.handleRegisterAndFarmSetup();
+      }
+      return false;
+    };
+
+    window.handleSubPlantSubmit = function(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (window.SubGateway && typeof window.SubGateway.handleSavePlant === 'function') {
+        window.SubGateway.handleSavePlant();
+      }
+      return false;
+    };
   </script>
 </head>
 <body>
@@ -167,7 +192,7 @@
           <span class="step-title-badge">ĐĂNG NHẬP</span>
         </div>
 
-        <form id="form-login">
+        <form id="form-login" action="javascript:void(0);" onsubmit="return window.handleSubLoginSubmit(event);">
           <div class="form-group">
             <label class="form-label"><i data-lucide="mail" class="lucide-xs"></i> Email hoặc Số điện thoại</label>
             <input type="text" id="login-email" class="form-input" placeholder="Ví dụ: 0912345678" required>
@@ -176,7 +201,7 @@
             <label class="form-label"><i data-lucide="lock" class="lucide-xs"></i> Mật khẩu</label>
             <input type="password" id="login-password" class="form-input" placeholder="Nhập mật khẩu..." required>
           </div>
-          <button type="submit" id="btn-submit-login" class="btn btn-primary" style="margin-top:10px;">
+          <button type="button" id="btn-submit-login" class="btn btn-primary" onclick="window.handleSubLoginSubmit(event);" style="margin-top:10px;">
             <i data-lucide="log-in"></i> Đăng Nhập
           </button>
         </form>
@@ -198,7 +223,7 @@
           <span class="step-title-badge">ĐĂNG KÝ VƯỜN MỚI</span>
         </div>
 
-        <form id="form-register">
+        <form id="form-register" action="javascript:void(0);" onsubmit="return window.handleSubRegisterSubmit(event);">
           <div class="form-group">
             <label class="form-label"><i data-lucide="user" class="lucide-xs"></i> Họ và Tên Chủ Vườn</label>
             <input type="text" id="reg-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn Nông" required>
@@ -239,7 +264,7 @@
             </div>
           </div>
 
-          <button type="submit" id="btn-submit-register" class="btn btn-primary">
+          <button type="button" id="btn-submit-register" class="btn btn-primary" onclick="window.handleSubRegisterSubmit(event);">
             <i data-lucide="sparkles"></i> Kích Hoạt Tài Khoản & Tạo Vườn
           </button>
         </form>
@@ -289,7 +314,7 @@
           <span class="step-title-badge" id="plant-form-title">KHAI BÁO CÂY CHI TIẾT</span>
         </div>
 
-        <form id="form-plant-detail">
+        <form id="form-plant-detail" action="javascript:void(0);" onsubmit="return window.handleSubPlantSubmit(event);">
           <div class="form-row">
             <div class="form-group">
               <label class="form-label"><i data-lucide="tag" class="lucide-xs"></i> Mã Cây / Số Hiệu</label>
@@ -517,7 +542,7 @@
             <input type="text" id="input-tag-uid" class="form-input" placeholder="Tự nhận diện khi chạm thẻ..." style="font-family:monospace; color:#059669; font-weight:700;">
           </div>
 
-          <button type="submit" id="btn-submit-plant" class="btn btn-primary" style="margin-top:10px; padding:15px; font-size:15px;">
+          <button type="button" id="btn-submit-plant" class="btn btn-primary" onclick="window.handleSubPlantSubmit(event);" style="margin-top:10px; padding:15px; font-size:15px;">
             <i data-lucide="save"></i> Lưu Cây & Chuẩn Bị Nạp Thẻ
           </button>
         </form>

@@ -139,10 +139,21 @@ class SubGatewayApp {
       );
     }
 
-    // If explicit URL with encrypted user id is opened (/sub/usr_.../set_up) and valid session exists:
-    if (urlEncId && this.state.token && this.state.user) {
-      this.updateEncryptedUrl(urlEncId);
+    // If URL contains trailing '?' or query parameters, clean it without page reload
+    if (window.location.search) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // Auto-advance if authenticated session exists (even if urlEncId was not initially in URL)
+    if (this.state.token && this.state.user) {
+      const encId = urlEncId || this.state.user.encrypted_user_id || this.state.encryptedUserId;
+      if (encId) {
+        this.state.encryptedUserId = encId;
+        this.updateEncryptedUrl(encId);
+      }
       this.loadUserFarms().then(() => {
+        this.showView('view-farm-hub');
+      }).catch(() => {
         this.showView('view-farm-hub');
       });
     } else {
@@ -405,10 +416,29 @@ class SubGatewayApp {
       this.showView('view-farm-hub');
     });
 
-    // 2. Login Form
+    // 2. Login Form & Triggers
     document.getElementById('form-login')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       await this.handleLogin();
+    });
+
+    document.getElementById('btn-submit-login')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await this.handleLogin();
+    });
+
+    document.getElementById('login-email')?.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        await this.handleLogin();
+      }
+    });
+
+    document.getElementById('login-password')?.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        await this.handleLogin();
+      }
     });
 
     document.getElementById('btn-switch-register')?.addEventListener('click', () => {
@@ -418,6 +448,11 @@ class SubGatewayApp {
 
     // 3. Register & Farm Setup Form
     document.getElementById('form-register')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await this.handleRegisterAndFarmSetup();
+    });
+
+    document.getElementById('btn-submit-register')?.addEventListener('click', async (e) => {
       e.preventDefault();
       await this.handleRegisterAndFarmSetup();
     });
@@ -559,6 +594,11 @@ class SubGatewayApp {
       await this.handleSavePlant();
     });
 
+    document.getElementById('btn-submit-plant')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await this.handleSavePlant();
+    });
+
     // 10. NFC Tag Input & Scan Actions
     document.getElementById('input-tag-uid')?.addEventListener('input', (e) => {
       this.updateActiveTagUid(e.target.value);
@@ -666,13 +706,20 @@ class SubGatewayApp {
       return;
     }
 
+    const btn = document.getElementById('btn-submit-login');
     try {
-      const btn = document.getElementById('btn-submit-login');
-      if (btn) btn.innerText = 'Đang đăng nhập...';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="lucide-spin" style="width:16px;height:16px;"></i> Đang đăng nhập...';
+        this.renderIcons();
+      }
 
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
@@ -689,18 +736,30 @@ class SubGatewayApp {
       localStorage.setItem('user', JSON.stringify(data.user));
 
       if (data.user?.role === 'admin') {
-        this.showToast(' Đăng nhập thành công với quyền QUẢN TRỊ VIÊN!', 'success');
+        this.showToast('Đăng nhập thành công với quyền QUẢN TRỊ VIÊN!', 'success');
       } else {
         this.showToast('Đăng nhập thành công!', 'success');
       }
 
-      await this.loadUserFarms();
+      // Xóa dấu ? trên URL nếu có
+      if (window.location.search) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+
+      try {
+        await this.loadUserFarms();
+      } catch (e) {
+        console.warn('loadUserFarms error:', e);
+      }
       this.showView('view-farm-hub');
     } catch (err) {
       this.showToast(err.message, 'error');
     } finally {
-      const btn = document.getElementById('btn-submit-login');
-      if (btn) btn.innerText = 'Đăng Nhập';
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="log-in"></i> Đăng Nhập';
+        this.renderIcons();
+      }
     }
   }
 

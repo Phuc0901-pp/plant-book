@@ -198,4 +198,23 @@ describe('Suite 7: HTML Template Compilation, Tag Balance & Critical DOM IDs Ver
     expect(subJs.includes('btn-opt-new')).toBe(true);
   });
 
+  it('7.9 Should verify sub.html forms prevent native GET reload and wire direct handler dispatchers', () => {
+    const subHtmlPath = path.join(__dirname, '../../../frontend/public/sub.html');
+    const subJsPath = path.join(__dirname, '../../../frontend/public/js/sub-gateway.js');
+    const subHtml = fs.readFileSync(subHtmlPath, 'utf8');
+    const subJs = fs.readFileSync(subJsPath, 'utf8');
+
+    // Forms must have action="javascript:void(0);" to avoid ? reload
+    expect(subHtml.includes('action="javascript:void(0);"') || subHtml.includes("action='javascript:void(0);'")).toBe(true);
+    expect(subHtml.includes('handleSubLoginSubmit')).toBe(true);
+    expect(subHtml.includes('handleSubRegisterSubmit')).toBe(true);
+    expect(subHtml.includes('handleSubPlantSubmit')).toBe(true);
+
+    // subJs must clean query search parameter and advance session to view-farm-hub
+    expect(subJs.includes('window.location.search')).toBe(true);
+    expect(subJs.includes('btn-submit-login')).toBe(true);
+    expect(subJs.includes('btn-submit-register')).toBe(true);
+    expect(subJs.includes('btn-submit-plant')).toBe(true);
+  });
+
 });
