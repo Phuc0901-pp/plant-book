@@ -156,8 +156,8 @@ void main() {
   });
 
   group('Suite 4: PlantBookApp Root Widget Smoke Verification', () {
-    testWidgets('Renders PlantBookApp with v1.3.5+19 constants', (WidgetTester tester) async {
-      expect(AppConstants.appVersion, equals('v1.3.5'));
+    testWidgets('Renders PlantBookApp with v1.3.7 constants', (WidgetTester tester) async {
+      expect(AppConstants.appVersion, equals('v1.3.7'));
       expect(AppConstants.fullBuildTag, equals('v1.3.5+19'));
       await tester.pumpWidget(
         PlantBookApp(

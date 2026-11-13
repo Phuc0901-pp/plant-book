@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plant_book_mobile/components/interactive_gis_map_widget.dart';
-import 'package:plant_book_mobile/core/security/crypto_security_service.dart';
-import 'package:plant_book_mobile/core/security/rbac_policy.dart';
+import 'package:mobile_app/components/interactive_gis_map_widget.dart';
+import 'package:mobile_app/core/security/crypto_security_service.dart';
+import 'package:mobile_app/core/security/rbac_policy.dart';
 
 void main() {
   group('NIST FIPS 180-4 & 198-1 CryptoSecurityService', () {

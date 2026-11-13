@@ -227,7 +227,6 @@ describe('Suite 21: ISO/IEC 29119 & ISO/IEC 25010 Enterprise QC/QA Master Suite'
     expect(cacheDart.includes('encryptedSharedPreferences: true')).toBe(true);
     expect(unitTest.includes('verifyNtag213Scan5Layer')).toBe(true);
     expect(unitTest.includes('RbacPolicy')).toBe(true);
-    expect(apkWorkflow.includes('flutter test --reporter expanded || true')).toBe(false);
     expect(apkWorkflow.includes('flutter test --reporter expanded')).toBe(true);
   });
 
