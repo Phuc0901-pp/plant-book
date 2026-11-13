@@ -79,19 +79,20 @@ async function runPublicPlantE2E() {
     });
 
     await assertStep('PUB-E2E-02: Authenticate field session via /api/auth/login & reload profile', async () => {
-      const loginOk = await page.evaluate(async (base) => {
+      const loginRes = await page.evaluate(async (base) => {
         const res = await fetch(`${base}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier: '0908904895', password: '123456' })
+          body: JSON.stringify({ email: '0908904895', password: '123456' })
         });
         const data = await res.json();
-        if (!res.ok || !data.token) return false;
-        localStorage.setItem('plant_token', data.token);
-        if (data.user) localStorage.setItem('plant_user', JSON.stringify(data.user));
-        return true;
+        if (!res.ok || !data.token) return { ok: false, status: res.status, error: data.error || data.message };
+        localStorage.setItem('pb_token', data.token);
+        localStorage.setItem('token', data.token);
+        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+        return { ok: true };
       }, targetUrl);
-      if (!loginOk) throw new Error('Login failed on live server');
+      if (!loginRes.ok) throw new Error(`Login failed on live server (${loginRes.status}): ${loginRes.error}`);
       await page.reload({ waitUntil: 'networkidle', timeout: 30000 });
       await page.waitForSelector('.care-btn-labor', { timeout: 15000 });
     });
