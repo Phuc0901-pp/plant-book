@@ -1,13 +1,13 @@
 {
   "standard": "ISO/IEC 29119-3 / ISO/IEC 25010 / ISO/IEC 27001",
-  "generatedAt": "2026-11-13T09:43:31.507Z",
+  "generatedAt": "2026-11-16T02:40:15.395Z",
   "summary": {
-    "totalSuites": 25,
-    "totalTests": 164,
-    "passed": 164,
+    "totalSuites": 26,
+    "totalTests": 174,
+    "passed": 174,
     "failed": 0,
     "passRate": "100.0%",
-    "durationMs": 1139,
+    "durationMs": 1129,
     "verdict": "PASSED (100% ISO COMPLIANT)"
   },
   "suites": [
@@ -16,7 +16,7 @@
       "total": 9,
       "passed": 9,
       "failed": 0,
-      "durationMs": 206,
+      "durationMs": 207,
       "tests": [
         {
           "name": "1.1 Should hash password securely and verify matching password with bcrypt",
@@ -70,7 +70,7 @@
           "name": "1.10 Should manage Password Reset Requests lifecycle: query, single deletion, and bulk purge",
           "passed": true,
           "error": null,
-          "durationMs": 0
+          "durationMs": 1
         }
       ]
     },
@@ -79,7 +79,7 @@
       "total": 7,
       "passed": 7,
       "failed": 0,
-      "durationMs": 1,
+      "durationMs": 0,
       "tests": [
         {
           "name": "2.1 Should validate farm polygon coordinates array structure",
@@ -91,7 +91,7 @@
           "name": "2.2 Should compute farm area in square meters and convert accurately to hectares",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "2.3 Should compute perimeter and boundary edge distances accurately",
@@ -148,7 +148,7 @@
           "name": "3.3 Should correctly categorize plant health status and assign badge colors",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "3.4 Should validate GPS latitude and longitude ranges",
@@ -196,7 +196,7 @@
           "name": "3.11 Should validate NFC Inventory batch insertion, duplicate detection & state management",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "3.12 Should verify public_url field generation and synchronization upon GPS and NFC tagging",
@@ -208,7 +208,7 @@
           "name": "3.13 Should enforce 1-Tree-1-Tag lifecycle: inventory check, duplicate prevention & old tag unassignment",
           "passed": true,
           "error": null,
-          "durationMs": 0
+          "durationMs": 1
         },
         {
           "name": "3.14 Should verify public access response: active tag allowed, old replaced tag frozen (revoked)",
@@ -229,7 +229,7 @@
       "total": 7,
       "passed": 7,
       "failed": 0,
-      "durationMs": 1,
+      "durationMs": 0,
       "tests": [
         {
           "name": "4.1 Should handle the 4 distinct supply categories properly",
@@ -271,7 +271,7 @@
           "name": "4.7 Should accurately compute multi-dimensional date intervals for Daily, Monthly, Quarterly, and Yearly reporting",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         }
       ]
     },
@@ -319,7 +319,7 @@
       "total": 3,
       "passed": 3,
       "failed": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "tests": [
         {
           "name": "6.1 Should evaluate simple sensor thresholds correctly (< or >)",
@@ -346,13 +346,13 @@
       "total": 9,
       "passed": 9,
       "failed": 0,
-      "durationMs": 83,
+      "durationMs": 88,
       "tests": [
         {
           "name": "7.1 Should execute buildAll() and compile modular templates successfully",
           "passed": true,
           "error": null,
-          "durationMs": 35
+          "durationMs": 40
         },
         {
           "name": "7.2 Should verify HTML tag balance (div, form, section, select) in admin/index.html",
@@ -370,7 +370,7 @@
           "name": "7.4 Should verify presence of critical Admin Portal DOM element IDs",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 2
         },
         {
           "name": "7.5 Should verify presence of critical User Portal DOM element IDs (VietGAP & Care)",
@@ -394,7 +394,7 @@
           "name": "7.8 Should verify Smart NFC Gateway (public/sub.html & sub-gateway.js) DOM integrity & click event binding",
           "passed": true,
           "error": null,
-          "durationMs": 2
+          "durationMs": 1
         },
         {
           "name": "7.9 Should verify sub.html forms prevent native GET reload and wire direct handler dispatchers",
@@ -433,7 +433,7 @@
           "name": "8.4 Should validate 10 standard Durian Ri6 supplies, unit prices & active ingredients",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "8.5 Should verify VietGAP harvest batch code generation and traceability",
@@ -460,13 +460,13 @@
       "total": 5,
       "passed": 5,
       "failed": 0,
-      "durationMs": 8,
+      "durationMs": 9,
       "tests": [
         {
           "name": "9.1 Should verify Database Migration files (001, 002, 003) exist and contain valid SQL",
           "passed": true,
           "error": null,
-          "durationMs": 3
+          "durationMs": 4
         },
         {
           "name": "9.2 Should verify PostgreSQL GIN Indexes and Composite Index definitions in Migration and Init scripts",
@@ -478,13 +478,13 @@
           "name": "9.3 Should verify Storage Service multi-driver upload, delete and safe local fallback",
           "passed": true,
           "error": null,
-          "durationMs": 3
+          "durationMs": 2
         },
         {
           "name": "9.4 Should verify Client Offline-First IndexedDB and Sync Engine files exist and are valid modules",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 2
         },
         {
           "name": "9.5 Should verify Topbar has the Offline/Online Sync Badge DOM element",
@@ -505,7 +505,7 @@
           "name": "10.1 Should construct valid Open-Meteo REST forecast URL with precision GPS coordinates and parameters",
           "passed": true,
           "error": null,
-          "durationMs": 0
+          "durationMs": 1
         },
         {
           "name": "10.2 Should accurately decode WMO Weather codes (0..99) with icons, Vietnamese labels and safe fallback",
@@ -523,7 +523,7 @@
           "name": "10.4 Should generate accurate Agricultural Action Recommendations based on weather thresholds",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "10.5 Should parse full Open-Meteo sample payload into standardized agro-weather telemetry",
@@ -550,7 +550,7 @@
       "total": 8,
       "passed": 8,
       "failed": 0,
-      "durationMs": 2,
+      "durationMs": 1,
       "tests": [
         {
           "name": "11.1 Should validate and parse GPS coordinates accurately with boundary constraints",
@@ -598,7 +598,7 @@
           "name": "11.8 Should parse exported CSV symmetrically, handle various delimiters, normalize hex UIDs, detect duplicates, and extract tree codes & GPS coordinates",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         }
       ]
     },
@@ -607,7 +607,7 @@
       "total": 6,
       "passed": 6,
       "failed": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "tests": [
         {
           "name": "12.1 Should accurately calculate Haversine distance with millimetric precision",
@@ -652,7 +652,7 @@
       "total": 6,
       "passed": 6,
       "failed": 0,
-      "durationMs": 7,
+      "durationMs": 6,
       "tests": [
         {
           "name": "12.1 Should verify Migration 005 and init.js contain soft delete schema and index",
@@ -664,7 +664,7 @@
           "name": "12.2 Should verify backend query endpoints filter out soft-deleted logs",
           "passed": true,
           "error": null,
-          "durationMs": 3
+          "durationMs": 2
         },
         {
           "name": "12.3 Should verify selective batch filter query generator accurately constructs SQL clauses",
@@ -715,7 +715,7 @@
           "name": "13.3 Should verify XSS input sanitization prevents malicious script injection",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "13.4 Should verify Dynamic RAG Matching Algorithm (prioritizes trained Q&A and extracts top-ranked Knowledge)",
@@ -727,13 +727,13 @@
           "name": "13.5 Should verify presence of critical Admin AI Training Studio DOM elements and Modals in compiled HTML",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 2
         },
         {
           "name": "13.6 Should verify Security RBAC middleware protection and route registration in server.js",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "13.7 Should verify MemoryCacheEngine flush(), flushAll(), clear(), and pattern invalidation",
@@ -754,13 +754,13 @@
           "name": "13.1 Should format Zalo OA security alert message with critical indicators and distance",
           "passed": true,
           "error": null,
-          "durationMs": 27
+          "durationMs": 26
         },
         {
           "name": "13.2 Should format Zalo OA agricultural advisory and sensor alert message",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 2
         },
         {
           "name": "13.3 Should completely scrub confidential financial and formula fields from public logs",
@@ -811,7 +811,7 @@
           "name": "14.5 Should buffer offline transactions in IndexedDB delta queue and replay sequentially on reconnect",
           "passed": true,
           "error": null,
-          "durationMs": 0
+          "durationMs": 1
         },
         {
           "name": "14.6 Should broadcast real-time telemetry events across subscribed client sockets",
@@ -838,7 +838,7 @@
       "total": 5,
       "passed": 5,
       "failed": 0,
-      "durationMs": 2,
+      "durationMs": 1,
       "tests": [
         {
           "name": "15.1 Should verify SSOT app.config.json defines rateLimit configuration with 50 req / 1000ms",
@@ -856,7 +856,7 @@
           "name": "15.3 Should verify keyGenerator correctly distinguishes between Authenticated Users and Anonymous IPs",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "15.4 Should verify skip logic allows /health, /healthz and static token endpoints",
@@ -877,13 +877,13 @@
       "total": 6,
       "passed": 6,
       "failed": 0,
-      "durationMs": 248,
+      "durationMs": 261,
       "tests": [
         {
           "name": "16.1 Should verify Singleflight request deduplication collapses 50 concurrent queries to 1 DB execution",
           "passed": true,
           "error": null,
-          "durationMs": 18
+          "durationMs": 5
         },
         {
           "name": "16.2 Should verify range chunk filtering splits 80 plants accurately (1..20, 21..40, 41..60, 61..80)",
@@ -895,7 +895,7 @@
           "name": "16.3 Should verify EventBus cache invalidation and WebSocket packet dispatching",
           "passed": true,
           "error": null,
-          "durationMs": 219
+          "durationMs": 252
         },
         {
           "name": "16.4 Should verify Haversine GPS proximity formula sorts trees by physical distance",
@@ -907,13 +907,13 @@
           "name": "16.5 Should verify Soft Delete and Restore lifecycle structure in backend routes",
           "passed": true,
           "error": null,
-          "durationMs": 10
+          "durationMs": 3
         },
         {
           "name": "16.6 Should verify Smart Agronomic Reminders cycle calculation engine",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         }
       ]
     },
@@ -922,7 +922,7 @@
       "total": 4,
       "passed": 4,
       "failed": 0,
-      "durationMs": 168,
+      "durationMs": 161,
       "tests": [
         {
           "name": "17.1 Should verify Idempotent Startup Flag (legacy_data_normalization_v135) and Migration 008 exist",
@@ -934,13 +934,13 @@
           "name": "17.2 Should verify Per-Farm Hash-Chain Mutex Lock (withFarmHashChainLock) prevents concurrent hash forks",
           "passed": true,
           "error": null,
-          "durationMs": 159
+          "durationMs": 153
         },
         {
           "name": "17.3 Should verify Offline Batch Sync uses created_by column and supports /:id/logs + /:id/care-log aliases",
           "passed": true,
           "error": null,
-          "durationMs": 5
+          "durationMs": 3
         },
         {
           "name": "17.4 Should verify 100% SSOT Version synchronization across platform config files",
@@ -955,7 +955,7 @@
       "total": 5,
       "passed": 5,
       "failed": 0,
-      "durationMs": 9,
+      "durationMs": 5,
       "tests": [
         {
           "name": "18.1 Pure-Dart NIST FIPS 180-4 SHA-256 & FIPS 198-1 HMAC-SHA256 Engine present in crypto_security_service.dart",
@@ -973,19 +973,19 @@
           "name": "18.3 Models (Plant, PlantLog, Farm, Supply) synchronized with Web App v1.3.5 & IPCC Carbon MRV",
           "passed": true,
           "error": null,
-          "durationMs": 2
+          "durationMs": 1
         },
         {
           "name": "18.4 AES-256 Encrypted Hive Vault & 2-Phase Atomic Offline Batch Sync implemented",
           "passed": true,
           "error": null,
-          "durationMs": 3
+          "durationMs": 1
         },
         {
           "name": "18.5 4-Tab Enterprise Tree Profile & 5-Layer NFC/QR Scanner verified",
           "passed": true,
           "error": null,
-          "durationMs": 2
+          "durationMs": 1
         }
       ]
     },
@@ -994,7 +994,7 @@
       "total": 3,
       "passed": 3,
       "failed": 0,
-      "durationMs": 8,
+      "durationMs": 5,
       "tests": [
         {
           "name": "19.1 Backend route analytics.js implements 4 BI endpoints + i18n dictionary endpoint with RBAC finance redaction",
@@ -1006,13 +1006,13 @@
           "name": "19.2 Multi-language dictionaries (vi.json, en.json, zh.json) contain complete export & BI keys",
           "passed": true,
           "error": null,
-          "durationMs": 3
+          "durationMs": 2
         },
         {
           "name": "19.3 Universal i18n-engine.js & bi-analytics-widget.js are integrated across Public QR, Farmer, and Admin portals",
           "passed": true,
           "error": null,
-          "durationMs": 4
+          "durationMs": 2
         }
       ]
     },
@@ -1027,13 +1027,13 @@
           "name": "20.1 Should verify Migration 009 exists and is compatible with migrate.js transaction wrapper",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "20.2 Module SEC: Should harden rls_auto_enable, RLS policies, RESTRICT FKs, and pgcrypto helpers",
           "passed": true,
           "error": null,
-          "durationMs": 0
+          "durationMs": 1
         },
         {
           "name": "20.3 Module AUTH: Should enforce SHA-256 hash-chain, NFC anti-replay, and Append-Only audits",
@@ -1045,7 +1045,7 @@
           "name": "20.4 Module ISO: Should enforce ISO 6709 WGS84, ISO 4217 currency, W3C DID, and ISO 8601 age",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "20.5 Module PERF: Should create 35 FK covering indexes and drop 3 duplicate indexes",
@@ -1066,13 +1066,13 @@
       "total": 14,
       "passed": 14,
       "failed": 0,
-      "durationMs": 246,
+      "durationMs": 224,
       "tests": [
         {
           "name": "21.1 [QC][DB-SEC-01..04] Every SQL function in Migration 009 enforces explicit SET search_path & no deprecated auth.role()",
           "passed": true,
           "error": null,
-          "durationMs": 1
+          "durationMs": 0
         },
         {
           "name": "21.2 [QC][DB-SEC-02] RLS policies cover all 29 tables (service_role + public QR + authenticated multi-tenant)",
@@ -1096,13 +1096,13 @@
           "name": "21.5 [QA][OP-API-01] history.js DELETE /:id and DELETE / reject mutation with HTTP 403 ISO Append-Only",
           "passed": true,
           "error": null,
-          "durationMs": 238
+          "durationMs": 217
         },
         {
           "name": "21.6 [QA][OP-API-02] farms.js, supplies.js, users.js contain zero unguarded DELETE FROM data_audit_logs in transactions and handle 23503 -> 409",
           "passed": true,
           "error": null,
-          "durationMs": 2
+          "durationMs": 1
         },
         {
           "name": "21.7 [QA][ISO-6709 & ISO-4217 & W3C-DID] Boundary & negative validation matches DB CHECK constraints",
@@ -1198,7 +1198,7 @@
           "name": "23.1 [BE-MODULAR] Backend plants router is modularized into <= 2.500 LOC domain files",
           "passed": true,
           "error": null,
-          "durationMs": 86
+          "durationMs": 85
         },
         {
           "name": "23.2 [FE-MODULAR] All Frontend JS business modules are <= 3.500 LOC (Zero Monolith Risk)",
@@ -1216,7 +1216,76 @@
           "name": "23.4 [DB-MIGRATIONS] All SQL migration files exist and contain valid DDL statements",
           "passed": true,
           "error": null,
-          "durationMs": 2
+          "durationMs": 3
+        }
+      ]
+    },
+    {
+      "name": "Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 23053 & OWASP LLM01)",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "durationMs": 9,
+      "tests": [
+        {
+          "name": "24.1 [OWASP-LLM01] Guardrail blocks Prompt Injection & SQL/Script injection attempts",
+          "passed": true,
+          "error": null,
+          "durationMs": 1
+        },
+        {
+          "name": "24.2 [NLU-SYNONYMS] Vietnamese Agro-Synonym Normalizer maps farmer dialects to canonical terms",
+          "passed": true,
+          "error": null,
+          "durationMs": 0
+        },
+        {
+          "name": "24.3 [BM25-QA] Fuzzy & BM25 Q&A Matcher matches paraphrased farmer questions without 30-row truncation",
+          "passed": true,
+          "error": null,
+          "durationMs": 1
+        },
+        {
+          "name": "24.4 [BM25-RAG] Hybrid BM25 Knowledge Ranking ranks relevant agronomic protocols accurately",
+          "passed": true,
+          "error": null,
+          "durationMs": 1
+        },
+        {
+          "name": "24.5 [TOOL-DOSAGE] Agro-Dosage Calculator computes exact spray & fertilizer quantities",
+          "passed": true,
+          "error": null,
+          "durationMs": 3
+        },
+        {
+          "name": "24.6 [TOOL-BIOSAFETY] Bio-Safety Inspector enforces 10-15 day buffer between chemical pesticides and Trichoderma",
+          "passed": true,
+          "error": null,
+          "durationMs": 1
+        },
+        {
+          "name": "24.7 [TOOL-PLANT-FARM] Agent Tools inspect specific plant codes, sick plants, farms & supply costs",
+          "passed": true,
+          "error": null,
+          "durationMs": 0
+        },
+        {
+          "name": "24.8 [GROUNDED-SYNTHESIS] Grounded Synthesizer combines Tools + RAG without generic fallback truncation",
+          "passed": true,
+          "error": null,
+          "durationMs": 1
+        },
+        {
+          "name": "24.9 [AUTO-LEARNING] Unfamiliar queries trigger needsAutoLearning flag for continuous training",
+          "passed": true,
+          "error": null,
+          "durationMs": 0
+        },
+        {
+          "name": "24.10 [MIGRATION-013] Verify Migration 013 & AI routes wire Be Mam Agent Engine v2.0",
+          "passed": true,
+          "error": null,
+          "durationMs": 1
         }
       ]
     }

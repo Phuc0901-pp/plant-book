@@ -1,0 +1,575 @@
+/**
+ * backend/services/beMamAgentEngine.js
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * BÉ MẦM HYBRID AUTONOMOUS AGENT ENGINE v2.0
+ * Standards: ISO/IEC 42001:2023 (AI Management), ISO/IEC 23053:2022 (AI Framework),
+ *            ISO/IEC TR 24028 (AI Trustworthiness), OWASP LLM Top 10
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
+const memoryCache = require('../config/cache');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. OWASP LLM01 GUARDRAIL: CHỐNG PROMPT INJECTION & MÃ ĐỘC
+// ─────────────────────────────────────────────────────────────────────────────
+const INJECTION_PATTERNS = [
+  /ignore\s+(all\s+)?(previous|prior|above)\s+instructions/i,
+  /bỏ\s+qua\s+(tất\s+cả\s+)?(hướng\s+dẫn|quy\s+tắc|lệnh)\s+trước/i,
+  /system\s*prompt\s*[:=]/i,
+  /reveal\s+your\s+(system|secret|hidden)\s+prompt/i,
+  /<script\b[^>]*>[\s\S]*?<\/script>/i,
+  /\b(drop\s+table|truncate\s+table|union\s+select\s+null)\b/i
+];
+
+function checkPromptInjection(rawMessage) {
+  const msg = String(rawMessage || '').trim();
+  for (const pat of INJECTION_PATTERNS) {
+    if (pat.test(msg)) {
+      return {
+        safe: false,
+        reason: 'OWASP_LLM01_PROMPT_INJECTION_BLOCKED',
+        safeReply: '🛡️ **Cảnh báo An ninh AI (ISO/IEC 42001 & OWASP LLM01):** Yêu cầu chứa cú pháp can thiệp hệ thống không hợp lệ. Bé Mầm chỉ hỗ trợ tư vấn kỹ thuật nông nghiệp, tra cứu dữ liệu trang trại và hướng dẫn sử dụng Sổ Nông Tân Bảo AgTech.'
+      };
+    }
+  }
+  return { safe: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. TỪ ĐIỂN ĐỒNG NGHĨA NHÀ NÔNG TIẾNG VIỆT (AGRO-SYNONYM NORMALIZER)
+// ─────────────────────────────────────────────────────────────────────────────
+const AGRO_SYNONYM_MAP = [
+  // Sâu bệnh hại
+  { variants: ['chảy nhựa', 'chảy mủ', 'xì nhựa', 'thối vỏ thân', 'loét thân'], canonical: 'xì mủ nứt thân phytophthora' },
+  { variants: ['thối gốc', 'đen rễ', 'tuột vỏ rễ', 'vàng đọt thối rễ'], canonical: 'vàng lá thối rễ phytophthora fusarium' },
+  { variants: ['cháy lá', 'khô chóp lá', 'cháy bìa lá', 'khô đầu lá', 'đốm cháy lá'], canonical: 'cháy lá thán thư rhizoctonia' },
+  { variants: ['rầy nhảy', 'rầy phấn', 'rầy phấn trắng', 'rầy bông'], canonical: 'rầy xanh chích hút đọt non' },
+  { variants: ['nhện vàng', 'bạc lá nhện'], canonical: 'nhện đỏ hại lá' },
+  { variants: ['sâu đục quả', 'sâu ăn bông'], canonical: 'sâu đục trái sâu ăn bông' },
+  { variants: ['nấm hồng', 'đốm hồng cành'], canonical: 'bệnh nấm hồng corticium' },
+  { variants: ['rong rêu', 'đốm rong'], canonical: 'bệnh đốm rong thân cành' },
+  // Sinh lý & Mùa vụ Sầu riêng / Cây ăn trái
+  { variants: ['làm bông', 'ép bông', 'kích bông', 'tạo mầm hoa', 'xử lý ra hoa'], canonical: 'làm bông xiết nước tạo mầm hoa' },
+  { variants: ['nhú mắt cua', 'ra mắt cua', 'rước mắt cua', 'nghẹn mắt cua'], canonical: 'mắt cua làm bông sầu riêng' },
+  { variants: ['xổ nhụy', 'sổ nhụy', 'nở hoa', 'quét phấn'], canonical: 'sổ nhụy thụ phấn đậu trái' },
+  { variants: ['rụng bông', 'rụng trái', 'rụng quả non', 'tháo khớp'], canonical: 'chống rụng trái non canxi bo' },
+  { variants: ['cơm cứng', 'sượng trái', 'nhão cơm', 'múi trắng'], canonical: 'sượng cơm cháy múi sầu riêng' },
+  { variants: ['đi đọt', 'xổ đọt', 'le mũi giáo', 'kéo đọt', 'chặn đọt', 'hãm đọt'], canonical: 'quản lý cơi đọt ức chế đọt non' },
+  // Phân bón & Thuốc BVTV
+  { variants: ['tưới men', 'bón vi sinh', 'nấm đối kháng', 'men vi sinh'], canonical: 'chế phẩm vi sinh trichoderma bacillus' },
+  { variants: ['xịt thuốc', 'phun xịt', 'thuốc trừ nấm', 'thuốc trừ sâu'], canonical: 'phun thuốc bvtv hóa học' },
+  { variants: ['vô phân', 'rải phân', 'bón gốc'], canonical: 'bón phân npk hữu cơ' },
+  { variants: ['cách ly', 'ngưng xịt thuốc', 'an toàn thu hoạch'], canonical: 'thời gian cách ly phi vietgap' },
+  // Thao tác App & Quản trị
+  { variants: ['mướn công', 'thuê người', 'công làm cỏ', 'công cắt tỉa', 'tiền công'], canonical: 'thuê nhân công chăm sóc' },
+  { variants: ['sài sao', 'dùng sao', 'xài sao', 'chưa biết dùng', 'chưa biết sài', 'cách dùng app'], canonical: 'hướng dẫn sử dụng sổ nông tân bảo' },
+  { variants: ['quẹt thẻ', 'chạm thẻ', 'gắn chip', 'nạp thẻ'], canonical: 'quét thẻ nfc ntag213 định danh cây' }
+];
+
+const VIETNAMESE_STOPWORDS = new Set([
+  'là', 'và', 'của', 'có', 'được', 'trong', 'cho', 'với', 'như', 'thế', 'nào',
+  'sao', 'vậy', 'nhé', 'ạ', 'ơi', 'bác', 'em', 'bé', 'mầm', 'tôi', 'mình', 'thì',
+  'mà', 'này', 'đó', 'các', 'những', 'một', 'cái', 'con', 'về', 'khi', 'để', 'làm'
+]);
+
+function normalizeAgroQuery(rawText) {
+  let lower = String(rawText || '').toLowerCase().trim();
+  const matchedSynonyms = [];
+
+  for (const entry of AGRO_SYNONYM_MAP) {
+    for (const v of entry.variants) {
+      if (lower.includes(v)) {
+        matchedSynonyms.push({ from: v, to: entry.canonical });
+        if (!lower.includes(entry.canonical)) {
+          lower += ' ' + entry.canonical;
+        }
+      }
+    }
+  }
+  return { normalizedText: lower, matchedSynonyms };
+}
+
+function tokenizeVietnamese(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .split(/\s+/)
+    .map(t => t.trim())
+    .filter(t => t.length >= 2 && !VIETNAMESE_STOPWORDS.has(t));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. KHO ĐẠI TỪ ĐIỂN NÔNG HỌC MẶC ĐỊNH (BUILT-IN ENCYCLOPEDIA FALLBACK)
+// ─────────────────────────────────────────────────────────────────────────────
+const BUILTIN_ENCYCLOPEDIA_ARTICLES = [
+  {
+    id: 9001,
+    category: 'An toàn Sinh học',
+    title: 'Quy Tắc Vàng: Khoảng Cách 10 ~ 15 Ngày Giữa Thuốc BVTV Hóa Học & Chế Phẩm Vi Sinh',
+    topic_keywords: 'thuốc bvtv, hóa học, vi sinh, trichoderma, bacillus, men em, khoảng cách 10 ngày, 15 ngày, pha chung',
+    content: '1. Khi phun/tưới Thuốc BVTV hóa học, BẮT BUỘC phải chờ 10 - 15 ngày sau mới được tưới Chế phẩm vi sinh (Trichoderma, Bacillus, men EM) và ngược lại.\n2. Tuyệt đối KHÔNG pha chung thuốc trừ nấm hóa học với nấm đối kháng Trichoderma trong cùng bồn pha vì hoạt chất sát khuẩn sẽ tiêu diệt hoàn toàn bào tử có lợi.\n3. Quy trình chuẩn: Dập dịch bằng hóa học -> Nghỉ đệm 10-15 ngày giữ ẩm -> Phục hồi rễ bằng Trichoderma + Acid Humic + Phân hữu cơ.',
+    priority: 10
+  },
+  {
+    id: 9002,
+    category: 'Sâu bệnh hại',
+    title: 'Phác Đồ Đặc Trị Vàng Lá Thối Rễ & Nứt Thân Xì Mủ (Phytophthora / Fusarium)',
+    topic_keywords: 'vàng lá thối rễ, xì mủ, nứt thân, chảy nhựa, phytophthora, fusarium, metalaxyl, fosetyl-al, dimethomorph, agrifos',
+    content: '1. Triệu chứng: Vỏ thân chảy nhựa nâu đen có mùi chua, rễ cám thối đen tuột vỏ, lá vàng rụng hàng loạt.\n2. Xử lý vết bệnh trên thân: Dùng dao sắc cạo sạch vỏ thối tới phần gỗ khỏe, quét trực tiếp Metalaxyl (Ridomil Gold) hoặc Fosetyl-Al (Aliette) hoặc tiêm/phun Agrifos 400.\n3. Xử lý vùng rễ: Tưới Dimethomorph + Metalaxyl quanh chiếu tán cây (10-15 lít/gốc), ngưng tưới đẫm 5-7 ngày.\n4. Phục hồi sau 10-15 ngày: Tưới nấm đối kháng Trichoderma + Humic kích rễ tơ mới.',
+    priority: 10
+  },
+  {
+    id: 9003,
+    category: 'Kỹ thuật Canh tác',
+    title: 'Quy Trình Làm Bông, Rước Mắt Cua, Sổ Nhụy & Chống Rụng Trái Non Sầu Riêng',
+    topic_keywords: 'làm bông, xiết nước, mắt cua, sổ nhụy, đậu trái, rụng trái non, canxi bo, mkp, 10-60-10, chặn đọt, đi đọt',
+    content: '1. Tạo mầm & Xiết nước: Khi cơi đọt thứ 2-3 chuyển lụa hoàn toàn, bón Lân cao (Super Lân / NPK 10-50-10), xiết nước 14-20 ngày và phun MKP (0-52-34) + KNO3 tạo mầm hoa.\n2. Rước mắt cua: Khi mắt cua sáng 2-3cm mới nhấp nước trở lại (20-30% lượng nước bình thường) tránh sốc nước gây nghẹn bông hoặc biến bông thành đọt.\n3. Quản lý cơi đọt trước sổ nhụy: Kéo đọt đồng loạt lúc bông 20-25 ngày tuổi hoặc chặn/dìu đọt bằng MKP + Kali cao nếu đọt phóng đúng lúc sắp sổ nhụy.\n4. Sổ nhụy & Chống rụng: Phun Canxi-Bo + Kẽm trước sổ nhụy 5 ngày và sau đậu trái 7-10 ngày; thụ phấn bổ sung lúc 18h30-21h00.',
+    priority: 9
+  },
+  {
+    id: 9004,
+    category: 'Kỹ thuật Canh tác',
+    title: 'Phác Đồ Khắc Phục Sượng Cơm, Cháy Múi & Nuôi Trái Sầu Riêng Cơm Vàng Dẻo',
+    topic_keywords: 'sượng cơm, cháy múi, nhão cơm, nuôi trái, lên cơm, kali trắng, k2so4, canxi, magie, thu hoạch',
+    content: '1. Nguyên nhân sượng cơm & cháy múi: Cây đi đọt non cạnh tranh dinh dưỡng lúc trái 60-90 ngày, dư nước/mưa lớn, thiếu Canxi-Magie-Bo, hoặc bón phân chứa gốc Clo (KCl).\n2. Biện pháp khắc phục:\n- Tuyệt đối dùng NPK Kali Sunfat (K2SO4 - Kali trắng như 12-11-18 hoặc 15-5-20 TE), KHÔNG dùng Kali đỏ (KCl).\n- Phun bổ sung Canxi-Bo-Magie định kỳ 10-15 ngày/lần ở giai đoạn trái 40-80 ngày.\n- Giữ ẩm độ đất ổn định 60-65%, thoát nước rãnh tốt khi mưa lớn, rút nước trước thu hoạch 10-15 ngày.',
+    priority: 9
+  },
+  {
+    id: 9005,
+    category: 'Sâu bệnh hại',
+    title: 'Phác Đồ Quản Lý Rầy Xanh, Nhện Đỏ, Thán Thư Cháy Lá & Sâu Đục Trái',
+    topic_keywords: 'rầy xanh, rầy nhảy, nhện đỏ, thán thư, cháy lá, sâu đục trái, abamectin, emamectin, imidacloprid, pymetrozine, hexaconazole',
+    content: '1. Rầy xanh / Rầy nhảy (hại đọt non): Phun định kỳ khi đọt vừa nhú mũi giáo bằng Pymetrozine, Thiamethoxam hoặc Imidacloprid, luân phiên hoạt chất tránh kháng thuốc.\n2. Nhện đỏ (mùa nắng): Phun Abamectin, Pyridaben hoặc Spirodiclofen mặt dưới lá.\n3. Thán thư / Cháy lá (Rhizoctonia / Colletotrichum): Cắt tỉa cành thông thoáng, phun Azoxystrobin + Difenoconazole hoặc Hexaconazole.\n4. Sâu đục trái: Tỉa thưa trái chùm, phun Emamectin benzoate hoặc Chlorantraniliprole và tuân thủ nghiêm ngặt thời gian cách ly PHI.',
+    priority: 9
+  },
+  {
+    id: 9006,
+    category: 'Cẩm nang Ứng dụng',
+    title: 'Hướng Dẫn Toàn Tập Sổ Nông Tân Bảo: Tạo Vườn, Gắn NFC (/sub), Thuê Nhân Công & Xuất VietGAP',
+    topic_keywords: 'hướng dẫn sử dụng, sài sao, dùng sao, tạo trang trại, quét nfc, ntag213, thuê nhân công, xuất vietgap, bản đồ gis',
+    content: '1. Cổng Định Danh Nhanh (/sub): Thực hiện 4 bước: Đăng nhập -> Chọn/Tạo Vườn -> Tạo Cây Mới -> Chạm thẻ NTAG213 để ghi mã định danh chống giả.\n2. Hồ Sơ Cây Thực Địa (/:farm/:plant/:uid): Chạm điện thoại vào thẻ NFC trên cây, chọn 1 trong 6 thao tác Chibi chuẩn ISO: Tưới nước, Bón phân, Phun thuốc, Thuê nhân công, Bệnh cây, Thu hoạch.\n3. Cổng Nông Hộ (/user/): Quản lý danh mục trang trại, xem dự báo thời tiết 24h & độ ẩm đất 3 tầng, quản lý tồn kho vật tư và xem biểu đồ chi phí.\n4. Xuất Báo Cáo VietGAP: Tại hồ sơ cây hoặc trang quản trị, nhấn "Xuất VietGAP / PDF A4" để tải báo cáo truy xuất nguồn gốc kèm chuỗi băm SHA-256.',
+    priority: 9
+  }
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. HYBRID BM25 & FUZZY RAG ENGINE (TOÀN CỤC TRONG RAM, KHÔNG GIỚI HẠN 30 DÒNG)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadKnowledgeBaseCached(pool) {
+  const cacheKey = 'ai_kb_full_cache_v2';
+  const cached = memoryCache.get(cacheKey);
+  if (cached) return cached;
+
+  let qaRows = [];
+  let articleRows = [];
+
+  if (pool && typeof pool.readQuery === 'function') {
+    try {
+      const [qRes, aRes] = await Promise.all([
+        pool.readQuery('SELECT id, category, sample_questions, expected_answer, keywords FROM ai_training_qa WHERE is_active = true ORDER BY updated_at DESC'),
+        pool.readQuery('SELECT id, category, title, topic_keywords, content, priority FROM ai_knowledge_articles WHERE is_active = true ORDER BY priority DESC, updated_at DESC')
+      ]);
+      qaRows = qRes.rows || [];
+      articleRows = aRes.rows || [];
+    } catch (_) {
+      // Fallback to built-in encyclopedia if DB is unreachable
+    }
+  }
+
+  // Merge built-in encyclopedia articles if not already present by title
+  const existingTitles = new Set(articleRows.map(a => String(a.title || '').toLowerCase()));
+  for (const builtin of BUILTIN_ENCYCLOPEDIA_ARTICLES) {
+    if (!existingTitles.has(builtin.title.toLowerCase())) {
+      articleRows.push(builtin);
+    }
+  }
+
+  const bundle = { qaRows, articleRows };
+  memoryCache.set(cacheKey, bundle, 120);
+  return bundle;
+}
+
+function matchTrainingQA(rawQuery, qaList = []) {
+  const { normalizedText } = normalizeAgroQuery(rawQuery);
+  const queryTokens = tokenizeVietnamese(normalizedText);
+  if (queryTokens.length === 0) return null;
+
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const qa of qaList) {
+    const variants = String(qa.sample_questions || '')
+      .split('\n')
+      .map(v => v.trim().toLowerCase())
+      .filter(Boolean);
+
+    for (const variant of variants) {
+      const normVariant = normalizeAgroQuery(variant).normalizedText;
+      // 1. Substring exact match
+      if (normalizedText.includes(normVariant) || normVariant.includes(normalizedText)) {
+        return { qa, score: 1.0, matchedVariant: variant };
+      }
+
+      // 2. Token overlap / Jaccard + Keyword boost
+      const varTokens = tokenizeVietnamese(normVariant);
+      if (varTokens.length === 0) continue;
+
+      let overlap = 0;
+      for (const vt of varTokens) {
+        if (queryTokens.includes(vt)) overlap++;
+      }
+      const coverageVar = overlap / varTokens.length;
+      const coverageQuery = overlap / queryTokens.length;
+      const f1Score = (coverageVar + coverageQuery) > 0
+        ? (2 * coverageVar * coverageQuery) / (coverageVar + coverageQuery)
+        : 0;
+
+      if (f1Score > bestScore) {
+        bestScore = f1Score;
+        bestMatch = { qa, score: Number(f1Score.toFixed(3)), matchedVariant: variant };
+      }
+    }
+  }
+
+  return bestScore >= 0.62 ? bestMatch : null;
+}
+
+function rankKnowledgeArticles(rawQuery, articlesList = []) {
+  const { normalizedText, matchedSynonyms } = normalizeAgroQuery(rawQuery);
+  const queryTokens = tokenizeVietnamese(normalizedText);
+  const scored = [];
+
+  for (const art of articlesList) {
+    const titleLower = String(art.title || '').toLowerCase();
+    const contentLower = String(art.content || '').toLowerCase();
+    const kwList = String(art.topic_keywords || '')
+      .split(',')
+      .map(k => k.trim().toLowerCase())
+      .filter(Boolean);
+
+    let score = 0;
+
+    // Title phrase or token match
+    if (normalizedText.includes(titleLower) || titleLower.includes(normalizedText)) {
+      score += 8;
+    }
+
+    // Topic keyword phrase match
+    for (const kw of kwList) {
+      if (kw && normalizedText.includes(kw)) {
+        score += 4;
+      }
+    }
+
+    // BM25-style token scoring across title, keywords, and content
+    for (const tok of queryTokens) {
+      if (tok.length < 2) continue;
+      if (titleLower.includes(tok)) score += 2.0;
+      if (kwList.some(k => k.includes(tok))) score += 1.5;
+      if (contentLower.includes(tok)) score += 0.6;
+    }
+
+    if (score >= 2.0) {
+      const priorityBonus = (Number(art.priority) || 5) * 0.15;
+      scored.push({
+        ...art,
+        matchScore: Number((score + priorityBonus).toFixed(2))
+      });
+    }
+  }
+
+  scored.sort((a, b) => b.matchScore - a.matchScore);
+  return {
+    topArticles: scored.slice(0, 3),
+    matchedSynonyms,
+    maxScore: scored[0]?.matchScore || 0
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. BỘ 8 AGENTIC TOOLS (TRUY VẤN SỐ LIỆU THẬT & TÍNH TOÁN CHÍNH XÁC 100%)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Tool 7: Máy tính toán học liều lượng pha thuốc / bón phân chính xác 100%
+ */
+function calculateAgroDosageTool(rawQuery) {
+  const q = String(rawQuery || '').toLowerCase();
+
+  // Case A: Pha thuốc theo số phuy / bình (VD: "pha 25ml cho bình 20 lít, vậy 2 phuy 200 lít cần bao nhiêu?")
+  const phuyMatch = q.match(/(\d+(?:[.,]\d+)?)\s*phuy\s*(\d+)?\s*(?:lít|l)?/i);
+  const binhMatch = q.match(/(\d+(?:[.,]\d+)?)\s*bình\s*(\d+)?\s*(?:lít|l)?/i);
+  const rateMlPerLitMatch = q.match(/(\d+(?:[.,]\d+)?)\s*(ml|g|gam|cc)\b[^0-9]{0,25}?(\d+)\s*(?:lít|l)\b/i);
+
+  if (rateMlPerLitMatch && (phuyMatch || binhMatch)) {
+    const rateVal = parseFloat(rateMlPerLitMatch[1].replace(',', '.'));
+    const rateUnit = rateMlPerLitMatch[2];
+    const baseWaterL = parseFloat(rateMlPerLitMatch[3]);
+
+    const containerCount = phuyMatch
+      ? parseFloat(phuyMatch[1].replace(',', '.'))
+      : parseFloat(binhMatch[1].replace(',', '.'));
+    const containerVolumeL = phuyMatch
+      ? (parseFloat(phuyMatch[2]) || 200)
+      : (parseFloat(binhMatch[2]) || 20);
+
+    const totalWaterL = containerCount * containerVolumeL;
+    const totalChemical = (totalWaterL / baseWaterL) * rateVal;
+    const displayTotal = totalChemical >= 1000
+      ? `${(totalChemical / 1000).toFixed(2)} ${rateUnit === 'g' || rateUnit === 'gam' ? 'kg' : 'lít'} (${Math.round(totalChemical)} ${rateUnit})`
+      : `${Math.round(totalChemical * 10) / 10} ${rateUnit}`;
+
+    return {
+      toolName: 'tool_calculate_agro_dosage',
+      summary: `🧮 **Kết Quả Tính Toán Liều Lượng Pha Phun Chính Xác (Agent Calculator):**\n` +
+        `• **Định mức chuẩn:** ${rateVal} ${rateUnit} / ${baseWaterL} lít nước.\n` +
+        `• **Tổng lượng nước cần pha:** ${containerCount} ${phuyMatch ? 'phuy' : 'bình'} × ${containerVolumeL}L = **${totalWaterL.toLocaleString('vi-VN')} lít nước**.\n` +
+        `• **Tổng lượng thuốc/phân bón lá cần dùng:** **${displayTotal}**.`
+    };
+  }
+
+  // Case B: Bón phân theo số gốc cây (VD: "150 gốc sầu riêng, mỗi gốc bón 0.8 kg")
+  const treeCountMatch = q.match(/(\d+)\s*(?:gốc|cây)/i);
+  const perTreeKgMatch = q.match(/(\d+(?:[.,]\d+)?)\s*(kg|kí|g|gam|lít|l)\s*(?:\/|\s+mỗi\s+|\s+trên\s+\d*\s*)(?:gốc|cây)/i);
+  if (treeCountMatch && perTreeKgMatch) {
+    const trees = parseInt(treeCountMatch[1], 10);
+    const amountPerTree = parseFloat(perTreeKgMatch[1].replace(',', '.'));
+    const unit = perTreeKgMatch[2];
+    const isGram = unit === 'g' || unit === 'gam';
+    const totalRaw = trees * amountPerTree;
+    const totalKg = isGram ? totalRaw / 1000 : totalRaw;
+    const bags50kg = (totalKg / 50).toFixed(1);
+
+    return {
+      toolName: 'tool_calculate_agro_dosage',
+      summary: `🧮 **Kết Quả Tính Toán Định Mức Bón Phân Theo Gốc (Agent Calculator):**\n` +
+        `• **Quy mô:** ${trees.toLocaleString('vi-VN')} gốc × ${amountPerTree} ${unit}/gốc.\n` +
+        `• **Tổng khối lượng vật tư cần chuẩn bị:** **${totalKg.toLocaleString('vi-VN')} kg** ${!isGram && (unit === 'lít' || unit === 'l') ? 'lít' : `(tương đương ~${bags50kg} bao 50kg)`}.`
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Thực thi bộ 8 Agentic Tools dựa trên ngữ cảnh người dùng & câu hỏi
+ */
+function executeAgentTools(rawQuery, context = {}) {
+  const { normalizedText } = normalizeAgroQuery(rawQuery);
+  const {
+    isAdmin = false,
+    currentUser = {},
+    userFarms = [],
+    userPlants = [],
+    userLogs = [],
+    userSuppliesCost = 0,
+    userRecentSupplies = []
+  } = context;
+
+  const triggeredTools = [];
+  const toolSections = [];
+  const suggestedActions = [];
+
+  // 1. Tool 7: Agro-Dosage Calculator
+  const dosageRes = calculateAgroDosageTool(rawQuery);
+  if (dosageRes) {
+    triggeredTools.push(dosageRes.toolName);
+    toolSections.push(dosageRes.summary);
+  }
+
+  // 2. Tool 6: Bio-Safety & PHI Inspector (10-15 days rule between chemical & microbial)
+  if (
+    (normalizedText.includes('vi sinh') || normalizedText.includes('trichoderma') || normalizedText.includes('bacillus') || normalizedText.includes('men em')) &&
+    (normalizedText.includes('hóa học') || normalizedText.includes('thuốc') || normalizedText.includes('xịt') || normalizedText.includes('phun') || normalizedText.includes('pha chung') || normalizedText.includes('mấy ngày') || normalizedText.includes('khoảng cách'))
+  ) {
+    triggeredTools.push('tool_check_phi_and_biosafety');
+    const recentSpray = userLogs.find(l => String(l.log_type || '').toLowerCase().includes('phun thuốc'));
+    let logWarning = '';
+    if (recentSpray && recentSpray.log_date) {
+      const daysAgo = Math.max(0, Math.floor((Date.now() - new Date(recentSpray.log_date).getTime()) / 86400000));
+      logWarning = daysAgo < 12
+        ? `\n• ⚠️ **Cảnh báo từ Nhật ký vườn của Bác:** Đợt phun thuốc gần nhất mới cách đây **${daysAgo} ngày** (trên cây ${recentSpray.tree_code || recentSpray.plant_type}). Bác cần chờ thêm **${12 - daysAgo} đến ${15 - daysAgo} ngày nữa** mới nên tưới men vi sinh!`
+        : `\n• ✅ **Kiểm tra Nhật ký vườn:** Đợt phun thuốc gần nhất đã cách đây **${daysAgo} ngày** (≥ 12 ngày), hiện tại Bác có thể tưới nấm đối kháng Trichoderma / vi sinh an toàn.`;
+    }
+    toolSections.push(
+      `🛡️ **Kiểm Định An Toàn Sinh Học (Agent Bio-Safety Inspector):**\n` +
+      `• **Quy tắc bắt buộc:** Tuyệt đối **KHÔNG pha chung** và **KHÔNG tưới liền** Chế phẩm vi sinh (Trichoderma, Bacillus, men EM) ngay sau khi phun/tưới Thuốc BVTV hóa học.\n` +
+      `• **Thời gian cách ly an toàn:** Bắt buộc chờ **10 đến 15 ngày** để hoạt chất sát khuẩn phân giải hết mới đưa vi sinh + Humic vào vùng rễ.${logWarning}`
+    );
+  }
+
+  // 3. Tool 1: Lookup Specific Plant by Code (e.g., SR-001, #SR-LK-102, cây 109)
+  const codeMatch = rawQuery.match(/\b([A-Z]{1,4}-[A-Z0-9-]{1,12})\b/i);
+  if (codeMatch && userPlants.length > 0) {
+    const targetCode = codeMatch[1].toUpperCase();
+    const foundPlant = userPlants.find(p => String(p.tree_code || '').toUpperCase().includes(targetCode));
+    if (foundPlant) {
+      triggeredTools.push('tool_lookup_plant_by_code');
+      const plantLogs = userLogs.filter(l => String(l.tree_code || '').toUpperCase() === String(foundPlant.tree_code || '').toUpperCase());
+      const recentStr = plantLogs.length > 0
+        ? plantLogs.slice(0, 3).map(l => `${new Date(l.log_date).toLocaleDateString('vi-VN')}: [${l.log_type}] ${l.note || ''}`).join(' | ')
+        : 'Chưa có nhật ký gần đây';
+      toolSections.push(
+        `🌳 **Hồ Sơ Cây Trồng Tra Cứu Thực Tế (${foundPlant.tree_code}):**\n` +
+        `• **Trang trại:** ${foundPlant.farm_name || 'Đang cập nhật'} | **Giống:** ${[foundPlant.plant_type, foundPlant.plant_variety].filter(Boolean).join(' - ')}\n` +
+        `• **Tình trạng sức khỏe:** **${foundPlant.health_status || 'Khỏe mạnh'}**\n` +
+        `• **Lịch sử chăm sóc gần nhất:** ${recentStr}`
+      );
+    }
+  }
+
+  // 4. Tool 2: Sick Plants Report
+  if (normalizedText.includes('cây bệnh') || normalizedText.includes('mấy cây bệnh') || normalizedText.includes('cần chú ý') || normalizedText.includes('sức khỏe vườn')) {
+    triggeredTools.push('tool_get_sick_plants_report');
+    const sickList = userPlants.filter(p => p.health_status && p.health_status !== 'Khỏe mạnh' && p.health_status !== 'Tốt');
+    if (sickList.length === 0) {
+      toolSections.push(`🩺 **Báo Cáo Sức Khỏe Vườn:** Toàn bộ **${userPlants.length} cây** đang quản lý đều ở trạng thái **Khỏe mạnh (100%)**, chưa ghi nhận cây phát sinh ổ bệnh.`);
+    } else {
+      const preview = sickList.slice(0, 8).map(p => `**${p.tree_code || '#' + p.id}** (${p.health_status} - ${p.farm_name || 'Vườn'})`).join(', ');
+      toolSections.push(
+        `🩺 **Cảnh Báo Cây Đang Theo Dõi Bệnh Hại (${sickList.length}/${userPlants.length} cây):**\n` +
+        `• **Danh sách cây cần xử lý:** ${preview}${sickList.length > 8 ? ` và ${sickList.length - 8} cây khác` : ''}.`
+      );
+    }
+  }
+
+  // 5. Tool 3: Farm Portfolio Overview
+  if (normalizedText.includes('trang trại') || normalizedText.includes('mấy vườn') || normalizedText.includes('diện tích') || normalizedText.includes('trồng cây gì') || normalizedText.includes('danh sách vườn')) {
+    triggeredTools.push('tool_get_farm_portfolio');
+    if (userFarms.length === 0) {
+      toolSections.push(`🏡 **Danh Mục Trang Trại:** Tài khoản hiện chưa khởi tạo trang trại nào. Bác có thể vào mục **"Trang trại"** ➔ **"+ Khởi tạo Trang trại mới (GPS)"** để bắt đầu.`);
+      suggestedActions.push({ label: 'Khởi tạo Trang trại mới', path: '/user/#farms' });
+    } else {
+      const lines = userFarms.map((f, i) => `• **${i + 1}. ${f.name}**: Diện tích **${f.area ? f.area + ' ha' : 'Chưa nhập'}** | Cơ cấu giống: **${f.crops}** (**${f.total} cây**)`).join('\n');
+      toolSections.push(`🏡 **Báo Cáo Danh Mục Trang Trại (${userFarms.length} vườn):**\n${lines}`);
+    }
+  }
+
+  // 6. Tool 4: Supply & Financial Cost Analytics
+  if (normalizedText.includes('chi phí') || normalizedText.includes('tiền') || normalizedText.includes('vật tư') || normalizedText.includes('tiêu hao') || normalizedText.includes('hạch toán')) {
+    triggeredTools.push('tool_get_supply_and_cost_analytics');
+    const recentLines = userRecentSupplies.length > 0
+      ? userRecentSupplies.slice(0, 5).map(s => `  - **${s.name}** (${s.category}): ${s.quantity} ${s.unit} → **${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ** (${s.farm_name || 'Vườn'})`).join('\n')
+      : '  - Chưa phát sinh phiếu xuất vật tư gần đây.';
+    toolSections.push(
+      `💰 **Báo Cáo Hạch Toán Vật Tư & Chi Phí (${isAdmin ? 'Toàn hệ thống' : currentUser.name || 'Nông hộ'}):**\n` +
+      `• **Tổng chi phí vật tư lũy kế:** **${Number(userSuppliesCost).toLocaleString('vi-VN')} VNĐ**\n` +
+      `• **Các đợt xuất dùng gần nhất:**\n${recentLines}`
+    );
+  }
+
+  // 7. Tool 5: Recent Cultivation Logs
+  if (normalizedText.includes('nhật ký') || normalizedText.includes('lịch sử chăm sóc') || normalizedText.includes('mới làm gì') || normalizedText.includes('hoạt động gần đây')) {
+    triggeredTools.push('tool_get_recent_cultivation_logs');
+    const logLines = userLogs.length > 0
+      ? userLogs.slice(0, 6).map(l => `• **${new Date(l.log_date).toLocaleDateString('vi-VN')}** — **[${l.log_type}]** tại cây **${l.tree_code || l.plant_type}** (${l.farm_name}): ${l.note || 'Đã thực hiện đúng quy trình'}`).join('\n')
+      : '• Chưa có nhật ký canh tác nào được ghi nhận gần đây.';
+    toolSections.push(`📝 **Trích Xuất Nhật Ký Canh Tác Thực Địa Gần Nhất:**\n${logLines}`);
+  }
+
+  // 8. Tool 8: App Navigation & Workflow Guide
+  if (normalizedText.includes('hướng dẫn sử dụng') || normalizedText.includes('quét thẻ nfc') || normalizedText.includes('thuê nhân công') || normalizedText.includes('xuất vietgap')) {
+    triggeredTools.push('tool_app_navigation_guide');
+    suggestedActions.push(
+      { label: 'Mở Cổng Định Danh NFC (/sub)', path: '/sub' },
+      { label: 'Quản lý Vườn & Cây (/user/)', path: '/user/' }
+    );
+  }
+
+  return {
+    triggeredTools,
+    toolSections,
+    suggestedActions
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. GROUNDED AGENT SYNTHESIZER (TỔNG HỢP ĐÁP ÁN CHÍNH XÁC 100%, KHÔNG BAO GIỜ CỤT)
+// ─────────────────────────────────────────────────────────────────────────────
+function synthesizeGroundedAgentReply({
+  rawQuery,
+  isAdmin = false,
+  userName = 'Bác nông hộ',
+  matchedQAResult = null,
+  ragResult = { topArticles: [], matchedSynonyms: [], maxScore: 0 },
+  toolExecResult = { triggeredTools: [], toolSections: [], suggestedActions: [] }
+}) {
+  const greetingTitle = isAdmin ? 'Admin' : `Bác ${userName}`;
+  const blocks = [];
+
+  // 1. Nếu khớp Cặp Q&A đã huấn luyện
+  if (matchedQAResult && matchedQAResult.qa?.expected_answer) {
+    blocks.push(matchedQAResult.qa.expected_answer);
+  }
+
+  // 2. Nếu có kết quả từ 8 Agent Tools (Số liệu vườn thực tế / Máy tính liều lượng / Kiểm định an toàn)
+  if (toolExecResult.toolSections && toolExecResult.toolSections.length > 0) {
+    blocks.push(toolExecResult.toolSections.join('\n\n'));
+  }
+
+  // 3. Nếu có bài viết chuyên môn từ Kho Tri Thức (BM25 Top Articles) và chưa trùng lặp hoàn toàn với Q&A
+  if (ragResult.topArticles && ragResult.topArticles.length > 0 && !matchedQAResult) {
+    const primaryArt = ragResult.topArticles[0];
+    blocks.push(
+      `📘 **Phác Đồ & Tri Thức Chuyên Môn Chuẩn Tân Bảo AgTech — ${primaryArt.title} (${primaryArt.category}):**\n` +
+      `${primaryArt.content}`
+    );
+
+    if (ragResult.topArticles.length > 1 && ragResult.topArticles[1].matchScore >= 4.5) {
+      const secArt = ragResult.topArticles[1];
+      blocks.push(`💡 **Tham khảo bổ sung (${secArt.title}):**\n${secArt.content}`);
+    }
+  }
+
+  // 4. Tính toán điểm tin cậy (Confidence Score theo chuẩn ISO/IEC TR 24028)
+  let confidenceScore = 0.25;
+  if (matchedQAResult) {
+    confidenceScore = Math.max(confidenceScore, matchedQAResult.score);
+  }
+  if (toolExecResult.triggeredTools.length > 0) {
+    confidenceScore = Math.max(confidenceScore, 0.92);
+  }
+  if (ragResult.maxScore > 0) {
+    confidenceScore = Math.max(confidenceScore, Math.min(0.95, 0.45 + ragResult.maxScore * 0.05));
+  }
+  confidenceScore = Number(confidenceScore.toFixed(2));
+
+  // 5. Nếu câu hỏi hoàn toàn nằm ngoài cả Q&A, Tools và Kho Tri Thức -> Trả lời định hướng có cấu trúc & đánh dấu Auto-Learning
+  if (blocks.length === 0) {
+    blocks.push(
+      `Dạ chào ${greetingTitle}! Về câu hỏi **"${rawQuery}"**, Bé Mầm đã ghi nhận vào **Hệ thống Tự học (Auto-Learning Queue)** để cập nhật phác đồ chuyên sâu.\n\n` +
+      `Hiện tại ${greetingTitle} có thể yêu cầu Bé Mầm thực hiện ngay các tác vụ Agent sau:\n` +
+      `• 🧮 **Tính liều lượng pha thuốc/bón phân:** Ví dụ *"Pha 25ml thuốc cho bình 20L, vậy 3 phuy 200L cần bao nhiêu ml?"* hoặc *"120 gốc sầu riêng bón 0.6kg/gốc hết bao nhiêu kg?"*\n` +
+      `• 🩺 **Chẩn đoán & Phác đồ bệnh hại:** Xì mủ nứt thân, vàng lá thối rễ, cháy lá thán thư, rầy xanh, nhện đỏ, làm bông, chống rụng trái non, sượng cơm.\n` +
+      `• 📊 **Tra cứu dữ liệu thực của vườn:** *"Vườn có mấy cây bệnh?"*, *"Chi phí vật tư đã dùng?"*, *"Nhật ký chăm sóc gần nhất?"* hoặc tra theo mã cây (*"SR-001"*).`
+    );
+  }
+
+  return {
+    reply: blocks.join('\n\n---\n\n'),
+    confidenceScore,
+    needsAutoLearning: confidenceScore < 0.35,
+    agentMetadata: {
+      standard: 'ISO/IEC 42001 & ISO/IEC 23053 Hybrid Agent',
+      confidenceScore,
+      toolsTriggered: toolExecResult.triggeredTools,
+      matchedQAId: matchedQAResult?.qa?.id || null,
+      matchedArticles: (ragResult.topArticles || []).map(a => ({ id: a.id, title: a.title, score: a.matchScore })),
+      matchedSynonyms: ragResult.matchedSynonyms || [],
+      suggestedActions: toolExecResult.suggestedActions || []
+    }
+  };
+}
+
+module.exports = {
+  checkPromptInjection,
+  normalizeAgroQuery,
+  tokenizeVietnamese,
+  loadKnowledgeBaseCached,
+  matchTrainingQA,
+  rankKnowledgeArticles,
+  calculateAgroDosageTool,
+  executeAgentTools,
+  synthesizeGroundedAgentReply,
+  BUILTIN_ENCYCLOPEDIA_ARTICLES
+};

@@ -4,6 +4,13 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const memoryCache = require('../config/cache');
+const {
+  matchTrainingQA,
+  rankKnowledgeArticles,
+  executeAgentTools,
+  synthesizeGroundedAgentReply,
+  BUILTIN_ENCYCLOPEDIA_ARTICLES
+} = require('../services/beMamAgentEngine');
 
 // ─────────────────────────────────────────────────────────────
 // 🛡️ BẢO MẬT: BỘ LỌC XSS, CHỐNG BOT HONEYPOT & TRÍCH XUẤT REAL CLIENT IP
@@ -462,29 +469,50 @@ router.post('/test', botProtectionMiddleware, async (req, res) => {
 
     matchedArticles.sort((a, b) => b.score - a.score);
 
+    // Chạy thêm bộ Agent Engine v2.0 để trả về chẩn đoán nâng cao
+    const qaMatchV2 = matchTrainingQA(cleanMsg, qaRes.rows);
+    const ragV2 = rankKnowledgeArticles(cleanMsg, articlesRes.rows);
+    const toolExecV2 = executeAgentTools(cleanMsg, { isAdmin: true, currentUser: req.user });
+    const synthesizedV2 = synthesizeGroundedAgentReply({
+      rawQuery: cleanMsg,
+      isAdmin: true,
+      userName: req.user?.name || 'Admin',
+      matchedQAResult: qaMatchV2,
+      ragResult: ragV2,
+      toolExecResult: toolExecV2
+    });
+
     const elapsed = Date.now() - startTime;
 
     res.json({
       success: true,
       query: cleanMsg,
       elapsedMs: elapsed,
-      matchedQA: matchedQA ? {
-        id: matchedQA.id,
-        category: matchedQA.category,
-        expectedAnswer: matchedQA.expected_answer,
-        keywords: matchedQA.keywords
+      matchedQA: (matchedQA || qaMatchV2?.qa) ? {
+        id: (matchedQA || qaMatchV2.qa).id,
+        category: (matchedQA || qaMatchV2.qa).category,
+        expectedAnswer: (matchedQA || qaMatchV2.qa).expected_answer,
+        keywords: (matchedQA || qaMatchV2.qa).keywords
       } : null,
-      matchedArticles: matchedArticles.slice(0, 3).map(m => ({
-        id: m.article.id,
-        title: m.article.title,
-        category: m.article.category,
-        priority: m.article.priority,
-        score: m.score,
-        snippet: m.article.content.slice(0, 200) + '...'
+      matchedArticles: (ragV2.topArticles.length > 0 ? ragV2.topArticles : matchedArticles.slice(0, 3).map(m => ({ ...m.article, matchScore: m.score }))).slice(0, 3).map(art => ({
+        id: art.id,
+        title: art.title,
+        category: art.category,
+        priority: art.priority,
+        score: art.matchScore || art.score || 5,
+        snippet: String(art.content || '').slice(0, 200) + '...'
       })),
-      recommendation: matchedQA 
+      agentSimulation: {
+        confidenceScore: synthesizedV2.confidenceScore,
+        toolsTriggered: toolExecV2.triggeredTools,
+        matchedSynonyms: ragV2.matchedSynonyms,
+        synthesizedReply: synthesizedV2.reply
+      },
+      recommendation: (matchedQA || qaMatchV2)
         ? '⚡ Trực tiếp áp dụng câu trả lời chuẩn từ Cặp Q&A (Tốc độ phản hồi < 5ms)' 
-        : (matchedArticles.length > 0 ? `📚 Ghép ${matchedArticles.length} bài viết tri thức vào RAG Prompt của Gemini` : '🌐 Sử dụng tri thức tổng quát & dữ liệu thời gian thực của trang trại')
+        : (ragV2.topArticles.length > 0 || toolExecV2.triggeredTools.length > 0
+            ? `🤖 Kích hoạt ${toolExecV2.triggeredTools.length} Agent Tools & ${ragV2.topArticles.length} bài viết BM25 RAG (Độ tin cậy: ${Math.round(synthesizedV2.confidenceScore * 100)}%)`
+            : '🌐 Sử dụng tri thức tổng quát & tự động đưa vào hàng đợi Auto-Learning')
     });
   } catch (err) {
     console.error('Lỗi thử nghiệm AI:', err);
@@ -579,6 +607,108 @@ router.get('/logs', async (req, res) => {
   } catch (err) {
     console.error('Lỗi lấy nhật ký huấn luyện:', err);
     res.status(500).json({ error: 'Lỗi máy chủ khi lấy nhật ký' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// 5. NẠP ĐẠI TỪ ĐIỂN TRI THỨC & QUẢN LÝ HÀNG ĐỢI TỰ HỌC (ISO/IEC 42001)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/ai/training/seed-encyclopedia
+ * Nạp tự động (Idempotent) Bộ Đại Từ Điển Nông Học & VietGAP vào CSDL
+ */
+router.post('/seed-encyclopedia', async (req, res) => {
+  try {
+    let insertedCount = 0;
+    for (const item of BUILTIN_ENCYCLOPEDIA_ARTICLES) {
+      const checkRes = await pool.query('SELECT id FROM ai_knowledge_articles WHERE LOWER(title) = LOWER($1)', [item.title]);
+      if (checkRes.rows.length === 0) {
+        await pool.query(
+          `INSERT INTO ai_knowledge_articles (category, title, topic_keywords, content, priority, is_active, created_by, updated_at)
+           VALUES ($1, $2, $3, $4, $5, true, $6, NOW())`,
+          [item.category, item.title, item.topic_keywords, item.content, item.priority || 9, req.user.id]
+        );
+        insertedCount++;
+      }
+    }
+    memoryCache.flush();
+
+    const clientIp = getClientIp(req);
+    await pool.query(
+      `INSERT INTO ai_training_logs (action, target_type, details, admin_id, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      ['SEED_ENCYCLOPEDIA', 'KNOWLEDGE_ARTICLE', JSON.stringify({ insertedCount, totalBuiltin: BUILTIN_ENCYCLOPEDIA_ARTICLES.length }), req.user.id, clientIp]
+    ).catch(() => {});
+
+    res.json({
+      success: true,
+      insertedCount,
+      totalBuiltin: BUILTIN_ENCYCLOPEDIA_ARTICLES.length,
+      message: `Đã đồng bộ Đại Từ Điển Nông Học thành công (+${insertedCount} chuyên đề mới)!`
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi nạp Đại Từ Điển: ' + err.message });
+  }
+});
+
+/**
+ * GET /api/ai/training/unanswered
+ * Lấy danh sách các câu hỏi người dùng chưa khớp để Admin duyệt huấn luyện
+ */
+router.get('/unanswered', async (req, res) => {
+  try {
+    const statusFilter = req.query.status || 'pending';
+    const result = await pool.query(
+      `SELECT uq.*, u.full_name as user_name
+       FROM ai_unanswered_queries uq
+       LEFT JOIN users u ON uq.user_id = u.id
+       WHERE ($1 = 'all' OR uq.status = $1)
+       ORDER BY uq.created_at DESC
+       LIMIT 100`,
+      [statusFilter]
+    );
+    res.json({ success: true, queries: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi tải danh sách câu hỏi chờ huấn luyện' });
+  }
+});
+
+/**
+ * POST /api/ai/training/unanswered/:id/resolve
+ * Chuyển câu hỏi chờ huấn luyện thành Cặp Q&A chính thức chỉ với 1 thao tác
+ */
+router.post('/unanswered/:id/resolve', botProtectionMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category, sample_questions, expected_answer, keywords } = req.body;
+    if (!expected_answer || !expected_answer.trim()) {
+      return res.status(400).json({ error: 'Vui lòng nhập câu trả lời chuẩn để huấn luyện.' });
+    }
+
+    const qRow = await pool.query('SELECT * FROM ai_unanswered_queries WHERE id = $1', [id]);
+    const baseQuestion = qRow.rows[0]?.user_query || '';
+    const finalQuestions = sanitizeInput(sample_questions || baseQuestion);
+    const finalAnswer = sanitizeInput(expected_answer);
+    const finalCategory = sanitizeInput(category || 'Hỏi Đáp Thường Gặp');
+    const finalKeywords = sanitizeInput(keywords || '');
+
+    const qaInsert = await pool.query(
+      `INSERT INTO ai_training_qa (category, sample_questions, expected_answer, keywords, is_active, created_by, updated_at)
+       VALUES ($1, $2, $3, $4, true, $5, NOW()) RETURNING *`,
+      [finalCategory, finalQuestions, finalAnswer, finalKeywords, req.user.id]
+    );
+
+    await pool.query(`UPDATE ai_unanswered_queries SET status = 'resolved' WHERE id = $1`, [id]);
+    memoryCache.flush();
+
+    res.json({
+      success: true,
+      qa: qaInsert.rows[0],
+      message: 'Đã huấn luyện câu hỏi thành cặp Q&A chính thức!'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi duyệt huấn luyện câu hỏi: ' + err.message });
   }
 });
 

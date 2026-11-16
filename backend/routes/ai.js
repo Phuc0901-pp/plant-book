@@ -3,6 +3,14 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const memoryCache = require('../config/cache');
+const {
+  checkPromptInjection,
+  loadKnowledgeBaseCached,
+  matchTrainingQA,
+  rankKnowledgeArticles,
+  executeAgentTools,
+  synthesizeGroundedAgentReply
+} = require('../services/beMamAgentEngine');
 
 /**
  * Phân loại độ khó câu hỏi (Smart Dynamic Model Routing)
@@ -41,6 +49,18 @@ router.post('/chat', auth, async (req, res) => {
       return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống' });
     }
 
+    // 0. OWASP LLM01 Prompt Injection Guardrail
+    const guardCheck = checkPromptInjection(message);
+    if (!guardCheck.safe) {
+      return res.json({
+        success: true,
+        reply: guardCheck.safeReply,
+        model: 'owasp_llm01_guardrail',
+        source: 'security_guardrail',
+        agentMetadata: { blockedReason: guardCheck.reason }
+      });
+    }
+
     const isAdmin = currentUser.role === 'admin';
     const cacheKey = `ai_context_${currentUser.id}_${isAdmin ? 'adm' : 'usr'}`;
     
@@ -55,10 +75,11 @@ router.post('/chat', auth, async (req, res) => {
 
     if (cachedContextData) {
       systemContext = cachedContextData.systemContext;
-      userFarms = cachedContextData.userFarms;
-      userSuppliesCost = cachedContextData.userSuppliesCost;
-      userRecentSupplies = cachedContextData.userRecentSupplies;
-      userLogs = cachedContextData.userLogs;
+      userFarms = cachedContextData.userFarms || [];
+      userPlants = cachedContextData.userPlants || [];
+      userSuppliesCost = cachedContextData.userSuppliesCost || 0;
+      userRecentSupplies = cachedContextData.userRecentSupplies || [];
+      userLogs = cachedContextData.userLogs || [];
     } else {
       // 2. Truy vấn từ Read Replica Pool (Tách tải khỏi Master)
       try {
@@ -92,7 +113,8 @@ router.post('/chat', auth, async (req, res) => {
             };
           });
 
-          (plantsRes.rows || []).forEach(p => {
+          userPlants = plantsRes.rows || [];
+          userPlants.forEach(p => {
             if (p.farm_id && farmMap[p.farm_id]) {
               farmMap[p.farm_id].plantCount++;
               const crop = [p.plant_type, p.plant_variety].filter(Boolean).join(' - ');
@@ -232,6 +254,7 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
         memoryCache.set(cacheKey, {
           systemContext,
           userFarms,
+          userPlants,
           userSuppliesCost,
           userRecentSupplies,
           userLogs
@@ -243,130 +266,82 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
       }
     }
 
-    // 2. DYNAMIC RAG IN-CONTEXT INJECTION (Tra cứu Kho Tri Thức & Cặp Q&A đã huấn luyện)
+    // 2. HYBRID BM25 RAG & 8 AGENTIC TOOLS EXECUTION (ISO/IEC 42001 & 23053)
+    // Quét toàn bộ ai_training_qa & ai_knowledge_articles trong RAM Cache (xóa bỏ giới hạn LIMIT 30)
     let trainedKnowledgeText = '';
-    let matchedQAPair = null;
-    const lowerMessage = message.toLowerCase().trim();
+    let matchedQAResult = null;
+    let ragResult = { topArticles: [], matchedSynonyms: [], maxScore: 0 };
+    let toolExecResult = { triggeredTools: [], toolSections: [], suggestedActions: [] };
 
     try {
-      // 2.1 Quét cặp Q&A đã huấn luyện
-      const qaRows = await pool.readQuery(`
-        SELECT sample_questions, expected_answer 
-        FROM ai_training_qa 
-        WHERE is_active = true 
-        ORDER BY updated_at DESC 
-        LIMIT 30
-      `);
+      const kbBundle = await loadKnowledgeBaseCached(pool);
+      matchedQAResult = matchTrainingQA(message, kbBundle.qaRows);
+      ragResult = rankKnowledgeArticles(message, kbBundle.articleRows);
+      toolExecResult = executeAgentTools(message, {
+        isAdmin,
+        currentUser,
+        userFarms,
+        userPlants,
+        userLogs,
+        userSuppliesCost,
+        userRecentSupplies
+      });
 
-      for (const qa of (qaRows.rows || [])) {
-        const variants = qa.sample_questions.split('\n').map(v => v.trim().toLowerCase()).filter(Boolean);
-        const isMatch = variants.some(v => lowerMessage.includes(v) || v.includes(lowerMessage));
-        if (isMatch) {
-          matchedQAPair = qa;
-          break;
-        }
-      }
-
-      // NẾU KHỚP CẶP Q&A ĐÃ HUẤN LUYỆN: Trả lời tức thì 100% chuẩn xác theo ý Admin ($0 Token, 0ms latency)
-      if (matchedQAPair && matchedQAPair.expected_answer) {
+      // Nếu khớp Cặp Q&A độ tin cậy cao (>= 0.85) và không yêu cầu tính toán phức tạp -> Phản xạ tức thì (< 5ms, $0 Token)
+      if (matchedQAResult && matchedQAResult.score >= 0.85 && toolExecResult.triggeredTools.length === 0) {
         return res.json({
-          reply: matchedQAPair.expected_answer,
+          success: true,
+          reply: matchedQAResult.qa.expected_answer,
           source: 'trained_qa',
-          modelUsed: 'trained-qa-instant'
+          model: 'trained-qa-instant',
+          modelUsed: 'trained-qa-instant',
+          agentMetadata: {
+            confidenceScore: matchedQAResult.score,
+            matchedQAId: matchedQAResult.qa.id,
+            toolsTriggered: []
+          }
         });
       }
 
-      // 2.2 Quét các bài viết tri thức chuyên môn liên quan
-      const articleRows = await pool.readQuery(`
-        SELECT title, category, topic_keywords, content, priority 
-        FROM ai_knowledge_articles 
-        WHERE is_active = true 
-        ORDER BY priority DESC, updated_at DESC
-      `);
-
-      const relevantArticles = [];
-      for (const art of (articleRows.rows || [])) {
-        const kwList = (art.topic_keywords || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
-        const tLower = art.title.toLowerCase();
-        const cLower = art.content.toLowerCase();
-
-        let matchScore = 0;
-        if (lowerMessage.includes(tLower) || tLower.includes(lowerMessage)) matchScore += 5;
-        kwList.forEach(k => {
-          if (lowerMessage.includes(k)) matchScore += 3;
-        });
-        if (cLower.includes(lowerMessage)) matchScore += 1;
-
-        if (matchScore > 0) {
-          relevantArticles.push({ ...art, matchScore });
-        }
-      }
-
-      relevantArticles.sort((a, b) => b.matchScore - a.matchScore);
-      const topArticles = relevantArticles.slice(0, 3);
-
-      if (topArticles.length > 0) {
+      if (ragResult.topArticles.length > 0) {
         trainedKnowledgeText = `\n[TÀI LIỆU TRI THỨC ĐỘC QUYỀN TÂN BẢO ĐÃ HUẤN LUYỆN CHO BÉ MẦM]:\n` +
-          topArticles.map((a, i) => `--- Tài liệu ${i + 1}: ${a.title} (${a.category}) ---\n${a.content}`).join('\n\n');
+          ragResult.topArticles.map((a, i) => `--- Tài liệu ${i + 1}: ${a.title} (${a.category} | Điểm BM25: ${a.matchScore}) ---\n${a.content}`).join('\n\n');
       }
-
     } catch (ragErr) {
-      console.warn('Lỗi tra cứu RAG tri thức:', ragErr.message);
+      console.warn('Lỗi tra cứu RAG & Agent Tools:', ragErr.message);
     }
 
+    const agentToolsContextText = toolExecResult.toolSections.length > 0
+      ? `\n[KẾT QUẢ THỰC THI CÔNG CỤ AGENT TRÊN DỮ LIỆU THẬT CỦA VƯỜN]:\n${toolExecResult.toolSections.join('\n\n')}\n`
+      : '';
+
     // 3. TẬP HUẤN TOÀN BỘ KIẾN THỨC NÔNG NGHIỆP & CẨM NANG HỆ THỐNG
-    const systemPrompt = `Bạn là "Bé Mầm AgTech" - Trợ lý số AI chuyên gia nông nghiệp thông minh của hệ thống Sổ Nông Tân Bảo AgTech.
+    const systemPrompt = `Bạn là "Bé Mầm AgTech" - AI Agent chuyên gia nông nghiệp thông minh (chuẩn ISO/IEC 42001) của hệ thống Sổ Nông Tân Bảo AgTech.
 Xưng hô: Xưng là "Bé Mầm" hoặc "em", gọi người dùng là "${isAdmin ? 'Admin' : 'Bác ' + (currentUser.name || 'nông hộ')}".
 
 📘 [BỘ KIẾN THỨC CẨM NANG HỆ THỐNG SỔ NÔNG TÂN BẢO]:
-Khi người dùng hỏi "App này sài sao?", "Chưa biết dùng", "Hướng dẫn sử dụng", "Tạo trang trại như thế nào", hãy hướng dẫn chuẩn xác 4 bước sau:
-- Bước 1: Tạo Trang Trại Mới: Vào menu "Trang trại" (bên trái) -> Bấm "+ Khởi tạo Trang trại mới (GPS)" -> Điền tên vườn, diện tích và nhấn "Lấy vị trí GPS" để hệ thống tự động ghim vị trí vệ tinh và kết nối trạm dự báo thời tiết 6 ngày.
-- Bước 2: Thêm Cây Trồng & Gán Mã Cây: Vào trang trại -> Bấm "+ Thêm cây" -> Nhập loại cây (Sầu riêng, Bưởi...), mã cây (SR-001) và định vị cây trên bản đồ GIS hoặc quét thẻ NFC/QR.
-- Bước 3: Ghi Nhật Ký Canh Tác: Bấm vào Bé Mầm Ôm Nút (+) ở góc dưới màn hình -> Chọn "📝 Ghi nhật ký chăm sóc" -> Chọn hoạt động Tưới nước (số lít/gốc), Bón phân NPK, Phun thuốc BVTV hoặc Chụp ảnh đính kèm.
-- Bước 4: Quản Lý Vật Tư & Chi Phí: Vào mục "Vật tư" -> Chụp ảnh bao bì phân bón/thuốc để AI quét OCR bóc tách giá tiền và tự động tính toán tổng chi phí mùa vụ.
+- Bước 1: Tạo Trang Trại Mới: Vào menu "Trang trại" -> Bấm "+ Khởi tạo Trang trại mới (GPS)" -> Nhập tên vườn, diện tích và lấy vị trí GPS vệ tinh.
+- Bước 2: Thêm Cây & Định danh NFC (/sub): Bấm "+ Thêm cây" hoặc vào cổng /sub để gán thẻ NFC NTAG213.
+- Bước 3: Ghi Nhật Ký Canh Tác: Chọn 1 trong 6 thao tác Chibi ISO (Tưới nước, Bón phân, Phun thuốc, Thuê nhân công, Bệnh cây, Thu hoạch).
+- Bước 4: Quản Lý Vật Tư & Xuất Báo Cáo VietGAP: Tự động khấu trừ tồn kho, hạch toán chi phí và niêm phong chuỗi băm SHA-256.
 
-🌿 [BỘ KIẾN THỨC KỸ THUẬT NÔNG NGHIỆP & VIETGAP]:
-- Sầu riêng: Giai đoạn nuôi đọt (NPK 30-10-10), làm bông (xiết nước 15-20 ngày + NPK 10-50-10), nuôi trái (NPK 12-12-17 hoặc NPK 15-5-25 để cơm vàng ngọt dẻo).
-- Bệnh hại: Vàng lá thối rễ / Xì mủ nứt thân (quét Metalaxyl/Fosetyl-Al, tưới nấm Trichoderma). Rầy xanh (phun Imidacloprid/Emamectin khi đọt le mũi giáo).
-- Nguyên tắc Canh tác An Toàn: Khi sử dụng Thuốc BVTV (hóa học) bắt buộc phải cách 10 - 15 ngày sau mới được dùng Chế phẩm vi sinh (Trichoderma, Bacillus, men EM) để tránh diệt chết vi sinh vật có lợi.
+🌿 [NGUYÊN TẮC AN TOÀN SINH HỌC & VIETGAP BẮT BUỘC]:
+- Khi sử dụng Thuốc BVTV (hóa học) BẮT BUỘC phải cách 10 - 15 ngày sau mới được dùng Chế phẩm vi sinh (Trichoderma, Bacillus, men EM) để tránh diệt chết vi sinh vật có lợi.
+${agentToolsContextText}
 ${trainedKnowledgeText}
-${matchedQAPair ? `\n[CÂU HỎI TRÙNG KHỚP VỚI CẶP ĐÃ HUẤN LUYỆN - ƯU TIÊN TRẢ LỜI THEO ĐÚNG NỘI DUNG SAU]:\n${matchedQAPair.expected_answer}\n` : ''}
+${matchedQAResult ? `\n[CẶP Q&A ĐÃ HUẤN LUYỆN LIÊN QUAN]:\n${matchedQAResult.qa.expected_answer}\n` : ''}
 
-⚠️ NGUYÊN TẮC QUAN TRỌNG:
-1. TRẢ LỜI ĐẦY ĐỦ, MẠCH LẠC, TUYỆT ĐỐI KHÔNG ĐƯỢC CẮT CỤT CÂU GIỮA CHỪNG.
-2. Trình bày bằng markdown rõ ràng (tiêu đề, gạch đầu dòng, in đậm tên nút bấm).
-3. ĐI THẲNG VÀO TRỌNG TÂM câu hỏi của người dùng.
+⚠️ NGUYÊN TẮC TRẢ LỜI CỦA AGENT:
+1. Trả lời đầy đủ, mạch lạc, bám sát 100% số liệu từ [KẾT QUẢ THỰC THI CÔNG CỤ AGENT] và [TÀI LIỆU TRI THỨC].
+2. Trình bày bằng markdown rõ ràng (tiêu đề, gạch đầu dòng, in đậm con số và hoạt chất).
 
 ${systemContext}`;
 
-    // 3. ĐIỀU HƯỚNG MÔ HÌNH & TỰ ĐỘNG CHUYỂN TIẾP (AUTO FAILOVER LOOP)
+    // 4. ĐIỀU HƯỚNG MÔ HÌNH CHUẨN & TỰ ĐỘNG CHUYỂN TIẾP (AUTO FAILOVER LOOP)
     const queryComplexity = classifyQueryComplexity(message);
-    let modelCandidates = [];
-
-    if (queryComplexity === 'complex') {
-      // 🌟 Câu hỏi khó/chuyên sâu: Ưu tiên Model Siêu Cấp trước, nếu hết quota tự động nhảy sang toàn bộ model còn lại
-      modelCandidates = [
-        'gemini-3.7-flash',
-        'gemini-3.5-flash',
-        'gemini-pro-latest',
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-pro'
-      ];
-    } else {
-      // ⚡ Câu hỏi thường: Ưu tiên Model Standard/Lite (Quota lớn 1.500 RPD), nếu cần vẫn có thể nhảy sang model khác
-      modelCandidates = [
-        'gemini-2.5-flash-lite',
-        'gemini-2.0-flash',
-        'gemini-2.5-flash',
-        'gemini-flash-latest',
-        'gemini-1.5-flash',
-        'gemini-3.5-flash',
-        'gemini-3.7-flash'
-      ];
-    }
+    const modelCandidates = queryComplexity === 'complex'
+      ? ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.5-flash-lite']
+      : ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
 
     const rawKeys = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
     const apiKeys = rawKeys.split(/[,;\s]+/).map(k => k.trim()).filter(Boolean);
@@ -381,7 +356,7 @@ ${systemContext}`;
           });
         }
       }
-      
+
       contents.push({
         role: 'user',
         parts: [{ text: `${systemPrompt}\n\nCâu hỏi của ${currentUser.name}: ${message}` }]
@@ -391,7 +366,7 @@ ${systemContext}`;
         for (const modelName of modelCandidates) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 12000);
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
             const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
               method: 'POST',
@@ -400,7 +375,7 @@ ${systemContext}`;
               body: JSON.stringify({
                 contents,
                 generationConfig: {
-                  temperature: queryComplexity === 'complex' ? 0.3 : 0.15,
+                  temperature: queryComplexity === 'complex' ? 0.25 : 0.15,
                   maxOutputTokens: 2500
                 }
               })
@@ -416,77 +391,53 @@ ${systemContext}`;
                   success: true,
                   reply: reply.trim(),
                   model: `${modelName} (${queryComplexity})`,
-                  source: 'gemini_ai'
+                  source: 'gemini_ai_agent',
+                  agentMetadata: {
+                    toolsTriggered: toolExecResult.triggeredTools,
+                    matchedArticles: ragResult.topArticles.map(a => a.title),
+                    suggestedActions: toolExecResult.suggestedActions
+                  }
                 });
               }
             } else {
-              // 429 Too Many Requests hoặc model hết quota -> Tự động chuyển model tiếp theo
-              console.warn(`[AI Router] Model ${modelName} trả về HTTP ${geminiRes.status} -> Tự động nhảy sang model kế tiếp...`);
+              console.warn(`[AI Agent Router] Model ${modelName} trả về HTTP ${geminiRes.status} -> Chuyển model kế tiếp...`);
             }
-          } catch (err) {
-            // Lỗi mạng hoặc timeout -> Nhảy tiếp model sau
+          } catch (_) {
+            // Timeout hoặc lỗi mạng -> Chuyển tiếp
           }
         }
       }
     }
 
-    // 4. Fallback Knowledge Engine Hoàn Chỉnh (Đầy Đủ Không Bao Giờ Cụt)
-    const lower = message.toLowerCase();
-    let fallbackReply = '';
+    // 5. GROUNDED NEURO-SYMBOLIC AGENT SYNTHESIZER (Hoạt động 100% bất tử kể cả khi không có Gemini API Key)
+    const synthesized = synthesizeGroundedAgentReply({
+      rawQuery: message,
+      isAdmin,
+      userName: currentUser.name || 'Nông hộ',
+      matchedQAResult,
+      ragResult,
+      toolExecResult
+    });
 
-    if (matchedQAPair && matchedQAPair.expected_answer) {
-      fallbackReply = matchedQAPair.expected_answer;
-    } else if (lower.includes('sài sao') || lower.includes('dùng sao') || lower.includes('hướng dẫn') || lower.includes('tạo trang trại') || lower.includes('chưa biết sài') || lower.includes('chưa biết dùng') || lower.includes('bắt đầu')) {
-      fallbackReply = `🌱 **Chào mừng Bác đến với Sổ Nông Tân Bảo AgTech! Bé Mầm xin hướng dẫn quy trình 4 bước sử dụng cực kỳ đơn giản sau đây:**\n\n` +
-        `📍 **Bước 1: Khởi tạo Trang Trại Đầu Tiên:**\n` +
-        `- Vào menu **"Trang trại"** ở thanh điều hướng bên trái.\n` +
-        `- Nhấn nút xanh **"+ Khởi tạo Trang trại mới (GPS)"**.\n` +
-        `- Nhập tên vườn, diện tích (ha) và nhấn **"Lấy GPS"** để hệ thống tự động ghim vị trí vệ tinh và kết nối trạm dự báo thời tiết 6 ngày.\n\n` +
-        `🌳 **Bước 2: Thêm Cây Trồng & Gán Mã Cây:**\n` +
-        `- Mở trang trại vừa tạo, bấm nút **"+ Thêm cây"**.\n` +
-        `- Chọn loại cây (Sầu riêng, Bưởi, Mít...), gán mã cây (ví dụ: **SR-001**) và định vị cây trên bản đồ GIS hoặc quét thẻ NFC/QR thực địa.\n\n` +
-        `📝 **Bước 3: Ghi Nhật Ký Canh Tác Hàng Ngày:**\n` +
-        `- Bấm trực tiếp vào **Bé Mầm Ôm Nút Dấu Cộng (+)** ở góc dưới bên phải màn hình bất cứ lúc nào.\n` +
-        `- Chọn **"📝 Ghi nhật ký chăm sóc"** để lưu lại hoạt động: Tưới nước (lít/gốc), bón phân NPK, phun thuốc BVTV hoặc chụp ảnh kiểm tra vườn.\n\n` +
-        `📦 **Bước 4: Quản Lý Kho Vật Tư & Chi Phí Tiêu Hao:**\n` +
-        `- Vào mục **"Vật tư"**, chụp ảnh bao bì phân bón/thuốc để AI tự động quét OCR bóc tách giá tiền và tự động tính toán chi phí theo mùa vụ cho Bác!\n\n` +
-        `💡 *Trong quá trình canh tác, Bác cần hỏi bất kỳ kỹ thuật trị bệnh hay tra cứu gì cứ nhấn vào em (Bé Mầm) nhé! ✨*`;
-    } else if (lower.includes('trang trại') || lower.includes('vườn') || lower.includes('mấy trang trại') || lower.includes('trồng cây gì') || lower.includes('trồng gì')) {
-      if (userFarms.length === 0) {
-        fallbackReply = `🏡 Bác chưa tạo trang trại nào. Bác hãy vào mục **"Trang trại"** ➔ bấm **"+ Khởi tạo Trang trại mới (GPS)"** để tạo trang trại đầu tiên nhé!`;
-      } else {
-        fallbackReply = `🏡 **${isAdmin ? 'Toàn bộ trang trại trong hệ thống' : 'Danh sách các trang trại của Bác (' + userFarms.length + ' trang trại)'}:**\n` +
-          userFarms.map((f, idx) => `• **${idx + 1}. ${f.name}**:\n  - Diện tích: ${f.area ? f.area + ' ha' : 'Chưa cập nhật'}\n  - Loại cây trồng: **${f.crops}** (${f.total} cây)`).join('\n\n');
-      }
-    } else if (lower.includes('chi phí') || lower.includes('tiền') || lower.includes('vật tư') || lower.includes('tiêu hao')) {
-      fallbackReply = `💰 **Tổng hợp chi phí vật tư của ${isAdmin ? 'toàn hệ thống' : 'Bác ' + currentUser.name}:**\n` +
-        `• **Tổng chi phí đã dùng:** **${userSuppliesCost.toLocaleString('vi-VN')} VNĐ**\n` +
-        (userRecentSupplies.length > 0 ? `• **Các đợt dùng gần nhất:**\n` + userRecentSupplies.map(s => `  - ${s.name} (${s.category}): ${s.quantity} ${s.unit} (${Number(s.total_cost).toLocaleString('vi-VN')} đ) -> ${s.farm_name}`).join('\n') : '  - Chưa ghi nhận đợt dùng vật tư nào.');
-    } else if (lower.includes('nhật ký') || lower.includes('chăm sóc') || lower.includes('canh tác') || lower.includes('lịch sử')) {
-      fallbackReply = `📝 **Nhật ký canh tác gần đây của ${isAdmin ? 'hệ thống' : 'Bác'}:**\n` +
-        (userLogs.length > 0 ? userLogs.map(l => `• **${new Date(l.log_date).toLocaleDateString('vi-VN')}** [${l.log_type}]: ${l.tree_code || l.plant_type} (${l.farm_name}) - ${l.note || 'Bình thường'}`).join('\n') : 'Chưa có hoạt động canh tác nào gần đây.');
-    } else if (lower.includes('bệnh') || lower.includes('sâu') || lower.includes('vàng lá') || lower.includes('đốm') || lower.includes('thối rễ')) {
-      fallbackReply = `🌿 **Kỹ thuật xử lý bệnh hại cây trồng chuẩn VietGAP:**\n` +
-        `• **Bệnh Vàng lá thối rễ:** Giảm lượng nước tưới, xới nhẹ đất quanh tán cây, tưới thuốc hoạt chất *Metalaxyl* hoặc *Dimethomorph*, kết hợp bổ sung nấm đối kháng *Trichoderma* để phục hồi rễ tơ.\n` +
-        `• **Bệnh Đốm lá / Rỉ sắt / Thán thư:** Cắt tỉa cành thông thoáng, phun thuốc hoạt chất *Mancozeb*, *Hexaconazole* hoặc *Azoxystrobin*.\n` +
-        `• **Lưu ý khoảng cách:** Khi đã phun thuốc hóa học trị bệnh, **BẮT BUỘC cách 10 - 15 ngày sau** mới được tưới men vi sinh / nấm đối kháng để tránh thuốc hóa học diệt chết men vi sinh có lợi! 🩺`;
-    } else if (lower.includes('tưới') || lower.includes('nước') || lower.includes('ẩm')) {
-      fallbackReply = `💧 **Hướng dẫn liều lượng tưới nước:**\n` +
-        `• Giữ độ ẩm đất vùng rễ cây ở mức **65% - 75%**.\n` +
-        `• Tưới vào sáng sớm hoặc chiều mát, lượng nước khoảng 20 - 40 lít/gốc tùy độ tuổi cây và mùa vụ.`;
-    } else {
-      fallbackReply = `Dạ ${isAdmin ? 'Admin' : 'Bác ' + currentUser.name}! Về **"${message}"**, Bé Mầm đã nắm thông tin. Bác có thể hỏi Bé Mầm về: hướng dẫn sử dụng app, tạo trang trại mới, kỹ thuật trị sâu bệnh, tổng chi phí vật tư hoặc nhật ký chăm sóc của vườn nhé! 🌱✨`;
+    // 6. AUTO-LEARNING LOOP: Ghi nhận tự động các câu hỏi lạ (confidence < 0.35) vào ai_unanswered_queries
+    if (synthesized.needsAutoLearning && pool && typeof pool.query === 'function') {
+      pool.query(
+        `INSERT INTO ai_unanswered_queries (user_id, user_query, bot_response, user_feedback, status)
+         VALUES ($1, $2, $3, 'unanswered', 'pending')`,
+        [currentUser.id || null, message.trim().slice(0, 500), synthesized.reply.slice(0, 1000)]
+      ).catch(() => {});
     }
 
     return res.json({
       success: true,
-      reply: fallbackReply,
-      model: 'trained_expert_engine',
-      source: 'trained_knowledge_base'
+      reply: synthesized.reply,
+      model: 'be_mam_hybrid_agent_v2',
+      source: matchedQAResult ? 'trained_qa' : 'grounded_agent_engine',
+      agentMetadata: synthesized.agentMetadata
     });
 
   } catch (err) {
-    console.error('Lỗi API Chat Bé Mầm Scoped:', err);
+    console.error('Lỗi API Chat Bé Mầm Agent:', err);
     res.status(500).json({ error: 'Lỗi máy chủ AI: ' + err.message });
   }
 });
