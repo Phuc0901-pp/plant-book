@@ -555,7 +555,7 @@ function executeAgentTools(rawQuery, context = {}) {
         : 'Chưa gắn thẻ NFC';
       toolSections.push(
         `🌳 **Hồ Sơ Cây Trồng Tra Cứu Thực Tế (${foundPlant.tree_code}):**\n` +
-        `• **Trang trại:** ${foundPlant.farm_name || 'Đang cập nhật'} | **Giống:** ${[foundPlant.plant_type, foundPlant.plant_variety].filter(Boolean).join(' - ')}\n` +
+        `• **Trang trại:** ${foundPlant.farm_name || 'Đang cập nhật'} | **Giống:** ${cleanAndDedupeCrops([foundPlant.plant_type, foundPlant.plant_variety].filter(Boolean).join(' - '))}\n` +
         `• **Tình trạng sức khỏe:** **${foundPlant.health_status || 'Khỏe mạnh'}** | **NFC:** ${nfcStatusStr}\n` +
         `• **Lịch sử chăm sóc gần nhất:** ${recentStr}`
       );
@@ -771,12 +771,21 @@ function executeAgentTools(rawQuery, context = {}) {
     triggeredTools.push('tool_get_iot_and_weather_status');
     if (userIotSensors.length > 0) {
       const sensorLines = userIotSensors.map(s => {
-        const soil = s.soil_data || {};
-        const air = s.air_data || {};
-        const moisture = soil.moisture ?? soil.humidity ?? s.soil_moisture ?? 'Đang đo';
-        const temp = air.temp ?? air.temperature ?? s.temperature ?? '28°C';
-        const ph = soil.ph ?? s.soil_ph ?? '6.2';
-        return `• **${s.farm_name || s.device_name || 'Trạm quan trắc'}:** Độ ẩm đất: **${moisture}%** | Nhiệt độ: **${temp}** | pH: **${ph}**`;
+        let soil = s.soil_data || {};
+        if (typeof soil === 'string') { try { soil = JSON.parse(soil); } catch (_) { soil = {}; } }
+        let air = s.air_data || {};
+        if (typeof air === 'string') { try { air = JSON.parse(air); } catch (_) { air = {}; } }
+        const activeLayer = soil[soil.active_depth ? `depth_${soil.active_depth}` : 'depth_20cm'] || soil.depth_20cm || soil.depth_10cm || soil.depth_30cm || soil;
+        const moisture = activeLayer?.moisture ?? soil.moisture ?? soil.humidity ?? s.soil_moisture;
+        const temp = air.temperature ?? air.temp ?? s.temperature;
+        const airHum = air.humidity;
+        const ph = activeLayer?.ph ?? soil.ph ?? s.soil_ph ?? '6.5';
+        const ec = activeLayer?.ec;
+        const moistStr = moisture !== undefined && moisture !== null ? `${moisture}%` : 'Đang đồng bộ';
+        const tempStr = temp !== undefined && temp !== null ? `${temp}°C` : 'Đang đồng bộ';
+        const ecStr = ec !== undefined ? ` | EC: **${ec} mS/cm**` : '';
+        const humStr = airHum !== undefined ? ` | Ẩm KK: **${airHum}%**` : '';
+        return `• **${s.farm_name || s.device_name || 'Trạm quan trắc'}:** Độ ẩm đất: **${moistStr}** | Nhiệt độ: **${tempStr}**${humStr} | pH: **${ph}**${ecStr}`;
       }).join('\n');
 
       toolSections.push(
@@ -864,9 +873,9 @@ function synthesizeGroundedAgentReply({
   ]);
   const hasPersonalDataAnswer = (toolExecResult.triggeredTools || []).some(t => PERSONAL_DATA_TOOLS.has(t));
   const shouldIncludeRagArticles = !matchedQAResult &&
+    !hasPersonalDataAnswer &&
     ragResult.topArticles &&
-    ragResult.topArticles.length > 0 &&
-    (!hasPersonalDataAnswer || ragResult.maxScore >= 7.0);
+    ragResult.topArticles.length > 0;
 
   if (shouldIncludeRagArticles) {
     const primaryArt = ragResult.topArticles[0];
