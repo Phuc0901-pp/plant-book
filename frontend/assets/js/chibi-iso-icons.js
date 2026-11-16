@@ -144,6 +144,99 @@
       <circle cx="27" cy="28" r="1.8" fill="#0f172a"/>
       <circle cx="37" cy="28" r="1.8" fill="#0f172a"/>
       <path d="M29.5 31.5 Q32 33.8 34.5 31.5" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"/>`
+    },
+
+    'chibi-bot': {
+      label: 'Trợ lý Bé Mầm AI',
+      svg: `<circle cx="32" cy="32" r="30" fill="#d1fae5"/>
+      <path d="M32 19 C26 11 17 11 19 18 C21 22 28 21 32 19 Z" fill="#4ade80" stroke="#15803d" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M32 19 C38 11 47 11 45 18 C43 22 36 21 32 19 Z" fill="#22c55e" stroke="#15803d" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M32 18 C44 18 50 28 49 41 C48 51 41 55 32 55 C23 55 16 51 15 41 C14 28 20 18 32 18 Z" fill="#34d399" stroke="#047857" stroke-width="2.2"/>
+      <ellipse cx="32" cy="43" rx="11" ry="8" fill="#ecfdf5" opacity="0.9"/>
+      <circle cx="25.5" cy="33" r="3.4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2"/>
+      <circle cx="38.5" cy="33" r="3.4" fill="#ffffff" stroke="#0f172a" stroke-width="1.2"/>
+      <circle cx="26" cy="33" r="2" fill="#0284c7"/>
+      <circle cx="38" cy="33" r="2" fill="#0284c7"/>
+      <circle cx="25.2" cy="32" r="0.9" fill="#ffffff"/>
+      <circle cx="37.2" cy="32" r="0.9" fill="#ffffff"/>
+      <ellipse cx="21" cy="37.5" rx="2.6" ry="1.4" fill="#fb7185" opacity="0.75"/>
+      <ellipse cx="43" cy="37.5" rx="2.6" ry="1.4" fill="#fb7185" opacity="0.75"/>
+      <path d="M29 38 Q32 41 35 38" fill="none" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>`
+    },
+
+    'chibi-farm': {
+      label: 'Nông trại',
+      svg: `<circle cx="32" cy="32" r="30" fill="#dcfce7"/>
+      <path d="M12 47 Q32 38 52 47 L50 53 Q32 57 14 53 Z" fill="#22c55e" stroke="#15803d" stroke-width="1.8"/>
+      <path d="M18 31 L32 16 L46 31 Z" fill="#f97316" stroke="#9a3412" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="21" y="30" width="22" height="17" rx="3" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+      <circle cx="27.5" cy="37.5" r="1.9" fill="#0f172a"/>
+      <circle cx="36.5" cy="37.5" r="1.9" fill="#0f172a"/>
+      <circle cx="28.1" cy="36.9" r="0.7" fill="#ffffff"/>
+      <circle cx="37.1" cy="36.9" r="0.7" fill="#ffffff"/>
+      <ellipse cx="24.5" cy="40.5" rx="2" ry="1.1" fill="#fb7185" opacity="0.75"/>
+      <ellipse cx="39.5" cy="40.5" rx="2" ry="1.1" fill="#fb7185" opacity="0.75"/>
+      <path d="M29.5 41 Q32 43.5 34.5 41" fill="none" stroke="#0f172a" stroke-width="1.7" stroke-linecap="round"/>`
+    },
+
+    'chibi-cost': {
+      label: 'Chi phí & Vật tư',
+      svg: `<circle cx="32" cy="32" r="30" fill="#fef3c7"/>
+      <path d="M25 18 L39 18 L36 24 L28 24 Z" fill="#f59e0b" stroke="#b45309" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M27 24 C19 27 17 37 19 46 C21 52 43 52 45 46 C47 37 45 27 37 24 Z" fill="#fbbf24" stroke="#b45309" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M25 24 H39" stroke="#dc2626" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="27.5" cy="36" r="2" fill="#0f172a"/>
+      <circle cx="36.5" cy="36" r="2" fill="#0f172a"/>
+      <circle cx="28.1" cy="35.3" r="0.7" fill="#ffffff"/>
+      <circle cx="37.1" cy="35.3" r="0.7" fill="#ffffff"/>
+      <ellipse cx="24" cy="39" rx="2.1" ry="1.1" fill="#fb7185" opacity="0.75"/>
+      <ellipse cx="40" cy="39" rx="2.1" ry="1.1" fill="#fb7185" opacity="0.75"/>
+      <path d="M29.5 40 Q32 42.5 34.5 40" fill="none" stroke="#0f172a" stroke-width="1.7" stroke-linecap="round"/>`
+    },
+
+    'chibi-log': {
+      label: 'Nhật ký & Phác đồ',
+      svg: `<circle cx="32" cy="32" r="30" fill="#e0f2fe"/>
+      <rect x="19" y="15" width="26" height="35" rx="5" fill="#10b981" stroke="#047857" stroke-width="2.2"/>
+      <rect x="23" y="19" width="18" height="27" rx="3" fill="#ffffff" stroke="#a7f3d0" stroke-width="1.2"/>
+      <circle cx="28" cy="31" r="1.9" fill="#0f172a"/>
+      <circle cx="36" cy="31" r="1.9" fill="#0f172a"/>
+      <circle cx="28.5" cy="30.4" r="0.7" fill="#ffffff"/>
+      <circle cx="36.5" cy="30.4" r="0.7" fill="#ffffff"/>
+      <ellipse cx="25.5" cy="34" rx="1.8" ry="1" fill="#fb7185" opacity="0.7"/>
+      <ellipse cx="38.5" cy="34" rx="1.8" ry="1" fill="#fb7185" opacity="0.7"/>
+      <path d="M29.5 35 Q32 37.5 34.5 35" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M27 41 H37" stroke="#059669" stroke-width="2" stroke-linecap="round"/>`
+    },
+
+    'chibi-calc': {
+      label: 'Tính toán liều lượng',
+      svg: `<circle cx="32" cy="32" r="30" fill="#ede9fe"/>
+      <rect x="20" y="15" width="24" height="34" rx="5" fill="#8b5cf6" stroke="#5b21b6" stroke-width="2.2"/>
+      <rect x="24" y="19" width="16" height="11" rx="2.5" fill="#f5f3ff" stroke="#6d28d9" stroke-width="1.4"/>
+      <circle cx="28.5" cy="24.5" r="1.6" fill="#0f172a"/>
+      <circle cx="35.5" cy="24.5" r="1.6" fill="#0f172a"/>
+      <path d="M30 27 Q32 28.8 34 27" fill="none" stroke="#0f172a" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="26" cy="36" r="2" fill="#ddd6fe"/>
+      <circle cx="32" cy="36" r="2" fill="#ddd6fe"/>
+      <circle cx="38" cy="36" r="2" fill="#ddd6fe"/>
+      <circle cx="26" cy="42" r="2" fill="#ddd6fe"/>
+      <circle cx="32" cy="42" r="2" fill="#ddd6fe"/>
+      <circle cx="38" cy="42" r="2" fill="#fde047"/>`
+    },
+
+    'chibi-iot': {
+      label: 'Cảm biến IoT & Thời tiết',
+      svg: `<circle cx="32" cy="32" r="30" fill="#e0f2fe"/>
+      <path d="M22 20 Q32 12 42 20" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M25 24 Q32 18 39 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+      <rect x="20" y="27" width="24" height="22" rx="7" fill="#0ea5e9" stroke="#0369a1" stroke-width="2.2"/>
+      <rect x="23.5" y="30.5" width="17" height="15" rx="4.5" fill="#f0f9ff"/>
+      <circle cx="28" cy="37" r="1.9" fill="#0f172a"/>
+      <circle cx="36" cy="37" r="1.9" fill="#0f172a"/>
+      <circle cx="28.5" cy="36.4" r="0.7" fill="#ffffff"/>
+      <circle cx="36.5" cy="36.4" r="0.7" fill="#ffffff"/>
+      <path d="M29.5 40.5 Q32 42.8 34.5 40.5" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"/>`
     }
   };
 

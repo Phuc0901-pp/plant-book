@@ -143,4 +143,57 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(aiTrainingRoute).toContain('/seed-encyclopedia');
     expect(aiTrainingRoute).toContain('/unanswered/:id/resolve');
   });
+
+  it('24.11 [EASY-QUERY-FARM] Natural farm-count query answers accurately without RAG /sub noise', () => {
+    const query = 'Tôi muốn hỏi tôi đang có bao nhiêu vườn vậy?';
+    const ragResult = rankKnowledgeArticles(query, BUILTIN_ENCYCLOPEDIA_ARTICLES);
+    const toolExecResult = executeAgentTools(query, {
+      isAdmin: false,
+      currentUser: { id: 17, name: 'Bùi Văn Dũng' },
+      userFarms: [
+        { name: 'Vườn Sầu Riêng A', area: 1.5, crops: 'Sầu riêng Ri6', total: 80 },
+        { name: 'Vườn Bưởi B', area: 0.8, crops: 'Bưởi da xanh', total: 40 }
+      ],
+      userPlants: new Array(120).fill({ farm_name: 'Vườn', health_status: 'Khỏe mạnh' })
+    });
+
+    const synth = synthesizeGroundedAgentReply({
+      rawQuery: query,
+      isAdmin: false,
+      userName: 'Bùi Văn Dũng',
+      matchedQAResult: null,
+      ragResult,
+      toolExecResult
+    });
+
+    expect(toolExecResult.triggeredTools).toContain('tool_get_farm_portfolio');
+    expect(synth.reply).toContain('2 trang trại');
+    expect(synth.reply).toContain('120 cây');
+    expect(synth.reply.includes('Cổng Định Danh Nhanh (/sub)')).toBe(false);
+  });
+
+  it('24.12 [CHIBI-ICONS & EASY-PLANTS] Verify Chibi ISO chat icons & total plants/greeting tools', () => {
+    const plantQuery = 'Vườn tôi có bao nhiêu cây?';
+    const plantTools = executeAgentTools(plantQuery, {
+      userFarms: [{ name: 'Vườn Long Khánh', area: 2, crops: 'Sầu riêng', total: 50 }],
+      userPlants: [
+        { id: 1, farm_name: 'Vườn Long Khánh', health_status: 'Khỏe mạnh' },
+        { id: 2, farm_name: 'Vườn Long Khánh', health_status: 'Bệnh' }
+      ]
+    });
+    expect(plantTools.triggeredTools).toContain('tool_get_plant_inventory_summary');
+    expect(plantTools.toolSections.join('\n')).toContain('2 cây');
+
+    const greetTools = executeAgentTools('Xin chào Bé Mầm', {
+      currentUser: { name: 'Minh' },
+      userFarms: [{ name: 'Vườn A', total: 10 }],
+      userPlants: []
+    });
+    expect(greetTools.triggeredTools).toContain('tool_greeting_and_account_summary');
+
+    const chibiLib = fs.readFileSync(path.join(rootDir, 'frontend/assets/js/chibi-iso-icons.js'), 'utf8');
+    for (const key of ['chibi-bot', 'chibi-farm', 'chibi-cost', 'chibi-log', 'chibi-calc', 'chibi-iot']) {
+      expect(chibiLib).toContain(`'${key}'`);
+    }
+  });
 });

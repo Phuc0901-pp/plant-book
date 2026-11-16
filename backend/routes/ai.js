@@ -81,23 +81,29 @@ router.post('/chat', auth, async (req, res) => {
       userRecentSupplies = cachedContextData.userRecentSupplies || [];
       userLogs = cachedContextData.userLogs || [];
     } else {
-      // 2. Truy vấn từ Read Replica Pool (Tách tải khỏi Master)
+      // 2. Truy vấn từ Read Replica Pool (Fault-Tolerant: 1 câu phụ lỗi không làm sập toàn bộ Promise.all)
+      const safeReadQuery = (sql, params = []) =>
+        pool.readQuery(sql, params).catch((qErr) => {
+          console.warn('AI SQL sub-query warn:', qErr.message);
+          return { rows: [] };
+        });
+
       try {
         if (isAdmin) {
           const [farmsRes, plantsRes, sickRes, costRes] = await Promise.all([
-            pool.readQuery(`
+            safeReadQuery(`
               SELECT f.id, f.name, f.area, f.total_plants, COALESCE(u.full_name, 'Nông hộ') as owner_name 
               FROM farms f 
               LEFT JOIN users u ON f.user_id = u.id 
               WHERE (f.is_deleted IS NOT TRUE)
             `),
-            pool.readQuery(`
+            safeReadQuery(`
               SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
               FROM plants p 
               LEFT JOIN farms f ON p.farm_id = f.id
             `),
-            pool.readQuery("SELECT COUNT(*) as count FROM plants WHERE health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
-            pool.readQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages")
+            safeReadQuery("SELECT COUNT(*) as count FROM plants WHERE health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
+            safeReadQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages")
           ]);
 
           const farmMap = {};
@@ -147,45 +153,45 @@ ${farmLines}
         } else {
           // NÔNG HỘ / USER: CHỈ TRUY CẬP DỮ LIỆU CÁC TRANG TRẠI THUỘC SỞ HỮU CỦA USER NÀY
           const [farmsRes, plantsRes, logsRes, costRes, usagesRes] = await Promise.all([
-            pool.readQuery(`
+            safeReadQuery(`
               SELECT f.id, f.name, f.area, f.total_plants, u.full_name as owner_name 
               FROM farms f 
               LEFT JOIN users u ON f.user_id = u.id 
               WHERE (f.is_deleted IS NOT TRUE) 
-                AND (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
+                AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
             `, [currentUser.id]),
 
-            pool.readQuery(`
+            safeReadQuery(`
               SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
               FROM plants p 
               JOIN farms f ON p.farm_id = f.id 
               WHERE (f.is_deleted IS NOT TRUE) 
-                AND (f.user_id = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1) OR p.created_by = $1 OR p.assigned_to_user_id = $1)
+                AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1) OR p.created_by = $1)
             `, [currentUser.id]),
 
-            pool.readQuery(`
+            safeReadQuery(`
               SELECT pl.log_date, pl.log_type, pl.note, p.tree_code, p.plant_type, f.name as farm_name 
               FROM plant_logs pl 
               JOIN plants p ON pl.plant_id = p.id 
               JOIN farms f ON p.farm_id = f.id 
-              WHERE (f.user_id = $1 OR pl.created_by = $1) 
+              WHERE (f.user_id = $1 OR f.created_by = $1 OR pl.created_by = $1) 
               ORDER BY pl.log_date DESC, pl.created_at DESC 
               LIMIT 10
             `, [currentUser.id]),
 
-            pool.readQuery(`
+            safeReadQuery(`
               SELECT COALESCE(SUM(su.total_cost), 0) as total 
               FROM supply_usages su 
               LEFT JOIN farms f ON su.farm_id = f.id 
-              WHERE su.user_id = $1 OR f.user_id = $1
+              WHERE su.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
             `, [currentUser.id]),
 
-            pool.readQuery(`
+            safeReadQuery(`
               SELECT s.name, s.category, su.quantity, s.unit, su.unit_price, su.total_cost, su.usage_date, f.name as farm_name 
               FROM supply_usages su 
               JOIN supplies s ON su.supply_id = s.id 
               LEFT JOIN farms f ON su.farm_id = f.id 
-              WHERE su.user_id = $1 OR f.user_id = $1 
+              WHERE su.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
               ORDER BY su.usage_date DESC 
               LIMIT 8
             `, [currentUser.id])

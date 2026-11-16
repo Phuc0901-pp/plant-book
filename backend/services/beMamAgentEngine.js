@@ -234,9 +234,14 @@ function matchTrainingQA(rawQuery, qaList = []) {
   return bestScore >= 0.62 ? bestMatch : null;
 }
 
+const RAG_GENERIC_NOISE_WORDS = new Set([
+  'muốn', 'hỏi', 'đang', 'bao', 'nhiêu', 'mấy', 'nào', 'gì', 'đâu',
+  'vườn', 'cây', 'trang', 'trại', 'của', 'em', 'anh', 'chị', 'hiện', 'tại', 'vậy', 'tổng', 'số'
+]);
+
 function rankKnowledgeArticles(rawQuery, articlesList = []) {
   const { normalizedText, matchedSynonyms } = normalizeAgroQuery(rawQuery);
-  const queryTokens = tokenizeVietnamese(normalizedText);
+  const queryTokens = tokenizeVietnamese(normalizedText).filter(t => !RAG_GENERIC_NOISE_WORDS.has(t));
   const scored = [];
 
   for (const art of articlesList) {
@@ -261,7 +266,7 @@ function rankKnowledgeArticles(rawQuery, articlesList = []) {
       }
     }
 
-    // BM25-style token scoring across title, keywords, and content
+    // BM25-style token scoring across title, keywords, and content (generic words already filtered)
     for (const tok of queryTokens) {
       if (tok.length < 2) continue;
       if (titleLower.includes(tok)) score += 2.0;
@@ -269,7 +274,7 @@ function rankKnowledgeArticles(rawQuery, articlesList = []) {
       if (contentLower.includes(tok)) score += 0.6;
     }
 
-    if (score >= 2.0) {
+    if (score >= 4.0) {
       const priorityBonus = (Number(art.priority) || 5) * 0.15;
       scored.push({
         ...art,
@@ -419,7 +424,7 @@ function executeAgentTools(rawQuery, context = {}) {
   }
 
   // 4. Tool 2: Sick Plants Report
-  if (normalizedText.includes('cây bệnh') || normalizedText.includes('mấy cây bệnh') || normalizedText.includes('cần chú ý') || normalizedText.includes('sức khỏe vườn')) {
+  if (/(cây\s*bệnh|mấy\s*cây\s*bệnh|cây\s*nào\s*bệnh|bị\s*bệnh|cây\s*yếu|cần\s*chú\s*ý|nguy\s*cấp|tình\s*trạng\s*sức\s*khỏe|sức\s*khỏe\s*vườn)/i.test(normalizedText)) {
     triggeredTools.push('tool_get_sick_plants_report');
     const sickList = userPlants.filter(p => p.health_status && p.health_status !== 'Khỏe mạnh' && p.health_status !== 'Tốt');
     if (sickList.length === 0) {
@@ -434,19 +439,39 @@ function executeAgentTools(rawQuery, context = {}) {
   }
 
   // 5. Tool 3: Farm Portfolio Overview
-  if (normalizedText.includes('trang trại') || normalizedText.includes('mấy vườn') || normalizedText.includes('diện tích') || normalizedText.includes('trồng cây gì') || normalizedText.includes('danh sách vườn')) {
+  if (/(bao\s*nhiêu|mấy|danh\s*sách|các|những|tất\s*cả|có|tên)\s*(trang\s*trại|vườn|khu\s*vườn)|(trang\s*trại|vườn)\s*(của\s*tôi|của\s*mình|hiện\s*tại|nào)|trang\s*trại|diện\s*tích|trồng\s*cây\s*gì|trồng\s*giống\s*gì/i.test(normalizedText)) {
     triggeredTools.push('tool_get_farm_portfolio');
+    const greetingPrefix = isAdmin ? 'Hệ thống hiện đang quản lý' : `Hiện tại ${currentUser.name ? 'Bác ' + currentUser.name : 'Bác'} đang có`;
+    const totalPlantsCount = userPlants.length || userFarms.reduce((acc, f) => acc + (Number(f.total) || 0), 0);
     if (userFarms.length === 0) {
-      toolSections.push(`🏡 **Danh Mục Trang Trại:** Tài khoản hiện chưa khởi tạo trang trại nào. Bác có thể vào mục **"Trang trại"** ➔ **"+ Khởi tạo Trang trại mới (GPS)"** để bắt đầu.`);
+      toolSections.push(`🏡 **Danh Mục Trang Trại:** ${greetingPrefix} **0 trang trại**. Bác có thể vào mục **"Trang trại"** ➔ **"+ Khởi tạo Trang trại mới (GPS)"** để tạo vườn đầu tiên.`);
       suggestedActions.push({ label: 'Khởi tạo Trang trại mới', path: '/user/#farms' });
     } else {
-      const lines = userFarms.map((f, i) => `• **${i + 1}. ${f.name}**: Diện tích **${f.area ? f.area + ' ha' : 'Chưa nhập'}** | Cơ cấu giống: **${f.crops}** (**${f.total} cây**)`).join('\n');
-      toolSections.push(`🏡 **Báo Cáo Danh Mục Trang Trại (${userFarms.length} vườn):**\n${lines}`);
+      const lines = userFarms.map((f, i) => `• **${i + 1}. ${f.name}**: Diện tích **${f.area ? f.area + ' ha' : 'Chưa nhập'}** | Giống trồng: **${f.crops}** (**${f.total} cây**)`).join('\n');
+      toolSections.push(`🏡 **${greetingPrefix} ${userFarms.length} trang trại (tổng cộng ${totalPlantsCount} cây trồng):**\n${lines}`);
     }
   }
 
+  // 5B. Tool 3B: Total Plants Inventory Summary
+  if (/(bao\s*nhiêu\s*cây|mấy\s*cây|tổng\s*số\s*cây|cây\s*của\s*tôi|danh\s*sách\s*cây)/i.test(normalizedText) && !triggeredTools.includes('tool_get_sick_plants_report')) {
+    triggeredTools.push('tool_get_plant_inventory_summary');
+    const healthyCount = userPlants.filter(p => !p.health_status || p.health_status === 'Khỏe mạnh' || p.health_status === 'Tốt').length;
+    const attentionCount = userPlants.length - healthyCount;
+    const byFarm = {};
+    userPlants.forEach(p => {
+      const fname = p.farm_name || 'Vườn chưa phân loại';
+      byFarm[fname] = (byFarm[fname] || 0) + 1;
+    });
+    const farmSummary = Object.entries(byFarm).map(([fn, cnt]) => `• **${fn}:** ${cnt} cây`).join('\n') || '• Chưa có cây nào được tạo.';
+    toolSections.push(
+      `🌳 **Thống Kê Cây Trồng Của Vườn (${userPlants.length} cây):**\n` +
+      `• **Khỏe mạnh:** ${healthyCount} cây | **Cần chú ý / Bệnh:** ${attentionCount} cây\n` +
+      `${farmSummary}`
+    );
+  }
+
   // 6. Tool 4: Supply & Financial Cost Analytics
-  if (normalizedText.includes('chi phí') || normalizedText.includes('tiền') || normalizedText.includes('vật tư') || normalizedText.includes('tiêu hao') || normalizedText.includes('hạch toán')) {
+  if (/(chi\s*phí|bao\s*nhiêu\s*tiền|tốn\s*bao\s*nhiêu|hết\s*bao\s*nhiêu|tiền\s*vật\s*tư|vật\s*tư|tiêu\s*hao|hạch\s*toán|phân\s*thuốc\s*đã\s*dùng)/i.test(normalizedText)) {
     triggeredTools.push('tool_get_supply_and_cost_analytics');
     const recentLines = userRecentSupplies.length > 0
       ? userRecentSupplies.slice(0, 5).map(s => `  - **${s.name}** (${s.category}): ${s.quantity} ${s.unit} → **${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ** (${s.farm_name || 'Vườn'})`).join('\n')
@@ -459,7 +484,7 @@ function executeAgentTools(rawQuery, context = {}) {
   }
 
   // 7. Tool 5: Recent Cultivation Logs
-  if (normalizedText.includes('nhật ký') || normalizedText.includes('lịch sử chăm sóc') || normalizedText.includes('mới làm gì') || normalizedText.includes('hoạt động gần đây')) {
+  if (/(nhật\s*ký|lịch\s*sử\s*chăm\s*sóc|chăm\s*sóc\s*gần\s*đây|mới\s*làm\s*gì|mới\s*tưới|mới\s*bón|mới\s*phun|hôm\s*nay\s*làm\s*gì|hoạt\s*động\s*gần\s*đây)/i.test(normalizedText)) {
     triggeredTools.push('tool_get_recent_cultivation_logs');
     const logLines = userLogs.length > 0
       ? userLogs.slice(0, 6).map(l => `• **${new Date(l.log_date).toLocaleDateString('vi-VN')}** — **[${l.log_type}]** tại cây **${l.tree_code || l.plant_type}** (${l.farm_name}): ${l.note || 'Đã thực hiện đúng quy trình'}`).join('\n')
@@ -467,12 +492,25 @@ function executeAgentTools(rawQuery, context = {}) {
     toolSections.push(`📝 **Trích Xuất Nhật Ký Canh Tác Thực Địa Gần Nhất:**\n${logLines}`);
   }
 
-  // 8. Tool 8: App Navigation & Workflow Guide
+  // 8. Tool 8: App Navigation & Workflow Guide & Greetings
   if (normalizedText.includes('hướng dẫn sử dụng') || normalizedText.includes('quét thẻ nfc') || normalizedText.includes('thuê nhân công') || normalizedText.includes('xuất vietgap')) {
     triggeredTools.push('tool_app_navigation_guide');
     suggestedActions.push(
       { label: 'Mở Cổng Định Danh NFC (/sub)', path: '/sub' },
       { label: 'Quản lý Vườn & Cây (/user/)', path: '/user/' }
+    );
+  }
+
+  if (
+    triggeredTools.length === 0 &&
+    /^(xin\s*chào|chào(\s*bé\s*mầm)?|hello|hi|bạn\s*là\s*ai|em\s*là\s*ai|tôi\s*là\s*ai|thông\s*tin\s*tài\s*khoản)/i.test(rawQuery.trim())
+  ) {
+    triggeredTools.push('tool_greeting_and_account_summary');
+    const totalPlantsCount = userPlants.length || userFarms.reduce((acc, f) => acc + (Number(f.total) || 0), 0);
+    toolSections.push(
+      `🌱 **Chào ${isAdmin ? 'Admin' : 'Bác ' + (currentUser.name || 'Nông hộ')}!** Em là **Bé Mầm AI AgTech** — Trợ lý nông nghiệp thông minh của Sổ Nông Tân Bảo.\n` +
+      `• **Tóm tắt nhanh vườn của ${isAdmin ? 'hệ thống' : 'Bác'}:** Hiện đang quản lý **${userFarms.length} trang trại** với **${totalPlantsCount} cây trồng**.\n` +
+      `• Bác có thể hỏi ngay: *"Tôi có bao nhiêu vườn?"*, *"Chi phí vật tư?"*, *"Cây có bệnh không?"*, hoặc hỏi phác đồ trị sâu bệnh & tính liều lượng pha thuốc ạ!`
     );
   }
 
@@ -507,15 +545,31 @@ function synthesizeGroundedAgentReply({
     blocks.push(toolExecResult.toolSections.join('\n\n'));
   }
 
-  // 3. Nếu có bài viết chuyên môn từ Kho Tri Thức (BM25 Top Articles) và chưa trùng lặp hoàn toàn với Q&A
-  if (ragResult.topArticles && ragResult.topArticles.length > 0 && !matchedQAResult) {
+  // 3. Nếu có bài viết chuyên môn từ Kho Tri Thức (BM25 Top Articles)
+  // Chống nhiễu: Nếu Personal Data Tool đã trả lời câu hỏi dữ liệu vườn/cây/chi phí/nhật ký thì chỉ đính kèm bài viết khi điểm khớp rất cao (>= 7.0)
+  const PERSONAL_DATA_TOOLS = new Set([
+    'tool_get_farm_portfolio',
+    'tool_get_plant_inventory_summary',
+    'tool_get_sick_plants_report',
+    'tool_lookup_plant_by_code',
+    'tool_get_supply_and_cost_analytics',
+    'tool_get_recent_cultivation_logs',
+    'tool_greeting_and_account_summary'
+  ]);
+  const hasPersonalDataAnswer = (toolExecResult.triggeredTools || []).some(t => PERSONAL_DATA_TOOLS.has(t));
+  const shouldIncludeRagArticles = !matchedQAResult &&
+    ragResult.topArticles &&
+    ragResult.topArticles.length > 0 &&
+    (!hasPersonalDataAnswer || ragResult.maxScore >= 7.0);
+
+  if (shouldIncludeRagArticles) {
     const primaryArt = ragResult.topArticles[0];
     blocks.push(
       `📘 **Phác Đồ & Tri Thức Chuyên Môn Chuẩn Tân Bảo AgTech — ${primaryArt.title} (${primaryArt.category}):**\n` +
       `${primaryArt.content}`
     );
 
-    if (ragResult.topArticles.length > 1 && ragResult.topArticles[1].matchScore >= 4.5) {
+    if (ragResult.topArticles.length > 1 && ragResult.topArticles[1].matchScore >= 5.5) {
       const secArt = ragResult.topArticles[1];
       blocks.push(`💡 **Tham khảo bổ sung (${secArt.title}):**\n${secArt.content}`);
     }

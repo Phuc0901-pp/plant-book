@@ -10,6 +10,50 @@ let _chatHistory = [];
 let _isAiResponding = false;
 const ADMIN_MASCOT_POS_KEY = 'tanbao_mascot_pos_admin';
 
+function _getAdminChibiIcon(name, size = 18) {
+  if (typeof window !== 'undefined' && window.ChibiIcons && typeof window.ChibiIcons.get === 'function') {
+    const svg = window.ChibiIcons.get(name, size);
+    if (svg) return svg;
+  }
+  return '';
+}
+
+function _escapeAdminChatHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function _formatAdminAiChatHtml(rawText) {
+  let html = _escapeAdminChatHtml(rawText);
+  html = html.replace(/\n---\n/g, '<hr style="border:none;border-top:1px dashed #cbd5e1;margin:8px 0;">');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#065f46;font-weight:700;">$1</strong>');
+  const emojiMap = [
+    ['🏡', 'chibi-farm'],
+    ['🌳', 'chibi-fertilize'],
+    ['🩺', 'chibi-disease'],
+    ['💰', 'chibi-cost'],
+    ['📝', 'chibi-log'],
+    ['📘', 'chibi-log'],
+    ['🧮', 'chibi-calc'],
+    ['🛡️', 'chibi-login'],
+    ['💧', 'chibi-water'],
+    ['🌿', 'chibi-fertilize'],
+    ['🌱', 'chibi-bot'],
+    ['📍', 'chibi-farm'],
+    ['📦', 'chibi-cost'],
+    ['💡', 'chibi-bot']
+  ];
+  for (const [emo, chibiName] of emojiMap) {
+    const iconHtml = _getAdminChibiIcon(chibiName, 17);
+    if (iconHtml) {
+      html = html.split(emo).join(`<span style="display:inline-flex;vertical-align:-3px;margin-right:3px;">${iconHtml}</span>`);
+    }
+  }
+  return html;
+}
+
 function isAdminLoggedIn() {
   const token = localStorage.getItem('pb_token');
   if (!token) return false;
@@ -441,16 +485,16 @@ function renderAdminMascot() {
         <div id="admin-ai-chat-messages" style="flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8fafc;">
           <!-- Welcome Message -->
           <div style="display: flex; gap: 8px; align-items: flex-start;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">🌱</div>
+            <div style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${_getAdminChibiIcon('chibi-bot', 30) || '🌱'}</div>
             <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; color: #1e293b; max-width: 85%; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-              Xin chào Admin! Em là <strong>Bé Mầm AI</strong>. Em đã kết nối trực tiếp với Google Gemini và hệ thống dữ liệu. Admin có thể hỏi em bất kỳ câu hỏi nào về nông nghiệp, CSDL, đời sống hay kiến thức chung ạ! ✨
+              Xin chào Admin! Em là <strong style="color:#065f46;">Bé Mầm AI Agent</strong>. Admin có thể hỏi em về danh mục trang trại, sức khỏe cây trồng, cảm biến IoT hay chi phí vật tư ạ!
             </div>
           </div>
 
           <!-- History Render -->
           ${_chatHistory.map(item => `
             <div style="display: flex; gap: 8px; align-items: flex-start; justify-content: ${item.role === 'user' ? 'flex-end' : 'flex-start'};">
-              ${item.role !== 'user' ? `<div style="width: 28px; height: 28px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">🌱</div>` : ''}
+              ${item.role !== 'user' ? `<div style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${_getAdminChibiIcon('chibi-bot', 30) || '🌱'}</div>` : ''}
               <div style="
                 background: ${item.role === 'user' ? 'linear-gradient(135deg, #047857, #10b981)' : '#ffffff'};
                 color: ${item.role === 'user' ? '#ffffff' : '#1e293b'};
@@ -458,30 +502,31 @@ function renderAdminMascot() {
                 padding: 10px 14px;
                 border-radius: 14px;
                 font-size: 13px;
-                line-height: 1.5;
+                line-height: 1.55;
                 max-width: 85%;
                 box-shadow: 0 2px 6px rgba(0,0,0,0.04);
                 white-space: pre-wrap;
-              ">${item.text}</div>
+                word-break: break-word;
+              ">${item.role === 'user' ? _escapeAdminChatHtml(item.text) : _formatAdminAiChatHtml(item.text)}</div>
             </div>
           `).join('')}
 
           ${_isAiResponding ? `
             <div style="display: flex; gap: 8px; align-items: center;">
-              <div style="width: 28px; height: 28px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px;">🌱</div>
-              <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 8px 14px; border-radius: 14px; font-size: 12.5px; color: #64748b;">
-                <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#10b981; margin-right:6px;"></i> Bé Mầm đang suy nghĩ câu trả lời...
+              <div style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">${_getAdminChibiIcon('chibi-bot', 30) || '🌱'}</div>
+              <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 8px 14px; border-radius: 14px; font-size: 12.5px; color: #64748b; display:flex; align-items:center;">
+                <i data-lucide="loader-2" class="lucide-spin lucide-sm" style="color:#10b981; margin-right:6px;"></i> Bé Mầm đang tra cứu dữ liệu hệ thống...
               </div>
             </div>
           ` : ''}
         </div>
 
-        <!-- Suggested Prompt Chips -->
+        <!-- Suggested Prompt Chips (Chibi ISO Icons) -->
         <div style="padding: 6px 12px; background: #ffffff; border-top: 1px solid #f1f5f9; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap;">
-          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Tóm tắt sức khỏe toàn bộ cây trồng hôm nay')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">🌿 Sức khỏe cây</button>
-          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Kiểm tra trạng thái cảm biến IoT đất và khí tượng')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">📡 Cảm biến IoT</button>
-          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Gợi ý xử lý các cây đang ủ bệnh')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">🩺 Cây bệnh</button>
-          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Tư vấn tối ưu chi phí phân bón và nước tưới')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">💰 Tối ưu chi phí</button>
+          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Tôi đang quản lý bao nhiêu trang trại và bao nhiêu cây?')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getAdminChibiIcon('chibi-farm', 16)} Danh mục vườn</button>
+          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Kiểm tra trạng thái cảm biến IoT đất và khí tượng')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getAdminChibiIcon('chibi-iot', 16)} Cảm biến IoT</button>
+          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Gợi ý xử lý các cây đang ủ bệnh')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getAdminChibiIcon('chibi-disease', 16)} Cây bệnh</button>
+          <button class="ai-chat-prompt-pill" onclick="sendAdminPrompt('Tổng chi phí vật tư toàn hệ thống là bao nhiêu?')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getAdminChibiIcon('chibi-cost', 16)} Chi phí vật tư</button>
         </div>
 
         <!-- Chat Input Bar -->
