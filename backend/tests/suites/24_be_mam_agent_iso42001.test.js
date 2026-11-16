@@ -6,6 +6,8 @@ const {
   normalizeAgroQuery,
   matchTrainingQA,
   rankKnowledgeArticles,
+  formatSmartIsoArea,
+  cleanAndDedupeCrops,
   calculateAgroDosageTool,
   executeAgentTools,
   synthesizeGroundedAgentReply,
@@ -195,5 +197,48 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     for (const key of ['chibi-bot', 'chibi-farm', 'chibi-cost', 'chibi-log', 'chibi-calc', 'chibi-iot']) {
       expect(chibiLib).toContain(`'${key}'`);
     }
+  });
+
+  it('24.13 [ISO-80000 & ISO-26514] Area normalization, crop deduplication, 4-tier KPI headers and supply consolidation', () => {
+    // 1. Kiểm tra formatSmartIsoArea(6717.325471320856) chứa ha và 6.717 m² (không chứa .325471320856)
+    const formattedArea = formatSmartIsoArea(6717.325471320856);
+    expect(formattedArea).toContain('ha');
+    expect(formattedArea).toContain('6.717 m²');
+    expect(formattedArea.includes('.325471320856')).toBe(false);
+
+    // 2. Kiểm tra cleanAndDedupeCrops('Sầu riêng(durian) - Dona, Sầu riêng (durian) - Dona, Sầu riêng(durian) - RI6') chỉ còn 1 lần Dona và chứa RI6
+    const cleanedCrops = cleanAndDedupeCrops('Sầu riêng(durian) - Dona, Sầu riêng (durian) - Dona, Sầu riêng(durian) - RI6');
+    const donaMatches = (cleanedCrops.match(/Dona/g) || []).length;
+    expect(donaMatches).toBe(1);
+    expect(cleanedCrops).toContain('RI6');
+
+    // 3. Kiểm tra tool_get_farm_portfolio chứa [KPI: và tool_get_supply_and_cost_analytics gộp gọn dòng trùng nhau
+    const farmTools = executeAgentTools('Tôi có những trang trại nào?', {
+      userFarms: [
+        { name: 'Vườn Long Khánh', area: 6717.325471320856, crops: 'Sầu riêng(durian) - Dona, Sầu riêng - Dona', total: 100 }
+      ],
+      userPlants: new Array(100).fill({ farm_name: 'Vườn Long Khánh' })
+    });
+    expect(farmTools.triggeredTools).toContain('tool_get_farm_portfolio');
+    const farmStr = farmTools.toolSections.join('\n');
+    expect(farmStr).toContain('[KPI:');
+    expect(farmStr).toContain('6.717 m²');
+
+    const supplyTools = executeAgentTools('Chi phí vật tư đã dùng bao nhiêu tiền?', {
+      userSuppliesCost: 3750000,
+      userRecentSupplies: [
+        { name: 'NPK Kali Trắng', category: 'Phân bón', quantity: 25, unit: 'kg', total_cost: 625000, farm_name: 'Vườn Long Khánh' },
+        { name: 'NPK Kali Trắng', category: 'Phân bón', quantity: 25, unit: 'kg', total_cost: 625000, farm_name: 'Vườn Long Khánh' },
+        { name: 'Thuốc trừ sâu Sinh học', category: 'Thuốc BVTV', quantity: 2, unit: 'chai', total_cost: 300000, farm_name: 'Vườn Long Khánh' }
+      ]
+    });
+    expect(supplyTools.triggeredTools).toContain('tool_get_supply_and_cost_analytics');
+    const supplyStr = supplyTools.toolSections.join('\n');
+    expect(supplyStr).toContain('[KPI:');
+    expect(supplyStr).toContain('(x2 lượt)');
+    expect(supplyStr).toContain('50 kg');
+    expect(supplyStr).toContain('1.250.000');
+    const npkMatches = (supplyStr.match(/NPK Kali Trắng/g) || []).length;
+    expect(npkMatches).toBe(1);
   });
 });

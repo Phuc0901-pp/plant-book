@@ -292,6 +292,52 @@ function rankKnowledgeArticles(rawQuery, articlesList = []) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 4B. TIỆN ÍCH CHUẨN HÓA SỐ LIỆU NÔNG NGHIỆP THEO CHUẨN ISO 80000 & GIS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Chuẩn hóa diện tích nông nghiệp thông minh theo chuẩn ISO 80000
+ */
+function formatSmartIsoArea(rawArea) {
+  if (rawArea === null || rawArea === undefined || rawArea === '' || isNaN(Number(rawArea)) || Number(rawArea) <= 0) {
+    return 'Chưa nhập';
+  }
+  const num = Number(rawArea);
+  if (num >= 1000) {
+    const haStr = (num / 10000).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const m2Str = Math.round(num).toLocaleString('vi-VN');
+    return `${haStr} ha (${m2Str} m²)`;
+  }
+  return `${num.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ha`;
+}
+
+/**
+ * Chuẩn hóa và khử trùng lặp danh mục cây trồng / giống cây trồng
+ */
+function cleanAndDedupeCrops(rawCrops) {
+  if (!rawCrops || !String(rawCrops).trim()) return 'Đang cập nhật';
+  const parts = String(rawCrops).split(',');
+  const seen = new Set();
+  const cleaned = [];
+
+  for (const part of parts) {
+    const item = String(part || '')
+      .replace(/\(\s*(durian|pomelo|mango|coffee|pepper)\s*\)/gi, '')
+      .replace(/\s*-\s*/g, ' - ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!item) continue;
+    const lowerKey = item.toLowerCase();
+    if (!seen.has(lowerKey)) {
+      seen.add(lowerKey);
+      cleaned.push(item);
+    }
+  }
+
+  return cleaned.length > 0 ? cleaned.join(', ') : 'Đang cập nhật';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 5. BỘ 8 AGENTIC TOOLS (TRUY VẤN SỐ LIỆU THẬT & TÍNH TOÁN CHÍNH XÁC 100%)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -327,6 +373,7 @@ function calculateAgroDosageTool(rawQuery) {
     return {
       toolName: 'tool_calculate_agro_dosage',
       summary: `🧮 **Kết Quả Tính Toán Liều Lượng Pha Phun Chính Xác (Agent Calculator):**\n` +
+        `[KPI: ${totalWaterL.toLocaleString('vi-VN')} Lít nước | ${displayTotal} Vật tư]\n` +
         `• **Định mức chuẩn:** ${rateVal} ${rateUnit} / ${baseWaterL} lít nước.\n` +
         `• **Tổng lượng nước cần pha:** ${containerCount} ${phuyMatch ? 'phuy' : 'bình'} × ${containerVolumeL}L = **${totalWaterL.toLocaleString('vi-VN')} lít nước**.\n` +
         `• **Tổng lượng thuốc/phân bón lá cần dùng:** **${displayTotal}**.`
@@ -348,6 +395,7 @@ function calculateAgroDosageTool(rawQuery) {
     return {
       toolName: 'tool_calculate_agro_dosage',
       summary: `🧮 **Kết Quả Tính Toán Định Mức Bón Phân Theo Gốc (Agent Calculator):**\n` +
+        `[KPI: ${trees.toLocaleString('vi-VN')} Gốc cây | ${totalKg.toLocaleString('vi-VN')} kg Vật tư]\n` +
         `• **Quy mô:** ${trees.toLocaleString('vi-VN')} gốc × ${amountPerTree} ${unit}/gốc.\n` +
         `• **Tổng khối lượng vật tư cần chuẩn bị:** **${totalKg.toLocaleString('vi-VN')} kg** ${!isGram && (unit === 'lít' || unit === 'l') ? 'lít' : `(tương đương ~${bags50kg} bao 50kg)`}.`
     };
@@ -447,8 +495,12 @@ function executeAgentTools(rawQuery, context = {}) {
       toolSections.push(`🏡 **Danh Mục Trang Trại:** ${greetingPrefix} **0 trang trại**. Bác có thể vào mục **"Trang trại"** ➔ **"+ Khởi tạo Trang trại mới (GPS)"** để tạo vườn đầu tiên.`);
       suggestedActions.push({ label: 'Khởi tạo Trang trại mới', path: '/user/#farms' });
     } else {
-      const lines = userFarms.map((f, i) => `• **${i + 1}. ${f.name}**: Diện tích **${f.area ? f.area + ' ha' : 'Chưa nhập'}** | Giống trồng: **${f.crops}** (**${f.total} cây**)`).join('\n');
-      toolSections.push(`🏡 **${greetingPrefix} ${userFarms.length} trang trại (tổng cộng ${totalPlantsCount} cây trồng):**\n${lines}`);
+      const lines = userFarms.map((f, i) => `• **${i + 1}. ${f.name}** (${f.total} cây): Diện tích **${formatSmartIsoArea(f.area)}** | Giống: **${cleanAndDedupeCrops(f.crops)}**`).join('\n');
+      toolSections.push(
+        `🏡 **${greetingPrefix} ${userFarms.length} trang trại (tổng cộng ${totalPlantsCount} cây trồng):**\n` +
+        `[KPI: ${userFarms.length} Trang trại | ${totalPlantsCount} Cây trồng | 100% Đồng bộ GIS]\n` +
+        `${lines}`
+      );
     }
   }
 
@@ -465,6 +517,7 @@ function executeAgentTools(rawQuery, context = {}) {
     const farmSummary = Object.entries(byFarm).map(([fn, cnt]) => `• **${fn}:** ${cnt} cây`).join('\n') || '• Chưa có cây nào được tạo.';
     toolSections.push(
       `🌳 **Thống Kê Cây Trồng Của Vườn (${userPlants.length} cây):**\n` +
+      `[KPI: ${userPlants.length} Tổng số cây | ${healthyCount} Khỏe mạnh | ${attentionCount} Cần chú ý]\n` +
       `• **Khỏe mạnh:** ${healthyCount} cây | **Cần chú ý / Bệnh:** ${attentionCount} cây\n` +
       `${farmSummary}`
     );
@@ -473,11 +526,44 @@ function executeAgentTools(rawQuery, context = {}) {
   // 6. Tool 4: Supply & Financial Cost Analytics
   if (/(chi\s*phí|bao\s*nhiêu\s*tiền|tốn\s*bao\s*nhiêu|hết\s*bao\s*nhiêu|tiền\s*vật\s*tư|vật\s*tư|tiêu\s*hao|hạch\s*toán|phân\s*thuốc\s*đã\s*dùng)/i.test(normalizedText)) {
     triggeredTools.push('tool_get_supply_and_cost_analytics');
-    const recentLines = userRecentSupplies.length > 0
-      ? userRecentSupplies.slice(0, 5).map(s => `  - **${s.name}** (${s.category}): ${s.quantity} ${s.unit} → **${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ** (${s.farm_name || 'Vườn'})`).join('\n')
+
+    // Gộp các dòng userRecentSupplies trùng (s.name + '|' + s.category + '|' + s.farm_name)
+    const aggregatedSupplies = [];
+    const supplyGroupMap = new Map();
+
+    for (const s of userRecentSupplies) {
+      const key = `${s.name || ''}|${s.category || ''}|${s.farm_name || ''}`;
+      if (!supplyGroupMap.has(key)) {
+        const item = {
+          name: s.name,
+          category: s.category,
+          farm_name: s.farm_name,
+          unit: s.unit || '',
+          quantity: Number(s.quantity) || 0,
+          total_cost: Number(s.total_cost) || 0,
+          count: 1
+        };
+        supplyGroupMap.set(key, item);
+        aggregatedSupplies.push(item);
+      } else {
+        const item = supplyGroupMap.get(key);
+        item.quantity += (Number(s.quantity) || 0);
+        item.total_cost += (Number(s.total_cost) || 0);
+        item.count += 1;
+      }
+    }
+
+    const recentLines = aggregatedSupplies.length > 0
+      ? aggregatedSupplies.slice(0, 5).map(s => {
+          const countBadge = s.count > 1 ? ` (x${s.count} lượt)` : '';
+          const qty = Math.round(s.quantity * 100) / 100;
+          return `  - **${s.name}** (${s.category})${countBadge}: ${qty} ${s.unit} → **${Number(s.total_cost).toLocaleString('vi-VN')} VNĐ** (${s.farm_name || 'Vườn'})`;
+        }).join('\n')
       : '  - Chưa phát sinh phiếu xuất vật tư gần đây.';
+
     toolSections.push(
       `💰 **Báo Cáo Hạch Toán Vật Tư & Chi Phí (${isAdmin ? 'Toàn hệ thống' : currentUser.name || 'Nông hộ'}):**\n` +
+      `[KPI: ${Number(userSuppliesCost).toLocaleString('vi-VN')} đ Tổng chi | ${userRecentSupplies.length} Đợt xuất gần nhất]\n` +
       `• **Tổng chi phí vật tư lũy kế:** **${Number(userSuppliesCost).toLocaleString('vi-VN')} VNĐ**\n` +
       `• **Các đợt xuất dùng gần nhất:**\n${recentLines}`
     );
@@ -622,6 +708,8 @@ module.exports = {
   loadKnowledgeBaseCached,
   matchTrainingQA,
   rankKnowledgeArticles,
+  formatSmartIsoArea,
+  cleanAndDedupeCrops,
   calculateAgroDosageTool,
   executeAgentTools,
   synthesizeGroundedAgentReply,

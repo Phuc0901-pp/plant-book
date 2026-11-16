@@ -26,32 +26,86 @@ function _escapeAdminChatHtml(str) {
 }
 
 function _formatAdminAiChatHtml(rawText) {
-  let html = _escapeAdminChatHtml(rawText);
-  html = html.replace(/\n---\n/g, '<hr style="border:none;border-top:1px dashed #cbd5e1;margin:8px 0;">');
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#065f46;font-weight:700;">$1</strong>');
-  const emojiMap = [
-    ['🏡', 'chibi-farm'],
-    ['🌳', 'chibi-fertilize'],
-    ['🩺', 'chibi-disease'],
-    ['💰', 'chibi-cost'],
-    ['📝', 'chibi-log'],
-    ['📘', 'chibi-log'],
-    ['🧮', 'chibi-calc'],
-    ['🛡️', 'chibi-login'],
-    ['💧', 'chibi-water'],
-    ['🌿', 'chibi-fertilize'],
-    ['🌱', 'chibi-bot'],
-    ['📍', 'chibi-farm'],
-    ['📦', 'chibi-cost'],
-    ['💡', 'chibi-bot']
-  ];
-  for (const [emo, chibiName] of emojiMap) {
-    const iconHtml = _getAdminChibiIcon(chibiName, 17);
-    if (iconHtml) {
-      html = html.split(emo).join(`<span style="display:inline-flex;vertical-align:-3px;margin-right:3px;">${iconHtml}</span>`);
+  if (!rawText) return '';
+
+  function formatInline(text) {
+    let html = _escapeAdminChatHtml(text);
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#065f46;font-weight:700;">$1</strong>');
+    const emojiMap = [
+      ['🏡', 'chibi-farm'],
+      ['🌳', 'chibi-fertilize'],
+      ['🩺', 'chibi-disease'],
+      ['💰', 'chibi-cost'],
+      ['📝', 'chibi-log'],
+      ['📘', 'chibi-log'],
+      ['🧮', 'chibi-calc'],
+      ['🛡️', 'chibi-login'],
+      ['💧', 'chibi-water'],
+      ['🌿', 'chibi-fertilize'],
+      ['🌱', 'chibi-bot'],
+      ['📍', 'chibi-farm'],
+      ['📦', 'chibi-cost'],
+      ['💡', 'chibi-bot'],
+      ['📡', 'chibi-iot']
+    ];
+    for (const [emo, chibiName] of emojiMap) {
+      const iconHtml = _getAdminChibiIcon(chibiName, 17);
+      if (iconHtml) {
+        html = html.split(emo).join(`<span style="display:inline-flex;vertical-align:-3px;margin-right:3px;">${iconHtml}</span>`);
+      }
+    }
+    return html;
+  }
+
+  const normalized = String(rawText).replace(/\r\n/g, '\n');
+  const blocks = normalized.split(/\n+\s*---\s*\n+/);
+  const renderedBlocks = [];
+
+  for (let i = 0; i < blocks.length; i++) {
+    const lines = blocks[i].split('\n');
+    const renderedLines = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      // 1. KPI Pills Bar: [KPI: val1 | val2 | val3]
+      const kpiMatch = trimmed.match(/^\[KPI:\s*(.+?)\]$/);
+      if (kpiMatch) {
+        const items = kpiMatch[1].split('|').map(s => s.trim()).filter(Boolean);
+        const pillsHtml = items.map(item => {
+          return `<span style="background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; font-size:11.5px; font-weight:800; padding:3px 9px; border-radius:8px; display:inline-flex; align-items:center;">${formatInline(item)}</span>`;
+        }).join('');
+        renderedLines.push(`<div style="display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 8px 0;">${pillsHtml}</div>`);
+        continue;
+      }
+
+      // 2. Structured Row Card: • or - (remove redundant bullet)
+      const bulletMatch = trimmed.match(/^[•\-]\s+(.*)$/);
+      if (bulletMatch) {
+        renderedLines.push(`<div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:8px; padding:6px 10px; margin-top:5px; font-size:12.5px; line-height:1.45;">${formatInline(bulletMatch[1])}</div>`);
+        continue;
+      }
+
+      // 3. Structured Row Card: \d+\.\s (keep number)
+      const numMatch = trimmed.match(/^(\d+\.\s+.*)$/);
+      if (numMatch) {
+        renderedLines.push(`<div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #10b981; border-radius:8px; padding:6px 10px; margin-top:5px; font-size:12.5px; line-height:1.45;">${formatInline(numMatch[1])}</div>`);
+        continue;
+      }
+
+      // 4. Title or regular text line
+      renderedLines.push(`<div style="margin-bottom:4px; font-size:13px; line-height:1.5;">${formatInline(trimmed)}</div>`);
+    }
+
+    if (renderedLines.length > 0) {
+      const blockHtml = renderedLines.join('');
+      const separator = (renderedBlocks.length > 0) ? '<hr style="border:none;border-top:1px dashed #cbd5e1;margin:8px 0;">' : '';
+      renderedBlocks.push(`${separator}<div style="margin-bottom:8px;">${blockHtml}</div>`);
     }
   }
-  return html;
+
+  return renderedBlocks.join('');
 }
 
 function isAdminLoggedIn() {
@@ -505,9 +559,9 @@ function renderAdminMascot() {
                 line-height: 1.55;
                 max-width: 85%;
                 box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-                white-space: pre-wrap;
+                white-space: ${item.role === 'user' ? 'pre-wrap' : 'normal'};
                 word-break: break-word;
-              ">${item.role === 'user' ? _escapeAdminChatHtml(item.text) : _formatAdminAiChatHtml(item.text)}</div>
+              ">${item.role === 'user' ? _escapeAdminChatHtml(item.text) : `${_formatAdminAiChatHtml(item.text)}<div style="margin-top:8px; padding-top:5px; border-top:1px dashed #e2e8f0; display:flex; align-items:center; justify-content:space-between; font-size:10.5px; color:#64748b; font-weight:600;"><span>✓ Chuẩn ISO 26514</span><span>Bé Mầm AgTech Agent</span></div>`}</div>
             </div>
           `).join('')}
 
