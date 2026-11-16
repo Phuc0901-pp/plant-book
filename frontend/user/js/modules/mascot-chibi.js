@@ -36,6 +36,7 @@ function _formatAiChatMessageHtml(rawText) {
   function formatInline(text) {
     let html = _escapeChatHtml(text);
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#065f46;font-weight:700;">$1</strong>');
+    html = html.replace(/\*([^*]+?)\*/g, '<em style="color:#0f172a;font-style:italic;">$1</em>');
     const emojiMap = [
       ['🏡', 'chibi-farm'],
       ['🌳', 'chibi-fertilize'],
@@ -666,8 +667,10 @@ export function renderMascot() {
         <!-- Suggested Prompt Chips (Chibi ISO Icons) -->
         <div style="padding: 6px 12px; background: #ffffff; border-top: 1px solid #f1f5f9; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap;">
           <button class="ai-user-prompt-pill" onclick="sendUserPrompt('Tôi đang có những trang trại nào và trồng cây gì?')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getChibiIcon('chibi-farm', 16)} Trang trại của tôi</button>
-          <button class="ai-user-prompt-pill" onclick="sendUserPrompt('Tổng chi phí vật tư tôi đã dùng là bao nhiêu?')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getChibiIcon('chibi-cost', 16)} Chi phí vật tư</button>
+          <button class="ai-user-prompt-pill" onclick="sendUserPrompt('Tổng số cây trồng trong vườn và tình trạng sức khỏe hiện tại?')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getChibiIcon('chibi-fertilize', 16)} Cây trồng</button>
+          <button class="ai-user-prompt-pill" onclick="sendUserPrompt('Kiểm tra cảm biến IoT đất và hướng dẫn quét thẻ NFC định danh cây')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getChibiIcon('chibi-iot', 16)} Cảm biến IoT &amp; NFC</button>
           <button class="ai-user-prompt-pill" onclick="sendUserPrompt('Nhật ký chăm sóc gần đây của vườn tôi')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getChibiIcon('chibi-log', 16)} Nhật ký gần đây</button>
+          <button class="ai-user-prompt-pill" onclick="sendUserPrompt('Tổng chi phí vật tư tôi đã dùng là bao nhiêu?')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getChibiIcon('chibi-cost', 16)} Chi phí vật tư</button>
           <button class="ai-user-prompt-pill" onclick="sendUserPrompt('Cách xử lý khi cây bị vàng lá thối rễ')" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: #334155; cursor: pointer; display:inline-flex; align-items:center; gap:5px;">${_getChibiIcon('chibi-disease', 16)} Trị vàng lá</button>
         </div>
 

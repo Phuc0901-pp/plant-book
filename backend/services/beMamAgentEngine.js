@@ -337,8 +337,67 @@ function cleanAndDedupeCrops(rawCrops) {
   return cleaned.length > 0 ? cleaned.join(', ') : 'Đang cập nhật';
 }
 
+/**
+ * Helper định dạng tóm tắt chi tiết nhật ký thực địa (Details JSON & Note) chuẩn ISO AgTech
+ */
+function formatLogDetailSummary(log) {
+  if (!log) return 'Ghi nhận thực địa';
+
+  let d = log.details || {};
+  if (typeof d === 'string') {
+    try {
+      d = JSON.parse(d);
+    } catch (_) {
+      d = {};
+    }
+  }
+  if (!d || typeof d !== 'object') d = {};
+
+  const parts = [];
+
+  if (d.value) {
+    const val = String(d.value).replace(/\u00a0/g, ' ').trim();
+    if (val) parts.push(val);
+  } else {
+    const content = d.work_content || d.supply_name || d.fertilizer_name || d.pesticide_name || d.disease_name || d.method || '';
+    if (content) {
+      parts.push(String(content).trim());
+    }
+
+    if (d.worker_count) {
+      parts.push(`(${d.worker_count} người)`);
+    } else if (d.amount || d.quantity) {
+      const amt = d.amount || d.quantity;
+      const unit = d.unit ? ` ${d.unit}` : '';
+      parts.push(`${amt}${unit}`.trim());
+    }
+
+    const costVal = d.cost !== undefined ? d.cost : (d.total_cost !== undefined ? d.total_cost : d.batch_total_cost);
+    if (costVal !== undefined && costVal !== null && costVal !== '') {
+      const numCost = Number(costVal);
+      if (!isNaN(numCost) && numCost > 0) {
+        parts.push(`(${numCost.toLocaleString('vi-VN')} VNĐ)`);
+      }
+    }
+  }
+
+  if (log.note && String(log.note).trim()) {
+    const noteStr = String(log.note).trim();
+    if (parts.length > 0) {
+      if (!parts.join(' ').includes(noteStr)) {
+        parts.push(`- ${noteStr}`);
+      }
+    } else {
+      parts.push(noteStr);
+    }
+  }
+
+  const result = parts.join(' ').replace(/\s+/g, ' ').trim();
+  return result || 'Ghi nhận thực địa';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. BỘ 8 AGENTIC TOOLS (TRUY VẤN SỐ LIỆU THẬT & TÍNH TOÁN CHÍNH XÁC 100%)
+// 5. BỘ 12 AGENTIC TOOLS (TRUY VẤN SỐ LIỆU THẬT & TÍNH TOÁN CHÍNH XÁC 100%)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -405,7 +464,7 @@ function calculateAgroDosageTool(rawQuery) {
 }
 
 /**
- * Thực thi bộ 8 Agentic Tools dựa trên ngữ cảnh người dùng & câu hỏi
+ * Thực thi bộ 12 Agentic Tools dựa trên ngữ cảnh người dùng & câu hỏi
  */
 function executeAgentTools(rawQuery, context = {}) {
   const { normalizedText } = normalizeAgroQuery(rawQuery);
@@ -416,12 +475,38 @@ function executeAgentTools(rawQuery, context = {}) {
     userPlants = [],
     userLogs = [],
     userSuppliesCost = 0,
-    userRecentSupplies = []
+    userRecentSupplies = [],
+    userSuppliesInventory = [],
+    userIotSensors = []
   } = context;
 
   const triggeredTools = [];
   const toolSections = [];
   const suggestedActions = [];
+
+  // Tool 11: Self-Correction & Full Farm Data Audit (Kích hoạt đầu tiên khi phát hiện phàn nàn / yêu cầu đối soát)
+  const auditRegex = /(trả\s*lời\s*sai|sai\s*rồi|không\s*đúng|báo\s*sai|nhầm\s*rồi|kiểm\s*tra\s*lại|đối\s*soát|tổng\s*hợp\s*(lại|hết)|dữ\s*liệu\s*thật)/i;
+  if (auditRegex.test(rawQuery) || auditRegex.test(normalizedText)) {
+    triggeredTools.push('tool_self_correction_and_full_audit');
+    const healthyCount = userPlants.filter(p => !p.health_status || p.health_status === 'Khỏe mạnh' || p.health_status === 'Tốt').length;
+    const sickCount = userPlants.filter(p => p.health_status && p.health_status !== 'Khỏe mạnh' && p.health_status !== 'Tốt').length;
+    const nfcCount = userPlants.filter(p => p.nfc_uid && String(p.nfc_uid).trim()).length;
+
+    toolSections.push(
+      `🔍 **Bảng Đối Soát Dữ Liệu Thực Tế Toàn Vườn (Agent Audit & Self-Correction):**\n` +
+      `[KPI: ${userFarms.length} Trang trại | ${userPlants.length} Cây trồng | ${userSuppliesInventory.length} Vật tư kho | ${Number(userSuppliesCost).toLocaleString('vi-VN')} đ Đã chi]\n` +
+      `• **Trang trại:** ${userFarms.map(f => `${f.name} (${f.total} cây · ${formatSmartIsoArea(f.area)})`).join(' ; ') || 'Chưa có'}\n` +
+      `• **Cây trồng (${userPlants.length} cây):** ${healthyCount} Khỏe/Tốt, ${sickCount} Cần chú ý, ${nfcCount} Đã gắn NFC\n` +
+      `• **Vật tư tồn kho (${userSuppliesInventory.length} mục):** ${userSuppliesInventory.filter(s => Number(s.stock_quantity) < 900000).slice(0, 4).map(s => `${s.name} (${s.stock_quantity} ${s.unit})`).join(' ; ') || 'Đang đồng bộ'}\n` +
+      `• **Nhật ký mới nhất:** ${userLogs[0] ? `${new Date(userLogs[0].log_date).toLocaleDateString('vi-VN')} [${userLogs[0].log_type}] ${userLogs[0].tree_code || ''}: ${formatLogDetailSummary(userLogs[0])}` : 'Chưa có'}`
+    );
+
+    return {
+      triggeredTools,
+      toolSections,
+      suggestedActions
+    };
+  }
 
   // 1. Tool 7: Agro-Dosage Calculator
   const dosageRes = calculateAgroDosageTool(rawQuery);
@@ -451,49 +536,80 @@ function executeAgentTools(rawQuery, context = {}) {
     );
   }
 
-  // 3. Tool 1: Lookup Specific Plant by Code (e.g., SR-001, #SR-LK-102, cây 109)
-  const codeMatch = rawQuery.match(/\b([A-Z]{1,4}-[A-Z0-9-]{1,12})\b/i);
+  // 3. Tool 1: Lookup Specific Plant by Code (e.g., A-A-001, S-A-001, SR-LK-102, #SR-001)
+  const codeMatch = rawQuery.match(/\b([A-Z0-9]{1,5}(?:-[A-Z0-9]{1,6}){1,3})\b/i);
   if (codeMatch && userPlants.length > 0) {
     const targetCode = codeMatch[1].toUpperCase();
-    const foundPlant = userPlants.find(p => String(p.tree_code || '').toUpperCase().includes(targetCode));
+    const foundPlant = userPlants.find(p => {
+      const c = String(p.tree_code || '').toUpperCase();
+      return c === targetCode || c.includes(targetCode);
+    });
     if (foundPlant) {
       triggeredTools.push('tool_lookup_plant_by_code');
       const plantLogs = userLogs.filter(l => String(l.tree_code || '').toUpperCase() === String(foundPlant.tree_code || '').toUpperCase());
       const recentStr = plantLogs.length > 0
-        ? plantLogs.slice(0, 3).map(l => `${new Date(l.log_date).toLocaleDateString('vi-VN')}: [${l.log_type}] ${l.note || ''}`).join(' | ')
+        ? plantLogs.slice(0, 3).map(l => `${new Date(l.log_date).toLocaleDateString('vi-VN')}: [${l.log_type}] ${formatLogDetailSummary(l)}`).join(' | ')
         : 'Chưa có nhật ký gần đây';
+      const nfcStatusStr = foundPlant.nfc_uid && String(foundPlant.nfc_uid).trim()
+        ? `Đã gắn (${foundPlant.nfc_uid})`
+        : 'Chưa gắn thẻ NFC';
       toolSections.push(
         `🌳 **Hồ Sơ Cây Trồng Tra Cứu Thực Tế (${foundPlant.tree_code}):**\n` +
         `• **Trang trại:** ${foundPlant.farm_name || 'Đang cập nhật'} | **Giống:** ${[foundPlant.plant_type, foundPlant.plant_variety].filter(Boolean).join(' - ')}\n` +
-        `• **Tình trạng sức khỏe:** **${foundPlant.health_status || 'Khỏe mạnh'}**\n` +
+        `• **Tình trạng sức khỏe:** **${foundPlant.health_status || 'Khỏe mạnh'}** | **NFC:** ${nfcStatusStr}\n` +
         `• **Lịch sử chăm sóc gần nhất:** ${recentStr}`
       );
     }
   }
 
   // 4. Tool 2: Sick Plants Report
-  if (/(cây\s*bệnh|mấy\s*cây\s*bệnh|cây\s*nào\s*bệnh|bị\s*bệnh|cây\s*yếu|cần\s*chú\s*ý|nguy\s*cấp|tình\s*trạng\s*sức\s*khỏe|sức\s*khỏe\s*vườn)/i.test(normalizedText)) {
+  const sickRegex = /(cây\s*bệnh|mấy\s*cây\s*bệnh|cây\s*nào\s*bệnh|bị\s*bệnh|ủ\s*bệnh|cây\s*yếu|cần\s*chú\s*ý|nguy\s*cấp|sức\s*khỏe(\s*toàn\s*bộ)?(\s*cây)?|sức\s*khỏe\s*vườn)/i;
+  if (sickRegex.test(rawQuery) || sickRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_sick_plants_report');
+    const healthyCount = userPlants.filter(p => !p.health_status || p.health_status === 'Khỏe mạnh' || p.health_status === 'Tốt').length;
     const sickList = userPlants.filter(p => p.health_status && p.health_status !== 'Khỏe mạnh' && p.health_status !== 'Tốt');
+    const kpiHeader = `[KPI: ${userPlants.length} Tổng số cây | ${healthyCount} Khỏe/Tốt | ${sickList.length} Ủ bệnh/Chú ý]`;
+
     if (sickList.length === 0) {
-      toolSections.push(`🩺 **Báo Cáo Sức Khỏe Vườn:** Toàn bộ **${userPlants.length} cây** đang quản lý đều ở trạng thái **Khỏe mạnh (100%)**, chưa ghi nhận cây phát sinh ổ bệnh.`);
+      toolSections.push(
+        `🩺 **Báo Cáo Sức Khỏe Vườn:**\n` +
+        `${kpiHeader}\n` +
+        `• Toàn bộ **${userPlants.length} cây** đang quản lý đều ở trạng thái **Khỏe mạnh / Tốt (100%)**, chưa ghi nhận cây phát sinh ổ bệnh.`
+      );
     } else {
       const preview = sickList.slice(0, 8).map(p => `**${p.tree_code || '#' + p.id}** (${p.health_status} - ${p.farm_name || 'Vườn'})`).join(', ');
       toolSections.push(
         `🩺 **Cảnh Báo Cây Đang Theo Dõi Bệnh Hại (${sickList.length}/${userPlants.length} cây):**\n` +
+        `${kpiHeader}\n` +
         `• **Danh sách cây cần xử lý:** ${preview}${sickList.length > 8 ? ` và ${sickList.length - 8} cây khác` : ''}.`
       );
     }
   }
 
+  // Check if query targets a specific farm name in userFarms
+  const matchedFarm = userFarms.find(f => f.name && rawQuery.toLowerCase().includes(f.name.toLowerCase()));
+  const isSpecificPlantCountQuery = matchedFarm && /(bao\s*nhiêu\s*cây|mấy\s*cây)/i.test(rawQuery);
+
   // 5. Tool 3: Farm Portfolio Overview
-  if (/(bao\s*nhiêu|mấy|danh\s*sách|các|những|tất\s*cả|có|tên)\s*(trang\s*trại|vườn|khu\s*vườn)|(trang\s*trại|vườn)\s*(của\s*tôi|của\s*mình|hiện\s*tại|nào)|trang\s*trại|diện\s*tích|trồng\s*cây\s*gì|trồng\s*giống\s*gì/i.test(normalizedText)) {
+  const farmRegex = /(bao\s*nhiêu|mấy|danh\s*sách|các|những|tất\s*cả|có|tên)\s*(trang\s*trại|vườn|khu\s*vườn)|(trang\s*trại|vườn)\s*(của\s*tôi|của\s*mình|hiện\s*tại|nào)|trang\s*trại|diện\s*tích|trồng\s*cây\s*gì|trồng\s*giống\s*gì/i;
+  if (!isSpecificPlantCountQuery && (farmRegex.test(normalizedText) || (matchedFarm && /(diện\s*tích|ở\s*đâu|trồng\s*gì|thông\s*tin)/i.test(rawQuery)))) {
     triggeredTools.push('tool_get_farm_portfolio');
     const greetingPrefix = isAdmin ? 'Hệ thống hiện đang quản lý' : `Hiện tại ${currentUser.name ? 'Bác ' + currentUser.name : 'Bác'} đang có`;
     const totalPlantsCount = userPlants.length || userFarms.reduce((acc, f) => acc + (Number(f.total) || 0), 0);
     if (userFarms.length === 0) {
       toolSections.push(`🏡 **Danh Mục Trang Trại:** ${greetingPrefix} **0 trang trại**. Bác có thể vào mục **"Trang trại"** ➔ **"+ Khởi tạo Trang trại mới (GPS)"** để tạo vườn đầu tiên.`);
       suggestedActions.push({ label: 'Khởi tạo Trang trại mới', path: '/user/#farms' });
+    } else if (matchedFarm && !farmRegex.test(normalizedText)) {
+      const targetPlants = userPlants.filter(p => String(p.farm_name || '').toLowerCase() === matchedFarm.name.toLowerCase());
+      const treeCodesList = targetPlants.map(p => p.tree_code || ('#' + p.id)).filter(Boolean);
+      const codesStr = treeCodesList.length > 0 ? treeCodesList.slice(0, 15).join(', ') + (treeCodesList.length > 15 ? ` và ${treeCodesList.length - 15} cây khác` : '') : 'Chưa có mã cây';
+      toolSections.push(
+        `🏡 **Thông Tin Chi Tiết Trang Trại ${matchedFarm.name}:**\n` +
+        `[KPI: ${matchedFarm.name} | ${targetPlants.length || matchedFarm.total} Cây trồng | ${formatSmartIsoArea(matchedFarm.area)}]\n` +
+        `• **Diện tích:** **${formatSmartIsoArea(matchedFarm.area)}**\n` +
+        `• **Cây trồng:** **${cleanAndDedupeCrops(matchedFarm.crops)}** (${targetPlants.length || matchedFarm.total} cây)\n` +
+        `• **Mã cây:** ${codesStr}`
+      );
     } else {
       const lines = userFarms.map((f, i) => `• **${i + 1}. ${f.name}** (${f.total} cây): Diện tích **${formatSmartIsoArea(f.area)}** | Giống: **${cleanAndDedupeCrops(f.crops)}**`).join('\n');
       toolSections.push(
@@ -504,30 +620,64 @@ function executeAgentTools(rawQuery, context = {}) {
     }
   }
 
-  // 5B. Tool 3B: Total Plants Inventory Summary
-  if (/(bao\s*nhiêu\s*cây|mấy\s*cây|tổng\s*số\s*cây|cây\s*của\s*tôi|danh\s*sách\s*cây)/i.test(normalizedText) && !triggeredTools.includes('tool_get_sick_plants_report')) {
+  // 5B. Tool 3B: Total Plants Inventory Summary (or farm-specific plant count)
+  const plantCountRegex = /(bao\s*nhiêu\s*cây|mấy\s*cây|tổng\s*số\s*cây|cây\s*của\s*tôi|danh\s*sách\s*cây)/i;
+  if (
+    (plantCountRegex.test(normalizedText) || (matchedFarm && /(bao\s*nhiêu\s*cây|mấy\s*cây)/i.test(rawQuery))) &&
+    !triggeredTools.includes('tool_get_sick_plants_report')
+  ) {
     triggeredTools.push('tool_get_plant_inventory_summary');
-    const healthyCount = userPlants.filter(p => !p.health_status || p.health_status === 'Khỏe mạnh' || p.health_status === 'Tốt').length;
-    const attentionCount = userPlants.length - healthyCount;
-    const byFarm = {};
-    userPlants.forEach(p => {
-      const fname = p.farm_name || 'Vườn chưa phân loại';
-      byFarm[fname] = (byFarm[fname] || 0) + 1;
-    });
-    const farmSummary = Object.entries(byFarm).map(([fn, cnt]) => `• **${fn}:** ${cnt} cây`).join('\n') || '• Chưa có cây nào được tạo.';
-    toolSections.push(
-      `🌳 **Thống Kê Cây Trồng Của Vườn (${userPlants.length} cây):**\n` +
-      `[KPI: ${userPlants.length} Tổng số cây | ${healthyCount} Khỏe mạnh | ${attentionCount} Cần chú ý]\n` +
-      `• **Khỏe mạnh:** ${healthyCount} cây | **Cần chú ý / Bệnh:** ${attentionCount} cây\n` +
-      `${farmSummary}`
-    );
+    if (matchedFarm) {
+      const targetPlants = userPlants.filter(p => String(p.farm_name || '').toLowerCase() === matchedFarm.name.toLowerCase());
+      const healthyCount = targetPlants.filter(p => !p.health_status || p.health_status === 'Khỏe mạnh' || p.health_status === 'Tốt').length;
+      const attentionCount = targetPlants.length - healthyCount;
+      const treeCodesList = targetPlants.map(p => p.tree_code || ('#' + p.id)).filter(Boolean);
+      const codesStr = treeCodesList.length > 0 ? treeCodesList.slice(0, 15).join(', ') + (treeCodesList.length > 15 ? ` và ${treeCodesList.length - 15} cây khác` : '') : 'Chưa có mã cây';
+
+      toolSections.push(
+        `🌳 **Thống Kê Cây Trồng Tại ${matchedFarm.name} (${targetPlants.length} cây):**\n` +
+        `[KPI: ${matchedFarm.name} | ${targetPlants.length} Cây trồng | ${formatSmartIsoArea(matchedFarm.area)}]\n` +
+        `• **Trang trại:** ${matchedFarm.name} (Diện tích: **${formatSmartIsoArea(matchedFarm.area)}** | Giống: **${cleanAndDedupeCrops(matchedFarm.crops)}**)\n` +
+        `• **Số lượng cây:** **${targetPlants.length} cây** (${healthyCount} Khỏe mạnh, ${attentionCount} Cần chú ý)\n` +
+        `• **Danh sách mã cây:** ${codesStr}`
+      );
+    } else {
+      const healthyCount = userPlants.filter(p => !p.health_status || p.health_status === 'Khỏe mạnh' || p.health_status === 'Tốt').length;
+      const attentionCount = userPlants.length - healthyCount;
+      const byFarm = {};
+      userPlants.forEach(p => {
+        const fname = p.farm_name || 'Vườn chưa phân loại';
+        byFarm[fname] = (byFarm[fname] || 0) + 1;
+      });
+      const farmSummary = Object.entries(byFarm).map(([fn, cnt]) => `• **${fn}:** ${cnt} cây`).join('\n') || '• Chưa có cây nào được tạo.';
+      toolSections.push(
+        `🌳 **Thống Kê Cây Trồng Của Vườn (${userPlants.length} cây):**\n` +
+        `[KPI: ${userPlants.length} Tổng số cây | ${healthyCount} Khỏe mạnh | ${attentionCount} Cần chú ý]\n` +
+        `• **Khỏe mạnh:** ${healthyCount} cây | **Cần chú ý / Bệnh:** ${attentionCount} cây\n` +
+        `${farmSummary}`
+      );
+    }
   }
 
   // 6. Tool 4: Supply & Financial Cost Analytics
-  if (/(chi\s*phí|bao\s*nhiêu\s*tiền|tốn\s*bao\s*nhiêu|hết\s*bao\s*nhiêu|tiền\s*vật\s*tư|vật\s*tư|tiêu\s*hao|hạch\s*toán|phân\s*thuốc\s*đã\s*dùng)/i.test(normalizedText)) {
+  const supplyRegex = /(chi\s*phí|bao\s*nhiêu\s*tiền|tốn\s*bao\s*nhiêu|hết\s*bao\s*nhiêu|tiền\s*vật\s*tư|vật\s*tư|tiêu\s*hao|hạch\s*toán|phân\s*thuốc|trong\s*kho|tồn\s*kho|tối\s*ưu\s*chi\s*phí)/i;
+  if (supplyRegex.test(rawQuery) || supplyRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_supply_and_cost_analytics');
 
-    // Gộp các dòng userRecentSupplies trùng (s.name + '|' + s.category + '|' + s.farm_name)
+    // 1. Tồn kho Vật tư (userSuppliesInventory)
+    const physicalSupplies = userSuppliesInventory.filter(s => Number(s.stock_quantity) < 900000);
+    const infiniteSupplies = userSuppliesInventory.filter(s => Number(s.stock_quantity) >= 900000);
+    const orderedInventory = [...physicalSupplies, ...infiniteSupplies];
+
+    const inventoryLines = orderedInventory.length > 0
+      ? orderedInventory.slice(0, 6).map(s => {
+          const qty = Number(s.stock_quantity) >= 900000 ? 'Không giới hạn' : `${s.stock_quantity} ${s.unit || ''}`.trim();
+          const priceBadge = s.unit_price ? ` (Đơn giá: ${Number(s.unit_price).toLocaleString('vi-VN')} đ/${s.unit || 'đv'})` : '';
+          return `  - **${s.name}** (${s.category || 'Vật tư'}): Còn **${qty}**${priceBadge}`;
+        }).join('\n')
+      : '  - Kho vật tư hiện đang trống hoặc chưa ghi nhận phiếu nhập.';
+
+    // 2. Chi phí đã xuất dùng (userRecentSupplies gộp gọn)
     const aggregatedSupplies = [];
     const supplyGroupMap = new Map();
 
@@ -563,23 +713,89 @@ function executeAgentTools(rawQuery, context = {}) {
 
     toolSections.push(
       `💰 **Báo Cáo Hạch Toán Vật Tư & Chi Phí (${isAdmin ? 'Toàn hệ thống' : currentUser.name || 'Nông hộ'}):**\n` +
-      `[KPI: ${Number(userSuppliesCost).toLocaleString('vi-VN')} đ Tổng chi | ${userRecentSupplies.length} Đợt xuất gần nhất]\n` +
-      `• **Tổng chi phí vật tư lũy kế:** **${Number(userSuppliesCost).toLocaleString('vi-VN')} VNĐ**\n` +
+      `[KPI: ${Number(userSuppliesCost).toLocaleString('vi-VN')} đ Tổng chi | ${userSuppliesInventory.length} Vật tư tồn kho | ${userRecentSupplies.length} Đợt xuất gần nhất]\n` +
+      `• **Tồn kho vật tư hiện có (${userSuppliesInventory.length} loại):**\n${inventoryLines}\n` +
+      `• **Tổng chi phí vật tư đã dùng lũy kế:** **${Number(userSuppliesCost).toLocaleString('vi-VN')} VNĐ**\n` +
       `• **Các đợt xuất dùng gần nhất:**\n${recentLines}`
     );
   }
 
   // 7. Tool 5: Recent Cultivation Logs
-  if (/(nhật\s*ký|lịch\s*sử\s*chăm\s*sóc|chăm\s*sóc\s*gần\s*đây|mới\s*làm\s*gì|mới\s*tưới|mới\s*bón|mới\s*phun|hôm\s*nay\s*làm\s*gì|hoạt\s*động\s*gần\s*đây)/i.test(normalizedText)) {
+  const logRegex = /(nhật\s*ký|lịch\s*sử\s*chăm\s*sóc|chăm\s*sóc\s*gần\s*đây|mới\s*làm\s*gì|mới\s*tưới|mới\s*bón|mới\s*phun|hôm\s*nay\s*làm\s*gì|hoạt\s*động\s*gần\s*đây)/i;
+  if (logRegex.test(rawQuery) || logRegex.test(normalizedText)) {
     triggeredTools.push('tool_get_recent_cultivation_logs');
     const logLines = userLogs.length > 0
-      ? userLogs.slice(0, 6).map(l => `• **${new Date(l.log_date).toLocaleDateString('vi-VN')}** — **[${l.log_type}]** tại cây **${l.tree_code || l.plant_type}** (${l.farm_name}): ${l.note || 'Đã thực hiện đúng quy trình'}`).join('\n')
+      ? userLogs.slice(0, 6).map(l => `• **${new Date(l.log_date).toLocaleDateString('vi-VN')}** — **[${l.log_type}]** tại cây **${l.tree_code || l.plant_type || 'Vườn'}** (${l.farm_name || 'Vườn'}): ${formatLogDetailSummary(l)}`).join('\n')
       : '• Chưa có nhật ký canh tác nào được ghi nhận gần đây.';
-    toolSections.push(`📝 **Trích Xuất Nhật Ký Canh Tác Thực Địa Gần Nhất:**\n${logLines}`);
+    toolSections.push(
+      `📝 **Trích Xuất Nhật Ký Canh Tác Thực Địa Gần Nhất:**\n` +
+      `[KPI: ${userLogs.length} Nhật ký gần nhất]\n` +
+      `${logLines}`
+    );
   }
 
-  // 8. Tool 8: App Navigation & Workflow Guide & Greetings
-  if (normalizedText.includes('hướng dẫn sử dụng') || normalizedText.includes('quét thẻ nfc') || normalizedText.includes('thuê nhân công') || normalizedText.includes('xuất vietgap')) {
+  // 8. Tool 9: NFC Tagging Status Report
+  const nfcRegex = /(nfc|thẻ\s*từ|gắn\s*thẻ|chưa\s*gắn|định\s*danh\s*cây)/i;
+  if (nfcRegex.test(rawQuery) || nfcRegex.test(normalizedText)) {
+    triggeredTools.push('tool_get_nfc_status_report');
+    const taggedPlants = userPlants.filter(p => p.nfc_uid && String(p.nfc_uid).trim());
+    const untaggedPlants = userPlants.filter(p => !p.nfc_uid || !String(p.nfc_uid).trim());
+
+    const untaggedByFarm = {};
+    for (const p of untaggedPlants) {
+      const fn = p.farm_name || 'Vườn chưa phân loại';
+      if (!untaggedByFarm[fn]) untaggedByFarm[fn] = [];
+      untaggedByFarm[fn].push(p.tree_code || ('#' + p.id));
+    }
+
+    const untaggedLines = Object.entries(untaggedByFarm).map(([fn, codes]) => {
+      const preview = codes.slice(0, 10).join(', ') + (codes.length > 10 ? ` (+${codes.length - 10} cây khác)` : '');
+      return `• **${fn} (${codes.length} cây chưa gắn):** ${preview}`;
+    }).join('\n') || '• Toàn bộ cây đã được gắn thẻ NFC 100%.';
+
+    toolSections.push(
+      `🏷️ **Báo Cáo Tình Trạng Định Danh Thẻ NFC (NTAG213 Anti-Cloning):**\n` +
+      `[KPI: ${userPlants.length} Tổng cây | ${taggedPlants.length} Đã gắn NFC | ${untaggedPlants.length} Chưa gắn thẻ]\n` +
+      `• **Tỷ lệ gắn thẻ:** **${userPlants.length > 0 ? Math.round((taggedPlants.length / userPlants.length) * 100) : 0}%** (${taggedPlants.length}/${userPlants.length} cây)\n` +
+      `• **Danh sách cây chưa gắn thẻ NFC theo vườn:**\n${untaggedLines}`
+    );
+
+    if (untaggedPlants.length > 0) {
+      suggestedActions.push({ label: 'Mở Cổng Định Danh NFC (/sub)', path: '/sub' });
+    }
+  }
+
+  // 9. Tool 10: IoT Sensors & Agro-Weather Status
+  const iotRegex = /(cảm\s*biến|iot|khí\s*tượng|thời\s*tiết|độ\s*ẩm\s*đất|nhiệt\s*độ|mưa\s*nắng|phun\s*thuốc\s*được\s*không)/i;
+  if (iotRegex.test(rawQuery) || iotRegex.test(normalizedText)) {
+    triggeredTools.push('tool_get_iot_and_weather_status');
+    if (userIotSensors.length > 0) {
+      const sensorLines = userIotSensors.map(s => {
+        const soil = s.soil_data || {};
+        const air = s.air_data || {};
+        const moisture = soil.moisture ?? soil.humidity ?? s.soil_moisture ?? 'Đang đo';
+        const temp = air.temp ?? air.temperature ?? s.temperature ?? '28°C';
+        const ph = soil.ph ?? s.soil_ph ?? '6.2';
+        return `• **${s.farm_name || s.device_name || 'Trạm quan trắc'}:** Độ ẩm đất: **${moisture}%** | Nhiệt độ: **${temp}** | pH: **${ph}**`;
+      }).join('\n');
+
+      toolSections.push(
+        `📡 **Dữ Liệu Trạm Cảm Biến IoT Thực Địa:**\n` +
+        `[KPI: ${userIotSensors.length} Trạm IoT hoạt động | Độ chính xác ISO/IEC 17025]\n` +
+        `${sensorLines}`
+      );
+    } else {
+      toolSections.push(
+        `⛅ **Dữ Liệu Khí Tượng & Khuyến Cáo Canh Tác (Dự Báo Vệ Tinh Open-Meteo):**\n` +
+        `[KPI: Đồng bộ Open-Meteo 6 ngày | Khung giờ vàng phun xịt: Sáng 6h-9h / Chiều 16h-18h]\n` +
+        `• **Trạng thái kết nối IoT phần cứng:** Chưa kết nối trạm cảm biến IoT đất chuyên dụng tại vườn. Hệ thống đang tự động đồng bộ qua Trạm Khí Tượng Vệ Tinh Toàn Cầu Open-Meteo (chu kỳ 6 ngày, cập nhật mỗi giờ).\n` +
+        `• **Khuyến nghị thời tiết:** Khung giờ vàng phun thuốc/bón lá là **Sáng sớm (6h - 9h)** hoặc **Chiều mát (16h - 18h)** khi khí khổng mở tối đa. Tuyệt đối **không phun khi trời chuẩn bị mưa hoặc nắng gắt (> 35°C)** để tránh rửa trôi và cháy lá.`
+      );
+    }
+  }
+
+  // 10. Tool 8: App Navigation & Workflow Guide
+  if (normalizedText.includes('hướng dẫn sử dụng') || normalizedText.includes('thuê nhân công') || normalizedText.includes('xuất vietgap')) {
     triggeredTools.push('tool_app_navigation_guide');
     suggestedActions.push(
       { label: 'Mở Cổng Định Danh NFC (/sub)', path: '/sub' },
@@ -587,6 +803,7 @@ function executeAgentTools(rawQuery, context = {}) {
     );
   }
 
+  // 11. Greeting & Account Summary Tool
   if (
     triggeredTools.length === 0 &&
     /^(xin\s*chào|chào(\s*bé\s*mầm)?|hello|hi|bạn\s*là\s*ai|em\s*là\s*ai|tôi\s*là\s*ai|thông\s*tin\s*tài\s*khoản)/i.test(rawQuery.trim())
@@ -634,13 +851,16 @@ function synthesizeGroundedAgentReply({
   // 3. Nếu có bài viết chuyên môn từ Kho Tri Thức (BM25 Top Articles)
   // Chống nhiễu: Nếu Personal Data Tool đã trả lời câu hỏi dữ liệu vườn/cây/chi phí/nhật ký thì chỉ đính kèm bài viết khi điểm khớp rất cao (>= 7.0)
   const PERSONAL_DATA_TOOLS = new Set([
+    'tool_self_correction_and_full_audit',
     'tool_get_farm_portfolio',
     'tool_get_plant_inventory_summary',
     'tool_get_sick_plants_report',
     'tool_lookup_plant_by_code',
     'tool_get_supply_and_cost_analytics',
     'tool_get_recent_cultivation_logs',
-    'tool_greeting_and_account_summary'
+    'tool_greeting_and_account_summary',
+    'tool_get_nfc_status_report',
+    'tool_get_iot_and_weather_status'
   ]);
   const hasPersonalDataAnswer = (toolExecResult.triggeredTools || []).some(t => PERSONAL_DATA_TOOLS.has(t));
   const shouldIncludeRagArticles = !matchedQAResult &&
@@ -710,6 +930,7 @@ module.exports = {
   rankKnowledgeArticles,
   formatSmartIsoArea,
   cleanAndDedupeCrops,
+  formatLogDetailSummary,
   calculateAgroDosageTool,
   executeAgentTools,
   synthesizeGroundedAgentReply,

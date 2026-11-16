@@ -8,6 +8,7 @@ const {
   rankKnowledgeArticles,
   formatSmartIsoArea,
   cleanAndDedupeCrops,
+  formatLogDetailSummary,
   calculateAgroDosageTool,
   executeAgentTools,
   synthesizeGroundedAgentReply,
@@ -240,5 +241,106 @@ describe('Suite 24: Be Mam Hybrid Autonomous Agent v2.0 (ISO/IEC 42001, ISO/IEC 
     expect(supplyStr).toContain('1.250.000');
     const npkMatches = (supplyStr.match(/NPK Kali Trắng/g) || []).length;
     expect(npkMatches).toBe(1);
+  });
+
+  it('24.14 [FULL-INTENT-COVERAGE] Full intent coverage for self-correction audit, log details, supply inventory, NFC, IoT, sick plants and farm-specific query', () => {
+    // 1. "bạn trả lời sai rồi" -> kích hoạt tool_self_correction_and_full_audit (không rơi vào needsAutoLearning = true!)
+    const auditRes = executeAgentTools('bạn trả lời sai rồi', {
+      userFarms: [{ name: 'Vườn Bình Phước', area: 3.0, crops: 'Sầu riêng Dona', total: 150 }],
+      userPlants: [
+        { id: 1, tree_code: 'BP-001', health_status: 'Tốt', nfc_uid: '04A1B2C3' },
+        { id: 2, tree_code: 'BP-002', health_status: 'Cần chú ý', nfc_uid: null }
+      ],
+      userLogs: [{ log_date: new Date().toISOString(), log_type: 'Bón phân', tree_code: 'BP-001', details: { work_content: 'Tưới gốc Humic' } }],
+      userSuppliesCost: 2500000,
+      userSuppliesInventory: [{ name: 'Humic Hoa Kỳ', stock_quantity: 10, unit: 'gói' }]
+    });
+    expect(auditRes.triggeredTools).toContain('tool_self_correction_and_full_audit');
+    const auditSynth = synthesizeGroundedAgentReply({
+      rawQuery: 'bạn trả lời sai rồi',
+      toolExecResult: auditRes
+    });
+    expect(auditSynth.needsAutoLearning).toBe(false);
+    expect(auditSynth.reply).toContain('Bảng Đối Soát Dữ Liệu Thực Tế Toàn Vườn');
+    expect(auditSynth.reply).toContain('Vườn Bình Phước');
+
+    // 2. "Nhật ký chăm sóc gần đây của vườn tôi" với details ({ work_content: 'Tỉa hoa/nụ non', cost: 200000 }) -> output phải chứa 'Tỉa hoa/nụ non' và '200.000'
+    const testLog = {
+      log_date: new Date().toISOString(),
+      log_type: 'Cắt tỉa',
+      tree_code: 'SR-01',
+      farm_name: 'Vườn Long Khánh',
+      details: { work_content: 'Tỉa hoa/nụ non', cost: 200000 }
+    };
+    const logSummary = formatLogDetailSummary(testLog);
+    expect(logSummary).toContain('Tỉa hoa/nụ non');
+    expect(logSummary).toContain('200.000');
+
+    const logExec = executeAgentTools('Nhật ký chăm sóc gần đây của vườn tôi', {
+      userLogs: [testLog]
+    });
+    expect(logExec.triggeredTools).toContain('tool_get_recent_cultivation_logs');
+    const logJoined = logExec.toolSections.join('\n');
+    expect(logJoined).toContain('Tỉa hoa/nụ non');
+    expect(logJoined).toContain('200.000');
+
+    // 3. "Trong kho tôi đang có những vật tư phân thuốc gì?" -> hiển thị tên vật tư từ userSuppliesInventory
+    const supplyExec = executeAgentTools('Trong kho tôi đang có những vật tư phân thuốc gì?', {
+      userSuppliesInventory: [
+        { name: 'Phân bón NPK 20-20-15', category: 'Phân bón', stock_quantity: 15, unit: 'bao', unit_price: 650000 }
+      ],
+      userRecentSupplies: []
+    });
+    expect(supplyExec.triggeredTools).toContain('tool_get_supply_and_cost_analytics');
+    expect(supplyExec.toolSections.join('\n')).toContain('Phân bón NPK 20-20-15');
+
+    // 4. "Cây nào chưa gắn thẻ NFC?" -> kích hoạt tool_get_nfc_status_report
+    const nfcExec = executeAgentTools('Cây nào chưa gắn thẻ NFC?', {
+      userPlants: [
+        { id: 10, tree_code: 'SR-001', nfc_uid: '04A1B2C3', farm_name: 'Vườn A' },
+        { id: 11, tree_code: 'SR-002', nfc_uid: null, farm_name: 'Vườn A' }
+      ]
+    });
+    expect(nfcExec.triggeredTools).toContain('tool_get_nfc_status_report');
+    expect(nfcExec.toolSections.join('\n')).toContain('SR-002');
+
+    // 5. "Kiểm tra trạng thái cảm biến IoT đất và khí tượng" -> kích hoạt tool_get_iot_and_weather_status
+    const iotExec = executeAgentTools('Kiểm tra trạng thái cảm biến IoT đất và khí tượng', {
+      userIotSensors: [
+        { device_name: 'Trạm Cảm Biến Khu A', soil_data: { moisture: 68, ph: 6.5 }, air_data: { temp: '31°C' } }
+      ]
+    });
+    expect(iotExec.triggeredTools).toContain('tool_get_iot_and_weather_status');
+    expect(iotExec.toolSections.join('\n')).toContain('68%');
+
+    // 6. "Tóm tắt sức khỏe toàn bộ cây trồng hôm nay" -> kích hoạt tool_get_sick_plants_report
+    const sickExec = executeAgentTools('Tóm tắt sức khỏe toàn bộ cây trồng hôm nay', {
+      userPlants: [
+        { id: 1, tree_code: 'SR-01', health_status: 'Khỏe mạnh' },
+        { id: 2, tree_code: 'SR-02', health_status: 'Cần chú ý' }
+      ]
+    });
+    expect(sickExec.triggeredTools).toContain('tool_get_sick_plants_report');
+    expect(sickExec.toolSections.join('\n')).toContain('SR-02');
+
+    // 7. "Vườn Nông trại Demo có mấy cây?" -> lọc đúng số cây của Nông trại Demo
+    const farmDemoExec = executeAgentTools('Vườn Nông trại Demo có mấy cây?', {
+      userFarms: [
+        { name: 'Nông trại Demo', area: 1.8, crops: 'Sầu riêng Musang King', total: 2 },
+        { name: 'Vườn Gia Đình', area: 0.5, crops: 'Bưởi', total: 10 }
+      ],
+      userPlants: [
+        { id: 101, tree_code: 'A-A-001', farm_name: 'Nông trại Demo', health_status: 'Tốt' },
+        { id: 102, tree_code: 'S-A-001', farm_name: 'Nông trại Demo', health_status: 'Khỏe mạnh' },
+        { id: 201, tree_code: 'GD-001', farm_name: 'Vườn Gia Đình', health_status: 'Tốt' }
+      ]
+    });
+    expect(farmDemoExec.triggeredTools).toContain('tool_get_plant_inventory_summary');
+    const farmDemoOutput = farmDemoExec.toolSections.join('\n');
+    expect(farmDemoOutput).toContain('Nông trại Demo');
+    expect(farmDemoOutput).toContain('2 cây');
+    expect(farmDemoOutput).toContain('A-A-001');
+    expect(farmDemoOutput).toContain('S-A-001');
+    expect(farmDemoOutput.includes('GD-001')).toBe(false);
   });
 });

@@ -72,6 +72,8 @@ router.post('/chat', auth, async (req, res) => {
     let userLogs = [];
     let userSuppliesCost = 0;
     let userRecentSupplies = [];
+    let userSuppliesInventory = [];
+    let userIotSensors = [];
 
     if (cachedContextData) {
       systemContext = cachedContextData.systemContext;
@@ -80,6 +82,8 @@ router.post('/chat', auth, async (req, res) => {
       userSuppliesCost = cachedContextData.userSuppliesCost || 0;
       userRecentSupplies = cachedContextData.userRecentSupplies || [];
       userLogs = cachedContextData.userLogs || [];
+      userSuppliesInventory = cachedContextData.userSuppliesInventory || [];
+      userIotSensors = cachedContextData.userIotSensors || [];
     } else {
       // 2. Truy vấn từ Read Replica Pool (Fault-Tolerant: 1 câu phụ lỗi không làm sập toàn bộ Promise.all)
       const safeReadQuery = (sql, params = []) =>
@@ -90,7 +94,7 @@ router.post('/chat', auth, async (req, res) => {
 
       try {
         if (isAdmin) {
-          const [farmsRes, plantsRes, sickRes, costRes] = await Promise.all([
+          const [farmsRes, plantsRes, sickRes, costRes, logsRes, suppliesInvRes, iotRes] = await Promise.all([
             safeReadQuery(`
               SELECT f.id, f.name, f.area, f.total_plants, COALESCE(u.full_name, 'Nông hộ') as owner_name 
               FROM farms f 
@@ -98,12 +102,35 @@ router.post('/chat', auth, async (req, res) => {
               WHERE (f.is_deleted IS NOT TRUE)
             `),
             safeReadQuery(`
-              SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
+              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
               FROM plants p 
               LEFT JOIN farms f ON p.farm_id = f.id
+              WHERE (f.is_deleted IS NOT TRUE) AND (p.is_deleted IS NOT TRUE) AND (p.deleted_at IS NULL)
             `),
             safeReadQuery("SELECT COUNT(*) as count FROM plants WHERE health_status IN ('Cần chú ý', 'Bệnh', 'Nguy cấp')"),
-            safeReadQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages")
+            safeReadQuery("SELECT COALESCE(SUM(total_cost), 0) as total FROM supply_usages"),
+            safeReadQuery(`
+              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name 
+              FROM plant_logs pl 
+              JOIN plants p ON pl.plant_id = p.id 
+              JOIN farms f ON p.farm_id = f.id 
+              WHERE (pl.is_deleted IS NOT TRUE) 
+              ORDER BY pl.log_date DESC, pl.created_at DESC 
+              LIMIT 12
+            `),
+            safeReadQuery(`
+              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name 
+              FROM supplies s 
+              LEFT JOIN farms f ON s.farm_id = f.id 
+              ORDER BY s.created_at DESC 
+              LIMIT 30
+            `),
+            safeReadQuery(`
+              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at 
+              FROM farm_iot_sensors fis 
+              JOIN farms f ON fis.farm_id = f.id 
+              WHERE (f.is_deleted IS NOT TRUE)
+            `)
           ]);
 
           const farmMap = {};
@@ -136,6 +163,11 @@ router.post('/chat', auth, async (req, res) => {
             crops: f.crops.size > 0 ? Array.from(f.crops).join(', ') : 'Đang cập nhật danh sách cây'
           }));
 
+          userLogs = logsRes.rows || [];
+          userSuppliesInventory = suppliesInvRes.rows || [];
+          userIotSensors = iotRes.rows || [];
+          userSuppliesCost = Number(costRes.rows?.[0]?.total || 0);
+
           const sickCount = sickRes.rows?.[0]?.count || 0;
           const totalExpense = costRes.rows?.[0]?.total || 0;
 
@@ -152,7 +184,7 @@ ${farmLines}
 
         } else {
           // NÔNG HỘ / USER: CHỈ TRUY CẬP DỮ LIỆU CÁC TRANG TRẠI THUỘC SỞ HỮU CỦA USER NÀY
-          const [farmsRes, plantsRes, logsRes, costRes, usagesRes] = await Promise.all([
+          const [farmsRes, plantsRes, logsRes, costRes, usagesRes, suppliesInvRes, iotRes] = await Promise.all([
             safeReadQuery(`
               SELECT f.id, f.name, f.area, f.total_plants, u.full_name as owner_name 
               FROM farms f 
@@ -162,21 +194,24 @@ ${farmLines}
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT p.id, p.tree_code, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
+              SELECT p.id, p.tree_code, p.nfc_uid, p.plot_code, p.planting_date, p.plant_type, p.plant_variety, p.health_status, p.farm_id, f.name as farm_name 
               FROM plants p 
               JOIN farms f ON p.farm_id = f.id 
               WHERE (f.is_deleted IS NOT TRUE) 
+                AND (p.is_deleted IS NOT TRUE) 
+                AND (p.deleted_at IS NULL) 
                 AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1) OR p.created_by = $1)
             `, [currentUser.id]),
 
             safeReadQuery(`
-              SELECT pl.log_date, pl.log_type, pl.note, p.tree_code, p.plant_type, f.name as farm_name 
+              SELECT pl.log_date, pl.log_type, pl.note, pl.details, p.tree_code, p.plant_type, f.name as farm_name 
               FROM plant_logs pl 
               JOIN plants p ON pl.plant_id = p.id 
               JOIN farms f ON p.farm_id = f.id 
-              WHERE (f.user_id = $1 OR f.created_by = $1 OR pl.created_by = $1) 
+              WHERE (pl.is_deleted IS NOT TRUE)
+                AND (f.user_id = $1 OR f.created_by = $1 OR pl.created_by = $1) 
               ORDER BY pl.log_date DESC, pl.created_at DESC 
-              LIMIT 10
+              LIMIT 15
             `, [currentUser.id]),
 
             safeReadQuery(`
@@ -194,6 +229,23 @@ ${farmLines}
               WHERE su.user_id = $1 OR f.user_id = $1 OR f.created_by = $1
               ORDER BY su.usage_date DESC 
               LIMIT 8
+            `, [currentUser.id]),
+
+            safeReadQuery(`
+              SELECT s.id, s.name, s.category, s.stock_quantity, s.unit, s.package_price, s.unit_price, f.name as farm_name 
+              FROM supplies s 
+              LEFT JOIN farms f ON s.farm_id = f.id 
+              WHERE s.user_id = $1 OR f.user_id = $1 OR f.created_by = $1 
+              ORDER BY s.created_at DESC 
+              LIMIT 30
+            `, [currentUser.id]),
+
+            safeReadQuery(`
+              SELECT fis.farm_id, f.name as farm_name, fis.air_data, fis.soil_data, fis.water_data, fis.updated_at 
+              FROM farm_iot_sensors fis 
+              JOIN farms f ON fis.farm_id = f.id 
+              WHERE (f.is_deleted IS NOT TRUE) 
+                AND (f.user_id = $1 OR f.created_by = $1 OR f.id = (SELECT farm_id FROM users WHERE id = $1))
             `, [currentUser.id])
           ]);
 
@@ -230,6 +282,8 @@ ${farmLines}
           userLogs = logsRes.rows || [];
           userSuppliesCost = Number(costRes.rows?.[0]?.total || 0);
           userRecentSupplies = usagesRes.rows || [];
+          userSuppliesInventory = suppliesInvRes.rows || [];
+          userIotSensors = iotRes.rows || [];
 
           const farmLines = userFarms.map(f => 
             `- Trang trại của Bác: "${f.name}" | Diện tích: ${f.area ? f.area + ' ha' : 'Chưa nhập'} | Cây trồng: ${f.crops} (Tổng: ${f.total} cây)`
@@ -263,7 +317,9 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
           userPlants,
           userSuppliesCost,
           userRecentSupplies,
-          userLogs
+          userLogs,
+          userSuppliesInventory,
+          userIotSensors
         }, 45);
 
       } catch (dbErr) {
@@ -290,7 +346,9 @@ ${supplyLines || '- Chưa ghi nhận tiêu hao vật tư gần đây.'}`;
         userPlants,
         userLogs,
         userSuppliesCost,
-        userRecentSupplies
+        userRecentSupplies,
+        userSuppliesInventory,
+        userIotSensors
       });
 
       // Nếu khớp Cặp Q&A độ tin cậy cao (>= 0.85) và không yêu cầu tính toán phức tạp -> Phản xạ tức thì (< 5ms, $0 Token)
