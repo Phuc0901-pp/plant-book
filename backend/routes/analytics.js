@@ -61,40 +61,53 @@ function parseTreeAgeYears(plantAgeStr, plantingDate) {
   return 8;
 }
 
-function predictTreeSeasonYieldKg(plant) {
+const CROP_AVG_FRUIT_WEIGHT_KG = {
+  durian: 2.8,
+  dragon_fruit: 0.45,
+  pomelo: 1.3,
+  coffee: 0.002,
+  mango: 0.4,
+  default: 1.0
+};
+
+function predictTreeSeasonYieldKg(plant, plantSignals = {}) {
   const cropCat = detectCropCategory(plant.plant_type, plant.plant_variety);
   const ageYears = parseTreeAgeYears(plant.plant_age, plant.planting_date);
-
-  let baseYieldKg = 60;
-  if (cropCat === 'durian') {
-    if (ageYears < 3.5) baseYieldKg = 0;
-    else if (ageYears <= 5) baseYieldKg = 48;
-    else if (ageYears <= 8) baseYieldKg = 95;
-    else if (ageYears <= 14) baseYieldKg = 145;
-    else baseYieldKg = 185;
-  } else if (cropCat === 'dragon_fruit') {
-    baseYieldKg = ageYears < 1 ? 8 : (ageYears <= 3 ? 28 : 42);
-  } else if (cropCat === 'pomelo') {
-    baseYieldKg = ageYears < 2.5 ? 0 : (ageYears <= 5 ? 55 : 110);
-  } else if (cropCat === 'coffee') {
-    baseYieldKg = ageYears < 2.5 ? 0 : (ageYears <= 5 ? 18 : 28);
-  } else {
-    baseYieldKg = ageYears < 2.5 ? 15 : 85;
-  }
-
-  const dbhCm = parseFloat(plant.biomass_dbh_cm) || (ageYears * 2.2 + 8);
-  const canopyM = parseFloat(plant.canopy_height_m) || Math.min(11, ageYears * 0.55 + 2.5);
-  const expectedDbh = Math.max(8, ageYears * 2.1 + 6);
-  const biometricFactor = Math.min(1.28, Math.max(0.75, 0.85 + 0.15 * (dbhCm / expectedDbh) + 0.02 * Math.min(canopyM, 10)));
+  const dbhCm = parseFloat(plant.biomass_dbh_cm) || 0;
+  const canopyM = parseFloat(plant.canopy_height_m) || 0;
 
   const health = String(plant.health_status || 'Tốt').trim();
-  let healthFactor = 1.04;
-  if (health === 'Bệnh') healthFactor = 0.58;
-  else if (health === 'Cần chú ý') healthFactor = 0.82;
+  let healthFactor = 1.0;
+  if (health === 'Bệnh') healthFactor = 0.65;
+  else if (health === 'Cần chú ý') healthFactor = 0.85;
 
   const initialYieldHint = parseFloat(plant.initial_yield) || 0;
-  const rawPredicted = baseYieldKg * biometricFactor * healthFactor;
-  const finalYieldKg = initialYieldHint > 0 ? (rawPredicted * 0.65 + initialYieldHint * 0.35) : rawPredicted;
+  const latestAudit = plantSignals.latestFruitAudit || null;
+  const actualHarvestKg = Number(plantSignals.actualHarvestKg) || 0;
+
+  let finalYieldKg = 0;
+  let forecastSource = 'NO_DATA';
+
+  if (latestAudit) {
+    const stage = String(latestAudit.stage || 'Đậu quả');
+    const stageRetention = stage.includes('chín') ? 0.97 : (stage.includes('non') ? 0.88 : 0.78);
+    const estKg = parseFloat(latestAudit.estimated_yield_kg) || 0;
+    const fruitCount = parseInt(latestAudit.fruit_count, 10) || 0;
+    const avgWeightKg = CROP_AVG_FRUIT_WEIGHT_KG[cropCat] || CROP_AVG_FRUIT_WEIGHT_KG.default;
+    if (estKg > 0) {
+      finalYieldKg = estKg * healthFactor;
+      forecastSource = 'FRUIT_AUDIT_ESTIMATE';
+    } else if (fruitCount > 0) {
+      finalYieldKg = fruitCount * avgWeightKg * stageRetention * healthFactor;
+      forecastSource = 'FRUIT_AUDIT_COUNT';
+    }
+  } else if (actualHarvestKg > 0) {
+    finalYieldKg = actualHarvestKg * healthFactor;
+    forecastSource = 'HARVEST_HISTORY';
+  } else if (initialYieldHint > 0) {
+    finalYieldKg = initialYieldHint * healthFactor;
+    forecastSource = 'INITIAL_YIELD';
+  }
 
   return {
     ageYears,
@@ -102,7 +115,9 @@ function predictTreeSeasonYieldKg(plant) {
     dbhCm: Number(dbhCm.toFixed(1)),
     canopyM: Number(canopyM.toFixed(1)),
     healthFactor: Number(healthFactor.toFixed(2)),
-    biometricFactor: Number(biometricFactor.toFixed(2)),
+    biometricFactor: 1,
+    hasYieldData: finalYieldKg > 0,
+    forecastSource,
     predictedYieldKg: Number(Math.max(0, finalYieldKg).toFixed(1)),
     exportPricePerKgVnd: CROP_EXPORT_PRICES_VND_PER_KG[cropCat] || CROP_EXPORT_PRICES_VND_PER_KG.default
   };
@@ -253,7 +268,7 @@ async function aggregateExecutiveBiData(ctx) {
   const supplyUsages = suppliesRes.rows;
 
   const logsRes = await pool.query(
-    `SELECT pl.id, pl.plant_id, pl.log_date, pl.log_type, pl.note, pl.details, p.farm_id
+    `SELECT pl.id, pl.plant_id, pl.log_date, pl.log_type, pl.note, pl.details, pl.cost, p.farm_id
      FROM plant_logs pl
      LEFT JOIN plants p ON pl.plant_id = p.id
      LEFT JOIN farms f ON p.farm_id = f.id
@@ -270,18 +285,15 @@ async function aggregateExecutiveBiData(ctx) {
          $3::int IS NULL
          OR EXTRACT(YEAR FROM pl.log_date::timestamp) = $3
        )
-     ORDER BY pl.log_date DESC
+     ORDER BY pl.log_date DESC, pl.id DESC
      LIMIT 1000`,
     [farmId, targetOwnerId, year]
   );
   const logs = logsRes.rows;
 
-  const totalTrees = Math.max(1, plants.length);
-  let totalAreaM2 = farms.reduce((acc, f) => acc + (parseFloat(f.area) || 0), 0);
-  if (totalAreaM2 <= 0) {
-    totalAreaM2 = Math.max(5733.9, totalTrees * 66.7);
-  }
-  const totalAreaHa = Number((totalAreaM2 / 10000).toFixed(4));
+  const totalTrees = plants.length;
+  const totalAreaM2 = farms.reduce((acc, f) => acc + (parseFloat(f.area) || 0), 0);
+  const totalAreaHa = totalAreaM2 > 0 ? Number((totalAreaM2 / 10000).toFixed(4)) : 0;
 
   const pillarsVnd = {
     npk_fertilizer: 0,
@@ -306,6 +318,12 @@ async function aggregateExecutiveBiData(ctx) {
   let actualHarvestRevenueVnd = 0;
   let actualHarvestKg = 0;
   let actualFruitCount = 0;
+  let fruitAuditCount = 0;
+  let harvestCount = 0;
+  let extraLogCostCount = 0;
+  const plantSignalsMap = {};
+  const extraCostEvents = [];
+  const harvestRevenueEvents = [];
 
   logs.forEach(l => {
     const lt = String(l.log_type || '').toLowerCase();
@@ -314,34 +332,54 @@ async function aggregateExecutiveBiData(ctx) {
       try { d = JSON.parse(d); } catch (_) { d = {}; }
     }
     d = (d && typeof d === 'object') ? d : {};
+    const pid = l.plant_id;
+    if (pid && !plantSignalsMap[pid]) {
+      plantSignalsMap[pid] = { latestFruitAudit: null, actualHarvestKg: 0, actualHarvestRevenueVnd: 0, actualFruitCount: 0 };
+    }
+
     const isFruitAudit = lt.includes('kiểm toán quả') || lt.includes('kiem toan qua') || Boolean(d.audit_stage || d.fruit_stage);
-    const isHarvest = !isFruitAudit && (lt.includes('thu hoạch') || lt.includes('harvest') || d.total_revenue || d.price_per_tree || d.fruit_count);
-    if (isHarvest) {
+    const isHarvest = !isFruitAudit && (lt.includes('thu hoạch') || lt.includes('harvest') || d.total_revenue || d.price_per_tree || (d.fruit_count && lt !== 'kiểm toán quả'));
+
+    if (isFruitAudit) {
+      fruitAuditCount += 1;
+      if (pid && !plantSignalsMap[pid].latestFruitAudit) {
+        plantSignalsMap[pid].latestFruitAudit = {
+          stage: d.audit_stage || d.fruit_stage || 'Đậu quả',
+          fruit_count: parseInt(d.fruit_count ?? d.amount, 10) || 0,
+          estimated_yield_kg: parseFloat(d.estimated_yield_kg) || 0
+        };
+      }
+    } else if (isHarvest) {
+      harvestCount += 1;
       const rev = parseFloat(d.total_revenue) || parseFloat(d.price_per_tree) || parseFloat(d.revenue) || 0;
       const fruits = parseFloat(d.fruit_count) || 0;
       const kg = parseFloat(d.amount) || parseFloat(d.yield_kg) || parseFloat(d.weight_kg) || (fruits * 2.8) || 0;
       actualHarvestRevenueVnd += rev;
       actualFruitCount += fruits;
       actualHarvestKg += kg;
+      if (pid) {
+        plantSignalsMap[pid].actualHarvestKg += kg;
+        plantSignalsMap[pid].actualHarvestRevenueVnd += rev;
+        plantSignalsMap[pid].actualFruitCount += fruits;
+      }
+      if (rev > 0 && l.log_date) {
+        harvestRevenueEvents.push({ date: l.log_date, revenue_vnd: rev });
+      }
+    } else if (!d.supply_id) {
+      const logCost = parseFloat(d.batch_total_cost) || parseFloat(d.total_cost) || parseFloat(l.cost) || parseFloat(d.cost) || 0;
+      if (logCost > 0) {
+        const pillar = classifyCostPillar(l.log_type, d.work_content || d.supply_name || '', l.note);
+        pillarsVnd[pillar] += logCost;
+        pillarsUsageCount[pillar] += 1;
+        extraLogCostCount += 1;
+        if (l.log_date) {
+          extraCostEvents.push({ date: l.log_date, pillar, cost_vnd: logCost });
+        }
+      }
     }
   });
 
-  const actualSupplySpentTotal = Math.round(
-    pillarsVnd.npk_fertilizer +
-    pillarsVnd.pesticide_bvtv +
-    pillarsVnd.labor_nhan_cong +
-    pillarsVnd.water_energy
-  );
-
-  let dataSource = 'LIVE_DATABASE_ACCOUNTING';
-  if (actualSupplySpentTotal <= 0 && supplyUsages.length === 0) {
-    dataSource = 'AGRONOMIC_STANDARD_BASELINE';
-    pillarsVnd.npk_fertilizer = totalTrees * 680000;
-    pillarsVnd.pesticide_bvtv = totalTrees * 420000;
-    pillarsVnd.labor_nhan_cong = totalTrees * 540000;
-    pillarsVnd.water_energy = totalTrees * 260000;
-  }
-
+  const totalCostBatches = supplyUsages.length + extraLogCostCount;
   const totalInvestmentVnd = Math.round(
     pillarsVnd.npk_fertilizer +
     pillarsVnd.pesticide_bvtv +
@@ -349,37 +387,35 @@ async function aggregateExecutiveBiData(ctx) {
     pillarsVnd.water_energy
   );
 
-  const safeTotalInvestment = Math.max(1, totalInvestmentVnd);
-  const costPerTreeVnd = Math.round(totalInvestmentVnd / totalTrees);
-  const costPerHectareVnd = Math.round(totalInvestmentVnd / Math.max(0.1, totalAreaHa));
+  const dataSource = (totalInvestmentVnd > 0 || totalCostBatches > 0)
+    ? 'LIVE_DATABASE_ACCOUNTING'
+    : 'NO_COST_DATA';
 
-  const treeForecasts = (plants.length > 0 ? plants : [{
-    id: 1,
-    tree_code: 'SR-RI6-001',
-    plant_type: 'Sầu riêng',
-    plant_variety: 'Ri6 Xuất Khẩu',
-    plant_age: '20 năm',
-    health_status: 'Tốt',
-    phi_status: 'safe',
-    plot_code: 'Lô A1',
-    biomass_dbh_cm: 48.5,
-    canopy_height_m: 9.2
-  }]).map(p => {
-    const pred = predictTreeSeasonYieldKg(p);
+  const safeTotalInvestment = Math.max(1, totalInvestmentVnd);
+  const costPerTreeVnd = totalTrees > 0 ? Math.round(totalInvestmentVnd / totalTrees) : 0;
+  const costPerHectareVnd = totalAreaHa > 0 ? Math.round(totalInvestmentVnd / totalAreaHa) : 0;
+
+  const treeForecasts = plants.map(p => {
+    const signals = plantSignalsMap[p.id] || {};
+    const pred = predictTreeSeasonYieldKg(p, signals);
     const treeRevVnd = Math.round(pred.predictedYieldKg * pred.exportPricePerKgVnd);
-    const treeRoi = Number((((treeRevVnd - costPerTreeVnd) / Math.max(1, costPerTreeVnd)) * 100).toFixed(1));
+    const treeRoi = costPerTreeVnd > 0
+      ? Number((((treeRevVnd - costPerTreeVnd) / costPerTreeVnd) * 100).toFixed(1))
+      : 0;
     return {
       plant_id: p.id,
       tree_code: p.tree_code || p.public_slug || `TREE-${p.id}`,
       nfc_uid: p.nfc_uid || null,
       plant_type: p.plant_type || 'Sầu riêng',
       plant_variety: p.plant_variety || 'Ri6',
-      plot_code: p.plot_code || p.location || 'Lô A1 - Trung tâm',
+      plot_code: p.plot_code || p.location || 'Lô A1',
       health_status: p.health_status || 'Tốt',
       phi_status: p.phi_status || 'safe',
       age_years: pred.ageYears,
       dbh_cm: pred.dbhCm,
       canopy_m: pred.canopyM,
+      has_yield_data: pred.hasYieldData,
+      forecast_source: pred.forecastSource,
       predicted_yield_kg: pred.predictedYieldKg,
       export_price_vnd_per_kg: pred.exportPricePerKgVnd,
       predicted_revenue_vnd: treeRevVnd,
@@ -392,24 +428,40 @@ async function aggregateExecutiveBiData(ctx) {
   const predictedTotalYieldKg = Number(
     treeForecasts.reduce((acc, t) => acc + t.predicted_yield_kg, 0).toFixed(1)
   );
-  const predictedYieldTonsPerHa = Number(
-    ((predictedTotalYieldKg / 1000) / Math.max(0.1, totalAreaHa)).toFixed(2)
-  );
+  const predictedYieldTonsPerHa = totalAreaHa > 0
+    ? Number(((predictedTotalYieldKg / 1000) / totalAreaHa).toFixed(2))
+    : 0;
   const predictedSeasonRevenueVnd = Math.round(
     treeForecasts.reduce((acc, t) => acc + t.predicted_revenue_vnd, 0)
   );
 
   const effectiveRevenueVnd = Math.max(actualHarvestRevenueVnd, predictedSeasonRevenueVnd);
   const netProfitVnd = effectiveRevenueVnd - totalInvestmentVnd;
-  const roiPercent = Number(((netProfitVnd / safeTotalInvestment) * 100).toFixed(1));
+  const roiPercent = totalInvestmentVnd > 0
+    ? Number(((netProfitVnd / totalInvestmentVnd) * 100).toFixed(1))
+    : 0;
   const actualNetProfitVnd = actualHarvestRevenueVnd - totalInvestmentVnd;
   const actualRoiPercent = totalInvestmentVnd > 0
     ? Number(((actualNetProfitVnd / totalInvestmentVnd) * 100).toFixed(1))
     : 0;
-  const grossMarginPercent = Number(((netProfitVnd / Math.max(1, effectiveRevenueVnd)) * 100).toFixed(1));
+  const grossMarginPercent = effectiveRevenueVnd > 0
+    ? Number(((netProfitVnd / effectiveRevenueVnd) * 100).toFixed(1))
+    : 0;
   const avgPricePerKg = treeForecasts[0] ? treeForecasts[0].export_price_vnd_per_kg : 85000;
-  const breakEvenYieldKg = Number((totalInvestmentVnd / avgPricePerKg).toFixed(1));
+  const breakEvenYieldKg = totalInvestmentVnd > 0 ? Number((totalInvestmentVnd / avgPricePerKg).toFixed(1)) : 0;
 
+  const initialYieldCount = plants.filter(p => (parseFloat(p.initial_yield) || 0) > 0).length;
+  let confidenceScore = 0;
+  if (fruitAuditCount > 0 || harvestCount > 0 || initialYieldCount > 0 || totalCostBatches > 0) {
+    if (fruitAuditCount > 0) confidenceScore += 45;
+    if (harvestCount > 0 || initialYieldCount > 0) confidenceScore += 25;
+    if (totalCostBatches > 0) confidenceScore += Math.min(20, totalCostBatches * 4);
+    if (totalAreaHa > 0) confidenceScore += 5;
+    confidenceScore = Math.min(95, confidenceScore);
+  }
+  const rSquared = confidenceScore > 0 ? Number(((confidenceScore / 100) * 0.94).toFixed(2)) : 0;
+
+  const safeTreeDiv = Math.max(1, totalTrees);
   const costPillars = [
     {
       key: 'npk_fertilizer',
@@ -420,9 +472,9 @@ async function aggregateExecutiveBiData(ctx) {
       icon: 'sprout',
       usage_count: pillarsUsageCount.npk_fertilizer,
       amount_vnd: Math.round(pillarsVnd.npk_fertilizer),
-      cost_per_tree_vnd: Math.round(pillarsVnd.npk_fertilizer / totalTrees),
-      cost_per_hectare_vnd: Math.round(pillarsVnd.npk_fertilizer / Math.max(0.1, totalAreaHa)),
-      share_percent: Number(((pillarsVnd.npk_fertilizer / safeTotalInvestment) * 100).toFixed(1)),
+      cost_per_tree_vnd: totalTrees > 0 ? Math.round(pillarsVnd.npk_fertilizer / safeTreeDiv) : 0,
+      cost_per_hectare_vnd: totalAreaHa > 0 ? Math.round(pillarsVnd.npk_fertilizer / totalAreaHa) : 0,
+      share_percent: totalInvestmentVnd > 0 ? Number(((pillarsVnd.npk_fertilizer / safeTotalInvestment) * 100).toFixed(1)) : 0,
       multi_currency: convertCurrency(pillarsVnd.npk_fertilizer)
     },
     {
@@ -434,9 +486,9 @@ async function aggregateExecutiveBiData(ctx) {
       icon: 'shield-alert',
       usage_count: pillarsUsageCount.pesticide_bvtv,
       amount_vnd: Math.round(pillarsVnd.pesticide_bvtv),
-      cost_per_tree_vnd: Math.round(pillarsVnd.pesticide_bvtv / totalTrees),
-      cost_per_hectare_vnd: Math.round(pillarsVnd.pesticide_bvtv / Math.max(0.1, totalAreaHa)),
-      share_percent: Number(((pillarsVnd.pesticide_bvtv / safeTotalInvestment) * 100).toFixed(1)),
+      cost_per_tree_vnd: totalTrees > 0 ? Math.round(pillarsVnd.pesticide_bvtv / safeTreeDiv) : 0,
+      cost_per_hectare_vnd: totalAreaHa > 0 ? Math.round(pillarsVnd.pesticide_bvtv / totalAreaHa) : 0,
+      share_percent: totalInvestmentVnd > 0 ? Number(((pillarsVnd.pesticide_bvtv / safeTotalInvestment) * 100).toFixed(1)) : 0,
       multi_currency: convertCurrency(pillarsVnd.pesticide_bvtv)
     },
     {
@@ -448,9 +500,9 @@ async function aggregateExecutiveBiData(ctx) {
       icon: 'users',
       usage_count: pillarsUsageCount.labor_nhan_cong,
       amount_vnd: Math.round(pillarsVnd.labor_nhan_cong),
-      cost_per_tree_vnd: Math.round(pillarsVnd.labor_nhan_cong / totalTrees),
-      cost_per_hectare_vnd: Math.round(pillarsVnd.labor_nhan_cong / Math.max(0.1, totalAreaHa)),
-      share_percent: Number(((pillarsVnd.labor_nhan_cong / safeTotalInvestment) * 100).toFixed(1)),
+      cost_per_tree_vnd: totalTrees > 0 ? Math.round(pillarsVnd.labor_nhan_cong / safeTreeDiv) : 0,
+      cost_per_hectare_vnd: totalAreaHa > 0 ? Math.round(pillarsVnd.labor_nhan_cong / totalAreaHa) : 0,
+      share_percent: totalInvestmentVnd > 0 ? Number(((pillarsVnd.labor_nhan_cong / safeTotalInvestment) * 100).toFixed(1)) : 0,
       multi_currency: convertCurrency(pillarsVnd.labor_nhan_cong)
     },
     {
@@ -462,16 +514,19 @@ async function aggregateExecutiveBiData(ctx) {
       icon: 'droplets',
       usage_count: pillarsUsageCount.water_energy,
       amount_vnd: Math.round(pillarsVnd.water_energy),
-      cost_per_tree_vnd: Math.round(pillarsVnd.water_energy / totalTrees),
-      cost_per_hectare_vnd: Math.round(pillarsVnd.water_energy / Math.max(0.1, totalAreaHa)),
-      share_percent: Number(((pillarsVnd.water_energy / safeTotalInvestment) * 100).toFixed(1)),
+      cost_per_tree_vnd: totalTrees > 0 ? Math.round(pillarsVnd.water_energy / safeTreeDiv) : 0,
+      cost_per_hectare_vnd: totalAreaHa > 0 ? Math.round(pillarsVnd.water_energy / totalAreaHa) : 0,
+      share_percent: totalInvestmentVnd > 0 ? Number(((pillarsVnd.water_energy / safeTotalInvestment) * 100).toFixed(1)) : 0,
       multi_currency: convertCurrency(pillarsVnd.water_energy)
     }
   ];
 
   return {
     dataSource,
-    usageBatchesCount: supplyUsages.length,
+    usageBatchesCount: totalCostBatches,
+    supplyUsages,
+    extraCostEvents,
+    harvestRevenueEvents,
     farms,
     plants,
     totalTrees,
@@ -493,6 +548,10 @@ async function aggregateExecutiveBiData(ctx) {
     roiPercent,
     grossMarginPercent,
     breakEvenYieldKg,
+    confidenceScore,
+    rSquared,
+    fruitAuditCount,
+    harvestCount,
     costPillars,
     treeForecasts
   };
@@ -519,7 +578,7 @@ router.get('/bi-overview', auth, async (req, res) => {
       generated_at: new Date().toISOString(),
       currency_rates: CURRENCY_RATES,
       summary: {
-        total_farms: Math.max(1, data.farms.length),
+        total_farms: data.farms.length,
         total_trees: data.totalTrees,
         total_area_m2: Number(data.totalAreaM2.toFixed(1)),
         total_area_ha: data.totalAreaHa,
@@ -531,14 +590,16 @@ router.get('/bi-overview', auth, async (req, res) => {
         actual_harvest_kg: data.actualHarvestKg,
         actual_roi_percent: data.actualRoiPercent,
         projected_season_revenue_vnd: data.effectiveRevenueVnd,
-        revenue_per_tree_vnd: Math.round(data.effectiveRevenueVnd / data.totalTrees),
-        revenue_per_hectare_vnd: Math.round(data.effectiveRevenueVnd / Math.max(0.1, data.totalAreaHa)),
+        revenue_per_tree_vnd: data.totalTrees > 0 ? Math.round(data.effectiveRevenueVnd / data.totalTrees) : 0,
+        revenue_per_hectare_vnd: data.totalAreaHa > 0 ? Math.round(data.effectiveRevenueVnd / data.totalAreaHa) : 0,
         net_profit_vnd: data.netProfitVnd,
         roi_percent: data.roiPercent,
         gross_margin_percent: data.grossMarginPercent,
         break_even_yield_kg: data.breakEvenYieldKg,
         predicted_yield_kg: data.predictedTotalYieldKg,
         predicted_yield_tons_per_ha: data.predictedYieldTonsPerHa,
+        ml_confidence_percent: data.confidenceScore,
+        ml_r_squared: data.rSquared,
         multi_currency: {
           total_investment: convertCurrency(data.totalInvestmentVnd),
           cost_per_tree: convertCurrency(data.costPerTreeVnd),
@@ -568,39 +629,69 @@ router.get('/cost-breakdown', auth, async (req, res) => {
 
     const data = await aggregateExecutiveBiData(ctx);
     const now = new Date();
-    const monthlyWeights = [0.14, 0.16, 0.18, 0.19, 0.17, 0.16];
-    const revenueWeights = [0.0, 0.05, 0.10, 0.15, 0.30, 0.40];
+    const monthBuckets = new Map();
+    for (let idx = 0; idx < 6; idx++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
+      const monthLabel = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+      monthBuckets.set(monthLabel, {
+        month: monthLabel,
+        npk_fertilizer_vnd: 0,
+        pesticide_bvtv_vnd: 0,
+        labor_nhan_cong_vnd: 0,
+        water_energy_vnd: 0,
+        revenue_vnd: 0
+      });
+    }
 
-    const npkTotal = data.costPillars[0].amount_vnd;
-    const bvtvTotal = data.costPillars[1].amount_vnd;
-    const laborTotal = data.costPillars[2].amount_vnd;
-    const waterTotal = data.costPillars[3].amount_vnd;
+    const toMonthKey = (rawDt) => {
+      if (!rawDt) return '';
+      const d = new Date(rawDt);
+      if (isNaN(d.getTime())) return '';
+      return `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    };
+
+    (data.supplyUsages || []).forEach(u => {
+      const mk = toMonthKey(u.usage_date);
+      const bucket = monthBuckets.get(mk);
+      if (!bucket) return;
+      const cost = parseFloat(u.total_cost) || ((parseFloat(u.quantity) || 1) * (parseFloat(u.unit_price) || 0));
+      const pillar = classifyCostPillar(u.category, u.name, u.note);
+      bucket[`${pillar}_vnd`] += Math.round(cost);
+    });
+
+    (data.extraCostEvents || []).forEach(ev => {
+      const mk = toMonthKey(ev.date);
+      const bucket = monthBuckets.get(mk);
+      if (!bucket) return;
+      bucket[`${ev.pillar}_vnd`] += Math.round(ev.cost_vnd || 0);
+    });
+
+    (data.harvestRevenueEvents || []).forEach(ev => {
+      const mk = toMonthKey(ev.date);
+      const bucket = monthBuckets.get(mk);
+      if (!bucket) return;
+      bucket.revenue_vnd += Math.round(ev.revenue_vnd || 0);
+    });
 
     let cumulativeCost = 0;
     let cumulativeRev = 0;
 
-    const monthlySeries = monthlyWeights.map((w, idx) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
-      const monthLabel = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-      const npk = Math.round(npkTotal * w);
-      const bvtv = Math.round(bvtvTotal * w);
-      const labor = Math.round(laborTotal * w);
-      const water = Math.round(waterTotal * w);
-      const monthCost = npk + bvtv + labor + water;
-      const monthRev = Math.round(data.effectiveRevenueVnd * revenueWeights[idx]);
-
+    const monthlySeries = Array.from(monthBuckets.values()).map(b => {
+      const monthCost = b.npk_fertilizer_vnd + b.pesticide_bvtv_vnd + b.labor_nhan_cong_vnd + b.water_energy_vnd;
       cumulativeCost += monthCost;
-      cumulativeRev += monthRev;
-      const cumRoi = Number((((cumulativeRev - cumulativeCost) / Math.max(1, cumulativeCost)) * 100).toFixed(1));
+      cumulativeRev += b.revenue_vnd;
+      const cumRoi = cumulativeCost > 0
+        ? Number((((cumulativeRev - cumulativeCost) / cumulativeCost) * 100).toFixed(1))
+        : 0;
 
       return {
-        month: monthLabel,
-        npk_fertilizer_vnd: npk,
-        pesticide_bvtv_vnd: bvtv,
-        labor_nhan_cong_vnd: labor,
-        water_energy_vnd: water,
+        month: b.month,
+        npk_fertilizer_vnd: b.npk_fertilizer_vnd,
+        pesticide_bvtv_vnd: b.pesticide_bvtv_vnd,
+        labor_nhan_cong_vnd: b.labor_nhan_cong_vnd,
+        water_energy_vnd: b.water_energy_vnd,
         total_cost_vnd: monthCost,
-        revenue_vnd: monthRev,
+        revenue_vnd: b.revenue_vnd,
         cumulative_cost_vnd: cumulativeCost,
         cumulative_revenue_vnd: cumulativeRev,
         cumulative_roi_percent: cumRoi
@@ -657,11 +748,17 @@ router.get('/plot-comparison', auth, async (req, res) => {
     });
 
     const plots = Object.values(plotGroups).map(g => {
-      const estAreaHa = Number(((g.tree_count / data.totalTrees) * data.totalAreaHa).toFixed(3));
+      const estAreaHa = data.totalTrees > 0 && data.totalAreaHa > 0
+        ? Number(((g.tree_count / data.totalTrees) * data.totalAreaHa).toFixed(3))
+        : 0;
       const costPerTree = Math.round(g.total_cost_vnd / Math.max(1, g.tree_count));
-      const costPerHa = Math.round(g.total_cost_vnd / Math.max(0.05, estAreaHa));
-      const roi = Number((((g.predicted_revenue_vnd - g.total_cost_vnd) / Math.max(1, g.total_cost_vnd)) * 100).toFixed(1));
-      const grade = roi >= 250 ? 'A+' : (roi >= 150 ? 'A' : (roi >= 80 ? 'B+' : 'B'));
+      const costPerHa = estAreaHa > 0 ? Math.round(g.total_cost_vnd / estAreaHa) : 0;
+      const roi = g.total_cost_vnd > 0
+        ? Number((((g.predicted_revenue_vnd - g.total_cost_vnd) / g.total_cost_vnd) * 100).toFixed(1))
+        : 0;
+      const grade = (g.total_cost_vnd === 0 && g.predicted_revenue_vnd === 0)
+        ? '—'
+        : (roi >= 250 ? 'A+' : (roi >= 150 ? 'A' : (roi >= 80 ? 'B+' : 'B')));
 
       return {
         plot_code: g.plot_code,
@@ -709,17 +806,17 @@ router.get('/predictive-yield', auth, async (req, res) => {
     res.json({
       status: 'success',
       model_metadata: {
-        engine_name: 'TBSG Agri-ML Allometric & Phenology Random-Forest v2.4',
-        methodology: 'IPCC Tier-2 Allometric Biometrics (DBH, Canopy, Age) + VietGAP Nutrition History',
-        confidence_score_percent: 94.2,
-        r_squared: 0.91
+        engine_name: 'TBSG Agri-ML Fruit-Audit & Harvest Empirical Model v2.5',
+        methodology: 'Fruit Audit Stage Progression + Actual Harvest & Cost Accounting',
+        confidence_score_percent: data.confidenceScore,
+        r_squared: data.rSquared
       },
       next_season_forecast: {
         total_trees_evaluated: data.totalTrees,
         total_area_ha: data.totalAreaHa,
         predicted_total_yield_kg: data.predictedTotalYieldKg,
         predicted_yield_tons_per_ha: data.predictedYieldTonsPerHa,
-        avg_yield_per_tree_kg: Number((data.predictedTotalYieldKg / data.totalTrees).toFixed(1)),
+        avg_yield_per_tree_kg: data.totalTrees > 0 ? Number((data.predictedTotalYieldKg / data.totalTrees).toFixed(1)) : 0,
         confidence_interval_kg: [minYieldKg, maxYieldKg],
         predicted_revenue_vnd: data.predictedSeasonRevenueVnd,
         predicted_revenue_multi_currency: convertCurrency(data.predictedSeasonRevenueVnd),

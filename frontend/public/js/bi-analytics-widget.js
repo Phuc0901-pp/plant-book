@@ -197,9 +197,12 @@
     const unitKg = tr('bi.unit_kg', 'kg');
     const unitTonHa = tr('bi.unit_ton_ha', 'tấn/ha');
 
+    const mlConfidence = Number(pred?.model_metadata?.confidence_score_percent ?? ov?.ml_confidence_percent ?? 0);
+    const mlR2 = Number(pred?.model_metadata?.r_squared ?? ov?.ml_r_squared ?? 0);
+
     const sourceBadgeText = dataSource === 'LIVE_DATABASE_ACCOUNTING'
       ? (curLang === 'zh' ? `实时数据库核算 (${batchesCount} 批次)` : (curLang === 'en' ? `LIVE DB (${batchesCount} batches)` : `HẠCH TOÁN DB THỰC TẾ (${batchesCount} đợt)`))
-      : (curLang === 'zh' ? 'VietGAP 标准农艺基线' : (curLang === 'en' ? 'AGRONOMIC BASELINE' : 'ĐỊNH MỨC CHUẨN VIETGAP'));
+      : (curLang === 'zh' ? '暂无实际投入数据' : (curLang === 'en' ? 'NO RECORDED DATA YET' : 'CHƯA CÓ DỮ LIỆU CANH TÁC'));
 
     const lblRevPerTree = curLang === 'zh' ? '单株营收' : (curLang === 'en' ? 'Rev/Tree' : 'DT/cây');
     const lblRevPerHa = curLang === 'zh' ? '公顷营收' : (curLang === 'en' ? 'Rev/Ha' : 'DT/ha');
@@ -236,14 +239,21 @@
       </div>
     `).join('');
 
-    const recsHtml = (pred?.agronomic_recommendations || []).slice(0, 2).map(r => `
+    const recsList = (pred?.agronomic_recommendations || []).slice(0, 2);
+    const recsHtml = (mlConfidence === 0 && Number(ov.predicted_yield_kg) === 0)
+      ? `<div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; padding:9px 12px; font-size:11.5px; font-weight:700; color:#475569;">
+           Chưa đủ dữ liệu <strong>Kiểm toán quả / Vật tư / Thu hoạch</strong> để mô hình ML dự báo. Hãy ghi nhận nhật ký thực tế để kích hoạt dự báo chính xác.
+         </div>`
+      : recsList.map(r => `
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:3.5px solid ${r.priority === 'HIGH' ? '#059669' : '#0284c7'}; border-radius:8px; padding:7px 11px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
         <div style="font-size:11.5px; font-weight:700; color:#0f172a;">${getRecLocalizedTitle(r)}</div>
         <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:20px;">${r.impact_estimate}</span>
       </div>
     `).join('');
 
-    const plotRowsHtml = plots.map(pl => `
+    const plotRowsHtml = plots.map(pl => {
+      const plRoiSign = Number(pl.roi_percent) > 0 ? '+' : '';
+      return `
       <tr>
         <td style="padding:8px 12px; font-weight:800; color:#0f172a;">${pl.plot_code}</td>
         <td style="padding:8px 12px; font-weight:700;">${pl.tree_count} ${unitTree} <span style="color:#64748b; font-size:11px;">(${pl.estimated_area_ha} ${unitHa})</span></td>
@@ -253,7 +263,7 @@
         <td style="padding:8px 12px; font-weight:800; color:#0f172a;">${fmtMoney(pl.predicted_revenue_vnd)}</td>
         <td style="padding:8px 12px;">
           <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-weight:900; font-size:11.5px; padding:2px 8px; border-radius:20px;">
-            +${pl.roi_percent}%
+            ${plRoiSign}${pl.roi_percent}%
           </span>
         </td>
         <td style="padding:8px 12px; text-align:center;">
@@ -262,7 +272,8 @@
           </span>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     return `
       <!-- Compact Executive Header Bar -->
@@ -354,14 +365,14 @@
 
           <div style="background:#fefce8; border:1px solid #fde047; border-radius:10px; padding:8px 11px;">
             <div style="font-size:10.5px; font-weight:800; color:#a16207;" data-i18n="bi.kpi_roi">${tr('bi.kpi_roi')}</div>
-            <div style="font-size:17px; font-weight:900; color:#b45309; margin-top:2px;">+${ov.roi_percent}%</div>
+            <div style="font-size:17px; font-weight:900; color:#b45309; margin-top:2px;">${Number(ov.roi_percent) > 0 ? '+' : ''}${ov.roi_percent}%</div>
             <div style="font-size:10px; font-weight:700; color:#854d0e;">${lblMargin}: ${ov.gross_margin_percent}%</div>
           </div>
 
           <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:8px 11px;">
             <div style="font-size:10.5px; font-weight:800; color:#6d28d9;" data-i18n="bi.kpi_predicted_yield">${tr('bi.kpi_predicted_yield')}</div>
             <div style="font-size:16px; font-weight:900; color:#4c1d95; margin-top:2px;">${Number(ov.predicted_yield_kg).toLocaleString('vi-VN')} ${unitKg}</div>
-            <div style="font-size:10px; font-weight:700; color:#7c3aed;">${lblYieldHa}: ${ov.predicted_yield_tons_per_ha} ${unitTonHa} (ML 94.2%)</div>
+            <div style="font-size:10px; font-weight:700; color:#7c3aed;">${lblYieldHa}: ${ov.predicted_yield_tons_per_ha} ${unitTonHa} (ML ${mlConfidence}%)</div>
           </div>
 
         </div>
@@ -412,7 +423,7 @@
                   <span data-i18n="bi.chart_cashflow_roi_title">${tr('bi.chart_cashflow_roi_title')}</span>
                 </span>
                 <span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px;">
-                  ${tr('bi.ml_confidence_badge', 'Độ tin cậy ML')}: 94.2% (R²=0.91)
+                  ${tr('bi.ml_confidence_badge', 'Độ tin cậy ML')}: ${mlConfidence}% (R²=${mlR2})
                 </span>
               </div>
               ${renderSvgCashflowChart(cashflow)}
