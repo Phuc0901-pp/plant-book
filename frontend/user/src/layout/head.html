@@ -216,6 +216,28 @@ window.onerror = function(message, source, lineno, colno, error) {
   z-index: 100060 !important;
 }
 
+#user-export-logs-modal .modal,
+#user-report-library-modal .modal {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: min(90vh, 760px) !important;
+  max-height: min(90dvh, 760px) !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+#user-export-logs-modal-body,
+#user-report-library-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+#user-export-logs-modal-footer,
+#user-report-library-modal-footer {
+  flex-shrink: 0 !important;
+}
+
 #register-modal .modal, #forgot-modal .modal {
   display: flex !important;
   flex-direction: column !important;
