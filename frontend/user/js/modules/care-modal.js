@@ -1900,6 +1900,7 @@ export async function saveCareLog() {
     }
 
     closeCareModal();
+    if (typeof window.reloadUserLogs === 'function') window.reloadUserLogs();
     if (typeof window.loadUserDashboard === 'function') window.loadUserDashboard();
     if (typeof window.loadSupplies === 'function') window.loadSupplies();
     if (typeof window.loadSuppliesAnalytics === 'function') window.loadSuppliesAnalytics();

@@ -570,6 +570,24 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_plants_coords ON plants(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
       CREATE INDEX IF NOT EXISTS idx_ai_knowledge_active ON ai_knowledge_articles(is_active, priority DESC);
       CREATE INDEX IF NOT EXISTS idx_ai_training_qa_active ON ai_training_qa(is_active);
+      CREATE TABLE IF NOT EXISTS saved_reports (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(id) ON DELETE SET NULL,
+        plant_id INTEGER REFERENCES plants(id) ON DELETE SET NULL,
+        title VARCHAR(255) NOT NULL,
+        standard_code VARCHAR(80) DEFAULT 'vietgap_globalgap_iso',
+        standard_label TEXT DEFAULT '',
+        categories JSONB DEFAULT '[]'::jsonb,
+        from_date VARCHAR(20),
+        to_date VARCHAR(20),
+        total_logs INTEGER DEFAULT 0,
+        report_html TEXT NOT NULL,
+        report_meta JSONB DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_saved_reports_user_created ON saved_reports(user_id, created_at DESC);
     `);
 
     const defaultConfigs = [

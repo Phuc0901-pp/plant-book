@@ -19,10 +19,35 @@
       explicitCats: false
     };
 
-    function matchesReportCategory(checkedCats, logType) {
+    function isReportFruitAuditLog(logOrType) {
+      if (!logOrType) return false;
+      const lt = typeof logOrType === 'string' ? logOrType : (logOrType.log_type || '');
+      const norm = String(lt).trim().toLowerCase();
+      if (norm === 'kiểm toán quả' || norm === 'kiểm đếm quả' || norm === 'fruit_audit' || norm === 'fruit audit' || norm.startsWith('kiểm toán quả')) {
+        return true;
+      }
+      if (typeof logOrType === 'object' && logOrType.details && (logOrType.details.audit_stage || logOrType.details.fruit_stage) && norm !== 'thu hoạch') {
+        return true;
+      }
+      return false;
+    }
+
+    function toReportLocalYmd(dVal) {
+      if (!dVal) return '';
+      const s = String(dVal).trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      if (/^\d{4}-\d{2}-\d{2}T00:00:00(\.000)?Z$/i.test(s)) return s.slice(0, 10);
+      const d = new Date(dVal);
+      if (isNaN(d.getTime())) return s.slice(0, 10);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function matchesReportCategory(checkedCats, logOrType) {
       if (!checkedCats) return true;
       if (checkedCats.length === 0) return false;
+      const logType = typeof logOrType === 'string' ? logOrType : (logOrType?.log_type || '');
       if (checkedCats.includes(logType)) return true;
+      if (checkedCats.includes('Kiểm toán quả') && isReportFruitAuditLog(logOrType)) return true;
       if (checkedCats.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
       return false;
     }
@@ -302,9 +327,9 @@
       const toDate = cfg.toDate || '';
       const filtered = (logs || []).filter(log => {
         const rawDt = log.log_date || log.created_at;
-        const logDateStr = rawDt ? new Date(rawDt).toISOString().slice(0, 10) : '';
+        const logDateStr = toReportLocalYmd(rawDt);
         const isWithinDate = (!fromDate || !logDateStr || logDateStr >= fromDate) && (!toDate || !logDateStr || logDateStr <= toDate);
-        const isMatchedCat = !checkedCats || matchesReportCategory(checkedCats, log.log_type);
+        const isMatchedCat = !checkedCats || matchesReportCategory(checkedCats, log);
         return isWithinDate && isMatchedCat;
       });
       filtered.sort((a, b) => new Date(a.log_date || a.created_at) - new Date(b.log_date || b.created_at));
@@ -423,10 +448,7 @@
 
     function countLogsForCategory(catValue) {
       const logs = (plantData && plantData.logs) || [];
-      return logs.filter(l => {
-        if (catValue === 'Nhân công') return l.log_type === 'Nhân công' || LEGACY_LABOR_ALIASES.includes(l.log_type);
-        return l.log_type === catValue;
-      }).length;
+      return logs.filter(l => matchesReportCategory([catValue], l)).length;
     }
 
     function openReportConfigModal(defaultMode) {
@@ -1391,3 +1413,114 @@ function addContourLinesToMap(map, options = {}) {
     map.once('load', initContours);
   }
 }
+
+let _savedPublicReportId = null;
+
+function toggleReportTitleEdit(open) {
+  const wrap = document.getElementById('report-title-edit-wrap');
+  const inp = document.getElementById('report-title-input');
+  const h1 = document.getElementById('report-main-heading');
+  if (!wrap) return;
+  wrap.style.display = open ? 'flex' : 'none';
+  if (open && inp) {
+    if (h1 && !inp.value.trim()) inp.value = h1.textContent.trim();
+    inp.focus();
+    inp.select();
+  }
+}
+window.toggleReportTitleEdit = toggleReportTitleEdit;
+
+async function saveReportTitleEdit() {
+  const inp = document.getElementById('report-title-input');
+  const h1 = document.getElementById('report-main-heading');
+  if (!inp || !h1) return;
+  const newTitle = inp.value.trim();
+  if (!newTitle) return;
+  h1.textContent = newTitle;
+  document.title = newTitle;
+  toggleReportTitleEdit(false);
+
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('user_token') || localStorage.getItem('token') || '') : '';
+  if (_savedPublicReportId && !String(_savedPublicReportId).startsWith('local_') && token) {
+    try {
+      await fetch(`/api/plants/reports/${_savedPublicReportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: newTitle })
+      });
+    } catch (_) {}
+  }
+  try {
+    const key = 'plantbook_saved_reports_v1';
+    const raw = localStorage.getItem(key);
+    const list = raw ? JSON.parse(raw) : [];
+    if (_savedPublicReportId && Array.isArray(list)) {
+      const next = list.map(r => String(r.id) === String(_savedPublicReportId) ? { ...r, title: newTitle, updated_at: new Date().toISOString() } : r);
+      localStorage.setItem(key, JSON.stringify(next));
+    }
+  } catch (_) {}
+}
+window.saveReportTitleEdit = saveReportTitleEdit;
+
+async function savePublicReportAndPrintPdf() {
+  const h1 = document.getElementById('report-main-heading');
+  const title = (h1 ? h1.textContent.trim() : '') || 'Báo cáo lịch trình canh tác';
+  const filteredLogs = plantData ? filterReportLogsByConfig(enrichReportLogsWithFruitAuditChain(plantData.logs || []), _activeReportConfig) : [];
+  const stdLabel = getReportStandardLabel(_activeReportConfig.standard);
+  const reportHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const payload = {
+    title,
+    farm_id: plantData?.farm_id || null,
+    plant_id: plantData?.id || null,
+    standard_code: _activeReportConfig.standard || 'vietgap_globalgap_iso',
+    standard_label: stdLabel,
+    categories: _activeReportConfig.checkedCats || [],
+    from_date: _activeReportConfig.fromDate || null,
+    to_date: _activeReportConfig.toDate || null,
+    total_logs: filteredLogs.length,
+    report_html: reportHtml,
+    report_meta: {
+      farmName: plantData?.farm_name || 'Nông Trại',
+      treeCode: plantData?.tree_code || plantData?.id || ''
+    }
+  };
+
+  let saved = null;
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('user_token') || localStorage.getItem('token') || '') : '';
+  if (token) {
+    try {
+      const res = await fetch('/api/plants/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) saved = await res.json();
+    } catch (_) {}
+  }
+
+  if (saved && saved.id) {
+    _savedPublicReportId = saved.id;
+  } else {
+    _savedPublicReportId = _savedPublicReportId || `local_${Date.now()}`;
+    try {
+      const key = 'plantbook_saved_reports_v1';
+      const raw = localStorage.getItem(key);
+      const list = raw ? JSON.parse(raw) : [];
+      const item = {
+        id: _savedPublicReportId,
+        ...payload,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      const next = [item, ...(Array.isArray(list) ? list.filter(r => String(r.id) !== String(_savedPublicReportId)) : [])].slice(0, 50);
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch (_) {}
+  }
+
+  const btn = document.getElementById('btn-save-pdf-report');
+  if (btn) btn.textContent = 'Đã lưu · Đang xuất PDF';
+  setTimeout(() => {
+    if (typeof window.print === 'function') window.print();
+  }, 150);
+}
+window.savePublicReportAndPrintPdf = savePublicReportAndPrintPdf;

@@ -1,9 +1,34 @@
 const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
 
-function matchesExportCategory(checkedCats, logType) {
+function isPublicFruitAuditLog(logOrType) {
+  if (!logOrType) return false;
+  const lt = typeof logOrType === 'string' ? logOrType : (logOrType.log_type || '');
+  const norm = String(lt).trim().toLowerCase();
+  if (norm === 'kiểm toán quả' || norm === 'kiểm đếm quả' || norm === 'fruit_audit' || norm === 'fruit audit' || norm.startsWith('kiểm toán quả')) {
+    return true;
+  }
+  if (typeof logOrType === 'object' && logOrType.details && (logOrType.details.audit_stage || logOrType.details.fruit_stage) && norm !== 'thu hoạch') {
+    return true;
+  }
+  return false;
+}
+
+function toPublicLocalYmd(dVal) {
+  if (!dVal) return '';
+  const s = String(dVal).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}T00:00:00(\.000)?Z$/i.test(s)) return s.slice(0, 10);
+  const d = new Date(dVal);
+  if (isNaN(d.getTime())) return s.slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function matchesExportCategory(checkedCats, logOrType) {
   if (!checkedCats) return true;
   if (checkedCats.length === 0) return false;
+  const logType = typeof logOrType === 'string' ? logOrType : (logOrType?.log_type || '');
   if (checkedCats.includes(logType)) return true;
+  if (checkedCats.includes('Kiểm toán quả') && isPublicFruitAuditLog(logOrType)) return true;
   if (checkedCats.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
   return false;
 }
@@ -27,9 +52,9 @@ function updateExportModalMatchSummary() {
   const logs = currentPlantData.logs || [];
   const count = logs.filter(log => {
     const rawDate = log.log_date || log.created_at;
-    const logDateStr = rawDate ? new Date(rawDate).toISOString().split('T')[0] : '';
+    const logDateStr = toPublicLocalYmd(rawDate);
     const inDate = (!fromDate || !logDateStr || logDateStr >= fromDate) && (!toDate || !logDateStr || logDateStr <= toDate);
-    return inDate && matchesExportCategory(checkedCats, log.log_type);
+    return inDate && matchesExportCategory(checkedCats, log);
   }).length;
   summaryEl.style.background = '#ecfdf5';
   summaryEl.style.borderColor = '#a7f3d0';
@@ -77,7 +102,7 @@ function openExportModal() {
   const container = document.getElementById('export-categories-container');
   container.innerHTML = categories.map(cat => {
     const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
-    const cnt = logs.filter(l => cat === 'Nhân công' ? (l.log_type === 'Nhân công' || LEGACY_LABOR_ALIASES.includes(l.log_type)) : l.log_type === cat).length;
+    const cnt = logs.filter(l => matchesExportCategory([cat], l)).length;
     return `
       <label class="export-category-item" style="justify-content:space-between;">
         <span style="display:inline-flex; align-items:center; gap:7px;">
@@ -172,9 +197,9 @@ function exportPublicLogsCsv() {
   }
   const filteredLogs = logs.filter(log => {
     const rawDt = log.log_date || log.created_at;
-    const logDateStr = rawDt ? new Date(rawDt).toISOString().split('T')[0] : '';
+    const logDateStr = toPublicLocalYmd(rawDt);
     const isWithinDate = (!fromDate || !logDateStr || logDateStr >= fromDate) && (!toDate || !logDateStr || logDateStr <= toDate);
-    const isMatchedCat = matchesExportCategory(checkedCats, log.log_type);
+    const isMatchedCat = matchesExportCategory(checkedCats, log);
     return isWithinDate && isMatchedCat;
   });
   filteredLogs.sort((a, b) => new Date(a.log_date || a.created_at) - new Date(b.log_date || b.created_at));

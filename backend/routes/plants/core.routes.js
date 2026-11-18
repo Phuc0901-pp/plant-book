@@ -299,7 +299,7 @@ router.get('/logs/recent', auth, async (req, res) => {
       }
     }
     query += ` ORDER BY pl.log_date DESC, pl.id DESC `;
-    query += ` LIMIT 300 `;
+    query += isAll ? ` LIMIT 5000 ` : ` LIMIT 300 `;
     const result = await pool.query(query, params);
     const rows = isUserFinanceRedacted(req.user)
       ? result.rows.map(r => sanitizeLogRowForUser(r, req.user))
@@ -1376,6 +1376,160 @@ router.post('/farms/:farmId/reorder-by-gps', auth, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi sắp xếp lại mã cây: ' + err.message });
   } finally {
     client.release();
+  }
+});
+
+router.get('/reports', auth, async (req, res) => {
+  try {
+    const isAdmin = req.user.role === 'admin';
+    const query = isAdmin
+      ? `SELECT sr.id, sr.user_id, sr.farm_id, sr.plant_id, sr.title, sr.standard_code, sr.standard_label, sr.categories, sr.from_date, sr.to_date, sr.total_logs, sr.report_meta, sr.created_at, sr.updated_at, f.name as farm_name, u.full_name as creator_name
+         FROM saved_reports sr
+         LEFT JOIN farms f ON f.id = sr.farm_id
+         LEFT JOIN users u ON u.id = sr.user_id
+         ORDER BY sr.updated_at DESC, sr.id DESC
+         LIMIT 200`
+      : `SELECT sr.id, sr.user_id, sr.farm_id, sr.plant_id, sr.title, sr.standard_code, sr.standard_label, sr.categories, sr.from_date, sr.to_date, sr.total_logs, sr.report_meta, sr.created_at, sr.updated_at, f.name as farm_name, u.full_name as creator_name
+         FROM saved_reports sr
+         LEFT JOIN farms f ON f.id = sr.farm_id
+         LEFT JOIN users u ON u.id = sr.user_id
+         WHERE sr.user_id = $1 OR f.user_id = $1
+         ORDER BY sr.updated_at DESC, sr.id DESC
+         LIMIT 200`;
+    const params = isAdmin ? [] : [req.user.id];
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi tải thư viện báo cáo: ' + err.message });
+  }
+});
+
+router.get('/reports/:id(\\d+)', auth, async (req, res) => {
+  try {
+    const reportId = parseInt(req.params.id, 10);
+    const result = await pool.query(
+      `SELECT sr.*, f.user_id as farm_owner_id, f.name as farm_name
+       FROM saved_reports sr
+       LEFT JOIN farms f ON f.id = sr.farm_id
+       WHERE sr.id = $1`,
+      [reportId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy báo cáo trong thư viện.' });
+    }
+    const row = result.rows[0];
+    if (req.user.role !== 'admin' && row.user_id !== req.user.id && row.farm_owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập báo cáo này.' });
+    }
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi tải chi tiết báo cáo: ' + err.message });
+  }
+});
+
+router.post('/reports', auth, async (req, res) => {
+  try {
+    const {
+      title,
+      farm_id,
+      plant_id,
+      standard_code,
+      standard_label,
+      categories,
+      from_date,
+      to_date,
+      total_logs,
+      report_html,
+      report_meta
+    } = req.body || {};
+
+    const cleanTitle = String(title || '').trim();
+    if (!cleanTitle) {
+      return res.status(400).json({ error: 'Vui lòng nhập tiêu đề báo cáo.' });
+    }
+    if (!report_html || typeof report_html !== 'string') {
+      return res.status(400).json({ error: 'Nội dung báo cáo không hợp lệ.' });
+    }
+
+    const parsedFarmId = (farm_id && farm_id !== 'all' && !isNaN(parseInt(farm_id, 10))) ? parseInt(farm_id, 10) : null;
+    const parsedPlantId = (plant_id && plant_id !== 'all' && !isNaN(parseInt(plant_id, 10))) ? parseInt(plant_id, 10) : null;
+    const catsJson = JSON.stringify(Array.isArray(categories) ? categories : []);
+    const metaJson = JSON.stringify(report_meta && typeof report_meta === 'object' ? report_meta : {});
+
+    const insertRes = await pool.query(
+      `INSERT INTO saved_reports (
+        user_id, farm_id, plant_id, title, standard_code, standard_label,
+        categories, from_date, to_date, total_logs, report_html, report_meta
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12::jsonb)
+      RETURNING id, user_id, farm_id, plant_id, title, standard_code, standard_label, categories, from_date, to_date, total_logs, report_meta, created_at, updated_at`,
+      [
+        req.user.id,
+        parsedFarmId,
+        parsedPlantId,
+        cleanTitle.slice(0, 255),
+        String(standard_code || 'vietgap_globalgap_iso').slice(0, 80),
+        String(standard_label || ''),
+        catsJson,
+        from_date ? String(from_date).slice(0, 20) : null,
+        to_date ? String(to_date).slice(0, 20) : null,
+        parseInt(total_logs, 10) || 0,
+        report_html,
+        metaJson
+      ]
+    );
+    res.status(201).json(insertRes.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi lưu báo cáo vào thư viện: ' + err.message });
+  }
+});
+
+router.patch('/reports/:id(\\d+)', auth, async (req, res) => {
+  try {
+    const reportId = parseInt(req.params.id, 10);
+    const cleanTitle = String(req.body?.title || '').trim();
+    if (!cleanTitle) {
+      return res.status(400).json({ error: 'Tiêu đề báo cáo không được để trống.' });
+    }
+    const existing = await pool.query(
+      `SELECT sr.id, sr.user_id, f.user_id as farm_owner_id FROM saved_reports sr LEFT JOIN farms f ON f.id = sr.farm_id WHERE sr.id = $1`,
+      [reportId]
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy báo cáo.' });
+    }
+    const row = existing.rows[0];
+    if (req.user.role !== 'admin' && row.user_id !== req.user.id && row.farm_owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền đổi tên báo cáo này.' });
+    }
+    const updated = await pool.query(
+      `UPDATE saved_reports SET title = $1, updated_at = NOW() WHERE id = $2
+       RETURNING id, user_id, farm_id, plant_id, title, standard_code, standard_label, categories, from_date, to_date, total_logs, report_meta, created_at, updated_at`,
+      [cleanTitle.slice(0, 255), reportId]
+    );
+    res.json(updated.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi đổi tên báo cáo: ' + err.message });
+  }
+});
+
+router.delete('/reports/:id(\\d+)', auth, async (req, res) => {
+  try {
+    const reportId = parseInt(req.params.id, 10);
+    const existing = await pool.query(
+      `SELECT sr.id, sr.user_id, f.user_id as farm_owner_id FROM saved_reports sr LEFT JOIN farms f ON f.id = sr.farm_id WHERE sr.id = $1`,
+      [reportId]
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy báo cáo.' });
+    }
+    const row = existing.rows[0];
+    if (req.user.role !== 'admin' && row.user_id !== req.user.id && row.farm_owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Bạn không có quyền xóa báo cáo này.' });
+    }
+    await pool.query(`DELETE FROM saved_reports WHERE id = $1`, [reportId]);
+    res.json({ success: true, id: reportId });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server khi xóa báo cáo: ' + err.message });
   }
 });
 

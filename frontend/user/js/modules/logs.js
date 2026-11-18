@@ -18,9 +18,34 @@ const DAY_OF_WEEK_ARR = dayOfWeekArr;
 
 const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
 
-function matchesUserLogCategory(selectedList, logType) {
+function isFruitAuditLog(logOrType) {
+  if (!logOrType) return false;
+  const lt = typeof logOrType === 'string' ? logOrType : (logOrType.log_type || '');
+  const norm = String(lt).trim().toLowerCase();
+  if (norm === 'kiểm toán quả' || norm === 'kiểm đếm quả' || norm === 'fruit_audit' || norm === 'fruit audit' || norm.startsWith('kiểm toán quả')) {
+    return true;
+  }
+  if (typeof logOrType === 'object' && logOrType.details && (logOrType.details.audit_stage || logOrType.details.fruit_stage) && norm !== 'thu hoạch') {
+    return true;
+  }
+  return false;
+}
+
+function toLocalYmd(dVal) {
+  if (!dVal) return '';
+  const s = String(dVal).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}T00:00:00(\.000)?Z$/i.test(s)) return s.slice(0, 10);
+  const d = new Date(dVal);
+  if (isNaN(d.getTime())) return s.slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function matchesUserLogCategory(selectedList, logOrType) {
   if (!selectedList || selectedList.length === 0) return true;
+  const logType = typeof logOrType === 'string' ? logOrType : (logOrType?.log_type || '');
   if (selectedList.includes(logType)) return true;
+  if (selectedList.includes('Kiểm toán quả') && isFruitAuditLog(logOrType)) return true;
   if (selectedList.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
   return false;
 }
@@ -166,11 +191,11 @@ export function groupCareLogs(logs) {
   for (const rawLog of logs) {
     const log = JSON.parse(JSON.stringify(rawLog));
 
-    if (log.log_type === 'Bệnh cây' || log.log_type === 'Kiểm toán quả') {
+    if (log.log_type === 'Bệnh cây' || isFruitAuditLog(log)) {
       grouped.push({
         ...log,
         isDiseaseLog: log.log_type === 'Bệnh cây',
-        isFruitAuditLog: log.log_type === 'Kiểm toán quả',
+        isFruitAuditLog: isFruitAuditLog(log),
         targetDisplay: `Cây #${log.tree_code || log.plant_id}${log.farm_name ? ' (' + log.farm_name + ')' : ''}`
       });
       continue;
@@ -1015,7 +1040,7 @@ export function filterUserLogs() {
   }
 
   if (filterType !== 'all') {
-    filtered = filtered.filter(l => matchesUserLogCategory([filterType], l.log_type));
+    filtered = filtered.filter(l => matchesUserLogCategory([filterType], l));
   }
 
   if (_diseaseOnlyFilterActive) {
@@ -1067,6 +1092,7 @@ export async function reloadUserLogs() {
     const freshLogs = await api('/plants/logs/recent?days=30');
     setLogsCache(freshLogs || []);
     filterUserLogs();
+    refreshReportLibraryBadge().catch(() => {});
   } catch (err) {
     console.warn('Could not reload logs cache:', err);
   }
@@ -1413,9 +1439,15 @@ export function updateUserExportMatchSummary() {
   let list = [...(_logsCache || [])];
   if (farmId !== 'all') list = list.filter(l => String(l.farm_id) === String(farmId));
   if (plantId !== 'all') list = list.filter(l => String(l.plant_id) === String(plantId));
-  if (fromDate) list = list.filter(l => l.log_date && new Date(l.log_date).toISOString().slice(0, 10) >= fromDate);
-  if (toDate) list = list.filter(l => l.log_date && new Date(l.log_date).toISOString().slice(0, 10) <= toDate);
-  list = list.filter(l => matchesUserLogCategory(checkedCats, l.log_type));
+  if (fromDate) list = list.filter(l => {
+    const d = toLocalYmd(l.log_date || l.created_at);
+    return d && d >= fromDate;
+  });
+  if (toDate) list = list.filter(l => {
+    const d = toLocalYmd(l.log_date || l.created_at);
+    return d && d <= toDate;
+  });
+  list = list.filter(l => matchesUserLogCategory(checkedCats, l));
 
   summaryEl.style.background = '#ecfdf5';
   summaryEl.style.borderColor = '#a7f3d0';
@@ -1432,7 +1464,7 @@ function renderUserExportCategoryGrid() {
   const logs = _logsCache || [];
   catsContainer.innerHTML = standardCats.map(cat => {
     const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
-    const cnt = logs.filter(l => cat === 'Nhân công' ? (l.log_type === 'Nhân công' || LEGACY_LABOR_ALIASES.includes(l.log_type)) : l.log_type === cat).length;
+    const cnt = logs.filter(l => matchesUserLogCategory([cat], l)).length;
     return `
       <label style="display:flex; align-items:center; justify-content:space-between; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:7px 10px; border-radius:8px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
         <span style="display:inline-flex; align-items:center; gap:6px;">
@@ -1450,6 +1482,7 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
   const plantSel = document.getElementById('modal-export-plant');
   const fromDateInput = document.getElementById('modal-export-date-from');
   const toDateInput = document.getElementById('modal-export-date-to');
+  const titleInput = document.getElementById('modal-export-report-title');
 
   const filterFarmSel = document.getElementById('user-log-filter-farm');
   if (farmSel) {
@@ -1466,12 +1499,25 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
 
   onModalExportFarmChange();
   if (plantSel && presetPlantId) {
+    const existingOpts = plantSel.options ? Array.from(plantSel.options) : [];
+    if (!existingOpts.some(o => String(o.value) === String(presetPlantId)) && typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof plantSel.appendChild === 'function') {
+      const opt = document.createElement('option');
+      opt.value = String(presetPlantId);
+      opt.textContent = `Cây #${presetPlantId}`;
+      plantSel.appendChild(opt);
+    }
     plantSel.value = String(presetPlantId);
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  if (titleInput && !titleInput.dataset.userEdited) {
+    const selectedFarmOpt = (farmSel && farmSel.options && farmSel.selectedIndex >= 0) ? farmSel.options[farmSel.selectedIndex] : null;
+    const fLabel = (selectedFarmOpt && farmSel.value !== 'all') ? ` — ${selectedFarmOpt.text}` : '';
+    titleInput.value = `SỔ NHẬT KÝ CANH TÁC & KIỂM ĐỊNH CHẤT LƯỢNG CÂY TRỒNG${fLabel}`;
+  }
+
+  const today = toLocalYmd(new Date());
   const logDates = (_logsCache || [])
-    .map(l => (l.log_date || l.created_at) ? new Date(l.log_date || l.created_at).toISOString().slice(0, 10) : '')
+    .map(l => toLocalYmd(l.log_date || l.created_at))
     .filter(Boolean)
     .sort();
   if (fromDateInput) fromDateInput.value = logDates.length > 0 ? logDates[0] : '';
@@ -1489,21 +1535,21 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
     }
   }
 
-  if (!_logsCache || _logsCache.length === 0) {
-    try {
-      const freshRes = await api('/plants/logs/recent?days=all');
-      if (Array.isArray(freshRes) && freshRes.length > 0) {
-        setLogsCache(enrichLogsWithFruitAuditChain(freshRes));
-        const dates = freshRes
-          .map(l => (l.log_date || l.created_at) ? new Date(l.log_date || l.created_at).toISOString().slice(0, 10) : '')
-          .filter(Boolean)
-          .sort();
-        if (fromDateInput && !fromDateInput.value && dates.length > 0) fromDateInput.value = dates[0];
-        renderUserExportCategoryGrid();
-        updateUserExportMatchSummary();
+  try {
+    const freshRes = await api('/plants/logs/recent?days=all');
+    if (Array.isArray(freshRes) && freshRes.length > 0) {
+      setLogsCache(enrichLogsWithFruitAuditChain(freshRes));
+      const dates = freshRes
+        .map(l => toLocalYmd(l.log_date || l.created_at))
+        .filter(Boolean)
+        .sort();
+      if (fromDateInput && dates.length > 0 && (!fromDateInput.value || dates[0] < fromDateInput.value)) {
+        fromDateInput.value = dates[0];
       }
-    } catch (_) {}
-  }
+      renderUserExportCategoryGrid();
+      updateUserExportMatchSummary();
+    }
+  } catch (_) {}
 }
 window.openUserExportLogsModal = openUserExportLogsModal;
 
@@ -1749,18 +1795,18 @@ export async function executeUserExport(mode = 'csv') {
   }
   if (fromDate) {
     filtered = filtered.filter(l => {
-      const d = new Date(l.log_date).toISOString().slice(0, 10);
-      return d >= fromDate;
+      const d = toLocalYmd(l.log_date || l.created_at);
+      return d && d >= fromDate;
     });
   }
   if (toDate) {
     filtered = filtered.filter(l => {
-      const d = new Date(l.log_date).toISOString().slice(0, 10);
-      return d <= toDate;
+      const d = toLocalYmd(l.log_date || l.created_at);
+      return d && d <= toDate;
     });
   }
   if (checkedCats.length > 0) {
-    filtered = filtered.filter(l => matchesUserLogCategory(checkedCats, l.log_type));
+    filtered = filtered.filter(l => matchesUserLogCategory(checkedCats, l));
   }
 
   filtered.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
@@ -1770,41 +1816,65 @@ export async function executeUserExport(mode = 'csv') {
     return;
   }
 
+  const customTitle = (document.getElementById('modal-export-report-title')?.value || '').trim()
+    || 'SỔ NHẬT KÝ CANH TÁC & KIỂM ĐỊNH CHẤT LƯỢNG CÂY TRỒNG';
+
   closeUserExportLogsModal();
 
   const farmSel = document.getElementById('modal-export-farm');
   const selectedFarmOpt = (farmSel && farmSel.options && farmSel.selectedIndex >= 0) ? farmSel.options[farmSel.selectedIndex] : null;
   const farmName = selectedFarmOpt ? selectedFarmOpt.text : 'NongTrang';
   const cleanFarmName = farmName.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_');
-  const dateSuffix = new Date().toISOString().slice(0, 10);
+  const dateSuffix = toLocalYmd(new Date());
 
   if (mode === 'csv') {
     exportLogsToCsv(filtered, `So_Nhat_Ky_VietGAP_GlobalGAP_${cleanFarmName}_${dateSuffix}.csv`, { standardLabel });
   } else {
-    openPrintableVietGapReport(filtered, {
+    const metaPayload = {
+      title: customTitle,
+      farmId: farmId,
+      plantId: plantId,
       farmName: farmName === 'Tất cả trang trại' ? 'Toàn bộ trang trại' : farmName,
       fromDate: fromDate,
       toDate: toDate,
       totalLogs: filtered.length,
+      standardCode: stdCode,
       standardLabel,
+      categories: checkedCats,
       categoriesLabel: checkedCats.map(c => c === 'Nhân công' ? 'Thuê nhân công' : c).join(', ')
-    });
+    };
+    if (mode === 'save_pdf') {
+      const htmlDoc = buildPrintableVietGapReportHtml(filtered, metaPayload);
+      const saved = await saveReportToAppLibrary({
+        title: customTitle,
+        farm_id: farmId,
+        plant_id: plantId,
+        standard_code: stdCode,
+        standard_label: standardLabel,
+        categories: checkedCats,
+        from_date: fromDate,
+        to_date: toDate,
+        total_logs: filtered.length,
+        report_html: htmlDoc,
+        report_meta: metaPayload
+      });
+      metaPayload.savedReportId = saved?.id || null;
+      metaPayload.autoPrint = true;
+    }
+    openPrintableVietGapReport(filtered, metaPayload);
   }
 }
 window.executeUserExport = executeUserExport;
 
-export function openPrintableVietGapReport(logs, meta = {}) {
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    alert('Trình duyệt đang chặn cửa sổ pop-up. Vui lòng cho phép mở pop-up để xem bản in báo cáo.');
-    return;
-  }
-
+function buildPrintableVietGapReportHtml(logs, meta = {}) {
   const now = new Date();
   const printTimeStr = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   const fromStr = meta.fromDate ? new Date(meta.fromDate).toLocaleDateString('vi-VN') : 'Ngày đầu số hóa';
   const toStr = meta.toDate ? new Date(meta.toDate).toLocaleDateString('vi-VN') : 'Hiện tại';
   const stdLabel = meta.standardLabel || 'VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007';
+  const reportTitle = meta.title || 'SỔ NHẬT KÝ CANH TÁC & KIỂM ĐỊNH CHẤT LƯỢNG CÂY TRỒNG';
+  const originBase = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : '';
+  const logoUrl = `${originBase}/assets/logo.png`;
 
   let tableRowsHtml = '';
   logs.forEach((log, index) => {
@@ -1833,12 +1903,25 @@ export function openPrintableVietGapReport(logs, meta = {}) {
     `;
   });
 
-  const htmlDoc = `
+  const safeMetaJson = JSON.stringify({
+    savedReportId: meta.savedReportId || null,
+    farm_id: meta.farmId || 'all',
+    plant_id: meta.plantId || 'all',
+    standard_code: meta.standardCode || 'vietgap_globalgap_iso',
+    standard_label: stdLabel,
+    categories: Array.isArray(meta.categories) ? meta.categories : [],
+    from_date: meta.fromDate || null,
+    to_date: meta.toDate || null,
+    total_logs: logs.length,
+    farmName: meta.farmName || 'Nông Trại'
+  }).replace(/</g, '\\u003c');
+
+  return `
     <!DOCTYPE html>
     <html lang="vi">
     <head>
       <meta charset="UTF-8">
-      <title>Sổ Nhật Ký Canh Tác VietGAP &amp; GlobalG.A.P. — ${esc(meta.farmName || 'Nông Trại')}</title>
+      <title>${esc(reportTitle)} — ${esc(meta.farmName || 'Nông Trại')}</title>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
       <style>
         @page { size: A4 landscape; margin: 12mm 10mm 15mm 10mm; }
@@ -1854,17 +1937,34 @@ export function openPrintableVietGapReport(logs, meta = {}) {
         .header-grid {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
+          align-items: center;
           border-bottom: 2px solid #047857;
           padding-bottom: 12px;
           margin-bottom: 16px;
         }
-        .org-info { text-align: left; }
-        .org-name { font-size: 15px; font-weight: 800; color: #047857; text-transform: uppercase; }
-        .system-name { font-size: 11px; color: #64748b; font-weight: 600; }
+        .org-info { display: flex; align-items: center; gap: 12px; text-align: left; }
+        .org-logo { height: 48px; width: auto; max-width: 190px; object-fit: contain; display: block; }
         .report-title-box { text-align: center; margin-bottom: 16px; }
-        .report-title { font-size: 18px; font-weight: 800; color: #064e3b; text-transform: uppercase; margin: 0 0 4px 0; }
-        .report-sub { font-size: 12.5px; color: #334155; font-weight: 600; }
+        .report-title-row { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .report-title { font-size: 18px; font-weight: 800; color: #064e3b; text-transform: uppercase; margin: 0; }
+        .edit-title-btn {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px; border-radius: 7px; border: 1px solid #cbd5e1;
+          background: #f8fafc; color: #047857; cursor: pointer; font-size: 13px;
+        }
+        .edit-title-btn:hover { background: #ecfdf5; border-color: #10b981; }
+        .title-edit-wrap {
+          display: none; justify-content: center; align-items: center; gap: 8px; margin: 6px auto 4px; max-width: 680px;
+        }
+        .title-edit-input {
+          flex: 1; padding: 7px 12px; border: 1.5px solid #059669; border-radius: 8px;
+          font-size: 14px; font-weight: 700; color: #064e3b; outline: none;
+        }
+        .title-save-btn {
+          background: #059669; color: #ffffff; border: none; padding: 7px 14px;
+          border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer;
+        }
+        .report-sub { font-size: 12.5px; color: #334155; font-weight: 600; margin-top: 4px; }
         .meta-strip {
           display: flex;
           justify-content: space-between;
@@ -1913,27 +2013,42 @@ export function openPrintableVietGapReport(logs, meta = {}) {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          flex-wrap: wrap;
+          gap: 10px;
           margin-bottom: 20px;
           border-radius: 8px;
         }
+        .bar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .bar-btn {
+          border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700;
+          cursor: pointer; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .bar-btn-lib { background: #0284c7; color: #ffffff; }
+        .bar-btn-save-pdf { background: #10b981; color: #ffffff; }
+        .bar-btn-print { background: #334155; color: #ffffff; }
+        .save-status-pill { font-size: 11.5px; color: #6ee7b7; font-weight: 700; }
         @media print {
-          .no-print-bar { display: none !important; }
+          .no-print-bar, .edit-title-btn, .title-edit-wrap { display: none !important; }
           body { padding: 0; }
         }
       </style>
     </head>
     <body>
       <div class="no-print-bar">
-        <div><strong>Bản in Sổ Nhật Ký Canh Tác ${esc(stdLabel)}</strong> · Số lượng: ${logs.length} dòng ghi chép</div>
-        <button onclick="window.print()" style="background:#10b981; color:#ffffff; border:none; padding:6px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px;">
-          In Báo Cáo / Xuất PDF
-        </button>
+        <div>
+          <strong>Bản in Sổ Nhật Ký Canh Tác ${esc(stdLabel)}</strong> · Số lượng: ${logs.length} dòng ghi chép
+          <span id="printable-save-status" class="save-status-pill">${meta.savedReportId ? ' · Đã lưu vào Thư viện' : ''}</span>
+        </div>
+        <div class="bar-actions">
+          <button type="button" id="btn-save-report-library" class="bar-btn bar-btn-lib" onclick="saveCurrentReportToLibrary(false)">Lưu vào Thư viện</button>
+          <button type="button" id="btn-save-and-export-pdf" class="bar-btn bar-btn-save-pdf" onclick="saveCurrentReportToLibrary(true)">Lưu &amp; Xuất PDF</button>
+          <button type="button" id="btn-print-only" class="bar-btn bar-btn-print" onclick="window.print()">In / Xuất PDF</button>
+        </div>
       </div>
 
       <div class="header-grid">
         <div class="org-info">
-          <div class="org-name">TÂN BẢO AGTECH — HỆ SINH THÁI NÔNG NGHIỆP SỐ</div>
-          <div class="system-name">Hệ Thống Quản Lý Canh Tác &amp; Định Danh Cây Trồng NFC Plant Book</div>
+          <img src="${logoUrl}" alt="TanBao AgTech Logo" class="org-logo" onerror="this.style.display='none'">
         </div>
         <div style="text-align: right; font-size: 11px; color: #64748b;">
           <div>Tiêu chuẩn áp dụng: <strong>${esc(stdLabel)}</strong></div>
@@ -1942,7 +2057,17 @@ export function openPrintableVietGapReport(logs, meta = {}) {
       </div>
 
       <div class="report-title-box">
-        <h1 class="report-title">SỔ NHẬT KÝ CANH TÁC &amp; KIỂM ĐỊNH CHẤT LƯỢNG CÂY TRỒNG</h1>
+        <div class="report-title-row">
+          <h1 class="report-title" id="printable-report-title">${esc(reportTitle)}</h1>
+          <button type="button" id="btn-edit-printable-title" class="edit-title-btn" onclick="togglePrintableTitleEdit(true)" title="Đổi tên báo cáo">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+          </button>
+        </div>
+        <div id="printable-title-edit-wrap" class="title-edit-wrap">
+          <input type="text" id="printable-title-input" class="title-edit-input" value="${esc(reportTitle)}">
+          <button type="button" class="title-save-btn" onclick="savePrintableTitleEdit()">Lưu tên</button>
+          <button type="button" class="title-save-btn" style="background:#64748b;" onclick="togglePrintableTitleEdit(false)">Hủy</button>
+        </div>
         <div class="report-sub">Trang trại: <strong>${esc(meta.farmName || 'Nông Trại')}</strong>${meta.categoriesLabel ? ` · Hạng mục: <strong>${esc(meta.categoriesLabel)}</strong>` : ''}</div>
       </div>
 
@@ -1989,12 +2114,313 @@ export function openPrintableVietGapReport(logs, meta = {}) {
           <div class="sig-name">................................................</div>
         </div>
       </div>
+
+      <script>
+        window.__REPORT_META__ = ${safeMetaJson};
+        function togglePrintableTitleEdit(open) {
+          var wrap = document.getElementById('printable-title-edit-wrap');
+          var inp = document.getElementById('printable-title-input');
+          if (!wrap) return;
+          wrap.style.display = open ? 'flex' : 'none';
+          if (open && inp) { inp.focus(); inp.select(); }
+        }
+        async function savePrintableTitleEdit() {
+          var inp = document.getElementById('printable-title-input');
+          var h1 = document.getElementById('printable-report-title');
+          if (!inp || !h1) return;
+          var newTitle = inp.value.trim();
+          if (!newTitle) return;
+          h1.textContent = newTitle;
+          document.title = newTitle + ' — ' + (window.__REPORT_META__.farmName || 'Nông Trại');
+          togglePrintableTitleEdit(false);
+          if (window.__REPORT_META__.savedReportId && window.opener && typeof window.opener.renameReportInAppLibrary === 'function') {
+            await window.opener.renameReportInAppLibrary(window.__REPORT_META__.savedReportId, newTitle);
+            var st = document.getElementById('printable-save-status');
+            if (st) st.textContent = ' · Đã cập nhật tên trong Thư viện';
+          }
+        }
+        async function saveCurrentReportToLibrary(andPrint) {
+          var h1 = document.getElementById('printable-report-title');
+          var title = h1 ? h1.textContent.trim() : 'Báo cáo canh tác';
+          var m = window.__REPORT_META__ || {};
+          var payload = {
+            id: m.savedReportId || undefined,
+            title: title,
+            farm_id: m.farm_id,
+            plant_id: m.plant_id,
+            standard_code: m.standard_code,
+            standard_label: m.standard_label,
+            categories: m.categories,
+            from_date: m.from_date,
+            to_date: m.to_date,
+            total_logs: m.total_logs,
+            report_html: '<!DOCTYPE html>\\n' + document.documentElement.outerHTML,
+            report_meta: m
+          };
+          var saved = null;
+          if (window.opener && typeof window.opener.saveReportToAppLibrary === 'function') {
+            saved = await window.opener.saveReportToAppLibrary(payload);
+          }
+          if (saved && saved.id) {
+            window.__REPORT_META__.savedReportId = saved.id;
+          }
+          var st = document.getElementById('printable-save-status');
+          if (st) st.textContent = ' · Đã lưu vào Thư viện';
+          if (andPrint) {
+            setTimeout(function () { window.print(); }, 150);
+          }
+        }
+      </script>
     </body>
     </html>
   `;
+}
 
+export function openPrintableVietGapReport(logs, meta = {}) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Trình duyệt đang chặn cửa sổ pop-up. Vui lòng cho phép mở pop-up để xem bản in báo cáo.');
+    return;
+  }
+  const htmlDoc = buildPrintableVietGapReportHtml(logs, meta);
   printWindow.document.open();
   printWindow.document.write(htmlDoc);
   printWindow.document.close();
+  if (meta.autoPrint) {
+    setTimeout(() => {
+      try { printWindow.print(); } catch (_) {}
+    }, 300);
+  }
 }
 window.openPrintableVietGapReport = openPrintableVietGapReport;
+
+const REPORT_LIBRARY_LOCAL_KEY = 'plantbook_saved_reports_v1';
+let _reportLibraryCache = [];
+
+function getLocalReportLibrary() {
+  try {
+    const raw = localStorage.getItem(REPORT_LIBRARY_LOCAL_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function setLocalReportLibrary(items) {
+  try {
+    localStorage.setItem(REPORT_LIBRARY_LOCAL_KEY, JSON.stringify((items || []).slice(0, 50)));
+  } catch (_) {}
+}
+
+export async function refreshReportLibraryBadge() {
+  const badge = document.getElementById('report-library-count-badge');
+  try {
+    const list = await api('/plants/reports');
+    if (Array.isArray(list)) {
+      _reportLibraryCache = list;
+      if (badge) {
+        badge.textContent = String(list.length);
+        badge.style.display = list.length > 0 ? 'inline-block' : 'none';
+      }
+      return list;
+    }
+  } catch (_) {}
+  const localList = getLocalReportLibrary();
+  _reportLibraryCache = localList;
+  if (badge) {
+    badge.textContent = String(localList.length);
+    badge.style.display = localList.length > 0 ? 'inline-block' : 'none';
+  }
+  return localList;
+}
+window.refreshReportLibraryBadge = refreshReportLibraryBadge;
+
+export async function saveReportToAppLibrary(payload) {
+  try {
+    let saved = null;
+    if (payload.id && !String(payload.id).startsWith('local_')) {
+      saved = await api(`/plants/reports/${payload.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title: payload.title })
+      });
+    } else {
+      saved = await api('/plants/reports', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    }
+    if (saved && saved.id) {
+      toast('Đã lưu báo cáo vào Thư viện ứng dụng!', 'success');
+      await refreshReportLibraryBadge();
+      return saved;
+    }
+  } catch (_) {}
+  const localList = getLocalReportLibrary();
+  const id = payload.id || `local_${Date.now()}`;
+  const item = {
+    id,
+    title: payload.title || 'Báo cáo canh tác',
+    standard_label: payload.standard_label || '',
+    total_logs: payload.total_logs || 0,
+    from_date: payload.from_date || null,
+    to_date: payload.to_date || null,
+    report_html: payload.report_html || '',
+    report_meta: payload.report_meta || {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  const next = [item, ...localList.filter(r => String(r.id) !== String(id))];
+  setLocalReportLibrary(next);
+  _reportLibraryCache = next;
+  toast('Đã lưu báo cáo vào Thư viện cục bộ!', 'success');
+  await refreshReportLibraryBadge();
+  return item;
+}
+window.saveReportToAppLibrary = saveReportToAppLibrary;
+
+export async function renameReportInAppLibrary(id, newTitle) {
+  const cleanTitle = String(newTitle || '').trim();
+  if (!cleanTitle) return null;
+  try {
+    if (!String(id).startsWith('local_')) {
+      const updated = await api(`/plants/reports/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title: cleanTitle })
+      });
+      await refreshReportLibraryBadge();
+      toast('Đã đổi tên báo cáo thành công!', 'success');
+      return updated;
+    }
+  } catch (_) {}
+  const localList = getLocalReportLibrary();
+  const next = localList.map(r => String(r.id) === String(id) ? { ...r, title: cleanTitle, updated_at: new Date().toISOString() } : r);
+  setLocalReportLibrary(next);
+  _reportLibraryCache = next;
+  toast('Đã đổi tên báo cáo thành công!', 'success');
+  return next.find(r => String(r.id) === String(id)) || null;
+}
+window.renameReportInAppLibrary = renameReportInAppLibrary;
+
+export function renderUserReportLibraryList() {
+  const container = document.getElementById('user-report-library-list');
+  if (!container) return;
+  const q = (document.getElementById('report-library-search')?.value || '').trim().toLowerCase();
+  const items = (_reportLibraryCache || []).filter(r => {
+    if (!q) return true;
+    return [r.title, r.farm_name, r.standard_label, r.report_meta?.farmName].some(v => String(v || '').toLowerCase().includes(q));
+  });
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="padding:36px 20px; text-align:center; color:#64748b;">
+      <i data-lucide="folder-open" class="lucide-sm" style="width:28px; height:28px; color:#94a3b8; margin-bottom:8px;"></i>
+      <div style="font-weight:700; color:#334155; margin-bottom:4px;">Thư viện báo cáo đang trống</div>
+      <div style="font-size:12.5px;">Nhấn <strong>"Lưu &amp; Xuất PDF"</strong> khi xuất báo cáo để lưu trữ vào thư viện ứng dụng.</div>
+    </div>`;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  container.innerHTML = items.map(r => {
+    const dt = r.updated_at || r.created_at;
+    const dtStr = dt ? new Date(dt).toLocaleString('vi-VN') : '—';
+    const farmLbl = r.farm_name || r.report_meta?.farmName || 'Nông trại';
+    return `
+      <div style="border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; background:#ffffff; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:220px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <strong style="font-size:14px; color:#0f172a;">${esc(r.title)}</strong>
+            <button type="button" onclick="promptRenameSavedReport('${esc(String(r.id))}')" title="Đổi tên báo cáo" style="background:#f8fafc; border:1px solid #cbd5e1; color:#047857; border-radius:6px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">
+              <i data-lucide="pencil" class="lucide-xs"></i>
+            </button>
+          </div>
+          <div style="font-size:12px; color:#64748b; margin-top:4px;">
+            ${esc(farmLbl)} · <strong>${r.total_logs || 0}</strong> bản ghi · ${esc(r.standard_label || 'VietGAP / GlobalG.A.P.')}
+          </div>
+          <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Lưu lúc: ${dtStr}</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" onclick="openSavedReportFromLibrary('${esc(String(r.id))}', false)" class="btn btn-secondary btn-sm" style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+            <i data-lucide="eye" class="lucide-xs"></i> Xem
+          </button>
+          <button type="button" onclick="openSavedReportFromLibrary('${esc(String(r.id))}', true)" class="btn btn-primary btn-sm" style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; background:#059669; border:none; color:#ffffff; display:inline-flex; align-items:center; gap:5px;">
+            <i data-lucide="printer" class="lucide-xs"></i> Xuất PDF
+          </button>
+          <button type="button" onclick="deleteSavedReportFromLibrary('${esc(String(r.id))}')" title="Xóa báo cáo" style="background:#fff1f2; border:1px solid #fecaca; color:#dc2626; border-radius:8px; padding:6px 9px; cursor:pointer; display:inline-flex; align-items:center;">
+            <i data-lucide="trash-2" class="lucide-xs"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+window.renderUserReportLibraryList = renderUserReportLibraryList;
+
+export async function openUserReportLibraryModal() {
+  const modal = document.getElementById('user-report-library-modal');
+  if (modal) modal.style.display = 'flex';
+  await refreshReportLibraryBadge();
+  renderUserReportLibraryList();
+}
+window.openUserReportLibraryModal = openUserReportLibraryModal;
+
+export function closeUserReportLibraryModal() {
+  const modal = document.getElementById('user-report-library-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeUserReportLibraryModal = closeUserReportLibraryModal;
+
+export async function promptRenameSavedReport(id) {
+  const item = (_reportLibraryCache || []).find(r => String(r.id) === String(id));
+  const currentTitle = item ? item.title : '';
+  const nextTitle = prompt('Nhập tên mới cho báo cáo:', currentTitle);
+  if (!nextTitle || !nextTitle.trim()) return;
+  await renameReportInAppLibrary(id, nextTitle.trim());
+  await refreshReportLibraryBadge();
+  renderUserReportLibraryList();
+}
+window.promptRenameSavedReport = promptRenameSavedReport;
+
+export async function openSavedReportFromLibrary(id, autoPrint = false) {
+  let detail = null;
+  if (!String(id).startsWith('local_')) {
+    try {
+      detail = await api(`/plants/reports/${id}`);
+    } catch (_) {}
+  }
+  if (!detail) {
+    detail = (_reportLibraryCache || []).find(r => String(r.id) === String(id));
+  }
+  if (!detail || !detail.report_html) {
+    toast('Không tìm thấy nội dung báo cáo đã lưu.', 'error');
+    return;
+  }
+  const win = window.open('', '_blank');
+  if (!win) {
+    alert('Trình duyệt đang chặn cửa sổ pop-up. Vui lòng cho phép mở pop-up để xem báo cáo.');
+    return;
+  }
+  win.document.open();
+  win.document.write(detail.report_html);
+  win.document.close();
+  if (autoPrint) {
+    setTimeout(() => {
+      try { win.print(); } catch (_) {}
+    }, 300);
+  }
+}
+window.openSavedReportFromLibrary = openSavedReportFromLibrary;
+
+export async function deleteSavedReportFromLibrary(id) {
+  if (!confirm('Bạn có chắc chắn muốn xóa báo cáo này khỏi Thư viện?')) return;
+  try {
+    if (!String(id).startsWith('local_')) {
+      await api(`/plants/reports/${id}`, { method: 'DELETE' });
+    }
+  } catch (_) {}
+  const localList = getLocalReportLibrary().filter(r => String(r.id) !== String(id));
+  setLocalReportLibrary(localList);
+  await refreshReportLibraryBadge();
+  renderUserReportLibraryList();
+  toast('Đã xóa báo cáo khỏi Thư viện.', 'success');
+}
+window.deleteSavedReportFromLibrary = deleteSavedReportFromLibrary;

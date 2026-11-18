@@ -44,6 +44,9 @@
       <button type="button" class="btn btn-secondary" id="btn-export-csv" onclick="openReportConfigModal('csv')" style="background: #f0fdf4; border-color: #86efac; color: #166534; font-weight: 700;">
         <i data-lucide="file-spreadsheet" class="lucide-sm"></i> Xuất CSV (Excel)
       </button>
+      <button type="button" class="btn btn-secondary" id="btn-save-pdf-report" onclick="savePublicReportAndPrintPdf()" style="background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; font-weight: 700;">
+        <i data-lucide="bookmark-check" class="lucide-sm"></i> Lưu &amp; Xuất PDF
+      </button>
       <button type="button" class="btn btn-primary" id="btn-print-report" onclick="openReportConfigModal('print')">
         <i data-lucide="printer" class="lucide-sm"></i> In báo cáo / Tải PDF
       </button>
@@ -71,7 +74,17 @@
         </div>
       </div>
       <div class="title-wrap">
-        <h1 class="title" id="report-main-heading">Báo cáo lịch trình canh tác</h1>
+        <div class="report-title-row">
+          <h1 class="title" id="report-main-heading">Báo cáo lịch trình canh tác</h1>
+          <button type="button" id="btn-edit-report-title" class="btn-edit-report-title" onclick="toggleReportTitleEdit(true)" title="Đổi tên báo cáo">
+            <i data-lucide="pencil" class="lucide-sm"></i>
+          </button>
+        </div>
+        <div id="report-title-edit-wrap" class="report-title-edit-wrap">
+          <input type="text" id="report-title-input" class="report-title-input" value="Báo cáo lịch trình canh tác" placeholder="Nhập tên báo cáo...">
+          <button type="button" id="btn-save-report-title" class="btn btn-primary" onclick="saveReportTitleEdit()">Lưu tên</button>
+          <button type="button" class="btn btn-secondary" onclick="toggleReportTitleEdit(false)">Hủy</button>
+        </div>
         <p class="subtitle" id="report-standard-subtitle">Tiêu chuẩn áp dụng: VietGAP (TCVN 11892-1:2017) · GlobalG.A.P. (IFA v6.0) · ISO 22005:2007</p>
         <p class="subtitle" id="report-time">Trích xuất lúc: —</p>
       </div>

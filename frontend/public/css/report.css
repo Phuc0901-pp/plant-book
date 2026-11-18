@@ -753,7 +753,9 @@
       }
 
       .top-bar,
-      .report-modal-overlay {
+      .report-modal-overlay,
+      .btn-edit-report-title,
+      .report-title-edit-wrap {
         display: none !important;
       }
 
@@ -781,4 +783,49 @@
       #report-map {
         border: 1px solid #cbd5e0 !important;
       }
+    }
+
+    .report-title-row {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-edit-report-title {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #047857;
+      cursor: pointer;
+    }
+
+    .btn-edit-report-title:hover {
+      background: #ecfdf5;
+      border-color: #10b981;
+    }
+
+    .report-title-edit-wrap {
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      margin: 6px 0;
+    }
+
+    .report-title-input {
+      min-width: 240px;
+      padding: 6px 10px;
+      border: 1.5px solid #059669;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      outline: none;
     }
