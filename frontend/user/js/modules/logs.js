@@ -1417,11 +1417,43 @@ export async function executeSelectiveDelete() {
 }
 window.executeSelectiveDelete = executeSelectiveDelete;
 
-export function updateUserExportMatchSummary() {
-  const summaryEl = document.getElementById('modal-export-match-summary');
-  if (!summaryEl) return 0;
+function mergeLogsIntoCache(incomingLogs) {
+  const existing = Array.isArray(_logsCache) ? _logsCache : [];
+  const byKey = new Map();
+  const keyOf = (l) => (l && l.id != null) ? `id_${l.id}` : `tmp_${l?.plant_id}_${l?.log_date}_${l?.log_type}_${l?.created_at}`;
+  existing.forEach(l => { if (l) byKey.set(keyOf(l), l); });
+  (incomingLogs || []).forEach(l => {
+    if (!l) return;
+    const k = keyOf(l);
+    const prev = byKey.get(k);
+    byKey.set(k, prev ? { ...prev, ...l } : l);
+  });
+  setLogsCache(enrichLogsWithFruitAuditChain(Array.from(byKey.values())));
+}
+
+function getScopedLogsForExportModal() {
   const farmId = document.getElementById('modal-export-farm')?.value || 'all';
   const plantId = document.getElementById('modal-export-plant')?.value || 'all';
+  let list = [...(_logsCache || [])];
+  if (farmId !== 'all') list = list.filter(l => String(l.farm_id) === String(farmId));
+  if (plantId !== 'all') list = list.filter(l => String(l.plant_id) === String(plantId));
+  return list;
+}
+
+function updateUserExportCategoryCounts() {
+  const scoped = getScopedLogsForExportModal();
+  const countEls = document.querySelectorAll('[data-export-cat-count]');
+  countEls.forEach(el => {
+    const cat = el.getAttribute('data-export-cat-count');
+    if (!cat) return;
+    el.textContent = String(scoped.filter(l => matchesUserLogCategory([cat], l)).length);
+  });
+}
+
+export function updateUserExportMatchSummary() {
+  updateUserExportCategoryCounts();
+  const summaryEl = document.getElementById('modal-export-match-summary');
+  if (!summaryEl) return 0;
   const fromDate = document.getElementById('modal-export-date-from')?.value || '';
   const toDate = document.getElementById('modal-export-date-to')?.value || '';
 
@@ -1436,9 +1468,7 @@ export function updateUserExportMatchSummary() {
     return 0;
   }
 
-  let list = [...(_logsCache || [])];
-  if (farmId !== 'all') list = list.filter(l => String(l.farm_id) === String(farmId));
-  if (plantId !== 'all') list = list.filter(l => String(l.plant_id) === String(plantId));
+  let list = getScopedLogsForExportModal();
   if (fromDate) list = list.filter(l => {
     const d = toLocalYmd(l.log_date || l.created_at);
     return d && d >= fromDate;
@@ -1461,7 +1491,7 @@ function renderUserExportCategoryGrid() {
   const catsContainer = document.getElementById('modal-export-categories-grid');
   if (!catsContainer) return;
   const standardCats = ['Kiểm toán quả', 'Phun thuốc', 'Bón phân', 'Tưới nước', 'Nhân công', 'Bệnh cây', 'Thu hoạch'];
-  const logs = _logsCache || [];
+  const logs = getScopedLogsForExportModal();
   catsContainer.innerHTML = standardCats.map(cat => {
     const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
     const cnt = logs.filter(l => matchesUserLogCategory([cat], l)).length;
@@ -1471,18 +1501,36 @@ function renderUserExportCategoryGrid() {
           <input type="checkbox" name="user_export_cat" value="${esc(cat)}" checked onchange="updateUserExportMatchSummary()" style="accent-color:#059669; cursor:pointer;">
           <span>${esc(label)}</span>
         </span>
-        <span style="font-size:11px; font-weight:800; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:999px;">${cnt}</span>
+        <span data-export-cat-count="${esc(cat)}" style="font-size:11px; font-weight:800; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:999px;">${cnt}</span>
       </label>
     `;
   }).join('');
 }
 
-export async function openUserExportLogsModal(defaultMode, presetFarmId, presetPlantId) {
+export async function openUserExportLogsModal(defaultMode, presetFarmId, presetPlantId, presetPlantObj) {
   const farmSel = document.getElementById('modal-export-farm');
   const plantSel = document.getElementById('modal-export-plant');
   const fromDateInput = document.getElementById('modal-export-date-from');
   const toDateInput = document.getElementById('modal-export-date-to');
   const titleInput = document.getElementById('modal-export-report-title');
+
+  const erpPlant = presetPlantObj || null;
+  const rawPlantLogs = (erpPlant && Array.isArray(erpPlant.logs) && erpPlant.logs.length > 0)
+    ? erpPlant.logs
+    : ((presetPlantId && presetPlantId !== 'all' && typeof window !== 'undefined' && Array.isArray(window._currentErpEnrichedLogs)) ? window._currentErpEnrichedLogs : []);
+
+  if (rawPlantLogs.length > 0) {
+    const normalizedErpLogs = rawPlantLogs.map(l => ({
+      ...l,
+      farm_id: l.farm_id || erpPlant?.farm_id || (presetFarmId && presetFarmId !== 'all' ? presetFarmId : null),
+      farm_name: l.farm_name || erpPlant?.farm_name || '',
+      plant_id: l.plant_id || erpPlant?.id || (presetPlantId && presetPlantId !== 'all' ? presetPlantId : null),
+      tree_code: l.tree_code || erpPlant?.tree_code || erpPlant?.id || '',
+      plant_type: l.plant_type || erpPlant?.plant_type || '',
+      plant_variety: l.plant_variety || erpPlant?.plant_variety || ''
+    }));
+    mergeLogsIntoCache(normalizedErpLogs);
+  }
 
   const filterFarmSel = document.getElementById('user-log-filter-farm');
   if (farmSel) {
@@ -1494,16 +1542,27 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
       farmSel.innerHTML = '<option value="all">Tất cả trang trại</option>'
         + farms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
     }
-    farmSel.value = presetFarmId ? String(presetFarmId) : ((filterFarmSel && filterFarmSel.value) || 'all');
+    const targetFarmVal = (presetFarmId && presetFarmId !== 'all') ? String(presetFarmId) : ((filterFarmSel && filterFarmSel.value) || 'all');
+    const existingFarmOpts = farmSel.options ? Array.from(farmSel.options) : [];
+    if (targetFarmVal !== 'all' && !existingFarmOpts.some(o => String(o.value) === targetFarmVal) && typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof farmSel.appendChild === 'function') {
+      const fOpt = document.createElement('option');
+      fOpt.value = targetFarmVal;
+      fOpt.textContent = erpPlant?.farm_name || `Trang trại #${targetFarmVal}`;
+      farmSel.appendChild(fOpt);
+    }
+    farmSel.value = targetFarmVal;
+    if (!farmSel.value) farmSel.value = 'all';
   }
 
   onModalExportFarmChange();
-  if (plantSel && presetPlantId) {
+  if (plantSel && presetPlantId && presetPlantId !== 'all') {
     const existingOpts = plantSel.options ? Array.from(plantSel.options) : [];
     if (!existingOpts.some(o => String(o.value) === String(presetPlantId)) && typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof plantSel.appendChild === 'function') {
       const opt = document.createElement('option');
       opt.value = String(presetPlantId);
-      opt.textContent = `Cây #${presetPlantId}`;
+      const tCode = erpPlant?.tree_code || presetPlantId;
+      const pType = erpPlant?.plant_type ? ` (${erpPlant.plant_type})` : '';
+      opt.textContent = `Cây #${tCode}${pType}`;
       plantSel.appendChild(opt);
     }
     plantSel.value = String(presetPlantId);
@@ -1512,11 +1571,14 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
   if (titleInput && !titleInput.dataset.userEdited) {
     const selectedFarmOpt = (farmSel && farmSel.options && farmSel.selectedIndex >= 0) ? farmSel.options[farmSel.selectedIndex] : null;
     const fLabel = (selectedFarmOpt && farmSel.value !== 'all') ? ` — ${selectedFarmOpt.text}` : '';
-    titleInput.value = `SỔ NHẬT KÝ CANH TÁC & KIỂM ĐỊNH CHẤT LƯỢNG CÂY TRỒNG${fLabel}`;
+    const pLabel = (plantSel && plantSel.value !== 'all' && erpPlant) ? ` · Cây #${erpPlant.tree_code || erpPlant.id}` : '';
+    titleInput.value = `SỔ NHẬT KÝ CANH TÁC & KIỂM ĐỊNH CHẤT LƯỢNG CÂY TRỒNG${fLabel}${pLabel}`;
   }
 
   const today = toLocalYmd(new Date());
-  const logDates = (_logsCache || [])
+  const scopedLogs = getScopedLogsForExportModal();
+  const baseLogsForDates = scopedLogs.length > 0 ? scopedLogs : (_logsCache || []);
+  const logDates = baseLogsForDates
     .map(l => toLocalYmd(l.log_date || l.created_at))
     .filter(Boolean)
     .sort();
@@ -1531,7 +1593,11 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
     if (typeof document !== 'undefined' && document.body && typeof document.body.appendChild === 'function' && modal.parentElement !== document.body) {
       document.body.appendChild(modal);
     }
-    modal.style.zIndex = '10050';
+    if (modal.style && typeof modal.style.setProperty === 'function') {
+      modal.style.setProperty('z-index', '100050', 'important');
+    } else if (modal.style) {
+      modal.style.zIndex = '100050';
+    }
     modal.style.display = 'flex';
     if (window.lucide) lucide.createIcons();
     if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
@@ -1542,8 +1608,10 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
   try {
     const freshRes = await api('/plants/logs/recent?days=all');
     if (Array.isArray(freshRes) && freshRes.length > 0) {
-      setLogsCache(enrichLogsWithFruitAuditChain(freshRes));
-      const dates = freshRes
+      mergeLogsIntoCache(freshRes);
+      const mergedScoped = getScopedLogsForExportModal();
+      const datePool = mergedScoped.length > 0 ? mergedScoped : (_logsCache || []);
+      const dates = datePool
         .map(l => toLocalYmd(l.log_date || l.created_at))
         .filter(Boolean)
         .sort();
@@ -1783,8 +1851,8 @@ export async function executeUserExport(mode = 'csv') {
   try {
     const freshRes = await api('/plants/logs/recent?days=all');
     if (Array.isArray(freshRes) && freshRes.length > 0) {
-      allLogs = enrichLogsWithFruitAuditChain(freshRes);
-      setLogsCache(allLogs);
+      mergeLogsIntoCache(freshRes);
+      allLogs = [..._logsCache];
     }
   } catch (err) {
     console.warn('Fallback to local logs cache:', err);
@@ -2365,7 +2433,11 @@ export async function openUserReportLibraryModal() {
     if (typeof document !== 'undefined' && document.body && typeof document.body.appendChild === 'function' && modal.parentElement !== document.body) {
       document.body.appendChild(modal);
     }
-    modal.style.zIndex = '10060';
+    if (modal.style && typeof modal.style.setProperty === 'function') {
+      modal.style.setProperty('z-index', '100060', 'important');
+    } else if (modal.style) {
+      modal.style.zIndex = '100060';
+    }
     modal.style.display = 'flex';
   }
   await refreshReportLibraryBadge();

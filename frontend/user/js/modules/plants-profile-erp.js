@@ -988,7 +988,7 @@ export function openErpPlantExportModal() {
   if (!_currentErpPlant) return;
   const p = _currentErpPlant;
   if (typeof window.openUserExportLogsModal === 'function') {
-    window.openUserExportLogsModal('print', p.farm_id || '', p.id || '');
+    window.openUserExportLogsModal('print', p.farm_id || 'all', p.id || 'all', p);
   } else if (p.public_slug || p.nfc_uid || p.id) {
     const slug = p.nfc_uid || p.public_slug || p.id;
     window.open(`/plant/${encodeURIComponent(slug)}/report`, '_blank');
