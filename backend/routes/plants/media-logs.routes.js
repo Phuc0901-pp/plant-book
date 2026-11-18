@@ -9,7 +9,8 @@ const {
   sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
-  buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType
+  buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType,
+  enrichFruitAuditAndHarvestDetails
 } = require('./helpers');
 
 router.delete('/:id', auth, admin, async (req, res) => {
@@ -308,8 +309,14 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
     const effectiveDate = log_date || new Date().toISOString().slice(0, 10);
     const parsedDetails = typeof details === 'string' ? JSON.parse(details || '{}') : (details || {});
     
-    // Chuẩn hóa hạng mục canh tác về 6 hạng mục SSOT & bảo vệ Thu hoạch / Nhân công
+    // Chuẩn hóa hạng mục canh tác về bộ SSOT quốc tế & đối chiếu Kiểm toán quả / Thu hoạch
     const effectiveLogType = normalizeCareLogType(log_type || 'Nhật ký chăm sóc', parsedDetails);
+    await enrichFruitAuditAndHarvestDetails(pool, {
+      plantId: targetPlantId,
+      logDate: effectiveDate,
+      logType: effectiveLogType,
+      details: parsedDetails
+    });
 
     let generatedBatchCode = null;
     let isPhiViolation = false;
@@ -569,9 +576,16 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
 
     const editHistory = [...(currentLog.edit_history || []), historyItem];
 
-    // Chuẩn hóa hạng mục canh tác về 6 hạng mục SSOT & bảo vệ Thu hoạch / Nhân công
+    // Chuẩn hóa hạng mục canh tác về bộ SSOT quốc tế & đối chiếu Kiểm toán quả / Thu hoạch
     const parsedPutDetails = details ? { ...(typeof details === 'string' ? JSON.parse(details || '{}') : details) } : { ...(currentLog.details || {}) };
     const targetLogType = normalizeCareLogType(log_type || currentLog.log_type, parsedPutDetails);
+    await enrichFruitAuditAndHarvestDetails(pool, {
+      plantId: parseInt(plantId, 10),
+      logDate: log_date || currentLog.log_date,
+      logType: targetLogType,
+      details: parsedPutDetails,
+      excludeLogId: logId
+    });
 
     // Update log
     const updated = await pool.query(

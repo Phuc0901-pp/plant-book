@@ -520,7 +520,7 @@ router.get(['/:id/full-dataset', '/:id/export-json'], async (req, res) => {
       }
 
       // Bóc tách hồ sơ Doanh thu & Sản lượng Thu hoạch (Harvest & Revenue Logs - loại trừ Kiểm toán quả)
-      const isFruitAuditLog = lTypeLower.includes('kiểm toán quả') || lTypeLower.includes('kiem toan qua') || Boolean(details.fruit_stage);
+      const isFruitAuditLog = lTypeLower.includes('kiểm toán quả') || lTypeLower.includes('kiem toan qua') || Boolean(details.audit_stage || details.fruit_stage);
       if (
         !isFruitAuditLog && (
           lTypeLower.includes('thu hoạch') ||

@@ -1399,6 +1399,10 @@ async function renderPlant(plant, isEditable) {
   window._plantSuppliesCurrentPage = 1;
   window._plantSuppliesPageSize = 10;
 
+  if (typeof enrichPublicPlantLogsWithAuditChain === 'function') {
+    enrichPublicPlantLogsWithAuditChain(logs);
+  }
+
   logs.forEach(log => {
     const dateStr = fmtDate(log.log_date);
     if (!window._publicLogsGrouped[dateStr]) {
@@ -2139,8 +2143,8 @@ async function renderPlant(plant, isEditable) {
             ${window.ChibiIcons ? window.ChibiIcons.get('chibi-labor', 32) : '<i data-lucide="users" class="lucide-sm" style="color: #0284c7"></i>'}
             <span style="color: #0369a1; font-weight: 700;">Thuê nhân công</span>
           </button>
-          <button class="care-btn care-btn-fruit-audit" onclick="openModal('modal-fruit-audit')" style="border-color:#99f6e4; background:#f0fdfa;">
-            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-fruit-audit', 32) : '<i data-lucide="clipboard-check" class="lucide-sm" style="color: #0d9488"></i>'}
+          <button class="care-btn care-btn-audit" onclick="openModal('modal-fruit-audit')" style="border-color:#99f6e4; background:#f0fdfa;">
+            ${window.ChibiIcons ? window.ChibiIcons.get('chibi-fruit-audit', 32) : '<i data-lucide="apple" class="lucide-sm" style="color: #0d9488"></i>'}
             <span style="color: #0f766e; font-weight: 700;">Kiểm toán quả</span>
           </button>
           <button class="care-btn care-btn-disease" onclick="openModal('modal-disease')">

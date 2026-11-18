@@ -36,12 +36,110 @@ function matchesUserLogCategory(selectedList, logType) {
 }
 
 
+function _fmtViShortDateLog(dVal) {
+  if (!dVal) return '';
+  const s = String(dVal).slice(0, 10);
+  const p = s.split('-');
+  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+  const d = new Date(dVal);
+  return !isNaN(d) ? d.toLocaleDateString('vi-VN') : s;
+}
+
+/**
+ * Tính toán chuỗi đối chiếu biến động số quả (Đậu quả → Quả non → Quả chín → Thu hoạch)
+ * độc lập theo từng cây theo đúng thứ tự thời gian thực.
+ */
+export function enrichLogsWithFruitAuditChain(logs) {
+  if (!Array.isArray(logs) || logs.length === 0) return logs || [];
+  const byPlant = new Map();
+  logs.forEach((l) => {
+    if (!l || (l.log_type !== 'Kiểm toán quả' && l.log_type !== 'Thu hoạch')) return;
+    const pKey = String(l.plant_id || 0);
+    if (!byPlant.has(pKey)) byPlant.set(pKey, []);
+    byPlant.get(pKey).push(l);
+  });
+
+  byPlant.forEach((pLogs) => {
+    pLogs.sort((a, b) => {
+      const dA = a.log_date ? new Date(a.log_date).toISOString().slice(0, 10) : '';
+      const dB = b.log_date ? new Date(b.log_date).toISOString().slice(0, 10) : '';
+      if (dA !== dB) return dA.localeCompare(dB);
+      const tA = (a.details?.audit_time || a.details?.time || a.created_at || '');
+      const tB = (b.details?.audit_time || b.details?.time || b.created_at || '');
+      if (tA !== tB) return String(tA).localeCompare(String(tB));
+      return (a.id || 0) - (b.id || 0);
+    });
+
+    let lastAudit = null;
+    for (const l of pLogs) {
+      if (!l.details || typeof l.details !== 'object') l.details = {};
+      const d = l.details;
+      const dDateIso = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+
+      if (l.log_type === 'Kiểm toán quả') {
+        const currStage = d.audit_stage || 'Đậu quả';
+        const currCount = parseInt(d.fruit_count ?? d.amount, 10);
+        if (!isNaN(currCount)) {
+          if (lastAudit) {
+            const delta = currCount - lastAudit.count;
+            const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+            const deltaLabel = delta < 0
+              ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)`
+              : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Giữ nguyên số quả (0%)');
+            d.prev_stage = lastAudit.stage;
+            d.prev_fruit_count = lastAudit.count;
+            d.prev_log_date = lastAudit.dateIso;
+            d.delta_count = delta;
+            d.delta_pct = pct;
+            d.comparison_text = `${lastAudit.stage} (${_fmtViShortDateLog(lastAudit.dateIso)}): ${lastAudit.count} quả → ${currStage} (${_fmtViShortDateLog(dDateIso)}): ${currCount} quả (${deltaLabel})`;
+          } else {
+            d.comparison_text = d.comparison_text || `Khởi tạo mốc ${currStage} (${_fmtViShortDateLog(dDateIso)}): ${currCount} quả`;
+          }
+          lastAudit = { stage: currStage, count: currCount, dateIso: dDateIso };
+        }
+      } else if (l.log_type === 'Thu hoạch') {
+        const hCount = parseInt(d.fruit_count, 10);
+        if (lastAudit && !isNaN(hCount) && hCount > 0) {
+          const delta = hCount - lastAudit.count;
+          const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+          const deltaLabel = delta < 0
+            ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)`
+            : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Khớp 100% số quả (0%)');
+          d.prev_audit_stage = lastAudit.stage;
+          d.prev_audit_count = lastAudit.count;
+          d.prev_audit_date = lastAudit.dateIso;
+          d.harvest_delta_count = delta;
+          d.harvest_delta_pct = pct;
+          d.harvest_comparison_text = `So với Kiểm toán ${lastAudit.stage} (${_fmtViShortDateLog(lastAudit.dateIso)}: ${lastAudit.count} quả): Thu hoạch ${hCount} quả (${deltaLabel})`;
+        }
+      }
+    }
+  });
+  return logs;
+}
+
+function _buildFruitDeltaBadgeHtml(details, isHarvest = false) {
+  if (!details) return '';
+  const text = isHarvest ? details.harvest_comparison_text : details.comparison_text;
+  if (!text) return '';
+  const delta = isHarvest ? details.harvest_delta_count : details.delta_count;
+  let bg = '#f0fdfa';
+  let color = '#0f766e';
+  let border = '#99f6e4';
+  if (typeof delta === 'number') {
+    if (delta < 0) { bg = '#fef2f2'; color = '#dc2626'; border = '#fecaca'; }
+    else if (delta > 0) { bg = '#f0fdf4'; color = '#059669'; border = '#bbf7d0'; }
+    else { bg = '#eff6ff'; color = '#0284c7'; border = '#bfdbfe'; }
+  }
+  return `<div style="margin-top:4px; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:8px; font-size:11.5px; font-weight:700; background:${bg}; color:${color}; border:1px solid ${border};"><i data-lucide="git-compare" class="lucide-xs"></i> ${esc(text)}</div>`;
+}
+
 /**
  * Cập nhật cache nhật ký (30 ngày).
  * @param {Array} logs
  */
 export function setLogsCache(logs) {
-  _logsCache = logs || [];
+  _logsCache = enrichLogsWithFruitAuditChain(logs || []);
   window._allLogsCache = _logsCache;
 }
 
@@ -94,6 +192,7 @@ window.toggleDiseaseOnlyFilter = toggleDiseaseOnlyFilter;
  */
 export function groupCareLogs(logs) {
   if (!Array.isArray(logs) || logs.length === 0) return [];
+  enrichLogsWithFruitAuditChain(logs);
 
   const grouped = [];
   const regularGroups = new Map();
@@ -102,11 +201,12 @@ export function groupCareLogs(logs) {
     // Clone log để không mutate cache gốc
     const log = JSON.parse(JSON.stringify(rawLog));
 
-    // Bệnh cây: Không gom nhóm, giữ nguyên dòng riêng biệt phục vụ điều tra dịch tễ
-    if (log.log_type === 'Bệnh cây') {
+    // Bệnh cây & Kiểm toán quả: Không gom nhóm, giữ nguyên dòng riêng biệt theo từng cây & mốc thời gian
+    if (log.log_type === 'Bệnh cây' || log.log_type === 'Kiểm toán quả') {
       grouped.push({
         ...log,
-        isDiseaseLog: true,
+        isDiseaseLog: log.log_type === 'Bệnh cây',
+        isFruitAuditLog: log.log_type === 'Kiểm toán quả',
         targetDisplay: `Cây #${log.tree_code || log.plant_id}${log.farm_name ? ' (' + log.farm_name + ')' : ''}`
       });
       continue;
@@ -118,10 +218,9 @@ export function groupCareLogs(logs) {
     
     // Tên vật tư hoặc hoạt chất chính
     const supplyName = (log.details?.supply_name || log.details?.fertilizer_name || log.details?.pesticide_name || log.details?.foliar_nutrition || log.details?.fertilizer || log.details?.pesticide || '').trim().toLowerCase();
-    const stageSuffix = (logType === 'Kiểm toán quả' && log.details?.fruit_stage) ? `__${log.details.fruit_stage}` : '';
     
-    // Khóa gom nhóm chính: Cùng ngày + Cùng nông trại + Cùng loại hoạt động + Cùng vật tư (+ Mục con Kiểm toán quả)
-    const key = `${dateStr}__${farmId}__${logType}__${supplyName}${stageSuffix}`;
+    // Khóa gom nhóm chính: Cùng ngày + Cùng nông trại + Cùng loại hoạt động + Cùng vật tư
+    const key = `${dateStr}__${farmId}__${logType}__${supplyName}`;
 
     if (!regularGroups.has(key)) {
       regularGroups.set(key, {
@@ -302,13 +401,6 @@ export function groupCareLogsByDay(logs) {
       let detailsStr = esc(l.note || '');
       if (l.details && Object.keys(l.details).length > 0) {
         const parts = [];
-        if (l.log_type === 'Kiểm toán quả') {
-          if (l.details.fruit_stage) parts.push(`Giai đoạn: ${l.details.fruit_stage}`);
-          if (l.details.fruit_count !== undefined) parts.push(`Số quả: ${l.details.fruit_count} quả`);
-          if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${l.details.dropped_or_culled_count} quả`);
-          if (l.details.estimated_yield_kg) parts.push(`Ước tính: ${l.details.estimated_yield_kg} kg`);
-          if (l.details.audit_time) parts.push(`Giờ đếm: ${l.details.audit_time}`);
-        }
         if (l.details.work_content)    parts.push(`Công việc: ${l.details.work_content}`);
         if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
         if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
@@ -325,7 +417,7 @@ export function groupCareLogsByDay(logs) {
         }
       }
 
-      const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công' || l.log_type === 'Kiểm toán quả')
+      const mediaHtml = (l.log_type === 'Bệnh cây' || l.log_type === 'Nhân công')
         ? buildMediaThumbnailsHtml(l.media_urls, 36)
         : '';
 
@@ -385,6 +477,7 @@ export function renderUserLogsTable(logs) {
     return;
   }
 
+  enrichLogsWithFruitAuditChain(logs);
   if (moreWrap) moreWrap.style.display = 'block';
 
   // 1. Phân chia raw logs theo từng Ngày
@@ -483,9 +576,6 @@ export function renderUserLogsTable(logs) {
       } else if (l.log_type === 'Bệnh cây') {
         badgeClass = 'badge-red';
         icon = 'bug';
-      } else if (l.log_type === 'Kiểm toán quả') {
-        badgeClass = 'badge-green';
-        icon = 'clipboard-check';
       } else if (l.log_type === 'Thu hoạch') {
         badgeClass = 'badge-yellow';
         icon = 'wheat';
@@ -495,10 +585,14 @@ export function renderUserLogsTable(logs) {
       } else if (l.log_type === 'Nhân công') {
         badgeClass = 'badge-blue';
         icon = 'users';
+      } else if (l.log_type === 'Kiểm toán quả') {
+        badgeClass = 'badge-green';
+        icon = 'apple';
       }
 
       // 4. Chi tiết, Vật tư, Khối lượng & Chú thích
       let detailsStr = esc(l.note || '');
+      let auditDeltaHtml = '';
       if (l.details && Object.keys(l.details).length > 0) {
         const parts = [];
         const qtyVal = l.details.quantity ?? l.details.amount ?? l.details.qty ?? l.details.dosage ?? l.details.volume ?? l.details.yield_kg;
@@ -510,15 +604,16 @@ export function renderUserLogsTable(logs) {
           if (l.details.worker_count) parts.push(`Số lượng: <strong style="color:#0284c7;">${l.details.worker_count} người</strong>`);
           if (l.details.time_range) parts.push(`Giờ làm: <strong>${esc(l.details.time_range)}</strong>`);
         } else if (l.log_type === 'Kiểm toán quả') {
-          if (l.details.fruit_stage) parts.push(`Giai đoạn: <strong style="color:#0f766e;">[${esc(l.details.fruit_stage)}]</strong>`);
-          if (l.details.fruit_count !== undefined) parts.push(`Đếm được: <strong style="color:#059669;">${l.details.fruit_count} quả</strong>`);
-          if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: <strong style="color:#d97706;">${l.details.dropped_or_culled_count} quả</strong>`);
-          if (l.details.estimated_yield_kg) parts.push(`Ước tính: <strong>~${l.details.estimated_yield_kg} kg</strong>`);
+          if (l.details.audit_stage) parts.push(`Giai đoạn: <strong style="color:#0f766e;">${esc(l.details.audit_stage)}</strong>`);
+          if (l.details.fruit_count !== undefined) parts.push(`Đếm thực tế: <strong style="color:#0f172a;">${l.details.fruit_count} quả</strong>`);
+          if (l.details.reason) parts.push(`Nguyên nhân: ${esc(l.details.reason)}`);
+          auditDeltaHtml = _buildFruitDeltaBadgeHtml(l.details, false);
         } else {
           if (supName) parts.push(`Vật tư: <strong style="color:#0f172a;">${esc(supName)}</strong>`);
           if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '' && qtyVal > 0) parts.push(`Tổng lượng: <strong style="color:#059669;">${qtyVal} ${unitVal}</strong>`);
         }
-        if (l.details.fruit_count) parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
+        if (l.log_type !== 'Kiểm toán quả' && l.details.fruit_count) parts.push(`Số trái: <strong>${l.details.fruit_count}</strong>`);
+        if (l.log_type === 'Thu hoạch' && l.details.harvest_comparison_text) auditDeltaHtml = _buildFruitDeltaBadgeHtml(l.details, true);
         if (l.details.total_cost) parts.push(`Chi phí: <strong style="color:#dc2626;">${Number(l.details.total_cost).toLocaleString('vi-VN')} đ</strong>`);
         if (l.details.total_revenue) parts.push(`Doanh thu: <strong style="color:#059669;">${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ</strong>`);
         if (l.details.avg_price_per_fruit) parts.push(`TB/quả: <strong style="color:#d97706;">${Number(l.details.avg_price_per_fruit).toLocaleString('vi-VN')} đ</strong>`);
@@ -558,6 +653,7 @@ export function renderUserLogsTable(logs) {
           </td>
           <td data-label="Chi tiết / Ghi chú" style="vertical-align: middle; padding: 12px 14px; font-size: 13px; color: #334155; line-height: 1.5;">
             <div>${detailsStr || 'Đã hoàn thành công việc theo quy trình chuẩn.'}</div>
+            ${auditDeltaHtml}
             ${mediaHtml ? `<div style="margin-top: 4px;">${mediaHtml}</div>` : ''}
           </td>
           <td data-label="Người thực hiện" style="vertical-align: middle; padding: 12px 14px; white-space: nowrap; font-size: 12.5px; color: #475569;">
@@ -642,7 +738,7 @@ function _renderLogPage() {
     'Bón phân': 'sprout',
     'Phun thuốc': 'flask-conical',
     'Nhân công': 'users',
-    'Kiểm toán quả': 'clipboard-check',
+    'Kiểm toán quả': 'apple',
     'Cắt tỉa': 'scissors',
     'Cắt lá': 'scissors',
     'Làm cỏ': 'scissors',
@@ -681,6 +777,7 @@ function _renderLogPage() {
 
     dayItems.forEach(l => {
       let detailsStr = esc(l.note || '');
+      let itemDeltaBadgeHtml = '';
       if (l.details && Object.keys(l.details).length > 0) {
         const parts = [];
         const qtyVal = l.details.quantity ?? l.details.amount ?? l.details.qty ?? l.details.dosage ?? l.details.volume ?? l.details.yield_kg;
@@ -692,16 +789,16 @@ function _renderLogPage() {
           if (l.details.worker_count) parts.push(`Số người: ${l.details.worker_count} người`);
           if (l.details.time_range)   parts.push(`Giờ làm: ${l.details.time_range}`);
         } else if (l.log_type === 'Kiểm toán quả') {
-          if (l.details.fruit_stage) parts.push(`Giai đoạn: [${l.details.fruit_stage}]`);
-          if (l.details.fruit_count !== undefined) parts.push(`Số quả trên cây: ${l.details.fruit_count} quả`);
-          if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${l.details.dropped_or_culled_count} quả`);
-          if (l.details.estimated_yield_kg) parts.push(`Ước tính: ~${l.details.estimated_yield_kg} kg`);
+          if (l.details.audit_stage) parts.push(`Giai đoạn: ${l.details.audit_stage}`);
+          if (l.details.fruit_count !== undefined) parts.push(`Số quả đếm được: ${l.details.fruit_count} quả`);
           if (l.details.audit_time) parts.push(`Giờ đếm: ${l.details.audit_time}`);
+          itemDeltaBadgeHtml = _buildFruitDeltaBadgeHtml(l.details, false);
         } else {
           if (supName) parts.push(`Vật tư: ${supName}`);
           if (qtyVal !== undefined && qtyVal !== null && qtyVal !== '') parts.push(`Lượng: ${qtyVal} ${unitVal}`);
         }
-        if (l.details.fruit_count)     parts.push(`Số trái: ${l.details.fruit_count}`);
+        if (l.log_type !== 'Kiểm toán quả' && l.details.fruit_count) parts.push(`Số trái: ${l.details.fruit_count}`);
+        if (l.log_type === 'Thu hoạch' && l.details.harvest_comparison_text) itemDeltaBadgeHtml = _buildFruitDeltaBadgeHtml(l.details, true);
         if (l.details.total_revenue && !isFinanceRedacted)   parts.push(`Doanh thu: ${Number(l.details.total_revenue).toLocaleString('vi-VN')} đ`);
         if (l.details.total_cost && !isFinanceRedacted)      parts.push(`Chi phí: ${Number(l.details.total_cost).toLocaleString('vi-VN')} đ`);
         if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
@@ -781,6 +878,7 @@ function _renderLogPage() {
                   <strong style="color:#0f172a; font-size:14px;">${esc(targetDisplay)}</strong>
                 </div>
                 ${detailsStr ? `<div style="font-size:12.5px; color:#475569; margin-top:4px;">${detailsStr}</div>` : ''}
+                ${itemDeltaBadgeHtml || ''}
                 ${mediaHtml ? `<div style="margin-top:6px;">${mediaHtml}</div>` : ''}
                 <div style="font-size:11.5px; color:#64748b; margin-top:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="user" class="lucide-xs" style="color:#059669;"></i> Thực hiện: <strong>${esc(l.creator_name || 'Nông hộ')}</strong></span>
@@ -855,22 +953,23 @@ function _logRow(l) {
   if (l.details && Object.keys(l.details).length > 0) {
     const parts = [];
     if (l.log_type === 'Kiểm toán quả') {
-      if (l.details.fruit_stage) parts.push(`Giai đoạn: [${l.details.fruit_stage}]`);
+      if (l.details.audit_stage) parts.push(`Giai đoạn: ${l.details.audit_stage}`);
       if (l.details.fruit_count !== undefined) parts.push(`Số quả: ${l.details.fruit_count} quả`);
-      if (l.details.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${l.details.dropped_or_culled_count} quả`);
-      if (l.details.estimated_yield_kg) parts.push(`Ước tính: ~${l.details.estimated_yield_kg} kg`);
-      if (l.details.audit_time) parts.push(`Giờ đếm: ${l.details.audit_time}`);
+      if (l.details.comparison_text) parts.push(l.details.comparison_text);
+      if (l.details.reason) parts.push(`Nguyên nhân: ${l.details.reason}`);
+    } else {
+      if (l.details.work_content)    parts.push(`Nội dung: ${l.details.work_content}`);
+      if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
+      if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
+      if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
+      if (l.details.amount && !l.details.worker_count) parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
+      if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
+      if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
+      if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
+      if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
+      if (l.details.severity)        parts.push(`Mức độ: ${l.details.severity}`);
+      if (l.details.harvest_comparison_text) parts.push(l.details.harvest_comparison_text);
     }
-    if (l.details.work_content)    parts.push(`Nội dung: ${l.details.work_content}`);
-    if (l.details.worker_count)    parts.push(`Số người: ${l.details.worker_count} người`);
-    if (l.details.time_range)      parts.push(`Giờ làm: ${l.details.time_range}`);
-    if (l.details.method)          parts.push(`Cách: ${l.details.method}`);
-    if (l.details.amount && !l.details.worker_count) parts.push(`Lượng: ${l.details.amount} ${l.details.unit || ''}`);
-    if (l.details.fertilizer_name) parts.push(`Phân: ${l.details.fertilizer_name}`);
-    if (l.details.pesticide_name)  parts.push(`Thuốc: ${l.details.pesticide_name}`);
-    if (l.details.reason)          parts.push(`Lý do: ${l.details.reason}`);
-    if (l.details.disease_name)    parts.push(`Bệnh: ${l.details.disease_name}`);
-    if (l.details.severity)        parts.push(`Mức độ: ${l.details.severity}`);
     if (parts.length > 0) {
       detailsStr = `<span style="${l.log_type === 'Bệnh cây' ? 'color:#991b1b;font-weight:700;' : 'color:var(--green)'}">[${parts.join(', ')}]</span>` + (l.note ? ` - ${esc(l.note)}` : '');
     }
@@ -918,7 +1017,6 @@ function _logRow(l) {
     'Tưới nước': 'badge-blue',
     'Bón phân':  'badge-brown',
     'Phun thuốc': 'badge-purple',
-    'Kiểm toán quả': 'badge-green',
     'Cắt lá':    'badge-green',
     'Tỉa hoa':   'badge-amber'
   };
@@ -1424,7 +1522,7 @@ export function openUserExportLogsModal() {
   if (fromDateInput) fromDateInput.value = fromDateStr;
   if (toDateInput) toDateInput.value = today;
 
-  // Populate Canonical SSOT categories + Kiểm toán quả
+  // Populate Canonical SSOT categories checkboxes (bao gồm Kiểm toán quả)
   const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
   if (catsContainer) {
     catsContainer.innerHTML = standardCats.map(cat => {
@@ -1508,14 +1606,15 @@ function formatLogDetailsText(log) {
     if (d.amount) parts.push(`Số lượng hoa/quả: ${d.amount}`);
     if (d.reason) parts.push(`Mục đích: ${d.reason}`);
   } else if (log.log_type === 'Kiểm toán quả') {
-    if (d.fruit_stage) parts.push(`Giai đoạn: ${d.fruit_stage}`);
-    if (d.fruit_count !== undefined) parts.push(`Số quả trên cây: ${d.fruit_count} quả`);
-    if (d.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${d.dropped_or_culled_count} quả`);
-    if (d.estimated_yield_kg) parts.push(`Sản lượng ước tính: ${d.estimated_yield_kg} kg`);
+    if (d.audit_stage) parts.push(`Giai đoạn: ${d.audit_stage}`);
+    if (d.fruit_count !== undefined) parts.push(`Số quả: ${d.fruit_count} quả`);
     if (d.audit_time) parts.push(`Giờ đếm: ${d.audit_time}`);
+    if (d.comparison_text) parts.push(d.comparison_text);
+    if (d.reason) parts.push(`Nguyên nhân/Ghi nhận: ${d.reason}`);
   } else if (log.log_type === 'Thu hoạch') {
     if (d.amount || d.yield_kg) parts.push(`Sản lượng: ${d.amount || d.yield_kg} ${d.unit || 'kg'}`);
     if (d.fruit_count) parts.push(`Số lượng trái: ${d.fruit_count} trái`);
+    if (d.harvest_comparison_text) parts.push(d.harvest_comparison_text);
     if (d.total_revenue) parts.push(`Doanh thu: ${Number(d.total_revenue).toLocaleString('vi-VN')} đ`);
     if (d.avg_price_per_fruit) parts.push(`TB/quả: ${Number(d.avg_price_per_fruit).toLocaleString('vi-VN')} đ`);
     if (d.quality) parts.push(`Chất lượng: ${d.quality}`);
@@ -1633,11 +1732,11 @@ export async function executeUserExport(mode = 'csv') {
   }
 
   // Fetch full logs or use cache
-  let allLogs = _logsCache;
+  let allLogs = enrichLogsWithFruitAuditChain([..._logsCache]);
   try {
     const freshRes = await api('/plants/logs/recent?days=all');
     if (Array.isArray(freshRes) && freshRes.length > 0) {
-      allLogs = freshRes;
+      allLogs = enrichLogsWithFruitAuditChain(freshRes);
       setLogsCache(allLogs);
     }
   } catch (err) {

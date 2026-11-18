@@ -155,6 +155,13 @@ export function openCareModal(plantId, treeCode, plantType, logId = null) {
   }
 
   const modal = document.getElementById('care-modal');
+  if (dateEl && !dateEl._fruitAuditHooked) {
+    dateEl._fruitAuditHooked = true;
+    dateEl.addEventListener('change', () => {
+      if (typeof calculateFruitAuditPreview === 'function') calculateFruitAuditPreview();
+      if (typeof calculateHarvestEconomicsPreview === 'function') calculateHarvestEconomicsPreview();
+    });
+  }
   if (modal) modal.style.display = 'flex';
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
@@ -246,6 +253,9 @@ function _renderMultiTreeSelector(checkboxListEl, multiEl, preselectedPlantId = 
     }
     if (typeof calculateFruitAuditPreview === 'function') {
       calculateFruitAuditPreview();
+    }
+    if (typeof calculateHarvestEconomicsPreview === 'function') {
+      calculateHarvestEconomicsPreview();
     }
   };
 
@@ -696,6 +706,146 @@ export function selectLaborWorkContent(val, btnEl) {
 }
 window.selectLaborWorkContent = selectLaborWorkContent;
 
+function _findLatestFruitAuditForPlant(plantId, beforeDateStr, excludeLogId = null) {
+  if (!plantId) return null;
+  const targetDate = (beforeDateStr || new Date().toISOString().slice(0, 10)).slice(0, 10);
+  const audits = (getLogsCache() || []).filter(l => {
+    if (String(l.plant_id) !== String(plantId)) return false;
+    if (l.log_type !== 'Kiểm toán quả') return false;
+    if (excludeLogId && String(l.id) === String(excludeLogId)) return false;
+    const dStr = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+    return !dStr || dStr <= targetDate;
+  });
+  if (audits.length === 0) return null;
+  audits.sort((a, b) => {
+    const dA = a.log_date ? new Date(a.log_date).toISOString().slice(0, 10) : '';
+    const dB = b.log_date ? new Date(b.log_date).toISOString().slice(0, 10) : '';
+    if (dB !== dA) return dB.localeCompare(dA);
+    return (b.id || 0) - (a.id || 0);
+  });
+  return audits[0];
+}
+
+function _computeFruitDeltaSummary(prevCount, currCount) {
+  const delta = currCount - prevCount;
+  const pct = prevCount > 0 ? Number(((delta / prevCount) * 100).toFixed(1)) : 0;
+  let label = 'Giữ nguyên số quả (0%)';
+  let color = '#0284c7';
+  let bg = '#e0f2fe';
+  if (delta < 0) {
+    label = `Suy giảm ${Math.abs(delta)} quả (${pct}%)`;
+    color = '#dc2626';
+    bg = '#fee2e2';
+  } else if (delta > 0) {
+    label = `Tăng ${delta} quả (+${pct}%)`;
+    color = '#059669';
+    bg = '#dcfce7';
+  }
+  return { delta, pct, label, color, bg };
+}
+
+export function selectFruitAuditStage(stage, btnEl) {
+  const hiddenEl = document.getElementById('c-detail-audit-stage');
+  if (hiddenEl) hiddenEl.value = stage;
+  if (btnEl && btnEl.parentElement) {
+    btnEl.parentElement.querySelectorAll('.fruit-stage-pill').forEach(b => {
+      b.style.borderColor = '#cbd5e1';
+      b.style.background = '#ffffff';
+      b.style.color = '#334155';
+      b.style.fontWeight = '600';
+      b.style.boxShadow = 'none';
+    });
+    btnEl.style.borderColor = '#0d9488';
+    btnEl.style.background = '#ccfbf1';
+    btnEl.style.color = '#0f766e';
+    btnEl.style.fontWeight = '800';
+    btnEl.style.boxShadow = '0 2px 6px rgba(13,148,136,0.18)';
+  }
+  calculateFruitAuditPreview();
+}
+window.selectFruitAuditStage = selectFruitAuditStage;
+
+export function selectFruitAuditReason(val, btnEl) {
+  const el = document.getElementById('c-detail-audit-reason');
+  if (el) {
+    el.value = val;
+    el.focus();
+  }
+  if (btnEl && btnEl.parentElement) {
+    btnEl.parentElement.querySelectorAll('button').forEach(b => {
+      b.style.borderColor = '#cbd5e1';
+      b.style.background = '#f8fafc';
+      b.style.color = '#334155';
+    });
+    btnEl.style.borderColor = '#0d9488';
+    btnEl.style.background = '#f0fdfa';
+    btnEl.style.color = '#0f766e';
+  }
+}
+window.selectFruitAuditReason = selectFruitAuditReason;
+
+export function calculateFruitAuditPreview() {
+  const boxEl = document.getElementById('fruit-audit-comparison-box');
+  if (!boxEl) return;
+
+  const currStage = document.getElementById('c-detail-audit-stage')?.value || 'Đậu quả';
+  const rawCount = parseInt(document.getElementById('c-detail-audit-fruit-count')?.value, 10);
+  const hasCount = !isNaN(rawCount) && rawCount >= 0;
+  const logDateStr = document.getElementById('c-log-date')?.value || new Date().toISOString().slice(0, 10);
+
+  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
+  let firstPlantId = document.getElementById('c-plant-id')?.value || null;
+  let treeCount = 1;
+  if (isMulti) {
+    const checked = document.querySelectorAll('.c-plant-checkbox:checked');
+    treeCount = checked.length || 1;
+    if (checked.length > 0) firstPlantId = checked[0].value;
+  }
+
+  const prevLog = _findLatestFruitAuditForPlant(firstPlantId, logDateStr, window._activeEditLogId);
+  const prevDetails = prevLog?.details || {};
+  const prevCount = parseInt(prevDetails.fruit_count ?? prevDetails.amount, 10);
+  const prevStage = prevDetails.audit_stage || 'Kiểm toán trước';
+  const prevDateFmt = prevLog?.log_date ? new Date(prevLog.log_date).toLocaleDateString('vi-VN') : '';
+  const currDateFmt = logDateStr ? new Date(logDateStr).toLocaleDateString('vi-VN') : '';
+
+  const prevSummaryEl = document.getElementById('audit-calc-prev-summary');
+  const deltaBadgeEl = document.getElementById('audit-calc-delta-badge');
+  const noteEl = document.getElementById('audit-calc-multi-note');
+
+  if (prevLog && !isNaN(prevCount)) {
+    if (prevSummaryEl) {
+      prevSummaryEl.innerHTML = `Mốc trước: <strong>${esc(prevStage)}</strong> (${esc(prevDateFmt)}) = <strong style="color:#0f172a;">${prevCount} quả</strong>`;
+    }
+    if (hasCount && deltaBadgeEl) {
+      const diff = _computeFruitDeltaSummary(prevCount, rawCount);
+      deltaBadgeEl.style.background = diff.bg;
+      deltaBadgeEl.style.color = diff.color;
+      deltaBadgeEl.textContent = `${currStage} (${currDateFmt}): ${rawCount} quả · ${diff.label}`;
+    } else if (deltaBadgeEl) {
+      deltaBadgeEl.style.background = '#f1f5f9';
+      deltaBadgeEl.style.color = '#475569';
+      deltaBadgeEl.textContent = 'Nhập số quả hiện tại để tính chênh lệch';
+    }
+  } else {
+    if (prevSummaryEl) {
+      prevSummaryEl.innerHTML = `Mốc khởi tạo đầu tiên: <strong>${esc(currStage)}</strong> (${esc(currDateFmt)})`;
+    }
+    if (deltaBadgeEl) {
+      deltaBadgeEl.style.background = '#ccfbf1';
+      deltaBadgeEl.style.color = '#0f766e';
+      deltaBadgeEl.textContent = hasCount ? `${currStage}: ${rawCount} quả (Mốc chuẩn ban đầu)` : 'Chưa có lịch sử kiểm toán trước';
+    }
+  }
+
+  if (noteEl) {
+    noteEl.textContent = treeCount > 1
+      ? `Đang áp dụng cho ${treeCount} cây — hệ thống sẽ tự đối chiếu riêng với mốc trước của từng cây.`
+      : 'Hệ thống tự động lưu vết so sánh với lần kiểm toán trước của cây.';
+  }
+}
+window.calculateFruitAuditPreview = calculateFruitAuditPreview;
+
 export function calculateHarvestEconomicsPreview() {
   const fruitCount = parseFloat(document.getElementById('c-detail-harvest-fruit-count')?.value) || 0;
   const singleTreeRev = parseFloat(document.getElementById('c-detail-harvest-tree-revenue')?.value) || 0;
@@ -704,9 +854,13 @@ export function calculateHarvestEconomicsPreview() {
 
   const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
   let treeCount = 1;
+  let firstPlantId = document.getElementById('c-plant-id')?.value || null;
   if (isMulti) {
     const checked = document.querySelectorAll('.c-plant-checkbox:checked');
-    if (checked.length > 0) treeCount = checked.length;
+    if (checked.length > 0) {
+      treeCount = checked.length;
+      firstPlantId = checked[0].value;
+    }
   }
 
   const avgFruitEl = document.getElementById('harvest-calc-avg-fruit');
@@ -714,6 +868,7 @@ export function calculateHarvestEconomicsPreview() {
   const totalRevEl = document.getElementById('harvest-calc-total-rev');
   const treeNoteEl = document.getElementById('harvest-calc-tree-note');
   const multiHintEl = document.getElementById('harvest-multi-tree-hint');
+  const auditCompareEl = document.getElementById('harvest-audit-compare-line');
 
   const totalRev = singleTreeRev * treeCount;
   const avgPerFruit = (fruitCount > 0) ? Math.round(singleTreeRev / fruitCount) : 0;
@@ -746,6 +901,25 @@ export function calculateHarvestEconomicsPreview() {
     treeNoteEl.textContent = treeCount > 1 ? `${treeCount} cây (x ${fmtVND(singleTreeRev)})` : '1 cây thu hoạch';
   }
 
+  if (auditCompareEl) {
+    const logDateStr = document.getElementById('c-log-date')?.value || new Date().toISOString().slice(0, 10);
+    const prevAudit = _findLatestFruitAuditForPlant(firstPlantId, logDateStr);
+    if (prevAudit && prevAudit.details && fruitCount > 0) {
+      const prevCount = parseInt(prevAudit.details.fruit_count ?? prevAudit.details.amount, 10);
+      if (!isNaN(prevCount)) {
+        const diff = _computeFruitDeltaSummary(prevCount, fruitCount);
+        const prevStage = prevAudit.details.audit_stage || 'Kiểm toán quả';
+        const prevDate = prevAudit.log_date ? new Date(prevAudit.log_date).toLocaleDateString('vi-VN') : '';
+        auditCompareEl.style.display = 'block';
+        auditCompareEl.innerHTML = `<i data-lucide="git-compare" class="lucide-xs" style="color:${diff.color};"></i> Đối chiếu <strong>Kiểm toán gần nhất (${esc(prevStage)}${prevDate ? ' - ' + esc(prevDate) : ''}: ${prevCount} quả)</strong>: Thu <strong>${fruitCount} quả</strong> → <span style="color:${diff.color}; font-weight:800;">${esc(diff.label)}</span>`;
+      } else {
+        auditCompareEl.style.display = 'none';
+      }
+    } else {
+      auditCompareEl.style.display = 'none';
+    }
+  }
+
   if (multiHintEl) {
     if (treeCount > 1) {
       multiHintEl.style.display = 'block';
@@ -758,61 +932,29 @@ export function calculateHarvestEconomicsPreview() {
 }
 window.calculateHarvestEconomicsPreview = calculateHarvestEconomicsPreview;
 
-export function selectFruitAuditStage(stage, btnEl) {
-  const inputEl = document.getElementById('c-detail-fruit-stage');
-  if (inputEl) inputEl.value = stage;
-  if (btnEl && btnEl.parentElement) {
-    btnEl.parentElement.querySelectorAll('button').forEach(b => {
-      b.style.borderColor = '#cbd5e1';
-      b.style.background = '#ffffff';
-      b.style.color = '#334155';
-      b.style.fontWeight = '600';
-    });
-    btnEl.style.borderColor = '#0d9488';
-    btnEl.style.background = '#ccfbf1';
-    btnEl.style.color = '#0f766e';
-    btnEl.style.fontWeight = '800';
-  }
-  calculateFruitAuditPreview();
+function _renderCareMediaPickerHtml(labelText) {
+  return `
+    <div class="field">
+      <label><i data-lucide="camera" class="lucide-sm" style="color:#0284c7;"></i> ${labelText}</label>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input type="file" id="c-detail-media-capture" accept="image/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
+        <input type="file" id="c-detail-media-video" accept="video/*" capture="environment" style="display:none;" onchange="onCareMediaSelected('video')">
+        <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
+            <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
+          </button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-video').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">
+            <i data-lucide="video" class="lucide-sm"></i> Quay video
+          </button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;background:#fff;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
+            <i data-lucide="images" class="lucide-sm"></i> Thư viện
+          </button>
+        </div>
+        <div id="c-media-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
+      </div>
+    </div>`;
 }
-window.selectFruitAuditStage = selectFruitAuditStage;
-
-export function calculateFruitAuditPreview() {
-  const stage = document.getElementById('c-detail-fruit-stage')?.value || 'Đậu quả';
-  const fruitCount = parseInt(document.getElementById('c-detail-fruit-audit-count')?.value, 10) || 0;
-  const avgGram = parseFloat(document.getElementById('c-detail-fruit-audit-avg-gram')?.value) || 0;
-  const auditTime = document.getElementById('c-detail-fruit-audit-time')?.value || '';
-
-  const isMulti = document.getElementById('c-plant-multi-select')?.style.display === 'block';
-  let treeCount = 1;
-  if (isMulti) {
-    const checked = document.querySelectorAll('.c-plant-checkbox:checked');
-    if (checked.length > 0) treeCount = checked.length;
-  }
-
-  const singleKg = (fruitCount > 0 && avgGram > 0) ? Number(((fruitCount * avgGram) / 1000).toFixed(2)) : 0;
-  const totalKg = Number((singleKg * treeCount).toFixed(2));
-  const totalFruits = fruitCount * treeCount;
-
-  const stageTimeEl = document.getElementById('fruit-audit-calc-stage-time');
-  const singleKgEl = document.getElementById('fruit-audit-calc-single-kg');
-  const totalKgEl = document.getElementById('fruit-audit-calc-total-kg');
-  const treeNoteEl = document.getElementById('fruit-audit-calc-tree-note');
-
-  if (stageTimeEl) {
-    stageTimeEl.textContent = `${stage}${auditTime ? ` · Lúc ${auditTime}` : ''}`;
-  }
-  if (singleKgEl) {
-    singleKgEl.textContent = `${fruitCount.toLocaleString('vi-VN')} quả / cây${singleKg > 0 ? ` (~${singleKg} kg)` : ''}`;
-  }
-  if (totalKgEl) {
-    totalKgEl.textContent = totalKg > 0 ? `${totalKg.toLocaleString('vi-VN')} kg` : `${totalFruits.toLocaleString('vi-VN')} quả`;
-  }
-  if (treeNoteEl) {
-    treeNoteEl.textContent = treeCount > 1 ? `Tổng ${treeCount} cây (${totalFruits.toLocaleString('vi-VN')} quả)` : '1 cây được kiểm toán';
-  }
-}
-window.calculateFruitAuditPreview = calculateFruitAuditPreview;
 
 /**
  * Trả về HTML form fields theo loại hoạt động.
@@ -1097,26 +1239,68 @@ function _buildDetailFields(logType, configs, supplies = []) {
         </div>
 
         <!-- 5. Chụp ảnh đoàn người tham gia (Nếu có - Không bắt buộc) -->
-        <div class="field">
-          <label><i data-lucide="camera" class="lucide-sm" style="color:#0284c7;"></i> Chụp ảnh đoàn người tham gia (Nếu có)</label>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <input type="file" id="c-detail-media-capture" accept="image/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
-            <input type="file" id="c-detail-media-video" accept="video/*" capture="environment" style="display:none;" onchange="onCareMediaSelected('video')">
-            <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
-                <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
-              </button>
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-video').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">
-                <i data-lucide="video" class="lucide-sm"></i> Quay video
-              </button>
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;background:#fff;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
-                <i data-lucide="images" class="lucide-sm"></i> Thư viện
-              </button>
-            </div>
-            <div id="c-media-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
+        ${_renderCareMediaPickerHtml('Chụp ảnh đoàn người tham gia (Nếu có)')}`;
+    }
+    case 'Kiểm toán quả': {
+      const nowTime = new Date().toTimeString().slice(0, 5);
+      return `
+        <div class="field" style="margin-bottom:12px;">
+          <label><i data-lucide="layers" class="lucide-sm" style="color:#0d9488;"></i> Giai đoạn kiểm toán quả (3 mục con) *</label>
+          <input type="hidden" id="c-detail-audit-stage" value="Đậu quả">
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+            <button type="button" class="fruit-stage-pill" onclick="selectFruitAuditStage('Đậu quả', this)" style="padding:10px 8px; border-radius:10px; border:1.5px solid #0d9488; background:#ccfbf1; color:#0f766e; font-size:12.5px; font-weight:800; cursor:pointer; box-shadow:0 2px 6px rgba(13,148,136,0.18);">
+              🌼 Đậu quả
+            </button>
+            <button type="button" class="fruit-stage-pill" onclick="selectFruitAuditStage('Quả non', this)" style="padding:10px 8px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:600; cursor:pointer;">
+              🍏 Quả non
+            </button>
+            <button type="button" class="fruit-stage-pill" onclick="selectFruitAuditStage('Quả chín', this)" style="padding:10px 8px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:600; cursor:pointer;">
+              🍈 Quả chín
+            </button>
           </div>
-        </div>`;
+        </div>
+
+        <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+              <i data-lucide="hash" class="lucide-sm" style="color:#0d9488;"></i> Số lượng quả đếm được *
+            </label>
+            <div style="position:relative;">
+              <input type="number" id="c-detail-audit-fruit-count" min="0" step="1" placeholder="VD: 75" oninput="calculateFruitAuditPreview()" onchange="calculateFruitAuditPreview()" style="width:100%; padding:10px 44px 10px 12px; border:1.5px solid #5eead4; border-radius:8px; font-weight:800; font-size:15px; color:#0f766e; background:#f0fdfa;">
+              <span style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:700; color:#0d9488;">quả</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:5px; margin-bottom:6px;">
+              <i data-lucide="clock" class="lucide-sm" style="color:#0d9488;"></i> Giờ kiểm đếm *
+            </label>
+            <input type="time" id="c-detail-audit-time" value="${nowTime}" style="width:100%; padding:10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
+          </div>
+        </div>
+
+        <div id="fruit-audit-comparison-box" style="margin-bottom:12px; padding:12px 14px; background:linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%); border:1.5px solid #99f6e4; border-radius:12px;">
+          <div style="font-size:11px; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:0.4px; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="git-compare" class="lucide-sm"></i> ĐỐI CHIẾU BIẾN ĐỘNG SỐ QUẢ VỚI GIAI ĐOẠN TRƯỚC
+          </div>
+          <div id="audit-calc-prev-summary" style="font-size:12.5px; color:#334155; margin-top:6px;">Đang tra cứu mốc kiểm toán trước...</div>
+          <div id="audit-calc-delta-badge" style="display:inline-block; margin-top:6px; padding:5px 10px; border-radius:8px; font-size:12.5px; font-weight:800; background:#ccfbf1; color:#0f766e;">
+            Nhập số quả để tính biến động
+          </div>
+          <div id="audit-calc-multi-note" style="font-size:11px; color:#64748b; margin-top:6px;"></div>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label><i data-lucide="clipboard-check" class="lucide-sm" style="color:#0d9488;"></i> Nguyên nhân suy giảm / Tình trạng trái</label>
+          <input type="text" id="c-detail-audit-reason" placeholder="VD: Rụng sinh lý, tỉa trái tạo phẩm cấp, thời tiết/nấm bệnh...">
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+            <button type="button" onclick="selectFruitAuditReason('Rụng sinh lý tự nhiên', this)" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; cursor:pointer; font-weight:600;">Rụng sinh lý</button>
+            <button type="button" onclick="selectFruitAuditReason('Tỉa bỏ trái còi / méo', this)" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; cursor:pointer; font-weight:600;">Tỉa bỏ trái còi</button>
+            <button type="button" onclick="selectFruitAuditReason('Côn trùng / Sâu bệnh gây rụng', this)" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; cursor:pointer; font-weight:600;">Sâu bệnh hại quả</button>
+            <button type="button" onclick="selectFruitAuditReason('Sinh trưởng khỏe, giữ trái tốt', this)" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; cursor:pointer; font-weight:600;">Giữ trái tốt</button>
+          </div>
+        </div>
+
+        ${_renderCareMediaPickerHtml('Chụp ảnh kiểm đếm quả trên cây (Nếu có)')}`;
     }
     case 'Cắt lá': {
       const reasons = configs.leaf_cut_reasons || [];
@@ -1129,94 +1313,6 @@ function _buildDetailFields(logType, configs, supplies = []) {
       return `
         <div class="field"><label>Lý do tỉa hoa/quả *</label><select id="c-detail-reason">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
         <div class="field"><label>Số lượng hoa/quả đã tỉa</label><input type="number" id="c-detail-amount" value="3" min="1"></div>`;
-    }
-    case 'Kiểm toán quả': {
-      const nowTime = new Date().toTimeString().slice(0, 5);
-      return `
-        <!-- 1. Chọn giai đoạn Kiểm toán quả (3 mục con) -->
-        <div class="field" style="margin-bottom:12px;">
-          <label><i data-lucide="clipboard-check" class="lucide-sm" style="color:#0d9488;"></i> Giai đoạn kiểm toán quả (3 mục con) *</label>
-          <input type="hidden" id="c-detail-fruit-stage" value="Đậu quả">
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:4px;">
-            <button type="button" data-fruit-stage="Đậu quả" onclick="selectFruitAuditStage('Đậu quả', this)" style="padding:9px 8px; border-radius:10px; border:1.5px solid #0d9488; background:#ccfbf1; color:#0f766e; font-size:12.5px; font-weight:800; cursor:pointer; text-align:center;">
-              🌼 Đậu quả<br><span style="font-size:10px; font-weight:600; opacity:0.85;">Sau xổ nhụy</span>
-            </button>
-            <button type="button" data-fruit-stage="Quả non" onclick="selectFruitAuditStage('Quả non', this)" style="padding:9px 8px; border-radius:10px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:600; cursor:pointer; text-align:center;">
-              🍈 Quả non<br><span style="font-size:10px; font-weight:600; opacity:0.8;">Đang nuôi trái</span>
-            </button>
-            <button type="button" data-fruit-stage="Quả chín" onclick="selectFruitAuditStage('Quả chín', this)" style="padding:9px 8px; border-radius:10px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:600; cursor:pointer; text-align:center;">
-              🌕 Quả chín<br><span style="font-size:10px; font-weight:600; opacity:0.8;">Chờ thu hoạch</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 2. Số quả đếm trên cây & Số quả rụng / tỉa bỏ -->
-        <div class="field" style="display:flex; gap:10px; margin-bottom:12px;">
-          <div style="flex:1;">
-            <label><i data-lucide="hash" class="lucide-sm" style="color:#0f766e;"></i> Số quả trên cây *</label>
-            <input type="number" id="c-detail-fruit-audit-count" min="0" step="1" value="" placeholder="VD: 120" oninput="calculateFruitAuditPreview()" onchange="calculateFruitAuditPreview()" style="width:100%; padding:9px 10px; border:1.5px solid #5eead4; border-radius:8px; font-weight:800; color:#0f766e; background:#f0fdfa;">
-          </div>
-          <div style="flex:1;">
-            <label><i data-lucide="scissors" class="lucide-sm" style="color:#d97706;"></i> Quả rụng / tỉa bỏ</label>
-            <input type="number" id="c-detail-fruit-audit-culled" min="0" step="1" value="0" placeholder="VD: 15" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
-          </div>
-        </div>
-
-        <!-- 3. Trọng lượng bình quân 1 quả & Giờ kiểm đếm cụ thể -->
-        <div class="field" style="display:flex; gap:10px; margin-bottom:12px;">
-          <div style="flex:1.2;">
-            <label><i data-lucide="scale" class="lucide-sm" style="color:#0284c7;"></i> Trọng lượng TB 1 quả (gram)</label>
-            <input type="number" id="c-detail-fruit-audit-avg-gram" min="0" step="10" value="" placeholder="VD: 350 hoặc 2800" oninput="calculateFruitAuditPreview()" onchange="calculateFruitAuditPreview()" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:600;">
-          </div>
-          <div style="flex:0.8;">
-            <label><i data-lucide="clock" class="lucide-sm" style="color:#0d9488;"></i> Giờ kiểm đếm *</label>
-            <input type="time" id="c-detail-fruit-audit-time" value="${nowTime}" oninput="calculateFruitAuditPreview()" onchange="calculateFruitAuditPreview()" style="width:100%; padding:8px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-weight:700;">
-          </div>
-        </div>
-
-        <!-- 4. Khối tự động dự báo sản lượng định kỳ -->
-        <div id="fruit-audit-preview-box" class="calc-breakdown-card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); border:1.5px solid #5eead4; border-radius:12px;">
-          <div style="font-size:11px; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between;">
-            <span style="display:flex; align-items:center; gap:6px;">
-              <i data-lucide="calculator" class="lucide-sm" style="color:#0d9488;"></i> THỐNG KÊ KIỂM TOÁN QUẢ ĐỊNH KỲ
-            </span>
-            <span style="background:#ccfbf1; color:#0f766e; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; border:1px solid #99f6e4;">BBCH 71-89</span>
-          </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; padding-top:8px; border-top:1px dashed #5eead4;">
-            <div>
-              <div style="font-size:11px; color:#115e59; font-weight:700;">Mục con &amp; Giờ kiểm:</div>
-              <div id="fruit-audit-calc-stage-time" style="font-size:13px; font-weight:800; color:#0f766e; margin-top:2px;">Đậu quả · Lúc ${nowTime}</div>
-              <div id="fruit-audit-calc-single-kg" style="font-size:11.5px; color:#475569; margin-top:2px;">0 quả / cây</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px; color:#065f46; font-weight:700;">Tổng ước tính toàn đợt:</div>
-              <div id="fruit-audit-calc-total-kg" style="font-size:17px; font-weight:900; color:#0f766e; margin-top:2px;">0 quả</div>
-              <div id="fruit-audit-calc-tree-note" style="font-size:11px; color:#115e59; margin-top:2px;">1 cây được kiểm toán</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5. Chụp ảnh chùm quả kiểm toán (Tùy chọn) -->
-        <div class="field">
-          <label><i data-lucide="camera" class="lucide-sm" style="color:#0d9488;"></i> Ảnh thực địa chùm quả (Tự động đóng dấu thời gian)</label>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <input type="file" id="c-detail-media-capture" accept="image/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
-            <input type="file" id="c-detail-media-video" accept="video/*" capture="environment" style="display:none;" onchange="onCareMediaSelected('video')">
-            <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
-                <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
-              </button>
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-video').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">
-                <i data-lucide="video" class="lucide-sm"></i> Quay video
-              </button>
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;background:#fff;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
-                <i data-lucide="images" class="lucide-sm"></i> Thư viện
-              </button>
-            </div>
-            <div id="c-media-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
-          </div>
-        </div>`;
     }
     case 'Thu hoạch': {
       const currentPlantId = document.getElementById('c-plant-id')?.value;
@@ -1262,6 +1358,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
             <span style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; font-weight:700; color:#047857;">VNĐ</span>
           </div>
           <div id="harvest-multi-tree-hint" style="display:none; font-size:12px; color:#047857; margin-top:4px; font-weight:600;"></div>
+          <div id="harvest-audit-compare-line" style="display:none; font-size:12px; color:#0f766e; background:#f0fdfa; border:1px solid #99f6e4; border-radius:8px; padding:6px 10px; margin-top:6px;"></div>
         </div>
 
         <!-- 3. Khối tự động tính trung bình quân 1 quả & tổng doanh thu -->
@@ -1310,26 +1407,7 @@ function _buildDetailFields(logType, configs, supplies = []) {
           </select>
         </div>
         <div class="field"><label>Mô tả dấu hiệu / Triệu chứng</label><textarea id="c-detail-description" rows="2" placeholder="Nhập thêm chi tiết quan sát được..."></textarea></div>
-        <div class="field">
-          <label>Hình ảnh / Video thực tế (Tự động đóng dấu ảnh) *</label>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <input type="file" id="c-detail-media-capture" accept="image/*" capture="environment" multiple style="display:none;" onchange="onCareMediaSelected('capture')">
-            <input type="file" id="c-detail-media-video" accept="video/*" capture="environment" style="display:none;" onchange="onCareMediaSelected('video')">
-            <input type="file" id="c-detail-media-library" accept="image/*,video/*" multiple style="display:none;" onchange="onCareMediaSelected('library')">
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-capture').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
-                <i data-lucide="camera" class="lucide-sm"></i> Chụp hình
-              </button>
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-video').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">
-                <i data-lucide="video" class="lucide-sm"></i> Quay video
-              </button>
-              <button class="btn btn-secondary btn-sm" type="button" onclick="document.getElementById('c-detail-media-library').click()" style="flex:1;justify-content:center;gap:5px;padding:9px 4px;background:#fff;display:inline-flex;align-items:center;font-size:12px;font-weight:600;">
-                <i data-lucide="images" class="lucide-sm"></i> Thư viện
-              </button>
-            </div>
-            <div id="c-media-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
-          </div>
-        </div>`;
+        ${_renderCareMediaPickerHtml('Hình ảnh / Video thực tế (Tự động đóng dấu ảnh) *')}`;
     default:
       return '';
   }
@@ -1359,20 +1437,22 @@ function _populateDetailFields(log) {
     _setVal('c-detail-labor-end-time',   d.end_time || '');
     renderMediaPreviews();
     if (typeof calculateLaborCostPreview === 'function') calculateLaborCostPreview();
+  } else if (t === 'Kiểm toán quả') {
+    const stageVal = d.audit_stage || 'Đậu quả';
+    _setVal('c-detail-audit-stage', stageVal);
+    document.querySelectorAll('.fruit-stage-pill').forEach(btn => {
+      if ((btn.textContent || '').includes(stageVal)) {
+        selectFruitAuditStage(stageVal, btn);
+      }
+    });
+    _setVal('c-detail-audit-fruit-count', d.fruit_count !== undefined ? d.fruit_count : d.amount);
+    _setVal('c-detail-audit-time', d.audit_time || d.time || '');
+    _setVal('c-detail-audit-reason', d.reason || d.drop_reason || '');
+    renderMediaPreviews();
+    if (typeof calculateFruitAuditPreview === 'function') calculateFruitAuditPreview();
   } else if (t === 'Cắt lá' || t === 'Tỉa hoa') {
     _setVal('c-detail-reason',     d.reason);
     _setVal('c-detail-amount',     d.amount);
-  } else if (t === 'Kiểm toán quả') {
-    const stage = d.fruit_stage || 'Đậu quả';
-    _setVal('c-detail-fruit-stage', stage);
-    const stageBtn = document.querySelector(`[data-fruit-stage="${stage}"]`);
-    if (stageBtn) selectFruitAuditStage(stage, stageBtn);
-    _setVal('c-detail-fruit-audit-count', d.fruit_count !== undefined ? d.fruit_count : (d.amount || ''));
-    _setVal('c-detail-fruit-audit-culled', d.dropped_or_culled_count !== undefined ? d.dropped_or_culled_count : 0);
-    _setVal('c-detail-fruit-audit-avg-gram', d.avg_weight_gram || '');
-    _setVal('c-detail-fruit-audit-time', d.audit_time || '');
-    renderMediaPreviews();
-    if (typeof calculateFruitAuditPreview === 'function') calculateFruitAuditPreview();
   } else if (t === 'Thu hoạch') {
     _setVal('c-detail-harvest-fruit-count', d.fruit_count);
     _setVal('c-detail-harvest-amount',      d.amount);
@@ -1418,14 +1498,15 @@ function _buildDetailsString(logType, details) {
     if (d.reason) parts.push(`Lý do: ${d.reason}`);
     if (d.amount) parts.push(`Lượng: ${d.amount}`);
   } else if (logType === 'Kiểm toán quả') {
-    if (d.fruit_stage) parts.push(`Giai đoạn: ${d.fruit_stage}`);
-    if (d.fruit_count !== undefined) parts.push(`Số quả: ${d.fruit_count} quả`);
-    if (d.dropped_or_culled_count) parts.push(`Rụng/tỉa: ${d.dropped_or_culled_count} quả`);
-    if (d.estimated_yield_kg) parts.push(`Ước tính: ${d.estimated_yield_kg} kg`);
+    if (d.audit_stage) parts.push(`Giai đoạn: ${d.audit_stage}`);
+    if (d.fruit_count !== undefined) parts.push(`Số lượng: ${d.fruit_count} quả`);
     if (d.audit_time) parts.push(`Giờ đếm: ${d.audit_time}`);
+    if (d.comparison_text) parts.push(d.comparison_text);
+    if (d.reason) parts.push(`Ghi nhận: ${d.reason}`);
   } else if (logType === 'Thu hoạch') {
     if (d.amount) parts.push(`Sản lượng: ${d.amount} ${d.unit || 'kg'}`);
     if (d.fruit_count) parts.push(`Số trái: ${d.fruit_count} quả`);
+    if (d.harvest_comparison_text) parts.push(d.harvest_comparison_text);
     if (d.total_revenue) parts.push(`Thu: ${new Intl.NumberFormat('vi-VN').format(d.total_revenue)} VNĐ`);
     if (d.avg_price_per_fruit) parts.push(`TB: ${new Intl.NumberFormat('vi-VN').format(d.avg_price_per_fruit)} VNĐ/quả`);
     if (d.quality) parts.push(`Chất lượng: ${d.quality}`);
@@ -1505,19 +1586,18 @@ window.removeExistingPhoto = removeExistingPhoto;
 
 // ── Save ──────────────────────────────────────────────────────
 
-async function _uploadWatermarkedCareMedia(selectedPlants, watermarkLabel, btn) {
+async function _uploadCareMediaFiles(primaryPlantId, primaryTreeCode, caption, btn) {
   const mediaUrls = [...(window._existingMediaUrls || [])];
-  if (selectedCareFiles.length > 0 && selectedPlants[0]?.id) {
+  if (selectedCareFiles.length > 0 && primaryPlantId) {
     if (btn) btn.innerHTML = '<span class="spinner"></span> Đóng dấu ảnh...';
     const formData = new FormData();
-    const primaryTreeCode = selectedPlants[0].treeCode;
     for (const file of selectedCareFiles) {
       const processed = file.type.startsWith('image/')
-        ? await watermarkImage(file, primaryTreeCode, watermarkLabel)
+        ? await watermarkImage(file, primaryTreeCode, caption)
         : file;
       formData.append('files', processed, file.name);
     }
-    const uploadRes = await fetch(`${API}/plants/${selectedPlants[0].id}/media`, {
+    const uploadRes = await fetch(`${API}/plants/${primaryPlantId}/media`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData
@@ -1527,8 +1607,8 @@ async function _uploadWatermarkedCareMedia(selectedPlants, watermarkLabel, btn) 
       throw new Error(errData.error || 'Lỗi tải ảnh/video lên máy chủ');
     }
     const uploaded = await uploadRes.json();
-    const uploadedArr = Array.isArray(uploaded) ? uploaded : (uploaded.uploaded || []);
-    uploadedArr.forEach(f => {
+    const list = Array.isArray(uploaded) ? uploaded : (uploaded.uploaded || []);
+    list.forEach(f => {
       mediaUrls.push({ url: f.url, type: f.media_type });
     });
   }
@@ -1726,42 +1806,45 @@ export async function saveCareLog() {
       };
 
       // Tải lên & đóng dấu ảnh đoàn người tham gia (nếu có chọn ảnh/video)
-      body.media_urls = await _uploadWatermarkedCareMedia(selectedPlants, `Nhân công: ${workContent}`, btn);
+      body.media_urls = await _uploadCareMediaFiles(
+        selectedPlants[0].id,
+        selectedPlants[0].treeCode,
+        `Nhân công: ${workContent}`,
+        btn
+      );
+
+    } else if (logType === 'Kiểm toán quả') {
+      const auditStage = document.getElementById('c-detail-audit-stage')?.value || 'Đậu quả';
+      const fruitCount = parseInt(document.getElementById('c-detail-audit-fruit-count')?.value, 10);
+      const auditTime = document.getElementById('c-detail-audit-time')?.value || '';
+      const reason = document.getElementById('c-detail-audit-reason')?.value.trim() || '';
+
+      if (isNaN(fruitCount) || fruitCount < 0) {
+        throw new Error('Vui lòng nhập số lượng quả đếm thực tế hợp lệ (≥ 0)!');
+      }
+
+      body.details = {
+        audit_stage: auditStage,
+        fruit_count: fruitCount,
+        amount: fruitCount,
+        unit: 'quả',
+        audit_time: auditTime,
+        time: auditTime,
+        reason
+      };
+
+      body.media_urls = await _uploadCareMediaFiles(
+        selectedPlants[0].id,
+        selectedPlants[0].treeCode,
+        `Kiểm toán ${auditStage}: ${fruitCount} quả`,
+        btn
+      );
 
     } else if (logType === 'Cắt lá') {
       body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
 
     } else if (logType === 'Tỉa hoa') {
       body.details = { reason: document.getElementById('c-detail-reason')?.value, amount: parseInt(document.getElementById('c-detail-amount')?.value) || 0 };
-
-    } else if (logType === 'Kiểm toán quả') {
-      const fruitStage = document.getElementById('c-detail-fruit-stage')?.value || 'Đậu quả';
-      const fruitCount = parseInt(document.getElementById('c-detail-fruit-audit-count')?.value, 10);
-      if (isNaN(fruitCount) || fruitCount < 0) throw new Error('Vui lòng nhập số lượng quả kiểm đếm hợp lệ!');
-      const culledCount = parseInt(document.getElementById('c-detail-fruit-audit-culled')?.value, 10) || 0;
-      const avgWeightGram = parseFloat(document.getElementById('c-detail-fruit-audit-avg-gram')?.value) || 0;
-      const estimatedYieldKg = (fruitCount > 0 && avgWeightGram > 0)
-        ? Number(((fruitCount * avgWeightGram) / 1000).toFixed(2))
-        : 0;
-      const auditTime = document.getElementById('c-detail-fruit-audit-time')?.value || new Date().toTimeString().slice(0, 5);
-      const performedAtIso = new Date(`${logDate}T${auditTime}:00`).toISOString();
-
-      body.details = {
-        fruit_stage: fruitStage,
-        fruit_count: fruitCount,
-        amount: fruitCount,
-        quantity: fruitCount,
-        unit: 'quả',
-        dropped_or_culled_count: culledCount,
-        avg_weight_gram: avgWeightGram,
-        estimated_yield_kg: estimatedYieldKg,
-        audit_time: auditTime,
-        time: auditTime,
-        performed_at: performedAtIso,
-        value: `Kiểm toán quả [${fruitStage}]: ${fruitCount} quả${culledCount > 0 ? ` (Rụng/tỉa: ${culledCount})` : ''}${estimatedYieldKg > 0 ? ` · Ước tính ~${estimatedYieldKg} kg` : ''} · Lúc ${auditTime}`
-      };
-
-      body.media_urls = await _uploadWatermarkedCareMedia(selectedPlants, `Kiểm toán quả: ${fruitStage}`, btn);
 
     } else if (logType === 'Thu hoạch') {
       const amount = parseFloat(document.getElementById('c-detail-harvest-amount')?.value) || 0;
@@ -1791,7 +1874,13 @@ export async function saveCareLog() {
         description: document.getElementById('c-detail-description')?.value.trim()
       };
 
-      body.media_urls = await _uploadWatermarkedCareMedia(selectedPlants, disease_name, btn);
+      // Hợp nhất ảnh cũ và ảnh mới
+      body.media_urls = await _uploadCareMediaFiles(
+        selectedPlants[0].id,
+        selectedPlants[0].treeCode,
+        disease_name,
+        btn
+      );
     }
 
     if (window._activeEditLogId) {
@@ -1863,9 +1952,11 @@ export async function saveCareLog() {
       }
 
       if (logType === 'Thu hoạch' && lastSavedResult && lastSavedResult.batch_code) {
-        toast(`🌾 Thu hoạch thành công! Đã cấp Mã Lô VietGAP: ${lastSavedResult.batch_code}`, 'success');
+        const compareHint = lastSavedResult.details?.harvest_comparison_text ? ` · ${lastSavedResult.details.harvest_comparison_text}` : '';
+        toast(`🌾 Thu hoạch thành công! Mã Lô VietGAP: ${lastSavedResult.batch_code}${compareHint}`, 'success');
       } else if (logType === 'Kiểm toán quả') {
-        toast(`🍈 Đã ghi nhật ký Kiểm toán quả [${body.details?.fruit_stage || 'Đậu quả'}] thành công!`, 'success');
+        const cmp = lastSavedResult?.details?.comparison_text ? ` (${lastSavedResult.details.comparison_text})` : '';
+        toast(`🍏 Đã lưu nhật ký Kiểm toán quả thành công!${cmp}`, 'success');
       } else if (logType === 'Nhân công') {
         toast('👷 Đã ghi nhật ký Nhân công & tự động hạch toán chi phí lên bảng BI!', 'success');
       } else if (supplyId) {

@@ -131,6 +131,23 @@ async function submitCareLog(event, type, modalId, formId) {
     details.equipment_used = document.getElementById('labor-equipment-used')?.value.trim() || '';
     note = document.getElementById('labor-note')?.value.trim() || '';
   }
+  else if (type === 'Kiểm toán quả') {
+    const auditStage = document.getElementById('audit-stage-select')?.value || 'Đậu quả';
+    const fruitCount = parseInt(document.getElementById('audit-fruit-count')?.value, 10);
+    const reasonSel = document.getElementById('audit-reason-select')?.value;
+    const reasonVal = reasonSel === '__custom__' ? document.getElementById('audit-reason-custom')?.value.trim() : reasonSel;
+    const dtVal = document.getElementById('audit-datetime')?.value || '';
+
+    details.audit_stage = auditStage;
+    details.fruit_count = isNaN(fruitCount) ? 0 : fruitCount;
+    details.amount = details.fruit_count;
+    details.unit = 'quả';
+    details.audit_time = dtVal.length >= 16 ? dtVal.slice(11, 16) : '';
+    details.reason = reasonVal || '';
+    details.operator_name = document.getElementById('audit-operator-name')?.value.trim() || '';
+    details.equipment_used = document.getElementById('audit-equipment-used')?.value.trim() || '';
+    note = document.getElementById('audit-note')?.value.trim() || '';
+  }
   else if (type === 'Cắt lá') {
     details.amount = document.getElementById('leaf-amount')?.value.trim() || '';
     const selectVal = document.getElementById('leaf-reason-select')?.value;
@@ -165,31 +182,6 @@ async function submitCareLog(event, type, modalId, formId) {
     details.equipment_used = document.getElementById('harvest-equipment-used')?.value.trim() || '';
     const harvestNoteInput = document.getElementById('harvest-note');
     note = harvestNoteInput ? harvestNoteInput.value.trim() : '';
-  }
-  else if (type === 'Kiểm toán quả') {
-    const fruitStage = document.getElementById('fruit-audit-stage')?.value || 'Đậu quả';
-    const fruitCount = parseInt(document.getElementById('fruit-audit-count')?.value, 10) || 0;
-    const culledCount = parseInt(document.getElementById('fruit-audit-culled')?.value, 10) || 0;
-    const avgWeightGram = parseFloat(document.getElementById('fruit-audit-avg-gram')?.value) || 0;
-    const estimatedYieldKg = (fruitCount > 0 && avgWeightGram > 0)
-      ? Number(((fruitCount * avgWeightGram) / 1000).toFixed(2))
-      : 0;
-    const dtVal = document.getElementById('fruit-audit-datetime')?.value || '';
-    const auditTime = dtVal && dtVal.includes('T') ? dtVal.slice(11, 16) : new Date().toTimeString().slice(0, 5);
-
-    details.fruit_stage = fruitStage;
-    details.fruit_count = fruitCount;
-    details.amount = fruitCount;
-    details.unit = 'quả';
-    details.dropped_or_culled_count = culledCount;
-    details.avg_weight_gram = avgWeightGram;
-    details.estimated_yield_kg = estimatedYieldKg;
-    details.audit_time = auditTime;
-    details.time = auditTime;
-    details.operator_name = document.getElementById('fruit-audit-operator-name')?.value.trim() || '';
-    details.equipment_used = document.getElementById('fruit-audit-equipment-used')?.value.trim() || '';
-    details.value = `Kiểm toán quả [${fruitStage}]: ${fruitCount} quả${culledCount > 0 ? ` (Rụng/tỉa: ${culledCount})` : ''}${estimatedYieldKg > 0 ? ` · Ước tính ~${estimatedYieldKg} kg` : ''} · Lúc ${auditTime}`;
-    note = document.getElementById('fruit-audit-note')?.value.trim() || '';
   }
 
   const dtInput = form.querySelector('input[type="datetime-local"]');
@@ -265,6 +257,64 @@ async function submitCareLog(event, type, modalId, formId) {
   }
 }
 
+function _findPublicLatestFruitAudit(beforeDateStr) {
+  const logs = currentPlantData?.logs || [];
+  const targetDate = (beforeDateStr || new Date().toISOString().slice(0, 10)).slice(0, 10);
+  const audits = logs.filter(l => {
+    if (l.log_type !== 'Kiểm toán quả') return false;
+    const dStr = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+    return !dStr || dStr <= targetDate;
+  });
+  if (audits.length === 0) return null;
+  audits.sort((a, b) => {
+    const dA = a.log_date ? new Date(a.log_date).toISOString().slice(0, 10) : '';
+    const dB = b.log_date ? new Date(b.log_date).toISOString().slice(0, 10) : '';
+    if (dB !== dA) return dB.localeCompare(dA);
+    return (b.id || 0) - (a.id || 0);
+  });
+  return audits[0];
+}
+
+function updatePublicFruitAuditPreview() {
+  const currStage = document.getElementById('audit-stage-select')?.value || 'Đậu quả';
+  const rawCount = parseInt(document.getElementById('audit-fruit-count')?.value, 10);
+  const hasCount = !isNaN(rawCount) && rawCount >= 0;
+  const dtVal = document.getElementById('audit-datetime')?.value || '';
+  const dateStr = dtVal ? dtVal.slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+  const prevEl = document.getElementById('public-audit-prev-summary');
+  const deltaEl = document.getElementById('public-audit-delta-badge');
+  if (!prevEl || !deltaEl) return;
+
+  const prev = _findPublicLatestFruitAudit(dateStr);
+  const prevCount = prev?.details ? parseInt(prev.details.fruit_count ?? prev.details.amount, 10) : NaN;
+  const currDateFmt = new Date(dateStr).toLocaleDateString('vi-VN');
+
+  if (prev && !isNaN(prevCount)) {
+    const prevStage = prev.details?.audit_stage || 'Kiểm toán trước';
+    const prevDateFmt = prev.log_date ? new Date(prev.log_date).toLocaleDateString('vi-VN') : '';
+    prevEl.innerHTML = `Mốc trước: <strong>${esc(prevStage)}</strong> (${esc(prevDateFmt)}) = <strong>${prevCount} quả</strong>`;
+    if (hasCount) {
+      const diff = rawCount - prevCount;
+      const pct = prevCount > 0 ? Number(((diff / prevCount) * 100).toFixed(1)) : 0;
+      const label = diff < 0 ? `Suy giảm ${Math.abs(diff)} quả (${pct}%)` : (diff > 0 ? `Tăng ${diff} quả (+${pct}%)` : 'Giữ nguyên (0%)');
+      deltaEl.style.background = diff < 0 ? '#fee2e2' : (diff > 0 ? '#dcfce7' : '#e0f2fe');
+      deltaEl.style.color = diff < 0 ? '#dc2626' : (diff > 0 ? '#059669' : '#0284c7');
+      deltaEl.textContent = `${currStage} (${currDateFmt}): ${rawCount} quả · ${label}`;
+    } else {
+      deltaEl.style.background = '#f1f5f9';
+      deltaEl.style.color = '#475569';
+      deltaEl.textContent = 'Nhập số quả hiện tại để đối chiếu tự động';
+    }
+  } else {
+    prevEl.innerHTML = `Mốc khởi tạo đầu tiên: <strong>${esc(currStage)}</strong> (${esc(currDateFmt)})`;
+    deltaEl.style.background = '#ccfbf1';
+    deltaEl.style.color = '#0f766e';
+    deltaEl.textContent = hasCount ? `${currStage}: ${rawCount} quả (Mốc chuẩn ban đầu)` : 'Chưa có mốc kiểm toán quả trước đó';
+  }
+}
+window.updatePublicFruitAuditPreview = updatePublicFruitAuditPreview;
+
 function calculatePublicHarvestEconomics() {
   const fruitCount = parseFloat(document.getElementById('harvest-fruit-count')?.value) || 0;
   const treeRev = parseFloat(document.getElementById('harvest-tree-revenue')?.value) || 0;
@@ -273,19 +323,24 @@ function calculatePublicHarvestEconomics() {
     const avg = fruitCount > 0 ? Math.round(treeRev / fruitCount) : 0;
     avgEl.textContent = `${new Intl.NumberFormat('vi-VN').format(avg)} VNĐ / quả`;
   }
-}
-window.calculatePublicHarvestEconomics = calculatePublicHarvestEconomics;
-
-function calculatePublicFruitAuditPreview() {
-  const count = parseFloat(document.getElementById('fruit-audit-count')?.value) || 0;
-  const avgGram = parseFloat(document.getElementById('fruit-audit-avg-gram')?.value) || 0;
-  const estEl = document.getElementById('public-fruit-audit-est-kg');
-  if (estEl) {
-    const estKg = (count > 0 && avgGram > 0) ? ((count * avgGram) / 1000).toFixed(2) : '0';
-    estEl.textContent = `${estKg} kg`;
+  const cmpEl = document.getElementById('public-harvest-audit-compare');
+  if (cmpEl) {
+    const prev = _findPublicLatestFruitAudit(new Date().toISOString().slice(0, 10));
+    const prevCount = prev?.details ? parseInt(prev.details.fruit_count ?? prev.details.amount, 10) : NaN;
+    if (prev && !isNaN(prevCount) && fruitCount > 0) {
+      const diff = fruitCount - prevCount;
+      const pct = prevCount > 0 ? Number(((diff / prevCount) * 100).toFixed(1)) : 0;
+      const label = diff < 0 ? `Suy giảm ${Math.abs(diff)} quả (${pct}%)` : (diff > 0 ? `Tăng ${diff} quả (+${pct}%)` : 'Khớp 100% số quả');
+      const prevStage = prev.details?.audit_stage || 'Kiểm toán quả';
+      const prevDate = prev.log_date ? new Date(prev.log_date).toLocaleDateString('vi-VN') : '';
+      cmpEl.style.display = 'block';
+      cmpEl.innerHTML = `Đối chiếu <strong>${esc(prevStage)}${prevDate ? ' (' + esc(prevDate) + ')' : ''}: ${prevCount} quả</strong> → Thu ${fruitCount} quả (<span style="color:${diff < 0 ? '#dc2626' : '#059669'};">${esc(label)}</span>)`;
+    } else {
+      cmpEl.style.display = 'none';
+    }
   }
 }
-window.calculatePublicFruitAuditPreview = calculatePublicFruitAuditPreview;
+window.calculatePublicHarvestEconomics = calculatePublicHarvestEconomics;
 
 // ── Bệnh cây Feature ─────────────────────────────────────────────
 let diseaseImageFiles = [];
@@ -555,10 +610,15 @@ async function submitDiseaseLog(event) {
   }
 }
 
-// Restore drafts if user cancels out and re-opens
+// Restore drafts or refresh audit comparison previews when modal opens
 function onModalOpen(modalId) {
   if (modalId === 'modal-disease') {
     restoreDiseaseDraft();
+  } else if (modalId === 'modal-fruit-audit') {
+    toggleCustomInput('audit-reason');
+    updatePublicFruitAuditPreview();
+  } else if (modalId === 'modal-harvest') {
+    calculatePublicHarvestEconomics();
   }
 }
 

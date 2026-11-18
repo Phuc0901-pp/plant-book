@@ -267,91 +267,86 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
     final noteController = TextEditingController();
     final detailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    String selectedFruitStage = 'Đậu quả';
-    final bool isFruitAudit = activityType == 'Kiểm toán quả';
 
     String detailLabel = 'Thông số chi tiết:';
+    String selectedAuditStage = 'Đậu quả';
     if (activityType == 'Tưới nước') detailLabel = 'Lượng nước (lít):';
     if (activityType == 'Bón phân') detailLabel = 'Tên phân bón:';
     if (activityType == 'Phun thuốc') detailLabel = 'Tên thuốc BVTV:';
     if (activityType == 'Thuê nhân công' || activityType == 'Cắt cành/lá' || activityType == 'Tỉa hoa/quả') detailLabel = 'Công việc thuê nhân công (Tỉa cành/Tỉa hoa/Làm cỏ...):';
-    if (isFruitAudit) detailLabel = 'Số quả đếm được trên cây (quả):';
+    if (activityType == 'Kiểm toán quả') detailLabel = 'Số lượng quả đếm thực tế (quả):';
     if (activityType == 'Bệnh cây') detailLabel = 'Tên sâu bệnh phát hiện:';
 
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          title: Text(
-            'Ghi nhanh: $activityType',
-            style: const TextStyle(color: AppTheme.textMain, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (isFruitAudit) ...[
-                  const Text('Giai đoạn kiểm toán (3 mục con):', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: selectedFruitStage,
-                    decoration: const InputDecoration(
-                      fillColor: Color(0xFFF0FDFA),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    items: const ['Đậu quả', 'Quả non', 'Quả chín']
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold))))
-                        .toList(),
-                    onChanged: (v) => setDialogState(() => selectedFruitStage = v ?? 'Đậu quả'),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                Text(detailLabel, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+        backgroundColor: Colors.white,
+        title: Text(
+          'Ghi nhanh: $activityType',
+          style: const TextStyle(color: AppTheme.textMain, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (activityType == 'Kiểm toán quả') ...[
+                const Text('Giai đoạn kiểm toán (3 mục con):', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
                 const SizedBox(height: 6),
-                TextFormField(
-                  controller: detailController,
-                  keyboardType: isFruitAudit ? TextInputType.number : TextInputType.text,
-                  style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
-                  decoration: InputDecoration(
-                    fillColor: const Color(0xFFF8FAFC),
-                    hintText: isFruitAudit ? 'VD: 120' : 'Nhập thông tin...',
-                    hintStyle: const TextStyle(color: Colors.black26, fontSize: 13),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'Trường này không được trống' : null,
+                DropdownButtonFormField<String>(
+                  value: selectedAuditStage,
+                  items: const ['Đậu quả', 'Quả non', 'Quả chín']
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (v) => setDialogState(() => selectedAuditStage = v ?? 'Đậu quả'),
                 ),
                 const SizedBox(height: 12),
-                const Text('Ghi chú thêm:', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: noteController,
-                  maxLines: 2,
-                  style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
-                  decoration: const InputDecoration(
-                    fillColor: Color(0xFFF8FAFC),
-                    hintText: 'Nhập ghi chú...',
-                    hintStyle: TextStyle(color: Colors.black26, fontSize: 13),
-                    contentPadding: EdgeInsets.all(12),
-                  ),
-                ),
               ],
-            ),
+              Text(detailLabel, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: detailController,
+                keyboardType: activityType == 'Kiểm toán quả' ? TextInputType.number : TextInputType.text,
+                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                decoration: InputDecoration(
+                  fillColor: const Color(0xFFF8FAFC),
+                  hintText: activityType == 'Kiểm toán quả' ? 'VD: 75' : 'Nhập thông tin...',
+                  hintStyle: const TextStyle(color: Colors.black26, fontSize: 13),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                validator: (val) => val == null || val.isEmpty ? 'Trường này không được trống' : null,
+              ),
+              const SizedBox(height: 12),
+              const Text('Ghi chú thêm:', style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: noteController,
+                maxLines: 2,
+                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                decoration: const InputDecoration(
+                  fillColor: Color(0xFFF8FAFC),
+                  hintText: 'Nhập ghi chú...',
+                  hintStyle: TextStyle(color: Colors.black26, fontSize: 13),
+                  contentPadding: EdgeInsets.all(12),
+                ),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green),
-              child: const Text('Ghi lại'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.green),
+            child: const Text('Ghi lại'),
+          ),
+        ],
+      ),
       ),
     );
 
@@ -367,17 +362,13 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
         details['work_content'] = value;
         details['activity'] = value;
       }
-      if (isFruitAudit) {
-        final int count = int.tryParse(value) ?? 0;
-        final DateTime now = DateTime.now();
-        final String auditTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-        details['fruit_stage'] = selectedFruitStage;
-        details['fruit_count'] = count;
-        details['amount'] = count;
+      if (activityType == 'Kiểm toán quả') {
+        final cnt = int.tryParse(value) ?? 0;
+        details['audit_stage'] = selectedAuditStage;
+        details['fruit_count'] = cnt;
+        details['amount'] = cnt;
         details['unit'] = 'quả';
-        details['audit_time'] = auditTime;
-        details['performed_at'] = now.toIso8601String();
-        details['value'] = 'Kiểm toán quả [$selectedFruitStage]: $count quả · Lúc $auditTime';
+        details['value'] = '$selectedAuditStage: $cnt quả';
       }
       if (activityType == 'Bệnh cây') details['disease'] = value;
 
@@ -719,7 +710,7 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       {'label': 'Bón phân', 'icon': Icons.opacity_rounded, 'color': Colors.green},
       {'label': 'Phun thuốc', 'icon': Icons.science_rounded, 'color': Colors.orange},
       {'label': 'Thuê nhân công', 'icon': Icons.engineering_rounded, 'color': Colors.cyan},
-      {'label': 'Kiểm toán quả', 'icon': Icons.fact_check_rounded, 'color': Colors.teal},
+      {'label': 'Kiểm toán quả', 'icon': Icons.fact_check_rounded, 'color': Color(0xFF0D9488)},
       {'label': 'Bệnh cây', 'icon': Icons.error_outline_rounded, 'color': Colors.red},
     ];
 
@@ -1051,6 +1042,21 @@ class _PublicPlantProfilePageState extends State<PublicPlantProfilePage> {
       final unit = details['unit'] ?? 'lít';
       if (name != null && name.toString().isNotEmpty) parts.add('Loại thuốc: $name');
       if (amount != null) parts.add('Lượng phun: $amount $unit');
+    } else if (logType == 'Kiểm toán quả') {
+      final stage = details['audit_stage'] ?? 'Đậu quả';
+      final cnt = details['fruit_count'] ?? details['amount'] ?? 0;
+      final cmp = details['comparison_text'];
+      final reason = details['reason'];
+      parts.add('Giai đoạn: $stage ($cnt quả)');
+      if (cmp != null && cmp.toString().isNotEmpty) parts.add('$cmp');
+      if (reason != null && reason.toString().isNotEmpty) parts.add('Ghi nhận: $reason');
+    } else if (logType == 'Thu hoạch') {
+      final yVal = details['yield_kg'] ?? details['amount'];
+      final fCnt = details['fruit_count'];
+      final cmp = details['harvest_comparison_text'];
+      if (yVal != null) parts.add('Sản lượng: $yVal ${details['unit'] ?? 'kg'}');
+      if (fCnt != null && fCnt != 0) parts.add('Số trái: $fCnt quả');
+      if (cmp != null && cmp.toString().isNotEmpty) parts.add('$cmp');
     } else if (logType == 'Bệnh cây') {
       final name = details['disease_name'];
       final severity = details['severity'];

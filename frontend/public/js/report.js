@@ -10,6 +10,60 @@
       return false;
     }
 
+    function enrichReportLogsWithFruitAuditChain(logs) {
+      if (!Array.isArray(logs) || logs.length === 0) return logs || [];
+      const chain = logs.filter(l => l && (l.log_type === 'Kiểm toán quả' || l.log_type === 'Thu hoạch'));
+      chain.sort((a, b) => {
+        const dA = a.log_date ? new Date(a.log_date).toISOString().slice(0, 10) : '';
+        const dB = b.log_date ? new Date(b.log_date).toISOString().slice(0, 10) : '';
+        if (dA !== dB) return dA.localeCompare(dB);
+        const tA = (a.details?.audit_time || a.details?.performed_at || a.created_at || '');
+        const tB = (b.details?.audit_time || b.details?.performed_at || b.created_at || '');
+        if (tA !== tB) return String(tA).localeCompare(String(tB));
+        return (a.id || 0) - (b.id || 0);
+      });
+      let lastAudit = null;
+      for (const l of chain) {
+        if (!l.details || typeof l.details !== 'object') l.details = {};
+        const d = l.details;
+        const dDateIso = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+        if (l.log_type === 'Kiểm toán quả') {
+          const stage = d.audit_stage || 'Đậu quả';
+          const cnt = parseInt(d.fruit_count ?? d.amount, 10);
+          if (!isNaN(cnt)) {
+            if (lastAudit) {
+              const delta = cnt - lastAudit.count;
+              const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+              const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Giữ nguyên số quả (0%)');
+              d.prev_stage = lastAudit.stage;
+              d.prev_fruit_count = lastAudit.count;
+              d.prev_log_date = lastAudit.dateIso;
+              d.delta_count = delta;
+              d.delta_pct = pct;
+              d.comparison_text = `${lastAudit.stage} (${formatDate(lastAudit.dateIso)}): ${lastAudit.count} quả → ${stage} (${formatDate(dDateIso)}): ${cnt} quả (${label})`;
+            } else {
+              d.comparison_text = d.comparison_text || `Khởi tạo mốc ${stage} (${formatDate(dDateIso)}): ${cnt} quả`;
+            }
+            lastAudit = { stage, count: cnt, dateIso: dDateIso };
+          }
+        } else if (l.log_type === 'Thu hoạch') {
+          const hCount = parseInt(d.fruit_count, 10);
+          if (lastAudit && !isNaN(hCount) && hCount > 0) {
+            const delta = hCount - lastAudit.count;
+            const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+            const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Khớp 100% số quả');
+            d.prev_audit_stage = lastAudit.stage;
+            d.prev_audit_count = lastAudit.count;
+            d.prev_audit_date = lastAudit.dateIso;
+            d.harvest_delta_count = delta;
+            d.harvest_delta_pct = pct;
+            d.harvest_comparison_text = `So với Kiểm toán ${lastAudit.stage} (${formatDate(lastAudit.dateIso)}: ${lastAudit.count} quả): Thu hoạch ${hCount} quả (${label})`;
+          }
+        }
+      }
+      return logs;
+    }
+
     // Helpers
     function esc(s) {
       if (s === undefined || s === null) return '';
@@ -59,15 +113,20 @@
         return `Bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')} | Mức độ: ${esc(details.severity || '—')} | Mô tả: ${esc(details.description || '—')}`;
       }
       if (log.log_type === 'Kiểm toán quả') {
-        const auditTime = details.audit_time || formatTime(details.performed_at || log.created_at);
-        return `Giai đoạn: ${esc(details.fruit_stage || 'Đậu quả')} | Số quả trên cây: ${esc(details.fruit_count ?? details.amount ?? '—')} quả | Rụng/Tỉa: ${esc(details.dropped_or_culled_count || 0)} quả | Ước tính: ${esc(details.estimated_yield_kg || '—')} kg | Giờ đếm: ${esc(auditTime)}`;
+        const stage = details.audit_stage || 'Đậu quả';
+        const cnt = details.fruit_count !== undefined ? details.fruit_count : (details.amount || 0);
+        const timePart = details.audit_time ? ` (${esc(details.audit_time)})` : '';
+        const cmpPart = details.comparison_text ? ` | Đối chiếu: ${esc(details.comparison_text)}` : '';
+        const reasonPart = details.reason ? ` | Nguyên nhân: ${esc(details.reason)}` : '';
+        return `Giai đoạn: ${esc(stage)}${timePart} | Số quả: ${esc(cnt)} quả${cmpPart}${reasonPart}`;
       }
       if (log.log_type === 'Thu hoạch') {
         const yieldVal = details.amount || details.yield_kg || '—';
         const yieldUnit = details.unit || 'kg';
         const qualityVal = details.quality || details.grade || 'Đạt chuẩn';
         const batchVal = log.batch_code || details.batch_code || '—';
-        return `Sản lượng: ${esc(yieldVal)} ${esc(yieldUnit)} | Chất lượng: ${esc(qualityVal)} | Mã lô: ${esc(batchVal)}`;
+        const cmpPart = details.harvest_comparison_text ? ` | ${esc(details.harvest_comparison_text)}` : '';
+        return `Sản lượng: ${esc(yieldVal)} ${esc(yieldUnit)} | Chất lượng: ${esc(qualityVal)} | Mã lô: ${esc(batchVal)}${cmpPart}`;
       }
       return '';
     }
@@ -122,7 +181,7 @@
       const categoriesParam = urlParams.get('categories');
       const checkedCats = categoriesParam ? categoriesParam.split(',') : [];
 
-      const logs = plantData.logs || [];
+      const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
       const filteredLogs = logs.filter(log => {
         const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
         const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
@@ -246,7 +305,7 @@
           : '—';
 
         // Filter and Sort Logs
-        const logs = plantData.logs || [];
+        const logs = enrichReportLogsWithFruitAuditChain(plantData.logs || []);
         const filteredLogs = logs.filter(log => {
           const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
           const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);

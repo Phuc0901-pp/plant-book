@@ -438,18 +438,20 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
     }
 
     // Smart Dual-Defense: Ưu tiên tách riêng Kiểm toán quả khỏi nhận diện Thu hoạch
-    const isFruitAudit = typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua') || Boolean(details.fruit_stage);
+    const isFruitAudit = typeStr.includes('kiểm toán quả') || typeStr.includes('kiem toan qua') || Boolean(details.audit_stage || details.fruit_stage);
     if (isFruitAudit) {
       return {
         ...log,
         log_type: 'Kiểm toán quả',
         _isFruitAudit: true,
         _fruitAuditItem: {
-          stage: details.fruit_stage || 'Đậu quả',
+          stage: details.audit_stage || details.fruit_stage || 'Đậu quả',
           fruit_count: parseInt(details.fruit_count || details.amount || 0, 10) || 0,
           culled_count: parseInt(details.dropped_or_culled_count || 0, 10) || 0,
           estimated_yield_kg: parseFloat(details.estimated_yield_kg || 0) || 0,
-          audit_time: details.audit_time || ''
+          audit_time: details.audit_time || '',
+          comparison_text: details.comparison_text || '',
+          reason: details.reason || ''
         }
       };
     }
@@ -652,7 +654,13 @@ async function _loadErpPlantLogsAndCosts(plantId, plant) {
                   <div style="margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:#115e59;font-weight:600;">
                     <span>Rụng/Tỉa bỏ: <strong>${log._fruitAuditItem.culled_count} quả</strong></span>
                     ${log._fruitAuditItem.audit_time ? `<span>Giờ kiểm đếm: <strong>${esc(log._fruitAuditItem.audit_time)}</strong></span>` : ''}
+                    ${log._fruitAuditItem.reason ? `<span>Lý do: <strong>${esc(log._fruitAuditItem.reason)}</strong></span>` : ''}
                   </div>
+                  ${log._fruitAuditItem.comparison_text ? `
+                    <div style="margin-top:6px;padding:6px 10px;background:#ffffff;border:1px solid #99f6e4;border-radius:7px;font-size:11.5px;font-weight:700;color:#0f766e;">
+                      <i data-lucide="git-compare" class="lucide-xs"></i> ${esc(log._fruitAuditItem.comparison_text)}
+                    </div>
+                  ` : ''}
                 </div>
               ` : log._isHarvest ? `
                 <div style="margin-top:8px;padding:10px 14px;background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);border:1.5px solid #d8b4fe;border-radius:10px;box-shadow:0 2px 6px rgba(147,51,234,0.06);">

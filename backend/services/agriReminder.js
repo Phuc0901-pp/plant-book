@@ -12,13 +12,13 @@ const CROP_CYCLES = {
     { type: 'Bón phân hữu cơ vi sinh / NPK', cycleDays: 14, priority: 'HIGH', icon: 'fa-seedling', color: '#059669' },
     { type: 'Phun chế phẩm sinh học phòng ngừa nấm lá', cycleDays: 21, priority: 'HIGH', icon: 'fa-shield-virus', color: '#ea580c' },
     { type: 'Tỉa cành tạo tán & dưỡng đọt non', cycleDays: 45, priority: 'NORMAL', icon: 'fa-scissors', color: '#8b5cf6' },
-    { type: 'Kiểm toán quả (Đậu quả / Quả non / Quả chín)', cycleDays: 14, priority: 'HIGH', icon: 'fa-clipboard-check', color: '#0d9488' },
+    { type: 'Kiểm toán quả (Đậu quả / Quả non / Quả chín)', cycleDays: 15, priority: 'HIGH', icon: 'fa-apple-whole', color: '#0d9488' },
     { type: 'Đo pH & Vi lượng tầng rễ tơ', cycleDays: 30, priority: 'NORMAL', icon: 'fa-flask', color: '#06b6d4' }
   ],
   'DEFAULT': [
     { type: 'Tưới nước định kỳ', cycleDays: 3, priority: 'NORMAL', icon: 'fa-droplet', color: '#0284c7' },
     { type: 'Bón phân hữu cơ định kỳ', cycleDays: 15, priority: 'HIGH', icon: 'fa-seedling', color: '#059669' },
-    { type: 'Kiểm toán quả (Đậu quả / Quả non / Quả chín)', cycleDays: 14, priority: 'HIGH', icon: 'fa-clipboard-check', color: '#0d9488' },
+    { type: 'Kiểm toán quả (Đậu quả / Quả non / Quả chín)', cycleDays: 15, priority: 'HIGH', icon: 'fa-apple-whole', color: '#0d9488' },
     { type: 'Kiểm tra sâu bệnh', cycleDays: 10, priority: 'HIGH', icon: 'fa-magnifying-glass', color: '#f59e0b' }
   ]
 };

@@ -12,6 +12,7 @@ class LogEditDialog extends StatefulWidget {
   final PlantLog? log; // null means ADD, not null means EDIT
   final String? farmName;
   final String? initialType; // e.g. 'Nhân công', 'Bón phân'
+  final List<PlantLog>? existingLogs;
   final VoidCallback? onLogSaved;
 
   const LogEditDialog({
@@ -20,6 +21,7 @@ class LogEditDialog extends StatefulWidget {
     this.log,
     this.farmName,
     this.initialType,
+    this.existingLogs,
     this.onLogSaved,
   });
 
@@ -38,6 +40,7 @@ class _LogEditDialogState extends State<LogEditDialog> {
   final _equipmentController = TextEditingController();
   final _harvestQualityController = TextEditingController(text: 'Loại A (Đạt chuẩn xuất khẩu)');
   final _diseaseDescController = TextEditingController();
+  final _auditReasonController = TextEditingController();
 
   // Dedicated Labor (Nhân công) Controllers - Defaults to BLANK text as requested!
   final _laborWorkContentController = TextEditingController(text: '');
@@ -46,14 +49,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
   final _laborStartTimeController = TextEditingController(text: '');
   final _laborEndTimeController = TextEditingController(text: '');
   String _laborCostMode = 'total'; // 'total' (Cả đoàn) or 'per_person' (1 người)
-
-  // Dedicated Fruit Audit (Kiểm toán quả) Controllers
-  String _fruitAuditStage = 'Đậu quả';
-  final _fruitAuditCountController = TextEditingController(text: '');
-  final _fruitAuditCulledController = TextEditingController(text: '0');
-  final _fruitAuditAvgGramController = TextEditingController(text: '');
-  final _fruitAuditTimeController = TextEditingController(text: '');
-  final List<String> _fruitAuditStages = ['Đậu quả', 'Quả non', 'Quả chín'];
 
   late String _selectedType;
   late DateTime _selectedDate;
@@ -71,6 +66,7 @@ class _LogEditDialogState extends State<LogEditDialog> {
   String _wateringMethod = 'Tưới nhỏ giọt';
   String _harvestUnit = 'kg';
   String _diseaseSeverity = 'Trung bình';
+  String _auditStage = 'Đậu quả';
 
   final List<String> _activityTypes = [
     'Nhân công',
@@ -81,6 +77,19 @@ class _LogEditDialogState extends State<LogEditDialog> {
     'Thu hoạch',
     'Bệnh cây',
     'Khác',
+  ];
+
+  final List<String> _fruitAuditStages = [
+    'Đậu quả',
+    'Quả non',
+    'Quả chín',
+  ];
+
+  final List<String> _fruitAuditQuickReasons = [
+    'Rụng sinh lý tự nhiên',
+    'Tỉa bỏ trái còi / méo',
+    'Côn trùng / Sâu bệnh gây rụng',
+    'Sinh trưởng khỏe, giữ trái tốt',
   ];
 
   final List<String> _laborQuickChips = [
@@ -155,12 +164,10 @@ class _LogEditDialogState extends State<LogEditDialog> {
         _selectedUnit = (details['unit'] ?? 'ml').toString();
         _manualNameController.text = (details['pesticide_name'] ?? details['value'] ?? '').toString();
       } else if (_selectedType == 'Kiểm toán quả') {
-        final rawStage = (details['fruit_stage'] ?? 'Đậu quả').toString();
-        _fruitAuditStage = _fruitAuditStages.contains(rawStage) ? rawStage : 'Đậu quả';
-        _fruitAuditCountController.text = (details['fruit_count'] ?? details['amount'] ?? '').toString();
-        _fruitAuditCulledController.text = (details['dropped_or_culled_count'] ?? '0').toString();
-        _fruitAuditAvgGramController.text = (details['avg_weight_gram'] ?? '').toString();
-        _fruitAuditTimeController.text = (details['audit_time'] ?? DateFormat('HH:mm').format(_selectedDate)).toString();
+        final rawStage = (details['audit_stage'] ?? 'Đậu quả').toString();
+        _auditStage = _fruitAuditStages.contains(rawStage) ? rawStage : 'Đậu quả';
+        _amountController.text = (details['fruit_count'] ?? details['amount'] ?? '').toString();
+        _auditReasonController.text = (details['reason'] ?? '').toString();
       } else if (_selectedType == 'Thu hoạch') {
         _amountController.text = (details['yield_kg'] ?? details['amount'] ?? '50').toString();
         _harvestUnit = (details['unit'] ?? 'kg').toString();
@@ -198,11 +205,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
     } else if (type == 'Thu hoạch') {
       _amountController.text = '50';
       _harvestUnit = 'kg';
-    } else if (type == 'Kiểm toán quả') {
-      if (_fruitAuditTimeController.text.isEmpty) {
-        _fruitAuditTimeController.text = DateFormat('HH:mm').format(DateTime.now());
-      }
-      _amountController.text = '';
     } else {
       _amountController.text = '';
     }
@@ -217,15 +219,12 @@ class _LogEditDialogState extends State<LogEditDialog> {
     _equipmentController.dispose();
     _harvestQualityController.dispose();
     _diseaseDescController.dispose();
+    _auditReasonController.dispose();
     _laborWorkContentController.dispose();
     _laborWorkerCountController.dispose();
     _laborCostController.dispose();
     _laborStartTimeController.dispose();
     _laborEndTimeController.dispose();
-    _fruitAuditCountController.dispose();
-    _fruitAuditCulledController.dispose();
-    _fruitAuditAvgGramController.dispose();
-    _fruitAuditTimeController.dispose();
     super.dispose();
   }
 
@@ -378,28 +377,15 @@ class _LogEditDialogState extends State<LogEditDialog> {
       details['value'] = '$pesticideName: $amount $_selectedUnit';
       if (_selectedSupply != null) details['supply_id'] = _selectedSupply!.id;
     } else if (_selectedType == 'Kiểm toán quả') {
-      final int fruitCount = int.tryParse(_fruitAuditCountController.text.trim()) ?? 0;
-      final int culledCount = int.tryParse(_fruitAuditCulledController.text.trim()) ?? 0;
-      final double avgGram = double.tryParse(_fruitAuditAvgGramController.text.trim()) ?? 0.0;
-      final double estKg = (fruitCount > 0 && avgGram > 0)
-          ? double.parse(((fruitCount * avgGram) / 1000).toStringAsFixed(2))
-          : 0.0;
-      final String auditTime = _fruitAuditTimeController.text.trim().isNotEmpty
-          ? _fruitAuditTimeController.text.trim()
-          : DateFormat('HH:mm').format(DateTime.now());
-      final String performedAtIso = '${dateStr}T${auditTime.length == 5 ? auditTime : '08:00'}:00';
-
-      details['fruit_stage'] = _fruitAuditStage;
+      final fruitCount = int.tryParse(_amountController.text.trim()) ?? 0;
+      final reason = _auditReasonController.text.trim();
+      details['audit_stage'] = _auditStage;
       details['fruit_count'] = fruitCount;
       details['amount'] = fruitCount;
       details['unit'] = 'quả';
-      details['dropped_or_culled_count'] = culledCount;
-      details['avg_weight_gram'] = avgGram;
-      details['estimated_yield_kg'] = estKg;
-      details['audit_time'] = auditTime;
-      details['time'] = auditTime;
-      details['performed_at'] = performedAtIso;
-      details['value'] = 'Kiểm toán quả [$_fruitAuditStage]: $fruitCount quả${culledCount > 0 ? ' (Rụng/tỉa: $culledCount)' : ''}${estKg > 0 ? ' · Ước tính ~$estKg kg' : ''} · Lúc $auditTime';
+      details['audit_time'] = DateFormat('HH:mm').format(DateTime.now());
+      if (reason.isNotEmpty) details['reason'] = reason;
+      details['value'] = '$_auditStage: $fruitCount quả';
     } else if (_selectedType == 'Thu hoạch') {
       final yieldVal = double.tryParse(_amountController.text) ?? 0.0;
       final quality = _harvestQualityController.text.trim();
@@ -582,7 +568,7 @@ class _LogEditDialogState extends State<LogEditDialog> {
                               activeColor = AppTheme.roseText;
                               activeBg = AppTheme.rosePastel;
                             } else if (type == 'Kiểm toán quả') {
-                              icon = LucideIconName.check;
+                              icon = LucideIconName.tag;
                               activeColor = const Color(0xFF0F766E);
                               activeBg = const Color(0xFFCCFBF1);
                             } else if (type == 'Thu hoạch') {
@@ -1109,179 +1095,6 @@ class _LogEditDialogState extends State<LogEditDialog> {
     );
   }
 
-  // ==================== FRUIT AUDIT (KIỂM TOÁN QUẢ) WIDGETS ====================
-  Widget _buildFruitAuditSection() {
-    final int count = int.tryParse(_fruitAuditCountController.text.trim()) ?? 0;
-    final double avgGram = double.tryParse(_fruitAuditAvgGramController.text.trim()) ?? 0.0;
-    final double estKg = (count > 0 && avgGram > 0) ? ((count * avgGram) / 1000.0) : 0.0;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDFA),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF99F6E4), width: 0.9),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              LucideIcon(LucideIconName.check, size: 18, color: Color(0xFF0F766E)),
-              SizedBox(width: 6),
-              Text(
-                'KIỂM TOÁN QUẢ ĐỊNH KỲ (3 MỤC CON)',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F766E),
-                  letterSpacing: 0.4,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _fruitAuditStages.map((stage) {
-              final bool selected = _fruitAuditStage == stage;
-              return InkWell(
-                onTap: () => setState(() => _fruitAuditStage = stage),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: selected ? const Color(0xFF0F766E) : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected ? const Color(0xFF0F766E) : const Color(0xFF99F6E4),
-                    ),
-                  ),
-                  child: Text(
-                    stage,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: selected ? Colors.white : const Color(0xFF0F766E),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Số quả trên cây *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _fruitAuditCountController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
-                      decoration: const InputDecoration(hintText: 'VD: 120', suffixText: 'quả'),
-                      onChanged: (_) => setState(() {}),
-                      validator: (v) {
-                        if (_selectedType == 'Kiểm toán quả' && (v == null || v.trim().isEmpty)) {
-                          return 'Nhập số quả';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Quả rụng / tỉa bỏ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _fruitAuditCulledController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                      decoration: const InputDecoration(hintText: '0', suffixText: 'quả'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('TB 1 quả (gram)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _fruitAuditAvgGramController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                      decoration: const InputDecoration(hintText: '350 / 2800', suffixText: 'g'),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Giờ kiểm đếm *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _fruitAuditTimeController,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                      decoration: const InputDecoration(
-                        hintText: '08:30',
-                        prefixIcon: Padding(
-                          padding: EdgeInsets.all(10),
-                          child: LucideIcon(LucideIconName.clock, size: 14, color: Color(0xFF0F766E)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF99F6E4), width: 0.9),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Giai đoạn: $_fruitAuditStage',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F766E)),
-                ),
-                Text(
-                  estKg > 0 ? 'Ước tính: ~${estKg.toStringAsFixed(2)} kg' : '$count quả / cây',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.fluentEmerald),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ==================== OTHER CARE SECTIONS ====================
   Widget _buildWateringSection() {
     return Column(
@@ -1354,6 +1167,181 @@ class _LogEditDialogState extends State<LogEditDialog> {
           ],
         ),
       ],
+    );
+  }
+
+  PlantLog? _findLatestFruitAudit() {
+    final logs = widget.existingLogs;
+    if (logs == null || logs.isEmpty) return null;
+    final dateStr = _selectedDate.toIso8601String().substring(0, 10);
+    final candidates = logs.where((l) {
+      if (l.logType != 'Kiểm toán quả') return false;
+      if (widget.log != null && l.id == widget.log!.id) return false;
+      final d = l.logDate.length >= 10 ? l.logDate.substring(0, 10) : '';
+      return d.isEmpty || d.compareTo(dateStr) <= 0;
+    }).toList();
+    if (candidates.isEmpty) return null;
+    candidates.sort((a, b) {
+      final dCmp = b.logDate.compareTo(a.logDate);
+      if (dCmp != 0) return dCmp;
+      return b.id.compareTo(a.id);
+    });
+    return candidates.first;
+  }
+
+  Widget _buildFruitAuditSection() {
+    final prevAudit = _findLatestFruitAudit();
+    final currCount = int.tryParse(_amountController.text.trim());
+    String prevSummary = 'Mốc khởi tạo đầu tiên: $_auditStage';
+    String deltaSummary = currCount != null ? '$_auditStage: $currCount quả' : 'Nhập số quả để đối chiếu tự động';
+    Color deltaColor = const Color(0xFF0F766E);
+
+    if (prevAudit != null) {
+      final pStage = (prevAudit.details['audit_stage'] ?? 'Kiểm toán trước').toString();
+      final pCount = int.tryParse((prevAudit.details['fruit_count'] ?? prevAudit.details['amount'] ?? '').toString());
+      final pDate = prevAudit.logDate.length >= 10 ? prevAudit.logDate.substring(0, 10) : prevAudit.logDate;
+      if (pCount != null) {
+        prevSummary = 'Mốc trước: $pStage ($pDate) = $pCount quả';
+        if (currCount != null) {
+          final delta = currCount - pCount;
+          final pct = pCount > 0 ? ((delta / pCount) * 100).toStringAsFixed(1) : '0.0';
+          if (delta < 0) {
+            deltaSummary = '$_auditStage: $currCount quả · Suy giảm ${delta.abs()} quả ($pct%)';
+            deltaColor = AppTheme.roseText;
+          } else if (delta > 0) {
+            deltaSummary = '$_auditStage: $currCount quả · Tăng $delta quả (+$pct%)';
+            deltaColor = AppTheme.fluentEmerald;
+          } else {
+            deltaSummary = '$_auditStage: $currCount quả · Giữ nguyên (0%)';
+          }
+        }
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDFA),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF99F6E4), width: 0.9),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              LucideIcon(LucideIconName.tag, size: 17, color: Color(0xFF0F766E)),
+              SizedBox(width: 6),
+              Text(
+                'KIỂM TOÁN QUẢ ĐỊNH KỲ (3 GIAI ĐOẠN)',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F766E),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text('Giai đoạn con *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain)),
+          const SizedBox(height: 6),
+          Row(
+            children: _fruitAuditStages.map((stage) {
+              final isSelected = _auditStage == stage;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: InkWell(
+                    onTap: () => setState(() => _auditStage = stage),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF0D9488) : Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: isSelected ? const Color(0xFF0D9488) : const Color(0xFFCBD5E1)),
+                      ),
+                      child: Text(
+                        stage,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                          color: isSelected ? Colors.white : AppTheme.fluentTextMain,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          const Text('Số lượng quả đếm thực tế *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain)),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _amountController,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+            decoration: const InputDecoration(hintText: 'VD: 75', suffixText: 'quả'),
+            onChanged: (_) => setState(() {}),
+            validator: (v) {
+              if (_selectedType == 'Kiểm toán quả') {
+                final val = int.tryParse((v ?? '').trim());
+                if (val == null || val < 0) return 'Vui lòng nhập số lượng quả hợp lệ (≥ 0)';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF99F6E4)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(prevSummary, style: const TextStyle(fontSize: 11.5, color: AppTheme.fluentTextMuted, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(deltaSummary, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: deltaColor)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text('Nguyên nhân suy giảm / Tình trạng trái', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.fluentTextMain)),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _auditReasonController,
+            style: const TextStyle(fontSize: 12.5),
+            decoration: const InputDecoration(hintText: 'VD: Rụng sinh lý, tỉa trái còi...'),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: _fruitAuditQuickReasons.map((chip) {
+              return InkWell(
+                onTap: () => setState(() => _auditReasonController.text = chip),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF99F6E4)),
+                  ),
+                  child: Text(chip, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F766E))),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 

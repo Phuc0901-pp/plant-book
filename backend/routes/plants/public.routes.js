@@ -9,7 +9,7 @@ const {
   sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
-  buildLogFilterQuery, isFullNfcUid
+  buildLogFilterQuery, isFullNfcUid, normalizeCareLogType, enrichFruitAuditAndHarvestDetails
 } = require('./helpers');
 
 router.get('/farms/:farmId/public-portal', async (req, res) => {
@@ -809,9 +809,16 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
     }
 
     const allMediaUrls = [...existingMediaUrls, ...uploadedMediaUrls];
+    const effectiveLogType = normalizeCareLogType(log_type || 'Nhật ký chăm sóc', details);
+    await enrichFruitAuditAndHarvestDetails(pool, {
+      plantId,
+      logDate: log_date,
+      logType: effectiveLogType,
+      details
+    });
 
     // PHI Quarantine & Pesticide Notice
-    if (log_type === 'Phun thuốc') {
+    if (effectiveLogType === 'Phun thuốc') {
       let phiDays = parseInt(details.phi_days) || 0;
       const pesticideName = details.name || details.pesticide_name || note || 'Thuốc BVTV';
 
@@ -842,7 +849,7 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
     // Harvest batch code
     let generatedBatchCode = null;
     let farmPuc = access.plant?.puc_code || 'VN-TB';
-    if (log_type === 'Thu hoạch') {
+    if (effectiveLogType === 'Thu hoạch') {
       const dateClean = log_date.replace(/-/g, '');
       const codeClean = (access.plant?.tree_code || plantId).replace(/[^a-zA-Z0-9]/g, '');
       generatedBatchCode = `${farmPuc}-${dateClean}-${codeClean}`;
@@ -853,17 +860,18 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
     const result = await pool.query(
       `INSERT INTO plant_logs (plant_id, log_date, log_type, note, media_urls, details, created_by, operator_name, equipment_used, batch_code, puc_code)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-      [plantId, log_date, log_type, note,
+      [plantId, log_date, effectiveLogType, note,
        JSON.stringify(allMediaUrls), JSON.stringify(details), access.user.id, operator_name, equipment_used, generatedBatchCode, farmPuc]
     );
     await sealPlantLogHashChain(pool, result.rows[0]);
 
     // Update health status if disease
-    if (log_type === 'Bệnh cây') {
+    if (effectiveLogType === 'Bệnh cây') {
       await pool.query(`UPDATE plants SET health_status = 'Bệnh', updated_at = NOW() WHERE id = $1`, [plantId]);
     }
 
-    // Auto-record supply usage and stock deduction
+    // Auto-record supply usage and stock deduction (bỏ qua Thu hoạch và Kiểm toán quả)
+    if (effectiveLogType !== 'Thu hoạch' && effectiveLogType !== 'Kiểm toán quả') {
     try {
       let resolvedSupplyId = details.supply_id || null;
       const rawAmount = parseFloat(details.quantity || details.volume || details.amount || 0);
@@ -885,14 +893,14 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
         if (supInfo.rows.length > 0) {
           const sup = supInfo.rows[0];
           const supUnit = (sup.unit || 'kg').toLowerCase().trim();
-          const usageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, log_type);
+          const usageQty = convertLogAmountToBaseSupplyQty(rawAmount, rawUnit, supUnit, effectiveLogType);
           const uPrice = parseFloat(sup.unit_price) || 0;
           const totCost = parseFloat(details.total_cost) || (usageQty * uPrice);
 
           await pool.query(
             `INSERT INTO supply_usages (user_id, supply_id, farm_id, plant_id, usage_date, quantity, unit_price, total_cost, note)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [access.user.id, sup.id, access.plant?.farm_id || null, plantId, log_date, usageQty, uPrice, totCost, `Tự động từ nhật ký [${log_type}] tại vườn (${rawAmount} ${rawUnit || sup.unit})`]
+            [access.user.id, sup.id, access.plant?.farm_id || null, plantId, log_date, usageQty, uPrice, totCost, `Tự động từ nhật ký [${effectiveLogType}] tại vườn (${rawAmount} ${rawUnit || sup.unit})`]
           );
 
           if (sup.category !== 'Tiền nước' && sup.category !== 'Nhân công' && sup.stock_quantity > 0) {
@@ -902,6 +910,7 @@ router.post('/public/:slug/logs', upload.array('files', 12), async (req, res) =>
       }
     } catch (supErr) {
       console.warn('Cảnh báo ghi nhận tiêu hao vật tư từ nhật ký công khai:', supErr.message);
+    }
     }
     res.status(201).json(result.rows[0]);
   } catch (err) {

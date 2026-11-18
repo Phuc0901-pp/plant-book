@@ -32,7 +32,7 @@ function openExportModal() {
     fromDateInput.value = oneYearAgo.toISOString().split('T')[0];
   }
   
-  // Populate Canonical SSOT Categories + Kiểm toán quả
+  // Populate Canonical SSOT Categories (bao gồm Kiểm toán quả)
   const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Kiểm toán quả", "Bệnh cây", "Thu hoạch"];
   
   // Append any extra unique category present in logs (skip legacy labor aliases merged into Nhân công)
@@ -158,16 +158,16 @@ function exportPublicLogsCsv() {
       detailsText = `Loại: ${d.type || '—'}, Tên phân: ${d.fertilizer_name || '—'}, Lượng: ${d.amount || '—'} ${d.unit || ''}`;
     } else if (log.log_type === 'Phun thuốc') {
       detailsText = `Loại: ${d.type || '—'}, Thuốc: ${d.pesticide_name || '—'}, Liều lượng: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
+    } else if (log.log_type === 'Nhân công') {
+      detailsText = `Công việc: ${d.work_content || d.reason || 'Chăm sóc'}, Số công: ${d.worker_count || d.amount || 1} người`;
+    } else if (log.log_type === 'Kiểm toán quả') {
+      detailsText = `Giai đoạn: ${d.audit_stage || 'Đậu quả'}, Số quả: ${d.fruit_count ?? d.amount ?? 0} quả${d.comparison_text ? ', ' + d.comparison_text : ''}${d.reason ? ', Ghi nhận: ' + d.reason : ''}`;
+    } else if (log.log_type === 'Thu hoạch') {
+      detailsText = `Sản lượng: ${d.amount || d.yield_kg || '—'} ${d.unit || 'kg'}${d.fruit_count ? ', Số trái: ' + d.fruit_count : ''}${d.harvest_comparison_text ? ', ' + d.harvest_comparison_text : ''}`;
     } else if (log.log_type === 'Cắt lá') {
       detailsText = `Số cành/lá tỉa: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
     } else if (log.log_type === 'Tỉa hoa') {
       detailsText = `Số bông/trái tỉa: ${d.amount || '—'}, Lý do: ${d.reason || '—'}`;
-    } else if (log.log_type === 'Nhân công') {
-      detailsText = `Công việc: ${d.work_content || 'Chăm sóc vườn'}, Số công: ${d.worker_count || d.amount || 1} người`;
-    } else if (log.log_type === 'Kiểm toán quả') {
-      detailsText = `Giai đoạn: ${d.fruit_stage || 'Đậu quả'}, Số quả trên cây: ${d.fruit_count ?? d.amount ?? 0} quả, Rụng/Tỉa: ${d.dropped_or_culled_count || 0} quả, Ước tính: ${d.estimated_yield_kg || 0} kg, Giờ đếm: ${d.audit_time || '—'}`;
-    } else if (log.log_type === 'Thu hoạch') {
-      detailsText = `Sản lượng: ${d.amount || d.yield_kg || '—'} ${d.unit || 'kg'}, Số trái: ${d.fruit_count || '—'}, Chất lượng: ${d.quality || 'Đạt chuẩn'}`;
     } else if (log.log_type === 'Bệnh cây') {
       detailsText = `Bệnh: ${d.disease_name || 'Chưa rõ'}, Mức độ: ${d.severity || '—'}, Mô tả: ${d.description || '—'}`;
     } else {

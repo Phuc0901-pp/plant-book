@@ -98,6 +98,24 @@
       <path d="M29.5 44.5 Q32 47 34.5 44.5" fill="none" stroke="#0f172a" stroke-width="1.7" stroke-linecap="round"/>`
     },
 
+    'chibi-fruit-audit': {
+      label: 'Kiểm toán quả',
+      svg: `<circle cx="32" cy="32" r="30" fill="#ccfbf1"/>
+      <path d="M32 14 C34 10 40 10 41 14 C37 16 34 16 32 14 Z" fill="#22c55e" stroke="#15803d" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M32 15 V20" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M32 20 C21 20 15 28 17 39 C19 49 26 53 32 52 C38 53 45 49 47 39 C49 28 43 20 32 20 Z" fill="#14b8a6" stroke="#0f766e" stroke-width="2.2" stroke-linejoin="round"/>
+      <ellipse cx="24" cy="29" rx="2.5" ry="4.5" transform="rotate(-20 24 29)" fill="#99f6e4" opacity="0.6"/>
+      <circle cx="27" cy="35" r="2.1" fill="#0f172a"/>
+      <circle cx="37" cy="35" r="2.1" fill="#0f172a"/>
+      <circle cx="27.6" cy="34.3" r="0.8" fill="#ffffff"/>
+      <circle cx="37.6" cy="34.3" r="0.8" fill="#ffffff"/>
+      <ellipse cx="23.5" cy="38.5" rx="2.1" ry="1.2" fill="#fb7185" opacity="0.75"/>
+      <ellipse cx="40.5" cy="38.5" rx="2.1" ry="1.2" fill="#fb7185" opacity="0.75"/>
+      <path d="M29.5 39 Q32 41.5 34.5 39" fill="none" stroke="#0f172a" stroke-width="1.7" stroke-linecap="round"/>
+      <circle cx="48" cy="45" r="7.5" fill="#ffffff" stroke="#0d9488" stroke-width="2"/>
+      <path d="M44.5 45 L47 47.5 L51.5 42.5" fill="none" stroke="#0d9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`
+    },
+
     'chibi-login': {
       label: 'Đăng nhập',
       svg: `<circle cx="32" cy="32" r="30" fill="#d1fae5"/>
@@ -237,49 +255,8 @@
       <circle cx="28.5" cy="36.4" r="0.7" fill="#ffffff"/>
       <circle cx="36.5" cy="36.4" r="0.7" fill="#ffffff"/>
       <path d="M29.5 40.5 Q32 42.8 34.5 40.5" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"/>`
-    },
-
-    'chibi-fruit-audit': {
-      label: 'Kiểm toán quả',
-      svg: `<circle cx="32" cy="32" r="30" fill="#ccfbf1"/>
-      <rect x="15" y="16" width="24" height="33" rx="5" fill="#ffffff" stroke="#0f766e" stroke-width="2.1"/>
-      <rect x="21" y="13" width="12" height="5" rx="2.5" fill="#14b8a6" stroke="#0f766e" stroke-width="1.6"/>
-      <path d="M20 26 L23 29 L29 23" fill="none" stroke="#0d9488" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="20" y1="35" x2="31" y2="35" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-      <line x1="20" y1="41" x2="29" y2="41" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="41" cy="37" r="12" fill="#fde047" stroke="#ca8a04" stroke-width="2.1"/>
-      <path d="M41 25 C41 20 46 18 48 21" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="37.5" cy="36" r="1.8" fill="#0f172a"/>
-      <circle cx="44.5" cy="36" r="1.8" fill="#0f172a"/>
-      <circle cx="38" cy="35.3" r="0.7" fill="#ffffff"/>
-      <circle cx="45" cy="35.3" r="0.7" fill="#ffffff"/>
-      <ellipse cx="35" cy="39" rx="1.8" ry="1" fill="#fb7185" opacity="0.75"/>
-      <ellipse cx="47" cy="39" rx="1.8" ry="1" fill="#fb7185" opacity="0.75"/>
-      <path d="M39 39.8 Q41 42 43 39.8" fill="none" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round"/>`
     }
   };
-
-  const KEYWORD_ICON_MAP = {
-    'tưới nước': 'chibi-water',
-    'bón phân': 'chibi-fertilize',
-    'phun thuốc': 'chibi-pesticide',
-    'nhân công': 'chibi-labor',
-    'thuê nhân công': 'chibi-labor',
-    'bệnh cây': 'chibi-disease',
-    'thu hoạch': 'chibi-harvest',
-    'kiểm toán quả': 'chibi-fruit-audit',
-    'đậu quả': 'chibi-fruit-audit',
-    'quả non': 'chibi-fruit-audit',
-    'quả chín': 'chibi-fruit-audit'
-  };
-
-  function resolveByKeyword(keyword) {
-    const key = String(keyword || '').toLowerCase().trim();
-    for (const [kw, iconName] of Object.entries(KEYWORD_ICON_MAP)) {
-      if (key.includes(kw)) return iconName;
-    }
-    return 'chibi-log';
-  }
 
   function buildSvg(name, size = 28, extraClass = '') {
     const item = CHIBI_REGISTRY[name];
@@ -304,9 +281,7 @@
   global.ChibiIcons = {
     version: '1.0.0-ISO',
     registry: CHIBI_REGISTRY,
-    keywordMap: KEYWORD_ICON_MAP,
     get: buildSvg,
-    resolveByKeyword: resolveByKeyword,
     hydrate: hydrate
   };
 

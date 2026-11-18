@@ -159,6 +159,7 @@ class _PlantDetailPageState extends State<PlantDetailPage>
         plantIds: <int>[widget.plant.id],
         farmName: widget.plant.farmName,
         initialType: initialType,
+        existingLogs: _logs,
       ),
     ).then((bool? success) {
       if (success == true && mounted) {
@@ -203,6 +204,7 @@ class _PlantDetailPageState extends State<PlantDetailPage>
         plantIds: <int>[widget.plant.id],
         log: log,
         farmName: widget.plant.farmName,
+        existingLogs: _logs,
       ),
     ).then((bool? success) {
       if (success == true && mounted) {
@@ -430,7 +432,7 @@ class _PlantDetailPageState extends State<PlantDetailPage>
                 _quickCareTile(
                     'Thuê nhân công', Icons.groups_rounded, Colors.indigo, 'Nhân công'),
                 _quickCareTile(
-                    'Kiểm toán quả', Icons.fact_check_rounded, Colors.teal, 'Kiểm toán quả'),
+                    'Kiểm toán quả', Icons.fact_check_rounded, Color(0xFF0D9488), 'Kiểm toán quả'),
                 _quickCareTile('Bệnh cây', Icons.error_outline_rounded,
                     Colors.red, 'Bệnh cây'),
                 _quickCareTile('Thu hoạch', Icons.agriculture_rounded,
@@ -1187,28 +1189,28 @@ class _PlantDetailPageState extends State<PlantDetailPage>
         parts.add('Giờ làm: $timeRange');
       }
     } else if (logType == 'Kiểm toán quả') {
-      final dynamic stage = details['fruit_stage'] ?? 'Đậu quả';
+      final dynamic stage = details['audit_stage'] ?? 'Đậu quả';
       final dynamic fruitCount = details['fruit_count'] ?? details['amount'];
-      final dynamic culled = details['dropped_or_culled_count'];
-      final dynamic estKg = details['estimated_yield_kg'];
-      final dynamic auditTime = details['audit_time'];
+      final dynamic cmp = details['comparison_text'];
+      final dynamic reason = details['reason'];
       parts.add('Giai đoạn: $stage');
       if (fruitCount != null) parts.add('Số quả: $fruitCount quả');
-      if (culled != null && culled != 0) parts.add('Rụng/tỉa: $culled quả');
-      if (estKg != null && estKg != 0) parts.add('Ước tính: ~$estKg kg');
-      if (auditTime != null && auditTime.toString().isNotEmpty) {
-        parts.add('Giờ đếm: $auditTime');
-      }
+      if (cmp != null && cmp.toString().isNotEmpty) parts.add('$cmp');
+      if (reason != null && reason.toString().isNotEmpty) parts.add('Ghi nhận: $reason');
     } else if (logType == 'Thu hoạch') {
       final dynamic yieldVal = details['yield_kg'] ?? details['amount'];
       final dynamic unit = details['unit'] ?? 'kg';
       final dynamic quality = details['quality'] ?? details['grade'];
       final dynamic fruitCount = details['fruit_count'];
+      final dynamic cmp = details['harvest_comparison_text'];
       if (yieldVal != null && yieldVal.toString().isNotEmpty) {
         parts.add('Sản lượng: $yieldVal $unit');
       }
       if (fruitCount != null && fruitCount != 0) {
         parts.add('Số trái: $fruitCount');
+      }
+      if (cmp != null && cmp.toString().isNotEmpty) {
+        parts.add('$cmp');
       }
       if (quality != null && quality.toString().isNotEmpty) {
         parts.add('Chất lượng: $quality');

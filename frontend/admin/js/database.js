@@ -431,7 +431,7 @@ async function selectTreeForDetail(plantId) {
       // Load entire farm logs
       const farm = dbFarmsCache.find(f => f.id == currentDbSelectedFarmId);
       const allLogs = await api(`/plants/logs/farm/${currentDbSelectedFarmId}`).catch(() => []);
-      currentDbPlantLogsCache = allLogs || [];
+      currentDbPlantLogsCache = enrichDbLogsWithFruitAuditChain(allLogs || []);
       currentDbPlantProfileCache = {
         id: 'all',
         tree_code: 'ALL',
@@ -489,7 +489,7 @@ async function selectTreeForDetail(plantId) {
     } else {
       const plant = await api(`/plants/${plantId}`);
       currentDbPlantProfileCache = plant;
-      const logs = plant.logs || [];
+      const logs = enrichDbLogsWithFruitAuditChain(plant.logs || []);
       currentDbPlantLogsCache = logs;
 
       let totalConsumableCost = 0;
@@ -707,6 +707,76 @@ window.printQrModalCode = printQrModalCode;
 
 const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
 
+function enrichDbLogsWithFruitAuditChain(logs) {
+  if (!Array.isArray(logs) || logs.length === 0) return logs || [];
+  const byPlant = new Map();
+  logs.forEach((l) => {
+    if (!l || (l.log_type !== 'Kiểm toán quả' && l.log_type !== 'Thu hoạch')) return;
+    const pKey = String(l.plant_id || 0);
+    if (!byPlant.has(pKey)) byPlant.set(pKey, []);
+    byPlant.get(pKey).push(l);
+  });
+
+  byPlant.forEach((pLogs) => {
+    pLogs.sort((a, b) => {
+      const dA = a.log_date ? new Date(a.log_date).toISOString().slice(0, 10) : '';
+      const dB = b.log_date ? new Date(b.log_date).toISOString().slice(0, 10) : '';
+      if (dA !== dB) return dA.localeCompare(dB);
+      let dObjA = {}; let dObjB = {};
+      try { dObjA = typeof a.details === 'string' ? JSON.parse(a.details) : (a.details || {}); } catch(_) {}
+      try { dObjB = typeof b.details === 'string' ? JSON.parse(b.details) : (b.details || {}); } catch(_) {}
+      const tA = (dObjA.audit_time || dObjA.performed_at || a.created_at || '');
+      const tB = (dObjB.audit_time || dObjB.performed_at || b.created_at || '');
+      if (tA !== tB) return String(tA).localeCompare(String(tB));
+      return (a.id || 0) - (b.id || 0);
+    });
+
+    let lastAudit = null;
+    for (const l of pLogs) {
+      let d = {};
+      try { d = typeof l.details === 'string' ? JSON.parse(l.details) : (l.details || {}); } catch(_) { d = {}; }
+      l.details = d;
+      const dDateIso = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+      const fmtVi = (iso) => iso && iso.length >= 10 ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : iso;
+
+      if (l.log_type === 'Kiểm toán quả') {
+        const stage = d.audit_stage || 'Đậu quả';
+        const cnt = parseInt(d.fruit_count ?? d.amount, 10);
+        if (!isNaN(cnt)) {
+          if (lastAudit) {
+            const delta = cnt - lastAudit.count;
+            const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+            const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Giữ nguyên số quả (0%)');
+            d.prev_stage = lastAudit.stage;
+            d.prev_fruit_count = lastAudit.count;
+            d.prev_log_date = lastAudit.dateIso;
+            d.delta_count = delta;
+            d.delta_pct = pct;
+            d.comparison_text = `${lastAudit.stage} (${fmtVi(lastAudit.dateIso)}): ${lastAudit.count} quả → ${stage} (${fmtVi(dDateIso)}): ${cnt} quả (${label})`;
+          } else {
+            d.comparison_text = d.comparison_text || `Khởi tạo mốc ${stage} (${fmtVi(dDateIso)}): ${cnt} quả`;
+          }
+          lastAudit = { stage, count: cnt, dateIso: dDateIso };
+        }
+      } else if (l.log_type === 'Thu hoạch') {
+        const hCount = parseInt(d.fruit_count, 10);
+        if (lastAudit && !isNaN(hCount) && hCount > 0) {
+          const delta = hCount - lastAudit.count;
+          const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+          const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Khớp 100% số quả');
+          d.prev_audit_stage = lastAudit.stage;
+          d.prev_audit_count = lastAudit.count;
+          d.prev_audit_date = lastAudit.dateIso;
+          d.harvest_delta_count = delta;
+          d.harvest_delta_pct = pct;
+          d.harvest_comparison_text = `So với Kiểm toán ${lastAudit.stage} (${fmtVi(lastAudit.dateIso)}: ${lastAudit.count} quả): Thu hoạch ${hCount} quả (${label})`;
+        }
+      }
+    }
+  });
+  return logs;
+}
+
 function getCanonicalActivityCategory(logType) {
   if (!logType) return 'Khác';
   if (LEGACY_LABOR_ALIASES.includes(logType)) return 'Nhân công';
@@ -732,7 +802,7 @@ function renderActivityFilterChips(logs) {
     'Bón phân': { icon: 'sprout', inactBorder: '#fde68a', inactBg: '#fef3c7', inactColor: '#92400e' },
     'Phun thuốc': { icon: 'spray-can', inactBorder: '#ddd6fe', inactBg: '#f3e8ff', inactColor: '#6b21a8' },
     'Nhân công': { icon: 'users', inactBorder: '#bae6fd', inactBg: '#f0f9ff', inactColor: '#0369a1' },
-    'Kiểm toán quả': { icon: 'clipboard-check', inactBorder: '#99f6e4', inactBg: '#f0fdfa', inactColor: '#0f766e' },
+    'Kiểm toán quả': { icon: 'apple', inactBorder: '#99f6e4', inactBg: '#f0fdfa', inactColor: '#0f766e' },
     'Bệnh cây': { icon: 'bug', inactBorder: '#fca5a5', inactBg: '#fef2f2', inactColor: '#b91c1c' },
     'Thu hoạch': { icon: 'shopping-bag', inactBorder: '#fef08a', inactBg: '#fefce8', inactColor: '#a16207' }
   };
@@ -813,7 +883,7 @@ function renderDetailTimeline() {
   if (!container) return;
 
   const plant = currentDbPlantProfileCache;
-  let logs = currentDbPlantLogsCache || [];
+  let logs = enrichDbLogsWithFruitAuditChain(currentDbPlantLogsCache || []);
 
   if (currentDbActiveActivityFilter !== 'all') {
     logs = logs.filter(l => getCanonicalActivityCategory(l.log_type) === currentDbActiveActivityFilter);
@@ -846,7 +916,7 @@ function renderDetailTimeline() {
     'Bón phân': { bg: '#fef3c7', color: '#78350f', border: '#fde68a', icon: 'sprout', iconColor: '#92400e' },
     'Phun thuốc': { bg: '#f3e8ff', color: '#6b21a8', border: '#ddd6fe', icon: 'spray-can', iconColor: '#8b5cf6' },
     'Nhân công': { bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd', icon: 'users', iconColor: '#0284c7' },
-    'Kiểm toán quả': { bg: '#f0fdfa', color: '#0f766e', border: '#99f6e4', icon: 'clipboard-check', iconColor: '#0d9488' },
+    'Kiểm toán quả': { bg: '#f0fdfa', color: '#0f766e', border: '#99f6e4', icon: 'apple', iconColor: '#0d9488' },
     'Cắt lá': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: 'scissors', iconColor: '#10b981' },
     'Tỉa hoa': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: 'scissors', iconColor: '#ea580c' },
     'Bệnh cây': { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5', icon: 'bug', iconColor: '#ef4444' },
@@ -915,12 +985,11 @@ function renderDetailTimeline() {
       const reason = details.reason || '';
       const workContent = details.work_content || '';
       const workerCount = details.worker_count || '';
-      const fruitStage = details.fruit_stage || '';
       const fruitCount = details.fruit_count || '';
-      const culledCount = details.dropped_or_culled_count || 0;
-      const estimatedYieldKg = details.estimated_yield_kg || '';
-      const auditTime = details.audit_time || '';
       const batchCode = l.batch_code || details.batch_code || '';
+      const auditStage = details.audit_stage || '';
+      const auditComparisonText = l.log_type === 'Kiểm toán quả' ? (details.comparison_text || '') : (l.log_type === 'Thu hoạch' ? (details.harvest_comparison_text || '') : '');
+      const auditDeltaVal = l.log_type === 'Kiểm toán quả' ? details.delta_count : details.harvest_delta_count;
       const cost = parseFloat(details.cost || details.supply_cost || l.cost || 0);
 
       let logMediaList = [];
@@ -932,7 +1001,10 @@ function renderDetailTimeline() {
       }
 
       let supplyBoxHtml = '';
-      if (supplyName || cost > 0 || quantity || method || reason || workContent || workerCount || fruitCount || batchCode || fruitStage) {
+      if (supplyName || cost > 0 || quantity || method || reason || workContent || workerCount || fruitCount || batchCode || auditStage || auditComparisonText) {
+        const cmpBg = (typeof auditDeltaVal === 'number' && auditDeltaVal < 0) ? '#fef2f2' : '#f0fdfa';
+        const cmpColor = (typeof auditDeltaVal === 'number' && auditDeltaVal < 0) ? '#dc2626' : '#0f766e';
+        const cmpBorder = (typeof auditDeltaVal === 'number' && auditDeltaVal < 0) ? '#fecaca' : '#99f6e4';
         supplyBoxHtml = `
           <div style="margin-top:10px; background:#f8fafc; border:1px solid ${cfg.border}; border-radius:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -941,15 +1013,14 @@ function renderDetailTimeline() {
                 : `<div style="width:40px; height:40px; border-radius:8px; background:${cfg.bg}; color:${cfg.iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px;"><i data-lucide="${cfg.icon}" class="lucide-sm"></i></div>`
               }
               <div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(fruitStage ? `Giai đoạn: ${fruitStage}` : (workContent || supplyName || l.log_type))}</div>
+                <div style="font-size:13px; font-weight:800; color:#0f172a;">${esc(auditStage ? `Kiểm toán: ${auditStage}` : (workContent || supplyName || l.log_type))}</div>
                 ${workerCount ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Số công: <strong>${esc(workerCount)} người</strong></div>` : ''}
-                ${quantity && l.log_type !== 'Kiểm toán quả' ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">${l.log_type === 'Thu hoạch' ? 'Sản lượng' : 'Liều lượng'}: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
-                ${fruitCount ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">${l.log_type === 'Kiểm toán quả' ? 'Số quả trên cây' : 'Số lượng trái'}: <strong>${esc(fruitCount)} quả</strong>${culledCount ? ` · Rụng/tỉa: <strong>${esc(culledCount)} quả</strong>` : ''}</div>` : ''}
-                ${estimatedYieldKg ? `<div style="font-size:11.5px; color:#0f766e; font-weight:600;">Sản lượng ước tính: <strong>~${esc(estimatedYieldKg)} kg</strong></div>` : ''}
-                ${auditTime ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Giờ kiểm đếm: <strong>${esc(auditTime)}</strong></div>` : ''}
+                ${(l.log_type !== 'Kiểm toán quả' && quantity) ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">${l.log_type === 'Thu hoạch' ? 'Sản lượng' : 'Liều lượng'}: <strong>${esc(quantity)} ${esc(unit)}</strong></div>` : ''}
+                ${fruitCount ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Số lượng trái: <strong>${esc(fruitCount)} quả</strong></div>` : ''}
+                ${auditComparisonText ? `<div style="margin-top:4px; padding:3px 8px; border-radius:6px; background:${cmpBg}; color:${cmpColor}; border:1px solid ${cmpBorder}; font-size:11.5px; font-weight:700;">${esc(auditComparisonText)}</div>` : ''}
                 ${batchCode ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mã lô VietGAP: <strong style="font-family:monospace;">${esc(batchCode)}</strong></div>` : ''}
                 ${method ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Phương thức: <strong>${esc(method)}</strong></div>` : ''}
-                ${reason ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Mục đích: <strong>${esc(reason)}</strong></div>` : ''}
+                ${reason ? `<div style="font-size:11.5px; color:#475569; font-weight:600;">Ghi nhận: <strong>${esc(reason)}</strong></div>` : ''}
               </div>
             </div>
             ${cost > 0 ? `<div style="font-size:13px; font-weight:800; color:#047857; background:#ecfdf5; padding:5px 12px; border-radius:8px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="coins" class="lucide-xs"></i> ${cost.toLocaleString('vi-VN')} đ</div>` : ''}

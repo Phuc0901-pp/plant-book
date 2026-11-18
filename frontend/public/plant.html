@@ -889,6 +889,91 @@
   </div>
 </div>
 
+<!-- 🍏 Fruit Audit / Kiểm toán quả Modal -->
+<div class="modal-overlay" id="modal-fruit-audit" onclick="closeModalOnOuterClick(event, 'modal-fruit-audit')">
+  <div class="glass-panel modal">
+    <div class="modal-header">
+      <h3 class="modal-title" style="color: #0d9488;"><i data-lucide="apple" class="lucide-sm"></i> Kiểm toán quả định kỳ (Đậu quả → Non → Chín)</h3>
+      <button class="modal-close" onclick="closeModal('modal-fruit-audit')">×</button>
+    </div>
+    <form id="form-fruit-audit" onsubmit="submitCareLog(event, 'Kiểm toán quả', 'modal-fruit-audit', 'form-fruit-audit')">
+      <div class="modal-body">
+        <div class="field">
+          <label>Giai đoạn kiểm toán quả (3 mục con) *</label>
+          <select id="audit-stage-select" onchange="updatePublicFruitAuditPreview()">
+            <option value="Đậu quả">🌼 Đậu quả (Đậu trái non ban đầu)</option>
+            <option value="Quả non">🍏 Quả non (Nuôi trái / Tuyển trái)</option>
+            <option value="Quả chín">🍈 Quả chín (Chuẩn bị thu hoạch)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Số lượng quả đếm thực tế trên cây *</label>
+          <input type="number" id="audit-fruit-count" min="0" step="1" placeholder="Ví dụ: 75" oninput="updatePublicFruitAuditPreview()" onchange="updatePublicFruitAuditPreview()" required style="font-weight:800; font-size:15px; color:#0f766e; background:#f0fdfa;">
+        </div>
+
+        <div id="public-audit-comparison-box" style="margin-bottom:14px; padding:10px 12px; background:#f0fdfa; border:1.5px solid #99f6e4; border-radius:10px;">
+          <div style="font-size:11px; font-weight:800; color:#0f766e; text-transform:uppercase;">
+            <i data-lucide="git-compare" class="lucide-xs"></i> ĐỐI CHIẾU VỚI GIAI ĐOẠN TRƯỚC
+          </div>
+          <div id="public-audit-prev-summary" style="font-size:12px; color:#334155; margin-top:4px;">Đang tra cứu dữ liệu kiểm toán...</div>
+          <div id="public-audit-delta-badge" style="display:inline-block; margin-top:6px; padding:4px 9px; border-radius:8px; font-size:12px; font-weight:800; background:#ccfbf1; color:#0f766e;">Nhập số quả để đối chiếu</div>
+        </div>
+
+        <div class="field">
+          <label>Nguyên nhân suy giảm / Tình trạng trái</label>
+          <div class="custom-select-wrap">
+            <select id="audit-reason-select" onchange="toggleCustomInput('audit-reason')">
+              <option value="Rụng sinh lý tự nhiên">Rụng sinh lý tự nhiên</option>
+              <option value="Tỉa bỏ trái còi / méo">Tỉa bỏ trái còi / méo</option>
+              <option value="Côn trùng / Sâu bệnh gây rụng">Côn trùng / Sâu bệnh gây rụng</option>
+              <option value="Sinh trưởng khỏe, giữ trái tốt">Sinh trưởng khỏe, giữ trái tốt</option>
+              <option value="__custom__">➕ Lý do khác...</option>
+            </select>
+            <input type="text" id="audit-reason-custom" placeholder="Nhập lý do khác..." style="display:none; width: 45%;">
+          </div>
+        </div>
+
+        <!-- VietGAP Operator & Equipment Box -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Kiểm Đếm &amp; Dụng Cụ
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người kiểm đếm</label>
+              <input type="text" id="audit-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Dụng cụ / Thiết bị</label>
+              <input type="text" id="audit-equipment-used" placeholder="VD: Máy đếm cơ học, sổ thực địa..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Thời gian kiểm đếm cụ thể *</label>
+          <input type="datetime-local" id="audit-datetime" onchange="updatePublicFruitAuditPreview()" required>
+        </div>
+
+        <div class="field">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Ghi chú thêm</label>
+            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('audit-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
+              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
+            </button>
+          </div>
+          <textarea id="audit-note" rows="2" placeholder="Tình trạng phát triển trái, kích cỡ, hướng xử lý tiếp theo..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-fruit-audit')">Hủy</button>
+        <button type="submit" class="btn btn-submit" style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color:#fff;">Lưu kiểm toán quả</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Harvest Modal -->
 <div class="modal-overlay" id="modal-harvest" onclick="closeModalOnOuterClick(event, 'modal-harvest')">
   <div class="glass-panel modal">
@@ -932,6 +1017,7 @@
 
         <!-- Khối tự động tính trung bình quân 1 quả -->
         <div id="public-harvest-calc-box" style="margin-bottom:12px; padding:10px 14px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px;">
+          <div id="public-harvest-audit-compare" style="display:none; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #fcd34d; font-size:12px; font-weight:700; color:#0f766e;"></div>
           <div style="font-size:11.5px; font-weight:700; color:#b45309; display:flex; justify-content:space-between; align-items:center;">
             <span><i data-lucide="calculator" class="lucide-sm"></i> TÍNH BÌNH QUÂN / QUẢ:</span>
             <span id="public-harvest-avg-fruit" style="font-size:15px; font-weight:800; color:#b45309;">35.000 VNĐ / quả</span>
@@ -978,90 +1064,6 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('modal-harvest')">Hủy</button>
         <button type="submit" class="btn btn-submit" style="background:linear-gradient(135deg, #d97706 0%, #b45309 100%); color:#fff;">Lưu nhật ký thu hoạch</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- 🍈 Fruit Audit / Kiểm toán quả Modal -->
-<div class="modal-overlay" id="modal-fruit-audit" onclick="closeModalOnOuterClick(event, 'modal-fruit-audit')">
-  <div class="glass-panel modal">
-    <div class="modal-header">
-      <h3 class="modal-title" style="color: #0f766e;"><i data-lucide="clipboard-check" class="lucide-sm"></i> Kiểm Toán Quả Định Kỳ</h3>
-      <button class="modal-close" onclick="closeModal('modal-fruit-audit')">×</button>
-    </div>
-    <form id="form-fruit-audit" onsubmit="submitCareLog(event, 'Kiểm toán quả', 'modal-fruit-audit', 'form-fruit-audit')">
-      <div class="modal-body">
-        <div class="field">
-          <label>Giai đoạn kiểm toán (3 mục con) *</label>
-          <select id="fruit-audit-stage" required style="font-weight:700; color:#0f766e; background:#f0fdfa; border-color:#5eead4;">
-            <option value="Đậu quả">1. Đậu quả — Đếm quả đậu sau xổ nhụy (BBCH 71)</option>
-            <option value="Quả non">2. Quả non — Đếm quả non đang nuôi trái (BBCH 73-77)</option>
-            <option value="Quả chín">3. Quả chín — Đếm quả chín trước thu hoạch (BBCH 81-89)</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="field" style="flex:1;">
-            <label>Số quả đếm được trên cây *</label>
-            <input type="number" id="fruit-audit-count" min="0" step="1" placeholder="VD: 120" oninput="calculatePublicFruitAuditPreview()" onchange="calculatePublicFruitAuditPreview()" required>
-          </div>
-          <div class="field" style="flex:1;">
-            <label>Số quả rụng / tỉa bỏ</label>
-            <input type="number" id="fruit-audit-culled" min="0" step="1" value="0" placeholder="VD: 15">
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Trọng lượng ước tính 1 quả (gram)</label>
-          <input type="number" id="fruit-audit-avg-gram" min="0" step="10" placeholder="VD: 350 (quả non) hoặc 2800 (quả chín)" oninput="calculatePublicFruitAuditPreview()" onchange="calculatePublicFruitAuditPreview()">
-        </div>
-
-        <div style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); border:1.5px solid #5eead4; border-radius:12px;">
-          <div style="font-size:11px; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="calculator" class="lucide-sm"></i> DỰ BÁO SẢN LƯỢNG ĐỊNH KỲ
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-            <span style="font-size:12.5px; color:#115e59; font-weight:600;">Sản lượng ước tính trên cây:</span>
-            <span style="font-size:16px; font-weight:900; color:#0f766e;" id="public-fruit-audit-est-kg">0 kg</span>
-          </div>
-        </div>
-
-        <!-- VietGAP Operator & Equipment Box -->
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
-          <div style="font-size:11.5px; font-weight:700; color:#047857; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
-            <i data-lucide="user-check" class="lucide-sm"></i> Tiêu Chuẩn VietGAP: Người Kiểm Đếm &amp; Thiết Bị
-          </div>
-          <div style="display:flex; gap:8px;">
-            <div style="flex:1;">
-              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Người kiểm toán</label>
-              <input type="text" id="fruit-audit-operator-name" placeholder="VD: Nguyễn Văn A" style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
-            </div>
-            <div style="flex:1;">
-              <label style="font-size:11px; color:#475569; font-weight:600; margin-bottom:2px; display:block;">Dụng cụ đếm</label>
-              <input type="text" id="fruit-audit-equipment-used" placeholder="VD: Máy đếm cơ học, thước đo..." style="width:100%; padding:6px 8px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;">
-            </div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Thời gian kiểm đếm cụ thể *</label>
-          <input type="datetime-local" id="fruit-audit-datetime" required>
-        </div>
-
-        <div class="field">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <label style="margin:0;">Ghi chú hiện trạng quả</label>
-            <button type="button" class="btn-voice-dictate" onclick="startPublicVoiceInput('fruit-audit-note', this)" style="display:inline-flex; align-items:center; gap:4px; font-weight:600; padding:3px 8px; font-size:11px; border-radius:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; cursor:pointer;">
-              <i data-lucide="mic" class="lucide-sm"></i> <span>Đọc giọng nói</span>
-            </button>
-          </div>
-          <textarea id="fruit-audit-note" rows="2" placeholder="Ví dụ: Quả phân bố đều tán, tỉa bỏ bớt trái méo..."></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-fruit-audit')">Hủy</button>
-        <button type="submit" class="btn btn-submit" style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color:#fff;">Lưu kiểm toán quả</button>
       </div>
     </form>
   </div>

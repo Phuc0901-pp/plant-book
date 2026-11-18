@@ -354,13 +354,15 @@ function formatLogDetailSummary(log) {
   if (!d || typeof d !== 'object') d = {};
 
   if (log.log_type === 'Kiểm toán quả') {
-    const stage = d.fruit_stage || 'Đậu quả';
+    const stage = d.audit_stage || d.fruit_stage || 'Đậu quả';
     const count = d.fruit_count ?? d.amount ?? 0;
     const culled = d.dropped_or_culled_count ? ` (Rụng/tỉa: ${d.dropped_or_culled_count} quả)` : '';
     const estKg = d.estimated_yield_kg ? ` · Ước tính ~${d.estimated_yield_kg} kg` : '';
     const auditTime = d.audit_time ? ` · Lúc ${d.audit_time}` : '';
+    const cmp = d.comparison_text ? ` · [${d.comparison_text}]` : '';
+    const reason = d.reason ? ` · Lý do: ${d.reason}` : '';
     const noteTail = log.note && String(log.note).trim() ? ` - ${String(log.note).trim()}` : '';
-    return `Giai đoạn ${stage}: Đếm ${count} quả${culled}${estKg}${auditTime}${noteTail}`.trim();
+    return `Giai đoạn ${stage}: Đếm ${count} quả${culled}${estKg}${auditTime}${cmp}${reason}${noteTail}`.trim();
   }
 
   const parts = [];

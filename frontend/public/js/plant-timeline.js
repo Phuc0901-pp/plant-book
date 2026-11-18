@@ -1,4 +1,68 @@
 // Modular Plant Public Timeline & Agronomic Calculators
+function _fmtPublicShortDate(dVal) {
+  if (!dVal) return '';
+  const s = String(dVal).slice(0, 10);
+  const p = s.split('-');
+  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+  const d = new Date(dVal);
+  return !isNaN(d) ? d.toLocaleDateString('vi-VN') : s;
+}
+
+function enrichPublicPlantLogsWithAuditChain(logs) {
+  if (!Array.isArray(logs) || logs.length === 0) return logs || [];
+  const auditAndHarvest = logs.filter(l => l && (l.log_type === 'Kiểm toán quả' || l.log_type === 'Thu hoạch'));
+  auditAndHarvest.sort((a, b) => {
+    const dA = a.log_date ? new Date(a.log_date).toISOString().slice(0, 10) : '';
+    const dB = b.log_date ? new Date(b.log_date).toISOString().slice(0, 10) : '';
+    if (dA !== dB) return dA.localeCompare(dB);
+    const tA = (a.details?.audit_time || a.details?.performed_at || a.created_at || '');
+    const tB = (b.details?.audit_time || b.details?.performed_at || b.created_at || '');
+    if (tA !== tB) return String(tA).localeCompare(String(tB));
+    return (a.id || 0) - (b.id || 0);
+  });
+
+  let lastAudit = null;
+  for (const l of auditAndHarvest) {
+    if (!l.details || typeof l.details !== 'object') l.details = {};
+    const d = l.details;
+    const dDateIso = l.log_date ? new Date(l.log_date).toISOString().slice(0, 10) : '';
+    if (l.log_type === 'Kiểm toán quả') {
+      const stage = d.audit_stage || 'Đậu quả';
+      const cnt = parseInt(d.fruit_count ?? d.amount, 10);
+      if (!isNaN(cnt)) {
+        if (lastAudit) {
+          const delta = cnt - lastAudit.count;
+          const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+          const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Giữ nguyên số quả (0%)');
+          d.prev_stage = lastAudit.stage;
+          d.prev_fruit_count = lastAudit.count;
+          d.prev_log_date = lastAudit.dateIso;
+          d.delta_count = delta;
+          d.delta_pct = pct;
+          d.comparison_text = `${lastAudit.stage} (${_fmtPublicShortDate(lastAudit.dateIso)}): ${lastAudit.count} quả → ${stage} (${_fmtPublicShortDate(dDateIso)}): ${cnt} quả (${label})`;
+        } else {
+          d.comparison_text = d.comparison_text || `Khởi tạo mốc ${stage} (${_fmtPublicShortDate(dDateIso)}): ${cnt} quả`;
+        }
+        lastAudit = { stage, count: cnt, dateIso: dDateIso };
+      }
+    } else if (l.log_type === 'Thu hoạch') {
+      const hCount = parseInt(d.fruit_count, 10);
+      if (lastAudit && !isNaN(hCount) && hCount > 0) {
+        const delta = hCount - lastAudit.count;
+        const pct = lastAudit.count > 0 ? Number(((delta / lastAudit.count) * 100).toFixed(1)) : 0;
+        const label = delta < 0 ? `Suy giảm ${Math.abs(delta)} quả (${pct}%)` : (delta > 0 ? `Tăng ${delta} quả (+${pct}%)` : 'Khớp 100% số quả');
+        d.prev_audit_stage = lastAudit.stage;
+        d.prev_audit_count = lastAudit.count;
+        d.prev_audit_date = lastAudit.dateIso;
+        d.harvest_delta_count = delta;
+        d.harvest_delta_pct = pct;
+        d.harvest_comparison_text = `So với Kiểm toán ${lastAudit.stage} (${_fmtPublicShortDate(lastAudit.dateIso)}: ${lastAudit.count} quả): Thu hoạch ${hCount} quả (${label})`;
+      }
+    }
+  }
+  return logs;
+}
+
 function getFertilizerName(details) {
   return (details.supply_name || details.fertilizer_name || details.fertilizer || details.foliar_nutrition || details.type || details.product_name || details.name || '').trim();
 }
@@ -60,19 +124,27 @@ function getCareLogSummary(log) {
     return `Đã thụ phấn chéo ban đêm. Tỷ lệ tiếp nhận phấn: <strong>${esc(details.pollination_rate || '95%')}</strong>.`;
   }
   if (log.log_type === 'Kiểm toán quả') {
-    const stage = details.fruit_stage || 'Đậu quả';
-    const count = details.fruit_count ?? qty ?? 0;
-    const culled = details.dropped_or_culled_count ? ` · Rụng/tỉa: <strong>${details.dropped_or_culled_count} quả</strong>` : '';
-    const estKg = details.estimated_yield_kg ? ` · Ước tính: <strong>~${details.estimated_yield_kg} kg</strong>` : '';
-    const auditTime = details.audit_time ? ` · Lúc <strong>${esc(details.audit_time)}</strong>` : '';
-    return `Kiểm toán giai đoạn <strong>[${esc(stage)}]</strong>: Đếm <strong>${esc(count)} quả</strong> trên cây${culled}${estKg}${auditTime}.`;
+    const stage = details.audit_stage || 'Đậu quả';
+    const cnt = details.fruit_count !== undefined ? details.fruit_count : (qty || 0);
+    const reasonStr = details.reason ? ` · Ghi nhận: <strong>${esc(details.reason)}</strong>` : '';
+    const cmpColor = (typeof details.delta_count === 'number' && details.delta_count < 0) ? '#dc2626' : '#0f766e';
+    const cmpBg = (typeof details.delta_count === 'number' && details.delta_count < 0) ? '#fef2f2' : '#f0fdfa';
+    const cmpStr = details.comparison_text
+      ? `<div style="margin-top:6px; padding:5px 9px; border-radius:8px; background:${cmpBg}; color:${cmpColor}; font-size:12px; font-weight:700; display:inline-block;">${esc(details.comparison_text)}</div>`
+      : '';
+    return `Kiểm toán quả giai đoạn <strong>${esc(stage)}</strong>: đếm được <strong>${esc(cnt)} quả</strong>${reasonStr}.${cmpStr}`;
   }
   if (log.log_type === 'Thu hoạch') {
     const yieldKg = details.yield_kg || qty || '—';
     const fruitCount = details.fruit_count ? ` (${details.fruit_count} trái)` : '';
     const revStr = details.total_revenue ? ` · Doanh thu: <strong>${Number(details.total_revenue).toLocaleString('vi-VN')} đ</strong>` : '';
     const batchStr = log.batch_code || details.batch_code ? ` · Mã Lô VietGAP: <strong>${esc(log.batch_code || details.batch_code)}</strong>` : '';
-    return `Đã thu hoạch: <strong>${esc(yieldKg)} kg</strong>${fruitCount}${revStr}${batchStr}.`;
+    const cmpColor = (typeof details.harvest_delta_count === 'number' && details.harvest_delta_count < 0) ? '#dc2626' : '#047857';
+    const cmpBg = (typeof details.harvest_delta_count === 'number' && details.harvest_delta_count < 0) ? '#fef2f2' : '#ecfdf5';
+    const cmpStr = details.harvest_comparison_text
+      ? `<div style="margin-top:6px; padding:5px 9px; border-radius:8px; background:${cmpBg}; color:${cmpColor}; font-size:12px; font-weight:700; display:inline-block;">${esc(details.harvest_comparison_text)}</div>`
+      : '';
+    return `Đã thu hoạch: <strong>${esc(yieldKg)} kg</strong>${fruitCount}${revStr}${batchStr}.${cmpStr}`;
   }
   if (log.log_type === 'Bệnh cây') {
     const sevIcon = details.severity === 'Nghiêm trọng' 
@@ -119,16 +191,16 @@ function getShortSummary(log) {
     return `Thụ phấn hoa chéo ban đêm (${esc(details.pollination_rate || 'Đạt 95%')})`;
   }
   if (log.log_type === 'Kiểm toán quả') {
-    const stage = details.fruit_stage || 'Đậu quả';
-    const count = details.fruit_count ?? qty ?? 0;
-    const estStr = details.estimated_yield_kg ? ` (~${details.estimated_yield_kg} kg)` : '';
-    const timeStr = details.audit_time ? ` · ${esc(details.audit_time)}` : '';
-    return `[${esc(stage)}] Đếm ${esc(count)} quả${estStr}${timeStr}`;
+    const stage = details.audit_stage || 'Đậu quả';
+    const cnt = details.fruit_count !== undefined ? details.fruit_count : (qty || 0);
+    const cmpShort = details.comparison_text ? ` · ${details.comparison_text}` : '';
+    return `[${esc(stage)}] ${esc(cnt)} quả${esc(cmpShort)}`;
   }
   if (log.log_type === 'Thu hoạch') {
     const yieldKg = details.yield_kg || qty || '';
     const fruitCount = details.fruit_count ? ` · ${details.fruit_count} trái` : '';
-    return `Thu hoạch ${yieldKg ? yieldKg + ' kg' : ''}${fruitCount} — Mã Lô: ${esc(log.batch_code || details.batch_code || 'VietGAP')}`;
+    const cmpShort = details.harvest_comparison_text ? ` · ${details.harvest_comparison_text}` : '';
+    return `Thu hoạch ${yieldKg ? yieldKg + ' kg' : ''}${fruitCount} — Mã Lô: ${esc(log.batch_code || details.batch_code || 'VietGAP')}${esc(cmpShort)}`;
   }
   if (log.log_type === 'Bệnh cây') {
     const sevIcon = details.severity === 'Nghiêm trọng' 
@@ -183,9 +255,9 @@ function _renderTimelineItemHtml(log) {
     icon = 'sparkles';
     chibiKey = 'chibi-fertilize';
   } else if (log.log_type === 'Kiểm toán quả') {
-    markerClass = 'marker-water';
-    tagClass = 'tag-water';
-    icon = 'clipboard-check';
+    markerClass = 'marker-fertilize';
+    tagClass = 'tag-fertilize';
+    icon = 'apple';
     chibiKey = 'chibi-fruit-audit';
   } else if (log.log_type === 'Thu hoạch') {
     markerClass = 'marker-fertilize';

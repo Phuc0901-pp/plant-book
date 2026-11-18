@@ -475,27 +475,60 @@ const LEGACY_LABOR_LOG_TYPES = [
   'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'
 ];
 
+const FRUIT_AUDIT_STAGES = ['Đậu quả', 'Quả non', 'Quả chín'];
+
+function normalizeFruitAuditStage(rawStage) {
+  const s = String(rawStage || '').trim();
+  const lower = s.toLowerCase();
+  if (!s) return 'Đậu quả';
+  if (lower.includes('đậu') || lower.includes('dau')) return 'Đậu quả';
+  if (lower.includes('non')) return 'Quả non';
+  if (lower.includes('chín') || lower.includes('chin')) return 'Quả chín';
+  return FRUIT_AUDIT_STAGES.includes(s) ? s : 'Đậu quả';
+}
+
+function formatViShortDate(dateVal) {
+  if (!dateVal) return '';
+  const str = String(dateVal).slice(0, 10);
+  const parts = str.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return str;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+function buildAuditDeltaLabel(deltaCount, deltaPct) {
+  if (deltaCount < 0) {
+    return `Suy giảm ${Math.abs(deltaCount)} quả (${deltaPct}%)`;
+  }
+  if (deltaCount > 0) {
+    return `Tăng ${deltaCount} quả (+${deltaPct}%)`;
+  }
+  return 'Giữ nguyên số quả (0%)';
+}
+
 /**
- * Chuẩn hóa hạng mục canh tác mới về 6 hạng mục SSOT quốc tế,
+ * Chuẩn hóa hạng mục canh tác mới về bộ hạng mục SSOT quốc tế (bao gồm Kiểm toán quả),
  * bảo toàn nhãn thao tác cũ vào details.work_content khi thuộc nhóm Nhân công.
  */
 function normalizeCareLogType(rawLogType, parsedDetails = {}) {
-  let effectiveLogType = rawLogType || 'Nhật ký chăm sóc';
+  const effectiveLogType = rawLogType || 'Nhật ký chăm sóc';
   const lower = String(effectiveLogType).toLowerCase();
-
-  // ƯU TIÊN TUYỆT ĐỐI: Nhận diện Kiểm toán quả trước Thu hoạch để không bị ép nhầm do dùng chung fruit_count
+  // Kiểm toán quả phải kiểm tra TRƯỚC Thu hoạch vì cùng có trường fruit_count
   if (
     lower.includes('kiểm toán quả') ||
     lower.includes('kiem toan qua') ||
     lower.includes('đếm quả') ||
-    Boolean(parsedDetails.fruit_stage)
+    (parsedDetails && (parsedDetails.audit_stage || parsedDetails.fruit_stage))
   ) {
-    if (!parsedDetails.fruit_stage) {
-      parsedDetails.fruit_stage = 'Đậu quả';
-    }
+    const stage = normalizeFruitAuditStage(parsedDetails.audit_stage || parsedDetails.fruit_stage);
+    parsedDetails.audit_stage = stage;
+    parsedDetails.fruit_stage = stage;
     return 'Kiểm toán quả';
   }
-
   if (
     lower.includes('thu hoạch') ||
     lower.includes('harvest') ||
@@ -513,6 +546,126 @@ function normalizeCareLogType(rawLogType, parsedDetails = {}) {
     return 'Nhân công';
   }
   return effectiveLogType;
+}
+
+/**
+ * Tự động truy vấn bản ghi Kiểm toán quả liền trước trên cùng cây để đối chiếu
+ * tăng/giảm số quả cho cả Kiểm toán quả (chuyển giao / trùng giai đoạn) và Thu hoạch.
+ */
+async function enrichFruitAuditAndHarvestDetails(dbPool, { plantId, logDate, logType, details = {}, excludeLogId = null }) {
+  if (!dbPool || !plantId || (logType !== 'Kiểm toán quả' && logType !== 'Thu hoạch')) {
+    return details;
+  }
+
+  const effectiveDateStr = logDate ? String(logDate).slice(0, 10) : new Date().toISOString().slice(0, 10);
+  let prevRow = null;
+
+  try {
+    const excludeClause = excludeLogId ? 'AND id != $3' : '';
+    const params = excludeLogId
+      ? [plantId, effectiveDateStr, parseInt(excludeLogId, 10)]
+      : [plantId, effectiveDateStr];
+
+    const resBefore = await dbPool.query(
+      `SELECT id, log_date, details
+       FROM plant_logs
+       WHERE plant_id = $1
+         AND log_type = 'Kiểm toán quả'
+         AND (is_deleted IS NOT TRUE)
+         AND log_date::date <= $2::date
+         ${excludeClause}
+       ORDER BY log_date DESC, id DESC
+       LIMIT 1`,
+      params
+    );
+    if (resBefore.rows.length > 0) {
+      prevRow = resBefore.rows[0];
+    } else {
+      const fbParams = excludeLogId ? [plantId, parseInt(excludeLogId, 10)] : [plantId];
+      const fbClause = excludeLogId ? 'AND id != $2' : '';
+      const resAny = await dbPool.query(
+        `SELECT id, log_date, details
+         FROM plant_logs
+         WHERE plant_id = $1
+           AND log_type = 'Kiểm toán quả'
+           AND (is_deleted IS NOT TRUE)
+           ${fbClause}
+         ORDER BY log_date DESC, id DESC
+         LIMIT 1`,
+        fbParams
+      );
+      if (resAny.rows.length > 0) prevRow = resAny.rows[0];
+    }
+  } catch (err) {
+    console.warn('enrichFruitAuditAndHarvestDetails query warning:', err.message);
+    return details;
+  }
+
+  if (logType === 'Kiểm toán quả') {
+    const currStage = normalizeFruitAuditStage(details.audit_stage || details.fruit_stage);
+    details.audit_stage = currStage;
+    details.fruit_stage = currStage;
+    const currCount = parseInt(details.fruit_count ?? details.amount ?? 0, 10);
+    if (!isNaN(currCount) && currCount >= 0) {
+      details.fruit_count = currCount;
+      details.amount = currCount;
+      details.unit = details.unit || 'quả';
+    }
+
+    if (prevRow && !isNaN(currCount)) {
+      let prevDet = {};
+      try {
+        prevDet = typeof prevRow.details === 'string' ? JSON.parse(prevRow.details) : (prevRow.details || {});
+      } catch (_) { prevDet = {}; }
+      const prevCount = parseInt(prevDet.fruit_count ?? prevDet.amount, 10);
+      if (!isNaN(prevCount)) {
+        const prevStage = normalizeFruitAuditStage(prevDet.audit_stage || prevDet.fruit_stage);
+        const prevDateIso = prevRow.log_date ? new Date(prevRow.log_date).toISOString().slice(0, 10) : '';
+        const deltaCount = currCount - prevCount;
+        const deltaPct = prevCount > 0 ? Number(((deltaCount / prevCount) * 100).toFixed(1)) : 0;
+        const deltaLabel = buildAuditDeltaLabel(deltaCount, deltaPct);
+
+        details.prev_stage = prevStage;
+        details.prev_fruit_count = prevCount;
+        details.prev_log_date = prevDateIso;
+        details.delta_count = deltaCount;
+        details.delta_pct = deltaPct;
+        details.comparison_text = `${prevStage} (${formatViShortDate(prevDateIso)}): ${prevCount} quả → ${currStage} (${formatViShortDate(effectiveDateStr)}): ${currCount} quả (${deltaLabel})`;
+      }
+    } else if (!isNaN(currCount)) {
+      delete details.prev_stage;
+      delete details.prev_fruit_count;
+      delete details.prev_log_date;
+      delete details.delta_count;
+      delete details.delta_pct;
+      details.comparison_text = `Khởi tạo mốc ${currStage} (${formatViShortDate(effectiveDateStr)}): ${currCount} quả`;
+    }
+  } else if (logType === 'Thu hoạch') {
+    const harvestCount = parseInt(details.fruit_count, 10);
+    if (prevRow && !isNaN(harvestCount) && harvestCount > 0) {
+      let prevDet = {};
+      try {
+        prevDet = typeof prevRow.details === 'string' ? JSON.parse(prevRow.details) : (prevRow.details || {});
+      } catch (_) { prevDet = {}; }
+      const prevCount = parseInt(prevDet.fruit_count ?? prevDet.amount, 10);
+      if (!isNaN(prevCount)) {
+        const prevStage = normalizeFruitAuditStage(prevDet.audit_stage || prevDet.fruit_stage);
+        const prevDateIso = prevRow.log_date ? new Date(prevRow.log_date).toISOString().slice(0, 10) : '';
+        const deltaCount = harvestCount - prevCount;
+        const deltaPct = prevCount > 0 ? Number(((deltaCount / prevCount) * 100).toFixed(1)) : 0;
+        const deltaLabel = buildAuditDeltaLabel(deltaCount, deltaPct);
+
+        details.prev_audit_stage = prevStage;
+        details.prev_audit_count = prevCount;
+        details.prev_audit_date = prevDateIso;
+        details.harvest_delta_count = deltaCount;
+        details.harvest_delta_pct = deltaPct;
+        details.harvest_comparison_text = `So với Kiểm toán ${prevStage} (${formatViShortDate(prevDateIso)}: ${prevCount} quả): Thu hoạch ${harvestCount} quả (${deltaLabel})`;
+      }
+    }
+  }
+
+  return details;
 }
 
 function buildLogFilterQuery(req, bodyOrQuery) {
@@ -573,13 +726,6 @@ function buildLogFilterQuery(req, bodyOrQuery) {
       baseQuery += ` AND pl.log_type = $${idx} `;
       params.push(cleanLogType);
     }
-    idx++;
-  }
-
-  // 4B. Fruit Stage filter (Mục con Kiểm toán quả: Đậu quả / Quả non / Quả chín)
-  if (bodyOrQuery.fruit_stage && bodyOrQuery.fruit_stage !== 'all') {
-    baseQuery += ` AND pl.details->>'fruit_stage' = $${idx} `;
-    params.push(String(bodyOrQuery.fruit_stage).trim());
     idx++;
   }
 
@@ -644,5 +790,6 @@ module.exports = {
   sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
-  buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType
+  buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType,
+  FRUIT_AUDIT_STAGES, normalizeFruitAuditStage, enrichFruitAuditAndHarvestDetails
 };
