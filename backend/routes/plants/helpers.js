@@ -470,6 +470,37 @@ async function reconcileFarmNfcInventory(dbClient, farmId) {
 }
 
 
+const LEGACY_LABOR_LOG_TYPES = [
+  'Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá',
+  'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'
+];
+
+/**
+ * Chuẩn hóa hạng mục canh tác mới về 6 hạng mục SSOT quốc tế,
+ * bảo toàn nhãn thao tác cũ vào details.work_content khi thuộc nhóm Nhân công.
+ */
+function normalizeCareLogType(rawLogType, parsedDetails = {}) {
+  let effectiveLogType = rawLogType || 'Nhật ký chăm sóc';
+  const lower = String(effectiveLogType).toLowerCase();
+  if (
+    lower.includes('thu hoạch') ||
+    lower.includes('harvest') ||
+    parseFloat(parsedDetails.fruit_count) > 0 ||
+    parseFloat(parsedDetails.price_per_tree) > 0 ||
+    parseFloat(parsedDetails.total_revenue) > 0
+  ) {
+    return 'Thu hoạch';
+  }
+  const laborAliases = LEGACY_LABOR_LOG_TYPES.filter(t => t !== 'Nhân công');
+  if (laborAliases.some(alias => alias.toLowerCase() === lower.trim())) {
+    if (!parsedDetails.work_content) {
+      parsedDetails.work_content = String(effectiveLogType).trim();
+    }
+    return 'Nhân công';
+  }
+  return effectiveLogType;
+}
+
 function buildLogFilterQuery(req, bodyOrQuery) {
   let baseQuery = `
     FROM plant_logs pl
@@ -518,10 +549,16 @@ function buildLogFilterQuery(req, bodyOrQuery) {
     }
   }
 
-  // 4. Log Type filter
+  // 4. Log Type filter (hỗ trợ tương thích ngược cho hạng mục Nhân công)
   if (bodyOrQuery.log_type && bodyOrQuery.log_type !== 'all') {
-    baseQuery += ` AND pl.log_type = $${idx} `;
-    params.push(String(bodyOrQuery.log_type).trim());
+    const cleanLogType = String(bodyOrQuery.log_type).trim();
+    if (cleanLogType === 'Nhân công') {
+      baseQuery += ` AND pl.log_type = ANY($${idx}::text[]) `;
+      params.push(LEGACY_LABOR_LOG_TYPES);
+    } else {
+      baseQuery += ` AND pl.log_type = $${idx} `;
+      params.push(cleanLogType);
+    }
     idx++;
   }
 
@@ -586,5 +623,5 @@ module.exports = {
   sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
-  buildLogFilterQuery, isFullNfcUid
+  buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType
 };

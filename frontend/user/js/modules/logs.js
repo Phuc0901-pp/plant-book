@@ -26,6 +26,15 @@ const _selectedLogIds = new Set();
 const dayOfWeekArr = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const DAY_OF_WEEK_ARR = dayOfWeekArr;
 
+const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
+
+function matchesUserLogCategory(selectedList, logType) {
+  if (!selectedList || selectedList.length === 0) return true;
+  if (selectedList.includes(logType)) return true;
+  if (selectedList.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
+  return false;
+}
+
 
 /**
  * Cập nhật cache nhật ký (30 ngày).
@@ -961,9 +970,9 @@ export function filterUserLogs() {
     filtered = filtered.filter(l => String(l.farm_id) === farmId);
   }
 
-  // 2. Lọc theo Loại hoạt động
+  // 2. Lọc theo Loại hoạt động (tương thích ngược cho nhóm Nhân công)
   if (filterType !== 'all') {
-    filtered = filtered.filter(l => l.log_type === filterType);
+    filtered = filtered.filter(l => matchesUserLogCategory([filterType], l.log_type));
   }
 
   // 3. Lọc nút nhanh "Chỉ Cây bệnh"
@@ -1383,15 +1392,18 @@ export function openUserExportLogsModal() {
   if (fromDateInput) fromDateInput.value = fromDateStr;
   if (toDateInput) toDateInput.value = today;
 
-  // Populate categories checkboxes
-  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Cắt lá", "Tỉa hoa", "Thu hoạch", "Bệnh cây", "Ghi chú khác"];
+  // Populate 6 Canonical SSOT categories checkboxes
+  const standardCats = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Bệnh cây", "Thu hoạch"];
   if (catsContainer) {
-    catsContainer.innerHTML = standardCats.map(cat => `
-      <label style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:6px 10px; border-radius:8px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
-        <input type="checkbox" name="user_export_cat" value="${esc(cat)}" checked style="accent-color:#059669; cursor:pointer;">
-        <span>${esc(cat)}</span>
-      </label>
-    `).join('');
+    catsContainer.innerHTML = standardCats.map(cat => {
+      const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
+      return `
+        <label style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e2e8f0; padding:6px 10px; border-radius:8px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
+          <input type="checkbox" name="user_export_cat" value="${esc(cat)}" checked style="accent-color:#059669; cursor:pointer;">
+          <span>${esc(label)}</span>
+        </label>
+      `;
+    }).join('');
   }
 
   const modal = document.getElementById('user-export-logs-modal');
@@ -1614,7 +1626,7 @@ export async function executeUserExport(mode = 'csv') {
     });
   }
   if (checkedCats.length > 0) {
-    filtered = filtered.filter(l => checkedCats.includes(l.log_type) || (l.log_type === 'Chăm sóc' && checkedCats.includes('Ghi chú khác')));
+    filtered = filtered.filter(l => matchesUserLogCategory(checkedCats, l.log_type));
   }
 
   filtered.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));

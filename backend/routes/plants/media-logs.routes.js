@@ -9,7 +9,7 @@ const {
   sanitizeLogRowForUser, verifyPlantAccess, convertLogAmountToBaseSupplyQty,
   generateSlug, generatePublicPlantUrl, formatStandardNfcUid,
   syncPlantNfcToInventory, ensureNfcInventoryColumns, reconcileFarmNfcInventory,
-  buildLogFilterQuery, isFullNfcUid
+  buildLogFilterQuery, isFullNfcUid, LEGACY_LABOR_LOG_TYPES, normalizeCareLogType
 } = require('./helpers');
 
 router.delete('/:id', auth, admin, async (req, res) => {
@@ -308,17 +308,8 @@ router.post(['/:id/logs', '/:id/care-log'], auth, async (req, res) => {
     const effectiveDate = log_date || new Date().toISOString().slice(0, 10);
     const parsedDetails = typeof details === 'string' ? JSON.parse(details || '{}') : (details || {});
     
-    // Tự động nhận diện và bảo vệ loại nhật ký Thu hoạch (Dual Defense)
-    let effectiveLogType = log_type || 'Nhật ký chăm sóc';
-    if (
-      String(effectiveLogType).toLowerCase().includes('thu hoạch') ||
-      String(effectiveLogType).toLowerCase().includes('harvest') ||
-      parseFloat(parsedDetails.fruit_count) > 0 ||
-      parseFloat(parsedDetails.price_per_tree) > 0 ||
-      parseFloat(parsedDetails.total_revenue) > 0
-    ) {
-      effectiveLogType = 'Thu hoạch';
-    }
+    // Chuẩn hóa hạng mục canh tác về 6 hạng mục SSOT & bảo vệ Thu hoạch / Nhân công
+    const effectiveLogType = normalizeCareLogType(log_type || 'Nhật ký chăm sóc', parsedDetails);
 
     let generatedBatchCode = null;
     let isPhiViolation = false;
@@ -578,18 +569,9 @@ router.put('/:plantId/logs/:logId', auth, async (req, res) => {
 
     const editHistory = [...(currentLog.edit_history || []), historyItem];
 
-    // Tự động nhận diện và bảo vệ loại nhật ký Thu hoạch
-    const parsedPutDetails = details || currentLog.details || {};
-    let targetLogType = log_type || currentLog.log_type;
-    if (
-      String(targetLogType).toLowerCase().includes('thu hoạch') ||
-      String(targetLogType).toLowerCase().includes('harvest') ||
-      parseFloat(parsedPutDetails.fruit_count) > 0 ||
-      parseFloat(parsedPutDetails.price_per_tree) > 0 ||
-      parseFloat(parsedPutDetails.total_revenue) > 0
-    ) {
-      targetLogType = 'Thu hoạch';
-    }
+    // Chuẩn hóa hạng mục canh tác về 6 hạng mục SSOT & bảo vệ Thu hoạch / Nhân công
+    const parsedPutDetails = details ? { ...(typeof details === 'string' ? JSON.parse(details || '{}') : details) } : { ...(currentLog.details || {}) };
+    const targetLogType = normalizeCareLogType(log_type || currentLog.log_type, parsedPutDetails);
 
     // Update log
     const updated = await pool.query(

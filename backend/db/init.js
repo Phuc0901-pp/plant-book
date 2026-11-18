@@ -618,7 +618,8 @@ async function initDB() {
       { key: 'pesticides', value: JSON.stringify(["Thuốc trừ sâu sinh học", "Thuốc trừ bệnh Anvil", "Thuốc trừ nấm Ridomil Gold", "Chất kích thích sinh trưởng Atonik"]) },
       { key: 'water_methods', value: JSON.stringify(["Tưới tay thủ công", "Tưới nhỏ giọt", "Tưới phun mưa", "Tưới phun sương"]) },
       { key: 'leaf_cut_reasons', value: JSON.stringify(["Lá già úa/vàng", "Lá bị sâu bệnh hại", "Tỉa cành tạo tán", "Tỉa bớt lá thông thoáng"]) },
-      { key: 'flower_prune_reasons', value: JSON.stringify(["Tỉa hoa tàn", "Tỉa bớt nụ còi", "Tỉa cành tạo dáng", "Kích thích ra chồi mới"]) }
+      { key: 'flower_prune_reasons', value: JSON.stringify(["Tỉa hoa tàn", "Tỉa bớt nụ còi", "Tỉa cành tạo dáng", "Kích thích ra chồi mới"]) },
+      { key: 'labor_work_types', value: JSON.stringify(["Cắt cành / Tỉa lá tạo tán", "Tỉa hoa / Tỉa trái non", "Làm cỏ / Vệ sinh gốc", "Bao trái / Chống cành", "Thụ phấn bổ sung", "Bón phân / Phun thuốc thuê ngoài"]) }
     ];
 
     for (const config of defaultConfigs) {

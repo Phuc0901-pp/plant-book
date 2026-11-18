@@ -428,7 +428,7 @@ class _PlantDetailPageState extends State<PlantDetailPage>
                 _quickCareTile('Phun thuốc', Icons.bug_report_rounded,
                     Colors.orange, 'Phun thuốc'),
                 _quickCareTile(
-                    'Cắt tỉa', Icons.content_cut_rounded, Colors.amber, 'Cắt tỉa'),
+                    'Thuê nhân công', Icons.groups_rounded, Colors.indigo, 'Nhân công'),
                 _quickCareTile('Bệnh cây', Icons.error_outline_rounded,
                     Colors.red, 'Bệnh cây'),
                 _quickCareTile('Thu hoạch', Icons.agriculture_rounded,
@@ -1171,9 +1171,38 @@ class _PlantDetailPageState extends State<PlantDetailPage>
       if (desc != null && desc.toString().isNotEmpty) {
         parts.add('Mô tả: $desc');
       }
+    } else if (logType == 'Nhân công') {
+      final dynamic workContent = details['work_content'] ?? details['reason'];
+      final dynamic workerCount = details['worker_count'] ?? details['amount'];
+      final dynamic timeRange = details['time_range'];
+      if (workContent != null && workContent.toString().isNotEmpty) {
+        parts.add('Công việc: $workContent');
+      }
+      if (workerCount != null && workerCount != 0 && workerCount.toString().isNotEmpty) {
+        parts.add('Số công: $workerCount người');
+      }
+      if (timeRange != null && timeRange.toString().isNotEmpty) {
+        parts.add('Giờ làm: $timeRange');
+      }
+    } else if (logType == 'Thu hoạch') {
+      final dynamic yieldVal = details['yield_kg'] ?? details['amount'];
+      final dynamic unit = details['unit'] ?? 'kg';
+      final dynamic quality = details['quality'] ?? details['grade'];
+      final dynamic fruitCount = details['fruit_count'];
+      if (yieldVal != null && yieldVal.toString().isNotEmpty) {
+        parts.add('Sản lượng: $yieldVal $unit');
+      }
+      if (fruitCount != null && fruitCount != 0) {
+        parts.add('Số trái: $fruitCount');
+      }
+      if (quality != null && quality.toString().isNotEmpty) {
+        parts.add('Chất lượng: $quality');
+      }
     } else if (logType == 'Tỉa cành/lá' ||
         logType == 'Tỉa quả/hoa' ||
-        logType == 'Cắt tỉa') {
+        logType == 'Cắt tỉa' ||
+        logType == 'Cắt lá' ||
+        logType == 'Tỉa hoa') {
       final dynamic reason = details['reason'];
       final dynamic amount = details['amount'];
       if (reason != null && reason.toString().isNotEmpty) {
@@ -1222,10 +1251,16 @@ class _PlantDetailPageState extends State<PlantDetailPage>
         return Icons.opacity_rounded;
       case 'Phun thuốc':
         return Icons.bug_report_rounded;
+      case 'Nhân công':
+        return Icons.groups_rounded;
+      case 'Thu hoạch':
+        return Icons.shopping_basket_rounded;
       case 'Tỉa cành/lá':
       case 'Cắt tỉa':
+      case 'Cắt lá':
         return Icons.content_cut_rounded;
       case 'Tỉa quả/hoa':
+      case 'Tỉa hoa':
         return Icons.grain_rounded;
       case 'Bệnh cây':
         return Icons.error_outline_rounded;

@@ -1,6 +1,15 @@
     // Global State
     let plantData = null;
 
+    const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
+
+    function matchesReportCategory(checkedCats, logType) {
+      if (!checkedCats || checkedCats.length === 0) return true;
+      if (checkedCats.includes(logType)) return true;
+      if (checkedCats.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
+      return false;
+    }
+
     // Helpers
     function esc(s) {
       if (s === undefined || s === null) return '';
@@ -35,6 +44,11 @@
       if (log.log_type === 'Phun thuốc') {
         return `Loại thuốc: ${esc(details.type || '—')} | Tên thuốc: ${esc(details.pesticide_name || '—')} | Liều lượng: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
       }
+      if (log.log_type === 'Nhân công') {
+        const workContent = details.work_content || details.reason || 'Chăm sóc vườn';
+        const workers = details.worker_count || details.amount || 1;
+        return `Công việc: ${esc(workContent)} | Số công: ${esc(workers)} người`;
+      }
       if (log.log_type === 'Cắt lá') {
         return `Số cành/lá cắt tỉa: ${esc(details.amount || '—')} | Lý do: ${esc(details.reason || '—')}`;
       }
@@ -43,6 +57,13 @@
       }
       if (log.log_type === 'Bệnh cây') {
         return `Bệnh: ${esc(details.disease_name || 'Bệnh chưa xác định')} | Mức độ: ${esc(details.severity || '—')} | Mô tả: ${esc(details.description || '—')}`;
+      }
+      if (log.log_type === 'Thu hoạch') {
+        const yieldVal = details.amount || details.yield_kg || '—';
+        const yieldUnit = details.unit || 'kg';
+        const qualityVal = details.quality || details.grade || 'Đạt chuẩn';
+        const batchVal = log.batch_code || details.batch_code || '—';
+        return `Sản lượng: ${esc(yieldVal)} ${esc(yieldUnit)} | Chất lượng: ${esc(qualityVal)} | Mã lô: ${esc(batchVal)}`;
       }
       return '';
     }
@@ -101,7 +122,7 @@
       const filteredLogs = logs.filter(log => {
         const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
         const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
-        const isMatchedCat = checkedCats.length === 0 || checkedCats.includes(log.log_type);
+        const isMatchedCat = matchesReportCategory(checkedCats, log.log_type);
         return isWithinDate && isMatchedCat;
       });
       filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
@@ -226,8 +247,8 @@
           const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
           const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
           
-          // If no categories filter given, match all; otherwise check containment
-          const isMatchedCat = checkedCats.length === 0 || checkedCats.includes(log.log_type);
+          // If no categories filter given, match all; otherwise check containment with backward-compatible labor aliases
+          const isMatchedCat = matchesReportCategory(checkedCats, log.log_type);
           return isWithinDate && isMatchedCat;
         });
         filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));

@@ -1,4 +1,13 @@
 // Modular Public Plant VietGAP Export, Certificates, Contour Lines & A4 Map Export
+const LEGACY_LABOR_ALIASES = ['Nhân công', 'Cắt lá', 'Cắt tỉa', 'Cắt cành', 'Tỉa cành/lá', 'Tỉa hoa', 'Tỉa quả', 'Tỉa quả/hoa', 'Thụ phấn', 'Làm cỏ'];
+
+function matchesExportCategory(checkedCats, logType) {
+  if (!checkedCats || checkedCats.length === 0) return true;
+  if (checkedCats.includes(logType)) return true;
+  if (checkedCats.includes('Nhân công') && LEGACY_LABOR_ALIASES.includes(logType)) return true;
+  return false;
+}
+
 // Export report functionality
 function openExportModal() {
   if (!currentPlantData) {
@@ -23,23 +32,24 @@ function openExportModal() {
     fromDateInput.value = oneYearAgo.toISOString().split('T')[0];
   }
   
-  // Populate categories
-  const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Cắt lá", "Tỉa hoa", "Bệnh cây", "Ghi chú khác"];
+  // Populate 6 Canonical SSOT Categories
+  const categories = ["Tưới nước", "Bón phân", "Phun thuốc", "Nhân công", "Bệnh cây", "Thu hoạch"];
   
-  // Append any extra unique category present in logs
+  // Append any extra unique category present in logs (skip legacy labor aliases merged into Nhân công)
   const logs = currentPlantData.logs || [];
   logs.forEach(l => {
-    if (l.log_type && !categories.includes(l.log_type)) {
+    if (l.log_type && !categories.includes(l.log_type) && !LEGACY_LABOR_ALIASES.includes(l.log_type)) {
       categories.push(l.log_type);
     }
   });
   
   const container = document.getElementById('export-categories-container');
   container.innerHTML = categories.map(cat => {
+    const label = cat === 'Nhân công' ? 'Thuê nhân công' : cat;
     return `
       <label class="export-category-item">
         <input type="checkbox" name="export-cat" value="${esc(cat)}" checked>
-        <span>${esc(cat)}</span>
+        <span>${esc(label)}</span>
       </label>
     `;
   }).join('');
@@ -106,7 +116,7 @@ function exportPublicLogsCsv() {
   const filteredLogs = logs.filter(log => {
     const logDateStr = new Date(log.log_date).toISOString().split('T')[0];
     const isWithinDate = (!fromDate || logDateStr >= fromDate) && (!toDate || logDateStr <= toDate);
-    const isMatchedCat = checkedCats.length === 0 || checkedCats.includes(log.log_type);
+    const isMatchedCat = matchesExportCategory(checkedCats, log.log_type);
     return isWithinDate && isMatchedCat;
   });
   filteredLogs.sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
