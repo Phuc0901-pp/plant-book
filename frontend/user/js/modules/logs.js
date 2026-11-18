@@ -1528,6 +1528,10 @@ export async function openUserExportLogsModal(defaultMode, presetFarmId, presetP
 
   const modal = document.getElementById('user-export-logs-modal');
   if (modal) {
+    if (typeof document !== 'undefined' && document.body && typeof document.body.appendChild === 'function' && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+    modal.style.zIndex = '10050';
     modal.style.display = 'flex';
     if (window.lucide) lucide.createIcons();
     if (window.PlantBookI18n && typeof window.PlantBookI18n.applyDomTranslations === 'function') {
@@ -2357,7 +2361,13 @@ window.renderUserReportLibraryList = renderUserReportLibraryList;
 
 export async function openUserReportLibraryModal() {
   const modal = document.getElementById('user-report-library-modal');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    if (typeof document !== 'undefined' && document.body && typeof document.body.appendChild === 'function' && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+    modal.style.zIndex = '10060';
+    modal.style.display = 'flex';
+  }
   await refreshReportLibraryBadge();
   renderUserReportLibraryList();
 }
